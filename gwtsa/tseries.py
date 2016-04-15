@@ -47,7 +47,7 @@ class Constant:
     def __init__(self, value=0.0):
         self.nparam = 1
         self.parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
-        self.parameters.loc['constant_d'] = (1.0, np.nan, np.nan, 1)
+        self.parameters.loc['constant_d'] = (value, np.nan, np.nan, 1)
     def simulate(self, tindex=None, p=None):
         return p
     
