@@ -32,8 +32,8 @@ class Tseries2:
         self.parameters = self.rfunc.set_parameters(self.name)
         self.parameters.loc[self.name + '_f'] = (-1.0, -5.0, 0.0, 1)
     def simulate(self, tindex=None, p=None):
-        b = self.rfunc.block(p[:3])
-        stress = self.stress1 + p[3] * self.stress2
+        b = self.rfunc.block(p[:self.nparam-1]) # nparam-1 depending on rfunc
+        stress = self.stress1 + p[self.nparam-1] * self.stress2
         stress.fillna(stress.mean(), inplace=True)
         self.npoints = len(stress)
         h = pd.Series(fftconvolve(stress, b, 'full')[:self.npoints],
