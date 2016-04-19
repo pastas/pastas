@@ -2,9 +2,41 @@ import numpy as np
 import pandas as pd
 from scipy.special import gammainc, gammaincinv
 
-'''Need a description of the requirements of all the response functions'''
+'''
+rfunc.py contains the response functions.
 
-  
+Each response function is stored as a class and should at least contain the 
+following:
+
+Attributes
+----------
+nparam: integer
+    number of parameters.
+cutoff: float
+    percentage after which the response is cutoff.
+
+Functions
+---------
+__init__(self)
+    function that initialized an instance of the response function.
+set_parameters(self, name)
+    This function is called by an tseries object. Name is used as a prefix
+    for the parameter names. A Pandas dataframe is returned that contains
+    the values, minimum, maximum, and vary for each parameter.
+step(self, p)
+    This function calculates and returns an array of the step response. Input
+    p is an array of parameters in a specific order.
+block(self, p)
+    This function calls the step function and returns and array of the block
+    response. Input p is an array of parameters in a specific order.
+
+More information on how to write a response class can be found here:
+https://github.com/gwtsa/gwtsa/wiki
+
+gwtsa -2016
+'''
+
+
 class Gamma:
     def __init__(self):
         self.nparam = 3
