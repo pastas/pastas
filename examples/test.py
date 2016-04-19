@@ -45,3 +45,5 @@ d = Constant()
 ml.addtseries(d)
 n = NoiseModel()
 ml.addnoisemodel(n)
+
+ml.solve(tmin='1965', tmax='1990')
