@@ -20,9 +20,7 @@ class Gamma:
         s = p[0] * gammainc(p[1], t / p[2])
         return s
     def block(self, p):
-        self.tmax = gammaincinv(p[1], self.cutoff) * p[2]
-        t = np.arange(1.0, self.tmax)
-        s = p[0] * gammainc(p[1], t / p[2])
+        s = self.step(p)
         return s[1:] - s[:-1]
 
 
@@ -41,7 +39,5 @@ class ExpDecay:
         s = -p[0] * np.exp(- t / p[1]) + p[0]
         return s
     def block(self, p):
-        self.tmax = -np.log(1.0 / p[1]) * p[1]
-        t = np.arange(1.0, self.tmax)
-        s = -p[0] * np.exp(- t / p[1]) + p[0]
+        s = self.step(p)
         return s[1:] - s[:-1]
