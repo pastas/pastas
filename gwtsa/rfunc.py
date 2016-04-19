@@ -3,6 +3,7 @@ import pandas as pd
 from scipy.special import gammainc, gammaincinv
 
 '''Need a description of the requirements of all the response functions'''
+
   
 class Gamma:
     def __init__(self):
@@ -10,7 +11,7 @@ class Gamma:
         self.cutoff = 0.99
     def set_parameters(self, name):
         parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
-        parameters.loc[name + '_A'] = (1.0, 0.0, 5.0, 1)
+        parameters.loc[name + '_A'] = (500.0, 0.0, 5000.0, 1)
         parameters.loc[name + '_n'] = (1.0, 0.0, 5.0, 1)
         parameters.loc[name + '_a'] = (100.0, 1.0, 5000.0, 1)
         return parameters
@@ -24,13 +25,13 @@ class Gamma:
         return s[1:] - s[:-1]
 
 
-class ExpDecay:
+class Exponential:
     def __init__(self):
         self.nparam = 2
         self.cutoff = 0.99
     def set_parameters(self, name):
         parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
-        parameters.loc[name + '_A'] = (1.0, 0.0, 5.0, 1)
+        parameters.loc[name + '_A'] = (500.0, 0.0, 5000.0, 1)
         parameters.loc[name + '_a'] = (100.0, 1.0, 5000.0, 1)
         return parameters
     def step(self, p):

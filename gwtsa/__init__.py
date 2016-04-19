@@ -3,5 +3,5 @@ __author__='gwtsa team'
 from version import __version__
 
 from model import Model
-from rfunc import Gamma, ExpDecay
+from rfunc import Gamma, Exponential
 from tseries import Tseries, Tseries2, Constant, NoiseModel
