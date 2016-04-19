@@ -75,6 +75,14 @@ class Model:
             if report: print lmfit.fit_report(self.fit)
             self.parameters = np.array([p.value for p in self.fit.params.values()])
             self.paramdict = self.fit.params.valuesdict()
+            
+            # Return calibrated parameters to tseries
+            for ts in self.tserieslist:  
+                for k in ts.parameters.index:
+                    ts.parameters.loc[k].value = self.paramdict[k]
+            if self.noisemodel is not None:
+                for k in self.noisemodel.parameters.index:
+                    self.noisemodel.parameters.loc[k].value = self.paramdict[k]
 
     def plot(self, oseries=True):
         h = self.simulate()

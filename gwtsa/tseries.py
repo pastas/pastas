@@ -17,6 +17,7 @@ class Tseries:
         self.parameters = self.rfunc.set_parameters(self.name)
 
     def simulate(self, tindex=None, p=None):
+        if p is None: p = np.array(self.parameters.value)
         b = self.rfunc.block(p)
         h = pd.Series(fftconvolve(self.stress, b, 'full')[:self.npoints],
                       index=self.stress.index)
@@ -40,6 +41,7 @@ class Tseries2:
         self.parameters.loc[self.name + '_f'] = (-1.0, -5.0, 0.0, 1)
 
     def simulate(self, tindex=None, p=None):
+        if p is None: p = np.array(self.parameters.value)
         b = self.rfunc.block(p[:-1])  # nparam-1 depending on rfunc
         stress = self.stress1 + p[-1] * self.stress2
         stress.fillna(stress.mean(), inplace=True)
@@ -59,6 +61,7 @@ class Constant:
         self.parameters.loc['constant_d'] = (value, np.nan, np.nan, 1)
 
     def simulate(self, tindex=None, p=None):
+        if p is None: p = np.array(self.parameters.value)
         return p
 
 
@@ -69,6 +72,7 @@ class NoiseModel:
         self.parameters.loc['noise_alpha'] = (14.0, 0, 5000, 1)
 
     def simulate(self, res, delt, tindex=None, p=None):
+        if p is None: p = np.array(self.parameters.value)
         innovations = pd.Series(res, index=res.index)
         innovations[1:] -= np.exp(-delt[1:] / p) * res.values[:-1]  # values is needed else it gets messed up with the dates
         return innovations
