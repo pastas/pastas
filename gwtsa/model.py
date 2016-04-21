@@ -137,5 +137,7 @@ class Model:
         ax5.yaxis.set_visible(False)
         plt.text(0.05, 0.8, 'AIC: %.2f' % self.fit.aic)
         plt.text(0.05, 0.6, 'BIC: %.2f' % self.fit.bic)
+        plt.show()
         if savefig:
             plt.savefig('.eps' % (self.name), bbox_inches='tight')
+        
