@@ -20,8 +20,8 @@ set_parameters(self, name)
     A function that returs a Pandas DataFrame of the parameters of the
     response function. Columns of the dataframe need to be
     ['value', 'pmin', 'pmax', 'vary'].
-    Rows of the DataFrame have the for name_ followed by the symbol
-    for the parameter.
+    Rows of the DataFrame have names of the parameters.
+    Input name is used as a prefix.
     This function is called by a Tseries object.
 step(self, p)
     Returns an array of the step response. Input

@@ -2,30 +2,28 @@ import numpy as np
 import pandas as pd
 from scipy.signal import fftconvolve
 
-"""The tseries.py file contains all time series objects.
+"""
+tseries module.
+Constains class for time series objects.
 
-Each class defined in tseries should at least have the following:
+Each response function class needs the following:
 
 Attributes
 ----------
-stress : Pandas Series
-    Series object of the stress with index in datetime format.
-rfunc : Object
-    Response function defined in rfunc.py, E.g. Gamma().
-npoints : int
-    length of the stress Series.
 nparam : int
-    Number of parameters for this tseries object. Depending on
-    rfunc.nparam plus the parameters in used in this class.
+    Number of parameters. 
 name : str
     Name of this tseries object. Used as prefix for the parameters.
-parameters : Pandas Dataframe
+parameters : pandas Dataframe
     Dataframe containing the parameters.
 
 Methods
 -------
-simulate
-
+simulate : Returns pandas Series Object with simulate values
+           Input: tindex: Optional pandas TimeIndex. Time index to simulate values
+           p: Optional[array-like]. Parameters used for simulation. If p is not
+           provided, parameters attribute will be used.
+           Returns: pandas Series of simulated values
 """
 
 
