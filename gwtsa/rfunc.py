@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from scipy.special import gammainc, gammaincinv
 
-'''
+"""
 rfunc module.
 Contains classes for the response functions.
 Each response function class needs the following:
@@ -17,7 +17,7 @@ cutoff: float
 Functions
 ---------
 set_parameters(self, name)
-    A function that returs a Pandas DataFrame of the parameters of the
+    A function that returns a Pandas DataFrame of the parameters of the
     response function. Columns of the dataframe need to be
     ['value', 'pmin', 'pmax', 'vary'].
     Rows of the DataFrame have names of the parameters.
@@ -34,15 +34,15 @@ block(self, p)
 
 More information on how to write a response class can be found here:
 https://github.com/gwtsa/gwtsa/wiki
-
-gwtsa -2016
-'''
+"""
 
 
 class Gamma:
-    '''
+    """
+    Gamma response function with 3 parameters A, a, and n.
+
     step(t) = A * Gammainc(n, t / a)
-    '''
+    """
     def __init__(self):
         self.nparam = 3
         self.cutoff = 0.99
@@ -66,10 +66,11 @@ class Gamma:
 
 
 class Exponential:
-    '''
+    """
+    Exponential response functino with 2 parameters: A and a.
+
     step(t) = A * (1 - exp(-t / a))
-    '''
-    
+    """
     def __init__(self):
         self.nparam = 2
         self.cutoff = 0.99
