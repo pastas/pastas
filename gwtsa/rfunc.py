@@ -6,7 +6,9 @@ from scipy.special import gammainc, gammaincinv
 rfunc module.
 Contains classes for the response functions.
 Each response function class needs the following:
+"""
 
+_class_doc = """
 Attributes
 ----------
 nparam: integer
@@ -38,11 +40,13 @@ https://github.com/gwtsa/gwtsa/wiki
 
 
 class Gamma:
-    """
+    __doc__ = """
     Gamma response function with 3 parameters A, a, and n.
 
     step(t) = A * Gammainc(n, t / a)
-    """
+
+    %(doc)s
+    """ % {'doc' : _class_doc}
     def __init__(self):
         self.nparam = 3
         self.cutoff = 0.99
@@ -66,11 +70,13 @@ class Gamma:
 
 
 class Exponential:
-    """
-    Exponential response functino with 2 parameters: A and a.
+    __doc__ = """
+    Exponential response function with 2 parameters: A and a.
 
     step(t) = A * (1 - exp(-t / a))
-    """
+
+    %(doc)s
+    """ % {'doc' : _class_doc}
     def __init__(self):
         self.nparam = 2
         self.cutoff = 0.99
