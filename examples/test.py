@@ -51,5 +51,5 @@ ml.solve()
 ml.plot()
 
 # Solve for a certain period
-ml.solve(tmin='1965', tmax='1990')
-ml.plot_results()  # More advanced plotting option
+#ml.solve(tmin='1965', tmax='1990')
+#ml.plot_results()  # More advanced plotting option

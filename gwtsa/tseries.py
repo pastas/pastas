@@ -158,6 +158,10 @@ class NoiseModel:
         """
         if p is None: p = np.array(self.parameters.value)
         innovations = pd.Series(res, index=res.index)
-        innovations[1:] -= np.exp(-delt[1:] / p) * res.values[:-1]  # values is
-        # needed else it gets messed up with the dates
+        # weights of innovations, see Eq. A17 in reference [1]
+        power = (1.0 / (2.0 * (len(delt)-1)))
+        w = np.exp(power * np.sum(np.log(1 - np.exp(-2 *delt[1:] / p)))) / \
+            np.sqrt(1.0 - np.exp(-2 * delt[1:] / p))
+        # res.values is needed else it gets messed up with the dates
+        innovations[1:] -= w * np.exp(-delt[1:] / p) * res.values[:-1]  
         return innovations
