@@ -227,4 +227,6 @@ class NoiseModel:
             np.sqrt(1.0 - np.exp(-2 * delt[1:] / p))
         # res.values is needed else it gets messed up with the dates
         innovations[1:] -= w * np.exp(-delt[1:] / p) * res.values[:-1]
+        if tindex is not None:
+            innovations = innovations[tindex]
         return innovations
