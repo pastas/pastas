@@ -19,7 +19,6 @@ rain = pd.read_csv('Heibloem_rain_data.dat', skiprows=4, delim_whitespace=True,
 rain = rain['1980':]  # cut off everything before 1980
 rain = rain.precip
 rain /= 1000.0  # Meters
-rain.fillna(rain.mean(), inplace=True)
 
 # Import and check the observed evaporation series
 evap = pd.read_csv('Maastricht_E_June2015.csv', skiprows=4, sep=';',
@@ -28,10 +27,8 @@ evap = pd.read_csv('Maastricht_E_June2015.csv', skiprows=4, sep=';',
 evap.rename(columns={'VALUE (m-ref)': 'evap'}, inplace=True)
 evap = evap['1980':]  # cut off everything before 1980
 evap = evap.evap
-evap.fillna(evap.mean(), inplace=True)
 
-#recharge = rain - 0.8 * evap
-#recharge.fillna(recharge.mean(), inplace=True)
+recharge = rain - 0.8 * evap
 
 #oseries -= oseries.mean()
 #recharge -= recharge.mean()
@@ -39,7 +36,7 @@ evap.fillna(evap.mean(), inplace=True)
 # Create the time series model
 ml = Model(oseries)
 #ts1 = Tseries(recharge, Gamma(), name='recharge')
-ts1 = Tseries2(rain, evap, Gamma(), name='recharge')
+ts1 = Tseries2([rain, evap], Gamma(), name='recharge', freq='D', fillna='mean')
 ml.addtseries(ts1)
 d = Constant()
 ml.addtseries(d)
@@ -51,5 +48,5 @@ ml.solve()
 ml.plot()
 
 # Solve for a certain period
-ml.solve(tmin='1965', tmax='1990')
-ml.plot_results()  # More advanced plotting option
+#ml.solve(tmin='1965', tmax='1990')
+#ml.plot_results()  # More advanced plotting option
