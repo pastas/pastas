@@ -33,7 +33,6 @@ class TseriesBase:
 
     def __init__(self, stress, rfunc, name, stressnames, xy, metadata, freq,
                  fillna):
-
         self.stress = self.check_stresses(stress, freq, fillna)
         self.rfunc = rfunc
         self.nparam = rfunc.nparam
@@ -82,6 +81,17 @@ class TseriesBase:
             stresses.append(k)
         return stresses
 
+    def set_parameters(self, **kwargs):
+        """Method to set the parameters value
+
+        Usage
+        -----
+        E.g. ts2.set_parameters(recharge_A=200)
+
+        """
+        for i in kwargs:
+            self.parameters.loc['%s' % i, 'value'] = kwargs[i]
+
 
 class Tseries(TseriesBase):
     """Time series model consisting of the convolution of one stress with one
@@ -93,8 +103,11 @@ class Tseries(TseriesBase):
                  xy=(0, 0), freq=None, fillna='mean'):
         TseriesBase.__init__(self, stress, rfunc, name, metadata, stressnames, xy,
                              freq, fillna)
-        self.parameters = self.rfunc.set_parameters(self.name)
+        self.set_init_parameters()
         self.stress = self.stress[0]  # unpack stress list for this Tseries
+
+    def set_init_parameters(self):
+        self.parameters = self.rfunc.set_parameters(self.name)
 
     def simulate(self, tindex=None, p=None):
         """ Simulates the head contribution.
@@ -139,6 +152,9 @@ class Tseries2(TseriesBase):
         TseriesBase.__init__(self, stress, rfunc, name, metadata, stressnames,
                              xy, freq, fillna)
         self.nparam += 1
+        self.set_init_parameters()
+
+    def set_init_parameters(self):
         self.parameters = self.rfunc.set_parameters(self.name)
         self.parameters.loc[self.name + '_f'] = (-1.0, -5.0, 0.0, 1)
 
