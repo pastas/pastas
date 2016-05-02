@@ -147,8 +147,8 @@ class Tseries2(TseriesBase):
 
     """
 
-    def __init__(self, stress, rfunc, name, metadata=None, stressnames=None, xy=(
-            0, 0), freq=None, fillna='mean'):
+    def __init__(self, stress, rfunc, name, metadata=None, stressnames=None,
+                 xy=(0, 0), freq=None, fillna='mean'):
         TseriesBase.__init__(self, stress, rfunc, name, metadata, stressnames,
                              xy, freq, fillna)
         self.nparam += 1
@@ -167,6 +167,36 @@ class Tseries2(TseriesBase):
         self.npoints = len(stress)
         h = pd.Series(fftconvolve(stress, b, 'full')[:self.npoints],
                       index=stress.index)
+        if tindex is not None:
+            h = h[tindex]
+        return h
+
+
+class Tseries3(TseriesBase):
+    def __init__(self, stress, rfunc, recharge, name, metadata=None,
+                 stressnames=None,
+                 xy=(0, 0), freq=None, fillna='mean'):
+        TseriesBase.__init__(self, stress, rfunc, name, stressnames, xy,
+                             metadata, freq, fillna)
+        self.recharge = recharge
+        self.set_init_parameters()
+        self.nparam = self.rfunc.nparam + self.recharge.nparam
+
+    def set_init_parameters(self):
+        self.parameters = pd.concat([self.rfunc.set_parameters(self.name),
+                                     self.recharge.set_parameters(self.name)])
+
+    def simulate(self, tindex=None, p=None):
+        if p is None:
+            p = np.array(self.parameters.value)
+        b = self.rfunc.block(p[:-3])
+        self.npoints = len(self.stress[0])
+        P = np.array(self.stress[0])
+        E = np.array(self.stress[1])
+        self.rseries = self.recharge.simulate(P, E, p[-self.recharge.nparam:])
+        self.npoints = len(self.rseries)
+        h = pd.Series(fftconvolve(self.rseries, b, 'full')[:self.npoints],
+                      index=self.stress[0].index)
         if tindex is not None:
             h = h[tindex]
         return h

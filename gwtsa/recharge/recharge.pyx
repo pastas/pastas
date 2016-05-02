@@ -1,7 +1,9 @@
 """
 Created on Wed Apr 15 18:20:35 2015
 
-This python script is used to solve the differential equations that are used for the unsaturated zone module. The output of the function is the soil state (how full it is) at each timestep, and the groundwater recharge R.
+This python script is used to solve the differential equations that are used for the
+unsaturated zone module. The output of the function is the soil state (how full
+it is) at each timestep, and the groundwater recharge N.
 
 -------------------------------------Three models can be used:
 - Percolation Flow:
@@ -11,21 +13,27 @@ dS/dt = Pe[t] - Kp * (Sr/Srmax)**Gamma - Epu * min(1, Sr/0.5Srmax)
 dS/ Dt = Pe[t] * (1 - (Sr[t] / Srmax)**Beta)- Epu * min(1, Sr/0.5Srmax)
 
 - Combination:
-dS/ Dt = Pe[t] * (1 - (Sr[t] / Srmax)**Beta) - Kp * (Sr/Srmax)**Gamma - Epu * min(1, Sr/0.5*Srmax)
+dS/ Dt = Pe[t] * (1 - (Sr[t] / Srmax)**Beta) - Kp * (Sr/Srmax)**Gamma - Epu
+         * min(1, Sr/0.5*Srmax)
 
 -------------------------------------Numerical info:
-The Soil module is solved with an implicit euler and Newton Raphson iteration. The initial estimate for the the NR-iteration is provided by an Explicit Euler solution of the above differential equation. 
+The Soil module is solved with an implicit euler and Newton Raphson iteration.
+The initial estimate for the the NR-iteration is provided by an Explicit Euler
+solution of the above differential equation.
 
 -------------------------------------To Do:
     - Built in more external / internal checks for water balance
 
 -------------------------------------References:     
-- Kavetski, D., Kuczera, G. & Franks, S.W. [2006]. Calibration of conceptual hydrological models revisited: 1. Overcoming numerical artefacts. Journal of Hydrology, 320, p. 173-186.  
+- Kavetski, D., Kuczera, G. & Franks, S.W. [2006]. Calibration of conceptual
+hydrological models revisited: 1. Overcoming numerical artefacts.
+Journal of Hydrology, 320, p. 173-186.
 
-@author: Raoul Collenteur"""
+@author: Raoul Collenteur
+"""
 
 # cython: profile=True
-# filename: Unsat_Zone.pyx
+# filename: recharge.pyx
 
 import numpy as np
 cimport numpy as np
@@ -40,7 +48,9 @@ In this section the preferential flow model is defined.
 dS/ Dt = Pe[t] * (1 - (Sr[t] / Srmax)**Beta)- Epu * min(1, Sr/0.5Srmax)
 ----------------------------------------------- """    
     
-def pref(np.ndarray[np.int_t] Time_Model, np.ndarray[np.float_t, ndim=1] P, np.ndarray[np.float_t, ndim=1] E, double Srmax = 0.1, double Beta = 2.0, double Imax = 0.001, int dt = 1, int solver = 1):
+def pref(np.ndarray[np.int_t] Time_Model, np.ndarray[np.float_t, ndim=1] P,
+np.ndarray[np.float_t, ndim=1] E, double Srmax = 0.1, double Beta = 2.0,
+double Imax = 0.001, int dt = 1, int solver = 1):
     
     cdef int t, iteration, bisection, n
     cdef double error, Last_S, g, g_derivative, a, b, c
@@ -140,7 +150,9 @@ In this section the percolation model is defined.
 dS/dt = Pe[t] - Kp * (Sr/Srmax)**Gamma - Epu * min(1, Sr/0.5Srmax) 
 ----------------------------------------------- """
 
-def perc(np.ndarray[np.int_t] Time_Model, np.ndarray[np.float_t, ndim=1] P, np.ndarray[np.float_t, ndim=1] E, double Srmax = 0.1, double Kp = 0.03, double Gamma = 2.0, double Imax = 0.001, int dt = 1, int solver = 1):
+def perc(np.ndarray[np.int_t] Time_Model, np.ndarray[np.float_t, ndim=1] P,
+np.ndarray[np.float_t, ndim=1] E, double Srmax = 0.1, double Kp = 0.03,
+double Gamma = 2.0, double Imax = 0.001, int dt = 1, int solver = 1):
     
     cdef int t, iteration, bisection, n
     cdef double error, Last_S, g, g_derivative, a, b, c
