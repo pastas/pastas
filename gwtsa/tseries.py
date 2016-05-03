@@ -173,6 +173,13 @@ class Tseries2(TseriesBase):
 
 
 class Tseries3(TseriesBase):
+    """
+    Time series model consisting of a recharge model to calculate the recharge
+    convoluted with a response function.
+
+    The recharge model has to be provided.
+    """
+
     def __init__(self, stress, rfunc, recharge, name, metadata=None,
                  stressnames=None,
                  xy=(0, 0), freq=None, fillna='mean'):
@@ -193,13 +200,22 @@ class Tseries3(TseriesBase):
         self.npoints = len(self.stress[0])
         P = np.array(self.stress[0])
         E = np.array(self.stress[1])
-        self.rseries = self.recharge.simulate(P, E, p[-self.recharge.nparam:])
-        self.npoints = len(self.rseries)
-        h = pd.Series(fftconvolve(self.rseries, b, 'full')[:self.npoints],
+        rseries = self.recharge.simulate(P, E, p[-self.recharge.nparam:])
+        self.npoints = len(rseries)
+        h = pd.Series(fftconvolve(rseries, b, 'full')[:self.npoints],
                       index=self.stress[0].index)
         if tindex is not None:
             h = h[tindex]
         return h
+
+    def simulate_recharge(self, p=None):
+        if p is None:
+            p = np.array(self.parameters.value)
+        P = np.array(self.stress[0])
+        E = np.array(self.stress[1])
+        rseries = self.recharge.simulate(P, E, p[-self.recharge.nparam:])
+        rseries = pd.Series(rseries, index=self.stress[0].index)
+        return rseries
 
 
 class Constant:
