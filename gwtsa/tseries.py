@@ -189,7 +189,7 @@ class Tseries3(TseriesBase):
     def simulate(self, tindex=None, p=None):
         if p is None:
             p = np.array(self.parameters.value)
-        b = self.rfunc.block(p[:-3])
+        b = self.rfunc.block(p[:-self.recharge.nparam])
         self.npoints = len(self.stress[0])
         P = np.array(self.stress[0])
         E = np.array(self.stress[1])
