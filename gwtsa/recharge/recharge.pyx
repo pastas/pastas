@@ -252,7 +252,10 @@ In this section a combination of the percolation and the preferential flow model
 dS/ Dt = Pe[t] * (1 - (Sr[t] / Srmax)**Beta) - Kp * (Sr/Srmax)**Gamma - Epu * min(1, Sr/0.5*Srmax)
 ----------------------------------------------- """    
     
-def comb(np.ndarray[np.int_t] Time_Model, np.ndarray[np.float_t, ndim=1] P, np.ndarray[np.float_t, ndim=1] E, double Srmax = 0.1, double Kp = 0.03, double Beta = 2.0, double Gamma = 2.0, double Imax = 0.001, int dt = 1, int solver = 1):
+def comb(np.ndarray[np.int_t] Time_Model, np.ndarray[np.float_t, ndim=1] P,
+np.ndarray[np.float_t, ndim=1] E, double Srmax = 0.1, double Kp = 0.03,
+double Beta = 2.0, double Gamma = 2.0, double Imax = 0.001, int dt = 1,
+int solver = 1):
     
     cdef int t, iteration, bisection, n
     cdef double error, Last_S, g, g_derivative, a, b, c

@@ -7,4 +7,4 @@ from model import Model
 from rfunc import Gamma, Exponential
 from tseries import Tseries, Tseries2, Tseries3, Constant, NoiseModel
 from stats import Statistics
-from recharge.recharge_func import Preferential
+from recharge.recharge_func import Preferential, Linear, Percolation, Combination
