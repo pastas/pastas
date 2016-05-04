@@ -1,0 +1,9 @@
+gwtsa/__init__.py
+gwtsa/model.py
+gwtsa/rfunc.py
+gwtsa/tseries.py
+gwtsa/version.py
+gwtsa.egg-info/PKG-INFO
+gwtsa.egg-info/SOURCES.txt
+gwtsa.egg-info/dependency_links.txt
+gwtsa.egg-info/top_level.txt
