@@ -143,6 +143,7 @@ class Combination(Recharge):
 
     def simulate(self, precipitation, evaporation, p=None):
         t = np.arange(len(precipitation))
-        recharge = comb(t, precipitation, evaporation, p[0], p[1], p[2], p[3], p[4],
-                        self.dt, self.solver)[0]
+        Rs, Rf = comb(t, precipitation, evaporation, p[0], p[1], p[2], p[3],
+                      p[4], self.dt, self.solver)[0:2]
+        recharge = Rs + Rf  # Slow plus fast recharge
         return recharge
