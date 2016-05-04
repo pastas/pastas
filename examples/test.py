@@ -10,7 +10,6 @@ gwdata.rename(columns={'STAND (MV)': 'h'}, inplace=True)
 gwdata.index.names = ['date']
 gwdata.h *= 0.01
 oseries = 30.17 - gwdata.h  # NAP
-oseries.dropna(inplace=True)
 
 # Import and check the observed precipitation series
 rain = pd.read_csv('Heibloem_rain_data.dat', skiprows=4, delim_whitespace=True,
@@ -36,9 +35,10 @@ recharge = rain - 0.8 * evap
 # Create the time series model
 ml = Model(oseries)
 #ts1 = Tseries(recharge, Gamma(), name='recharge')
-ts1 = Tseries2([rain, evap], Gamma(), name='recharge', freq='D', fillna='mean')
+ts1 = Tseries2([rain, evap], Gamma(), name='recharge')
 ml.addtseries(ts1)
-d = Constant()
+d = Constant(oseries.min())  # Using oseries.min() as initial value slightly
+# reduces computation time
 ml.addtseries(d)
 n = NoiseModel()
 ml.addnoisemodel(n)

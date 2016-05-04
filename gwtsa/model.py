@@ -5,11 +5,23 @@ import lmfit
 
 
 class Model:
-    def __init__(self, oseries):
-        self.oseries = oseries
+    def __init__(self, oseries, xy=(0,0), metadata=None, freq=None):
+        self.oseries = self.check_oseries(oseries, freq)
+        self.xy = xy
+        self.metadata = metadata
         self.odelt = self.oseries.index.to_series().diff() / np.timedelta64(1,'D')  # delt converted to days
         self.tserieslist = []
         self.noisemodel = None
+
+    def check_oseries(self, oseries, freq):
+        assert isinstance(oseries, pd.Series), 'Expected a Pandas Series object, ' \
+                                               'got %s' % type(oseries)
+        # Deal with frequency of the time series
+        if freq:
+            oseries = oseries.resample(freq)
+        # Drop nan-values form the time series
+        oseries.dropna(inplace=True)
+        return oseries
 
     def addtseries(self, tseries):
         self.tserieslist.append(tseries)
@@ -44,7 +56,7 @@ class Model:
         r = self.oseries[tindex] - self.simulate(tindex, p)
         if noise and (self.noisemodel is not None):
             r = self.noisemodel.simulate(r, self.odelt[tindex], tindex, p[-1])
-        if sum(r**2) is np.nan:
+        if np.isnan(sum(r**2)):
             print 'nan problem in residuals'  # quick and dirty check
         return r
 
