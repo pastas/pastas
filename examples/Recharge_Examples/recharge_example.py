@@ -31,7 +31,7 @@ n = NoiseModel()
 ml.addnoisemodel(n)
 
 # Solve for a certain period
-ml.solve(tmin='1970', tmax='2004')
+ml.solve(tmin='1960', tmax='2004')
 
 # Create the time series model with linear recharge model
 ml1 = Model(oseries)
@@ -44,10 +44,11 @@ n1 = NoiseModel()
 ml1.addnoisemodel(n1)
 
 # Solve for a certain period
-ml1.solve(tmin='1970', tmax='2004')
+ml1.solve(tmin='1960', tmax='2004')
 
 plt.figure()
 plt.plot(ml1.oseries, 'ko', markersize=2)
 plt.plot(ml.simulate())
 plt.plot(ml1.simulate())
 plt.legend(['observed', 'preferential', 'linear'], loc='best')
+plt.show()

@@ -138,7 +138,7 @@ class Combination(Recharge):
         parameters.loc[name + '_Kp'] = (1.0e-2, 0.0, np.nan, 1)
         parameters.loc[name + '_Beta'] = (3.0, 0.0, np.nan, 1)
         parameters.loc[name + '_Gamma'] = (3.0, 0.0, np.nan, 1)
-        parameters.loc[name + '_Imax'] = (1.5e-3, 0.0, np.nan, )
+        parameters.loc[name + '_Imax'] = (1.5e-3, 0.0, np.nan, 0)
         return parameters
 
     def simulate(self, precipitation, evaporation, p=None):
