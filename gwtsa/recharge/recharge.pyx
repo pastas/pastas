@@ -1,13 +1,19 @@
+import numpy as np
+cimport numpy as np
+
 """
-Created on Wed Apr 15 18:20:35 2015
+This cython script can be used to solve the differential equations that are used
+for the root zone module. The output of the function is the soil state (how
+saturated it is) at each timestep, and the groundwater recharge N.
 
-This python script is used to solve the differential equations that are used for the
-unsaturated zone module. The output of the function is the soil state (how full
-it is) at each timestep, and the groundwater recharge N.
+This .pyx-file can be cythonized and compiled, increasing computation speeds up
+to 35 times. The use of this compiled version is strongly recommended. Take a
+look at cythonize.py for compilation instructions.
 
--------------------------------------Three models can be used:
+Three models can be used:
+-------------------------
 - Percolation Flow:
-dS/dt = Pe[t] - Kp * (Sr/Srmax)**Gamma - Epu * min(1, Sr/0.5Srmax) 
+dS/dt = Pe[t] - Kp * (Sr/Srmax)**Gamma - Epu * min(1, Sr/0.5Srmax)
 
 - Preferential Flow:
 dS/ Dt = Pe[t] * (1 - (Sr[t] / Srmax)**Beta)- Epu * min(1, Sr/0.5Srmax)
@@ -16,27 +22,28 @@ dS/ Dt = Pe[t] * (1 - (Sr[t] / Srmax)**Beta)- Epu * min(1, Sr/0.5Srmax)
 dS/ Dt = Pe[t] * (1 - (Sr[t] / Srmax)**Beta) - Kp * (Sr/Srmax)**Gamma - Epu
          * min(1, Sr/0.5*Srmax)
 
--------------------------------------Numerical info:
-The Soil module is solved with an implicit euler and Newton Raphson iteration.
-The initial estimate for the the NR-iteration is provided by an Explicit Euler
-solution of the above differential equation.
+Numerical info:
+---------------
+The soil module can be solved with an implicit or explicit euler scheme. Newton
+Raphson iteration is used as the root finder, but it is switched to a bisection
+method if this fails. The initial estimate for the the NR-iteration is provided
+by an Explicit Euler solution of the above differential equation.
 
--------------------------------------To Do:
-    - Built in more external / internal checks for water balance
+To Do:
+------
+- Built in more external / internal checks for water balance
 
--------------------------------------References:     
-- Kavetski, D., Kuczera, G. & Franks, S.W. [2006]. Calibration of conceptual
-hydrological models revisited: 1. Overcoming numerical artefacts.
-Journal of Hydrology, 320, p. 173-186.
+References:
+-----------
+- R.A. Collenteur [2016] Non-linear time series analysis of deep groundwater
+levels: Application to the Veluwe. MSc. thesis, TU Delft.
+http://repository.tudelft.nl/view/ir/uuid:baf4fc8c-6311-407c-b01f-c80a96ecd584/
 
 @author: Raoul Collenteur
 """
 
 # cython: profile=True
 # filename: recharge.pyx
-
-import numpy as np
-cimport numpy as np
 
 # Define some C-function for more efficient computation
 cdef inline double c_max(double a, double b): return a if a >= b else b

@@ -1,15 +1,25 @@
 # -*- coding: utf-8 -*-
+
 """
-Created on Sat Feb 28 23:15:23 2015
+Cythonize.py can be used to cythonize and/or compile recharge.pyx and recharge.c
+files. Cythonizing the .pyx file should only be done by developers! The c-file
+that is shipped with this software can be compiled into an .so file or a .exe file.
 
-Make sure you are in the directory where this setup.py file is placed!
-Run this script in the terminal by typing:
-"python cythonize.py build_ext --inplace"
+Compilation instructions:
+-------------------------
+[1] Open the command window (Windows) or terminal (MacOS).
+[2] Move to the directory where this file is located.
+[3] type the following and press enter:
+#   >>> python cythonize.py build_ext --inplace
 
-If one wants to cythonize the .pyx file or de .c file is unavailable:
-python cythonize.py build_ext --inplace --use-cython
+Cythonize instructions:
+-----------------------
+[1] Open the command window (Windows) or terminal (MacOS).
+[2] Move to the directory where this file is located.
+[3] type the following and press enter:
+#   >>> python cythonize.py build_ext --inplace --use-cython
 
-This option requires Cython to cythonize the .pyx file.
+This option requires the Cython package to be installed.
 
 @author: Raoul Collenteur
 """
@@ -27,17 +37,17 @@ if '--use-cython' in sys.argv:
 else:
     USE_CYTHON = False
 
-
 ext = '.pyx' if USE_CYTHON else '.c'
 
-extensions = [Extension("recharge", ["recharge"+ext])]
+extensions = [Extension("recharge", ["recharge" + ext])]
 
 if USE_CYTHON:
     from Cython.Build import cythonize
+
     extensions = cythonize(extensions)
 
 setup(
-    include_dirs = [np.get_include()],
-    cmdclass = {'USE_CYHTON' : 'USE_CYHTON'},
-    ext_modules = extensions
+    include_dirs=[np.get_include()],
+    cmdclass={'USE_CYHTON': 'USE_CYHTON'},
+    ext_modules=extensions
 )

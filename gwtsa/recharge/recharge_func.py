@@ -26,6 +26,7 @@ simulate(self, evaporation, precipitation, p=None)
 
 """
 
+
 class Recharge:
     def __init__(self):
         pass
@@ -115,6 +116,7 @@ class Percolation(Recharge):
         recharge = perc(t, precipitation, evaporation, p[0], p[1], p[2], p[3],
                         self.dt, self.solver)[0]
         return recharge
+
 
 class Combination(Recharge):
     """Combination flow recharge model

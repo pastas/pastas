@@ -1,11 +1,16 @@
+import numpy as np
+
 """
-Created on Wed Apr 15 18:20:35 2015
+This python script can be used to solve the differential equations that are used
+for the root zone module. The output of the function is the soil state (how
+saturated it is) at each timestep, and the groundwater recharge N.
 
-This python script is used to solve the differential equations that are used for the
-unsaturated zone module. The output of the function is the soil state (how full
-it is) at each timestep, and the groundwater recharge N.
+A .pyx-file is available of this script that can be cythonized and compiled, increasing
+computation speeds up to 35 times. The use of this compiled version is strongly
+recommended. Take a look at cythonize.py for compilation instructions.
 
--------------------------------------Three models can be used:
+Three models can be used:
+-------------------------
 - Percolation Flow:
 dS/dt = Pe[t] - Kp * (Sr/Srmax)**Gamma - Epu * min(1, Sr/0.5Srmax) 
 
@@ -16,31 +21,31 @@ dS/ Dt = Pe[t] * (1 - (Sr[t] / Srmax)**Beta)- Epu * min(1, Sr/0.5Srmax)
 dS/ Dt = Pe[t] * (1 - (Sr[t] / Srmax)**Beta) - Kp * (Sr/Srmax)**Gamma - Epu
          * min(1, Sr/0.5*Srmax)
 
--------------------------------------Numerical info:
-The Soil module is solved with an implicit euler and Newton Raphson iteration.
-The initial estimate for the the NR-iteration is provided by an Explicit Euler
-solution of the above differential equation.
+Numerical info:
+---------------
+The soil module can be solved with an implicit or explicit euler scheme. Newton
+Raphson iteration is used as the root finder, but it is switched to a bisection
+method if this fails. The initial estimate for the the NR-iteration is provided
+by an Explicit Euler solution of the above differential equation.
 
--------------------------------------To Do:
-    - Built in more external / internal checks for water balance
+To Do:
+------
+- Built in more external / internal checks for water balance
 
--------------------------------------References:     
-- Kavetski, D., Kuczera, G. & Franks, S.W. [2006]. Calibration of conceptual
-hydrological models revisited: 1. Overcoming numerical artefacts.
-Journal of Hydrology, 320, p. 173-186.
+References:
+-----------
+- R.A. Collenteur [2016] Non-linear time series analysis of deep groundwater
+levels: Application to the Veluwe. MSc. thesis, TU Delft.
+http://repository.tudelft.nl/view/ir/uuid:baf4fc8c-6311-407c-b01f-c80a96ecd584/
 
 @author: Raoul Collenteur
 """
-
-# cython: profile=True
-# filename: recharge.pyx
-
-import numpy as np
 
 """-----------------------------------------------
 In this section the preferential flow model is defined. 
 dS/ Dt = Pe[t] * (1 - (Sr[t] / Srmax)**Beta)- Epu * min(1, Sr/0.5Srmax)
 ----------------------------------------------- """
+
 
 def pref(t, P, E, Srmax=0.1, Beta=2.0, Imax=0.001, dt=1.0, solver=1):
     n = len(t) / dt
@@ -62,7 +67,8 @@ def pref(t, P, E, Srmax=0.1, Beta=2.0, Imax=0.001, dt=1.0, solver=1):
 
     for t in range(n - 1):
         Si[t + 1] = Si[t] + P[t + 1]  # Fill intercEpution bucket with new rain
-        Pe[t + 1] = np.max([0.0, Si[t + 1] - Imax])  # Calculate effective precipitation
+        Pe[t + 1] = np.max(
+            [0.0, Si[t + 1] - Imax])  # Calculate effective precipitation
         Si[t + 1] = Si[t + 1] - Pe[t + 1]
         Ei[t + 1] = np.min([Si[t + 1], E[t + 1]])  # Evaporation from intercEpution
         Si[t + 1] = Si[t + 1] - Ei[t + 1]  # Update intercEpution state
@@ -366,7 +372,8 @@ def comb(t, P, E, Srmax=0.1, Kp=0.03, Beta=2.0, Gamma=2.0, Imax=0.001,
                                             a / (0.5 * Srmax))]))) * (
                                     c - S[t] - dt * (
                                                 Pe[t] * (
-                                                1 - (c / Srmax) ** Beta) - Kp * (
+                                                        1 - (
+                                                                c / Srmax) ** Beta) - Kp * (
                                                     c / Srmax) ** Gamma - Epu[
                                         t] * np.min([
                                         1.0, (

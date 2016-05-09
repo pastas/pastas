@@ -6,7 +6,3 @@
 *.pyc
 
 gwtsa/recharge/recharge.so
-
-gwtsa/recharge/build/temp.macosx-10.5-x86_64-2.7/recharge.o
-
-gwtsa/recharge/gwtsa/recharge/recharge.so
