@@ -24,19 +24,15 @@ set_parameters(self, name)
 simulate(self, evaporation, precipitation, p=None)
     A function that returns an array of the simulated recharge series.
 
+References
+----------
+[1] R.A. Collenteur [2016] Non-linear time series analysis of deep groundwater
+levels: Application to the Veluwe. MSc. thesis, TU Delft.
+http://repository.tudelft.nl/view/ir/uuid:baf4fc8c-6311-407c-b01f-c80a96ecd584/
 """
 
 
-class Recharge:
-    def __init__(self):
-        pass
-
-    def plot(self, p=None):
-        recharge = self.simulate(p)
-        plt.bar(recharge)
-
-
-class Linear(Recharge):
+class Linear:
     """Linear recharge model
 
     The recharge to the groundwater is calculated as:
@@ -45,7 +41,6 @@ class Linear(Recharge):
     """
 
     def __init__(self):
-        Recharge.__init__(self)
         self.nparam = 1
         self.dt = 1
         self.solver = 1
@@ -60,7 +55,7 @@ class Linear(Recharge):
         return recharge
 
 
-class Preferential(Recharge):
+class Preferential:
     """Preferential flow recharge model
 
     The water balance for the root zone is calculated as:
@@ -69,7 +64,6 @@ class Preferential(Recharge):
     """
 
     def __init__(self):
-        Recharge.__init__(self)
         self.nparam = 3
         self.dt = 1  # Has to be 1 right now.
         self.solver = 1  # 1 = implicit, 2 = explicit
@@ -88,7 +82,7 @@ class Preferential(Recharge):
         return recharge
 
 
-class Percolation(Recharge):
+class Percolation:
     """Percolation flow recharge model
 
     Other water balance for the root zone s calculated as:
@@ -98,7 +92,6 @@ class Percolation(Recharge):
     """
 
     def __init__(self):
-        Recharge.__init__(self)
         self.nparam = 4
         self.dt = 1
         self.solver = 1
@@ -118,7 +111,7 @@ class Percolation(Recharge):
         return recharge
 
 
-class Combination(Recharge):
+class Combination:
     """Combination flow recharge model
 
     Other water balance for the root zone is calculated as:
@@ -129,7 +122,6 @@ class Combination(Recharge):
     """
 
     def __init__(self):
-        Recharge.__init__(self)
         self.nparam = 5
         self.dt = 1
         self.solver = 1
