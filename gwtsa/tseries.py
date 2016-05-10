@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from scipy.signal import fftconvolve
+from checks import check_tseries
 
 """
 tseries module.
@@ -33,7 +34,7 @@ class TseriesBase:
 
     def __init__(self, stress, rfunc, name, stressnames, xy, metadata, freq,
                  fillna):
-        self.stress = self.check_stresses(stress, freq, fillna)
+        self.stress = check_tseries(stress, freq, fillna)
         self.rfunc = rfunc
         self.nparam = rfunc.nparam
         self.name = name
@@ -43,43 +44,6 @@ class TseriesBase:
             self.stress_names = stressnames
         self.xy = xy
         self.metadata = metadata
-
-    def check_stresses(self, stress, freq, fillna):
-        """ Check the stress series on missing values and constant frequency.
-
-        Returns
-        -------
-        list of stresses:
-            - Checked for Missing values
-            - Checked for frequency of stress
-        """
-        if type(stress) is pd.Series:
-            stress = [stress]
-        stresses = []
-        for k in stress:
-            assert isinstance(k, pd.Series), 'Expected a Pandas Series, ' \
-                                             'got %s' % type(k)
-            # Deal with frequency of the stress series
-            if freq:
-                k = k.asfreq(freq)
-            else:
-                freq = pd.infer_freq(k.index)
-                k = k.asfreq(freq)
-
-            # Deal with nan-values in stress series
-            if k.hasnans:
-                print '%i nan-value(s) was/were found and filled with: %s' % (
-                    k.isnull(
-                    ).values.sum(), fillna)
-                if fillna == 'interpolate':
-                    k.interpolate('time')
-                elif type(fillna) == float:
-                    print fillna, 'init'
-                    k.fillna(fillna, inplace=True)
-                else:
-                    k.fillna(k.mean(), inplace=True)  # Default option
-            stresses.append(k)
-        return stresses
 
     def set_parameters(self, **kwargs):
         """Method to set the parameters value
