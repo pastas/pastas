@@ -2,26 +2,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import lmfit
+from checks import check_oseries
+from imports.dinodata import DinoGrondwaterstand
 
 
 class Model:
     def __init__(self, oseries, xy=(0,0), metadata=None, freq=None):
-        self.oseries = self.check_oseries(oseries, freq)
+        self.oseries = check_oseries(oseries, freq)
         self.xy = xy
         self.metadata = metadata
         self.odelt = self.oseries.index.to_series().diff() / np.timedelta64(1,'D')  # delt converted to days
         self.tserieslist = []
         self.noisemodel = None
-
-    def check_oseries(self, oseries, freq):
-        assert isinstance(oseries, pd.Series), 'Expected a Pandas Series object, ' \
-                                               'got %s' % type(oseries)
-        # Deal with frequency of the time series
-        if freq:
-            oseries = oseries.resample(freq)
-        # Drop nan-values form the time series
-        oseries.dropna(inplace=True)
-        return oseries
 
     def addtseries(self, tseries):
         self.tserieslist.append(tseries)
