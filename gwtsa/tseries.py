@@ -136,6 +136,40 @@ class Tseries2(TseriesBase):
         return h
 
 
+class TseriesWell(TseriesBase):
+    """Time series model consisting of the convolution of two stresses with
+    one response function.
+
+    stress = stress1 + factor * stress2
+
+    Last parameters is factor
+
+    """
+
+    def __init__(self, stress, rfunc, r, name, metadata=None, stressnames=None,
+                 xy=(
+            0, 0), freq=None, fillna='mean'):
+        TseriesBase.__init__(self, stress, rfunc, name, metadata, stressnames,
+                             xy, freq, fillna)
+        self.set_init_parameters()
+        self.r = r
+
+    def set_init_parameters(self):
+        self.parameters = self.rfunc.set_parameters(self.name)
+
+    def simulate(self, tindex=None, p=None):
+        if p is None:
+            p = np.array(self.parameters.value)
+        h = pd.Series(data=0, index=self.stress[0].index)
+        for i in range(len(self.stress)):
+            self.npoints = len(self.stress[i])
+            b = self.rfunc.block(p, self.r[i])  # nparam-1 depending on rfunc
+            h += fftconvolve(self.stress[i], b, 'full')[:self.npoints]
+        if tindex is not None:
+            h = h[tindex]
+        return h
+
+
 class Constant:
     """A constant value.
 

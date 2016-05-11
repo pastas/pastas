@@ -11,7 +11,8 @@ class Model:
         self.oseries = check_oseries(oseries, freq)
         self.xy = xy
         self.metadata = metadata
-        self.odelt = self.oseries.index.to_series().diff() / np.timedelta64(1,'D')  # delt converted to days
+        self.odelt = self.oseries.index.to_series().diff() / np.timedelta64(1, 'D')
+        # delt converted to days
         self.tserieslist = []
         self.noisemodel = None
 
@@ -48,14 +49,15 @@ class Model:
         r = self.oseries[tindex] - self.simulate(tindex, p)
         if noise and (self.noisemodel is not None):
             r = self.noisemodel.simulate(r, self.odelt[tindex], tindex, p[-1])
-        if np.isnan(sum(r**2)):
+        if np.isnan(sum(r ** 2)):
             print 'nan problem in residuals'  # quick and dirty check
         return r
 
     def solve(self, tmin=None, tmax=None, solvemethod='lmfit', report=True,
               noise=True):
         if noise and (self.noisemodel is None):
-            print 'Warning, solution with noise model while noise model is not defined. No noise model is used'
+            print 'Warning, solution with noise model while noise model is not ' \
+                  'defined. No noise model is used'
         self.solvemethod = solvemethod
         self.nparam = sum(ts.nparam for ts in self.tserieslist)
         if self.solvemethod == 'lmfit':
@@ -63,13 +65,17 @@ class Model:
             for ts in self.tserieslist:
                 for k in ts.parameters.index:
                     p = ts.parameters.loc[k]
-                    pvalues = np.where(np.isnan(p.values), None, p.values)  # needed because lmfit doesn't take nan as input
+                    pvalues = np.where(np.isnan(p.values), None,
+                                       p.values)  # needed because lmfit doesn't
+                    # take nan as input
                     parameters.add(k, value=pvalues[0], min=pvalues[1],
                                    max=pvalues[2], vary=pvalues[3])
             if self.noisemodel is not None:
                 for k in self.noisemodel.parameters.index:
                     p = self.noisemodel.parameters.loc[k]
-                    pvalues = np.where(np.isnan(p.values), None, p.values)  # needed because lmfit doesn't take nan as input
+                    pvalues = np.where(np.isnan(p.values), None,
+                                       p.values)  # needed because lmfit doesn't
+                    # take nan as input
                     parameters.add(k, value=pvalues[0], min=pvalues[1],
                                    max=pvalues[2], vary=pvalues[3])
             self.lmfit_params = parameters
@@ -80,7 +86,7 @@ class Model:
             self.parameters = np.array([p.value for p in self.fit.params.values()])
             self.paramdict = self.fit.params.valuesdict()
             # Return parameters to tseries
-            for ts in self.tserieslist:  
+            for ts in self.tserieslist:
                 for k in ts.parameters.index:
                     ts.parameters.loc[k].value = self.paramdict[k]
             if self.noisemodel is not None:
@@ -102,7 +108,8 @@ class Model:
         h = self.simulate()
         ax1 = plt.subplot(gs[:2, :-1])
         h.plot(label='modeled head')
-        self.oseries.plot(linestyle='', marker='.', color='k', markersize=3, label='observed head')
+        self.oseries.plot(linestyle='', marker='.', color='k', markersize=3,
+                          label='observed head')
         ax1.xaxis.set_visible(False)
         plt.legend(loc=(0, 1), ncol=3, frameon=False, handlelength=3)
         plt.ylabel('Head [m]')
@@ -111,7 +118,10 @@ class Model:
         ax2 = plt.subplot(gs[2, :-1], sharex=ax1)
         residuals.plot(color='k', label='residuals')
         if self.noisemodel is not None:
-            innovations = pd.Series(self.noisemodel.simulate(residuals, self.odelt, p=self.parameters[-1]), index=residuals.index)
+            innovations = pd.Series(self.noisemodel.simulate(residuals,
+                                                             self.odelt,
+                                                             p=self.parameters[-1]),
+                                    index=residuals.index)
             innovations.plot(label='innovations')
         plt.legend(loc=(0, 1), ncol=3, frameon=False, handlelength=3)
         plt.ylabel('Error [m]')
@@ -120,7 +130,7 @@ class Model:
         ax3 = plt.subplot(gs[0, -1])
         n = 0
         for ts in self.tserieslist:
-            p = self.parameters[n:n+ts.nparam]
+            p = self.parameters[n:n + ts.nparam]
             n += ts.nparam
             if "rfunc" in dir(ts):
                 plt.plot(ts.rfunc.block(p))
@@ -131,8 +141,9 @@ class Model:
         ax4 = plt.subplot(gs[1:2, -1])
         ax4.xaxis.set_visible(False)
         ax4.yaxis.set_visible(False)
-        text = np.vstack((self.paramdict.keys(), [round(float(i), 4) for i in self.paramdict.values()])).T
-        colLabels=("Parameter", "Value")
+        text = np.vstack((self.paramdict.keys(), [round(float(i), 4) for i in
+                                                  self.paramdict.values()])).T
+        colLabels = ("Parameter", "Value")
         ytable = ax4.table(cellText=text, colLabels=colLabels, loc='center')
         ytable.scale(1, 1.1)
         # Table of the numerical diagnostic statistics.
@@ -144,4 +155,3 @@ class Model:
         plt.show()
         if savefig:
             plt.savefig('.eps' % (self.name), bbox_inches='tight')
-        
