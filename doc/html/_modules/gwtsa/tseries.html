@@ -1,0 +1,338 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>gwtsa.tseries &mdash; GWTSA 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="GWTSA 0.0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">GWTSA 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for gwtsa.tseries</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">scipy.signal</span> <span class="kn">import</span> <span class="n">fftconvolve</span>
+<span class="kn">from</span> <span class="nn">checks</span> <span class="kn">import</span> <span class="n">check_tseries</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">tseries module.</span>
+<span class="sd">Constains class for time series objects.</span>
+
+<span class="sd">Each response function class needs the following:</span>
+
+<span class="sd">Attributes</span>
+<span class="sd">----------</span>
+<span class="sd">nparam : int</span>
+<span class="sd">    Number of parameters. </span>
+<span class="sd">name : str</span>
+<span class="sd">    Name of this tseries object. Used as prefix for the parameters.</span>
+<span class="sd">parameters : pandas Dataframe</span>
+<span class="sd">    Dataframe containing the parameters.</span>
+
+<span class="sd">Methods</span>
+<span class="sd">-------</span>
+<span class="sd">simulate : Returns pandas Series Object with simulate values</span>
+<span class="sd">           Input: tindex: Optional pandas TimeIndex. Time index to simulate values</span>
+<span class="sd">           p: Optional[array-like]. Parameters used for simulation. If p is not</span>
+<span class="sd">           provided, parameters attribute will be used.</span>
+<span class="sd">           Returns: pandas Series of simulated values</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="TseriesBase"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.tseries.TseriesBase">[docs]</a><span class="k">class</span> <span class="nc">TseriesBase</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Tseries Base class called by each Tseries object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stress</span><span class="p">,</span> <span class="n">rfunc</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">stressnames</span><span class="p">,</span> <span class="n">xy</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">freq</span><span class="p">,</span>
+                 <span class="n">fillna</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stress</span> <span class="o">=</span> <span class="n">check_tseries</span><span class="p">(</span><span class="n">stress</span><span class="p">,</span> <span class="n">freq</span><span class="p">,</span> <span class="n">fillna</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rfunc</span> <span class="o">=</span> <span class="n">rfunc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nparam</span> <span class="o">=</span> <span class="n">rfunc</span><span class="o">.</span><span class="n">nparam</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="k">if</span> <span class="n">stressnames</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stress_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stress</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stress_names</span> <span class="o">=</span> <span class="n">stressnames</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xy</span> <span class="o">=</span> <span class="n">xy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">metadata</span>
+
+<div class="viewcode-block" id="TseriesBase.set_parameters"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.tseries.TseriesBase.set_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">set_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Method to set the parameters value</span>
+
+<span class="sd">        Usage</span>
+<span class="sd">        -----</span>
+<span class="sd">        E.g. ts2.set_parameters(recharge_A=200)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">i</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+</div></div>
+<div class="viewcode-block" id="Tseries"><a class="viewcode-back" href="../../index.html#gwtsa.tseries.Tseries">[docs]</a><span class="k">class</span> <span class="nc">Tseries</span><span class="p">(</span><span class="n">TseriesBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Time series model consisting of the convolution of one stress with one</span>
+<span class="sd">    response function.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stress</span><span class="p">,</span> <span class="n">rfunc</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">stressnames</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">xy</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">freq</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">fillna</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">):</span>
+        <span class="n">TseriesBase</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stress</span><span class="p">,</span> <span class="n">rfunc</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">stressnames</span><span class="p">,</span> <span class="n">xy</span><span class="p">,</span>
+                             <span class="n">freq</span><span class="p">,</span> <span class="n">fillna</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_init_parameters</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stress</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stress</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># unpack stress list for this Tseries</span>
+
+<div class="viewcode-block" id="Tseries.set_init_parameters"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.tseries.Tseries.set_init_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">set_init_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rfunc</span><span class="o">.</span><span class="n">set_parameters</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Tseries.simulate"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.tseries.Tseries.simulate">[docs]</a>    <span class="k">def</span> <span class="nf">simulate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tindex</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Simulates the head contribution.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tindex:</span>
+<span class="sd">            Time indices to simulate the model.</span>
+<span class="sd">        p: Optional[array-like]</span>
+<span class="sd">            Parameters used for simulation. If p is not</span>
+<span class="sd">            provided, parameters attribute will be used.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Pandas Series Object</span>
+<span class="sd">            The simulated head contribution.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">p</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rfunc</span><span class="o">.</span><span class="n">block</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">npoints</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stress</span><span class="p">)</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">fftconvolve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stress</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="s1">&#39;full&#39;</span><span class="p">)[:</span><span class="bp">self</span><span class="o">.</span><span class="n">npoints</span><span class="p">],</span>
+                      <span class="n">index</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stress</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tindex</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">h</span> <span class="o">=</span> <span class="n">h</span><span class="p">[</span><span class="n">tindex</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">h</span>
+
+</div></div>
+<div class="viewcode-block" id="Tseries2"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.tseries.Tseries2">[docs]</a><span class="k">class</span> <span class="nc">Tseries2</span><span class="p">(</span><span class="n">TseriesBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Time series model consisting of the convolution of two stresses with</span>
+<span class="sd">    one response function.</span>
+
+<span class="sd">    stress = stress1 + factor * stress2</span>
+
+<span class="sd">    Last parameters is factor</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stress</span><span class="p">,</span> <span class="n">rfunc</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">stressnames</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">xy</span><span class="o">=</span><span class="p">(</span>
+            <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">freq</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">fillna</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">):</span>
+        <span class="n">TseriesBase</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stress</span><span class="p">,</span> <span class="n">rfunc</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">stressnames</span><span class="p">,</span>
+                             <span class="n">xy</span><span class="p">,</span> <span class="n">freq</span><span class="p">,</span> <span class="n">fillna</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nparam</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_init_parameters</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Tseries2.set_init_parameters"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.tseries.Tseries2.set_init_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">set_init_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rfunc</span><span class="o">.</span><span class="n">set_parameters</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;_f&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">5.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Tseries2.simulate"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.tseries.Tseries2.simulate">[docs]</a>    <span class="k">def</span> <span class="nf">simulate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tindex</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">p</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rfunc</span><span class="o">.</span><span class="n">block</span><span class="p">(</span><span class="n">p</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>  <span class="c1"># nparam-1 depending on rfunc</span>
+        <span class="n">stress</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stress</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">p</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">stress</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">stress</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">stress</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">npoints</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stress</span><span class="p">)</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">fftconvolve</span><span class="p">(</span><span class="n">stress</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="s1">&#39;full&#39;</span><span class="p">)[:</span><span class="bp">self</span><span class="o">.</span><span class="n">npoints</span><span class="p">],</span>
+                      <span class="n">index</span><span class="o">=</span><span class="n">stress</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tindex</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">h</span> <span class="o">=</span> <span class="n">h</span><span class="p">[</span><span class="n">tindex</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">h</span>
+
+</div></div>
+<div class="viewcode-block" id="TseriesWell"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.tseries.TseriesWell">[docs]</a><span class="k">class</span> <span class="nc">TseriesWell</span><span class="p">(</span><span class="n">TseriesBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Time series model consisting of the convolution of two stresses with</span>
+<span class="sd">    one response function.</span>
+
+<span class="sd">    stress = stress1 + factor * stress2</span>
+
+<span class="sd">    Last parameters is factor</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stress</span><span class="p">,</span> <span class="n">rfunc</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">stressnames</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">xy</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">freq</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">fillna</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">):</span>
+        <span class="n">TseriesBase</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stress</span><span class="p">,</span> <span class="n">rfunc</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">stressnames</span><span class="p">,</span>
+                             <span class="n">xy</span><span class="p">,</span> <span class="n">freq</span><span class="p">,</span> <span class="n">fillna</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_init_parameters</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">r</span> <span class="o">=</span> <span class="n">r</span>
+
+<div class="viewcode-block" id="TseriesWell.set_init_parameters"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.tseries.TseriesWell.set_init_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">set_init_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rfunc</span><span class="o">.</span><span class="n">set_parameters</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="TseriesWell.simulate"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.tseries.TseriesWell.simulate">[docs]</a>    <span class="k">def</span> <span class="nf">simulate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tindex</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">p</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stress</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stress</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">npoints</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stress</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rfunc</span><span class="o">.</span><span class="n">block</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>  <span class="c1"># nparam-1 depending on rfunc</span>
+            <span class="n">h</span> <span class="o">+=</span> <span class="n">fftconvolve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stress</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">b</span><span class="p">,</span> <span class="s1">&#39;full&#39;</span><span class="p">)[:</span><span class="bp">self</span><span class="o">.</span><span class="n">npoints</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">tindex</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">h</span> <span class="o">=</span> <span class="n">h</span><span class="p">[</span><span class="n">tindex</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">h</span>
+
+</div></div>
+<div class="viewcode-block" id="Constant"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.tseries.Constant">[docs]</a><span class="k">class</span> <span class="nc">Constant</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;A constant value.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    value : Optional[float]</span>
+<span class="sd">        Initial estimate of the parameter value. E.g. The minimum of the observed</span>
+<span class="sd">        series.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nparam</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">,</span> <span class="s1">&#39;pmin&#39;</span><span class="p">,</span> <span class="s1">&#39;pmax&#39;</span><span class="p">,</span> <span class="s1">&#39;vary&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;constant_d&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Constant.simulate"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.tseries.Constant.simulate">[docs]</a>    <span class="k">def</span> <span class="nf">simulate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tindex</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">p</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">p</span>
+
+</div></div>
+<div class="viewcode-block" id="NoiseModel"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.tseries.NoiseModel">[docs]</a><span class="k">class</span> <span class="nc">NoiseModel</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Noise model with exponential decay of the residual.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Calculates the innovations [1] according to:</span>
+<span class="sd">    v(t1) = r(t1) - r(t0) * exp(- (t1 - t0) / alpha)</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] von Asmuth, J. R., and M. F. P. Bierkens (2005), Modeling irregularly</span>
+<span class="sd">    spaced residual series as a continuous stochastic process, Water Resour.</span>
+<span class="sd">    Res., 41, W12404, doi:10.1029/2004WR003726.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nparam</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">,</span> <span class="s1">&#39;pmin&#39;</span><span class="p">,</span> <span class="s1">&#39;pmax&#39;</span><span class="p">,</span> <span class="s1">&#39;vary&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;noise_alpha&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">14.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">5000</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<div class="viewcode-block" id="NoiseModel.simulate"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.tseries.NoiseModel.simulate">[docs]</a>    <span class="k">def</span> <span class="nf">simulate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">delt</span><span class="p">,</span> <span class="n">tindex</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        res : Pandas Series</span>
+<span class="sd">            The residual series.</span>
+<span class="sd">        delt : Pandas Series</span>
+<span class="sd">            Time steps between observations.</span>
+<span class="sd">        tindex : Optional[None]</span>
+<span class="sd">            Time indices used for simulation.</span>
+<span class="sd">        p : Optional[array-like]</span>
+<span class="sd">            Alpha parameters used by the noisemodel.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Pandas Series</span>
+<span class="sd">            Series of the innovations.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">p</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">innovations</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">res</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="c1"># weights of innovations, see Eq. A17 in reference [1]</span>
+        <span class="n">power</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">delt</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)))</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">power</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">delt</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">/</span> <span class="n">p</span><span class="p">))))</span> <span class="o">/</span> \
+            <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">delt</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">/</span> <span class="n">p</span><span class="p">))</span>
+        <span class="c1"># res.values is needed else it gets messed up with the dates</span>
+        <span class="n">innovations</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-=</span> <span class="n">w</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">delt</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">/</span> <span class="n">p</span><span class="p">)</span> <span class="o">*</span> <span class="n">res</span><span class="o">.</span><span class="n">values</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">tindex</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">innovations</span> <span class="o">=</span> <span class="n">innovations</span><span class="p">[</span><span class="n">tindex</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">innovations</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">GWTSA 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, M. Bakker, R.A. Collenteur, R. Calje, F. Schaars.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+  </body>
+</html>

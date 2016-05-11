@@ -1,0 +1,276 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>gwtsa.rfunc &mdash; GWTSA 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="GWTSA 0.0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">GWTSA 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for gwtsa.rfunc</h1><div class="highlight"><pre>
+<span></span><span class="c1"># coding=utf-8</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">scipy.special</span> <span class="kn">import</span> <span class="n">gammainc</span><span class="p">,</span> <span class="n">gammaincinv</span><span class="p">,</span> <span class="n">k0</span><span class="p">,</span> <span class="n">exp1</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">rfunc module.</span>
+<span class="sd">Contains classes for the response functions.</span>
+<span class="sd">Each response function class needs the following:</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">_class_doc</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">Attributes</span>
+<span class="s2">----------</span>
+<span class="s2">nparam: integer</span>
+<span class="s2">    number of parameters.</span>
+<span class="s2">cutoff: float</span>
+<span class="s2">    percentage after which the step function is cut off.</span>
+
+<span class="s2">Functions</span>
+<span class="s2">---------</span>
+<span class="s2">set_parameters(self, name)</span>
+<span class="s2">    A function that returns a Pandas DataFrame of the parameters of the</span>
+<span class="s2">    response function. Columns of the dataframe need to be</span>
+<span class="s2">    [&#39;value&#39;, &#39;pmin&#39;, &#39;pmax&#39;, &#39;vary&#39;].</span>
+<span class="s2">    Rows of the DataFrame have names of the parameters.</span>
+<span class="s2">    Input name is used as a prefix.</span>
+<span class="s2">    This function is called by a Tseries object.</span>
+<span class="s2">step(self, p)</span>
+<span class="s2">    Returns an array of the step response. Input</span>
+<span class="s2">    p is a numpy array of parameter values in the same order as</span>
+<span class="s2">    defined in set_parameters.</span>
+<span class="s2">block(self, p)</span>
+<span class="s2">    Returns an array of the block response. Input</span>
+<span class="s2">    p is a numpy array of parameter values in the same order as</span>
+<span class="s2">    defined in set_parameters.</span>
+
+<span class="s2">More information on how to write a response class can be found here:</span>
+<span class="s2">https://github.com/gwtsa/gwtsa/wiki</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="Gamma"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.rfunc.Gamma">[docs]</a><span class="k">class</span> <span class="nc">Gamma</span><span class="p">:</span>
+    <span class="n">__doc__</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    Gamma response function with 3 parameters A, a, and n.</span>
+
+<span class="s2">    step(t) = A * Gammainc(n, t / a)</span>
+
+<span class="s2">    </span><span class="si">%(doc)s</span><span class="s2"></span>
+<span class="s2">    &quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">{</span><span class="s1">&#39;doc&#39;</span><span class="p">:</span> <span class="n">_class_doc</span><span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nparam</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">=</span> <span class="mf">0.99</span>
+
+<div class="viewcode-block" id="Gamma.set_parameters"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.rfunc.Gamma.set_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">set_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">,</span> <span class="s1">&#39;pmin&#39;</span><span class="p">,</span> <span class="s1">&#39;pmax&#39;</span><span class="p">,</span> <span class="s1">&#39;vary&#39;</span><span class="p">])</span>
+        <span class="n">parameters</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;_A&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">500.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">5000.0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">parameters</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;_n&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">parameters</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;_a&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">100.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">5000.0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">parameters</span>
+</div>
+<div class="viewcode-block" id="Gamma.step"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.rfunc.Gamma.step">[docs]</a>    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tmax</span> <span class="o">=</span> <span class="n">gammaincinv</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="p">)</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tmax</span><span class="p">)</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">gammainc</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">t</span> <span class="o">/</span> <span class="n">p</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">s</span>
+</div>
+<div class="viewcode-block" id="Gamma.block"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.rfunc.Gamma.block">[docs]</a>    <span class="k">def</span> <span class="nf">block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">s</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+</div></div>
+<div class="viewcode-block" id="Exponential"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.rfunc.Exponential">[docs]</a><span class="k">class</span> <span class="nc">Exponential</span><span class="p">:</span>
+    <span class="n">__doc__</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    Exponential response function with 2 parameters: A and a.</span>
+
+<span class="s2">    step(t) = A * (1 - exp(-t / a))</span>
+
+<span class="s2">    </span><span class="si">%(doc)s</span><span class="s2"></span>
+<span class="s2">    &quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">{</span><span class="s1">&#39;doc&#39;</span><span class="p">:</span> <span class="n">_class_doc</span><span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nparam</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">=</span> <span class="mf">0.99</span>
+
+<div class="viewcode-block" id="Exponential.set_parameters"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.rfunc.Exponential.set_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">set_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">,</span> <span class="s1">&#39;pmin&#39;</span><span class="p">,</span> <span class="s1">&#39;pmax&#39;</span><span class="p">,</span> <span class="s1">&#39;vary&#39;</span><span class="p">])</span>
+        <span class="n">parameters</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;_A&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">500.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">5000.0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">parameters</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;_a&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">100.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">5000.0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">parameters</span>
+</div>
+<div class="viewcode-block" id="Exponential.step"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.rfunc.Exponential.step">[docs]</a>    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tmax</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tmax</span><span class="p">)</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">t</span> <span class="o">/</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="k">return</span> <span class="n">s</span>
+</div>
+<div class="viewcode-block" id="Exponential.block"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.rfunc.Exponential.block">[docs]</a>    <span class="k">def</span> <span class="nf">block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">s</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+</div></div>
+<div class="viewcode-block" id="Hantush"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.rfunc.Hantush">[docs]</a><span class="k">class</span> <span class="nc">Hantush</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot; The Hantush well function</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    [1] Hantush, M. S., &amp; Jacob, C. E. (1955). Non‐steady radial flow in an</span>
+<span class="sd">    infinite leaky aquifer. Eos, Transactions American Geophysical Union, 36(1),</span>
+<span class="sd">    95-100.</span>
+
+<span class="sd">    [2] Veling, E. J. M., &amp; Maas, C. (2010). Hantush well function revisited.</span>
+<span class="sd">    Journal of hydrology, 393(3), 381-388.</span>
+
+<span class="sd">    [3] Von Asmuth, J. R., Maas, K., Bakker, M., &amp; Petersen, J. (2008). Modeling</span>
+<span class="sd">    time series of ground water head fluctuations subjected to multiple stresses.</span>
+<span class="sd">    Ground Water, 46(1), 30-40.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nparam</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">=</span> <span class="mf">0.99</span>
+
+<div class="viewcode-block" id="Hantush.set_parameters"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.rfunc.Hantush.set_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">set_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">,</span> <span class="s1">&#39;pmin&#39;</span><span class="p">,</span> <span class="s1">&#39;pmax&#39;</span><span class="p">,</span> <span class="s1">&#39;vary&#39;</span><span class="p">])</span>
+        <span class="n">parameters</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;_S&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">parameters</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;_T&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mf">5000.0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">parameters</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;_c&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1000.0</span><span class="p">,</span> <span class="mf">5000.0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">parameters</span>
+</div>
+<div class="viewcode-block" id="Hantush.step"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.rfunc.Hantush.step">[docs]</a>    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tmax</span> <span class="o">=</span> <span class="mi">10000</span>  <span class="c1"># This should be changed with some analytical expression</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tmax</span><span class="p">)</span>
+        <span class="n">rho</span> <span class="o">=</span> <span class="n">r</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="n">tau</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">/</span> <span class="n">rho</span> <span class="o">*</span> <span class="n">t</span> <span class="o">/</span> <span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+        <span class="c1"># tau[tau &gt; 100] = 100</span>
+        <span class="n">h_inf</span> <span class="o">=</span> <span class="n">k0</span><span class="p">(</span><span class="n">rho</span><span class="p">)</span>
+        <span class="n">expintrho</span> <span class="o">=</span> <span class="n">exp1</span><span class="p">(</span><span class="n">rho</span><span class="p">)</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="p">(</span><span class="n">expintrho</span> <span class="o">-</span> <span class="n">h_inf</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">expintrho</span> <span class="o">-</span> <span class="n">exp1</span><span class="p">(</span><span class="n">rho</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">))</span>
+        <span class="n">I</span> <span class="o">=</span> <span class="n">h_inf</span> <span class="o">-</span> <span class="n">w</span> <span class="o">*</span> <span class="n">exp1</span><span class="p">(</span><span class="n">rho</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">tau</span><span class="p">)))</span> <span class="o">+</span> <span class="p">(</span><span class="n">w</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> \
+                                                             <span class="n">exp1</span><span class="p">(</span>
+                                                                 <span class="n">rho</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cosh</span><span class="p">(</span><span class="n">tau</span><span class="p">))</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">h_inf</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">tau</span><span class="p">)</span> <span class="o">*</span> <span class="n">I</span>
+        <span class="k">return</span> <span class="n">s</span>
+</div>
+<div class="viewcode-block" id="Hantush.block"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.rfunc.Hantush.block">[docs]</a>    <span class="k">def</span> <span class="nf">block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">s</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+</div></div>
+<div class="viewcode-block" id="Theis"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.rfunc.Theis">[docs]</a><span class="k">class</span> <span class="nc">Theis</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot; The Theis well function</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    [1] Theis, C. V. (1935). The relation between the lowering of the Piezometric</span>
+<span class="sd">    surface and the rate and duration of discharge of a well using ground‐water</span>
+<span class="sd">    storage. Eos, Transactions American Geophysical Union, 16(2), 519-524.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nparam</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">=</span> <span class="mf">0.99</span>
+
+<div class="viewcode-block" id="Theis.set_parameters"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.rfunc.Theis.set_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">set_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">,</span> <span class="s1">&#39;pmin&#39;</span><span class="p">,</span> <span class="s1">&#39;pmax&#39;</span><span class="p">,</span> <span class="s1">&#39;vary&#39;</span><span class="p">])</span>
+        <span class="n">parameters</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;_S&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">3e-1</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">parameters</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;_T&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mf">5000.0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">parameters</span>
+</div>
+<div class="viewcode-block" id="Theis.step"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.rfunc.Theis.step">[docs]</a>    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tmax</span> <span class="o">=</span> <span class="mi">10000</span>  <span class="c1"># This should be changed with some analytical expression</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tmax</span><span class="p">)</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">r</span> <span class="o">**</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="mf">4.0</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">exp1</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">s</span>
+</div>
+<div class="viewcode-block" id="Theis.block"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.rfunc.Theis.block">[docs]</a>    <span class="k">def</span> <span class="nf">block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">s</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">GWTSA 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, M. Bakker, R.A. Collenteur, R. Calje, F. Schaars.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+  </body>
+</html>

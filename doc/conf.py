@@ -2,6 +2,9 @@
 #
 # GWTSA documentation build configuration file, created by
 # sphinx-quickstart on Wed May 11 12:38:06 2016.
+
+# Repository setup is according to:
+# http://gisellezeno.com/tutorials/sphinx-for-python-documentation.html
 #
 # This file is execfile()d with the current directory set to its
 # containing dir.
