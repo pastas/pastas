@@ -106,6 +106,7 @@ class KnmiStation:
                 s = cStringIO.StringIO(line)
                 
                 data=np.genfromtxt(s,dtype=None,delimiter='  ',names=titels)
+                data = np.atleast_1d(data)         
                 if isFirstLocation:
                     stations=data
                     isFirstLocation=False
