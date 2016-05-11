@@ -1,0 +1,275 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>gwtsa.stats &mdash; GWTSA 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="GWTSA 0.0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">GWTSA 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for gwtsa.stats</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">tabulate</span> <span class="kn">import</span> <span class="n">tabulate</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">statsmodels.tsa.stattools</span> <span class="kn">import</span> <span class="n">acf</span><span class="p">,</span> <span class="n">pacf</span>
+<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">probplot</span>
+
+<span class="sd">&quot;&quot;&quot;Statistics for time series models</span>
+
+
+
+<span class="sd">Usage</span>
+<span class="sd">-----</span>
+
+<span class="sd">&gt;&gt;&gt; ml_stats = Statistics(ml)</span>
+<span class="sd">&gt;&gt;&gt; ml_stats.summary()</span>
+
+<span class="sd">Statistic:                       Value</span>
+<span class="sd">-----------------------------  -------</span>
+<span class="sd">Explained variance percentage  92.6574</span>
+<span class="sd">Pearson R^2                     0.9631</span>
+
+<span class="sd">TODO</span>
+<span class="sd">----</span>
+<span class="sd">- ACF for irregular timesteps</span>
+<span class="sd">- PACF for irregular timesteps</span>
+<span class="sd">- Nash-Sutcliffe</span>
+<span class="sd">- portmanteau test (ljung-Box &amp; Box-Pierce)</span>
+<span class="sd">-</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="Statistics"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.stats.Statistics">[docs]</a><span class="k">class</span> <span class="nc">Statistics</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    rmse</span>
+<span class="sd">    evp</span>
+<span class="sd">    avg_dev</span>
+<span class="sd">    pearson</span>
+<span class="sd">    r_corrected</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ml</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ml</span><span class="o">.</span><span class="n">fit</span><span class="o">.</span><span class="n">success</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="s1">&#39;Model optimization was not succesfull, make sure the model is solved&#39;</span> \
+            <span class="s1">&#39;Properly.&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">h</span> <span class="o">=</span> <span class="n">ml</span><span class="o">.</span><span class="n">simulate</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">oseries</span> <span class="o">=</span> <span class="n">ml</span><span class="o">.</span><span class="n">oseries</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">res</span> <span class="o">=</span> <span class="n">ml</span><span class="o">.</span><span class="n">oseries</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">h</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">odelt</span> <span class="o">=</span> <span class="n">ml</span><span class="o">.</span><span class="n">odelt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">innovations</span> <span class="o">=</span> <span class="n">ml</span><span class="o">.</span><span class="n">noisemodel</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">odelt</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">N_param</span> <span class="o">=</span> <span class="n">ml</span><span class="o">.</span><span class="n">fit</span><span class="o">.</span><span class="n">nvarys</span>
+
+<div class="viewcode-block" id="Statistics.rmse"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.stats.Statistics.rmse">[docs]</a>    <span class="k">def</span> <span class="nf">rmse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Root mean squared error of the residuals.</span>
+
+<span class="sd">        rmse = sqrt(sum(residuals**2) / N)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Statistics.avg_dev"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.stats.Statistics.avg_dev">[docs]</a>    <span class="k">def</span> <span class="nf">avg_dev</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Average deviation of the residuals.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Statistics.evp"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.stats.Statistics.evp">[docs]</a>    <span class="k">def</span> <span class="nf">evp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Explained variance percentage.</span>
+
+<span class="sd">        evp = (var(h) - var(res)) / var(h) * 100%</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">))</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="p">)</span> <span class="o">*</span> <span class="mf">100.0</span>
+</div>
+<div class="viewcode-block" id="Statistics.pearson"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.stats.Statistics.pearson">[docs]</a>    <span class="k">def</span> <span class="nf">pearson</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Correlation between observed and simulated series.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">oseries</span><span class="p">)[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="Statistics.r_corrected"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.stats.Statistics.r_corrected">[docs]</a>    <span class="k">def</span> <span class="nf">r_corrected</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Corrected R-squared</span>
+
+<span class="sd">        R_corrected = 1 - (n-1) / (n-N_param) * RSS/TSS</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">RSS</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res</span> <span class="o">**</span> <span class="mf">2.0</span><span class="p">)</span>
+        <span class="n">TSS</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">oseries</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">oseries</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span><span class="o">**</span><span class="mf">2.0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">N</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">N</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">N_param</span><span class="p">)</span> <span class="o">*</span> <span class="n">RSS</span> <span class="o">/</span> <span class="n">TSS</span>
+</div>
+<div class="viewcode-block" id="Statistics.bic"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.stats.Statistics.bic">[docs]</a>    <span class="k">def</span> <span class="nf">bic</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Bayesian Information Criterium</span>
+
+<span class="sd">        BIC = -2 log(L) + S_j log(N)</span>
+<span class="sd">        S_j : Number of free parameters</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">bic</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">innovations</span><span class="o">**</span><span class="mf">2.0</span><span class="p">))</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">N_param</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">bic</span>
+</div>
+<div class="viewcode-block" id="Statistics.aic"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.stats.Statistics.aic">[docs]</a>    <span class="k">def</span> <span class="nf">aic</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Akaike Information Criterium</span>
+
+<span class="sd">        AIC = -2 log(L) + 2 S_j</span>
+<span class="sd">        S_j : Number of free parameters</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">aic</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">innovations</span><span class="o">**</span><span class="mf">2.0</span><span class="p">))</span> <span class="o">+</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">N_param</span>
+        <span class="k">return</span> <span class="n">aic</span>
+</div>
+<div class="viewcode-block" id="Statistics.acf"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.stats.Statistics.acf">[docs]</a>    <span class="k">def</span> <span class="nf">acf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nlags</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Autocorrelation function.</span>
+
+<span class="sd">        TODO</span>
+<span class="sd">        ----</span>
+<span class="sd">        Compute autocorrelation for irregulat time steps.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">acf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">innovations</span><span class="p">,</span> <span class="n">nlags</span><span class="o">=</span><span class="n">nlags</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Statistics.pacf"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.stats.Statistics.pacf">[docs]</a>    <span class="k">def</span> <span class="nf">pacf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nlags</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Partial autocorrelation function.</span>
+
+<span class="sd">        http://statsmodels.sourceforge.net/devel/_modules/statsmodels/tsa/stattools.html#acf</span>
+<span class="sd">            </span>
+<span class="sd">        TODO</span>
+<span class="sd">        ----</span>
+<span class="sd">        Compute  partial autocorrelation for irregulat time steps.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">pacf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">innovations</span><span class="p">,</span> <span class="n">nlags</span><span class="o">=</span><span class="n">nlags</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Statistics.plot_diagnostics"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.stats.Statistics.plot_diagnostics">[docs]</a>    <span class="k">def</span> <span class="nf">plot_diagnostics</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">gs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">GridSpec</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">wspace</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+
+        <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:</span><span class="mi">2</span><span class="p">])</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Autocorrelation&#39;</span><span class="p">)</span>
+        <span class="c1"># plt.axhline(0.2, &#39;--&#39;)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">stem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">acf</span><span class="p">())</span>
+
+        <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:</span><span class="mi">2</span><span class="p">])</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Partial Autocorrelation&#39;</span><span class="p">)</span>
+        <span class="c1"># plt.axhline(0.2, &#39;--&#39;)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">stem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pacf</span><span class="p">())</span>
+
+        <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">innovations</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">bins</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+
+        <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+        <span class="n">probplot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">innovations</span><span class="p">,</span> <span class="n">plot</span><span class="o">=</span><span class="n">plt</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+
+</div>
+<div class="viewcode-block" id="Statistics.summary"><a class="viewcode-back" href="../../gwtsa.html#gwtsa.stats.Statistics.summary">[docs]</a>    <span class="k">def</span> <span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s1">&#39;basic&#39;</span><span class="p">):</span>
+        <span class="n">basic</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;evp&#39;</span> <span class="p">:</span> <span class="s1">&#39;Explained variance percentage&#39;</span><span class="p">,</span> <span class="s1">&#39;rmse&#39;</span> <span class="p">:</span> <span class="s1">&#39;Root mean &#39;</span>
+                                                                   <span class="s1">&#39;squared error&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;avg_dev&#39;</span> <span class="p">:</span> <span class="s1">&#39;Average Deviation&#39;</span><span class="p">,</span> <span class="s1">&#39;pearson&#39;</span> <span class="p">:</span> <span class="s1">&#39;Pearson R^2&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;bic&#39;</span> <span class="p">:</span> <span class="s1">&#39;Bayesian Information Criterion&#39;</span><span class="p">,</span> <span class="s1">&#39;aic&#39;</span> <span class="p">:</span> <span class="s1">&#39;Akaike &#39;</span>
+                                                                   <span class="s1">&#39;Information &#39;</span>
+                                                                   <span class="s1">&#39;Criterion&#39;</span><span class="p">}</span>
+        <span class="n">stats</span> <span class="o">=</span><span class="p">[]</span>
+        <span class="n">statsvalue</span> <span class="o">=</span><span class="p">[]</span>
+        <span class="n">header</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Statistic:&#39;</span><span class="p">,</span><span class="s1">&#39;Value&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">output</span> <span class="ow">is</span> <span class="s1">&#39;basic&#39;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">basic</span><span class="p">:</span>
+                <span class="n">stats</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">basic</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+                <span class="n">statsvalue</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">)())</span>
+        <span class="k">print</span> <span class="n">tabulate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">stats</span><span class="p">,</span> <span class="n">statsvalue</span><span class="p">),</span> <span class="n">headers</span><span class="o">=</span><span class="n">header</span><span class="p">,</span> <span class="n">floatfmt</span><span class="o">=</span><span class="s2">&quot;.4f&quot;</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">GWTSA 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, M. Bakker, R.A. Collenteur, R. Calje, F. Schaars.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+  </body>
+</html>
