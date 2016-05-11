@@ -9,8 +9,7 @@ class Model:
         self.oseries = self.check_oseries(oseries, freq)
         self.xy = xy
         self.metadata = metadata
-        self.odelt = self.oseries.index.to_series().diff() / np.timedelta64(1,
-                                                                            'D')
+        self.odelt = self.oseries.index.to_series().diff() / np.timedelta64(1, 'D')
         # delt converted to days
         self.tserieslist = []
         self.noisemodel = None

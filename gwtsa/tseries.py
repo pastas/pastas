@@ -182,9 +182,8 @@ class TseriesWell(TseriesBase):
 
     """
 
-    def __init__(self, stress, rfunc, r=1, name, metadata=None, stressnames=None,
-                 xy=(
-            0, 0), freq=None, fillna='mean'):
+    def __init__(self, stress, rfunc, r, name, metadata=None, stressnames=None,
+                 xy=(0, 0), freq=None, fillna='mean'):
         TseriesBase.__init__(self, stress, rfunc, name, metadata, stressnames,
                              xy, freq, fillna)
         self.set_init_parameters()
