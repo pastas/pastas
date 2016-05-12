@@ -7,6 +7,7 @@ Subpackages
 .. toctree::
 
     gwtsa.imports
+    gwtsa.recharge
 
 Submodules
 ----------
