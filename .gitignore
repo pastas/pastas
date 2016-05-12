@@ -4,3 +4,5 @@
 *.iml
 
 *.pyc
+
+doc/doctrees/environment.pickle
