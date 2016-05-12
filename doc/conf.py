@@ -62,6 +62,7 @@ master_doc = 'index'
 project = u'GWTSA'
 copyright = u'2016, M. Bakker, R.A. Collenteur, R. Calje, F. Schaars'
 author = u'M. Bakker, R.A. Collenteur, R. Calje, F. Schaars'
+rst_epilog = '.. |project| replace:: %s' % project
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

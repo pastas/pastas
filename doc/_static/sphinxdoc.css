@@ -12,7 +12,7 @@ body {
     line-height: 150%;
     text-align: center;
     /*background-color: #AFC1C4; */
-    background-color: #BFD1D4;
+    background-color: #D6EAF8;
     color: black;
     padding: 0;
     border: 1px solid #aaa;
@@ -20,6 +20,12 @@ body {
     margin: 0px auto 0px auto;
     min-width: 740px;
     max-width: 1000px
+}
+
+div.header {
+    background-color: #3498DB;
+    text-align: left;
+    padding: 10px 10px 15px 15px;
 }
 
 a {
@@ -176,7 +182,8 @@ div.related h3 {
 }
 
 div.related ul {
-    background-image: url(navigation.png);
+    background-color: #1F618D;
+
     height: 2em;
     list-style: none;
     border-top: 1px solid #ddd;
@@ -236,8 +243,8 @@ div.sphinxsidebar h4, div.sphinxsidebar h3 {
     font-size: 0.9em;
     padding: 0.1em 0 0.1em 0.5em;
     color: white;
-    border: 1px solid #86989B;
-    background-color: #AFC1C4;
+    border: 1px solid #3498DB;
+    background-color: #AED6F1;
 }
 
 div.sphinxsidebar ul {
@@ -311,8 +318,8 @@ table td, table th {
 }
 
 div.footer {
-    background-color: #E3EFF1;
-    color: #86989B;
+    background-color: #3498DB;
+    color: #AED6F1;
     padding: 3px 8px 3px 0;
     clear: both;
     font-size: 0.8em;
