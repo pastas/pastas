@@ -1,6 +1,7 @@
+# coding=utf-8
 import numpy as np
 import pandas as pd
-from scipy.special import gammainc, gammaincinv
+from scipy.special import gammainc, gammaincinv, k0, exp1
 
 """
 rfunc module.
@@ -46,7 +47,8 @@ class Gamma:
     step(t) = A * Gammainc(n, t / a)
 
     %(doc)s
-    """ % {'doc' : _class_doc}
+    """ % {'doc': _class_doc}
+
     def __init__(self):
         self.nparam = 3
         self.cutoff = 0.99
@@ -76,7 +78,8 @@ class Exponential:
     step(t) = A * (1 - exp(-t / a))
 
     %(doc)s
-    """ % {'doc' : _class_doc}
+    """ % {'doc': _class_doc}
+
     def __init__(self):
         self.nparam = 2
         self.cutoff = 0.99
@@ -95,4 +98,86 @@ class Exponential:
 
     def block(self, p):
         s = self.step(p)
+        return s[1:] - s[:-1]
+
+
+class Hantush:
+    """ The Hantush well function
+
+    References
+    ----------
+    [1] Hantush, M. S., & Jacob, C. E. (1955). Non‐steady radial flow in an
+    infinite leaky aquifer. Eos, Transactions American Geophysical Union, 36(1),
+    95-100.
+
+    [2] Veling, E. J. M., & Maas, C. (2010). Hantush well function revisited.
+    Journal of hydrology, 393(3), 381-388.
+
+    [3] Von Asmuth, J. R., Maas, K., Bakker, M., & Petersen, J. (2008). Modeling
+    time series of ground water head fluctuations subjected to multiple stresses.
+    Ground Water, 46(1), 30-40.
+
+    """
+
+    def __init__(self):
+        self.nparam = 3
+        self.cutoff = 0.99
+
+    def set_parameters(self, name):
+        parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
+        parameters.loc[name + '_S'] = (0.0, 1e-3, 1.0, 1)
+        parameters.loc[name + '_T'] = (0.0, 10.0, 5000.0, 1)
+        parameters.loc[name + '_c'] = (0.0, 1000.0, 5000.0, 1)
+        return parameters
+
+    def step(self, p, r):
+        self.tmax = 10000  # This should be changed with some analytical expression
+        t = np.arange(1.0, self.tmax)
+        rho = r / np.sqrt(p[1] * p[2])
+        tau = np.log(2.0 / rho * t / (p[0] * p[2]))
+        # tau[tau > 100] = 100
+        h_inf = k0(rho)
+        expintrho = exp1(rho)
+        w = (expintrho - h_inf) / (expintrho - exp1(rho / 2.0))
+        I = h_inf - w * exp1(rho / 2.0 * np.exp(abs(tau))) + (w - 1.0) * \
+                                                             exp1(
+                                                                 rho * np.cosh(tau))
+        s = h_inf + np.sign(tau) * I
+        return s
+
+    def block(self, p, r):
+        s = self.step(p, r)
+        return s[1:] - s[:-1]
+
+
+class Theis:
+    """ The Theis well function
+
+    References
+    ----------
+    [1] Theis, C. V. (1935). The relation between the lowering of the Piezometric
+    surface and the rate and duration of discharge of a well using ground‐water
+    storage. Eos, Transactions American Geophysical Union, 16(2), 519-524.
+
+    """
+
+    def __init__(self):
+        self.nparam = 3
+        self.cutoff = 0.99
+
+    def set_parameters(self, name):
+        parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
+        parameters.loc[name + '_S'] = (0.0, 3e-1, 1.0, 1)
+        parameters.loc[name + '_T'] = (0.0, 10.0, 5000.0, 1)
+        return parameters
+
+    def step(self, p, r):
+        self.tmax = 10000  # This should be changed with some analytical expression
+        t = np.arange(1.0, self.tmax)
+        u = r ** 2.0 * p[0] / (4.0 * p[1] * t)
+        s = exp1(u)
+        return s
+
+    def block(self, p, r):
+        s = self.step(p, r)
         return s[1:] - s[:-1]
