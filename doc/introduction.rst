@@ -24,7 +24,6 @@ and install using::
 
    python setup.py install
 
-
 ========
 Examples
 ========
