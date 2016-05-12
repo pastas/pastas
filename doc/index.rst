@@ -17,7 +17,7 @@ tracker toward the upper-right corner of the Github repository. Pull requests wi
 only be accepted on the development branch (dev) of the repository.
 
 Quick installation guide
-========================
+~~~~~~~~~~~~~~~~~~~~~~~~
 To get the latest development version, use::
 
    git clone http://github.com/gwtwa/gwtsa.git
@@ -26,11 +26,9 @@ and install using::
 
    python setup.py install
 
-
 Indices and tables
-==================
+~~~~~~~~~~~~~~~~~~
 
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

@@ -1,8 +1,23 @@
 gwtsa package
 =============
 
+Subpackages
+-----------
+
+.. toctree::
+
+    gwtsa.imports
+
 Submodules
 ----------
+
+gwtsa.checks module
+-------------------
+
+.. automodule:: gwtsa.checks
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 gwtsa.model module
 ------------------
