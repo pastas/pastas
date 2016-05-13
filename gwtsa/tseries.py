@@ -136,7 +136,7 @@ class Tseries2(TseriesBase):
         return h
 
 
-class Tseries3(TseriesBase):
+class TseriesRecharge(TseriesBase):
     """
     Time series model consisting of a recharge model to calculate the recharge
     convoluted with a response function.
