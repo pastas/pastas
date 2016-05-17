@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from scipy.signal import fftconvolve
+
 from checks import check_tseries
 
 """

@@ -42,13 +42,14 @@ class Statistics(object):
     r_corrected
 
     """
+
     def __init__(self, ml):
         if ml.fit.success is not True:
             'Model optimization was not succesfull, make sure the model is solved' \
             'Properly.'
         self.h = ml.simulate()
         self.oseries = ml.oseries
-        self.res = ml.oseries -self.h
+        self.res = ml.oseries - self.h
         self.N = len(self.h)
         self.odelt = ml.odelt
         self.innovations = ml.noisemodel.simulate(self.res, self.odelt)
@@ -60,7 +61,7 @@ class Statistics(object):
         rmse = sqrt(sum(residuals**2) / N)
 
         """
-        return np.sqrt(sum(self.res**2) / self.N)
+        return np.sqrt(sum(self.res ** 2) / self.N)
 
     def avg_dev(self):
         """Average deviation of the residuals.
@@ -91,8 +92,8 @@ class Statistics(object):
 
         """
         RSS = sum(self.res ** 2.0)
-        TSS = sum((self.oseries - self.oseries.mean())**2.0)
-        return 1.0 - (self.N -1.0) / (self.N - self.N_param) * RSS / TSS
+        TSS = sum((self.oseries - self.oseries.mean()) ** 2.0)
+        return 1.0 - (self.N - 1.0) / (self.N - self.N_param) * RSS / TSS
 
     def bic(self):
         """Bayesian Information Criterium
@@ -104,7 +105,7 @@ class Statistics(object):
         -------
 
         """
-        bic = -2.0 * np.log(sum(self.innovations**2.0)) + self.N_param * np.log(
+        bic = -2.0 * np.log(sum(self.innovations ** 2.0)) + self.N_param * np.log(
             self.N)
         return bic
 
@@ -118,7 +119,7 @@ class Statistics(object):
         -------
 
         """
-        aic = -2.0 * np.log(sum(self.innovations**2.0)) + 2.0 * self.N_param
+        aic = -2.0 * np.log(sum(self.innovations ** 2.0)) + 2.0 * self.N_param
         return aic
 
     def acf(self, nlags=20):
@@ -163,18 +164,16 @@ class Statistics(object):
         probplot(self.innovations, plot=plt)
         plt.show()
 
-
-
     def summary(self, output='basic'):
-        basic = {'evp' : 'Explained variance percentage', 'rmse' : 'Root mean '
-                                                                   'squared error',
-                 'avg_dev' : 'Average Deviation', 'pearson' : 'Pearson R^2',
-                 'bic' : 'Bayesian Information Criterion', 'aic' : 'Akaike '
-                                                                   'Information '
-                                                                   'Criterion'}
-        stats =[]
-        statsvalue =[]
-        header = ['Statistic:','Value']
+        basic = {'evp': 'Explained variance percentage', 'rmse': 'Root mean '
+                                                                 'squared error',
+                 'avg_dev': 'Average Deviation', 'pearson': 'Pearson R^2',
+                 'bic': 'Bayesian Information Criterion', 'aic': 'Akaike '
+                                                                 'Information '
+                                                                 'Criterion'}
+        stats = []
+        statsvalue = []
+        header = ['Statistic:', 'Value']
         if output is 'basic':
             for k in basic:
                 stats.append(basic[k])

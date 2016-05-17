@@ -1,13 +1,13 @@
-import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
 import lmfit
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
 from checks import check_oseries
-from imports.dinodata import DinoGrondwaterstand
 
 
 class Model:
-    def __init__(self, oseries, xy=(0,0), metadata=None, freq=None):
+    def __init__(self, oseries, xy=(0, 0), metadata=None, freq=None):
         self.oseries = check_oseries(oseries, freq)
         self.xy = xy
         self.metadata = metadata
