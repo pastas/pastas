@@ -22,7 +22,7 @@ except:
 setup(
     name='gwtsa',
 
-    # Versions should comply with PEP440.  For a discussion on single-sourcing
+    # Versions should comply with PEP440. For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # http://packaging.python.org/en/latest/tutorial.html#version
     version = __version__,
@@ -52,8 +52,8 @@ setup(
         'Programming Language :: Python :: 2.7'
         ],
     platforms='Windows, Mac OS-X',
-    #install_requires=['numpy>=1.9', 'matplotlib>=1.4'],
+    install_requires=['numpy>=1.9', 'matplotlib>=1.4', 'lmfit>=0.9', 'pandas',
+                      'scipy', 'statsmodels', 'tabulate', 'requests'],
     packages=['gwtsa'],
     include_package_data = True,
-    #package_data = {'timml': ['besselaes.f90', 'besselaes.so', 'besselaes.pyd']}
     )
