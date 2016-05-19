@@ -25,9 +25,8 @@ install:
   - conda info -a
 
   # Directly add dependencies here to speed up Travis Builds
-  - deps='numpy>=1.9 matplotlib>=1.4 pandas>=0.15 scipy>=0.15
-  statsmodels>=0.5'
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION $deps
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
+ matplotlib=1.5
   - source activate test-environment
   - pip install .
 
