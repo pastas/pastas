@@ -60,8 +60,8 @@ setup(
         'Programming Language :: Python :: 2.7'
     ],
     platforms='Windows, Mac OS-X',
-    install_requires=['numpy>=1.9', 'matplotlib>=1.4', 'lmfit>=0.9', 'pandas',
-                      'scipy', 'statsmodels', 'tabulate', 'requests'],
+    install_requires=['numpy>=1.9', 'matplotlib>=1.4', 'lmfit>=0.9', 'pandas>=0.15',
+                      'scipy>=0.15', 'statsmodels>=0.5', 'tabulate', 'requests'],
     packages=['gwtsa'],
     include_package_data=True,
 )
