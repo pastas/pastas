@@ -4,10 +4,9 @@
 language: python
 python:
   # We don't actually use the Travis Python, but this keeps it organized.
-  - "2.6"
   - "2.7"
-  - "3.3"
-  - "3.4"
+  # - "3.3"
+  # - "3.4"
 install:
   - sudo apt-get update
   # We do this conditionally because it saves us some downloading if the
@@ -29,7 +28,9 @@ install:
   - deps='numpy>=1.9 matplotlib>=1.4 pandas>=0.15 scipy>=0.15 statsmodels>=0.5'
   - conda create -q -n test-environment $deps python=$TRAVIS_PYTHON_VERSION
   - source activate test-environment
-  - pip install .
+  - pip install --user .
+  - pip install nose
 
 # command to run tests
-script: nose tests tests
+script:
+   - nosetests tests -v
