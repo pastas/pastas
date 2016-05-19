@@ -9,8 +9,6 @@ from setuptools import setup
 # with open(path.join(here, 'README'), encoding='utf-8') as f:
 #    long_description = f.read()
 
-from gwtsa import __version__
-
 l_d = ''
 try:
     import pypandoc
@@ -19,13 +17,23 @@ try:
 except:
     pass
 
+# Set the version. Possibly this can be converted to another method such as Numpy
+#  is using in the future. https://github.com/numpy/numpy/blob/master/setup.py
+# DO NOT USE from gwtsa import __version__ as it causes problems with Travis.
+
+MAJOR               = 0
+MINOR               = 0
+MICRO               = 1
+ISRELEASED          = False
+VERSION             = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
+
 setup(
     name='gwtsa',
 
     # Versions should comply with PEP440. For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # http://packaging.python.org/en/latest/tutorial.html#version
-    version=__version__,
+    version=VERSION,
 
     description='Open Source Time Series Analysis',
     long_description=l_d,
