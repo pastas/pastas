@@ -1,4 +1,5 @@
 # This script is adapted from: http://conda.pydata.org/docs/travis.html
+# Check the Travis file after changes here: http://lint.travis-ci.org
 
 language: python
 python:
@@ -25,10 +26,10 @@ install:
   - conda info -a
 
   # Directly add dependencies here to speed up Travis Builds
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
- matplotlib=1.5
+  - deps='numpy>=1.9 matplotlib>=1.4 pandas>=0.15 scipy>=0.15 statsmodels>=0.5'
+  - conda create -q -n test-environment $deps python=$TRAVIS_PYTHON_VERSION
   - source activate test-environment
   - pip install .
 
 # command to run tests
-script: nosetests tests
+script: nose tests tests
