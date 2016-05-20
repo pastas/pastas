@@ -1,9 +1,6 @@
 # This script is adapted from: http://conda.pydata.org/docs/travis.html
 # Check the Travis file after changes here: http://lint.travis-ci.org
-os:
-  - linux
-  - osx
-  
+
 language: python
 python:
   # We don't actually use the Travis Python, but this keeps it organized.
