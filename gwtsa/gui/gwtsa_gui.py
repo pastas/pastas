@@ -7,6 +7,8 @@ Created on Wed May 18 20:47:20 2016
 
 from Tkinter import Tk, W, N, E, S
 from ttk import Button, Label,  Frame, Labelframe, Treeview
+import matplotlib
+matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import tkFileDialog
