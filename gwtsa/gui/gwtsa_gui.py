@@ -50,6 +50,7 @@ class GwtsaGui(Frame):
         if True:
             f = Figure(facecolor="white",figsize=(2,1))
             self.ts_ax = f.add_subplot(111)
+            self.ts_ax.set_position([0.075,0.1,0.9,0.85])
             self.ts_canvas = FigureCanvasTkAgg(f, master=Frame1)
             #self.ts_canvas.show()
             self.ts_canvas.get_tk_widget().grid(row=1, column=1, columnspan=2, rowspan=4,
@@ -69,7 +70,7 @@ class GwtsaGui(Frame):
         Frame2.columnconfigure(2, weight=1)
         Frame2.rowconfigure(3, weight=1)
         
-        ibtn = Button(Frame2, text="Read file", command=self.load_file)
+        ibtn = Button(Frame2, text="Read file", command=self.load_ir_file)
         ibtn.grid(row=0, column=0, padx=5, pady=1)
         ibtn = Button(Frame2, text="Download", command=self.load_file)
         ibtn.grid(row=1, column=0, padx=5, pady=1)
@@ -93,29 +94,32 @@ class GwtsaGui(Frame):
         self.tree.heading("six", text="Par 3")
         
         self.tree.tag_configure('disabled', foreground='grey')
-        self.tree.bind("<Button-1>", self.select_ir)
-
+        self.tree.bind("<<TreeviewSelect>>", self.select_ir)
+        
+        self.ir_series=[];
         if True:
             # test-data
             self.tree.insert('', 'end', 'recharge', text='Recharge',
                         values=["Tseries2"])
             self.tree.insert('recharge', 'end', text='Precipitation',
-                        values=['Gamma',"0.3","0.2","10"])
+                        values=['Gamma',"500","1","100"])
             self.tree.insert('recharge', 'end', text='Evaporation',
-                        values=['Gamma',"0.3","0.2","5"])
+                        values=['Factor',"0.79"])
                         
             self.tree.insert('', 'end', 'drainage_level', text='Drainage level',
                         values=['Constant',"1.02"])
             self.tree.insert('', 'end', 'well_1', text='Well 1',
-                        values=['Hantush',"-","-","-"], tags = ('disabled',))
+                        values=['Hantush',"1","2","3"], tags = ('disabled',))
         
         if True:
             f = Figure(facecolor="white",figsize=(1,1))
             self.ir_ax = f.add_subplot(111)
+            self.ir_ax.set_position([0.25,0.1,0.7,0.85])
             self.ir_canvas = FigureCanvasTkAgg(f, master=Frame2)
             #self.ir_canvas.show()
             self.ir_canvas.get_tk_widget().grid(row=0, column=2, rowspan=4,
                 sticky = W+E+N+S)
+        self.ir_graph=None
         
         #%% Frame 3
         Frame3 = Frame(self.parent)
@@ -138,17 +142,31 @@ class GwtsaGui(Frame):
         ibtn.grid(row=2, column=4, padx=5, pady=1)
     
     def select_ir(self,event):
-        item = self.tree.identify('item',event.x,event.y)
-        print("you clicked on", self.tree.item(item,"text"))
-        values=self.tree.item(item,"values")        
+        if self.ir_graph!=None:
+            self.ir_graph.remove()
+            self.ir_graph=None
+                
+        values=self.tree.item(self.tree.selection(),"values")
+        #tag=self.tree.item(self.tree.selection(),"tag")
         
-        ir = getattr(gwtsa.rfunc, values[0])()
-        #s=ir.block(values[1:ir.nparam])
-        s=ir.block([1,2,3])
-        self.ir_ax.plot(s)
-        self.ir_ax.relim()            
-        self.ir_ax.autoscale_view()
-        self.ir_canvas.show()
+        if values[0]=='Constant':
+            pass
+        elif values[0]=='Tseries2':
+            pass
+        elif values[0]=='Factor':
+            # get the brother from the parent
+            pass
+        else:
+            ir = getattr(gwtsa.rfunc, values[0])()
+            #s=ir.block([1,2,3])
+            p=list(values[1:ir.nparam+1])
+            p=[float(x) for x in p]
+            s=ir.block(p)
+            
+            self.ir_graph,=self.ir_ax.plot(s)
+            self.ir_ax.relim()            
+            self.ir_ax.autoscale_view()
+            self.ir_canvas.show()
     
     def load_file(self):
         if self.settings.has_key('observation_file'):
@@ -171,6 +189,27 @@ class GwtsaGui(Frame):
             self.ts_ax.relim()            
             self.ts_ax.autoscale_view()
             self.ts_canvas.show()
+            
+    def load_ir_file(self):
+        if self.settings.has_key('ir_file'):
+            dlg = tkFileDialog.Open(initialdir=self.settings['ir_file'])
+        else:
+            dlg = tkFileDialog.Open()
+        fname = dlg.show()
+        if fname != '':
+            print(fname)
+            self.settings['ir_file'] = fname
+            self.save_settings()
+            series = ImportSeries(fname,'knmi',variable='RH')
+            self.ir_series.append(series)
+            self.tree.insert('', 'end', text='Precipitation',
+                        values=['Gamma',"500","1","100"])
+            #self.tree.insert('recharge', 'end', text='Evaporation',
+            #            values=['Factor',"0.79"])
+            series = ImportSeries(fname,'knmi',variable='EV24')
+            self.ir_series.append(series)
+            self.tree.insert('', 'end', text='Evaporation',
+                        values=['Gamma',"500","1","100"])
     
     def load_settings(self):
         if os.path.isfile(self.settingsFile):
