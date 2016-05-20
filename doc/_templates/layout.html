@@ -11,17 +11,30 @@
 
 
 {% block relbar1 %}
-
 <div class="header">
 <a href="{{ pathto('index') }}"><img src="{{
 pathto("_static/logo.png", 1) }}" border="0" alt="GWTSA Logo" height="100px"></a>
 </div>
-
 {{ super() }}
 {% endblock %}
 
 {# put the sidebar before the body #}
-{% block sidebar1 %}
 
-{{ sidebar() }}{% endblock %}
-{% block sidebar2 %}{% endblock %}
+{% block sidebar1 %}
+<div class="sidebar">
+      <div class="sphinxsidebar">
+          <div class="sphinxsidebarwrapper">
+              <h3><a href="#">Project Info</a></h3>
+              <p>Version:<b> {{ version }} </b></p>
+              <a href="https://travis-ci.org/gwtsa/gwtsa"><img
+        src="https://travis-ci.org/gwtsa/gwtsa.svg?branch=master" border="0"
+        alt="Travis Status">
+              </a>
+          </div>
+      </div>
+    {{ super() }}
+</div>
+{% endblock %}
+
+{% block sidebar2 %}
+{% endblock %}
