@@ -105,8 +105,14 @@ class KnmiStation:
                 line = line.replace('    ', '  ')
                 line = line.replace('   ', '  ')
                 s = cStringIO.StringIO(line)
+<<<<<<< HEAD
 
                 data = np.genfromtxt(s, dtype=None, delimiter='  ', names=titels)
+=======
+                
+                data=np.genfromtxt(s,dtype=None,delimiter='  ',names=titels)
+                data = np.atleast_1d(data)         
+>>>>>>> refs/remotes/origin/imports
                 if isFirstLocation:
                     stations = data
                     isFirstLocation = False
