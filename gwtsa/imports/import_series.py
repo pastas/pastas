@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue May 10 11:33:13 2016
+
 @author: ruben
 """
 
@@ -13,7 +14,7 @@ class ImportSeries:
         if filetype=='dino':
             dino = DinoGrondwaterstand(fname)
             self.series=dino.stand
-
+            
             self.xy=(dino.x, dino.y)
             self.latlon=self.rd2wgs(self.xy)
             self.meta=dino.meta[-1]
@@ -24,7 +25,7 @@ class ImportSeries:
                          knmi.stations['LON_east'][0])
             names=knmi.stations.dtype.names
             self.meta=dict(zip(names,knmi.stations[0]))
-
+            
         elif filetype=='usgs':
             # not implemented yet
             pass
