@@ -8,3 +8,4 @@ gwtsa.egg-info/SOURCES.txt
 gwtsa.egg-info/dependency_links.txt
 gwtsa.egg-info/PKG-INFO
 gwtsa.egg-info/top_level.txt
+gwtsa/gui/settings

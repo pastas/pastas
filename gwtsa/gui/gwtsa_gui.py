@@ -214,9 +214,10 @@ class GwtsaGui(Frame):
                         values=['Gamma',"500","1","100"])
             #self.tree.insert('recharge', 'end', text='Evaporation',
             #            values=['Factor',"0.79"])
-            series = ImportSeries(irfname,'knmi',variable='EV24')
-            self.irs.append(series)
-            self.tree.insert('', 'end', text='Evaporation',
+            if False:
+                series = ImportSeries(irfname,'knmi',variable='EV24')
+                self.irs.append(series)
+                self.tree.insert('', 'end', text='Evaporation',
                         values=['Gamma',"500","1","100"])
                         
     def plot_ir_series(self):
