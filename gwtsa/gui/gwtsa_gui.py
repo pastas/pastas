@@ -179,7 +179,7 @@ class GwtsaGui(Frame):
     
     def load_file(self):
         if self.settings.has_key('observation_file'):
-            dlg = tkFileDialog.Open(initialdir=self.settings['observation_file'])
+            dlg = tkFileDialog.Open(initialfile=self.settings['observation_file'])
         else:
             dlg = tkFileDialog.Open()
         fname = dlg.show()
@@ -200,7 +200,7 @@ class GwtsaGui(Frame):
             
     def load_ir_file(self):
         if self.settings.has_key('ir_file'):
-            dlg = tkFileDialog.Open(initialdir=self.settings['ir_file'])
+            dlg = tkFileDialog.Open(initialfile=self.settings['ir_file'])
         else:
             dlg = tkFileDialog.Open()
         irfname = dlg.show()
