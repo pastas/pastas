@@ -7,10 +7,12 @@ Created on Wed May 18 20:47:20 2016
 
 from Tkinter import Tk, W, N, E, S
 from ttk import Button, Label,  Frame, Labelframe, Treeview
+import tkMessageBox
 import matplotlib
 matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
 import tkFileDialog
 from gwtsa.imports.import_series import ImportSeries
 import gwtsa
@@ -24,6 +26,9 @@ class GwtsaGui(Frame):
         self.settingsFile = 'settings'
         self.load_settings()
         
+        self.obs = None
+        self.irs = [];
+        
         self.parent = parent
         self.initUI()
         
@@ -36,7 +41,6 @@ class GwtsaGui(Frame):
         self.parent.rowconfigure(2)
         self.parent.columnconfigure(0, weight=1)
         
-        
         #%% Frame 1
         Frame1 = Labelframe(self.parent, text='Observations')
         Frame1.grid(row=0,column=0,sticky = W+E+N+S)
@@ -45,7 +49,7 @@ class GwtsaGui(Frame):
         Frame1.columnconfigure(1, weight=1)
         Frame1.rowconfigure(3, weight=2)
         
-        ibtn = Button(Frame1, text="Read file", command=self.load_file)
+        ibtn = Button(Frame1, text="Read obs. file", command=self.load_file)
         ibtn.grid(row=1, column=0, padx=5, pady=5)
         if True:
             f = Figure(facecolor="white",figsize=(2,1))
@@ -55,7 +59,8 @@ class GwtsaGui(Frame):
             #self.ts_canvas.show()
             self.ts_canvas.get_tk_widget().grid(row=1, column=1, columnspan=2, rowspan=4,
                 sticky = W+E+N+S)
-        self.observation_graph=None
+        self.obs_graph=None
+        self.sim_graph=None
         #area = Text(container)
         #area.grid(row=1, column=1, columnspan=2, rowspan=4, 
         #    padx=5, pady=5, sticky=E+W+S+N)
@@ -70,11 +75,11 @@ class GwtsaGui(Frame):
         Frame2.columnconfigure(2, weight=1)
         Frame2.rowconfigure(3, weight=1)
         
-        ibtn = Button(Frame2, text="Read file", command=self.load_ir_file)
+        ibtn = Button(Frame2, text="Read str. file", command=self.load_ir_file)
         ibtn.grid(row=0, column=0, padx=5, pady=1)
-        ibtn = Button(Frame2, text="Download", command=self.load_file)
+        ibtn = Button(Frame2, text="Download", command=self.not_yet_implemented)
         ibtn.grid(row=1, column=0, padx=5, pady=1)
-        ibtn = Button(Frame2, text="Plot series", command=self.load_file)
+        ibtn = Button(Frame2, text="Plot series", command=self.plot_ir_series)
         ibtn.grid(row=2, column=0, padx=5, pady=1)
         
         self.tree = Treeview(Frame2, height=4)
@@ -96,8 +101,7 @@ class GwtsaGui(Frame):
         self.tree.tag_configure('disabled', foreground='grey')
         self.tree.bind("<<TreeviewSelect>>", self.select_ir)
         
-        self.ir_series=[];
-        if True:
+        if False:
             # test-data
             self.tree.insert('', 'end', 'recharge', text='Recharge',
                         values=["Tseries2"])
@@ -110,6 +114,10 @@ class GwtsaGui(Frame):
                         values=['Constant',"1.02"])
             self.tree.insert('', 'end', 'well_1', text='Well 1',
                         values=['Hantush',"1","2","3"], tags = ('disabled',))
+        else:
+            self.tree.insert('', 'end', 'drainage_level', text='Drainage level',
+            values=['Constant',"1.02"])
+            self.irs.append(None)
         
         if True:
             f = Figure(facecolor="white",figsize=(1,1))
@@ -128,24 +136,25 @@ class GwtsaGui(Frame):
         Frame3.columnconfigure(1, weight=1)
         Frame3.columnconfigure(3, weight=1) 
         
-        ibtn = Button(Frame3, text="Optimize", command=self.load_file)
+        ibtn = Button(Frame3, text="Optimize", command=self.optimize)
         ibtn.grid(row=1, column=0, padx=5, pady=1)
-        ibtn = Button(Frame3, text="Show results", command=self.load_file)
+        ibtn = Button(Frame3, text="Show results", command=self.not_yet_implemented)
         ibtn.grid(row=2, column=0, padx=5, pady=1)
         
-        ibtn = Button(Frame3, text="Simulate", command=self.load_file)
+        ibtn = Button(Frame3, text="Simulate", command=self.not_yet_implemented)
         ibtn.grid(row=1, column=2, padx=5, pady=1)        
         
-        ibtn = Button(Frame3, text="Save to file", command=self.load_file)
+        ibtn = Button(Frame3, text="Save to file", command=self.not_yet_implemented)
         ibtn.grid(row=1, column=4, padx=5, pady=1)
-        ibtn = Button(Frame3, text="Export", command=self.load_file)
+        ibtn = Button(Frame3, text="Export", command=self.not_yet_implemented)
         ibtn.grid(row=2, column=4, padx=5, pady=1)
     
     def select_ir(self,event):
         if self.ir_graph!=None:
             self.ir_graph.remove()
             self.ir_graph=None
-                
+        
+        print(self.tree.selection())
         values=self.tree.item(self.tree.selection(),"values")
         #tag=self.tree.item(self.tree.selection(),"tag")
         
@@ -178,13 +187,12 @@ class GwtsaGui(Frame):
             print(fname)
             self.settings['observation_file'] = fname
             self.save_settings()
-            series = ImportSeries(fname,'dino')
+            self.obs = ImportSeries(fname,'dino')
             
-            if self.observation_graph!=None:
-                self.observation_graph.remove()
-            #self.observation_graph=dino.stand.plot(ax=self.ts_ax)
-            self.observation_graph,=self.ts_ax.plot(series.series.index,
-                                                    series.series.values,
+            if self.abs_graph!=None:
+                self.abs_graph.remove()
+            self.obs_graph,=self.ts_ax.plot(self.obs.series.index,
+                                                    self.obs.series.values,
                                                     color='black',marker='.')
             self.ts_ax.relim()            
             self.ts_ax.autoscale_view()
@@ -195,21 +203,60 @@ class GwtsaGui(Frame):
             dlg = tkFileDialog.Open(initialdir=self.settings['ir_file'])
         else:
             dlg = tkFileDialog.Open()
-        fname = dlg.show()
-        if fname != '':
-            print(fname)
-            self.settings['ir_file'] = fname
+        irfname = dlg.show()
+        if irfname != '':
+            print(irfname)
+            self.settings['ir_file'] = irfname
             self.save_settings()
-            series = ImportSeries(fname,'knmi',variable='RH')
-            self.ir_series.append(series)
+            series = ImportSeries(irfname,'knmi',variable='RH')
+            self.irs.append(series)
             self.tree.insert('', 'end', text='Precipitation',
                         values=['Gamma',"500","1","100"])
             #self.tree.insert('recharge', 'end', text='Evaporation',
             #            values=['Factor',"0.79"])
-            series = ImportSeries(fname,'knmi',variable='EV24')
-            self.ir_series.append(series)
+            series = ImportSeries(irfname,'knmi',variable='EV24')
+            self.irs.append(series)
             self.tree.insert('', 'end', text='Evaporation',
                         values=['Gamma',"500","1","100"])
+                        
+    def plot_ir_series(self):
+        f=plt.figure()
+        ax = f.add_subplot(111)
+        for ir in self.irs:
+            if ir != None:
+                ir.series.plot(ax = ax)
+        plt.show()
+    
+    def optimize(self):
+        if self.obs == None:
+            tkMessageBox.showerror('No observation series', 'First read observations')
+        else:
+            self.ml = gwtsa.Model(self.obs.series)
+            chs=self.tree.get_children()
+            for ch in chs:
+                values=self.tree.item(ch,"values")
+                print(values)
+                
+                if values[0]=='Constant':
+                    ts=gwtsa.Constant(value=float(values[1]))
+                elif values[0]=='Tseries2':
+                    pass
+                elif values[0]=='Factor':
+                    # get the brother from the parent
+                    pass
+                else:
+                    stress=self.irs[self.tree.index(ch)].series
+                    rfunc = getattr(gwtsa.rfunc, values[0])()
+                    ts = gwtsa.Tseries(stress, rfunc, name=values[0])
+            self.ml.addtseries(ts)
+            self.ml.solve()
+            h = self.ml.simulate()
+            if self.sim_graph!=None:
+                self.sim_graph.remove()
+            self.sim_graph,=self.ts_ax.plot(h.index,h.values,color='red')
+            self.ts_ax.relim()            
+            self.ts_ax.autoscale_view()
+            self.ts_canvas.show()
     
     def load_settings(self):
         if os.path.isfile(self.settingsFile):
@@ -222,7 +269,9 @@ class GwtsaGui(Frame):
     def save_settings(self):
         fileObject = open(self.settingsFile,'wb')
         pickle.dump(self.settings,fileObject)
-        
+    
+    def not_yet_implemented(self):
+        tkMessageBox.showerror('Not yet implemented', 'Working on it...')
 
 def center(toplevel):
     toplevel.update_idletasks()
