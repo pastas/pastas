@@ -110,9 +110,9 @@ class GwtsaGui(Frame):
             self.tree.insert('recharge', 'end', text='Evaporation',
                         values=['Factor',"0.79"])
                         
-            self.tree.insert('', 'end', 'drainage_level', text='Drainage level',
+            self.tree.insert('', 'end', text='Drainage level',
                         values=['Constant',"1.02"])
-            self.tree.insert('', 'end', 'well_1', text='Well 1',
+            self.tree.insert('', 'end', text='Well 1',
                         values=['Hantush',"1","2","3"], tags = ('disabled',))
         else:
             self.tree.insert('', 'end', 'drainage_level', text='Drainage level',
@@ -189,8 +189,8 @@ class GwtsaGui(Frame):
             self.save_settings()
             self.obs = ImportSeries(fname,'dino')
             
-            if self.abs_graph!=None:
-                self.abs_graph.remove()
+            if self.obs_graph!=None:
+                self.obs_graph.remove()
             self.obs_graph,=self.ts_ax.plot(self.obs.series.index,
                                                     self.obs.series.values,
                                                     color='black',marker='.')
@@ -239,6 +239,7 @@ class GwtsaGui(Frame):
                 
                 if values[0]=='Constant':
                     ts=gwtsa.Constant(value=float(values[1]))
+                    self.ml.addtseries(ts)
                 elif values[0]=='Tseries2':
                     pass
                 elif values[0]=='Factor':
@@ -248,8 +249,15 @@ class GwtsaGui(Frame):
                     stress=self.irs[self.tree.index(ch)].series
                     rfunc = getattr(gwtsa.rfunc, values[0])()
                     ts = gwtsa.Tseries(stress, rfunc, name=values[0])
-            self.ml.addtseries(ts)
+                    self.ml.addtseries(ts)
+                    
+            # solve
             self.ml.solve()
+            
+            # change parameters
+            
+            
+            # show graph
             h = self.ml.simulate()
             if self.sim_graph!=None:
                 self.sim_graph.remove()
