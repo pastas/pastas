@@ -242,9 +242,7 @@ class GwtsaGui(Frame):
                     ts=gwtsa.Constant(value=float(values[1]))
                     self.ml.addtseries(ts)
                 elif values[0]=='Tseries2':
-                    pass
-                elif values[0]=='Factor':
-                    # get the brother from the parent
+                    # not implemented yet
                     pass
                 else:
                     stress=self.irs[self.tree.index(ch)].series
@@ -255,8 +253,21 @@ class GwtsaGui(Frame):
             # solve
             self.ml.solve()
             
-            # change parameters
-            
+            # change parameters in Treeview
+            for i in range(len(chs)):
+                ch=chs[i]
+                ts=self.ml.tserieslist[i]
+                value=ts.parameters['value']
+                # convert to strings
+                value=['{:.2f}'.format(x) for x in value]
+                #value=['{:.3g}'.format(x) for x in value]
+                
+                # add to existing name
+                values=self.tree.item(ch,"values")
+                values=[values[0]]+value
+                # set values
+                self.tree.item(ch,values=values)
+                
             
             # show graph
             h = self.ml.simulate()
