@@ -259,12 +259,20 @@ class GwtsaGui(Frame):
                 ts=self.ml.tserieslist[i]
                 value=ts.parameters['value']
                 # convert to strings
-                value=['{:.2f}'.format(x) for x in value]
+                #valueStr=['{:.2f}'.format(x) for x in value]
                 #value=['{:.3g}'.format(x) for x in value]
+                valueStr=[]
+                for v in value:
+                    if v>=1000:
+                        valueStr.append('{:.0f}'.format(v))
+                    elif v>=100:
+                        valueStr.append('{:.1f}'.format(v))
+                    else:
+                        valueStr.append('{:.2f}'.format(v))
                 
                 # add to existing name
                 values=self.tree.item(ch,"values")
-                values=[values[0]]+value
+                values=[values[0]]+valueStr
                 # set values
                 self.tree.item(ch,values=values)
                 
