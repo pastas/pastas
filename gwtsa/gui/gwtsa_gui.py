@@ -5,7 +5,7 @@ Created on Wed May 18 20:47:20 2016
 @author: ruben
 """
 
-from Tkinter import Tk, W, N, E, S
+from Tkinter import Tk, W, N, E, S, Menu
 from ttk import Button, Label,  Frame, Labelframe, Treeview
 import tkMessageBox
 import matplotlib
@@ -119,6 +119,15 @@ class GwtsaGui(Frame):
             values=['Constant',"1.02"])
             self.irs.append(None)
         
+        self.popup = Menu(self.parent, tearoff=0)
+        #self.popup.add_command(label="Disable", command=self.disable_ir)
+        self.ir_is_disabled=False
+        self.popup.add_checkbutton(label="Disable", onvalue=True, offvalue=False,
+                                   variable=self.ir_is_disabled, command=self.disable_ir)
+        self.popup.add_command(label="Delete", command=self.delete_ir)
+        self.tree.bind("<Button-3>", self.popUpMenu)
+        
+        
         if True:
             f = Figure(facecolor="white",figsize=(1,1))
             self.ir_ax = f.add_subplot(111)
@@ -148,6 +157,30 @@ class GwtsaGui(Frame):
         ibtn.grid(row=1, column=4, padx=5, pady=1)
         ibtn = Button(Frame3, text="Export", command=self.not_yet_implemented)
         ibtn.grid(row=2, column=4, padx=5, pady=1)
+        
+    def popUpMenu(self,event):
+        if self.tree.selection():
+            tags=self.tree.item(self.tree.selection(),"tags")
+            if 'disabled' in tags:
+                self.ir_is_disabled=True
+            else:
+                self.ir_is_disabled=False
+            self.popup.post(event.x_root, event.y_root)
+    
+    def disable_ir(self):
+        tags=self.tree.item(self.tree.selection(),"tags")
+        if 'disabled' in tags:
+            self.tree.item(self.tree.selection()[0],tags = ())
+        else:
+            self.tree.item(self.tree.selection()[0],tags = ('disabled',))
+    
+    def delete_ir(self):
+        print self.tree.selection()[0]
+        #index = self.tree.get(0, "end").index(self.tree.selection()[0])
+        index = self.tree.index(self.tree.selection()[0])
+        print(index)
+        self.irs.pop(index)
+        self.tree.delete(self.tree.selection())
     
     def select_ir(self,event):
         if self.ir_graph!=None:
