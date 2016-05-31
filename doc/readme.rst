@@ -8,7 +8,7 @@ the documentation website (http://gwtsa.github.io/gwtsa/index.html).
 
 | On your computer, a folder needs to be dedicated. The structure is as follows:
 | ../Project/gwtsa-master/
-| ../Project/gwtsa-doc/
+| ../Project/gwtsa-docs/
 
 The first folder is where the projects is maintained (the master branch) and the second folder is dedicated to the
 documentation website. To set up your github for the gwtsa-doc folder, `see here 
@@ -24,9 +24,9 @@ Instructions for updating Sphinx documentation
   >>> cd html
 
 4. The html files have now been created in the html folder with the gwtsa-doc folder if Sphinxdoc was succesfull.
-5. Move to the html folder with the gwtsa-doc folder:
+5. Move to the html folder with the gwtsa-docs folder:
   >>> cd
-  >>> cd ../path-to-gwtsa-doc/html
+  >>> cd ../path-to-gwtsa-docs/html
   
 6. Update the gh-pages branch:
   >>> git branch # Check if we are in the gh-pages branch
