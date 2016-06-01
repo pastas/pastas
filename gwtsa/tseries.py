@@ -1,36 +1,38 @@
+"""
+tseries module
+    Constains class for time series objects.
+
+    Each response function class needs the following:
+
+    Attributes
+    ----------
+    nparam : int
+        Number of parameters.
+    name : str
+        Name of this tseries object. Used as prefix for the parameters.
+    parameters : pandas Dataframe
+        Dataframe containing the parameters.
+
+    Methods
+    -------
+    simulate : Returns pandas Series Object with simulate values
+               Input: tindex: Optional pandas TimeIndex. Time index to simulate
+               values
+               p: Optional[array-like]. Parameters used for simulation. If p is not
+               provided, parameters attribute will be used.
+               Returns: pandas Series of simulated values
+"""
+
 import numpy as np
 import pandas as pd
 from scipy.signal import fftconvolve
 
 from checks import check_tseries
 
-"""
-tseries module.
-Constains class for time series objects.
-
-Each response function class needs the following:
-
-Attributes
-----------
-nparam : int
-    Number of parameters. 
-name : str
-    Name of this tseries object. Used as prefix for the parameters.
-parameters : pandas Dataframe
-    Dataframe containing the parameters.
-
-Methods
--------
-simulate : Returns pandas Series Object with simulate values
-           Input: tindex: Optional pandas TimeIndex. Time index to simulate values
-           p: Optional[array-like]. Parameters used for simulation. If p is not
-           provided, parameters attribute will be used.
-           Returns: pandas Series of simulated values
-"""
-
 
 class TseriesBase:
     """Tseries Base class called by each Tseries object.
+
     """
 
     def __init__(self, rfunc, name, xy, metadata):
@@ -53,8 +55,19 @@ class TseriesBase:
 
 
 class Tseries(TseriesBase):
-    """Time series model consisting of the convolution of one stress with one
+    """
+    Time series model consisting of the convolution of one stress with one
     response function.
+
+    Parameters
+    ----------
+    stress
+    rfunc
+    name
+    metadata
+    xy
+    freq
+    fillnan
 
     """
 
@@ -65,6 +78,10 @@ class Tseries(TseriesBase):
         self.set_init_parameters()
 
     def set_init_parameters(self):
+        """
+        Set the initial parameters back to their default values.
+
+        """
         self.parameters = self.rfunc.set_parameters(self.name)
 
     def simulate(self, tindex=None, p=None):
@@ -100,8 +117,8 @@ class Recharge(TseriesBase):
 
     Parameters
     ----------
-    precipitation
-    evaporation
+    precip
+    evap
     rfunc
     recharge
     name
@@ -111,20 +128,24 @@ class Recharge(TseriesBase):
     fillnan
     """
 
-    def __init__(self, precipitation, evaporation, rfunc, recharge,
-                 name='Recharge', metadata=None, xy=(0, 0), freq=[None, None],
+    def __init__(self, precip, evap, rfunc, recharge,
+                 name='Recharge', metadata=None, xy=(0, 0), freq=['D', 'D'],
                  fillnan=['mean', 'interpolate']):
         TseriesBase.__init__(self, rfunc, name, xy, metadata)
 
         # Check and name the time series
-        P = check_tseries(precipitation, freq[0], fillnan[0])
-        E = check_tseries(evaporation, freq[1], fillnan[1])
+        P = check_tseries(precip, freq[0], fillnan[0])
+        E = check_tseries(evap, freq[1], fillnan[1])
 
-        # Select data where only where both series are available
-        self.precipitation = P[P.index & E.index]
-        self.evaporation = E[P.index & E.index]
-        self.evaporation.name = 'Evaporation'
-        self.precipitation.name = 'Precipitation'
+        # Select data where both series are available
+        self.precip = P[P.index & E.index]
+        self.evap = E[P.index & E.index]
+        self.evap.name = 'Evaporation'
+        self.precip.name = 'Precipitation'
+
+        # The recharge calculation needs arrays
+        self.precip_array = np.array(self.precip)
+        self.evap_array = np.array(self.evap)
 
         self.recharge = recharge
         self.set_init_parameters()
@@ -137,14 +158,12 @@ class Recharge(TseriesBase):
     def simulate(self, tindex=None, p=None):
         if p is None:
             p = np.array(self.parameters.value)
-        b = self.rfunc.block(p[:-self.recharge.nparam])
-        self.npoints = len(self.precipitation)
-        P = np.array(self.precipitation)
-        E = np.array(self.evaporation)
-        rseries = self.recharge.simulate(P, E, p[-self.recharge.nparam:])
+        b = self.rfunc.block(p[:-self.recharge.nparam])  # Block response
+        rseries = self.recharge.simulate(self.precip_array, self.evap_array,
+                                         p[-self.recharge.nparam:])
         self.npoints = len(rseries)
         h = pd.Series(fftconvolve(rseries, b, 'full')[:self.npoints],
-                      index=self.precipitation.index, name='Recharge')
+                      index=self.precip.index, name='Recharge')
         if tindex is not None:
             h = h[tindex]
         return h
@@ -152,10 +171,9 @@ class Recharge(TseriesBase):
     def simulate_recharge(self, p=None):
         if p is None:
             p = np.array(self.parameters.value)
-        P = np.array(self.precipitation)
-        E = np.array(self.evaporation)
-        rseries = self.recharge.simulate(P, E, p[-self.recharge.nparam:])
-        rseries = pd.Series(rseries, index=self.precipitation.index,
+        rseries = self.recharge.simulate(self.precip_array, self.evap_array,
+                                         p[-self.recharge.nparam:])
+        rseries = pd.Series(rseries, index=self.precip.index,
                             name='Recharge')
         return rseries
 
@@ -164,12 +182,10 @@ class Well(TseriesBase):
     """Time series model consisting of the convolution of two stresses with
     one response function.
 
-    stress = stress1 + factor * stress2
-
-    Last parameters is factor
 
     """
 
+    # TODO implement this function
     def __init__(self, stress, rfunc, r, name, metadata=None, stressnames=None,
                  xy=(0, 0), freq=None, fillna='mean'):
         TseriesBase.__init__(self, rfunc, name, xy, metadata)
