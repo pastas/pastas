@@ -15,7 +15,6 @@ oseries = 30.17 - gwdata.h  # NAP
 rain = pd.read_csv('Heibloem_rain_data.dat', skiprows=4, delim_whitespace=True,
                    parse_dates=['date'],
                    index_col='date')
-rain = rain['1980':]  # cut off everything before 1980
 rain = rain.precip
 rain /= 1000.0  # Meters
 
@@ -24,18 +23,17 @@ evap = pd.read_csv('Maastricht_E_June2015.csv', skiprows=4, sep=';',
                    parse_dates=['DATE'],
                    index_col='DATE')
 evap.rename(columns={'VALUE (m-ref)': 'evap'}, inplace=True)
-evap = evap['1980':]  # cut off everything before 1980
 evap = evap.evap
 
 recharge = rain - 0.8 * evap
 
-#oseries -= oseries.mean()
-#recharge -= recharge.mean()
+# oseries -= oseries.mean()
+# recharge -= recharge.mean()
 
 # Create the time series model
 ml = Model(oseries)
-#ts1 = Tseries(recharge, Gamma(), name='recharge')
-ts1 = Tseries2([rain, evap], Gamma(), name='recharge')
+# ts1 = Tseries(recharge, Gamma(), name='recharge')
+ts1 = Recharge(rain, evap, Gamma(), Linear(), name='recharge')
 ml.addtseries(ts1)
 d = Constant(oseries.min())  # Using oseries.min() as initial value slightly
 # reduces computation time
@@ -48,5 +46,5 @@ ml.solve()
 ml.plot()
 
 # Solve for a certain period
-#ml.solve(tmin='1965', tmax='1990')
-#ml.plot_results()  # More advanced plotting option
+# ml.solve(tmin='1965', tmax='1990')
+# ml.plot_results()  # More advanced plotting option

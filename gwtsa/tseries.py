@@ -33,16 +33,10 @@ class TseriesBase:
     """Tseries Base class called by each Tseries object.
     """
 
-    def __init__(self, stress, rfunc, name, stressnames, xy, metadata, freq,
-                 fillna):
-        self.stress = check_tseries(stress, freq, fillna)
+    def __init__(self, rfunc, name, xy, metadata):
         self.rfunc = rfunc
         self.nparam = rfunc.nparam
         self.name = name
-        if stressnames is None:
-            self.stress_names = [k.name for k in self.stress]
-        else:
-            self.stress_names = stressnames
         self.xy = xy
         self.metadata = metadata
 
@@ -51,7 +45,7 @@ class TseriesBase:
 
         Usage
         -----
-        E.g. ts2.set_parameters(recharge_A=200)
+        >>> ts2.set_parameters(recharge_A=200)
 
         """
         for i in kwargs:
@@ -64,12 +58,11 @@ class Tseries(TseriesBase):
 
     """
 
-    def __init__(self, stress, rfunc, name, metadata=None, stressnames=None,
-                 xy=(0, 0), freq=None, fillna='mean'):
-        TseriesBase.__init__(self, stress, rfunc, name, metadata, stressnames, xy,
-                             freq, fillna)
+    def __init__(self, stress, rfunc, name, metadata=None, xy=(0, 0), freq=None,
+                 fillnan='mean'):
+        TseriesBase.__init__(self, rfunc, name, xy, metadata)
+        self.stress = check_tseries(stress, freq, fillnan)
         self.set_init_parameters()
-        self.stress = self.stress[0]  # unpack stress list for this Tseries
 
     def set_init_parameters(self):
         self.parameters = self.rfunc.set_parameters(self.name)
@@ -102,54 +95,37 @@ class Tseries(TseriesBase):
         return h
 
 
-class Tseries2(TseriesBase):
-    """Time series model consisting of the convolution of two stresses with
-    one response function.
+class Recharge(TseriesBase):
+    """Time series model to calculate the groundwater recharge as a stress.
 
-    stress = stress1 + factor * stress2
-
-    Last parameters is factor
-
+    Parameters
+    ----------
+    precipitation
+    evaporation
+    rfunc
+    recharge
+    name
+    metadata
+    xy
+    freq
+    fillnan
     """
 
-    def __init__(self, stress, rfunc, name, metadata=None, stressnames=None,
-                 xy=(0, 0), freq=None, fillna='mean'):
-        TseriesBase.__init__(self, stress, rfunc, name, metadata, stressnames,
-                             xy, freq, fillna)
-        self.nparam += 1
-        self.set_init_parameters()
+    def __init__(self, precipitation, evaporation, rfunc, recharge,
+                 name='Recharge', metadata=None, xy=(0, 0), freq=[None, None],
+                 fillnan=['mean', 'interpolate']):
+        TseriesBase.__init__(self, rfunc, name, xy, metadata)
 
-    def set_init_parameters(self):
-        self.parameters = self.rfunc.set_parameters(self.name)
-        self.parameters.loc[self.name + '_f'] = (-1.0, -5.0, 0.0, 1)
+        # Check and name the time series
+        P = check_tseries(precipitation, freq[0], fillnan[0])
+        E = check_tseries(evaporation, freq[1], fillnan[1])
 
-    def simulate(self, tindex=None, p=None):
-        if p is None:
-            p = np.array(self.parameters.value)
-        b = self.rfunc.block(p[:-1])  # nparam-1 depending on rfunc
-        stress = self.stress[0] + p[-1] * self.stress[1]
-        stress.fillna(stress.mean(), inplace=True)
-        self.npoints = len(stress)
-        h = pd.Series(fftconvolve(stress, b, 'full')[:self.npoints],
-                      index=stress.index)
-        if tindex is not None:
-            h = h[tindex]
-        return h
+        # Select data where only where both series are available
+        self.precipitation = P[P.index & E.index]
+        self.evaporation = E[P.index & E.index]
+        self.evaporation.name = 'Evaporation'
+        self.precipitation.name = 'Precipitation'
 
-
-class TseriesRecharge(TseriesBase):
-    """
-    Time series model consisting of a recharge model to calculate the recharge
-    convoluted with a response function.
-
-    The recharge model has to be provided.
-    """
-
-    def __init__(self, stress, rfunc, recharge, name, metadata=None,
-                 stressnames=None,
-                 xy=(0, 0), freq=None, fillna='mean'):
-        TseriesBase.__init__(self, stress, rfunc, name, stressnames, xy,
-                             metadata, freq, fillna)
         self.recharge = recharge
         self.set_init_parameters()
         self.nparam = self.rfunc.nparam + self.recharge.nparam
@@ -162,28 +138,29 @@ class TseriesRecharge(TseriesBase):
         if p is None:
             p = np.array(self.parameters.value)
         b = self.rfunc.block(p[:-self.recharge.nparam])
-        self.npoints = len(self.stress[0])
-        P = np.array(self.stress[0])
-        E = np.array(self.stress[1])
+        self.npoints = len(self.precipitation)
+        P = np.array(self.precipitation)
+        E = np.array(self.evaporation)
         rseries = self.recharge.simulate(P, E, p[-self.recharge.nparam:])
         self.npoints = len(rseries)
         h = pd.Series(fftconvolve(rseries, b, 'full')[:self.npoints],
-                      index=self.stress[0].index)
+                      index=self.precipitation.index, name='Recharge')
         if tindex is not None:
             h = h[tindex]
         return h
 
-def simulate_recharge(self, p=None):
-    if p is None:
-        p = np.array(self.parameters.value)
-    P = np.array(self.stress[0])
-    E = np.array(self.stress[1])
-    rseries = self.recharge.simulate(P, E, p[-self.recharge.nparam:])
-    rseries = pd.Series(rseries, index=self.stress[0].index)
-    return rseries
+    def simulate_recharge(self, p=None):
+        if p is None:
+            p = np.array(self.parameters.value)
+        P = np.array(self.precipitation)
+        E = np.array(self.evaporation)
+        rseries = self.recharge.simulate(P, E, p[-self.recharge.nparam:])
+        rseries = pd.Series(rseries, index=self.precipitation.index,
+                            name='Recharge')
+        return rseries
 
 
-class TseriesWell(TseriesBase):
+class Well(TseriesBase):
     """Time series model consisting of the convolution of two stresses with
     one response function.
 
@@ -195,8 +172,15 @@ class TseriesWell(TseriesBase):
 
     def __init__(self, stress, rfunc, r, name, metadata=None, stressnames=None,
                  xy=(0, 0), freq=None, fillna='mean'):
-        TseriesBase.__init__(self, stress, rfunc, name, metadata, stressnames,
-                             xy, freq, fillna)
+        TseriesBase.__init__(self, rfunc, name, xy, metadata)
+
+        # Check stresses
+        self.stress = []
+        if type(stress) is pd.Series:
+            stress = [stress]
+        for i in range(len(stress)):
+            self.stress.append(check_tseries(stress, freq, fillna))
+
         self.set_init_parameters()
         self.r = r
 
