@@ -7,8 +7,9 @@ from checks import check_oseries
 
 
 class Model:
-    def __init__(self, oseries, xy=(0, 0), metadata=None, freq=None):
-        self.oseries = check_oseries(oseries, freq)
+    def __init__(self, oseries, xy=(0, 0), metadata=None, freq=None,
+                 fillnan='drop'):
+        self.oseries = check_oseries(oseries, freq, fillnan)
         self.xy = xy
         self.metadata = metadata
         self.odelt = self.oseries.index.to_series().diff() / np.timedelta64(1, 'D')
