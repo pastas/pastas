@@ -33,4 +33,5 @@ install:
 
 # command to run tests
 script:
-   - nosetests tests -v
+   - cd tests
+   - nosetests -v
