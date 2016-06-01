@@ -1,8 +1,3 @@
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from recharge import pref, perc, comb
-
 """recharge_func module
 Contains the classes for the different models that are available to calculate the
 recharge from evaporation and precipitation data.
@@ -30,6 +25,11 @@ References
 levels: Application to the Veluwe. MSc. thesis, TU Delft.
 http://repository.tudelft.nl/view/ir/uuid:baf4fc8c-6311-407c-b01f-c80a96ecd584/
 """
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from recharge import pref, perc, comb
 
 
 class Linear:

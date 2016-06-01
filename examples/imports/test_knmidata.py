@@ -6,13 +6,13 @@ Created on Fri Apr 22 13:58:15 2016
 """
 from datetime import datetime
 import matplotlib.pyplot as plt
-from knmidata import KnmiStation
+from gwtsa.imports.knmidata import KnmiStation
 
 # %% hoe te gebruiken?
 if True:
     # via een bestand, te downloaden via
     # https://www.knmi.nl/nederland-nu/klimatologie/daggegevens
-    knmi = KnmiStation.fromfile('KNMI_20160504.txt')
+    knmi = KnmiStation.fromfile('../data/KNMI_20160504.txt')
 else:
     # of door direct te downloaden
     knmi = KnmiStation(stns=260, start=datetime(1970, 1, 1),
