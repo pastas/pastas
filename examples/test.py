@@ -12,7 +12,8 @@ gwdata.h *= 0.01
 oseries = 30.17 - gwdata.h  # NAP
 
 # Import and check the observed precipitation series
-rain = pd.read_csv('data/Heibloem_rain_data.dat', skiprows=4, delim_whitespace=True,
+rain = pd.read_csv('data/Heibloem_rain_data.dat', skiprows=4,
+                   delim_whitespace=True,
                    parse_dates=['date'],
                    index_col='date')
 rain = rain.precip
