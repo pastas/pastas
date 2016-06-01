@@ -34,7 +34,8 @@ recharge = rain - 0.8 * evap
 # Create the time series model
 ml = Model(oseries)
 # ts1 = Tseries(recharge, Gamma(), name='recharge')
-ts1 = Recharge(rain, evap, Gamma(), Linear(), name='recharge')
+ts1 = Recharge(rain, evap, Gamma(), Linear(), name='recharge',
+               fillnan='interpolate')
 ml.addtseries(ts1)
 d = Constant(oseries.min())  # Using oseries.min() as initial value slightly
 # reduces computation time
