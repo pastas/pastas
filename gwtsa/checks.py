@@ -1,3 +1,8 @@
+"""
+checks module
+    This module is used to check the time series.
+
+"""
 import pandas as pd
 
 
@@ -15,13 +20,13 @@ def check_oseries(oseries, freq, fillnan='drop'):
     fillnan: optional: str or float
         Methods or float number to fill nan-values. Default values is
         'drop'. Currently supported options are: 'interpolate', float,
-        and 'mean'. Interpolation is performed with a standard linear
+        'mean' and, 'drop'. Interpolation is performed with a standard linear
         interpolation.
 
     Returns
     -------
     oseries: pd.Series
-        Pandas series object check for nan-values and with the required frequency.
+        Pandas series object checked for nan-values and with the required frequency.
 
     """
     assert isinstance(oseries, pd.Series), 'Expected a Pandas Series object, ' \
@@ -33,20 +38,24 @@ def check_oseries(oseries, freq, fillnan='drop'):
 
     # Deal with frequency of the time series
     if freq:
+        print Warning
         oseries = oseries.resample(freq)
 
     # Handle nan-values in oseries
     if oseries.hasnans:
-        print '%i nan-value(s) was/were found and handled/filled with: %s' % (
-            oseries.isnull().values.sum(), fillnan)
-        if fillnan == 'mean':
-            oseries.fillna(stress.mean(), inplace=True)
+        print '%i nan-value(s) in the oseries was/were found and handled/filled ' \
+              'with: %s' % (oseries.isnull().values.sum(), fillnan)
+        if fillnan == 'drop':
+            oseries.dropna(inplace=True)  # Default option
+        elif fillnan == 'mean':
+            oseries.fillna(oseries.mean(), inplace=True)
         elif fillnan == 'interpolate':
             oseries.interpolate(method='time', inplace=True)
         elif type(fillnan) == float:
             oseries.fillna(fillnan, inplace=True)
         else:
-            oseries.dropna(inplace=True) # Default option
+            print 'User-defined option for fillnan %s isinstance() not supported' \
+                  % fillnan
 
     return oseries
 
@@ -56,7 +65,7 @@ def check_tseries(stress, freq, fillnan):
 
     Parameters
     ----------
-    tseries: pd.Series
+    stress: pd.Series
         Pandas series object containing the stress time series.
     freq: str
         String containing the desired frequency. The required string format is found
@@ -79,7 +88,7 @@ def check_tseries(stress, freq, fillnan):
     assert isinstance(stress, pd.Series), 'Expected a Pandas Series, ' \
                                           'got %s' % type(stress)
 
-    # Drop nan-values at the beginning of the time series
+    # Drop nan-values at the beginning and end of the time series
     stress = stress.loc[stress.first_valid_index():stress.last_valid_index(
     )].copy(deep=True)
 
@@ -88,18 +97,22 @@ def check_tseries(stress, freq, fillnan):
         stress = stress.asfreq(freq)
     else:
         freq = pd.infer_freq(stress.index)
-        print 'Tried to infer frequency from time series: freq=%s' %freq
+        print 'Inferred frequency from time series: freq=%s' % freq
         stress = stress.asfreq(freq)
 
     # Handle nan-values in stress series
     if stress.hasnans:
         print '%i nan-value(s) was/were found and filled with: %s' % (
             stress.isnull().values.sum(), fillnan)
-        if fillnan == 'interpolate':
+        if fillnan == 'mean':
+            stress.fillna(stress.mean(), inplace=True)  # Default option
+        elif fillnan == 'interpolate':
             stress.interpolate(method='time')
         elif type(fillnan) == float:
             print fillnan, 'init'
             stress.fillna(fillnan, inplace=True)
         else:
-            stress.fillna(stress.mean(), inplace=True)  # Default option
+            print 'User-defined option for fillnan %s isinstance() not supported' \
+                  % fillnan
+
     return stress
