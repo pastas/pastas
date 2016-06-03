@@ -2,7 +2,7 @@
 Contains the classes for the different models that are available to calculate the
 recharge from evaporation and precipitation data.
 
-Each Recharge class contains at leat the following:
+Each Recharge class contains at least the following:
 
 Attributes
 ----------

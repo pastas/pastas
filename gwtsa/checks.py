@@ -13,11 +13,11 @@ def check_oseries(oseries, freq, fillnan='drop'):
     ----------
     oseries: pd.Series
         Pandas series object containing the observed time series.
-    freq: str
+    freq: optional[str]
         String containing the desired frequency. The required string format is found
         at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset
         -aliases
-    fillnan: optional: str or float
+    fillnan: optional[str or float]
         Methods or float number to fill nan-values. Default values is
         'drop'. Currently supported options are: 'interpolate', float,
         'mean' and, 'drop'. Interpolation is performed with a standard linear

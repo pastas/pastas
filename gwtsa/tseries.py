@@ -61,13 +61,27 @@ class Tseries(TseriesBase):
 
     Parameters
     ----------
-    stress
-    rfunc
-    name
-    metadata
-    xy
-    freq
-    fillnan
+    stress: pd.Series
+        pandas Series object containing the stress.
+    rfunc: rfunc class object
+        Response function used in the convolution with the stess.
+    name: str
+        Name of the stress
+    metadata: Optional[dict]
+        dictionary containing metadata about the stress.
+    xy: Optional[tuple]
+        XY location in lon-lat format used for making maps.
+    freq: Optional[str]
+        Frequency to which the stress series are transformed. By default,
+        the frequency is inferred from the data and that frequency is used.
+        The required string format is found
+        at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset
+        -aliases
+    fillnan: Optional[str or float]
+        Methods or float number to fill nan-values. Default values is
+        'mean'. Currently supported options are: 'interpolate', float,
+        and 'mean'. Interpolation is performed with a standard linear
+        interpolation.
 
     """
 
@@ -113,23 +127,51 @@ class Tseries(TseriesBase):
 
 
 class Recharge(TseriesBase):
-    """Time series model to calculate the groundwater recharge as a stress.
+    """Time series model performing convolution on groundwater recharge
+    calculated from precipitation and evaporation with one response function.
 
     Parameters
     ----------
-    precip
-    evap
-    rfunc
-    recharge
-    name
-    metadata
-    xy
-    freq
-    fillnan
+    precip: pd.Series
+        pandas Series object containing the precipitation stress.
+    evap: pd.Series
+        pandas Series object containing the evaporationstress.
+    rfunc: rfunc class object
+        Response function used in the convolution with the stess.
+    recharge: recharge_func class object
+    name: str
+        Name of the stress
+    metadata: Optional[dict]
+        dictionary containing metadata about the stress.
+    xy: Optional[tuple]
+        XY location in lon-lat format used for making maps.
+    freq: Optional[list of str]
+        Frequency to which the stress series are transformed. By default,
+        the frequency is inferred from the data and that frequency is used.
+        The required string format is found
+        at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset
+        -aliases
+    fillnan: Optional[list of str or float]
+        Methods or float number to fill nan-values. Default value for
+        precipitation is 'mean' and default for evaporation is 'interpolate'.
+        Currently supported options are: 'interpolate', float,
+        and 'mean'. Interpolation is performed with a standard linear
+        interpolation.
+
+    Notes
+    -----
+    Please check the documentation of the recharge_func classes for more details.
+
+    References
+    ----------
+    [1] R.A. Collenteur [2016] Non-linear time series analysis of deep groundwater
+    levels: Application to the Veluwe. MSc. thesis, TU Delft.
+    http://repository.tudelft.nl/view/ir/uuid:baf4fc8c-6311-407c-b01f-c80a96ecd584/
+
     """
 
     def __init__(self, precip, evap, rfunc, recharge,
-                 name='Recharge', metadata=None, xy=(0, 0), freq=['D', 'D'],
+                 name='Recharge', metadata=None, xy=(0, 0), freq=[None, None],
                  fillnan=['mean', 'interpolate']):
         TseriesBase.__init__(self, rfunc, name, xy, metadata)
 
@@ -169,6 +211,19 @@ class Recharge(TseriesBase):
         return h
 
     def simulate_recharge(self, p=None):
+        """
+        Returns the simulated recharge with the parameters saves in the recharge
+        object.
+
+        Parameters
+        ----------
+        p: optional[pd.DataFrame]
+            Array containing the parameters of the recharge model.
+        Returns
+        -------
+            Other simulated recharge series as a pd. Series object.
+
+        """
         if p is None:
             p = np.array(self.parameters.value)
         rseries = self.recharge.simulate(self.precip_array, self.evap_array,
@@ -179,9 +234,32 @@ class Recharge(TseriesBase):
 
 
 class Well(TseriesBase):
-    """Time series model consisting of the convolution of two stresses with
+    """Time series model consisting of the convolution of one or more stresses with
     one response function.
 
+    Parameters
+    ----------
+    stress: list
+        list of pandas Series objects containing the stresses.
+    rfunc: rfunc class object
+        Response function used in the convolution with the stess.
+    name: str
+        Name of the stress
+    metadata: Optional[dict]
+        dictionary containing metadata about the stress.
+    xy: Optional[tuple]
+        XY location in lon-lat format used for making maps.
+    freq: Optional[str]
+        Frequency to which the stress series are transformed. By default,
+        the frequency is inferred from the data and that frequency is used.
+        The required string format is found
+        at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset
+        -aliases
+    fillnan: Optional[str or float]
+        Methods or float number to fill nan-values. Default values is
+        'mean'. Currently supported options are: 'interpolate', float,
+        and 'mean'. Interpolation is performed with a standard linear
+        interpolation.
 
     """
 
@@ -217,7 +295,7 @@ class Well(TseriesBase):
 
 
 class Constant:
-    """A constant value.
+    """A constant value that is added to the time series model.
 
     Parameters
     ----------
