@@ -130,14 +130,17 @@ class Model:
                   'defined. No noise model is used'
         self.solvemethod = solvemethod
         self.nparam = sum(ts.nparam for ts in self.tserieslist)
+
+        # Initialize parameters
+        
+
         if self.solvemethod == 'lmfit':
             parameters = lmfit.Parameters()
             for ts in self.tserieslist:
                 for k in ts.parameters.index:
                     p = ts.parameters.loc[k]
-                    pvalues = np.where(np.isnan(p.values), None,
-                                       p.values)  # needed because lmfit doesn't
-                    # take nan as input
+                    # needed because lmfit doesn't take nan as input
+                    pvalues = np.where(np.isnan(p.values), None, p.values)
                     parameters.add(k, value=pvalues[0], min=pvalues[1],
                                    max=pvalues[2], vary=pvalues[3])
             if self.noisemodel is not None:

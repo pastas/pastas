@@ -1,13 +1,11 @@
-# -*- coding: utf-8 -*-
 """
-Created on Fri Mar 18 13:35:39 2016
-
 @author: ruben
+
 """
+
 import requests
 import numpy as np
 from datetime import date
-# from io import StringIO
 import cStringIO
 import pandas as pd
 import numpy.lib.recfunctions as rfn
@@ -105,8 +103,8 @@ class KnmiStation:
                 line = line.replace('    ', '  ')
                 line = line.replace('   ', '  ')
                 s = cStringIO.StringIO(line)
-                data=np.genfromtxt(s,dtype=None,delimiter='  ',names=titels)
-                data = np.atleast_1d(data)         
+                data = np.genfromtxt(s, dtype=None, delimiter='  ', names=titels)
+                data = np.atleast_1d(data)
                 if isFirstLocation:
                     stations = data
                     isFirstLocation = False
