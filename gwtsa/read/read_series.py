@@ -46,7 +46,7 @@ class ReadSeries:
             # not implemented yet
             pass
         else:
-            raise Exception('Unknown filtype')
+            raise Exception('Unknown filetype')
 
     def rd2wgs(self, xy):
         """

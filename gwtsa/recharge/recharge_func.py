@@ -28,7 +28,6 @@ http://repository.tudelft.nl/view/ir/uuid:baf4fc8c-6311-407c-b01f-c80a96ecd584/
 
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 from recharge import pref, perc, comb
 
 
