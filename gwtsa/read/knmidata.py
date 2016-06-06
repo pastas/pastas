@@ -1,13 +1,15 @@
-# -*- coding: utf-8 -*-
 """
-Created on Fri Mar 18 13:35:39 2016
-
 @author: ruben
+
 """
+
 import requests
 import numpy as np
 from datetime import date
+<<<<<<< HEAD:gwtsa/imports/knmidata.py
 #from io import StringIO
+=======
+>>>>>>> master:gwtsa/read/knmidata.py
 import cStringIO
 import pandas as pd
 import numpy.lib.recfunctions as rfn
@@ -104,9 +106,14 @@ class KnmiStation:
                 line=line.replace('    ','  ')
                 line=line.replace('   ','  ')
                 s = cStringIO.StringIO(line)
+<<<<<<< HEAD:gwtsa/imports/knmidata.py
                 
                 data=np.genfromtxt(s,dtype=None,delimiter='  ',names=titels)
                 data = np.atleast_1d(data)         
+=======
+                data = np.genfromtxt(s, dtype=None, delimiter='  ', names=titels)
+                data = np.atleast_1d(data)
+>>>>>>> master:gwtsa/read/knmidata.py
                 if isFirstLocation:
                     stations=data
                     isFirstLocation=False

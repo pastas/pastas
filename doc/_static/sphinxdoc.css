@@ -229,9 +229,16 @@ div.body a {
     text-decoration: underline;
 }
 
-div.sphinxsidebar {
+div.sidebar {
     margin: 0;
     padding: 0.5em 15px 15px 0;
+    width: 210px;
+    float: right;
+    text-align: left;
+}
+
+div.sphinxsidebar {
+    margin: 0;
     width: 210px;
     float: right;
     text-align: left;
