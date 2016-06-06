@@ -50,7 +50,7 @@ setup(
 
     # See https://PyPI.python.org/PyPI?%3Aaction=list_classifiers
     classifiers=[
-        'Development Status :: 1 - Planning',
+        'Development Status :: 3 - Alpha',
         # Indicate who your project is intended for
         # 'Intended Audience :: Groundwater Modelers',
         # Pick yor license as you wish (should match "license" above)
