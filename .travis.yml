@@ -1,13 +1,36 @@
+# This script is adapted from: http://conda.pydata.org/docs/travis.html
+# Check the Travis file after changes here: http://lint.travis-ci.org
+
 language: python
 python:
-  - "2.6"
+  # We don't actually use the Travis Python, but this keeps it organized.
   - "2.7"
-  - "3.2"
-  - "3.3"
-  - "3.4"
-  - "3.5"
-  - "3.5-dev" # 3.5 development branch
-# command to install dependencies
-install: "pip install ."
+  # - "3.3"
+  # - "3.4"
+install:
+  - sudo apt-get update
+  # We do this conditionally because it saves us some downloading if the
+  # version is the same.
+  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+      wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
+    else
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    fi
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  # Useful for debugging any issues with conda
+  - conda info -a
+
+  # Directly add dependencies here to speed up Travis Builds
+  - deps='numpy>=1.9 matplotlib>=1.4 pandas>=0.15 scipy>=0.15 statsmodels>=0.5'
+  - conda create -q -n test-environment $deps python=$TRAVIS_PYTHON_VERSION
+  - source activate test-environment
+  - pip install --user .
+  - pip install nose
+
 # command to run tests
-script: nosetests
+script:
+   - nosetests tests -v
