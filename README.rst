@@ -1,4 +1,4 @@
-.. image:: https://travis-ci.org/gwtsa/gwtsa.svg?branch=dev
+.. image:: https://travis-ci.org/gwtsa/gwtsa.svg?branch=master
     :target: https://travis-ci.org/gwtsa/gwtsa
 
 GWTSA Introduction
