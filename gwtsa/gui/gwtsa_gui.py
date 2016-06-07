@@ -4,7 +4,7 @@ This file contains the GUI made for gwtsa.
 """
 
 from Tkinter import Tk, W, N, E, S, Toplevel, StringVar
-from ttk import Button, Label, Frame, Labelframe, Treeview, OptionMenu
+from ttk import Button, Label, Frame, Labelframe, Treeview, OptionMenu, Entry
 import tkMessageBox
 import matplotlib
 
@@ -230,20 +230,75 @@ class GwtsaGui(Frame):
                 self.tree.insert('', 'end', text='Evaporation',
                                  values=['Gamma', "500", "1", "100"])
 
-    # Add a stress
+    #
+    # Add a stress through a seperate window
+    #
+
     def add_stress(self):
-        top = Toplevel(self)
-        top.title('Add stress component')
-        top.geometry("300x250+300+300")
-        Label(top, text='Choose stress type').pack()
+        # Create a new pop-up window
+        window = Toplevel(self)
+        window.geometry('+300+300')
+        top = Frame(window)
+        top.grid(column=1, row=1, padx=10, pady=10)
+
+        # Choose the stress type
+        tseries_dict = {'Tseries', 'Recharge'}
+        Label(top, text='Choose stress type:').grid(row=0, column=0,
+                                                    sticky=W)
         tseries = StringVar(top)
-        tseries.set("Tseries")  # initial value
-        opt1 = OptionMenu(top, tseries, "Tseries", "Recharge")
-        opt1.pack()
+        tseries.set('Recharge')  # initial value
+        # tseries.trace('w', self.update_stress_options())
+        opt1 = OptionMenu(top, tseries, *tseries_dict)
+        opt1.grid(row=0, column=1, sticky=E)
+
+        # Choose recharge model
+        recharge_dict = {'Linear', 'Preferential', 'Percolation',
+                         'Combination'}
+        Label(top, text='Choose recharge model:').grid(row=1, column=0,
+                                                       sticky=W)
+        recharge = StringVar(top)
+        recharge.set('Linear')
+        opt2 = OptionMenu(top, recharge, *recharge_dict)
+        opt2.grid(row=1, column=1, sticky=E)
+
+        # Choose Reponse function
+        response_dict = {'Gamma', 'Exponential'}
+        Label(top, text='Response function:').grid(row=2, column=0,
+                                                   sticky=W)
         rfunc = StringVar(top)
         rfunc.set('Exponential')
-        opt2 = OptionMenu(top, rfunc, 'Gamma', 'Exponential')
-        opt2.pack()
+        opt2 = OptionMenu(top, rfunc, *response_dict)
+        opt2.grid(row=2, column=1, sticky=E)
+
+        # Select Rain data
+        rain = StringVar(top)
+        r = Entry(top, textvariable=rain)
+        Label(top, text='Select precipitation data:').grid(row=3, column=0,
+                                                           sticky=W)
+        Button(top, text='Browse', command=lambda: rain.set(
+            tkFileDialog.askopenfilename())).grid(row=3, column=2, sticky=E)
+        r.grid(row=3, column=1, sticky=W)
+
+        # Select Evap data
+        evap = StringVar(top)
+        e = Entry(top, textvariable=evap)
+        Label(top, text='Select evaporation data:').grid(row=4, column=0, sticky=W)
+        Button(top, text='Browse', command=lambda: evap.set(
+            tkFileDialog.askopenfilename())).grid(row=4, column=2, sticky=E)
+        e.grid(row=4, column=1, sticky=W)
+
+        # Lower button row
+        cancel = Button(top, text='Cancel', command=window.quit)
+        cancel.grid(row=5, column=1, sticky=S + W)
+        save = Button(top, text='Add Stress', command=self.make_stress)
+        save.grid(row=5, column=2, sticky=S + E)
+
+    def make_stress(self, precip, evap, rfunc, recharge):
+        precip = ReadSeries(precip.get())
+        evap = ReadSeries(evap.get())
+        rfunc = eval(gwtsa, rfunc.get())
+        recharge = eval(recharge)
+        ts = eval(tseries.get())(precip, evap, rfunc, recharge)
 
     def plot_ir_series(self):
         f = plt.figure()
@@ -339,7 +394,8 @@ def center(toplevel):
 
 def main():
     root = Tk()
-    root.geometry("600x500+300+300")
+    w, h = root.winfo_screenwidth(), root.winfo_screenheight()
+    root.geometry("%dx%d+0+0" % (w, h))
     GwtsaGui(root)
     root.mainloop()
 
