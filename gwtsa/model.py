@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from checks import check_oseries
+from stats import Statistics
 
 
 class Model:
@@ -165,6 +166,9 @@ class Model:
             if self.noisemodel is not None:
                 for k in self.noisemodel.parameters.index:
                     self.noisemodel.parameters.loc[k].value = self.paramdict[k]
+
+        # Make the Statistics class available after optimization
+        self.stats = Statistics(self)
 
     def plot(self, oseries=True):
         """
