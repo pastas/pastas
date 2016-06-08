@@ -58,7 +58,7 @@ class Statistics(object):
         # Sture some other parameters
         self.N = len(self.sseries)  # Number of observations
         self.N_param = ml.fit.nvarys  # Numberof varying parameters
-        self.ml = ml # Store reference to model for future use
+        self.ml = ml  # Store reference to model for future use
 
     # Return the series for a specified tmax and tmin
 
@@ -197,6 +197,26 @@ class Statistics(object):
         iseries = self.get_iseries(tmin, tmax)
         return pacf(iseries, nlags=nlags)
 
+    def GHG(self, tmin=None, tmax=None, series='oseries'):
+        if series == 'oseries':
+            x = []
+            oseries = self.get_oseries(tmin, tmax)
+            for year in np.unique(oseries.index.year):
+                x.append(oseries['%i' % year].sort_values(ascending=False,
+                                                          inplace=False)[
+                         0:3].values)
+            return np.mean(np.array(x))
+
+    def GLG(self, tmin=None, tmax=None, series='oseries'):
+        if series == 'oseries':
+            x = []
+            oseries = self.get_oseries(tmin, tmax)
+            for year in np.unique(oseries.index.year):
+                x.append(oseries['%i' % year].sort_values(ascending=True,
+                                                          inplace=False)[
+                         0:3].values)
+            return np.mean(np.array(x))
+
     def plot_diagnostics(self, tmin=None, tmax=None):
         plt.figure()
         gs = plt.GridSpec(2, 3, wspace=0.2)
@@ -223,8 +243,10 @@ class Statistics(object):
                                                                  'squared error',
                  'avg_dev': 'Average Deviation', 'pearson': 'Pearson R^2',
                  'bic': 'Bayesian Information Criterion', 'aic': 'Akaike '
-                                                                 'Information '
+                                                                 'Information'
                                                                  'Criterion'}
+
+        dutch = {}
 
         output = eval(output)
         names = output.values()
