@@ -198,6 +198,18 @@ class Statistics(object):
         return pacf(iseries, nlags=nlags)
 
     def GHG(self, tmin=None, tmax=None, series='oseries'):
+        """GHG: Gemiddeld Hoog Grondwater (in Dutch)
+
+        3 maximum groundwater level observations for each year divided by 3 times
+        the number of years.
+
+        Parameters
+        ----------
+        series: Optional[str]
+            string for the series to calculate the statistic for. Supported
+            options are: 'oseries'.
+
+        """
         if series == 'oseries':
             x = []
             oseries = self.get_oseries(tmin, tmax)
@@ -208,6 +220,18 @@ class Statistics(object):
             return np.mean(np.array(x))
 
     def GLG(self, tmin=None, tmax=None, series='oseries'):
+        """GLG: Gemiddeld Laag Grondwater (in Dutch)
+
+        3 minimum groundwater level observations for each year divided by 3 times
+        the number of years.
+        
+        Parameters
+        ----------
+        series: Optional[str]
+            string for the series to calculate the statistic for. Supported
+            options are: 'oseries'.
+
+        """
         if series == 'oseries':
             x = []
             oseries = self.get_oseries(tmin, tmax)
