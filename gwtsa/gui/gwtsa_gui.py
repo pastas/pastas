@@ -27,6 +27,8 @@ class GwtsaGui(Frame):
 
         self.obs = None
         self.irs = []
+        self.tserieslist = [] # Empty list to store all tseries objects
+        self.modellist = [] # Empty list to store all the optimized models
 
         self.parent = parent
         self.initUI()
@@ -90,9 +92,9 @@ class GwtsaGui(Frame):
         self.tree = Treeview(Frame2, height=4)
         self.tree.grid(row=0, column=1, rowspan=5, sticky=W + E + N + S)
 
-        self.tree["columns"] = ("three", "four", "five", "six")
+        self.tree["columns"] = ('two','three', 'four', 'five', 'six')
         self.tree.column("#0", width=100)
-        # tree.column("two", width=30)
+        self.tree.column("two", width=30)
         self.tree.column("three", width=45)
         self.tree.column("four", width=15)
         self.tree.column("five", width=15)
@@ -124,14 +126,13 @@ class GwtsaGui(Frame):
                              values=['Constant', "1.02"])
             self.irs.append(None)
 
-        if True:
-            f = Figure(facecolor="white", figsize=(1, 1))
-            self.ir_ax = f.add_subplot(111)
-            self.ir_ax.set_position([0.25, 0.1, 0.7, 0.85])
-            self.ir_canvas = FigureCanvasTkAgg(f, master=Frame2)
-            # self.ir_canvas.show()
-            self.ir_canvas.get_tk_widget().grid(row=0, column=2, rowspan=4,
-                                                sticky=W + E + N + S)
+
+        f = Figure(facecolor="white", figsize=(1, 1))
+        self.ir_ax = f.add_subplot(111)
+        #self.ir_ax.set_position([0.25, 0.1, 0.7, 0.85])
+        self.ir_canvas = FigureCanvasTkAgg(f, master=Frame2)
+        self.ir_canvas.get_tk_widget().grid(row=0, column=2, rowspan=4,
+                                            sticky=W + E + N + S)
         self.ir_graph = None
 
         # %% Frame 3
@@ -271,11 +272,11 @@ class GwtsaGui(Frame):
         opt2.grid(row=2, column=1, sticky=E)
 
         # Select Rain data
-        rain = StringVar(top)
-        r = Entry(top, textvariable=rain)
+        precip = StringVar(top)
+        r = Entry(top, textvariable=precip)
         Label(top, text='Select precipitation data:').grid(row=3, column=0,
                                                            sticky=W)
-        Button(top, text='Browse', command=lambda: rain.set(
+        Button(top, text='Browse', command=lambda: precip.set(
             tkFileDialog.askopenfilename())).grid(row=3, column=2, sticky=E)
         r.grid(row=3, column=1, sticky=W)
 
@@ -288,17 +289,22 @@ class GwtsaGui(Frame):
         e.grid(row=4, column=1, sticky=W)
 
         # Lower button row
-        cancel = Button(top, text='Cancel', command=window.quit)
+        cancel = Button(top, text='Cancel', command=window.quit) # Needs Fix,
+        # windows.quit closes all windows now
         cancel.grid(row=5, column=1, sticky=S + W)
-        save = Button(top, text='Add Stress', command=self.make_stress)
+        save = Button(top, text='Add Stress', command=lambda: self.make_stress (
+            tseries, precip, evap, rfunc, recharge))
         save.grid(row=5, column=2, sticky=S + E)
 
-    def make_stress(self, precip, evap, rfunc, recharge):
-        precip = ReadSeries(precip.get())
-        evap = ReadSeries(evap.get())
-        rfunc = eval(gwtsa, rfunc.get())
-        recharge = eval(recharge)
-        ts = eval(tseries.get())(precip, evap, rfunc, recharge)
+    def make_stress(self, tseries, precip, evap, rfunc, recharge):
+        precip = ReadSeries(precip.get(), 'knmi', variable='RH')
+        evap = ReadSeries(evap.get(), 'knmi', variable='EV24')
+        rfunc = eval(rfunc.get())()
+        recharge = eval(recharge.get())()
+        ts = eval(tseries.get())(precip.series, evap.series, rfunc, recharge)
+        self.tserieslist.append(ts)
+
+        #self.tree.insert()
 
     def plot_ir_series(self):
         f = plt.figure()
@@ -309,11 +315,11 @@ class GwtsaGui(Frame):
         plt.show()
 
     def optimize(self):
-        if self.obs == None:
+        if self.oseries == None:
             tkMessageBox.showerror('No observation series',
                                    'First read observations')
         else:
-            self.ml = Model(self.obs.series)
+            self.ml = Model(self.oseries.series)
             chs = self.tree.get_children()
             for ch in chs:
                 values = self.tree.item(ch, "values")
@@ -322,12 +328,12 @@ class GwtsaGui(Frame):
                 if values[0] == 'Constant':
                     ts = Constant(value=float(values[1]))
                     self.ml.addtseries(ts)
-                elif values[0] == 'Tseries2':
+                elif values[0] == 'Recharge':
                     # not implemented yet
                     pass
                 else:
                     stress = self.irs[self.tree.index(ch)].series
-                    rfunc = getattr(rfunc, values[0])()
+                    rfunc = eval(values[0])()
                     ts = Tseries(stress, rfunc, name=values[0])
                     self.ml.addtseries(ts)
 
