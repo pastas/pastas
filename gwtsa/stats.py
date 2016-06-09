@@ -20,12 +20,18 @@ TODO
 -
 
 """
-
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+
+#import matplotlib.pyplot as plt
 from statsmodels.tsa.stattools import acf, pacf
 from scipy.stats import probplot
+from Tkinter import W, N, E, S, Tk
+from ttk import Button, Label, Frame, Labelframe, Treeview, OptionMenu, Entry, \
+    Notebook
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
 
 
 class Statistics(object):
@@ -61,6 +67,16 @@ class Statistics(object):
         self.ml = ml  # Store reference to model for future use
 
     # Return the series for a specified tmax and tmin
+    def get_series(self, series, tmin=None, tmax=None):
+        assert isinstance(series, pd.Series), 'Expected a Pandas Series object, ' \
+                                              'got %s' % type(series)
+        if tmin is None:
+            tmin = self.series.index.min()
+        if tmax is None:
+            tmax = self.series.index.max()
+        tindex = self.series[tmin: tmax].index
+        series = (self.series)[tindex]
+        return series
 
     def get_rseries(self, tmin=None, tmax=None):
         if tmin is None:
@@ -224,7 +240,7 @@ class Statistics(object):
 
         3 minimum groundwater level observations for each year divided by 3 times
         the number of years.
-        
+
         Parameters
         ----------
         series: Optional[str]
@@ -241,6 +257,10 @@ class Statistics(object):
                          0:3].values)
             return np.mean(np.array(x))
 
+    def descriptive(self, series, tmin, tmax):
+        series = self.get_series(series, tmin, tmax)
+        series.describe()
+
     def plot_diagnostics(self, tmin=None, tmax=None):
         plt.figure()
         gs = plt.GridSpec(2, 3, wspace=0.2)
@@ -256,13 +276,72 @@ class Statistics(object):
         plt.stem(self.pacf())
 
         plt.subplot(gs[0, 2])
-        self.innovations.hist(bins=20)
+        self.iseries.hist(bins=20)
 
         plt.subplot(gs[1, 2])
-        probplot(self.innovations, plot=plt)
+        probplot(self.iseries, plot=plt)
         plt.show()
 
-    def summary(self, tmin=None, tmax=None, output='basic'):
+    def plot_statistics(self):
+        """Plot the statistics with tabs. Experimental!!
+
+        Returns
+        -------
+
+        """
+        self.root = Tk()
+        self.root.title('Model Summary')
+        w, h = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
+        self.root.geometry("%dx%d+0+0" % (w, h))
+
+        top = Frame(self.root)
+        top.columnconfigure(0, weight=1)
+        top.rowconfigure(0, weight=1)
+        top.grid()
+
+        n = Notebook(top)
+        n.grid(row=0, column=0, sticky=W + E + N + S)
+
+        f1 = Frame(n)  # first page, which would get widgets gridded into it
+        f = Figure(facecolor="white", figsize=(2, 1))
+        self.ts_ax = f.add_subplot(311)
+        f.add_subplot(312)
+        f.add_subplot(313)
+
+        # self.ts_ax.set_position([0.05, 0.1, 0.9, 0.85]) # This should not be
+        #  hardcoded
+        self.ts_canvas = FigureCanvasTkAgg(f, master=f1)
+        self.ts_canvas.get_tk_widget().grid(row=1, column=1, columnspan=2,
+                                            rowspan=4,
+                                            sticky=W + E + N + S)
+        f2 = Frame(n)  # second page
+
+        n.add(f1, text='One')
+        Button(f1, text='Test').grid()
+
+        n.add(f2, text='Two')
+        Button(f2, text='Test').grid()
+
+        self.root.mainloop()
+
+    def summary(self, output='basic', tmin=None, tmax=None):
+        """Prints a summary table of the model statistics. The set of statistics
+        that are printed are selected by a dictionary of the desired statistics.
+
+        Parameters
+        ----------
+        output: str or dict
+            dictionary of the desired statistics or a string with one of the
+            predefined sets. Supported options are: 'basic', 'all', and 'dutch'.
+        tmin
+
+        tmax
+
+        Returns
+        -------
+
+        """
+
         basic = {'evp': 'Explained variance percentage', 'rmse': 'Root mean '
                                                                  'squared error',
                  'avg_dev': 'Average Deviation', 'pearson': 'Pearson R^2',
@@ -270,9 +349,20 @@ class Statistics(object):
                                                                  'Information'
                                                                  'Criterion'}
 
-        dutch = {}
+        dutch = {'GHG': 'Gemiddeld Hoog Grondwater', 'GLG': 'Gemiddeld Laag '
+                                                            'Grondwater'}
 
-        output = eval(output)
+        all = {'evp': 'Explained variance percentage', 'rmse': 'Root mean '
+                                                               'squared error',
+               'avg_dev': 'Average Deviation', 'pearson': 'Pearson R^2',
+               'bic': 'Bayesian Information Criterion', 'aic': 'Akaike '
+                                                               'Information'
+                                                               'Criterion',
+               'GHG': 'Gemiddeld Hoog Grondwater', 'GLG': 'Gemiddeld Laag '
+                                                          'Grondwater'}
+
+        if type(output) == str:
+            output = eval(output)
         names = output.values()
         statsvalue = []
 
