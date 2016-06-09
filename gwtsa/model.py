@@ -133,7 +133,7 @@ class Model:
         self.nparam = sum(ts.nparam for ts in self.tserieslist)
 
         # Initialize parameters
-        
+
 
         if self.solvemethod == 'lmfit':
             parameters = lmfit.Parameters()

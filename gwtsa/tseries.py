@@ -305,8 +305,14 @@ class Constant:
 
     """
 
-    def __init__(self, value=0.0):
+    def __init__(self, name='Constant', xy=None, metadata=None, value=0.0):
         self.nparam = 1
+        self.name = name
+        self.xy = xy
+        self.metadata = metadata
+        self.set_init_parameters(value)
+
+    def set_init_parameters(self, value=0.0):
         self.parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
         self.parameters.loc['constant_d'] = (value, np.nan, np.nan, 1)
 
