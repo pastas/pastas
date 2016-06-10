@@ -20,14 +20,6 @@ gwtsa.recharge.recharge module
     :undoc-members:
     :show-inheritance:
 
-gwtsa.recharge.recharge module
-------------------------------
-
-.. automodule:: gwtsa.recharge.recharge
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 gwtsa.recharge.recharge_func module
 -----------------------------------
 

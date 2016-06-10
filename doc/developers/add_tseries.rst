@@ -52,3 +52,37 @@ Special classes
 The `NoiseModel` class is considered as a special class and does not comply with
 the above descriptions. It is recommended to closely studied the NoiseModel class
  when adding a new noise model.
+
+Example Response function class:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+::
+
+    class Tseries(TseriesBase):
+        """
+        Docs go here.
+        """
+        def __init__(self, stress, rfunc, name, metadata=None, xy=(0, 0), freq=None,
+                     fillnan='mean'):
+            TseriesBase.__init__(self, rfunc, name, xy, metadata)
+            self.stress = check_tseries(stress, freq, fillnan)
+            self.set_init_parameters()
+
+        def set_init_parameters(self):
+            """
+            Docs go here
+            """
+            self.parameters = self.rfunc.set_parameters(self.name)
+
+        def simulate(self, tindex=None, p=None):
+            """
+            Docs go here
+            """
+            if p is None:
+                p = np.array(self.parameters.value)
+            b = self.rfunc.block(p)
+            self.npoints = len(self.stress)
+            h = pd.Series(fftconvolve(self.stress, b, 'full')[:self.npoints],
+                          index=self.stress.index)
+            if tindex is not None:
+                h = h[tindex]
+            return h
