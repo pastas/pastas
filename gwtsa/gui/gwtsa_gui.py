@@ -54,10 +54,9 @@ class GwtsaGui(Frame):
         ibtn = Button(Frame1, text="Read Series", command=self.read_series)
         ibtn.grid(row=1, column=0, padx=5, pady=5)
 
-        f = Figure(facecolor="white", figsize=(2, 1))
+        f = Figure(facecolor="white", figsize=(1, 1))
         self.ts_ax = f.add_subplot(111)
-        # self.ts_ax.set_position([0.05, 0.1, 0.9, 0.85]) # This should not be
-        #  hardcoded
+        self.ts_ax.set_position([0.075, 0.1, 0.9, 0.85]) # This should not be hardcoded
         self.ts_canvas = FigureCanvasTkAgg(f, master=Frame1)
         self.ts_canvas.get_tk_widget().grid(row=1, column=1, columnspan=2,
                                             rowspan=4,
@@ -92,9 +91,9 @@ class GwtsaGui(Frame):
         self.tree = Treeview(Frame2, height=4)
         self.tree.grid(row=0, column=1, rowspan=5, sticky=W + E + N + S)
 
-        self.tree["columns"] = ('two','three', 'four', 'five', 'six')
+        self.tree["columns"] = ('three', 'four', 'five', 'six')
         self.tree.column("#0", width=100)
-        self.tree.column("two", width=30)
+        #self.tree.column("two", width=30)
         self.tree.column("three", width=45)
         self.tree.column("four", width=15)
         self.tree.column("five", width=15)
@@ -122,10 +121,14 @@ class GwtsaGui(Frame):
             self.tree.insert('', 'end', text='Well 1',
                              values=['Hantush', "1", "2", "3"], tags=('disabled',))
         else:
-            self.tree.insert('', 'end', 'drainage_level', text='Drainage level',
-                             values=['Constant', "1.02"])
-            self.irs.append(None)
+            #self.tree.insert('', 'end', 'drainage_level', text='Drainage level',
+            #                 values=['Constant', "1.02"])
+            #self.irs.append(None)
+            ts = Constant(value=1.02,name='Drainage level')
+            self.tserieslist.append(ts)
 
+        self.generateTreeView()        
+        
         self.popup = Menu(self.parent, tearoff=0)
         #self.popup.add_command(label="Disable", command=self.disable_ir)
         self.ir_is_disabled=False
@@ -134,9 +137,9 @@ class GwtsaGui(Frame):
         self.popup.add_command(label="Delete", command=self.delete_ir)
         self.tree.bind("<Button-3>", self.popUpMenu)
 
-        f = Figure(facecolor="white", figsize=(1, 1))
+        f = Figure(facecolor="white", figsize=(2, 1))
         self.ir_ax = f.add_subplot(111)
-        #self.ir_ax.set_position([0.25, 0.1, 0.7, 0.85])
+        self.ir_ax.set_position([0.15, 0.15, 0.80, 0.8])
         self.ir_canvas = FigureCanvasTkAgg(f, master=Frame2)
         self.ir_canvas.get_tk_widget().grid(row=0, column=2, rowspan=4,
                                             sticky=W + E + N + S)
@@ -192,27 +195,45 @@ class GwtsaGui(Frame):
             self.ir_graph = None
 
         print(self.tree.selection())
-        values = self.tree.item(self.tree.selection(), "values")
-        # tag=self.tree.item(self.tree.selection(),"tag")
-
-        if values[0] == 'Constant':
-            pass
-        elif values[0] == 'Tseries2':
-            pass
-        elif values[0] == 'Factor':
-            # get the brother from the parent
-            pass
+        if False:
+            values = self.tree.item(self.tree.selection(), "values")
+            # tag=self.tree.item(self.tree.selection(),"tag")
+    
+            if values[0] == 'Constant':
+                pass
+            elif values[0] == 'Tseries2':
+                pass
+            elif values[0] == 'Factor':
+                # get the brother from the parent
+                pass
+            else:
+                ir = getattr(rfunc, values[0])()
+                # s=ir.block([1,2,3])
+                p = list(values[1:ir.nparam + 1])
+                p = [float(x) for x in p]
+                s = ir.block(p)
+    
+                self.ir_graph, = self.ir_ax.plot(s)
+                self.ir_ax.relim()
+                self.ir_ax.autoscale_view()
+                self.ir_canvas.show()
         else:
-            ir = getattr(rfunc, values[0])()
-            # s=ir.block([1,2,3])
-            p = list(values[1:ir.nparam + 1])
-            p = [float(x) for x in p]
-            s = ir.block(p)
-
-            self.ir_graph, = self.ir_ax.plot(s)
-            self.ir_ax.relim()
-            self.ir_ax.autoscale_view()
-            self.ir_canvas.show()
+            ts=self.tserieslist[self.tree.index(self.tree.selection())]
+            cl=str(ts.__class__);
+            if cl=='gwtsa.tseries.Constant':
+                pass
+            elif cl=='gwtsa.tseries.NoiseModel':
+                pass
+            else:
+                ir=ts.rfunc
+                p=ts.parameters['value']
+                print(p)
+                s=ir.block(p)
+                
+                self.ir_graph, = self.ir_ax.plot(s)
+                self.ir_ax.relim()
+                self.ir_ax.autoscale_view()
+                self.ir_canvas.show()
 
     # Read the observed time series
     def read_series(self):
@@ -251,9 +272,14 @@ class GwtsaGui(Frame):
             self.settings['ir_file'] = irfname
             self.save_settings()
             series = ReadSeries(irfname, 'knmi', variable='RH')
-            self.irs.append(series)
-            self.tree.insert('', 'end', text='Precipitation',
+            if False:
+                self.irs.append(series)
+                self.tree.insert('', 'end', text='Precipitation',
                              values=['Gamma', "500", "1", "100"])
+            else:
+                ts = Tseries(series.series, Gamma(), name='Precipitation')
+                self.tserieslist.append(ts)
+                self.generateTreeView()
             # self.tree.insert('recharge', 'end', text='Evaporation',
             #            values=['Factor',"0.79"])
             if False:
@@ -261,6 +287,21 @@ class GwtsaGui(Frame):
                 self.irs.append(series)
                 self.tree.insert('', 'end', text='Evaporation',
                                  values=['Gamma', "500", "1", "100"])
+                                 
+    def generateTreeView(self):
+        for ts in self.tserieslist:
+            values=ts.parameters['value']
+            valueStr = []
+            for v in values:
+                if v >= 1000:
+                    valueStr.append('{:.0f}'.format(v))
+                elif v >= 100:
+                    valueStr.append('{:.1f}'.format(v))
+                else:
+                    valueStr.append('{:.2f}'.format(v))
+                        
+        valueStr = [Gamma.__name__] + valueStr
+        self.tree.insert('','end', text=ts.name,values=valueStr)
 
     #
     # Add a stress through a seperate window
@@ -320,7 +361,7 @@ class GwtsaGui(Frame):
         e.grid(row=4, column=1, sticky=W)
 
         # Lower button row
-        cancel = Button(top, text='Cancel', command=window.quit) # Needs Fix,
+        cancel = Button(top, text='Cancel', command=window.destroy) # Needs Fix,
         # windows.quit closes all windows now
         cancel.grid(row=5, column=1, sticky=S + W)
         save = Button(top, text='Add Stress', command=lambda: self.make_stress (
@@ -334,6 +375,7 @@ class GwtsaGui(Frame):
         recharge = eval(recharge.get())()
         ts = eval(tseries.get())(precip.series, evap.series, rfunc, recharge)
         self.tserieslist.append(ts)
+        self.generateTreeView()
 
         #self.tree.insert()
 
@@ -351,23 +393,27 @@ class GwtsaGui(Frame):
                                    'First read observations')
         else:
             self.ml = Model(self.oseries.series)
-            chs = self.tree.get_children()
-            for ch in chs:
-                values = self.tree.item(ch, "values")
-                print(values)
-
-                if values[0] == 'Constant':
-                    ts = Constant(value=float(values[1]))
+            if False:
+                chs = self.tree.get_children()
+                for ch in chs:
+                    values = self.tree.item(ch, "values")
+                    print(values)
+    
+                    if values[0] == 'Constant':
+                        ts = Constant(value=float(values[1]))
+                        self.ml.addtseries(ts)
+                    elif values[0] == 'Recharge':
+                        # not implemented yet
+                        pass
+                    else:
+                        stress = self.irs[self.tree.index(ch)].series
+                        rfunc = eval(values[0])()
+                        ts = Tseries(stress, rfunc, name=values[0])
+                        self.ml.addtseries(ts)
+            else:
+                for ts in self.tserieslist:
+                    #TODO Make a deep copy
                     self.ml.addtseries(ts)
-                elif values[0] == 'Recharge':
-                    # not implemented yet
-                    pass
-                else:
-                    stress = self.irs[self.tree.index(ch)].series
-                    rfunc = eval(values[0])()
-                    ts = Tseries(stress, rfunc, name=values[0])
-                    self.ml.addtseries(ts)
-
             # solve
             self.ml.solve()
 
@@ -431,8 +477,13 @@ def center(toplevel):
 
 def main():
     root = Tk()
-    w, h = root.winfo_screenwidth(), root.winfo_screenheight()
-    root.geometry("%dx%d+0+0" % (w, h))
+    #w, h = root.winfo_screenwidth(), root.winfo_screenheight()
+    #root.geometry("%dx%d+0+0" % (w, h))
+    root.geometry("600x500+300+300")
+    sw, sh = root.winfo_screenwidth(), root.winfo_screenheight()
+    w=600
+    h=500
+    root.geometry("%dx%d+%d+%d" % (w, h, (sw-w)/2, (sh-h)/2))
     GwtsaGui(root)
     root.mainloop()
 
