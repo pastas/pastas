@@ -4,11 +4,12 @@ Created on Wed Mar 30 16:07:44 2016
 
 @author: ruben
 """
+
 import matplotlib.pyplot as plt
-from dinodata import DinoGrondwaterstand
+from gwtsa.read.dinodata import DinoGrondwaterstand
 
 # %% hoe te gebruiken?
-fname = 'B32D0136001_1.csv'
+fname = '../data/B32D0136001_1.csv'
 dino = DinoGrondwaterstand(fname)
 
 # %% teken

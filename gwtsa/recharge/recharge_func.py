@@ -1,13 +1,8 @@
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from recharge import pref, perc, comb
-
 """recharge_func module
 Contains the classes for the different models that are available to calculate the
 recharge from evaporation and precipitation data.
 
-Each Recharge class contains at leat the following:
+Each Recharge class contains at least the following:
 
 Attributes
 ----------
@@ -31,9 +26,14 @@ levels: Application to the Veluwe. MSc. thesis, TU Delft.
 http://repository.tudelft.nl/view/ir/uuid:baf4fc8c-6311-407c-b01f-c80a96ecd584/
 """
 
+import pandas as pd
+import numpy as np
+from recharge import pref, perc, comb
+
 
 class Linear:
-    """Linear recharge model
+    """
+    Linear recharge model
 
     The recharge to the groundwater is calculated as:
     R = P - f * E
@@ -42,21 +42,20 @@ class Linear:
 
     def __init__(self):
         self.nparam = 1
-        self.dt = 1
-        self.solver = 1
 
     def set_parameters(self, name):
         parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
         parameters.loc[name + '_f'] = (-1.0, -5.0, 0.0, 1)
         return parameters
 
-    def simulate(self, precipitation, evaporation, p=None):
-        recharge = precipitation + p * evaporation
+    def simulate(self, precip, evap, p=None):
+        recharge = precip + p * evap
         return recharge
 
 
 class Preferential:
-    """Preferential flow recharge model
+    """
+    Preferential flow recharge model
 
     The water balance for the root zone is calculated as:
     dS / dt = Pe * (1 - (Sr / Srmax)**Beta)- Epu * min(1, Sr / (0.5 * Srmax))
@@ -75,15 +74,16 @@ class Preferential:
         parameters.loc[name + '_Imax'] = (1.5e-3, np.nan, np.nan, 0)
         return parameters
 
-    def simulate(self, precipitation, evaporation, p=None):
-        t = np.arange(len(precipitation))
-        recharge = pref(t, precipitation, evaporation, p[0], p[1], p[2],
+    def simulate(self, precip, evap, p=None):
+        t = np.arange(len(precip))
+        recharge = pref(t, precip, evap, p[0], p[1], p[2],
                         self.dt, self.solver)[0]
         return recharge
 
 
 class Percolation:
-    """Percolation flow recharge model
+    """
+    Percolation flow recharge model
 
     Other water balance for the root zone s calculated as:
 
@@ -104,15 +104,16 @@ class Percolation:
         parameters.loc[name + '_Imax'] = (1.5e-3, 0.0, np.nan, 0)
         return parameters
 
-    def simulate(self, precipitation, evaporation, p=None):
-        t = np.arange(len(precipitation))
-        recharge = perc(t, precipitation, evaporation, p[0], p[1], p[2], p[3],
+    def simulate(self, precip, evap, p=None):
+        t = np.arange(len(precip))
+        recharge = perc(t, precip, evap, p[0], p[1], p[2], p[3],
                         self.dt, self.solver)[0]
         return recharge
 
 
 class Combination:
-    """Combination flow recharge model
+    """
+    Combination flow recharge model
 
     Other water balance for the root zone is calculated as:
 
@@ -135,9 +136,9 @@ class Combination:
         parameters.loc[name + '_Imax'] = (1.5e-3, 0.0, np.nan, 0)
         return parameters
 
-    def simulate(self, precipitation, evaporation, p=None):
-        t = np.arange(len(precipitation))
-        Rs, Rf = comb(t, precipitation, evaporation, p[0], p[1], p[2], p[3],
+    def simulate(self, precip, evap, p=None):
+        t = np.arange(len(precip))
+        Rs, Rf = comb(t, precip, evap, p[0], p[1], p[2], p[3],
                       p[4], self.dt, self.solver)[0:2]
         recharge = Rs + Rf  # Slow plus fast recharge
         return recharge

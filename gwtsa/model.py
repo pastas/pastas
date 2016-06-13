@@ -7,8 +7,33 @@ from checks import check_oseries
 
 
 class Model:
-    def __init__(self, oseries, xy=(0, 0), metadata=None, freq=None):
-        self.oseries = check_oseries(oseries, freq)
+    def __init__(self, oseries, xy=(0, 0), metadata=None, freq=None,
+                 fillnan='drop'):
+        """
+        Initiates a time series model.
+
+        Parameters
+        ----------
+        oseries: pd.Series
+            pandas Series object containing the dependent time series. The
+            observation can be non-equidistant.
+        xy: Optional[tuple]
+            XY location of the oseries in lat-lon format.
+        metadata: Optional[dict]
+            Dictionary containing metadata of the model.
+        freq: Optional[str]
+            String containing the desired frequency. By default freq=None and the
+            observations are used as they are. The required string format is found
+            at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset
+            -aliases
+        fillnan: Optional[str or float]
+            Methods or float number to fill nan-values. Default values is
+            'drop'. Currently supported options are: 'interpolate', float,
+            'mean' and, 'drop'. Interpolation is performed with a standard linear
+            interpolation.
+
+        """
+        self.oseries = check_oseries(oseries, freq, fillnan)
         self.xy = xy
         self.metadata = metadata
         self.odelt = self.oseries.index.to_series().diff() / np.timedelta64(1, 'D')
@@ -17,12 +42,35 @@ class Model:
         self.noisemodel = None
 
     def addtseries(self, tseries):
+        """
+        adds a time series model component to the Model.
+
+        """
         self.tserieslist.append(tseries)
 
     def addnoisemodel(self, noisemodel):
+        """
+        Adds a noise model to the time series Model.
+
+        """
         self.noisemodel = noisemodel
 
-    def simulate(self, t=None, p=None, noise=False):
+    def simulate(self, t=None, p=None):
+        """
+
+        Parameters
+        ----------
+        t: Optional[pd.series.index]
+            Time indices to use for the simulation of the time series model.
+        p: Optional[array]
+            Array of the parameters used in the time series model.
+        noise:
+
+        Returns
+        -------
+        Pandas Series object containing the simulated time series.
+
+        """
         if t is None:
             t = self.oseries.index
         if p is None:
@@ -36,6 +84,10 @@ class Model:
 
     def residuals(self, parameters, tmin=None, tmax=None, solvemethod='lmfit',
                   noise=False):
+        """
+        Method that is called by the solve fucntion to calculate the residuals.
+
+        """
         if tmin is None:
             tmin = self.oseries.index.min()
         if tmax is None:
@@ -55,19 +107,40 @@ class Model:
 
     def solve(self, tmin=None, tmax=None, solvemethod='lmfit', report=True,
               noise=True):
+        """
+        Methods to solve the time series model.
+
+        Parameters
+        ----------
+        tmin: Optional[str]
+            String with a start date for the simulation period (E.g. '1980')
+        tmax: Optional[str]
+            String with an end date for the simulation period (E.g. '2010')
+        solvemethod: Optional[str]
+            Methods used to solve the time series model. Only 'lmfit' is currently
+            supported.
+        report: Boolean
+            Print a report to the screen after optimization finished.
+        noise: Boolean
+            Use the nose model (True) or not (False).
+
+        """
         if noise and (self.noisemodel is None):
             print 'Warning, solution with noise model while noise model is not ' \
                   'defined. No noise model is used'
         self.solvemethod = solvemethod
         self.nparam = sum(ts.nparam for ts in self.tserieslist)
+
+        # Initialize parameters
+        
+
         if self.solvemethod == 'lmfit':
             parameters = lmfit.Parameters()
             for ts in self.tserieslist:
                 for k in ts.parameters.index:
                     p = ts.parameters.loc[k]
-                    pvalues = np.where(np.isnan(p.values), None,
-                                       p.values)  # needed because lmfit doesn't
-                    # take nan as input
+                    # needed because lmfit doesn't take nan as input
+                    pvalues = np.where(np.isnan(p.values), None, p.values)
                     parameters.add(k, value=pvalues[0], min=pvalues[1],
                                    max=pvalues[2], vary=pvalues[3])
             if self.noisemodel is not None:
@@ -94,6 +167,18 @@ class Model:
                     self.noisemodel.parameters.loc[k].value = self.paramdict[k]
 
     def plot(self, oseries=True):
+        """
+
+        Parameters
+        ----------
+        oseries: Boolean
+            True to plot the observed time series.
+
+        Returns
+        -------
+        Plot of the simulated and optionally the observed time series
+
+        """
         h = self.simulate()
         plt.figure()
         h.plot()
@@ -102,7 +187,19 @@ class Model:
         plt.show()
 
     def plot_results(self, savefig=False):
-        plt.figure('Model Results', facecolor='white', figsize=(16, 12))
+        """
+
+        Parameters
+        ----------
+        savefig: Optional[Boolean]
+            True to save the figure, False is default. Figure is saved in the
+            current working directory when running your python scripts.
+
+        Returns
+        -------
+
+        """
+        plt.figure('Model Results', facecolor='white')
         gs = plt.GridSpec(3, 4, wspace=0.2)
         # Plot the Groundwater levels
         h = self.simulate()

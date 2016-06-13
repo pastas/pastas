@@ -1,48 +1,44 @@
+"""
+tseries module
+    Constains class for time series objects.
+
+    Each response function class needs the following:
+
+    Attributes
+    ----------
+    nparam : int
+        Number of parameters.
+    name : str
+        Name of this tseries object. Used as prefix for the parameters.
+    parameters : pandas Dataframe
+        Dataframe containing the parameters.
+
+    Methods
+    -------
+    simulate : Returns pandas Series Object with simulate values
+               Input: tindex: Optional pandas TimeIndex. Time index to simulate
+               values
+               p: Optional[array-like]. Parameters used for simulation. If p is not
+               provided, parameters attribute will be used.
+               Returns: pandas Series of simulated values
+"""
+
 import numpy as np
 import pandas as pd
 from scipy.signal import fftconvolve
 
 from checks import check_tseries
 
-"""
-tseries module.
-Constains class for time series objects.
-
-Each response function class needs the following:
-
-Attributes
-----------
-nparam : int
-    Number of parameters. 
-name : str
-    Name of this tseries object. Used as prefix for the parameters.
-parameters : pandas Dataframe
-    Dataframe containing the parameters.
-
-Methods
--------
-simulate : Returns pandas Series Object with simulate values
-           Input: tindex: Optional pandas TimeIndex. Time index to simulate values
-           p: Optional[array-like]. Parameters used for simulation. If p is not
-           provided, parameters attribute will be used.
-           Returns: pandas Series of simulated values
-"""
-
 
 class TseriesBase:
     """Tseries Base class called by each Tseries object.
+
     """
 
-    def __init__(self, stress, rfunc, name, stressnames, xy, metadata, freq,
-                 fillna):
-        self.stress = check_tseries(stress, freq, fillna)
+    def __init__(self, rfunc, name, xy, metadata):
         self.rfunc = rfunc
         self.nparam = rfunc.nparam
         self.name = name
-        if stressnames is None:
-            self.stress_names = [k.name for k in self.stress]
-        else:
-            self.stress_names = stressnames
         self.xy = xy
         self.metadata = metadata
 
@@ -51,7 +47,7 @@ class TseriesBase:
 
         Usage
         -----
-        E.g. ts2.set_parameters(recharge_A=200)
+        >>> ts2.set_parameters(recharge_A=200)
 
         """
         for i in kwargs:
@@ -59,19 +55,47 @@ class TseriesBase:
 
 
 class Tseries(TseriesBase):
-    """Time series model consisting of the convolution of one stress with one
+    """
+    Time series model consisting of the convolution of one stress with one
     response function.
+
+    Parameters
+    ----------
+    stress: pd.Series
+        pandas Series object containing the stress.
+    rfunc: rfunc class object
+        Response function used in the convolution with the stess.
+    name: str
+        Name of the stress
+    metadata: Optional[dict]
+        dictionary containing metadata about the stress.
+    xy: Optional[tuple]
+        XY location in lon-lat format used for making maps.
+    freq: Optional[str]
+        Frequency to which the stress series are transformed. By default,
+        the frequency is inferred from the data and that frequency is used.
+        The required string format is found
+        at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset
+        -aliases
+    fillnan: Optional[str or float]
+        Methods or float number to fill nan-values. Default values is
+        'mean'. Currently supported options are: 'interpolate', float,
+        and 'mean'. Interpolation is performed with a standard linear
+        interpolation.
 
     """
 
-    def __init__(self, stress, rfunc, name, metadata=None, stressnames=None,
-                 xy=(0, 0), freq=None, fillna='mean'):
-        TseriesBase.__init__(self, stress, rfunc, name, metadata, stressnames, xy,
-                             freq, fillna)
+    def __init__(self, stress, rfunc, name, metadata=None, xy=(0, 0), freq=None,
+                 fillnan='mean'):
+        TseriesBase.__init__(self, rfunc, name, xy, metadata)
+        self.stress = check_tseries(stress, freq, fillnan)
         self.set_init_parameters()
-        self.stress = self.stress[0]  # unpack stress list for this Tseries
 
     def set_init_parameters(self):
+        """
+        Set the initial parameters back to their default values.
+
+        """
         self.parameters = self.rfunc.set_parameters(self.name)
 
     def simulate(self, tindex=None, p=None):
@@ -102,54 +126,69 @@ class Tseries(TseriesBase):
         return h
 
 
-class Tseries2(TseriesBase):
-    """Time series model consisting of the convolution of two stresses with
-    one response function.
+class Recharge(TseriesBase):
+    """Time series model performing convolution on groundwater recharge
+    calculated from precipitation and evaporation with one response function.
 
-    stress = stress1 + factor * stress2
+    Parameters
+    ----------
+    precip: pd.Series
+        pandas Series object containing the precipitation stress.
+    evap: pd.Series
+        pandas Series object containing the evaporationstress.
+    rfunc: rfunc class object
+        Response function used in the convolution with the stess.
+    recharge: recharge_func class object
+    name: str
+        Name of the stress
+    metadata: Optional[dict]
+        dictionary containing metadata about the stress.
+    xy: Optional[tuple]
+        XY location in lon-lat format used for making maps.
+    freq: Optional[list of str]
+        Frequency to which the stress series are transformed. By default,
+        the frequency is inferred from the data and that frequency is used.
+        The required string format is found
+        at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset
+        -aliases
+    fillnan: Optional[list of str or float]
+        Methods or float number to fill nan-values. Default value for
+        precipitation is 'mean' and default for evaporation is 'interpolate'.
+        Currently supported options are: 'interpolate', float,
+        and 'mean'. Interpolation is performed with a standard linear
+        interpolation.
 
-    Last parameters is factor
+    Notes
+    -----
+    Please check the documentation of the recharge_func classes for more details.
+
+    References
+    ----------
+    [1] R.A. Collenteur [2016] Non-linear time series analysis of deep groundwater
+    levels: Application to the Veluwe. MSc. thesis, TU Delft.
+    http://repository.tudelft.nl/view/ir/uuid:baf4fc8c-6311-407c-b01f-c80a96ecd584/
 
     """
 
-    def __init__(self, stress, rfunc, name, metadata=None, stressnames=None,
-                 xy=(0, 0), freq=None, fillna='mean'):
-        TseriesBase.__init__(self, stress, rfunc, name, metadata, stressnames,
-                             xy, freq, fillna)
-        self.nparam += 1
-        self.set_init_parameters()
+    def __init__(self, precip, evap, rfunc, recharge,
+                 name='Recharge', metadata=None, xy=(0, 0), freq=[None, None],
+                 fillnan=['mean', 'interpolate']):
+        TseriesBase.__init__(self, rfunc, name, xy, metadata)
 
-    def set_init_parameters(self):
-        self.parameters = self.rfunc.set_parameters(self.name)
-        self.parameters.loc[self.name + '_f'] = (-1.0, -5.0, 0.0, 1)
+        # Check and name the time series
+        P = check_tseries(precip, freq[0], fillnan[0])
+        E = check_tseries(evap, freq[1], fillnan[1])
 
-    def simulate(self, tindex=None, p=None):
-        if p is None:
-            p = np.array(self.parameters.value)
-        b = self.rfunc.block(p[:-1])  # nparam-1 depending on rfunc
-        stress = self.stress[0] + p[-1] * self.stress[1]
-        stress.fillna(stress.mean(), inplace=True)
-        self.npoints = len(stress)
-        h = pd.Series(fftconvolve(stress, b, 'full')[:self.npoints],
-                      index=stress.index)
-        if tindex is not None:
-            h = h[tindex]
-        return h
+        # Select data where both series are available
+        self.precip = P[P.index & E.index]
+        self.evap = E[P.index & E.index]
+        self.evap.name = 'Evaporation'
+        self.precip.name = 'Precipitation'
 
+        # The recharge calculation needs arrays
+        self.precip_array = np.array(self.precip)
+        self.evap_array = np.array(self.evap)
 
-class TseriesRecharge(TseriesBase):
-    """
-    Time series model consisting of a recharge model to calculate the recharge
-    convoluted with a response function.
-
-    The recharge model has to be provided.
-    """
-
-    def __init__(self, stress, rfunc, recharge, name, metadata=None,
-                 stressnames=None,
-                 xy=(0, 0), freq=None, fillna='mean'):
-        TseriesBase.__init__(self, stress, rfunc, name, stressnames, xy,
-                             metadata, freq, fillna)
         self.recharge = recharge
         self.set_init_parameters()
         self.nparam = self.rfunc.nparam + self.recharge.nparam
@@ -161,42 +200,81 @@ class TseriesRecharge(TseriesBase):
     def simulate(self, tindex=None, p=None):
         if p is None:
             p = np.array(self.parameters.value)
-        b = self.rfunc.block(p[:-self.recharge.nparam])
-        self.npoints = len(self.stress[0])
-        P = np.array(self.stress[0])
-        E = np.array(self.stress[1])
-        rseries = self.recharge.simulate(P, E, p[-self.recharge.nparam:])
+        b = self.rfunc.block(p[:-self.recharge.nparam])  # Block response
+        rseries = self.recharge.simulate(self.precip_array, self.evap_array,
+                                         p[-self.recharge.nparam:])
         self.npoints = len(rseries)
         h = pd.Series(fftconvolve(rseries, b, 'full')[:self.npoints],
-                      index=self.stress[0].index)
+                      index=self.precip.index, name='Recharge')
         if tindex is not None:
             h = h[tindex]
         return h
 
-def simulate_recharge(self, p=None):
-    if p is None:
-        p = np.array(self.parameters.value)
-    P = np.array(self.stress[0])
-    E = np.array(self.stress[1])
-    rseries = self.recharge.simulate(P, E, p[-self.recharge.nparam:])
-    rseries = pd.Series(rseries, index=self.stress[0].index)
-    return rseries
+    def simulate_recharge(self, p=None):
+        """
+        Returns the simulated recharge with the parameters saves in the recharge
+        object.
+
+        Parameters
+        ----------
+        p: optional[pd.DataFrame]
+            Array containing the parameters of the recharge model.
+        Returns
+        -------
+            Other simulated recharge series as a pd. Series object.
+
+        """
+        if p is None:
+            p = np.array(self.parameters.value)
+        rseries = self.recharge.simulate(self.precip_array, self.evap_array,
+                                         p[-self.recharge.nparam:])
+        rseries = pd.Series(rseries, index=self.precip.index,
+                            name='Recharge')
+        return rseries
 
 
-class TseriesWell(TseriesBase):
-    """Time series model consisting of the convolution of two stresses with
+class Well(TseriesBase):
+    """Time series model consisting of the convolution of one or more stresses with
     one response function.
 
-    stress = stress1 + factor * stress2
-
-    Last parameters is factor
+    Parameters
+    ----------
+    stress: list
+        list of pandas Series objects containing the stresses.
+    rfunc: rfunc class object
+        Response function used in the convolution with the stess.
+    name: str
+        Name of the stress
+    metadata: Optional[dict]
+        dictionary containing metadata about the stress.
+    xy: Optional[tuple]
+        XY location in lon-lat format used for making maps.
+    freq: Optional[str]
+        Frequency to which the stress series are transformed. By default,
+        the frequency is inferred from the data and that frequency is used.
+        The required string format is found
+        at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset
+        -aliases
+    fillnan: Optional[str or float]
+        Methods or float number to fill nan-values. Default values is
+        'mean'. Currently supported options are: 'interpolate', float,
+        and 'mean'. Interpolation is performed with a standard linear
+        interpolation.
 
     """
 
+    # TODO implement this function
     def __init__(self, stress, rfunc, r, name, metadata=None, stressnames=None,
                  xy=(0, 0), freq=None, fillna='mean'):
-        TseriesBase.__init__(self, stress, rfunc, name, metadata, stressnames,
-                             xy, freq, fillna)
+        TseriesBase.__init__(self, rfunc, name, xy, metadata)
+
+        # Check stresses
+        self.stress = []
+        if type(stress) is pd.Series:
+            stress = [stress]
+        for i in range(len(stress)):
+            self.stress.append(check_tseries(stress, freq, fillna))
+
         self.set_init_parameters()
         self.r = r
 
@@ -217,7 +295,7 @@ class TseriesWell(TseriesBase):
 
 
 class Constant:
-    """A constant value.
+    """A constant value that is added to the time series model.
 
     Parameters
     ----------

@@ -1,52 +1,118 @@
-import numpy as np
+"""
+checks module
+    This module is used to check the time series.
+
+"""
 import pandas as pd
 
 
-def check_oseries(oseries, freq):
-    assert isinstance(oseries, pd.Series), 'Expected a Pandas Series object, ' \
-                                           'got %s' % type(oseries)
-    # Deal with frequency of the time series
-    if freq:
-        oseries = oseries.resample(freq)
-    # Drop nan-values form the time series
-    oseries.dropna(inplace=True)
-    return oseries
+def check_oseries(oseries, freq, fillnan='drop'):
+    """Check the observed time series before running a simulation.
 
-
-def check_tseries(stress, freq, fillna):
-    """ Check the stress series on missing values and constant frequency.
+    Parameters
+    ----------
+    oseries: pd.Series
+        Pandas series object containing the observed time series.
+    freq: optional[str]
+        String containing the desired frequency. The required string format is found
+        at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset
+        -aliases
+    fillnan: optional[str or float]
+        Methods or float number to fill nan-values. Default values is
+        'drop'. Currently supported options are: 'interpolate', float,
+        'mean' and, 'drop'. Interpolation is performed with a standard linear
+        interpolation.
 
     Returns
     -------
-    list of stresses:
-        - Checked for Missing values
-        - Checked for frequency of stress
+    oseries: pd.Series
+        Pandas series object checked for nan-values and with the required frequency.
+
+    """
+    assert isinstance(oseries, pd.Series), 'Expected a Pandas Series object, ' \
+                                           'got %s' % type(oseries)
+
+    # make a deep copy to preserve original imported data
+    oseries = oseries.loc[oseries.first_valid_index():oseries.last_valid_index(
+    )].copy(deep=True)
+
+    # Deal with frequency of the time series
+    if freq:
+        print Warning
+        oseries = oseries.resample(freq)
+
+    # Handle nan-values in oseries
+    if oseries.hasnans:
+        print '%i nan-value(s) in the oseries was/were found and handled/filled ' \
+              'with: %s' % (oseries.isnull().values.sum(), fillnan)
+        if fillnan == 'drop':
+            oseries.dropna(inplace=True)  # Default option
+        elif fillnan == 'mean':
+            oseries.fillna(oseries.mean(), inplace=True)
+        elif fillnan == 'interpolate':
+            oseries.interpolate(method='time', inplace=True)
+        elif type(fillnan) == float:
+            oseries.fillna(fillnan, inplace=True)
+        else:
+            print 'User-defined option for fillnan %s isinstance() not supported' \
+                  % fillnan
+
+    return oseries
+
+
+def check_tseries(stress, freq, fillnan):
+    """ Check the stress series when creating a time series model.
+
+    Parameters
+    ----------
+    stress: pd.Series
+        Pandas series object containing the stress time series.
+    freq: str
+        String containing the desired frequency. The required string format is found
+        at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset
+        -aliases
+    fillnan: optional: str or float
+        Methods or float number to fill nan-values. Default values is
+        'mean'. Currently supported options are: 'interpolate', float,
+        and 'mean'. Interpolation is performed with a standard linear
+        interpolation.
+
+    Returns
+    -------
+    the corrected stress as pd.Series:
+        - nan-values dropped at begin and end.
+        - frequency made constant.
+        - handled nan-values in between.
     """
 
-    if type(stress) is pd.Series:
-        stress = [stress]
-    stresses = []
-    for k in stress:
-        assert isinstance(k, pd.Series), 'Expected a Pandas Series, ' \
-                                         'got %s' % type(k)
-        # Deal with frequency of the stress series
-        if freq:
-            k = k.asfreq(freq)
-        else:
-            freq = pd.infer_freq(k.index)
-            k = k.asfreq(freq)
+    assert isinstance(stress, pd.Series), 'Expected a Pandas Series, ' \
+                                          'got %s' % type(stress)
 
-        # Deal with nan-values in stress series
-        if k.hasnans:
-            print '%i nan-value(s) was/were found and filled with: %s' % (
-                k.isnull(
-                ).values.sum(), fillna)
-            if fillna == 'interpolate':
-                k.interpolate('time')
-            elif type(fillna) == float:
-                print fillna, 'init'
-                k.fillna(fillna, inplace=True)
-            else:
-                k.fillna(k.mean(), inplace=True)  # Default option
-        stresses.append(k)
-    return stresses
+    # Drop nan-values at the beginning and end of the time series
+    stress = stress.loc[stress.first_valid_index():stress.last_valid_index(
+    )].copy(deep=True)
+
+    # Make frequency of the stress series constant
+    if freq:
+        stress = stress.asfreq(freq)
+    else:
+        freq = pd.infer_freq(stress.index)
+        print 'Inferred frequency from time series: freq=%s' % freq
+        stress = stress.asfreq(freq)
+
+    # Handle nan-values in stress series
+    if stress.hasnans:
+        print '%i nan-value(s) was/were found and filled with: %s' % (
+            stress.isnull().values.sum(), fillnan)
+        if fillnan == 'mean':
+            stress.fillna(stress.mean(), inplace=True)  # Default option
+        elif fillnan == 'interpolate':
+            stress.interpolate(method='time')
+        elif type(fillnan) == float:
+            print fillnan, 'init'
+            stress.fillna(fillnan, inplace=True)
+        else:
+            print 'User-defined option for fillnan %s isinstance() not supported' \
+                  % fillnan
+
+    return stress
