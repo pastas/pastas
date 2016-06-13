@@ -107,7 +107,7 @@ class Model:
         return r
 
     def solve(self, tmin=None, tmax=None, solvemethod='lmfit', report=True,
-              noise=True):
+              noise=True, initialize=False):
         """
         Methods to solve the time series model.
 
@@ -133,7 +133,9 @@ class Model:
         self.nparam = sum(ts.nparam for ts in self.tserieslist)
 
         # Initialize parameters
-
+        if initialize is True:
+            for ts in self.tserieslist:
+                ts.set_init_parameters()
 
         if self.solvemethod == 'lmfit':
             parameters = lmfit.Parameters()
@@ -169,6 +171,7 @@ class Model:
 
         # Make the Statistics class available after optimization
         self.stats = Statistics(self)
+
 
     def plot(self, oseries=True):
         """

@@ -26,7 +26,7 @@ Recharge tseries object is created. E.g.:
 
 >>> ts = Recharge(precip, evap, Gamma(), Preferential())
 
-In this section we will have a closer look at the Preferential() class. 
+In this section we will have a closer look at the Preferential() class.
 
 ::
 
