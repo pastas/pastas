@@ -7,14 +7,14 @@ test the functioning of gwtsa during development.
 from gwtsa import *
 
 # read observations
-fname = '../data/B32D0136001_1.csv'
+fname = 'data/B32D0136001_1.csv'
 obs = ReadSeries(fname,'dino')
 
 # Create the time series model
 ml = Model(obs.series)
 
 # read climate data
-fname = '../data/KNMI_20160522.txt'
+fname = 'data/KNMI_20160522.txt'
 RH=ReadSeries(fname,'knmi',variable='RH')
 EV24=ReadSeries(fname,'knmi',variable='EV24')
 
@@ -35,3 +35,4 @@ ml.solve()
 
 # show results
 ml.plot()
+ml.stats.summary()

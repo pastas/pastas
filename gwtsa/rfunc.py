@@ -36,7 +36,7 @@ block(self, p)
     defined in set_parameters.
 
 More information on how to write a response class can be found here:
-https://github.com/gwtsa/gwtsa/wiki
+http://gwtsa.github.io/gwtsa/developers.html
 """
 
 
@@ -75,7 +75,7 @@ class Exponential:
     __doc__ = """
     Exponential response function with 2 parameters: A and a.
 
-    step(t) = A * (1 - exp(-t / a))
+    .. math:: step(t) = A * (1 - exp(-t / a))
 
     %(doc)s
     """ % {'doc': _class_doc}

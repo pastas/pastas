@@ -8,3 +8,4 @@ Table of contents
    installation
    getting_started
    modules
+   developers

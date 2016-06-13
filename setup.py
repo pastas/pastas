@@ -61,7 +61,7 @@ setup(
     ],
     platforms='Windows, Mac OS-X',
     install_requires=['numpy>=1.9', 'matplotlib>=1.4', 'lmfit>=0.9', 'pandas>=0.15',
-                      'scipy>=0.15', 'statsmodels>=0.5', 'tabulate', 'requests',
+                      'scipy>=0.15', 'statsmodels>=0.5', 'requests',
                       'pyproj'],
     packages=['gwtsa'],
     include_package_data=True,
