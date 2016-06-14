@@ -56,7 +56,7 @@ class Model:
         """
         self.noisemodel = noisemodel
 
-    def simulate(self, t=None, p=None):
+    def simulate(self, tmin=None, tmax=None, p=None):
         """
 
         Parameters
@@ -72,21 +72,25 @@ class Model:
         Pandas Series object containing the simulated time series.
 
         """
-        if t is None:
-            t = self.oseries.index
+        if tmin is None:
+            tmin = self.oseries.index.min()
+        if tmax is None:
+            tmax = self.oseries.index.max()
+        tindex = self.oseries[tmin: tmax].index  # times used for calibration
+
         if p is None:
             p = self.parameters
-        h = pd.Series(data=0, index=t)
+        h = pd.Series(data=0, index=tindex)
         istart = 0
         for ts in self.tserieslist:
-            h += ts.simulate(t, p[istart: istart + ts.nparam])
+            h += ts.simulate(tindex, p[istart: istart + ts.nparam])
             istart += ts.nparam
         return h
 
     def residuals(self, parameters, tmin=None, tmax=None, solvemethod='lmfit',
                   noise=False):
         """
-        Method that is called by the solve fucntion to calculate the residuals.
+        Method that is called by the solve function to calculate the residuals.
 
         """
         if tmin is None:
@@ -94,14 +98,16 @@ class Model:
         if tmax is None:
             tmax = self.oseries.index.max()
         tindex = self.oseries[tmin: tmax].index  # times used for calibration
+
         if solvemethod == 'lmfit':  # probably needs to be a function call
             p = np.array([p.value for p in parameters.values()])
         if isinstance(parameters, np.ndarray):
             p = parameters
         # h_observed - h_simulated
-        r = self.oseries[tindex] - self.simulate(tindex, p)
+        r = self.oseries[tindex] - self.simulate(tmin, tmax, p)
         if noise and (self.noisemodel is not None):
-            r = self.noisemodel.simulate(r, self.odelt[tindex], tindex, p[-1])
+            r = self.noisemodel.simulate(r, self.odelt[tindex], tindex,
+                                         p[-self.noisemodel.nparam])
         if np.isnan(sum(r ** 2)):
             print 'nan problem in residuals'  # quick and dirty check
         return r
@@ -124,6 +130,8 @@ class Model:
             Print a report to the screen after optimization finished.
         noise: Boolean
             Use the nose model (True) or not (False).
+        initialize: Boolean
+            Reset initial parameteres.
 
         """
         if noise and (self.noisemodel is None):
@@ -136,6 +144,7 @@ class Model:
         if initialize is True:
             for ts in self.tserieslist:
                 ts.set_init_parameters()
+            if self.noisemodel: self.noisemodel.set_init_parameters()
 
         if self.solvemethod == 'lmfit':
             parameters = lmfit.Parameters()
@@ -170,7 +179,7 @@ class Model:
                     self.noisemodel.parameters.loc[k].value = self.paramdict[k]
 
         # Make the Statistics class available after optimization
-        self.stats = Statistics(self)
+        # self.stats = Statistics(self)
 
 
     def plot(self, oseries=True):

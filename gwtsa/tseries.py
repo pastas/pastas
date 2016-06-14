@@ -97,6 +97,8 @@ class Tseries(TseriesBase):
         TseriesBase.__init__(self, rfunc, name, xy, metadata)
         self.stress = check_tseries(stress, freq, fillnan)
         self.set_init_parameters()
+        self.tmin = self.stress.index.min()
+        self.tmax = self.stress.index.max()
 
     def set_init_parameters(self):
         """
@@ -192,6 +194,10 @@ class Recharge(TseriesBase):
         self.evap.name = 'Evaporation'
         self.precip.name = 'Precipitation'
 
+        # Store tmin and tmax
+        self.tmin = self.precip.index.min()
+        self.tmax = self.precip.index.max()
+
         # The recharge calculation needs arrays
         self.precip_array = np.array(self.precip)
         self.evap_array = np.array(self.evap)
@@ -199,6 +205,7 @@ class Recharge(TseriesBase):
         self.recharge = recharge
         self.set_init_parameters()
         self.nparam = self.rfunc.nparam + self.recharge.nparam
+        self.stress = self.simulate_recharge()
 
     def set_init_parameters(self):
         self.parameters = pd.concat([self.rfunc.set_parameters(self.name),
@@ -271,7 +278,7 @@ class Well(TseriesBase):
     """
 
     # TODO implement this function
-    def __init__(self, stress, rfunc, r, name, metadata=None, stressnames=None,
+    def __init__(self, stress, rfunc, r, name, metadata=None,
                  xy=(0, 0), freq=None, fillna='mean'):
         TseriesBase.__init__(self, rfunc, name, xy, metadata)
 
@@ -333,7 +340,7 @@ class Constant:
                 print 'vary should be 1 or 0, not %s' % kwargs[i]
             self.parameters.loc['%s' % i, 'vary'] = kwargs[i]
 
-    def simulate(self, tindex=None, p=None):
+    def simulate(self, t=None, p=None):
         if p is None:
             p = np.array(self.parameters.value)
         return p
