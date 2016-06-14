@@ -72,16 +72,23 @@ class Model:
         Pandas Series object containing the simulated time series.
 
         """
+
+        # Default option when not tmin and tmax is provided
         if tmin is None:
             tmin = self.oseries.index.min()
         if tmax is None:
             tmax = self.oseries.index.max()
+
+        # TODO create tindex from scratch
+        if tmin is None: tmin = self.tmin
+        if tmax is None: tmax = self.tmax
+        #tindex = pd.series.index......???
         tindex = self.oseries[tmin: tmax].index  # times used for calibration
 
         if p is None:
             p = self.parameters
         h = pd.Series(data=0, index=tindex)
-        istart = 0
+        istart = 0  # Track parameters index to pass to ts object
         for ts in self.tserieslist:
             h += ts.simulate(tindex, p[istart: istart + ts.nparam])
             istart += ts.nparam
@@ -104,7 +111,7 @@ class Model:
         if isinstance(parameters, np.ndarray):
             p = parameters
         # h_observed - h_simulated
-        r = self.oseries[tindex] - self.simulate(tmin, tmax, p)
+        r = self.oseries[tindex] - self.simulate(tmin, tmax, p)[tindex]
         if noise and (self.noisemodel is not None):
             r = self.noisemodel.simulate(r, self.odelt[tindex], tindex,
                                          p[-self.noisemodel.nparam])
@@ -139,6 +146,9 @@ class Model:
                   'defined. No noise model is used'
         self.solvemethod = solvemethod
         self.nparam = sum(ts.nparam for ts in self.tserieslist)
+
+        # Check series with tmin, tmax
+        tmin, tmax = self.check_series(tmin, tmax)
 
         # Initialize parameters
         if initialize is True:
@@ -179,10 +189,66 @@ class Model:
                     self.noisemodel.parameters.loc[k].value = self.paramdict[k]
 
         # Make the Statistics class available after optimization
-        # self.stats = Statistics(self)
+        self.stats = Statistics(self)
 
+    def check_series(self, tmin=None, tmax=None):
+        """
+        Function to check if the dependent and independent time series match.
 
-    def plot(self, oseries=True):
+        - tmin and tmax are in oseries.index for optimization.
+        - at least one stress is available for simulation between tmin and tmax.
+        -
+
+        Parameters
+        ----------
+        tmin
+        tmax
+
+        Returns
+        -------
+
+        """
+
+        # Store tmax and tmin. If none is provided, use oseries to set them.
+        if tmin is None:
+            tmin = self.oseries.index.min()
+        else:
+            tmin = pd.tslib.Timestamp(tmin)
+        if tmax is None:
+            tmax = self.oseries.index.max()
+        else:
+            tmax = pd.tslib.Timestamp(tmax)
+
+        # Check tmin and tmax compared to oseries and raise warning.
+        if tmin not in self.oseries.index:
+            print 'Warning, given tmin is outside of the oseries. First valid ' \
+                  'index is %s' % self.oseries.first_valid_index()
+        if tmax not in self.oseries.index:
+            print 'Warning, given tmax is outside of the oseries. Last valid ' \
+                  'index is %s' % self.oseries.last_valid_index()
+
+        # Get maximum simulation period.
+        tstmin = self.tserieslist[0].tmin
+        tstmax = self.tserieslist[0].tmax
+
+        for ts in self.tserieslist:
+            if ts.tmin < tstmin:
+                tstmin = ts.tmin
+            if ts.tmax > tstmax:
+                tstmax = ts.tmax
+
+        # Check if chose period is within or outside the maximum period.
+        if tstmin > tmin:
+            tmin = tstmin
+        if tstmax < tmax:
+            tmax = tstmax
+
+        self.tmin = tmin
+        self.tmax = tmax
+
+        return tmin, tmax
+
+    def plot(self, tmin=None, tmax=None, oseries=True):
         """
 
         Parameters
@@ -195,18 +261,20 @@ class Model:
         Plot of the simulated and optionally the observed time series
 
         """
-        h = self.simulate()
+        h = self.simulate(tmin, tmax)
         plt.figure()
         h.plot()
         if oseries:
             self.oseries.plot(style='ro')
         plt.show()
 
-    def plot_results(self, savefig=False):
+    def plot_results(self, tmin=None, tmax=None, savefig=False):
         """
 
         Parameters
         ----------
+        tmin/tmax: str
+            start and end time for plotting
         savefig: Optional[Boolean]
             True to save the figure, False is default. Figure is saved in the
             current working directory when running your python scripts.
@@ -218,7 +286,7 @@ class Model:
         plt.figure('Model Results', facecolor='white')
         gs = plt.GridSpec(3, 4, wspace=0.2)
         # Plot the Groundwater levels
-        h = self.simulate()
+        h = self.simulate(tmin, tmax)
         ax1 = plt.subplot(gs[:2, :-1])
         h.plot(label='modeled head')
         self.oseries.plot(linestyle='', marker='.', color='k', markersize=3,
