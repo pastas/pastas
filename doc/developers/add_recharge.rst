@@ -2,7 +2,7 @@ Adding recharge classes
 =======================
 the recharge class is developed specifically for the simulation of groundwater,
 with different options to calculate the groundwater recharge. The base of the
-recharge models is a `Recharge` class in tseries.py. This class takes two
+recharge models is a `Recharge` class in `tseries.py`. This class takes two
 stresses: (potential) evaporation and precipitation, and uses a recharge function
 to calculate a recharge stress from these two input stresses. Finally, the
 calculated recharge series is convoluted with a response function to calculate
@@ -13,20 +13,23 @@ In this section it is described how to add a recharge class to calculate the
 recharge. The actual functions to calculate the recharge are contained in the
 `recharge` folder. Within this folder, two files are important to take a look at:
 `recharge_func.py` and `recharge.py`. The first contains a class for each
-recharge model (similar to the classes in rfunc.py) and the second contains the
+recharge model (similar to the classes in `rfunc.py`) and the second contains the
 computational core to calculate recharge series. The other files are solutions
 to reduce computation times but we'll come back to those.
 
-* Please take a look at the Recharge example notebook!*
+*Please take a look at the Recharge example notebook!*
 
 The recharge_func.py classes
-============================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The classes defined in this file are the classes that are provided when a
 Recharge tseries object is created. E.g.:
 
 >>> ts = Recharge(precip, evap, Gamma(), Preferential())
 
-In this section we will have a closer look at the Preferential() class. 
+In this section we will have a closer look at the Preferential() class from
+`recharge_func.py`. The class needs two methods: set_parameters() and simulate
+(). Within simulate the method the function `pref` is called, which contains the
+computational core for simulating the preferential recharge.
 
 ::
 
@@ -56,3 +59,19 @@ In this section we will have a closer look at the Preferential() class.
             recharge = pref(t, precip, evap, p[0], p[1], p[2],
                             self.dt, self.solver)[0]
             return recharge
+
+
+Writing new recharge models
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Writing a new recharge model can be as simple as writing a new class in
+`recharge_func.py` with the same methods as the example above. if the calculation
+ is simple it can be programmed directly in this class (as is the case for the
+ Linear() recharge class), or it can be contained within a separate file and
+ imported.
+
+Compiling recharge functions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The computation of the recharge can significantly increase computation times. It
+is therefore recommended to compile the `recharge.c` file that is provided.
+Compiling `recharge.c` can be done by running `cythoninze.py` and the reader is
+referred to this file for further instructions.

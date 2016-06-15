@@ -58,8 +58,8 @@ class Statistics(object):
         self.oseries = ml.oseries  # Observed series
         self.rseries = ml.oseries - self.sseries  # Residuals series
         self.odelt = ml.odelt  # Timestep between observations
-        self.iseries = ml.noisemodel.simulate(self.rseries,
-                                              self.odelt)  # Innovations
+        if ml.noisemodel: # Calculate the innovations
+            self.iseries = ml.noisemodel.simulate(self.rseries, self.odelt)
 
         # Sture some other parameters
         self.N = len(self.sseries)  # Number of observations
