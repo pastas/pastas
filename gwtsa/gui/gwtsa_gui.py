@@ -186,8 +186,10 @@ class GwtsaGui(Frame):
         #index = self.tree.get(0, "end").index(self.tree.selection()[0])
         index = self.tree.index(self.tree.selection()[0])
         print(index)
+        #self.tserieslist.pop(index)
+        #self.tree.delete(self.tree.selection())
         self.irs.pop(index)
-        self.tree.delete(self.tree.selection())
+        self.generateTreeView()
 
     def select_ir(self, event):
         if self.ir_graph != None:
@@ -219,7 +221,7 @@ class GwtsaGui(Frame):
                 self.ir_canvas.show()
         else:
             ts=self.tserieslist[self.tree.index(self.tree.selection())]
-            cl=str(ts.__class__);
+            cl=str(ts.__class__)
             if cl=='gwtsa.tseries.Constant':
                 pass
             elif cl=='gwtsa.tseries.NoiseModel':
@@ -289,6 +291,8 @@ class GwtsaGui(Frame):
                                  values=['Gamma', "500", "1", "100"])
                                  
     def generateTreeView(self):
+        for ch in self.tree.get_children():
+            self.tree.detach(ch)
         for ts in self.tserieslist:
             values=ts.parameters['value']
             valueStr = []
@@ -299,9 +303,12 @@ class GwtsaGui(Frame):
                     valueStr.append('{:.1f}'.format(v))
                 else:
                     valueStr.append('{:.2f}'.format(v))
-                        
-        valueStr = [Gamma.__name__] + valueStr
-        self.tree.insert('','end', text=ts.name,values=valueStr)
+            #valueStr = [Gamma.__name__] + valueStr
+            if hasattr(ts,'rfunc'):
+                valueStr = [ts.rfunc.__class__.__name__] + valueStr
+            else:
+                valueStr = ['Constant'] + valueStr
+            self.tree.insert('','end', text=ts.name,values=valueStr)
 
     #
     # Add a stress through a seperate window
@@ -463,16 +470,6 @@ class GwtsaGui(Frame):
 
     def not_yet_implemented(self):
         tkMessageBox.showerror('Not yet implemented', 'Working on it...')
-
-
-def center(toplevel):
-    toplevel.update_idletasks()
-    w = toplevel.winfo_screenwidth()
-    h = toplevel.winfo_screenheight()
-    size = tuple(int(_) for _ in toplevel.geometry().split('+')[0].split('x'))
-    x = w / 2 - size[0] / 2
-    y = h / 2 - size[1] / 2
-    toplevel.geometry("%dx%d+%d+%d" % (size + (x, y)))
 
 
 def main():
