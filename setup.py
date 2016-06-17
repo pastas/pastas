@@ -19,7 +19,7 @@ except:
 
 # Set the version. Possibly this can be converted to another method such as Numpy
 #  is using in the future. https://github.com/numpy/numpy/blob/master/setup.py
-# DO NOT USE from gwtsa import __version__ as it causes problems with Travis.
+# DO NOT USE from pasta import __version__ as it causes problems with Travis.
 
 MAJOR               = 0
 MINOR               = 0
@@ -28,7 +28,7 @@ ISRELEASED          = False
 VERSION             = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
 
 setup(
-    name='gwtsa',
+    name='pasta',
 
     # Versions should comply with PEP440. For a discussion on single-sourcing
     # the version across setup.py and the project code, see
@@ -39,7 +39,7 @@ setup(
     long_description=l_d,
 
     # The project's main homepage.
-    url='https://github.com/gwtsa/gwtsa',
+    url='https://github.com/pastas/pasta',
 
     # Author details
     author='Mark Bakker',
@@ -63,6 +63,6 @@ setup(
     install_requires=['numpy>=1.9', 'matplotlib>=1.4', 'lmfit>=0.9', 'pandas>=0.15',
                       'scipy>=0.15', 'statsmodels>=0.5', 'requests',
                       'pyproj'],
-    packages=['gwtsa'],
+    packages=['pasta'],
     include_package_data=True,
 )

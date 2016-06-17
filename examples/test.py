@@ -5,7 +5,7 @@ test the functioning of gwtsa during development.
 """
 import matplotlib
 matplotlib.use('TkAgg')
-from gwtsa import *
+from pasta import *
 
 # read observations
 fname = 'data/B32D0136001_1.csv'

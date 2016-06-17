@@ -1,3 +1,3 @@
 def test_import():
-    import gwtsa
+    import pasta
     return

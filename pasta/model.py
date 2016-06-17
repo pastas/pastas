@@ -57,7 +57,7 @@ class Model:
         """
         self.noisemodel = noisemodel
 
-    def simulate(self, parameters=None, tmin=None, tmax=None):
+    def simulate(self, parameters=None, tmin=None, tmax=None, freq='D'):
         """
 
         Parameters
@@ -80,8 +80,7 @@ class Model:
         if tmax is None:
             tmax = self.tmax
 
-        tindex = pd.date_range(tmin, tmax, freq='D')  # Hardcoded as 'D' now.
-        # should be changes to simulation frequency in the future!
+        tindex = pd.date_range(tmin, tmax, freq=freq)
 
         if parameters is None:
             parameters = self.parameters
@@ -242,14 +241,14 @@ class Model:
                 if ts.tmax > tstmax:
                     tstmax = ts.tmax
 
-        # Check if chose period is within or outside the maximum period.
+        self.tmin = tmin
+        self.tmax = tmax
+
+        # Check if chosen period is within or outside the maximum period.
         if tstmin > tmin:
             tmin = tstmin
         if tstmax < tmax:
             tmax = tstmax
-
-        self.tmin = tmin
-        self.tmax = tmax
 
         return tmin, tmax
 

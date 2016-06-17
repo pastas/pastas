@@ -73,5 +73,5 @@ Compiling recharge functions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The computation of the recharge can significantly increase computation times. It
 is therefore recommended to compile the `recharge.c` file that is provided.
-Compiling `recharge.c` can be done by running `cythoninze.py` and the reader is
+Compiling `recharge.c` can be done by running `cythonize.py` and the reader is
 referred to this file for further instructions.
