@@ -1,5 +1,5 @@
-.. image:: https://travis-ci.org/gwtsa/gwtsa.svg?branch=dev
-    :target: https://travis-ci.org/gwtsa/gwtsa
+.. image:: https://travis-ci.org/pastas/pasta.svg?branch=dev
+    :target: https://travis-ci.org/pastas/pasta
 
 PASTA Introduction
 ======================
