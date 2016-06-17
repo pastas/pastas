@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from tseries import Constant
 from checks import check_oseries
 from stats import Statistics
 
@@ -56,7 +57,7 @@ class Model:
         """
         self.noisemodel = noisemodel
 
-    def simulate(self, tmin=None, tmax=None, p=None):
+    def simulate(self, parameters=None, tmin=None, tmax=None):
         """
 
         Parameters
@@ -75,26 +76,23 @@ class Model:
 
         # Default option when not tmin and tmax is provided
         if tmin is None:
-            tmin = self.oseries.index.min()
+            tmin = self.tmin
         if tmax is None:
-            tmax = self.oseries.index.max()
+            tmax = self.tmax
 
-        # TODO create tindex from scratch
-        if tmin is None: tmin = self.tmin
-        if tmax is None: tmax = self.tmax
-        #tindex = pd.series.index......???
-        tindex = self.oseries[tmin: tmax].index  # times used for calibration
+        tindex = pd.date_range(tmin, tmax, freq='D')  # Hardcoded as 'D' now.
+        # should be changes to simulation frequency in the future!
 
-        if p is None:
-            p = self.parameters
+        if parameters is None:
+            parameters = self.parameters
         h = pd.Series(data=0, index=tindex)
         istart = 0  # Track parameters index to pass to ts object
         for ts in self.tserieslist:
-            h += ts.simulate(tindex, p[istart: istart + ts.nparam])
+            h += ts.simulate(tindex, parameters[istart: istart + ts.nparam])
             istart += ts.nparam
         return h
 
-    def residuals(self, parameters, tmin=None, tmax=None, solvemethod='lmfit',
+    def residuals(self, parameters=None, tmin=None, tmax=None, solvemethod='lmfit',
                   noise=False):
         """
         Method that is called by the solve function to calculate the residuals.
@@ -107,11 +105,15 @@ class Model:
         tindex = self.oseries[tmin: tmax].index  # times used for calibration
 
         if solvemethod == 'lmfit':  # probably needs to be a function call
+            if parameters is None:
+                parameters = self.fit.params
             p = np.array([p.value for p in parameters.values()])
         if isinstance(parameters, np.ndarray):
+            if parameters is None:
+                parameters = self.parameters
             p = parameters
         # h_observed - h_simulated
-        r = self.oseries[tindex] - self.simulate(tmin, tmax, p)[tindex]
+        r = self.oseries[tindex] - self.simulate(p, tmin, tmax)[tindex]
         if noise and (self.noisemodel is not None):
             r = self.noisemodel.simulate(r, self.odelt[tindex], tindex,
                                          p[-self.noisemodel.nparam])
@@ -188,8 +190,8 @@ class Model:
                 for k in self.noisemodel.parameters.index:
                     self.noisemodel.parameters.loc[k].value = self.paramdict[k]
 
-        # Make the Statistics class available after optimization
-        self.stats = Statistics(self)
+            # Make the Statistics class available after optimization
+            self.stats = Statistics(self)
 
     def check_series(self, tmin=None, tmax=None):
         """
@@ -232,10 +234,13 @@ class Model:
         tstmax = self.tserieslist[0].tmax
 
         for ts in self.tserieslist:
-            if ts.tmin < tstmin:
-                tstmin = ts.tmin
-            if ts.tmax > tstmax:
-                tstmax = ts.tmax
+            if isinstance(ts, Constant):  # Check if it is not a constant tseries.
+                pass
+            else:
+                if ts.tmin < tstmin:
+                    tstmin = ts.tmin
+                if ts.tmax > tstmax:
+                    tstmax = ts.tmax
 
         # Check if chose period is within or outside the maximum period.
         if tstmin > tmin:
@@ -265,7 +270,7 @@ class Model:
         plt.figure()
         h.plot()
         if oseries:
-            self.oseries.plot(style='ro')
+            self.oseries.plot(linestyle='', marker='.', color='k', markersize=3)
         plt.show()
 
     def plot_results(self, tmin=None, tmax=None, savefig=False):
@@ -285,28 +290,28 @@ class Model:
         """
         plt.figure('Model Results', facecolor='white')
         gs = plt.GridSpec(3, 4, wspace=0.2)
+
         # Plot the Groundwater levels
-        h = self.simulate(tmin, tmax)
+        h = self.simulate(tmin=tmin, tmax=tmax)
         ax1 = plt.subplot(gs[:2, :-1])
         h.plot(label='modeled head')
         self.oseries.plot(linestyle='', marker='.', color='k', markersize=3,
                           label='observed head')
-        ax1.xaxis.set_visible(False)
+        # ax1.xaxis.set_visible(False)
         plt.legend(loc=(0, 1), ncol=3, frameon=False, handlelength=3)
         plt.ylabel('Head [m]')
+
         # Plot the residuals and innovations
-        residuals = self.oseries - h
-        ax2 = plt.subplot(gs[2, :-1], sharex=ax1)
+        residuals = self.residuals(tmin=tmin, tmax=tmax)
+        ax2 = plt.subplot(gs[2, :-1])  # , sharex=ax1)
         residuals.plot(color='k', label='residuals')
         if self.noisemodel is not None:
-            innovations = pd.Series(self.noisemodel.simulate(residuals,
-                                                             self.odelt,
-                                                             p=self.parameters[-1]),
-                                    index=residuals.index)
+            innovations = self.noisemodel.simulate(residuals, self.odelt)
             innovations.plot(label='innovations')
         plt.legend(loc=(0, 1), ncol=3, frameon=False, handlelength=3)
         plt.ylabel('Error [m]')
         plt.xlabel('Time [Years]')
+
         # Plot the Impulse Response Function
         ax3 = plt.subplot(gs[0, -1])
         n = 0
@@ -318,6 +323,7 @@ class Model:
         ax3.set_xticks(ax3.get_xticks()[::2])
         ax3.set_yticks(ax3.get_yticks()[::2])
         plt.title('Block Response')
+
         # Plot the Model Parameters (Experimental)
         ax4 = plt.subplot(gs[1:2, -1])
         ax4.xaxis.set_visible(False)
@@ -327,6 +333,7 @@ class Model:
         colLabels = ("Parameter", "Value")
         ytable = ax4.table(cellText=text, colLabels=colLabels, loc='center')
         ytable.scale(1, 1.1)
+
         # Table of the numerical diagnostic statistics.
         ax5 = plt.subplot(gs[2, -1])
         ax5.xaxis.set_visible(False)
