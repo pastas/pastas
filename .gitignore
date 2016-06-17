@@ -11,3 +11,5 @@ pasta.egg-info/PKG-INFO
 pasta.egg-info/top_level.txt
 
 examples/notebooks/.ipynb_checkpoints/
+
+pasta.egg-info/requires.txt
