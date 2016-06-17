@@ -20,15 +20,18 @@ Instructions for updating Sphinx documentation
 2. Move to the doc folder in the pasta-master folder:
 >>> cd ../path-to-pasta-master/doc
 
-3. Run sphinx auto documentation:
+3. read pasta modules with sphinx-apidoc
+  >>> sphinx-apidoc ../pasta -o .
+
+4. Run sphinx auto documentation:
   >>> cd html
 
-4. The html files have now been created in the html folder with the pasta-doc folder if Sphinxdoc was succesfull.
-5. Move to the html folder with the pasta-docs folder:
+5. The html files have now been created in the html folder with the pasta-doc folder if Sphinxdoc was succesfull.
+6. Move to the html folder with the pasta-docs folder:
   >>> cd
   >>> cd ../path-to-pasta-docs/html
   
-6. Update the gh-pages branch:
+7. Update the gh-pages branch:
   >>> git branch # Check if we are in the gh-pages branch
   >>> git add .
   >>> git commit -a -m "Update Docs"
