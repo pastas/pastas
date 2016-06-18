@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Cythonize.py can be used to cythonize and/or compile recharge.pyx and recharge.c
 files. Cythonizing the .pyx file should only be done by developers! The c-file
@@ -21,7 +19,6 @@ Cythonize instructions:
 
 This option requires the Cython package to be installed.
 
-@author: Raoul Collenteur
 """
 
 from distutils.core import setup

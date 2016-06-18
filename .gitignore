@@ -5,9 +5,11 @@
 
 *.pyc
 
-gwtsa.egg-info/SOURCES.txt
-gwtsa.egg-info/dependency_links.txt
-gwtsa.egg-info/PKG-INFO
-gwtsa.egg-info/top_level.txt
+pasta.egg-info/SOURCES.txt
+pasta.egg-info/dependency_links.txt
+pasta.egg-info/PKG-INFO
+pasta.egg-info/top_level.txt
 
 examples/notebooks/.ipynb_checkpoints/
+
+pasta.egg-info/requires.txt

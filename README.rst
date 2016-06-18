@@ -15,6 +15,11 @@ improvement or enhancement, please submit a new Issue through the Github Issue
 tracker toward the upper-right corner of the Github repository. Pull requests will
 only be accepted on the development branch (dev) of the repository.
 
+Documentation
+~~~~~~~~~~~~~
+Documentation is provided on a dedicated website: http://pastas.github.io/pasta/
+
+
 Quick installation guide
 ~~~~~~~~~~~~~~~~~~~~~~~~
 To get the latest development version, use::

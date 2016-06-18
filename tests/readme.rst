@@ -1,7 +1,8 @@
 Tests
 -----
 
-This folder contains all the tests that can be run to automatically test of gwtsa runs correctly. 
+This folder contains all the tests that can be run to automatically test of pasta
+runs correctly.
 All tests in this folder can be run with the following command:
 >>> nosetests
 

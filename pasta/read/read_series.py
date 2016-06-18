@@ -3,8 +3,8 @@
 @author: ruben
 """
 
-from gwtsa.read.dinodata import DinoGrondwaterstand
-from gwtsa.read.knmidata import KnmiStation
+from pasta.read.dinodata import DinoGrondwaterstand
+from pasta.read.knmidata import KnmiStation
 from pyproj import Proj, transform
 
 

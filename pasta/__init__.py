@@ -1,5 +1,5 @@
-__name__ = 'gwtsa'
-__author__ = 'gwtsa team'
+__name__ = 'pasta'
+__author__ = 'pasta team'
 __docformat__ = 'NumPy'
 
 from model import Model

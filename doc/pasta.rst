@@ -1,4 +1,4 @@
-gwtsa package
+pasta package
 =============
 
 Subpackages
@@ -6,56 +6,48 @@ Subpackages
 
 .. toctree::
 
-    gwtsa.imports
-    gwtsa.recharge
+    pasta.read
+    pasta.recharge
 
 Submodules
 ----------
 
-gwtsa.checks module
+pasta.checks module
 -------------------
 
-.. automodule:: gwtsa.checks
+.. automodule:: pasta.checks
     :members:
     :undoc-members:
     :show-inheritance:
 
-gwtsa.model module
+pasta.model module
 ------------------
 
-.. automodule:: gwtsa.model
+.. automodule:: pasta.model
     :members:
     :undoc-members:
     :show-inheritance:
 
-gwtsa.rfunc module
+pasta.rfunc module
 ------------------
 
-.. automodule:: gwtsa.rfunc
+.. automodule:: pasta.rfunc
     :members:
     :undoc-members:
     :show-inheritance:
 
-gwtsa.stats module
+pasta.stats module
 ------------------
 
-.. automodule:: gwtsa.stats
+.. automodule:: pasta.stats
     :members:
     :undoc-members:
     :show-inheritance:
 
-gwtsa.tseries module
+pasta.tseries module
 --------------------
 
-.. automodule:: gwtsa.tseries
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-gwtsa.version module
---------------------
-
-.. automodule:: gwtsa.version
+.. automodule:: pasta.tseries
     :members:
     :undoc-members:
     :show-inheritance:
@@ -64,7 +56,7 @@ gwtsa.version module
 Module contents
 ---------------
 
-.. automodule:: gwtsa
+.. automodule:: pasta
     :members:
     :undoc-members:
     :show-inheritance:

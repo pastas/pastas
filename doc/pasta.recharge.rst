@@ -1,37 +1,37 @@
-gwtsa.recharge package
+pasta.recharge package
 ======================
 
 Submodules
 ----------
 
-gwtsa.recharge.cythonize module
+pasta.recharge.cythonize module
 -------------------------------
 
-.. automodule:: gwtsa.recharge.cythonize
+.. automodule:: pasta.recharge.cythonize
     :members:
     :undoc-members:
     :show-inheritance:
 
-gwtsa.recharge.recharge module
+pasta.recharge.recharge module
 ------------------------------
 
-.. automodule:: gwtsa.recharge.recharge
+.. automodule:: pasta.recharge.recharge
     :members:
     :undoc-members:
     :show-inheritance:
 
-gwtsa.recharge.recharge module
+pasta.recharge.recharge module
 ------------------------------
 
-.. automodule:: gwtsa.recharge.recharge
+.. automodule:: pasta.recharge.recharge
     :members:
     :undoc-members:
     :show-inheritance:
 
-gwtsa.recharge.recharge_func module
+pasta.recharge.recharge_func module
 -----------------------------------
 
-.. automodule:: gwtsa.recharge.recharge_func
+.. automodule:: pasta.recharge.recharge_func
     :members:
     :undoc-members:
     :show-inheritance:
@@ -40,7 +40,7 @@ gwtsa.recharge.recharge_func module
 Module contents
 ---------------
 
-.. automodule:: gwtsa.recharge
+.. automodule:: pasta.recharge
     :members:
     :undoc-members:
     :show-inheritance:
