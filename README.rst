@@ -1,4 +1,4 @@
-.. image:: https://travis-ci.org/pastas/pasta.svg?branch=dev
+.. image:: https://travis-ci.org/pastas/pasta.svg?branch=master
     :target: https://travis-ci.org/pastas/pasta
 
 PASTA Introduction
