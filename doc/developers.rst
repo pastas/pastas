@@ -9,7 +9,7 @@ find guides to how to write different classes that add functionality to |Project
 Before you start
 ~~~~~~~~~~~~~~~~
 Fork the project from the `projects' Github page <http://github
-.com/gwtsa/pasta>`_ and create a local copy of |Project|. Work on your new
+.com/pastas/pasta>`_ and create a local copy of |Project|. Work on your new
 function or class and test it by writing your own test suite. Once you have
 tested your code and want to make it available for other |Project| users, you can
 submit a pull request on the development branch (dev) of the repository.
