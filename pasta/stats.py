@@ -56,7 +56,7 @@ class Statistics(object):
         # Store all the series for quicker computation of the statistics
         self.sseries = ml.simulate()  # Simulated series
         self.oseries = ml.oseries  # Observed series
-        self.rseries = ml.oseries - self.sseries  # Residuals series
+        self.rseries = ml.residuals()  # Residuals series
         self.odelt = ml.odelt  # Timestep between observations
         if ml.noisemodel: # Calculate the innovations
             self.iseries = ml.noisemodel.simulate(self.rseries, self.odelt)

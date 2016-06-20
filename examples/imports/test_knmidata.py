@@ -5,7 +5,7 @@
 """
 from datetime import datetime
 import matplotlib.pyplot as plt
-from gwtsa.read.knmidata import KnmiStation
+from pasta.read.knmidata import KnmiStation
 
 # How to use it?
 

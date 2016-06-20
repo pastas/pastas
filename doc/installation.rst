@@ -5,14 +5,8 @@ Downloading and Installation
 Downloading
 ~~~~~~~~~~~
 
-In the future gwtsa will be made available through `PyPi <http://pypi.python.org/pypi/>`_.
-
-
-
-
-
-
-
+In the future |Project| will be made available through `PyPi <http://pypi.python
+.org/pypi/>`_.
 
 
 Development Version
@@ -20,7 +14,7 @@ Development Version
 
 To get the latest development version, use::
 
-   git clone http://github.com/gwtwa/gwtsa.git
+   git clone https://github.com/pastas/pasta.git
 
 
 and install using::

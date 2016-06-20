@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# GWTSA documentation build configuration file, created by
+# PASTA documentation build configuration file, created by
 # sphinx-quickstart on Wed May 11 12:38:06 2016.
 
 # Repository setup is according to:
@@ -59,7 +59,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'GWTSA'
+project = u'PASTA'
 copyright = u'2016, M. Bakker, R.A. Collenteur, R. Calje, F. Schaars'
 author = u'M. Bakker, R.A. Collenteur, R. Calje, F. Schaars'
 rst_epilog = '.. |project| replace:: %s' % project
@@ -213,7 +213,7 @@ html_show_copyright = True
 # html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'GWTSAdoc'
+htmlhelp_basename = 'PASTAdoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -235,7 +235,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'GWTSA.tex', u'GWTSA Documentation',
+    (master_doc, 'PASTA.tex', u'PASTA Documentation',
      u'M. Bakker, R.A. Collenteur, R. Calje, F. Schaars', 'manual'),
 ]
 
@@ -265,7 +265,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'gwtsa', u'GWTSA Documentation',
+    (master_doc, 'pasta', u'PASTA Documentation',
      [author], 1)
 ]
 
@@ -279,8 +279,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'GWTSA', u'GWTSA Documentation',
-     author, 'GWTSA', 'One line description of project.',
+    (master_doc, 'PASTA', u'PASTA Documentation',
+     author, 'PASTA', 'One line description of project.',
      'Miscellaneous'),
 ]
 

@@ -36,7 +36,7 @@ block(self, p)
     defined in set_parameters.
 
 More information on how to write a response class can be found here:
-http://gwtsa.github.io/gwtsa/developers.html
+http://pasta.github.io/pasta/developers.html
 """
 
 

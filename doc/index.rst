@@ -1,4 +1,4 @@
-.. GWTSA documentation master file, created by
+.. PASTA documentation master file, created by
    sphinx-quickstart on Wed May 11 12:38:06 2016.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
@@ -21,7 +21,7 @@ Quick installation guide
 ~~~~~~~~~~~~~~~~~~~~~~~~
 To get the latest development version, use::
 
-   git clone http://github.com/gwtwa/gwtsa.git
+   git clone https://github.com/pastas/pasta.git
 
 and install using::
 

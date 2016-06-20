@@ -1,5 +1,5 @@
 import pandas as pd
-from gwtsa import *
+from pasta import *
 
 def test_model():
 
