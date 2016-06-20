@@ -13,7 +13,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import tkFileDialog
-from gwtsa import *
+from pasta import *
 import pickle
 import os.path
 
@@ -389,9 +389,9 @@ class GwtsaGui(Frame):
     def plot_ir_series(self):
         f = plt.figure()
         ax = f.add_subplot(111)
-        for ir in self.irs:
-            if ir != None:
-                ir.series.plot(ax=ax)
+        for ts in self.tserieslist:
+            if hasattr(ts,'stress'):
+                ts.stress.plot(ax=ax)
         plt.show()
 
     def optimize(self):
