@@ -319,7 +319,7 @@ class Constant:
 
     """
 
-    def __init__(self, name='Constant', xy=None, metadata=None, value=0.0):
+    def __init__(self, name='Constant', xy=None, metadata=None, value=0.0, pmin=np.nan, pmax=np.nan):
         self.nparam = 1
         self.name = name
         self.xy = xy
