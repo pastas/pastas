@@ -103,14 +103,13 @@ class Model:
             tmax = self.oseries.index.max()
         tindex = self.oseries[tmin: tmax].index  # times used for calibration
 
-        if solvemethod == 'lmfit':  # probably needs to be a function call
-            if parameters is None:
-                parameters = self.fit.params
-            p = np.array([p.value for p in parameters.values()])
         if isinstance(parameters, np.ndarray):
-            if parameters is None:
-                parameters = self.parameters
             p = parameters
+        elif isinstance(parameters, lmfit.parameter.Parameters):  # probably needs to be a function call
+            p = np.array([p.value for p in parameters.values()])
+        elif parameters is None:
+            p = self.parameters
+
         # h_observed - h_simulated
         r = self.oseries[tindex] - self.simulate(p, tmin, tmax)[tindex]
         if noise and (self.noisemodel is not None):
@@ -119,9 +118,15 @@ class Model:
         if np.isnan(sum(r ** 2)):
             print 'nan problem in residuals'  # quick and dirty check
         return r
-
+    
+    def sse(self, parameters=None, tmin=None, tmax=None, solvemethod='lmfit',
+                  noise=False):
+        res = self.residuals(parameters, tmin=None, tmax=None,
+                             solvemethod='lmfit', noise=False)
+        return sum(res ** 2)
+    
     def solve(self, tmin=None, tmax=None, solvemethod='lmfit', report=True,
-              noise=True, initialize=False):
+              noise=True, initialize=False, solve=True):
         """
         Methods to solve the time series model.
 
@@ -147,6 +152,8 @@ class Model:
                   'defined. No noise model is used'
         self.solvemethod = solvemethod
         self.nparam = sum(ts.nparam for ts in self.tserieslist)
+        if self.noisemodel is not None:
+            self.nparam += self.noisemodel.nparam
 
         # Check series with tmin, tmax
         tmin, tmax = self.check_series(tmin, tmax)
@@ -156,41 +163,43 @@ class Model:
             for ts in self.tserieslist:
                 ts.set_init_parameters()
             if self.noisemodel: self.noisemodel.set_init_parameters()
-
-        if self.solvemethod == 'lmfit':
-            parameters = lmfit.Parameters()
-            for ts in self.tserieslist:
-                for k in ts.parameters.index:
-                    p = ts.parameters.loc[k]
-                    # needed because lmfit doesn't take nan as input
-                    pvalues = np.where(np.isnan(p.values), None, p.values)
-                    parameters.add(k, value=pvalues[0], min=pvalues[1],
-                                   max=pvalues[2], vary=pvalues[3])
-            if self.noisemodel is not None:
-                for k in self.noisemodel.parameters.index:
-                    p = self.noisemodel.parameters.loc[k]
-                    pvalues = np.where(np.isnan(p.values), None,
-                                       p.values)  # needed because lmfit doesn't
-                    # take nan as input
-                    parameters.add(k, value=pvalues[0], min=pvalues[1],
-                                   max=pvalues[2], vary=pvalues[3])
-            self.lmfit_params = parameters
-            self.fit = lmfit.minimize(fcn=self.residuals, params=parameters,
-                                      ftol=1e-3, epsfcn=1e-4,
-                                      args=(tmin, tmax, self.solvemethod, noise))
-            if report: print lmfit.fit_report(self.fit)
-            self.parameters = np.array([p.value for p in self.fit.params.values()])
-            self.paramdict = self.fit.params.valuesdict()
-            # Return parameters to tseries
-            for ts in self.tserieslist:
-                for k in ts.parameters.index:
-                    ts.parameters.loc[k].value = self.paramdict[k]
-            if self.noisemodel is not None:
-                for k in self.noisemodel.parameters.index:
-                    self.noisemodel.parameters.loc[k].value = self.paramdict[k]
-
-            # Make the Statistics class available after optimization
-            self.stats = Statistics(self)
+        
+        #TODO: the initialization should probably be a separate function and a pandas parmeter dataframe should be stored
+        if solve:
+            if self.solvemethod == 'lmfit':
+                parameters = lmfit.Parameters()
+                for ts in self.tserieslist:
+                    for k in ts.parameters.index:
+                        p = ts.parameters.loc[k]
+                        # needed because lmfit doesn't take nan as input
+                        pvalues = np.where(np.isnan(p.values), None, p.values)
+                        parameters.add(k, value=pvalues[0], min=pvalues[1],
+                                       max=pvalues[2], vary=pvalues[3])
+                if self.noisemodel is not None:
+                    for k in self.noisemodel.parameters.index:
+                        p = self.noisemodel.parameters.loc[k]
+                        pvalues = np.where(np.isnan(p.values), None,
+                                           p.values)  # needed because lmfit doesn't
+                        # take nan as input
+                        parameters.add(k, value=pvalues[0], min=pvalues[1],
+                                       max=pvalues[2], vary=pvalues[3])
+                self.lmfit_params = parameters
+                self.fit = lmfit.minimize(fcn=self.residuals, params=parameters,
+                                          ftol=1e-3, epsfcn=1e-4,
+                                          args=(tmin, tmax, self.solvemethod, noise))
+                if report: print lmfit.fit_report(self.fit)
+                self.parameters = np.array([p.value for p in self.fit.params.values()])
+                self.paramdict = self.fit.params.valuesdict()
+                # Return parameters to tseries
+                for ts in self.tserieslist:
+                    for k in ts.parameters.index:
+                        ts.parameters.loc[k].value = self.paramdict[k]
+                if self.noisemodel is not None:
+                    for k in self.noisemodel.parameters.index:
+                        self.noisemodel.parameters.loc[k].value = self.paramdict[k]
+    
+                # Make the Statistics class available after optimization
+                self.stats = Statistics(self)
 
     def check_series(self, tmin=None, tmax=None):
         """
