@@ -121,8 +121,8 @@ class Model:
     
     def sse(self, parameters=None, tmin=None, tmax=None, solvemethod='lmfit',
                   noise=False):
-        res = self.residuals(parameters, tmin=None, tmax=None,
-                             solvemethod='lmfit', noise=False)
+        res = self.residuals(parameters, tmin=tmin, tmax=tmax,
+                             solvemethod=solvemethod, noise=noise)
         return sum(res ** 2)
     
     def solve(self, tmin=None, tmax=None, solvemethod='lmfit', report=True,
