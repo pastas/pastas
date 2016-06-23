@@ -1,5 +1,5 @@
 """
-This file contains the GUI made for gwtsa.
+This file contains the GUI made for pasta.
 
 """
 
@@ -18,7 +18,7 @@ import pickle
 import os.path
 
 
-class GwtsaGui(Frame):
+class PastaGui(Frame):
     def __init__(self, parent):
         Frame.__init__(self, parent)
 
@@ -36,7 +36,7 @@ class GwtsaGui(Frame):
     def initUI(self):
         # Initialize the GUI Application and create all the frames
 
-        self.parent.title("GWTSA Time Series Model")
+        self.parent.title("PASTA Time Series Model")
         self.parent.rowconfigure(0, weight=1)
         self.parent.rowconfigure(1, weight=1)
         self.parent.rowconfigure(2)
@@ -485,7 +485,7 @@ def main():
     w=600
     h=500
     root.geometry("%dx%d+%d+%d" % (w, h, (sw-w)/2, (sh-h)/2))
-    GwtsaGui(root)
+    PastaGui(root)
     root.mainloop()
 
 
