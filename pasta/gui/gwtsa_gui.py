@@ -193,7 +193,10 @@ class GwtsaGui(Frame):
 
     def select_ir(self, event):
         if self.ir_graph != None:
-            self.ir_graph.remove()
+            self.ir_ax.clear()
+            #plt.cla()
+            #self.ir_graph.pop()
+            #self.ir_graph.remove()
             self.ir_graph = None
 
         print(self.tree.selection())
@@ -222,9 +225,9 @@ class GwtsaGui(Frame):
         else:
             ts=self.tserieslist[self.tree.index(self.tree.selection())]
             cl=str(ts.__class__)
-            if cl=='gwtsa.tseries.Constant':
+            if cl=='pasta.tseries.Constant':
                 pass
-            elif cl=='gwtsa.tseries.NoiseModel':
+            elif cl=='pasta.tseries.NoiseModel':
                 pass
             else:
                 ir=ts.rfunc
@@ -236,6 +239,7 @@ class GwtsaGui(Frame):
                 self.ir_ax.relim()
                 self.ir_ax.autoscale_view()
                 self.ir_canvas.show()
+            self.ir_canvas.show()
 
     # Read the observed time series
     def read_series(self):
