@@ -124,8 +124,9 @@ class PastaGui(Frame):
             #self.tree.insert('', 'end', 'drainage_level', text='Drainage level',
             #                 values=['Constant', "1.02"])
             #self.irs.append(None)
-            ts = Constant(value=1.02,name='Drainage level')
-            self.tserieslist.append(ts)
+            #ts = Constant(value=1.02,name='Drainage level')
+            #self.tserieslist.append(ts)
+            pass
 
         self.generateTreeView()        
         
@@ -167,79 +168,46 @@ class PastaGui(Frame):
 
     def popUpMenu(self,event):
         if self.tree.selection():
-            tags=self.tree.item(self.tree.selection(),"tags")
-            if 'disabled' in tags:
-                self.ir_is_disabled=True
-            else:
-                self.ir_is_disabled=False
             self.popup.post(event.x_root, event.y_root)
     
     def disable_ir(self):
-        tags=self.tree.item(self.tree.selection(),"tags")
-        if 'disabled' in tags:
-            self.tree.item(self.tree.selection()[0],tags = ())
+        ts = self.tserieslist[self.tree.index(self.tree.selection())]
+        if ts.disabled:
+            ts.disabled = False
         else:
-            self.tree.item(self.tree.selection()[0],tags = ('disabled',))
+            ts.disabled = True
+        self.generateTreeView()
+        # if ts.disabled:
+        #     self.ir_is_disabled = True
+        # tags=self.tree.item(self.tree.selection(),"tags")
+        # if 'disabled' in tags:
+        #     self.tree.item(self.tree.selection()[0],tags = ())
+        # else:
+        #     self.tree.item(self.tree.selection()[0],tags = ('disabled',))
     
     def delete_ir(self):
-        print self.tree.selection()[0]
-        #index = self.tree.get(0, "end").index(self.tree.selection()[0])
         index = self.tree.index(self.tree.selection()[0])
-        print(index)
-        #self.tserieslist.pop(index)
-        #self.tree.delete(self.tree.selection())
-        self.irs.pop(index)
+        self.tserieslist.pop(index)
         self.generateTreeView()
 
     def select_ir(self, event):
         if self.ir_graph != None:
             self.ir_ax.clear()
-            #plt.cla()
-            #self.ir_graph.pop()
-            #self.ir_graph.remove()
             self.ir_graph = None
 
-        print(self.tree.selection())
-        if False:
-            values = self.tree.item(self.tree.selection(), "values")
-            # tag=self.tree.item(self.tree.selection(),"tag")
-    
-            if values[0] == 'Constant':
-                pass
-            elif values[0] == 'Tseries2':
-                pass
-            elif values[0] == 'Factor':
-                # get the brother from the parent
-                pass
-            else:
-                ir = getattr(rfunc, values[0])()
-                # s=ir.block([1,2,3])
-                p = list(values[1:ir.nparam + 1])
-                p = [float(x) for x in p]
-                s = ir.block(p)
-    
-                self.ir_graph, = self.ir_ax.plot(s)
-                self.ir_ax.relim()
-                self.ir_ax.autoscale_view()
-                self.ir_canvas.show()
-        else:
-            ts=self.tserieslist[self.tree.index(self.tree.selection())]
-            cl=str(ts.__class__)
-            if cl=='pasta.tseries.Constant':
-                pass
-            elif cl=='pasta.tseries.NoiseModel':
-                pass
-            else:
-                ir=ts.rfunc
-                p=ts.parameters['value']
-                print(p)
-                s=ir.block(p)
-                
-                self.ir_graph, = self.ir_ax.plot(s)
-                self.ir_ax.relim()
-                self.ir_ax.autoscale_view()
-                self.ir_canvas.show()
+        # draw graph of selection
+        ts=self.tserieslist[self.tree.index(self.tree.selection())]
+        self.ir_is_disabled = ts.disabled
+        if hasattr(ts,'rfunc'):
+            ir=ts.rfunc
+            p=ts.parameters['value']
+            s=ir.block(p)
+
+            self.ir_graph, = self.ir_ax.plot(s)
+            self.ir_ax.relim()
+            self.ir_ax.autoscale_view()
             self.ir_canvas.show()
+        self.ir_canvas.show()
 
     # Read the observed time series
     def read_series(self):
@@ -255,6 +223,19 @@ class PastaGui(Frame):
 
             # TODO Make read_series choose the filetype e.g type='dino'
             self.oseries = ReadSeries(fname, 'dino')
+
+            # test if any of tseries is a Constant
+            new_constant = True
+            for ts in self.tserieslist:
+                cl = str(ts.__class__)
+                if cl == 'pasta.tseries.Constant':
+                    ts.set_parameters(constant_d=self.oseries.series.min())
+                    new_constant=False
+            if new_constant:
+                ts = Constant(value=self.oseries.series.min(), name='Drainage level')
+                ts.disabled = False
+                self.tserieslist.append(ts)
+            self.generateTreeView()
 
             # Automatically plot the oseries
             if self.series_graph != None:
@@ -274,25 +255,22 @@ class PastaGui(Frame):
             dlg = tkFileDialog.Open()
         irfname = dlg.show()
         if irfname != '':
-            print(irfname)
             self.settings['ir_file'] = irfname
             self.save_settings()
-            series = ReadSeries(irfname, 'knmi', variable='RH')
-            if False:
-                self.irs.append(series)
-                self.tree.insert('', 'end', text='Precipitation',
-                             values=['Gamma', "500", "1", "100"])
-            else:
+            if True:
+                series = ReadSeries(irfname, 'knmi', variable='RH')
                 ts = Tseries(series.series, Gamma(), name='Precipitation')
+                ts.disabled = False
                 self.tserieslist.append(ts)
-                self.generateTreeView()
-            # self.tree.insert('recharge', 'end', text='Evaporation',
-            #            values=['Factor',"0.79"])
-            if False:
-                series = ReadSeries(irfname, 'knmi', variable='EV24')
-                self.irs.append(series)
-                self.tree.insert('', 'end', text='Evaporation',
-                                 values=['Gamma', "500", "1", "100"])
+            else:
+                prec = ReadSeries(irfname, 'knmi', variable='RH')
+                evap = ReadSeries(irfname, 'knmi', variable='EV24')
+                ts = Recharge(prec.series, evap.series, Gamma(), Linear(), name='recharge')
+                ts.disabled = False
+                self.tserieslist.append(ts)
+
+            self.generateTreeView()
+
                                  
     def generateTreeView(self):
         for ch in self.tree.get_children():
@@ -312,7 +290,11 @@ class PastaGui(Frame):
                 valueStr = [ts.rfunc.__class__.__name__] + valueStr
             else:
                 valueStr = ['Constant'] + valueStr
-            self.tree.insert('','end', text=ts.name,values=valueStr)
+            if ts.disabled:
+                tags = ('disabled',)
+            else:
+                tags = ()
+            self.tree.insert('', 'end', text = ts.name, values = valueStr, tags = tags)
 
     #
     # Add a stress through a seperate window
@@ -403,53 +385,19 @@ class PastaGui(Frame):
             tkMessageBox.showerror('No observation series',
                                    'First read observations')
         else:
+            # initialise the model
             self.ml = Model(self.oseries.series)
-            if False:
-                chs = self.tree.get_children()
-                for ch in chs:
-                    values = self.tree.item(ch, "values")
-                    print(values)
-    
-                    if values[0] == 'Constant':
-                        ts = Constant(value=float(values[1]))
-                        self.ml.addtseries(ts)
-                    elif values[0] == 'Recharge':
-                        # not implemented yet
-                        pass
-                    else:
-                        stress = self.irs[self.tree.index(ch)].series
-                        rfunc = eval(values[0])()
-                        ts = Tseries(stress, rfunc, name=values[0])
-                        self.ml.addtseries(ts)
-            else:
-                for ts in self.tserieslist:
-                    #TODO Make a deep copy
-                    self.ml.addtseries(ts)
+
+            # add tseries
+            for ts in self.tserieslist:
+                #TODO Make a deep copy
+                self.ml.addtseries(ts)
+
             # solve
             self.ml.solve()
 
             # change parameters in Treeview
-            for i in range(len(chs)):
-                ch = chs[i]
-                ts = self.ml.tserieslist[i]
-                value = ts.parameters['value']
-                # convert to strings
-                # valueStr=['{:.2f}'.format(x) for x in value]
-                # value=['{:.3g}'.format(x) for x in value]
-                valueStr = []
-                for v in value:
-                    if v >= 1000:
-                        valueStr.append('{:.0f}'.format(v))
-                    elif v >= 100:
-                        valueStr.append('{:.1f}'.format(v))
-                    else:
-                        valueStr.append('{:.2f}'.format(v))
-
-                # add to existing name
-                values = self.tree.item(ch, "values")
-                values = [values[0]] + valueStr
-                # set values
-                self.tree.item(ch, values=values)
+            self.generateTreeView()
 
             # show graph
             h = self.ml.simulate()
