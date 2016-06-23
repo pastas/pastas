@@ -238,16 +238,20 @@ class Model:
                   'index is %s' % self.oseries.last_valid_index()
 
         # Get maximum simulation period.
-        tstmin = self.tserieslist[0].tmin
-        tstmax = self.tserieslist[0].tmax
+        tstmin = None
+        tstmax = None
 
         for ts in self.tserieslist:
             if isinstance(ts, Constant):  # Check if it is not a constant tseries.
                 pass
             else:
-                if ts.tmin < tstmin:
+                if tstmin == None:
                     tstmin = ts.tmin
-                if ts.tmax > tstmax:
+                elif ts.tmin < tstmin:
+                    tstmin = ts.tmin
+                if tstmax == None:
+                    tstmax = ts.tmax
+                elif ts.tmax > tstmax:
                     tstmax = ts.tmax
 
         self.tmin = tmin
