@@ -319,16 +319,18 @@ class Constant:
 
     """
 
-    def __init__(self, name='Constant', xy=None, metadata=None, value=0.0):
+    def __init__(self, name='Constant', xy=None, metadata=None, value=0.0, pmin=np.nan, pmax=np.nan):
         self.nparam = 1
         self.name = name
         self.xy = xy
         self.metadata = metadata
+        self.pmin = pmin
+        self.pmax = pmax
         self.set_init_parameters(value)
 
     def set_init_parameters(self, value=0.0):
         self.parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
-        self.parameters.loc['constant_d'] = (value, np.nan, np.nan, 1)
+        self.parameters.loc['constant_d'] = (value, self.pmin, self.pmax, 1)
 
     def set_parameters(self, **kwargs):
         for i in kwargs:

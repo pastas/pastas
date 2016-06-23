@@ -3,8 +3,8 @@ This test file is meant for developing purposes. Providing an easy method to
 test the functioning of PASTA during development.
 
 """
-import matplotlib
-matplotlib.use('TkAgg')
+#import matplotlib
+#matplotlib.use('TkAgg')
 from pasta import *
 
 # read observations
@@ -31,9 +31,8 @@ ml.addtseries(d)
 n = NoiseModel()
 ml.addnoisemodel(n)
 
-# Solve the time series model
-ml.solve(tmax= '1990', initialize=False)
+# Solve
+ml.solve()
 
-# show results
-#ml.stats.summary(output='all')
-ml.plot_results()
+# Plot
+ml.plot()
