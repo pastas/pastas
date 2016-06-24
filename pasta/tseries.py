@@ -35,12 +35,14 @@ class TseriesBase:
 
     """
 
-    def __init__(self, rfunc, name, xy, metadata):
+    def __init__(self, rfunc, name, xy, metadata, tmin, tmax):
         self.rfunc = rfunc
         self.nparam = rfunc.nparam
         self.name = name
         self.xy = xy
         self.metadata = metadata
+        self.tmin = tmin
+        self.tmax = tmax
 
     def set_parameters(self, **kwargs):
         """Method to set the parameters value
@@ -94,11 +96,10 @@ class Tseries(TseriesBase):
 
     def __init__(self, stress, rfunc, name, metadata=None, xy=(0, 0), freq=None,
                  fillnan='mean'):
-        TseriesBase.__init__(self, rfunc, name, xy, metadata)
         self.stress = check_tseries(stress, freq, fillnan)
         self.set_init_parameters()
-        self.tmin = self.stress.index.min()
-        self.tmax = self.stress.index.max()
+        TseriesBase.__init__(self, rfunc, name, xy, metadata,
+                             self.stress.index.min(), self.stress.index.max())
 
     def set_init_parameters(self):
         """
@@ -182,7 +183,6 @@ class Recharge(TseriesBase):
     def __init__(self, precip, evap, rfunc, recharge,
                  name='Recharge', metadata=None, xy=(0, 0), freq=[None, None],
                  fillnan=['mean', 'interpolate']):
-        TseriesBase.__init__(self, rfunc, name, xy, metadata)
 
         # Check and name the time series
         P = check_tseries(precip, freq[0], fillnan[0])
@@ -195,8 +195,8 @@ class Recharge(TseriesBase):
         self.precip.name = 'Precipitation'
 
         # Store tmin and tmax
-        self.tmin = self.precip.index.min()
-        self.tmax = self.precip.index.max()
+        TseriesBase.__init__(self, rfunc, name, xy, metadata,
+                     self.precip.index.min(), self.precip.index.max())
 
         # The recharge calculation needs arrays
         self.precip_array = np.array(self.precip)
@@ -280,7 +280,6 @@ class Well(TseriesBase):
     # TODO implement this function
     def __init__(self, stress, rfunc, r, name, metadata=None,
                  xy=(0, 0), freq=None, fillna='mean'):
-        TseriesBase.__init__(self, rfunc, name, xy, metadata)
 
         # Check stresses
         self.stress = []
@@ -291,6 +290,9 @@ class Well(TseriesBase):
 
         self.set_init_parameters()
         self.r = r
+        
+        TseriesBase.__init__(self, rfunc, name, xy, metadata,
+                     self.stress.index.min(), self.stress.index.max())
 
     def set_init_parameters(self):
         self.parameters = self.rfunc.set_parameters(self.name)
@@ -308,7 +310,7 @@ class Well(TseriesBase):
         return h
 
 
-class Constant:
+class Constant(TseriesBase):
     """A constant value that is added to the time series model.
 
     Parameters
@@ -327,6 +329,10 @@ class Constant:
         self.pmin = pmin
         self.pmax = pmax
         self.set_init_parameters(value)
+        # TODO: Should call this to make it sensible
+        # rfunc should be one for all times
+        #TseriesBase.__init__(self, rfunc, name, xy, metadata,
+        #                     self.stress.index.min(), self.stress.index.max())
 
     def set_init_parameters(self, value=0.0):
         self.parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
