@@ -3,7 +3,7 @@ This file contains the GUI made for pasta.
 
 """
 
-from Tkinter import Tk, W, N, E, S, Toplevel, StringVar, Menu
+from Tkinter import Tk, W, N, E, S, Toplevel, StringVar, Menu, BooleanVar
 from ttk import Button, Label, Frame, Labelframe, Treeview, OptionMenu, Entry
 import tkMessageBox
 import matplotlib
@@ -132,7 +132,8 @@ class PastaGui(Frame):
         
         self.popup = Menu(self.parent, tearoff=0)
         #self.popup.add_command(label="Disable", command=self.disable_ir)
-        self.ir_is_disabled=False
+        self.ir_is_disabled=BooleanVar()
+
         self.popup.add_checkbutton(label="Disable", onvalue=True, offvalue=False,
                                    variable=self.ir_is_disabled, command=self.disable_ir)
         self.popup.add_command(label="Delete", command=self.delete_ir)
@@ -155,7 +156,7 @@ class PastaGui(Frame):
 
         ibtn = Button(Frame3, text="Optimize", command=self.optimize)
         ibtn.grid(row=1, column=0, padx=5, pady=1)
-        ibtn = Button(Frame3, text="Show results", command=self.not_yet_implemented)
+        ibtn = Button(Frame3, text="Show results", command=self.show_results)
         ibtn.grid(row=2, column=0, padx=5, pady=1)
 
         ibtn = Button(Frame3, text="Simulate", command=self.not_yet_implemented)
@@ -197,7 +198,7 @@ class PastaGui(Frame):
 
         # draw graph of selection
         ts=self.tserieslist[self.tree.index(self.tree.selection())]
-        self.ir_is_disabled = ts.disabled
+        self.ir_is_disabled.set(ts.disabled)
         if hasattr(ts,'rfunc'):
             ir=ts.rfunc
             p=ts.parameters['value']
@@ -227,8 +228,7 @@ class PastaGui(Frame):
             # test if any of tseries is a Constant
             new_constant = True
             for ts in self.tserieslist:
-                cl = str(ts.__class__)
-                if cl == 'pasta.tseries.Constant':
+                if isinstance(ts,Constant):
                     ts.set_parameters(constant_d=self.oseries.series.min())
                     new_constant=False
             if new_constant:
@@ -302,38 +302,38 @@ class PastaGui(Frame):
 
     def add_stress(self):
         # Create a new pop-up window
-        window = Toplevel(self)
-        window.geometry('+300+300')
+        window = Toplevel(self.parent)
+        #window.geometry('+300+300')
         top = Frame(window)
         top.grid(column=1, row=1, padx=10, pady=10)
 
         # Choose the stress type
-        tseries_dict = {'Tseries', 'Recharge'}
+        tseries_list = ['Tseries', 'Recharge']
         Label(top, text='Choose stress type:').grid(row=0, column=0,
                                                     sticky=W)
         tseries = StringVar(top)
-        tseries.set('Recharge')  # initial value
+        tseries.set(tseries_list[0])  # initial value
         # tseries.trace('w', self.update_stress_options())
-        opt1 = OptionMenu(top, tseries, *tseries_dict)
+        opt1 = OptionMenu(top, tseries, None, *tseries_list)
         opt1.grid(row=0, column=1, sticky=E)
 
         # Choose recharge model
-        recharge_dict = {'Linear', 'Preferential', 'Percolation',
-                         'Combination'}
+        recharge_list = ['Linear', 'Preferential', 'Percolation',
+                         'Combination']
         Label(top, text='Choose recharge model:').grid(row=1, column=0,
                                                        sticky=W)
         recharge = StringVar(top)
-        recharge.set('Linear')
-        opt2 = OptionMenu(top, recharge, *recharge_dict)
+        recharge.set(recharge_list[0])
+        opt2 = OptionMenu(top, recharge, recharge_list[0], *recharge_list)
         opt2.grid(row=1, column=1, sticky=E)
 
         # Choose Reponse function
-        response_dict = {'Gamma', 'Exponential'}
+        response_list = ['Gamma', 'Exponential']
         Label(top, text='Response function:').grid(row=2, column=0,
                                                    sticky=W)
         rfunc = StringVar(top)
-        rfunc.set('Exponential')
-        opt2 = OptionMenu(top, rfunc, *response_dict)
+        rfunc.set(response_list[0])
+        opt2 = OptionMenu(top, rfunc, None, *response_list)
         opt2.grid(row=2, column=1, sticky=E)
 
         # Select Rain data
@@ -385,13 +385,16 @@ class PastaGui(Frame):
             tkMessageBox.showerror('No observation series',
                                    'First read observations')
         else:
+            self.parent.config(cursor="wait")
+
             # initialise the model
             self.ml = Model(self.oseries.series)
 
             # add tseries
             for ts in self.tserieslist:
-                #TODO Make a deep copy
-                self.ml.addtseries(ts)
+                if not ts.disabled:
+                    #TODO Make a deep copy
+                    self.ml.addtseries(ts)
 
             # solve
             self.ml.solve()
@@ -408,6 +411,11 @@ class PastaGui(Frame):
             self.ts_ax.autoscale_view()
             self.ts_canvas.show()
 
+            self.parent.config(cursor="")
+
+    def show_results(self):
+        self.ml.plot_results()
+
     def load_settings(self):
         if os.path.isfile(self.settingsFile):
             fileObject = open(self.settingsFile, 'r')
@@ -423,19 +431,22 @@ class PastaGui(Frame):
     def not_yet_implemented(self):
         tkMessageBox.showerror('Not yet implemented', 'Working on it...')
 
-
 def main():
     root = Tk()
     #w, h = root.winfo_screenwidth(), root.winfo_screenheight()
     #root.geometry("%dx%d+0+0" % (w, h))
-    root.geometry("600x500+300+300")
-    sw, sh = root.winfo_screenwidth(), root.winfo_screenheight()
-    w=600
-    h=500
-    root.geometry("%dx%d+%d+%d" % (w, h, (sw-w)/2, (sh-h)/2))
+    #root.geometry("600x500+300+300")
+    # sw, sh = root.winfo_screenwidth(), root.winfo_screenheight()
+    # w=600
+    # h=500
+    # root.geometry("%dx%d+%d+%d" % (w, h, (sw-w)/2, (sh-h)/2))
+    root.geometry(center(root,600,500))
     PastaGui(root)
     root.mainloop()
 
+def center(root,w,h):
+    sw, sh = root.winfo_screenwidth(), root.winfo_screenheight()
+    return "%dx%d+%d+%d" % (w, h, (sw-w)/2, (sh-h)/2)
 
 if __name__ == '__main__':
     main()
