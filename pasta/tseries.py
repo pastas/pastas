@@ -328,6 +328,8 @@ class Constant(TseriesBase):
         self.metadata = metadata
         self.pmin = pmin
         self.pmax = pmax
+        self.tmin = pd.Timestamp.min
+        self.tmax = pd.Timestamp.max
         self.set_init_parameters(value)
         # TODO: Should call this to make it sensible
         # rfunc should be one for all times
