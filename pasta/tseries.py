@@ -97,9 +97,9 @@ class Tseries(TseriesBase):
     def __init__(self, stress, rfunc, name, metadata=None, xy=(0, 0), freq=None,
                  fillnan='mean'):
         self.stress = check_tseries(stress, freq, fillnan)
-        self.set_init_parameters()
         TseriesBase.__init__(self, rfunc, name, xy, metadata,
                              self.stress.index.min(), self.stress.index.max())
+        self.set_init_parameters()
 
     def set_init_parameters(self):
         """
