@@ -35,7 +35,7 @@ ml.addnoisemodel(n)
 #ml.solve(initialize=True, solve=False)
 
 # Solve model to get good starting value
-ml.solve()
+ml.solve(initialize=True, solve=False)
 
 import numpy as np
 
@@ -45,15 +45,19 @@ class PastaTest:
         self.dim = self.model.nparam
         self.xlow = []
         self.xup = []
+        self.xvalue = []
         # TODO: this should be in the Model class of Pasta
         for ts in ml.tserieslist:
             self.xlow.extend(ts.parameters['pmin'].tolist())
             self.xup.extend(ts.parameters['pmax'].tolist())
+            self.xvalue.extend(ts.parameters['value'].tolist())
         if ml.noisemodel is not None:
             self.xlow.extend(ml.noisemodel.parameters['pmin'].tolist())
             self.xup.extend(ml.noisemodel.parameters['pmax'].tolist())
+            self.xvalue.extend(ml.noisemodel.parameters['value'].tolist())
         self.xlow = np.array(self.xlow)
         self.xup = np.array(self.xup)
+        self.xvalue = np.array(self.xvalue)
         # option 2
         #faclow = 0.5 * np.ones(self.dim)
         #facup = 2 * np.ones(self.dim)
@@ -64,12 +68,27 @@ class PastaTest:
         self.info = "Pasta test"
         self.integer = [] # integer variables MUST be specified
         self.continuous = np.arange(self.dim) # continuos variables
+    
+    def checkbounds(self, **kwargs):
+        x = kwargs["x_new"]
+        testmax = bool(np.all(x <= self.xup))
+        testmin = bool(np.all(x >= self.xlow))
+        print 'x', x
+        print 'testmin', testmin
+        print 'testmax', testmax
+        return testmax and testmin
         
     def objfunction(self, x):
-        print '.',
+        print x
         return self.model.sse(x, noise=True)
     
 data = PastaTest(ml)
     
-from scipy.optimize import differential_evolution
-result = differential_evolution(data.objfunction, zip(data.xlow, data.xup))
+#from scipy.optimize import differential_evolution
+#result = differential_evolution(data.objfunction, zip(data.xlow, data.xup))
+
+from scipy.optimize import basinhopping
+def print_fun(x, f, accepted):
+    print("at minimum %.4f accepted %d" % (f, int(accepted)))
+
+result = basinhopping(data.objfunction, data.xvalue, niter=50, callback=print_fun, accept_test=data.checkbounds)
