@@ -41,7 +41,10 @@ class Model:
         self.odelt = self.oseries.index.to_series().diff() / np.timedelta64(1, 'D')
         # delt converted to days
         self.tserieslist = []
+        #TODO: store parameters of tseries in list of arrays
+        self.parameterslist = []
         self.noisemodel = None
+        self.noiseparameters = None
 
     def addtseries(self, tseries):
         """

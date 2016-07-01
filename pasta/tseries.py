@@ -35,9 +35,9 @@ class TseriesBase:
 
     """
 
-    def __init__(self, rfunc, name, xy, metadata, tmin, tmax):
-        self.rfunc = rfunc
-        self.nparam = rfunc.nparam
+    def __init__(self, rfunc, name, xy, metadata, tmin, tmax, cutoff):
+        self.rfunc = rfunc(cutoff)
+        self.nparam = self.rfunc.nparam
         self.name = name
         self.xy = xy
         self.metadata = metadata
@@ -95,10 +95,11 @@ class Tseries(TseriesBase):
     """
 
     def __init__(self, stress, rfunc, name, metadata=None, xy=(0, 0), freq=None,
-                 fillnan='mean'):
+                 fillnan='mean', cutoff=0.99):
         self.stress = check_tseries(stress, freq, fillnan)
         TseriesBase.__init__(self, rfunc, name, xy, metadata,
-                             self.stress.index.min(), self.stress.index.max())
+                             self.stress.index.min(), self.stress.index.max(),
+                             cutoff)
         self.set_init_parameters()
 
     def set_init_parameters(self):
@@ -146,7 +147,7 @@ class Recharge(TseriesBase):
         pandas Series object containing the precipitation stress.
     evap: pd.Series
         pandas Series object containing the evaporationstress.
-    rfunc: rfunc class object
+    rfunc: rfunc class
         Response function used in the convolution with the stess.
     recharge: recharge_func class object
     name: str
@@ -182,7 +183,7 @@ class Recharge(TseriesBase):
 
     def __init__(self, precip, evap, rfunc, recharge,
                  name='Recharge', metadata=None, xy=(0, 0), freq=[None, None],
-                 fillnan=['mean', 'interpolate']):
+                 fillnan=['mean', 'interpolate'], cutoff=0.99):
 
         # Check and name the time series
         P = check_tseries(precip, freq[0], fillnan[0])
@@ -196,7 +197,7 @@ class Recharge(TseriesBase):
 
         # Store tmin and tmax
         TseriesBase.__init__(self, rfunc, name, xy, metadata,
-                     self.precip.index.min(), self.precip.index.max())
+                     self.precip.index.min(), self.precip.index.max(), cutoff)
 
         # The recharge calculation needs arrays
         self.precip_array = np.array(self.precip)
@@ -279,7 +280,7 @@ class Well(TseriesBase):
 
     # TODO implement this function
     def __init__(self, stress, rfunc, r, name, metadata=None,
-                 xy=(0, 0), freq=None, fillna='mean'):
+                 xy=(0, 0), freq=None, fillna='mean', cutoff=0.99):
 
         # Check stresses
         self.stress = []
@@ -292,7 +293,7 @@ class Well(TseriesBase):
         self.r = r
         
         TseriesBase.__init__(self, rfunc, name, xy, metadata,
-                     self.stress.index.min(), self.stress.index.max())
+                     self.stress.index.min(), self.stress.index.max(), cutoff)
 
     def set_init_parameters(self):
         self.parameters = self.rfunc.set_parameters(self.name)

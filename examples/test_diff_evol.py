@@ -73,22 +73,23 @@ class PastaTest:
         x = kwargs["x_new"]
         testmax = bool(np.all(x <= self.xup))
         testmin = bool(np.all(x >= self.xlow))
-        print 'x', x
-        print 'testmin', testmin
-        print 'testmax', testmax
+        #print 'x', x
+        #print 'testmin', testmin
+        #print 'testmax', testmax
         return testmax and testmin
         
     def objfunction(self, x):
-        print x
+        print '.',
+        #print x
         return self.model.sse(x, noise=True)
     
 data = PastaTest(ml)
     
-#from scipy.optimize import differential_evolution
-#result = differential_evolution(data.objfunction, zip(data.xlow, data.xup))
+from scipy.optimize import differential_evolution
+result = differential_evolution(data.objfunction, zip(data.xlow, data.xup))
 
-from scipy.optimize import basinhopping
-def print_fun(x, f, accepted):
-    print("at minimum %.4f accepted %d" % (f, int(accepted)))
+#from scipy.optimize import basinhopping
+#def print_fun(x, f, accepted):
+#    print("at minimum %.4f accepted %d" % (f, int(accepted)))
 
-result = basinhopping(data.objfunction, data.xvalue, niter=50, callback=print_fun, accept_test=data.checkbounds)
+#result = basinhopping(data.objfunction, data.xvalue, niter=50, callback=print_fun, accept_test=data.checkbounds)

@@ -49,9 +49,9 @@ class Gamma:
     %(doc)s
     """ % {'doc': _class_doc}
 
-    def __init__(self):
+    def __init__(self, cutoff=0.99):
         self.nparam = 3
-        self.cutoff = 0.99
+        self.cutoff = cutoff
 
     def set_parameters(self, name):
         parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
@@ -80,9 +80,9 @@ class Exponential:
     %(doc)s
     """ % {'doc': _class_doc}
 
-    def __init__(self):
+    def __init__(self, cutoff):
         self.nparam = 2
-        self.cutoff = 0.99
+        self.cutoff = cutoff
 
     def set_parameters(self, name):
         parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
@@ -119,9 +119,9 @@ class Hantush:
 
     """
 
-    def __init__(self):
+    def __init__(self, cutoff):
         self.nparam = 3
-        self.cutoff = 0.99
+        self.cutoff = cutoff
 
     def set_parameters(self, name):
         parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
@@ -161,9 +161,9 @@ class Theis:
 
     """
 
-    def __init__(self):
+    def __init__(self, cutoff):
         self.nparam = 3
-        self.cutoff = 0.99
+        self.cutoff = cutoff
 
     def set_parameters(self, name):
         parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
