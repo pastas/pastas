@@ -72,7 +72,7 @@ class Tseries(TseriesBase):
     ----------
     stress: pd.Series
         pandas Series object containing the stress.
-    rfunc: rfunc class object
+    rfunc: rfunc class
         Response function used in the convolution with the stess.
     name: str
         Name of the stress
@@ -256,7 +256,7 @@ class Well(TseriesBase):
     ----------
     stress: list
         list of pandas Series objects containing the stresses.
-    rfunc: rfunc class object
+    rfunc: rfunc class
         Response function used in the convolution with the stess.
     name: str
         Name of the stress
