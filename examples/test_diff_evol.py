@@ -20,7 +20,7 @@ RH=ReadSeries(fname,'knmi',variable='RH')
 EV24=ReadSeries(fname,'knmi',variable='EV24')
 
 # Create stress
-ts = Recharge(RH.series, EV24.series, Gamma(), Linear(), name='recharge')
+ts = Recharge(RH.series, EV24.series, Gamma, Linear(), name='recharge')
 ml.addtseries(ts)
 
 # Add drainage level
@@ -85,8 +85,11 @@ class PastaTest:
     
 data = PastaTest(ml)
     
-from scipy.optimize import differential_evolution
-result = differential_evolution(data.objfunction, zip(data.xlow, data.xup))
+#from scipy.optimize import differential_evolution
+#result = differential_evolution(data.objfunction, zip(data.xlow, data.xup))
+
+from scipy.optimize import least_squares
+result = least_squares(data.objfunction, data.xvalue, bounds=(data.xlow, data.xup))
 
 #from scipy.optimize import basinhopping
 #def print_fun(x, f, accepted):
