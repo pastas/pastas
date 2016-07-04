@@ -42,10 +42,10 @@ class Model:
         self.odelt = self.oseries.index.to_series().diff() / np.timedelta64(1, 'D')
         # delt converted to days
         self.tserieslist = []
-        #TODO: store parameters of tseries in list of arrays
-        self.parameterslist = []
         self.noisemodel = None
         self.noiseparameters = None
+        self.tmin = None
+        self.tmax = None
 
     def addtseries(self, tseries):
         """
@@ -83,11 +83,12 @@ class Model:
             tmin = self.tmin
         if tmax is None:
             tmax = self.tmax
+        assert (tmin is not None) and (tmax is not None), 'model needs to be solved first'
 
         tindex = pd.date_range(tmin, tmax, freq=freq)
 
         if parameters is None:
-            parameters = self.parameters
+            parameters = self.optimal_params
         h = pd.Series(data=0, index=tindex)
         istart = 0  # Track parameters index to pass to ts object
         for ts in self.tserieslist:
@@ -204,17 +205,9 @@ class Model:
             self.initialize(self, default_parameters=default_parameters)
 
         # Solve model
-        self.param = solver(self, tmin=tmin, tmax=tmax, noise=noise,
-                            report=True)
+        self.optimal_params = solver(self, tmin=tmin, tmax=tmax, noise=noise,
+                                     report=True)
 
-        #     self.paramdict = self.fit.params.valuesdict()
-        # for ts in self.tserieslist:
-        #         for k in ts.parameters.index:
-        #             ts.parameters.loc[k].value = self.paramdict[k]
-        #     if self.noisemodel is not None:
-        #         for k in self.noisemodel.parameters.index:
-        #             self.noisemodel.parameters.loc[k].value = self.paramdict[k]
-        #
         # self.stats = Statistics(self)
 
     def check_series(self, tmin=None, tmax=None):
@@ -290,7 +283,7 @@ class Model:
         Plot of the simulated and optionally the observed time series
 
         """
-        h = self.simulate(tmin, tmax)
+        h = self.simulate(tmin=tmin, tmax=tmax)
         plt.figure()
         h.plot()
         if oseries:
