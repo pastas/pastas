@@ -36,5 +36,8 @@ ml.addnoisemodel(n)
 # Solve
 ml.solve()
 
+#ml.initialize()
+#print ml.parameters
+
 # Plot
-ml.plot()
+#ml.plot()
