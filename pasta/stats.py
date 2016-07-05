@@ -49,9 +49,9 @@ class Statistics(object):
     """
 
     def __init__(self, ml):
-        if ml.fit.success is not True:
-            'Model optimization was not succesfull, make sure the model is solved' \
-            'Properly.'
+        #if ml.fit.success is not True:
+        #    'Model optimization was not succesfull, make sure the model is solved' \
+        #    'Properly.'
 
         # Store all the series for quicker computation of the statistics
         self.sseries = ml.simulate()  # Simulated series

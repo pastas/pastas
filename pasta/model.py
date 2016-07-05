@@ -6,7 +6,7 @@ import pandas as pd
 from tseries import Constant
 from checks import check_oseries
 from stats import Statistics
-from solver import lmfit_solve
+from solver import LmfitSolve
 
 
 class Model:
@@ -96,34 +96,6 @@ class Model:
             istart += ts.nparam
         return h
 
-    # def residuals(self, parameters=None, tmin=None, tmax=None, solvemethod='lmfit',
-    #               noise=False):
-    #     """
-    #     Method that is called by the solve function to calculate the residuals.
-    #
-    #     """
-    #     if tmin is None:
-    #         tmin = self.oseries.index.min()
-    #     if tmax is None:
-    #         tmax = self.oseries.index.max()
-    #     tindex = self.oseries[tmin: tmax].index  # times used for calibration
-    #
-    #     if isinstance(parameters, np.ndarray):
-    #         p = parameters
-    #     elif isinstance(parameters, lmfit.parameter.Parameters):  # probably needs to be a function call
-    #         p = np.array([p.value for p in parameters.values()])
-    #     elif parameters is None:
-    #         p = self.parameters
-    #
-    #     # h_observed - h_simulated
-    #     r = self.oseries[tindex] - self.simulate(p, tmin, tmax)[tindex]
-    #     if noise and (self.noisemodel is not None):
-    #         r = self.noisemodel.simulate(r, self.odelt[tindex], tindex,
-    #                                      p[-self.noisemodel.nparam])
-    #     if np.isnan(sum(r ** 2)):
-    #         print 'nan problem in residuals'  # quick and dirty check
-    #     return r
-
     def residuals(self, parameters=None, tmin=None, tmax=None, noise=True):
         """
         Method to calculate the residuals.
@@ -144,20 +116,19 @@ class Model:
         r = self.oseries[tindex] - self.simulate(p, tmin, tmax)[tindex]
         if noise and (self.noisemodel is not None):
             r = self.noisemodel.simulate(r, self.odelt[tindex], tindex,
-                                         p[-self.noisemodel.nparam])
+                                         p[-self.noisemodel.nparam:])
         if np.isnan(sum(r ** 2)):
             print 'nan problem in residuals'  # quick and dirty check
         return r
-
-
     
-    def sse(self, parameters=None, tmin=None, tmax=None, solvemethod='lmfit',
-                  noise=False):
-        res = self.residuals(parameters, tmin=tmin, tmax=tmax,
-                             solvemethod=solvemethod, noise=noise)
+    def sse(self, parameters=None, tmin=None, tmax=None, noise=False):
+        res = self.residuals(parameters, tmin=tmin, tmax=tmax, noise=noise)
         return sum(res ** 2)
 
     def initialize(self, default_parameters=False):
+        self.nparam = sum(ts.nparam for ts in self.tserieslist)
+        if self.noisemodel is not None:
+            self.nparam += self.noisemodel.nparam
         if default_parameters:
             for ts in self.tserieslist:
                 ts.set_init_parameters()
@@ -168,7 +139,7 @@ class Model:
         if self.noisemodel:
             self.parameters = self.parameters.append(self.noisemodel.parameters)
 
-    def solve(self, tmin=None, tmax=None, solver=lmfit_solve, report=True,
+    def solve(self, tmin=None, tmax=None, solver=LmfitSolve, report=True,
               noise=True, default_parameters=False, solve=True):
         """
         Methods to solve the time series model.
@@ -193,20 +164,19 @@ class Model:
         if noise and (self.noisemodel is None):
             print 'Warning, solution with noise model while noise model is not ' \
                   'defined. No noise model is used'
-        self.nparam = sum(ts.nparam for ts in self.tserieslist)
-        if self.noisemodel is not None:
-            self.nparam += self.noisemodel.nparam
 
         # Check series with tmin, tmax
         tmin, tmax = self.check_series(tmin, tmax)
 
         # Initialize parameters
-        if default_parameters:
-            self.initialize(self, default_parameters=default_parameters)
+        self.initialize(default_parameters=default_parameters)
 
         # Solve model
-        self.optimal_params = solver(self, tmin=tmin, tmax=tmax, noise=noise,
-                                     report=True)
+        fit = solver(self, tmin=tmin, tmax=tmax, noise=noise)
+         
+        self.optimal_params = fit.optimal_params
+        self.report = fit.report
+        if report: print self.report
 
         # self.stats = Statistics(self)
 

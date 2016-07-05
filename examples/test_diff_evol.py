@@ -35,8 +35,7 @@ ml.addnoisemodel(n)
 #ml.solve(initialize=True, solve=False)
 
 # Solve model to get good starting value
-ml.solve(initialize=True, solve=False)
-
+ml.initialize()
 import numpy as np
 
 class PastaTest:
@@ -85,11 +84,11 @@ class PastaTest:
     
 data = PastaTest(ml)
     
-#from scipy.optimize import differential_evolution
-#result = differential_evolution(data.objfunction, zip(data.xlow, data.xup))
+from scipy.optimize import differential_evolution
+result = differential_evolution(data.objfunction, zip(data.xlow, data.xup))
 
-from scipy.optimize import least_squares
-result = least_squares(data.objfunction, data.xvalue, bounds=(data.xlow, data.xup))
+#from scipy.optimize import least_squares
+#result = least_squares(data.objfunction, data.xvalue, bounds=(data.xlow, data.xup))
 
 #from scipy.optimize import basinhopping
 #def print_fun(x, f, accepted):
