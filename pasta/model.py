@@ -150,9 +150,8 @@ class Model:
             String with a start date for the simulation period (E.g. '1980')
         tmax: Optional[str]
             String with an end date for the simulation period (E.g. '2010')
-        solvemethod: Optional[str]
-            Methods used to solve the time series model. Only 'lmfit' is currently
-            supported.
+        solver: Optional[solver class]
+            Class used to solve the model. Default is lmfit (LmfitSolve)
         report: Boolean
             Print a report to the screen after optimization finished.
         noise: Boolean

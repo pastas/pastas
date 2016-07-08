@@ -181,3 +181,17 @@ class Theis:
     def block(self, p, r):
         s = self.step(p, r)
         return s[1:] - s[:-1]
+    
+class One:
+    """Dummy class for Constant. Returns 1
+    """
+    
+    def __init__(self, cutoff):
+        self.nparam = 1
+        self.cutoff = cutoff
+        
+    def step(self, p):
+        return p[0]
+    
+    def block(self, p):
+        return p[0]

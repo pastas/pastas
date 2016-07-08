@@ -28,6 +28,7 @@ import pandas as pd
 from scipy.signal import fftconvolve
 
 from checks import check_tseries
+from rfunc import One
 
 
 class TseriesBase:
@@ -324,19 +325,12 @@ class Constant(TseriesBase):
 
     def __init__(self, name='Constant', xy=None, metadata=None, value=0.0, pmin=-5, pmax=+5):
         self.nparam = 1
-        self.name = name
-        self.xy = xy
-        self.metadata = metadata
         self.value = value
         self.pmin = self.value + pmin
         self.pmax = self.value + pmax
-        self.tmin = pd.Timestamp.min
-        self.tmax = pd.Timestamp.max
         self.set_init_parameters()
-        # TODO: Should call this to make it sensible
-        # rfunc should be one for all times
-        #TseriesBase.__init__(self, rfunc, name, xy, metadata,
-        #                     self.stress.index.min(), self.stress.index.max())
+        TseriesBase.__init__(self, One, name, xy, metadata,
+                             pd.Timestamp.min, pd.Timestamp.max, 0)
 
     def set_init_parameters(self):
         self.parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
