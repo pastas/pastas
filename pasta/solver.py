@@ -50,6 +50,7 @@ class DESolve:
         result = differential_evolution(self.objfunction, zip(self.model.parameters['pmin'], self.model.parameters['pmax']))
         self.optimal_params = result.values()[3]
         self.report = str(result)
+        
     def objfunction(self, parameters):
         print '.',
         return self.model.sse(parameters, tmin=self.tmin, tmax=self.tmax, noise=self.noise)

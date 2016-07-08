@@ -58,12 +58,14 @@ class Statistics(object):
         self.oseries = ml.oseries  # Observed series
         self.rseries = ml.residuals()  # Residuals series
         self.odelt = ml.odelt  # Timestep between observations
+        print self.rseries[:5]
         if ml.noisemodel: # Calculate the innovations
             self.iseries = ml.noisemodel.simulate(self.rseries, self.odelt)
+        print self.rseries[:5]
 
         # Sture some other parameters
         self.N = len(self.sseries)  # Number of observations
-        self.N_param = ml.fit.nvarys  # Numberof varying parameters
+        self.N_param = ml.nparam  # Numberof varying parameters
         self.ml = ml  # Store reference to model for future use
 
     # Return the series for a specified tmax and tmin

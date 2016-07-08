@@ -26,7 +26,8 @@ ts = Recharge(RH.series, EV24.series, Gamma, Linear(), name='recharge')
 ml.addtseries(ts)
 
 # Add drainage level
-d = Constant(value=obs.series.min())
+import numpy as np
+d = Constant(value=obs.series.min(), pmin=np.nan, pmax=np.nan)
 ml.addtseries(d)
 
 # Add noise model

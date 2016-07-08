@@ -107,40 +107,36 @@ class Model:
             tmax = self.oseries.index.max()
         tindex = self.oseries[tmin: tmax].index  # times used for calibration
 
-        if isinstance(parameters, np.ndarray):
-            p = parameters
-        elif parameters is None:
-            p = self.parameters
+        if parameters is None:
+            parameters = self.optimal_params
 
         # h_observed - h_simulated
-        r = self.oseries[tindex] - self.simulate(p, tmin, tmax)[tindex]
+        r = self.oseries[tindex] - self.simulate(parameters, tmin, tmax)[tindex]
         if noise and (self.noisemodel is not None):
             r = self.noisemodel.simulate(r, self.odelt[tindex], tindex,
-                                         p[-self.noisemodel.nparam:])
+                                         parameters[-self.noisemodel.nparam:])
         if np.isnan(sum(r ** 2)):
             print 'nan problem in residuals'  # quick and dirty check
         return r
     
-    def sse(self, parameters=None, tmin=None, tmax=None, noise=False):
+    def sse(self, parameters=None, tmin=None, tmax=None, noise=True):
         res = self.residuals(parameters, tmin=tmin, tmax=tmax, noise=noise)
         return sum(res ** 2)
 
-    def initialize(self, default_parameters=False):
+    def initialize(self, default_parameters=True):
         self.nparam = sum(ts.nparam for ts in self.tserieslist)
         if self.noisemodel is not None:
             self.nparam += self.noisemodel.nparam
-        if default_parameters:
-            for ts in self.tserieslist:
-                ts.set_init_parameters()
-            if self.noisemodel: self.noisemodel.set_init_parameters()
         self.parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
         for ts in self.tserieslist:
             self.parameters = self.parameters.append(ts.parameters)
         if self.noisemodel:
             self.parameters = self.parameters.append(self.noisemodel.parameters)
+        if not default_parameters:
+            self.parameters.value[:] = self.optimal_params
 
     def solve(self, tmin=None, tmax=None, solver=LmfitSolve, report=True,
-              noise=True, default_parameters=False, solve=True):
+              noise=True, default_parameters=True, solve=True):
         """
         Methods to solve the time series model.
 

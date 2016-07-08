@@ -191,7 +191,7 @@ class One:
         self.cutoff = cutoff
         
     def step(self, p):
-        return p[0]
+        return p[0] * np.ones(2)
     
     def block(self, p):
-        return p[0]
+        return p[0] * np.ones(2)
