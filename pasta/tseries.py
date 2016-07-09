@@ -28,6 +28,7 @@ import pandas as pd
 from scipy.signal import fftconvolve
 
 from checks import check_tseries
+from rfunc import One
 
 
 class TseriesBase:
@@ -35,12 +36,14 @@ class TseriesBase:
 
     """
 
-    def __init__(self, rfunc, name, xy, metadata):
-        self.rfunc = rfunc
-        self.nparam = rfunc.nparam
+    def __init__(self, rfunc, name, xy, metadata, tmin, tmax, cutoff):
+        self.rfunc = rfunc(cutoff)
+        self.nparam = self.rfunc.nparam
         self.name = name
         self.xy = xy
         self.metadata = metadata
+        self.tmin = tmin
+        self.tmax = tmax
 
     def set_parameters(self, **kwargs):
         """Method to set the parameters value
@@ -70,7 +73,7 @@ class Tseries(TseriesBase):
     ----------
     stress: pd.Series
         pandas Series object containing the stress.
-    rfunc: rfunc class object
+    rfunc: rfunc class
         Response function used in the convolution with the stess.
     name: str
         Name of the stress
@@ -93,12 +96,12 @@ class Tseries(TseriesBase):
     """
 
     def __init__(self, stress, rfunc, name, metadata=None, xy=(0, 0), freq=None,
-                 fillnan='mean'):
-        TseriesBase.__init__(self, rfunc, name, xy, metadata)
+                 fillnan='mean', cutoff=0.99):
         self.stress = check_tseries(stress, freq, fillnan)
+        TseriesBase.__init__(self, rfunc, name, xy, metadata,
+                             self.stress.index.min(), self.stress.index.max(),
+                             cutoff)
         self.set_init_parameters()
-        self.tmin = self.stress.index.min()
-        self.tmax = self.stress.index.max()
 
     def set_init_parameters(self):
         """
@@ -145,7 +148,7 @@ class Recharge(TseriesBase):
         pandas Series object containing the precipitation stress.
     evap: pd.Series
         pandas Series object containing the evaporationstress.
-    rfunc: rfunc class object
+    rfunc: rfunc class
         Response function used in the convolution with the stess.
     recharge: recharge_func class object
     name: str
@@ -181,8 +184,7 @@ class Recharge(TseriesBase):
 
     def __init__(self, precip, evap, rfunc, recharge,
                  name='Recharge', metadata=None, xy=(0, 0), freq=[None, None],
-                 fillnan=['mean', 'interpolate']):
-        TseriesBase.__init__(self, rfunc, name, xy, metadata)
+                 fillnan=['mean', 'interpolate'], cutoff=0.99):
 
         # Check and name the time series
         P = check_tseries(precip, freq[0], fillnan[0])
@@ -195,8 +197,8 @@ class Recharge(TseriesBase):
         self.precip.name = 'Precipitation'
 
         # Store tmin and tmax
-        self.tmin = self.precip.index.min()
-        self.tmax = self.precip.index.max()
+        TseriesBase.__init__(self, rfunc, name, xy, metadata,
+                     self.precip.index.min(), self.precip.index.max(), cutoff)
 
         # The recharge calculation needs arrays
         self.precip_array = np.array(self.precip)
@@ -255,7 +257,7 @@ class Well(TseriesBase):
     ----------
     stress: list
         list of pandas Series objects containing the stresses.
-    rfunc: rfunc class object
+    rfunc: rfunc class
         Response function used in the convolution with the stess.
     name: str
         Name of the stress
@@ -279,8 +281,7 @@ class Well(TseriesBase):
 
     # TODO implement this function
     def __init__(self, stress, rfunc, r, name, metadata=None,
-                 xy=(0, 0), freq=None, fillna='mean'):
-        TseriesBase.__init__(self, rfunc, name, xy, metadata)
+                 xy=(0, 0), freq=None, fillna='mean', cutoff=0.99):
 
         # Check stresses
         self.stress = []
@@ -291,6 +292,9 @@ class Well(TseriesBase):
 
         self.set_init_parameters()
         self.r = r
+        
+        TseriesBase.__init__(self, rfunc, name, xy, metadata,
+                     self.stress.index.min(), self.stress.index.max(), cutoff)
 
     def set_init_parameters(self):
         self.parameters = self.rfunc.set_parameters(self.name)
@@ -308,7 +312,7 @@ class Well(TseriesBase):
         return h
 
 
-class Constant:
+class Constant(TseriesBase):
     """A constant value that is added to the time series model.
 
     Parameters
@@ -319,16 +323,18 @@ class Constant:
 
     """
 
-    def __init__(self, name='Constant', xy=None, metadata=None, value=0.0):
+    def __init__(self, name='Constant', xy=None, metadata=None, value=0.0, pmin=-5, pmax=+5):
         self.nparam = 1
-        self.name = name
-        self.xy = xy
-        self.metadata = metadata
-        self.set_init_parameters(value)
+        self.value = value
+        self.pmin = self.value + pmin
+        self.pmax = self.value + pmax
+        self.set_init_parameters()
+        TseriesBase.__init__(self, One, name, xy, metadata,
+                             pd.Timestamp.min, pd.Timestamp.max, 0)
 
-    def set_init_parameters(self, value=0.0):
+    def set_init_parameters(self):
         self.parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
-        self.parameters.loc['constant_d'] = (value, np.nan, np.nan, 1)
+        self.parameters.loc['constant_d'] = (self.value, self.pmin, self.pmax, 1)
 
     def set_parameters(self, **kwargs):
         for i in kwargs:

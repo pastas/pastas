@@ -66,9 +66,9 @@ class KnmiStation:
 
             elif line.startswith('STN '):
                 isLocations = True
-                isFirstLocation = True;
+                isFirstLocation = True
                 line = line.strip()
-                titels = line.split();
+                titels = line.split()
                 titels = [x.replace('(', '_') for x in titels]
                 titels = [x.replace(r')', '') for x in titels]
                 titels = [x.encode('utf8') for x in titels]
@@ -76,7 +76,7 @@ class KnmiStation:
             elif line.startswith('YYYYMMDD'):
                 isVariables = True
                 isLocations = False
-                variables = dict();
+                variables = dict()
                 varDes = line.split(' = ')
                 variables[varDes[0].strip()] = varDes[1].strip()
 
@@ -103,15 +103,16 @@ class KnmiStation:
                 line = line.replace('    ', '  ')
                 line = line.replace('   ', '  ')
                 s = cStringIO.StringIO(line)
+
                 data = np.genfromtxt(s, dtype=None, delimiter='  ', names=titels)
                 data = np.atleast_1d(data)
+
                 if isFirstLocation:
                     stations = data
                     isFirstLocation = False
                 else:
                     # raise NameError('Meerdere locaties nog niet ondersteund')
-                    stations = rfn.stack_arrays((stations, data), autoconvert=True,
-                                                usemask=False)
+                    stations = rfn.stack_arrays((stations, data), autoconvert=True, usemask=False)
 
             elif isVariables:
                 line = line.encode('utf-8')
@@ -129,9 +130,8 @@ class KnmiStation:
             dtype = [np.float64] * (len(variables) + 1)
             dtype[0] = np.int  # station id
             dtype[1] = 'S8'
-            dtype = zip(header, dtype);
-            data = pd.read_csv(f, header=None, names=header,
-                               parse_dates=['YYYYMMDD'], index_col='YYYYMMDD',
+            dtype = zip(header, dtype)
+            data = pd.read_csv(f, header=None, names=header, parse_dates=['YYYYMMDD'], index_col='YYYYMMDD',
                                dtype=dtype, na_values='     ')
         elif True:
             data = pd.read_csv(f, names=header, parse_dates=['YYYYMMDD'],
@@ -145,7 +145,7 @@ class KnmiStation:
             dtype = [np.float] * (len(variables) + 1)
             dtype[0] = np.int  # station id
             dtype[1] = 'datetime64[s]'  # datum in YYYYMMDD-formaat
-            dtype = zip(header, dtype);
+            dtype = zip(header, dtype)
             # verander de datum naar een datetime
             # string2datetime = lambda x: datetime.strptime(x, '%Y%m%d')
             string2datetime = lambda x: pd.to_datetime(x, format='%Y%m%d')

@@ -49,21 +49,23 @@ class Statistics(object):
     """
 
     def __init__(self, ml):
-        if ml.fit.success is not True:
-            'Model optimization was not succesfull, make sure the model is solved' \
-            'Properly.'
+        #if ml.fit.success is not True:
+        #    'Model optimization was not succesfull, make sure the model is solved' \
+        #    'Properly.'
 
         # Store all the series for quicker computation of the statistics
         self.sseries = ml.simulate()  # Simulated series
         self.oseries = ml.oseries  # Observed series
         self.rseries = ml.residuals()  # Residuals series
         self.odelt = ml.odelt  # Timestep between observations
+        print self.rseries[:5]
         if ml.noisemodel: # Calculate the innovations
             self.iseries = ml.noisemodel.simulate(self.rseries, self.odelt)
+        print self.rseries[:5]
 
         # Sture some other parameters
         self.N = len(self.sseries)  # Number of observations
-        self.N_param = ml.fit.nvarys  # Numberof varying parameters
+        self.N_param = ml.nparam  # Numberof varying parameters
         self.ml = ml  # Store reference to model for future use
 
     # Return the series for a specified tmax and tmin

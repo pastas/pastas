@@ -16,10 +16,10 @@ class DinoGrondwaterstand:
             header = dict()
             while line not in ['\n', '']:
                 propval = line.split(',')
-                prop = propval[0];
+                prop = propval[0]
                 prop = prop.replace(':', '')
                 prop = prop.strip()
-                val = propval[1];
+                val = propval[1]
                 if propval[2] != '':
                     val = val + ' ' + propval[2].replace(':', '') + ' ' + propval[3]
                 header[prop] = val
@@ -33,11 +33,11 @@ class DinoGrondwaterstand:
             ref = dict()
             while line not in ['\n', '']:
                 propval = line.split(',')
-                prop = propval[0];
+                prop = propval[0]
                 prop = prop.replace(':', '')
                 prop = prop.strip()
                 if len(propval) > 1:
-                    val = propval[1];
+                    val = propval[1]
                     ref[prop] = val
                 line = f.readline()
 
@@ -47,15 +47,15 @@ class DinoGrondwaterstand:
 
             # lees meta-informatie
             metaList = list()
-            line = line.strip();
+            line = line.strip()
             properties = line.split(',')
             line = f.readline()
             while line not in ['\n', '']:
                 meta = dict()
-                line = line.strip();
+                line = line.strip()
                 values = line.split(',')
                 for i in range(0, len(values)):
-                    meta[properties[i]] = values[i];
+                    meta[properties[i]] = values[i]
                 metaList.append(meta)
                 line = f.readline()
 
@@ -63,7 +63,7 @@ class DinoGrondwaterstand:
             while line == '\n':
                 line = f.readline()
 
-            line = line.strip();
+            line = line.strip()
             titel = line.split(',')
             while '' in titel:
                 titel.remove('')
@@ -82,17 +82,14 @@ class DinoGrondwaterstand:
                 if False:
                     usecols = range(0, len(titel))
                     # usecols.remove(2)
-                    measurements = pd.read_csv(f, header=None, names=titel,
-                                               parse_dates=['Peildatum'],
-                                               index_col='Peildatum', dtype=dtype,
-                                               dayfirst=True,
+                    measurements = pd.read_csv(f, header=None, names=titel, parse_dates=['Peildatum'],
+                                               index_col='Peildatum', dtype=dtype, dayfirst=True,
                                                usecols=usecols)
                     ts = measurements['Stand_cm_tov_NAP'] / 100
                 else:
                     if False:
                         measurements = np.genfromtxt(f, delimiter=',', dtype=None,
-                                                     usecols=range(0, len(titel)),
-                                                     names=titel,
+                                                     usecols=range(0, len(titel)), names=titel,
                                                      missing_values=[''])
                         values = measurements['Stand_cm_tov_NAP'] / float(100)
                         values[values == -0.01] = np.NAN
@@ -111,12 +108,10 @@ class DinoGrondwaterstand:
                             values[:] = np.NAN
 
                     if measurements['Peildatum'].size == 1:
-                        datum = pd.to_datetime(measurements['Peildatum'].item(),
-                                               dayfirst=True)
+                        datum = pd.to_datetime(measurements['Peildatum'].item(), dayfirst=True)
                         ts = pd.Series([values], [datum])
                     else:
-                        datum = pd.to_datetime(measurements['Peildatum'],
-                                               dayfirst=True)
+                        datum = pd.to_datetime(measurements['Peildatum'], dayfirst=True)
                         ts = pd.Series(values, datum)
             else:
                 measurements = None
@@ -139,14 +134,12 @@ class DinoGrondwaterstand:
                     self.maaiveld = np.nan
                 else:
                     self.maaiveld = float(maaiveld) / 100
-                bovenkant_filter = self.meta[-1][
-                    'Bovenkant filter (cm t.o.v. NAP)'];
+                bovenkant_filter = self.meta[-1]['Bovenkant filter (cm t.o.v. NAP)'];
                 if bovenkant_filter == '':
                     self.bovenkant_filter = np.nan
                 else:
                     self.bovenkant_filter = float(bovenkant_filter) / 100
-                self.onderkant_filter = self.meta[-1][
-                    'Onderkant filter (cm t.o.v. NAP)']
+                self.onderkant_filter = self.meta[-1]['Onderkant filter (cm t.o.v. NAP)']
                 if self.onderkant_filter == '':
                     self.onderkant_filter = np.nan
                 else:

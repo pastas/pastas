@@ -3,8 +3,8 @@ This test file is meant for developing purposes. Providing an easy method to
 test the functioning of PASTA during development.
 
 """
-import matplotlib
-matplotlib.use('TkAgg')
+#import matplotlib
+#matplotlib.use('TkAgg')
 from pasta import *
 
 # read observations
@@ -18,22 +18,28 @@ ml = Model(obs.series)
 fname = 'data/KNMI_20160522.txt'
 RH=ReadSeries(fname,'knmi',variable='RH')
 EV24=ReadSeries(fname,'knmi',variable='EV24')
+rech = RH.series - EV24.series
 
 # Create stress
-ts = Recharge(RH.series, EV24.series, Gamma(), Linear(), name='recharge')
+ts = Recharge(RH.series, EV24.series, Gamma, Linear(), name='recharge')
+#ts = Tseries(rech, Gamma, name='recharge')
 ml.addtseries(ts)
 
 # Add drainage level
-d = Constant(value=obs.series.min())
+import numpy as np
+d = Constant(value=obs.series.min(), pmin=np.nan, pmax=np.nan)
 ml.addtseries(d)
 
 # Add noise model
 n = NoiseModel()
 ml.addnoisemodel(n)
 
-# Solve the time series model
-ml.solve(tmax= '1990', initialize=False)
+# Solve
+ml.solve()
+#ml.plot()
 
-# show results
-#ml.stats.summary(output='all')
-ml.plot_results()
+#ml.initialize()
+#print ml.parameters
+
+# Plot
+#ml.plot()

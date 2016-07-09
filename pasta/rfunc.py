@@ -49,9 +49,9 @@ class Gamma:
     %(doc)s
     """ % {'doc': _class_doc}
 
-    def __init__(self):
+    def __init__(self, cutoff=0.99):
         self.nparam = 3
-        self.cutoff = 0.99
+        self.cutoff = cutoff
 
     def set_parameters(self, name):
         parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
@@ -80,9 +80,9 @@ class Exponential:
     %(doc)s
     """ % {'doc': _class_doc}
 
-    def __init__(self):
+    def __init__(self, cutoff):
         self.nparam = 2
-        self.cutoff = 0.99
+        self.cutoff = cutoff
 
     def set_parameters(self, name):
         parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
@@ -119,9 +119,9 @@ class Hantush:
 
     """
 
-    def __init__(self):
+    def __init__(self, cutoff):
         self.nparam = 3
-        self.cutoff = 0.99
+        self.cutoff = cutoff
 
     def set_parameters(self, name):
         parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
@@ -161,9 +161,9 @@ class Theis:
 
     """
 
-    def __init__(self):
+    def __init__(self, cutoff):
         self.nparam = 3
-        self.cutoff = 0.99
+        self.cutoff = cutoff
 
     def set_parameters(self, name):
         parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
@@ -181,3 +181,17 @@ class Theis:
     def block(self, p, r):
         s = self.step(p, r)
         return s[1:] - s[:-1]
+    
+class One:
+    """Dummy class for Constant. Returns 1
+    """
+    
+    def __init__(self, cutoff):
+        self.nparam = 1
+        self.cutoff = cutoff
+        
+    def step(self, p):
+        return p[0] * np.ones(2)
+    
+    def block(self, p):
+        return p[0] * np.ones(2)

@@ -6,6 +6,7 @@ import pandas as pd
 from tseries import Constant
 from checks import check_oseries
 from stats import Statistics
+from solver import LmfitSolve
 
 
 class Model:
@@ -42,6 +43,9 @@ class Model:
         # delt converted to days
         self.tserieslist = []
         self.noisemodel = None
+        self.noiseparameters = None
+        self.tmin = None
+        self.tmax = None
 
     def addtseries(self, tseries):
         """
@@ -79,11 +83,12 @@ class Model:
             tmin = self.tmin
         if tmax is None:
             tmax = self.tmax
+        assert (tmin is not None) and (tmax is not None), 'model needs to be solved first'
 
         tindex = pd.date_range(tmin, tmax, freq=freq)
 
         if parameters is None:
-            parameters = self.parameters
+            parameters = self.optimal_params
         h = pd.Series(data=0, index=tindex)
         istart = 0  # Track parameters index to pass to ts object
         for ts in self.tserieslist:
@@ -91,10 +96,9 @@ class Model:
             istart += ts.nparam
         return h
 
-    def residuals(self, parameters=None, tmin=None, tmax=None, solvemethod='lmfit',
-                  noise=False):
+    def residuals(self, parameters=None, tmin=None, tmax=None, noise=True):
         """
-        Method that is called by the solve function to calculate the residuals.
+        Method to calculate the residuals.
 
         """
         if tmin is None:
@@ -103,25 +107,36 @@ class Model:
             tmax = self.oseries.index.max()
         tindex = self.oseries[tmin: tmax].index  # times used for calibration
 
-        if solvemethod == 'lmfit':  # probably needs to be a function call
-            if parameters is None:
-                parameters = self.fit.params
-            p = np.array([p.value for p in parameters.values()])
-        if isinstance(parameters, np.ndarray):
-            if parameters is None:
-                parameters = self.parameters
-            p = parameters
+        if parameters is None:
+            parameters = self.optimal_params
+
         # h_observed - h_simulated
-        r = self.oseries[tindex] - self.simulate(p, tmin, tmax)[tindex]
+        r = self.oseries[tindex] - self.simulate(parameters, tmin, tmax)[tindex]
         if noise and (self.noisemodel is not None):
             r = self.noisemodel.simulate(r, self.odelt[tindex], tindex,
-                                         p[-self.noisemodel.nparam])
+                                         parameters[-self.noisemodel.nparam:])
         if np.isnan(sum(r ** 2)):
             print 'nan problem in residuals'  # quick and dirty check
         return r
+    
+    def sse(self, parameters=None, tmin=None, tmax=None, noise=True):
+        res = self.residuals(parameters, tmin=tmin, tmax=tmax, noise=noise)
+        return sum(res ** 2)
 
-    def solve(self, tmin=None, tmax=None, solvemethod='lmfit', report=True,
-              noise=True, initialize=False):
+    def initialize(self, default_parameters=True):
+        self.nparam = sum(ts.nparam for ts in self.tserieslist)
+        if self.noisemodel is not None:
+            self.nparam += self.noisemodel.nparam
+        self.parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
+        for ts in self.tserieslist:
+            self.parameters = self.parameters.append(ts.parameters)
+        if self.noisemodel:
+            self.parameters = self.parameters.append(self.noisemodel.parameters)
+        if not default_parameters:
+            self.parameters.value[:] = self.optimal_params
+
+    def solve(self, tmin=None, tmax=None, solver=LmfitSolve, report=True,
+              noise=True, default_parameters=True, solve=True):
         """
         Methods to solve the time series model.
 
@@ -131,9 +146,8 @@ class Model:
             String with a start date for the simulation period (E.g. '1980')
         tmax: Optional[str]
             String with an end date for the simulation period (E.g. '2010')
-        solvemethod: Optional[str]
-            Methods used to solve the time series model. Only 'lmfit' is currently
-            supported.
+        solver: Optional[solver class]
+            Class used to solve the model. Default is lmfit (LmfitSolve)
         report: Boolean
             Print a report to the screen after optimization finished.
         noise: Boolean
@@ -145,52 +159,21 @@ class Model:
         if noise and (self.noisemodel is None):
             print 'Warning, solution with noise model while noise model is not ' \
                   'defined. No noise model is used'
-        self.solvemethod = solvemethod
-        self.nparam = sum(ts.nparam for ts in self.tserieslist)
 
         # Check series with tmin, tmax
         tmin, tmax = self.check_series(tmin, tmax)
 
         # Initialize parameters
-        if initialize is True:
-            for ts in self.tserieslist:
-                ts.set_init_parameters()
-            if self.noisemodel: self.noisemodel.set_init_parameters()
+        self.initialize(default_parameters=default_parameters)
 
-        if self.solvemethod == 'lmfit':
-            parameters = lmfit.Parameters()
-            for ts in self.tserieslist:
-                for k in ts.parameters.index:
-                    p = ts.parameters.loc[k]
-                    # needed because lmfit doesn't take nan as input
-                    pvalues = np.where(np.isnan(p.values), None, p.values)
-                    parameters.add(k, value=pvalues[0], min=pvalues[1],
-                                   max=pvalues[2], vary=pvalues[3])
-            if self.noisemodel is not None:
-                for k in self.noisemodel.parameters.index:
-                    p = self.noisemodel.parameters.loc[k]
-                    pvalues = np.where(np.isnan(p.values), None,
-                                       p.values)  # needed because lmfit doesn't
-                    # take nan as input
-                    parameters.add(k, value=pvalues[0], min=pvalues[1],
-                                   max=pvalues[2], vary=pvalues[3])
-            self.lmfit_params = parameters
-            self.fit = lmfit.minimize(fcn=self.residuals, params=parameters,
-                                      ftol=1e-3, epsfcn=1e-4,
-                                      args=(tmin, tmax, self.solvemethod, noise))
-            if report: print lmfit.fit_report(self.fit)
-            self.parameters = np.array([p.value for p in self.fit.params.values()])
-            self.paramdict = self.fit.params.valuesdict()
-            # Return parameters to tseries
-            for ts in self.tserieslist:
-                for k in ts.parameters.index:
-                    ts.parameters.loc[k].value = self.paramdict[k]
-            if self.noisemodel is not None:
-                for k in self.noisemodel.parameters.index:
-                    self.noisemodel.parameters.loc[k].value = self.paramdict[k]
+        # Solve model
+        fit = solver(self, tmin=tmin, tmax=tmax, noise=noise)
+         
+        self.optimal_params = fit.optimal_params
+        self.report = fit.report
+        if report: print self.report
 
-            # Make the Statistics class available after optimization
-            self.stats = Statistics(self)
+        # self.stats = Statistics(self)
 
     def check_series(self, tmin=None, tmax=None):
         """
@@ -265,7 +248,7 @@ class Model:
         Plot of the simulated and optionally the observed time series
 
         """
-        h = self.simulate(tmin, tmax)
+        h = self.simulate(tmin=tmin, tmax=tmax)
         plt.figure()
         h.plot()
         if oseries:
