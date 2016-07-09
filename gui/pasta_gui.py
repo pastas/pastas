@@ -16,11 +16,12 @@ import tkFileDialog
 from pasta import *
 import pickle
 import os.path
+from framework import Framework
 
-
-class PastaGui(Frame):
+class PastaGui(Frame, Framework):
     def __init__(self, parent):
         Frame.__init__(self, parent)
+        Framework.__init__(self, parent)
 
         self.settingsFile = 'settings'
         self.load_settings()
@@ -31,6 +32,7 @@ class PastaGui(Frame):
         self.modellist = [] # Empty list to store all the optimized models
 
         self.parent = parent
+        self.build_menu()
         self.initUI()
 
     def initUI(self):
@@ -247,6 +249,22 @@ class PastaGui(Frame):
             self.ts_ax.relim()
             self.ts_ax.autoscale_view()
             self.ts_canvas.show()
+
+    def build_menu(self):
+        # Create the menu according to the specifications in the menulist.
+        menulist = ('Bestand -Nieuw Project//Crtl+N/self.donothing,'
+                    'Open/folder/Ctrl+O/self.donothing,'
+                    'Opslaan.../save_as/Ctrl+S/self.donothing,'
+                    'Opslaan als.../save_as/Ctrl+S/self.donothing,'
+                    'Sep,'
+                    'Sluit//Ctrl+Q/self.parent.quit',
+                    'Edit -Maak ongedaan/undo/Ctrl+Z/self.donothing,'
+                    'Sep',
+                    'Project -Project Informatie/setting/Ctrl+I/self.donothing',
+                    'Help -Help/help//self.donothing,'
+                    'Over.../information//self.donothing')
+
+        self.create_menu(menulist)
 
     def load_ir_file(self):
         if self.settings.has_key('ir_file'):
