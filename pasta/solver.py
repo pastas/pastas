@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import lmfit
 
+
 class LmfitSolve:
     def __init__(self, model, tmin=None, tmax=None, noise=True):
         parameters = lmfit.Parameters()
@@ -21,7 +22,8 @@ class LmfitSolve:
         p = np.array([p.value for p in parameters.values()])
         return model.residuals(p, tmin, tmax, noise)
 
-#def lmfit_solve(model, tmin=None, tmax=None, noise=True, report=True):
+
+# def lmfit_solve(model, tmin=None, tmax=None, noise=True, report=True):
 #    parameters = lmfit.Parameters()
 #    for k in model.parameters.index:
 #        p = model.parameters.loc[k]
@@ -35,11 +37,12 @@ class LmfitSolve:
 #    if report: print lmfit.fit_report(fit)
 #    return np.array([p.value for p in fit.params.values()])
 #
-#def lmfit_obj_function(parameters, tmin, tmax, noise, model):
+# def lmfit_obj_function(parameters, tmin, tmax, noise, model):
 #    p = np.array([p.value for p in parameters.values()])
 #    return model.residuals(p, tmin, tmax, noise)
 
 from scipy.optimize import differential_evolution
+
 
 class DESolve:
     def __init__(self, model, tmin=None, tmax=None, noise=True):
@@ -47,11 +50,13 @@ class DESolve:
         self.tmin = tmin
         self.tmax = tmax
         self.noise = noise
-        result = differential_evolution(self.objfunction, zip(self.model.parameters['pmin'], self.model.parameters['pmax']))
+        result = differential_evolution(self.objfunction,
+                                        zip(self.model.parameters['pmin'],
+                                            self.model.parameters['pmax']))
         self.optimal_params = result.values()[3]
         self.report = str(result)
-        
+
     def objfunction(self, parameters):
         print '.',
-        return self.model.sse(parameters, tmin=self.tmin, tmax=self.tmax, noise=self.noise)
-
+        return self.model.sse(parameters, tmin=self.tmin, tmax=self.tmax,
+                              noise=self.noise)

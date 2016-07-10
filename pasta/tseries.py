@@ -63,7 +63,6 @@ class TseriesBase:
             self.parameters.loc['%s' % i, 'vary'] = kwargs[i]
 
 
-
 class Tseries(TseriesBase):
     """
     Time series model consisting of the convolution of one stress with one
@@ -198,13 +197,14 @@ class Recharge(TseriesBase):
 
         # Store tmin and tmax
         TseriesBase.__init__(self, rfunc, name, xy, metadata,
-                     self.precip.index.min(), self.precip.index.max(), cutoff)
+                             self.precip.index.min(), self.precip.index.max(),
+                             cutoff)
 
         # The recharge calculation needs arrays
         self.precip_array = np.array(self.precip)
         self.evap_array = np.array(self.evap)
 
-        self.recharge = recharge
+        self.recharge = recharge()
         self.set_init_parameters()
         self.nparam = self.rfunc.nparam + self.recharge.nparam
         self.stress = self.simulate_recharge()
@@ -292,9 +292,10 @@ class Well(TseriesBase):
 
         self.set_init_parameters()
         self.r = r
-        
+
         TseriesBase.__init__(self, rfunc, name, xy, metadata,
-                     self.stress.index.min(), self.stress.index.max(), cutoff)
+                             self.stress.index.min(), self.stress.index.max(),
+                             cutoff)
 
     def set_init_parameters(self):
         self.parameters = self.rfunc.set_parameters(self.name)
@@ -323,7 +324,8 @@ class Constant(TseriesBase):
 
     """
 
-    def __init__(self, name='Constant', xy=None, metadata=None, value=0.0, pmin=-5, pmax=+5):
+    def __init__(self, name='Constant', xy=None, metadata=None, value=0.0, pmin=-5,
+                 pmax=+5):
         self.nparam = 1
         self.value = value
         self.pmin = self.value + pmin

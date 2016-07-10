@@ -21,13 +21,12 @@ EV24=ReadSeries(fname,'knmi',variable='EV24')
 rech = RH.series - EV24.series
 
 # Create stress
-ts = Recharge(RH.series, EV24.series, Gamma, Linear(), name='recharge')
+ts = Recharge(RH.series, EV24.series, Gamma, Linear, name='recharge')
 #ts = Tseries(rech, Gamma, name='recharge')
 ml.addtseries(ts)
 
 # Add drainage level
-import numpy as np
-d = Constant(value=obs.series.min(), pmin=np.nan, pmax=np.nan)
+d = Constant(value=obs.series.min())
 ml.addtseries(d)
 
 # Add noise model
@@ -36,7 +35,7 @@ ml.addnoisemodel(n)
 
 # Solve
 ml.solve()
-#ml.plot()
+ml.plot()
 
 #ml.initialize()
 #print ml.parameters
