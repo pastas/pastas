@@ -60,7 +60,7 @@ def check_oseries(oseries, freq, fillnan='drop'):
     return oseries
 
 
-def check_tseries(stress, freq, fillnan):
+def check_tseries(stress, freq, fillnan, name=''):
     """ Check the stress series when creating a time series model.
 
     Parameters
@@ -97,7 +97,7 @@ def check_tseries(stress, freq, fillnan):
         stress = stress.asfreq(freq)
     else:
         freq = pd.infer_freq(stress.index)
-        print 'Inferred frequency from time series: freq=%s' % freq
+        print 'Inferred frequency from time series %s: freq=%s ' %(name, freq)
         stress = stress.asfreq(freq)
 
     # Handle nan-values in stress series

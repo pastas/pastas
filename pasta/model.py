@@ -235,7 +235,7 @@ class Model:
 
         return tmin, tmax
 
-    def plot(self, tmin=None, tmax=None, oseries=True):
+    def plot(self, tmin=None, tmax=None, oseries=True, simulate=True):
         """
 
         Parameters
@@ -248,9 +248,10 @@ class Model:
         Plot of the simulated and optionally the observed time series
 
         """
-        h = self.simulate(tmin=tmin, tmax=tmax)
         plt.figure()
-        h.plot()
+        if simulate:
+            h = self.simulate(tmin=tmin, tmax=tmax)
+            h.plot()
         if oseries:
             self.oseries.plot(linestyle='', marker='.', color='k', markersize=3)
         plt.show()

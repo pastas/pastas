@@ -96,7 +96,7 @@ class Tseries(TseriesBase):
 
     def __init__(self, stress, rfunc, name, metadata=None, xy=(0, 0), freq=None,
                  fillnan='mean', cutoff=0.99):
-        self.stress = check_tseries(stress, freq, fillnan)
+        self.stress = check_tseries(stress, freq, fillnan, name=name)
         TseriesBase.__init__(self, rfunc, name, xy, metadata,
                              self.stress.index.min(), self.stress.index.max(),
                              cutoff)
@@ -186,8 +186,8 @@ class Recharge(TseriesBase):
                  fillnan=['mean', 'interpolate'], cutoff=0.99):
 
         # Check and name the time series
-        P = check_tseries(precip, freq[0], fillnan[0])
-        E = check_tseries(evap, freq[1], fillnan[1])
+        P = check_tseries(precip, freq[0], fillnan[0], name=name + '_P')
+        E = check_tseries(evap, freq[1], fillnan[1], name=name + '_E')
 
         # Select data where both series are available
         self.precip = P[P.index & E.index]
@@ -288,7 +288,7 @@ class Well(TseriesBase):
         if type(stress) is pd.Series:
             stress = [stress]
         for i in range(len(stress)):
-            self.stress.append(check_tseries(stress, freq, fillna))
+            self.stress.append(check_tseries(stress, freq, fillna, name))
 
         self.set_init_parameters()
         self.r = r
