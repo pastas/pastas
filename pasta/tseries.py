@@ -108,6 +108,7 @@ class Tseries(TseriesBase):
 
         """
         self.parameters = self.rfunc.set_parameters(self.name)
+        self.optimal_params = self.parameters.value
 
     def simulate(self, tindex=None, p=None):
         """ Simulates the head contribution.
@@ -212,10 +213,13 @@ class Recharge(TseriesBase):
     def set_init_parameters(self):
         self.parameters = pd.concat([self.rfunc.set_parameters(self.name),
                                      self.recharge.set_parameters(self.name)])
+        self.optimal_params = self.parameters.value
 
     def simulate(self, tindex=None, p=None):
         if p is None:
             p = np.array(self.parameters.value)
+        elif isinstance(p, pd.Series):
+            p = p.values  # Ugly fix, but apparently the rechare fnction doesn't like a pandas dataframe
         b = self.rfunc.block(p[:-self.recharge.nparam])  # Block response
         rseries = self.recharge.simulate(self.precip_array, self.evap_array,
                                          p[-self.recharge.nparam:])
@@ -242,6 +246,8 @@ class Recharge(TseriesBase):
         """
         if p is None:
             p = np.array(self.parameters.value)
+        elif isinstance(p, pd.Series):
+            p = p.values  # Ugly fix, but apparently the rechare fnction doesn't like a pandas dataframe
         rseries = self.recharge.simulate(self.precip_array, self.evap_array,
                                          p[-self.recharge.nparam:])
         rseries = pd.Series(rseries, index=self.precip.index,
@@ -299,6 +305,7 @@ class Well(TseriesBase):
 
     def set_init_parameters(self):
         self.parameters = self.rfunc.set_parameters(self.name)
+        self.optimal_params = self.parameters.value
 
     def simulate(self, tindex=None, p=None):
         if p is None:
@@ -337,6 +344,7 @@ class Constant(TseriesBase):
     def set_init_parameters(self):
         self.parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
         self.parameters.loc['constant_d'] = (self.value, self.pmin, self.pmax, 1)
+        self.optimal_params = self.parameters.value
 
     def set_parameters(self, **kwargs):
         for i in kwargs:
@@ -378,6 +386,7 @@ class NoiseModel:
     def set_init_parameters(self):
         self.parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
         self.parameters.loc['noise_alpha'] = (14.0, 0, 5000, 1)
+        self.optimal_params = self.parameters.value
 
     def set_parameters(self, **kwargs):
         for i in kwargs:

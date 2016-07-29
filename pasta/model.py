@@ -1,4 +1,3 @@
-import lmfit
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -170,6 +169,17 @@ class Model:
         fit = solver(self, tmin=tmin, tmax=tmax, noise=noise)
          
         self.optimal_params = fit.optimal_params
+
+        #TODO: this should be a pd.Series and should be given back to the ts objects
+        #self.optimal_params = pd.Series(fit.optimal_params, index=self.parameters.index)
+        #for ts in self.tserieslist:
+        #    for k in ts.parameters.index:
+        #        ts.parameters.loc[k].value = self.paramdict[k]
+        #if self.noisemodel is not None:
+        #    for k in self.noisemodel.parameters.index:
+        #        self.noisemodel.parameters.loc[k].value = self.paramdict[k]
+    
+        
         self.report = fit.report
         if report: print self.report
 
