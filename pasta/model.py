@@ -6,6 +6,7 @@ from tseries import Constant
 from checks import check_oseries
 from stats import Statistics
 from solver import LmfitSolve
+from collections import OrderedDict
 
 
 class Model:
@@ -40,7 +41,7 @@ class Model:
         self.metadata = metadata
         self.odelt = self.oseries.index.to_series().diff() / np.timedelta64(1, 'D')
         # delt converted to days
-        self.tserieslist = []
+        self.tseriesdict = OrderedDict()
         self.noisemodel = None
         self.noiseparameters = None
         self.tmin = None
@@ -51,7 +52,7 @@ class Model:
         adds a time series model component to the Model.
 
         """
-        self.tserieslist.append(tseries)
+        self.tseriesdict[tseries.name] = tseries
 
     def addnoisemodel(self, noisemodel):
         """
@@ -90,7 +91,7 @@ class Model:
             parameters = self.optimal_params
         h = pd.Series(data=0, index=tindex)
         istart = 0  # Track parameters index to pass to ts object
-        for ts in self.tserieslist:
+        for ts in self.tseriesdict.values():
             h += ts.simulate(tindex, parameters[istart: istart + ts.nparam])
             istart += ts.nparam
         return h
@@ -123,11 +124,12 @@ class Model:
         return sum(res ** 2)
 
     def initialize(self, default_parameters=True):
-        self.nparam = sum(ts.nparam for ts in self.tserieslist)
+        self.nparam = sum(ts.nparam for ts in self.tseriesdict.values())
         if self.noisemodel is not None:
             self.nparam += self.noisemodel.nparam
         self.parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
-        for ts in self.tserieslist:
+        #self.parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary', 'optimal', 'tseries'])
+        for ts in self.tseriesdict.values():
             self.parameters = self.parameters.append(ts.parameters)
         if self.noisemodel:
             self.parameters = self.parameters.append(self.noisemodel.parameters)
@@ -222,10 +224,10 @@ class Model:
                   'index is %s' % self.oseries.last_valid_index()
 
         # Get maximum simulation period.
-        tstmin = self.tserieslist[0].tmin
-        tstmax = self.tserieslist[0].tmax
+        tstmin = pd.Timestamp.min
+        tstmax = pd.Timestamp.max
 
-        for ts in self.tserieslist:
+        for ts in self.tseriesdict.values():
             if isinstance(ts, Constant):  # Check if it is not a constant tseries.
                 pass
             else:
@@ -308,7 +310,7 @@ class Model:
         # Plot the Impulse Response Function
         ax3 = plt.subplot(gs[0, -1])
         n = 0
-        for ts in self.tserieslist:
+        for ts in self.tseriesdict.values():
             p = self.parameters[n:n + ts.nparam]
             n += ts.nparam
             if "rfunc" in dir(ts):
