@@ -54,7 +54,7 @@ class TseriesBase:
 
         """
         for i in kwargs:
-            self.parameters.loc['%s' % i, 'value'] = kwargs[i]
+            self.parameters.loc['%s' % i, 'initial'] = kwargs[i]
 
     def fix_parameters(self, **kwargs):
         for i in kwargs:
@@ -342,7 +342,7 @@ class Constant(TseriesBase):
                              pd.Timestamp.min, pd.Timestamp.max, 0)
 
     def set_init_parameters(self):
-        self.parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
+        self.parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary'])
         self.parameters.loc['constant_d'] = (self.value, self.pmin, self.pmax, 1)
         self.optimal_params = self.parameters.value
 

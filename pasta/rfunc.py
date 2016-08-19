@@ -22,7 +22,7 @@ Functions
 set_parameters(self, name)
     A function that returns a Pandas DataFrame of the parameters of the
     response function. Columns of the dataframe need to be
-    ['value', 'pmin', 'pmax', 'vary'].
+    ['initial', 'pmin', 'pmax', 'vary'].
     Rows of the DataFrame have names of the parameters.
     Input name is used as a prefix.
     This function is called by a Tseries object.
@@ -54,7 +54,7 @@ class Gamma:
         self.cutoff = cutoff
 
     def set_parameters(self, name):
-        parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
+        parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary'])
         parameters.loc[name + '_A'] = (500.0, 0.0, 5000.0, 1)
         parameters.loc[name + '_n'] = (1.0, 0.0, 5.0, 1)
         parameters.loc[name + '_a'] = (100.0, 1.0, 5000.0, 1)
@@ -85,7 +85,7 @@ class Exponential:
         self.cutoff = cutoff
 
     def set_parameters(self, name):
-        parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
+        parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary'])
         parameters.loc[name + '_A'] = (500.0, 0.0, 5000.0, 1)
         parameters.loc[name + '_a'] = (100.0, 1.0, 5000.0, 1)
         return parameters
@@ -124,7 +124,7 @@ class Hantush:
         self.cutoff = cutoff
 
     def set_parameters(self, name):
-        parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
+        parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary'])
         parameters.loc[name + '_S'] = (0.0, 1e-3, 1.0, 1)
         parameters.loc[name + '_T'] = (0.0, 10.0, 5000.0, 1)
         parameters.loc[name + '_c'] = (0.0, 1000.0, 5000.0, 1)
@@ -166,7 +166,7 @@ class Theis:
         self.cutoff = cutoff
 
     def set_parameters(self, name):
-        parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
+        parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary'])
         parameters.loc[name + '_S'] = (0.0, 3e-1, 1.0, 1)
         parameters.loc[name + '_T'] = (0.0, 10.0, 5000.0, 1)
         return parameters
