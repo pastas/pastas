@@ -210,7 +210,7 @@ class Recharge(TseriesBase):
         self.parameters = pd.concat([self.rfunc.set_parameters(self.name),
                                      self.recharge.set_parameters(self.name)])
 
-    def simulate(self, tindex=None, p=None):
+    def simulate(self, p=None, tindex=None):
         if p is None:
             p = np.array(self.parameters.value)
         elif isinstance(p, pd.Series):
@@ -301,7 +301,7 @@ class Well(TseriesBase):
     def set_init_parameters(self):
         self.parameters = self.rfunc.set_parameters(self.name)
 
-    def simulate(self, tindex=None, p=None):
+    def simulate(self, p=None, tindex=None):
         if p is None:
             p = np.array(self.parameters.value)
         h = pd.Series(data=0, index=self.stress[0].index)
@@ -339,7 +339,7 @@ class Constant(TseriesBase):
         self.parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         self.parameters.loc['constant_d'] = (self.value, self.pmin, self.pmax, 1, 'constant')
 
-    def simulate(self, t=None, p=None):
+    def simulate(self, p=None, t=None):
         if p is None:
             p = np.array(self.parameters.value)
         return p
@@ -379,7 +379,7 @@ class NoiseModel:
                 print 'vary should be 1 or 0, not %s' % kwargs[i]
             self.parameters.loc['%s' % i, 'vary'] = kwargs[i]
 
-    def simulate(self, res, delt, tindex=None, p=None):
+    def simulate(self, res, delt, p=None, tindex=None):
         """
 
         Parameters

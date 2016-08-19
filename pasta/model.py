@@ -92,7 +92,7 @@ class Model:
         h = pd.Series(data=0, index=tindex)
         istart = 0  # Track parameters index to pass to ts object
         for ts in self.tseriesdict.values():
-            h += ts.simulate(tindex, parameters[istart: istart + ts.nparam])
+            h += ts.simulate(parameters[istart: istart + ts.nparam], tindex)
             istart += ts.nparam
         return h
 
@@ -113,8 +113,9 @@ class Model:
         # h_observed - h_simulated
         r = self.oseries[tindex] - self.simulate(parameters, tmin, tmax)[tindex]
         if noise and (self.noisemodel is not None):
-            r = self.noisemodel.simulate(r, self.odelt[tindex], tindex,
-                                         parameters[-self.noisemodel.nparam:])
+            r = self.noisemodel.simulate(r, self.odelt[tindex],
+                                         parameters[-self.noisemodel.nparam:],
+                                         tindex)
         if np.isnan(sum(r ** 2)):
             print 'nan problem in residuals'  # quick and dirty check
         return r
