@@ -6,12 +6,13 @@ import lmfit
 class LmfitSolve:
     def __init__(self, model, tmin=None, tmax=None, noise=True):
         parameters = lmfit.Parameters()
-        for k in model.parameters.index:
-            p = model.parameters.loc[k]
-            # needed because lmfit doesn't take nan as input
-            pvalues = np.where(np.isnan(p.values), None, p.values)
-            parameters.add(k, value=pvalues[0], min=pvalues[1],
-                           max=pvalues[2], vary=pvalues[3])
+        p = model.parameters[['initial', 'pmin', 'pmax', 'vary']]
+        for k in p.index:
+            pp = np.where(np.isnan(p.loc[k]), None, p.loc[k])
+ 
+            parameters.add(k, value=pp[0], min=pp[1],
+                           max=pp[2], vary=pp[3])
+        print parameters
         fit = lmfit.minimize(fcn=self.objfunction, params=parameters,
                              ftol=1e-3, epsfcn=1e-4,
                              args=(tmin, tmax, noise, model))

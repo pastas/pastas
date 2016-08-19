@@ -44,6 +44,7 @@ class TseriesBase:
         self.metadata = metadata
         self.tmin = tmin
         self.tmax = tmax
+        self.set_init_parameters()
 
     def set_parameters(self, **kwargs):
         """Method to set the parameters value
@@ -100,7 +101,6 @@ class Tseries(TseriesBase):
         TseriesBase.__init__(self, rfunc, name, xy, metadata,
                              self.stress.index.min(), self.stress.index.max(),
                              cutoff)
-        self.set_init_parameters()
 
     def set_init_parameters(self):
         """
@@ -108,18 +108,16 @@ class Tseries(TseriesBase):
 
         """
         self.parameters = self.rfunc.set_parameters(self.name)
-        self.optimal_params = self.parameters.value
 
-    def simulate(self, tindex=None, p=None):
+    def simulate(self, p, tindex=None):
         """ Simulates the head contribution.
 
         Parameters
         ----------
-        tindex:
-            Time indices to simulate the model.
-        p: Optional[array-like]
-            Parameters used for simulation. If p is not
-            provided, parameters attribute will be used.
+        p: 1D array
+           Parameters used for simulation.
+        tindex: Optional[Pandas time series]
+           Time indices to simulate the model.
 
         Returns
         -------
@@ -127,10 +125,8 @@ class Tseries(TseriesBase):
             The simulated head contribution.
 
         """
-        if p is None:
-            p = np.array(self.parameters.value)
         b = self.rfunc.block(p)
-        self.npoints = len(self.stress)
+        self.npoints = len(self.stress)  # Why recompute?
         h = pd.Series(fftconvolve(self.stress, b, 'full')[:self.npoints],
                       index=self.stress.index)
         if tindex is not None:
@@ -213,7 +209,6 @@ class Recharge(TseriesBase):
     def set_init_parameters(self):
         self.parameters = pd.concat([self.rfunc.set_parameters(self.name),
                                      self.recharge.set_parameters(self.name)])
-        self.optimal_params = self.parameters.value
 
     def simulate(self, tindex=None, p=None):
         if p is None:
@@ -305,7 +300,6 @@ class Well(TseriesBase):
 
     def set_init_parameters(self):
         self.parameters = self.rfunc.set_parameters(self.name)
-        self.optimal_params = self.parameters.value
 
     def simulate(self, tindex=None, p=None):
         if p is None:
@@ -342,19 +336,8 @@ class Constant(TseriesBase):
                              pd.Timestamp.min, pd.Timestamp.max, 0)
 
     def set_init_parameters(self):
-        self.parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary'])
-        self.parameters.loc['constant_d'] = (self.value, self.pmin, self.pmax, 1)
-        self.optimal_params = self.parameters.value
-
-    def set_parameters(self, **kwargs):
-        for i in kwargs:
-            self.parameters.loc['%s' % i, 'value'] = kwargs[i]
-
-    def fix_parameters(self, **kwargs):
-        for i in kwargs:
-            if (kwargs[i] is not 0) and (kwargs[i] is not 1):
-                print 'vary should be 1 or 0, not %s' % kwargs[i]
-            self.parameters.loc['%s' % i, 'vary'] = kwargs[i]
+        self.parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        self.parameters.loc['constant_d'] = (self.value, self.pmin, self.pmax, 1, 'constant')
 
     def simulate(self, t=None, p=None):
         if p is None:
@@ -380,13 +363,11 @@ class NoiseModel:
 
     def __init__(self):
         self.nparam = 1
-        self.parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
-        self.parameters.loc['noise_alpha'] = (14.0, 0, 5000, 1)
+        self.set_init_parameters()
 
     def set_init_parameters(self):
-        self.parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
-        self.parameters.loc['noise_alpha'] = (14.0, 0, 5000, 1)
-        self.optimal_params = self.parameters.value
+        self.parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        self.parameters.loc['noise_alpha'] = (14.0, 0, 5000, 1, 'noise')
 
     def set_parameters(self, **kwargs):
         for i in kwargs:

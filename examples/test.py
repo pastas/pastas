@@ -21,8 +21,8 @@ EV24=ReadSeries(fname,'knmi',variable='EV24')
 rech = RH.series - EV24.series
 
 # Create stress
-ts = Recharge(RH.series, EV24.series, Gamma, Linear, name='recharge')
-#ts = Tseries(rech, Gamma, name='recharge')
+#ts = Recharge(RH.series, EV24.series, Gamma, Linear, name='recharge')
+ts = Tseries(rech, Gamma, name='recharge')
 ml.addtseries(ts)
 
 # Add drainage level

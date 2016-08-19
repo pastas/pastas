@@ -127,8 +127,8 @@ class Model:
         self.nparam = sum(ts.nparam for ts in self.tseriesdict.values())
         if self.noisemodel is not None:
             self.nparam += self.noisemodel.nparam
-        self.parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
-        #self.parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary', 'optimal', 'tseries'])
+        self.parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax',
+                                                'vary', 'optimal', 'name'])
         for ts in self.tseriesdict.values():
             self.parameters = self.parameters.append(ts.parameters)
         if self.noisemodel:
