@@ -202,7 +202,6 @@ class Recharge(TseriesBase):
         TseriesBase.__init__(self, rfunc, name, xy, metadata,
                              self.precip.index.min(), self.precip.index.max(),
                              cutoff)
-        self.set_init_parameters()
 
         # The recharge calculation needs arrays
         self.precip_array = np.array(self.precip)
@@ -211,7 +210,7 @@ class Recharge(TseriesBase):
         self.recharge = recharge()
         self.set_init_parameters()
         self.nparam = self.rfunc.nparam + self.recharge.nparam
-        self.stress = self.simulate_recharge()
+        self.stress = self.simulate_recharge(self.parameters.initial.values)
 
     def set_init_parameters(self):
         self.parameters = pd.concat([self.rfunc.set_parameters(self.name),
