@@ -88,7 +88,7 @@ class Model:
         tindex = pd.date_range(tmin, tmax, freq=freq)
 
         if parameters is None:
-            parameters = self.optimal_params
+            parameters = self.parameters.optimal.values
         h = pd.Series(data=0, index=tindex)
         istart = 0  # Track parameters index to pass to ts object
         for ts in self.tseriesdict.values():
@@ -108,7 +108,7 @@ class Model:
         tindex = self.oseries[tmin: tmax].index  # times used for calibration
 
         if parameters is None:
-            parameters = self.optimal_params
+            parameters = self.parameters.optimal.values
 
         # h_observed - h_simulated
         r = self.oseries[tindex] - self.simulate(parameters, tmin, tmax)[tindex]
@@ -124,7 +124,9 @@ class Model:
         res = self.residuals(parameters, tmin=tmin, tmax=tmax, noise=noise)
         return sum(res ** 2)
 
-    def initialize(self, default_parameters=True):
+    def initialize(self, initial=True):
+        if not initial:
+            optimal = self.parameters.optimal
         self.nparam = sum(ts.nparam for ts in self.tseriesdict.values())
         if self.noisemodel is not None:
             self.nparam += self.noisemodel.nparam
@@ -134,11 +136,11 @@ class Model:
             self.parameters = self.parameters.append(ts.parameters)
         if self.noisemodel:
             self.parameters = self.parameters.append(self.noisemodel.parameters)
-        if not default_parameters:
-            self.parameters.value[:] = self.optimal_params
+        if not initial:
+            self.parameters.initial = optimal
 
     def solve(self, tmin=None, tmax=None, solver=LmfitSolve, report=True,
-              noise=True, default_parameters=True, solve=True):
+              noise=True, initial=True, solve=True):
         """
         Methods to solve the time series model.
 
@@ -166,23 +168,12 @@ class Model:
         tmin, tmax = self.check_series(tmin, tmax)
 
         # Initialize parameters
-        self.initialize(default_parameters=default_parameters)
+        self.initialize(initial=initial)
 
         # Solve model
         fit = solver(self, tmin=tmin, tmax=tmax, noise=noise)
          
-        self.optimal_params = fit.optimal_params
-
-        #TODO: this should be a pd.Series and should be given back to the ts objects
-        #self.optimal_params = pd.Series(fit.optimal_params, index=self.parameters.index)
-        #for ts in self.tserieslist:
-        #    for k in ts.parameters.index:
-        #        ts.parameters.loc[k].value = self.paramdict[k]
-        #if self.noisemodel is not None:
-        #    for k in self.noisemodel.parameters.index:
-        #        self.noisemodel.parameters.loc[k].value = self.paramdict[k]
-    
-        
+        self.parameters.optimal = fit.optimal_params  
         self.report = fit.report
         if report: print self.report
 
@@ -268,6 +259,16 @@ class Model:
         if oseries:
             self.oseries.plot(linestyle='', marker='.', color='k', markersize=3)
         plt.show()
+        
+    def get_response(self, name):
+        p = self.parameters.loc[self.parameters.name == 'recharge',
+                                'optimal'].values
+        return self.tseriesdict[name].simulate(p)
+    
+    def get_response_function(self, name):
+        p = self.parameters.loc[self.parameters.name == 'recharge',
+                                'optimal'].values
+        return self.tseriesdict[name].rfunc.block(p)
 
     def plot_results(self, tmin=None, tmax=None, savefig=False):
         """

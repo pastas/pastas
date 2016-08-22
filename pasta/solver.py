@@ -12,7 +12,6 @@ class LmfitSolve:
  
             parameters.add(k, value=pp[0], min=pp[1],
                            max=pp[2], vary=pp[3])
-        print parameters
         fit = lmfit.minimize(fcn=self.objfunction, params=parameters,
                              ftol=1e-3, epsfcn=1e-4,
                              args=(tmin, tmax, noise, model))

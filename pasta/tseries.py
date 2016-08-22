@@ -44,24 +44,29 @@ class TseriesBase:
         self.metadata = metadata
         self.tmin = tmin
         self.tmax = tmax
-        self.set_init_parameters()
 
-    def set_parameters(self, **kwargs):
-        """Method to set the parameters value
+    def set_initial(self, name, value):
+        """Method to set the initial parameter value
 
         Usage
         -----
-        >>> ts2.set_parameters(recharge_A=200)
+        >>> ts.set_initial('parametername', 200)
 
         """
-        for i in kwargs:
-            self.parameters.loc['%s' % i, 'initial'] = kwargs[i]
+        if name in self.parameters.index:
+            self.parameters.loc[name, 'initial'] = value
 
-    def fix_parameters(self, **kwargs):
-        for i in kwargs:
-            if (kwargs[i] is not 0) and (kwargs[i] is not 1):
-                print 'vary should be 1 or 0, not %s' % kwargs[i]
-            self.parameters.loc['%s' % i, 'vary'] = kwargs[i]
+    def set_min(name, value):
+        if name in self.parameters.index:
+            self.parameters.loc[name, 'pmin'] = value
+        
+    def set_max(name, value):
+        if name in self.parameters.index:
+            self.parameters.loc[name, 'pmax'] = value
+
+    def fix_parameter(self, name):
+        if name in self.parameters.index:
+            self.parameters.loc[name, 'vary'] = 0
 
 
 class Tseries(TseriesBase):
@@ -101,6 +106,7 @@ class Tseries(TseriesBase):
         TseriesBase.__init__(self, rfunc, name, xy, metadata,
                              self.stress.index.min(), self.stress.index.max(),
                              cutoff)
+        self.set_init_parameters()
 
     def set_init_parameters(self):
         """
@@ -196,6 +202,7 @@ class Recharge(TseriesBase):
         TseriesBase.__init__(self, rfunc, name, xy, metadata,
                              self.precip.index.min(), self.precip.index.max(),
                              cutoff)
+        self.set_init_parameters()
 
         # The recharge calculation needs arrays
         self.precip_array = np.array(self.precip)
@@ -210,11 +217,7 @@ class Recharge(TseriesBase):
         self.parameters = pd.concat([self.rfunc.set_parameters(self.name),
                                      self.recharge.set_parameters(self.name)])
 
-    def simulate(self, p=None, tindex=None):
-        if p is None:
-            p = np.array(self.parameters.value)
-        elif isinstance(p, pd.Series):
-            p = p.values  # Ugly fix, but apparently the rechare fnction doesn't like a pandas dataframe
+    def simulate(self, p, tindex=None):
         b = self.rfunc.block(p[:-self.recharge.nparam])  # Block response
         rseries = self.recharge.simulate(self.precip_array, self.evap_array,
                                          p[-self.recharge.nparam:])
@@ -239,10 +242,6 @@ class Recharge(TseriesBase):
             Other simulated recharge series as a pd. Series object.
 
         """
-        if p is None:
-            p = np.array(self.parameters.value)
-        elif isinstance(p, pd.Series):
-            p = p.values  # Ugly fix, but apparently the rechare fnction doesn't like a pandas dataframe
         rseries = self.recharge.simulate(self.precip_array, self.evap_array,
                                          p[-self.recharge.nparam:])
         rseries = pd.Series(rseries, index=self.precip.index,
@@ -297,13 +296,12 @@ class Well(TseriesBase):
         TseriesBase.__init__(self, rfunc, name, xy, metadata,
                              self.stress.index.min(), self.stress.index.max(),
                              cutoff)
+        self.set_init_parameters()
 
     def set_init_parameters(self):
         self.parameters = self.rfunc.set_parameters(self.name)
 
     def simulate(self, p=None, tindex=None):
-        if p is None:
-            p = np.array(self.parameters.value)
         h = pd.Series(data=0, index=self.stress[0].index)
         for i in range(len(self.stress)):
             self.npoints = len(self.stress[i])
@@ -334,14 +332,13 @@ class Constant(TseriesBase):
         self.set_init_parameters()
         TseriesBase.__init__(self, One, name, xy, metadata,
                              pd.Timestamp.min, pd.Timestamp.max, 0)
+        self.set_init_parameters()
 
     def set_init_parameters(self):
         self.parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         self.parameters.loc['constant_d'] = (self.value, self.pmin, self.pmax, 1, 'constant')
 
     def simulate(self, p=None, t=None):
-        if p is None:
-            p = np.array(self.parameters.value)
         return p
 
 
@@ -379,7 +376,7 @@ class NoiseModel:
                 print 'vary should be 1 or 0, not %s' % kwargs[i]
             self.parameters.loc['%s' % i, 'vary'] = kwargs[i]
 
-    def simulate(self, res, delt, p=None, tindex=None):
+    def simulate(self, res, delt, p, tindex=None):
         """
 
         Parameters
@@ -398,8 +395,6 @@ class NoiseModel:
         Pandas Series
             Series of the innovations.
         """
-        if p is None:
-            p = np.array(self.parameters.value)
         innovations = pd.Series(res, index=res.index)
         # weights of innovations, see Eq. A17 in reference [1]
         power = (1.0 / (2.0 * (len(delt) - 1)))
