@@ -56,11 +56,11 @@ class TseriesBase:
         if name in self.parameters.index:
             self.parameters.loc[name, 'initial'] = value
 
-    def set_min(name, value):
+    def set_min(self, name, value):
         if name in self.parameters.index:
             self.parameters.loc[name, 'pmin'] = value
         
-    def set_max(name, value):
+    def set_max(self, name, value):
         if name in self.parameters.index:
             self.parameters.loc[name, 'pmax'] = value
 
