@@ -1,10 +1,10 @@
 (dp0
 S'ir_file'
 p1
-S'/Users/Raoul/Projects/pasta/pasta/examples/data/KNMI_20160522.txt'
+VC:/Users/Wiertsema/Projects/pasta/examples/data/KNMI_20160522.txt
 p2
 sS'observation_file'
 p3
-S'/Users/Raoul/Projects/pasta/pasta/examples/data/B33A0113001_1.csv'
+VC:/Users/Wiertsema/Projects/pasta/examples/data/B33A0113001_1.csv
 p4
 s.

@@ -14,3 +14,4 @@ pasta.egg-info/requires.txt
 pasta/gui/settings
 
 examples/notebooks/.ipynb_checkpoints/
+gui/settings
