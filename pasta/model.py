@@ -261,14 +261,18 @@ class Model:
         plt.show()
         
     def get_response(self, name):
-        p = self.parameters.loc[self.parameters.name == 'recharge',
+        p = self.parameters.loc[self.parameters.name == name,
                                 'optimal'].values
         return self.tseriesdict[name].simulate(p)
     
     def get_response_function(self, name):
-        p = self.parameters.loc[self.parameters.name == 'recharge',
-                                'optimal'].values
+        p = self.parameters.loc[self.parameters.name == name, 'optimal'].values
+        print (p)
         return self.tseriesdict[name].rfunc.block(p)
+
+    def get_stress(self, name):
+        p = self.parameters.loc[self.parameters.name == name, 'optimal'].values
+        return self.tseriesdict[name].get_stress(p)
 
     def plot_results(self, tmin=None, tmax=None, savefig=False):
         """
