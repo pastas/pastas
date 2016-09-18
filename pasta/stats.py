@@ -23,14 +23,8 @@ TODO
 import numpy as np
 import pandas as pd
 
-#import matplotlib.pyplot as plt
 from statsmodels.tsa.stattools import acf, pacf
 from scipy.stats import probplot
-from Tkinter import W, N, E, S, Tk
-from ttk import Button, Label, Frame, Labelframe, Treeview, OptionMenu, Entry, \
-    Notebook
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
 
@@ -49,7 +43,7 @@ class Statistics(object):
     """
 
     def __init__(self, ml):
-        #if ml.fit.success is not True:
+        # if ml.fit.success is not True:
         #    'Model optimization was not succesfull, make sure the model is solved' \
         #    'Properly.'
 
@@ -59,7 +53,7 @@ class Statistics(object):
         self.rseries = ml.residuals()  # Residuals series
         self.odelt = ml.odelt  # Timestep between observations
         print self.rseries[:5]
-        if ml.noisemodel: # Calculate the innovations
+        if ml.noisemodel:  # Calculate the innovations
             self.iseries = ml.noisemodel.simulate(self.rseries, self.odelt)
         print self.rseries[:5]
 
@@ -283,48 +277,6 @@ class Statistics(object):
         plt.subplot(gs[1, 2])
         probplot(self.iseries, plot=plt)
         plt.show()
-
-    def plot_statistics(self):
-        """Plot the statistics with tabs. Experimental!!
-
-        Returns
-        -------
-
-        """
-        self.root = Tk()
-        self.root.title('Model Summary')
-        w, h = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
-        self.root.geometry("%dx%d+0+0" % (w, h))
-
-        top = Frame(self.root)
-        top.columnconfigure(0, weight=1)
-        top.rowconfigure(0, weight=1)
-        top.grid()
-
-        n = Notebook(top)
-        n.grid(row=0, column=0, sticky=W + E + N + S)
-
-        f1 = Frame(n)  # first page, which would get widgets gridded into it
-        f = Figure(facecolor="white", figsize=(2, 1))
-        self.ts_ax = f.add_subplot(311)
-        f.add_subplot(312)
-        f.add_subplot(313)
-
-        # self.ts_ax.set_position([0.05, 0.1, 0.9, 0.85]) # This should not be
-        #  hardcoded
-        self.ts_canvas = FigureCanvasTkAgg(f, master=f1)
-        self.ts_canvas.get_tk_widget().grid(row=1, column=1, columnspan=2,
-                                            rowspan=4,
-                                            sticky=W + E + N + S)
-        f2 = Frame(n)  # second page
-
-        n.add(f1, text='One')
-        Button(f1, text='Test').grid()
-
-        n.add(f2, text='Two')
-        Button(f2, text='Test').grid()
-
-        self.root.mainloop()
 
     def summary(self, output='basic', tmin=None, tmax=None):
         """Prints a summary table of the model statistics. The set of statistics
