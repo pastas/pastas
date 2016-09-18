@@ -20,12 +20,11 @@ TODO
 -
 
 """
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
-from statsmodels.tsa.stattools import acf, pacf
 from scipy.stats import probplot
-import matplotlib.pyplot as plt
+from statsmodels.tsa.stattools import acf, pacf
 
 
 class Statistics(object):

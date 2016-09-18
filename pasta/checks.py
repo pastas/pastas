@@ -97,7 +97,7 @@ def check_tseries(stress, freq, fillnan, name=''):
         stress = stress.asfreq(freq)
     else:
         freq = pd.infer_freq(stress.index)
-        print 'Inferred frequency from time series %s: freq=%s ' %(name, freq)
+        print 'Inferred frequency from time series %s: freq=%s ' % (name, freq)
         stress = stress.asfreq(freq)
 
     # Handle nan-values in stress series
