@@ -107,12 +107,12 @@ def check_tseries(stress, freq, fillnan, name=''):
         if fillnan == 'mean':
             stress.fillna(stress.mean(), inplace=True)  # Default option
         elif fillnan == 'interpolate':
-            stress.interpolate(method='time')
+            stress.interpolate(method='time', inplace=True)
         elif type(fillnan) == float:
-            print fillnan, 'init'
             stress.fillna(fillnan, inplace=True)
         else:
             print 'User-defined option for fillnan %s isinstance() not supported' \
                   % fillnan
+            
 
     return stress

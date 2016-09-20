@@ -112,10 +112,12 @@ class Model:
 
         # h_observed - h_simulated
         r = self.oseries[tindex] - self.simulate(parameters, tmin, tmax)[tindex]
+        #print 'step1:', sum(r**2)
         if noise and (self.noisemodel is not None):
             r = self.noisemodel.simulate(r, self.odelt[tindex],
                                          parameters[-self.noisemodel.nparam:],
                                          tindex)
+        #print 'step2:', sum(r**2)
         if np.isnan(sum(r ** 2)):
             print 'nan problem in residuals'  # quick and dirty check
         return r

@@ -138,6 +138,82 @@ class Tseries(TseriesBase):
         if tindex is not None:
             h = h[tindex]
         return h
+    
+class Tseries2(TseriesBase):
+    """
+    Time series model consisting of the convolution of two stresses with one
+    response function.
+
+    Parameters
+    ----------
+    stress1: pd.Series
+        pandas Series object containing stress 1.
+    stress2: pd.Series
+        pandas Series object containing stress 2.
+    rfunc: rfunc class
+        Response function used in the convolution with the stess.
+    name: str
+        Name of the stress
+    metadata: Optional[dict]
+        dictionary containing metadata about the stress.
+    xy: Optional[tuple]
+        XY location in lon-lat format used for making maps.
+    freq: Optional[str]
+        Frequency to which the stress series are transformed. By default,
+        the frequency is inferred from the data and that frequency is used.
+        The required string format is found
+        at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset
+        -aliases
+    fillnan: Optional[str or float]
+        Methods or float number to fill nan-values. Default values is
+        'mean'. Currently supported options are: 'interpolate', float,
+        and 'mean'. Interpolation is performed with a standard linear
+        interpolation.
+
+    """
+
+    def __init__(self, stress0, stress1, rfunc, name, metadata=None, xy=(0, 0), freq=None,
+                 fillnan=['mean', 'interpolate'], cutoff=0.99):
+        tmin = max(stress0.index[0], stress1.index[0])
+        tmax = min(stress0.index[-1], stress1.index[-1])
+        self.stress0 = check_tseries(stress0[tmin: tmax], freq, fillnan[0], name=name)
+        self.stress1 = check_tseries(stress1[tmin: tmax], freq, fillnan[1], name=name)
+        TseriesBase.__init__(self, rfunc, name, xy, metadata,
+                             tmin, tmax, cutoff)
+        self.set_init_parameters()
+
+    def set_init_parameters(self):
+        """
+        Set the initial parameters back to their default values.
+
+        """
+        self.parameters = self.rfunc.set_parameters(self.name)
+        self.parameters.loc[self.name + '_f'] = (-1.0, -2.0, 2.0, 1, self.name)
+        self.nparam += 1
+
+    def simulate(self, p, tindex=None):
+        """ Simulates the head contribution.
+
+        Parameters
+        ----------
+        p: 1D array
+           Parameters used for simulation.
+        tindex: Optional[Pandas time series]
+           Time indices to simulate the model.
+
+        Returns
+        -------
+        Pandas Series Object
+            The simulated head contribution.
+
+        """
+        b = self.rfunc.block(p[:-1])
+        self.npoints = len(self.stress0)  # Why recompute?
+        h = pd.Series(fftconvolve(self.stress0 + p[-1] * self.stress1, b, 'full')[:self.npoints],
+                      index=self.stress0.index)
+        if tindex is not None:
+            h = h[tindex]
+        return h
 
 
 class Recharge(TseriesBase):
