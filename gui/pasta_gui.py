@@ -412,7 +412,7 @@ class PastaGui(Frame, Framework):
             for ts in self.tserieslist:
                 if not ts.disabled:
                     #TODO Make a deep copy
-                    self.ml.addtseries(ts)
+                    self.ml.add_tseries(ts)
 
             # solve
             self.ml.solve()

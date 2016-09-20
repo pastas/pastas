@@ -54,7 +54,8 @@ class Gamma:
         self.cutoff = cutoff
 
     def set_parameters(self, name):
-        parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        parameters = pd.DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         parameters.loc[name + '_A'] = (500.0, 0.0, 5000.0, 1, name)
         parameters.loc[name + '_n'] = (1.0, 0.0, 5.0, 1, name)
         parameters.loc[name + '_a'] = (100.0, 1.0, 5000.0, 1, name)
@@ -85,7 +86,8 @@ class Exponential:
         self.cutoff = cutoff
 
     def set_parameters(self, name):
-        parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        parameters = pd.DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         parameters.loc[name + '_A'] = (500.0, 0.0, 5000.0, 1, name)
         parameters.loc[name + '_a'] = (100.0, 1.0, 5000.0, 1, name)
         parameters['tseries'] = name
@@ -125,7 +127,8 @@ class Hantush:
         self.cutoff = cutoff
 
     def set_parameters(self, name):
-        parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        parameters = pd.DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         parameters.loc[name + '_S'] = (0.0, 1e-3, 1.0, 1, name)
         parameters.loc[name + '_T'] = (0.0, 10.0, 5000.0, 1, name)
         parameters.loc[name + '_c'] = (0.0, 1000.0, 5000.0, 1, name)
@@ -168,7 +171,8 @@ class Theis:
         self.cutoff = cutoff
 
     def set_parameters(self, name):
-        parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        parameters = pd.DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         parameters.loc[name + '_S'] = (0.0, 3e-1, 1.0, 1, name)
         parameters.loc[name + '_T'] = (0.0, 10.0, 5000.0, 1, name)
         return parameters
@@ -183,17 +187,18 @@ class Theis:
     def block(self, p, r):
         s = self.step(p, r)
         return s[1:] - s[:-1]
-    
+
+
 class One:
     """Dummy class for Constant. Returns 1
     """
-    
+
     def __init__(self, cutoff):
         self.nparam = 1
         self.cutoff = cutoff
-        
+
     def step(self, p):
         return p[0] * np.ones(2)
-    
+
     def block(self, p):
         return p[0] * np.ones(2)

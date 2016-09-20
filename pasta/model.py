@@ -1,12 +1,12 @@
+from collections import OrderedDict
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from tseries import Constant
 from checks import check_oseries
-from stats import Statistics
 from solver import LmfitSolve
-from collections import OrderedDict
+from tseries import Constant
 
 
 class Model:
@@ -47,14 +47,14 @@ class Model:
         self.tmin = None
         self.tmax = None
 
-    def addtseries(self, tseries):
+    def add_tseries(self, tseries):
         """
         adds a time series model component to the Model.
 
         """
         self.tseriesdict[tseries.name] = tseries
 
-    def addnoisemodel(self, noisemodel):
+    def add_noisemodel(self, noisemodel):
         """
         Adds a noise model to the time series Model.
 
@@ -83,7 +83,8 @@ class Model:
             tmin = self.tmin
         if tmax is None:
             tmax = self.tmax
-        assert (tmin is not None) and (tmax is not None), 'model needs to be solved first'
+        assert (tmin is not None) and (
+            tmax is not None), 'model needs to be solved first'
 
         tindex = pd.date_range(tmin, tmax, freq=freq)
 
@@ -121,7 +122,7 @@ class Model:
         if np.isnan(sum(r ** 2)):
             print 'nan problem in residuals'  # quick and dirty check
         return r
-    
+
     def sse(self, parameters=None, tmin=None, tmax=None, noise=True):
         res = self.residuals(parameters, tmin=tmin, tmax=tmax, noise=noise)
         return sum(res ** 2)
@@ -174,8 +175,8 @@ class Model:
 
         # Solve model
         fit = solver(self, tmin=tmin, tmax=tmax, noise=noise)
-         
-        self.parameters.optimal = fit.optimal_params  
+
+        self.parameters.optimal = fit.optimal_params
         self.report = fit.report
         if report: print self.report
 
@@ -241,6 +242,19 @@ class Model:
 
         return tmin, tmax
 
+    def get_response(self, name):
+        p = self.parameters.loc[self.parameters.name == name, 'optimal'].values
+        return self.tseriesdict[name].simulate(p)
+
+    def get_response_function(self, name):
+        p = self.parameters.loc[self.parameters.name == name, 'optimal'].values
+        print (p)
+        return self.tseriesdict[name].rfunc.block(p)
+
+    def get_stress(self, name):
+        p = self.parameters.loc[self.parameters.name == name, 'optimal'].values
+        return self.tseriesdict[name].get_stress(p)
+
     def plot(self, tmin=None, tmax=None, oseries=True, simulate=True):
         """
 
@@ -261,16 +275,6 @@ class Model:
         if oseries:
             self.oseries.plot(linestyle='', marker='.', color='k', markersize=3)
         plt.show()
-        
-    def get_response(self, name):
-        p = self.parameters.loc[self.parameters.name == 'recharge',
-                                'optimal'].values
-        return self.tseriesdict[name].simulate(p)
-    
-    def get_response_function(self, name):
-        p = self.parameters.loc[self.parameters.name == 'recharge',
-                                'optimal'].values
-        return self.tseriesdict[name].rfunc.block(p)
 
     def plot_results(self, tmin=None, tmax=None, savefig=False):
         """

@@ -1,6 +1,5 @@
-import numpy as np
-import pandas as pd
 import lmfit
+import numpy as np
 
 
 class LmfitSolve:
@@ -9,7 +8,7 @@ class LmfitSolve:
         p = model.parameters[['initial', 'pmin', 'pmax', 'vary']]
         for k in p.index:
             pp = np.where(np.isnan(p.loc[k]), None, p.loc[k])
- 
+
             parameters.add(k, value=pp[0], min=pp[1],
                            max=pp[2], vary=pp[3])
         fit = lmfit.minimize(fcn=self.objfunction, params=parameters,

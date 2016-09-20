@@ -24,15 +24,15 @@ rech = RH.series - EV24.series
 #ts = Recharge(RH.series, EV24.series, Gamma, Linear, name='recharge')
 ts = Recharge(RH.series, EV24.series, Gamma, Combination, name='recharge')
 #ts = Tseries(rech, Gamma, name='recharge')
-ml.addtseries(ts)
+ml.add_tseries(ts)
 
 # Add drainage level
 d = Constant(value=obs.series.min())
-ml.addtseries(d)
+ml.add_tseries(d)
 
 # Add noise model
 n = NoiseModel()
-ml.addnoisemodel(n)
+ml.add_noisemodel(n)
 
 # Solve
 ml.solve()

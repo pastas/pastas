@@ -33,11 +33,11 @@ def test_model():
 
     ts1 = Recharge(rain, evap, Gamma(), Linear(), name='recharge',
                    fillnan='interpolate')
-    ml.addtseries(ts1)
+    ml.add_tseries(ts1)
     d = Constant(oseries.min())
-    ml.addtseries(d)
+    ml.add_tseries(d)
     n = NoiseModel()
-    ml.addnoisemodel(n)
+    ml.add_noisemodel(n)
 
     # Solve the time series model
     ml.solve()
