@@ -57,7 +57,7 @@ class Gamma:
         parameters = pd.DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         parameters.loc[name + '_A'] = (500.0, 0.0, 5000.0, 1, name)
-        parameters.loc[name + '_n'] = (1.0, 0.0, 5.0, 1, name)
+        parameters.loc[name + '_n'] = (1.0, 0.1, 5.0, 1, name)  # if n is too small, the length of the response function is close to zero
         parameters.loc[name + '_a'] = (100.0, 1.0, 5000.0, 1, name)
         return parameters
 

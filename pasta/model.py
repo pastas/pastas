@@ -168,13 +168,13 @@ class Model:
                   'defined. No noise model is used'
 
         # Check series with tmin, tmax
-        tmin, tmax = self.check_series(tmin, tmax)
+        self.set_tmin_tmax(tmin, tmax)
 
         # Initialize parameters
         self.initialize(initial=initial)
 
         # Solve model
-        fit = solver(self, tmin=tmin, tmax=tmax, noise=noise)
+        fit = solver(self, tmin=self.tmin, tmax=self.tmax, noise=noise)
 
         self.parameters.optimal = fit.optimal_params
         self.report = fit.report
@@ -182,7 +182,7 @@ class Model:
 
         # self.stats = Statistics(self)
 
-    def check_series(self, tmin=None, tmax=None):
+    def set_tmin_tmax(self, tmin=None, tmax=None):
         """
         Function to check if the dependent and independent time series match.
 
@@ -205,42 +205,20 @@ class Model:
             tmin = self.oseries.index.min()
         else:
             tmin = pd.tslib.Timestamp(tmin)
+            assert (tmin >= self.oseries.index[0]) and (tmin <= self.oseries.index[-1]), 'Error: Specified tmin is outside of the oseries'
         if tmax is None:
             tmax = self.oseries.index.max()
         else:
             tmax = pd.tslib.Timestamp(tmax)
-
-        # Check tmin and tmax compared to oseries and raise warning.
-        if tmin not in self.oseries.index:
-            print 'Warning, given tmin is outside of the oseries. First valid ' \
-                  'index is %s' % self.oseries.first_valid_index()
-        if tmax not in self.oseries.index:
-            print 'Warning, given tmax is outside of the oseries. Last valid ' \
-                  'index is %s' % self.oseries.last_valid_index()
-
-        # Get maximum simulation period.
-        tstmin = pd.Timestamp.min
-        tstmax = pd.Timestamp.max
-
-        for ts in self.tseriesdict.values():
-            if isinstance(ts, Constant):  # Check if it is not a constant tseries.
-                pass
-            else:
-                if ts.tmin < tstmin:
-                    tstmin = ts.tmin
-                if ts.tmax > tstmax:
-                    tstmax = ts.tmax
-
+            assert (tmax >= self.oseries.index[0]) and (tmax <= self.oseries.index[-1]), 'Error: Specified tmin is outside of the oseries'
+        assert tmax > tmin, 'Error: Specified tmax not larger than specified tmin'
+        assert len(self.oseries[tmin: tmax]) > 0, 'Error: no observations between tmin and tmax'
+        
         self.tmin = tmin
         self.tmax = tmax
-
-        # Check if chosen period is within or outside the maximum period.
-        if tstmin > tmin:
-            tmin = tstmin
-        if tstmax < tmax:
-            tmax = tstmax
-
-        return tmin, tmax
+        
+        #TODO
+        # Check if at least one stress overlaps with the oseries data
 
     def get_response(self, name):
         p = self.parameters.loc[self.parameters.name == name, 'optimal'].values
