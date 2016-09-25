@@ -5,6 +5,8 @@
 
 *.pyc
 
+*.so
+
 pasta.egg-info/SOURCES.txt
 pasta.egg-info/dependency_links.txt
 pasta.egg-info/PKG-INFO
