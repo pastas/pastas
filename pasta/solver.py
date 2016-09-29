@@ -49,13 +49,18 @@ class DESolve:
         self.tmin = tmin
         self.tmax = tmax
         self.noise = noise
+        self.parameters = self.model.parameters.initial.values
+        self.vary = self.model.parameters.vary.values.astype('bool')
+        self.pmin = self.model.parameters.pmin.values[self.vary]
+        self.pmax = self.model.parameters.pmax.values[self.vary]
         result = differential_evolution(self.objfunction,
-                                        zip(self.model.parameters['pmin'],
-                                            self.model.parameters['pmax']))
-        self.optimal_params = result.values()[3]
+                                        zip(self.pmin, self.pmax))
+        self.optimal_params = self.model.parameters.initial.values
+        self.optimal_params[self.vary] = result.values()[3]
         self.report = str(result)
 
     def objfunction(self, parameters):
         print '.',
-        return self.model.sse(parameters, tmin=self.tmin, tmax=self.tmax,
+        self.parameters[self.vary] = parameters
+        return self.model.sse(self.parameters, tmin=self.tmin, tmax=self.tmax,
                               noise=self.noise)
