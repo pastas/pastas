@@ -22,7 +22,8 @@ rech = RH.series - EV24.series
 
 # Create stress
 #ts = Recharge(RH.series, EV24.series, Gamma, Linear, name='recharge')
-ts = Recharge(RH.series, EV24.series, Gamma, Combination, name='recharge')
+#ts = Recharge(RH.series, EV24.series, Gamma, Combination, name='recharge')
+ts = Tseries2(RH.series, EV24.series, Gamma, name='recharge')
 #ts = Tseries(rech, Gamma, name='recharge')
 ml.add_tseries(ts)
 

@@ -187,10 +187,14 @@ class Tseries2(TseriesBase):
 
     def __init__(self, stress0, stress1, rfunc, name, metadata=None, xy=(0, 0), freq=None,
                  fillnan=['mean', 'interpolate'], cutoff=0.99):
-        tmin = max(stress0.index[0], stress1.index[0])
-        tmax = min(stress0.index[-1], stress1.index[-1])
-        self.stress0 = check_tseries(stress0[tmin: tmax], freq, fillnan[0], name=name)
-        self.stress1 = check_tseries(stress1[tmin: tmax], freq, fillnan[1], name=name)
+        self.stress0 = check_tseries(stress0, freq, fillnan[0], name=name)
+        self.stress1 = check_tseries(stress1, freq, fillnan[1], name=name)
+        # First check the series, then determine tmin and tmax
+        # A series may start with NaN values, which are removed by the check_tseries function
+        tmin = max(self.stress0.index[0], self.stress1.index[0])
+        tmax = min(self.stress0.index[-1], self.stress1.index[-1])
+        self.stress0 = self.stress0[tmin: tmax]
+        self.stress1 = self.stress1[tmin: tmax]
         TseriesBase.__init__(self, rfunc, name, xy, metadata,
                              tmin, tmax, cutoff)
         self.set_init_parameters()
