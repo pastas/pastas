@@ -286,9 +286,10 @@ class Model:
         residuals = self.residuals(tmin=tmin, tmax=tmax)
         ax2 = plt.subplot(gs[2, :-1])  # , sharex=ax1)
         residuals.plot(color='k', label='residuals')
-        if self.noisemodel is not None:
-            innovations = self.noisemodel.simulate(residuals, self.odelt)
-            innovations.plot(label='innovations')
+        # Ruben Calje commented next three lines on 31-10-2016:
+        #if self.noisemodel is not None:
+            #innovations = self.noisemodel.simulate(residuals, self.odelt)
+            #innovations.plot(label='innovations')
         plt.legend(loc=(0, 1), ncol=3, frameon=False, handlelength=3)
         plt.ylabel('Error [m]')
         plt.xlabel('Time [Years]')
@@ -300,7 +301,7 @@ class Model:
             p = self.parameters[n:n + ts.nparam]
             n += ts.nparam
             if "rfunc" in dir(ts):
-                plt.plot(ts.rfunc.block(p))
+                plt.plot(ts.rfunc.block(p.optimal))
         ax3.set_xticks(ax3.get_xticks()[::2])
         ax3.set_yticks(ax3.get_yticks()[::2])
         plt.title('Block Response')
@@ -309,8 +310,8 @@ class Model:
         ax4 = plt.subplot(gs[1:2, -1])
         ax4.xaxis.set_visible(False)
         ax4.yaxis.set_visible(False)
-        text = np.vstack((self.paramdict.keys(), [round(float(i), 4) for i in
-                                                  self.paramdict.values()])).T
+        text = np.vstack((self.parameters.keys(), [round(float(i), 4) for i in
+                                                  self.parameters.optimal.values])).T
         colLabels = ("Parameter", "Value")
         ytable = ax4.table(cellText=text, colLabels=colLabels, loc='center')
         ytable.scale(1, 1.1)
@@ -319,8 +320,50 @@ class Model:
         ax5 = plt.subplot(gs[2, -1])
         ax5.xaxis.set_visible(False)
         ax5.yaxis.set_visible(False)
-        plt.text(0.05, 0.8, 'AIC: %.2f' % self.fit.aic)
-        plt.text(0.05, 0.6, 'BIC: %.2f' % self.fit.bic)
+        # Ruben Calje commented next two lines on 31-10-2016:
+        #plt.text(0.05, 0.8, 'AIC: %.2f' % self.fit.aic)
+        #plt.text(0.05, 0.6, 'BIC: %.2f' % self.fit.bic)
         plt.show()
         if savefig:
             plt.savefig('.eps' % (self.name), bbox_inches='tight')
+
+    def plot_decomposition(self,tmin=None, tmax=None, freq='D'):
+        # Default option when not tmin and tmax is provided
+        if tmin is None:
+            tmin = self.tmin
+        if tmax is None:
+            tmax = self.tmax
+        assert (tmin is not None) and (
+            tmax is not None), 'model needs to be solved first'
+
+        tindex = pd.date_range(tmin, tmax, freq=freq)
+
+        ts = self.tseriesdict
+        n = len(ts)
+        f, axarr = plt.subplots(1 + n, sharex=True)
+
+        # plot combination in top-graph
+        axarr[0].set_title('Observations and simulation')
+
+        h = self.simulate(tmin=tmin, tmax=tmax)
+        h.plot(ax=axarr[0], label='simulation')
+        self.oseries.plot(linestyle='', marker='.', color='k', markersize=3, ax=axarr[0], label='observations')
+        handles, labels = axarr[0].get_legend_handles_labels()
+        leg=axarr[0].legend(handles, labels, loc=2)
+        leg.get_frame().set_alpha(0.5)
+
+        parameters = self.parameters.optimal.values
+        istart = 0  # Track parameters index to pass to ts object
+        iax = 1
+        for ts in self.tseriesdict.values():
+            h = ts.simulate(parameters[istart: istart + ts.nparam], tindex)
+            axarr[iax].set_title(ts.name)
+            if isinstance(ts, Constant):
+                xlim = axarr[iax].get_xlim()
+                axarr[iax].plot(xlim,[h,h])
+            else:
+                h.plot(ax=axarr[iax])
+            istart += ts.nparam
+            iax += 1
+        # show the figure
+        plt.show()
