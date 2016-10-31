@@ -341,7 +341,7 @@ class Model:
         if savefig:
             plt.savefig('.eps' % (self.name), bbox_inches='tight')
 
-    def plot_decomposition(self,tmin=None, tmax=None, freq='D'):
+    def plot_decomposition(self, tmin=None, tmax=None, freq='D'):
         # Default option when not tmin and tmax is provided
         if tmin is None:
             tmin = self.tmin
