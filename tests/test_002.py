@@ -31,7 +31,7 @@ def test_model():
     # Create the time series model
     ml = Model(oseries)
 
-    ts1 = Recharge(rain, evap, Gamma(), Linear(), name='recharge',
+    ts1 = Recharge(rain, evap, Gamma, Linear, name='recharge',
                    fillnan='interpolate')
     ml.add_tseries(ts1)
     d = Constant(oseries.min())
