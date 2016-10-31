@@ -113,12 +113,12 @@ class Model:
 
         # h_observed - h_simulated
         r = self.oseries[tindex] - self.simulate(parameters, tmin, tmax)[tindex]
-        #print 'step1:', sum(r**2)
+        # print 'step1:', sum(r**2)
         if noise and (self.noisemodel is not None):
             r = self.noisemodel.simulate(r, self.odelt[tindex],
                                          parameters[-self.noisemodel.nparam:],
                                          tindex)
-        #print 'step2:', sum(r**2)
+        # print 'step2:', sum(r**2)
         if np.isnan(sum(r ** 2)):
             print 'nan problem in residuals'  # quick and dirty check
         return r
@@ -127,7 +127,7 @@ class Model:
         res = self.residuals(parameters, tmin=tmin, tmax=tmax, noise=noise)
         return sum(res ** 2)
 
-    def initialize(self, initial=True):
+    def initialize(self, initial=True, noise=True):
         if not initial:
             optimal = self.parameters.optimal
         self.nparam = sum(ts.nparam for ts in self.tseriesdict.values())
@@ -137,7 +137,7 @@ class Model:
                                                 'vary', 'optimal', 'name'])
         for ts in self.tseriesdict.values():
             self.parameters = self.parameters.append(ts.parameters)
-        if self.noisemodel:
+        if self.noisemodel and noise:
             self.parameters = self.parameters.append(self.noisemodel.parameters)
         if not initial:
             self.parameters.initial = optimal
@@ -171,7 +171,7 @@ class Model:
         self.set_tmin_tmax(tmin, tmax)
 
         # Initialize parameters
-        self.initialize(initial=initial)
+        self.initialize(initial=initial, noise=noise)
 
         # Solve model
         fit = solver(self, tmin=self.tmin, tmax=self.tmax, noise=noise)
@@ -205,33 +205,47 @@ class Model:
             tmin = self.oseries.index.min()
         else:
             tmin = pd.tslib.Timestamp(tmin)
-            assert (tmin >= self.oseries.index[0]) and (tmin <= self.oseries.index[-1]), 'Error: Specified tmin is outside of the oseries'
+            assert (tmin >= self.oseries.index[0]) and (tmin <= self.oseries.index[
+                -1]), 'Error: Specified tmin is outside of the oseries'
         if tmax is None:
             tmax = self.oseries.index.max()
         else:
             tmax = pd.tslib.Timestamp(tmax)
-            assert (tmax >= self.oseries.index[0]) and (tmax <= self.oseries.index[-1]), 'Error: Specified tmin is outside of the oseries'
+            assert (tmax >= self.oseries.index[0]) and (tmax <= self.oseries.index[
+                -1]), 'Error: Specified tmin is outside of the oseries'
         assert tmax > tmin, 'Error: Specified tmax not larger than specified tmin'
-        assert len(self.oseries[tmin: tmax]) > 0, 'Error: no observations between tmin and tmax'
-        
+        assert len(self.oseries[
+                   tmin: tmax]) > 0, 'Error: no observations between tmin and tmax'
+
         self.tmin = tmin
         self.tmax = tmax
-        
-        #TODO
+
+        # TODO
         # Check if at least one stress overlaps with the oseries data
 
     def get_response(self, name):
-        p = self.parameters.loc[self.parameters.name == name, 'optimal'].values
-        return self.tseriesdict[name].simulate(p)
+        try:
+            p = self.parameters.loc[self.parameters.name == name, 'optimal'].values
+            return self.tseriesdict[name].simulate(p)
+        except KeyError:
+            print "Name not in tseriesdict, available names are: %s" \
+                  % self.tseriesdict.keys()
 
     def get_response_function(self, name):
-        p = self.parameters.loc[self.parameters.name == name, 'optimal'].values
-        print (p)
-        return self.tseriesdict[name].rfunc.block(p)
+        try:
+            p = self.parameters.loc[self.parameters.name == name, 'optimal'].values
+            return self.tseriesdict[name].rfunc.block(p)
+        except KeyError:
+            print "Name not in tseriesdict, available names are: %s" \
+                  % self.tseriesdict.keys()
 
     def get_stress(self, name):
-        p = self.parameters.loc[self.parameters.name == name, 'optimal'].values
-        return self.tseriesdict[name].get_stress(p)
+        try:
+            p = self.parameters.loc[self.parameters.name == name, 'optimal'].values
+            return self.tseriesdict[name].get_stress(p)
+        except KeyError:
+            print "Name not in tseriesdict, available names are: %s" \
+                  % self.tseriesdict.keys()
 
     def plot(self, tmin=None, tmax=None, oseries=True, simulate=True):
         """

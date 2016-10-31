@@ -151,7 +151,14 @@ class Tseries(TseriesBase):
         if tindex is not None:
             h = h[tindex]
         return h
-    
+
+    def get_stress(self, p, tindex=None):
+        if tindex is not None:
+            return self.stress[tindex]
+        else:
+            return self.stress
+
+
 class Tseries2(TseriesBase):
     """
     Time series model consisting of the convolution of two stresses with one
@@ -185,7 +192,8 @@ class Tseries2(TseriesBase):
 
     """
 
-    def __init__(self, stress0, stress1, rfunc, name, metadata=None, xy=(0, 0), freq=None,
+    def __init__(self, stress0, stress1, rfunc, name, metadata=None, xy=(0, 0),
+                 freq=None,
                  fillnan=['mean', 'interpolate'], cutoff=0.99):
         self.stress0 = check_tseries(stress0, freq, fillnan[0], name=name)
         self.stress1 = check_tseries(stress1, freq, fillnan[1], name=name)
@@ -226,7 +234,8 @@ class Tseries2(TseriesBase):
         """
         b = self.rfunc.block(p[:-1])
         self.npoints = len(self.stress0)  # Why recompute?
-        h = pd.Series(fftconvolve(self.stress0 + p[-1] * self.stress1, b, 'full')[:self.npoints],
+        h = pd.Series(fftconvolve(self.stress0 + p[-1] * self.stress1, b, 'full')[
+                      :self.npoints],
                       index=self.stress0.index)
         if tindex is not None:
             h = h[tindex]
