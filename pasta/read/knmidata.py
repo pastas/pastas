@@ -1,5 +1,22 @@
 """
 @author: ruben
+Reads daily meteorological data in a file from stations of the KNMI:
+knmi = KnmiStation.fromfile(filename)
+Hourly data is not yet supported
+
+Data can be downloaded for the meteorological stations at:
+https://www.knmi.nl/nederland-nu/klimatologie/daggegevens
+or
+http://projects.knmi.nl/klimatologie/daggegevens/selectie.cgi
+
+For the rainfall stations data is available at:
+https://www.knmi.nl/nederland-nu/klimatologie/monv/reeksen
+
+Also, data from the meteorological stations can be downloaded directly, for example with
+knmi = KnmiStation(stns=260, start=datetime(1970, 1, 1), end=datetime(1971, 1, 1))  # 260 = de bilt
+knmi.download()
+For now the direct download only works for meteorological stations and daily data (so no rainfall stations or hourly data)
+
 
 """
 
@@ -54,85 +71,100 @@ class KnmiStation:
 
     def readdata(self, f):
         stations = None
+        variables = dict()
         isLocations = False
         isVariables = False
         line = f.readline()
-        while line != '':
-            if line.startswith('# '):
-                line = line[2:]
-            if line.strip() == '':
-                # doe niets                
-                pass
+        if line.startswith('# '):
+            # data from meteorological station
+            while line != '':
+                if line.startswith('# '):
+                    line = line[2:]
+                if line.strip() == '':
+                    # doe niets
+                    pass
 
-            elif line.startswith('STN '):
-                isLocations = True
-                isFirstLocation = True
-                line = line.strip()
-                titels = line.split()
-                titels = [x.replace('(', '_') for x in titels]
-                titels = [x.replace(r')', '') for x in titels]
-                titels = [x.encode('utf8') for x in titels]
+                elif line.startswith('STN '):
+                    isLocations = True
+                    isFirstLocation = True
+                    line = line.strip()
+                    titels = line.split()
+                    titels = [x.replace('(', '_') for x in titels]
+                    titels = [x.replace(r')', '') for x in titels]
+                    titels = [x.encode('utf8') for x in titels]
 
-            elif line.startswith('YYYYMMDD'):
-                isVariables = True
-                isLocations = False
-                variables = dict()
-                varDes = line.split(' = ')
-                variables[varDes[0].strip()] = varDes[1].strip()
+                elif line.startswith('YYYYMMDD'):
+                    isVariables = True
+                    isLocations = False
+                    varDes = line.split(' = ')
+                    variables[varDes[0].strip()] = varDes[1].strip()
 
-            elif line.startswith('STN,'):
-                # 
-                header = line.split(',')
-                header = map(str.strip, header)
-                header = [x.encode('utf8') for x in header]
-                # header=[x.strip().lower() for x in header]
-                # header=[x.lower() for x in ["A","B","C"]]
-                break
+                elif line.startswith('STN,'):
+                    #
+                    header = line.split(',')
+                    header = map(str.strip, header)
+                    header = [x.encode('utf8') for x in header]
+                    # header=[x.strip().lower() for x in header]
+                    # header=[x.lower() for x in ["A","B","C"]]
+                    break
 
-            elif isLocations:
-                line = line.strip()
-                line = line.replace(':', '')
+                elif isLocations:
+                    line = line.strip()
+                    line = line.replace(':', '')
 
-                # zorg dat delimiter twee spaties is, zodat 'de bilt' als 1 string
-                # wordt ingelezen
-                line = line.replace('         ', '  ')
-                line = line.replace('        ', '  ')
-                line = line.replace('       ', '  ')
-                line = line.replace('      ', '  ')
-                line = line.replace('     ', '  ')
-                line = line.replace('    ', '  ')
-                line = line.replace('   ', '  ')
-                s = cStringIO.StringIO(line)
+                    # zorg dat delimiter twee spaties is, zodat 'de bilt' als 1 string
+                    # wordt ingelezen
+                    line = line.replace('         ', '  ')
+                    line = line.replace('        ', '  ')
+                    line = line.replace('       ', '  ')
+                    line = line.replace('      ', '  ')
+                    line = line.replace('     ', '  ')
+                    line = line.replace('    ', '  ')
+                    line = line.replace('   ', '  ')
+                    s = cStringIO.StringIO(line)
 
-                data = np.genfromtxt(s, dtype=None, delimiter='  ', names=titels)
-                data = np.atleast_1d(data)
+                    data = np.genfromtxt(s, dtype=None, delimiter='  ', names=titels)
+                    data = np.atleast_1d(data)
 
-                if isFirstLocation:
-                    stations = data
-                    isFirstLocation = False
-                else:
-                    # raise NameError('Meerdere locaties nog niet ondersteund')
-                    stations = rfn.stack_arrays((stations, data), autoconvert=True, usemask=False)
+                    if isFirstLocation:
+                        stations = data
+                        isFirstLocation = False
+                    else:
+                        # raise NameError('Meerdere locaties nog niet ondersteund')
+                        stations = rfn.stack_arrays((stations, data), autoconvert=True, usemask=False)
 
-            elif isVariables:
-                line = line.encode('utf-8')
-                varDes = line.split(' = ')
-                variables[varDes[0].strip()] = varDes[1].strip()
+                elif isVariables:
+                    line = line.encode('utf-8')
+                    varDes = line.split(' = ')
+                    variables[varDes[0].strip()] = varDes[1].strip()
 
+                line = f.readline()
+
+            # lees nog een lege regel
             line = f.readline()
-
-        # %% read measurements
-        # lees nog een lege regel
-        line = f.readline()
-        # lees alle metingen in
+        else:
+            # data from precipitation station
+            while not line.startswith('STN,'):
+                if ' = ' in line:
+                    line = line.encode('utf-8')
+                    varDes = line.split(' = ')
+                    variables[varDes[0].strip()] = varDes[1].strip()
+                line = f.readline()
+            header = line.split(',')
+            header = map(str.strip, header)
+            header = [x.encode('utf8') for x in header]
+            #header.remove('')
+        # read the measurements
         if True:
-            # omzetten van datatype werkt niet goed
+            # omzetten van datatype werkt nu wel goed
             dtype = [np.float64] * (len(variables) + 1)
             dtype[0] = np.int  # station id
             dtype[1] = 'S8'
             dtype = zip(header, dtype)
             data = pd.read_csv(f, header=None, names=header, parse_dates=['YYYYMMDD'], index_col='YYYYMMDD',
                                dtype=dtype, na_values='     ')
+            if '' in data.columns:
+                data.drop('', axis=1, inplace=True)
         elif True:
             data = pd.read_csv(f, names=header, parse_dates=['YYYYMMDD'],
                                index_col='YYYYMMDD')
@@ -171,10 +203,18 @@ class KnmiStation:
                 # reken om van 0.1 naar 1
                 data[key] = data[key] * 0.1
                 value = value.replace('0.1 ', '')
+            if ' tiende ' in value:
+                # reken om van 0.1 naar 1
+                data[key] = data[key] * 0.1
+                value = value.replace(' tiende ', ' ')
             if ' mm' in value:
                 # reken mm om naar m
                 data[key] = data[key] * 0.001
                 value = value.replace(' mm', ' m')
+            if ' millimeters' in value:
+                # reken mm om naar m
+                data[key] = data[key] * 0.001
+                value = value.replace(' millimeters', ' m')
             if '(in percents)' in value:
                 # reken procent om naar deel
                 # data[key]=data[key]*0.01
