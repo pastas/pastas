@@ -8,22 +8,30 @@ import matplotlib.pyplot as plt
 from pasta.read.knmidata import KnmiStation
 
 # How to use it?
-
+# data from a meteorological station
 if True:
-    # use a file:
-
+    # use a file
     knmi = KnmiStation.fromfile('../data/KNMI_20160504.txt')
 else:
-    # or download it from
+    # or download it directly from
     # https://www.knmi.nl/nederland-nu/klimatologie/daggegevens
     knmi = KnmiStation(stns=260, start=datetime(1970, 1, 1),
                        end=datetime(1971, 1, 1))  # de bilt
-    knmi.download()
+    knmi.download() # for now only works for meteorological stataions and daily data (so not hourly)
 
 # draw the figure
-f, axarr = plt.subplots(2, sharex=True)
+f1, axarr = plt.subplots(2, sharex=True)
 knmi.data['RH'].plot(ax=axarr[0])
 axarr[0].set_title(knmi.variables['RH'])
 knmi.data['EV24'].plot(ax=axarr[1])
 axarr[1].set_title(knmi.variables['EV24'])
+
+# use a file of a rainfall station:
+knmi = KnmiStation.fromfile('../data/neerslaggeg_AKKRUM_089.txt')
+f2 = plt.figure()
+ax = f2.add_subplot(111)
+knmi.data['RD'].plot(ax=ax)
+ax.set_title(knmi.variables['RD'], fontsize=10)
+
 plt.show()
+
