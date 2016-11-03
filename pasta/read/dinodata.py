@@ -78,7 +78,7 @@ class DinoGrondwaterstand:
                 dtype[2] = "S10"
                 dtype[titel.index('Bijzonderheid')] = object
                 dtype[titel.index('Opmerking')] = object
-                dtype = zip(titel, dtype);
+                dtype = zip(titel, dtype)
                 if False:
                     usecols = range(0, len(titel))
                     # usecols.remove(2)
@@ -134,7 +134,7 @@ class DinoGrondwaterstand:
                     self.maaiveld = np.nan
                 else:
                     self.maaiveld = float(maaiveld) / 100
-                bovenkant_filter = self.meta[-1]['Bovenkant filter (cm t.o.v. NAP)'];
+                bovenkant_filter = self.meta[-1]['Bovenkant filter (cm t.o.v. NAP)']
                 if bovenkant_filter == '':
                     self.bovenkant_filter = np.nan
                 else:

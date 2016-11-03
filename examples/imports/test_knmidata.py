@@ -19,7 +19,7 @@ else:
                        end=datetime(1971, 1, 1))  # de bilt
     knmi.download() # for now only works for meteorological stataions and daily data (so not hourly)
 
-# draw the figure
+# plot
 f1, axarr = plt.subplots(2, sharex=True)
 knmi.data['RH'].plot(ax=axarr[0])
 axarr[0].set_title(knmi.variables['RH'])
@@ -28,6 +28,7 @@ axarr[1].set_title(knmi.variables['EV24'])
 
 # use a file of a rainfall station:
 knmi = KnmiStation.fromfile('../data/neerslaggeg_AKKRUM_089.txt')
+# plot
 f2 = plt.figure()
 ax = f2.add_subplot(111)
 knmi.data['RD'].plot(ax=ax)
