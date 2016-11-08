@@ -26,37 +26,45 @@ IN.series = IN.series.resample('d').bfill()
 IN.name = IN.name.replace('(','')
 IN.name = IN.name.replace(')','')
 IN.name = IN.name.replace(' ','_')
-ts = Tseries(IN.series, Gamma, IN.name)
+if False:
+    ts = Tseries(IN.series, Gamma, IN.name)
+else:
+    IN2 = next(x for x in meny.IN if x.name == 'Verdamping (GILZE-RIJEN)')
+    IN2.series = IN2.series.resample('d').bfill()
+    IN2.name = IN2.name.replace('(', '')
+    IN2.name = IN2.name.replace(')', '')
+    IN2.name = IN2.name.replace(' ', '_')
+    ts = Tseries2(IN.series, IN2.series, Gamma, 'Recharge')
 ml.add_tseries(ts)
 
 # Add well extraction at Ossendrecht
 IN = next(x for x in meny.IN if x.name == 'Onttrekking (Ossendrecht)')
-# extraction amound counts for the previeous month
+# extraction amount counts for the previous month
 IN.series = IN.series.resample('d').bfill()
 IN.name = IN.name.replace('(','')
 IN.name = IN.name.replace(')','')
 IN.name = IN.name.replace(' ','_')
-ts = Tseries(IN.series, Gamma, IN.name)
+ts = Tseries(-IN.series/1000, Gamma, IN.name)
 ml.add_tseries(ts)
 
 # Add well extraction at Huijbergen
 IN = next(x for x in meny.IN if x.name == 'Onttrekking (Huijbergen)')
-# extraction amound counts for the previeous month
+# extraction amount counts for the previous month
 IN.series = IN.series.resample('d').bfill()
 IN.name = IN.name.replace('(','')
 IN.name = IN.name.replace(')','')
 IN.name = IN.name.replace(' ','_')
-ts = Tseries(IN.series, Gamma, IN.name)
+ts = Tseries(-IN.series/1000, Gamma, IN.name)
 ml.add_tseries(ts)
 
 # Add well extraction at Essen
 IN = next(x for x in meny.IN if x.name == 'Onttrekking (Essen)')
-# extraction amound counts for the previeous month
+# extraction amount counts for the previous month
 IN.series = IN.series.resample('d').bfill()
 IN.name = IN.name.replace('(','')
 IN.name = IN.name.replace(')','')
 IN.name = IN.name.replace(' ','_')
-ts = Tseries(IN.series, Gamma, IN.name)
+ts = Tseries(-IN.series/1000, Gamma, IN.name)
 ml.add_tseries(ts)
 
 # Add noise model
