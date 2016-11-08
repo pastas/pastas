@@ -57,6 +57,12 @@ def check_oseries(oseries, freq, fillnan='drop'):
             print 'User-defined option for fillnan %s isinstance() not supported' \
                   % fillnan
 
+    # Drop dubplicate indexes
+    if not oseries.index.is_unique:
+        #oseries.drop_duplicates(inplace=True) # does not look at index...
+        grouped = oseries.groupby(level=0)
+        oseries = grouped.first()
+
     return oseries
 
 
