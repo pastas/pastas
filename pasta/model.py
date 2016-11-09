@@ -383,7 +383,21 @@ class Model:
 
         ts = self.tseriesdict
         n = len(ts)
-        f, axarr = plt.subplots(1 + n, sharex=True)
+
+        parameters = self.parameters.optimal.values
+
+        if True:
+            f, axarr = plt.subplots(1 + n, sharex=True)
+        else:
+            # let the height of the axes be determined by the values
+            # height_ratios = [1]*(n+1)
+            height_ratios = [self.oseries.max()-self.oseries.min()]
+            istart = 0  # Track parameters index to pass to ts object
+            for ts in self.tseriesdict.values():
+                h = ts.simulate(parameters[istart: istart + ts.nparam], tindex)
+                height_ratios.append(h.max()-h.min())
+                istart += ts.nparam
+            f, axarr = plt.subplots(1 + n, sharex=True, gridspec_kw={'height_ratios':height_ratios})
 
         # plot combination in top-graph
         axarr[0].set_title('Observations and simulation')
@@ -395,7 +409,6 @@ class Model:
         leg=axarr[0].legend(handles, labels, loc=2)
         leg.get_frame().set_alpha(0.5)
 
-        parameters = self.parameters.optimal.values
         istart = 0  # Track parameters index to pass to ts object
         iax = 1
         for ts in self.tseriesdict.values():
