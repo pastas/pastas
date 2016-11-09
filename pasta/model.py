@@ -3,6 +3,7 @@ from collections import OrderedDict
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from pandas.tseries.frequencies import to_offset
 
 from checks import check_oseries
 from solver import LmfitSolve
@@ -39,8 +40,10 @@ class Model:
         self.oseries = check_oseries(oseries, freq, fillnan)
         self.xy = xy
         self.metadata = metadata
-        self.odelt = self.oseries.index.to_series().diff() / np.timedelta64(1, 'D')
-        # delt converted to days
+        self.odelt = self.oseries.index.to_series().diff() / \
+                     self.oseries.index.to_series().diff().min()
+        self.freq = to_offset(self.oseries.index.to_series().diff().min())
+        # Independent of the time unit
         self.tseriesdict = OrderedDict()
         self.noisemodel = None
         self.noiseparameters = None
@@ -244,13 +247,20 @@ class Model:
                 pass
             else:
                 freqs.add(tseries.freq)
+                min_freq = tseries.freq
 
         if len(freqs) is not 1:
             print 'Warning, the frequencies of the tseries are not all the same.'
 
-        # TODO adc more check on the frequency
+        # TODO add more check on the frequency
         # 2. tseries timestamps should match (e.g. similar hours')
-        # 3. freq of the tseries is lower than the max delta_t of the oseries
+
+        # 3. freq of the tseries is lower than or equal to the min delta_t of the
+        # oseries
+        if to_offset(min_freq) > to_offset(self.freq):
+            print 'Warning, timestep of observed series is smaller than the ' \
+                  'tseries timestep.'
+
 
     def get_response(self, name):
         try:
