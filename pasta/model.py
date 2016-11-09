@@ -170,6 +170,9 @@ class Model:
         # Check series with tmin, tmax
         self.set_tmin_tmax(tmin, tmax)
 
+        # Check frequency of tseries
+        self.check_frequency()
+
         # Initialize parameters
         self.initialize(initial=initial, noise=noise)
 
@@ -222,6 +225,32 @@ class Model:
 
         # TODO
         # Check if at least one stress overlaps with the oseries data
+
+    def check_frequency(self):
+        """
+        Methods to check if the frequency is:
+
+        1. The same for all tseries
+        2. tseries timestamps should match (e.g. similar hours)
+        3. freq of the tseries is lower than the max tdelta of the oseries
+
+        """
+
+        # 1. The same for all tseries
+        freqs = set()
+
+        for tseries in self.tseriesdict.values():
+            if isinstance(tseries, Constant):
+                pass
+            else:
+                freqs.add(tseries.freq)
+
+        if len(freqs) is not 1:
+            print 'Warning, the frequencies of the tseries are not all the same.'
+
+        # TODO adc more check on the frequency
+        # 2. tseries timestamps should match (e.g. similar hours')
+        # 3. freq of the tseries is lower than the max delta_t of the oseries
 
     def get_response(self, name):
         try:

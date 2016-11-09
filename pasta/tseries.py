@@ -44,6 +44,7 @@ class TseriesBase:
         self.metadata = metadata
         self.tmin = tmin
         self.tmax = tmax
+        self.freq = None
 
     def set_initial(self, name, value):
         """Method to set the initial parameter value
@@ -119,6 +120,7 @@ class Tseries(TseriesBase):
         TseriesBase.__init__(self, rfunc, name, xy, metadata,
                              self.stress.index.min(), self.stress.index.max(),
                              cutoff)
+        self.freq = self.stress.index.freqstr
         self.set_init_parameters()
 
     def set_init_parameters(self):
@@ -203,7 +205,10 @@ class Tseries2(TseriesBase):
         tmax = min(self.stress0.index[-1], self.stress1.index[-1])
         self.stress0 = self.stress0[tmin: tmax]
         self.stress1 = self.stress1[tmin: tmax]
+
         TseriesBase.__init__(self, rfunc, name, xy, metadata, tmin, tmax, cutoff)
+        self.freq = self.stress0.index.freqstr
+
         self.set_init_parameters()
 
     def set_init_parameters(self):
@@ -241,12 +246,13 @@ class Tseries2(TseriesBase):
         return h
 
     def get_stress(self, p, tindex=None):
-        self.stress = pd.concat([self.stress0, self.stress1], axis=1)
-        if tindex is not None:
+        stress2 = self.stress0 + p * self.stress1
+        stress = pd.concat([self.stress0, self.stress1, stress2], axis=1)
 
-            return self.stress[tindex]
+        if tindex is not None:
+            return stress[tindex]
         else:
-            return self.stress
+            return stress
 
 
 class Recharge(TseriesBase):
@@ -303,6 +309,8 @@ class Recharge(TseriesBase):
         # Select data where both series are available
         self.precip = P[P.index & E.index]
         self.evap = E[P.index & E.index]
+        self.freq = self.precip.index.freqstr
+
 
         self.evap.name = 'Evaporation'
         self.precip.name = 'Precipitation'
@@ -409,8 +417,11 @@ class Well(TseriesBase):
         self.stress = []
         if type(stress) is pd.Series:
             stress = [stress]
+
+        # This should maybe standard be a pd.DataFrame
         for i in range(len(stress)):
             self.stress.append(check_tseries(stress, freq, fillna, name))
+        self.freq = self.stress[0].index.freqstr
 
         self.set_init_parameters()
         self.r = r
