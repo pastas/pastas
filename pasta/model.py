@@ -1,6 +1,8 @@
 from collections import OrderedDict
 
 import matplotlib.pyplot as plt
+import matplotlib.ticker as plticker
+
 import numpy as np
 import pandas as pd
 from pandas.tseries.frequencies import to_offset
@@ -396,12 +398,14 @@ class Model:
 
         parameters = self.parameters.optimal.values
 
-        if True:
+        hsim = self.simulate(tmin=tmin, tmax=tmax)
+
+        if False:
             f, axarr = plt.subplots(1 + n, sharex=True)
         else:
             # let the height of the axes be determined by the values
             # height_ratios = [1]*(n+1)
-            height_ratios = [self.oseries.max()-self.oseries.min()]
+            height_ratios = [max([hsim.max(),self.oseries.max()])-min([hsim.min(),self.oseries.min()])]
             istart = 0  # Track parameters index to pass to ts object
             for ts in self.tseriesdict.values():
                 h = ts.simulate(parameters[istart: istart + ts.nparam], tindex)
@@ -411,9 +415,11 @@ class Model:
 
         # plot combination in top-graph
         axarr[0].set_title('Observations and simulation')
+        axarr[0].grid(which='both')
+        axarr[0].autoscale(enable=True, axis='y', tight=True)
 
-        h = self.simulate(tmin=tmin, tmax=tmax)
-        h.plot(ax=axarr[0], label='simulation')
+        # plot simulation and observations
+        hsim.plot(ax=axarr[0], label='simulation')
         self.oseries.plot(linestyle='', marker='.', color='k', markersize=3, ax=axarr[0], label='observations')
         handles, labels = axarr[0].get_legend_handles_labels()
         leg=axarr[0].legend(handles, labels, loc=2)
@@ -421,15 +427,30 @@ class Model:
 
         istart = 0  # Track parameters index to pass to ts object
         iax = 1
+
+        plt.axes(axarr[0])
+        ticks, labels = plt.yticks()
+        if len(ticks)>2:
+            base = ticks[1]-ticks[0]
+        else:
+            base = None
         for ts in self.tseriesdict.values():
             h = ts.simulate(parameters[istart: istart + ts.nparam], tindex)
             axarr[iax].set_title(ts.name)
+            axarr[iax].grid(which='both')
+            axarr[iax].autoscale(enable=True, axis='y', tight=True)
+
             if isinstance(ts, Constant):
                 xlim = axarr[iax].get_xlim()
                 axarr[iax].plot(xlim,[h,h])
+                axarr[iax].yaxis.set_ticks(h)
             else:
                 h.plot(ax=axarr[iax])
+                if base is not None:
+                    axarr[iax].yaxis.set_major_locator(plticker.MultipleLocator(base=base))
+
             istart += ts.nparam
             iax += 1
         # show the figure
+        plt.tight_layout()
         plt.show()
