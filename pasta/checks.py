@@ -59,9 +59,9 @@ def check_oseries(oseries, freq, fillnan='drop'):
 
     # Drop dubplicate indexes
     if not oseries.index.is_unique:
-        #oseries.drop_duplicates(inplace=True) # does not look at index...
+        print 'duplicate time-indexes were found in the oseries. Values were averaged.'
         grouped = oseries.groupby(level=0)
-        oseries = grouped.first()
+        oseries = grouped.mean()
 
     return oseries
 
