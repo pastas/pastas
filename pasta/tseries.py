@@ -309,7 +309,7 @@ class Recharge(TseriesBase):
         # Select data where both series are available
         self.precip = P[P.index & E.index]
         self.evap = E[P.index & E.index]
-        self.freq = self.precip.index.freqstr
+
 
 
         self.evap.name = 'Evaporation'
@@ -319,7 +319,7 @@ class Recharge(TseriesBase):
         TseriesBase.__init__(self, rfunc, name, xy, metadata,
                              self.precip.index.min(), self.precip.index.max(),
                              cutoff)
-
+        self.freq = self.precip.index.freqstr
         # The recharge calculation needs arrays
         self.precip_array = np.array(self.precip)
         self.evap_array = np.array(self.evap)
