@@ -6,6 +6,7 @@
 from pasta.read.dinodata import DinoGrondwaterstand
 from pasta.read.knmidata import KnmiStation
 from pyproj import Proj, transform
+import numpy as np
 
 
 class ReadSeries:
@@ -34,10 +35,14 @@ class ReadSeries:
         elif filetype == 'knmi':
             knmi = KnmiStation.fromfile(fname)
             self.series = knmi.data[variable]
-            self.latlon = (knmi.stations['LAT_north'][0],
+            if knmi.stations is not None:
+                self.latlon = (knmi.stations['LAT_north'][0],
                            knmi.stations['LON_east'][0])
-            names = knmi.stations.dtype.names
-            self.meta = dict(zip(names, knmi.stations[0]))
+                names = knmi.stations.dtype.names
+                self.meta = dict(zip(names, knmi.stations[0]))
+            else:
+                self.latlon=(np.NaN,np.NaN)
+                self.meta ={}
 
         elif filetype == 'usgs':
             # not implemented yet

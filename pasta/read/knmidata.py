@@ -144,12 +144,16 @@ class KnmiStation:
             line = f.readline()
         else:
             # data from precipitation station
-            while not line.startswith('STN,'):
+            if line.startswith('# '):
+                line = line[2:]
+            while not line.startswith('STN,') and line != '':
                 if ' = ' in line:
                     line = line.encode('utf-8')
                     varDes = line.split(' = ')
                     variables[varDes[0].strip()] = varDes[1].strip()
                 line = f.readline()
+                if line.startswith('# '):
+                    line = line[2:]
             header = line.split(',')
             header = map(str.strip, header)
             header = [x.encode('utf8') for x in header]
