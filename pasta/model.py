@@ -6,6 +6,7 @@ import matplotlib.ticker as plticker
 import numpy as np
 import pandas as pd
 from pandas.tseries.frequencies import to_offset
+from warnings import warn
 
 from checks import check_oseries
 from solver import LmfitSolve
@@ -213,14 +214,16 @@ class Model:
             tmin = self.oseries.index.min()
         else:
             tmin = pd.tslib.Timestamp(tmin)
-            assert (tmin >= self.oseries.index[0]) and (tmin <= self.oseries.index[
-                -1]), 'Error: Specified tmin is outside of the oseries'
+            if tmin < self.oseries.index[0]:
+                warn('Specified tmin is before first observation ' + str(self.oseries.index[0]))
+            assert tmin <= self.oseries.index[-1], 'Error: Specified tmin is after last observation'
         if tmax is None:
             tmax = self.oseries.index.max()
         else:
             tmax = pd.tslib.Timestamp(tmax)
-            assert (tmax >= self.oseries.index[0]) and (tmax <= self.oseries.index[
-                -1]), 'Error: Specified tmin is outside of the oseries'
+            if tmax > self.oseries.index[-1]:
+                warn('Specified tmax is after last observation ' + str(self.oseries.index[-1]))
+            assert tmax >= self.oseries.index[0], 'Error: Specified tmax is before first observation'
         assert tmax > tmin, 'Error: Specified tmax not larger than specified tmin'
         assert len(self.oseries[
                    tmin: tmax]) > 0, 'Error: no observations between tmin and tmax'
