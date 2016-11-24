@@ -15,7 +15,7 @@ from tseries import Constant
 
 class Model:
     def __init__(self, oseries, xy=(0, 0), metadata=None, freq=None,
-                 fillnan='drop'):
+                 warmup=1500, fillnan='drop'):
         """
         Initiates a time series model.
 
@@ -33,6 +33,8 @@ class Model:
             observations are used as they are. The required string format is found
             at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset
             -aliases
+        warmup: Optional[float]
+            Number of days used for warmup
         fillnan: Optional[str or float]
             Methods or float number to fill nan-values. Default values is
             'drop'. Currently supported options are: 'interpolate', float,
@@ -41,6 +43,7 @@ class Model:
 
         """
         self.oseries = check_oseries(oseries, freq, fillnan)
+        self.warmup = warmup
         self.xy = xy
         self.metadata = metadata
         self.odelt = self.oseries.index.to_series().diff() / \
@@ -92,7 +95,7 @@ class Model:
         assert (tmin is not None) and (
             tmax is not None), 'model needs to be solved first'
 
-        tindex = pd.date_range(tmin, tmax, freq=freq)
+        tindex = pd.date_range(tmin - pd.DateOffset(days=self.warmup), tmax, freq=freq)
 
         if parameters is None:
             parameters = self.parameters.optimal.values
@@ -101,7 +104,7 @@ class Model:
         for ts in self.tseriesdict.values():
             h += ts.simulate(parameters[istart: istart + ts.nparam], tindex)
             istart += ts.nparam
-        return h
+        return h[tmin:]
 
     def residuals(self, parameters=None, tmin=None, tmax=None, noise=True):
         """
@@ -112,7 +115,7 @@ class Model:
             tmin = self.oseries.index.min()
         if tmax is None:
             tmax = self.oseries.index.max()
-        tindex = self.oseries[tmin: tmax].index  # times used for calibration
+        tindex = self.oseries[tmin - pd.DateOffset(days=self.warmup): tmax].index  # times used for calibration
 
         if parameters is None:
             parameters = self.parameters.optimal.values
@@ -127,7 +130,7 @@ class Model:
         # print 'step2:', sum(r**2)
         if np.isnan(sum(r ** 2)):
             print 'nan problem in residuals'  # quick and dirty check
-        return r
+        return r[tmin:]
 
     def sse(self, parameters=None, tmin=None, tmax=None, noise=True):
         res = self.residuals(parameters, tmin=tmin, tmax=tmax, noise=noise)
