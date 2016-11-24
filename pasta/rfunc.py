@@ -16,6 +16,8 @@ nparam: integer
     number of parameters.
 cutoff: float
     percentage after which the step function is cut off.
+tmax: float
+    time corresponding to the cutoff
 
 Functions
 ---------
@@ -52,6 +54,7 @@ class Gamma:
     def __init__(self, cutoff=0.99):
         self.nparam = 3
         self.cutoff = cutoff
+        self.tmax = 0
 
     def set_parameters(self, name):
         parameters = pd.DataFrame(
@@ -84,6 +87,7 @@ class Exponential:
     def __init__(self, cutoff):
         self.nparam = 2
         self.cutoff = cutoff
+        self.tmax = 0
 
     def set_parameters(self, name):
         parameters = pd.DataFrame(
@@ -196,6 +200,7 @@ class One:
     def __init__(self, cutoff):
         self.nparam = 1
         self.cutoff = cutoff
+        self.tmax = 0
 
     def step(self, p):
         return p[0] * np.ones(2)

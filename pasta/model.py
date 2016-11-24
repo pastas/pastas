@@ -55,6 +55,9 @@ class Model:
         self.noiseparameters = None
         self.tmin = None
         self.tmax = None
+        # Min and max time of observation series
+        self.otmin = self.oseries.index[0]
+        self.otmax = self.oseries.index[-1]
 
     def add_tseries(self, tseries):
         """
@@ -95,7 +98,7 @@ class Model:
         assert (tmin is not None) and (
             tmax is not None), 'model needs to be solved first'
 
-        tindex = pd.date_range(tmin - pd.DateOffset(days=self.warmup), tmax, freq=freq)
+        tindex = pd.date_range(pd.to_datetime(tmin) - pd.DateOffset(days=self.warmup), tmax, freq=freq)
 
         if parameters is None:
             parameters = self.parameters.optimal.values
@@ -115,7 +118,7 @@ class Model:
             tmin = self.oseries.index.min()
         if tmax is None:
             tmax = self.oseries.index.max()
-        tindex = self.oseries[tmin - pd.DateOffset(days=self.warmup): tmax].index  # times used for calibration
+        tindex = self.oseries[tmin: tmax].index  # times used for calibration
 
         if parameters is None:
             parameters = self.parameters.optimal.values
@@ -309,6 +312,10 @@ class Model:
         """
         plt.figure()
         if simulate:
+            if tmin is None:
+                tmin = self.otmin
+            if tmax is None:
+                tmax = self.otmax
             h = self.simulate(tmin=tmin, tmax=tmax)
             h.plot()
         if oseries:
