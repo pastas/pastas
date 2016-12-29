@@ -45,6 +45,7 @@ class TseriesBase:
         self.tmin = tmin
         self.tmax = tmax
         self.freq = None
+        self.stress = []
 
     def set_initial(self, name, value):
         """Method to set the initial parameter value
@@ -116,11 +117,12 @@ class Tseries(TseriesBase):
 
     def __init__(self, stress, rfunc, name, metadata=None, xy=(0, 0), freq=None,
                  fillnan='mean', cutoff=0.99):
-        self.stress = check_tseries(stress, freq, fillnan, name=name)
+        stress = check_tseries(stress, freq, fillnan, name=name)
         TseriesBase.__init__(self, rfunc, name, xy, metadata,
-                             self.stress.index.min(), self.stress.index.max(),
+                             stress.index.min(), stress.index.max(),
                              cutoff)
-        self.freq = self.stress.index.freqstr
+        self.freq = stress.index.freqstr
+        self.stress.append(stress)
         self.set_init_parameters()
 
     def set_init_parameters(self):
@@ -147,9 +149,9 @@ class Tseries(TseriesBase):
 
         """
         b = self.rfunc.block(p)
-        self.npoints = len(self.stress)  # Why recompute?
-        h = pd.Series(fftconvolve(self.stress, b, 'full')[:self.npoints],
-                      index=self.stress.index, name=self.name)
+        self.npoints = len(self.stress[0])  # Why recompute?
+        h = pd.Series(fftconvolve(self.stress[0], b, 'full')[:self.npoints],
+                      index=self.stress[0].index, name=self.name)
         if tindex is not None:
             h = h[tindex]
         return h
@@ -197,17 +199,19 @@ class Tseries2(TseriesBase):
     def __init__(self, stress0, stress1, rfunc, name, metadata=None, xy=(0, 0),
                  freq=None, fillnan=('mean', 'interpolate'), cutoff=0.99):
         # First check the series, then determine tmin and tmax
-        self.stress0 = check_tseries(stress0, freq, fillnan[0], name=name)
-        self.stress1 = check_tseries(stress1, freq, fillnan[1], name=name)
+        stress0 = check_tseries(stress0, freq, fillnan[0], name=name)
+        stress1 = check_tseries(stress1, freq, fillnan[1], name=name)
 
         # A series may start with NaN values, which are removed by the check_tseries function
-        tmin = max(self.stress0.index[0], self.stress1.index[0])
-        tmax = min(self.stress0.index[-1], self.stress1.index[-1])
-        self.stress0 = self.stress0[tmin: tmax]
-        self.stress1 = self.stress1[tmin: tmax]
+        tmin = max(stress0.index[0], stress1.index[0])
+        tmax = min(stress0.index[-1], stress1.index[-1])
+        stress0 = stress0[tmin: tmax]
+        stress1 = stress1[tmin: tmax]
 
         TseriesBase.__init__(self, rfunc, name, xy, metadata, tmin, tmax, cutoff)
-        self.freq = self.stress0.index.freqstr
+        self.freq = stress0.index.freqstr
+        self.stress.append(stress0)
+        self.stress.append(stress1)
 
         self.set_init_parameters()
 
@@ -237,17 +241,17 @@ class Tseries2(TseriesBase):
 
         """
         b = self.rfunc.block(p[:-1])
-        self.npoints = len(self.stress0)  # Why recompute?
-        h = pd.Series(fftconvolve(self.stress0 + p[-1] * self.stress1, b, 'full')[
+        self.npoints = len(self.stress[0])  # Why recompute?
+        h = pd.Series(fftconvolve(self.stress[0] + p[-1] * self.stress[1], b, 'full')[
                       :self.npoints],
-                      index=self.stress0.index)
+                      index=self.stress[0].index)
         if tindex is not None:
             h = h[tindex]
         return h
 
     def get_stress(self, p, tindex=None):
-        stress2 = self.stress0 + p * self.stress1
-        stress = pd.concat([self.stress0, self.stress1, stress2], axis=1)
+        stress2 = self.stress[0] + p * self.stress[1]
+        stress = pd.concat([self.stress[0], self.stress[1], stress2], axis=1)
 
         if tindex is not None:
             return stress[tindex]
