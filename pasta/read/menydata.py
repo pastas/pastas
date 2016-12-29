@@ -1,5 +1,7 @@
 """
 Contains the class MenyData, which represents the data in a Menyanthes file
+
+Currently only the observations (H) and stresses (IN) are supported. Models (M) are ignored.
 """
 
 import scipy.io as sio
@@ -45,7 +47,8 @@ class MenyData:
                     step = series.index.to_series().diff() / pd.offsets.Day(1)
                     step = step.values.astype(np.float)
                     series = series / step
-                    series = series[1:]
+                    if series.values[0] != 0:
+                        series = series[1:]
 
                 # add to self.IN
                 self.IN.append(MenyIN(series, IN.Name, IN.type))
@@ -75,8 +78,6 @@ class MenyData:
         seconds = (date.replace(tzinfo=None) - date.min).seconds
         rounding = (seconds + roundTo / 2) // roundTo * roundTo
         return date + dt.timedelta(0, rounding - seconds, -date.microsecond)
-
-
 
 
 class MenyH:
