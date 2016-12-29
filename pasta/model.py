@@ -48,7 +48,9 @@ class Model:
         self.metadata = metadata
         self.odelt = self.oseries.index.to_series().diff() / \
                      self.oseries.index.to_series().diff().min()
-        self.freq = to_offset(self.oseries.index.to_series().diff().min())
+        self.freq = None
+        self.dt = None
+
         # Independent of the time unit
         self.tseriesdict = OrderedDict()
         self.noisemodel = None
@@ -124,7 +126,15 @@ class Model:
             parameters = self.parameters.optimal.values
 
         # h_observed - h_simulated
-        r = self.oseries[tindex] - self.simulate(parameters, tmin, tmax)[tindex]
+        h_observed = self.oseries[tindex]
+        simulation = self.simulate(parameters, tmin, tmax)
+        if len(tindex.difference(simulation.index)) == 0:
+            # all of the observation indexes are in the simulation
+            h_simulated = simulation[tindex]
+        else:
+            # interpolate simulation to measurement-times
+            h_simulated = np.interp(h_observed.index.asi8, simulation.index.asi8, simulation)
+        r = h_observed - h_simulated
         # print 'step1:', sum(r**2)
         if noise and (self.noisemodel is not None):
             r = self.noisemodel.simulate(r, self.odelt[tindex],
@@ -179,11 +189,11 @@ class Model:
             print 'Warning, solution with noise model while noise model is not ' \
                   'defined. No noise model is used'
 
-        # Check series with tmin, tmax
-        self.set_tmin_tmax(tmin, tmax)
-
         # Check frequency of tseries
         self.check_frequency()
+
+        # Check series with tmin, tmax
+        self.set_tmin_tmax(tmin, tmax)
 
         # Initialize parameters
         self.initialize(initial=initial, noise=noise)
@@ -202,7 +212,7 @@ class Model:
         Function to check if the dependent and independent time series match.
 
         - tmin and tmax are in oseries.index for optimization.
-        - at least one stress is available for simulation between tmin and tmax.
+        - all the stresses are available for simulation between tmin and tmax.
         -
 
         Parameters
@@ -230,28 +240,38 @@ class Model:
             if tmax > self.oseries.index[-1]:
                 warn('Specified tmax is after last observation ' + str(self.oseries.index[-1]))
             assert tmax >= self.oseries.index[0], 'Error: Specified tmax is before first observation'
+
+        # adjust tmin and tmax, so that all the tseries cover the period
+        for tseries in self.tseriesdict.values():
+            for stress in tseries.stress:
+                if stress.index.min() > tmin:
+                    tmin = stress.index.min()
+                if stress.index.max() < tmax:
+                    tmax = stress.index.max()
+
+        # adjust tmin and tmax so that the offset with the default frequency (determined in check_frequency) is equal to that of the tseries
+        tmin = tmin.normalize() + self.dt
+        tmax = tmax.normalize() + self.dt
+
         assert tmax > tmin, 'Error: Specified tmax not larger than specified tmin'
-        assert len(self.oseries[
-                   tmin: tmax]) > 0, 'Error: no observations between tmin and tmax'
+        assert len(self.oseries[tmin: tmax]) > 0, 'Error: no observations between tmin and tmax'
 
         self.tmin = tmin
         self.tmax = tmax
-
-        # TODO
-        # Check if at least one stress overlaps with the oseries data
 
     def check_frequency(self):
         """
         Methods to check if the frequency is:
 
-        1. The same for all tseries
+        1. The frequency should be the same for all tseries
         2. tseries timestamps should match (e.g. similar hours)
         3. freq of the tseries is lower than the max tdelta of the oseries
 
         """
 
-        # 1. The same for all tseries
+        # calculate frequency and time-difference with default frequency
         freqs = set()
+        dts = set()
 
         for tseries in self.tseriesdict.values():
             if isinstance(tseries, Constant):
@@ -259,19 +279,23 @@ class Model:
             else:
                 freqs.add(tseries.freq)
                 min_freq = tseries.freq
+                for stress in tseries.stress:
+                    # calculate the offset from the default frequency (now only works for daily data with normalize)
+                    norm = stress.asfreq(tseries.freq, normalize=True)
+                    norm = norm.index.to_series()
+                    norm.index = stress.index
+                    td = stress.index.to_series() - norm
+                    step_array = td.unique()
+                    assert step_array.size == 1, 'Frequency is not constant'
+                    dts.add(step_array[0])
 
-        if len(freqs) is not 1:
-            print 'Warning, the frequencies of the tseries are not all the same.'
+        # 1. The frequency should be the same for all tseries
+        assert len(freqs) == 1, 'The frequency of the tseries is not all the same for all stresses.'
+        self.freq = next(iter(freqs))
 
-        # TODO add more check on the frequency
         # 2. tseries timestamps should match (e.g. similar hours')
-
-        # 3. freq of the tseries is lower than or equal to the min delta_t of the
-        # oseries
-        if to_offset(min_freq) > to_offset(self.freq):
-            print 'Warning, timestep of observed series is smaller than the ' \
-                  'tseries timestep.'
-
+        assert len(dts) == 1, 'The time-differences with the default frequency is not the same for all stresses.'
+        self.dt = next(iter(dts))
 
     def get_response(self, name):
         try:
@@ -426,44 +450,51 @@ class Model:
                 istart += ts.nparam
             f, axarr = plt.subplots(1 + n, sharex=True, gridspec_kw={'height_ratios':height_ratios})
 
-        # plot combination in top-graph
-        axarr[0].set_title('Observations and simulation')
-        axarr[0].grid(which='both')
-        axarr[0].autoscale(enable=True, axis='y', tight=True)
+        plt.axes(axarr[0])
 
-        # plot simulation and observations
-        hsim.plot(ax=axarr[0], label='simulation')
+        # plot simulation and observations in top graph
         self.oseries.plot(linestyle='', marker='.', color='k', markersize=3, ax=axarr[0], label='observations')
+        hsim.plot(ax=axarr[0], label='simulation')
+
+        axarr[0].set_title('Observations and simulation')
+        axarr[0].autoscale(enable=True, axis='y', tight=True)
+        axarr[0].grid(which='both')
+        axarr[0].minorticks_off()
+
         handles, labels = axarr[0].get_legend_handles_labels()
         leg=axarr[0].legend(handles, labels, loc=2)
         leg.get_frame().set_alpha(0.5)
 
-        istart = 0  # Track parameters index to pass to ts object
-        iax = 1
-
-        plt.axes(axarr[0])
-        ticks, labels = plt.yticks()
-        if len(ticks)>2:
-            base = ticks[1]-ticks[0]
+        yticks, ylabels = plt.yticks()
+        if len(yticks)>2:
+            base = yticks[1]-yticks[0]
         else:
             base = None
+
+        istart = 0  # Track parameters index to pass to ts object
+        iax = 1
         for ts in self.tseriesdict.values():
+            plt.axes(axarr[iax])
             h = ts.simulate(parameters[istart: istart + ts.nparam], tindex)
-            axarr[iax].set_title(ts.name)
-            axarr[iax].grid(which='both')
-            axarr[iax].autoscale(enable=True, axis='y', tight=True)
 
             if isinstance(ts, Constant):
                 xlim = axarr[iax].get_xlim()
                 axarr[iax].plot(xlim,[h,h])
                 axarr[iax].yaxis.set_ticks(h)
             else:
-                h.plot(ax=axarr[iax])
+                plt.plot(h.index,h.values)
                 if base is not None:
                     axarr[iax].yaxis.set_major_locator(plticker.MultipleLocator(base=base))
 
+            axarr[iax].set_title(ts.name)
+            axarr[iax].autoscale(enable=True, axis='y', tight=True)
+            axarr[iax].grid(which='both')
+            axarr[iax].minorticks_off()
+
+
             istart += ts.nparam
             iax += 1
+
         # show the figure
         plt.tight_layout()
         plt.show()
