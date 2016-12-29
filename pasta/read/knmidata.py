@@ -1,8 +1,7 @@
 """
-@author: ruben
+@author: ruben calje
 Reads daily meteorological data in a file from stations of the KNMI:
 knmi = KnmiStation.fromfile(filename)
-Hourly data is not yet supported
 
 Data can be downloaded for the meteorological stations at:
 https://www.knmi.nl/nederland-nu/klimatologie/daggegevens
@@ -22,7 +21,7 @@ For now the direct download only works for meteorological stations and daily dat
 
 import requests
 import numpy as np
-from datetime import date
+from datetime import date, timedelta, datetime
 import cStringIO
 import pandas as pd
 import numpy.lib.recfunctions as rfn
@@ -160,16 +159,38 @@ class KnmiStation:
             #header.remove('')
         # read the measurements
         if True:
-            # omzetten van datatype werkt nu wel goed
+            # use pandas with the right datatypes
             dtype = [np.float64] * (len(variables) + 1)
             dtype[0] = np.int  # station id
             dtype[1] = 'S8'
-            dtype = zip(header, dtype)
-            data = pd.read_csv(f, header=None, names=header, parse_dates=['YYYYMMDD'], index_col='YYYYMMDD',
-                               dtype=dtype, na_values='     ')
+            if True:
+                # do not do anything with hours while reading
+                dtype = zip(header, dtype)
+                data = pd.read_csv(f, header=None, names=header, parse_dates=['YYYYMMDD'], index_col='YYYYMMDD',
+                                   dtype=dtype, na_values='     ')
+                if True:
+                    # add hours to the index
+                    if 'HH' in data.keys():
+                        data.index = data.index+pd.to_timedelta(data['HH'], unit='h')
+                        data.pop('HH')
+            else:
+                # convert the hours right away
+                if header.__contains__('HH'):
+                    dtype[header.index('HH')] = 'S5'
+                    parse_dates=[['YYYYMMDD', 'HH']]
+                    date_parser = self.parse_day_and_hour
+                else:
+                    parse_dates = ['YYYYMMDD']
+                    date_parser = None
+                dtype = zip(header, dtype)
+                data = pd.read_csv(f, header=None, names=header, parse_dates=parse_dates, index_col=0,
+                                   dtype=dtype, na_values='     ', date_parser=date_parser)
+
+            # sometimes an empty column is added at the end off the file (every line ends with ,)
             if '' in data.columns:
                 data.drop('', axis=1, inplace=True)
         elif True:
+            # old method: read everything as string, and later transform to numeric
             data = pd.read_csv(f, names=header, parse_dates=['YYYYMMDD'],
                                index_col='YYYYMMDD')
             for key, value in variables.iteritems():
@@ -178,6 +199,7 @@ class KnmiStation:
                     # data.loc[data[key]=='     ', key]=''
                     data[key] = pd.to_numeric(data[key], errors='coerce')
         else:
+            # old method: use genfromtxt, and then transfrom to dataframe
             dtype = [np.float] * (len(variables) + 1)
             dtype[0] = np.int  # station id
             dtype[1] = 'datetime64[s]'  # datum in YYYYMMDD-formaat
@@ -196,6 +218,15 @@ class KnmiStation:
 
         # %% van pas de eenheid aan van de metingen
         for key, value in variables.iteritems():
+            # test if key existst in data (YYYYMMDD and possibly HH are allready replaced by the index
+            if key not in data.keys():
+                if key == 'YYYYMMDD' or key == 'HH':
+                    pass
+                elif key == 'T10N':
+                    variables.pop(key)
+                    key = 'T10'
+                else:
+                    raise NameError(key + ' does not exist in data')
             if ' (-1 for <0.05 mm)' in value or ' (-1 voor <0.05 mm)' in value:
                 # erin=data[key]==-1
                 # data[key][erin]=data[key][erin]=0.25 # eenheid is nog 0.1 mm
@@ -239,6 +270,11 @@ class KnmiStation:
         self.stations = stations
         self.variables = variables
         self.data = data
+
+    def parse_day_and_hour(self,day_hour):
+        d=datetime.strptime(day_hour, '%Y%m%d %H')
+        return d
+
 
     def download(self):
         url = 'http://projects.knmi.nl/klimatologie/daggegevens/getdata_dag.cgi'
