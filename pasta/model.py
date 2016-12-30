@@ -284,7 +284,7 @@ class Model:
                     dts.add(dt)
 
         # 1. The frequency should be the same for all tseries
-        assert len(freqs) == 1, 'The frequency of the tseries is not all the same for all stresses.'
+        assert len(freqs) == 1, 'The frequency of the tseries is not the same for all stresses.'
         self.freq = next(iter(freqs))
 
         # 2. tseries timestamps should match (e.g. similar hours')
@@ -308,7 +308,7 @@ class Model:
         def calc_second_offset(t):
             return datetime.timedelta(microseconds = t.microsecond)
         def calc_millisecond_offset(t):
-            # t has no millisecond attribute, so use microsecond and use the remainder after division by 10000
+            # t has no millisecond attribute, so use microsecond and use the remainder after division by 1000
             return datetime.timedelta(microseconds = t.microsecond % 1000.0)
 
         # map the inputs to the function blocks
