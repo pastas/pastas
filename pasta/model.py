@@ -5,7 +5,7 @@ import matplotlib.ticker as plticker
 
 import numpy as np
 import pandas as pd
-from pandas.tseries.frequencies import to_offset
+import datetime
 from warnings import warn
 
 from checks import check_oseries
@@ -249,9 +249,9 @@ class Model:
                 if stress.index.max() < tmax:
                     tmax = stress.index.max()
 
-        # adjust tmin and tmax so that the offset with the default frequency (determined in check_frequency) is equal to that of the tseries
-        tmin = tmin.normalize() + self.dt
-        tmax = tmax.normalize() + self.dt
+        # adjust tmin and tmax so that the offset (dt, determined in check_frequency) is equal to that of the tseries
+        tmin = tmin - self.get_time_offset(tmin, self.freq) + self.dt
+        tmax = tmax - self.get_time_offset(tmax, self.freq) + self.dt
 
         assert tmax > tmin, 'Error: Specified tmax not larger than specified tmin'
         assert len(self.oseries[tmin: tmax]) > 0, 'Error: no observations between tmin and tmax'
@@ -278,16 +278,10 @@ class Model:
                 pass
             else:
                 freqs.add(tseries.freq)
-                min_freq = tseries.freq
                 for stress in tseries.stress:
-                    # calculate the offset from the default frequency (now only works for daily data with normalize)
-                    norm = stress.asfreq(tseries.freq, normalize=True)
-                    norm = norm.index.to_series()
-                    norm.index = stress.index
-                    td = stress.index.to_series() - norm
-                    step_array = td.unique()
-                    assert step_array.size == 1, 'Frequency is not constant'
-                    dts.add(step_array[0])
+                    # calculate the offset from the default frequency
+                    dt = self.get_time_offset(stress, tseries.freq)
+                    dts.add(dt)
 
         # 1. The frequency should be the same for all tseries
         assert len(freqs) == 1, 'The frequency of the tseries is not all the same for all stresses.'
@@ -296,6 +290,40 @@ class Model:
         # 2. tseries timestamps should match (e.g. similar hours')
         assert len(dts) == 1, 'The time-differences with the default frequency is not the same for all stresses.'
         self.dt = next(iter(dts))
+
+    def get_time_offset(self, t, freq):
+        if isinstance(t, pd.Series):
+            # Take the first timestep. The rest of index has the same offset, as the frequency is constant.
+            t = t.index[0]
+
+        # define the function blocks
+        def calc_week_offset(t):
+            return datetime.timedelta(days = t.weekday(), hours = t.hour, minutes = t.minute, seconds = t.second)
+        def calc_day_offset(t):
+            return datetime.timedelta(hours = t.hour, minutes = t.minute, seconds = t.second)
+        def calc_hour_offset(t):
+            return datetime.timedelta(minutes = t.minute, seconds = t.second)
+        def calc_minute_offset(t):
+            return datetime.timedelta(seconds = t.second)
+        def calc_second_offset(t):
+            return datetime.timedelta(microseconds = t.microsecond)
+        def calc_millisecond_offset(t):
+            # t has no millisecond attribute, so use microsecond and use the remainder after division by 10000
+            return datetime.timedelta(microseconds = t.microsecond % 1000.0)
+
+        # map the inputs to the function blocks
+        # see http://pandas.pydata.org/pandas-docs/stable/timeseries.html#timeseries-offset-aliases
+        options = {'W': calc_week_offset, # weekly frequency
+                   'D': calc_day_offset, # calendar day frequency
+                   'H': calc_hour_offset, # hourly frequency
+                   'T': calc_minute_offset, # minutely frequency
+                   'min': calc_minute_offset, # minutely frequency
+                   'S': calc_second_offset, # secondly frequency
+                   'L': calc_millisecond_offset, # milliseconds
+                   'ms': calc_millisecond_offset, # milliseconds
+                   }
+
+        return options[freq](t)
 
     def get_response(self, name):
         try:
