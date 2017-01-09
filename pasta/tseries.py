@@ -45,7 +45,7 @@ class TseriesBase:
         self.tmin = tmin
         self.tmax = tmax
         self.freq = None
-        self.stress = []
+        self.stress = pd.DataFrame()
 
     def set_initial(self, name, value):
         """Method to set the initial parameter value
@@ -70,7 +70,7 @@ class TseriesBase:
         if name in self.parameters.index:
             self.parameters.loc[name, 'vary'] = 0
 
-    def get_stress(self, p, tindex=None):
+    def __getstress__(self, p=None, tindex=None):
         """
         Returns the stress or stresses of the time series object as a pandas
         DataFrame. If the time series object has multiple stresses each column
@@ -78,10 +78,14 @@ class TseriesBase:
 
         Returns
         -------
-        None:
+        stress: pd.Dataframe()
+            Pandas dataframe of the stress(es)
 
         """
-        return None
+        if tindex is not None:
+            return self.stress[tindex]
+        else:
+            return self.stress
 
 
 class Tseries(TseriesBase):
@@ -115,19 +119,19 @@ class Tseries(TseriesBase):
 
     """
 
-    def __init__(self, stress, rfunc, name, metadata=None, xy=(0, 0), freq=None,
-                 fillnan='mean', cutoff=0.99):
+    def __init__(self, stress, rfunc, name, metadata=None, xy=(0, 0),
+                 freq=None, fillnan='mean', cutoff=0.99):
         stress = check_tseries(stress, freq, fillnan, name=name)
         TseriesBase.__init__(self, rfunc, name, xy, metadata,
                              stress.index.min(), stress.index.max(),
                              cutoff)
         self.freq = stress.index.freqstr
-        self.stress.append(stress)
+        self.stress[name] = stress
         self.set_init_parameters()
 
     def set_init_parameters(self):
         """
-        Set the initial parameters back to their default values.
+        Set the initial parameters (back) to their default values.
 
         """
         self.parameters = self.rfunc.set_parameters(self.name)
@@ -149,18 +153,12 @@ class Tseries(TseriesBase):
 
         """
         b = self.rfunc.block(p)
-        self.npoints = len(self.stress[0])  # Why recompute?
-        h = pd.Series(fftconvolve(self.stress[0], b, 'full')[:self.npoints],
-                      index=self.stress[0].index, name=self.name)
+        self.npoints = len(self.stress)  # Why recompute?
+        h = pd.Series(fftconvolve(self.stress[self.name], b, 'full')[
+                      :self.npoints], index=self.stress.index, name=self.name)
         if tindex is not None:
             h = h[tindex]
         return h
-
-    def get_stress(self, p, tindex=None):
-        if tindex is not None:
-            return self.stress[tindex]
-        else:
-            return self.stress
 
 
 class Tseries2(TseriesBase):
@@ -202,17 +200,16 @@ class Tseries2(TseriesBase):
         stress0 = check_tseries(stress0, freq, fillnan[0], name=name)
         stress1 = check_tseries(stress1, freq, fillnan[1], name=name)
 
-        # A series may start with NaN values, which are removed by the check_tseries function
-        tmin = max(stress0.index[0], stress1.index[0])
-        tmax = min(stress0.index[-1], stress1.index[-1])
-        stress0 = stress0[tmin: tmax]
-        stress1 = stress1[tmin: tmax]
+        # Select indices where both series are available
+        index = stress0.index & stress1.index
 
-        TseriesBase.__init__(self, rfunc, name, xy, metadata, tmin, tmax, cutoff)
+        TseriesBase.__init__(self, rfunc, name, xy, metadata, index.min(),
+                             index.max(), cutoff)
+
+        self.stress["stress0"] = stress0[index]
+        self.stress["stress1"] = stress1[index]
+
         self.freq = stress0.index.freqstr
-        self.stress.append(stress0)
-        self.stress.append(stress1)
-
         self.set_init_parameters()
 
     def set_init_parameters(self):
@@ -241,22 +238,25 @@ class Tseries2(TseriesBase):
 
         """
         b = self.rfunc.block(p[:-1])
-        self.npoints = len(self.stress[0])  # Why recompute?
-        h = pd.Series(fftconvolve(self.stress[0] + p[-1] * self.stress[1], b, 'full')[
-                      :self.npoints],
-                      index=self.stress[0].index)
+        self.npoints = len(self.stress)  # Why recompute?
+        h = pd.Series(
+            fftconvolve(
+                self.stress["stress0"] + p[-1] * self.stress["stress1"],
+                b, 'full')[:self.npoints], index=self.stress.index)
         if tindex is not None:
             h = h[tindex]
         return h
 
-    def get_stress(self, p, tindex=None):
-        stress2 = self.stress[0] + p * self.stress[1]
-        stress = pd.concat([self.stress[0], self.stress[1], stress2], axis=1)
+    def __getstress__(self, p=None, tindex=None):
+        if p is not None:
+            stress = self.stress[0] + p[-1] * self.stress[1]
 
-        if tindex is not None:
-            return stress[tindex]
+            if tindex is not None:
+                return stress[tindex]
+            else:
+                return stress
         else:
-            return stress
+            print("parameter to calculate the stress is unknown")
 
 
 class Recharge(TseriesBase):
@@ -310,23 +310,20 @@ class Recharge(TseriesBase):
         P = check_tseries(precip, freq[0], fillnan[0], name=name + '_P')
         E = check_tseries(evap, freq[1], fillnan[1], name=name + '_E')
 
-        # Select data where both series are available
-        self.precip = P[P.index & E.index]
-        self.evap = E[P.index & E.index]
-
-
-
-        self.evap.name = 'Evaporation'
-        self.precip.name = 'Precipitation'
+        # Select indices where both series are available
+        index = P.index & E.index
 
         # Store tmin and tmax
-        TseriesBase.__init__(self, rfunc, name, xy, metadata,
-                             self.precip.index.min(), self.precip.index.max(),
-                             cutoff)
-        self.freq = self.precip.index.freqstr
+        TseriesBase.__init__(self, rfunc, name, xy, metadata, index.min(),
+                             index.max(), cutoff)
+        self.freq = self.stress.index.freqstr
+
+        self.stress[P.name] = P[index]
+        self.stress[E.name] = E[index]
+
         # The recharge calculation needs arrays
-        self.precip_array = np.array(self.precip)
-        self.evap_array = np.array(self.evap)
+        self.precip_array = np.array(self.stress[P.name])
+        self.evap_array = np.array(self.stress[E.name])
 
         self.recharge = recharge()
         self.set_init_parameters()
@@ -337,7 +334,6 @@ class Recharge(TseriesBase):
                                      self.recharge.set_parameters(self.name)])
 
     def simulate(self, p, tindex=None):
-        type(p)
         b = self.rfunc.block(p[:-self.recharge.nparam])  # Block response
         rseries = self.recharge.simulate(self.precip_array, self.evap_array,
                                          p[-self.recharge.nparam:])
@@ -348,7 +344,7 @@ class Recharge(TseriesBase):
             h = h[tindex]
         return h
 
-    def get_stress(self, p, tindex=None):
+    def __getstress__(self, p=None, tindex=None):
         """
         Returns the stress or stresses of the time series object as a pandas
         DataFrame. If the time series object has multiple stresses each column
@@ -358,7 +354,6 @@ class Recharge(TseriesBase):
         ----------
         tindex: pd TimeIndex
 
-
         Returns
         -------
         stress: pd DataFrame
@@ -366,21 +361,21 @@ class Recharge(TseriesBase):
 
         """
 
-        stress = pd.DataFrame()
-        stress['Evaporation'] = self.evap
-        stress['Precipitation'] = self.precip
+        # If parameters are not provided, don't calculate the recharge.
+        if p is not None:
+            rseries = self.recharge.simulate(self.precip_array,
+                                             self.evap_array,
+                                             p[-self.recharge.nparam:])
 
-        rseries = self.recharge.simulate(self.precip_array, self.evap_array,
-                                         p[-self.recharge.nparam:])
+            stress = pd.Series(rseries, index=self.stress.index,
+                               name=self.name)
 
-        rseries = pd.Series(rseries, index=self.precip.index,
-                            name=self.name)
-        stress['Recharge'] = rseries
-
-        if tindex is not None:
-            stress = stress[tindex]
-
-        return stress
+            if tindex is not None:
+                return stress[tindex]
+            else:
+                return stress
+        else:
+            print("parameter to calculate the stress is unknown")
 
 
 class Well(TseriesBase):
@@ -460,7 +455,8 @@ class Constant(TseriesBase):
 
     """
 
-    def __init__(self, name='Constant', xy=None, metadata=None, value=0.0, pmin=-5,
+    def __init__(self, name='Constant', xy=None, metadata=None, value=0.0,
+                 pmin=-5,
                  pmax=+5):
         self.nparam = 1
         self.value = value

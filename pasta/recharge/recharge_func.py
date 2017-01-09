@@ -44,7 +44,8 @@ class Linear:
         self.nparam = 1
 
     def set_parameters(self, name):
-        parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        parameters = pd.DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         parameters.loc[name + '_f'] = (-1.0, -5.0, 0.0, 1, name)
         return parameters
 
@@ -68,7 +69,8 @@ class Preferential:
         self.solver = 1  # 1 = implicit, 2 = explicit
 
     def set_parameters(self, name):
-        parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        parameters = pd.DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         parameters.loc[name + '_Srmax'] = (0.26, np.nan, np.nan, 0, name)
         parameters.loc[name + '_Beta'] = (3.0, 0.0, np.nan, 1, name)
         parameters.loc[name + '_Imax'] = (1.5e-3, np.nan, np.nan, 0, name)
@@ -97,7 +99,8 @@ class Percolation:
         self.solver = 1
 
     def set_parameters(self, name):
-        parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        parameters = pd.DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         parameters.loc[name + '_Srmax'] = (0.26, np.nan, np.nan, 0, name)
         parameters.loc[name + '_Kp'] = (1.0e-2, 0.0, np.nan, 1, name)
         parameters.loc[name + '_Gamma'] = (3.0, 0.0, np.nan, 1, name)
@@ -128,7 +131,8 @@ class Combination:
         self.solver = 1
 
     def set_parameters(self, name):
-        parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        parameters = pd.DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         parameters.loc[name + '_Srmax'] = (0.26, np.nan, np.nan, 0, name)
         parameters.loc[name + '_Kp'] = (1.0e-2, 0.0, np.nan, 1, name)
         parameters.loc[name + '_Beta'] = (3.0, 0.0, np.nan, 1, name)
