@@ -35,10 +35,7 @@ class LmfitSolve:
 #                         args=(tmin, tmax, noise, model))
 #    if report: print lmfit.fit_report(fit)
 #    return np.array([p.value for p in fit.params.values()])
-#
-# def lmfit_obj_function(parameters, tmin, tmax, noise, model):
-#    p = np.array([p.value for p in parameters.values()])
-#    return model.residuals(p, tmin, tmax, noise)
+
 
 from scipy.optimize import differential_evolution
 
@@ -62,5 +59,6 @@ class DESolve:
     def objfunction(self, parameters):
         print '.',
         self.parameters[self.vary] = parameters
-        return self.model.sse(self.parameters, tmin=self.tmin, tmax=self.tmax,
-                              noise=self.noise)
+        res = self.model.residuals(self.parameters, tmin=self.tmin,
+                                   tmax=self.tmax, noise=self.noise)
+        return sum(res ** 2)

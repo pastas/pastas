@@ -1,35 +1,51 @@
 """Statistics for time series models.
 
+Statistics can be calculated for the following time series:
+- Observation series
+- Simulated series
+- Residual series
+- Innovation series
+
+Each of these series can be obtained through their individual (private) get
+method for a specific time frame.
+
+two different types of statistics are provided: model statistics and
+descriptive statistics for each series.
+
 Usage
 -----
 
->>> ml_stats = Statistics(ml)
->>> ml_stats.summary()
+>>> ml.stats.summary()
 
-Statistic:                       Value
------------------------------  -------
-Explained variance percentage  92.6574
-Pearson R^2                     0.9631
+                                     Value
+Statistic
+Pearson R^2                       0.874113
+Root mean squared error           0.432442
+Bayesian Information Criterion  113.809120
+Average Deviation                 0.335966
+Explained variance percentage    72.701968
+Akaike InformationCriterion      25.327385
 
 TODO
 ----
 - ACF for irregular timesteps
-- PACF for irregular timesteps
+- PACF for irregular timestep
 - Nash-Sutcliffe
 - portmanteau test (ljung-Box & Box-Pierce)
--
 
 """
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy.stats import probplot
+
 from statsmodels.tsa.stattools import acf, pacf
 
 
 class Statistics(object):
     """
     This class contains all the statistical methods available.
+
 
     Methods
     -------
@@ -42,72 +58,53 @@ class Statistics(object):
     """
 
     def __init__(self, ml):
-        # if ml.fit.success is not True:
-        #    'Model optimization was not succesfull, make sure the model is solved' \
-        #    'Properly.'
-
-        # Store all the series for quicker computation of the statistics
-        self.sseries = ml.simulate()  # Simulated series
-        self.oseries = ml.oseries  # Observed series
-        self.rseries = ml.residuals()  # Residuals series
-        self.odelt = ml.odelt  # Timestep between observations
-        print self.rseries[:5]
-        if ml.noisemodel:  # Calculate the innovations
-            self.iseries = ml.noisemodel.simulate(self.rseries, self.odelt)
-        print self.rseries[:5]
-
-        # Sture some other parameters
-        self.N = len(self.sseries)  # Number of observations
-        self.N_param = ml.nparam  # Numberof varying parameters
         self.ml = ml  # Store reference to model for future use
 
-    # Return the series for a specified tmax and tmin
-    def get_series(self, series, tmin=None, tmax=None):
-        assert isinstance(series, pd.Series), 'Expected a Pandas Series object, ' \
-                                              'got %s' % type(series)
-        if tmin is None:
-            tmin = self.series.index.min()
-        if tmax is None:
-            tmax = self.series.index.max()
-        tindex = self.series[tmin: tmax].index
-        series = (self.series)[tindex]
+    # Private methods that return the series for a specified tmax and tmin
+    # meant for internal use.
+
+    def __getresiduals__(self, tmin=None, tmax=None):
+        series = self.ml.residuals(tmin=tmin, tmax=tmax, noise=False)
         return series
 
-    def get_rseries(self, tmin=None, tmax=None):
-        if tmin is None:
-            tmin = self.oseries.index.min()
-        if tmax is None:
-            tmax = self.oseries.index.max()
-        tindex = self.oseries[tmin: tmax].index
-        rseries = (self.rseries)[tindex]
-        return rseries
+    def __getsimulated__(self, tmin=None, tmax=None):
+        series = self.ml.simulate(tmin=tmin, tmax=tmax)
+        return series
 
-    def get_sseries(self, tmin=None, tmax=None):
-        if tmin is None:
-            tmin = self.oseries.index.min()
-        if tmax is None:
-            tmax = self.oseries.index.max()
-        tindex = self.oseries[tmin: tmax].index
-        sseries = self.sseries[tindex]  # Simulated series
-        return sseries
+    def __getinnovations__(self, tmin=None, tmax=None):
+        series = self.ml.residuals(tmin=tmin, tmax=tmax, noise=True)
+        return series
 
-    def get_iseries(self, tmin=None, tmax=None):
+    def __getobservations__(self, tmin=None, tmax=None):
         if tmin is None:
-            tmin = self.oseries.index.min()
+            tmin = self.ml.oseries.index.min()
         if tmax is None:
-            tmax = self.oseries.index.max()
-        tindex = self.oseries[tmin: tmax].index
-        iseries = self.iseries[tindex]
-        return iseries
+            tmax = self.ml.oseries.index.max()
+        tindex = self.ml.oseries[tmin: tmax].index
+        series = self.ml.oseries[tindex]
+        return series
 
-    def get_oseries(self, tmin=None, tmax=None):
-        if tmin is None:
-            tmin = self.oseries.index.min()
-        if tmax is None:
-            tmax = self.oseries.index.max()
-        tindex = self.oseries[tmin: tmax].index
-        oseries = self.oseries[tindex]
-        return oseries
+    def __getallseries__(self, tmin=None, tmax=None):
+        """
+        Method to easily obtain all four series.
+
+        Parameters
+        ----------
+        tmin
+        tmax
+
+        Returns
+        -------
+        series: pd.Dataframe
+            returns pandas dataframe with all four time series.
+
+        """
+        series = pd.DataFrame()
+        series["simulated"] = self.__getsimulated__(tmin=tmin, tmax=tmax)
+        series["observations"] = self.__getobservations__(tmin=tmin, tmax=tmax)
+        series["residuals"] = self.__getresiduals__(tmin=tmin, tmax=tmax)
+        series["innovations"] = self.__getinnovations__(tmin=tmin, tmax=tmax)
+        return series
 
     # The statistical functions
 
@@ -117,15 +114,19 @@ class Statistics(object):
         rmse = sqrt(sum(residuals**2) / N)
 
         """
-        res = self.get_rseries(tmin, tmax)
+        res = self.__getresiduals__(tmin, tmax)
         N = res.size
         return np.sqrt(sum(res ** 2) / N)
+
+    def sse(self, tmin=None, tmax=None):
+        res = self.__getresiduals__(tmin, tmax)
+        return sum(res ** 2)
 
     def avg_dev(self, tmin=None, tmax=None):
         """Average deviation of the residuals.
 
         """
-        res = self.get_rseries(tmin, tmax)
+        res = self.__getresiduals__(tmin, tmax)
         return res.mean()
 
     def evp(self, tmin=None, tmax=None):
@@ -134,18 +135,19 @@ class Statistics(object):
         evp = (var(h) - var(res)) / var(h) * 100%
         """
 
-        res = self.get_rseries(tmin, tmax)
-        sseries = self.get_sseries(tmin, tmax)
-        return (np.var(sseries) - np.var(res)) / np.var(sseries) * 100.0
+        res = self.__getresiduals__(tmin, tmax)
+        obs = self.__getobservations__(tmin, tmax)
+        return (np.var(obs) - np.var(res)) / np.var(obs) * 100.0
 
     def pearson(self, tmin=None, tmax=None):
         """Correlation between observed and simulated series.
 
         """
 
-        sseries = self.get_sseries(tmin, tmax)
-        oseries = self.get_oseries(tmin, tmax)
-        return np.corrcoef(sseries, oseries)[0, 1]
+        sim = self.__getsimulated__(tmin, tmax)
+        obs = self.__getobservations__(tmin, tmax)
+        sim = sim[obs.index]  # Make sure to correlate the same in time.
+        return np.corrcoef(sim, obs)[0, 1]
 
     def r_corrected(self, tmin=None, tmax=None):
         """Corrected R-squared
@@ -154,13 +156,13 @@ class Statistics(object):
 
         """
 
-        oseries = self.get_oseries(tmin, tmax)
-        res = self.get_rseries(tmin, tmax)
-        N = oseries.size
+        obs = self.__getobservations__(tmin, tmax)
+        res = self.__getresiduals__(tmin, tmax)
+        N = obs.size
 
         RSS = sum(res ** 2.0)
-        TSS = sum((oseries - oseries.mean()) ** 2.0)
-        return 1.0 - (N - 1.0) / (N - self.N_param) * RSS / TSS
+        TSS = sum((obs - obs.mean()) ** 2.0)
+        return 1.0 - (N - 1.0) / (N - self.ml.nparam) * RSS / TSS
 
     def bic(self, tmin=None, tmax=None):
         """Bayesian Information Criterium
@@ -169,9 +171,10 @@ class Statistics(object):
         S_j : Number of free parameters
 
         """
-        iseries = self.get_iseries(tmin, tmax)
-        N = iseries.size
-        bic = -2.0 * np.log(sum(iseries ** 2.0)) + self.N_param * np.log(N)
+        innovations = self.__getinnovations__(tmin, tmax)
+        N = innovations.size
+        bic = -2.0 * np.log(sum(innovations ** 2.0)) + self.ml.nparam * np.log(
+            N)
         return bic
 
     def aic(self, tmin=None, tmax=None):
@@ -181,8 +184,8 @@ class Statistics(object):
         S_j : Number of free parameters
 
         """
-        iseries = self.get_iseries(tmin, tmax)
-        aic = -2.0 * np.log(sum(iseries ** 2.0)) + 2.0 * self.N_param
+        innovations = self.__getinnovations__(tmin, tmax)
+        aic = -2.0 * np.log(sum(innovations ** 2.0)) + 2.0 * self.ml.nparam
         return aic
 
     def acf(self, tmin=None, tmax=None, nlags=20):
@@ -193,8 +196,8 @@ class Statistics(object):
         Compute autocorrelation for irregulat time steps.
 
         """
-        iseries = self.get_iseries(tmin, tmax)
-        return acf(iseries, nlags=nlags)
+        innovations = self.__getinnovations__(tmin, tmax)
+        return acf(innovations, nlags=nlags)
 
     def pacf(self, tmin=None, tmax=None, nlags=20):
         """Partial autocorrelation function.
@@ -205,58 +208,60 @@ class Statistics(object):
         ----
         Compute  partial autocorrelation for irregulat time steps.
         """
-        iseries = self.get_iseries(tmin, tmax)
-        return pacf(iseries, nlags=nlags)
+        innovations = self.__getinnovations__(tmin, tmax)
+        return pacf(innovations, nlags=nlags)
 
-    def GHG(self, tmin=None, tmax=None, series='oseries'):
-        """GHG: Gemiddeld Hoog Grondwater (in Dutch)
+    # def GHG(self, tmin=None, tmax=None, series='oseries'):
+    #     """GHG: Gemiddeld Hoog Grondwater (in Dutch)
+    #
+    #     3 maximum groundwater level observations for each year divided by 3 times
+    #     the number of years.
+    #
+    #     Parameters
+    #     ----------
+    #     series: Optional[str]
+    #         string for the series to calculate the statistic for. Supported
+    #         options are: 'oseries'.
+    #
+    #     """
+    #     if series == 'oseries':
+    #         x = []
+    #         oseries = self.__getobservations__(tmin, tmax)
+    #         for year in np.unique(oseries.index.year):
+    #             x.append(oseries['%i' % year].sort_values(ascending=False,
+    #                                                       inplace=False)[
+    #                      0:3].values)
+    #         return np.mean(np.array(x))
+    #
+    # def GLG(self, tmin=None, tmax=None, series='oseries'):
+    #     """GLG: Gemiddeld Laag Grondwater (in Dutch)
+    #
+    #     3 minimum groundwater level observations for each year divided by 3 times
+    #     the number of years.
+    #
+    #     Parameters
+    #     ----------
+    #     series: Optional[str]
+    #         string for the series to calculate the statistic for. Supported
+    #         options are: 'oseries'.
+    #
+    #     """
+    #     if series == 'oseries':
+    #         x = []
+    #         oseries = self.__getobservations__(tmin, tmax)
+    #         for year in np.unique(oseries.index.year):
+    #             x.append(oseries['%i' % year].sort_values(ascending=True,
+    #                                                       inplace=False)[
+    #                      0:3].values)
+    #         return np.mean(np.array(x))
 
-        3 maximum groundwater level observations for each year divided by 3 times
-        the number of years.
-
-        Parameters
-        ----------
-        series: Optional[str]
-            string for the series to calculate the statistic for. Supported
-            options are: 'oseries'.
-
-        """
-        if series == 'oseries':
-            x = []
-            oseries = self.get_oseries(tmin, tmax)
-            for year in np.unique(oseries.index.year):
-                x.append(oseries['%i' % year].sort_values(ascending=False,
-                                                          inplace=False)[
-                         0:3].values)
-            return np.mean(np.array(x))
-
-    def GLG(self, tmin=None, tmax=None, series='oseries'):
-        """GLG: Gemiddeld Laag Grondwater (in Dutch)
-
-        3 minimum groundwater level observations for each year divided by 3 times
-        the number of years.
-
-        Parameters
-        ----------
-        series: Optional[str]
-            string for the series to calculate the statistic for. Supported
-            options are: 'oseries'.
-
-        """
-        if series == 'oseries':
-            x = []
-            oseries = self.get_oseries(tmin, tmax)
-            for year in np.unique(oseries.index.year):
-                x.append(oseries['%i' % year].sort_values(ascending=True,
-                                                          inplace=False)[
-                         0:3].values)
-            return np.mean(np.array(x))
-
-    def descriptive(self, series, tmin, tmax):
-        series = self.get_series(series, tmin, tmax)
+    def descriptive(self, tmin=None, tmax=None):
+        series = self.__getallseries__(tmin, tmax)
         series.describe()
 
     def plot_diagnostics(self, tmin=None, tmax=None):
+        innovations = self.__getinnovations__(tmin, tmax)
+
         plt.figure()
         gs = plt.GridSpec(2, 3, wspace=0.2)
 
@@ -271,10 +276,10 @@ class Statistics(object):
         plt.stem(self.pacf())
 
         plt.subplot(gs[0, 2])
-        self.iseries.hist(bins=20)
+        innovations.hist(bins=20)
 
         plt.subplot(gs[1, 2])
-        probplot(self.iseries, plot=plt)
+        probplot(innovations, plot=plt)
         plt.show()
 
     def summary(self, output='basic', tmin=None, tmax=None):
@@ -310,9 +315,7 @@ class Statistics(object):
                'avg_dev': 'Average Deviation', 'pearson': 'Pearson R^2',
                'bic': 'Bayesian Information Criterion', 'aic': 'Akaike '
                                                                'Information'
-                                                               'Criterion',
-               'GHG': 'Gemiddeld Hoog Grondwater', 'GLG': 'Gemiddeld Laag '
-                                                          'Grondwater'}
+                                                               'Criterion'}
 
         if type(output) == str:
             output = eval(output)

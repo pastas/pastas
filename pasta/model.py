@@ -11,6 +11,7 @@ from warnings import warn
 from checks import check_oseries
 from solver import LmfitSolve
 from tseries import Constant
+from stats import Statistics
 
 
 class Model:
@@ -55,11 +56,13 @@ class Model:
         self.tseriesdict = OrderedDict()
         self.noisemodel = None
         self.noiseparameters = None
+        self.nparam = 0
         self.tmin = None
         self.tmax = None
         # Min and max time of observation series
         self.otmin = self.oseries.index[0]
         self.otmax = self.oseries.index[-1]
+        self.stats = Statistics(self)
 
     def add_tseries(self, tseries):
         """
@@ -147,10 +150,6 @@ class Model:
         if np.isnan(sum(r ** 2)):
             print 'nan problem in residuals'  # quick and dirty check
         return r[tmin:]
-
-    def sse(self, parameters=None, tmin=None, tmax=None, noise=True):
-        res = self.residuals(parameters, tmin=tmin, tmax=tmax, noise=noise)
-        return sum(res ** 2)
 
     def initialize(self, initial=True, noise=True):
         if not initial:
@@ -292,23 +291,25 @@ class Model:
                 dts.add(dt)
 
         # 1. The frequency should be the same for all tseries
-        assert len(
-            freqs) == 1, 'The frequency of the tseries is not the same for all stresses.'
+        assert len(freqs) == 1, 'The frequency of the tseries is not the ' \
+                                'same for all stresses.'
         self.freq = next(iter(freqs))
 
         # 2. tseries timestamps should match (e.g. similar hours')
         assert len(
-            dts) == 1, 'The time-differences with the default frequency is not the same for all stresses.'
+            dts) == 1, 'The time-differences with the default frequency is' \
+                       ' not the same for all stresses.'
         self.dt = next(iter(dts))
 
     def get_time_offset(self, t, freq):
         if isinstance(t, pd.Series):
-            # Take the first timestep. The rest of index has the same offset, as the frequency is constant.
+            # Take the first timestep. The rest of index has the same offset,
+            # as the frequency is constant.
             t = t.index[0]
 
         # define the function blocks
         def calc_week_offset(t):
-            return datetime.timedelta(days=t.weekday(), hours=t.hour,
+            return datetime.timedelta(days=t.weekday, hours=t.hour,
                                       minutes=t.minute, seconds=t.second)
 
         def calc_day_offset(t):
@@ -342,7 +343,7 @@ class Model:
 
         return options[freq](t)
 
-    def get_response(self, name):
+    def get_contribution(self, name):
         try:
             p = self.parameters.loc[
                 self.parameters.name == name, 'optimal'].values
@@ -550,41 +551,3 @@ class Model:
         # show the figure
         plt.tight_layout()
         plt.show()
-
-    def get_series(self, series='oseries', tmin=None, tmax=None):
-        """
-        Method to obtain all the series that can be obtained from the model
-
-        - Observed series ('o' or 'oseries')
-        - Stress series ('t' or 'tseries')
-        - Residual series ('r' or 'rseries')
-        - Innovation series ('i' or 'iseries')
-        - Simulated series ('s' or 'sseries')
-
-
-        :return:
-        A pandas series object
-
-        """
-        series = series.lower()
-
-        if series in ['o', 'oseries']:
-            series
-        elif series in ['t' or 'tseries']:
-            pass
-        elif series in ['r' or 'rseries']:
-            pass
-        elif series in ['i' or 'iseries']:
-            pass
-        elif series in ['s' or 'sseries']:
-            pass
-        else:
-            Warning("series type is unknown, please use one of the following "
-                    "keywords for the series type:"
-                    "oseries, tseries, iseries, rseries, sseries")
-
-        return series[tmin:tmax]
-
-        self.series = None
-        self.series.oseries = self.oseries
-        self.series.residuals = None
