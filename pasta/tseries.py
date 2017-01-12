@@ -316,10 +316,10 @@ class Recharge(TseriesBase):
         # Store tmin and tmax
         TseriesBase.__init__(self, rfunc, name, xy, metadata, index.min(),
                              index.max(), cutoff)
-        self.freq = self.stress.index.freqstr
 
         self.stress[P.name] = P[index]
         self.stress[E.name] = E[index]
+        self.freq = self.stress.index.freqstr
 
         # The recharge calculation needs arrays
         self.precip_array = np.array(self.stress[P.name])
@@ -339,7 +339,7 @@ class Recharge(TseriesBase):
                                          p[-self.recharge.nparam:])
         self.npoints = len(rseries)
         h = pd.Series(fftconvolve(rseries, b, 'full')[:self.npoints],
-                      index=self.precip.index, name=self.name)
+                      index=self.stress.index, name=self.name)
         if tindex is not None:
             h = h[tindex]
         return h
