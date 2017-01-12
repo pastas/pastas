@@ -27,8 +27,8 @@ import numpy as np
 import pandas as pd
 from scipy.signal import fftconvolve
 
-from checks import check_tseries
-from rfunc import One
+from .checks import check_tseries
+from .rfunc import One
 
 
 class TseriesBase:
@@ -508,7 +508,7 @@ class NoiseModel:
     def fix_parameters(self, **kwargs):
         for i in kwargs:
             if (kwargs[i] is not 0) and (kwargs[i] is not 1):
-                print 'vary should be 1 or 0, not %s' % kwargs[i]
+                print('vary should be 1 or 0, not %s' % kwargs[i])
             self.parameters.loc['%s' % i, 'vary'] = kwargs[i]
 
     def simulate(self, res, delt, p, tindex=None):

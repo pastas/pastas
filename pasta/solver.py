@@ -57,7 +57,7 @@ class DESolve:
         self.report = str(result)
 
     def objfunction(self, parameters):
-        print '.',
+        print('.'),
         self.parameters[self.vary] = parameters
         res = self.model.residuals(self.parameters, tmin=self.tmin,
                                    tmax=self.tmax, noise=self.noise)

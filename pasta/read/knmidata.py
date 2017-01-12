@@ -21,8 +21,9 @@ For now the direct download only works for meteorological stations and daily dat
 
 import requests
 import numpy as np
-from datetime import date, timedelta, datetime
-import cStringIO
+from datetime import date, datetime
+# from io import StringIO
+from StringIO import StringIO
 import pandas as pd
 import numpy.lib.recfunctions as rfn
 
@@ -120,7 +121,7 @@ class KnmiStation:
                     line = line.replace('     ', '  ')
                     line = line.replace('    ', '  ')
                     line = line.replace('   ', '  ')
-                    s = cStringIO.StringIO(line)
+                    s = StringIO(line)
 
                     data = np.genfromtxt(s, dtype=None, delimiter='  ', names=titels)
                     data = np.atleast_1d(data)
@@ -293,6 +294,6 @@ class KnmiStation:
         }
         self.result = requests.get(url, params=data).text
         self.result = self.result.encode('utf8')
-        # f=StringIO(self.result)
-        f = cStringIO.StringIO(self.result)
+
+        f = StringIO(self.result)
         self.readdata(f)

@@ -120,7 +120,7 @@ def pref(t, P, E, Srmax=0.1, Beta=2.0, Imax=0.001, dt=1.0, solver=1):
 
                 while ((b - a) / 2.0) > error:
                     if iteration > 100:
-                        print 'iteration in bisection method exceeded 100', iteration
+                        print('iteration in bisection method exceeded 100', iteration)
                         break
                     iteration += 1  # increase the number of iterations by 1
 
@@ -235,7 +235,7 @@ def perc(t, P, E, Srmax=0.1, Kp=0.03, Gamma=2.0, Imax=0.001, dt=1.0, solver=1):
 
                 while ((b - a) / 2.0) > error:
                     if iteration > 100:
-                        print 'iteration in bisection method exceeded 100', iteration
+                        print('iteration in bisection method exceeded 100', iteration)
                         break
                     iteration += 1  # increase the number of iterations by 1
 
@@ -357,7 +357,7 @@ def comb(t, P, E, Srmax=0.1, Kp=0.03, Beta=2.0, Gamma=2.0, Imax=0.001,
                 #
                 while ((b - a) / 2.0) > error:
                     if iteration > 100:
-                        print 'iteration in bisection method exceeded 100', iteration
+                        print('iteration in bisection method exceeded 100', iteration)
                         break
                     iteration += 1  # increase the number of iterations by 1
 

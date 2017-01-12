@@ -38,13 +38,12 @@ def check_oseries(oseries, freq, fillnan='drop'):
 
     # Deal with frequency of the time series
     if freq:
-        print Warning
         oseries = oseries.resample(freq)
 
     # Handle nan-values in oseries
     if oseries.hasnans:
-        print '%i nan-value(s) in the oseries was/were found and handled/filled ' \
-              'with: %s' % (oseries.isnull().values.sum(), fillnan)
+        print('%i nan-value(s) in the oseries was/were found and handled/filled '
+              'with: %s' % (oseries.isnull().values.sum(), fillnan))
         if fillnan == 'drop':
             oseries.dropna(inplace=True)  # Default option
         elif fillnan == 'mean':
@@ -54,12 +53,12 @@ def check_oseries(oseries, freq, fillnan='drop'):
         elif type(fillnan) == float:
             oseries.fillna(fillnan, inplace=True)
         else:
-            print 'User-defined option for fillnan %s isinstance() not supported' \
-                  % fillnan
+            print('User-defined option for fillnan %s isinstance() not supported'
+                  % fillnan)
 
     # Drop dubplicate indexes
     if not oseries.index.is_unique:
-        print 'duplicate time-indexes were found in the oseries. Values were averaged.'
+        print('duplicate time-indexes were found in the oseries. Values were averaged.')
         grouped = oseries.groupby(level=0)
         oseries = grouped.mean()
 
@@ -103,13 +102,13 @@ def check_tseries(stress, freq, fillnan, name=''):
         stress = stress.asfreq(freq)
     else:
         freq = pd.infer_freq(stress.index)
-        print 'Inferred frequency from time series %s: freq=%s ' % (name, freq)
+        print('Inferred frequency from time series %s: freq=%s ' % (name, freq))
         stress = stress.asfreq(freq)
 
     # Handle nan-values in stress series
     if stress.hasnans:
-        print '%i nan-value(s) was/were found and filled with: %s' % (
-            stress.isnull().values.sum(), fillnan)
+        print('%i nan-value(s) was/were found and filled with: %s'
+              % (stress.isnull().values.sum(), fillnan))
         if fillnan == 'mean':
             stress.fillna(stress.mean(), inplace=True)  # Default option
         elif fillnan == 'interpolate':
@@ -117,8 +116,7 @@ def check_tseries(stress, freq, fillnan, name=''):
         elif type(fillnan) == float:
             stress.fillna(fillnan, inplace=True)
         else:
-            print 'User-defined option for fillnan %s isinstance() not supported' \
-                  % fillnan
-            
+            print('User-defined option for fillnan %s isinstance() not supported'
+            % fillnan)
 
     return stress

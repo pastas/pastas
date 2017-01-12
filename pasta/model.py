@@ -8,10 +8,10 @@ import pandas as pd
 import datetime
 from warnings import warn
 
-from checks import check_oseries
-from solver import LmfitSolve
-from tseries import Constant
-from stats import Statistics
+from .checks import check_oseries
+from .solver import LmfitSolve
+from .tseries import Constant
+from .stats import Statistics
 
 
 class Model:
@@ -141,14 +141,12 @@ class Model:
             h_simulated = np.interp(h_observed.index.asi8,
                                     simulation.index.asi8, simulation)
         r = h_observed - h_simulated
-        # print 'step1:', sum(r**2)
         if noise and (self.noisemodel is not None):
             r = self.noisemodel.simulate(r, self.odelt[tindex],
                                          parameters[-self.noisemodel.nparam:],
                                          tindex)
-        # print 'step2:', sum(r**2)
         if np.isnan(sum(r ** 2)):
-            print 'nan problem in residuals'  # quick and dirty check
+            print('nan problem in residuals')  # quick and dirty check
         return r[tmin:]
 
     def initialize(self, initial=True, noise=True):
@@ -189,8 +187,8 @@ class Model:
 
         """
         if noise and (self.noisemodel is None):
-            print 'Warning, solution with noise model while noise model is not ' \
-                  'defined. No noise model is used'
+            print('Warning, solution with noise model while noise model is not '
+                  'defined. No noise model is used')
 
         # Check frequency of tseries
         self.check_frequency()
@@ -206,7 +204,7 @@ class Model:
 
         self.parameters.optimal = fit.optimal_params
         self.report = fit.report
-        if report: print self.report
+        if report: print(self.report)
 
         # self.stats = Statistics(self)
 
@@ -349,8 +347,8 @@ class Model:
                 self.parameters.name == name, 'optimal'].values
             return self.tseriesdict[name].simulate(p)
         except KeyError:
-            print "Name not in tseriesdict, available names are: %s" \
-                  % self.tseriesdict.keys()
+            print("Name not in tseriesdict, available names are: %s"
+                  % self.tseriesdict.keys())
 
     def get_response_function(self, name):
         try:
@@ -358,8 +356,8 @@ class Model:
                 self.parameters.name == name, 'optimal'].values
             return self.tseriesdict[name].rfunc.block(p)
         except KeyError:
-            print "Name not in tseriesdict, available names are: %s" \
-                  % self.tseriesdict.keys()
+            print("Name not in tseriesdict, available names are: %s"
+                  % self.tseriesdict.keys())
 
     def get_stress(self, name):
         try:
@@ -367,8 +365,8 @@ class Model:
                 self.parameters.name == name, 'optimal'].values
             return self.tseriesdict[name].__getstress__(p)
         except KeyError:
-            print "Name not in tseriesdict, available names are: %s" \
-                  % self.tseriesdict.keys()
+            print("Name not in tseriesdict, available names are: %s"
+                  % self.tseriesdict.keys())
 
     def plot(self, tmin=None, tmax=None, oseries=True, simulate=True):
         """

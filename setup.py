@@ -50,7 +50,7 @@ setup(
 
     # See https://PyPI.python.org/PyPI?%3Aaction=list_classifiers
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         # Indicate who your project is intended for
         # 'Intended Audience :: Groundwater Modelers',
         # Pick yor license as you wish (should match "license" above)
@@ -58,11 +58,12 @@ setup(
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
         'Programming Language :: Python :: 2.7'
+        'Programming Language :: Python :: 3.5'
     ],
     platforms='Windows, Mac OS-X',
     install_requires=['numpy>=1.9', 'matplotlib>=1.4', 'lmfit>=0.9', 'pandas>=0.15',
                       'scipy>=0.15', 'statsmodels>=0.5', 'requests',
-                      'pyproj'],
+                      'pyproj', "io"],
     packages=find_packages(exclude=[]),
     include_package_data=True,
 )

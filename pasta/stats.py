@@ -327,4 +327,4 @@ class Statistics(object):
 
         stats = pd.DataFrame(index=names, data=statsvalue, columns=['Value'])
         stats.index.name = 'Statistic'
-        print stats
+        print(stats)

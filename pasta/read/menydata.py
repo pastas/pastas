@@ -54,7 +54,7 @@ class MenyData:
                 self.IN.append(MenyIN(series, IN.Name, IN.type))
 
         else:
-            print 'Could not find file ', fname
+            print('Could not find file ', fname)
 
 
     def matlab2datetime(self,matlab_datenum):

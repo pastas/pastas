@@ -39,5 +39,3 @@ ml.add_noisemodel(n)
 ml.solve()
 ml.plot()
 
-# ml.initialize()
-# print ml.parameters
