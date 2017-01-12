@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 # from setuptools import find_packages
 # from os import path
@@ -63,6 +63,6 @@ setup(
     install_requires=['numpy>=1.9', 'matplotlib>=1.4', 'lmfit>=0.9', 'pandas>=0.15',
                       'scipy>=0.15', 'statsmodels>=0.5', 'requests',
                       'pyproj'],
-    packages=['pasta'],
+    packages=find_packages(exclude=[]),
     include_package_data=True,
 )
