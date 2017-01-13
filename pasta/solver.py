@@ -3,7 +3,7 @@ import numpy as np
 
 
 class LmfitSolve:
-    def __init__(self, model, tmin=None, tmax=None, noise=True):
+    def __init__(self, model, tmin=None, tmax=None, noise=True, freq='D'):
         parameters = lmfit.Parameters()
         p = model.parameters[['initial', 'pmin', 'pmax', 'vary']]
         for k in p.index:
@@ -13,13 +13,13 @@ class LmfitSolve:
                            max=pp[2], vary=pp[3])
         fit = lmfit.minimize(fcn=self.objfunction, params=parameters,
                              ftol=1e-3, epsfcn=1e-4,
-                             args=(tmin, tmax, noise, model))
+                             args=(tmin, tmax, noise, model, freq))
         self.optimal_params = np.array([p.value for p in fit.params.values()])
         self.report = lmfit.fit_report(fit)
 
-    def objfunction(self, parameters, tmin, tmax, noise, model):
+    def objfunction(self, parameters, tmin, tmax, noise, model, freq):
         p = np.array([p.value for p in parameters.values()])
-        return model.residuals(p, tmin, tmax, noise)
+        return model.residuals(p, tmin, tmax, freq, noise)
 
 
 # def lmfit_solve(model, tmin=None, tmax=None, noise=True, report=True):
@@ -41,7 +41,8 @@ from scipy.optimize import differential_evolution
 
 
 class DESolve:
-    def __init__(self, model, tmin=None, tmax=None, noise=True):
+    def __init__(self, model, tmin=None, tmax=None, noise=True, freq='D'):
+        self.freq = freq
         self.model = model
         self.tmin = tmin
         self.tmax = tmax
@@ -60,5 +61,6 @@ class DESolve:
         print('.'),
         self.parameters[self.vary] = parameters
         res = self.model.residuals(self.parameters, tmin=self.tmin,
-                                   tmax=self.tmax, noise=self.noise)
+                                   tmax=self.tmax, freq=self.freq,
+                                   noise=self.noise)
         return sum(res ** 2)

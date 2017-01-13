@@ -50,7 +50,7 @@ class Model:
         self.odelt = self.oseries.index.to_series().diff() / \
                      self.oseries.index.to_series().diff().min()
         self.freq = None
-        self.dt = None
+        self.time_offset = None
 
         # Independent of the time unit
         self.tseriesdict = OrderedDict()
@@ -106,17 +106,18 @@ class Model:
         tindex = pd.date_range(
             pd.to_datetime(tmin) - pd.DateOffset(days=self.warmup), tmax,
             freq=freq)
+        dt = self.get_dt(freq)
 
         if parameters is None:
             parameters = self.parameters.optimal.values
         h = pd.Series(data=0, index=tindex)
         istart = 0  # Track parameters index to pass to ts object
         for ts in self.tseriesdict.values():
-            h += ts.simulate(parameters[istart: istart + ts.nparam], tindex)
+            h += ts.simulate(parameters[istart: istart + ts.nparam], tindex, dt)
             istart += ts.nparam
         return h[tmin:]
 
-    def residuals(self, parameters=None, tmin=None, tmax=None, noise=True):
+    def residuals(self, parameters=None, tmin=None, tmax=None, freq='D', noise=True):
         """
         Method to calculate the residuals.
 
@@ -132,7 +133,7 @@ class Model:
 
         # h_observed - h_simulated
         h_observed = self.oseries[tindex]
-        simulation = self.simulate(parameters, tmin, tmax)
+        simulation = self.simulate(parameters, tmin, tmax, freq)
         if len(tindex.difference(simulation.index)) == 0:
             # all of the observation indexes are in the simulation
             h_simulated = simulation[tindex]
@@ -253,9 +254,9 @@ class Model:
             if tseries.tmax < tmax:
                 tmax = tseries.tmax
 
-        # adjust tmin and tmax so that the offset (dt, determined in check_frequency) is equal to that of the tseries
-        tmin = tmin - self.get_time_offset(tmin, self.freq) + self.dt
-        tmax = tmax - self.get_time_offset(tmax, self.freq) + self.dt
+        # adjust tmin and tmax so that the time-offset (determined in check_frequency) is equal to that of the tseries
+        tmin = tmin - self.get_time_offset(tmin, self.freq) + self.time_offset
+        tmax = tmax - self.get_time_offset(tmax, self.freq) + self.time_offset
 
         assert tmax > tmin, 'Error: Specified tmax not larger than specified tmin'
         assert len(self.oseries[
@@ -276,7 +277,7 @@ class Model:
 
         # calculate frequency and time-difference with default frequency
         freqs = set()
-        dts = set()
+        time_offsets = set()
 
         for tseries in self.tseriesdict.values():
             if isinstance(tseries, Constant):
@@ -284,9 +285,9 @@ class Model:
             else:
                 freqs.add(tseries.freq)
                 # calculate the offset from the default frequency
-                dt = self.get_time_offset(tseries.stress.index[0],
+                time_offset = self.get_time_offset(tseries.stress.index[0],
                                           tseries.freq)
-                dts.add(dt)
+                time_offsets.add(time_offset)
 
         # 1. The frequency should be the same for all tseries
         assert len(freqs) == 1, 'The frequency of the tseries is not the ' \
@@ -295,9 +296,22 @@ class Model:
 
         # 2. tseries timestamps should match (e.g. similar hours')
         assert len(
-            dts) == 1, 'The time-differences with the default frequency is' \
+            time_offsets) == 1, 'The time-differences with the default frequency is' \
                        ' not the same for all stresses.'
-        self.dt = next(iter(dts))
+        self.time_offset = next(iter(time_offsets))
+
+    def get_dt(self, freq):
+        options = {'W': 7,  # weekly frequency
+                   'D': 1,  # calendar day frequency
+                   'H': 1/24,  # hourly frequency
+                   'T': 1/24/60,  # minutely frequency
+                   'min': 1/24/60,  # minutely frequency
+                   'S': 1/24/3600,  # secondly frequency
+                   'L': 1/24/3600000,  # milliseconds
+                   'ms': 1/24/3600000,  # milliseconds
+                   }
+
+        return options[freq]
 
     def get_time_offset(self, t, freq):
         if isinstance(t, pd.Series):

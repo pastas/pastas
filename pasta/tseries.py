@@ -136,7 +136,7 @@ class Tseries(TseriesBase):
         """
         self.parameters = self.rfunc.set_parameters(self.name)
 
-    def simulate(self, p, tindex=None):
+    def simulate(self, p, tindex=None, dt=1):
         """ Simulates the head contribution.
 
         Parameters
@@ -152,7 +152,7 @@ class Tseries(TseriesBase):
             The simulated head contribution.
 
         """
-        b = self.rfunc.block(p)
+        b = self.rfunc.block(p, dt)
         self.npoints = len(self.stress)  # Why recompute?
         h = pd.Series(fftconvolve(self.stress[self.name], b, 'full')[
                       :self.npoints], index=self.stress.index, name=self.name)
@@ -221,7 +221,7 @@ class Tseries2(TseriesBase):
         self.parameters.loc[self.name + '_f'] = (-1.0, -2.0, 2.0, 1, self.name)
         self.nparam += 1
 
-    def simulate(self, p, tindex=None):
+    def simulate(self, p, tindex=None, dt=1):
         """ Simulates the head contribution.
 
         Parameters
@@ -237,7 +237,7 @@ class Tseries2(TseriesBase):
             The simulated head contribution.
 
         """
-        b = self.rfunc.block(p[:-1])
+        b = self.rfunc.block(p[:-1], dt)
         self.npoints = len(self.stress)  # Why recompute?
         h = pd.Series(
             fftconvolve(
@@ -333,8 +333,8 @@ class Recharge(TseriesBase):
         self.parameters = pd.concat([self.rfunc.set_parameters(self.name),
                                      self.recharge.set_parameters(self.name)])
 
-    def simulate(self, p, tindex=None):
-        b = self.rfunc.block(p[:-self.recharge.nparam])  # Block response
+    def simulate(self, p, tindex=None, dt=1):
+        b = self.rfunc.block(p[:-self.recharge.nparam], dt)  # Block response
         rseries = self.recharge.simulate(self.precip_array, self.evap_array,
                                          p[-self.recharge.nparam:])
         self.npoints = len(rseries)
@@ -433,7 +433,7 @@ class Well(TseriesBase):
     def set_init_parameters(self):
         self.parameters = self.rfunc.set_parameters(self.name)
 
-    def simulate(self, p=None, tindex=None):
+    def simulate(self, p=None, tindex=None, dt=1):
         h = pd.Series(data=0, index=self.stress[0].index)
         for i in range(len(self.stress)):
             self.npoints = len(self.stress[i])
@@ -472,7 +472,7 @@ class Constant(TseriesBase):
         self.parameters.loc['constant_d'] = (
             self.value, self.pmin, self.pmax, 1, self.name)
 
-    def simulate(self, p=None, t=None):
+    def simulate(self, p=None, t=None, dt=None):
         return p
 
 

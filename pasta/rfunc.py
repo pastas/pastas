@@ -64,14 +64,14 @@ class Gamma:
         parameters.loc[name + '_a'] = (100.0, 1.0, 5000.0, 1, name)
         return parameters
 
-    def step(self, p):
+    def step(self, p, dt):
         self.tmax = gammaincinv(p[1], self.cutoff) * p[2]
-        t = np.arange(1.0, self.tmax)
+        t = np.arange(dt, self.tmax, dt)
         s = p[0] * gammainc(p[1], t / p[2])
         return s
 
-    def block(self, p):
-        s = self.step(p)
+    def block(self, p, dt):
+        s = self.step(p, dt)
         return s[1:] - s[:-1]
 
 
@@ -97,14 +97,14 @@ class Exponential:
         parameters['tseries'] = name
         return parameters
 
-    def step(self, p):
+    def step(self, p, dt):
         self.tmax = -np.log(1.0 / p[1]) * p[1]
-        t = np.arange(1.0, self.tmax)
+        t = np.arange(dt, self.tmax, dt)
         s = p[0] * (1.0 - np.exp(-t / p[1]))
         return s
 
-    def block(self, p):
-        s = self.step(p)
+    def block(self, p, dt):
+        s = self.step(p, dt)
         return s[1:] - s[:-1]
 
 
@@ -202,8 +202,8 @@ class One:
         self.cutoff = cutoff
         self.tmax = 0
 
-    def step(self, p):
+    def step(self, p, dt):
         return p[0] * np.ones(2)
 
-    def block(self, p):
+    def block(self, p, dt):
         return p[0] * np.ones(2)
