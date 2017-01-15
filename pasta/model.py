@@ -482,6 +482,12 @@ class Model:
             plt.savefig('.eps' % (self.name), bbox_inches='tight')
 
     def plot_decomposition(self, tmin=None, tmax=None, freq='D'):
+        """
+
+        Plot the decomposition of a time-series in the different stresses
+
+        """
+
         # Default option when not tmin and tmax is provided
         if tmin is None:
             tmin = self.tmin
@@ -492,63 +498,64 @@ class Model:
 
         tindex = pd.date_range(tmin, tmax, freq=freq)
 
-        ts = self.tseriesdict
-        n = len(ts)
-
-        parameters = self.parameters.optimal.values
-
+        # determine the simulation
         hsim = self.simulate(tmin=tmin, tmax=tmax)
+        h = [hsim]
 
+        # determine the influence of the different stresses
+        parameters = self.parameters.optimal.values
+        istart = 0  # Track parameters index to pass to ts object
+        for ts in self.tseriesdict.values():
+            h.append(ts.simulate(parameters[istart: istart + ts.nparam], tindex))
+            istart += ts.nparam
+
+        # open the figure
         if False:
-            f, axarr = plt.subplots(1 + n, sharex=True)
+            f, axarr = plt.subplots(1 + len(self.tseriesdict), sharex=True)
         else:
             # let the height of the axes be determined by the values
-            # height_ratios = [1]*(n+1)
+            # height_ratios = [1]*(len(self.tseriesdict)+1)
             height_ratios = [max([hsim.max(), self.oseries.max()]) - min(
                 [hsim.min(), self.oseries.min()])]
-            istart = 0  # Track parameters index to pass to ts object
-            for ts in self.tseriesdict.values():
-                h = ts.simulate(parameters[istart: istart + ts.nparam], tindex)
-                height_ratios.append(h.max() - h.min())
-                istart += ts.nparam
-            f, axarr = plt.subplots(1 + n, sharex=True, gridspec_kw={
+            for ht in h:
+                height_ratios.append(ht.max() - ht.min())
+            f, axarr = plt.subplots(1 + len(self.tseriesdict), sharex=True, gridspec_kw={
                 'height_ratios': height_ratios})
 
-        plt.axes(axarr[0])
-
         # plot simulation and observations in top graph
+        plt.axes(axarr[0])
         self.oseries.plot(linestyle='', marker='.', color='k', markersize=3,
                           ax=axarr[0], label='observations')
         hsim.plot(ax=axarr[0], label='simulation')
-
         axarr[0].set_title('Observations and simulation')
         axarr[0].autoscale(enable=True, axis='y', tight=True)
         axarr[0].grid(which='both')
         axarr[0].minorticks_off()
 
+        # add a legend
         handles, labels = axarr[0].get_legend_handles_labels()
         leg = axarr[0].legend(handles, labels, loc=2)
         leg.get_frame().set_alpha(0.5)
 
+        # determine the ytick-spacing of the top graph
         yticks, ylabels = plt.yticks()
         if len(yticks) > 2:
             base = yticks[1] - yticks[0]
         else:
             base = None
 
-        istart = 0  # Track parameters index to pass to ts object
+        # plot the influence of the stresses
         iax = 1
         for ts in self.tseriesdict.values():
             plt.axes(axarr[iax])
-            h = ts.simulate(parameters[istart: istart + ts.nparam], tindex)
-
             if isinstance(ts, Constant):
                 xlim = axarr[iax].get_xlim()
-                axarr[iax].plot(xlim, [h, h])
-                axarr[iax].yaxis.set_ticks(h)
+                axarr[iax].plot(xlim, [h[iax], h[iax]])
+                axarr[iax].yaxis.set_ticks(h[iax])
             else:
-                plt.plot(h.index, h.values)
+                plt.plot(h[iax].index, h[iax].values)
                 if base is not None:
+                    # set the ytick-spacing equal to the top graph
                     axarr[iax].yaxis.set_major_locator(
                         plticker.MultipleLocator(base=base))
 
@@ -556,8 +563,6 @@ class Model:
             axarr[iax].autoscale(enable=True, axis='y', tight=True)
             axarr[iax].grid(which='both')
             axarr[iax].minorticks_off()
-
-            istart += ts.nparam
             iax += 1
 
         # show the figure
