@@ -16,13 +16,16 @@ meny.H[0].series.index = meny.H[0].series.index.ceil('d')
 ml = Model(meny.H[0].series)
 
 # Add drainage level
-d = Constant(value=meny.H[0].series.min())
+d = Constant(value=meny.H[0].series.mean())
 ml.add_tseries(d)
+
+freq='W'
 
 # Add precipitation
 IN = next(x for x in meny.IN if x.name == 'Neerslag (Hoogerheide)')
 # round to days (precipitation is measured at 9:00)
-IN.series = IN.series.resample('d').bfill()
+IN.series = IN.series.resample(freq).bfill()
+IN.series = IN.series.dropna()
 IN.name = IN.name.replace('(','')
 IN.name = IN.name.replace(')','')
 IN.name = IN.name.replace(' ','_')
@@ -30,7 +33,8 @@ if False:
     ts = Tseries(IN.series, Gamma, IN.name)
 else:
     IN2 = next(x for x in meny.IN if x.name == 'Verdamping (GILZE-RIJEN)')
-    IN2.series = IN2.series.resample('d').bfill()
+    IN2.series = IN2.series.resample(freq).bfill()
+    IN2.series = IN2.series.dropna()
     IN2.name = IN2.name.replace('(', '')
     IN2.name = IN2.name.replace(')', '')
     IN2.name = IN2.name.replace(' ', '_')
@@ -40,7 +44,8 @@ ml.add_tseries(ts)
 # Add well extraction at Ossendrecht
 IN = next(x for x in meny.IN if x.name == 'Onttrekking (Ossendrecht)')
 # extraction amount counts for the previous month
-IN.series = IN.series.resample('d').bfill()
+IN.series = IN.series.resample(freq).bfill()
+IN.series = IN.series.dropna()
 IN.name = IN.name.replace('(','')
 IN.name = IN.name.replace(')','')
 IN.name = IN.name.replace(' ','_')
@@ -50,7 +55,8 @@ ml.add_tseries(ts)
 # Add well extraction at Huijbergen
 IN = next(x for x in meny.IN if x.name == 'Onttrekking (Huijbergen)')
 # extraction amount counts for the previous month
-IN.series = IN.series.resample('d').bfill()
+IN.series = IN.series.resample(freq).bfill()
+IN.series = IN.series.dropna()
 IN.name = IN.name.replace('(','')
 IN.name = IN.name.replace(')','')
 IN.name = IN.name.replace(' ','_')
@@ -60,7 +66,8 @@ ml.add_tseries(ts)
 # Add well extraction at Essen
 IN = next(x for x in meny.IN if x.name == 'Onttrekking (Essen)')
 # extraction amount counts for the previous month
-IN.series = IN.series.resample('d').bfill()
+IN.series = IN.series.resample(freq).bfill()
+IN.series = IN.series.dropna()
 IN.name = IN.name.replace('(','')
 IN.name = IN.name.replace(')','')
 IN.name = IN.name.replace(' ','_')

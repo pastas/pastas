@@ -201,7 +201,7 @@ class Model:
         self.initialize(initial=initial, noise=noise)
 
         # Solve model
-        fit = solver(self, tmin=self.tmin, tmax=self.tmax, noise=noise)
+        fit = solver(self, tmin=self.tmin, tmax=self.tmax, noise=noise, freq=self.freq)
 
         self.parameters.optimal = fit.optimal_params
         self.report = fit.report
@@ -310,7 +310,8 @@ class Model:
                    'L': 1/24/3600000,  # milliseconds
                    'ms': 1/24/3600000,  # milliseconds
                    }
-
+        # remove the day from the week
+        freq = freq.split("-", 1)[0]
         return options[freq]
 
     def get_time_offset(self, t, freq):
@@ -321,7 +322,7 @@ class Model:
 
         # define the function blocks
         def calc_week_offset(t):
-            return datetime.timedelta(days=t.weekday, hours=t.hour,
+            return datetime.timedelta(days=t.weekday(), hours=t.hour,
                                       minutes=t.minute, seconds=t.second)
 
         def calc_day_offset(t):
@@ -352,7 +353,8 @@ class Model:
                    'L': calc_millisecond_offset,  # milliseconds
                    'ms': calc_millisecond_offset,  # milliseconds
                    }
-
+        # remove the day from the week
+        freq = freq.split("-", 1)[0]
         return options[freq](t)
 
     def get_contribution(self, name):
@@ -481,7 +483,7 @@ class Model:
         if savefig:
             plt.savefig('.eps' % (self.name), bbox_inches='tight')
 
-    def plot_decomposition(self, tmin=None, tmax=None, freq='D'):
+    def plot_decomposition(self, tmin=None, tmax=None, freq=None):
         """
 
         Plot the decomposition of a time-series in the different stresses
@@ -495,18 +497,21 @@ class Model:
             tmax = self.tmax
         assert (tmin is not None) and (
             tmax is not None), 'model needs to be solved first'
+        if freq is None:
+            freq = self.freq
 
         tindex = pd.date_range(tmin, tmax, freq=freq)
 
         # determine the simulation
-        hsim = self.simulate(tmin=tmin, tmax=tmax)
+        hsim = self.simulate(tmin=tmin, tmax=tmax, freq=freq)
         h = [hsim]
 
         # determine the influence of the different stresses
         parameters = self.parameters.optimal.values
         istart = 0  # Track parameters index to pass to ts object
         for ts in self.tseriesdict.values():
-            h.append(ts.simulate(parameters[istart: istart + ts.nparam], tindex))
+            dt = self.get_dt(freq)
+            h.append(ts.simulate(parameters[istart: istart + ts.nparam], tindex, dt))
             istart += ts.nparam
 
         # open the figure
@@ -517,7 +522,7 @@ class Model:
             # height_ratios = [1]*(len(self.tseriesdict)+1)
             height_ratios = [max([hsim.max(), self.oseries.max()]) - min(
                 [hsim.min(), self.oseries.min()])]
-            for ht in h:
+            for ht in h[1:]:
                 height_ratios.append(ht.max() - ht.min())
             f, axarr = plt.subplots(1 + len(self.tseriesdict), sharex=True, gridspec_kw={
                 'height_ratios': height_ratios})

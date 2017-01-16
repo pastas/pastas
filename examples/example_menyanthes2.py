@@ -18,7 +18,7 @@ meny = MenyData(fname)
 ml = Model(meny.H[0].series)
 
 # Add drainage level
-d = Constant(value=meny.H[0].series.min())
+d = Constant(value=meny.H[0].series.mean())
 ml.add_tseries(d)
 
 # Add precipitation
