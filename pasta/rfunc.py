@@ -16,13 +16,15 @@ nparam: integer
     number of parameters.
 cutoff: float
     percentage after which the step function is cut off.
+tmax: float
+    time corresponding to the cutoff
 
 Functions
 ---------
 set_parameters(self, name)
     A function that returns a Pandas DataFrame of the parameters of the
     response function. Columns of the dataframe need to be
-    ['value', 'pmin', 'pmax', 'vary'].
+    ['initial', 'pmin', 'pmax', 'vary'].
     Rows of the DataFrame have names of the parameters.
     Input name is used as a prefix.
     This function is called by a Tseries object.
@@ -52,22 +54,24 @@ class Gamma:
     def __init__(self, cutoff=0.99):
         self.nparam = 3
         self.cutoff = cutoff
+        self.tmax = 0
 
     def set_parameters(self, name):
-        parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
-        parameters.loc[name + '_A'] = (500.0, 0.0, 5000.0, 1)
-        parameters.loc[name + '_n'] = (1.0, 0.0, 5.0, 1)
-        parameters.loc[name + '_a'] = (100.0, 1.0, 5000.0, 1)
+        parameters = pd.DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        parameters.loc[name + '_A'] = (500.0, 0.0, 5000.0, 1, name)
+        parameters.loc[name + '_n'] = (1.0, 0.1, 5.0, 1, name)  # if n is too small, the length of the response function is close to zero
+        parameters.loc[name + '_a'] = (100.0, 1.0, 5000.0, 1, name)
         return parameters
 
-    def step(self, p):
+    def step(self, p, dt):
         self.tmax = gammaincinv(p[1], self.cutoff) * p[2]
-        t = np.arange(1.0, self.tmax)
+        t = np.arange(dt, self.tmax, dt)
         s = p[0] * gammainc(p[1], t / p[2])
         return s
 
-    def block(self, p):
-        s = self.step(p)
+    def block(self, p, dt):
+        s = self.step(p, dt)
         return s[1:] - s[:-1]
 
 
@@ -83,21 +87,24 @@ class Exponential:
     def __init__(self, cutoff):
         self.nparam = 2
         self.cutoff = cutoff
+        self.tmax = 0
 
     def set_parameters(self, name):
-        parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
-        parameters.loc[name + '_A'] = (500.0, 0.0, 5000.0, 1)
-        parameters.loc[name + '_a'] = (100.0, 1.0, 5000.0, 1)
+        parameters = pd.DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        parameters.loc[name + '_A'] = (500.0, 0.0, 5000.0, 1, name)
+        parameters.loc[name + '_a'] = (100.0, 1.0, 5000.0, 1, name)
+        parameters['tseries'] = name
         return parameters
 
-    def step(self, p):
+    def step(self, p, dt):
         self.tmax = -np.log(1.0 / p[1]) * p[1]
-        t = np.arange(1.0, self.tmax)
+        t = np.arange(dt, self.tmax, dt)
         s = p[0] * (1.0 - np.exp(-t / p[1]))
         return s
 
-    def block(self, p):
-        s = self.step(p)
+    def block(self, p, dt):
+        s = self.step(p, dt)
         return s[1:] - s[:-1]
 
 
@@ -124,10 +131,12 @@ class Hantush:
         self.cutoff = cutoff
 
     def set_parameters(self, name):
-        parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
-        parameters.loc[name + '_S'] = (0.0, 1e-3, 1.0, 1)
-        parameters.loc[name + '_T'] = (0.0, 10.0, 5000.0, 1)
-        parameters.loc[name + '_c'] = (0.0, 1000.0, 5000.0, 1)
+        parameters = pd.DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        parameters.loc[name + '_S'] = (0.0, 1e-3, 1.0, 1, name)
+        parameters.loc[name + '_T'] = (0.0, 10.0, 5000.0, 1, name)
+        parameters.loc[name + '_c'] = (0.0, 1000.0, 5000.0, 1, name)
+        parameters['tseries'] = name
         return parameters
 
     def step(self, p, r):
@@ -166,9 +175,10 @@ class Theis:
         self.cutoff = cutoff
 
     def set_parameters(self, name):
-        parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
-        parameters.loc[name + '_S'] = (0.0, 3e-1, 1.0, 1)
-        parameters.loc[name + '_T'] = (0.0, 10.0, 5000.0, 1)
+        parameters = pd.DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        parameters.loc[name + '_S'] = (0.0, 3e-1, 1.0, 1, name)
+        parameters.loc[name + '_T'] = (0.0, 10.0, 5000.0, 1, name)
         return parameters
 
     def step(self, p, r):
@@ -181,17 +191,19 @@ class Theis:
     def block(self, p, r):
         s = self.step(p, r)
         return s[1:] - s[:-1]
-    
+
+
 class One:
     """Dummy class for Constant. Returns 1
     """
-    
+
     def __init__(self, cutoff):
         self.nparam = 1
         self.cutoff = cutoff
-        
-    def step(self, p):
+        self.tmax = 0
+
+    def step(self, p, dt):
         return p[0] * np.ones(2)
-    
-    def block(self, p):
+
+    def block(self, p, dt):
         return p[0] * np.ones(2)

@@ -8,11 +8,11 @@ Created on Wed Mar 30 16:07:44 2016
 import matplotlib.pyplot as plt
 from pasta.read.dinodata import DinoGrondwaterstand
 
-# %% hoe te gebruiken?
+# How to use it?
 fname = '../data/B32D0136001_1.csv'
 dino = DinoGrondwaterstand(fname)
 
-# %% teken
+# plot
 plt.figure()
 dino.stand.plot()
 plt.show()

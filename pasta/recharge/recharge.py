@@ -48,7 +48,7 @@ dS/ Dt = Pe[t] * (1 - (Sr[t] / Srmax)**Beta)- Epu * min(1, Sr/0.5Srmax)
 
 
 def pref(t, P, E, Srmax=0.1, Beta=2.0, Imax=0.001, dt=1.0, solver=1):
-    n = len(t) / dt
+    n = int(len(t) / dt)
     error = 1.0e-5
 
     # Create an empty array to store the soil state in
@@ -120,7 +120,7 @@ def pref(t, P, E, Srmax=0.1, Beta=2.0, Imax=0.001, dt=1.0, solver=1):
 
                 while ((b - a) / 2.0) > error:
                     if iteration > 100:
-                        print 'iteration in bisection method exceeded 100', iteration
+                        print('iteration in bisection method exceeded 100', iteration)
                         break
                     iteration += 1  # increase the number of iterations by 1
 
@@ -164,7 +164,7 @@ dS/dt = Pe[t] - Kp * (Sr/Srmax)**Gamma - Epu * min(1, Sr/0.5Srmax)
 
 
 def perc(t, P, E, Srmax=0.1, Kp=0.03, Gamma=2.0, Imax=0.001, dt=1.0, solver=1):
-    n = len(t) / dt
+    n = int(len(t) / dt)
     error = 1.0e-5
 
     # Create an empty array to store the soil state in
@@ -235,7 +235,7 @@ def perc(t, P, E, Srmax=0.1, Kp=0.03, Gamma=2.0, Imax=0.001, dt=1.0, solver=1):
 
                 while ((b - a) / 2.0) > error:
                     if iteration > 100:
-                        print 'iteration in bisection method exceeded 100', iteration
+                        print('iteration in bisection method exceeded 100', iteration)
                         break
                     iteration += 1  # increase the number of iterations by 1
 
@@ -280,7 +280,7 @@ Epu * min(1, Sr/0.5*Srmax)
 
 def comb(t, P, E, Srmax=0.1, Kp=0.03, Beta=2.0, Gamma=2.0, Imax=0.001,
          dt=1.0, solver=1):
-    n = len(t) / dt
+    n = int(len(t) / dt)
     error = 1.0e-5
 
     # Create an empty array to store the soil state in
@@ -357,7 +357,7 @@ def comb(t, P, E, Srmax=0.1, Kp=0.03, Beta=2.0, Gamma=2.0, Imax=0.001,
                 #
                 while ((b - a) / 2.0) > error:
                     if iteration > 100:
-                        print 'iteration in bisection method exceeded 100', iteration
+                        print('iteration in bisection method exceeded 100', iteration)
                         break
                     iteration += 1  # increase the number of iterations by 1
 

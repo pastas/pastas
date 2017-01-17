@@ -5,6 +5,8 @@
 
 *.pyc
 
+*.so
+
 pasta.egg-info/SOURCES.txt
 pasta.egg-info/dependency_links.txt
 pasta.egg-info/PKG-INFO
@@ -14,3 +16,4 @@ pasta.egg-info/requires.txt
 pasta/gui/settings
 
 examples/notebooks/.ipynb_checkpoints/
+gui/settings

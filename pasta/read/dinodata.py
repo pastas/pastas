@@ -9,8 +9,7 @@ import pandas as pd
 
 class DinoGrondwaterstand:
     def __init__(self, fname):
-        # f = open(fname, 'r')
-        with open(fname, 'U') as f:
+        with open(fname, 'r') as f:
             # lees de header
             line = f.readline()
             header = dict()
@@ -21,7 +20,8 @@ class DinoGrondwaterstand:
                 prop = prop.strip()
                 val = propval[1]
                 if propval[2] != '':
-                    val = val + ' ' + propval[2].replace(':', '') + ' ' + propval[3]
+                    val = val + ' ' + propval[2].replace(':', '') + ' ' + \
+                          propval[3]
                 header[prop] = val
                 line = f.readline()
 
@@ -70,6 +70,7 @@ class DinoGrondwaterstand:
 
             # lees reeksen
             if line != '':
+                # Validate if titles are valid names
                 validator = np.lib._iotools.NameValidator()
                 titel = validator(titel)
                 dtype = [np.float64] * (len(titel))
@@ -78,41 +79,44 @@ class DinoGrondwaterstand:
                 dtype[2] = "S10"
                 dtype[titel.index('Bijzonderheid')] = object
                 dtype[titel.index('Opmerking')] = object
-                dtype = zip(titel, dtype);
-                if False:
-                    usecols = range(0, len(titel))
-                    # usecols.remove(2)
-                    measurements = pd.read_csv(f, header=None, names=titel, parse_dates=['Peildatum'],
-                                               index_col='Peildatum', dtype=dtype, dayfirst=True,
-                                               usecols=usecols)
-                    ts = measurements['Stand_cm_tov_NAP'] / 100
-                else:
-                    if False:
-                        measurements = np.genfromtxt(f, delimiter=',', dtype=None,
-                                                     usecols=range(0, len(titel)), names=titel,
-                                                     missing_values=[''])
-                        values = measurements['Stand_cm_tov_NAP'] / float(100)
-                        values[values == -0.01] = np.NAN
-                    else:
-                        usecols = range(0, len(titel))
-                        measurements = np.genfromtxt(f, delimiter=',', dtype=dtype,
-                                                     names=titel, usecols=usecols)
-                        values = measurements['Stand_cm_tov_NAP'] / 100
+                dtype = list(zip(titel, dtype))
 
-                    # %% zet de ingelzen data om in een reeks
-                    if measurements['Stand_cm_tov_NAP'].dtype == np.dtype('bool'):
-                        # wanneer bleek dat het allemaal lege waarden waren
-                        if values.size == 1:
-                            values = np.NAN
-                        else:
-                            values[:] = np.NAN
+                usecols = range(0, len(titel))
+                # # usecols.remove(2)
+                measurements = pd.read_csv(f, header=None, names=titel,
+                                           parse_dates=['Peildatum'],
+                                           index_col = 'Peildatum',
+                                           dayfirst=True,
+                                           usecols=usecols)
+                ts = measurements['Stand_cm_tov_NAP'] / 100
+                #
+                # measurements = np.genfromtxt(f, delimiter=',',
+                #                              dtype=None,
+                #                              usecols=range(0, len(titel)),
+                #                              names=titel,
+                #                              missing_values=[''])
+                # values = measurements['Stand_cm_tov_NAP'] / float(100)
+                # values[values == -0.01] = np.NAN
 
-                    if measurements['Peildatum'].size == 1:
-                        datum = pd.to_datetime(measurements['Peildatum'].item(), dayfirst=True)
-                        ts = pd.Series([values], [datum])
-                    else:
-                        datum = pd.to_datetime(measurements['Peildatum'], dayfirst=True)
-                        ts = pd.Series(values, datum)
+                # measurements = np.genfromtxt(fname, delimiter=',', dtype=dtype,
+                #                              names=titel, usecols=usecols)
+                #values = measurements['Stand_cm_tov_NAP'] / 100
+
+                # %% zet de ingelezen data om in een reeks
+                # if measurements['Stand_cm_tov_NAP'].dtype == np.dtype('bool'):
+                #     # wanneer bleek dat het allemaal lege waarden waren
+                #     if values.size == 1:
+                #         values = np.NAN
+                #     else:
+                #         values[:] = np.NAN
+
+                # if measurements['Peildatum'].size == 1:
+                #     datum = pd.to_datetime(
+                #         measurements['Peildatum'].item(), dayfirst=True)
+                #     ts = pd.Series([values], [datum])
+                # else:
+                #     datum = pd.to_datetime(measurements['Peildatum'])
+                #     ts = pd.Series(values, datum)
             else:
                 measurements = None
                 ts = pd.Series()
@@ -134,12 +138,14 @@ class DinoGrondwaterstand:
                     self.maaiveld = np.nan
                 else:
                     self.maaiveld = float(maaiveld) / 100
-                bovenkant_filter = self.meta[-1]['Bovenkant filter (cm t.o.v. NAP)'];
+                bovenkant_filter = self.meta[-1][
+                    'Bovenkant filter (cm t.o.v. NAP)']
                 if bovenkant_filter == '':
                     self.bovenkant_filter = np.nan
                 else:
                     self.bovenkant_filter = float(bovenkant_filter) / 100
-                self.onderkant_filter = self.meta[-1]['Onderkant filter (cm t.o.v. NAP)']
+                self.onderkant_filter = self.meta[-1][
+                    'Onderkant filter (cm t.o.v. NAP)']
                 if self.onderkant_filter == '':
                     self.onderkant_filter = np.nan
                 else:

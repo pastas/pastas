@@ -28,7 +28,7 @@ http://repository.tudelft.nl/view/ir/uuid:baf4fc8c-6311-407c-b01f-c80a96ecd584/
 
 import pandas as pd
 import numpy as np
-from recharge import pref, perc, comb
+from .recharge import pref, perc, comb
 
 
 class Linear:
@@ -44,8 +44,9 @@ class Linear:
         self.nparam = 1
 
     def set_parameters(self, name):
-        parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
-        parameters.loc[name + '_f'] = (-1.0, -5.0, 0.0, 1)
+        parameters = pd.DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        parameters.loc[name + '_f'] = (-1.0, -5.0, 0.0, 1, name)
         return parameters
 
     def simulate(self, precip, evap, p=None):
@@ -68,10 +69,11 @@ class Preferential:
         self.solver = 1  # 1 = implicit, 2 = explicit
 
     def set_parameters(self, name):
-        parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
-        parameters.loc[name + '_Srmax'] = (0.26, np.nan, np.nan, 0)
-        parameters.loc[name + '_Beta'] = (3.0, 0.0, np.nan, 1)
-        parameters.loc[name + '_Imax'] = (1.5e-3, np.nan, np.nan, 0)
+        parameters = pd.DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        parameters.loc[name + '_Srmax'] = (0.26, np.nan, np.nan, 0, name)
+        parameters.loc[name + '_Beta'] = (3.0, 0.0, np.nan, 1, name)
+        parameters.loc[name + '_Imax'] = (1.5e-3, np.nan, np.nan, 0, name)
         return parameters
 
     def simulate(self, precip, evap, p=None):
@@ -97,11 +99,12 @@ class Percolation:
         self.solver = 1
 
     def set_parameters(self, name):
-        parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
-        parameters.loc[name + '_Srmax'] = (0.26, np.nan, np.nan, 0)
-        parameters.loc[name + '_Kp'] = (1.0e-2, 0.0, np.nan, 1)
-        parameters.loc[name + '_Gamma'] = (3.0, 0.0, np.nan, 1)
-        parameters.loc[name + '_Imax'] = (1.5e-3, 0.0, np.nan, 0)
+        parameters = pd.DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        parameters.loc[name + '_Srmax'] = (0.26, np.nan, np.nan, 0, name)
+        parameters.loc[name + '_Kp'] = (1.0e-2, 0.0, np.nan, 1, name)
+        parameters.loc[name + '_Gamma'] = (3.0, 0.0, np.nan, 1, name)
+        parameters.loc[name + '_Imax'] = (1.5e-3, 0.0, np.nan, 0, name)
         return parameters
 
     def simulate(self, precip, evap, p=None):
@@ -128,12 +131,13 @@ class Combination:
         self.solver = 1
 
     def set_parameters(self, name):
-        parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
-        parameters.loc[name + '_Srmax'] = (0.26, np.nan, np.nan, 0)
-        parameters.loc[name + '_Kp'] = (1.0e-2, 0.0, np.nan, 1)
-        parameters.loc[name + '_Beta'] = (3.0, 0.0, np.nan, 1)
-        parameters.loc[name + '_Gamma'] = (3.0, 0.0, np.nan, 1)
-        parameters.loc[name + '_Imax'] = (1.5e-3, 0.0, np.nan, 0)
+        parameters = pd.DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        parameters.loc[name + '_Srmax'] = (0.26, np.nan, np.nan, 0, name)
+        parameters.loc[name + '_Kp'] = (1.0e-2, 0.0, np.nan, 1, name)
+        parameters.loc[name + '_Beta'] = (3.0, 0.0, np.nan, 1, name)
+        parameters.loc[name + '_Gamma'] = (3.0, 0.0, np.nan, 1, name)
+        parameters.loc[name + '_Imax'] = (1.5e-3, 0.0, np.nan, 0, name)
         return parameters
 
     def simulate(self, precip, evap, p=None):

@@ -1,17 +1,21 @@
-import lmfit
+import datetime
+from collections import OrderedDict
+from warnings import warn
+
 import matplotlib.pyplot as plt
+import matplotlib.ticker as plticker
 import numpy as np
 import pandas as pd
 
-from tseries import Constant
-from checks import check_oseries
-from stats import Statistics
-from solver import LmfitSolve
+from .checks import check_oseries
+from .solver import LmfitSolve
+from .stats import Statistics
+from .tseries import Constant
 
 
 class Model:
     def __init__(self, oseries, xy=(0, 0), metadata=None, freq=None,
-                 fillnan='drop'):
+                 warmup=1500, fillnan='drop', constant=True):
         """
         Initiates a time series model.
 
@@ -29,6 +33,8 @@ class Model:
             observations are used as they are. The required string format is found
             at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset
             -aliases
+        warmup: Optional[float]
+            Number of days used for warmup
         fillnan: Optional[str or float]
             Methods or float number to fill nan-values. Default values is
             'drop'. Currently supported options are: 'interpolate', float,
@@ -37,29 +43,52 @@ class Model:
 
         """
         self.oseries = check_oseries(oseries, freq, fillnan)
+        self.warmup = warmup
         self.xy = xy
         self.metadata = metadata
-        self.odelt = self.oseries.index.to_series().diff() / np.timedelta64(1, 'D')
-        # delt converted to days
-        self.tserieslist = []
+        self.odelt = self.oseries.index.to_series().diff() / \
+                     np.timedelta64(1, 'D')
+        self.freq = None
+        self.time_offset = None
+
+        # Independent of the time unit
+        self.tseriesdict = OrderedDict()
         self.noisemodel = None
-        self.noiseparameters = None
+
+        if constant:
+            self.add_constant()
+        else:
+            self.constant = None
+
+        self.nparam = 0
         self.tmin = None
         self.tmax = None
+        # Min and max time of observation series
+        self.otmin = self.oseries.index[0]
+        self.otmax = self.oseries.index[-1]
+        self.stats = Statistics(self)
 
-    def addtseries(self, tseries):
+    def add_tseries(self, tseries):
         """
         adds a time series model component to the Model.
 
         """
-        self.tserieslist.append(tseries)
+        self.tseriesdict[tseries.name] = tseries
 
-    def addnoisemodel(self, noisemodel):
+    def add_noisemodel(self, noisemodel):
         """
         Adds a noise model to the time series Model.
 
         """
         self.noisemodel = noisemodel
+
+    def add_constant(self):
+        """
+        Adds a Constant to the time series Model.
+
+        """
+
+        self.constant = Constant(value=self.oseries.min())
 
     def simulate(self, parameters=None, tmin=None, tmax=None, freq='D'):
         """
@@ -83,20 +112,29 @@ class Model:
             tmin = self.tmin
         if tmax is None:
             tmax = self.tmax
-        assert (tmin is not None) and (tmax is not None), 'model needs to be solved first'
+        assert (tmin is not None) and (
+            tmax is not None), 'model needs to be solved first'
 
-        tindex = pd.date_range(tmin, tmax, freq=freq)
+        tindex = pd.date_range(
+            pd.to_datetime(tmin) - pd.DateOffset(days=self.warmup), tmax,
+            freq=freq)
+        dt = self.get_dt(freq)
 
         if parameters is None:
-            parameters = self.optimal_params
+            parameters = self.parameters.optimal.values
         h = pd.Series(data=0, index=tindex)
         istart = 0  # Track parameters index to pass to ts object
-        for ts in self.tserieslist:
-            h += ts.simulate(tindex, parameters[istart: istart + ts.nparam])
+        for ts in self.tseriesdict.values():
+            h += ts.simulate(parameters[istart: istart + ts.nparam], tindex,
+                             dt)
             istart += ts.nparam
-        return h
+        if self.constant:
+            h += self.constant.simulate(parameters[istart])
 
-    def residuals(self, parameters=None, tmin=None, tmax=None, noise=True):
+        return h[tmin:]
+
+    def residuals(self, parameters=None, tmin=None, tmax=None, freq='D',
+                  noise=True):
         """
         Method to calculate the residuals.
 
@@ -108,35 +146,47 @@ class Model:
         tindex = self.oseries[tmin: tmax].index  # times used for calibration
 
         if parameters is None:
-            parameters = self.optimal_params
+            parameters = self.parameters.optimal.values
 
         # h_observed - h_simulated
-        r = self.oseries[tindex] - self.simulate(parameters, tmin, tmax)[tindex]
+        h_observed = self.oseries[tindex]
+        simulation = self.simulate(parameters, tmin, tmax, freq)
+        if len(tindex.difference(simulation.index)) == 0:
+            # all of the observation indexes are in the simulation
+            h_simulated = simulation[tindex]
+        else:
+            # interpolate simulation to measurement-times
+            h_simulated = np.interp(h_observed.index.asi8,
+                                    simulation.index.asi8, simulation)
+        r = h_observed - h_simulated
         if noise and (self.noisemodel is not None):
-            r = self.noisemodel.simulate(r, self.odelt[tindex], tindex,
-                                         parameters[-self.noisemodel.nparam:])
+            r = self.noisemodel.simulate(r, self.odelt[tindex],
+                                         parameters[-self.noisemodel.nparam:],
+                                         tindex)
         if np.isnan(sum(r ** 2)):
-            print 'nan problem in residuals'  # quick and dirty check
-        return r
-    
-    def sse(self, parameters=None, tmin=None, tmax=None, noise=True):
-        res = self.residuals(parameters, tmin=tmin, tmax=tmax, noise=noise)
-        return sum(res ** 2)
+            print('nan problem in residuals')  # quick and dirty check
+        return r[tmin:]
 
-    def initialize(self, default_parameters=True):
-        self.nparam = sum(ts.nparam for ts in self.tserieslist)
+    def initialize(self, initial=True, noise=True):
+        if not initial:
+            optimal = self.parameters.optimal
+        self.nparam = sum(ts.nparam for ts in self.tseriesdict.values())
         if self.noisemodel is not None:
             self.nparam += self.noisemodel.nparam
-        self.parameters = pd.DataFrame(columns=['value', 'pmin', 'pmax', 'vary'])
-        for ts in self.tserieslist:
+        self.parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax',
+                                                'vary', 'optimal', 'name'])
+        for ts in self.tseriesdict.values():
             self.parameters = self.parameters.append(ts.parameters)
-        if self.noisemodel:
-            self.parameters = self.parameters.append(self.noisemodel.parameters)
-        if not default_parameters:
-            self.parameters.value[:] = self.optimal_params
+        if self.constant:
+            self.parameters = self.parameters.append(self.constant.parameters)
+        if self.noisemodel and noise:
+            self.parameters = self.parameters.append(
+                self.noisemodel.parameters)
+        if not initial:
+            self.parameters.initial = optimal
 
     def solve(self, tmin=None, tmax=None, solver=LmfitSolve, report=True,
-              noise=True, default_parameters=True, solve=True):
+              noise=True, initial=True):
         """
         Methods to solve the time series model.
 
@@ -153,34 +203,39 @@ class Model:
         noise: Boolean
             Use the nose model (True) or not (False).
         initialize: Boolean
-            Reset initial parameteres.
+            Reset initial parameters.
 
         """
         if noise and (self.noisemodel is None):
-            print 'Warning, solution with noise model while noise model is not ' \
-                  'defined. No noise model is used'
+            print(
+                'Warning, solution with noise model while noise model is not '
+                'defined. No noise model is used')
+
+        # Check frequency of tseries
+        self.check_frequency()
 
         # Check series with tmin, tmax
-        tmin, tmax = self.check_series(tmin, tmax)
+        self.set_tmin_tmax(tmin, tmax)
 
         # Initialize parameters
-        self.initialize(default_parameters=default_parameters)
+        self.initialize(initial=initial, noise=noise)
 
         # Solve model
-        fit = solver(self, tmin=tmin, tmax=tmax, noise=noise)
-         
-        self.optimal_params = fit.optimal_params
+        fit = solver(self, tmin=self.tmin, tmax=self.tmax, noise=noise,
+                     freq=self.freq)
+
+        self.parameters.optimal = fit.optimal_params
         self.report = fit.report
-        if report: print self.report
+        if report: print(self.report)
 
         # self.stats = Statistics(self)
 
-    def check_series(self, tmin=None, tmax=None):
+    def set_tmin_tmax(self, tmin=None, tmax=None):
         """
         Function to check if the dependent and independent time series match.
 
         - tmin and tmax are in oseries.index for optimization.
-        - at least one stress is available for simulation between tmin and tmax.
+        - all the stresses are available for simulation between tmin and tmax.
         -
 
         Parameters
@@ -198,44 +253,157 @@ class Model:
             tmin = self.oseries.index.min()
         else:
             tmin = pd.tslib.Timestamp(tmin)
+            if tmin < self.oseries.index[0]:
+                warn('Specified tmin is before first observation ' + str(
+                    self.oseries.index[0]))
+            assert tmin <= self.oseries.index[
+                -1], 'Error: Specified tmin is after last observation'
         if tmax is None:
             tmax = self.oseries.index.max()
         else:
             tmax = pd.tslib.Timestamp(tmax)
+            if tmax > self.oseries.index[-1]:
+                warn('Specified tmax is after last observation ' + str(
+                    self.oseries.index[-1]))
+            assert tmax >= self.oseries.index[
+                0], 'Error: Specified tmax is before first observation'
 
-        # Check tmin and tmax compared to oseries and raise warning.
-        if tmin not in self.oseries.index:
-            print 'Warning, given tmin is outside of the oseries. First valid ' \
-                  'index is %s' % self.oseries.first_valid_index()
-        if tmax not in self.oseries.index:
-            print 'Warning, given tmax is outside of the oseries. Last valid ' \
-                  'index is %s' % self.oseries.last_valid_index()
+        # adjust tmin and tmax, so that all the tseries cover the period
+        for tseries in self.tseriesdict.values():
+            if tseries.tmin > tmin:
+                tmin = tseries.tmin
+            if tseries.tmax < tmax:
+                tmax = tseries.tmax
 
-        # Get maximum simulation period.
-        tstmin = self.tserieslist[0].tmin
-        tstmax = self.tserieslist[0].tmax
+        # adjust tmin and tmax so that the time-offset (determined in check_frequency) is equal to that of the tseries
+        tmin = tmin - self.get_time_offset(tmin, self.freq) + self.time_offset
+        tmax = tmax - self.get_time_offset(tmax, self.freq) + self.time_offset
 
-        for ts in self.tserieslist:
-            if isinstance(ts, Constant):  # Check if it is not a constant tseries.
-                pass
-            else:
-                if ts.tmin < tstmin:
-                    tstmin = ts.tmin
-                if ts.tmax > tstmax:
-                    tstmax = ts.tmax
+        assert tmax > tmin, 'Error: Specified tmax not larger than specified tmin'
+        assert len(self.oseries[
+                   tmin: tmax]) > 0, 'Error: no observations between tmin and tmax'
 
         self.tmin = tmin
         self.tmax = tmax
 
-        # Check if chosen period is within or outside the maximum period.
-        if tstmin > tmin:
-            tmin = tstmin
-        if tstmax < tmax:
-            tmax = tstmax
+    def check_frequency(self):
+        """
+        Methods to check if the frequency is:
 
-        return tmin, tmax
+        1. The frequency should be the same for all tseries
+        2. tseries timestamps should match (e.g. similar hours)
+        3. freq of the tseries is lower than the max tdelta of the oseries
 
-    def plot(self, tmin=None, tmax=None, oseries=True):
+        """
+
+        # calculate frequency and time-difference with default frequency
+        freqs = set()
+        time_offsets = set()
+
+        for tseries in self.tseriesdict.values():
+            freqs.add(tseries.freq)
+            # calculate the offset from the default frequency
+            time_offset = self.get_time_offset(tseries.stress.index[0],
+                                               tseries.freq)
+            time_offsets.add(time_offset)
+
+        # 1. The frequency should be the same for all tseries
+        assert len(freqs) == 1, 'The frequency of the tseries is not the ' \
+                                'same for all stresses.'
+        self.freq = next(iter(freqs))
+
+        # 2. tseries timestamps should match (e.g. similar hours')
+        assert len(
+            time_offsets) == 1, 'The time-differences with the default frequency is' \
+                                ' not the same for all stresses.'
+        self.time_offset = next(iter(time_offsets))
+
+    def get_dt(self, freq):
+        options = {'W': 7,  # weekly frequency
+                   'D': 1,  # calendar day frequency
+                   'H': 1 / 24,  # hourly frequency
+                   'T': 1 / 24 / 60,  # minutely frequency
+                   'min': 1 / 24 / 60,  # minutely frequency
+                   'S': 1 / 24 / 3600,  # secondly frequency
+                   'L': 1 / 24 / 3600000,  # milliseconds
+                   'ms': 1 / 24 / 3600000,  # milliseconds
+                   }
+        # remove the day from the week
+        freq = freq.split("-", 1)[0]
+        return options[freq]
+
+    def get_time_offset(self, t, freq):
+        if isinstance(t, pd.Series):
+            # Take the first timestep. The rest of index has the same offset,
+            # as the frequency is constant.
+            t = t.index[0]
+
+        # define the function blocks
+        def calc_week_offset(t):
+            return datetime.timedelta(days=t.weekday(), hours=t.hour,
+                                      minutes=t.minute, seconds=t.second)
+
+        def calc_day_offset(t):
+            return datetime.timedelta(hours=t.hour, minutes=t.minute,
+                                      seconds=t.second)
+
+        def calc_hour_offset(t):
+            return datetime.timedelta(minutes=t.minute, seconds=t.second)
+
+        def calc_minute_offset(t):
+            return datetime.timedelta(seconds=t.second)
+
+        def calc_second_offset(t):
+            return datetime.timedelta(microseconds=t.microsecond)
+
+        def calc_millisecond_offset(t):
+            # t has no millisecond attribute, so use microsecond and use the remainder after division by 1000
+            return datetime.timedelta(microseconds=t.microsecond % 1000.0)
+
+        # map the inputs to the function blocks
+        # see http://pandas.pydata.org/pandas-docs/stable/timeseries.html#timeseries-offset-aliases
+        options = {'W': calc_week_offset,  # weekly frequency
+                   'D': calc_day_offset,  # calendar day frequency
+                   'H': calc_hour_offset,  # hourly frequency
+                   'T': calc_minute_offset,  # minutely frequency
+                   'min': calc_minute_offset,  # minutely frequency
+                   'S': calc_second_offset,  # secondly frequency
+                   'L': calc_millisecond_offset,  # milliseconds
+                   'ms': calc_millisecond_offset,  # milliseconds
+                   }
+        # remove the day from the week
+        freq = freq.split("-", 1)[0]
+        return options[freq](t)
+
+    def get_contribution(self, name):
+        try:
+            p = self.parameters.loc[
+                self.parameters.name == name, 'optimal'].values
+            return self.tseriesdict[name].simulate(p)
+        except KeyError:
+            print("Name not in tseriesdict, available names are: %s"
+                  % self.tseriesdict.keys())
+
+    def get_block_response(self, name):
+        try:
+            p = self.parameters.loc[
+                self.parameters.name == name, 'optimal'].values
+            dt = self.get_dt(self.freq)
+            return self.tseriesdict[name].rfunc.block(p, dt)
+        except KeyError:
+            print("Name not in tseriesdict, available names are: %s"
+                  % self.tseriesdict.keys())
+
+    def get_stress(self, name):
+        try:
+            p = self.parameters.loc[
+                self.parameters.name == name, 'optimal'].values
+            return self.tseriesdict[name].__getstress__(p)
+        except KeyError:
+            print("Name not in tseriesdict, available names are: %s"
+                  % self.tseriesdict.keys())
+
+    def plot(self, tmin=None, tmax=None, oseries=True, simulate=True):
         """
 
         Parameters
@@ -248,11 +416,17 @@ class Model:
         Plot of the simulated and optionally the observed time series
 
         """
-        h = self.simulate(tmin=tmin, tmax=tmax)
         plt.figure()
-        h.plot()
+        if simulate:
+            if tmin is None:
+                tmin = self.otmin
+            if tmax is None:
+                tmax = self.otmax
+            h = self.simulate(tmin=tmin, tmax=tmax)
+            h.plot()
         if oseries:
-            self.oseries.plot(linestyle='', marker='.', color='k', markersize=3)
+            self.oseries.plot(linestyle='', marker='.', color='k',
+                              markersize=3)
         plt.show()
 
     def plot_results(self, tmin=None, tmax=None, savefig=False):
@@ -287,41 +461,132 @@ class Model:
         residuals = self.residuals(tmin=tmin, tmax=tmax)
         ax2 = plt.subplot(gs[2, :-1])  # , sharex=ax1)
         residuals.plot(color='k', label='residuals')
-        if self.noisemodel is not None:
-            innovations = self.noisemodel.simulate(residuals, self.odelt)
-            innovations.plot(label='innovations')
+        # Ruben Calje commented next three lines on 31-10-2016:
+        # if self.noisemodel is not None:
+        # innovations = self.noisemodel.simulate(residuals, self.odelt)
+        # innovations.plot(label='innovations')
         plt.legend(loc=(0, 1), ncol=3, frameon=False, handlelength=3)
         plt.ylabel('Error [m]')
         plt.xlabel('Time [Years]')
 
-        # Plot the Impulse Response Function
+        # Plot the block response function
         ax3 = plt.subplot(gs[0, -1])
-        n = 0
-        for ts in self.tserieslist:
-            p = self.parameters[n:n + ts.nparam]
-            n += ts.nparam
+        for name, ts in self.tseriesdict.items():
+            dt = self.get_dt(self.freq)
             if "rfunc" in dir(ts):
-                plt.plot(ts.rfunc.block(p))
+                br = self.get_block_response(name)
+                t = np.arange(0, len(br) * dt, dt)
+                plt.plot(t, br)
         ax3.set_xticks(ax3.get_xticks()[::2])
         ax3.set_yticks(ax3.get_yticks()[::2])
         plt.title('Block Response')
 
         # Plot the Model Parameters (Experimental)
-        ax4 = plt.subplot(gs[1:2, -1])
-        ax4.xaxis.set_visible(False)
-        ax4.yaxis.set_visible(False)
-        text = np.vstack((self.paramdict.keys(), [round(float(i), 4) for i in
-                                                  self.paramdict.values()])).T
-        colLabels = ("Parameter", "Value")
-        ytable = ax4.table(cellText=text, colLabels=colLabels, loc='center')
-        ytable.scale(1, 1.1)
+        # ax4 = plt.subplot(gs[1:2, -1])
+        # ax4.xaxis.set_visible(False)
+        # ax4.yaxis.set_visible(False)
+        # text = np.vstack((self.parameters.keys(), [round(float(i), 4) for i in
+        #                                            self.parameters.optimal.values])).T
+        # colLabels = ("Parameter", "Value")
+        # ytable = ax4.table(cellText=text, colLabels=colLabels, loc='center')
+        # ytable.scale(1, 1.1)
 
         # Table of the numerical diagnostic statistics.
         ax5 = plt.subplot(gs[2, -1])
         ax5.xaxis.set_visible(False)
         ax5.yaxis.set_visible(False)
-        plt.text(0.05, 0.8, 'AIC: %.2f' % self.fit.aic)
-        plt.text(0.05, 0.6, 'BIC: %.2f' % self.fit.bic)
+        # Ruben Calje commented next two lines on 31-10-2016:
+        # plt.text(0.05, 0.8, 'AIC: %.2f' % self.fit.aic)
+        # plt.text(0.05, 0.6, 'BIC: %.2f' % self.fit.bic)
         plt.show()
         if savefig:
             plt.savefig('.eps' % (self.name), bbox_inches='tight')
+
+    def plot_decomposition(self, tmin=None, tmax=None, freq=None):
+        """
+
+        Plot the decomposition of a time-series in the different stresses
+
+        """
+
+        # Default option when not tmin and tmax is provided
+        if tmin is None:
+            tmin = self.tmin
+        if tmax is None:
+            tmax = self.tmax
+        assert (tmin is not None) and (
+            tmax is not None), 'model needs to be solved first'
+        if freq is None:
+            freq = self.freq
+
+        tindex = pd.date_range(tmin, tmax, freq=freq)
+
+        # determine the simulation
+        hsim = self.simulate(tmin=tmin, tmax=tmax, freq=freq)
+        h = [hsim]
+
+        # determine the influence of the different stresses
+        parameters = self.parameters.optimal.values
+        istart = 0  # Track parameters index to pass to ts object
+        for ts in self.tseriesdict.values():
+            dt = self.get_dt(freq)
+            h.append(
+                ts.simulate(parameters[istart: istart + ts.nparam], tindex,
+                            dt))
+            istart += ts.nparam
+
+        # open the figure
+        if False:
+            f, axarr = plt.subplots(1 + len(self.tseriesdict), sharex=True)
+        else:
+            # let the height of the axes be determined by the values
+            # height_ratios = [1]*(len(self.tseriesdict)+1)
+            height_ratios = [max([hsim.max(), self.oseries.max()]) - min(
+                [hsim.min(), self.oseries.min()])]
+            for ht in h[1:]:
+                height_ratios.append(ht.max() - ht.min())
+            f, axarr = plt.subplots(1 + len(self.tseriesdict), sharex=True,
+                                    gridspec_kw={
+                                        'height_ratios': height_ratios})
+
+        # plot simulation and observations in top graph
+        plt.axes(axarr[0])
+        self.oseries.plot(linestyle='', marker='.', color='k', markersize=3,
+                          ax=axarr[0], label='observations')
+        hsim.plot(ax=axarr[0], label='simulation')
+        axarr[0].set_title('Observations and simulation')
+        axarr[0].autoscale(enable=True, axis='y', tight=True)
+        axarr[0].grid(which='both')
+        axarr[0].minorticks_off()
+
+        # add a legend
+        handles, labels = axarr[0].get_legend_handles_labels()
+        leg = axarr[0].legend(handles, labels, loc=2)
+        leg.get_frame().set_alpha(0.5)
+
+        # determine the ytick-spacing of the top graph
+        yticks, ylabels = plt.yticks()
+        if len(yticks) > 2:
+            base = yticks[1] - yticks[0]
+        else:
+            base = None
+
+        # plot the influence of the stresses
+        iax = 1
+        for ts in self.tseriesdict.values():
+            plt.axes(axarr[iax])
+            plt.plot(h[iax].index, h[iax].values)
+            if base is not None:
+                # set the ytick-spacing equal to the top graph
+                axarr[iax].yaxis.set_major_locator(
+                    plticker.MultipleLocator(base=base))
+
+            axarr[iax].set_title(ts.name)
+            axarr[iax].autoscale(enable=True, axis='y', tight=True)
+            axarr[iax].grid(which='both')
+            axarr[iax].minorticks_off()
+            iax += 1
+
+        # show the figure
+        plt.tight_layout()
+        plt.show()

@@ -3,10 +3,8 @@
 
 language: python
 python:
-  # We don't actually use the Travis Python, but this keeps it organized.
   - "2.7"
-  # - "3.3"
-  # - "3.4"
+  - "3.5"
 install:
   - sudo apt-get update
   # We do this conditionally because it saves us some downloading if the
@@ -25,7 +23,7 @@ install:
   - conda info -a
 
   # Directly add dependencies here to speed up Travis Builds
-  - deps='numpy>=1.9 matplotlib>=1.4 pandas>=0.15 scipy>=0.15 statsmodels>=0.5'
+  - deps='numpy>=1.9 matplotlib>=1.4 pandas>=0.15 scipy>=0.15 statsmodels>=0.5 qt=4'
   - conda create -q -n test-environment $deps python=$TRAVIS_PYTHON_VERSION
   - source activate test-environment
   - pip install --user .

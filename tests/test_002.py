@@ -1,8 +1,8 @@
 import pandas as pd
 from pasta import *
 
-def test_model():
 
+def test_model():
     # Import and check the observed groundwater time series
     gwdata = pd.read_csv('tests/data/B58C0698001_0.csv', skiprows=11,
                          parse_dates=['PEIL DATUM TIJD'],
@@ -22,7 +22,8 @@ def test_model():
     rain /= 1000.0  # Meters
 
     # Import and check the observed evaporation series
-    evap = pd.read_csv('tests/data/Maastricht_E_June2015.csv', skiprows=4, sep=';',
+    evap = pd.read_csv('tests/data/Maastricht_E_June2015.csv', skiprows=4,
+                       sep=';',
                        parse_dates=['DATE'],
                        index_col='DATE')
     evap.rename(columns={'VALUE (m-ref)': 'evap'}, inplace=True)
@@ -31,13 +32,11 @@ def test_model():
     # Create the time series model
     ml = Model(oseries)
 
-    ts1 = Recharge(rain, evap, Gamma(), Linear(), name='recharge',
+    ts1 = Recharge(rain, evap, Gamma, Linear, name='recharge',
                    fillnan='interpolate')
-    ml.addtseries(ts1)
-    d = Constant(oseries.min())
-    ml.addtseries(d)
+    ml.add_tseries(ts1)
     n = NoiseModel()
-    ml.addnoisemodel(n)
+    ml.add_noisemodel(n)
 
     # Solve the time series model
     ml.solve()
