@@ -18,10 +18,6 @@ meny = MenyData(fname)
 # Create the time series model
 ml = Model(meny.H[0].series)
 
-# Add drainage level
-d = Constant(value=meny.H[0].series.mean())
-ml.add_tseries(d)
-
 # Add precipitation
 IN = next(x for x in meny.IN if x.name == 'Precipitation')
 # round to days (precipitation is measured at 9:00)

@@ -35,8 +35,6 @@ def test_model():
     ts1 = Recharge(rain, evap, Gamma, Linear, name='recharge',
                    fillnan='interpolate')
     ml.add_tseries(ts1)
-    d = Constant(value=oseries.min())
-    ml.add_tseries(d)
     n = NoiseModel()
     ml.add_noisemodel(n)
 

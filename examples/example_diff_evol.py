@@ -23,10 +23,6 @@ EV24=ReadSeries(fname,'knmi',variable='EV24')
 ts = Recharge(RH.series, EV24.series, Gamma, Linear(), name='recharge')
 ml.add_tseries(ts)
 
-# Add drainage level
-d = Constant(value=obs.series.mean(), pmin=obs.series.mean() - 5, pmax=obs.series.mean() + 5)
-ml.add_tseries(d)
-
 # Add noise model
 n = NoiseModel()
 ml.add_noisemodel(n)
@@ -78,8 +74,7 @@ class PastaTest:
         return testmax and testmin
         
     def objfunction(self, x):
-        print '.',
-        #print x
+        print('.')
         return self.model.sse(x, noise=True)
     
 data = PastaTest(ml)

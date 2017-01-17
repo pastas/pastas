@@ -27,10 +27,6 @@ ts1 = Tseries(EV24.series, Gamma, name='evap', freq='D')
 ml.add_tseries(ts)
 ml.add_tseries(ts1)
 
-# Add drainage level
-d = Constant(value=obs.series.min())
-ml.add_tseries(d)
-
 # Add noise model
 n = NoiseModel()
 ml.add_noisemodel(n)

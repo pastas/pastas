@@ -23,10 +23,6 @@ EV24=ReadSeries(fname,'knmi',variable='EV24')
 ts = Recharge(RH.series, EV24.series, Gamma(), Linear(), name='recharge')
 ml.add_tseries(ts)
 
-# Add drainage level
-d = Constant(value=obs.series.mean(), pmin=obs.series.mean() - 5, pmax=obs.series.mean() + 5)
-ml.add_tseries(d)
-
 # Add noise model
 n = NoiseModel()
 ml.add_noisemodel(n)
@@ -65,7 +61,7 @@ class PastaTest:
         self.continuous = np.arange(self.dim) # continuos variables
         
     def objfunction(self, x):
-        print '.',
+        print('.')
         return self.model.sse(x, noise=True)
     
 # Import the necessary modules

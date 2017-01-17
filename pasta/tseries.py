@@ -457,8 +457,7 @@ class Constant(TseriesBase):
     """
 
     def __init__(self, name='Constant', xy=None, metadata=None, value=0.0,
-                 pmin=-5,
-                 pmax=+5):
+                 pmin=-5, pmax=+5):
         self.nparam = 1
         self.value = value
         self.pmin = self.value + pmin
