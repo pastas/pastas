@@ -1,17 +1,16 @@
+import datetime
 from collections import OrderedDict
+from warnings import warn
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as plticker
-
 import numpy as np
 import pandas as pd
-import datetime
-from warnings import warn
 
 from .checks import check_oseries
 from .solver import LmfitSolve
-from .tseries import Constant
 from .stats import Statistics
+from .tseries import Constant
 
 
 class Model:
@@ -302,14 +301,11 @@ class Model:
         time_offsets = set()
 
         for tseries in self.tseriesdict.values():
-            if isinstance(tseries, Constant):
-                pass
-            else:
-                freqs.add(tseries.freq)
-                # calculate the offset from the default frequency
-                time_offset = self.get_time_offset(tseries.stress.index[0],
-                                                   tseries.freq)
-                time_offsets.add(time_offset)
+            freqs.add(tseries.freq)
+            # calculate the offset from the default frequency
+            time_offset = self.get_time_offset(tseries.stress.index[0],
+                                               tseries.freq)
+            time_offsets.add(time_offset)
 
         # 1. The frequency should be the same for all tseries
         assert len(freqs) == 1, 'The frequency of the tseries is not the ' \
@@ -479,7 +475,7 @@ class Model:
             dt = self.get_dt(self.freq)
             if "rfunc" in dir(ts):
                 br = self.get_block_response(name)
-                t = np.arange(0, len(br)*dt, dt)
+                t = np.arange(0, len(br) * dt, dt)
                 plt.plot(t, br)
         ax3.set_xticks(ax3.get_xticks()[::2])
         ax3.set_yticks(ax3.get_yticks()[::2])
@@ -579,16 +575,11 @@ class Model:
         iax = 1
         for ts in self.tseriesdict.values():
             plt.axes(axarr[iax])
-            if isinstance(ts, Constant):
-                xlim = axarr[iax].get_xlim()
-                axarr[iax].plot(xlim, [h[iax], h[iax]])
-                axarr[iax].yaxis.set_ticks(h[iax])
-            else:
-                plt.plot(h[iax].index, h[iax].values)
-                if base is not None:
-                    # set the ytick-spacing equal to the top graph
-                    axarr[iax].yaxis.set_major_locator(
-                        plticker.MultipleLocator(base=base))
+            plt.plot(h[iax].index, h[iax].values)
+            if base is not None:
+                # set the ytick-spacing equal to the top graph
+                axarr[iax].yaxis.set_major_locator(
+                    plticker.MultipleLocator(base=base))
 
             axarr[iax].set_title(ts.name)
             axarr[iax].autoscale(enable=True, axis='y', tight=True)
