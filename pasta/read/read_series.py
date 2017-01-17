@@ -5,7 +5,6 @@
 
 from pasta.read.dinodata import DinoGrondwaterstand
 from pasta.read.knmidata import KnmiStation
-from pyproj import Proj, transform
 import numpy as np
 
 
@@ -37,11 +36,11 @@ class ReadSeries:
             self.series = knmi.data[variable]
             if knmi.stations is not None:
                 self.latlon = (knmi.stations['LAT_north'][0],
-                           knmi.stations['LON_east'][0])
+                               knmi.stations['LON_east'][0])
                 self.meta = knmi.stations
             else:
-                self.latlon=(np.NaN,np.NaN)
-                self.meta ={}
+                self.latlon = (np.NaN, np.NaN)
+                self.meta = {}
 
         elif filetype == 'usgs':
             # not implemented yet
@@ -65,6 +64,14 @@ class ReadSeries:
         XY location in lat-lon format
 
         """
+        try:
+            from pyproj import Proj, transform
+        except ImportError:
+            raise ImportWarning(
+                'The module pyproj could not be imported. Please '
+                'install through:'
+                '>>> pip install requests'
+                'or ... conda install requests')
         outProj = Proj(init='epsg:4326')
         inProj = Proj(init='epsg:28992')
         lon, lat = transform(inProj, outProj, xy[0], xy[1])

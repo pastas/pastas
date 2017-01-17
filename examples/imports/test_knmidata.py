@@ -9,9 +9,9 @@ from pasta.read.knmidata import KnmiStation
 
 # How to use it?
 # data from a meteorological station
-download = False
+download = True
 
-if download:
+if not download:
     # use a file with locations:
     knmi = KnmiStation.fromfile('../data/KNMI_20160504.txt')
 

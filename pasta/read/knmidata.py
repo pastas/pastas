@@ -62,23 +62,26 @@ class KnmiStation:
         # installation of pasta).
         try:
             import requests
-        except:
-            Warning('The module requests could not be imported. Please '
-                    'install through:'
-                    '>>> pip install requests'
-                    'or ... conda install requests')
+        except ImportError:
+            raise ImportWarning(
+                'The module requests could not be imported. '
+                'Please install through:'
+                '>>> pip install requests'
+                'or:'
+                '>>> conda install requests')
         try:
             # StringIO changed from py27 to py35
             try:
                 from StringIO import StringIO
             except ImportError:
                 from io import StringIO
-        except:
-            Warning('The module requests could not be imported. Please '
-                    'install through:'
-                    '>>> pip install StringIO (for python 2)'
-                    'or '
-                    '... pip install io (for python 3)')
+        except ImportError:
+            raise ImportWarning(
+                'The module requests could not be imported. Please '
+                'install through:'
+                '>>> pip install StringIO (for python 2)'
+                'or: '
+                '>>> pip install io (for python 3)')
 
         url = 'http://projects.knmi.nl/klimatologie/daggegevens/getdata_dag.cgi'
         if not isinstance(self.stns, str):
