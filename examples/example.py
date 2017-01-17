@@ -13,13 +13,13 @@ obs = ReadSeries(fname, 'dino')
 ml = Model(obs.series)
 
 # read climate data
-fname = 'data/KNMI_20160522.txt'
+fname = 'data/KNMI_Bilt.txt'
 RH = ReadSeries(fname, 'knmi', variable='RH')
 EV24 = ReadSeries(fname, 'knmi', variable='EV24')
 rech = RH.series - EV24.series
 
 # Create stress
-# ts = Recharge(RH.series, EV24.series, Gamma, Linear, name='recharge')
+#ts = Recharge(RH.series, EV24.series, Gamma, Preferential, name='recharge')
 # ts = Recharge(RH.series, EV24.series, Gamma, Combination, name='recharge')
 # ts = Tseries2(RH.series, EV24.series, Gamma, name='recharge')
 ts = Tseries(RH.series, Gamma, name='precip', freq='D')

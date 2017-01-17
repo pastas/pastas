@@ -9,17 +9,17 @@ from pasta.read.knmidata import KnmiStation
 
 # How to use it?
 # data from a meteorological station
-download = True
+download = False
 
 if not download:
     # use a file with locations:
-    knmi = KnmiStation.fromfile('../data/KNMI_20160504.txt')
+    knmi = KnmiStation.fromfile('../data/KNMI_Bilt.txt')
 
     # without locations
-    knmi = KnmiStation.fromfile('../data/etmgeg_324.txt')
+    knmi = KnmiStation.fromfile('../data/KNMI_NoLocation.txt')
 
     # hourly data without locations
-    knmi = KnmiStation.fromfile('../data/uurgeg_240_2011-2020.txt')
+    knmi = KnmiStation.fromfile('../data/KNMI_Hourly.txt')
 else:
     # or download it directly from
     # https://www.knmi.nl/nederland-nu/klimatologie/daggegevens
@@ -38,7 +38,7 @@ if 'EV24' in knmi.data.keys():
 
 if True:
     # use a file of a rainfall station:
-    knmi = KnmiStation.fromfile('../data/neerslaggeg_AKKRUM_089.txt')
+    knmi = KnmiStation.fromfile('../data/KNMI_Akkrum.txt')
     # plot
     f2 = plt.figure()
     ax = f2.add_subplot(111)

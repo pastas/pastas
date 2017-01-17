@@ -15,7 +15,7 @@ obs = ReadSeries(fname,'dino')
 ml = Model(obs.series)
 
 # read climate data
-fname = 'data/KNMI_20160522.txt'
+fname = 'data/KNMI_Bilt.txt'
 RH=ReadSeries(fname,'knmi',variable='RH')
 EV24=ReadSeries(fname,'knmi',variable='EV24')
 

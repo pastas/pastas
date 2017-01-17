@@ -334,6 +334,7 @@ class Recharge(TseriesBase):
                                      self.recharge.set_parameters(self.name)])
 
     def simulate(self, p, tindex=None, dt=1):
+        dt = int(dt)
         b = self.rfunc.block(p[:-self.recharge.nparam], dt)  # Block response
         rseries = self.recharge.simulate(self.precip_array, self.evap_array,
                                          p[-self.recharge.nparam:])
