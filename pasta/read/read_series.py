@@ -38,8 +38,7 @@ class ReadSeries:
             if knmi.stations is not None:
                 self.latlon = (knmi.stations['LAT_north'][0],
                            knmi.stations['LON_east'][0])
-                names = knmi.stations.dtype.names
-                self.meta = dict(zip(names, knmi.stations[0]))
+                self.meta = knmi.stations
             else:
                 self.latlon=(np.NaN,np.NaN)
                 self.meta ={}

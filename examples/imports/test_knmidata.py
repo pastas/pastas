@@ -9,9 +9,10 @@ from pasta.read.knmidata import KnmiStation
 
 # How to use it?
 # data from a meteorological station
-if True:
-    # use a file
-    # with locations:
+download = False
+
+if download:
+    # use a file with locations:
     knmi = KnmiStation.fromfile('../data/KNMI_20160504.txt')
 
     # without locations
@@ -24,7 +25,8 @@ else:
     # https://www.knmi.nl/nederland-nu/klimatologie/daggegevens
     knmi = KnmiStation(stns=260, start=datetime(1970, 1, 1),
                        end=datetime(1971, 1, 1))  # de bilt
-    knmi.download() # for now only works for meteorological stataions and daily data (so not hourly)
+    knmi.download() # for now only works for meteorological stations
+                    # and daily data (so not hourly)
 
 # plot
 f1, axarr = plt.subplots(2, sharex=True)

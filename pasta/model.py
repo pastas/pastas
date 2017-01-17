@@ -48,7 +48,7 @@ class Model:
         self.xy = xy
         self.metadata = metadata
         self.odelt = self.oseries.index.to_series().diff() / \
-                     self.oseries.index.to_series().diff().min()
+                     np.timedelta64(1, 'D')
         self.freq = None
         self.time_offset = None
 
