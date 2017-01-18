@@ -1,10 +1,10 @@
 """
 This test file is meant for developing purposes. Providing an easy method to
-test the functioning of PASTA during development.
+test the functioning of Pastas during development.
 """
 
-from pasta import *
-from pasta.read.menydata import MenyData
+from pastas import *
+from pastas.read.menydata import MenyData
 import matplotlib.pyplot as plt
 import matplotlib.ticker as plticker
 

@@ -3,8 +3,8 @@
 @author: ruben
 """
 
-from pasta.read.dinodata import DinoGrondwaterstand
-from pasta.read.knmidata import KnmiStation
+from pastas.read.dinodata import DinoGrondwaterstand
+from pastas.read.knmidata import KnmiStation
 import numpy as np
 
 

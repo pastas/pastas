@@ -3,7 +3,7 @@
 
 """
 
-from pasta import *
+from pastas import *
 import matplotlib.pyplot as plt
 
 fname = '../data/B32D0136001_1.csv'

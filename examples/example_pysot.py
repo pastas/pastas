@@ -1,11 +1,11 @@
 """
 This test file is meant for developing purposes. Providing an easy method to
-test the functioning of PASTA during development.
+test the functioning of Pastas during development.
 
 """
 #import matplotlib
 #matplotlib.use('TkAgg')
-from pasta import *
+from pastas import *
 
 # read observations
 fname = 'data/B32D0136001_1.csv'
@@ -34,13 +34,13 @@ ml.add_noisemodel(n)
 ml.solve()
 
 
-class PastaTest:
+class PastasTest:
     def __init__(self, model):
         self.model = model
         self.dim = self.model.nparam
         self.xlow = []
         self.xup = []
-        # TODO: this should be in the Model class of Pasta
+        # TODO: this should be in the Model class of Pastas
         for ts in ml.tserieslist:
             self.xlow.extend(ts.parameters['pmin'].tolist())
             self.xup.extend(ts.parameters['pmax'].tolist())
@@ -56,7 +56,7 @@ class PastaTest:
         #facup[ml.parameters < 0] = 0.5
         #self.xlow = faclow * ml.parameters
         #self.xup = facup * ml.parameters
-        self.info = "Pasta test"
+        self.info = "Pastas test"
         self.integer = [] # integer variables MUST be specified
         self.continuous = np.arange(self.dim) # continuos variables
         
@@ -73,7 +73,7 @@ import numpy as np
 maxeval = 800
 
 # (1) Optimization problem
-data = PastaTest(ml)
+data = PastasTest(ml)
 
 # (2) Experimental design
 # Use a symmetric Latin hypercube with 2d + 1 samples

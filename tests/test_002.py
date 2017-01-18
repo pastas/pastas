@@ -1,5 +1,5 @@
 import pandas as pd
-from pasta import *
+from pastas import *
 
 
 def test_model():
