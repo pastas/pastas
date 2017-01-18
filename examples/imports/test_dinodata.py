@@ -6,7 +6,7 @@ Created on Wed Mar 30 16:07:44 2016
 """
 
 import matplotlib.pyplot as plt
-from pasta.read.dinodata import DinoGrondwaterstand
+from pastas.read.dinodata import DinoGrondwaterstand
 
 # How to use it?
 fname = '../data/B32D0136001_1.csv'

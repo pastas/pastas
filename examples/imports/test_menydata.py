@@ -5,7 +5,7 @@
 """
 
 import matplotlib.pyplot as plt
-from pasta.read.menydata import MenyData
+from pastas.read.menydata import MenyData
 
 # how to use it?
 fname = '../data/MenyanthesTest.men'

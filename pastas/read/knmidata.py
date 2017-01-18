@@ -59,7 +59,7 @@ class KnmiStation:
         :return:
         """
         # Import the necessary modules (optional and not included in the
-        # installation of pasta).
+        # installation of pastas).
         try:
             import requests
         except ImportError:

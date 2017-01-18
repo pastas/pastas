@@ -80,7 +80,7 @@ class MenyData:
 
         Not used anymore...
         """
-        if date == None: date = dt.datetime.now()
+        if date is None: date = dt.datetime.now()
         seconds = (date.replace(tzinfo=None) - date.min).seconds
         rounding = (seconds + roundTo / 2) // roundTo * roundTo
         return date + dt.timedelta(0, rounding - seconds, -date.microsecond)

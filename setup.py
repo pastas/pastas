@@ -14,36 +14,37 @@ except:
 
 # Set the version. Possibly this can be converted to another method such as Numpy
 #  is using in the future. https://github.com/numpy/numpy/blob/master/setup.py
-# DO NOT USE from pasta import __version__ as it causes problems with Travis.
+# DO NOT USE from pastas import __version__ as it causes problems with Travis.
 
 MAJOR = 0
-MINOR = 0
-MICRO = 1
+MINOR = 9
+MICRO = 0
 ISRELEASED = False
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
 
 setup(
-    name='pasta',
+    name='pastas',
 
     # Versions should comply with PEP440. For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # http://packaging.python.org/en/latest/tutorial.html#version
     version=VERSION,
 
-    description='Open Source Time Series Analysis',
+    description='Python Applied System TimeSeries AnalysiS',
     long_description=l_d,
 
     # The project's main homepage.
-    url='https://github.com/pastas/pasta',
+    url='https://github.com/pastas/pastas',
     author='Mark Bakker, Raoul Collenteur, Ruben Calje, Frans Schaars',
     author_email='markbak@gmail.com, r.collenteur@artesia-water.nl, '
                  'r.calje@artesia-water.nl, f.schaars@artesia-water.nl',
     license='MIT',
     classifiers=[
         'Development Status :: 4 - Beta',
-        'Intended Audience :: Groundwater Modelers, Hydrologists',
+        'Intended Audience :: Science/Research',
+        'Intended Audience :: Other Audience',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 2.7'
+        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.5'
     ],
     platforms='Windows, Mac OS-X',

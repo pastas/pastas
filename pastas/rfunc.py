@@ -38,7 +38,7 @@ block(self, p)
     defined in set_parameters.
 
 More information on how to write a response class can be found here:
-http://pasta.github.io/pasta/developers.html
+http://pastas.github.io/pastas/developers.html
 """
 
 

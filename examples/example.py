@@ -3,7 +3,7 @@ This test file is meant for developing purposes. Providing an easy method to
 test the functioning of PASTA during development.
 
 """
-from pasta import *
+from pastas import *
 
 # read observations
 fname = 'data/B32D0136001_1.csv'

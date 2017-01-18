@@ -1,3 +1,3 @@
 def test_import():
-    import pasta
+    import pastas
     return
