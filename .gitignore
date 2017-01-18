@@ -8,6 +8,11 @@
 *.so
 
 pastas.egg-info
+pastas/gui/settings
 
 examples/notebooks/.ipynb_checkpoints/
 gui/settings
+build
+dist
+
+.idea/.name
