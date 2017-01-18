@@ -17,4 +17,4 @@ for nb in notebooks:
                  encoding='utf-8') as f:
         f.write(x[:])
 
-print "example notebooks successfully converted to .rst files"
+print("example notebooks successfully converted to .rst files")
