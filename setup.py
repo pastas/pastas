@@ -1,6 +1,5 @@
 from setuptools import setup, find_packages
 
-# from setuptools import find_packages
 # from os import path
 # from codecs import open  # To use a consistent encoding
 # here = path.abspath(path.dirname(__file__))
