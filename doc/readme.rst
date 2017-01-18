@@ -6,19 +6,24 @@ Follow these instructions when the documentation needs to be updated. Github sto
 named "gh-pages". This branch is different from all other branches in the sense that it only contains the html files for
 the documentation website (http://pastas.github.io/pasta/index.html).
 
-| On your computer, a folder needs to be dedicated. The structure is as follows:
-| ../Project/pasta-master/
-| ../Project/pasta-docs/
+On your computer, a folder needs to be dedicated. The structure is as follows:
+  ../Project/pasta-master/
+  ../Project/pasta-docs/
 
 The first folder is where the projects is maintained (the master branch) and the second folder is dedicated to the
-documentation website. To set up your github for the pasta-doc folder, `see here 
-<http://gisellezeno.com/tutorials/sphinx-for-python-documentation.html>`_.
+documentation website. To set up your github for the pasta-doc folder,
+
+  >>> git clone git@github.com:pastas/pastas.git .
+  >>> git checkout origin/gh-pages -b gh-pages
+  >>> ls -la
+  >>> git branch -d master
+  >>> $ git branch
 
 Instructions for updating Sphinx documentation
 ---------------------------------------------
 1. Open your terminal (MacOS) or command window (Windows)
 2. Move to the doc folder in the pasta-master folder:
->>> cd ../path-to-pasta-master/doc
+  >>> cd ../path-to-pasta-master/doc
 
 3. read pasta modules with sphinx-apidoc
   >>> sphinx-apidoc ../pasta -o .
