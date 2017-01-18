@@ -12,8 +12,8 @@ Latest Release  .. image:: https://img.shields.io/github/release/qubyte/pastas.s
                     :target: https://pypi.python.org/pypi/pastas
 ==============  ==================================================================
 
-Pastas Introduction
-===================
+Pastas: what is it?
+~~~~~~~~~~~~~~~~~~~
 Pastas is an open source python package for processing, simulating and analyzing 
 hydrological time series (models). The object oriented stucture allows for the 
 quick implementation of new model components. Time series models can be created,
@@ -75,3 +75,11 @@ only be accepted on the development branch (dev) of this repository.
 
 Please take a look at the `developers section <http://pastas.github.io/pastas/developers.html>`_
 on the documentation website for more information on how to develop Pastas.
+
+License
+~~~~~~~
+MIT
+
+Background
+~~~~~~~~~~
+Work on Pastas started in the spring of 2016 at the Delft University of Technology. 
