@@ -1,11 +1,11 @@
 ==============  ==================================================================
 Build Status    .. image:: https://travis-ci.org/pastas/pastas.svg?branch=master
                     :target: https://travis-ci.org/pastas/pastas
-Pypi            .. image:: https://img.shields.io/pypi/v/pastas.svg 
+Pypi            .. image:: https://img.shields.io/pypi/v/pastas.svg
                     :target: https://pypi.python.org/pypi/pastas
-License         .. image:: https://img.shields.io/pypi/l/pastas.svg   
+License         .. image:: https://img.shields.io/pypi/l/pastas.svg
                     :target: https://pypi.python.org/pypi/pastas
-Latest Release  .. image:: https://img.shields.io/github/release/qubyte/pastas.svg   
+Latest Release  .. image:: https://img.shields.io/github/release/qubyte/pastas.svg
                     :target: https://pypi.python.org/pypi/pastas
 ==============  ==================================================================
 
@@ -25,8 +25,7 @@ only be accepted on the development branch (dev) of the repository.
 
 Documentation
 ~~~~~~~~~~~~~
-Documentation is provided on a dedicated website: http://pastas.github
-.io/pastas/
+Documentation is provided on a dedicated website: http://pastas.github.io/pastas/
 
 
 Quick installation guide
