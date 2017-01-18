@@ -1,7 +1,7 @@
-pasta
-=====
+pastas
+======
 
 .. toctree::
    :maxdepth: 4
 
-   pasta
+   pastas

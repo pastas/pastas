@@ -5,7 +5,6 @@ Table of contents
    :maxdepth: 2
 
    index
-   installation
-   getting_started
-   modules
+   examples
    developers
+   modules

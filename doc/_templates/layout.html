@@ -3,18 +3,18 @@
 
 {% block rootrellink %}
         <li><a href="{{ pathto('index') }}">Home</a>|&nbsp;</li>
-        <li><a href="{{ pathto('search') }}">Search</a>|&nbsp;</li>
         <li><a href="{{ pathto('examples') }}">Examples</a>|&nbsp;</li>
-       <li><a href="{{ pathto('content') }}">Documentation </a> |&nbsp;</li>
-       <li><a href="{{ pathto('developers') }}">Developers </a> |&nbsp;</li>
-
+        <li><a href="{{ pathto('content') }}">Documentation </a> |&nbsp;</li>
+        <li><a href="{{ pathto('developers') }}">Developers </a> |&nbsp;</li>
+        <li><a href="{{ pathto('search') }}">Search</a>|&nbsp;</li>
 {% endblock %}
 
 
 {% block relbar1 %}
 <div class="header">
 <a href="{{ pathto('index') }}"><img src="{{
-pathto("_static/logo.png", 1) }}" border="0" alt="PASTA Logo" height="100px"></a>
+pathto("_static/logo.png", 1) }}" border="0" alt="PASTAS Logo"
+    height="100px"></a>
 </div>
 {{ super() }}
 {% endblock %}
@@ -26,11 +26,24 @@ pathto("_static/logo.png", 1) }}" border="0" alt="PASTA Logo" height="100px"></a
       <div class="sphinxsidebar">
           <div class="sphinxsidebarwrapper">
               <h3><a href="#">Project Info</a></h3>
-              <p>Version:<b> {{ version }} </b></p>
-              <a href="https://travis-ci.org/pastas/pasta"><img
-        src="https://travis-ci.org/pastas/pasta.svg?branch=master" border="0"
+              <a href="https://travis-ci.org/pastas/pastas"><img
+        src="https://travis-ci.org/pastas/pastas.svg?branch=master" border="0"
+        alt="Travis Status">
+              </a><br>
+              <a href="https://pypi.python.org/pypi/pastas"><img
+        src="https://img.shields.io/pypi/v/pastas.svg" border="0"
+        alt="Pypi Version">
+              </a><br>
+              <a href="https://mit-license.org/"><img
+        src="https://img.shields.io/pypi/l/pastas.svg" border="0"
+        alt="License">
+              </a><br>
+              <a href="https://github.com/pastas/pastas"><img
+        src="https://img.shields.io/github/release/qubyte/pastas.svg" border="0"
         alt="Travis Status">
               </a>
+
+
           </div>
       </div>
     {{ super() }}
