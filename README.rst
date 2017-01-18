@@ -56,4 +56,5 @@ To get the latest development version, use::
 Update
 ~~~~~~
 To update pastas, use::
+
   pip install pastas --upgrade
