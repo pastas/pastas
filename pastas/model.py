@@ -88,7 +88,7 @@ class Model:
 
         """
 
-        self.constant = Constant(value=self.oseries.min())
+        self.constant = Constant(value=self.oseries.mean())
 
     def simulate(self, parameters=None, tmin=None, tmax=None, freq='D'):
         """

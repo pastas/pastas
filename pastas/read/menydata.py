@@ -66,25 +66,9 @@ class MenyData:
         Transform a matlab time to a datetime, rounded to seconds
         """
         day = dt.datetime.fromordinal(int(matlab_datenum))
-        print(matlab_datenum)
         dayfrac = dt.timedelta(days=float(matlab_datenum) % 1) - dt.timedelta(
             days=366)
         return day + dayfrac
-        # return self.roundTime(day + dayfrac,roundTo=1)
-
-    def roundTime(self, date=None, roundTo=1):
-        """Round a datetime object to any time laps in seconds
-        dt : datetime.datetime object, default now.
-        roundTo : Closest number of seconds to round to, default 1 second.
-        Author: Thierry Husson 2012 - Use it as you want but don't blame me.
-
-        Not used anymore...
-        """
-        if date is None: date = dt.datetime.now()
-        seconds = (date.replace(tzinfo=None) - date.min).seconds
-        rounding = (seconds + roundTo / 2) // roundTo * roundTo
-        return date + dt.timedelta(0, rounding - seconds, -date.microsecond)
-
 
 class MenyH:
     def __init__(self, series, name):

@@ -26,9 +26,9 @@ Documentation is provided on a dedicated website: http://pastas.github.io/pastas
 
 Examples
 ~~~~~~~~
-All examples are provided in the `Examples directory <https://github.com/pastas/pastas/tree/master/examples>`_. 
-These include Python scripts and Ipython Notebooks. HTML versions of the IPython 
-notebooks can be found on the documentation website.
+Examples can be found on the `examples directory on the documentation website <http://pastas.github.io/pastas/examples.html>`_.
+All examples are provided in the `examples directory on GitHub <https://github.com/pastas/pastas/tree/master/examples>`_.
+These include Python scripts and Jupyter Notebooks.
 
 Quick installation guide
 ~~~~~~~~~~~~~~~~~~~~~~~~
