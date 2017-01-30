@@ -19,7 +19,7 @@ evap = ReadSeries('data/etmgeg_380.txt', 'knmi', variable='EV24')
 
 ## Create stress
 #ts = Tseries2(rain.series, evap.series[1965:], Gamma, name='recharge')
-ts = Tseries2(rain.precip, evap.series[1965:], Gamma, name='recharge')
+ts = Tseries2(rain.precip * 0.001, evap.series[1965:], Gamma, name='recharge')
 ml.add_tseries(ts)
 
 ## Add noise model
