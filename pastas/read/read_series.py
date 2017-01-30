@@ -34,7 +34,7 @@ class ReadSeries:
         elif filetype == 'knmi':
             knmi = KnmiStation.fromfile(fname)
             self.series = knmi.data[variable]
-            if knmi.stations and not knmi.stations.empty:
+            if knmi.stations is not None and not knmi.stations.empty:
                 self.latlon = (knmi.stations['LAT_north'][0],
                                knmi.stations['LON_east'][0])
                 self.meta = knmi.stations
