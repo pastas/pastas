@@ -105,6 +105,7 @@ class KnmiStation:
     def readdata(self, f):
         isLocations = False
         line = f.readline()
+        isMeteo = line.startswith('# ')
 
         # Process the header information (Everything < 'STN,')
         while 'STN,' not in line:
@@ -115,8 +116,8 @@ class KnmiStation:
             # If line is empty, skipline
             if line.strip() == '':
                 pass
-            # If line contains station info
-            elif line.startswith('STN '):
+            # If line contains station info (can only happen for meteorological stations)
+            elif isMeteo and line.startswith('STN '):
                 isLocations = True
                 line = line.strip()
                 titels = line.split()
@@ -184,7 +185,7 @@ class KnmiStation:
         if '' in data.columns:
             data.drop('', axis=1, inplace=True)
 
-        # %% van pas de eenheid aan van de metingen
+        # Adjust the unit of the measurements
         for key, value in self.variables.items():
             # test if key existst in data
             if key not in data.keys():
@@ -196,38 +197,34 @@ class KnmiStation:
                 else:
                     raise NameError(key + ' does not exist in data')
             if ' (-1 for <0.05 mm)' in value or ' (-1 voor <0.05 mm)' in value:
-                # erin=data[key]==-1
-                # data[key][erin]=data[key][erin]=0.25 # eenheid is nog 0.1 mm
-                # data[key][erin]=0.25 # eenheid is nog 0.1 mm
-                data.loc[data[key] == -1, key] = 0.25
+                # set 0.025 mm where data == -1
+                data.loc[data[key] == -1, key] = 0.25 # unit is still 0.1 mm
                 value = value.replace(' (-1 for <0.05 mm)', '')
                 value = value.replace(' (-1 voor <0.05 mm)', '')
             if '0.1 ' in value:
-                # reken om van 0.1 naar 1
+                # transform 0.1 to 1
                 data[key] = data[key] * 0.1
                 value = value.replace('0.1 ', '')
             if ' tiende ' in value:
-                # reken om van 0.1 naar 1
+                # transform 0.1 to 1
                 data[key] = data[key] * 0.1
                 value = value.replace(' tiende ', ' ')
             if ' mm' in value:
-                # reken mm om naar m
+                # transform mm to m
                 data[key] = data[key] * 0.001
                 value = value.replace(' mm', ' m')
             if ' millimeters' in value:
-                # reken mm om naar m
+                # transform mm to m
                 data[key] = data[key] * 0.001
                 value = value.replace(' millimeters', ' m')
             if '(in percents)' in value:
-                # reken procent om naar deel
-                # data[key]=data[key]*0.01
-                # reken (nog) niet om
+                # do not adjust (yet)
                 pass
             if 'hPa' in value:
-                # reken (nog) niet om
+                # do not adjust (yet)
                 pass
             if 'J/cm2' in value:
-                # reken (nog) niet om
+                # do not adjust (yet)
                 pass
             # Store new variable
             self.variables[key] = value

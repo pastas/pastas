@@ -12,14 +12,14 @@ obs = ReadSeries('data/B58C0698001_1.csv', 'dino')
 ml = Model(obs.series)
 
 # read weather data
-#rain = ReadSeries('data/neerslaggeg_HEIBLOEM-L_967-2.txt', 'knmi', variable='RD')
-from pandas import read_csv
-rain = read_csv('data/Heibloem_rain_data.dat', skiprows=4, sep=' ', skipinitialspace=True, parse_dates='date', index_col='date')
+rain = ReadSeries('data/neerslaggeg_HEIBLOEM-L_967-2.txt', 'knmi', variable='RD')
+#from pandas import read_csv
+#rain = read_csv('data/Heibloem_rain_data.dat', skiprows=4, sep=' ', skipinitialspace=True, parse_dates='date', index_col='date')
 evap = ReadSeries('data/etmgeg_380.txt', 'knmi', variable='EV24')
 
 ## Create stress
-#ts = Tseries2(rain.series, evap.series[1965:], Gamma, name='recharge')
-ts = Tseries2(rain.precip * 0.001, evap.series[1965:], Gamma, name='recharge')
+ts = Tseries2(rain.series, evap.series[1965:], Gamma, name='recharge')
+#ts = Tseries2(rain.precip * 0.001, evap.series[1965:], Gamma, name='recharge')
 ml.add_tseries(ts)
 
 ## Add noise model
