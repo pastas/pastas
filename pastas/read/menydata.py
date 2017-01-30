@@ -36,6 +36,10 @@ class MenyData:
             series.index = series.index.round('s')
 
             # add to self.H
+            if not hasattr(H, 'Name') and not hasattr(H, 'name'):
+                H.Name = None
+            if hasattr(H, 'name'):
+                H.Name = H.name
             self.H.append(MenyH(series, H.Name))
 
         self.IN = []
@@ -50,7 +54,8 @@ class MenyData:
             series.index = series.index.round('s')
 
             if IN.type == 'EVAP' or IN.type == 'PREC' or IN.type == 'WELL':
-                # in menyanthes, the flux is summed over the time-step, so devide by the timestep now
+                # in menyanthes, the flux is summed over the time-step, so
+                # devide by the timestep now
                 step = series.index.to_series().diff() / pd.offsets.Day(1)
                 step = step.values.astype(np.float)
                 series = series / step
@@ -58,8 +63,11 @@ class MenyData:
                     series = series[1:]
 
             # add to self.IN
+            if not hasattr(IN, 'Name') and not hasattr(IN, 'name'):
+                IN.Name = None
+            if hasattr(IN, 'name'):
+                IN.Name = IN.name
             self.IN.append(MenyIN(series, IN.Name, IN.type))
-
 
     def matlab2datetime(self, matlab_datenum):
         """
@@ -69,6 +77,7 @@ class MenyData:
         dayfrac = dt.timedelta(days=float(matlab_datenum) % 1) - dt.timedelta(
             days=366)
         return day + dayfrac
+
 
 class MenyH:
     def __init__(self, series, name):

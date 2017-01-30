@@ -16,8 +16,7 @@ from .tseries import Constant
 class Model:
     def __init__(self, oseries, xy=(0, 0), metadata=None, freq=None,
                  warmup=1500, fillnan='drop', constant=True):
-        """
-        Initiates a time series model.
+        """Initiates a time series model.
 
         Parameters
         ----------
@@ -69,25 +68,26 @@ class Model:
         self.stats = Statistics(self)
 
     def add_tseries(self, tseries):
-        """
-        adds a time series model component to the Model.
+        """Adds a time series model component to the Model.
 
         """
-        self.tseriesdict[tseries.name] = tseries
+        if tseries.name in self.tseriesdict.keys():
+            raise Warning('The name for the series you are trying to add '
+                          'already exists for this model. Select another '
+                          'name.')
+        else:
+            self.tseriesdict[tseries.name] = tseries
 
     def add_noisemodel(self, noisemodel):
-        """
-        Adds a noise model to the time series Model.
+        """Adds a noise model to the time series Model.
 
         """
         self.noisemodel = noisemodel
 
     def add_constant(self):
-        """
-        Adds a Constant to the time series Model.
+        """Adds a Constant to the time series Model.
 
         """
-
         self.constant = Constant(value=self.oseries.mean())
 
     def simulate(self, parameters=None, tmin=None, tmax=None, freq='D'):
@@ -178,6 +178,7 @@ class Model:
         for ts in self.tseriesdict.values():
             self.parameters = self.parameters.append(ts.parameters)
         if self.constant:
+            self.nparam += self.constant.nparam
             self.parameters = self.parameters.append(self.constant.parameters)
         if self.noisemodel and noise:
             self.parameters = self.parameters.append(
@@ -207,9 +208,8 @@ class Model:
 
         """
         if noise and (self.noisemodel is None):
-            print(
-                'Warning, solution with noise model while noise model is not '
-                'defined. No noise model is used')
+            print('Warning, solution with noise model while noise model is '
+                  'not defined. No noise model is used')
 
         # Check frequency of tseries
         self.check_frequency()
