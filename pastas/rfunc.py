@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import print_function, division
 import numpy as np
 import pandas as pd
 from scipy.special import gammainc, gammaincinv, k0, exp1
@@ -14,6 +15,9 @@ Attributes
 ----------
 nparam: integer
     number of parameters.
+up: boolean
+    indicates whether a positive stress will cause the head to go up
+    (True) or down (False)
 meanstress: float
     mean value of the stress, used to set the initial value such that
     the final step times the mean stress equals 1
@@ -44,8 +48,23 @@ More information on how to write a response class can be found here:
 http://pastas.github.io/pastas/developers.html
 """
 
-
-class Gamma:
+class RfuncBase:
+    def __init__(self, up, meanstress, cutoff):
+        if up:
+            self.up = 1
+        else:
+            self.up = -1
+        self.meanstress = meanstress
+        self.cutoff = cutoff
+        self.tmax = 0
+    def set_parameters(self, name):
+        pass
+    def step(self, p, dt):
+        pass
+    def block(self, p, dt):
+        pass
+    
+class Gamma(RfuncBase):
     __doc__ = """
     Gamma response function with 3 parameters A, a, and n.
 
@@ -54,16 +73,14 @@ class Gamma:
     %(doc)s
     """ % {'doc': _class_doc}
 
-    def __init__(self, meanstress=1.0, cutoff=0.99):
+    def __init__(self, up=True, meanstress=1, cutoff=0.99):
+        RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 3
-        self.meanstress = meanstress
-        self.cutoff = cutoff
-        self.tmax = 0
 
     def set_parameters(self, name):
         parameters = pd.DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        parameters.loc[name + '_A'] = (1 / self.meanstress, 0, 5000, 1, name)
+        parameters.loc[name + '_A'] = (1 / self.meanstress, 0, 100 / self.meanstress, 1, name)
         parameters.loc[name + '_n'] = (1, 0.1, 5, 1, name)  # if n is too small, the length of the response function is close to zero
         parameters.loc[name + '_a'] = (100, 1, 5000, 1, name)
         return parameters
@@ -71,7 +88,7 @@ class Gamma:
     def step(self, p, dt):
         self.tmax = gammaincinv(p[1], self.cutoff) * p[2]
         t = np.arange(dt, self.tmax, dt)
-        s = p[0] * gammainc(p[1], t / p[2])
+        s = self.up * p[0] * gammainc(p[1], t / p[2])
         return s
 
     def block(self, p, dt):
@@ -79,7 +96,7 @@ class Gamma:
         return s[1:] - s[:-1]
 
 
-class Exponential:
+class Exponential(RfuncBase):
     __doc__ = """
     Exponential response function with 2 parameters: A and a.
 
@@ -88,23 +105,22 @@ class Exponential:
     %(doc)s
     """ % {'doc': _class_doc}
 
-    def __init__(self, cutoff):
+    def __init__(self, up=True, meanstress=1, cutoff=0.99):
+        RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 2
-        self.cutoff = cutoff
-        self.tmax = 0
 
     def set_parameters(self, name):
         parameters = pd.DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        parameters.loc[name + '_A'] = (500.0, 0.0, 5000.0, 1, name)
-        parameters.loc[name + '_a'] = (100.0, 1.0, 5000.0, 1, name)
+        parameters.loc[name + '_A'] = (1 / self.meanstress, 0, 100 / self.meanstress, 1, name)
+        parameters.loc[name + '_a'] = (100, 1, 5000, 1, name)
         parameters['tseries'] = name
         return parameters
 
     def step(self, p, dt):
         self.tmax = -np.log(1.0 / p[1]) * p[1]
         t = np.arange(dt, self.tmax, dt)
-        s = p[0] * (1.0 - np.exp(-t / p[1]))
+        s = self.up * p[0] * (1.0 - np.exp(-t / p[1]))
         return s
 
     def block(self, p, dt):
@@ -112,7 +128,7 @@ class Exponential:
         return s[1:] - s[:-1]
 
 
-class Hantush:
+class Hantush(RfuncBase):
     """ The Hantush well function
 
     References
@@ -130,9 +146,9 @@ class Hantush:
 
     """
 
-    def __init__(self, cutoff):
+    def __init__(self, up=True, meanstress=1, cutoff=0.99):
+        RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 3
-        self.cutoff = cutoff
 
     def set_parameters(self, name):
         parameters = pd.DataFrame(
@@ -163,7 +179,7 @@ class Hantush:
         return s[1:] - s[:-1]
 
 
-class Theis:
+class Theis(RfuncBase):
     """ The Theis well function
 
     References
@@ -174,9 +190,9 @@ class Theis:
 
     """
 
-    def __init__(self, cutoff):
+    def __init__(self, up=True, meanstress=1, cutoff=0.99):
+        RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 3
-        self.cutoff = cutoff
 
     def set_parameters(self, name):
         parameters = pd.DataFrame(
@@ -197,14 +213,13 @@ class Theis:
         return s[1:] - s[:-1]
 
 
-class One:
+class One(RfuncBase):
     """Dummy class for Constant. Returns 1
     """
 
-    def __init__(self, meanstress, cutoff):
+    def __init__(self, up, meanstress, cutoff):
+        RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 1
-        self.cutoff = cutoff
-        self.tmax = 0
 
     def step(self, p, dt):
         return p[0] * np.ones(2)
