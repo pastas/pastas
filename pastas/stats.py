@@ -118,6 +118,16 @@ class Statistics(object):
         N = res.size
         return np.sqrt(sum(res ** 2) / N)
 
+    def rmsi(self, tmin=None, tmax=None):
+        """Root mean squared error of the innovations.
+
+        rmsi = sqrt(sum(innovations**2) / N)
+
+        """
+        res = self.__getinnovations__(tmin, tmax)
+        N = res.size
+        return np.sqrt(sum(res ** 2) / N)
+
     def sse(self, tmin=None, tmax=None):
         res = self.__getresiduals__(tmin, tmax)
         return sum(res ** 2)
@@ -165,27 +175,28 @@ class Statistics(object):
         return 1.0 - (N - 1.0) / (N - self.ml.nparam) * RSS / TSS
 
     def bic(self, tmin=None, tmax=None):
-        """Bayesian Information Criterium
+        """Bayesian Information Criterium.
 
-        BIC = -2 log(L) + S_j log(N)
-        S_j : Number of free parameters
+        BIC = -2 log(L) + nparam * log(N)
+        nparam : Number of free parameters
 
         """
         innovations = self.__getinnovations__(tmin, tmax)
         N = innovations.size
-        bic = -2.0 * np.log(sum(innovations ** 2.0)) + self.ml.nparam * np.log(
-            N)
+        nparam = len(self.ml.parameters[self.ml.parameters.vary == True])
+        bic = -2.0 * np.log(sum(innovations ** 2.0)) + nparam * np.log(N)
         return bic
 
     def aic(self, tmin=None, tmax=None):
-        """Akaike Information Criterium
+        """Akaike Information Criterium.
 
-        AIC = -2 log(L) + 2 S_j
-        S_j : Number of free parameters
+        AIC = -2 log(L) + 2 nparam
+        nparam : Number of free parameters
 
         """
         innovations = self.__getinnovations__(tmin, tmax)
-        aic = -2.0 * np.log(sum(innovations ** 2.0)) + 2.0 * self.ml.nparam
+        nparam = len(self.ml.parameters[self.ml.parameters.vary == True])
+        aic = -2.0 * np.log(sum(innovations ** 2.0)) + 2.0 * nparam
         return aic
 
     def acf(self, tmin=None, tmax=None, nlags=20):
