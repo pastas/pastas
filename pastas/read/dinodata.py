@@ -5,6 +5,8 @@
 
 import numpy as np
 import pandas as pd
+# following import needed for Python 2 compatibility
+from future.builtins.misc import open
 
 
 class DinoGrondwaterstand:

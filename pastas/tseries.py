@@ -36,8 +36,8 @@ class TseriesBase:
 
     """
 
-    def __init__(self, rfunc, name, xy, metadata, tmin, tmax, cutoff):
-        self.rfunc = rfunc(cutoff)
+    def __init__(self, rfunc, name, xy, metadata, tmin, tmax, meanstress, cutoff):
+        self.rfunc = rfunc(meanstress, cutoff)
         self.nparam = self.rfunc.nparam
         self.name = name
         self.xy = xy
@@ -57,18 +57,26 @@ class TseriesBase:
         """
         if name in self.parameters.index:
             self.parameters.loc[name, 'initial'] = value
+        else:
+            print('Warning:', name, 'does not exist')
 
     def set_min(self, name, value):
         if name in self.parameters.index:
             self.parameters.loc[name, 'pmin'] = value
+        else:
+            print('Warning:', name, 'does not exist')
 
     def set_max(self, name, value):
         if name in self.parameters.index:
             self.parameters.loc[name, 'pmax'] = value
+        else:
+            print('Warning:', name, 'does not exist')
 
     def fix_parameter(self, name):
         if name in self.parameters.index:
             self.parameters.loc[name, 'vary'] = 0
+        else:
+            print('Warning:', name, 'does not exist')
 
     def __getstress__(self, p=None, tindex=None):
         """
@@ -124,7 +132,7 @@ class Tseries(TseriesBase):
         stress = check_tseries(stress, freq, fillnan, name=name)
         TseriesBase.__init__(self, rfunc, name, xy, metadata,
                              stress.index.min(), stress.index.max(),
-                             cutoff)
+                             stress.mean(), cutoff)
         self.freq = stress.index.freqstr
         self.stress[name] = stress
         self.set_init_parameters()
@@ -204,7 +212,8 @@ class Tseries2(TseriesBase):
         index = stress0.index & stress1.index
 
         TseriesBase.__init__(self, rfunc, name, xy, metadata, index.min(),
-                             index.max(), cutoff)
+                             index.max(), stress0.mean() - stress1.mean(),
+                             cutoff)
 
         self.stress["stress0"] = stress0[index]
         self.stress["stress1"] = stress1[index]
@@ -463,7 +472,7 @@ class Constant(TseriesBase):
         self.pmin = self.value + pmin
         self.pmax = self.value + pmax
         TseriesBase.__init__(self, One, name, xy, metadata,
-                             pd.Timestamp.min, pd.Timestamp.max, 0)
+                             pd.Timestamp.min, pd.Timestamp.max, 0, 0)
         self.set_init_parameters()
 
     def set_init_parameters(self):

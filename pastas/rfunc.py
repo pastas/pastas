@@ -14,6 +14,9 @@ Attributes
 ----------
 nparam: integer
     number of parameters.
+meanstress: float
+    mean value of the stress, used to set the initial value such that
+    the final step times the mean stress equals 1
 cutoff: float
     percentage after which the step function is cut off.
 tmax: float
@@ -51,17 +54,18 @@ class Gamma:
     %(doc)s
     """ % {'doc': _class_doc}
 
-    def __init__(self, cutoff=0.99):
+    def __init__(self, meanstress=1.0, cutoff=0.99):
         self.nparam = 3
+        self.meanstress = meanstress
         self.cutoff = cutoff
         self.tmax = 0
 
     def set_parameters(self, name):
         parameters = pd.DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        parameters.loc[name + '_A'] = (500.0, 0.0, 5000.0, 1, name)
-        parameters.loc[name + '_n'] = (1.0, 0.1, 5.0, 1, name)  # if n is too small, the length of the response function is close to zero
-        parameters.loc[name + '_a'] = (100.0, 1.0, 5000.0, 1, name)
+        parameters.loc[name + '_A'] = (1 / self.meanstress, 0, 5000, 1, name)
+        parameters.loc[name + '_n'] = (1, 0.1, 5, 1, name)  # if n is too small, the length of the response function is close to zero
+        parameters.loc[name + '_a'] = (100, 1, 5000, 1, name)
         return parameters
 
     def step(self, p, dt):
@@ -197,7 +201,7 @@ class One:
     """Dummy class for Constant. Returns 1
     """
 
-    def __init__(self, cutoff):
+    def __init__(self, meanstress, cutoff):
         self.nparam = 1
         self.cutoff = cutoff
         self.tmax = 0
