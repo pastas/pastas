@@ -10,9 +10,8 @@ except:
 
 # Get the version.
 version = {}
-with open("version.py") as fp:
+with open("pastas/version.py") as fp:
     exec(fp.read(), version)
-print(version)
 
 setup(
     name='pastas',
