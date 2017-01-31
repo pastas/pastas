@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as plticker
 import numpy as np
 import pandas as pd
+from scipy import interpolate
 
 from .checks import check_oseries
 from .solver import LmfitSolve
@@ -155,6 +156,11 @@ class Model:
             # all of the observation indexes are in the simulation
             h_simulated = simulation[tindex]
         else:
+            # sample measurements, so that frequency is not higher than model
+            h_observed = self.__sample__(h_observed, simulation.index)
+            if len(h_observed)<len(tindex):
+                # update tindex
+                tindex = h_observed.index
             # interpolate simulation to measurement-times
             h_simulated = np.interp(h_observed.index.asi8,
                                     simulation.index.asi8, simulation)
@@ -402,6 +408,14 @@ class Model:
         except KeyError:
             print("Name not in tseriesdict, available names are: %s"
                   % self.tseriesdict.keys())
+
+    def __sample__(self, series, tindex):
+        # Sample the series so that the frequency is not higher that tindex
+        # Find the index closest to the tindex, and then return a selection of series
+        f = interpolate.interp1d(series.index.asi8 ,np.arange(0,len(series.index)),
+                                 kind='nearest', bounds_error=False, fill_value='extrapolate')
+        ind = np.unique(f(tindex.asi8).astype(int))
+        return series[ind]
 
     def plot(self, tmin=None, tmax=None, oseries=True, simulate=True):
         """
