@@ -36,7 +36,8 @@ class TseriesBase:
 
     """
 
-    def __init__(self, rfunc, name, xy, metadata, tmin, tmax, up, meanstress, cutoff):
+    def __init__(self, rfunc, name, xy, metadata, tmin, tmax, up, meanstress,
+                 cutoff):
         self.rfunc = rfunc(up, meanstress, cutoff)
         self.nparam = self.rfunc.nparam
         self.name = name
@@ -211,6 +212,11 @@ class Tseries2(TseriesBase):
 
         # Select indices where both series are available
         index = stress0.index & stress1.index
+        if len(index) is 0:
+            raise Warning('The two stresses that were provided have no '
+                          'overlapping time indices. Please make sure time '
+                          'indices overlap or apply to separate time series '
+                          'objects.')
 
         TseriesBase.__init__(self, rfunc, name, xy, metadata, index.min(),
                              index.max(), True,
@@ -323,9 +329,15 @@ class Recharge(TseriesBase):
         # Select indices where both series are available
         index = P.index & E.index
 
+        if len(index) is 0:
+            raise Warning('The two stresses that were provided have no '
+                          'overlapping time indices. Please make sure time '
+                          'indices overlap or apply to separate time series '
+                          'objects.')
+
         # Store tmin and tmax
         TseriesBase.__init__(self, rfunc, name, xy, metadata, index.min(),
-                             index.max(),  True,
+                             index.max(), True,
                              precip.mean() - evap.mean(), cutoff)
 
         self.stress[P.name] = P[index]
