@@ -1,5 +1,7 @@
 from __future__ import print_function
 
+execfile('../version.py')
+
 from .model import Model
 from .read.read_series import ReadSeries
 from .recharge.recharge_func import Preferential, Linear, Percolation, \
