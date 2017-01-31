@@ -1,5 +1,10 @@
 language: python
 
+env:
+  global:
+    #- DEPENDS="cython>=0.19"
+    - NO_NET=1
+
 matrix:
   include:
     - python: 2.7
