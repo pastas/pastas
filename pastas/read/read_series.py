@@ -6,6 +6,7 @@
 from pastas.read.dinodata import DinoGrondwaterstand
 from pastas.read.knmidata import KnmiStation
 import numpy as np
+import warnings
 
 
 class ReadSeries:
@@ -66,13 +67,15 @@ class ReadSeries:
         """
         try:
             from pyproj import Proj, transform
+            outProj = Proj(init='epsg:4326')
+            inProj = Proj(init='epsg:28992')
+            lon, lat = transform(inProj, outProj, xy[0], xy[1])
         except ImportError:
-            raise ImportWarning(
-                'The module pyproj could not be imported. Please '
-                'install through:'
-                '>>> pip install requests'
-                'or ... conda install requests')
-        outProj = Proj(init='epsg:4326')
-        inProj = Proj(init='epsg:28992')
-        lon, lat = transform(inProj, outProj, xy[0], xy[1])
+            warnings.warn('The module pyproj could not be imported. Please '
+                          'install through:'
+                          '>>> pip install requests'
+                          'or ... conda install requests', ImportWarning)
+            lat = np.NaN
+            lon = np.NaN
+
         return (lat, lon)
