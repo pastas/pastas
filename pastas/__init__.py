@@ -1,11 +1,11 @@
 from __future__ import print_function
 
 # Get the version.
-version = {}
-with open("pastas/version.py") as fp:
-    exec(fp.read(), version)
-__version__ = version['__version__']
-del version
+# version = {}
+# with open("version.py") as fp:
+#     exec(fp.read(), version)
+# __version__ = version['__version__']
+# del version
 
 from .model import Model
 from .read.read_series import ReadSeries
