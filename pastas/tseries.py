@@ -325,7 +325,8 @@ class Recharge(TseriesBase):
 
         # Store tmin and tmax
         TseriesBase.__init__(self, rfunc, name, xy, metadata, index.min(),
-                             index.max(), cutoff)
+                             index.max(),  True,
+                             precip.mean() - evap.mean(), cutoff)
 
         self.stress[P.name] = P[index]
         self.stress[E.name] = E[index]
