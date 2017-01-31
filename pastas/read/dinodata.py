@@ -5,9 +5,6 @@
 
 import numpy as np
 import pandas as pd
-# following import needed for Python 2 compatibility
-from future.builtins.misc import open
-
 
 class DinoGrondwaterstand:
     def __init__(self, fname):
@@ -15,8 +12,9 @@ class DinoGrondwaterstand:
             # lees de header
             line = f.readline()
             header = dict()
-            while line not in ['\n', '']:
+            while line not in ['\n', '', '\r\n']:
                 propval = line.split(',')
+                print(propval)
                 prop = propval[0]
                 prop = prop.replace(':', '')
                 prop = prop.strip()
@@ -28,12 +26,12 @@ class DinoGrondwaterstand:
                 line = f.readline()
 
             # lees gat
-            while line == '\n':
+            while (line == '\n') or (line == '\r\n'):
                 line = f.readline()
 
             # lees referentieniveaus
             ref = dict()
-            while line not in ['\n', '']:
+            while line not in ['\n', '', '\r\n']:
                 propval = line.split(',')
                 prop = propval[0]
                 prop = prop.replace(':', '')
@@ -44,7 +42,7 @@ class DinoGrondwaterstand:
                 line = f.readline()
 
             # lees gat
-            while line == '\n':
+            while (line == '\n') or (line == '\r\n'):
                 line = f.readline()
 
             # lees meta-informatie
@@ -52,7 +50,7 @@ class DinoGrondwaterstand:
             line = line.strip()
             properties = line.split(',')
             line = f.readline()
-            while line not in ['\n', '']:
+            while line not in ['\n', '', '\r\n']:
                 meta = dict()
                 line = line.strip()
                 values = line.split(',')
@@ -62,7 +60,7 @@ class DinoGrondwaterstand:
                 line = f.readline()
 
             # lees gat
-            while line == '\n':
+            while (line == '\n') or (line == '\r\n'):
                 line = f.readline()
 
             line = line.strip()
