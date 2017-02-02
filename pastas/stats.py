@@ -43,68 +43,14 @@ from statsmodels.tsa.stattools import acf, pacf
 
 
 class Statistics(object):
-    """
-    This class contains all the statistical methods available.
-
-
-    Methods
-    -------
-    rmse
-    evp
-    avg_dev
-    pearson
-    r_corrected
-
-    """
-
     def __init__(self, ml):
-        self.ml = ml  # Store reference to model for future use
+        """This class is inherited by the Model class of Pastas after a
+        model is calibrated.
 
-    # Private methods that return the series for a specified tmax and tmin
-    # meant for internal use.
-
-    def __getresiduals__(self, tmin=None, tmax=None):
-        series = self.ml.residuals(tmin=tmin, tmax=tmax, noise=False)
-        return series
-
-    def __getsimulated__(self, tmin=None, tmax=None):
-        series = self.ml.simulate(tmin=tmin, tmax=tmax)
-        return series
-
-    def __getinnovations__(self, tmin=None, tmax=None):
-        series = self.ml.residuals(tmin=tmin, tmax=tmax, noise=True)
-        return series
-
-    def __getobservations__(self, tmin=None, tmax=None):
-        if tmin is None:
-            tmin = self.ml.oseries.index.min()
-        if tmax is None:
-            tmax = self.ml.oseries.index.max()
-        tindex = self.ml.oseries[tmin: tmax].index
-        series = self.ml.oseries[tindex]
-        return series
-
-    def __getallseries__(self, tmin=None, tmax=None):
+        ml: Pastas Model
+            ml is a time series Model that is calibrated.
         """
-        Method to easily obtain all four series.
-
-        Parameters
-        ----------
-        tmin
-        tmax
-
-        Returns
-        -------
-        series: pd.Dataframe
-            returns pandas dataframe with all four time series.
-
-        """
-        series = pd.DataFrame()
-        series["simulated"] = self.__getsimulated__(tmin=tmin, tmax=tmax)
-        series["observations"] = self.__getobservations__(tmin=tmin, tmax=tmax)
-        series["residuals"] = self.__getresiduals__(tmin=tmin, tmax=tmax)
-        series["innovations"] = self.__getinnovations__(tmin=tmin, tmax=tmax)
-        return series
+        self.ml = ml
 
     # The statistical functions
 
@@ -192,6 +138,7 @@ class Statistics(object):
 
         AIC = -2 log(L) + 2 nparam
         nparam : Number of free parameters
+        L: likelihood function for the model.
 
         """
         innovations = self.__getinnovations__(tmin, tmax)
@@ -221,6 +168,25 @@ class Statistics(object):
         """
         innovations = self.__getinnovations__(tmin, tmax)
         return pacf(innovations, nlags=nlags)
+
+    def all(self, tmin=None, tmax=None, stats=None):
+        """Returns a dictionary with all the statistics.
+
+        Parameters
+        ----------
+        tmin
+        tmax
+
+        Returns
+        -------
+
+        """
+        keys = ["evp", "rmsi", "rmse", "aic", "bic", "avg_dev", "pearson", "r_corrected", "sse"]
+        stats = dict()
+        for k in keys:
+            stats[k] = (getattr(self, k)(tmin, tmax))
+
+        return stats
 
     # def GHG(self, tmin=None, tmax=None, series='oseries'):
     #     """GHG: Gemiddeld Hoog Grondwater (in Dutch)
@@ -339,3 +305,49 @@ class Statistics(object):
         stats = pd.DataFrame(index=names, data=statsvalue, columns=['Value'])
         stats.index.name = 'Statistic'
         print(stats)
+
+    # Private methods that return the series for a specified tmax and tmin
+    # meant for internal use.
+
+    def __getresiduals__(self, tmin=None, tmax=None):
+        series = self.ml.residuals(tmin=tmin, tmax=tmax, noise=False)
+        return series
+
+    def __getsimulated__(self, tmin=None, tmax=None):
+        series = self.ml.simulate(tmin=tmin, tmax=tmax)
+        return series
+
+    def __getinnovations__(self, tmin=None, tmax=None):
+        series = self.ml.residuals(tmin=tmin, tmax=tmax, noise=True)
+        return series
+
+    def __getobservations__(self, tmin=None, tmax=None):
+        if tmin is None:
+            tmin = self.ml.oseries.index.min()
+        if tmax is None:
+            tmax = self.ml.oseries.index.max()
+        tindex = self.ml.oseries[tmin: tmax].index
+        series = self.ml.oseries[tindex]
+        return series
+
+    def __getallseries__(self, tmin=None, tmax=None):
+        """
+        Method to easily obtain all four series.
+
+        Parameters
+        ----------
+        tmin
+        tmax
+
+        Returns
+        -------
+        series: pd.Dataframe
+            returns pandas dataframe with all four time series.
+
+        """
+        series = pd.DataFrame()
+        series["simulated"] = self.__getsimulated__(tmin=tmin, tmax=tmax)
+        series["observations"] = self.__getobservations__(tmin=tmin, tmax=tmax)
+        series["residuals"] = self.__getresiduals__(tmin=tmin, tmax=tmax)
+        series["innovations"] = self.__getinnovations__(tmin=tmin, tmax=tmax)
+        return series
