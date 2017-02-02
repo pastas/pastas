@@ -14,7 +14,6 @@ class DinoGrondwaterstand:
             header = dict()
             while line not in ['\n', '', '\r\n']:
                 propval = line.split(',')
-                #print(propval)
                 prop = propval[0]
                 prop = prop.replace(':', '')
                 prop = prop.strip()
