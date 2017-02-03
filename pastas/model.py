@@ -136,8 +136,7 @@ class Model:
 
     def residuals(self, parameters=None, tmin=None, tmax=None, freq='D',
                   noise=True):
-        """
-        Method to calculate the residuals.
+        """Method to calculate the residuals.
 
         """
         if tmin is None:
@@ -281,7 +280,8 @@ class Model:
             if tseries.tmax < tmax:
                 tmax = tseries.tmax
 
-        # adjust tmin and tmax so that the time-offset (determined in check_frequency) is equal to that of the tseries
+        # adjust tmin and tmax so that the time-offset (determined in
+        # check_frequency) is equal to that of the tseries
         tmin = tmin - self.get_time_offset(tmin, self.freq) + self.time_offset
         tmax = tmax - self.get_time_offset(tmax, self.freq) + self.time_offset
 
@@ -604,3 +604,38 @@ class Model:
         # show the figure
         plt.tight_layout()
         plt.show()
+
+    def get_simulation(self, tmin=None, tmax=None):
+        """Method that returns the simulated series.
+
+        """
+        series = self.simulate(tmin=tmin, tmax=tmax)
+        return series
+
+    def get_innovations(self, tmin=None, tmax=None):
+        """Method that returns the innovation series.
+
+        """
+        if self.noisemodel is None:
+            raise Warning('No noisemodel is present in this model, so the'
+                          ' innovations cannot be calculated.')
+
+        v = self.residuals(tmin=tmin, tmax=tmax, noise=True)
+        return v
+
+    def get_residuals(self, tmin=None, tmax=None):
+        """Method that returns the residual series
+
+        """
+        return self.residuals(tmin, tmax, noise=False)
+
+    def get_observations(self, tmin=None, tmax=None):
+        """Method that returns the observations series.
+
+        """
+        if tmin is None:
+            tmin = self.oseries.index.min()
+        if tmax is None:
+            tmax = self.oseries.index.max()
+        tindex = self.oseries[tmin: tmax].index
+        return self.oseries[tindex]
