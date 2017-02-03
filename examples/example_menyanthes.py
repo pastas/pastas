@@ -28,7 +28,7 @@ IN = next(x for x in meny.IN if x.name == 'Extraction 1')
 IN.series = IN.series.resample('d').bfill()
 IN.name = IN.name.replace(' ','_')
 # divide by thousand, as default starting parameters for gamma are wrong
-ts = Tseries(IN.series/1000, Gamma, IN.name, up=False)
+ts = Tseries(IN.series, Gamma, IN.name, up=False)
 ml.add_tseries(ts)
 #
 # Add well extraction 2
@@ -37,7 +37,7 @@ IN = next(x for x in meny.IN if x.name == 'Extraction 2')
 IN.series = IN.series.resample('d').bfill()
 IN.name = IN.name.replace(' ','_')
 # divide by thousand, as default starting parameters for gamma are wrong
-ts = Tseries(IN.series/1000, Gamma, IN.name, up=False)
+ts = Tseries(IN.series, Gamma, IN.name, up=False)
 ml.add_tseries(ts)
 #
 # Add well extraction 3
@@ -46,7 +46,7 @@ IN = next(x for x in meny.IN if x.name == 'Extraction 3')
 IN.series = IN.series.resample('d').bfill()
 IN.name = IN.name.replace(' ','_')
 # divide by thousand, as default starting parameters for gamma are wrong
-ts = Tseries(IN.series/1000, Gamma, IN.name, up=False)
+ts = Tseries(IN.series, Gamma, IN.name, up=False)
 ml.add_tseries(ts)
 
 # Add noise model

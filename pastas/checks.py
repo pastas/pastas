@@ -6,7 +6,7 @@ checks module
 import pandas as pd
 
 
-def check_oseries(oseries, freq, fillnan='drop'):
+def check_oseries(oseries, fillnan='drop'):
     """Check the observed time series before running a simulation.
 
     Parameters
@@ -35,10 +35,6 @@ def check_oseries(oseries, freq, fillnan='drop'):
     # make a deep copy to preserve original imported data
     oseries = oseries.loc[oseries.first_valid_index():oseries.last_valid_index(
     )].copy(deep=True)
-
-    # Deal with frequency of the time series
-    if freq:
-        oseries = oseries.resample(freq)
 
     # Handle nan-values in oseries
     if oseries.hasnans:

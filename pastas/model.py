@@ -42,7 +42,8 @@ class Model:
             interpolation.
 
         """
-        self.oseries = check_oseries(oseries, freq, fillnan)
+        self.oseries = check_oseries(oseries, fillnan)
+        self.oseries_calib = None
         self.warmup = warmup
         self.xy = xy
         self.metadata = metadata
@@ -91,7 +92,7 @@ class Model:
         """
         self.constant = Constant(value=self.oseries.mean())
 
-    def simulate(self, parameters=None, tmin=None, tmax=None, freq='D'):
+    def simulate(self, parameters=None, tmin=None, tmax=None, freq=None):
         """
 
         Parameters
@@ -113,6 +114,8 @@ class Model:
             tmin = self.tmin
         if tmax is None:
             tmax = self.tmax
+        if freq is None:
+            freq = self.freq
         assert (tmin is not None) and (
             tmax is not None), 'model needs to be solved first'
 
@@ -134,7 +137,7 @@ class Model:
 
         return h[tmin:]
 
-    def residuals(self, parameters=None, tmin=None, tmax=None, freq='D',
+    def residuals(self, parameters=None, tmin=None, tmax=None, freq=None,
                   noise=True):
         """Method to calculate the residuals.
 
@@ -143,6 +146,8 @@ class Model:
             tmin = self.oseries.index.min()
         if tmax is None:
             tmax = self.oseries.index.max()
+        if freq is None:
+            freq = self.freq
         tindex = self.oseries[tmin: tmax].index  # times used for calibration
 
         if parameters is None:
@@ -157,7 +162,7 @@ class Model:
         else:
             # sample measurements, so that frequency is not higher than model
             h_observed = self.__sample__(h_observed, simulation.index)
-            if len(h_observed)<len(tindex):
+            if len(h_observed) < len(tindex):
                 # update tindex
                 tindex = h_observed.index
             # interpolate simulation to measurement-times
@@ -412,7 +417,7 @@ class Model:
     def __sample__(self, series, tindex):
         # Sample the series so that the frequency is not higher that tindex
         # Find the index closest to the tindex, and then return a selection of series
-        f = interpolate.interp1d(series.index.asi8 ,np.arange(0,len(series.index)),
+        f = interpolate.interp1d(series.index.asi8, np.arange(0, len(series.index)),
                                  kind='nearest', bounds_error=False, fill_value='extrapolate')
         ind = np.unique(f(tindex.asi8).astype(int))
         return series[ind]
@@ -431,16 +436,20 @@ class Model:
 
         """
         plt.figure()
+        if oseries:
+            self.oseries.plot(linestyle='', marker='.', color='k',
+                              markersize=3)
         if simulate:
             if tmin is None:
                 tmin = self.otmin
             if tmax is None:
                 tmax = self.otmax
+            # adjust tmin and tmax so that the time-offset (determined in check_frequency) is equal to that of the tseries
+            tmin = tmin - self.get_time_offset(tmin, self.freq) + self.time_offset
+            tmax = tmax - self.get_time_offset(tmax, self.freq) + self.time_offset
             h = self.simulate(tmin=tmin, tmax=tmax)
             h.plot()
-        if oseries:
-            self.oseries.plot(linestyle='', marker='.', color='k',
-                              markersize=3)
+
         plt.show()
 
     def plot_results(self, tmin=None, tmax=None, savefig=False):
@@ -464,9 +473,10 @@ class Model:
         # Plot the Groundwater levels
         h = self.simulate(tmin=tmin, tmax=tmax)
         ax1 = plt.subplot(gs[:2, :-1])
-        h.plot(label='modeled head')
         self.oseries.plot(linestyle='', marker='.', color='k', markersize=3,
-                          label='observed head')
+                          label='observed head', ax=ax1)
+        h.plot(label='modeled head',ax=ax1)
+
         # ax1.xaxis.set_visible(False)
         plt.legend(loc=(0, 1), ncol=3, frameon=False, handlelength=3)
         plt.ylabel('Head [m]')
@@ -516,7 +526,7 @@ class Model:
         if savefig:
             plt.savefig('.eps' % (self.name), bbox_inches='tight')
 
-    def plot_decomposition(self, tmin=None, tmax=None, freq=None):
+    def plot_decomposition(self, tmin=None, tmax=None):
         """
 
         Plot the decomposition of a time-series in the different stresses
@@ -530,20 +540,18 @@ class Model:
             tmax = self.tmax
         assert (tmin is not None) and (
             tmax is not None), 'model needs to be solved first'
-        if freq is None:
-            freq = self.freq
 
-        tindex = pd.date_range(tmin, tmax, freq=freq)
+        tindex = pd.date_range(tmin, tmax, freq=self.freq)
 
         # determine the simulation
-        hsim = self.simulate(tmin=tmin, tmax=tmax, freq=freq)
+        hsim = self.simulate(tmin=tmin, tmax=tmax, freq=self.freq)
         h = [hsim]
 
         # determine the influence of the different stresses
         parameters = self.parameters.optimal.values
         istart = 0  # Track parameters index to pass to ts object
         for ts in self.tseriesdict.values():
-            dt = self.get_dt(freq)
+            dt = self.get_dt(self.freq)
             h.append(
                 ts.simulate(parameters[istart: istart + ts.nparam], tindex,
                             dt))
