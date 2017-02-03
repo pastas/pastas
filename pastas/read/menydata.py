@@ -1,7 +1,15 @@
 """
 Contains the class MenyData, which represents the data in a Menyanthes file
 
-Currently only the observations (H) and stresses (IN) are supported. Models (M) are ignored.
+Currently only the observations (H) and stresses (IN) and model results are supported.
+
+
+# Groundwater level and surface water level - meter with respect to a
+# reference level (e.g. NAP, TAW)
+# Precipitation and evaporation - meters(flux summed starting from date of
+# previous data entry)
+# Extraction - cubic meters(flux summed starting from date of previous data
+# entry)
 """
 
 import scipy.io as sio
@@ -12,7 +20,44 @@ import datetime as dt
 
 
 class MenyData:
-    def __init__(self, fname):
+    def __init__(self, fname, get_data='H'):
+        """This class reads a menyanthes file.
+
+        Parameters
+        ----------
+        fname: str
+            String with the filename and path to a menyanthes file.
+
+
+        """
+
+        mat = self.__readfile__(fname)
+
+        # Figure out which data to collect from the file.
+        if get_data == 'all':
+            get_data = ['H', 'IN', 'M']
+        elif type(get_data) is str:
+            get_data = [get_data]
+
+        if 'IN' in get_data:
+            self.IN = dict()
+            self.__readin__(mat)
+
+        if 'H' in get_data:
+            self.H = dict()
+            self.__readh__(mat)
+
+        if 'M' in get_data:
+            self.M = dict()
+            self.__readm__(mat)
+
+        del(mat) # Delete the mat file from memory again
+
+    def __readfile__(self, fname):
+        """This method is used to read the file.
+
+        """
+
         # Check if file is present
         if not (os.path.isfile(fname)):
             print('Could not find file ', fname)
@@ -20,56 +65,118 @@ class MenyData:
         mat = sio.loadmat(fname, struct_as_record=False, squeeze_me=True,
                           chars_as_strings=True)
 
-        # Groundwater level and surface water level - meter with respect to a reference level (e.g. NAP, TAW)
-        # Precipitation and evaporation - meters(flux summed starting from date of previous data entry)
-        # Extraction - cubic meters(flux summed starting from date of previous data entry)
-        self.H = []
-        if not isinstance(mat['H'], np.ndarray):
-            mat['H'] = [mat['H']]
-        for H in mat['H']:
-            tindex = [self.matlab2datetime(tval) for tval in
-                      H.values[:, 0]]
-            # measurement is used as is
-            series = pd.Series(H.values[:, 1], index=tindex)
+        return mat
 
-            # round on seconds, to get rid of conversion milliseconds
-            series.index = series.index.round('s')
+    def __readin__(self, mat):
+        """Read the input part.
 
-            # add to self.H
-            if not hasattr(H, 'Name') and not hasattr(H, 'name'):
-                H.Name = None
-            if hasattr(H, 'name'):
-                H.Name = H.name
-            self.H.append(MenyH(series, H.Name))
+        """
 
-        self.IN = []
+        # Check if more then one time series model is present
         if not isinstance(mat['IN'], np.ndarray):
             mat['IN'] = [mat['IN']]
-        for IN in mat['IN']:
-            tindex = [self.matlab2datetime(tval) for tval in
-                      IN.values[:, 0]]
-            series = pd.Series(IN.values[:, 1], index=tindex)
 
-            # round on seconds, to get rid of conversion milliseconds
-            series.index = series.index.round('s')
+        # Read all the time series models
+        for i, IN in enumerate(mat['IN']):
+            data = dict()
 
-            if IN.type == 'EVAP' or IN.type == 'PREC' or IN.type == 'WELL':
-                # in menyanthes, the flux is summed over the time-step, so
-                # devide by the timestep now
-                step = series.index.to_series().diff() / pd.offsets.Day(1)
-                step = step.values.astype(np.float)
-                series = series / step
-                if series.values[0] != 0:
-                    series = series[1:]
+            for name in IN._fieldnames:
+                if name != 'values':
+                    data[name] = getattr(IN, name)
+                else:
+                    tindex = [self.__matlab2datetime__(tval) for tval in
+                              IN.values[:, 0]]
+                    series = pd.Series(IN.values[:, 1], index=tindex)
+
+                    # round on seconds, to get rid of conversion milliseconds
+                    series.index = series.index.round('s')
+
+                    if IN.type in ['EVAP', 'PREC', 'WELL']:
+                        # in menyanthes, the flux is summed over the
+                        # time-step, so divide by the timestep now
+                        step = series.index.to_series().diff() / pd.offsets.Day(
+                            1)
+                        step = step.values.astype(np.float)
+                        series = series / step
+                        if series.values[0] != 0:
+                            series = series[1:]
+
+                    data['values'] = series
 
             # add to self.IN
             if not hasattr(IN, 'Name') and not hasattr(IN, 'name'):
-                IN.Name = None
+                IN.Name = 'IN' + str(i)
             if hasattr(IN, 'name'):
                 IN.Name = IN.name
-            self.IN.append(MenyIN(series, IN.Name, IN.type))
 
-    def matlab2datetime(self, matlab_datenum):
+            self.IN[IN.Name] = data
+
+    def __readh__(self, mat):
+        """Read the dependent variable part.
+
+        """
+
+        # Check if more then one time series model is present
+        if not isinstance(mat['H'], np.ndarray):
+            mat['H'] = [mat['H']]
+
+        # Read all the time series models
+        for i, H in enumerate(mat['H']):
+            data = dict()
+
+            for name in H._fieldnames:
+                if name != 'values':
+                    data[name] = getattr(H, name)
+                else:
+                    tindex = [self.__matlab2datetime__(tval) for tval in
+                              H.values[:, 0]]
+                    # measurement is used as is
+                    series = pd.Series(H.values[:, 1], index=tindex)
+                    # round on seconds, to get rid of conversion milliseconds
+                    series.index = series.index.round('s')
+                    data['values'] = series
+
+            # add to self.H
+            if not hasattr(H, 'Name') and not hasattr(H, 'name'):
+                H.Name = 'H' + str(i)  # Give it the index name
+            if hasattr(H, 'name'):
+                H.Name = H.name
+
+            self.H[H.Name] = data
+
+    def __readm__(self, mat):
+        """Read the result part.
+
+        """
+        # Check if more then one time series model is present
+        if not isinstance(mat['M'], np.ndarray):
+            mat['M'] = [mat['M']]
+
+        # Read all the time series models
+        for i, M in enumerate(mat['M']):
+            data = dict()
+
+            for name in M._fieldnames:
+                if name != 'values':
+                    data[name] = getattr(M, name)
+                else:
+                    tindex = [self.__matlab2datetime__(tval) for tval in
+                              M.values[:, 0]]
+                    # measurement is used as is
+                    series = pd.Series(M.values[:, 1], index=tindex)
+                    # round on seconds, to get rid of conversion milliseconds
+                    series.index = series.index.round('s')
+                    data['values'] = series
+
+            # add to self.H
+            if not hasattr(M, 'Name') and not hasattr(M, 'name'):
+                M.Name = 'M' + str(i)  # Give it the index name
+            if hasattr(M, 'name'):
+                M.Name = M.name
+
+            self.M[M.Name] = data
+
+    def __matlab2datetime__(self, matlab_datenum):
         """
         Transform a matlab time to a datetime, rounded to seconds
         """
@@ -77,16 +184,3 @@ class MenyData:
         dayfrac = dt.timedelta(days=float(matlab_datenum) % 1) - dt.timedelta(
             days=366)
         return day + dayfrac
-
-
-class MenyH:
-    def __init__(self, series, name):
-        self.series = series
-        self.name = name
-
-
-class MenyIN:
-    def __init__(self, series, name, type):
-        self.series = series
-        self.name = name
-        self.type = type

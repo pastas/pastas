@@ -1,0 +1,1 @@
+from pastas.read.read_series import dinodata, knmidata, menydata

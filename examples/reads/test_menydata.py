@@ -5,11 +5,16 @@
 """
 
 import matplotlib.pyplot as plt
-from pastas.read.menydata import MenyData
+from pastas import read
+import scipy.io as sio
 
 # how to use it?
 fname = '../data/MenyanthesTest.men'
-meny = MenyData(fname)
+mat = sio.loadmat(fname, struct_as_record=False, squeeze_me=True,
+                  chars_as_strings=True)
+meny = read.menydata(fname, 'IN')
+
+
 
 # plot some series
 f1, axarr = plt.subplots(len(meny.IN)+1, sharex=True)

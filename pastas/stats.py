@@ -50,7 +50,11 @@ class Statistics(object):
         ml: Pastas Model
             ml is a time series Model that is calibrated.
         """
+        # Save a reference to the model.
         self.ml = ml
+        # Save all statistics that can be calculated.
+        self.ops = ["evp", "rmsi", "rmse", "aic", "bic", "avg_dev", "pearson",
+                    "r_corrected", "sse"]
 
     # The statistical functions
 
@@ -181,9 +185,9 @@ class Statistics(object):
         -------
 
         """
-        keys = ["evp", "rmsi", "rmse", "aic", "bic", "avg_dev", "pearson", "r_corrected", "sse"]
+
         stats = dict()
-        for k in keys:
+        for k in self.ops:
             stats[k] = (getattr(self, k)(tmin, tmax))
 
         return stats

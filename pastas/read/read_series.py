@@ -3,79 +3,137 @@
 @author: ruben
 """
 
-from pastas.read.dinodata import DinoGrondwaterstand
-from pastas.read.knmidata import KnmiStation
-import numpy as np
 import warnings
 
+import numpy as np
+import pandas as pd
 
-class ReadSeries:
-    def __init__(self, fname, filetype, variable=None):
+from pastas.read.dinodata import DinoGrondwaterstand
+from pastas.read.knmidata import KnmiStation
+from pastas.read.menydata import MenyData
+
+
+def dinodata(fname):
+    """This method can be used to import files from Dinoloket that contain
+     groundwater level measurements (https://www.dinoloket.nl/)
+
+    Parameters
+    ----------
+    fname: str
+        Filename and path to a Dino file.
+
+    Returns
+    -------
+    DataModel: object
+        returns a standard Pastas DataModel object.
+
+    """
+    data = DataModel()
+    dino = DinoGrondwaterstand(fname)
+
+    data.series = dino.data
+    data.x = dino.x
+    data.y = dino.y
+    data.latlon = rd2wgs(data.x, data.y)
+    data.metadata = dino.meta[-1]
+
+    return data
+
+
+def knmidata(fname):
+    """This method can be used to import KNMI data.
+    ()
+
+    Parameters
+    ----------
+    fname: str
+        Filename and path to a Dino file.
+
+    Returns
+    -------
+    DataModel: object
+        returns a standard Pastas DataModel object.
+
+    """
+    data = DataModel()
+    knmi = KnmiStation.fromfile(fname)
+
+    data.data = knmi.data
+    if knmi.stations is not None and not knmi.stations.empty:
+        data.x = knmi.stations['LAT_north'][0]
+        data.y = knmi.stations['LON_east'][0]
+        data.metadata = knmi.stations
+
+    return data
+
+
+def menydata(fname, get_data='all'):
+    """This method can be used to import a menyanthes project file.
+
+    Parameters
+    ----------
+    fname: str
+        Filename and path to a Dino file.
+
+    Returns
+    -------
+    DataModel: object
+        returns a standard Pastas DataModel object.
+
+    """
+
+    meny = MenyData(fname, get_data=get_data)
+
+    # H_list = []
+    # for H in meny.H:
+    #     data = DataModel()
+    #
+    #     H_list.append(data)
+    #
+    # if type == 'all':
+    #     data.data = meny
+    # else:
+    #     data.data = meny[type]
+
+    return meny
+
+
+class DataModel():
+    def __init__(self):
+        """This is the standard datamodel class that is returned by all import
+         methods.
+
         """
-        Read in time series.
+        self.data = pd.DataFrame()
+        self.x = None
+        self.y = None
+        self.metadata = {}
 
-        Parameters
-        ----------
-        fname: str
-            filename inlcuding the relative path to the file
-        filetype: str
-            Type of the file. dedicated import modules have to be written and
-            imported for it.
-        variable: str
-            string with the variable name to import
 
-        """
+def rd2wgs(x, y):
+    """
 
-        if filetype == 'dino':
-            dino = DinoGrondwaterstand(fname)
-            self.series = dino.stand
-            self.xy = (dino.x, dino.y)
-            self.latlon = self.rd2wgs(self.xy)
-            self.meta = dino.meta[-1]
-        elif filetype == 'knmi':
-            knmi = KnmiStation.fromfile(fname)
-            self.series = knmi.data[variable]
-            if knmi.stations is not None and not knmi.stations.empty:
-                self.latlon = (knmi.stations['LAT_north'][0],
-                               knmi.stations['LON_east'][0])
-                self.meta = knmi.stations
-            else:
-                self.latlon = (np.NaN, np.NaN)
-                self.meta = {}
+    Parameters
+    ----------
+    xy: float
+        float of the location ???
 
-        elif filetype == 'usgs':
-            # not implemented yet
-            pass
-        elif filetype == 'csv':
-            # not implemented yet
-            pass
-        else:
-            raise Exception('Unknown filetype')
+    Returns
+    -------
+    XY location in lat-lon format
 
-    def rd2wgs(self, xy):
-        """
+    """
+    try:
+        from pyproj import Proj, transform
+        outProj = Proj(init='epsg:4326')
+        inProj = Proj(init='epsg:28992')
+        lon, lat = transform(inProj, outProj, x, y)
+    except ImportError:
+        warnings.warn('The module pyproj could not be imported. Please '
+                      'install through:'
+                      '>>> pip install requests'
+                      'or ... conda install requests', ImportWarning)
+        lat = np.NaN
+        lon = np.NaN
 
-        Parameters
-        ----------
-        xy: float
-            float of the location ???
-
-        Returns
-        -------
-        XY location in lat-lon format
-
-        """
-        try:
-            from pyproj import Proj, transform
-            outProj = Proj(init='epsg:4326')
-            inProj = Proj(init='epsg:28992')
-            lon, lat = transform(inProj, outProj, xy[0], xy[1])
-        except ImportError:
-            warnings.warn('The module pyproj could not be imported. Please '
-                          'install through:'
-                          '>>> pip install requests'
-                          'or ... conda install requests', ImportWarning)
-            lat = np.NaN
-            lon = np.NaN
-
-        return (lat, lon)
+    return (lat, lon)
