@@ -119,6 +119,11 @@ class Model:
         assert (tmin is not None) and (
             tmax is not None), 'model needs to be solved first'
 
+        # adjust tmin and tmax so that the time-offset (determined in
+        # check_frequency) is equal to that of the model (is also done in set_tmin_tmax)
+        tmin = tmin - self.get_time_offset(tmin, freq) + self.time_offset
+        tmax = tmax - self.get_time_offset(tmax, freq) + self.time_offset
+
         sim_index = pd.date_range(
             pd.to_datetime(tmin) - pd.DateOffset(days=self.warmup), tmax,
             freq=freq)
@@ -150,11 +155,6 @@ class Model:
             freq = self.freq
         if parameters is None:
             parameters = self.parameters.optimal.values
-
-        # adjust tmin and tmax so that the time-offset (determined in
-        # check_frequency) is equal to that of the model
-        tmin = tmin - self.get_time_offset(tmin, freq) + self.time_offset
-        tmax = tmax - self.get_time_offset(tmax, freq) + self.time_offset
 
         # simulate model
         simulation = self.simulate(parameters, tmin, tmax, freq)
@@ -454,9 +454,6 @@ class Model:
                 tmin = self.otmin
             if tmax is None:
                 tmax = self.otmax
-            # adjust tmin and tmax so that the time-offset (determined in check_frequency) is equal to that of the tseries
-            tmin = tmin - self.get_time_offset(tmin, self.freq) + self.time_offset
-            tmax = tmax - self.get_time_offset(tmax, self.freq) + self.time_offset
             h = self.simulate(tmin=tmin, tmax=tmax)
             h.plot()
 
@@ -478,28 +475,29 @@ class Model:
 
         """
         plt.figure('Model Results', facecolor='white')
-        gs = plt.GridSpec(3, 4, wspace=0.2)
+        gs = plt.GridSpec(3, 4, wspace=0.4, hspace=0.4)
 
         # Plot the Groundwater levels
         h = self.simulate(tmin=tmin, tmax=tmax)
         ax1 = plt.subplot(gs[:2, :-1])
         self.oseries.plot(linestyle='', marker='.', color='k', markersize=3,
                           label='observed head', ax=ax1)
-        h.plot(label='modeled head',ax=ax1)
-
-        # ax1.xaxis.set_visible(False)
-        plt.legend(loc=(0, 1), ncol=3, frameon=False, handlelength=3)
+        h.plot(label='modeled head', ax=ax1)
+        ax1.grid(which='both')
+        ax1.minorticks_off()
+        plt.legend(loc=(0, 1), ncol=3, frameon=False)
         plt.ylabel('Head [m]')
 
         # Plot the residuals and innovations
-        residuals = self.residuals(tmin=tmin, tmax=tmax)
-        ax2 = plt.subplot(gs[2, :-1])  # , sharex=ax1)
+        residuals = self.residuals(tmin=tmin, tmax=tmax, noise=False)
+        ax2 = plt.subplot(gs[2, :-1], sharex=ax1)
         residuals.plot(color='k', label='residuals')
-        # Ruben Calje commented next three lines on 31-10-2016:
-        # if self.noisemodel is not None:
-        # innovations = self.noisemodel.simulate(residuals, self.odelt)
-        # innovations.plot(label='innovations')
-        plt.legend(loc=(0, 1), ncol=3, frameon=False, handlelength=3)
+        if self.noisemodel is not None:
+            innovations = self.residuals(tmin=tmin, tmax=tmax, noise=True)
+            innovations.plot(label='innovations')
+        ax2.grid(which='both')
+        ax2.minorticks_off()
+        plt.legend(loc=(0, 1), ncol=3, frameon=False)
         plt.ylabel('Error [m]')
         plt.xlabel('Time [Years]')
 
@@ -513,14 +511,15 @@ class Model:
                 plt.plot(t, br)
         ax3.set_xticks(ax3.get_xticks()[::2])
         ax3.set_yticks(ax3.get_yticks()[::2])
-        plt.title('Block Response')
+        ax3.grid(which='both')
+        plt.title('Block Response', loc='left')
 
         # Plot the Model Parameters (Experimental)
         # ax4 = plt.subplot(gs[1:2, -1])
         # ax4.xaxis.set_visible(False)
         # ax4.yaxis.set_visible(False)
-        # text = np.vstack((self.parameters.keys(), [round(float(i), 4) for i in
-        #                                            self.parameters.optimal.values])).T
+        # text = np.vstack((self.parameters['optimal'].keys(), [round(float(i), 4) for i in
+        #                                                       self.parameters['optimal'].values])).T
         # colLabels = ("Parameter", "Value")
         # ytable = ax4.table(cellText=text, colLabels=colLabels, loc='center')
         # ytable.scale(1, 1.1)
@@ -529,9 +528,9 @@ class Model:
         ax5 = plt.subplot(gs[2, -1])
         ax5.xaxis.set_visible(False)
         ax5.yaxis.set_visible(False)
-        # Ruben Calje commented next two lines on 31-10-2016:
-        # plt.text(0.05, 0.8, 'AIC: %.2f' % self.fit.aic)
-        # plt.text(0.05, 0.6, 'BIC: %.2f' % self.fit.bic)
+        plt.text(0.05, 0.8, 'AIC: %.2f' % self.stats.aic())
+        plt.text(0.05, 0.6, 'BIC: %.2f' % self.stats.aic())
+        plt.title('Statistics', loc='left')
         plt.show()
         if savefig:
             plt.savefig('.eps' % (self.name), bbox_inches='tight')
@@ -551,10 +550,9 @@ class Model:
         assert (tmin is not None) and (
             tmax is not None), 'model needs to be solved first'
 
-        tindex = pd.date_range(tmin, tmax, freq=self.freq)
-
         # determine the simulation
-        hsim = self.simulate(tmin=tmin, tmax=tmax, freq=self.freq)
+        hsim = self.simulate(tmin=tmin, tmax=tmax)
+        tindex = hsim.index
         h = [hsim]
 
         # determine the influence of the different stresses
@@ -586,15 +584,12 @@ class Model:
         self.oseries.plot(linestyle='', marker='.', color='k', markersize=3,
                           ax=axarr[0], label='observations')
         hsim.plot(ax=axarr[0], label='simulation')
-        axarr[0].set_title('Observations and simulation')
         axarr[0].autoscale(enable=True, axis='y', tight=True)
         axarr[0].grid(which='both')
         axarr[0].minorticks_off()
 
         # add a legend
-        handles, labels = axarr[0].get_legend_handles_labels()
-        leg = axarr[0].legend(handles, labels, loc=2)
-        leg.get_frame().set_alpha(0.5)
+        axarr[0].legend(loc=(0, 1), ncol=3, frameon=False)
 
         # determine the ytick-spacing of the top graph
         yticks, ylabels = plt.yticks()
