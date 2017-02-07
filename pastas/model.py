@@ -119,17 +119,17 @@ class Model:
         assert (tmin is not None) and (
             tmax is not None), 'model needs to be solved first'
 
-        tindex = pd.date_range(
+        sim_index = pd.date_range(
             pd.to_datetime(tmin) - pd.DateOffset(days=self.warmup), tmax,
             freq=freq)
         dt = self.get_dt(freq)
 
         if parameters is None:
             parameters = self.parameters.optimal.values
-        h = pd.Series(data=0, index=tindex)
+        h = pd.Series(data=0, index=sim_index)
         istart = 0  # Track parameters index to pass to ts object
         for ts in self.tseriesdict.values():
-            h += ts.simulate(parameters[istart: istart + ts.nparam], tindex,
+            h += ts.simulate(parameters[istart: istart + ts.nparam], sim_index,
                              dt)
             istart += ts.nparam
         if self.constant:
@@ -138,7 +138,7 @@ class Model:
         return h[tmin:]
 
     def residuals(self, parameters=None, tmin=None, tmax=None, freq=None,
-                  noise=True):
+                  noise=True, h_observed=None):
         """Method to calculate the residuals.
 
         """
@@ -148,31 +148,39 @@ class Model:
             tmax = self.oseries.index.max()
         if freq is None:
             freq = self.freq
-        tindex = self.oseries[tmin: tmax].index  # times used for calibration
-
         if parameters is None:
             parameters = self.parameters.optimal.values
 
-        # h_observed - h_simulated
-        h_observed = self.oseries[tindex]
+        # adjust tmin and tmax so that the time-offset (determined in
+        # check_frequency) is equal to that of the model
+        tmin = tmin - self.get_time_offset(tmin, freq) + self.time_offset
+        tmax = tmax - self.get_time_offset(tmax, freq) + self.time_offset
+
+        # simulate model
         simulation = self.simulate(parameters, tmin, tmax, freq)
-        if len(tindex.difference(simulation.index)) == 0:
-            # all of the observation indexes are in the simulation
-            h_simulated = simulation[tindex]
-        else:
+
+        if h_observed is None:
+            h_observed = self.oseries[tmin: tmax]
             # sample measurements, so that frequency is not higher than model
             h_observed = self.__sample__(h_observed, simulation.index)
-            if len(h_observed) < len(tindex):
-                # update tindex
-                tindex = h_observed.index
+            # store this variable in the model, so that it can be used in the next iteration of the solver
+            self.oseries_calib = h_observed
+
+        obs_index = h_observed.index  # times used for calibration
+
+        # h_observed - h_simulated
+        if len(obs_index.difference(simulation.index)) == 0:
+            # all of the observation indexes are in the simulation
+            h_simulated = simulation[obs_index]
+        else:
             # interpolate simulation to measurement-times
             h_simulated = np.interp(h_observed.index.asi8,
                                     simulation.index.asi8, simulation)
         r = h_observed - h_simulated
         if noise and (self.noisemodel is not None):
-            r = self.noisemodel.simulate(r, self.odelt[tindex],
+            r = self.noisemodel.simulate(r, self.odelt[obs_index],
                                          parameters[-self.noisemodel.nparam:],
-                                         tindex)
+                                         obs_index)
         if np.isnan(sum(r ** 2)):
             print('nan problem in residuals')  # quick and dirty check
         return r[tmin:]
@@ -195,6 +203,8 @@ class Model:
                 self.noisemodel.parameters)
         if not initial:
             self.parameters.initial = optimal
+        # make sure calibration data is renewed
+        self.oseries_calib = None
 
     def solve(self, tmin=None, tmax=None, solver=LmfitSolve, report=True,
               noise=True, initial=True):
