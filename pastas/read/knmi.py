@@ -22,6 +22,33 @@ For now the direct download only works for meteorological stations and daily dat
 import numpy as np
 from datetime import date
 import pandas as pd
+from pastas.read.datamodel import DataModel
+
+
+class knmidata(DataModel):
+    def __init__(self, fname):
+        """This method can be used to import KNMI data.
+
+        Parameters
+        ----------
+        fname: str
+            Filename and path to a Dino file.
+
+        Returns
+        -------
+        DataModel: object
+            returns a standard Pastas DataModel object.
+
+        """
+        DataModel.__init__(self)
+        knmi = KnmiStation.fromfile(fname)
+
+        self.series = knmi.data
+
+        if knmi.stations is not None and not knmi.stations.empty:
+            self.x = knmi.stations['LAT_north'][0]
+            self.y = knmi.stations['LON_east'][0]
+            self.metadata = knmi.stations
 
 
 class KnmiStation:
@@ -198,7 +225,7 @@ class KnmiStation:
                     raise NameError(key + ' does not exist in data')
             if ' (-1 for <0.05 mm)' in value or ' (-1 voor <0.05 mm)' in value:
                 # set 0.025 mm where data == -1
-                data.loc[data[key] == -1, key] = 0.25 # unit is still 0.1 mm
+                data.loc[data[key] == -1, key] = 0.25  # unit is still 0.1 mm
                 value = value.replace(' (-1 for <0.05 mm)', '')
                 value = value.replace(' (-1 voor <0.05 mm)', '')
             if '0.1 ' in value:

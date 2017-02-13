@@ -10,6 +10,10 @@ Currently only the observations (H) and stresses (IN) and model results are supp
 # previous data entry)
 # Extraction - cubic meters(flux summed starting from date of previous data
 # entry)
+
+TODO: menyanthes-files contain a lot of data and a DataModel is not a good
+form to return... this needs some more work
+
 """
 
 import scipy.io as sio
@@ -19,8 +23,32 @@ import pandas as pd
 import datetime as dt
 
 
+# from pastas.read.datamodel import DataModel
+
+
+def menydata(fname, data='all'):
+    """This method can be used to import a menyanthes project file.
+
+    Parameters
+    ----------
+    fname: str
+        Filename and path to a Dino file.
+
+
+    Returns
+    -------
+    DataModel: object
+        returns a standard Pastas DataModel object or a list of objects when
+        more than one datatype is present.
+
+    """
+    meny = MenyData(fname, data=data)
+
+    return meny
+
+
 class MenyData:
-    def __init__(self, fname, get_data='H'):
+    def __init__(self, fname, data='H'):
         """This class reads a menyanthes file.
 
         Parameters
@@ -31,29 +59,29 @@ class MenyData:
 
         """
 
-        mat = self.__readfile__(fname)
+        mat = self.read_file(fname)
 
         # Figure out which data to collect from the file.
-        if get_data == 'all':
-            get_data = ['H', 'IN', 'M']
-        elif type(get_data) is str:
-            get_data = [get_data]
+        if data == 'all':
+            data = ['H', 'IN', 'M']
+        elif type(data) is str:
+            data = [data]
 
-        if 'IN' in get_data:
+        if 'IN' in data:
             self.IN = dict()
-            self.__readin__(mat)
+            self.read_in(mat)
 
-        if 'H' in get_data:
+        if 'H' in data:
             self.H = dict()
-            self.__readh__(mat)
+            self.read_h(mat)
 
-        if 'M' in get_data:
+        if 'M' in data:
             self.M = dict()
-            self.__readm__(mat)
+            self.read_m(mat)
 
-        del(mat) # Delete the mat file from memory again
+        del (mat)  # Delete the mat file from memory again
 
-    def __readfile__(self, fname):
+    def read_file(self, fname):
         """This method is used to read the file.
 
         """
@@ -67,7 +95,7 @@ class MenyData:
 
         return mat
 
-    def __readin__(self, mat):
+    def read_in(self, mat):
         """Read the input part.
 
         """
@@ -84,7 +112,7 @@ class MenyData:
                 if name != 'values':
                     data[name] = getattr(IN, name)
                 else:
-                    tindex = [self.__matlab2datetime__(tval) for tval in
+                    tindex = [self.matlab2datetime(tval) for tval in
                               IN.values[:, 0]]
                     series = pd.Series(IN.values[:, 1], index=tindex)
 
@@ -111,7 +139,7 @@ class MenyData:
 
             self.IN[IN.Name] = data
 
-    def __readh__(self, mat):
+    def read_h(self, mat):
         """Read the dependent variable part.
 
         """
@@ -128,7 +156,7 @@ class MenyData:
                 if name != 'values':
                     data[name] = getattr(H, name)
                 else:
-                    tindex = [self.__matlab2datetime__(tval) for tval in
+                    tindex = [self.matlab2datetime(tval) for tval in
                               H.values[:, 0]]
                     # measurement is used as is
                     series = pd.Series(H.values[:, 1], index=tindex)
@@ -144,7 +172,7 @@ class MenyData:
 
             self.H[H.Name] = data
 
-    def __readm__(self, mat):
+    def read_m(self, mat):
         """Read the result part.
 
         """
@@ -160,7 +188,7 @@ class MenyData:
                 if name != 'values':
                     data[name] = getattr(M, name)
                 else:
-                    tindex = [self.__matlab2datetime__(tval) for tval in
+                    tindex = [self.matlab2datetime(tval) for tval in
                               M.values[:, 0]]
                     # measurement is used as is
                     series = pd.Series(M.values[:, 1], index=tindex)
@@ -176,7 +204,7 @@ class MenyData:
 
             self.M[M.Name] = data
 
-    def __matlab2datetime__(self, matlab_datenum):
+    def matlab2datetime(self, matlab_datenum):
         """
         Transform a matlab time to a datetime, rounded to seconds
         """

@@ -3,18 +3,15 @@
 
 """
 
-from pastas import *
+from pastas import read
 import matplotlib.pyplot as plt
 
 fname = '../data/B32D0136001_1.csv'
-obs = ReadSeries(fname, 'dino')
+obs = read.dinodata(fname)
 
 fname = '../data/KNMI_Bilt.txt'
-stress = ReadSeries(fname, 'knmi', variable='RH')
+stress = read.knmidata(fname)
 
-plt.figure()
-plt.subplot(211)
-obs.series.plot()
-plt.subplot(212)
-stress.series.plot()
-plt.show()
+obs.data.plot()
+stress.data.plot()
+

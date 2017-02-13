@@ -1,10 +1,44 @@
 """
-@author: ruben
+This file contains the classes that can be used to import groundwater level
+data from dinoloket.nl.
+
+TODO: Get rid of filternummer en opmerking in self.series
 
 """
 
 import numpy as np
 import pandas as pd
+from pastas.read.datamodel import DataModel
+
+
+class dinodata(DataModel):
+    def __init__(self, fname):
+        """This method can be used to import files from Dinoloket that contain
+         groundwater level measurements (https://www.dinoloket.nl/)
+
+        Parameters
+        ----------
+        fname: str
+            Filename and path to a Dino file.
+
+        Returns
+        -------
+        DataModel: object
+            returns a standard Pastas DataModel object.
+
+        """
+
+        DataModel.__init__(self)
+
+        # Read the file
+        dino = DinoGrondwaterstand(fname)
+
+        self.data = dino.data
+        self.x = dino.x
+        self.y = dino.y
+        self.latlon = self.rd2wgs(dino.x, dino.y)
+        self.metadata = dino.meta[-1]
+
 
 class DinoGrondwaterstand:
     def __init__(self, fname):
@@ -84,7 +118,7 @@ class DinoGrondwaterstand:
                 # # usecols.remove(2)
                 measurements = pd.read_csv(f, header=None, names=titel,
                                            parse_dates=['Peildatum'],
-                                           index_col = 'Peildatum',
+                                           index_col='Peildatum',
                                            dayfirst=True,
                                            usecols=usecols)
                 ts = measurements['Stand_cm_tov_NAP'] / 100
@@ -99,7 +133,7 @@ class DinoGrondwaterstand:
 
                 # measurements = np.genfromtxt(fname, delimiter=',', dtype=dtype,
                 #                              names=titel, usecols=usecols)
-                #values = measurements['Stand_cm_tov_NAP'] / 100
+                # values = measurements['Stand_cm_tov_NAP'] / 100
 
                 # %% zet de ingelezen data om in een reeks
                 # if measurements['Stand_cm_tov_NAP'].dtype == np.dtype('bool'):

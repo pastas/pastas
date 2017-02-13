@@ -8,7 +8,7 @@ from __future__ import print_function
 # del version
 
 from .model import Model
-from .read.read_series import ReadSeries
+from . import read
 from .recharge.recharge_func import Preferential, Linear, Percolation, \
     Combination
 from .rfunc import Gamma, Exponential, Hantush, Theis
