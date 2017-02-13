@@ -43,7 +43,7 @@ class knmidata(DataModel):
         DataModel.__init__(self)
         knmi = KnmiStation.fromfile(fname)
 
-        self.series = knmi.data
+        self.data = knmi.data
 
         if knmi.stations is not None and not knmi.stations.empty:
             self.x = knmi.stations['LAT_north'][0]
