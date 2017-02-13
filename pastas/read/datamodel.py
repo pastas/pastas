@@ -9,7 +9,7 @@ class DataModel():
          methods.
 
         """
-        self.data = pd.DataFrame()
+        self.series = pd.Series()
         self.x = None
         self.y = None
         self.metadata = {}

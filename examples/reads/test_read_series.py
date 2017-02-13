@@ -10,8 +10,8 @@ fname = '../data/B32D0136001_1.csv'
 obs = read.dinodata(fname)
 
 fname = '../data/KNMI_Bilt.txt'
-stress = read.knmidata(fname)
+stress = read.knmidata(fname, 'EV24')
 
-obs.data.plot()
-stress.data.plot()
+obs.series.plot()
+stress.series.plot()
 

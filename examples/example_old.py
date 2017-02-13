@@ -7,16 +7,16 @@ from pastas import *
 
 # read observations
 fname = 'data/B32D0136001_1.csv'
-obs = ReadSeries(fname, 'dino')
+obs = read.dinodata(fname)
 
 # Create the time series model
 ml = Model(obs.series)
 
 # read climate data
 fname = 'data/KNMI_Bilt.txt'
-RH = ReadSeries(fname, 'knmi', variable='RH')
-EV24 = ReadSeries(fname, 'knmi', variable='EV24')
-rech = RH.series - EV24.series
+RH = read.knmidata(fname, variable='RH')
+EV24 = read.knmidata(fname, variable='EV24')
+#rech = RH.series - EV24.series
 
 # Create stress
 #ts = Recharge(RH.series, EV24.series, Gamma, Preferential, name='recharge')

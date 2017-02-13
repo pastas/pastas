@@ -12,7 +12,7 @@ from pastas.read.datamodel import DataModel
 
 
 class dinodata(DataModel):
-    def __init__(self, fname):
+    def __init__(self, fname, variable='Stand_cm_tov_NAP'):
         """This method can be used to import files from Dinoloket that contain
          groundwater level measurements (https://www.dinoloket.nl/)
 
@@ -33,7 +33,11 @@ class dinodata(DataModel):
         # Read the file
         dino = DinoGrondwaterstand(fname)
 
-        self.data = dino.data
+        if variable not in dino.data.keys():
+            Warning("variable %s is not in this dataset. Please use one of "
+                    "the following keys: %s" %(variable, dino.data.keys()))
+        else:
+            self.series = dino.data[variable]
         self.x = dino.x
         self.y = dino.y
         self.latlon = self.rd2wgs(dino.x, dino.y)

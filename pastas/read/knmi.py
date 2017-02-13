@@ -26,7 +26,7 @@ from pastas.read.datamodel import DataModel
 
 
 class knmidata(DataModel):
-    def __init__(self, fname):
+    def __init__(self, fname, variable='RD'):
         """This method can be used to import KNMI data.
 
         Parameters
@@ -43,7 +43,11 @@ class knmidata(DataModel):
         DataModel.__init__(self)
         knmi = KnmiStation.fromfile(fname)
 
-        self.data = knmi.data
+        if variable not in knmi.data.keys():
+            Warning("variable %s is not in this dataset. Please use one of "
+                    "the following keys: %s" %(variable, knmi.data.keys()))
+        else:
+            self.series = knmi.data[variable]
 
         if knmi.stations is not None and not knmi.stations.empty:
             self.x = knmi.stations['LAT_north'][0]
