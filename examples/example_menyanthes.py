@@ -4,10 +4,9 @@ test the functioning of Pastas during development.
 """
 
 from pastas import *
-from pastas.read.menydata import MenyData
 
 fname = 'data/MenyanthesTest.men'
-meny = MenyData(fname)
+meny = read.menydata(fname)
 
 # Create the time series model
 ml = Model(meny.H[0].series)

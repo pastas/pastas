@@ -6,13 +6,12 @@ Created on Wed Mar 30 16:07:44 2016
 """
 
 import matplotlib.pyplot as plt
-from pastas.read.dinodata import DinoGrondwaterstand
+from pastas import read
 
-# How to use it?
+# # How to use it?
 fname = '../data/B32D0136001_1.csv'
-dino = DinoGrondwaterstand(fname)
+dino = read.dinodata(fname)
 
 # plot
-plt.figure()
-dino.stand.plot()
+dino.data.plot()
 plt.show()

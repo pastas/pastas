@@ -48,6 +48,7 @@ class Statistics(object):
         # Save a reference to the model.
         self.ml = ml
         # Save all statistics that can be calculated.
+
         self.ops = {'evp': 'Explained variance percentage',
                     'rmse': 'Root mean squared error',
                     'rmsi': 'Root mean squared innovation',
@@ -174,6 +175,7 @@ class Statistics(object):
             Dataframe with all possible statistics
 
         """
+
         stats = pd.DataFrame(columns=['Value'])
         for k in self.ops.keys():
             stats.loc[k] = (getattr(self, k)(tmin, tmax))
