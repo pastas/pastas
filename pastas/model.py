@@ -42,7 +42,8 @@ class Model:
             interpolation.
 
         """
-        self.oseries = check_oseries(oseries, freq, fillnan)
+        self.oseries = check_oseries(oseries, fillnan)
+        self.oseries_calib = None
         self.warmup = warmup
         self.xy = xy
         self.metadata = metadata
@@ -91,7 +92,7 @@ class Model:
         """
         self.constant = Constant(value=self.oseries.mean())
 
-    def simulate(self, parameters=None, tmin=None, tmax=None, freq='D'):
+    def simulate(self, parameters=None, tmin=None, tmax=None, freq=None):
         """
 
         Parameters
@@ -113,20 +114,27 @@ class Model:
             tmin = self.tmin
         if tmax is None:
             tmax = self.tmax
+        if freq is None:
+            freq = self.freq
         assert (tmin is not None) and (
             tmax is not None), 'model needs to be solved first'
 
-        tindex = pd.date_range(
+        # adjust tmin and tmax so that the time-offset (determined in
+        # check_frequency) is equal to that of the model (is also done in set_tmin_tmax)
+        tmin = tmin - self.get_time_offset(tmin, freq) + self.time_offset
+        tmax = tmax - self.get_time_offset(tmax, freq) + self.time_offset
+
+        sim_index = pd.date_range(
             pd.to_datetime(tmin) - pd.DateOffset(days=self.warmup), tmax,
             freq=freq)
         dt = self.get_dt(freq)
 
         if parameters is None:
             parameters = self.parameters.optimal.values
-        h = pd.Series(data=0, index=tindex)
+        h = pd.Series(data=0, index=sim_index)
         istart = 0  # Track parameters index to pass to ts object
         for ts in self.tseriesdict.values():
-            h += ts.simulate(parameters[istart: istart + ts.nparam], tindex,
+            h += ts.simulate(parameters[istart: istart + ts.nparam], sim_index,
                              dt)
             istart += ts.nparam
         if self.constant:
@@ -134,41 +142,45 @@ class Model:
 
         return h[tmin:]
 
-    def residuals(self, parameters=None, tmin=None, tmax=None, freq='D',
-                  noise=True):
-        """
-        Method to calculate the residuals.
+    def residuals(self, parameters=None, tmin=None, tmax=None, freq=None,
+                  noise=True, h_observed=None):
+        """Method to calculate the residuals.
 
         """
         if tmin is None:
             tmin = self.oseries.index.min()
         if tmax is None:
             tmax = self.oseries.index.max()
-        tindex = self.oseries[tmin: tmax].index  # times used for calibration
-
+        if freq is None:
+            freq = self.freq
         if parameters is None:
             parameters = self.parameters.optimal.values
 
-        # h_observed - h_simulated
-        h_observed = self.oseries[tindex]
+        # simulate model
         simulation = self.simulate(parameters, tmin, tmax, freq)
-        if len(tindex.difference(simulation.index)) == 0:
-            # all of the observation indexes are in the simulation
-            h_simulated = simulation[tindex]
-        else:
+
+        if h_observed is None:
+            h_observed = self.oseries[tmin: tmax]
             # sample measurements, so that frequency is not higher than model
             h_observed = self.__sample__(h_observed, simulation.index)
-            if len(h_observed)<len(tindex):
-                # update tindex
-                tindex = h_observed.index
+            # store this variable in the model, so that it can be used in the next iteration of the solver
+            self.oseries_calib = h_observed
+
+        obs_index = h_observed.index  # times used for calibration
+
+        # h_observed - h_simulated
+        if len(obs_index.difference(simulation.index)) == 0:
+            # all of the observation indexes are in the simulation
+            h_simulated = simulation[obs_index]
+        else:
             # interpolate simulation to measurement-times
             h_simulated = np.interp(h_observed.index.asi8,
                                     simulation.index.asi8, simulation)
         r = h_observed - h_simulated
         if noise and (self.noisemodel is not None):
-            r = self.noisemodel.simulate(r, self.odelt[tindex],
+            r = self.noisemodel.simulate(r, self.odelt[obs_index],
                                          parameters[-self.noisemodel.nparam:],
-                                         tindex)
+                                         obs_index)
         if np.isnan(sum(r ** 2)):
             print('nan problem in residuals')  # quick and dirty check
         return r[tmin:]
@@ -191,6 +203,8 @@ class Model:
                 self.noisemodel.parameters)
         if not initial:
             self.parameters.initial = optimal
+        # make sure calibration data is renewed
+        self.oseries_calib = None
 
     def solve(self, tmin=None, tmax=None, solver=LmfitSolve, report=True,
               noise=True, initial=True):
@@ -281,7 +295,8 @@ class Model:
             if tseries.tmax < tmax:
                 tmax = tseries.tmax
 
-        # adjust tmin and tmax so that the time-offset (determined in check_frequency) is equal to that of the tseries
+        # adjust tmin and tmax so that the time-offset (determined in
+        # check_frequency) is equal to that of the tseries
         tmin = tmin - self.get_time_offset(tmin, self.freq) + self.time_offset
         tmax = tmax - self.get_time_offset(tmax, self.freq) + self.time_offset
 
@@ -412,7 +427,7 @@ class Model:
     def __sample__(self, series, tindex):
         # Sample the series so that the frequency is not higher that tindex
         # Find the index closest to the tindex, and then return a selection of series
-        f = interpolate.interp1d(series.index.asi8 ,np.arange(0,len(series.index)),
+        f = interpolate.interp1d(series.index.asi8, np.arange(0, len(series.index)),
                                  kind='nearest', bounds_error=False, fill_value='extrapolate')
         ind = np.unique(f(tindex.asi8).astype(int))
         return series[ind]
@@ -431,6 +446,9 @@ class Model:
 
         """
         plt.figure()
+        if oseries:
+            self.oseries.plot(linestyle='', marker='.', color='k',
+                              markersize=3)
         if simulate:
             if tmin is None:
                 tmin = self.otmin
@@ -438,9 +456,7 @@ class Model:
                 tmax = self.otmax
             h = self.simulate(tmin=tmin, tmax=tmax)
             h.plot()
-        if oseries:
-            self.oseries.plot(linestyle='', marker='.', color='k',
-                              markersize=3)
+
         plt.show()
 
     def plot_results(self, tmin=None, tmax=None, savefig=False):
@@ -459,27 +475,29 @@ class Model:
 
         """
         plt.figure('Model Results', facecolor='white')
-        gs = plt.GridSpec(3, 4, wspace=0.2)
+        gs = plt.GridSpec(3, 4, wspace=0.4, hspace=0.4)
 
         # Plot the Groundwater levels
         h = self.simulate(tmin=tmin, tmax=tmax)
         ax1 = plt.subplot(gs[:2, :-1])
-        h.plot(label='modeled head')
         self.oseries.plot(linestyle='', marker='.', color='k', markersize=3,
-                          label='observed head')
-        # ax1.xaxis.set_visible(False)
-        plt.legend(loc=(0, 1), ncol=3, frameon=False, handlelength=3)
+                          label='observed head', ax=ax1)
+        h.plot(label='modeled head', ax=ax1)
+        ax1.grid(which='both')
+        ax1.minorticks_off()
+        plt.legend(loc=(0, 1), ncol=3, frameon=False)
         plt.ylabel('Head [m]')
 
         # Plot the residuals and innovations
-        residuals = self.residuals(tmin=tmin, tmax=tmax)
-        ax2 = plt.subplot(gs[2, :-1])  # , sharex=ax1)
+        residuals = self.residuals(tmin=tmin, tmax=tmax, noise=False)
+        ax2 = plt.subplot(gs[2, :-1], sharex=ax1)
         residuals.plot(color='k', label='residuals')
-        # Ruben Calje commented next three lines on 31-10-2016:
-        # if self.noisemodel is not None:
-        # innovations = self.noisemodel.simulate(residuals, self.odelt)
-        # innovations.plot(label='innovations')
-        plt.legend(loc=(0, 1), ncol=3, frameon=False, handlelength=3)
+        if self.noisemodel is not None:
+            innovations = self.residuals(tmin=tmin, tmax=tmax, noise=True)
+            innovations.plot(label='innovations')
+        ax2.grid(which='both')
+        ax2.minorticks_off()
+        plt.legend(loc=(0, 1), ncol=3, frameon=False)
         plt.ylabel('Error [m]')
         plt.xlabel('Time [Years]')
 
@@ -493,14 +511,15 @@ class Model:
                 plt.plot(t, br)
         ax3.set_xticks(ax3.get_xticks()[::2])
         ax3.set_yticks(ax3.get_yticks()[::2])
-        plt.title('Block Response')
+        ax3.grid(which='both')
+        plt.title('Block Response', loc='left')
 
         # Plot the Model Parameters (Experimental)
         # ax4 = plt.subplot(gs[1:2, -1])
         # ax4.xaxis.set_visible(False)
         # ax4.yaxis.set_visible(False)
-        # text = np.vstack((self.parameters.keys(), [round(float(i), 4) for i in
-        #                                            self.parameters.optimal.values])).T
+        # text = np.vstack((self.parameters['optimal'].keys(), [round(float(i), 4) for i in
+        #                                                       self.parameters['optimal'].values])).T
         # colLabels = ("Parameter", "Value")
         # ytable = ax4.table(cellText=text, colLabels=colLabels, loc='center')
         # ytable.scale(1, 1.1)
@@ -509,14 +528,14 @@ class Model:
         ax5 = plt.subplot(gs[2, -1])
         ax5.xaxis.set_visible(False)
         ax5.yaxis.set_visible(False)
-        # Ruben Calje commented next two lines on 31-10-2016:
-        # plt.text(0.05, 0.8, 'AIC: %.2f' % self.fit.aic)
-        # plt.text(0.05, 0.6, 'BIC: %.2f' % self.fit.bic)
+        plt.text(0.05, 0.8, 'AIC: %.2f' % self.stats.aic())
+        plt.text(0.05, 0.6, 'BIC: %.2f' % self.stats.aic())
+        plt.title('Statistics', loc='left')
         plt.show()
         if savefig:
             plt.savefig('.eps' % (self.name), bbox_inches='tight')
 
-    def plot_decomposition(self, tmin=None, tmax=None, freq=None):
+    def plot_decomposition(self, tmin=None, tmax=None):
         """
 
         Plot the decomposition of a time-series in the different stresses
@@ -530,20 +549,17 @@ class Model:
             tmax = self.tmax
         assert (tmin is not None) and (
             tmax is not None), 'model needs to be solved first'
-        if freq is None:
-            freq = self.freq
-
-        tindex = pd.date_range(tmin, tmax, freq=freq)
 
         # determine the simulation
-        hsim = self.simulate(tmin=tmin, tmax=tmax, freq=freq)
+        hsim = self.simulate(tmin=tmin, tmax=tmax)
+        tindex = hsim.index
         h = [hsim]
 
         # determine the influence of the different stresses
         parameters = self.parameters.optimal.values
         istart = 0  # Track parameters index to pass to ts object
         for ts in self.tseriesdict.values():
-            dt = self.get_dt(freq)
+            dt = self.get_dt(self.freq)
             h.append(
                 ts.simulate(parameters[istart: istart + ts.nparam], tindex,
                             dt))
@@ -568,15 +584,12 @@ class Model:
         self.oseries.plot(linestyle='', marker='.', color='k', markersize=3,
                           ax=axarr[0], label='observations')
         hsim.plot(ax=axarr[0], label='simulation')
-        axarr[0].set_title('Observations and simulation')
         axarr[0].autoscale(enable=True, axis='y', tight=True)
         axarr[0].grid(which='both')
         axarr[0].minorticks_off()
 
         # add a legend
-        handles, labels = axarr[0].get_legend_handles_labels()
-        leg = axarr[0].legend(handles, labels, loc=2)
-        leg.get_frame().set_alpha(0.5)
+        axarr[0].legend(loc=(0, 1), ncol=3, frameon=False)
 
         # determine the ytick-spacing of the top graph
         yticks, ylabels = plt.yticks()
@@ -604,3 +617,38 @@ class Model:
         # show the figure
         plt.tight_layout()
         plt.show()
+
+    def get_simulation(self, tmin=None, tmax=None):
+        """Method that returns the simulated series.
+
+        """
+        series = self.simulate(tmin=tmin, tmax=tmax)
+        return series
+
+    def get_innovations(self, tmin=None, tmax=None):
+        """Method that returns the innovation series.
+
+        """
+        if self.noisemodel is None:
+            raise Warning('No noisemodel is present in this model, so the'
+                          ' innovations cannot be calculated.')
+
+        v = self.residuals(tmin=tmin, tmax=tmax, noise=True)
+        return v
+
+    def get_residuals(self, tmin=None, tmax=None):
+        """Method that returns the residual series
+
+        """
+        return self.residuals(tmin, tmax, noise=False)
+
+    def get_observations(self, tmin=None, tmax=None):
+        """Method that returns the observations series.
+
+        """
+        if tmin is None:
+            tmin = self.oseries.index.min()
+        if tmax is None:
+            tmax = self.oseries.index.max()
+        tindex = self.oseries[tmin: tmax].index
+        return self.oseries[tindex]

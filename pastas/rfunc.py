@@ -59,9 +59,9 @@ class RfuncBase:
         self.tmax = 0
     def set_parameters(self, name):
         pass
-    def step(self, p, dt):
+    def step(self, p, dt=1):
         pass
-    def block(self, p, dt):
+    def block(self, p, dt=1):
         pass
     
 class Gamma(RfuncBase):
@@ -85,13 +85,13 @@ class Gamma(RfuncBase):
         parameters.loc[name + '_a'] = (100, 1, 5000, 1, name)
         return parameters
 
-    def step(self, p, dt):
+    def step(self, p, dt=1):
         self.tmax = gammaincinv(p[1], self.cutoff) * p[2]
         t = np.arange(dt, self.tmax, dt)
         s = self.up * p[0] * gammainc(p[1], t / p[2])
         return s
 
-    def block(self, p, dt):
+    def block(self, p, dt=1):
         s = self.step(p, dt)
         return s[1:] - s[:-1]
 
@@ -117,13 +117,13 @@ class Exponential(RfuncBase):
         parameters['tseries'] = name
         return parameters
 
-    def step(self, p, dt):
+    def step(self, p, dt=1):
         self.tmax = -np.log(1.0 / p[1]) * p[1]
         t = np.arange(dt, self.tmax, dt)
         s = self.up * p[0] * (1.0 - np.exp(-t / p[1]))
         return s
 
-    def block(self, p, dt):
+    def block(self, p, dt=1):
         s = self.step(p, dt)
         return s[1:] - s[:-1]
 
@@ -221,8 +221,8 @@ class One(RfuncBase):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 1
 
-    def step(self, p, dt):
+    def step(self, p, dt=1):
         return p[0] * np.ones(2)
 
-    def block(self, p, dt):
+    def block(self, p, dt=1):
         return p[0] * np.ones(2)
