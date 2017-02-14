@@ -15,12 +15,14 @@ TODO: menyanthes-files contain a lot of data and a DataModel is not a good
 form to return... this needs some more work
 
 """
+from __future__ import print_function, division
 
-import scipy.io as sio
+import datetime as dt
 import os.path
+
 import numpy as np
 import pandas as pd
-import datetime as dt
+import scipy.io as sio
 
 
 # from pastas.read.datamodel import DataModel

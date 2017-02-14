@@ -26,11 +26,12 @@ TODO
 - Nash-Sutcliffe
 - portmanteau test (ljung-Box & Box-Pierce)
 """
+from __future__ import print_function, division
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy.stats import probplot
-
 from statsmodels.tsa.stattools import acf, pacf
 
 

@@ -1,14 +1,15 @@
 # coding=utf-8
-from __future__ import print_function, division
-import numpy as np
-import pandas as pd
-from scipy.special import gammainc, gammaincinv, k0, exp1
-
 """
 rfunc module.
 Contains classes for the response functions.
 Each response function class needs the following:
 """
+
+from __future__ import print_function, division
+
+import numpy as np
+import pandas as pd
+from scipy.special import gammainc, gammaincinv, k0, exp1
 
 _class_doc = """
 Attributes
@@ -48,6 +49,7 @@ More information on how to write a response class can be found here:
 http://pastas.github.io/pastas/developers.html
 """
 
+
 class RfuncBase:
     def __init__(self, up, meanstress, cutoff):
         if up:
@@ -57,13 +59,17 @@ class RfuncBase:
         self.meanstress = meanstress
         self.cutoff = cutoff
         self.tmax = 0
+
     def set_parameters(self, name):
         pass
+
     def step(self, p, dt=1):
         pass
+
     def block(self, p, dt=1):
         pass
-    
+
+
 class Gamma(RfuncBase):
     __doc__ = """
     Gamma response function with 3 parameters A, a, and n.
@@ -80,8 +86,10 @@ class Gamma(RfuncBase):
     def set_parameters(self, name):
         parameters = pd.DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        parameters.loc[name + '_A'] = (1 / self.meanstress, 0, 100 / self.meanstress, 1, name)
-        parameters.loc[name + '_n'] = (1, 0.1, 5, 1, name)  # if n is too small, the length of the response function is close to zero
+        parameters.loc[name + '_A'] = (
+            1 / self.meanstress, 0, 100 / self.meanstress, 1, name)
+        parameters.loc[name + '_n'] = (1, 0.1, 5, 1,
+                                       name)  # if n is too small, the length of the response function is close to zero
         parameters.loc[name + '_a'] = (100, 1, 5000, 1, name)
         return parameters
 
@@ -112,7 +120,8 @@ class Exponential(RfuncBase):
     def set_parameters(self, name):
         parameters = pd.DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        parameters.loc[name + '_A'] = (1 / self.meanstress, 0, 100 / self.meanstress, 1, name)
+        parameters.loc[name + '_A'] = (
+            1 / self.meanstress, 0, 100 / self.meanstress, 1, name)
         parameters.loc[name + '_a'] = (100, 1, 5000, 1, name)
         parameters['tseries'] = name
         return parameters
@@ -134,15 +143,15 @@ class Hantush(RfuncBase):
     References
     ----------
     [1] Hantush, M. S., & Jacob, C. E. (1955). Non‐steady radial flow in an
-    infinite leaky aquifer. Eos, Transactions American Geophysical Union, 36(1),
-    95-100.
+    infinite leaky aquifer. Eos, Transactions American Geophysical Union,
+    36(1), 95-100.
 
     [2] Veling, E. J. M., & Maas, C. (2010). Hantush well function revisited.
     Journal of hydrology, 393(3), 381-388.
 
     [3] Von Asmuth, J. R., Maas, K., Bakker, M., & Petersen, J. (2008). Modeling
-    time series of ground water head fluctuations subjected to multiple stresses.
-    Ground Water, 46(1), 30-40.
+    time series of ground water head fluctuations subjected to multiple
+    stresses. Ground Water, 46(1), 30-40.
 
     """
 
@@ -170,7 +179,8 @@ class Hantush(RfuncBase):
         w = (expintrho - h_inf) / (expintrho - exp1(rho / 2.0))
         I = h_inf - w * exp1(rho / 2.0 * np.exp(abs(tau))) + (w - 1.0) * \
                                                              exp1(
-                                                                 rho * np.cosh(tau))
+                                                                 rho * np.cosh(
+                                                                     tau))
         s = h_inf + np.sign(tau) * I
         return s
 

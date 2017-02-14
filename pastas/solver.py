@@ -1,3 +1,5 @@
+from __future__ import print_function, division
+
 import lmfit
 import numpy as np
 
@@ -19,7 +21,8 @@ class LmfitSolve:
 
     def objfunction(self, parameters, tmin, tmax, noise, model, freq):
         p = np.array([p.value for p in parameters.values()])
-        return model.residuals(p, tmin, tmax, freq, noise, h_observed=model.oseries_calib)
+        return model.residuals(p, tmin, tmax, freq, noise,
+                               h_observed=model.oseries_calib)
 
 
 # def lmfit_solve(model, tmin=None, tmax=None, noise=True, report=True):
@@ -62,5 +65,6 @@ class DESolve:
         self.parameters[self.vary] = parameters
         res = self.model.residuals(self.parameters, tmin=self.tmin,
                                    tmax=self.tmax, freq=self.freq,
-                                   noise=self.noise, h_observed=self.model.oseries_calib)
+                                   noise=self.noise,
+                                   h_observed=self.model.oseries_calib)
         return sum(res ** 2)

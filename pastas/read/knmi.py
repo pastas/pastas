@@ -19,8 +19,11 @@ For now the direct download only works for meteorological stations and daily dat
 
 """
 
-import numpy as np
+from __future__ import print_function, division
+
 from datetime import date
+
+import numpy as np
 import pandas as pd
 from pastas.read.datamodel import DataModel
 
@@ -45,7 +48,7 @@ class knmidata(DataModel):
 
         if variable not in knmi.data.keys():
             Warning("variable %s is not in this dataset. Please use one of "
-                    "the following keys: %s" %(variable, knmi.data.keys()))
+                    "the following keys: %s" % (variable, knmi.data.keys()))
         else:
             self.series = knmi.data[variable]
 

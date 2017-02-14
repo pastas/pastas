@@ -6,6 +6,8 @@ TODO: Get rid of filternummer en opmerking in self.series
 
 """
 
+from __future__ import print_function, division
+
 import numpy as np
 import pandas as pd
 from pastas.read.datamodel import DataModel
@@ -35,7 +37,7 @@ class dinodata(DataModel):
 
         if variable not in dino.data.keys():
             Warning("variable %s is not in this dataset. Please use one of "
-                    "the following keys: %s" %(variable, dino.data.keys()))
+                    "the following keys: %s" % (variable, dino.data.keys()))
         else:
             self.series = dino.data[variable]
         self.x = dino.x

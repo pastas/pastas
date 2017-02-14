@@ -26,8 +26,11 @@ levels: Application to the Veluwe. MSc. thesis, TU Delft.
 http://repository.tudelft.nl/view/ir/uuid:baf4fc8c-6311-407c-b01f-c80a96ecd584/
 """
 
-import pandas as pd
+from __future__ import print_function, division
+
 import numpy as np
+import pandas as pd
+
 from .recharge import pref, perc, comb
 
 
