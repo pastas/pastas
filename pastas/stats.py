@@ -43,8 +43,22 @@ class Statistics(object):
 
         >>> print(ml.stats.ops)
 
+<<<<<<< 67389b47d479ff4be11aa65cf02eab15e00a7ac7
         ml: Pastas Model
             ml is a time series Model that is calibrated.
+=======
+    def __getobservations__(self, tmin=None, tmax=None):
+        series = self.ml.oseries
+        if tmin is None and tmax is None:
+            return series
+        elif tmin is None:
+            tmin = self.ml.oseries.index.min()
+        elif tmax is None:
+            tmax = self.ml.oseries.index.max()
+        return series.truncate(before=tmin, after=tmax)
+
+    def __getallseries__(self, tmin=None, tmax=None):
+>>>>>>> refactored getobservations method of Statistics
         """
         # Save a reference to the model.
         self.ml = ml
