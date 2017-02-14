@@ -105,7 +105,7 @@ class Statistics(object):
         series["residuals"] = self.__getresiduals__(tmin=tmin, tmax=tmax)
         series["innovations"] = self.__getinnovations__(tmin=tmin, tmax=tmax)
         return series
-
+ 
     # The statistical functions
 
     def rmse(self, tmin=None, tmax=None):
@@ -211,7 +211,158 @@ class Statistics(object):
         innovations = self.__getinnovations__(tmin, tmax)
         return pacf(innovations, nlags=nlags)
 
+   
+    def __seriesbykey__(self, key, tmin=None, tmax=None):  
+        """Summary
+        Worker function for GHG and GLG statistcs. 
+        
+        Parameters
+        ----------
+        key : None, optional
+            timeseries key ('observations' or 'simulated')
+        tmin, tmax: Optional[pd.Timestamp]
+            Time indices to use for the simulation of the time series model.
+       
+        Returns
+        -------
+        TYPE
+            Description
+        """
+        if key == 'observations':
+            series = self.__getobservations__(tmin=tmin, tmax=tmax)
+        elif key == 'simulated':
+            series = self.__getsimulated__(tmin=tmin, tmax=tmax)
+        else:
+            raise ValueError('no timeseries with key {key:}'.format(key=key))
+        return series
+
+    def qGHG(self, key='observations', tmin=None, tmax=None, q=0.875):
+        """Summary
+        Gemiddeld Hoogste Grondwaterstand (GHG)
+        Approximated by taking a quantile of the timeseries values. 
+        
+        This Dutch groundwater statistic is also called MHGL (Mean High Groundwater Level)
+        
+        Parameters
+        ----------
+        key : None, optional
+            timeseries key ('observations' or 'simulated')
+        tmin, tmax: Optional[pd.Timestamp]
+            Time indices to use for the simulation of the time series model.
+        q : float, optional
+            quantile, fraction of exceedance (default 0.875)
+        
+        Returns
+        -------
+        TYPE
+            Description
+        """
+        series = self.__seriesbykey__(key=key, tmin=tmin, tmax=tmax)
+        return series.quantile(q)
+
+    def qGLG(self, key='observations', tmin=None, tmax=None, q=0.125):
+        """Summary
+        Gemiddeld Laagste Grondwaterstand (GLG)
+        Approximated by taking a quantile of the timeseries values. 
+        
+        This Dutch groundwater statistic is also called MLGL (Mean Low Groundwater Level)
+                
+        Parameters
+        ----------
+        key : None, optional
+            timeseries key ('observations' or 'simulated')
+        tmin, tmax: Optional[pd.Timestamp]
+            Time indices to use for the simulation of the time series model.
+        q : float, optional
+            quantile, fraction of exceedance (default 0.125)
+        
+        Returns
+        -------
+        TYPE
+            Description
+        """
+        series = self.__seriesbykey__(key=key, tmin=tmin, tmax=tmax)
+        return series.quantile(q)
+
+    def qGVG(self, key='observations', tmin=None, tmax=None):
+        """Summary
+        Gemiddeld Voorjaarsgrondwaterstand (GVG)
+        Approximated by taking the median of the values in the 
+        period between 15 March and 15 April.
+        
+        This Dutch groundwater statistic is also called MSGL (Mean Spring Groundwater Level)
+        
+        Parameters
+        ----------
+        key : None, optional
+            timeseries key ('observations' or 'simulated')
+        tmin, tmax: Optional[pd.Timestamp]
+            Time indices to use for the simulation of the time series model.
+        
+        Returns
+        -------
+        TYPE
+            Description
+        """
+        series = self.__seriesbykey__(key=key, tmin=tmin, tmax=tmax)
+        isinspring = lambda x: (((x.month == 2) and (x.day >= 15)) or 
+                            ((x.month == 3) and (x.day < 16)))
+        inspring = series.index.map(isinspring)
+        return series.loc[inspring].median()
+
+    def dGHG(self, tmin=None, tmax=None):
+        """
+        Difference in GHG between simulated and observed values
+        
+        Parameters
+        ----------
+        tmin, tmax: Optional[pd.Timestamp]
+            Time indices to use for the simulation of the time series model.
+        
+        Returns
+        -------
+        TYPE
+            Description
+        """
+        return (self.qGHG(key='simulated', tmin=tmin, tmax=tmax) - 
+                self.qGHG(key='observations', tmin=tmin, tmax=tmax))
+
+    def dGLG(self, tmin=None, tmax=None):
+        """
+        Difference in GLG between simulated and observed values
+        
+        Parameters
+        ----------
+        tmin, tmax: Optional[pd.Timestamp]
+            Time indices to use for the simulation of the time series model.
+        
+        Returns
+        -------
+        TYPE
+            Description
+        """
+        return (self.qGLG(key='simulated', tmin=tmin, tmax=tmax) - 
+                self.qGLG(key='observations', tmin=tmin, tmax=tmax))
+
+    def dGVG(self, tmin=None, tmax=None):
+        """
+        Difference in GVG between simulated and observed values
+        
+        Parameters
+        ----------
+        tmin, tmax: Optional[pd.Timestamp]
+            Time indices to use for the simulation of the time series model.
+        
+        Returns
+        -------
+        TYPE
+            Description
+        """
+        return (self.qGVG(key='simulated', tmin=tmin, tmax=tmax) - 
+                self.qGVG(key='observations', tmin=tmin, tmax=tmax))
+
     # def GHG(self, tmin=None, tmax=None, series='oseries'):
+
     #     """GHG: Gemiddeld Hoog Grondwater (in Dutch)
     #
     #     3 maximum groundwater level observations for each year divided by 3 times
@@ -256,11 +407,11 @@ class Statistics(object):
     #         return np.mean(np.array(x))
 
     def descriptive(self, tmin=None, tmax=None):
-        series = self.__getallseries__(tmin, tmax)
+        series = self.__getallseries__(tmin=tmin, tmax=tmax)
         series.describe()
 
     def plot_diagnostics(self, tmin=None, tmax=None):
-        innovations = self.__getinnovations__(tmin, tmax)
+        innovations = self.__getinnovations__(tmin=tmin, tmax=tmax)
 
         plt.figure()
         gs = plt.GridSpec(2, 3, wspace=0.2)
@@ -313,8 +464,12 @@ class Statistics(object):
                     'bic': 'Bayesian Information Criterion',
                     'aic': 'Akaike Information Criterion'},                    
                 'dutch': {
-                    'GHG': 'Gemiddeld Hoge Grondwaterstand',
-                    'GLG': 'Gemiddeld Lage Grondwaterstand'},
+                    'qGHG': 'Gemiddeld Hoge Grondwaterstand',
+                    'qGLG': 'Gemiddeld Lage Grondwaterstand',
+                    'qGVG': 'Gemiddelde Voorjaarsgrondwaterstand',
+                    'dGHG': 'Verschil Gemiddeld Hoge Grondwaterstand',
+                    'dGLG': 'Verschil Gemiddeld Lage Grondwaterstand',
+                    'dGVG': 'Verschil Gemiddelde Voorjaarsgrondwaterstand'},
                     }
 
         output['all'] = {}
@@ -322,7 +477,7 @@ class Statistics(object):
             output['all'].update(output_dict)
 
         selected_output = sorted([(n, f) for f, n in output[selected].items()])
-        names_and_values = [(n, getattr(self, f)(tmin, tmax))
+        names_and_values = [(n, getattr(self, f)(tmin=tmin, tmax=tmax))
             for n, f in selected_output]
         names, values = zip(*names_and_values)
 
