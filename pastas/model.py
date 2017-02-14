@@ -219,23 +219,52 @@ class Model:
         return r[tmin:]
 
     def initialize(self, initial=True, noise=True):
-        self.nparam = sum(ts.nparam for ts in self.tseriesdict.values())
-        if self.noisemodel is not None:
-            self.nparam += self.noisemodel.nparam
-        self.parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax',
-                                                'vary', 'optimal', 'name'])
-        for ts in self.tseriesdict.values():
-            self.parameters = self.parameters.append(ts.parameters)
-        if self.constant:
-            self.nparam += self.constant.nparam
-            self.parameters = self.parameters.append(self.constant.parameters)
-        if self.noisemodel and noise:
-            self.parameters = self.parameters.append(
-                self.noisemodel.parameters)
+        """Initialize the model before solving.
+
+        Parameters
+        ----------
+        initial: Boolean
+            Use initial values from parameter dataframe if True. If false, the
+            optimal values are used.
+        noise: Boolean
+            Add the parameters for the noisemodel to the parameters
+            Dataframe or not.
+
+        """
+        # Store optimized values in case they are needed
         if not initial:
-            self.parameters.initial = self.parameters.optimal
+            optimal = self.parameters.optimal
+
         # make sure calibration data is renewed
         self.oseries_calib = None
+
+        # Set initial parameters
+        self.parameters = self.get_init_parameters(noise=noise)
+        self.nparam = len(self.parameters)
+
+        # Set initial parameters to optimal parameters
+        if not initial:
+            self.parameters.initial = optimal
+
+    def get_init_parameters(self, noise=True):
+        """Method to reset all initial parameters to those provided in the
+        individual objects.
+
+        noise: Boolean
+            Add the parameters for the noisemodel to the parameters
+            Dataframe or not.
+
+        """
+        parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax',
+                                           'vary', 'optimal', 'name'])
+        for ts in self.tseriesdict.values():
+            parameters = parameters.append(ts.parameters)
+        if self.constant:
+            parameters = parameters.append(self.constant.parameters)
+        if self.noisemodel and noise:
+            parameters = parameters.append(self.noisemodel.parameters)
+
+        return parameters
 
     def solve(self, tmin=None, tmax=None, solver=LmfitSolve, report=True,
               noise=True, initial=True):
