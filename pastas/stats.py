@@ -346,3 +346,55 @@ included in Pastas. To obtain a list of all statistics that are included type:
         plt.subplot(gs[1, 2])
         probplot(innovations, plot=plt)
         plt.show()
+<<<<<<< f252845d33e7a5445e2215029dc16ab00d9b5b13
+=======
+
+    def summary(self, selected='basic', tmin=None, tmax=None):
+        """Prints a summary table of the model statistics. The set of statistics
+        that are printed are selected by a dictionary of the desired statistics.
+        
+        Parameters
+        ----------
+        selected_output : str or dict
+            dictionary of the desired statistics or a string with one of the
+            predefined sets. Supported options are: 'basic', 'all', and 'dutch'
+        tmin
+        
+        tmax : None, optional
+            Description
+        tmax
+        
+        Returns
+        -------
+        stats : Pandas Dataframe
+            single-column dataframe with calculated statistics        
+        
+        """
+
+        output = {
+                'basic': {
+                    'evp': 'Explained variance percentage',
+                    'rmse': 'Root mean squared error',
+                    'avg_dev': 'Average Deviation',
+                    'pearson': 'Pearson R^2',
+                    'bic': 'Bayesian Information Criterion',
+                    'aic': 'Akaike Information Criterion'},                    
+                'dutch': {
+                    'GHG': 'Gemiddeld Hoge Grondwaterstand',
+                    'GLG': 'Gemiddeld Lage Grondwaterstand'},
+                    }
+
+        output['all'] = {}
+        for output_dict in output.values():
+            output['all'].update(output_dict)
+
+        selected_output = sorted([(n, f) for f, n in output[selected].items()])
+        names_and_values = [(n, getattr(self, f)(tmin, tmax))
+            for n, f in selected_output]
+        names, values = zip(*names_and_values)
+
+        stats = pd.DataFrame(index=list(names), data=list(values),
+            columns=['Value'])
+        stats.index.name = 'Statistic'
+        return stats
+>>>>>>> refactored stats.summary()'
