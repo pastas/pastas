@@ -282,49 +282,51 @@ class Statistics(object):
         probplot(innovations, plot=plt)
         plt.show()
 
-    def summary(self, output='basic', tmin=None, tmax=None):
+    def summary(self, selected='basic', tmin=None, tmax=None):
         """Prints a summary table of the model statistics. The set of statistics
         that are printed are selected by a dictionary of the desired statistics.
-
+        
         Parameters
         ----------
-        output: str or dict
+        selected_output : str or dict
             dictionary of the desired statistics or a string with one of the
-            predefined sets. Supported options are: 'basic', 'all', and 'dutch'.
+            predefined sets. Supported options are: 'basic', 'all', and 'dutch'
         tmin
-
+        
+        tmax : None, optional
+            Description
         tmax
-
+        
         Returns
         -------
-
+        stats : Pandas Dataframe
+            single-column dataframe with calculated statistics        
+        
         """
 
-        basic = {'evp': 'Explained variance percentage', 'rmse': 'Root mean '
-                                                                 'squared error',
-                 'avg_dev': 'Average Deviation', 'pearson': 'Pearson R^2',
-                 'bic': 'Bayesian Information Criterion', 'aic': 'Akaike '
-                                                                 'Information'
-                                                                 'Criterion'}
+        output = {
+                'basic': {
+                    'evp': 'Explained variance percentage',
+                    'rmse': 'Root mean squared error',
+                    'avg_dev': 'Average Deviation',
+                    'pearson': 'Pearson R^2',
+                    'bic': 'Bayesian Information Criterion',
+                    'aic': 'Akaike Information Criterion'},                    
+                'dutch': {
+                    'GHG': 'Gemiddeld Hoge Grondwaterstand',
+                    'GLG': 'Gemiddeld Lage Grondwaterstand'},
+                    }
 
-        dutch = {'GHG': 'Gemiddeld Hoog Grondwater', 'GLG': 'Gemiddeld Laag '
-                                                            'Grondwater'}
+        output['all'] = {}
+        for output_dict in output.values():
+            output['all'].update(output_dict)
 
-        all = {'evp': 'Explained variance percentage', 'rmse': 'Root mean '
-                                                               'squared error',
-               'avg_dev': 'Average Deviation', 'pearson': 'Pearson R^2',
-               'bic': 'Bayesian Information Criterion', 'aic': 'Akaike '
-                                                               'Information'
-                                                               'Criterion'}
+        selected_output = sorted([(n, f) for f, n in output[selected].items()])
+        names_and_values = [(n, getattr(self, f)(tmin, tmax))
+            for n, f in selected_output]
+        names, values = zip(*names_and_values)
 
-        if type(output) == str:
-            output = eval(output)
-        names = output.values()
-        statsvalue = []
-
-        for k in output:
-            statsvalue.append(getattr(self, k)(tmin, tmax))
-
-        stats = pd.DataFrame(index=names, data=statsvalue, columns=['Value'])
+        stats = pd.DataFrame(index=list(names), data=list(values),
+            columns=['Value'])
         stats.index.name = 'Statistic'
-        print(stats)
+        return stats
