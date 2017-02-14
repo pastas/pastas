@@ -195,7 +195,7 @@ class Model:
         if h_observed is None:
             h_observed = self.oseries[tmin: tmax]
             # sample measurements, so that frequency is not higher than model
-            h_observed = self.__sample__(h_observed, simulation.index)
+            h_observed = self.sample(h_observed, simulation.index)
             # store this variable in the model, so that it can be used in the next iteration of the solver
             self.oseries_calib = h_observed
 
@@ -477,12 +477,12 @@ class Model:
         try:
             p = self.parameters.loc[
                 self.parameters.name == name, 'optimal'].values
-            return self.tseriesdict[name].__getstress__(p)
+            return self.tseriesdict[name].get_stress(p)
         except KeyError:
             print("Name not in tseriesdict, available names are: %s"
                   % self.tseriesdict.keys())
 
-    def __sample__(self, series, tindex):
+    def sample(self, series, tindex):
         # Sample the series so that the frequency is not higher that tindex
         # Find the index closest to the tindex, and then return a selection of series
         f = interpolate.interp1d(series.index.asi8,
@@ -596,9 +596,7 @@ class Model:
             plt.savefig('.eps' % (self.name), bbox_inches='tight')
 
     def plot_decomposition(self, tmin=None, tmax=None):
-        """
-
-        Plot the decomposition of a time-series in the different stresses
+        """Plot the decomposition of a time-series in the different stresses.
 
         """
 

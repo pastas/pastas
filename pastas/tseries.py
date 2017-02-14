@@ -79,7 +79,7 @@ class TseriesBase:
         else:
             print('Warning:', name, 'does not exist')
 
-    def __getstress__(self, p=None, tindex=None):
+    def get_stress(self, p=None, tindex=None):
         """
         Returns the stress or stresses of the time series object as a pandas
         DataFrame. If the time series object has multiple stresses each column
@@ -263,7 +263,7 @@ class Tseries2(TseriesBase):
             h = h[tindex]
         return h
 
-    def __getstress__(self, p=None, tindex=None):
+    def get_stress(self, p=None, tindex=None):
         if p is not None:
             stress = self.stress[0] + p[-1] * self.stress[1]
 
@@ -368,7 +368,7 @@ class Recharge(TseriesBase):
             h = h[tindex]
         return h
 
-    def __getstress__(self, p=None, tindex=None):
+    def get_stress(self, p=None, tindex=None):
         """
         Returns the stress or stresses of the time series object as a pandas
         DataFrame. If the time series object has multiple stresses each column
@@ -519,20 +519,41 @@ class NoiseModel:
         self.nparam = 1
         self.set_init_parameters()
 
+    def set_initial(self, name, value):
+        """Method to set the initial parameter value
+
+        Usage
+        -----
+        >>> ts.set_initial('parametername', 200)
+
+        """
+        if name in self.parameters.index:
+            self.parameters.loc[name, 'initial'] = value
+        else:
+            print('Warning:', name, 'does not exist')
+
+    def set_min(self, name, value):
+        if name in self.parameters.index:
+            self.parameters.loc[name, 'pmin'] = value
+        else:
+            print('Warning:', name, 'does not exist')
+
+    def set_max(self, name, value):
+        if name in self.parameters.index:
+            self.parameters.loc[name, 'pmax'] = value
+        else:
+            print('Warning:', name, 'does not exist')
+
+    def fix_parameter(self, name):
+        if name in self.parameters.index:
+            self.parameters.loc[name, 'vary'] = 0
+        else:
+            print('Warning:', name, 'does not exist')
+
     def set_init_parameters(self):
         self.parameters = pd.DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         self.parameters.loc['noise_alpha'] = (14.0, 0, 5000, 1, 'noise')
-
-    def set_parameters(self, **kwargs):
-        for i in kwargs:
-            self.parameters.loc['%s' % i, 'value'] = kwargs[i]
-
-    def fix_parameters(self, **kwargs):
-        for i in kwargs:
-            if (kwargs[i] is not 0) and (kwargs[i] is not 1):
-                print('vary should be 1 or 0, not %s' % kwargs[i])
-            self.parameters.loc['%s' % i, 'vary'] = kwargs[i]
 
     def simulate(self, res, delt, p, tindex=None):
         """
