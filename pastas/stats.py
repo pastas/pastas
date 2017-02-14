@@ -76,13 +76,14 @@ class Statistics(object):
         return series
 
     def __getobservations__(self, tmin=None, tmax=None):
-        if tmin is None:
+        series = self.ml.oseries
+        if tmin is None and tmax is None:
+            return series
+        elif tmin is None:
             tmin = self.ml.oseries.index.min()
-        if tmax is None:
+        elif tmax is None:
             tmax = self.ml.oseries.index.max()
-        tindex = self.ml.oseries[tmin: tmax].index
-        series = self.ml.oseries[tindex]
-        return series
+        return series.truncate(before=tmin, after=tmax)
 
     def __getallseries__(self, tmin=None, tmax=None):
         """
