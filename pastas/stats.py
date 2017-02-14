@@ -560,13 +560,16 @@ included in Pastas. To obtain a list of all statistics that are included type:
                     'dGVG': 'Verschil Gemiddelde Voorjaarsgrondwaterstand'},
                     }
 
-        output['all'] = {}
-        for output_dict in output.values():
-            output['all'].update(output_dict)
+        if selected == 'all':
+            selected_output = sorted([(k, n, f) for k, d in output.items()
+                for f, n in d.items()])
+        else:
+            selected_output = sorted([(0, n, f) for f, n in
+                output[selected].items()])
 
-        selected_output = sorted([(n, f) for f, n in output[selected].items()])
+        # compute statistics
         names_and_values = [(n, getattr(self, f)(tmin=tmin, tmax=tmax))
-            for n, f in selected_output]
+            for _, n, f in selected_output]
         names, values = zip(*names_and_values)
 
         stats = pd.DataFrame(index=list(names), data=list(values),
