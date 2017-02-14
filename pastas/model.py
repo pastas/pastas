@@ -15,7 +15,7 @@ from .tseries import Constant
 
 
 class Model:
-    def __init__(self, oseries, xy=(0, 0), metadata=None, freq=None,
+    def __init__(self, oseries, xy=(0, 0), metadata=None,
                  warmup=1500, fillnan='drop', constant=True):
         """Initiates a time series model.
 
@@ -28,31 +28,37 @@ class Model:
             XY location of the oseries in lat-lon format.
         metadata: Optional[dict]
             Dictionary containing metadata of the model.
-        freq: Optional[str]
-            String containing the desired frequency. By default freq=None and the
-            observations are used as they are. The required string format is found
-            at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset
-            -aliases
         warmup: Optional[float]
             Number of days used for warmup
         fillnan: Optional[str or float]
             Methods or float number to fill nan-values. Default values is
             'drop'. Currently supported options are: 'interpolate', float,
-            'mean' and, 'drop'. Interpolation is performed with a standard linear
-            interpolation.
+            'mean' and, 'drop'. Interpolation is performed with a standard
+            linear interpolation.
+        constant: Boolean
+            Add a constant to the model (Default=True).
 
         """
         self.oseries = check_oseries(oseries, fillnan)
         self.oseries_calib = None
-        self.warmup = warmup
-        self.xy = xy
-        self.metadata = metadata
+
+        # Min and max time of the model
+        self.tmin = None
+        self.tmax = None
+        # Min and max time of observation series
+        self.otmin = self.oseries.index[0]
+        self.otmax = self.oseries.index[-1]
         self.odelt = self.oseries.index.to_series().diff() / \
                      np.timedelta64(1, 'D')
+
+        self.warmup = warmup
         self.freq = None
         self.time_offset = None
 
-        # Independent of the time unit
+        self.parameters = pd.DataFrame(
+            columns=['initial', 'name', 'optimal', 'pmin', 'pmax', 'vary'])
+        self.nparam = 0
+
         self.tseriesdict = OrderedDict()
         self.noisemodel = None
 
@@ -61,36 +67,63 @@ class Model:
         else:
             self.constant = None
 
-        self.nparam = 0
-        self.tmin = None
-        self.tmax = None
-        # Min and max time of observation series
-        self.otmin = self.oseries.index[0]
-        self.otmax = self.oseries.index[-1]
+        # Metadata
+        self.xy = xy
+        self.metadata = metadata
+
+        # Load other modules
         self.stats = Statistics(self)
 
     def add_tseries(self, tseries):
-        """Adds a time series model component to the Model.
+        """Adds a time series component to the model.
 
         """
         if tseries.name in self.tseriesdict.keys():
-            raise Warning('The name for the series you are trying to add '
-                          'already exists for this model. Select another '
-                          'name.')
+            warn('The name for the series you are trying to add '
+                 'already exists for this model. Select another '
+                 'name.')
         else:
             self.tseriesdict[tseries.name] = tseries
+            self.parameters = self.parameters.append(tseries.parameters)
+            self.nparam += tseries.nparam
 
     def add_noisemodel(self, noisemodel):
         """Adds a noise model to the time series Model.
 
         """
         self.noisemodel = noisemodel
+        self.parameters = self.parameters.append(self.noisemodel.parameters)
+        self.nparam += noisemodel.nparam
 
     def add_constant(self):
         """Adds a Constant to the time series Model.
 
         """
-        self.constant = Constant(value=self.oseries.mean())
+        self.constant = Constant(value=self.oseries.mean(), name='constant')
+        self.parameters = self.parameters.append(self.constant.parameters)
+        self.nparam += self.constant.nparam
+
+    def del_tseries(self, name):
+        if name not in self.tseriesdict.keys():
+            warn(message='The tseries name you provided is not in the '
+                         'tseriesdict. Please select from the following list: '
+                         '%s' % self.tseriesdict.keys())
+        else:
+            self.nparam -= self.tseriesdict[name].nparam
+            self.parameters = self.parameters.ix[self.parameters.name != name]
+            self.tseriesdict.pop(name)
+
+    def del_constant(self):
+        self.nparam -= self.constant.nparam
+        self.parameters = self.parameters.ix[self.parameters.name !=
+                                             'constant']
+        self.constant = None
+
+    def del_noisemodel(self):
+        self.nparam -= self.noisemodel.nparam
+        self.parameters = self.parameters.ix[self.parameters.name !=
+                                             self.noisemodel.name]
+        self.noisemodel = None
 
     def simulate(self, parameters=None, tmin=None, tmax=None, freq=None):
         """
@@ -116,8 +149,8 @@ class Model:
             tmax = self.tmax
         if freq is None:
             freq = self.freq
-        assert (tmin is not None) and (
-            tmax is not None), 'model needs to be solved first'
+        assert (tmin is not None) and (tmax is not None), 'model needs to be' \
+                                                          ' solved first'
 
         # adjust tmin and tmax so that the time-offset (determined in
         # check_frequency) is equal to that of the model (is also done in set_tmin_tmax)
@@ -186,8 +219,6 @@ class Model:
         return r[tmin:]
 
     def initialize(self, initial=True, noise=True):
-        if not initial:
-            optimal = self.parameters.optimal
         self.nparam = sum(ts.nparam for ts in self.tseriesdict.values())
         if self.noisemodel is not None:
             self.nparam += self.noisemodel.nparam
@@ -202,7 +233,7 @@ class Model:
             self.parameters = self.parameters.append(
                 self.noisemodel.parameters)
         if not initial:
-            self.parameters.initial = optimal
+            self.parameters.initial = self.parameters.optimal
         # make sure calibration data is renewed
         self.oseries_calib = None
 
@@ -228,8 +259,8 @@ class Model:
 
         """
         if noise and (self.noisemodel is None):
-            print('Warning, solution with noise model while noise model is '
-                  'not defined. No noise model is used')
+            warn(message='Warning, solution with noise model while noise model'
+                         'is not defined. No noise model is used')
 
         # Check frequency of tseries
         self.check_frequency()
@@ -247,8 +278,6 @@ class Model:
         self.parameters.optimal = fit.optimal_params
         self.report = fit.report
         if report: print(self.report)
-
-        # self.stats = Statistics(self)
 
     def set_tmin_tmax(self, tmin=None, tmax=None):
         """
@@ -427,8 +456,10 @@ class Model:
     def __sample__(self, series, tindex):
         # Sample the series so that the frequency is not higher that tindex
         # Find the index closest to the tindex, and then return a selection of series
-        f = interpolate.interp1d(series.index.asi8, np.arange(0, len(series.index)),
-                                 kind='nearest', bounds_error=False, fill_value='extrapolate')
+        f = interpolate.interp1d(series.index.asi8,
+                                 np.arange(0, len(series.index)),
+                                 kind='nearest', bounds_error=False,
+                                 fill_value='extrapolate')
         ind = np.unique(f(tindex.asi8).astype(int))
         return series[ind]
 

@@ -320,7 +320,7 @@ class Recharge(TseriesBase):
     """
 
     def __init__(self, precip, evap, rfunc, recharge,
-                 name='Recharge', metadata=None, xy=(0, 0), freq=(None, None),
+                 name, metadata=None, xy=(0, 0), freq=(None, None),
                  fillnan=('mean', 'interpolate'), cutoff=0.99):
         # Check and name the time series
         P = check_tseries(precip, freq[0], fillnan[0], name=name + '_P')
@@ -479,7 +479,7 @@ class Constant(TseriesBase):
 
     """
 
-    def __init__(self, name='Constant', xy=None, metadata=None, value=0.0,
+    def __init__(self, name, xy=None, metadata=None, value=0.0,
                  pmin=-5, pmax=+5):
         self.nparam = 1
         self.value = value
