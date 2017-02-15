@@ -321,12 +321,14 @@ included in Pastas. To obtain a list of all statistics that are included type:
             raise ValueError('no timeseries with key {key:}'.format(key=key))
         return series
 
-    def qGHG(self, key='observations', tmin=None, tmax=None, q=0.875):
+    def qGHG(self, key='simulated', tmin=None, tmax=None, q=0.94):
         """Summary
         Gemiddeld Hoogste Grondwaterstand (GHG) also called MHGL (Mean High Groundwater Level)
-        Approximated by taking a quantile of the timeseries values. 
+        Approximated by taking a quantile of the timeseries values, after
+        resampling to daily values.
+        
     
-        This function does not care about series length or frequency!
+        This function does not care about series length!
         
         Parameters
         ----------
@@ -335,7 +337,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         tmin, tmax: Optional[pd.Timestamp]
             Time indices to use for the simulation of the time series model.
         q : float, optional
-            quantile, fraction of exceedance (default 0.875)
+            quantile, fraction of exceedance (default 0.94)
         
         Returns
         -------
@@ -343,14 +345,16 @@ included in Pastas. To obtain a list of all statistics that are included type:
             Description
         """
         series = self.__seriesbykey__(key=key, tmin=tmin, tmax=tmax)
+        series = series.resample('d').median()
         return series.quantile(q)
 
-    def qGLG(self, key='observations', tmin=None, tmax=None, q=0.125):
+    def qGLG(self, key='simulated', tmin=None, tmax=None, q=0.06):
         """Summary
         Gemiddeld Laagste Grondwaterstand (GLG) also called MLGL (Mean Low Groundwater Level)
-        Approximated by taking a quantile of the timeseries values. 
+        Approximated by taking a quantile of the timeseries values, after
+        resampling to daily values.
         
-        This function does not care about series length or changing frequency!
+        This function does not care about series length!
         
         Parameters
         ----------
@@ -359,7 +363,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         tmin, tmax : Optional[pd.Timestamp]
             Time indices to use for the simulation of the time series model.
         q : float, optional
-            quantile, fraction of exceedance (default 0.125)
+            quantile, fraction of exceedance (default 0.06)
         
         Returns
         -------
@@ -367,15 +371,16 @@ included in Pastas. To obtain a list of all statistics that are included type:
             Description
         """
         series = self.__seriesbykey__(key=key, tmin=tmin, tmax=tmax)
+        series = series.resample('d').median()
         return series.quantile(q)
 
-    def qGVG(self, key='observations', tmin=None, tmax=None):
+    def qGVG(self, key='simulated', tmin=None, tmax=None):
         """Summary
         Gemiddeld Voorjaarsgrondwaterstand (GVG) also called MSGL (Mean Spring Groundwater Level)
         Approximated by taking the median of the values in the 
-        period between 15 March and 15 April (working assumption).
+        period between 15 March and 15 April (after resampling to daily values).
 
-        This function does not care about series length or changing frequency!
+        This function does not care about series length!
         
         Parameters
         ----------
@@ -390,10 +395,14 @@ included in Pastas. To obtain a list of all statistics that are included type:
             Description
         """
         series = self.__seriesbykey__(key=key, tmin=tmin, tmax=tmax)
-        isinspring = lambda x: (((x.month == 2) and (x.day >= 15)) or 
-                            ((x.month == 3) and (x.day < 16)))
+        series = series.resample('d').median()
+        isinspring = lambda x: (((x.month == 3) and (x.day >= 15)) or 
+                            ((x.month == 4) and (x.day < 16)))
         inspring = series.index.map(isinspring)
-        return series.loc[inspring].median()
+        if np.any(inspring) > 0:
+            return series.loc[inspring].median()
+        else:
+            return np.nan
 
     def dGHG(self, tmin=None, tmax=None):
         """
@@ -556,6 +565,23 @@ included in Pastas. To obtain a list of all statistics that are included type:
             single-column dataframe with calculated statistics        
         
         """
+        output = {
+                'basic': {
+                    'evp': 'Explained variance percentage',
+                    'rmse': 'Root mean squared error',
+                    'avg_dev': 'Average Deviation',
+                    'pearson': 'Pearson R^2',
+                    'bic': 'Bayesian Information Criterion',
+                    'aic': 'Akaike Information Criterion'},
+                'dutch': {
+                    'qGHG': 'Gemiddeld Hoge Grondwaterstand',
+                    'qGLG': 'Gemiddeld Lage Grondwaterstand',
+                    'qGVG': 'Gemiddelde Voorjaarsgrondwaterstand',
+                    'dGHG': 'Verschil Gemiddeld Hoge Grondwaterstand',
+                    'dGLG': 'Verschil Gemiddeld Lage Grondwaterstand',
+                    'dGVG': 'Verschil Gemiddelde Voorjaarsgrondwaterstand'},
+                    }
+
         # get labels and method names for selected output
         if selected == 'all':
             selected_output = sorted([(k, l, f) for k, d in output.items()
