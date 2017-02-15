@@ -106,6 +106,19 @@ class Model:
         self.nparam += self.constant.nparam
 
     def del_tseries(self, name):
+        """ Save deletion of a tseries from the tseriesdict.
+
+        Parameters
+        ----------
+        name: str
+            string with the name of the tseries object.
+
+        Notes
+        -----
+        To obtain a list of the tseries names type:
+        >>> ml.tseriesdict.keys()
+
+        """
         if name not in self.tseriesdict.keys():
             warn(message='The tseries name you provided is not in the '
                          'tseriesdict. Please select from the following list: '
@@ -116,43 +129,68 @@ class Model:
             self.tseriesdict.pop(name)
 
     def del_constant(self):
-        self.nparam -= self.constant.nparam
-        self.parameters = self.parameters.ix[self.parameters.name !=
-                                             'constant']
-        self.constant = None
+        """ Save deletion of the constant from a Model.
+
+        """
+        if self.constant is None:
+            warn("No constant is present in this model.")
+        else:
+            self.nparam -= self.constant.nparam
+            self.parameters = self.parameters.ix[self.parameters.name !=
+                                                 'constant']
+            self.constant = None
 
     def del_noisemodel(self):
-        self.nparam -= self.noisemodel.nparam
-        self.parameters = self.parameters.ix[self.parameters.name !=
-                                             self.noisemodel.name]
-        self.noisemodel = None
+        """Save deletion of the noisemodel from the Model.
+
+        """
+        if self.noisemodel is None:
+            warn("No noisemodel is present in this model.")
+        else:
+            self.nparam -= self.noisemodel.nparam
+            self.parameters = self.parameters.ix[self.parameters.name !=
+                                                 self.noisemodel.name]
+            self.noisemodel = None
 
     def simulate(self, parameters=None, tmin=None, tmax=None, freq=None):
-        """
+        """Simulate the time series model.
 
         Parameters
         ----------
-        t: Optional[pd.series.index]
-            Time indices to use for the simulation of the time series model.
-        p: Optional[array]
+        parameters: Optional[list]
             Array of the parameters used in the time series model.
-        noise:
+        tmin: Optional[str]
+        tmax: Optional[str]
+        freq: Optional[str]
+            frequency at which the time series are simulated.
 
         Returns
         -------
-        Pandas Series object containing the simulated time series.
+        h: pd.Series
+            Pandas Series object containing the simulated time series
+
+        Notes
+        -----
+        This method can be used without any parameters. When the model is
+        solved, the optimal parameters values are used and if not,
+        the initial parameter values are used. This allows the user to
+        obtain an idea of how the simulation looks with only the initial
+        parameters and no calibration.
 
         """
-
-        # Default option when not tmin and tmax is provided
+        # Default option when tmin and tmax are not provided.
         if tmin is None:
             tmin = self.tmin
         if tmax is None:
             tmax = self.tmax
         if freq is None:
             freq = self.freq
-        assert (tmin is not None) and (tmax is not None), 'model needs to be' \
-                                                          ' solved first'
+
+        # If no parameters are provided, get parameters.
+        if parameters is None and self.parameters.optimal.hasnans:
+            parameters = self.parameters.initial.values
+        elif parameters is None:
+            parameters = self.parameters.optimal.values
 
         # adjust tmin and tmax so that the time-offset (determined in
         # check_frequency) is equal to that of the model (is also done in set_tmin_tmax)
@@ -164,8 +202,6 @@ class Model:
             freq=freq)
         dt = self.get_dt(freq)
 
-        if parameters is None:
-            parameters = self.parameters.optimal.values
         h = pd.Series(data=0, index=sim_index)
         istart = 0  # Track parameters index to pass to ts object
         for ts in self.tseriesdict.values():
@@ -179,7 +215,25 @@ class Model:
 
     def residuals(self, parameters=None, tmin=None, tmax=None, freq=None,
                   noise=True, h_observed=None):
-        """Method to calculate the residuals.
+        """
+
+        Parameters
+        ----------
+        parameters: Optional[list]
+            Array of the parameters used in the time series model.
+        tmin: Optional[str]
+        tmax: Optional[str]
+        freq: Optional[str]
+            frequency at which the time series are simulated.
+        noise: Optional[Boolean]
+            Boolean to indicate the use of the noisemodel (if provided) or not.
+        h_observed: Optional[pd.Series]
+            Pandas series containing the observed values.
+
+        Returns
+        -------
+        r: pd.Series
+            Pandas series with the simulated
 
         """
         if tmin is None:
@@ -369,6 +423,9 @@ class Model:
 
     def check_frequency(self):
         """
+
+        Notes
+        -----
         Methods to check if the frequency is:
 
         1. The frequency should be the same for all tseries
@@ -455,6 +512,7 @@ class Model:
                    }
         # remove the day from the week
         freq = freq.split("-", 1)[0]
+
         return options[freq](t)
 
     def get_contribution(self, name):
