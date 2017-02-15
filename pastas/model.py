@@ -382,11 +382,12 @@ class Model:
         time_offsets = set()
 
         for tseries in self.tseriesdict.values():
-            freqs.add(tseries.freq)
-            # calculate the offset from the default frequency
-            time_offset = self.get_time_offset(tseries.stress.index[0],
-                                               tseries.freq)
-            time_offsets.add(time_offset)
+            if not tseries.stress.empty:
+                freqs.add(tseries.freq)
+                # calculate the offset from the default frequency
+                time_offset = self.get_time_offset(tseries.stress.index[0],
+                                                   tseries.freq)
+                time_offsets.add(time_offset)
 
         # 1. The frequency should be the same for all tseries
         assert len(freqs) == 1, 'The frequency of the tseries is not the ' \

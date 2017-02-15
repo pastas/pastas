@@ -470,6 +470,42 @@ class Well(TseriesBase):
         return h
 
 
+class TseriesStep(TseriesBase):
+    """
+    A stress consisting of a step resonse at a specified time. The amplitude of the step is calibrated.
+    """
+
+    def __init__(self, t_step, rfunc=One, name='Step', xy=None, metadata=None, value=0.0,
+                 pmin=-5, pmax=+5):
+        assert t_step is not None, 'Error: Need to specify time of step (for now)'
+        assert rfunc is One, 'Error: Only an instantaneous step is supported (for now)'
+
+        TseriesBase.__init__(self, rfunc, name, xy, metadata,
+                             pd.Timestamp.min, pd.Timestamp.max, 1, 0, 0)
+
+        self.t_step = t_step
+        self.value = value
+        self.pmin = self.value + pmin
+        self.pmax = self.value + pmax
+        self.nparam = 2
+        self.set_init_parameters()
+
+    def set_init_parameters(self):
+        self.parameters = pd.DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        self.parameters.loc['step_t'] = (
+            self.t_step.value, pd.Timestamp.min.value, pd.Timestamp.max.value, 0, self.name)
+        self.parameters.loc['step_h'] = (
+            self.value, self.pmin, self.pmax, 1, self.name)
+
+    def simulate(self, p, tindex=None, dt=1):
+        assert tindex is not None, 'Error: Need an index'
+        # for now ignore rfunc, and apply step instantaneously (should be changed later)
+        h = pd.Series(0, tindex)
+        h[pd.Timestamp(p[0]):] = p[1]
+        return h
+
+
 class Constant(TseriesBase):
     """A constant value that is added to the time series model.
 

@@ -8,5 +8,5 @@ from .recharge.recharge_func import Preferential, Linear, Percolation, \
 from .rfunc import Gamma, Exponential, Hantush, Theis
 from .solver import LmfitSolve, DESolve
 from .stats import Statistics
-from .tseries import Tseries, Tseries2, Recharge, Well, Constant, NoiseModel
+from .tseries import Tseries, Tseries2, Recharge, TseriesStep, Well, Constant, NoiseModel
 from .version import __version__
