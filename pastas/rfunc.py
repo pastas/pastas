@@ -157,40 +157,41 @@ class Hantush(RfuncBase):
 
     def __init__(self, up=True, meanstress=1, cutoff=0.99):
         RfuncBase.__init__(self, up, meanstress, cutoff)
-        self.nparam = 3
+        self.nparam = 4
 
     def set_parameters(self, name):
         parameters = pd.DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        parameters.loc[name + '_S'] = (0.0, 1e-3, 1.0, 1, name)
-        parameters.loc[name + '_T'] = (0.0, 10.0, 5000.0, 1, name)
-        parameters.loc[name + '_c'] = (0.0, 1000.0, 5000.0, 1, name)
+        parameters.loc[name + '_S'] = (0.25, 1e-3, 1.0, 1, name)
+        parameters.loc[name + '_T'] = (100.0, 0.0, 10000.0, 1, name)
+        parameters.loc[name + '_c'] = (1000.0, 0.0, 100000.0, 1, name)
+        parameters.loc[name + '_r'] = (1000.0, 0.0, 100000.0, 0, name)
         parameters['tseries'] = name
         return parameters
 
-    def step(self, p, r):
+    def step(self, p, dt=1):
         self.tmax = 10000  # This should be changed with some analytical expression
-        t = np.arange(1.0, self.tmax)
+        t = np.arange(dt, self.tmax, dt)
+        r = p[3]
         rho = r / np.sqrt(p[1] * p[2])
         tau = np.log(2.0 / rho * t / (p[0] * p[2]))
         # tau[tau > 100] = 100
         h_inf = k0(rho)
         expintrho = exp1(rho)
         w = (expintrho - h_inf) / (expintrho - exp1(rho / 2.0))
-        I = h_inf - w * exp1(rho / 2.0 * np.exp(abs(tau))) + (w - 1.0) * \
-                                                             exp1(
-                                                                 rho * np.cosh(
-                                                                     tau))
-        s = h_inf + np.sign(tau) * I
+        I = h_inf - w * exp1(rho / 2.0 * np.exp(abs(tau))) + (w - 1.0) * exp1(rho * np.cosh(tau))
+        s = self.up * (h_inf + np.sign(tau) * I)
         return s
 
-    def block(self, p, r):
-        s = self.step(p, r)
+    def block(self, p, dt=1):
+        s = self.step(p, dt)
         return s[1:] - s[:-1]
 
 
 class Theis(RfuncBase):
     """ The Theis well function
+
+    Theis may not be very appropiate, as the drawdown will continue indefinitely
 
     References
     ----------
@@ -207,20 +208,23 @@ class Theis(RfuncBase):
     def set_parameters(self, name):
         parameters = pd.DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        parameters.loc[name + '_S'] = (0.0, 3e-1, 1.0, 1, name)
-        parameters.loc[name + '_T'] = (0.0, 10.0, 5000.0, 1, name)
+        parameters.loc[name + '_S'] = (0.25, 1e-3, 1.0, 1, name)
+        parameters.loc[name + '_T'] = (100.0, 0.0, 10000.0, 1, name)
+        parameters.loc[name + '_r'] = (1000.0, 0.0, 100000.0, 0, name)
         return parameters
 
-    def step(self, p, r):
+    def step(self, p, dt=1):
         self.tmax = 10000  # This should be changed with some analytical expression
-        t = np.arange(1.0, self.tmax)
+        t = np.arange(dt, self.tmax, dt)
+        r = p[2]
         u = r ** 2.0 * p[0] / (4.0 * p[1] * t)
-        s = exp1(u)
+        s = self.up * exp1(u)
         return s
 
-    def block(self, p, r):
-        s = self.step(p, r)
+    def block(self, p, dt=1):
+        s = self.step(p, dt)
         return s[1:] - s[:-1]
+
 
 class Bruggeman(RfuncBase):
     """ The function of Bruggeman, for a river in a confined aquifer, overlain by an aquitard with aquiferous ditches
@@ -230,6 +234,7 @@ class Bruggeman(RfuncBase):
     [1] http://grondwaterformules.nl/index.php/formules/waterloop/deklaag-met-sloten
 
     """
+
     #
 
     def __init__(self, up=True, meanstress=1, cutoff=0.99):
@@ -244,12 +249,12 @@ class Bruggeman(RfuncBase):
         c_init = 1 / np.exp(-2 * a_init) / self.meanstress
         parameters.loc[name + '_a'] = (a_init, 0, 100, 1, name)
         parameters.loc[name + '_b'] = (b_init, 0, 10, 1, name)
-        parameters.loc[name + '_c'] = (c_init, 0, c_init*100, 1, name)
+        parameters.loc[name + '_c'] = (c_init, 0, c_init * 100, 1, name)
         return parameters
 
     def step(self, p, dt=1):
         # TODO: find tmax from cutoff, below is just an opproximation
-        self.tmax = 4 * p[0]/p[1]**2
+        self.tmax = 4 * p[0] / p[1] ** 2
         t = np.arange(dt, self.tmax, dt)
         s = self.up * p[2] * self.polder_function(p[0], p[1] * np.sqrt(t))
         return s
@@ -262,6 +267,7 @@ class Bruggeman(RfuncBase):
     def block(self, p, dt=1):
         s = self.step(p, dt)
         return s[1:] - s[:-1]
+
 
 class One(RfuncBase):
     """Dummy class for Constant. Returns 1
