@@ -9,7 +9,7 @@ from __future__ import print_function, division
 
 import numpy as np
 import pandas as pd
-from scipy.special import gammainc, gammaincinv, k0, exp1
+from scipy.special import gammainc, gammaincinv, k0, exp1, erfc
 
 _class_doc = """
 Attributes
@@ -222,6 +222,46 @@ class Theis(RfuncBase):
         s = self.step(p, r)
         return s[1:] - s[:-1]
 
+class Bruggeman(RfuncBase):
+    """ The function of Bruggeman, for a river in a confined aquifer, overlain by an aquitard with aquiferous ditches
+
+    References
+    ----------
+    [1] http://grondwaterformules.nl/index.php/formules/waterloop/deklaag-met-sloten
+
+    """
+    #
+
+    def __init__(self, up=True, meanstress=1, cutoff=0.99):
+        RfuncBase.__init__(self, up, meanstress, cutoff)
+        self.nparam = 3
+
+    def set_parameters(self, name):
+        parameters = pd.DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        a_init = 1
+        b_init = 0.1
+        c_init = 1 / np.exp(-2 * a_init) / self.meanstress
+        parameters.loc[name + '_a'] = (a_init, 0, 100, 1, name)
+        parameters.loc[name + '_b'] = (b_init, 0, 10, 1, name)
+        parameters.loc[name + '_c'] = (c_init, 0, c_init*100, 1, name)
+        return parameters
+
+    def step(self, p, dt=1):
+        # TODO: find tmax from cutoff, below is just an opproximation
+        self.tmax = 4 * p[0]/p[1]**2
+        t = np.arange(dt, self.tmax, dt)
+        s = self.up * p[2] * self.polder_function(p[0], p[1] * np.sqrt(t))
+        return s
+
+    def polder_function(self, x, y):
+        s = .5 * np.exp( 2 * x) * erfc(x / y + y) + \
+            .5 * np.exp(-2 * x) * erfc(x / y - y)
+        return s
+
+    def block(self, p, dt=1):
+        s = self.step(p, dt)
+        return s[1:] - s[:-1]
 
 class One(RfuncBase):
     """Dummy class for Constant. Returns 1

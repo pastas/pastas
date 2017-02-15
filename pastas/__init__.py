@@ -5,8 +5,8 @@ from . import read
 from .model import Model
 from .recharge.recharge_func import Preferential, Linear, Percolation, \
     Combination
-from .rfunc import Gamma, Exponential, Hantush, Theis
+from .rfunc import Gamma, Exponential, Hantush, Theis, Bruggeman
 from .solver import LmfitSolve, DESolve
 from .stats import Statistics
-from .tseries import Tseries, Tseries2, Recharge, TseriesStep, Well, Constant, NoiseModel
+from .tseries import Tseries, Tseries2, Recharge, Well, TseriesStep, Constant, NoiseModel
 from .version import __version__
