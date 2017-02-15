@@ -239,10 +239,10 @@ class Statistics(object):
 
     def qGHG(self, key='observations', tmin=None, tmax=None, q=0.875):
         """Summary
-        Gemiddeld Hoogste Grondwaterstand (GHG)
+        Gemiddeld Hoogste Grondwaterstand (GHG) also called MHGL (Mean High Groundwater Level)
         Approximated by taking a quantile of the timeseries values. 
-        
-        This Dutch groundwater statistic is also called MHGL (Mean High Groundwater Level)
+    
+        This function does not care about series length or frequency!
         
         Parameters
         ----------
@@ -263,16 +263,16 @@ class Statistics(object):
 
     def qGLG(self, key='observations', tmin=None, tmax=None, q=0.125):
         """Summary
-        Gemiddeld Laagste Grondwaterstand (GLG)
+        Gemiddeld Laagste Grondwaterstand (GLG) also called MLGL (Mean Low Groundwater Level)
         Approximated by taking a quantile of the timeseries values. 
         
-        This Dutch groundwater statistic is also called MLGL (Mean Low Groundwater Level)
-                
+        This function does not care about series length or changing frequency!
+        
         Parameters
         ----------
         key : None, optional
             timeseries key ('observations' or 'simulated')
-        tmin, tmax: Optional[pd.Timestamp]
+        tmin, tmax : Optional[pd.Timestamp]
             Time indices to use for the simulation of the time series model.
         q : float, optional
             quantile, fraction of exceedance (default 0.125)
@@ -287,11 +287,11 @@ class Statistics(object):
 
     def qGVG(self, key='observations', tmin=None, tmax=None):
         """Summary
-        Gemiddeld Voorjaarsgrondwaterstand (GVG)
+        Gemiddeld Voorjaarsgrondwaterstand (GVG) also called MSGL (Mean Spring Groundwater Level)
         Approximated by taking the median of the values in the 
-        period between 15 March and 15 April.
-        
-        This Dutch groundwater statistic is also called MSGL (Mean Spring Groundwater Level)
+        period between 15 March and 15 April (working assumption).
+
+        This function does not care about series length or changing frequency!
         
         Parameters
         ----------
@@ -455,37 +455,20 @@ class Statistics(object):
             single-column dataframe with calculated statistics        
         
         """
-
-        output = {
-                'basic': {
-                    'evp': 'Explained variance percentage',
-                    'rmse': 'Root mean squared error',
-                    'avg_dev': 'Average Deviation',
-                    'pearson': 'Pearson R^2',
-                    'bic': 'Bayesian Information Criterion',
-                    'aic': 'Akaike Information Criterion'},                    
-                'dutch': {
-                    'qGHG': 'Gemiddeld Hoge Grondwaterstand',
-                    'qGLG': 'Gemiddeld Lage Grondwaterstand',
-                    'qGVG': 'Gemiddelde Voorjaarsgrondwaterstand',
-                    'dGHG': 'Verschil Gemiddeld Hoge Grondwaterstand',
-                    'dGLG': 'Verschil Gemiddeld Lage Grondwaterstand',
-                    'dGVG': 'Verschil Gemiddelde Voorjaarsgrondwaterstand'},
-                    }
-
+        # get labels and method names for selected output
         if selected == 'all':
-            selected_output = sorted([(k, n, f) for k, d in output.items()
-                for f, n in d.items()])
+            selected_output = sorted([(k, l, f) for k, d in output.items()
+                for f, l in d.items()]) # sort by key, label, method name
         else:
-            selected_output = sorted([(0, n, f) for f, n in
-                output[selected].items()])
+            selected_output = sorted([(0, l, f) for f, l in
+                output[selected].items()]) # sort by name, method name
 
         # compute statistics
-        names_and_values = [(n, getattr(self, f)(tmin=tmin, tmax=tmax))
-            for _, n, f in selected_output]
-        names, values = zip(*names_and_values)
+        labels_and_values = [(l, getattr(self, f)(tmin=tmin, tmax=tmax))
+            for _, l, f in selected_output]
+        labels, values = zip(*labels_and_values)
 
-        stats = pd.DataFrame(index=list(names), data=list(values),
+        stats = pd.DataFrame(index=list(labels), data=list(values),
             columns=['Value'])
         stats.index.name = 'Statistic'
         return stats
