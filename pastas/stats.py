@@ -271,8 +271,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return stats
 
     def bykey(self, key, tmin=None, tmax=None):
-        """Summary
-        Worker function for GHG and GLG statistcs.
+        """Worker function for GHG and GLG statistcs.
 
         Parameters
         ----------
@@ -295,8 +294,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return series
 
     def q_ghg(self, tmin=None, tmax=None, key='simulated', q=0.94):
-        """Summary
-        Gemiddeld Hoogste Grondwaterstand (GHG) also called MHGL (Mean High Groundwater Level)
+        """Gemiddeld Hoogste Grondwaterstand (GHG) also called MHGL (Mean High Groundwater Level)
         Approximated by taking a quantile of the timeseries values, after
         resampling to daily values.
 
@@ -322,8 +320,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return series.quantile(q)
 
     def q_glg(self, tmin=None, tmax=None, key='simulated', q=0.06):
-        """Summary
-        Gemiddeld Laagste Grondwaterstand (GLG) also called MLGL (Mean Low Groundwater Level)
+        """Gemiddeld Laagste Grondwaterstand (GLG) also called MLGL (Mean Low Groundwater Level)
         Approximated by taking a quantile of the timeseries values, after
         resampling to daily values.
 
@@ -347,11 +344,27 @@ included in Pastas. To obtain a list of all statistics that are included type:
         series = series.resample('d').median()
         return series.quantile(q)
 
+    def __inspring__(self, series):
+        """Test if timeseries index is between 14 March and 15 April.
+        
+        Parameters
+        ----------
+        series : pd.Series
+            series with datetime index
+        
+        Returns
+        -------
+        pd.Series
+            Boolean series with datetimeindex
+        """
+        isinspring = lambda x: (((x.month == 3) and (x.day >= 14)) or
+                    ((x.month == 4) and (x.day < 15)))
+        return series.index.map(isinspring)
+
     def q_gvg(self, tmin=None, tmax=None, key='simulated'):
-        """Summary
-        Gemiddeld Voorjaarsgrondwaterstand (GVG) also called MSGL (Mean Spring Groundwater Level)
+        """Gemiddeld Voorjaarsgrondwaterstand (GVG) also called MSGL (Mean Spring Groundwater Level)
         Approximated by taking the median of the values in the
-        period between 15 March and 15 April (after resampling to daily values).
+        period between 14 March and 15 April (after resampling to daily values).
 
         This function does not care about series length!
 
@@ -369,9 +382,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         series = self.bykey(key=key, tmin=tmin, tmax=tmax)
         series = series.resample('d').median()
-        isinspring = lambda x: (((x.month == 3) and (x.day >= 14)) or
-                            ((x.month == 4) and (x.day < 15)))
-        inspring = series.index.map(isinspring)
+        inspring = self.__inspring__(series)
         if np.any(inspring):
             return series.loc[inspring].median()
         else:
@@ -428,12 +439,11 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return (self.q_gvg(tmin=tmin, tmax=tmax, key='simulated') -
                 self.q_gvg(tmin=tmin, tmax=tmax, key='observations'))
 
-    def gxg(self, year_agg, tmin, tmax, key, fill_method, output):
-        """Summary
-        Worker method for classic GXG statistics.
+    def gxg(self, year_agg, tmin, tmax, key, fill_method, limit, output):
+        """Worker method for classic GXG statistics.
         Resampling the series to every 14th and 28th of the month.
         Taking the mean of aggregated values per year.
-
+        
         Parameters
         ----------
         year_agg : function series -> scalar
@@ -442,17 +452,23 @@ included in Pastas. To obtain a list of all statistics that are included type:
             Time indices to use for the simulation of the time series model.
         key : None, optional
             timeseries key ('observations' or 'simulated')
-        fill_method : TYPE
+        fill_method : str or None
             fill method for interpolation to 14th and 28th of the month
-        output : TYPE
+            see: http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.ffill.html
+                 http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.bfill.html
+                 http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.interpolate.html
+            Use None to omit filling and drop NaNs
+        limit : int or None
+            Maximum number of timesteps to fill using fill method, use None to fill all
+        output : str
             output type 'yearly' for series of yearly values, 'mean' for
             mean of yearly values
-
+        
         Returns
         -------
         pd.Series or scalar
             Series of yearly values or mean of yearly values
-
+        
         Raises
         ------
         ValueError
@@ -460,12 +476,14 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         series = self.bykey(key=key, tmin=tmin, tmax=tmax)
         series = series.resample('d').mean()
-        if fill_method == 'ffill':
-            series = series.ffill()
+        if fill_method is None:
+            series = series.dropna()
+        elif fill_method == 'ffill':
+            series = series.ffill(limit=limit)
         elif fill_method == 'bfill':
-            series = series.bfill()
+            series = series.bfill(limit=limit)
         else:
-            series = series.interpolate(method=fill_method)
+            series = series.interpolate(method=fill_method, limit=limit)
 
         the14or28 = lambda x: (x.day == 14) or (x.day == 28)
         is14or28 = series.index.map(the14or28)
@@ -482,9 +500,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
                 output=output))
 
     def ghg(self, tmin=None, tmax=None, key='simulated',
-            fill_method='linear', output='mean'):
-        """Summary
-        Classic method:
+            fill_method='linear', limit=15, output='mean'):
+        """Classic method:
         Resampling the series to every 14th and 28th of the month.
         Taking the mean of the mean of three highest values per year.
 
@@ -496,9 +513,15 @@ included in Pastas. To obtain a list of all statistics that are included type:
             Time indices to use for the simulation of the time series model.
         key : None, optional
             timeseries key ('observations' or 'simulated')
-        fill_method : TYPE
+        fill_method : str
             fill method for interpolation to 14th and 28th of the month
-        output : TYPE
+            see: http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.ffill.html
+                 http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.bfill.html
+                 http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.interpolate.html
+            Use None to omit filling and drop NaNs
+        limit : int or None
+            Maximum number of timesteps to fill using fill method, use None to fill all
+        output : str
             output type 'yearly' for series of yearly values, 'mean' for
             mean of yearly values
 
@@ -508,13 +531,12 @@ included in Pastas. To obtain a list of all statistics that are included type:
             Series of yearly values or mean of yearly values
         """
         mean_high = lambda s: s.nlargest(3).mean()
-        return self.GXG(mean_high, tmin=tmin, tmax=tmax, key=key,
-            fill_method=fill_method, output=output)
+        return self.gxg(mean_high, tmin=tmin, tmax=tmax, key=key,
+            fill_method=fill_method, limit=limit, output=output)
 
     def glg(self, tmin=None, tmax=None, key='simulated',
-            fill_method='linear', output='mean'):
-        """Summary
-        Classic method:
+            fill_method='linear', limit=15, output='mean'):
+        """Classic method:
         Resampling the series to every 14th and 28th of the month.
         Taking the mean of the mean of three lowest values per year.
 
@@ -526,9 +548,15 @@ included in Pastas. To obtain a list of all statistics that are included type:
             Time indices to use for the simulation of the time series model.
         key : None, optional
             timeseries key ('observations' or 'simulated')
-        fill_method : TYPE
+        fill_method : str
             fill method for interpolation to 14th and 28th of the month
-        output : TYPE
+            see: http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.ffill.html
+                 http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.bfill.html
+                 http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.interpolate.html
+            Use None to omit filling and drop NaNs
+        limit : int or None
+            Maximum number of timesteps to fill using fill method, use None to fill all
+        output : str
             output type 'yearly' for series of yearly values, 'mean' for
             mean of yearly values
 
@@ -538,15 +566,35 @@ included in Pastas. To obtain a list of all statistics that are included type:
             Series of yearly values or mean of yearly values
         """
         mean_low = lambda s: s.nsmallest(3).mean()
-        return self.GXG(mean_low, tmin=tmin, tmax=tmax, key=key,
-            fill_method=fill_method, output=output)
+        return self.gxg(mean_low, tmin=tmin, tmax=tmax, key=key,
+            fill_method=fill_method, limit=limit, output=output)
+
+    def __mean_spring__(self, series):
+        """Determine mean of timeseries values in spring. 
+
+        Year aggregator function for gvg method.
+        
+        Parameters
+        ----------
+        series : pd.Series
+            series with datetime index
+        
+        Returns
+        -------
+        float
+            Mean of series, or NaN if no values in spring
+        """
+        inspring = self.__inspring__(series)
+        if np.any(inspring):
+            return series.loc[inspring].mean()
+        else:
+            return np.nan
 
     def gvg(self, tmin=None, tmax=None, key='simulated',
-            fill_method='linear', output='mean'):
-        """Summary
-        Classic method:
+            fill_method='linear', limit=15, output='mean'):
+        """Classic method:
         Resampling the series to every 14th and 28th of the month.
-        Taking the mean of the mean of three lowest values per year.
+        Taking the mean of the values on March 14, March 28 and April 14.
 
         This function does not care about series length!
 
@@ -556,9 +604,15 @@ included in Pastas. To obtain a list of all statistics that are included type:
             Time indices to use for the simulation of the time series model.
         key : None, optional
             timeseries key ('observations' or 'simulated')
-        fill_method : TYPE
+        fill_method : str
             fill method for interpolation to 14th and 28th of the month
-        output : TYPE
+            see: http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.ffill.html
+                 http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.bfill.html
+                 http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.interpolate.html
+            Use None to omit filling and drop NaNs
+        limit : int or None
+            Maximum number of timesteps to fill using fill method, use None to fill all
+        output : str
             output type 'yearly' for series of yearly values, 'mean' for
             mean of yearly values
 
@@ -567,10 +621,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
         pd.Series or scalar
             Series of yearly values or mean of yearly values
         """
-        mean_spring = lambda s: s[inspring].mean()
-        return self.GXG(mean_low, tmin=tmin, tmax=tmax, key=key,
-            fill_method=fill_method, output=output)
-
+        return self.gxg(self.__mean_spring__, tmin=tmin, tmax=tmax, key=key,
+            fill_method=fill_method, limit=limit, output=output)
 
     # def GHG(self, tmin=None, tmax=None, series='oseries'):
 
