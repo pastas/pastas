@@ -79,6 +79,16 @@ class Model:
     def add_tseries(self, tseries):
         """Adds a time series component to the model.
 
+        Parameters
+        ----------
+        name: str
+            string with the name of the tseries object.
+
+        Notes
+        -----
+        To obtain a list of the tseries names type:
+        >>> ml.tseriesdict.keys()
+
         """
         if tseries.name in self.tseriesdict.keys():
             warn('The name for the series you are trying to add '
@@ -88,6 +98,11 @@ class Model:
             self.tseriesdict[tseries.name] = tseries
             self.parameters = self.parameters.append(tseries.parameters)
             self.nparam += tseries.nparam
+
+            # Call these methods to set tmin, tmax and freq and enable
+            # simulation.
+            self.check_frequency()
+            self.set_tmin_tmax()
 
     def add_noisemodel(self, noisemodel):
         """Adds a noise model to the time series Model.
@@ -178,7 +193,7 @@ class Model:
         parameters and no calibration.
 
         """
-        # Default option when tmin and tmax are not provided.
+        # Default option when tmin and tmax and freq are not provided.
         if tmin is None:
             tmin = self.tmin
         if tmax is None:
