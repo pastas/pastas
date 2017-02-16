@@ -21,8 +21,10 @@ class LmfitSolve:
 
     def objfunction(self, parameters, tmin, tmax, noise, model, freq):
         p = np.array([p.value for p in parameters.values()])
-        return model.residuals(p, tmin, tmax, freq, noise,
-                               h_observed=model.oseries_calib)
+        if noise:
+            return model.innovations(p, tmin, tmax, freq, model.oseries_calib)
+        else:
+            return model.residuals(p, tmin, tmax, freq, model.oseries_calib)
 
 
 # def lmfit_solve(model, tmin=None, tmax=None, noise=True, report=True):
@@ -67,4 +69,14 @@ class DESolve:
                                    tmax=self.tmax, freq=self.freq,
                                    noise=self.noise,
                                    h_observed=self.model.oseries_calib)
+
+        if self.noise:
+            res = self.model.innovations(self.parameters, tmin=self.tmin,
+                                         tmax=self.tmax, freq=self.freq,
+                                         h_observed=self.model.oseries_calib)
+        else:
+            res = self.model.residuals(self.parameters, tmin=self.tmin,
+                                       tmax=self.tmax, freq=self.freq,
+                                       h_observed=self.model.oseries_calib)
+
         return sum(res ** 2)

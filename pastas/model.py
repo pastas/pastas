@@ -186,11 +186,9 @@ class Model:
         if freq is None:
             freq = self.freq
 
-        # If no parameters are provided, get parameters.
-        if parameters is None and self.parameters.optimal.hasnans:
-            parameters = self.parameters.initial.values
-        elif parameters is None:
-            parameters = self.parameters.optimal.values
+        # Get parameters if none are provided
+        if parameters is None:
+            parameters = self.get_parameters()
 
         # adjust tmin and tmax so that the time-offset (determined in
         # check_frequency) is equal to that of the model (is also done in set_tmin_tmax)
@@ -214,7 +212,7 @@ class Model:
         return h[tmin:]
 
     def residuals(self, parameters=None, tmin=None, tmax=None, freq=None,
-                  noise=True, h_observed=None):
+                  h_observed=None):
         """
 
         Parameters
@@ -232,7 +230,7 @@ class Model:
 
         Returns
         -------
-        r: pd.Series
+        res: pd.Series
             Pandas series with the simulated
 
         """
@@ -242,8 +240,10 @@ class Model:
             tmax = self.oseries.index.max()
         if freq is None:
             freq = self.freq
+
+        # Get parameters if none are provided
         if parameters is None:
-            parameters = self.parameters.optimal.values
+            parameters = self.get_parameters()
 
         # simulate model
         simulation = self.simulate(parameters, tmin, tmax, freq)
@@ -265,14 +265,58 @@ class Model:
             # interpolate simulation to measurement-times
             h_simulated = np.interp(h_observed.index.asi8,
                                     simulation.index.asi8, simulation)
-        r = h_observed - h_simulated
-        if noise and (self.noisemodel is not None):
-            r = self.noisemodel.simulate(r, self.odelt[obs_index],
-                                         parameters[-self.noisemodel.nparam:],
-                                         obs_index)
-        if np.isnan(sum(r ** 2)):
+        res = h_observed - h_simulated
+
+        if np.isnan(sum(res ** 2)):
             print('nan problem in residuals')  # quick and dirty check
-        return r[tmin:]
+        return res[tmin:]
+
+    def innovations(self, parameters=None, tmin=None, tmax=None, freq=None,
+                    h_observed=None):
+        """Method to simulate the innovations.
+
+        Parameters
+        ----------
+        parameters
+        tmin
+        tmax
+        freq
+
+        Returns
+        -------
+        v: pd.Series
+            Pandas series of the innovations.
+
+        Notes
+        -----
+        The innovations are the time series that result when applying a noise
+        model.
+
+        """
+        if self.noisemodel is None:
+            warn("Innovations can not be calculated as there is no noisemodel")
+            return None
+
+        if tmin is None:
+            tmin = self.oseries.index.min()
+        if tmax is None:
+            tmax = self.oseries.index.max()
+        if freq is None:
+            freq = self.freq
+
+        # Get parameters if none are provided
+        if parameters is None:
+            parameters = self.get_parameters()
+
+        # Calculate the residuals
+        res = self.residuals(parameters, tmin, tmax, freq, h_observed)
+
+        # Calculate the innovations
+        v = self.noisemodel.simulate(res, self.odelt[res.index],
+                                     parameters[-self.noisemodel.nparam:],
+                                     res.index)
+
+        return v[tmin:]
 
     def initialize(self, initial=True, noise=True):
         """Initialize the model before solving.
@@ -457,6 +501,24 @@ class Model:
                                 ' not the same for all stresses.'
         self.time_offset = next(iter(time_offsets))
 
+    def get_parameters(self):
+        """Helper method to obtain the parameters needed for calculation if
+        none are provided. This method is used by the simulation, residuals
+        and the innovations methods.
+
+        Returns
+        -------
+        p: list
+            Array of the parameters used in the time series model.
+
+        """
+        if self.parameters.optimal.hasnans:
+            parameters = self.parameters.initial.values
+        else:
+            parameters = self.parameters.optimal.values
+
+        return parameters
+
     def get_dt(self, freq):
         options = {'W': 7,  # weekly frequency
                    'D': 1,  # calendar day frequency
@@ -610,11 +672,11 @@ class Model:
         plt.ylabel('Head [m]')
 
         # Plot the residuals and innovations
-        residuals = self.residuals(tmin=tmin, tmax=tmax, noise=False)
+        residuals = self.residuals(tmin=tmin, tmax=tmax)
         ax2 = plt.subplot(gs[2, :-1], sharex=ax1)
         residuals.plot(color='k', label='residuals')
         if self.noisemodel is not None:
-            innovations = self.residuals(tmin=tmin, tmax=tmax, noise=True)
+            innovations = self.residuals(tmin=tmin, tmax=tmax)
             innovations.plot(label='innovations')
         ax2.grid(which='both')
         ax2.minorticks_off()
@@ -654,7 +716,7 @@ class Model:
         plt.title('Statistics', loc='left')
         plt.show()
         if savefig:
-            plt.savefig('.eps' % (self.name), bbox_inches='tight')
+            plt.savefig('pastas.eps', bbox_inches='tight')
 
     def plot_decomposition(self, tmin=None, tmax=None):
         """Plot the decomposition of a time-series in the different stresses.
@@ -748,18 +810,14 @@ class Model:
         """Method that returns the innovation series.
 
         """
-        if self.noisemodel is None:
-            raise Warning('No noisemodel is present in this model, so the'
-                          ' innovations cannot be calculated.')
-
-        v = self.residuals(tmin=tmin, tmax=tmax, noise=True)
+        v = self.innovations(tmin=tmin, tmax=tmax)
         return v
 
     def get_residuals(self, tmin=None, tmax=None):
         """Method that returns the residual series
 
         """
-        return self.residuals(tmin, tmax, noise=False)
+        return self.residuals(tmin, tmax)
 
     def get_observations(self, tmin=None, tmax=None):
         """Method that returns the observations series.
