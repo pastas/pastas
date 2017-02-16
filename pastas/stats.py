@@ -43,22 +43,8 @@ class Statistics(object):
 
         >>> print(ml.stats.ops)
 
-<<<<<<< 67389b47d479ff4be11aa65cf02eab15e00a7ac7
         ml: Pastas Model
             ml is a time series Model that is calibrated.
-=======
-    def __getobservations__(self, tmin=None, tmax=None):
-        series = self.ml.oseries
-        if tmin is None and tmax is None:
-            return series
-        elif tmin is None:
-            tmin = self.ml.oseries.index.min()
-        elif tmax is None:
-            tmax = self.ml.oseries.index.max()
-        return series.truncate(before=tmin, after=tmax)
-
-    def __getallseries__(self, tmin=None, tmax=None):
->>>>>>> refactored getobservations method of Statistics
         """
         # Save a reference to the model.
         self.ml = ml
@@ -78,20 +64,9 @@ class Statistics(object):
         msg = """This module contains all the statistical functions that are
 included in Pastas. To obtain a list of all statistics that are included type:
 
-<<<<<<< aac672127cc06b87d14858a38926d01bfdf88b64
     >>> print(ml.stats.ops)"""
         return msg
 
-=======
-        """
-        series = pd.DataFrame()
-        series["simulated"] = self.__getsimulated__(tmin=tmin, tmax=tmax)
-        series["observations"] = self.__getobservations__(tmin=tmin, tmax=tmax)
-        series["residuals"] = self.__getresiduals__(tmin=tmin, tmax=tmax)
-        series["innovations"] = self.__getinnovations__(tmin=tmin, tmax=tmax)
-        return series
- 
->>>>>>> added quantile based GXG methods to Statistics: qGHG, qGLG, qGVG, and differencing functions: dGHG, dGLG, dGVG
     # The statistical functions
 
     def rmse(self, tmin=None, tmax=None):
@@ -274,7 +249,6 @@ included in Pastas. To obtain a list of all statistics that are included type:
         innovations = self.ml.get_innovations(tmin, tmax)
         return pacf(innovations, nlags=nlags)
 
-<<<<<<< aac672127cc06b87d14858a38926d01bfdf88b64
     def all(self, tmin=None, tmax=None):
         """Returns a dictionary with all the statistics.
 
@@ -295,9 +269,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
             stats.loc[k] = (getattr(self, k)(tmin, tmax))
 
         return stats
-=======
-   
-    def __seriesbykey__(self, key, tmin=None, tmax=None):  
+  
+    def bykey(self, key, tmin=None, tmax=None):  
         """Summary
         Worker function for GHG and GLG statistcs. 
         
@@ -314,9 +287,9 @@ included in Pastas. To obtain a list of all statistics that are included type:
             Description
         """
         if key == 'observations':
-            series = self.__getobservations__(tmin=tmin, tmax=tmax)
+            series = self.ml.get_observations(tmin, tmax)
         elif key == 'simulated':
-            series = self.__getsimulated__(tmin=tmin, tmax=tmax)
+            series = self.ml.get_residuals(tmin, tmax)
         else:
             raise ValueError('no timeseries with key {key:}'.format(key=key))
         return series
@@ -344,7 +317,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         TYPE
             Description
         """
-        series = self.__seriesbykey__(key=key, tmin=tmin, tmax=tmax)
+        series = self.bykey(key=key, tmin=tmin, tmax=tmax)
         series = series.resample('d').median()
         return series.quantile(q)
 
@@ -370,7 +343,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         TYPE
             Description
         """
-        series = self.__seriesbykey__(key=key, tmin=tmin, tmax=tmax)
+        series = self.bykey(key=key, tmin=tmin, tmax=tmax)
         series = series.resample('d').median()
         return series.quantile(q)
 
@@ -394,7 +367,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         TYPE
             Description
         """
-        series = self.__seriesbykey__(key=key, tmin=tmin, tmax=tmax)
+        series = self.bykey(key=key, tmin=tmin, tmax=tmax)
         series = series.resample('d').median()
         isinspring = lambda x: (((x.month == 3) and (x.day >= 15)) or 
                             ((x.month == 4) and (x.day < 16)))
@@ -454,7 +427,6 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         return (self.qGVG(key='simulated', tmin=tmin, tmax=tmax) - 
                 self.qGVG(key='observations', tmin=tmin, tmax=tmax))
->>>>>>> added quantile based GXG methods to Statistics: qGHG, qGLG, qGVG, and differencing functions: dGHG, dGLG, dGVG
 
     # def GHG(self, tmin=None, tmax=None, series='oseries'):
 
@@ -502,7 +474,6 @@ included in Pastas. To obtain a list of all statistics that are included type:
     #         return np.mean(np.array(x))
 
     def descriptive(self, tmin=None, tmax=None):
-<<<<<<< aac672127cc06b87d14858a38926d01bfdf88b64
         """Returns the descriptive statistics for all time series.
 
         """
@@ -514,13 +485,6 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
     def plot_diagnostics(self, tmin=None, tmax=None):
         innovations = self.ml.get_innovations(tmin, tmax)
-=======
-        series = self.__getallseries__(tmin=tmin, tmax=tmax)
-        series.describe()
-
-    def plot_diagnostics(self, tmin=None, tmax=None):
-        innovations = self.__getinnovations__(tmin=tmin, tmax=tmax)
->>>>>>> added quantile based GXG methods to Statistics: qGHG, qGLG, qGVG, and differencing functions: dGHG, dGLG, dGVG
 
         plt.figure()
         gs = plt.GridSpec(2, 3, wspace=0.2)
@@ -541,8 +505,6 @@ included in Pastas. To obtain a list of all statistics that are included type:
         plt.subplot(gs[1, 2])
         probplot(innovations, plot=plt)
         plt.show()
-<<<<<<< f252845d33e7a5445e2215029dc16ab00d9b5b13
-=======
 
     def summary(self, selected='basic', tmin=None, tmax=None):
         """Prints a summary table of the model statistics. The set of statistics
@@ -599,4 +561,3 @@ included in Pastas. To obtain a list of all statistics that are included type:
             columns=['Value'])
         stats.index.name = 'Statistic'
         return stats
->>>>>>> refactored stats.summary()'
