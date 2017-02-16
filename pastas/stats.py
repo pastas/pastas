@@ -372,7 +372,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         isinspring = lambda x: (((x.month == 3) and (x.day >= 15)) or 
                             ((x.month == 4) and (x.day < 16)))
         inspring = series.index.map(isinspring)
-        if np.any(inspring) > 0:
+        if np.any(inspring):
             return series.loc[inspring].median()
         else:
             return np.nan
