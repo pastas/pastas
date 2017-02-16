@@ -269,18 +269,18 @@ included in Pastas. To obtain a list of all statistics that are included type:
             stats.loc[k] = (getattr(self, k)(tmin, tmax))
 
         return stats
-  
-    def bykey(self, key, tmin=None, tmax=None):  
+
+    def bykey(self, key, tmin=None, tmax=None):
         """Summary
-        Worker function for GHG and GLG statistcs. 
-        
+        Worker function for GHG and GLG statistcs.
+
         Parameters
         ----------
         key : None, optional
             timeseries key ('observations' or 'simulated')
         tmin, tmax: Optional[pd.Timestamp]
             Time indices to use for the simulation of the time series model.
-       
+
         Returns
         -------
         TYPE
@@ -299,10 +299,10 @@ included in Pastas. To obtain a list of all statistics that are included type:
         Gemiddeld Hoogste Grondwaterstand (GHG) also called MHGL (Mean High Groundwater Level)
         Approximated by taking a quantile of the timeseries values, after
         resampling to daily values.
-        
-    
+
+
         This function does not care about series length!
-        
+
         Parameters
         ----------
         key : None, optional
@@ -311,7 +311,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
             Time indices to use for the simulation of the time series model.
         q : float, optional
             quantile, fraction of exceedance (default 0.94)
-        
+
         Returns
         -------
         TYPE
@@ -326,9 +326,9 @@ included in Pastas. To obtain a list of all statistics that are included type:
         Gemiddeld Laagste Grondwaterstand (GLG) also called MLGL (Mean Low Groundwater Level)
         Approximated by taking a quantile of the timeseries values, after
         resampling to daily values.
-        
+
         This function does not care about series length!
-        
+
         Parameters
         ----------
         key : None, optional
@@ -337,7 +337,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
             Time indices to use for the simulation of the time series model.
         q : float, optional
             quantile, fraction of exceedance (default 0.06)
-        
+
         Returns
         -------
         TYPE
@@ -350,18 +350,18 @@ included in Pastas. To obtain a list of all statistics that are included type:
     def q_gvg(self, tmin=None, tmax=None, key='simulated'):
         """Summary
         Gemiddeld Voorjaarsgrondwaterstand (GVG) also called MSGL (Mean Spring Groundwater Level)
-        Approximated by taking the median of the values in the 
+        Approximated by taking the median of the values in the
         period between 15 March and 15 April (after resampling to daily values).
 
         This function does not care about series length!
-        
+
         Parameters
         ----------
         key : None, optional
             timeseries key ('observations' or 'simulated')
         tmin, tmax: Optional[pd.Timestamp]
             Time indices to use for the simulation of the time series model.
-        
+
         Returns
         -------
         TYPE
@@ -369,8 +369,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         series = self.bykey(key=key, tmin=tmin, tmax=tmax)
         series = series.resample('d').median()
-        isinspring = lambda x: (((x.month == 3) and (x.day >= 15)) or 
-                            ((x.month == 4) and (x.day < 16)))
+        isinspring = lambda x: (((x.month == 3) and (x.day >= 14)) or
+                            ((x.month == 4) and (x.day < 15)))
         inspring = series.index.map(isinspring)
         if np.any(inspring):
             return series.loc[inspring].median()
@@ -380,60 +380,60 @@ included in Pastas. To obtain a list of all statistics that are included type:
     def d_ghg(self, tmin=None, tmax=None):
         """
         Difference in GHG between simulated and observed values
-        
+
         Parameters
         ----------
         tmin, tmax: Optional[pd.Timestamp]
             Time indices to use for the simulation of the time series model.
-        
+
         Returns
         -------
         TYPE
             Description
         """
-        return (self.q_ghg(tmin=tmin, tmax=tmax, key='simulated') - 
+        return (self.q_ghg(tmin=tmin, tmax=tmax, key='simulated') -
                 self.q_ghg(tmin=tmin, tmax=tmax, key='observations'))
 
     def d_glg(self, tmin=None, tmax=None):
         """
         Difference in GLG between simulated and observed values
-        
+
         Parameters
         ----------
         tmin, tmax: Optional[pd.Timestamp]
             Time indices to use for the simulation of the time series model.
-        
+
         Returns
         -------
         TYPE
             Description
         """
-        return (self.q_glg(tmin=tmin, tmax=tmax, key='simulated') - 
+        return (self.q_glg(tmin=tmin, tmax=tmax, key='simulated') -
                 self.q_glg(tmin=tmin, tmax=tmax, key='observations'))
 
     def d_gvg(self, tmin=None, tmax=None):
         """
         Difference in GVG between simulated and observed values
-        
+
         Parameters
         ----------
         tmin, tmax: Optional[pd.Timestamp]
             Time indices to use for the simulation of the time series model.
-        
+
         Returns
         -------
         TYPE
             Description
         """
-        return (self.q_gvg(tmin=tmin, tmax=tmax, key='simulated') - 
+        return (self.q_gvg(tmin=tmin, tmax=tmax, key='simulated') -
                 self.q_gvg(tmin=tmin, tmax=tmax, key='observations'))
 
     def gxg(self, year_agg, tmin, tmax, key, fill_method, output):
-        """Summary      
-        Worker method for classic GXG statistics. 
+        """Summary
+        Worker method for classic GXG statistics.
         Resampling the series to every 14th and 28th of the month.
-        Taking the mean of aggregated values per year.    
-        
+        Taking the mean of aggregated values per year.
+
         Parameters
         ----------
         year_agg : function series -> scalar
@@ -445,14 +445,14 @@ included in Pastas. To obtain a list of all statistics that are included type:
         fill_method : TYPE
             fill method for interpolation to 14th and 28th of the month
         output : TYPE
-            output type 'yearly' for series of yearly values, 'mean' for 
+            output type 'yearly' for series of yearly values, 'mean' for
             mean of yearly values
-        
+
         Returns
         -------
         pd.Series or scalar
             Series of yearly values or mean of yearly values
-        
+
         Raises
         ------
         ValueError
@@ -473,7 +473,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
             return np.nan
         series = series.loc[is14or28]
         yearly = series.resample('a').apply(year_agg)
-        if output == 'all':
+        if output == 'yearly':
             return yearly
         elif output == 'mean':
             return yearly.mean()
@@ -481,15 +481,15 @@ included in Pastas. To obtain a list of all statistics that are included type:
             raise ValueError('{output:} is not a valid output option'.format(
                 output=output))
 
-    def ghg(self, tmin=None, tmax=None, key='simulated', 
+    def ghg(self, tmin=None, tmax=None, key='simulated',
             fill_method='linear', output='mean'):
-        """Summary      
+        """Summary
         Classic method:
         Resampling the series to every 14th and 28th of the month.
-        Taking the mean of the mean of three highest values per year.    
-        
+        Taking the mean of the mean of three highest values per year.
+
         This function does not care about series length!
-        
+
         Parameters
         ----------
         tmin, tmax : Optional[pd.Timestamp]
@@ -499,13 +499,13 @@ included in Pastas. To obtain a list of all statistics that are included type:
         fill_method : TYPE
             fill method for interpolation to 14th and 28th of the month
         output : TYPE
-            output type 'yearly' for series of yearly values, 'mean' for 
+            output type 'yearly' for series of yearly values, 'mean' for
             mean of yearly values
-        
+
         Returns
         -------
         pd.Series or scalar
-            Series of yearly values or mean of yearly values      
+            Series of yearly values or mean of yearly values
         """
         mean_high = lambda s: s.nlargest(3).mean()
         return self.GXG(mean_high, tmin=tmin, tmax=tmax, key=key,
@@ -513,13 +513,13 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
     def glg(self, tmin=None, tmax=None, key='simulated',
             fill_method='linear', output='mean'):
-        """Summary      
+        """Summary
         Classic method:
         Resampling the series to every 14th and 28th of the month.
-        Taking the mean of the mean of three lowest values per year.    
-        
+        Taking the mean of the mean of three lowest values per year.
+
         This function does not care about series length!
-        
+
         Parameters
         ----------
         tmin, tmax : Optional[pd.Timestamp]
@@ -529,19 +529,49 @@ included in Pastas. To obtain a list of all statistics that are included type:
         fill_method : TYPE
             fill method for interpolation to 14th and 28th of the month
         output : TYPE
-            output type 'yearly' for series of yearly values, 'mean' for 
+            output type 'yearly' for series of yearly values, 'mean' for
             mean of yearly values
-        
+
         Returns
         -------
         pd.Series or scalar
-            Series of yearly values or mean of yearly values      
+            Series of yearly values or mean of yearly values
         """
         mean_low = lambda s: s.nsmallest(3).mean()
         return self.GXG(mean_low, tmin=tmin, tmax=tmax, key=key,
             fill_method=fill_method, output=output)
-            
-            
+
+    def gvg(self, tmin=None, tmax=None, key='simulated',
+            fill_method='linear', output='mean'):
+        """Summary
+        Classic method:
+        Resampling the series to every 14th and 28th of the month.
+        Taking the mean of the mean of three lowest values per year.
+
+        This function does not care about series length!
+
+        Parameters
+        ----------
+        tmin, tmax : Optional[pd.Timestamp]
+            Time indices to use for the simulation of the time series model.
+        key : None, optional
+            timeseries key ('observations' or 'simulated')
+        fill_method : TYPE
+            fill method for interpolation to 14th and 28th of the month
+        output : TYPE
+            output type 'yearly' for series of yearly values, 'mean' for
+            mean of yearly values
+
+        Returns
+        -------
+        pd.Series or scalar
+            Series of yearly values or mean of yearly values
+        """
+        mean_spring = lambda s: s[inspring].mean()
+        return self.GXG(mean_low, tmin=tmin, tmax=tmax, key=key,
+            fill_method=fill_method, output=output)
+
+
     # def GHG(self, tmin=None, tmax=None, series='oseries'):
 
     #     """GHG: Gemiddeld Hoog Grondwater (in Dutch)
@@ -623,23 +653,23 @@ included in Pastas. To obtain a list of all statistics that are included type:
     def summary(self, selected='basic', tmin=None, tmax=None):
         """Prints a summary table of the model statistics. The set of statistics
         that are printed are selected by a dictionary of the desired statistics.
-        
+
         Parameters
         ----------
         selected_output : str or dict
             dictionary of the desired statistics or a string with one of the
             predefined sets. Supported options are: 'basic', 'all', and 'dutch'
         tmin
-        
+
         tmax : None, optional
             Description
         tmax
-        
+
         Returns
         -------
         stats : Pandas Dataframe
-            single-column dataframe with calculated statistics        
-        
+            single-column dataframe with calculated statistics
+
         """
         output = {
                 'basic': {
