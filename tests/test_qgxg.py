@@ -52,7 +52,7 @@ class TestQGXG(object):
         assert np.isnan(v)
 
     def test_q_gxg_series(self):
-        s = pd.read_csv(r'data/hseries_gxg.csv', index_col=0, header=0,
+        s = pd.read_csv(r'tests/data/hseries_gxg.csv', index_col=0, header=0,
             parse_dates=True, dayfirst=True,
             squeeze=True,)
         ml = Model(s)
