@@ -294,7 +294,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
             raise ValueError('no timeseries with key {key:}'.format(key=key))
         return series
 
-    def qGHG(self, key='simulated', tmin=None, tmax=None, q=0.94):
+    def q_ghg(self, key='simulated', tmin=None, tmax=None, q=0.94):
         """Summary
         Gemiddeld Hoogste Grondwaterstand (GHG) also called MHGL (Mean High Groundwater Level)
         Approximated by taking a quantile of the timeseries values, after
@@ -321,7 +321,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         series = series.resample('d').median()
         return series.quantile(q)
 
-    def qGLG(self, key='simulated', tmin=None, tmax=None, q=0.06):
+    def q_glg(self, key='simulated', tmin=None, tmax=None, q=0.06):
         """Summary
         Gemiddeld Laagste Grondwaterstand (GLG) also called MLGL (Mean Low Groundwater Level)
         Approximated by taking a quantile of the timeseries values, after
@@ -347,7 +347,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         series = series.resample('d').median()
         return series.quantile(q)
 
-    def qGVG(self, key='simulated', tmin=None, tmax=None):
+    def q_gvg(self, key='simulated', tmin=None, tmax=None):
         """Summary
         Gemiddeld Voorjaarsgrondwaterstand (GVG) also called MSGL (Mean Spring Groundwater Level)
         Approximated by taking the median of the values in the 
@@ -377,7 +377,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         else:
             return np.nan
 
-    def dGHG(self, tmin=None, tmax=None):
+    def d_ghg(self, tmin=None, tmax=None):
         """
         Difference in GHG between simulated and observed values
         
@@ -391,10 +391,10 @@ included in Pastas. To obtain a list of all statistics that are included type:
         TYPE
             Description
         """
-        return (self.qGHG(key='simulated', tmin=tmin, tmax=tmax) - 
-                self.qGHG(key='observations', tmin=tmin, tmax=tmax))
+        return (self.q_ghg(key='simulated', tmin=tmin, tmax=tmax) - 
+                self.q_ghg(key='observations', tmin=tmin, tmax=tmax))
 
-    def dGLG(self, tmin=None, tmax=None):
+    def d_glg(self, tmin=None, tmax=None):
         """
         Difference in GLG between simulated and observed values
         
@@ -408,10 +408,10 @@ included in Pastas. To obtain a list of all statistics that are included type:
         TYPE
             Description
         """
-        return (self.qGLG(key='simulated', tmin=tmin, tmax=tmax) - 
-                self.qGLG(key='observations', tmin=tmin, tmax=tmax))
+        return (self.q_glg(key='simulated', tmin=tmin, tmax=tmax) - 
+                self.q_glg(key='observations', tmin=tmin, tmax=tmax))
 
-    def dGVG(self, tmin=None, tmax=None):
+    def d_gvg(self, tmin=None, tmax=None):
         """
         Difference in GVG between simulated and observed values
         
@@ -425,10 +425,10 @@ included in Pastas. To obtain a list of all statistics that are included type:
         TYPE
             Description
         """
-        return (self.qGVG(key='simulated', tmin=tmin, tmax=tmax) - 
-                self.qGVG(key='observations', tmin=tmin, tmax=tmax))
+        return (self.q_gvg(key='simulated', tmin=tmin, tmax=tmax) - 
+                self.q_gvg(key='observations', tmin=tmin, tmax=tmax))
 
-    def GXG(self, year_agg, key, tmin, tmax, fill_method, output):
+    def gxg(self, year_agg, key, tmin, tmax, fill_method, output):
         """Summary      
         Worker method for classic GXG statistics. 
         Resampling the series to every 14th and 28th of the month.
@@ -481,7 +481,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
             raise ValueError('{output:} is not a valid output option'.format(
                 output=output))
 
-    def GHG(self, key='simulated', tmin=None, tmax=None,
+    def ghg(self, key='simulated', tmin=None, tmax=None,
             fill_method='linear', output='mean'):
         """Summary      
         Classic method:
@@ -511,7 +511,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return self.GXG(mean_high, key=key, tmin=tmin, tmax=tmax,
             fill_method=fill_method, output=output)
 
-    def GLG(self, key='simulated', tmin=None, tmax=None,
+    def glg(self, key='simulated', tmin=None, tmax=None,
             fill_method='linear', output='mean'):
         """Summary      
         Classic method:
@@ -650,12 +650,12 @@ included in Pastas. To obtain a list of all statistics that are included type:
                     'bic': 'Bayesian Information Criterion',
                     'aic': 'Akaike Information Criterion'},
                 'dutch': {
-                    'qGHG': 'Gemiddeld Hoge Grondwaterstand',
-                    'qGLG': 'Gemiddeld Lage Grondwaterstand',
-                    'qGVG': 'Gemiddelde Voorjaarsgrondwaterstand',
-                    'dGHG': 'Verschil Gemiddeld Hoge Grondwaterstand',
-                    'dGLG': 'Verschil Gemiddeld Lage Grondwaterstand',
-                    'dGVG': 'Verschil Gemiddelde Voorjaarsgrondwaterstand'},
+                    'q_ghg': 'Gemiddeld Hoge Grondwaterstand',
+                    'q_glg': 'Gemiddeld Lage Grondwaterstand',
+                    'q_gvg': 'Gemiddelde Voorjaarsgrondwaterstand',
+                    'd_ghg': 'Verschil Gemiddeld Hoge Grondwaterstand',
+                    'd_glg': 'Verschil Gemiddeld Lage Grondwaterstand',
+                    'd_gvg': 'Verschil Gemiddelde Voorjaarsgrondwaterstand'},
                     }
 
         # get labels and method names for selected output
