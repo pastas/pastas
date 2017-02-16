@@ -294,7 +294,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
             raise ValueError('no timeseries with key {key:}'.format(key=key))
         return series
 
-    def q_ghg(self, key='simulated', tmin=None, tmax=None, q=0.94):
+    def q_ghg(self, tmin=None, tmax=None, key='simulated', q=0.94):
         """Summary
         Gemiddeld Hoogste Grondwaterstand (GHG) also called MHGL (Mean High Groundwater Level)
         Approximated by taking a quantile of the timeseries values, after
@@ -321,7 +321,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         series = series.resample('d').median()
         return series.quantile(q)
 
-    def q_glg(self, key='simulated', tmin=None, tmax=None, q=0.06):
+    def q_glg(self, tmin=None, tmax=None, key='simulated', q=0.06):
         """Summary
         Gemiddeld Laagste Grondwaterstand (GLG) also called MLGL (Mean Low Groundwater Level)
         Approximated by taking a quantile of the timeseries values, after
@@ -347,7 +347,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         series = series.resample('d').median()
         return series.quantile(q)
 
-    def q_gvg(self, key='simulated', tmin=None, tmax=None):
+    def q_gvg(self, tmin=None, tmax=None, key='simulated'):
         """Summary
         Gemiddeld Voorjaarsgrondwaterstand (GVG) also called MSGL (Mean Spring Groundwater Level)
         Approximated by taking the median of the values in the 
@@ -391,8 +391,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
         TYPE
             Description
         """
-        return (self.q_ghg(key='simulated', tmin=tmin, tmax=tmax) - 
-                self.q_ghg(key='observations', tmin=tmin, tmax=tmax))
+        return (self.q_ghg(tmin=tmin, tmax=tmax, key='simulated') - 
+                self.q_ghg(tmin=tmin, tmax=tmax, key='observations'))
 
     def d_glg(self, tmin=None, tmax=None):
         """
@@ -408,8 +408,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
         TYPE
             Description
         """
-        return (self.q_glg(key='simulated', tmin=tmin, tmax=tmax) - 
-                self.q_glg(key='observations', tmin=tmin, tmax=tmax))
+        return (self.q_glg(tmin=tmin, tmax=tmax, key='simulated') - 
+                self.q_glg(tmin=tmin, tmax=tmax, key='observations'))
 
     def d_gvg(self, tmin=None, tmax=None):
         """
@@ -425,10 +425,10 @@ included in Pastas. To obtain a list of all statistics that are included type:
         TYPE
             Description
         """
-        return (self.q_gvg(key='simulated', tmin=tmin, tmax=tmax) - 
-                self.q_gvg(key='observations', tmin=tmin, tmax=tmax))
+        return (self.q_gvg(tmin=tmin, tmax=tmax, key='simulated') - 
+                self.q_gvg(tmin=tmin, tmax=tmax, key='observations'))
 
-    def gxg(self, year_agg, key, tmin, tmax, fill_method, output):
+    def gxg(self, year_agg, tmin, tmax, key, fill_method, output):
         """Summary      
         Worker method for classic GXG statistics. 
         Resampling the series to every 14th and 28th of the month.
@@ -438,10 +438,10 @@ included in Pastas. To obtain a list of all statistics that are included type:
         ----------
         year_agg : function series -> scalar
             Aggregator function to one value per year
-        key : None, optional
-            timeseries key ('observations' or 'simulated')
         tmin, tmax : Optional[pd.Timestamp]
             Time indices to use for the simulation of the time series model.
+        key : None, optional
+            timeseries key ('observations' or 'simulated')
         fill_method : TYPE
             fill method for interpolation to 14th and 28th of the month
         output : TYPE
@@ -481,7 +481,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
             raise ValueError('{output:} is not a valid output option'.format(
                 output=output))
 
-    def ghg(self, key='simulated', tmin=None, tmax=None,
+    def ghg(self, tmin=None, tmax=None, key='simulated', 
             fill_method='linear', output='mean'):
         """Summary      
         Classic method:
@@ -492,10 +492,10 @@ included in Pastas. To obtain a list of all statistics that are included type:
         
         Parameters
         ----------
-        key : None, optional
-            timeseries key ('observations' or 'simulated')
         tmin, tmax : Optional[pd.Timestamp]
             Time indices to use for the simulation of the time series model.
+        key : None, optional
+            timeseries key ('observations' or 'simulated')
         fill_method : TYPE
             fill method for interpolation to 14th and 28th of the month
         output : TYPE
@@ -508,10 +508,10 @@ included in Pastas. To obtain a list of all statistics that are included type:
             Series of yearly values or mean of yearly values      
         """
         mean_high = lambda s: s.nlargest(3).mean()
-        return self.GXG(mean_high, key=key, tmin=tmin, tmax=tmax,
+        return self.GXG(mean_high, tmin=tmin, tmax=tmax, key=key,
             fill_method=fill_method, output=output)
 
-    def glg(self, key='simulated', tmin=None, tmax=None,
+    def glg(self, tmin=None, tmax=None, key='simulated',
             fill_method='linear', output='mean'):
         """Summary      
         Classic method:
@@ -522,10 +522,10 @@ included in Pastas. To obtain a list of all statistics that are included type:
         
         Parameters
         ----------
-        key : None, optional
-            timeseries key ('observations' or 'simulated')
         tmin, tmax : Optional[pd.Timestamp]
             Time indices to use for the simulation of the time series model.
+        key : None, optional
+            timeseries key ('observations' or 'simulated')
         fill_method : TYPE
             fill method for interpolation to 14th and 28th of the month
         output : TYPE
@@ -538,7 +538,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
             Series of yearly values or mean of yearly values      
         """
         mean_low = lambda s: s.nsmallest(3).mean()
-        return self.GXG(mean_low, key=key, tmin=tmin, tmax=tmax,
+        return self.GXG(mean_low, tmin=tmin, tmax=tmax, key=key,
             fill_method=fill_method, output=output)
             
             
