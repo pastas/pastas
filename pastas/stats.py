@@ -510,6 +510,37 @@ included in Pastas. To obtain a list of all statistics that are included type:
         mean_high = lambda s: s.nlargest(3).mean()
         return self.GXG(mean_high, key=key, tmin=tmin, tmax=tmax,
             fill_method=fill_method, output=output)
+
+    def GLG(self, key='simulated', tmin=None, tmax=None,
+            fill_method='linear', output='mean'):
+        """Summary      
+        Classic method:
+        Resampling the series to every 14th and 28th of the month.
+        Taking the mean of the mean of three lowest values per year.    
+        
+        This function does not care about series length!
+        
+        Parameters
+        ----------
+        key : None, optional
+            timeseries key ('observations' or 'simulated')
+        tmin, tmax : Optional[pd.Timestamp]
+            Time indices to use for the simulation of the time series model.
+        fill_method : TYPE
+            fill method for interpolation to 14th and 28th of the month
+        output : TYPE
+            output type 'yearly' for series of yearly values, 'mean' for 
+            mean of yearly values
+        
+        Returns
+        -------
+        pd.Series or scalar
+            Series of yearly values or mean of yearly values      
+        """
+        mean_low = lambda s: s.nsmallest(3).mean()
+        return self.GXG(mean_low, key=key, tmin=tmin, tmax=tmax,
+            fill_method=fill_method, output=output)
+            
             
     # def GHG(self, tmin=None, tmax=None, series='oseries'):
 
