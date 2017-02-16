@@ -468,11 +468,10 @@ included in Pastas. To obtain a list of all statistics that are included type:
             series = series.interpolate(method=fill_method)
 
         the14or28 = lambda x: (x.day == 14) or (x.day == 28)
-        isthe14or28 = series.index.map(the14or28)
+        is14or28 = series.index.map(the14or28)
         if not np.any(is14or28):
             return np.nan
         series = series.loc[is14or28]
-        mean_mean = 
         yearly = series.resample('a').apply(year_agg)
         if output == 'all':
             return yearly
