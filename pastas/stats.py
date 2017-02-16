@@ -428,6 +428,90 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return (self.qGVG(key='simulated', tmin=tmin, tmax=tmax) - 
                 self.qGVG(key='observations', tmin=tmin, tmax=tmax))
 
+    def GXG(self, year_agg, key, tmin, tmax, fill_method, output):
+        """Summary      
+        Worker method for classic GXG statistics. 
+        Resampling the series to every 14th and 28th of the month.
+        Taking the mean of aggregated values per year.    
+        
+        Parameters
+        ----------
+        year_agg : function series -> scalar
+            Aggregator function to one value per year
+        key : None, optional
+            timeseries key ('observations' or 'simulated')
+        tmin, tmax : Optional[pd.Timestamp]
+            Time indices to use for the simulation of the time series model.
+        fill_method : TYPE
+            fill method for interpolation to 14th and 28th of the month
+        output : TYPE
+            output type 'yearly' for series of yearly values, 'mean' for 
+            mean of yearly values
+        
+        Returns
+        -------
+        pd.Series or scalar
+            Series of yearly values or mean of yearly values
+        
+        Raises
+        ------
+        ValueError
+            When output argument is unknown
+        """
+        series = self.bykey(key=key, tmin=tmin, tmax=tmax)
+        series = series.resample('d').mean()
+        if fill_method == 'ffill':
+            series = series.ffill()
+        elif fill_method == 'bfill':
+            series = series.bfill()
+        else:
+            series = series.interpolate(method=fill_method)
+
+        the14or28 = lambda x: (x.day == 14) or (x.day == 28)
+        isthe14or28 = series.index.map(the14or28)
+        if not np.any(is14or28):
+            return np.nan
+        series = series.loc[is14or28]
+        mean_mean = 
+        yearly = series.resample('a').apply(year_agg)
+        if output == 'all':
+            return yearly
+        elif output == 'mean':
+            return yearly.mean()
+        else:
+            raise ValueError('{output:} is not a valid output option'.format(
+                output=output))
+
+    def GHG(self, key='simulated', tmin=None, tmax=None,
+            fill_method='linear', output='mean'):
+        """Summary      
+        Classic method:
+        Resampling the series to every 14th and 28th of the month.
+        Taking the mean of the mean of three highest values per year.    
+        
+        This function does not care about series length!
+        
+        Parameters
+        ----------
+        key : None, optional
+            timeseries key ('observations' or 'simulated')
+        tmin, tmax : Optional[pd.Timestamp]
+            Time indices to use for the simulation of the time series model.
+        fill_method : TYPE
+            fill method for interpolation to 14th and 28th of the month
+        output : TYPE
+            output type 'yearly' for series of yearly values, 'mean' for 
+            mean of yearly values
+        
+        Returns
+        -------
+        pd.Series or scalar
+            Series of yearly values or mean of yearly values      
+        """
+        mean_high = lambda s: s.nlargest(3).mean()
+        return self.GXG(mean_high, key=key, tmin=tmin, tmax=tmax,
+            fill_method=fill_method, output=output)
+            
     # def GHG(self, tmin=None, tmax=None, series='oseries'):
 
     #     """GHG: Gemiddeld Hoog Grondwater (in Dutch)
