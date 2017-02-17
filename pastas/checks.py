@@ -13,10 +13,6 @@ def check_oseries(oseries, fillnan='drop'):
     ----------
     oseries: pd.Series
         Pandas series object containing the observed time series.
-    freq: optional[str]
-        String containing the desired frequency. The required string format is found
-        at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset
-        -aliases
     fillnan: optional[str or float]
         Methods or float number to fill nan-values. Default values is
         'drop'. Currently supported options are: 'interpolate', float,
@@ -95,6 +91,9 @@ def check_tseries(stress, freq, fillnan, name=''):
     # Drop nan-values at the beginning and end of the time series
     stress = stress.loc[stress.first_valid_index():stress.last_valid_index(
     )].copy(deep=True)
+
+    # Make sure the indices are Timestamps
+    stress.index = pd.to_datetime(stress.index)
 
     # Make frequency of the stress series constant
     if freq:

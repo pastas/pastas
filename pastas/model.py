@@ -101,7 +101,7 @@ class Model:
 
             # Call these methods to set tmin, tmax and freq and enable
             # simulation.
-            self.check_frequency()
+            self.set_freq_offset()
             self.set_tmin_tmax()
 
     def add_noisemodel(self, noisemodel):
@@ -361,26 +361,6 @@ class Model:
         if not initial:
             self.parameters.initial = optimal
 
-    def get_init_parameters(self, noise=True):
-        """Method to reset all initial parameters to those provided in the
-        individual objects.
-
-        noise: Boolean
-            Add the parameters for the noisemodel to the parameters
-            Dataframe or not.
-
-        """
-        parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax',
-                                           'vary', 'optimal', 'name'])
-        for ts in self.tseriesdict.values():
-            parameters = parameters.append(ts.parameters)
-        if self.constant:
-            parameters = parameters.append(self.constant.parameters)
-        if self.noisemodel and noise:
-            parameters = parameters.append(self.noisemodel.parameters)
-
-        return parameters
-
     def solve(self, tmin=None, tmax=None, solver=LmfitSolve, report=True,
               noise=True, initial=True):
         """
@@ -407,7 +387,7 @@ class Model:
                          'is not defined. No noise model is used')
 
         # Check frequency of tseries
-        self.check_frequency()
+        self.set_freq_offset()
 
         # Check series with tmin, tmax
         self.set_tmin_tmax(tmin, tmax)
@@ -480,7 +460,7 @@ class Model:
         self.tmin = tmin
         self.tmax = tmax
 
-    def check_frequency(self):
+    def set_freq_offset(self):
         """
 
         Notes
@@ -516,6 +496,26 @@ class Model:
                                 ' not the same for all stresses.'
         self.time_offset = next(iter(time_offsets))
 
+    def get_init_parameters(self, noise=True):
+        """Method to reset all initial parameters to those provided in the
+        individual objects.
+
+        noise: Boolean
+            Add the parameters for the noisemodel to the parameters
+            Dataframe or not.
+
+        """
+        parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax',
+                                           'vary', 'optimal', 'name'])
+        for ts in self.tseriesdict.values():
+            parameters = parameters.append(ts.parameters)
+        if self.constant:
+            parameters = parameters.append(self.constant.parameters)
+        if self.noisemodel and noise:
+            parameters = parameters.append(self.noisemodel.parameters)
+
+        return parameters
+
     def get_parameters(self):
         """Helper method to obtain the parameters needed for calculation if
         none are provided. This method is used by the simulation, residuals
@@ -544,9 +544,10 @@ class Model:
                    'L': 1 / 24 / 3600000,  # milliseconds
                    'ms': 1 / 24 / 3600000,  # milliseconds
                    }
-        # remove the day from the week
-        freq = freq.split("-", 1)[0]
-        return options[freq]
+        # Get the frequency string and multiplier
+        num, freq = self.get_freqstr(freq)
+        dt = num * options[freq]
+        return dt
 
     def get_time_offset(self, t, freq):
         if isinstance(t, pd.Series):
@@ -587,10 +588,32 @@ class Model:
                    'L': calc_millisecond_offset,  # milliseconds
                    'ms': calc_millisecond_offset,  # milliseconds
                    }
-        # remove the day from the week
-        freq = freq.split("-", 1)[0]
+        # Get the frequency string and multiplier
+        num, freq = self.get_freqstr(freq)
+        offset = num * options[freq](t)
+        return offset
 
-        return options[freq](t)
+    def get_freqstr(self, freqstr):
+        """Method to untangle the frequency string.
+
+        """
+        # remove the day from the week
+        freqstr = freqstr.split("-", 1)[0]
+
+        # Find a number by which the frequency is multiplied
+        num = ''
+        freq = ''
+        for s in freqstr:
+            if s.isdigit():
+                num = num.__add__(s)
+            else:
+                freq = freq.__add__(s)
+        if num:
+            num = int(num)
+        else:
+            num = 1
+
+        return num, freq
 
     def get_contribution(self, name):
         try:

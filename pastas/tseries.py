@@ -475,7 +475,8 @@ class TseriesStep(TseriesBase):
     A stress consisting of a step resonse at a specified time. The amplitude of the step is calibrated.
     """
 
-    def __init__(self, t_step, rfunc=One, name='Step', xy=None, metadata=None, value=0.0,
+    def __init__(self, t_step, rfunc=One, name='Step', xy=None, metadata=None,
+                 value=0.0,
                  pmin=-5, pmax=+5):
         assert t_step is not None, 'Error: Need to specify time of step (for now)'
         assert rfunc is One, 'Error: Only an instantaneous step is supported (for now)'
@@ -494,7 +495,8 @@ class TseriesStep(TseriesBase):
         self.parameters = pd.DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         self.parameters.loc['step_t'] = (
-            self.t_step.value, pd.Timestamp.min.value, pd.Timestamp.max.value, 0, self.name)
+            self.t_step.value, pd.Timestamp.min.value, pd.Timestamp.max.value,
+            0, self.name)
         self.parameters.loc['step_h'] = (
             self.value, self.pmin, self.pmax, 1, self.name)
 

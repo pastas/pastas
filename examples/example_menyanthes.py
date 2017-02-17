@@ -9,7 +9,7 @@ fname = 'data/MenyanthesTest.men'
 meny = read.menydata(fname)
 
 # Create the time series model\
-H=meny.H.itervalues().next()
+H=meny.H['Obsevation well']
 ml = Model(H['values'])
 
 freq='W'
