@@ -18,5 +18,5 @@ def test_examples():
                 exec (open(file).read())
                 # close the figures again
                 plt.close('all')
-
+    os.chdir(cwd)
     return 'all examples work!'
