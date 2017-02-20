@@ -28,10 +28,8 @@ TODO
 """
 from __future__ import print_function, division
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy.stats import probplot
 from statsmodels.tsa.stattools import acf, pacf
 
 
@@ -358,7 +356,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
             Boolean series with datetimeindex
         """
         isinspring = lambda x: (((x.month == 3) and (x.day >= 14)) or
-                    ((x.month == 4) and (x.day < 15)))
+                                ((x.month == 4) and (x.day < 15)))
         return series.index.map(isinspring)
 
     def q_gvg(self, tmin=None, tmax=None, key='simulated'):
@@ -532,7 +530,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         mean_high = lambda s: s.nlargest(3).mean()
         return self.gxg(mean_high, tmin=tmin, tmax=tmax, key=key,
-            fill_method=fill_method, limit=limit, output=output)
+                        fill_method=fill_method, limit=limit, output=output)
 
     def glg(self, tmin=None, tmax=None, key='simulated',
             fill_method='linear', limit=15, output='mean'):
@@ -567,7 +565,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         mean_low = lambda s: s.nsmallest(3).mean()
         return self.gxg(mean_low, tmin=tmin, tmax=tmax, key=key,
-            fill_method=fill_method, limit=limit, output=output)
+                        fill_method=fill_method, limit=limit, output=output)
 
     def __mean_spring__(self, series):
         """Determine mean of timeseries values in spring. 
@@ -622,52 +620,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
             Series of yearly values or mean of yearly values
         """
         return self.gxg(self.__mean_spring__, tmin=tmin, tmax=tmax, key=key,
-            fill_method=fill_method, limit=limit, output=output)
-
-    # def GHG(self, tmin=None, tmax=None, series='oseries'):
-
-    #     """GHG: Gemiddeld Hoog Grondwater (in Dutch)
-    #
-    #     3 maximum groundwater level observations for each year divided by 3 times
-    #     the number of years.
-    #
-    #     Parameters
-    #     ----------
-    #     series: Optional[str]
-    #         string for the series to calculate the statistic for. Supported
-    #         options are: 'oseries'.
-    #
-    #     """
-    #     if series == 'oseries':
-    #         x = []
-    #         oseries = self.ml.get_observations(tmin, tmax)
-    #         for year in np.unique(oseries.index.year):
-    #             x.append(oseries['%i' % year].sort_values(ascending=False,
-    #                                                       inplace=False)[
-    #                      0:3].values)
-    #         return np.mean(np.array(x))
-    #
-    # def GLG(self, tmin=None, tmax=None, series='oseries'):
-    #     """GLG: Gemiddeld Laag Grondwater (in Dutch)
-    #
-    #     3 minimum groundwater level observations for each year divided by 3 times
-    #     the number of years.
-    #
-    #     Parameters
-    #     ----------
-    #     series: Optional[str]
-    #         string for the series to calculate the statistic for. Supported
-    #         options are: 'oseries'.
-    #
-    #     """
-    #     if series == 'oseries':
-    #         x = []
-    #         oseries = self.ml.get_observations(tmin, tmax)
-    #         for year in np.unique(oseries.index.year):
-    #             x.append(oseries['%i' % year].sort_values(ascending=True,
-    #                                                       inplace=False)[
-    #                      0:3].values)
-    #         return np.mean(np.array(x))
+                        fill_method=fill_method, limit=limit, output=output)
 
     def descriptive(self, tmin=None, tmax=None):
         """Returns the descriptive statistics for all time series.
@@ -676,31 +629,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return print("This method is currently not supported. Please use:"
                      ">>> ml.get_simulations().describe() to make use of the "
                      "built-in Pandas methods.")
-        #series = self.__getallseries__(tmin, tmax)
-        #series.describe()
-
-    def plot_diagnostics(self, tmin=None, tmax=None):
-        innovations = self.ml.get_innovations(tmin, tmax)
-
-        plt.figure()
-        gs = plt.GridSpec(2, 3, wspace=0.2)
-
-        plt.subplot(gs[0, :2])
-        plt.title('Autocorrelation')
-        # plt.axhline(0.2, '--')
-        plt.stem(self.acf())
-
-        plt.subplot(gs[1, :2])
-        plt.title('Partial Autocorrelation')
-        # plt.axhline(0.2, '--')
-        plt.stem(self.pacf())
-
-        plt.subplot(gs[0, 2])
-        innovations.hist(bins=20)
-
-        plt.subplot(gs[1, 2])
-        probplot(innovations, plot=plt)
-        plt.show()
+        # series = self.__getallseries__(tmin, tmax)
+        # series.describe()
 
     def summary(self, selected='basic', tmin=None, tmax=None):
         """Prints a summary table of the model statistics. The set of statistics
@@ -724,36 +654,38 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         """
         output = {
-                'basic': {
-                    'evp': 'Explained variance percentage',
-                    'rmse': 'Root mean squared error',
-                    'avg_dev': 'Average Deviation',
-                    'pearson': 'Pearson R^2',
-                    'bic': 'Bayesian Information Criterion',
-                    'aic': 'Akaike Information Criterion'},
-                'dutch': {
-                    'q_ghg': 'Gemiddeld Hoge Grondwaterstand',
-                    'q_glg': 'Gemiddeld Lage Grondwaterstand',
-                    'q_gvg': 'Gemiddelde Voorjaarsgrondwaterstand',
-                    'd_ghg': 'Verschil Gemiddeld Hoge Grondwaterstand',
-                    'd_glg': 'Verschil Gemiddeld Lage Grondwaterstand',
-                    'd_gvg': 'Verschil Gemiddelde Voorjaarsgrondwaterstand'},
-                    }
+            'basic': {
+                'evp': 'Explained variance percentage',
+                'rmse': 'Root mean squared error',
+                'avg_dev': 'Average Deviation',
+                'pearson': 'Pearson R^2',
+                'bic': 'Bayesian Information Criterion',
+                'aic': 'Akaike Information Criterion'},
+            'dutch': {
+                'q_ghg': 'Gemiddeld Hoge Grondwaterstand',
+                'q_glg': 'Gemiddeld Lage Grondwaterstand',
+                'q_gvg': 'Gemiddelde Voorjaarsgrondwaterstand',
+                'd_ghg': 'Verschil Gemiddeld Hoge Grondwaterstand',
+                'd_glg': 'Verschil Gemiddeld Lage Grondwaterstand',
+                'd_gvg': 'Verschil Gemiddelde Voorjaarsgrondwaterstand'},
+        }
 
         # get labels and method names for selected output
         if selected == 'all':
             selected_output = sorted([(k, l, f) for k, d in output.items()
-                for f, l in d.items()]) # sort by key, label, method name
+                                      for f, l in
+                                      d.items()])  # sort by key, label, method name
         else:
             selected_output = sorted([(0, l, f) for f, l in
-                output[selected].items()]) # sort by name, method name
+                                      output[
+                                          selected].items()])  # sort by name, method name
 
         # compute statistics
         labels_and_values = [(l, getattr(self, f)(tmin=tmin, tmax=tmax))
-            for _, l, f in selected_output]
+                             for _, l, f in selected_output]
         labels, values = zip(*labels_and_values)
 
         stats = pd.DataFrame(index=list(labels), data=list(values),
-            columns=['Value'])
+                             columns=['Value'])
         stats.index.name = 'Statistic'
         return stats

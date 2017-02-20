@@ -51,4 +51,4 @@ ml.add_noisemodel(n)
 
 # Solve
 ml.solve()
-ml.plot_decomposition()
+ml.plots.plot_decomposition()
