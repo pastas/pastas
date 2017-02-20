@@ -14,7 +14,7 @@ from .checks import check_oseries
 from .solver import LmfitSolve
 from .stats import Statistics
 from .tseries import Constant
-from .plot import Plotting
+from .plots import Plotting
 
 
 class Model:

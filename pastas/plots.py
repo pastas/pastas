@@ -17,6 +17,7 @@ class Plotting():
         self.ml = ml  # Store a reference to the model class
 
     def __repr__(self):
+        msg = "This module contains all the built-in plotting options that are available."
         return msg
 
     def plot(self, tmin=None, tmax=None, oseries=True, simulate=True):
@@ -46,7 +47,7 @@ class Plotting():
 
         plt.show()
 
-    def plot_results(self, tmin=None, tmax=None, savefig=False):
+    def results(self, tmin=None, tmax=None, savefig=False):
         """
 
         Parameters
@@ -124,7 +125,7 @@ class Plotting():
         if savefig:
             plt.savefig('pastas.eps', bbox_inches='tight')
 
-    def plot_decomposition(self, tmin=None, tmax=None):
+    def decomposition(self, tmin=None, tmax=None):
         """Plot the decomposition of a time-series in the different stresses.
 
         """
@@ -205,7 +206,7 @@ class Plotting():
         plt.tight_layout()
         plt.show()
 
-    def plot_diagnostics(self, tmin=None, tmax=None):
+    def diagnostics(self, tmin=None, tmax=None):
         innovations = self.ml.get_innovations(tmin, tmax)
 
         plt.figure()
@@ -228,22 +229,26 @@ class Plotting():
         probplot(innovations, plot=plt)
         plt.show()
 
-    def plot_block_response(self, series=None):
+    def block_response(self, series=None):
         """Plot the block response for a specific series.
 
         Returns
         -------
+        fig: Figure
+            return a Matplotlib figure instance.
 
         """
         if not series:
             series = self.ml.tseriesdict.keys()
+        else:
+            series = [series]
 
         legend = []
         fig = plt.figure()
 
-        for name in list(series):
+        for name in series:
             if name not in self.ml.tseriesdict.keys():
-                pass
+                return None
             elif hasattr(self.ml.tseriesdict[name], 'rfunc'):
                 plt.plot(self.ml.get_block_response(name))
                 legend.append(name)
@@ -254,10 +259,11 @@ class Plotting():
 
         # Change xtickers to the correct time
         locs, labels = plt.xticks()
-        labels = locs/self.ml.get_dt(self.ml.freq)
+        labels = locs * self.ml.get_dt(self.ml.freq)
         plt.xticks(locs, labels)
         plt.xlabel("Time [days]")
 
         plt.legend(legend)
         fig.suptitle("Block Response(s)")
         return fig
+
