@@ -94,8 +94,11 @@ class Gamma(RfuncBase):
         return parameters
 
     def step(self, p, dt=1):
-        self.tmax = gammaincinv(p[1], self.cutoff) * p[2]
-        t = np.arange(dt, self.tmax, dt)
+        if isinstance(dt, np.ndarray):
+            t = dt
+        else:
+            self.tmax = gammaincinv(p[1], self.cutoff) * p[2]
+            t = np.arange(dt, self.tmax, dt)
         s = self.up * p[0] * gammainc(p[1], t / p[2])
         return s
 
@@ -127,8 +130,11 @@ class Exponential(RfuncBase):
         return parameters
 
     def step(self, p, dt=1):
-        self.tmax = -np.log(1.0 / p[1]) * p[1]
-        t = np.arange(dt, self.tmax, dt)
+        if isinstance(dt, np.ndarray):
+            t = dt
+        else:
+            self.tmax = -np.log(1.0 / p[1]) * p[1]
+            t = np.arange(dt, self.tmax, dt)
         s = self.up * p[0] * (1.0 - np.exp(-t / p[1]))
         return s
 
@@ -169,17 +175,20 @@ class Hantush(RfuncBase):
         parameters.loc[name + '_cS'] = (100, 1e-3, 1e3, 1, name)
         parameters['tseries'] = name
         return parameters
-    
+
     def step(self, p, dt=1):
         rho = p[1]
         cS = p[2]
         k0rho = k0(rho)
-        # approximate formula for tmax
-        self.tmax = lambertw(1 / ((1 - self.cutoff) * k0rho)).real * cS
-        tau = np.arange(dt, self.tmax, dt) / cS
+        if isinstance(dt, np.ndarray):
+            t = dt
+        else:
+            # approximate formula for tmax
+            self.tmax = lambertw(1 / ((1 - self.cutoff) * k0rho)).real * cS
+            t = np.arange(dt, self.tmax, dt)
+        tau = t / cS
         tau1 = tau[tau < rho / 2]
         tau2 = tau[tau >= rho / 2]
-        k0rho = k0(rho)
         w = (exp1(rho) - k0rho) / (exp1(rho) - exp1(rho / 2))
         F = np.zeros_like(tau)
         F[tau < rho / 2] =  w * exp1(rho ** 2 / (4 * tau1)) - (w - 1) * exp1(tau1 + rho ** 2 / (4 * tau1))
@@ -217,8 +226,11 @@ class Theis(RfuncBase):
         return parameters
 
     def step(self, p, dt=1):
-        self.tmax = 10000  # This should be changed with some analytical expression
-        t = np.arange(dt, self.tmax, dt)
+        if isinstance(dt, np.ndarray):
+            t = dt
+        else:
+            self.tmax = 10000  # This should be changed with some analytical expression
+            t = np.arange(dt, self.tmax, dt)
         r = p[2]
         u = r ** 2.0 * p[0] / (4.0 * p[1] * t)
         s = self.up * exp1(u)
@@ -257,8 +269,11 @@ class Bruggeman(RfuncBase):
 
     def step(self, p, dt=1):
         # TODO: find tmax from cutoff, below is just an opproximation
-        self.tmax = 4 * p[0] / p[1] ** 2
-        t = np.arange(dt, self.tmax, dt)
+        if isinstance(dt, np.ndarray):
+            t = dt
+        else:
+            self.tmax = 4 * p[0] / p[1] ** 2
+            t = np.arange(dt, self.tmax, dt)
         s = self.up * p[2] * self.polder_function(p[0], p[1] * np.sqrt(t))
         return s
 
@@ -280,8 +295,17 @@ class One(RfuncBase):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 1
 
+    def set_parameters(self, name):
+        parameters = pd.DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        parameters.loc[name + '_d'] = (1, 0, 100, 1, name)
+        return parameters
+
     def step(self, p, dt=1):
-        return p[0] * np.ones(2)
+        if isinstance(dt, np.ndarray):
+            return p[0] * np.ones(len(dt))
+        else:
+            return p[0] * np.ones(2)
 
     def block(self, p, dt=1):
         return p[0] * np.ones(2)
