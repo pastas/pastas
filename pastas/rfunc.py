@@ -166,7 +166,7 @@ class Hantush(RfuncBase):
         parameters.loc[name + '_A'] = (
             1 / self.meanstress, 0, 100 / self.meanstress, 1, name)
         parameters.loc[name + '_rho'] = (1, 0.0001, 10, 1, name)
-        parameters.loc[name + '_cS'] = (1, 1e-3, 1e3, 1, name)
+        parameters.loc[name + '_cS'] = (100, 1e-3, 1e3, 1, name)
         parameters['tseries'] = name
         return parameters
     
@@ -184,7 +184,7 @@ class Hantush(RfuncBase):
         F = np.zeros_like(tau)
         F[tau < rho / 2] =  w * exp1(rho ** 2 / (4 * tau1)) - (w - 1) * exp1(tau1 + rho ** 2 / (4 * tau1))
         F[tau >= rho / 2] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(tau2 + rho ** 2 / (4 * tau2))
-        return self.up * F / (2 * k0rho)
+        return self.up * p[0] * F / (2 * k0rho)
 
     def block(self, p, dt=1):
         s = self.step(p, dt)
