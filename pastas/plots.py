@@ -62,7 +62,7 @@ class Plotting():
         -------
 
         """
-        plt.figure('Model Results', facecolor='white')
+        plt.figure(facecolor='white')
         gs = plt.GridSpec(3, 4, wspace=0.4, hspace=0.4)
 
         # Plot the Groundwater levels
@@ -267,3 +267,40 @@ class Plotting():
         fig.suptitle("Block Response(s)")
         return fig
 
+    def step_response(self, series=None):
+        """Plot the step response for a specific series.
+
+        Returns
+        -------
+        fig: Figure
+            return a Matplotlib figure instance.
+
+        """
+        if not series:
+            series = self.ml.tseriesdict.keys()
+        else:
+            series = [series]
+
+        legend = []
+        fig = plt.figure()
+
+        for name in series:
+            if name not in self.ml.tseriesdict.keys():
+                return None
+            elif hasattr(self.ml.tseriesdict[name], 'rfunc'):
+                plt.plot(self.ml.get_step_response(name))
+                legend.append(name)
+            else:
+                pass
+
+        plt.xlim(0)
+
+        # Change xtickers to the correct time
+        locs, labels = plt.xticks()
+        labels = locs * self.ml.get_dt(self.ml.freq)
+        plt.xticks(locs, labels)
+        plt.xlabel("Time [days]")
+
+        plt.legend(legend)
+        fig.suptitle("Step Response(s)")
+        return fig

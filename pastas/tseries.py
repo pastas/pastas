@@ -511,11 +511,11 @@ class Constant(TseriesBase):
     """
 
     def __init__(self, name, xy=None, metadata=None, value=0.0,
-                 pmin=-5, pmax=+5):
+                 pmin=np.nan, pmax=np.nan):
         self.nparam = 1
         self.value = value
-        self.pmin = self.value + pmin
-        self.pmax = self.value + pmax
+        self.pmin = pmin
+        self.pmax = pmax
         TseriesBase.__init__(self, One, name, xy, metadata,
                              pd.Timestamp.min, pd.Timestamp.max, 1, 0, 0)
         self.set_init_parameters()
@@ -526,7 +526,7 @@ class Constant(TseriesBase):
         self.parameters.loc['constant_d'] = (
             self.value, self.pmin, self.pmax, 1, self.name)
 
-    def simulate(self, p=None, t=None, dt=None):
+    def simulate(self, p=None):
         return p
 
 
@@ -536,7 +536,14 @@ class NoiseModel:
     Notes
     -----
     Calculates the innovations [1] according to:
-    v(t1) = r(t1) - r(t0) * exp(- (t1 - t0) / alpha)
+
+    ..math:: v(t1) = r(t1) - r(t0) * exp(- (t1 - t0) / alpha)
+
+    It can happen that the noisemodel is used in during the model calibration
+    to explain most of the variation in the data. A recommended solution is to
+    scale the initial parameter with the model timestep, E.g.:
+    >>> n = NoiseModel()
+    >>> n.set_initial("noise_alpha", 1.0 * ml.get_dt(ml.freq))
 
     References
     ----------

@@ -643,6 +643,16 @@ class Model:
             print("Name not in tseriesdict, available names are: %s"
                   % self.tseriesdict.keys())
 
+    def get_step_response(self, name):
+        try:
+            p = self.parameters.loc[
+                self.parameters.name == name, 'optimal'].values
+            dt = self.get_dt(self.freq)
+            return self.tseriesdict[name].rfunc.step(p, dt)
+        except KeyError:
+            print("Name not in tseriesdict, available names are: %s"
+                  % self.tseriesdict.keys())
+
     def get_stress(self, name):
         try:
             p = self.parameters.loc[
