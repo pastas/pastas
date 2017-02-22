@@ -19,6 +19,7 @@ class TestQGXG(object):
         idx = pd.date_range('20160101', freq='d', periods=n)
         s = pd.Series(np.arange(n), index=idx)
         ml = Model(s)
+        ml.freq = 'D'
         v = ml.stats.q_ghg(key='observations', q=.94)
         assert v == 94.
 
@@ -27,6 +28,7 @@ class TestQGXG(object):
         idx = pd.date_range('20160101', freq='d', periods=n)
         s = pd.Series(np.arange(n), index=idx)
         ml = Model(s)
+        ml.freq = 'D'
         v = ml.stats.q_glg(key='observations', q=.06)
         assert v == 6.
 
@@ -34,6 +36,7 @@ class TestQGXG(object):
         idx = pd.date_range('20160101', freq='d', periods=3)
         s = pd.Series([1, 3, np.nan], index=idx)
         ml = Model(s)
+        ml.freq = 'D'
         v = ml.stats.q_ghg(key='observations', q=.5)
         assert v == 2.
 
@@ -41,6 +44,7 @@ class TestQGXG(object):
         idx = pd.to_datetime(['20160320', '20160401', '20160420'])
         s = pd.Series([0, 5, 10], index=idx)
         ml = Model(s)
+        ml.freq = 'D'
         v = ml.stats.q_gvg(key='observations')
         assert v == 2.5
 
@@ -48,6 +52,7 @@ class TestQGXG(object):
         idx = pd.to_datetime(['20160820', '20160901', '20161120'])
         s = pd.Series([0, 5, 10], index=idx)
         ml = Model(s)
+        ml.freq = 'D'
         v = ml.stats.q_gvg(key='observations')
         assert np.isnan(v)
 
@@ -56,6 +61,7 @@ class TestQGXG(object):
             parse_dates=True, dayfirst=True,
             squeeze=True,)
         ml = Model(s)
+        ml.freq = 'D'
         ghg = ml.stats.q_ghg(key='observations')
         glg = ml.stats.q_glg(key='observations')
         gvg = ml.stats.q_gvg(key='observations')

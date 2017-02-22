@@ -51,7 +51,8 @@ class Model:
 
         self.warmup = warmup
         self.freq = None
-        self.time_offset = None
+        self.time_offset = pd.to_timedelta(0)
+
 
         self.parameters = pd.DataFrame(
             columns=['initial', 'name', 'optimal', 'pmin', 'pmax', 'vary'])
@@ -228,8 +229,6 @@ class Model:
         tmax: Optional[str]
         freq: Optional[str]
             frequency at which the time series are simulated.
-        noise: Optional[Boolean]
-            Boolean to indicate the use of the noisemodel (if provided) or not.
         h_observed: Optional[pd.Series]
             Pandas series containing the observed values.
 
@@ -239,16 +238,10 @@ class Model:
             Pandas series with the residuals series.
 
         """
-        if tmin is None:
-            tmin = self.get_tmin_tmax(tmin, tmax, freq)[0]
-        if tmax is None:
-            tmax = self.get_tmin_tmax(tmin, tmax, freq)[1]
         if freq is None:
             freq = self.freq
 
-        # Get parameters if none are provided
-        if parameters is None:
-            parameters = self.get_parameters()
+        tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq, use_oseries=True)
 
         # simulate model
         simulation = self.simulate(parameters, tmin, tmax, freq)
@@ -257,12 +250,13 @@ class Model:
             h_observed = self.oseries[tmin: tmax]
             # sample measurements, so that frequency is not higher than model
             h_observed = self.sample(h_observed, simulation.index)
-            # store this variable in the model, so that it can be used in the next iteration of the solver
+            # store this variable in the model, so that it can be used in the
+            # next iteration of the solver
             self.oseries_calib = h_observed
 
         obs_index = h_observed.index  # times used for calibration
 
-        # h_observed - h_simulated
+        # Get h_simulated at the correct indices
         if len(obs_index.difference(simulation.index)) == 0:
             # all of the observation indexes are in the simulation
             h_simulated = simulation[obs_index]
@@ -278,14 +272,18 @@ class Model:
 
     def innovations(self, parameters=None, tmin=None, tmax=None, freq=None,
                     h_observed=None):
-        """Method to simulate the innovations.
+        """Method to simulate the innovations when a noisemodel is present.
 
         Parameters
         ----------
-        parameters
-        tmin
-        tmax
-        freq
+        parameters: Optional[list]
+            Array of the parameters used in the time series model.
+        tmin: Optional[str]
+        tmax: Optional[str]
+        freq: Optional[str]
+            frequency at which the time series are simulated.
+        h_observed: Optional[pd.Series]
+            Pandas series containing the observed values.
 
         Returns
         -------
@@ -302,12 +300,7 @@ class Model:
             warn("Innovations can not be calculated as there is no noisemodel")
             return None
 
-        if tmin is None:
-            tmin = self.get_tmin_tmax(tmin, tmax, freq)[0]
-        if tmax is None:
-            tmax = self.get_tmin_tmax(tmin, tmax, freq)[1]
-        if freq is None:
-            freq = self.freq
+        tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq, use_oseries=True)
 
         # Get parameters if none are provided
         if parameters is None:
@@ -320,8 +313,15 @@ class Model:
         v = self.noisemodel.simulate(res, self.odelt[res.index],
                                      parameters[-self.noisemodel.nparam:],
                                      res.index)
-
         return v[tmin:]
+
+    def observations(self, tmin=None, tmax=None):
+        """Method that returns the observations series.
+
+        """
+        tmin, tmax = self.get_tmin_tmax(tmin, tmax, use_oseries=True)
+
+        return self.oseries[tmin: tmax]
 
     def initialize(self, initial=True, noise=True):
         """Initialize the model before solving.
@@ -394,30 +394,49 @@ class Model:
         if report: print(self.report)
 
     def get_tmin_tmax(self, tmin=None, tmax=None, freq=None, use_oseries=True):
-        """Function to check if the dependent and independent time series
-        match.
-
-        - tmin and tmax are in oseries.index for optimization.
-        - all the stresses are available for simulation between tmin and tmax.
+        """Method that checks and returns valid values for tmin and tmax.
 
         Parameters
         ----------
-        tmin
-        tmax
+        tmin: str
+            string with a year or date that can be turned into a pandas
+            Timestamp (e.g. pd.tslib.Timestamp(tmin)).
+        tmax: str
+            string with a year or date that can be turned into a pandas
+            Timestamp (e.g. pd.tslib.Timestamp(tmax)).
+        freq: str
+
+        use_oseries: Boolean
+            boolean to check the tmin and tmax against the oseries.
+
+        Returns
+        -------
+        tmin, tmax: pd.Timestamp
+            returns a pandas timestamp for tmin and tmax.
 
         Notes
         -----
-        The following steps are taken when setting the tmin and tmax:
-            1. Check the period that can be simulated.
-            2.
+        The tmin and tmax are checked and returned according to the
+        following rules:
+
+        A. If no value for tmin/tmax is provided:
+            1. if use_oseries is false, tmin is set to minimum of the tseries.
+            2. if use_series is true tmin is set to minimum of the oseries.
+
+        B. If a values for tmin/tmax is provided:
+            1. A pandas timestamp is made from the string
+            2. if use_oseries is True, tmin is checked against oseries.
+            3. tmin is checked against the tseries.
+
+        C. In all cases an offset for the tmin and tmax is added.
+
+        A detailed description of dealing with tmin and tmax and timesteps
+        in general can be found in the developers section of the docs.
 
         """
         # Get tmin and tmax from the tseries
         ts_tmin = pd.Timestamp.max
         ts_tmax = pd.Timestamp.min
-        if not freq:
-            freq = self.freq
-
         for tseries in self.tseriesdict.values():
             if tseries.tmin < ts_tmin:
                 ts_tmin = tseries.tmin
@@ -425,8 +444,10 @@ class Model:
                 ts_tmax = tseries.tmax
 
         # Set tmin properly
-        if tmin is None:
+        if not tmin and not use_oseries:
             tmin = ts_tmin
+        elif not tmin:
+            tmin = self.oseries.index.min()
         else:
             tmin = pd.tslib.Timestamp(tmin)
             # Check if tmin > oseries.tmin (Needs to be True)
@@ -441,8 +462,10 @@ class Model:
                 tmin = ts_tmin
 
         # Set tmax properly
-        if tmax is None:
+        if not tmax and not use_oseries:
             tmax = ts_tmax
+        elif not tmax:
+            tmax = self.oseries.index.max()
         else:
             tmax = pd.tslib.Timestamp(tmax)
             # Check if tmax < oseries.tmax (Needs to be True)
@@ -456,13 +479,15 @@ class Model:
                      " automatically set to tseries tmax %s" % ts_tmax)
                 tmax = ts_tmax
 
-        # adjust tmin and tmax so that the time-offset (determined in
-        # check_frequency) is equal to that of the tseries
+        # adjust tmin and tmax so that the time-offset is equal to the tseries.
+        if not freq:
+            freq = self.freq
         tmin = tmin - self.get_time_offset(tmin, freq) + self.time_offset
         tmax = tmax - self.get_time_offset(tmax, freq) + self.time_offset
 
         assert tmax > tmin, 'Error: Specified tmax not larger than specified tmin'
-        assert len(self.oseries[tmin: tmax]) > 0, 'Error: no observations between tmin and tmax'
+        assert len(self.oseries[tmin: tmax]) > 0, \
+            'Error: no observations between tmin and tmax'
 
         return tmin, tmax
 
@@ -608,6 +633,20 @@ class Model:
     def get_freqstr(self, freqstr):
         """Method to untangle the frequency string.
 
+        Parameters
+        ----------
+        freqstr: str
+            string with the frequency as defined by the pandas package,
+            possibly containing a numerical value.
+
+        Returns
+        -------
+        num: int
+            integer by which to multiply the frequency. 1 is returned if no
+            num is present in the string that has been provided.
+        freq: str
+            String with the frequency as defined by the pandas package.
+
         """
         # remove the day from the week
         freqstr = freqstr.split("-", 1)[0]
@@ -707,34 +746,3 @@ class Model:
 
         """
         self.plots.plot(tmin, tmax, oseries, simulate)
-
-    def get_simulation(self, tmin=None, tmax=None):
-        """Method that returns the simulated series.
-
-        """
-        series = self.simulate(tmin=tmin, tmax=tmax)
-        return series
-
-    def get_innovations(self, tmin=None, tmax=None):
-        """Method that returns the innovation series.
-
-        """
-        v = self.innovations(tmin=tmin, tmax=tmax)
-        return v
-
-    def get_residuals(self, tmin=None, tmax=None):
-        """Method that returns the residual series
-
-        """
-        return self.residuals(tmin, tmax)
-
-    def get_observations(self, tmin=None, tmax=None):
-        """Method that returns the observations series.
-
-        """
-        if tmin is None:
-            tmin = self.oseries.index.min()
-        if tmax is None:
-            tmax = self.oseries.index.max()
-        tindex = self.oseries[tmin: tmax].index
-        return self.oseries[tindex]

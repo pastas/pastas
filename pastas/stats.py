@@ -76,7 +76,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         where N is the number of residuals.
         """
-        res = self.ml.get_residuals(tmin, tmax)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax)
         N = res.size
         return np.sqrt(sum(res ** 2) / N)
 
@@ -89,7 +89,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         where N is the number of innovations.
         """
-        res = self.ml.get_innovations(tmin, tmax)
+        res = self.ml.innovations(tmin=tmin, tmax=tmax)
         N = res.size
         return np.sqrt(sum(res ** 2) / N)
 
@@ -105,7 +105,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         Where E is an array of the residual series.
 
         """
-        res = self.ml.get_residuals(tmin, tmax)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax)
         return sum(res ** 2)
 
     def avg_dev(self, tmin=None, tmax=None):
@@ -118,7 +118,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         Where N is the number of the residuals.
 
         """
-        res = self.ml.get_residuals(tmin, tmax)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax)
         return res.mean()
 
     def evp(self, tmin=None, tmax=None):
@@ -133,8 +133,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
         .. math:: evp = (var(h) - var(res)) / var(h) * 100%
 
         """
-        res = self.ml.get_residuals(tmin, tmax)
-        obs = self.ml.get_observations(tmin, tmax)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        obs = self.ml.observations(tmin=tmin, tmax=tmax)
         return (np.var(obs) - np.var(res)) / np.var(obs) * 100.0
 
     def rsq(self, tmin=None, tmax=None):
@@ -151,8 +151,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
         https://docs.scipy.org/doc/numpy/reference/generated/numpy.corrcoef.html#numpy.corrcoef
 
         """
-        sim = self.ml.get_simulation(tmin, tmax)
-        obs = self.ml.get_observations(tmin, tmax)
+        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        obs = self.ml.observations(tmin=tmin, tmax=tmax)
         sim = sim[obs.index]  # Make sure to correlate the same in time.
         return np.corrcoef(sim, obs)[0, 1]
 
@@ -170,8 +170,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
             N_Param = Number of free parameters
         """
 
-        obs = self.ml.get_observations(tmin, tmax)
-        res = self.ml.get_residuals(tmin, tmax)
+        obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax)
         N = obs.size
 
         RSS = sum(res ** 2.0)
@@ -190,7 +190,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         Where:
             nparam : Number of free parameters
         """
-        innovations = self.ml.get_innovations(tmin, tmax)
+        innovations = self.ml.innovations(tmin=tmin, tmax=tmax)
         n = innovations.size
         nparam = len(self.ml.parameters[self.ml.parameters.vary == True])
         bic = -2.0 * np.log(sum(innovations ** 2.0)) + nparam * np.log(n)
@@ -207,7 +207,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
             nparam = Number of free parameters
             L = likelihood function for the model.
         """
-        innovations = self.ml.get_innovations(tmin, tmax)
+        innovations = self.ml.innovations(tmin=tmin, tmax=tmax)
         nparam = len(self.ml.parameters[self.ml.parameters.vary == True])
         aic = -2.0 * np.log(sum(innovations ** 2.0)) + 2.0 * nparam
         return aic
@@ -226,7 +226,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         TODO: Compute autocorrelation for irregulat time steps.
         """
-        innovations = self.ml.get_innovations(tmin, tmax)
+        innovations = self.ml.innovations(tmin=tmin, tmax=tmax)
         return acf(innovations, nlags=nlags)
 
     def pacf(self, tmin=None, tmax=None, nlags=20):
@@ -244,7 +244,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         TODO: Compute  partial autocorrelation for irregulat time steps.
         """
-        innovations = self.ml.get_innovations(tmin, tmax)
+        innovations = self.ml.innovations(tmin=tmin, tmax=tmax)
         return pacf(innovations, nlags=nlags)
 
     def all(self, tmin=None, tmax=None):
@@ -264,7 +264,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         stats = pd.DataFrame(columns=['Value'])
         for k in self.ops.keys():
-            stats.loc[k] = (getattr(self, k)(tmin, tmax))
+            stats.loc[k] = (getattr(self, k)(tmin=tmin, tmax=tmax))
 
         return stats
 
@@ -284,9 +284,9 @@ included in Pastas. To obtain a list of all statistics that are included type:
             Description
         """
         if key == 'observations':
-            series = self.ml.get_observations(tmin, tmax)
+            series = self.ml.observations(tmin=tmin, tmax=tmax)
         elif key == 'simulated':
-            series = self.ml.get_residuals(tmin, tmax)
+            series = self.ml.residuals(tmin=tmin, tmax=tmax)
         else:
             raise ValueError('no timeseries with key {key:}'.format(key=key))
         return series
@@ -658,7 +658,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
                 'evp': 'Explained variance percentage',
                 'rmse': 'Root mean squared error',
                 'avg_dev': 'Average Deviation',
-                'pearson': 'Pearson R^2',
+                'rsq': 'Pearson R^2',
                 'bic': 'Bayesian Information Criterion',
                 'aic': 'Akaike Information Criterion'},
             'dutch': {
@@ -672,13 +672,13 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         # get labels and method names for selected output
         if selected == 'all':
+            # sort by key, label, method name
             selected_output = sorted([(k, l, f) for k, d in output.items()
-                                      for f, l in
-                                      d.items()])  # sort by key, label, method name
+                                      for f, l in d.items()])
         else:
+            # sort by name, method name
             selected_output = sorted([(0, l, f) for f, l in
-                                      output[
-                                          selected].items()])  # sort by name, method name
+                                      output[selected].items()])
 
         # compute statistics
         labels_and_values = [(l, getattr(self, f)(tmin=tmin, tmax=tmax))

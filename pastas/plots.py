@@ -207,7 +207,7 @@ class Plotting():
         plt.show()
 
     def diagnostics(self, tmin=None, tmax=None):
-        innovations = self.ml.get_innovations(tmin, tmax)
+        innovations = self.ml.innovations(tmin, tmax)
 
         plt.figure()
         gs = plt.GridSpec(2, 3, wspace=0.2)
