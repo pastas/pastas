@@ -53,7 +53,6 @@ class Model:
         self.freq = None
         self.time_offset = pd.to_timedelta(0)
 
-
         self.parameters = pd.DataFrame(
             columns=['initial', 'name', 'optimal', 'pmin', 'pmax', 'vary'])
         self.nparam = 0
@@ -553,7 +552,7 @@ class Model:
 
         return parameters
 
-    def get_parameters(self):
+    def get_parameters(self, name=None):
         """Helper method to obtain the parameters needed for calculation if
         none are provided. This method is used by the simulation, residuals
         and the innovations methods.
@@ -564,12 +563,18 @@ class Model:
             Array of the parameters used in the time series model.
 
         """
-        if self.parameters.optimal.hasnans:
-            parameters = self.parameters.initial.values
+        if name:
+            p = self.parameters[self.parameters.name == name]
         else:
-            parameters = self.parameters.optimal.values
+            p = self.parameters
 
-        return parameters
+        if p.optimal.hasnans:
+            warn("Model is not optimized yet, initial parameters are used.")
+            parameters = p.initial
+        else:
+            parameters = p.optimal
+
+        return parameters.values
 
     def get_dt(self, freq):
         options = {'W': 7,  # weekly frequency
@@ -667,33 +672,34 @@ class Model:
         return num, freq
 
     def get_contribution(self, name):
-        try:
-            p = self.parameters.loc[
-                self.parameters.name == name, 'optimal'].values
-            return self.tseriesdict[name].simulate(p)
-        except KeyError:
-            print("Name not in tseriesdict, available names are: %s"
-                  % self.tseriesdict.keys())
+        if name not in self.tseriesdict.keys():
+            warn("Name not in tseriesdict, available names are: %s"
+                 % self.tseriesdict.keys())
+            return None
+        else:
+            p = self.get_parameters(name)
+            dt = self.get_dt(self.freq)
+            return self.tseriesdict[name].simulate(p, dt)
 
     def get_block_response(self, name):
-        try:
-            p = self.parameters.loc[
-                self.parameters.name == name, 'optimal'].values
+        if name not in self.tseriesdict.keys():
+            warn("Name not in tseriesdict, available names are: %s"
+                 % self.tseriesdict.keys())
+            return None
+        else:
+            p = self.get_parameters(name)
             dt = self.get_dt(self.freq)
             return self.tseriesdict[name].rfunc.block(p, dt)
-        except KeyError:
-            print("Name not in tseriesdict, available names are: %s"
-                  % self.tseriesdict.keys())
 
     def get_step_response(self, name):
-        try:
-            p = self.parameters.loc[
-                self.parameters.name == name, 'optimal'].values
+        if name not in self.tseriesdict.keys():
+            warn("Name not in tseriesdict, available names are: %s"
+                 % self.tseriesdict.keys())
+            return None
+        else:
+            p = self.get_parameters(name)
             dt = self.get_dt(self.freq)
             return self.tseriesdict[name].rfunc.step(p, dt)
-        except KeyError:
-            print("Name not in tseriesdict, available names are: %s"
-                  % self.tseriesdict.keys())
 
     def get_stress(self, name):
         try:

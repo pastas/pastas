@@ -102,18 +102,6 @@ class Plotting():
         ax3.grid(which='both')
         plt.title('Block Response', loc='left')
 
-        # Plot the Model Parameters (Experimental)
-        ax4 = plt.subplot(gs[1:2, -1])
-        ax4.xaxis.set_visible(False)
-        ax4.yaxis.set_visible(False)
-        text = np.vstack(
-            (self.ml.parameters.optimal.keys(), [round(float(i), 4) for i
-                                                 in
-                                                 self.ml.parameters.optimal.values])).T
-        colLabels = ("Parameter", "Value")
-        ytable = ax4.table(cellText=text, colLabels=colLabels, loc='center')
-        ytable.scale(1, 1.1)
-
         # Table of the numerical diagnostic statistics.
         ax5 = plt.subplot(gs[2, -1])
         ax5.xaxis.set_visible(False)
