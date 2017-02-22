@@ -4,8 +4,6 @@ import datetime
 from collections import OrderedDict
 from warnings import warn
 
-import matplotlib.pyplot as plt
-import matplotlib.ticker as plticker
 import numpy as np
 import pandas as pd
 from scipy import interpolate
@@ -19,7 +17,7 @@ from .plots import Plotting
 
 class Model:
     def __init__(self, oseries, xy=(0, 0), name="TSA_Model", metadata=None,
-                 warmup=1500, fillnan='drop', constant=True):
+                 warmup=0, fillnan='drop', constant=True):
         """Initiates a time series model.
 
         Parameters
@@ -48,9 +46,6 @@ class Model:
         # Min and max time of the model
         self.tmin = None
         self.tmax = None
-        # Min and max time of observation series
-        self.otmin = self.oseries.index[0]
-        self.otmax = self.oseries.index[-1]
         self.odelt = self.oseries.index.to_series().diff() / \
                      np.timedelta64(1, 'D')
 
@@ -105,7 +100,7 @@ class Model:
             # Call these methods to set tmin, tmax and freq and enable
             # simulation.
             self.set_freq_offset()
-            self.set_tmin_tmax()
+            self.tmin, self.tmax = self.get_tmin_tmax()
 
     def add_noisemodel(self, noisemodel):
         """Adds a noise model to the time series Model.
@@ -197,26 +192,18 @@ class Model:
 
         """
         # Default option when tmin and tmax and freq are not provided.
-        if tmin is None:
-            tmin = self.tmin
-        if tmax is None:
-            tmax = self.tmax
         if freq is None:
             freq = self.freq
+
+        tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq, use_oseries=False)
+
+        tmin = pd.to_datetime(tmin) - pd.DateOffset(days=self.warmup)
+        sim_index = pd.date_range(tmin, tmax, freq=freq)
+        dt = self.get_dt(freq)
 
         # Get parameters if none are provided
         if parameters is None:
             parameters = self.get_parameters()
-
-        # adjust tmin and tmax so that the time-offset (determined in
-        # check_frequency) is equal to that of the model (is also done in set_tmin_tmax)
-        tmin = tmin - self.get_time_offset(tmin, freq) + self.time_offset
-        tmax = tmax - self.get_time_offset(tmax, freq) + self.time_offset
-
-        sim_index = pd.date_range(
-            pd.to_datetime(tmin) - pd.DateOffset(days=self.warmup), tmax,
-            freq=freq)
-        dt = self.get_dt(freq)
 
         h = pd.Series(data=0, index=sim_index)
         istart = 0  # Track parameters index to pass to ts object
@@ -231,7 +218,7 @@ class Model:
 
     def residuals(self, parameters=None, tmin=None, tmax=None, freq=None,
                   h_observed=None):
-        """
+        """Calculate the residual series.
 
         Parameters
         ----------
@@ -249,13 +236,13 @@ class Model:
         Returns
         -------
         res: pd.Series
-            Pandas series with the simulated
+            Pandas series with the residuals series.
 
         """
         if tmin is None:
-            tmin = self.oseries.index.min()
+            tmin = self.get_tmin_tmax(tmin, tmax, freq)[0]
         if tmax is None:
-            tmax = self.oseries.index.max()
+            tmax = self.get_tmin_tmax(tmin, tmax, freq)[1]
         if freq is None:
             freq = self.freq
 
@@ -316,9 +303,9 @@ class Model:
             return None
 
         if tmin is None:
-            tmin = self.oseries.index.min()
+            tmin = self.get_tmin_tmax(tmin, tmax, freq)[0]
         if tmax is None:
-            tmax = self.oseries.index.max()
+            tmax = self.get_tmin_tmax(tmin, tmax, freq)[1]
         if freq is None:
             freq = self.freq
 
@@ -380,20 +367,20 @@ class Model:
         report: Boolean
             Print a report to the screen after optimization finished.
         noise: Boolean
-            Use the nose model (True) or not (False).
+            Use the noise model (True) or not (False).
         initialize: Boolean
             Reset initial parameters.
 
         """
         if noise and (self.noisemodel is None):
             warn(message='Warning, solution with noise model while noise model'
-                         'is not defined. No noise model is used')
+                         'is not defined. No noise model is used.')
 
         # Check frequency of tseries
         self.set_freq_offset()
 
         # Check series with tmin, tmax
-        self.set_tmin_tmax(tmin, tmax)
+        self.tmin, self.tmax = self.get_tmin_tmax(tmin, tmax)
 
         # Initialize parameters
         self.initialize(initial=initial, noise=noise)
@@ -406,62 +393,78 @@ class Model:
         self.report = fit.report
         if report: print(self.report)
 
-    def set_tmin_tmax(self, tmin=None, tmax=None):
-        """
-        Function to check if the dependent and independent time series match.
+    def get_tmin_tmax(self, tmin=None, tmax=None, freq=None, use_oseries=True):
+        """Function to check if the dependent and independent time series
+        match.
 
         - tmin and tmax are in oseries.index for optimization.
         - all the stresses are available for simulation between tmin and tmax.
-        -
 
         Parameters
         ----------
         tmin
         tmax
 
-        Returns
-        -------
+        Notes
+        -----
+        The following steps are taken when setting the tmin and tmax:
+            1. Check the period that can be simulated.
+            2.
 
         """
+        # Get tmin and tmax from the tseries
+        ts_tmin = pd.Timestamp.max
+        ts_tmax = pd.Timestamp.min
+        if not freq:
+            freq = self.freq
 
-        # Store tmax and tmin. If none is provided, use oseries to set them.
+        for tseries in self.tseriesdict.values():
+            if tseries.tmin < ts_tmin:
+                ts_tmin = tseries.tmin
+            if tseries.tmax > ts_tmax:
+                ts_tmax = tseries.tmax
+
+        # Set tmin properly
         if tmin is None:
-            tmin = self.oseries.index.min()
+            tmin = ts_tmin
         else:
             tmin = pd.tslib.Timestamp(tmin)
-            if tmin < self.oseries.index[0]:
-                warn('Specified tmin is before first observation ' + str(
-                    self.oseries.index[0]))
-            assert tmin <= self.oseries.index[
-                -1], 'Error: Specified tmin is after last observation'
+            # Check if tmin > oseries.tmin (Needs to be True)
+            if tmin < self.oseries.index.min() and use_oseries:
+                warn("Specified tmin is before the first observation. tmin"
+                     " automatically set to %s" % self.oseries.index.min())
+                tmin = self.oseries.index.min()
+            # Check if tmin > tseries.tmin (Needs to be True)
+            if tmin < ts_tmin:
+                warn("Specified tmin is before any of the tseries tmin. tmin"
+                     " automatically set to tseries tmin %s" % ts_tmin)
+                tmin = ts_tmin
+
+        # Set tmax properly
         if tmax is None:
-            tmax = self.oseries.index.max()
+            tmax = ts_tmax
         else:
             tmax = pd.tslib.Timestamp(tmax)
-            if tmax > self.oseries.index[-1]:
-                warn('Specified tmax is after last observation ' + str(
-                    self.oseries.index[-1]))
-            assert tmax >= self.oseries.index[
-                0], 'Error: Specified tmax is before first observation'
-
-        # adjust tmin and tmax, so that all the tseries cover the period
-        for tseries in self.tseriesdict.values():
-            if tseries.tmin > tmin:
-                tmin = tseries.tmin
-            if tseries.tmax < tmax:
-                tmax = tseries.tmax
+            # Check if tmax < oseries.tmax (Needs to be True)
+            if tmax > self.oseries.index.max() and use_oseries:
+                warn("Specified tmax is after the last observation. tmax"
+                     " automatically set to %s" % self.oseries.index.max())
+                tmax = self.oseries.index.max()
+            # Check if tmax < tseries.tmax (Needs to be True)
+            if tmax > ts_tmax:
+                warn("Specified tmax is after any of the tseries tmax. tmax"
+                     " automatically set to tseries tmax %s" % ts_tmax)
+                tmax = ts_tmax
 
         # adjust tmin and tmax so that the time-offset (determined in
         # check_frequency) is equal to that of the tseries
-        tmin = tmin - self.get_time_offset(tmin, self.freq) + self.time_offset
-        tmax = tmax - self.get_time_offset(tmax, self.freq) + self.time_offset
+        tmin = tmin - self.get_time_offset(tmin, freq) + self.time_offset
+        tmax = tmax - self.get_time_offset(tmax, freq) + self.time_offset
 
         assert tmax > tmin, 'Error: Specified tmax not larger than specified tmin'
-        assert len(self.oseries[
-                   tmin: tmax]) > 0, 'Error: no observations between tmin and tmax'
+        assert len(self.oseries[tmin: tmax]) > 0, 'Error: no observations between tmin and tmax'
 
-        self.tmin = tmin
-        self.tmax = tmax
+        return tmin, tmax
 
     def set_freq_offset(self):
         """

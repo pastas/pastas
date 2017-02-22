@@ -2,17 +2,18 @@ from __future__ import print_function, division
 
 import lmfit
 import numpy as np
+import pandas as pd
 
 
 class LmfitSolve:
     def __init__(self, model, tmin=None, tmax=None, noise=True, freq='D'):
+        # Deal with the parameters
         parameters = lmfit.Parameters()
         p = model.parameters[['initial', 'pmin', 'pmax', 'vary']]
         for k in p.index:
             pp = np.where(np.isnan(p.loc[k]), None, p.loc[k])
+            parameters.add(k, value=pp[0], min=pp[1], max=pp[2], vary=pp[3])
 
-            parameters.add(k, value=pp[0], min=pp[1],
-                           max=pp[2], vary=pp[3])
         fit = lmfit.minimize(fcn=self.objfunction, params=parameters,
                              ftol=1e-3, epsfcn=1e-4,
                              args=(tmin, tmax, noise, model, freq))

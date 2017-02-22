@@ -39,9 +39,9 @@ class Plotting():
                                  markersize=3)
         if simulate:
             if tmin is None:
-                tmin = self.ml.otmin
+                tmin = self.ml.oseries.index.min()
             if tmax is None:
-                tmax = self.ml.otmax
+                tmax = self.ml.oseries.index.max()
             h = self.ml.simulate(tmin=tmin, tmax=tmax)
             h.plot()
 
