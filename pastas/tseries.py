@@ -25,6 +25,8 @@ tseries module
 
 from __future__ import print_function, division
 
+from warnings import warn
+
 import numpy as np
 import pandas as pd
 from scipy.signal import fftconvolve
@@ -164,7 +166,7 @@ class Tseries(TseriesBase):
 
         """
         b = self.rfunc.block(p, dt)
-        self.npoints = len(self.stress)  # Why recompute?
+        self.npoints = self.stress.index.size  # Why recompute?
         h = pd.Series(fftconvolve(self.stress[self.name], b, 'full')[
                       :self.npoints], index=self.stress.index, name=self.name)
         if tindex is not None:
@@ -207,22 +209,22 @@ class Tseries2(TseriesBase):
     """
 
     def __init__(self, stress0, stress1, rfunc, name, metadata=None, xy=(0, 0),
-                 freq=None, fillnan=('mean', 'interpolate'), cutoff=0.99):
+                 freq=None, fillnan=('mean', 'interpolate'),
+                 up=True, cutoff=0.99):
         # First check the series, then determine tmin and tmax
         stress0 = check_tseries(stress0, freq, fillnan[0], name=name)
         stress1 = check_tseries(stress1, freq, fillnan[1], name=name)
 
         # Select indices where both series are available
         index = stress0.index & stress1.index
-        if len(index) is 0:
-            raise Warning('The two stresses that were provided have no '
-                          'overlapping time indices. Please make sure time '
-                          'indices overlap or apply to separate time series '
-                          'objects.')
+        if index.size is 0:
+            warn('The two stresses that were provided have no overlapping time'
+                 ' indices. Please make sure time indices overlap or apply to '
+                 'separate time series objects.')
 
         TseriesBase.__init__(self, rfunc, name, xy, metadata, index.min(),
-                             index.max(), True,
-                             stress0.mean() - stress1.mean(), cutoff)
+                             index.max(), up, stress0.mean() - stress1.mean(),
+                             cutoff)
 
         self.stress["stress0"] = stress0[index]
         self.stress["stress1"] = stress1[index]
@@ -256,7 +258,7 @@ class Tseries2(TseriesBase):
 
         """
         b = self.rfunc.block(p[:-1], dt)
-        self.npoints = len(self.stress)  # Why recompute?
+        self.npoints = self.stress.index.size  # Why recompute?
         h = pd.Series(
             fftconvolve(
                 self.stress["stress0"] + p[-1] * self.stress["stress1"],
@@ -331,7 +333,7 @@ class Recharge(TseriesBase):
         # Select indices where both series are available
         index = P.index & E.index
 
-        if len(index) is 0:
+        if index.size is 0:
             raise Warning('The two stresses that were provided have no '
                           'overlapping time indices. Please make sure time '
                           'indices overlap or apply to separate time series '
@@ -405,15 +407,15 @@ class Recharge(TseriesBase):
 
 
 class Well(TseriesBase):
-    """Time series model consisting of the convolution of one or more stresses with
-    one response function.
+    """Time series model consisting of the convolution of one or more stresses
+    with one response function.
 
     Parameters
     ----------
-    stress: list
-        list of pandas Series objects containing the stresses.
+    stress: pd.DataFrame
+        Pandas DataFrame object containing the stresses.
     rfunc: rfunc class
-        Response function used in the convolution with the stess.
+        Response function used in the convolution with the stresses.
     name: str
         Name of the stress
     metadata: Optional[dict]
@@ -432,28 +434,35 @@ class Well(TseriesBase):
         and 'mean'. Interpolation is performed with a standard linear
         interpolation.
 
+    Notes
+    -----
+    This class implements convolution of multiple series with a the same
+    response function. This is often applied when dealing with multiple
+    wells in a time series model.
+
     """
 
-    # TODO implement this function
-    def __init__(self, stress, rfunc, r, name, metadata=None,
-                 xy=(0, 0), freq=None, fillna='mean', cutoff=0.99):
+    def __init__(self, stress, rfunc, name, r=None, metadata=None,
+                 xy=(0, 0), freq=None, fillna='mean', up=True, cutoff=0.99):
+        # Check if number of stresses and radii match
+        if len(stress.keys()) != len(r) and r:
+            warn("The number of stresses applied does not match the number "
+                 "of radii provided.")
+        else:
+            self.r = r
 
         # Check stresses
-        self.stress = []
         if type(stress) is pd.Series:
             stress = [stress]
 
-        # This should maybe standard be a pd.DataFrame
-        for i in range(len(stress)):
-            self.stress.append(check_tseries(stress, freq, fillna, name))
-        self.freq = self.stress[0].index.freqstr
-
-        self.set_init_parameters()
-        self.r = r
-
         TseriesBase.__init__(self, rfunc, name, xy, metadata,
                              self.stress.index.min(), self.stress.index.max(),
-                             cutoff)
+                             up, self.stress.mean(), cutoff)
+
+        for i in stress:
+            self.stress.append(check_tseries(stress[i], freq, fillna, name))
+
+        self.freq = self.stress[0].index.freqstr
         self.set_init_parameters()
 
     def set_init_parameters(self):
@@ -461,8 +470,8 @@ class Well(TseriesBase):
 
     def simulate(self, p=None, tindex=None, dt=1):
         h = pd.Series(data=0, index=self.stress[0].index)
-        for i in range(len(self.stress)):
-            self.npoints = len(self.stress[i])
+        for i in self.stress:
+            self.npoints = self.stress.index.size
             b = self.rfunc.block(p, self.r[i])  # nparam-1 depending on rfunc
             h += fftconvolve(self.stress[i], b, 'full')[:self.npoints]
         if tindex is not None:
@@ -475,7 +484,7 @@ class TseriesStep(TseriesBase):
     A stress consisting of a step resonse from a specified time. The amplitude and form (if rfunc is not One) of the step is calibrated. Before t_step the response is zero.
     """
 
-    def __init__(self, t_step, rfunc=One, name='Step', xy=None, metadata=None,
+    def __init__(self, t_step, name, rfunc=One, xy=None, metadata=None,
                  up=True):
         assert t_step is not None, 'Error: Need to specify time of step (for now this will not be optimized)'
 

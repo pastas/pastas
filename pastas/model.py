@@ -94,7 +94,7 @@ class Model:
                  'name.')
         else:
             self.tseriesdict[tseries.name] = tseries
-            self.parameters = self.parameters.append(tseries.parameters)
+            self.parameters = self.get_init_parameters()
             self.nparam += tseries.nparam
 
             # Call these methods to set tmin, tmax and freq and enable
@@ -107,7 +107,7 @@ class Model:
 
         """
         self.noisemodel = noisemodel
-        self.parameters = self.parameters.append(self.noisemodel.parameters)
+        self.parameters = self.get_init_parameters()
         self.nparam += noisemodel.nparam
 
     def add_constant(self):
@@ -115,7 +115,7 @@ class Model:
 
         """
         self.constant = Constant(value=self.oseries.mean(), name='constant')
-        self.parameters = self.parameters.append(self.constant.parameters)
+        self.parameters = self.get_init_parameters()
         self.nparam += self.constant.nparam
 
     def del_tseries(self, name):
@@ -208,8 +208,9 @@ class Model:
         h = pd.Series(data=0, index=sim_index)
         istart = 0  # Track parameters index to pass to ts object
         for ts in self.tseriesdict.values():
-            h += ts.simulate(parameters[istart: istart + ts.nparam], sim_index,
-                             dt)
+            c = ts.simulate(parameters[istart: istart + ts.nparam], sim_index,
+                            dt)
+            h = h.add(c, fill_value=0.0)
             istart += ts.nparam
         if self.constant:
             h += self.constant.simulate(parameters[istart])
@@ -256,7 +257,7 @@ class Model:
         obs_index = h_observed.index  # times used for calibration
 
         # Get h_simulated at the correct indices
-        if len(obs_index.difference(simulation.index)) == 0:
+        if obs_index.difference(simulation.index).size == 0:
             # all of the observation indexes are in the simulation
             h_simulated = simulation[obs_index]
         else:
@@ -484,8 +485,9 @@ class Model:
         tmin = tmin - self.get_time_offset(tmin, freq) + self.time_offset
         tmax = tmax - self.get_time_offset(tmax, freq) + self.time_offset
 
-        assert tmax > tmin, 'Error: Specified tmax not larger than specified tmin'
-        assert len(self.oseries[tmin: tmax]) > 0, \
+        assert tmax > tmin, \
+            'Error: Specified tmax not larger than specified tmin'
+        assert self.oseries[tmin: tmax].size > 0, \
             'Error: no observations between tmin and tmax'
 
         return tmin, tmax
@@ -679,7 +681,7 @@ class Model:
         else:
             p = self.get_parameters(name)
             dt = self.get_dt(self.freq)
-            return self.tseriesdict[name].simulate(p, dt)
+            return self.tseriesdict[name].simulate(p)
 
     def get_block_response(self, name):
         if name not in self.tseriesdict.keys():
@@ -732,7 +734,7 @@ class Model:
 
         """
         f = interpolate.interp1d(series.index.asi8,
-                                 np.arange(0, len(series.index)),
+                                 np.arange(0, series.index.size),
                                  kind='nearest', bounds_error=False,
                                  fill_value='extrapolate')
         ind = np.unique(f(tindex.asi8).astype(int))
