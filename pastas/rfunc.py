@@ -176,6 +176,12 @@ class Hantush(RfuncBase):
         parameters['tseries'] = name
         return parameters
 
+    def calc_tmax(self, p):
+        rho = p[1]
+        cS = p[2]
+        k0rho = k0(rho)
+        return lambertw(1 / ((1 - self.cutoff) * k0rho)).real * cS
+
     def step(self, p, dt=1):
         rho = p[1]
         cS = p[2]
