@@ -173,40 +173,6 @@ class Tseries(TseriesBase):
             h = h[tindex]
         return h
 
-    def simulate2(self, p, tindex=None, dt=0):
-        """ Simulates the head contribution, without convolution.
-
-        Parameters
-        ----------
-        p: 1D array
-           Parameters used for simulation.
-        tindex: Optional[Pandas time series]
-           Time indices to simulate the model.
-
-        Returns
-        -------
-        Pandas Series Object
-            The simulated head contribution.
-
-        """
-        h = pd.Series(0, tindex, name=self.name)
-        stress = self.stress.diff()
-        if self.stress.values[0]!=0:
-            stress=stress.set_value(stress.index[0] - (stress.index[1] - stress.index[0]), stress.columns, 0)
-            stress=stress.sort_index()
-        # set the index at the beginning of each step
-        stress = stress.shift(-1).dropna()
-        # remove steps that do not change
-        stress = stress.loc[~(stress == 0).all(axis=1)]
-        #tmax = self.rfunc.calc_tmax(p)
-        for i in stress.index:
-            erin = (h.index > i)# & ((h.index-i).days<tmax)
-            if any(erin):
-                r=stress.loc[i][0] * self.rfunc.step(p, (h.index[erin] - i).days)
-                h[erin] += r
-                #h[np.invert(erin) & (h.index > i)] = r[-1]
-        return h
-
 
 class Tseries2(TseriesBase):
     """
