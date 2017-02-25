@@ -9,6 +9,7 @@ import pandas as pd
 from scipy import interpolate
 
 from .checks import check_oseries
+from .objfunc import residuals as objf_residuals
 from .solver import LmfitSolve
 from .stats import Statistics
 from .tseries import Constant
@@ -351,8 +352,9 @@ class Model:
         if not initial:
             self.parameters.initial = optimal
 
-    def solve(self, tmin=None, tmax=None, solver=LmfitSolve, report=True,
-              noise=True, initial=True):
+    def solve(self, tmin=None, tmax=None,
+              solver=LmfitSolve, objfunc=objf_residuals,
+              report=True, noise=True, initial=True):
         """
         Methods to solve the time series model.
 
@@ -386,8 +388,12 @@ class Model:
         self.initialize(initial=initial, noise=noise)
 
         # Solve model
-        fit = solver(self, tmin=self.tmin, tmax=self.tmax, noise=noise,
-                     freq=self.freq)
+        solver = solver(self.parameters)
+
+        objfunc_kwargs= {'tmin': self.tmin, 'tmax': self.tmax,
+            'noise': noise, 'freq': self.freq}
+
+        fit = solver.solve(objfunc, self, **objfunc_kwargs)
 
         self.parameters.optimal = fit.optimal_params
         self.report = fit.report

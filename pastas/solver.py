@@ -4,6 +4,10 @@ import lmfit
 import numpy as np
 import pandas as pd
 
+class Fit(object):
+    def __init__(self, optimal_params, report):
+        self.optimal_params = optimal_params
+        self.report = report
 
 class LmfitSolve:
     def __init__(self, parameters, ftol=1e-3, epsfcn=1e-4):
@@ -32,36 +36,39 @@ class LmfitSolve:
             param_kwargs = {k: None if np.isnan(v) else v
                 for k, v in param_values.items()}
 
-            # rename 'initial' to 'value'
-            param_kwargs['value'] = param_kwargs['initial']
+            # rename parameter kwargs
+            param_kwargs.update({'value': param_kwargs.pop('initial')})
+            param_kwargs.update({'min': param_kwargs.pop('pmin')})
+            param_kwargs.update({'max': param_kwargs.pop('pmax')})
 
-            # add to Parameters
+            # add to parameters
             self.parameters.add(param_name, **param_kwargs)
 
-        # initialize output attributes
-        self.optimal_params = None
-        self.report = None
-
-    def solve(self, objfunc, **objfunc_kwargs):
+    def solve(self, objfunc, *objfunc_args, **objfunc_kwargs):
         """Summary
 
         Parameters
         ----------
         objfunc : function
             Objective function to be evaluated using lmfit.minize
-        **objfunc_kwargs :
+        *objfunc_args
+            Additional positional arguments for objective function
+        **objfunc_kwargs
             Additional keyword arguments for objective function
 
         """
 
         # deploy minimize using objfunc
-        lmfit.minimize(fcn=objfunc, params=self.parameters,
+        fit = lmfit.minimize(fcn=objfunc, params=self.parameters,
                              ftol=self.ftol, epsfcn=self.epsfcn,
+                             args=objfunc_args,
                              kws=objfunc_kwargs)
 
         # assign output attributes
-        self.optimal_params = np.array([p.value for p in fit.params.values()])
-        self.report = lmfit.fit_report(fit)
+        optimal_params = np.array([p.value for p in fit.params.values()])
+        report = lmfit.fit_report(fit)
+
+        return Fit(optimal_params, report=report)
 
 
 

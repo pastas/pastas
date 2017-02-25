@@ -1,6 +1,8 @@
 from __future__ import print_function, division
 
-def objfunc_residuals(model, parameters, tmin, tmax, noise, freq):
+import numpy as np
+
+def residuals(parameters, model, tmin=None, tmax=None, noise=True, freq='D'):
     p = np.array([p.value for p in parameters.values()])
     if noise:
         return model.innovations(p, tmin, tmax, freq, model.oseries_calib)
