@@ -74,7 +74,7 @@ class Gamma(RfuncBase):
     __doc__ = """
     Gamma response function with 3 parameters A, a, and n.
 
-    step(t) = A * Gammainc(n, t / a)
+    .. math:: step(t) = A * Gammainc(n, t / a)
 
     %(doc)s
     """ % {'doc': _class_doc}
@@ -145,6 +145,9 @@ class Exponential(RfuncBase):
 
 class Hantush(RfuncBase):
     """ The Hantush well function
+
+    Notes
+    -----
     Parameters are rho = r / lambda and cS
 
     References
@@ -173,7 +176,6 @@ class Hantush(RfuncBase):
             1 / self.meanstress, 0, 100 / self.meanstress, 1, name)
         parameters.loc[name + '_rho'] = (1, 0.0001, 10, 1, name)
         parameters.loc[name + '_cS'] = (100, 1e-3, 1e3, 1, name)
-        parameters['tseries'] = name
         return parameters
 
     def calc_tmax(self, p):
@@ -191,14 +193,18 @@ class Hantush(RfuncBase):
         else:
             # approximate formula for tmax
             self.tmax = lambertw(1 / ((1 - self.cutoff) * k0rho)).real * cS
+            if self.tmax < 3 * dt:
+                self.tmax = 3 * dt
             t = np.arange(dt, self.tmax, dt)
         tau = t / cS
         tau1 = tau[tau < rho / 2]
         tau2 = tau[tau >= rho / 2]
         w = (exp1(rho) - k0rho) / (exp1(rho) - exp1(rho / 2))
         F = np.zeros_like(tau)
-        F[tau < rho / 2] =  w * exp1(rho ** 2 / (4 * tau1)) - (w - 1) * exp1(tau1 + rho ** 2 / (4 * tau1))
-        F[tau >= rho / 2] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(tau2 + rho ** 2 / (4 * tau2))
+        F[tau < rho / 2] = w * exp1(rho ** 2 / (4 * tau1)) - (w - 1) * exp1(
+            tau1 + rho ** 2 / (4 * tau1))
+        F[tau >= rho / 2] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(
+            tau2 + rho ** 2 / (4 * tau2))
         return self.up * p[0] * F / (2 * k0rho)
 
     def block(self, p, dt=1):
@@ -207,9 +213,12 @@ class Hantush(RfuncBase):
 
 
 class Theis(RfuncBase):
-    """ The Theis well function
+    """ The Theis well function.
 
-    Theis may not be very appropiate, as the drawdown will continue indefinitely
+    Notes
+    -----
+    Theis may not be very appropiate, as the drawdown will continue
+    indefinitely.
 
     References
     ----------
@@ -248,7 +257,8 @@ class Theis(RfuncBase):
 
 
 class Bruggeman(RfuncBase):
-    """ The function of Bruggeman, for a river in a confined aquifer, overlain by an aquitard with aquiferous ditches
+    """ The function of Bruggeman, for a river in a confined aquifer, overlain
+    by an aquitard with aquiferous ditches.
 
     References
     ----------
@@ -284,7 +294,7 @@ class Bruggeman(RfuncBase):
         return s
 
     def polder_function(self, x, y):
-        s = .5 * np.exp( 2 * x) * erfc(x / y + y) + \
+        s = .5 * np.exp(2 * x) * erfc(x / y + y) + \
             .5 * np.exp(-2 * x) * erfc(x / y - y)
         return s
 
