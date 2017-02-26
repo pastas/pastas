@@ -1,8 +1,52 @@
 from __future__ import print_function, division
 
+from warnings import warn
+
 import lmfit
 import numpy as np
-import pandas as pd
+from scipy.optimize import least_squares
+
+
+class LeastSquares:
+    """Solving the model using Scipy's least_squares method
+
+    Notes
+    -----
+    This method uses the
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
+
+    """
+
+    def __init__(self, model, tmin=None, tmax=None, noise=True, freq='D'):
+        parameters = model.parameters.initial.values
+
+        # Set the boundaries
+        pmin = model.parameters.pmin.values
+        pmin[np.isnan(pmin)] = -np.inf
+        pmax = model.parameters.pmax.values
+        pmax[np.isnan(pmax)] = np.inf
+        bounds = (pmin, pmax)
+
+        # Set boundaries to initial values if vary is False
+        # TODO: make notification that fixing parameters is not (yet)
+        # supported.
+        if False in model.parameters.vary.values.astype('bool'):
+            warn("Fixing parameters is not supported with this solver. Please"
+                 "use LmfitSolve or apply small boundaries as a solution.")
+
+        self.fit = least_squares(self.objfunction, x0=parameters,
+                                 bounds=bounds,
+                                 args=(tmin, tmax, noise, model, freq))
+        self.optimal_params = self.fit.x
+        self.report = None
+
+    def objfunction(self, parameters, tmin, tmax, noise, model, freq):
+        if noise:
+            return model.innovations(parameters, tmin, tmax, freq,
+                                     model.oseries_calib)
+        else:
+            return model.residuals(parameters, tmin, tmax, freq,
+                                   model.oseries_calib)
 
 
 class LmfitSolve:
@@ -14,11 +58,12 @@ class LmfitSolve:
             pp = np.where(np.isnan(p.loc[k]), None, p.loc[k])
             parameters.add(k, value=pp[0], min=pp[1], max=pp[2], vary=pp[3])
 
-        fit = lmfit.minimize(fcn=self.objfunction, params=parameters,
-                             ftol=1e-3, epsfcn=1e-4,
-                             args=(tmin, tmax, noise, model, freq))
-        self.optimal_params = np.array([p.value for p in fit.params.values()])
-        self.report = lmfit.fit_report(fit)
+        self.fit = lmfit.minimize(fcn=self.objfunction, params=parameters,
+                                  ftol=1e-3, epsfcn=1e-4,
+                                  args=(tmin, tmax, noise, model, freq))
+        self.optimal_params = np.array([p.value for p in
+                                        self.fit.params.values()])
+        self.report = lmfit.fit_report(self.fit)
 
     def objfunction(self, parameters, tmin, tmax, noise, model, freq):
         p = np.array([p.value for p in parameters.values()])
@@ -26,21 +71,6 @@ class LmfitSolve:
             return model.innovations(p, tmin, tmax, freq, model.oseries_calib)
         else:
             return model.residuals(p, tmin, tmax, freq, model.oseries_calib)
-
-
-# def lmfit_solve(model, tmin=None, tmax=None, noise=True, report=True):
-#    parameters = lmfit.Parameters()
-#    for k in model.parameters.index:
-#        p = model.parameters.loc[k]
-#        # needed because lmfit doesn't take nan as input
-#        pvalues = np.where(np.isnan(p.values), None, p.values)
-#        parameters.add(k, value=pvalues[0], min=pvalues[1],
-#                       max=pvalues[2], vary=pvalues[3])
-#    fit = lmfit.minimize(fcn=lmfit_obj_function, params=parameters,
-#                         ftol=1e-3, epsfcn=1e-4,
-#                         args=(tmin, tmax, noise, model))
-#    if report: print lmfit.fit_report(fit)
-#    return np.array([p.value for p in fit.params.values()])
 
 
 from scipy.optimize import differential_evolution

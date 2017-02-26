@@ -70,6 +70,9 @@ class Model:
         self.metadata = metadata
         self.name = name
 
+        self.fit = None
+        self.report = "Model has not been solved yet. "
+
         # Load other modules
         self.stats = Statistics(self)
         self.plots = Plotting(self)
@@ -389,6 +392,7 @@ class Model:
         fit = solver(self, tmin=self.tmin, tmax=self.tmax, noise=noise,
                      freq=self.freq)
 
+        self.fit = fit.fit
         self.parameters.optimal = fit.optimal_params
         self.report = fit.report
         if report: print(self.report)
@@ -681,7 +685,7 @@ class Model:
         else:
             p = self.get_parameters(name)
             dt = self.get_dt(self.freq)
-            return self.tseriesdict[name].simulate(p)
+            return self.tseriesdict[name].simulate(p, dt=dt)
 
     def get_block_response(self, name):
         if name not in self.tseriesdict.keys():
