@@ -245,27 +245,27 @@ class Model:
         tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq, use_oseries=True)
 
         # simulate model
-        simulation = self.simulate(parameters, tmin, tmax, freq)
+        simulated = self.simulate(parameters, tmin, tmax, freq)
 
         if h_observed is None:
             h_observed = self.oseries[tmin: tmax]
-            # sample measurements, so that frequency is not higher than model
-            h_observed = self.sample(h_observed, simulation.index)
-            # store this variable in the model, so that it can be used in the
-            # next iteration of the solver
+        #     # sample measurements, so that frequency is not higher than model
+        #     h_observed = self.sample(h_observed, simulation.index)
+        #     # store this variable in the model, so that it can be used in the
+        #     # next iteration of the solver
             self.oseries_calib = h_observed
 
-        obs_index = h_observed.index  # times used for calibration
+        # obs_index = h_observed.index  # times used for calibration
 
-        # Get h_simulated at the correct indices
-        if obs_index.difference(simulation.index).size == 0:
-            # all of the observation indexes are in the simulation
-            h_simulated = simulation[obs_index]
-        else:
-            # interpolate simulation to measurement-times
-            h_simulated = np.interp(h_observed.index.asi8,
-                                    simulation.index.asi8, simulation)
-        res = h_observed - h_simulated
+        # # Get h_simulated at the correct indices
+        # if obs_index.difference(simulation.index).size == 0:
+        #     # all of the observation indexes are in the simulation
+        #     h_simulated = simulation[obs_index]
+        # else:
+        #     # interpolate simulation to measurement-times
+        #     h_simulated = np.interp(h_observed.index.asi8,
+        #                             simulation.index.asi8, simulation)
+        res = (h_observed - simulated.reindex_like(h_observed, method='nearest'))
 
         if np.isnan(sum(res ** 2)):
             print('nan problem in residuals')  # quick and dirty check
@@ -739,12 +739,14 @@ class Model:
         of series
 
         """
-        f = interpolate.interp1d(series.index.asi8,
-                                 np.arange(0, series.index.size),
-                                 kind='nearest', bounds_error=False,
-                                 fill_value='extrapolate')
-        ind = np.unique(f(tindex.asi8).astype(int))
-        return series[ind]
+        # f = interpolate.interp1d(series.index.asi8,
+        #                          np.arange(0, series.index.size),
+        #                          kind='nearest', bounds_error=False,
+        #                          fill_value='extrapolate')
+        # ind = np.unique(f(tindex.asi8).astype(int))
+        # return series[ind]
+        # return series.reindex(tindex, method='drop')
+
 
     def plot(self, tmin=None, tmax=None, oseries=True, simulate=True):
         """
