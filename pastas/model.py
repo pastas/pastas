@@ -206,15 +206,18 @@ class Model:
         if parameters is None:
             parameters = self.get_parameters()
 
-        h = pd.Series(data=0, index=sim_index)
+        h = np.zeros(len(sim_index))
         istart = 0  # Track parameters index to pass to ts object
         for ts in self.tseriesdict.values():
             c = ts.simulate(parameters[istart: istart + ts.nparam], sim_index,
                             dt)
-            h = h.add(c, fill_value=0.0)
+            h += c.values
             istart += ts.nparam
+
         if self.constant:
             h += self.constant.simulate(parameters[istart])
+
+        h = pd.Series(h, index=sim_index)
 
         return h.loc[tmin:]
 
