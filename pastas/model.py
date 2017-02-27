@@ -216,7 +216,7 @@ class Model:
         if self.constant:
             h += self.constant.simulate(parameters[istart])
 
-        return h[tmin:]
+        return h.loc[tmin:]
 
     def residuals(self, parameters=None, tmin=None, tmax=None, freq=None,
                   h_observed=None):
@@ -248,28 +248,12 @@ class Model:
         simulated = self.simulate(parameters, tmin, tmax, freq)
 
         if h_observed is None:
-            h_observed = self.oseries[tmin: tmax]
-        #     # sample measurements, so that frequency is not higher than model
-        #     h_observed = self.sample(h_observed, simulation.index)
-        #     # store this variable in the model, so that it can be used in the
-        #     # next iteration of the solver
+            h_observed = self.oseries.loc[tmin:tmax].asfreq(freq)
             self.oseries_calib = h_observed
+        h_simulated = simulated.reindex_like(h_observed, method='nearest')
+        res = h_observed - h_simulated
 
-        # obs_index = h_observed.index  # times used for calibration
-
-        # # Get h_simulated at the correct indices
-        # if obs_index.difference(simulation.index).size == 0:
-        #     # all of the observation indexes are in the simulation
-        #     h_simulated = simulation[obs_index]
-        # else:
-        #     # interpolate simulation to measurement-times
-        #     h_simulated = np.interp(h_observed.index.asi8,
-        #                             simulation.index.asi8, simulation)
-        res = (h_observed - simulated.reindex_like(h_observed, method='nearest'))
-
-        if np.isnan(sum(res ** 2)):
-            print('nan problem in residuals')  # quick and dirty check
-        return res[tmin:]
+        return res.loc[tmin:].dropna()
 
     def innovations(self, parameters=None, tmin=None, tmax=None, freq=None,
                     h_observed=None):
