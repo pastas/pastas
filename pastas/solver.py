@@ -4,7 +4,35 @@ import lmfit
 import numpy as np
 import pandas as pd
 
+def params_to_array(objfunc):
+    """Summary
+
+    Parameters
+    ----------
+    objfunc : function
+        objective function
+
+    Returns
+    -------
+    function
+        wrapped function converting parameters to array
+    """
+    def wrapper(parameters, *args, **kwargs):
+        p = np.array([p.value for p in parameters.values()])
+        return objfunc(p, *args, **kwargs)
+    return wrapper
+
+
 class Fit(object):
+    """Generic fit class containing the solver results
+
+    Attributes
+    ----------
+    optimal_params : TYPE
+        Description
+    report : TYPE
+        Description
+    """
     def __init__(self, optimal_params, report):
         self.optimal_params = optimal_params
         self.report = report
@@ -59,7 +87,8 @@ class LmfitSolve:
         """
 
         # deploy minimize using objfunc
-        fit = lmfit.minimize(fcn=objfunc, params=self.parameters,
+        fit = lmfit.minimize(fcn=params_to_array(objfunc),
+                             params=self.parameters,
                              ftol=self.ftol, epsfcn=self.epsfcn,
                              args=objfunc_args,
                              kws=objfunc_kwargs)
@@ -69,7 +98,6 @@ class LmfitSolve:
         report = lmfit.fit_report(fit)
 
         return Fit(optimal_params, report=report)
-
 
 
 # def lmfit_solve(model, tmin=None, tmax=None, noise=True, report=True):
