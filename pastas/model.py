@@ -472,8 +472,10 @@ class Model:
         # adjust tmin and tmax so that the time-offset is equal to the tseries.
         if not freq:
             freq = self.freq
-        tmin = tmin - self.get_time_offset(tmin, freq) + self.time_offset
-        tmax = tmax - self.get_time_offset(tmax, freq) + self.time_offset
+
+        offset = pd.tseries.frequencies.to_offset(freq)
+        tmin = offset.rollforward(tmin)
+        tmax = offset.rollback(tmax)
 
         assert tmax > tmin, \
             'Error: Specified tmax not larger than specified tmin'
@@ -503,8 +505,7 @@ class Model:
             if not tseries.stress.empty:
                 freqs.add(tseries.freq)
                 # calculate the offset from the default frequency
-                time_offset = self.get_time_offset(tseries.stress.index[0],
-                                                   tseries.freq)
+                time_offset = pd.tseries.frequencies.to_offset(tseries.freq)
                 time_offsets.add(time_offset)
 
         # 1. The frequency should be the same for all tseries
@@ -569,99 +570,9 @@ class Model:
         return parameters.values
 
     def get_dt(self, freq):
-        options = {'W': 7,  # weekly frequency
-                   'D': 1,  # calendar day frequency
-                   'H': 1 / 24,  # hourly frequency
-                   'T': 1 / 24 / 60,  # minutely frequency
-                   'min': 1 / 24 / 60,  # minutely frequency
-                   'S': 1 / 24 / 3600,  # secondly frequency
-                   'L': 1 / 24 / 3600000,  # milliseconds
-                   'ms': 1 / 24 / 3600000,  # milliseconds
-                   }
-        # Get the frequency string and multiplier
-        num, freq = self.get_freqstr(freq)
-        dt = num * options[freq]
+        offset = pd.tseries.frequencies.to_offset(freq)
+        dt = pd.to_timedelta(offset) / np.timedelta64(1, 'D')
         return dt
-
-    def get_time_offset(self, t, freq):
-        if isinstance(t, pd.Series):
-            # Take the first timestep. The rest of index has the same offset,
-            # as the frequency is constant.
-            t = t.index[0]
-
-        # define the function blocks
-        def calc_week_offset(t):
-            return datetime.timedelta(days=t.weekday(), hours=t.hour,
-                                      minutes=t.minute, seconds=t.second)
-
-        def calc_day_offset(t):
-            return datetime.timedelta(hours=t.hour, minutes=t.minute,
-                                      seconds=t.second)
-
-        def calc_hour_offset(t):
-            return datetime.timedelta(minutes=t.minute, seconds=t.second)
-
-        def calc_minute_offset(t):
-            return datetime.timedelta(seconds=t.second)
-
-        def calc_second_offset(t):
-            return datetime.timedelta(microseconds=t.microsecond)
-
-        def calc_millisecond_offset(t):
-            # t has no millisecond attribute, so use microsecond and use the remainder after division by 1000
-            return datetime.timedelta(microseconds=t.microsecond % 1000.0)
-
-        # map the inputs to the function blocks
-        # see http://pandas.pydata.org/pandas-docs/stable/timeseries.html#timeseries-offset-aliases
-        options = {'W': calc_week_offset,  # weekly frequency
-                   'D': calc_day_offset,  # calendar day frequency
-                   'H': calc_hour_offset,  # hourly frequency
-                   'T': calc_minute_offset,  # minutely frequency
-                   'min': calc_minute_offset,  # minutely frequency
-                   'S': calc_second_offset,  # secondly frequency
-                   'L': calc_millisecond_offset,  # milliseconds
-                   'ms': calc_millisecond_offset,  # milliseconds
-                   }
-        # Get the frequency string and multiplier
-        num, freq = self.get_freqstr(freq)
-        offset = num * options[freq](t)
-        return offset
-
-    def get_freqstr(self, freqstr):
-        """Method to untangle the frequency string.
-
-        Parameters
-        ----------
-        freqstr: str
-            string with the frequency as defined by the pandas package,
-            possibly containing a numerical value.
-
-        Returns
-        -------
-        num: int
-            integer by which to multiply the frequency. 1 is returned if no
-            num is present in the string that has been provided.
-        freq: str
-            String with the frequency as defined by the pandas package.
-
-        """
-        # remove the day from the week
-        freqstr = freqstr.split("-", 1)[0]
-
-        # Find a number by which the frequency is multiplied
-        num = ''
-        freq = ''
-        for s in freqstr:
-            if s.isdigit():
-                num = num.__add__(s)
-            else:
-                freq = freq.__add__(s)
-        if num:
-            num = int(num)
-        else:
-            num = 1
-
-        return num, freq
 
     def get_contribution(self, name):
         if name not in self.tseriesdict.keys():
@@ -701,36 +612,6 @@ class Model:
         except KeyError:
             print("Name not in tseriesdict, available names are: %s"
                   % self.tseriesdict.keys())
-
-    def sample(self, series, tindex):
-        """Sample the series so that the frequency is not higher that tindex.
-
-        Parameters
-        ----------
-        series: pd.Series
-            pandas series object.
-        tindex: pd.index
-            Pandas index object
-
-        Returns
-        -------
-        series: pd.Series
-
-
-        Notes
-        -----
-        Find the index closest to the tindex, and then return a selection
-        of series
-
-        """
-        # f = interpolate.interp1d(series.index.asi8,
-        #                          np.arange(0, series.index.size),
-        #                          kind='nearest', bounds_error=False,
-        #                          fill_value='extrapolate')
-        # ind = np.unique(f(tindex.asi8).astype(int))
-        # return series[ind]
-        # return series.reindex(tindex, method='drop')
-
 
     def plot(self, tmin=None, tmax=None, oseries=True, simulate=True):
         """
