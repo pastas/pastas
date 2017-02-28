@@ -211,36 +211,41 @@ class Model:
         for ts in self.tseriesdict.values():
             c = ts.simulate(parameters[istart: istart + ts.nparam], sim_index,
                             dt)
-            h += c.values
+            h += c.values # no need to match on index, all tseries are on sim_index
             istart += ts.nparam
 
         if self.constant:
             h += self.constant.simulate(parameters[istart])
 
+        # convert to Pandas Series
         h = pd.Series(h, index=sim_index)
 
         return h.loc[tmin:]
 
     def residuals(self, parameters=None, tmin=None, tmax=None, freq=None,
                   h_observed=None, sample_method='nearest'):
-        """Calculate the residual series.
+        """Calculate residual series
 
         Parameters
         ----------
-        parameters: Optional[list]
-            Array of the parameters used in the time series model.
-        tmin: Optional[str]
-        tmax: Optional[str]
-        freq: Optional[str]
-            frequency at which the time series are simulated.
-        h_observed: Optional[pd.Series]
+        parameters : None, optional
+            Array of parameter values
+        tmin : None, optional
+            Description
+        tmax : None, optional
+            Description
+        freq : None, optional
+            Frequency at which the time series are simulated.
+        h_observed : None, optional
             Pandas series containing the observed values.
+        sample_method : str, optional
+            Sample method used for matching simulation to observations
+            before calculating residuals.
 
         Returns
         -------
-        res: pd.Series
-            Pandas series with the residuals series.
-
+        TYPE
+            Description
         """
         if freq is None:
             freq = self.freq
@@ -574,7 +579,20 @@ class Model:
         return parameters.values
 
     def get_dt(self, freq):
+        """Summary
+
+        Parameters
+        ----------
+        freq : str
+            Pandas frequency string
+
+        Returns
+        -------
+        float
+            Frequency time offset in decimal days
+        """
         offset = pd.tseries.frequencies.to_offset(freq)
+
         to_days = {
             'years': 365.25,
             'months': 30.5,
@@ -588,6 +606,8 @@ class Model:
         if not len(offset.kwds):
             return 1.
         else:
+            # day of the week is not a multiplier, set to 1.
+            offset.kwds['weekday'] = 1.
             return sum(n * to_days[u] for u, n in offset.kwds.items())
 
     def get_contribution(self, name):

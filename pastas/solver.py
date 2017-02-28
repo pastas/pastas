@@ -5,7 +5,10 @@ import numpy as np
 import pandas as pd
 
 def params_to_array(objfunc):
-    """Summary
+    """Objective function wrapper for lmfit.
+
+    Unpacking lmfit.Parameters object to array before passing to
+    objective function.
 
     Parameters
     ----------
@@ -15,7 +18,7 @@ def params_to_array(objfunc):
     Returns
     -------
     function
-        wrapped function converting parameters to array
+        wrapped objective function taking parameter values as array
     """
     def wrapper(parameters, *args, **kwargs):
         p = np.array([p.value for p in parameters.values()])
@@ -28,10 +31,10 @@ class Fit(object):
 
     Attributes
     ----------
-    optimal_params : TYPE
-        Description
-    report : TYPE
-        Description
+    optimal_params : np.array
+        Array with optimal parameter values
+    report : str
+        fit report string
     """
     def __init__(self, optimal_params, report):
         self.optimal_params = optimal_params
@@ -73,7 +76,7 @@ class LmfitSolve:
             self.parameters.add(param_name, **param_kwargs)
 
     def solve(self, objfunc, *objfunc_args, **objfunc_kwargs):
-        """Summary
+        """Solve using objective functions
 
         Parameters
         ----------
