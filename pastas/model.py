@@ -583,8 +583,9 @@ class Model:
             'hours': 1. / 24.,
             'minutes': 1. / 24. / 60.,
             'seconds': 1. / 24. / 60. / 60.,
+            'milliseconds': 1. / 24. / 60. / 60. * 1e-3,
             }
-        if not len(offset.kwds) > 0:
+        if not len(offset.kwds):
             return 1.
         else:
             return sum(n * to_days[u] for u, n in offset.kwds.items())
