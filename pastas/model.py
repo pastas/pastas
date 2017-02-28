@@ -222,7 +222,7 @@ class Model:
         return h.loc[tmin:]
 
     def residuals(self, parameters=None, tmin=None, tmax=None, freq=None,
-                  h_observed=None):
+                  h_observed=None, sample_method='nearest'):
         """Calculate the residual series.
 
         Parameters
@@ -251,9 +251,10 @@ class Model:
         simulated = self.simulate(parameters, tmin, tmax, freq)
 
         if h_observed is None:
-            h_observed = self.oseries.loc[tmin:tmax].asfreq(freq)
+            h_observed = self.oseries.loc[tmin:tmax]
             self.oseries_calib = h_observed
-        h_simulated = simulated.reindex_like(h_observed, method='nearest')
+        h_simulated = (simulated
+                       .reindex_like(h_observed, method=sample_method))
         res = h_observed - h_simulated
 
         return res.loc[tmin:].dropna()
@@ -301,7 +302,7 @@ class Model:
         v = self.noisemodel.simulate(res, self.odelt[res.index],
                                      parameters[-self.noisemodel.nparam:],
                                      res.index)
-        return v[tmin:]
+        return v.loc[tmin:]
 
     def observations(self, tmin=None, tmax=None):
         """Method that returns the observations series.
@@ -309,7 +310,7 @@ class Model:
         """
         tmin, tmax = self.get_tmin_tmax(tmin, tmax, use_oseries=True)
 
-        return self.oseries[tmin: tmax]
+        return self.oseries.loc[tmin: tmax]
 
     def initialize(self, initial=True, noise=True):
         """Initialize the model before solving.
@@ -477,8 +478,8 @@ class Model:
             freq = self.freq
 
         offset = pd.tseries.frequencies.to_offset(freq)
-        tmin = offset.rollforward(tmin)
-        tmax = offset.rollback(tmax)
+        tmin = offset.rollforward(tmin).normalize()
+        tmax = offset.rollback(tmax).normalize()
 
         assert tmax > tmin, \
             'Error: Specified tmax not larger than specified tmin'
@@ -574,8 +575,19 @@ class Model:
 
     def get_dt(self, freq):
         offset = pd.tseries.frequencies.to_offset(freq)
-        dt = pd.to_timedelta(offset) / np.timedelta64(1, 'D')
-        return dt
+        to_days = {
+            'years': 365.25,
+            'months': 30.5,
+            'weekday': 7.,
+            'days': 1.,
+            'hours': 1. / 24.,
+            'minutes': 1. / 24. / 60.,
+            'seconds': 1. / 24. / 60. / 60.,
+            }
+        if not len(offset.kwds) > 0:
+            return 1.
+        else:
+            return sum(n * to_days[u] for u, n in offset.kwds.items())
 
     def get_contribution(self, name):
         if name not in self.tseriesdict.keys():
