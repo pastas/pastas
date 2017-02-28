@@ -389,9 +389,8 @@ class Model:
         objfunc_kwargs= {'tmin': self.tmin, 'tmax': self.tmax,
             'noise': noise, 'freq': self.freq}
 
-        fit = solver.solve(objfunc, self, **objfunc_kwargs)
+        self.fit = solver.solve(objfunc, self, **objfunc_kwargs)
 
-        self.fit = fit.fit
         self.parameters.optimal = fit.optimal_params
         self.report = fit.report
         if report: print(self.report)
