@@ -50,7 +50,7 @@ class Model:
                      np.timedelta64(1, 'D')
 
         self.warmup = warmup
-        self.freq = None
+        self.freq = 'D'
         self.time_offset = pd.to_timedelta(0)
 
         self.parameters = pd.DataFrame(
@@ -439,13 +439,18 @@ class Model:
 
         """
         # Get tmin and tmax from the tseries
-        ts_tmin = pd.Timestamp.max
-        ts_tmax = pd.Timestamp.min
-        for tseries in self.tseriesdict.values():
-            if tseries.tmin < ts_tmin:
-                ts_tmin = tseries.tmin
-            if tseries.tmax > ts_tmax:
-                ts_tmax = tseries.tmax
+        if self.tseriesdict:
+            ts_tmin = pd.Timestamp.max
+            ts_tmax = pd.Timestamp.min
+            for tseries in self.tseriesdict.values():
+                if tseries.tmin < ts_tmin:
+                    ts_tmin = tseries.tmin
+                if tseries.tmax > ts_tmax:
+                    ts_tmax = tseries.tmax
+        else:
+            # for when there are no tseries, use the osseries, regardless of use_oseries:
+            ts_tmin = self.oseries.index.min()
+            ts_tmax = self.oseries.index.max()
 
         # Set tmin properly
         if not tmin and not use_oseries:
@@ -522,15 +527,21 @@ class Model:
                 time_offsets.add(time_offset)
 
         # 1. The frequency should be the same for all tseries
-        assert len(freqs) == 1, 'The frequency of the tseries is not the ' \
+        assert len(freqs) <= 1, 'The frequency of the tseries is not the ' \
                                 'same for all stresses.'
-        self.freq = next(iter(freqs))
+        if len(freqs)==1:
+            self.freq = next(iter(freqs))
+        else:
+            self.freq = 'D'
 
         # 2. tseries timestamps should match (e.g. similar hours')
         assert len(
-            time_offsets) == 1, 'The time-differences with the default frequency is' \
+            time_offsets) <= 1, 'The time-differences with the default frequency is' \
                                 ' not the same for all stresses.'
-        self.time_offset = next(iter(time_offsets))
+        if len(time_offsets) == 1:
+            self.time_offset = next(iter(time_offsets))
+        else:
+            self.time_offset = datetime.timedelta(0)
 
     def get_init_parameters(self, noise=True):
         """Method to get all initial parameters from the individual objects.
