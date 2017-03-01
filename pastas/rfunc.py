@@ -98,7 +98,9 @@ class Gamma(RfuncBase):
             t = dt
         else:
             self.tmax = gammaincinv(p[1], self.cutoff) * p[2]
+            self.tmax = max(self.tmax, 3 * dt)
             t = np.arange(dt, self.tmax, dt)
+
         s = self.up * p[0] * gammainc(p[1], t / p[2])
         return s
 
@@ -134,6 +136,7 @@ class Exponential(RfuncBase):
             t = dt
         else:
             self.tmax = -np.log(1.0 / p[1]) * p[1]
+            self.tmax = max(self.tmax, 3 * dt)
             t = np.arange(dt, self.tmax, dt)
         s = self.up * p[0] * (1.0 - np.exp(-t / p[1]))
         return s
@@ -193,8 +196,7 @@ class Hantush(RfuncBase):
         else:
             # approximate formula for tmax
             self.tmax = lambertw(1 / ((1 - self.cutoff) * k0rho)).real * cS
-            if self.tmax < 3 * dt:
-                self.tmax = 3 * dt
+            self.tmax = max(self.tmax, 3 * dt)
             t = np.arange(dt, self.tmax, dt)
         tau = t / cS
         tau1 = tau[tau < rho / 2]
@@ -245,6 +247,7 @@ class Theis(RfuncBase):
             t = dt
         else:
             self.tmax = 10000  # This should be changed with some analytical expression
+            self.tmax = max(self.tmax, 3 * dt)
             t = np.arange(dt, self.tmax, dt)
         r = p[2]
         u = r ** 2.0 * p[0] / (4.0 * p[1] * t)
@@ -289,6 +292,7 @@ class Bruggeman(RfuncBase):
             t = dt
         else:
             self.tmax = 4 * p[0] / p[1] ** 2
+            self.tmax = max(self.tmax, 3 * dt)
             t = np.arange(dt, self.tmax, dt)
         s = self.up * p[2] * self.polder_function(p[0], p[1] * np.sqrt(t))
         return s
