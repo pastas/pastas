@@ -154,7 +154,8 @@ class Plotting():
             f, axarr = plt.subplots(1 + len(self.ml.tseriesdict), sharex=True,
                                     gridspec_kw={
                                         'height_ratios': height_ratios})
-
+            if type(axarr)!=list:
+                axarr=[axarr]
         # plot simulation and observations in top graph
         plt.axes(axarr[0])
         self.ml.oseries.plot(linestyle='', marker='.', color='k', markersize=3,
