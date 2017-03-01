@@ -688,7 +688,7 @@ class Model:
 
         return num, freq
 
-    def get_contribution(self, name):
+    def get_contribution(self, name, tindex = None):
         if name not in self.tseriesdict.keys():
             warn("Name not in tseriesdict, available names are: %s"
                  % self.tseriesdict.keys())
@@ -696,7 +696,7 @@ class Model:
         else:
             p = self.get_parameters(name)
             dt = self.get_dt(self.freq)
-            return self.tseriesdict[name].simulate(p, dt=dt)
+            return self.tseriesdict[name].simulate(p, tindex=tindex, dt=dt)
 
     def get_block_response(self, name):
         if name not in self.tseriesdict.keys():

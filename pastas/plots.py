@@ -132,14 +132,8 @@ class Plotting():
         h = [hsim]
 
         # determine the influence of the different stresses
-        parameters = self.ml.parameters.optimal.values
-        istart = 0  # Track parameters index to pass to ts object
         for ts in self.ml.tseriesdict.values():
-            dt = self.ml.get_dt(self.ml.freq)
-            h.append(
-                ts.simulate(parameters[istart: istart + ts.nparam], tindex,
-                            dt))
-            istart += ts.nparam
+            h.append(self.ml.get_contribution(ts.name, tindex=tindex))
 
         # open the figure
         if False:
@@ -154,8 +148,8 @@ class Plotting():
             f, axarr = plt.subplots(1 + len(self.ml.tseriesdict), sharex=True,
                                     gridspec_kw={
                                         'height_ratios': height_ratios})
-            if type(axarr)!=list:
-                axarr=[axarr]
+            axarr = np.atleast_1d(axarr)
+
         # plot simulation and observations in top graph
         plt.axes(axarr[0])
         self.ml.oseries.plot(linestyle='', marker='.', color='k', markersize=3,
