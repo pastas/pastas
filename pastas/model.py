@@ -218,7 +218,7 @@ class Model:
         if self.constant:
             h += self.constant.simulate(parameters[istart])
 
-        return h[tmin:]
+        return h
 
     def residuals(self, parameters=None, tmin=None, tmax=None, freq=None,
                   h_observed=None):
@@ -252,6 +252,7 @@ class Model:
         if h_observed is None:
             h_observed = self.oseries[tmin: tmax]
             # sample measurements, so that frequency is not higher than model
+            # keep the original timestamps, as they will be used during interpolation of the simulation
             h_observed = self.sample(h_observed, simulation.index)
             # store this variable in the model, so that it can be used in the
             # next iteration of the solver
@@ -271,7 +272,7 @@ class Model:
 
         if np.isnan(sum(res ** 2)):
             print('nan problem in residuals')  # quick and dirty check
-        return res[tmin:]
+        return res
 
     def innovations(self, parameters=None, tmin=None, tmax=None, freq=None,
                     h_observed=None):
@@ -316,7 +317,7 @@ class Model:
         v = self.noisemodel.simulate(res, self.odelt[res.index],
                                      parameters[-self.noisemodel.nparam:],
                                      res.index)
-        return v[tmin:]
+        return v
 
     def observations(self, tmin=None, tmax=None):
         """Method that returns the observations series.
@@ -324,7 +325,7 @@ class Model:
         """
         tmin, tmax = self.get_tmin_tmax(tmin, tmax, use_oseries=True)
 
-        return self.oseries[tmin: tmax]
+        return self.oseries.loc[tmin: tmax]
 
     def initialize(self, initial=True, noise=True):
         """Initialize the model before solving.
@@ -371,7 +372,7 @@ class Model:
             Print a report to the screen after optimization finished.
         noise: Boolean
             Use the noise model (True) or not (False).
-        initialize: Boolean
+        initial: Boolean
             Reset initial parameters.
 
         """

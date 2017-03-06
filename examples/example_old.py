@@ -10,7 +10,7 @@ fname = 'data/B32D0136001_1.csv'
 obs = read.dinodata(fname)
 
 # Create the time series model
-ml = Model(obs.series)
+ml = Model(obs.series/100.0)
 
 # read climate data
 fname = 'data/KNMI_Bilt.txt'

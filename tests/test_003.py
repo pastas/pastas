@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 
 def test_examples():
     # run all the examples in the following folders
-    # pathnames = ['examples', 'examples/reads']
-    pathnames = ['examples/reads']
+    pathnames = ['examples', 'examples/reads']
+    # pathnames = ['examples/reads']
     cwd = os.getcwd()
     # Turn interactive mode on, so that the figures do not block the main thread
     plt.ion()

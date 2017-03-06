@@ -173,40 +173,6 @@ class Tseries(TseriesBase):
             h = h[tindex]
         return h
 
-    def simulate2(self, p, tindex=None, dt=0):
-        """ Simulates the head contribution, without convolution.
-
-        Parameters
-        ----------
-        p: 1D array
-           Parameters used for simulation.
-        tindex: Optional[Pandas time series]
-           Time indices to simulate the model.
-
-        Returns
-        -------
-        Pandas Series Object
-            The simulated head contribution.
-
-        """
-        h = pd.Series(0, tindex, name=self.name)
-        stress = self.stress.diff()
-        if self.stress.values[0] != 0:
-            stress = stress.set_value(stress.index[0] - (stress.index[1] - stress.index[0]), stress.columns, 0)
-            stress = stress.sort_index()
-        # set the index at the beginning of each step
-        stress = stress.shift(-1).dropna()
-        # remove steps that do not change
-        stress = stress.loc[~(stress == 0).all(axis=1)]
-        # tmax = self.rfunc.calc_tmax(p)
-        for i in stress.index:
-            erin = (h.index > i)  # & ((h.index-i).days<tmax)
-            if any(erin):
-                r = stress.loc[i][0] * self.rfunc.step(p, (h.index[erin] - i).days)
-                h[erin] += r
-                # h[np.invert(erin) & (h.index > i)] = r[-1]
-        return h
-
 
 class Tseries2(TseriesBase):
     """
@@ -539,6 +505,89 @@ class TseriesStep(TseriesBase):
         h = pd.Series(0, tindex)
         td = tindex - pd.Timestamp(p[-1])
         h[td.days > 0] = self.rfunc.step(p[:-1], td[td.days > 0].days)
+        return h
+
+
+class TseriesNoConv(TseriesBase):
+    """
+    Time series model consisting of the calculation of one stress with one
+    response function, without the use of convolution (so it is slooooow)
+
+    Parameters
+    ----------
+    stress: pd.Series
+        pandas Series object containing the stress.
+    rfunc: rfunc class
+        Response function used in the convolution with the stess.
+    name: str
+        Name of the stress
+    metadata: Optional[dict]
+        dictionary containing metadata about the stress.
+    xy: Optional[tuple]
+        XY location in lon-lat format used for making maps.
+    freq: Optional[str]
+        Frequency to which the stress series are transformed. By default,
+        the frequency is inferred from the data and that frequency is used.
+        The required string format is found
+        at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset
+        -aliases
+    fillnan: Optional[str or float]
+        Methods or float number to fill nan-values. Default values is
+        'mean'. Currently supported options are: 'interpolate', float,
+        and 'mean'. Interpolation is performed with a standard linear
+        interpolation.
+
+    """
+
+    def __init__(self, stress, rfunc, name, metadata=None, xy=(0, 0),
+                 freq=None, fillnan='mean', up=True, cutoff=0.99):
+        stress = check_tseries(stress, freq, fillnan, name=name)
+        TseriesBase.__init__(self, rfunc, name, xy, metadata,
+                             stress.index.min(), stress.index.max(),
+                             up, stress.mean(), cutoff)
+        self.freq = stress.index.freqstr
+        self.stress[name] = stress
+        self.set_init_parameters()
+
+    def set_init_parameters(self):
+        """
+        Set the initial parameters (back) to their default values.
+
+        """
+        self.parameters = self.rfunc.set_parameters(self.name)
+
+    def simulate(self, p, tindex=None, dt=None):
+        """ Simulates the head contribution, without convolution.
+
+        Parameters
+        ----------
+        p: 1D array
+           Parameters used for simulation.
+        tindex: Optional[Pandas time series]
+           Time indices to simulate the model.
+
+        Returns
+        -------
+        Pandas Series Object
+            The simulated head contribution.
+
+        """
+        h = pd.Series(0, tindex, name=self.name)
+        stress = self.stress.diff()
+        if self.stress.values[0] != 0:
+            stress = stress.set_value(stress.index[0] - (stress.index[1] - stress.index[0]), stress.columns, 0)
+            stress = stress.sort_index()
+        # set the index at the beginning of each step
+        stress = stress.shift(-1).dropna()
+        # remove steps that do not change
+        stress = stress.loc[~(stress == 0).all(axis=1)]
+        # tmax = self.rfunc.calc_tmax(p)
+        for i in stress.index:
+            erin = (h.index > i)  # & ((h.index-i).days<tmax)
+            if any(erin):
+                r = stress.loc[i][0] * self.rfunc.step(p, (h.index[erin] - i).days)
+                h[erin] += r
+                # h[np.invert(erin) & (h.index > i)] = r[-1]
         return h
 
 

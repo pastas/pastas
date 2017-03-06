@@ -28,22 +28,26 @@ ml.add_tseries(ts)
 IN = meny.IN['Extraction 1']
 # extraction amount counts for the previous month
 IN['values'] = IN['values'].resample(freq).bfill().dropna()
-ts = Tseries(IN['values'], Gamma, 'Extraction_1', up=False)
+ts = Tseries(IN['values'], Hantush, 'Extraction_1', up=False)
 ml.add_tseries(ts)
-#
+
 # Add well extraction 2
 IN = meny.IN['Extraction 2']
 # extraction amount counts for the previous month
 IN['values'] = IN['values'].resample(freq).bfill().dropna()
-ts = Tseries(IN['values'], Gamma, 'Extraction_2', up=False)
+ts = Tseries(IN['values'], Hantush, 'Extraction_2', up=False)
 ml.add_tseries(ts)
-#
+
 # Add well extraction 3
 IN = meny.IN['Extraction 3']
 # extraction amount counts for the previous month
 IN['values'] = IN['values'].resample(freq).bfill().dropna()
-ts = Tseries(IN['values'], Gamma, 'Extraction_3', up=False)
+ts = Tseries(IN['values'], Hantush, 'Extraction_3', up=False)
 ml.add_tseries(ts)
+
+# replace extraction 3 by a step-function, to test the step-tseries
+# ts = TseriesStep(pd.Timestamp(1970,1,1), 'step', rfunc=Gamma, up=False)
+# ml.add_tseries(ts)
 
 # Add noise model
 n = NoiseModel()
