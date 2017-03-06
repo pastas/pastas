@@ -706,7 +706,9 @@ class Model:
         else:
             p = self.get_parameters(name)
             dt = self.get_dt(self.freq)
-            return self.tseriesdict[name].rfunc.block(p, dt)
+            b = self.tseriesdict[name].rfunc.block(p, dt)
+            t = np.arange(0, (len(b)) * dt, dt)
+            return pd.Series(b, index=t, name=name)
 
     def get_step_response(self, name):
         if name not in self.tseriesdict.keys():
@@ -716,7 +718,9 @@ class Model:
         else:
             p = self.get_parameters(name)
             dt = self.get_dt(self.freq)
-            return self.tseriesdict[name].rfunc.step(p, dt)
+            s = self.tseriesdict[name].rfunc.step(p, dt)
+            t = np.arange(0, (len(s)) * dt, dt)
+            return pd.Series(s, index=t, name=name)
 
     def get_stress(self, name):
         try:
