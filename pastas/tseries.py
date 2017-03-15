@@ -262,7 +262,8 @@ class Tseries2(TseriesBase):
         h = pd.Series(
             fftconvolve(
                 self.stress["stress0"] + p[-1] * self.stress["stress1"],
-                b, 'full')[:self.npoints], index=self.stress.index)
+                b, 'full')[:self.npoints], index=self.stress.index,
+            name=self.name)
         if tindex is not None:
             h = h[tindex]
         return h
@@ -469,7 +470,7 @@ class Well(TseriesBase):
         self.parameters = self.rfunc.set_parameters(self.name)
 
     def simulate(self, p=None, tindex=None, dt=1):
-        h = pd.Series(data=0, index=self.stress[0].index)
+        h = pd.Series(data=0, index=self.stress[0].index, name=self.name)
         for i in self.stress:
             self.npoints = self.stress.index.size
             b = self.rfunc.block(p, self.r[i])  # nparam-1 depending on rfunc
@@ -502,7 +503,7 @@ class TseriesStep(TseriesBase):
 
     def simulate(self, p, tindex=None, dt=1):
         assert tindex is not None, 'Error: Need an index'
-        h = pd.Series(0, tindex)
+        h = pd.Series(0, tindex, name=self.name)
         td = tindex - pd.Timestamp(p[-1])
         h[td.days > 0] = self.rfunc.step(p[:-1], td[td.days > 0].days)
         return h
@@ -575,7 +576,9 @@ class TseriesNoConv(TseriesBase):
         h = pd.Series(0, tindex, name=self.name)
         stress = self.stress.diff()
         if self.stress.values[0] != 0:
-            stress = stress.set_value(stress.index[0] - (stress.index[1] - stress.index[0]), stress.columns, 0)
+            stress = stress.set_value(
+                stress.index[0] - (stress.index[1] - stress.index[0]),
+                stress.columns, 0)
             stress = stress.sort_index()
         # set the index at the beginning of each step
         stress = stress.shift(-1).dropna()
@@ -585,7 +588,8 @@ class TseriesNoConv(TseriesBase):
         for i in stress.index:
             erin = (h.index > i)  # & ((h.index-i).days<tmax)
             if any(erin):
-                r = stress.loc[i][0] * self.rfunc.step(p, (h.index[erin] - i).days)
+                r = stress.loc[i][0] * self.rfunc.step(p, (
+                h.index[erin] - i).days)
                 h[erin] += r
                 # h[np.invert(erin) & (h.index > i)] = r[-1]
         return h
@@ -704,7 +708,7 @@ class NoiseModel:
         Pandas Series
             Series of the innovations.
         """
-        innovations = pd.Series(res, index=res.index)
+        innovations = pd.Series(res, index=res.index, name="Innovations")
         # weights of innovations, see Eq. A17 in reference [1]
         power = (1.0 / (2.0 * (len(delt) - 1)))
         w = np.exp(power * np.sum(np.log(1 - np.exp(-2 * delt[1:] / p)))) / \
