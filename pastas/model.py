@@ -76,6 +76,7 @@ class Model:
         # Load other modules
         self.stats = Statistics(self)
         self.plots = Plotting(self)
+        self.plot = self.plots.plot # because we are lazy
 
     def add_tseries(self, tseries):
         """Adds a time series component to the model.
@@ -220,8 +221,7 @@ class Model:
 
         return h
 
-    def residuals(self, parameters=None, tmin=None, tmax=None, freq=None,
-                  h_observed=None):
+    def residuals(self, parameters=None, tmin=None, tmax=None, freq=None):
         """Calculate the residual series.
 
         Parameters
@@ -249,14 +249,10 @@ class Model:
         # simulate model
         simulation = self.simulate(parameters, tmin, tmax, freq)
 
-        if h_observed is None:
-            h_observed = self.oseries[tmin: tmax]
-            # sample measurements, so that frequency is not higher than model
-            # keep the original timestamps, as they will be used during interpolation of the simulation
-            h_observed = self.sample(h_observed, simulation.index)
-            # store this variable in the model, so that it can be used in the
-            # next iteration of the solver
-            self.oseries_calib = h_observed
+        if self.oseries_calib is None:
+            h_observed = self.get_h_observed(tmin,tmax,simulation.index)
+        else:
+            h_observed = self.oseries_calib
 
         obs_index = h_observed.index  # times used for calibration
 
@@ -274,8 +270,14 @@ class Model:
             print('nan problem in residuals')  # quick and dirty check
         return res
 
-    def innovations(self, parameters=None, tmin=None, tmax=None, freq=None,
-                    h_observed=None):
+    def get_h_observed(self, tmin, tmax, sim_index):
+        h_observed = self.oseries[tmin: tmax]
+        # sample measurements, so that frequency is not higher than model
+        # keep the original timestamps, as they will be used during interpolation of the simulation
+        h_observed = self.sample(h_observed, sim_index)
+        return h_observed
+
+    def innovations(self, parameters=None, tmin=None, tmax=None, freq=None):
         """Method to simulate the innovations when a noisemodel is present.
 
         Parameters
@@ -311,7 +313,7 @@ class Model:
             parameters = self.get_parameters()
 
         # Calculate the residuals
-        res = self.residuals(parameters, tmin, tmax, freq, h_observed)
+        res = self.residuals(parameters, tmin, tmax, freq)
 
         # Calculate the innovations
         v = self.noisemodel.simulate(res, self.odelt[res.index],
@@ -345,7 +347,8 @@ class Model:
             optimal = self.parameters.optimal
 
         # make sure calibration data is renewed
-        self.oseries_calib = None
+        sim_index = pd.date_range(self.tmin, self.tmax, freq=self.freq)
+        self.oseries_calib = self.get_h_observed(self.tmin,self.tmax,sim_index)
 
         # Set initial parameters
         self.parameters = self.get_init_parameters(noise=noise)
@@ -392,6 +395,9 @@ class Model:
         # Solve model
         fit = solver(self, tmin=self.tmin, tmax=self.tmax, noise=noise,
                      freq=self.freq)
+
+        # make calibration data empty again
+        self.oseries_calib = None
 
         self.fit = fit.fit
         self.parameters.optimal = fit.optimal_params
@@ -759,18 +765,3 @@ class Model:
                                  fill_value='extrapolate')
         ind = np.unique(f(tindex.asi8).astype(int))
         return series[ind]
-
-    def plot(self, tmin=None, tmax=None, oseries=True, simulate=True):
-        """
-
-        Parameters
-        ----------
-        oseries: Boolean
-            True to plot the observed time series.
-
-        Returns
-        -------
-        Plot of the simulated and optionally the observed time series
-
-        """
-        self.plots.plot(tmin, tmax, oseries, simulate)

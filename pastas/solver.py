@@ -42,11 +42,9 @@ class LeastSquares:
 
     def objfunction(self, parameters, tmin, tmax, noise, model, freq):
         if noise:
-            return model.innovations(parameters, tmin, tmax, freq,
-                                     model.oseries_calib)
+            return model.innovations(parameters, tmin, tmax, freq)
         else:
-            return model.residuals(parameters, tmin, tmax, freq,
-                                   model.oseries_calib)
+            return model.residuals(parameters, tmin, tmax, freq)
 
 
 class LmfitSolve:
@@ -68,9 +66,9 @@ class LmfitSolve:
     def objfunction(self, parameters, tmin, tmax, noise, model, freq):
         p = np.array([p.value for p in parameters.values()])
         if noise:
-            return model.innovations(p, tmin, tmax, freq, model.oseries_calib)
+            return model.innovations(p, tmin, tmax, freq)
         else:
-            return model.residuals(p, tmin, tmax, freq, model.oseries_calib)
+            return model.residuals(p, tmin, tmax, freq)
 
 
 from scipy.optimize import differential_evolution
@@ -87,27 +85,21 @@ class DESolve:
         self.vary = self.model.parameters.vary.values.astype('bool')
         self.pmin = self.model.parameters.pmin.values[self.vary]
         self.pmax = self.model.parameters.pmax.values[self.vary]
-        result = differential_evolution(self.objfunction,
+        self.fit = differential_evolution(self.objfunction,
                                         zip(self.pmin, self.pmax))
         self.optimal_params = self.model.parameters.initial.values
-        self.optimal_params[self.vary] = result.values()[3]
-        self.report = str(result)
+        self.optimal_params[self.vary] = self.fit.values()[3]
+        self.report = str(self.fit)
 
     def objfunction(self, parameters):
         print('.'),
         self.parameters[self.vary] = parameters
-        res = self.model.residuals(self.parameters, tmin=self.tmin,
-                                   tmax=self.tmax, freq=self.freq,
-                                   noise=self.noise,
-                                   h_observed=self.model.oseries_calib)
 
         if self.noise:
             res = self.model.innovations(self.parameters, tmin=self.tmin,
-                                         tmax=self.tmax, freq=self.freq,
-                                         h_observed=self.model.oseries_calib)
+                                         tmax=self.tmax, freq=self.freq)
         else:
             res = self.model.residuals(self.parameters, tmin=self.tmin,
-                                       tmax=self.tmax, freq=self.freq,
-                                       h_observed=self.model.oseries_calib)
+                                       tmax=self.tmax, freq=self.freq)
 
         return sum(res ** 2)
