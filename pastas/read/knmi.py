@@ -51,6 +51,9 @@ class knmidata(DataModel):
                     "the following keys: %s" % (variable, knmi.data.keys()))
         else:
             self.series = knmi.data[variable]
+            # get rid of the hours when data is daily
+            if pd.infer_freq(self.series.index) is 'D':
+                self.series.index = self.series.index.normalize()
 
         if knmi.stations is not None and not knmi.stations.empty:
             self.x = knmi.stations['LAT_north'][0]
@@ -212,8 +215,20 @@ class KnmiStation:
 
         # convert the hours if provided
         if 'HH' in data.keys():
+            # hourly data, Hourly division 05 runs from 04.00 UT to 5.00 UT
             data.index = data.index + pd.to_timedelta(data['HH'], unit='h')
             data.pop('HH')
+        else:
+            # daily data, add a full day for meteorologiscal data
+            if 'RD' in data.keys():
+                # daily precipitation amount in 0.1 mm over the period 08.00 preceding day - 08.00 UTC present day
+                data.index = data.index + pd.to_timedelta(8, unit='h')
+            else:
+                # add a full day for meteorologiscal data, so that the timestamp is at the end of the period that the data represenets
+                data.index = data.index + pd.to_timedelta(1, unit='d')
+
+        # from UT to UT+1 (standard-time in the Netherlands)
+        data.index = data.index + pd.to_timedelta(1, unit='h')
 
         # Delete empty columns
         if '' in data.columns:
