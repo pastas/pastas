@@ -219,7 +219,7 @@ class KnmiStation:
             data.index = data.index + pd.to_timedelta(data['HH'], unit='h')
             data.pop('HH')
         else:
-            # daily data, add a full day for meteorologiscal data
+            # daily data
             if 'RD' in data.keys():
                 # daily precipitation amount in 0.1 mm over the period 08.00 preceding day - 08.00 UTC present day
                 data.index = data.index + pd.to_timedelta(8, unit='h')
