@@ -52,7 +52,7 @@ class knmidata(DataModel):
         else:
             self.series = knmi.data[variable]
             # get rid of the hours when data is daily
-            if pd.infer_freq(self.series.index) is 'D':
+            if pd.infer_freq(self.series.index) == 'D':
                 self.series.index = self.series.index.normalize()
 
         if knmi.stations is not None and not knmi.stations.empty:
