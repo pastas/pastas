@@ -8,8 +8,8 @@ Pypi            .. image:: https://img.shields.io/pypi/v/pastas.svg
                     :target: https://pypi.python.org/pypi/pastas
 License         .. image:: https://img.shields.io/pypi/l/pastas.svg
                     :target: https://mit-license.org/
-Latest Release  .. image:: https://img.shields.io/github/release/qubyte/pastas.svg
-                    :target: https://pypi.python.org/pypi/pastas
+Latest Release  .. image:: https://img.shields.io/github/release/pastas/pastas.svg
+                    :target: https://github.com/pastas/pastas/releases
 ==============  ==================================================================
 
 Pastas: what is it?
