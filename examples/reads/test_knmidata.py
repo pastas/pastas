@@ -5,7 +5,7 @@
 """
 from datetime import datetime
 import matplotlib.pyplot as plt
-from pastas.read.knmidata import KnmiStation
+from pastas.read.knmi import KnmiStation
 
 # How to use it?
 # data from a meteorological station

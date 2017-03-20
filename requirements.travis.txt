@@ -1,0 +1,11 @@
+numpy>=1.9
+
+matplotlib>=1.4
+
+lmfit>=0.9
+
+pandas>=0.15
+
+scipy>=0.15
+
+statsmodels>=0.5

@@ -60,6 +60,14 @@ pastas.tseries module
     :undoc-members:
     :show-inheritance:
 
+pastas.version module
+---------------------
+
+.. automodule:: pastas.version
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------

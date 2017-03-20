@@ -1,22 +1,18 @@
-"""
-checks module
-    This module is used to check the time series.
+"""This module is used to check the time series.
 
 """
+from __future__ import print_function, division
+
 import pandas as pd
 
 
-def check_oseries(oseries, freq, fillnan='drop'):
+def check_oseries(oseries, fillnan='drop'):
     """Check the observed time series before running a simulation.
 
     Parameters
     ----------
     oseries: pd.Series
         Pandas series object containing the observed time series.
-    freq: optional[str]
-        String containing the desired frequency. The required string format is found
-        at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset
-        -aliases
     fillnan: optional[str or float]
         Methods or float number to fill nan-values. Default values is
         'drop'. Currently supported options are: 'interpolate', float,
@@ -36,14 +32,11 @@ def check_oseries(oseries, freq, fillnan='drop'):
     oseries = oseries.loc[oseries.first_valid_index():oseries.last_valid_index(
     )].copy(deep=True)
 
-    # Deal with frequency of the time series
-    if freq:
-        oseries = oseries.resample(freq)
-
     # Handle nan-values in oseries
     if oseries.hasnans:
-        print('%i nan-value(s) in the oseries was/were found and handled/filled '
-              'with: %s' % (oseries.isnull().values.sum(), fillnan))
+        print(
+            '%i nan-value(s) in the oseries was/were found and handled/filled '
+            'with: %s' % (oseries.isnull().values.sum(), fillnan))
         if fillnan == 'drop':
             oseries.dropna(inplace=True)  # Default option
         elif fillnan == 'mean':
@@ -53,12 +46,14 @@ def check_oseries(oseries, freq, fillnan='drop'):
         elif type(fillnan) == float:
             oseries.fillna(fillnan, inplace=True)
         else:
-            print('User-defined option for fillnan %s isinstance() not supported'
-                  % fillnan)
+            print(
+                'User-defined option for fillnan %s isinstance() not supported'
+                % fillnan)
 
     # Drop dubplicate indexes
     if not oseries.index.is_unique:
-        print('duplicate time-indexes were found in the oseries. Values were averaged.')
+        print(
+            'duplicate time-indexes were found in the oseries. Values were averaged.')
         grouped = oseries.groupby(level=0)
         oseries = grouped.mean()
 
@@ -97,12 +92,16 @@ def check_tseries(stress, freq, fillnan, name=''):
     stress = stress.loc[stress.first_valid_index():stress.last_valid_index(
     )].copy(deep=True)
 
+    # Make sure the indices are Timestamps
+    stress.index = pd.to_datetime(stress.index)
+
     # Make frequency of the stress series constant
     if freq:
         stress = stress.asfreq(freq)
     else:
         freq = pd.infer_freq(stress.index)
-        print('Inferred frequency from time series %s: freq=%s ' % (name, freq))
+        print(
+            'Inferred frequency from time series %s: freq=%s ' % (name, freq))
         stress = stress.asfreq(freq)
 
     # Handle nan-values in stress series
@@ -116,7 +115,8 @@ def check_tseries(stress, freq, fillnan, name=''):
         elif type(fillnan) == float:
             stress.fillna(fillnan, inplace=True)
         else:
-            print('User-defined option for fillnan %s isinstance() not supported'
-            % fillnan)
+            print(
+                'User-defined option for fillnan %s isinstance() not supported'
+                % fillnan)
 
     return stress

@@ -1,5 +1,3 @@
-import numpy as np
-
 """
 This python script can be used to solve the differential equations that are used
 for the root zone module. The output of the function is the soil state (how
@@ -41,13 +39,17 @@ http://repository.tudelft.nl/view/ir/uuid:baf4fc8c-6311-407c-b01f-c80a96ecd584/
 @author: Raoul Collenteur
 """
 
-"""-----------------------------------------------
-In this section the preferential flow model is defined. 
-dS/ Dt = Pe[t] * (1 - (Sr[t] / Srmax)**Beta)- Epu * min(1, Sr/0.5Srmax)
------------------------------------------------ """
+from __future__ import print_function, division
+
+import numpy as np
 
 
 def pref(t, P, E, Srmax=0.1, Beta=2.0, Imax=0.001, dt=1.0, solver=1):
+    """
+    In this section the preferential flow model is defined.
+    dS/ Dt = Pe[t] * (1 - (Sr[t] / Srmax)**Beta)- Epu * min(1, Sr/0.5Srmax)
+    """
+
     n = int(len(t) / dt)
     error = 1.0e-5
 
@@ -70,9 +72,11 @@ def pref(t, P, E, Srmax=0.1, Beta=2.0, Imax=0.001, dt=1.0, solver=1):
         Pe[t + 1] = np.max(
             [0.0, Si[t + 1] - Imax])  # Calculate effective precipitation
         Si[t + 1] = Si[t + 1] - Pe[t + 1]
-        Ei[t + 1] = np.min([Si[t + 1], E[t + 1]])  # Evaporation from intercEpution
+        Ei[t + 1] = np.min(
+            [Si[t + 1], E[t + 1]])  # Evaporation from intercEpution
         Si[t + 1] = Si[t + 1] - Ei[t + 1]  # Update intercEpution state
-        Epu[t + 1] = E[t + 1] - Ei[t + 1]  # Update potential evapotranspiration
+        Epu[t + 1] = E[t + 1] - Ei[
+            t + 1]  # Update potential evapotranspiration
 
         Last_S = S[t]
         iteration = 0
@@ -92,13 +96,15 @@ def pref(t, P, E, Srmax=0.1, Beta=2.0, Imax=0.001, dt=1.0, solver=1):
                 iteration += 1
                 Last_S = S[t + 1]
 
-                g = Last_S - S[t] - dt * (Pe[t] * (1 - (Last_S / Srmax) ** Beta) -
-                                          Epu[t] * np.min([1.0, (Last_S / (0.5 *
-                                                                           Srmax))]))
+                g = Last_S - S[t] - dt * (
+                    Pe[t] * (1 - (Last_S / Srmax) ** Beta) -
+                    Epu[t] * np.min([1.0, (Last_S / (0.5 *
+                                                     Srmax))]))
                 # Derivative dEpuends on the state of the system
                 if Last_S > (0.5 * Srmax):
-                    g_derivative = 1.0 - dt * (-Beta * Pe[t] * (Last_S / Srmax) **
-                                               (Beta - 1))
+                    g_derivative = 1.0 - dt * (
+                        -Beta * Pe[t] * (Last_S / Srmax) **
+                        (Beta - 1))
                 else:
                     g_derivative = 1.0 - dt * (-Beta * Pe[t] * (Last_S / Srmax)
                                                ** (Beta - 1) - Epu[t] * (
@@ -120,21 +126,26 @@ def pref(t, P, E, Srmax=0.1, Beta=2.0, Imax=0.001, dt=1.0, solver=1):
 
                 while ((b - a) / 2.0) > error:
                     if iteration > 100:
-                        print('iteration in bisection method exceeded 100', iteration)
+                        print('iteration in bisection method exceeded 100',
+                              iteration)
                         break
                     iteration += 1  # increase the number of iterations by 1
 
                     if (c - S[t] - dt * (
-                                    Pe[t] * (1 - (c / Srmax) ** Beta) - Epu[t] *
+                                    Pe[t] * (1 - (c / Srmax) ** Beta) - Epu[
+                                t] *
                                 np.min([1.0, (c / (0.5 * Srmax))]))) == 0.0:
                         return c  # Return the current value if it is correct
                     elif (a - S[t] - dt * (
                                     Pe[t] * (1 - (a / Srmax) ** Beta) - Epu[t]
                                 * np.min([1.0, (a / (0.5 * Srmax))]))) * (
                                     c - S[t] - dt * (
-                                            Pe[t] * (1 - (c / Srmax) ** Beta) - Epu[
-                                        t] *
-                                        np.min([1.0, (c / (0.5 * Srmax))]))) > 0.0:
+                                            Pe[t] * (1 - (c / Srmax) ** Beta) -
+                                            Epu[
+                                                t] *
+                                            np.min([1.0, (
+                                                        c / (
+                                                        0.5 * Srmax))]))) > 0.0:
                         b = c
                     else:
                         a = c
@@ -146,7 +157,8 @@ def pref(t, P, E, Srmax=0.1, Beta=2.0, Imax=0.001, dt=1.0, solver=1):
             assert ~np.isnan(S[t + 1]), 'NaN value calculated for soil state'
 
         S[t + 1] = np.min([Srmax,
-                           np.max([0.0, S[t + 1]])])  # Make sure the solution is
+                           np.max(
+                               [0.0, S[t + 1]])])  # Make sure the solution is
         # larger
         #  then 0.0 and smaller than Srmax
         Ea[t + 1] = Epu[t + 1] * np.min([1.0, (S[t + 1] / (0.5 * Srmax))])
@@ -186,18 +198,21 @@ def perc(t, P, E, Srmax=0.1, Kp=0.03, Gamma=2.0, Imax=0.001, dt=1.0, solver=1):
         Pe[t + 1] = np.max([0.0, Si[t + 1] - Imax])  # Calculate effective
         # precipitation
         Si[t + 1] = Si[t + 1] - Pe[t + 1]
-        Ei[t + 1] = np.min([Si[t + 1], E[t + 1]])  # Evaporation from intercEpution
+        Ei[t + 1] = np.min(
+            [Si[t + 1], E[t + 1]])  # Evaporation from intercEpution
         Si[t + 1] = Si[t + 1] - Ei[t + 1]  # Update intercEpution state
-        Epu[t + 1] = E[t + 1] - Ei[t + 1]  # Update potential evapotranspiration
+        Epu[t + 1] = E[t + 1] - Ei[
+            t + 1]  # Update potential evapotranspiration
 
         Last_S = S[t]
         iteration = 0
         bisection = 1
         # Use explicit Euler scheme to find an initial estimate for the newton raphson-method
 
-        S[t + 1] = np.max([0.0, S[t] + dt * (Pe[t] - Kp * (S[t] / Srmax) ** Gamma -
-                                             Epu[t] * np.min([1.0, (S[t] / (0.5 *
-                                                                            Srmax))]))])
+        S[t + 1] = np.max(
+            [0.0, S[t] + dt * (Pe[t] - Kp * (S[t] / Srmax) ** Gamma -
+                               Epu[t] * np.min([1.0, (S[t] / (0.5 *
+                                                              Srmax))]))])
 
         if solver == 1:
             # Start the while loop for the newton-Raphson iteration
@@ -207,16 +222,18 @@ def perc(t, P, E, Srmax=0.1, Kp=0.03, Gamma=2.0, Imax=0.001, dt=1.0, solver=1):
                 iteration += 1
                 Last_S = S[t + 1]
 
-                g = Last_S - S[t] - dt * (Pe[t] - Kp * (Last_S / Srmax) ** Gamma -
-                                          Epu[t] * np.min([1, (Last_S / (0.5 *
-                                                                         Srmax))]))
+                g = Last_S - S[t] - dt * (
+                    Pe[t] - Kp * (Last_S / Srmax) ** Gamma -
+                    Epu[t] * np.min([1, (Last_S / (0.5 *
+                                                   Srmax))]))
                 # Derivative dEpuends on the state of the system
                 if Last_S > (0.5 * Srmax):
                     g_derivative = 1.0 - dt * (
                         -Gamma * Kp * (Last_S / Srmax) ** (Gamma - 1))
                 else:
                     g_derivative = 1.0 - dt * (
-                        -Gamma * Kp * (Last_S / Srmax) ** (Gamma - 1) - Epu[t] * (
+                        -Gamma * Kp * (Last_S / Srmax) ** (Gamma - 1) - Epu[
+                            t] * (
                             0.5 * Srmax))
 
                 # Check if there is no zero-division error            
@@ -235,17 +252,23 @@ def perc(t, P, E, Srmax=0.1, Kp=0.03, Gamma=2.0, Imax=0.001, dt=1.0, solver=1):
 
                 while ((b - a) / 2.0) > error:
                     if iteration > 100:
-                        print('iteration in bisection method exceeded 100', iteration)
+                        print('iteration in bisection method exceeded 100',
+                              iteration)
                         break
                     iteration += 1  # increase the number of iterations by 1
 
-                    if (c - S[t] - dt * (Pe[t] - Kp * (c / Srmax) ** Gamma - Epu[t]
-                        * np.min([1, (c / (0.5 * Srmax))]))) == 0.0:
+                    if (c - S[t] - dt * (
+                                    Pe[t] - Kp * (c / Srmax) ** Gamma - Epu[t]
+                                * np.min([1, (c / (0.5 * Srmax))]))) == 0.0:
                         return c  # Return the current value if it is correct
-                    elif (a - S[t] - dt * (Pe[t] - Kp * (a / Srmax) ** Gamma - Epu[
-                        t] * np.min([1.0, (a / (0.5 * Srmax))]))) * (c - S[t] - dt
-                        * (Pe[t] - Kp * (c / Srmax) ** Gamma - Epu[t] * np.min([
-                            1.0, (c / (0.5 * Srmax))]))) > 0.0:
+                    elif (a - S[t] - dt * (
+                                    Pe[t] - Kp * (a / Srmax) ** Gamma - Epu[
+                                t] * np.min([1.0, (a / (0.5 * Srmax))]))) * (
+                                    c - S[t] - dt
+                                * (Pe[t] - Kp * (c / Srmax) ** Gamma - Epu[
+                                    t] * np.min(
+                                    [
+                                        1.0, (c / (0.5 * Srmax))]))) > 0.0:
                         b = c
                     else:
                         a = c
@@ -257,7 +280,8 @@ def perc(t, P, E, Srmax=0.1, Kp=0.03, Gamma=2.0, Imax=0.001, dt=1.0, solver=1):
             assert ~np.isnan(S[t + 1]), 'NaN-value calculated for soil state'
 
         S[t + 1] = np.min([Srmax,
-                           np.max([0.0, S[t + 1]])])  # Make sure the solution is
+                           np.max(
+                               [0.0, S[t + 1]])])  # Make sure the solution is
         # larger
         #  then 0.0 and smaller than Srmax
         Ea[t + 1] = Epu[t + 1] * np.min([1, (S[t + 1] / (0.5 * Srmax))])
@@ -302,9 +326,11 @@ def comb(t, P, E, Srmax=0.1, Kp=0.03, Beta=2.0, Gamma=2.0, Imax=0.001,
         Pe[t + 1] = np.max([0.0, Si[t + 1] - Imax])  # Calculate effective
         # precipitation
         Si[t + 1] = Si[t + 1] - Pe[t + 1]
-        Ei[t + 1] = np.min([Si[t + 1], E[t + 1]])  # Evaporation from interception
+        Ei[t + 1] = np.min(
+            [Si[t + 1], E[t + 1]])  # Evaporation from interception
         Si[t + 1] = Si[t + 1] - Ei[t + 1]  # Update interception state
-        Epu[t + 1] = E[t + 1] - Ei[t + 1]  # Update potential evapotranspiration
+        Epu[t + 1] = E[t + 1] - Ei[
+            t + 1]  # Update potential evapotranspiration
 
         Last_S = S[t]
         iteration = 0
@@ -313,7 +339,8 @@ def comb(t, P, E, Srmax=0.1, Kp=0.03, Beta=2.0, Gamma=2.0, Imax=0.001,
         # Use explicit Euler scheme to find an initial estimate for the newton raphson-method
 
         S[t + 1] = np.max([0.0, S[t] + dt * (
-            Pe[t] * (1 - (S[t] / Srmax) ** Beta) - Kp * (S[t] / Srmax) ** Gamma -
+            Pe[t] * (1 - (S[t] / Srmax) ** Beta) - Kp * (
+                S[t] / Srmax) ** Gamma -
             Epu[
                 t] * np.min([1.0, (S[t] / (0.5 * Srmax))]))])
 
@@ -339,7 +366,8 @@ def comb(t, P, E, Srmax=0.1, Kp=0.03, Beta=2.0, Gamma=2.0, Imax=0.001,
                     g_derivative = 1.0 - dt * (
                         -Beta * Pe[t] * (Last_S / Srmax) ** (
                             Beta - 1) - Gamma * Kp * (
-                            Last_S / Srmax) ** (Gamma - 1) - Epu[t] * (0.5 * Srmax))
+                            Last_S / Srmax) ** (Gamma - 1) - Epu[t] * (
+                            0.5 * Srmax))
 
                 # Check if there is no zero-division error            
                 if np.isnan(g / g_derivative):
@@ -357,17 +385,24 @@ def comb(t, P, E, Srmax=0.1, Kp=0.03, Beta=2.0, Gamma=2.0, Imax=0.001,
                 #
                 while ((b - a) / 2.0) > error:
                     if iteration > 100:
-                        print('iteration in bisection method exceeded 100', iteration)
+                        print('iteration in bisection method exceeded 100',
+                              iteration)
                         break
                     iteration += 1  # increase the number of iterations by 1
 
-                    if (c - S[t] - dt * (Pe[t] * (1 - (c / Srmax) ** Beta) - Kp * (
-                                c / Srmax) ** Gamma - Epu[t] * np.min([1, (
-                                c / (0.5 * Srmax))]))) == 0.0:
+                    if (c - S[t] - dt * (
+                                        Pe[t] * (
+                                        1 - (c / Srmax) ** Beta) - Kp * (
+                                            c / Srmax) ** Gamma - Epu[
+                                t] * np.min([1, (
+                                        c / (0.5 * Srmax))]))) == 0.0:
                         return c  # Return the current value if it is correct
                     elif (a - S[t] - dt * (
-                                        Pe[t] * (1 - (a / Srmax) ** Beta) - Kp * (
-                                            a / Srmax) ** Gamma - Epu[t] * np.min([
+                                        Pe[t] * (
+                                                1 - (
+                                                a / Srmax) ** Beta) - Kp * (
+                                            a / Srmax) ** Gamma - Epu[
+                                t] * np.min([
                                 1.0, (
                                             a / (0.5 * Srmax))]))) * (
                                     c - S[t] - dt * (
@@ -377,7 +412,8 @@ def comb(t, P, E, Srmax=0.1, Kp=0.03, Beta=2.0, Gamma=2.0, Imax=0.001,
                                                     c / Srmax) ** Gamma - Epu[
                                         t] * np.min([
                                         1.0, (
-                                                    c / (0.5 * Srmax))]))) > 0.0:
+                                                    c / (
+                                                            0.5 * Srmax))]))) > 0.0:
                         b = c
                     else:
                         a = c
