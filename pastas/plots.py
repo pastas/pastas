@@ -34,6 +34,7 @@ class Plotting():
 
         """
         plt.figure()
+        plt.title(self.ml.name)
         if oseries:
             self.ml.oseries.plot(linestyle='', marker='.', color='k',
                                  markersize=3)

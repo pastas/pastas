@@ -32,8 +32,8 @@ setup(
         'Programming Language :: Python :: 3.5'
     ],
     platforms='Windows, Mac OS-X',
-    install_requires=['numpy>=1.9', 'matplotlib>=1.4', 'lmfit>=0.9',
-                      'pandas>=0.15', 'scipy>=0.15', 'statsmodels>=0.5'],
+    install_requires=['numpy>=1.9', 'matplotlib>=1.5', 'lmfit>=0.9',
+                      'pandas>=0.15', 'scipy>=0.17', 'statsmodels>=0.5'],
     packages=find_packages(exclude=[]),
     include_package_data=True,
 )
