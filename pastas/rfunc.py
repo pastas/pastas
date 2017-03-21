@@ -128,7 +128,6 @@ class Exponential(RfuncBase):
         parameters.loc[name + '_A'] = (
             1 / self.meanstress, 0, 100 / self.meanstress, 1, name)
         parameters.loc[name + '_a'] = (100, 1, 5000, 1, name)
-        parameters['tseries'] = name
         return parameters
 
     def step(self, p, dt=1):

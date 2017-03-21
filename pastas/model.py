@@ -9,14 +9,14 @@ import pandas as pd
 from scipy import interpolate
 
 from .checks import check_oseries
+from .plots import Plotting
 from .solver import LmfitSolve
 from .stats import Statistics
 from .tseries import Constant
-from .plots import Plotting
 
 
 class Model:
-    def __init__(self, oseries, xy=(0, 0), name="TSA_Model", metadata=None,
+    def __init__(self, oseries, xy=(0, 0), name="PASTAS_Model", metadata=None,
                  warmup=0, fillnan='drop', constant=True):
         """Initiates a time series model.
 
@@ -76,7 +76,7 @@ class Model:
         # Load other modules
         self.stats = Statistics(self)
         self.plots = Plotting(self)
-        self.plot = self.plots.plot # because we are lazy
+        self.plot = self.plots.plot  # because we are lazy
 
     def add_tseries(self, tseries):
         """Adds a time series component to the model.
@@ -250,7 +250,7 @@ class Model:
         simulation = self.simulate(parameters, tmin, tmax, freq)
 
         if self.oseries_calib is None:
-            h_observed = self.get_h_observed(tmin,tmax,simulation.index)
+            h_observed = self.get_h_observed(tmin, tmax, simulation.index)
         else:
             h_observed = self.oseries_calib
 
@@ -348,7 +348,8 @@ class Model:
 
         # make sure calibration data is renewed
         sim_index = pd.date_range(self.tmin, self.tmax, freq=self.freq)
-        self.oseries_calib = self.get_h_observed(self.tmin,self.tmax,sim_index)
+        self.oseries_calib = self.get_h_observed(self.tmin, self.tmax,
+                                                 sim_index)
 
         # Set initial parameters
         self.parameters = self.get_init_parameters(noise=noise)
@@ -536,7 +537,7 @@ class Model:
         # 1. The frequency should be the same for all tseries
         assert len(freqs) <= 1, 'The frequency of the tseries is not the ' \
                                 'same for all stresses.'
-        if len(freqs)==1:
+        if len(freqs) == 1:
             self.freq = next(iter(freqs))
         else:
             self.freq = 'D'
@@ -695,7 +696,7 @@ class Model:
 
         return num, freq
 
-    def get_contribution(self, name, tindex = None):
+    def get_contribution(self, name, tindex=None):
         if name not in self.tseriesdict.keys():
             warn("Name not in tseriesdict, available names are: %s"
                  % self.tseriesdict.keys())
