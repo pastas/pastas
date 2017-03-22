@@ -13,6 +13,7 @@ from .plots import Plotting
 from .solver import LmfitSolve
 from .stats import Statistics
 from .tseries import Constant
+from .plots import Plotting
 
 
 class Model:
