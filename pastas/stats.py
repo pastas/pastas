@@ -30,6 +30,7 @@ from __future__ import print_function, division
 
 import numpy as np
 import pandas as pd
+from statsmodels.stats.stattools import durbin_watson
 from statsmodels.tsa.stattools import acf, pacf
 
 
@@ -135,7 +136,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return (np.var(obs) - np.var(res)) / np.var(obs) * 100.0
+        evp = max(0.0, (np.var(obs) - np.var(res)) / np.var(obs) * 100.0)
+        return evp
 
     def rsq(self, tmin=None, tmax=None):
         """Correlation between observed and simulated series.
@@ -212,6 +214,28 @@ included in Pastas. To obtain a list of all statistics that are included type:
         aic = -2.0 * np.log(sum(innovations ** 2.0)) + 2.0 * nparam
         return aic
 
+    def durbin_watson(self, tmin=None, tmax=None, series='innovations'):
+        """Method to calculate the durbin watson statistic.
+
+        Parameters
+        ----------
+        tmin
+        tmax
+        series
+
+        Returns
+        -------
+        dw: float
+
+        Notes
+        -----
+        The Durban Watson statistic can be used to make a statement on the
+        correlation between the values.
+
+        """
+        series = self.bykey(series, tmin, tmax)
+        return durbin_watson(series)
+
     def acf(self, tmin=None, tmax=None, nlags=20):
         """Autocorrelation function.
 
@@ -247,49 +271,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         innovations = self.ml.innovations(tmin=tmin, tmax=tmax)
         return pacf(innovations, nlags=nlags)
 
-    def all(self, tmin=None, tmax=None):
-        """Returns a dictionary with all the statistics.
-
-        Parameters
-        ----------
-        tmin: str
-        tmax: str
-
-        Returns
-        -------
-        stats: pd.DataFrame
-            Dataframe with all possible statistics
-
-        """
-
-        stats = pd.DataFrame(columns=['Value'])
-        for k in self.ops.keys():
-            stats.loc[k] = (getattr(self, k)(tmin=tmin, tmax=tmax))
-
-        return stats
-
-    def bykey(self, key, tmin=None, tmax=None):
-        """Worker function for GHG and GLG statistcs.
-
-        Parameters
-        ----------
-        key : None, optional
-            timeseries key ('observations' or 'simulated')
-        tmin, tmax: Optional[pd.Timestamp]
-            Time indices to use for the simulation of the time series model.
-
-        Returns
-        -------
-        TYPE
-            Description
-        """
-        if key == 'observations':
-            series = self.ml.observations(tmin=tmin, tmax=tmax)
-        elif key == 'simulated':
-            series = self.ml.residuals(tmin=tmin, tmax=tmax)
-        else:
-            raise ValueError('no timeseries with key {key:}'.format(key=key))
-        return series
+    # Some Dutch statistics
 
     def q_ghg(self, tmin=None, tmax=None, key='simulated', q=0.94):
         """Gemiddeld Hoogste Grondwaterstand (GHG) also called MHGL (Mean High Groundwater Level)
@@ -341,23 +323,6 @@ included in Pastas. To obtain a list of all statistics that are included type:
         series = self.bykey(key=key, tmin=tmin, tmax=tmax)
         series = series.resample('d').median()
         return series.quantile(q)
-
-    def __inspring__(self, series):
-        """Test if timeseries index is between 14 March and 15 April.
-        
-        Parameters
-        ----------
-        series : pd.Series
-            series with datetime index
-        
-        Returns
-        -------
-        pd.Series
-            Boolean series with datetimeindex
-        """
-        isinspring = lambda x: (((x.month == 3) and (x.day >= 14)) or
-                                ((x.month == 4) and (x.day < 15)))
-        return series.index.map(isinspring)
 
     def q_gvg(self, tmin=None, tmax=None, key='simulated'):
         """Gemiddeld Voorjaarsgrondwaterstand (GVG) also called MSGL (Mean Spring Groundwater Level)
@@ -567,27 +532,6 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return self.gxg(mean_low, tmin=tmin, tmax=tmax, key=key,
                         fill_method=fill_method, limit=limit, output=output)
 
-    def __mean_spring__(self, series):
-        """Determine mean of timeseries values in spring. 
-
-        Year aggregator function for gvg method.
-        
-        Parameters
-        ----------
-        series : pd.Series
-            series with datetime index
-        
-        Returns
-        -------
-        float
-            Mean of series, or NaN if no values in spring
-        """
-        inspring = self.__inspring__(series)
-        if np.any(inspring):
-            return series.loc[inspring].mean()
-        else:
-            return np.nan
-
     def gvg(self, tmin=None, tmax=None, key='simulated',
             fill_method='linear', limit=15, output='mean'):
         """Classic method:
@@ -621,6 +565,75 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         return self.gxg(self.__mean_spring__, tmin=tmin, tmax=tmax, key=key,
                         fill_method=fill_method, limit=limit, output=output)
+
+    # Helper functions
+
+    def __mean_spring__(self, series):
+        """Determine mean of timeseries values in spring.
+
+        Year aggregator function for gvg method.
+
+        Parameters
+        ----------
+        series : pd.Series
+            series with datetime index
+
+        Returns
+        -------
+        float
+            Mean of series, or NaN if no values in spring
+        """
+        inspring = self.__inspring__(series)
+        if np.any(inspring):
+            return series.loc[inspring].mean()
+        else:
+            return np.nan
+
+    def __inspring__(self, series):
+        """Test if timeseries index is between 14 March and 15 April.
+
+        Parameters
+        ----------
+        series : pd.Series
+            series with datetime index
+
+        Returns
+        -------
+        pd.Series
+            Boolean series with datetimeindex
+        """
+        isinspring = lambda x: (((x.month == 3) and (x.day >= 14)) or
+                                ((x.month == 4) and (x.day < 15)))
+        return series.index.map(isinspring)
+
+    def bykey(self, key, tmin=None, tmax=None):
+        """Worker function for GHG and GLG statistcs.
+
+        Parameters
+        ----------
+        key : None, optional
+            timeseries key ('observations' or 'simulated')
+        tmin, tmax: Optional[pd.Timestamp]
+            Time indices to use for the simulation of the time series model.
+
+        Returns
+        -------
+        TYPE
+            Description
+        """
+        if key == 'observations':
+            series = self.ml.observations(tmin=tmin, tmax=tmax)
+        elif key == 'simulated':
+            series = self.ml.simulate(tmin=tmin, tmax=tmax)
+        elif key == 'residuals':
+            series = self.ml.residuals(tmin=tmin, tmax=tmax)
+        elif key == 'innovations':
+            series = self.ml.innovations(tmin=tmin, tmax=tmax)
+        else:
+            raise ValueError('no timeseries with key {key:}'.format(key=key))
+        return series
+
+    # Summary methods
 
     def descriptive(self, tmin=None, tmax=None):
         """Returns the descriptive statistics for all time series.
@@ -688,4 +701,47 @@ included in Pastas. To obtain a list of all statistics that are included type:
         stats = pd.DataFrame(index=list(labels), data=list(values),
                              columns=['Value'])
         stats.index.name = 'Statistic'
+        return stats
+
+    def many(self, tmin=None, tmax=None, stats=None):
+        """This method returns the values for a provided list of statistics.
+
+        Parameters
+        ----------
+        tmin
+        tmax
+        stats: list
+            list of statistics that need to be calculated.
+
+        Returns
+        -------
+
+        """
+        if not stats:
+            stats = ['evp', 'rmse', 'rmsi', 'durbin_watson']
+
+        data = pd.DataFrame(index=[0], columns=stats)
+        for k in stats:
+            data.iloc[0][k] = (getattr(self, k)(tmin=tmin, tmax=tmax))
+
+        return data
+
+    def all(self, tmin=None, tmax=None):
+        """Returns a dictionary with all the statistics.
+
+        Parameters
+        ----------
+        tmin: str
+        tmax: str
+
+        Returns
+        -------
+        stats: pd.DataFrame
+            Dataframe with all possible statistics
+
+        """
+        stats = pd.DataFrame(columns=['Value'])
+        for k in self.ops.keys():
+            stats.loc[k] = (getattr(self, k)(tmin=tmin, tmax=tmax))
+
         return stats
