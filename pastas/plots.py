@@ -20,7 +20,7 @@ class Plotting():
         msg = "This module contains all the built-in plotting options that are available."
         return msg
 
-    def plot(self, tmin=None, tmax=None, oseries=True, simulate=True):
+    def plot(self, tmin=None, tmax=None, oseries=True, simulate=True, figsize=None):
         """
 
         Parameters
@@ -37,18 +37,18 @@ class Plotting():
         plt.title(self.ml.name)
         if oseries:
             self.ml.oseries.plot(linestyle='', marker='.', color='k',
-                                 markersize=3)
+                                 markersize=3, figsize=figsize)
         if simulate:
             if tmin is None:
                 tmin = self.ml.oseries.index.min()
             if tmax is None:
                 tmax = self.ml.oseries.index.max()
             h = self.ml.simulate(tmin=tmin, tmax=tmax)
-            h.plot()
+            h.plot(figsize=figsize)
 
         plt.show()
 
-    def results(self, tmin=None, tmax=None, savefig=False):
+    def results(self, tmin=None, tmax=None, savefig=False, figsize=None):
         """
 
         Parameters
@@ -63,7 +63,7 @@ class Plotting():
         -------
 
         """
-        plt.figure(facecolor='white')
+        plt.figure(facecolor='white', figsize=figsize)
         gs = plt.GridSpec(3, 4, wspace=0.4, hspace=0.4)
 
         # Plot the Groundwater levels
@@ -92,16 +92,17 @@ class Plotting():
 
         # Plot the block response function
         ax3 = plt.subplot(gs[0, -1])
+        tmax = 0
         for name, ts in self.ml.tseriesdict.items():
             dt = self.ml.get_dt(self.ml.freq)
             if "rfunc" in dir(ts):
                 br = self.ml.get_block_response(name)
                 t = np.arange(0, len(br) * dt, dt)
-                plt.plot(t, br)
-        ax3.set_xticks(ax3.get_xticks()[::2])
-        ax3.set_yticks(ax3.get_yticks()[::2])
+                tmax = max(t[-1], tmax)
+                ax3.plot(t, br)
+        ax3.set_xlim(0, tmax)
         ax3.grid(which='both')
-        plt.title('Block Response', loc='left')
+        ax3.set_title('Block Response', loc='left')
 
         # Table of the numerical diagnostic statistics.
         ax5 = plt.subplot(gs[2, -1])
