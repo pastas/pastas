@@ -9,6 +9,22 @@ quick implementation of new model components. Time series models can be created,
 calibrated, and analysed with just a few lines of python code with the built-in
 optimization, visualisation, and statistical analysis tools.
 
+General Outline
+---------------
+A time-series model consists of stresses, called Tseries, which together with a Constant and an optional NoiseModel form the simulation.
+Most Tseries use a response-function, called rfunc, that transform the stress in its contribution in the simulation.
+Examples of response-functions are Gamma, Exponential or One (which is used for the Constant).
+Each Tseries has a number of parameters, which are optimized by the Solver.
+During optimization the residuals (the difference from the observations, or the innovations when a NoiseModel is used) are minimized.
+
+Stress-series
+-------------
+Most Tseries-classes use one or more stress-series.
+These series have to be equidistant (at the moment) and have to have the same frequency as the other stress-series (the observation-series can be non-equidistant and of different frequency).
+The user can use Pandas resample-methods to make sure the Series satisfy these conditions, before using the Series for Pastas.
+Each TimeStamp in the series represents the end of the period that that record describes.
+For example, the precipitation of January 1st, has the TimeStamp of January 2nd 0:00 (this can be counter-intuitive).
+
 Examples
 --------
 Examples can be found on the `examples directory on the documentation website <http://pastas.github.io/pastas/examples.html>`_.
