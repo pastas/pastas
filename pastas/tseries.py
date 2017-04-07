@@ -29,10 +29,12 @@ from warnings import warn
 
 import numpy as np
 import pandas as pd
+from pandas.tseries.frequencies import to_offset
 from scipy.signal import fftconvolve
 
 from .checks import check_tseries
 from .rfunc import One
+from .utils import get_dt
 
 
 class TseriesBase:
@@ -82,6 +84,23 @@ class TseriesBase:
             self.parameters.loc[name, 'vary'] = 0
         else:
             print('Warning:', name, 'does not exist')
+
+    def change_frequency(self,freq):
+        # change the frequency
+        # TODO: next lines of code ony are correct when the frequencies are a multiple of each other, fix this
+        # this is for example not the case when monthly data is resampled to weekly data. it would be better to
+        # work with weights. A week at the end of the month would then consist of the weighted data of that
+        # month and the next. Right now, this week will get the value of the next month. Did not find a Pandas
+        # method to perform this weighted mean.
+        if get_dt(freq) > get_dt(self.freq):
+            # downsample (for example from day to week), use mean
+            # make sure the labels are still at the end of each period, and data at the right side of the bucket
+            # is included (see http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.resample.html)
+            self.stress = self.stress.resample(freq, label='right', closed='right').mean()
+        elif get_dt(freq) < get_dt(self.freq):
+            # upsample (for exmaple from week to day), use bfill
+            self.stress = self.stress.resample(freq).bfill()
+        self.freq = freq
 
     def get_stress(self, p=None, tindex=None):
         """

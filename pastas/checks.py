@@ -112,6 +112,8 @@ def check_tseries(stress, freq, fillnan, name=''):
             stress.fillna(stress.mean(), inplace=True)  # Default option
         elif fillnan == 'interpolate':
             stress.interpolate(method='time', inplace=True)
+        elif fillnan == 'bfill':
+            stress.bfill(inplace=True)
         elif type(fillnan) == float:
             stress.fillna(fillnan, inplace=True)
         else:
