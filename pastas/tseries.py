@@ -87,7 +87,7 @@ class TseriesBase:
 
     def change_frequency(self,freq):
         # change the frequency
-        # TODO: next lines of code ony are correct when the frequencies are a multiple of each other, fix this
+        # TODO: next lines of code are only correct when the frequencies are a multiple of each other, fix this.
         # this is for example not the case when monthly data is resampled to weekly data. it would be better to
         # work with weights. A week at the end of the month would then consist of the weighted data of that
         # month and the next. Right now, this week will get the value of the next month. Did not find a Pandas
@@ -98,7 +98,7 @@ class TseriesBase:
             # is included (see http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.resample.html)
             self.stress = self.stress.resample(freq, label='right', closed='right').mean()
         elif get_dt(freq) < get_dt(self.freq):
-            # upsample (for exmaple from week to day), use bfill
+            # upsample (for example from week to day), use bfill
             self.stress = self.stress.resample(freq).bfill()
         self.freq = freq
 
