@@ -1,35 +1,35 @@
-pastas.recharge package
-=======================
+pastas\.recharge package
+========================
 
 Submodules
 ----------
 
-pastas.recharge.cythonize module
---------------------------------
+pastas\.recharge\.cythonize module
+----------------------------------
 
 .. automodule:: pastas.recharge.cythonize
     :members:
     :undoc-members:
     :show-inheritance:
 
-pastas.recharge.recharge module
--------------------------------
+pastas\.recharge\.recharge module
+---------------------------------
 
 .. automodule:: pastas.recharge.recharge
     :members:
     :undoc-members:
     :show-inheritance:
 
-pastas.recharge.recharge module
--------------------------------
+pastas\.recharge\.recharge module
+---------------------------------
 
 .. automodule:: pastas.recharge.recharge
     :members:
     :undoc-members:
     :show-inheritance:
 
-pastas.recharge.recharge_func module
-------------------------------------
+pastas\.recharge\.recharge\_func module
+---------------------------------------
 
 .. automodule:: pastas.recharge.recharge_func
     :members:

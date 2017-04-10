@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as plticker
 from scipy.stats import probplot
 import numpy as np
-
+from .utils import get_dt
 
 class Plotting():
     def __init__(self, ml):
@@ -94,7 +94,7 @@ class Plotting():
         ax3 = plt.subplot(gs[0, -1])
         tmax = 0
         for name, ts in self.ml.tseriesdict.items():
-            dt = self.ml.get_dt(self.ml.freq)
+            dt = get_dt(self.ml.freq)
             if "rfunc" in dir(ts):
                 br = self.ml.get_block_response(name)
                 t = np.arange(0, len(br) * dt, dt)
@@ -244,7 +244,7 @@ class Plotting():
 
         # Change xtickers to the correct time
         locs, labels = plt.xticks()
-        labels = locs * self.ml.get_dt(self.ml.freq)
+        labels = locs * get_dt(self.ml.freq)
         plt.xticks(locs, labels)
         plt.xlabel("Time [days]")
 
@@ -282,7 +282,7 @@ class Plotting():
 
         # Change xtickers to the correct time
         locs, labels = plt.xticks()
-        labels = locs * self.ml.get_dt(self.ml.freq)
+        labels = locs * get_dt(self.ml.freq)
         plt.xticks(locs, labels)
         plt.xlabel("Time [days]")
 

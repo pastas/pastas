@@ -12,56 +12,64 @@ Subpackages
 Submodules
 ----------
 
-pastas.checks module
---------------------
+pastas\.checks module
+---------------------
 
 .. automodule:: pastas.checks
     :members:
     :undoc-members:
     :show-inheritance:
 
-pastas.model module
--------------------
+pastas\.model module
+--------------------
 
 .. automodule:: pastas.model
     :members:
     :undoc-members:
     :show-inheritance:
 
-pastas.rfunc module
--------------------
+pastas\.plots module
+--------------------
+
+.. automodule:: pastas.plots
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pastas\.rfunc module
+--------------------
 
 .. automodule:: pastas.rfunc
     :members:
     :undoc-members:
     :show-inheritance:
 
-pastas.solver module
---------------------
+pastas\.solver module
+---------------------
 
 .. automodule:: pastas.solver
     :members:
     :undoc-members:
     :show-inheritance:
 
-pastas.stats module
--------------------
+pastas\.stats module
+--------------------
 
 .. automodule:: pastas.stats
     :members:
     :undoc-members:
     :show-inheritance:
 
-pastas.tseries module
----------------------
+pastas\.tseries module
+----------------------
 
 .. automodule:: pastas.tseries
     :members:
     :undoc-members:
     :show-inheritance:
 
-pastas.version module
----------------------
+pastas\.version module
+----------------------
 
 .. automodule:: pastas.version
     :members:

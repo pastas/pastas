@@ -1,35 +1,35 @@
-pastas.read package
-===================
+pastas\.read package
+====================
 
 Submodules
 ----------
 
-pastas.read.datamodel module
-----------------------------
+pastas\.read\.datamodel module
+------------------------------
 
 .. automodule:: pastas.read.datamodel
     :members:
     :undoc-members:
     :show-inheritance:
 
-pastas.read.dinoloket module
-----------------------------
+pastas\.read\.dinoloket module
+------------------------------
 
 .. automodule:: pastas.read.dinoloket
     :members:
     :undoc-members:
     :show-inheritance:
 
-pastas.read.knmi module
------------------------
+pastas\.read\.knmi module
+-------------------------
 
 .. automodule:: pastas.read.knmi
     :members:
     :undoc-members:
     :show-inheritance:
 
-pastas.read.menyanthes module
------------------------------
+pastas\.read\.menyanthes module
+-------------------------------
 
 .. automodule:: pastas.read.menyanthes
     :members:
