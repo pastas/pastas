@@ -39,7 +39,7 @@ class dinodata(DataModel):
             Warning("variable %s is not in this dataset. Please use one of "
                     "the following keys: %s" % (variable, dino.data.keys()))
         else:
-            self.series = dino.data[variable]
+            self.series = dino.data[variable] / 100 # To make it meters
         self.x = dino.x
         self.y = dino.y
         self.latlon = self.rd2wgs(dino.x, dino.y)
@@ -127,7 +127,7 @@ class DinoGrondwaterstand:
                                            index_col='Peildatum',
                                            dayfirst=True,
                                            usecols=usecols)
-                ts = measurements['Stand_cm_tov_NAP'] / 100
+                ts = measurements['Stand_cm_tov_NAP']
                 #
                 # measurements = np.genfromtxt(f, delimiter=',',
                 #                              dtype=None,
