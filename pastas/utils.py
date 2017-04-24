@@ -1,9 +1,11 @@
 import datetime
 import pandas as pd
 
+
 def get_dt(freq):
-    options = {'MS': 30,  # weekly frequency, used just for comparison
-               'M': 30,  # weekly frequency, used just for comparison
+    # method to calculate the timestep in days from the frequency string freq
+    options = {'MS': 30,  # monthly frequency (month-start), used just for comparison
+               'M': 30,  # monthly frequency (month-end), used just for comparison
                'W': 7,  # weekly frequency
                'D': 1,  # calendar day frequency
                'H': 1 / 24,  # hourly frequency
@@ -20,6 +22,7 @@ def get_dt(freq):
 
 
 def get_time_offset(t, freq):
+    # method to calculate the time offset between a TimeStamp t and a default Series with a frequency of freq
     if isinstance(t, pd.Series):
         # Take the first timestep. The rest of index has the same offset,
         # as the frequency is constant.
