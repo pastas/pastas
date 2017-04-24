@@ -1,6 +1,5 @@
 from __future__ import print_function, division
 
-
 from . import read
 from .model import Model
 from .recharge.recharge_func import Preferential, Linear, Percolation, \
@@ -8,5 +7,6 @@ from .recharge.recharge_func import Preferential, Linear, Percolation, \
 from .rfunc import Gamma, Exponential, Hantush, Theis, Bruggeman
 from .solver import LmfitSolve, LeastSquares, DESolve
 from .stats import Statistics
-from .tseries import Tseries, Tseries2, Recharge, Well, TseriesStep, Constant, NoiseModel
+from .tseries import Tseries, Tseries2, Recharge, Well, TseriesStep, Constant, \
+    NoiseModel, NoiseModel2
 from .version import __version__

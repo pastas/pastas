@@ -29,7 +29,6 @@ from warnings import warn
 
 import numpy as np
 import pandas as pd
-from pandas.tseries.frequencies import to_offset
 from scipy.signal import fftconvolve
 
 from .checks import check_tseries
@@ -734,6 +733,96 @@ class NoiseModel:
             np.sqrt(1.0 - np.exp(-2 * delt[1:] / p))
         # res.values is needed else it gets messed up with the dates
         innovations[1:] -= w * np.exp(-delt[1:] / p) * res.values[:-1]
+        if tindex is not None:
+            innovations = innovations[tindex]
+        return innovations
+
+
+class NoiseModel2:
+    """Noise model with exponential decay of the residual.
+
+    Notes
+    -----
+    Calculates the innovations [1] according to:
+
+    ..math:: v(t1) = r(t1) - r(t0) * exp(- (t1 - t0) / alpha)
+
+    It can happen that the noisemodel is used in during the model calibration
+    to explain most of the variation in the data. A recommended solution is to
+    scale the initial parameter with the model timestep, E.g.:
+    >>> n = NoiseModel()
+    >>> n.set_initial("noise_alpha", 1.0 * ml.get_dt(ml.freq))
+
+    References
+    ----------
+    .. [1] von Asmuth, J. R., and M. F. P. Bierkens (2005), Modeling irregularly
+    spaced residual series as a continuous stochastic process, Water Resour.
+    Res., 41, W12404, doi:10.1029/2004WR003726.
+
+    """
+
+    def __init__(self):
+        self.nparam = 1
+        self.set_init_parameters()
+
+    def set_initial(self, name, value):
+        """Method to set the initial parameter value
+
+        Usage
+        -----
+        >>> ts.set_initial('parametername', 200)
+
+        """
+        if name in self.parameters.index:
+            self.parameters.loc[name, 'initial'] = value
+        else:
+            print('Warning:', name, 'does not exist')
+
+    def set_min(self, name, value):
+        if name in self.parameters.index:
+            self.parameters.loc[name, 'pmin'] = value
+        else:
+            print('Warning:', name, 'does not exist')
+
+    def set_max(self, name, value):
+        if name in self.parameters.index:
+            self.parameters.loc[name, 'pmax'] = value
+        else:
+            print('Warning:', name, 'does not exist')
+
+    def fix_parameter(self, name):
+        if name in self.parameters.index:
+            self.parameters.loc[name, 'vary'] = 0
+        else:
+            print('Warning:', name, 'does not exist')
+
+    def set_init_parameters(self):
+        self.parameters = pd.DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        self.parameters.loc['noise_alpha'] = (14.0, 0, 5000, 1, 'noise')
+
+    def simulate(self, res, delt, p, tindex=None):
+        """
+
+        Parameters
+        ----------
+        res : Pandas Series
+            The residual series.
+        delt : Pandas Series
+            Time steps between observations.
+        tindex : Optional[None]
+            Time indices used for simulation.
+        p : Optional[array-like]
+            Alpha parameters used by the noisemodel.
+
+        Returns
+        -------
+        innovations: pd Series
+            Series of the innovations.
+        """
+        innovations = pd.Series(res, index=res.index, name="Innovations")
+        # res.values is needed else it gets messed up with the dates
+        innovations[1:] -= np.exp(-delt[1:] / p) * res.values[:-1]
         if tindex is not None:
             innovations = innovations[tindex]
         return innovations

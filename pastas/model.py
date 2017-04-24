@@ -383,7 +383,7 @@ class Model:
             self.parameters.initial = optimal
 
     def solve(self, tmin=None, tmax=None, solver=LmfitSolve, report=True,
-              noise=True, initial=True):
+              noise=True, initial=True, weights=None):
         """
         Methods to solve the time series model.
 
@@ -418,7 +418,7 @@ class Model:
 
         # Solve model
         fit = solver(self, tmin=self.tmin, tmax=self.tmax, noise=noise,
-                     freq=self.freq)
+                     freq=self.freq, weights=weights)
 
         # make calibration data empty again (was set in initialize)
         self.oseries_calib = None
