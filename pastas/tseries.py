@@ -84,7 +84,7 @@ class TseriesBase:
         else:
             print('Warning:', name, 'does not exist')
 
-    def change_frequency(self,freq):
+    def change_frequency(self, freq):
         # change the frequency
         # TODO: next lines of code are only correct when the frequencies are a multiple of each other, fix this.
         # this is for example not the case when monthly data is resampled to weekly data. it would be better to
@@ -95,7 +95,8 @@ class TseriesBase:
             # downsample (for example from day to week), use mean
             # make sure the labels are still at the end of each period, and data at the right side of the bucket
             # is included (see http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.resample.html)
-            self.stress = self.stress.resample(freq, label='right', closed='right').mean()
+            self.stress = self.stress.resample(freq, label='right',
+                                               closed='right').mean()
         elif get_dt(freq) < get_dt(self.freq):
             # upsample (for example from week to day), use bfill
             self.stress = self.stress.resample(freq).bfill()
@@ -607,7 +608,7 @@ class TseriesNoConv(TseriesBase):
             erin = (h.index > i)  # & ((h.index-i).days<tmax)
             if any(erin):
                 r = stress.loc[i][0] * self.rfunc.step(p, (
-                h.index[erin] - i).days)
+                    h.index[erin] - i).days)
                 h[erin] += r
                 # h[np.invert(erin) & (h.index > i)] = r[-1]
         return h
@@ -630,6 +631,7 @@ class Constant(TseriesBase):
         self.value = value
         self.pmin = pmin
         self.pmax = pmax
+        self.name = "constant"
         TseriesBase.__init__(self, One, name, xy, metadata,
                              pd.Timestamp.min, pd.Timestamp.max, 1, 0, 0)
         self.set_init_parameters()
@@ -669,6 +671,7 @@ class NoiseModel:
 
     def __init__(self):
         self.nparam = 1
+        self.name = "noise"
         self.set_init_parameters()
 
     def set_initial(self, name, value):
@@ -763,6 +766,7 @@ class NoiseModel2:
 
     def __init__(self):
         self.nparam = 1
+        self.name = "noise"
         self.set_init_parameters()
 
     def set_initial(self, name, value):

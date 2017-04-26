@@ -17,6 +17,7 @@ class BaseSolver:
     noise keyword) and applies weights (depending on the weights keyword).
 
     """
+
     def __init__(self):
         pass
 
@@ -40,7 +41,7 @@ class BaseSolver:
         elif hasattr(self, weights):
             weights = getattr(self, weights)
             w = weights(parameters, model, res)
-            res[1:] = w * res[1:]
+            res = res.multiply(w, fill_value=0.0)
             return res
         else:
             warn("The weighting option is not valid. Please provide a valid "
@@ -54,11 +55,19 @@ class BaseSolver:
 
         """
         p = parameters[-1]
-        delt = model.odelt[res.index]
-        power = (1.0 / (2.0 * (len(delt) - 1)))
-        w = np.exp(power * np.sum(np.log(1 - np.exp(-2 * delt[1:] / p)))) / \
-            np.sqrt(1.0 - np.exp(-2 * delt[1:] / p))
+        delt = model.odelt[res.index][1:]
+        power = (1.0 / (2.0 * (len(delt) - 1.0)))
+        w = np.exp(power * np.sum(np.log(1.0 - np.exp(-2.0 * delt / p)))) / \
+            np.sqrt(1.0 - np.exp(-2.0 * delt / p))
+        return w
 
+    def swsi2(self, parameters, model, res):
+        alpha = parameters[-1]
+        dt = model.odelt[res.index][1:]
+        N = res.index.size  # Number of innovations
+        numerator = np.exp(
+            (1.0 / N) * sum(np.log(1.0 - np.exp(-2.0 * dt / alpha))))
+        w = np.sqrt((numerator / (1.0 - np.exp(-2.0 * dt / alpha))))
         return w
 
     def time_step(self, parameters, model, res):
@@ -94,9 +103,8 @@ class LeastSquares(BaseSolver):
         if False in model.parameters.vary.values.astype('bool'):
             warn("Fixing parameters is not supported with this solver. Please"
                  "use LmfitSolve or apply small boundaries as a solution.")
-
         self.fit = least_squares(self.objfunction, x0=parameters,
-                                 bounds=bounds,
+                                 bounds=bounds, ftol=1e-3,
                                  args=(
                                      tmin, tmax, noise, model, freq, weights))
         self.optimal_params = self.fit.x
