@@ -404,8 +404,9 @@ class Model:
 
         """
         if noise and (self.noisemodel is None):
-            warn(message='Warning, solution with noise model while noise model'
+            warn(message='Warning, solution with noise model while noise model '
                          'is not defined. No noise model is used.')
+            noise = False
 
         # Check frequency of tseries (is allready performed at add_tseries())
         #self.set_freq_offset()
