@@ -43,7 +43,10 @@ class dinodata(DataModel):
         self.x = dino.x
         self.y = dino.y
         self.latlon = self.rd2wgs(dino.x, dino.y)
-        self.metadata = dino.meta[-1]
+        if len(dino.meta) > 0:
+            self.metadata = dino.meta[-1]
+        else:
+            self.metadata = {}
 
 
 class DinoGrondwaterstand:

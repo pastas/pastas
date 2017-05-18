@@ -42,5 +42,9 @@ class DataModel():
                           'or ... conda install requests', ImportWarning)
             lat = np.NaN
             lon = np.NaN
+        except:
+            # Otherwise just return none's
+            lat = np.NaN
+            lon = np.NaN
 
         return (lat, lon)
