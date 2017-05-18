@@ -1,6 +1,8 @@
 from __future__ import print_function, division
 
 import datetime
+import os
+import pickle
 from collections import OrderedDict
 from copy import deepcopy
 from warnings import warn
@@ -15,6 +17,7 @@ from .solver import LmfitSolve
 from .stats import Statistics
 from .tseries import Constant
 from .utils import get_dt, get_time_offset
+from .version import __version__
 
 
 class Model:
@@ -72,7 +75,7 @@ class Model:
 
         # Metadata
         self.xy = xy
-        self.metadata = metadata
+        self.metadata = self.get_metadata(metadata)
         self.name = name
 
         self.fit = None
@@ -259,7 +262,8 @@ class Model:
         simulation = self.simulate(parameters, tmin, tmax, freq)
 
         if self.oseries_calib is None:
-            oseries_calib = self.get_oseries_calib(tmin, tmax, simulation.index)
+            oseries_calib = self.get_oseries_calib(tmin, tmax,
+                                                   simulation.index)
         else:
             oseries_calib = self.oseries_calib
 
@@ -268,7 +272,8 @@ class Model:
         # Get h_simulated at the correct indices
         interpolate_simulation = self.interpolate_simulation
         if interpolate_simulation is None:
-            interpolate_simulation = obs_index.difference(simulation.index).size != 0
+            interpolate_simulation = obs_index.difference(
+                simulation.index).size != 0
         if interpolate_simulation:
             # interpolate simulation to measurement-times
             h_simulated = np.interp(oseries_calib.index.asi8,
@@ -290,7 +295,7 @@ class Model:
         return oseries_calib
 
     def get_tseriesdict_calib(self):
-        #tseriesdict_calib = self.tseriesdict.copy()
+        # tseriesdict_calib = self.tseriesdict.copy()
         tseriesdict_calib = deepcopy(self.tseriesdict)
         for tseries in tseriesdict_calib.values():
             tseries.change_frequency(self.freq)
@@ -366,13 +371,15 @@ class Model:
         # make sure calibration data is renewed
         sim_index = pd.date_range(self.tmin, self.tmax, freq=self.freq)
         self.oseries_calib = self.get_oseries_calib(self.tmin, self.tmax,
-                                                 sim_index)
+                                                    sim_index)
 
         self.tseries_calib = self.get_tseriesdict_calib()
 
-        self.interpolate_simulation = self.oseries_calib.index.difference(sim_index).size != 0
+        self.interpolate_simulation = self.oseries_calib.index.difference(
+            sim_index).size != 0
         if self.interpolate_simulation:
-            print('There are observations between the simulation-timesteps. Linear interpolation is used')
+            print(
+                'There are observations between the simulation-timesteps. Linear interpolation is used')
 
         # Set initial parameters
         self.parameters = self.get_init_parameters(noise=noise)
@@ -404,12 +411,13 @@ class Model:
 
         """
         if noise and (self.noisemodel is None):
-            warn(message='Warning, solution with noise model while noise model '
-                         'is not defined. No noise model is used.')
+            warn(
+                message='Warning, solution with noise model while noise model '
+                        'is not defined. No noise model is used.')
             noise = False
 
         # Check frequency of tseries (is allready performed at add_tseries())
-        #self.set_freq_offset()
+        # self.set_freq_offset()
 
         # Check series with tmin, tmax
         self.tmin, self.tmax = self.get_tmin_tmax(tmin, tmax)
@@ -562,7 +570,6 @@ class Model:
         if self.freq is None:
             self.freq = 'D'
 
-
         # 2. Tseries timestamps should match (e.g. similar hours')
         # calculate frequency and time-difference with default frequency
         time_offsets = set()
@@ -570,7 +577,7 @@ class Model:
             if not tseries.stress.empty:
                 # calculate the offset from the default frequency
                 time_offset = get_time_offset(tseries.stress.index[0],
-                                                   self.freq)
+                                              self.freq)
                 time_offsets.add(time_offset)
 
         assert len(
@@ -707,3 +714,86 @@ class Model:
                                  fill_value='extrapolate')
         ind = np.unique(f(tindex.asi8).astype(int))
         return series[ind]
+
+    def get_metadata(self, meta=None):
+        """Method that returns a metadata dict with the basic information.
+
+        Parameters
+        ----------
+        meta: dict
+            dictionary containing user defined metadata
+
+        Returns
+        -------
+        metadata: dict
+            dictionary containing the basic information.
+
+        """
+        metadata = {}
+        now = pd.datetime.now().strftime("%Y-%m-%d")
+        metadata["date_created"] = now
+        metadata["date_modified"] = now
+        metadata["pastas_version"] = __version__
+        metadata["owner"] = os.getlogin()
+
+        return metadata
+
+    def export_model(self, fname=None):
+        """
+        This method exports the model as an pickle (.pkl) file.
+
+        Parameters
+        ----------
+        fname: str
+            filename excluding the extension.
+
+        Returns
+        -------
+        Message if the export was succesfull.
+
+        Notes
+        -----
+        After a PASTAS model has been stored, it is simple to load the model
+        object into python using pickle. The following lines of code show
+        how this is done. In the future an proper import method will be
+        supported.
+
+        >>> import pickle
+        >>> with open(fname + ".pkl", "rb") as output:
+        >>>    pickle.load(self, output)
+
+        """
+        if not fname:
+            fname = "model"
+
+        # Update metadata
+        now = pd.datetime.now().strftime("%Y-%m-%d")
+        self.metadata["date_modified"] = now
+
+        with open(fname + ".pkl", "wb") as output:
+            pickle.dump(self, output)
+
+        return print("Model is stored succesfully as %s" % fname)
+
+    def import_model(self, fname=None):
+        """Temporary implementation of a load function, needs to be changed in the future, so PASTAS can support models from other versions..
+
+        TODO: probably it should copy the attributes only, so all methods are updated..? R. Collenteur 18/05/2017
+
+        Parameters
+        ----------
+        fname
+
+        Returns
+        -------
+
+        """
+
+        with open(fname + ".pkl", "rb") as output:
+            ml = pickle.load(output)
+
+        if ml.metadata["pastas_version"] == __version__:
+            warn("trying to import a PASTAS model that is created in an "
+                 "older version of PASTAS")
+
+        return print("Model succesfully imported!")
