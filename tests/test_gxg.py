@@ -101,7 +101,7 @@ class TestGXG(object):
         assert np.isnan(v)
 
     def test_gxg_series(self):
-        s = pd.read_csv('tests\\data\\hseries_gxg.csv', index_col=0, header=0,
+        s = pd.read_csv('data\\hseries_gxg.csv', index_col=0, header=0,
                         parse_dates=True, dayfirst=True, squeeze=True)
         ml = Model(s)
         ml.freq = 'D'
