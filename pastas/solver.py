@@ -91,10 +91,8 @@ class LeastSquares(BaseSolver):
         parameters = model.parameters.initial.values
 
         # Set the boundaries
-        pmin = model.parameters.pmin.values
-        pmin[np.isnan(pmin)] = -np.inf
-        pmax = model.parameters.pmax.values
-        pmax[np.isnan(pmax)] = np.inf
+        pmin = np.where(model.parameters.pmin.isnull(), -np.inf, model.parameters.pmin)
+        pmax = np.where(model.parameters.pmax.isnull(), np.inf, model.parameters.pmax)
         bounds = (pmin, pmax)
 
         # Set boundaries to initial values if vary is False
@@ -123,7 +121,7 @@ class LmfitSolve:
         parameters = lmfit.Parameters()
         p = model.parameters[['initial', 'pmin', 'pmax', 'vary']]
         for k in p.index:
-            pp = np.where(np.isnan(p.loc[k]), None, p.loc[k])
+            pp = np.where(p.loc[k].isnull(), None, p.loc[k])
             parameters.add(k, value=pp[0], min=pp[1], max=pp[2], vary=pp[3])
 
         self.fit = lmfit.minimize(fcn=self.objfunction, params=parameters,

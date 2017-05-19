@@ -347,7 +347,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         series = series.resample('d').median()
         inspring = self.__inspring__(series)
         if np.any(inspring):
-            return series.loc[inspring].median()
+            return series.iloc[inspring].median()
         else:
             return np.nan
 
@@ -452,7 +452,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         is14or28 = series.index.map(the14or28)
         if not np.any(is14or28):
             return np.nan
-        series = series.loc[is14or28]
+        series = series.iloc[is14or28]
         yearly = series.resample('a').apply(year_agg)
         if output == 'yearly':
             return yearly
@@ -585,7 +585,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         inspring = self.__inspring__(series)
         if np.any(inspring):
-            return series.loc[inspring].mean()
+            return series.iloc[inspring].mean()
         else:
             return np.nan
 

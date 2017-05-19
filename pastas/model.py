@@ -446,10 +446,10 @@ class Model:
         ----------
         tmin: str
             string with a year or date that can be turned into a pandas
-            Timestamp (e.g. pd.tslib.Timestamp(tmin)).
+            Timestamp (e.g. pd.Timestamp(tmin)).
         tmax: str
             string with a year or date that can be turned into a pandas
-            Timestamp (e.g. pd.tslib.Timestamp(tmax)).
+            Timestamp (e.g. pd.Timestamp(tmax)).
         freq: str
 
         use_oseries: Boolean
@@ -500,7 +500,7 @@ class Model:
         elif not tmin:
             tmin = self.oseries.index.min()
         else:
-            tmin = pd.tslib.Timestamp(tmin)
+            tmin = pd.Timestamp(tmin)
             # Check if tmin > oseries.tmin (Needs to be True)
             if tmin < self.oseries.index.min() and use_oseries:
                 warn("Specified tmin is before the first observation. tmin"
@@ -518,7 +518,7 @@ class Model:
         elif not tmax:
             tmax = self.oseries.index.max()
         else:
-            tmax = pd.tslib.Timestamp(tmax)
+            tmax = pd.Timestamp(tmax)
             # Check if tmax < oseries.tmax (Needs to be True)
             if tmax > self.oseries.index.max() and use_oseries:
                 warn("Specified tmax is after the last observation. tmax"
@@ -734,7 +734,10 @@ class Model:
         metadata["date_created"] = now
         metadata["date_modified"] = now
         metadata["pastas_version"] = __version__
-        metadata["owner"] = os.getlogin()
+        try:
+            metadata["owner"] = os.getlogin()
+        except:
+            metadata["owner"] = "Unknown"
 
         return metadata
 
