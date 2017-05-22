@@ -68,6 +68,22 @@ pastas\.tseries module
     :undoc-members:
     :show-inheritance:
 
+pastas\.uncertainty module
+--------------------------
+
+.. automodule:: pastas.uncertainty
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pastas\.utils module
+--------------------
+
+.. automodule:: pastas.utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pastas\.version module
 ----------------------
 

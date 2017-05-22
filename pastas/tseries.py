@@ -13,14 +13,6 @@ tseries module
     parameters : pandas Dataframe
         Dataframe containing the parameters.
 
-    Methods
-    -------
-    simulate : Returns pandas Series Object with simulate values
-               Input: tindex: Optional pandas TimeIndex. Time index to simulate
-               values
-               p: Optional[array-like]. Parameters used for simulation. If p is not
-               provided, parameters attribute will be used.
-               Returns: pandas Series of simulated values
 """
 
 from __future__ import print_function, division

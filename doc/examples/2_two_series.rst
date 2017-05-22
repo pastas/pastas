@@ -2,7 +2,7 @@
 Model with two time series
 ==========================
 
-.. code:: python
+.. code:: ipython3
 
     # First perform the necessary imports
     import pandas as pd
@@ -14,7 +14,7 @@ Model with two time series
 1. Importing the dependent time series data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code:: python
+.. code:: ipython3
 
     # Import and check the observed groundwater time series
     gwdata = pd.read_csv('../data/B58C0698001_0.csv', skiprows=11,
@@ -51,7 +51,7 @@ Model with two time series
 2. Import the independent time series
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code:: python
+.. code:: ipython3
 
     # Import observed precipitation series
     precip = pd.read_csv('../data/Heibloem_rain_data.dat', skiprows=4, 
@@ -70,7 +70,7 @@ Model with two time series
 3. Creating the time series model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code:: python
+.. code:: ipython3
 
     # Initiate the base model
     ml = Model(oseries)
@@ -98,7 +98,7 @@ Model with two time series
 4. Solving and plotting the model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code:: python
+.. code:: ipython3
 
     # Solve the time series model
     ml.solve()
@@ -148,7 +148,7 @@ Model with two time series
         C(precip_a, noise_alpha)     =  0.114 
     
 
-.. code:: python
+.. code:: ipython3
 
     ml.plot()
 

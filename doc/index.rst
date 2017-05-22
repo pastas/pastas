@@ -71,8 +71,11 @@ Please take a look at the `developers section <http://pastas.github.io/pastas/de
 on the documentation website for more information on how to develop Pastas.
 
 
-Indices and tables
-------------------
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. toctree::
+    :maxdepth: 2
+    :hidden:
+
+    Introduction <index>
+    Examples <examples>
+    Developers <developers>
+    API-Docs <modules>

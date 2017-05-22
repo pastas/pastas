@@ -8,7 +8,7 @@ observation-series is imported, and simulated. There are several
 stresses in the Menyanthes-file, among which are three groundwater
 extractions with a significant influence on groundwater head.
 
-.. code:: python
+.. code:: ipython3
 
     # First perform the necessary imports
     import matplotlib.pyplot as plt
@@ -23,7 +23,7 @@ Import the Menyanthes-file with observations and stresses. Then plot the
 observations, together with the diferent stresses in the Menyanthes
 file.
 
-.. code:: python
+.. code:: ipython3
 
     # how to use it?
     fname = '../data/MenyanthesTest.men'
@@ -58,7 +58,7 @@ file.
 Make a model with precipitation, evaporation and three groundwater
 extractions.
 
-.. code:: python
+.. code:: ipython3
 
     # Create the time series model
     ml = Model(meny.H[0].series)
@@ -219,7 +219,7 @@ extractions.
 Show the decomposition of the groundwater head, by plotting the
 influence on groundwater head of each of the stresses.
 
-.. code:: python
+.. code:: ipython3
 
     ml.plot_decomposition()
 

@@ -27,7 +27,7 @@ References
 groundwater levels: Application to the Veluwe. MSc. thesis, TU Delft.
 http://repository.tudelft.nl/view/ir/uuid:baf4fc8c-6311-407c-b01f-c80a96ecd584/
 
-.. code:: python
+.. code:: ipython3
 
     # First perform the necessary imports
     import pandas as pd
@@ -48,7 +48,7 @@ names "Stand (cm t.o.v. NAP)" (NAP is the Dutch national reference
 level). The final observed time series is stored as a Pandas ``Series``
 object names ``oseries``.
 
-.. code:: python
+.. code:: ipython3
 
     # Import and check the observed groundwater time series
     parse = lambda x: md.datetime.datetime.strptime(x, '%d-%m-%Y')
@@ -86,7 +86,7 @@ The two series are provided in a .txt file, which is again imported
 using Pandas ``read_csv`` function. The data is stored as a Pandas
 ``Dataframe`` named ``data``.
 
-.. code:: python
+.. code:: ipython3
 
     data = pd.read_csv('../data/KNMI_Apeldoorn.txt', skipinitialspace=True, skiprows=12,
                        delimiter=',', parse_dates=[0], index_col=['Date'], usecols=[
@@ -117,7 +117,7 @@ function for the recharge (:math:`R = P - f * E`). We use the
 ``TseriesRecharge`` class for this, and tell this class to use the
 ``Linear()`` recharge model.
 
-.. code:: python
+.. code:: ipython3
 
     # Create the time series model with preferential recharge model
     ml = Model(oseries)
@@ -142,7 +142,7 @@ flow model to calculate the recharge. Again, we use the
 ``Preferential()`` recharge model. See [1] for more information on this
 recharge model.
 
-.. code:: python
+.. code:: ipython3
 
     # Create the time series model with linear recharge model
     ml1 = Model(oseries)
@@ -167,7 +167,7 @@ the solve function on both models. (Solving the models (specifically the
 preferential model) can take several minutes when the recharge models
 are not compiled!)
 
-.. code:: python
+.. code:: ipython3
 
     print('results of the linear recharge model')
     print('------------------------------------')
@@ -251,7 +251,7 @@ resulting simulated groundwater levels. Instead of calling the
 ``ml.plot()`` or ``ml.plot_results`` function to do so, we write some
 simple code to show the groundwater levels in the same graph.
 
-.. code:: python
+.. code:: ipython3
 
     plt.figure()
     plt.plot(ml1.oseries, 'ko', markersize=2)
@@ -280,7 +280,7 @@ simple code to show the groundwater levels in the same graph.
 **Pastas** contains a built-in option to calculate statistics that can
 be used to comparing model performances.
 
-.. code:: python
+.. code:: ipython3
 
     print('Statistics for the linear recharge model:')
     print('')
