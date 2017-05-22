@@ -16,6 +16,7 @@ before_install:
     - "export DISPLAY=:99.0"
     - "sh -e /etc/init.d/xvfb start"
     - pip install --upgrade pip
+    - pip install codecov
 
 # Install dependencies
 install:
@@ -24,3 +25,6 @@ install:
 # command to run tests
 script:
    - nosetests tests -v
+
+after_success:
+   - codecov
