@@ -1,9 +1,10 @@
 """
 This file contains the plotting functionalities that are available for Pastas.
 
-Usage
------
-ml.plot.decomposition()
+Examples
+--------
+    ml.plot.decomposition()
+
 """
 
 import matplotlib.pyplot as plt
@@ -49,13 +50,13 @@ class Plotting():
         plt.show()
 
     def results(self, tmin=None, tmax=None, savefig=False, figsize=None):
-        """
+        """Plot different results in one window to get a quick overview.
 
         Parameters
         ----------
         tmin/tmax: str
             start and end time for plotting
-        savefig: Optional[Boolean]
+        savefig: boolean, optional
             True to save the figure, False is default. Figure is saved in the
             current working directory when running your python scripts.
 
@@ -63,7 +64,7 @@ class Plotting():
         -------
 
         """
-        plt.figure(facecolor='white', figsize=figsize)
+        fig = plt.figure(facecolor='white', figsize=figsize)
         gs = plt.GridSpec(3, 4, wspace=0.4, hspace=0.4)
 
         # Plot the Groundwater levels
@@ -219,7 +220,7 @@ class Plotting():
 
         Returns
         -------
-        fig: Figure
+        fig: matplotlib.Figure
             return a Matplotlib figure instance.
 
         """
@@ -257,7 +258,7 @@ class Plotting():
 
         Returns
         -------
-        fig: Figure
+        fig: matplotlib.Figure
             return a Matplotlib figure instance.
 
         """

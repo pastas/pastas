@@ -8,23 +8,28 @@ Each of these series can be obtained through their individual (private) get
 method for a specific time frame.
 two different types of statistics are provided: model statistics and
 descriptive statistics for each series.
-Usage
------
->>> ml.stats.summary()
-                                     Value
-Statistic
-Pearson R^2                       0.874113
-Root mean squared error           0.432442
-Bayesian Information Criterion  113.809120
-Average Deviation                 0.335966
-Explained variance percentage    72.701968
-Akaike InformationCriterion      25.327385
+
+Examples
+--------
+
+    >>> ml.stats.summary()
+                                         Value
+    Statistic
+    Pearson R^2                       0.874113
+    Root mean squared error           0.432442
+    Bayesian Information Criterion  113.809120
+    Average Deviation                 0.335966
+    Explained variance percentage    72.701968
+    Akaike InformationCriterion      25.327385
+
 TODO
 ----
-- ACF for irregular timesteps
-- PACF for irregular timestep
-- Nash-Sutcliffe
-- portmanteau test (ljung-Box & Box-Pierce)
+
+* ACF for irregular timesteps
+* PACF for irregular timestep
+* Nash-Sutcliffe
+* portmanteau test (ljung-Box & Box-Pierce)
+
 """
 from __future__ import print_function, division
 
@@ -48,7 +53,6 @@ class Statistics(object):
         # Save a reference to the model.
         self.ml = ml
         # Save all statistics that can be calculated.
-
         self.ops = {'evp': 'Explained variance percentage',
                     'rmse': 'Root mean squared error',
                     'rmsi': 'Root mean squared innovation',
@@ -258,6 +262,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         Notes
         -----
+
         For the partial autocorrelation function the acf method from
         Statsmodels package is used untill an alternative is found. However,
         please be aware that this can lead to incorrect values for irregular
@@ -266,7 +271,11 @@ included in Pastas. To obtain a list of all statistics that are included type:
         Please refer to the Statsmodels docs:
         http://statsmodels.sourceforge.net/devel/_modules/statsmodels/tsa/stattools.html#pacf
 
-        TODO: Compute  partial autocorrelation for irregulat time steps.
+        TODO
+        ----
+
+        Compute  partial autocorrelation for irregulat time steps.
+
         """
         innovations = self.ml.innovations(tmin=tmin, tmax=tmax)
         return pacf(innovations, nlags=nlags)
@@ -274,10 +283,9 @@ included in Pastas. To obtain a list of all statistics that are included type:
     # Some Dutch statistics
 
     def q_ghg(self, tmin=None, tmax=None, key='simulated', q=0.94):
-        """Gemiddeld Hoogste Grondwaterstand (GHG) also called MHGL (Mean High Groundwater Level)
-        Approximated by taking a quantile of the timeseries values, after
-        resampling to daily values.
-
+        """Gemiddeld Hoogste Grondwaterstand (GHG) also called MHGL (Mean High
+        Groundwater Level) Approximated by taking a quantile of the
+        timeseries values, after resampling to daily values.
 
         This function does not care about series length!
 
@@ -285,24 +293,20 @@ included in Pastas. To obtain a list of all statistics that are included type:
         ----------
         key : None, optional
             timeseries key ('observations' or 'simulated')
-        tmin, tmax: Optional[pd.Timestamp]
+        tmin/tmax: pandas.Timestamp, optional
             Time indices to use for the simulation of the time series model.
         q : float, optional
-            quantile, fraction of exceedance (default 0.94)
+            quantile fraction of exceedance (default 0.94)
 
-        Returns
-        -------
-        TYPE
-            Description
         """
         series = self.bykey(key=key, tmin=tmin, tmax=tmax)
         series = series.resample('d').median()
         return series.quantile(q)
 
     def q_glg(self, tmin=None, tmax=None, key='simulated', q=0.06):
-        """Gemiddeld Laagste Grondwaterstand (GLG) also called MLGL (Mean Low Groundwater Level)
-        Approximated by taking a quantile of the timeseries values, after
-        resampling to daily values.
+        """Gemiddeld Laagste Grondwaterstand (GLG) also called MLGL (Mean Low
+        Groundwater Level) approximated by taking a quantile of the
+        timeseries values, after resampling to daily values.
 
         This function does not care about series length!
 
@@ -310,24 +314,21 @@ included in Pastas. To obtain a list of all statistics that are included type:
         ----------
         key : None, optional
             timeseries key ('observations' or 'simulated')
-        tmin, tmax : Optional[pd.Timestamp]
+        tmin/tmax : pandas.Timestamp, optional
             Time indices to use for the simulation of the time series model.
         q : float, optional
             quantile, fraction of exceedance (default 0.06)
 
-        Returns
-        -------
-        TYPE
-            Description
         """
         series = self.bykey(key=key, tmin=tmin, tmax=tmax)
         series = series.resample('d').median()
         return series.quantile(q)
 
     def q_gvg(self, tmin=None, tmax=None, key='simulated'):
-        """Gemiddeld Voorjaarsgrondwaterstand (GVG) also called MSGL (Mean Spring Groundwater Level)
-        Approximated by taking the median of the values in the
-        period between 14 March and 15 April (after resampling to daily values).
+        """Gemiddeld Voorjaarsgrondwaterstand (GVG) also called MSGL (Mean
+        Spring Groundwater Level) approximated by taking the median of the
+        values in the period between 14 March and 15 April (after resampling to
+        daily values).
 
         This function does not care about series length!
 
@@ -335,13 +336,9 @@ included in Pastas. To obtain a list of all statistics that are included type:
         ----------
         key : None, optional
             timeseries key ('observations' or 'simulated')
-        tmin, tmax: Optional[pd.Timestamp]
+        tmin/tmax: pandas.Timestamp, optional
             Time indices to use for the simulation of the time series model.
 
-        Returns
-        -------
-        TYPE
-            Description
         """
         series = self.bykey(key=key, tmin=tmin, tmax=tmax)
         series = series.resample('d').median()
@@ -352,18 +349,13 @@ included in Pastas. To obtain a list of all statistics that are included type:
             return np.nan
 
     def d_ghg(self, tmin=None, tmax=None):
-        """
-        Difference in GHG between simulated and observed values
+        """Difference in GHG between simulated and observed values
 
         Parameters
         ----------
-        tmin, tmax: Optional[pd.Timestamp]
+        tmin/tmax: pandas.Timestamp, optional
             Time indices to use for the simulation of the time series model.
 
-        Returns
-        -------
-        TYPE
-            Description
         """
         return (self.q_ghg(tmin=tmin, tmax=tmax, key='simulated') -
                 self.q_ghg(tmin=tmin, tmax=tmax, key='observations'))
@@ -374,68 +366,65 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         Parameters
         ----------
-        tmin, tmax: Optional[pd.Timestamp]
+        tmin/tmax: pandas.Timestamp, optional
             Time indices to use for the simulation of the time series model.
 
-        Returns
-        -------
-        TYPE
-            Description
         """
         return (self.q_glg(tmin=tmin, tmax=tmax, key='simulated') -
                 self.q_glg(tmin=tmin, tmax=tmax, key='observations'))
 
     def d_gvg(self, tmin=None, tmax=None):
-        """
-        Difference in GVG between simulated and observed values
+        """Difference in GVG between simulated and observed values
 
         Parameters
         ----------
-        tmin, tmax: Optional[pd.Timestamp]
+        tmin, tmax: pandas.Timestamp
             Time indices to use for the simulation of the time series model.
 
-        Returns
-        -------
-        TYPE
-            Description
         """
         return (self.q_gvg(tmin=tmin, tmax=tmax, key='simulated') -
                 self.q_gvg(tmin=tmin, tmax=tmax, key='observations'))
 
     def gxg(self, year_agg, tmin, tmax, key, fill_method, limit, output):
-        """Worker method for classic GXG statistics.
-        Resampling the series to every 14th and 28th of the month.
-        Taking the mean of aggregated values per year.
+        """Worker method for classic GXG statistics. Resampling the series to
+        every 14th and 28th of the month. Taking the mean of aggregated
+        values per year.
         
         Parameters
         ----------
         year_agg : function series -> scalar
             Aggregator function to one value per year
-        tmin, tmax : Optional[pd.Timestamp]
+        tmin/tmax : pandas.Timestamp, optional
             Time indices to use for the simulation of the time series model.
-        key : None, optional
+        key : str, optional
             timeseries key ('observations' or 'simulated')
-        fill_method : str or None
-            fill method for interpolation to 14th and 28th of the month
-            see: http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.ffill.html
-                 http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.bfill.html
-                 http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.interpolate.html
-            Use None to omit filling and drop NaNs
-        limit : int or None
-            Maximum number of timesteps to fill using fill method, use None to fill all
+        fill_method : str
+            see notes below
+        limit : int or None, optional
+            Maximum number of timesteps to fill using fill method, use None to
+            fill all.
         output : str
             output type 'yearly' for series of yearly values, 'mean' for
             mean of yearly values
         
         Returns
         -------
-        pd.Series or scalar
+        pandas.Series or scalar
             Series of yearly values or mean of yearly values
         
         Raises
         ------
         ValueError
             When output argument is unknown
+
+        Notes
+        -----
+        fill method for interpolation to 14th and 28th of the month see:
+            * http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.ffill.html
+            * http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.bfill.html
+            * http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.interpolate.html
+            * Use None to omit filling and drop NaNs
+
         """
         series = self.bykey(key=key, tmin=tmin, tmax=tmax)
         series = series.resample('d').mean()
@@ -464,34 +453,30 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
     def ghg(self, tmin=None, tmax=None, key='simulated',
             fill_method='linear', limit=15, output='mean'):
-        """Classic method:
-        Resampling the series to every 14th and 28th of the month.
-        Taking the mean of the mean of three highest values per year.
-
-        This function does not care about series length!
+        """Classic method resampling the series to every 14th and 28th of
+        the month. Taking the mean of the mean of three highest values per
+        year. This function does not care about series length!
 
         Parameters
         ----------
-        tmin, tmax : Optional[pd.Timestamp]
+        tmin/tmax : pandas.Timestamp, optional
             Time indices to use for the simulation of the time series model.
-        key : None, optional
+        key : str, optional
             timeseries key ('observations' or 'simulated')
         fill_method : str
-            fill method for interpolation to 14th and 28th of the month
-            see: http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.ffill.html
-                 http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.bfill.html
-                 http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.interpolate.html
-            Use None to omit filling and drop NaNs
-        limit : int or None
-            Maximum number of timesteps to fill using fill method, use None to fill all
-        output : str
-            output type 'yearly' for series of yearly values, 'mean' for
-            mean of yearly values
+            see .. :mod: pastas.stats.gxg
+        limit : int or None, optional
+            Maximum number of timesteps to fill using fill method, use None to
+            fill all.
+        output : str, optional
+            output type 'yearly' for series of yearly values, 'mean' for mean
+            of yearly values.
 
         Returns
         -------
         pd.Series or scalar
             Series of yearly values or mean of yearly values
+
         """
         mean_high = lambda s: s.nlargest(3).mean()
         return self.gxg(mean_high, tmin=tmin, tmax=tmax, key=key,
@@ -499,27 +484,22 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
     def glg(self, tmin=None, tmax=None, key='simulated',
             fill_method='linear', limit=15, output='mean'):
-        """Classic method:
-        Resampling the series to every 14th and 28th of the month.
-        Taking the mean of the mean of three lowest values per year.
-
+        """Classic method resampling the series to every 14th and 28th of
+        the month. Taking the mean of the mean of three lowest values per year.
         This function does not care about series length!
 
         Parameters
         ----------
-        tmin, tmax : Optional[pd.Timestamp]
+        tmin/tmax : pandas.Timestamp, optional
             Time indices to use for the simulation of the time series model.
-        key : None, optional
+        key : str, optional
             timeseries key ('observations' or 'simulated')
-        fill_method : str
-            fill method for interpolation to 14th and 28th of the month
-            see: http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.ffill.html
-                 http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.bfill.html
-                 http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.interpolate.html
-            Use None to omit filling and drop NaNs
-        limit : int or None
-            Maximum number of timesteps to fill using fill method, use None to fill all
-        output : str
+        fill_method : str, optional
+            see .. :mod: pastas.stats.gxg
+        limit : int or None, optional
+            Maximum number of timesteps to fill using fill method, use None to
+            fill all.
+        output : str, optional
             output type 'yearly' for series of yearly values, 'mean' for
             mean of yearly values
 
@@ -527,6 +507,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         -------
         pd.Series or scalar
             Series of yearly values or mean of yearly values
+
         """
         mean_low = lambda s: s.nsmallest(3).mean()
         return self.gxg(mean_low, tmin=tmin, tmax=tmax, key=key,
@@ -534,34 +515,30 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
     def gvg(self, tmin=None, tmax=None, key='simulated',
             fill_method='linear', limit=15, output='mean'):
-        """Classic method:
-        Resampling the series to every 14th and 28th of the month.
-        Taking the mean of the values on March 14, March 28 and April 14.
-
-        This function does not care about series length!
+        """Classic method resampling the series to every 14th and 28th of
+        the month. Taking the mean of the values on March 14, March 28 and
+        April 14. This function does not care about series length!
 
         Parameters
         ----------
-        tmin, tmax : Optional[pd.Timestamp]
+        tmin/tmax : pandas.Timestamp, optional
             Time indices to use for the simulation of the time series model.
-        key : None, optional
+        key : str, optional
             timeseries key ('observations' or 'simulated')
-        fill_method : str
-            fill method for interpolation to 14th and 28th of the month
-            see: http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.ffill.html
-                 http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.bfill.html
-                 http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.interpolate.html
-            Use None to omit filling and drop NaNs
-        limit : int or None
-            Maximum number of timesteps to fill using fill method, use None to fill all
-        output : str
+        fill_method : str, optional
+            see .. :mod: pastas.stats.gxg
+        limit : int or None, optional
+            Maximum number of timesteps to fill using fill method, use None to
+            fill all.
+        output : str, optional
             output type 'yearly' for series of yearly values, 'mean' for
             mean of yearly values
 
         Returns
         -------
-        pd.Series or scalar
+        pandas.Series or scalar
             Series of yearly values or mean of yearly values
+
         """
         return self.gxg(self.__mean_spring__, tmin=tmin, tmax=tmax, key=key,
                         fill_method=fill_method, limit=limit, output=output)
@@ -575,13 +552,14 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         Parameters
         ----------
-        series : pd.Series
+        series : pandas.Series
             series with datetime index
 
         Returns
         -------
         float
             Mean of series, or NaN if no values in spring
+
         """
         inspring = self.__inspring__(series)
         if np.any(inspring):

@@ -100,25 +100,25 @@ class TestGXG(object):
                          output='mean', )
         assert np.isnan(v)
 
-    def test_gxg_series(self):
-        s = pd.read_csv('data\\hseries_gxg.csv', index_col=0, header=0,
-                        parse_dates=True, dayfirst=True, squeeze=True)
-        ml = Model(s)
-        ml.freq = 'D'
-        ghg = ml.stats.ghg(key='observations')
-        glg = ml.stats.glg(key='observations')
-        gvg = ml.stats.gvg(key='observations')
-        print('\n')
-        print('calculated GXG\'s classic method: \n')
-        print(('GHG: {ghg:.2f} m+NAP\n'
-               'GLG: {glg:.2f} m+NAP\n'
-               'GVG: {gvg:.2f} m+NAP\n').format(
-            ghg=ghg, glg=glg, gvg=gvg))
-        print('Menyanthes GXG\'s: \n')
-        print(('GHG: {ghg:.2f} m+NAP\n'
-               'GLG: {glg:.2f} m+NAP\n'
-               'GVG: {gvg:.2f} m+NAP\n').format(
-            ghg=-3.23, glg=-3.82, gvg=-3.43))
+    # def test_gxg_series(self):
+    #     s = pd.read_csv('data\\hseries_gxg.csv', index_col=0, header=0,
+    #                     parse_dates=True, dayfirst=True, squeeze=True)
+    #     ml = Model(s)
+    #     ml.freq = 'D'
+    #     ghg = ml.stats.ghg(key='observations')
+    #     glg = ml.stats.glg(key='observations')
+    #     gvg = ml.stats.gvg(key='observations')
+    #     print('\n')
+    #     print('calculated GXG\'s classic method: \n')
+    #     print(('GHG: {ghg:.2f} m+NAP\n'
+    #            'GLG: {glg:.2f} m+NAP\n'
+    #            'GVG: {gvg:.2f} m+NAP\n').format(
+    #         ghg=ghg, glg=glg, gvg=gvg))
+    #     print('Menyanthes GXG\'s: \n')
+    #     print(('GHG: {ghg:.2f} m+NAP\n'
+    #            'GLG: {glg:.2f} m+NAP\n'
+    #            'GVG: {gvg:.2f} m+NAP\n').format(
+    #         ghg=-3.23, glg=-3.82, gvg=-3.43))
 
         # def test_gxg_series(self, capsys):
         #     s = pd.read_csv(r'data/hseries_gxg.csv', index_col=0, header=0,

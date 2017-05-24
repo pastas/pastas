@@ -21,30 +21,38 @@ from .version import __version__
 
 
 class Model:
+    """Initiates a time series model.
+
+    Parameters
+    ----------
+    oseries: pandas.Series
+        pandas Series object containing the dependent time series. The
+        observation can be non-equidistant.
+    xy: tuple, optional
+        XY location of the oseries in lat-lon format.
+    name: str, optional
+        String with the name of the model, used in plotting and saving.
+    metadata: dict, optional
+        Dictionary containing metadata of the model.
+    warmup: float, optional
+        Number of days used for warmup.
+    fillnan: str or float, optional
+        Methods or float number to fill nan-values. Default values is
+        'drop'. Currently supported options are: 'interpolate', float,
+        'mean' and, 'drop'. Interpolation is performed with a standard
+        linear interpolation.
+    constant: bool, optional
+        Add a constant to the model (Default=True).
+
+    Examples
+    --------
+
+    >>> oseries = pd.Series([1,2,1], index=pd.to_datetime(range(3), unit="D"))
+    >>> ml = Model(oseries)
+
+    """
     def __init__(self, oseries, xy=(0, 0), name="PASTAS_Model", metadata=None,
                  warmup=0, fillnan='drop', constant=True):
-        """Initiates a time series model.
-
-        Parameters
-        ----------
-        oseries: pd.Series
-            pandas Series object containing the dependent time series. The
-            observation can be non-equidistant.
-        xy: Optional[tuple]
-            XY location of the oseries in lat-lon format.
-        metadata: Optional[dict]
-            Dictionary containing metadata of the model.
-        warmup: Optional[float]
-            Number of days used for warmup
-        fillnan: Optional[str or float]
-            Methods or float number to fill nan-values. Default values is
-            'drop'. Currently supported options are: 'interpolate', float,
-            'mean' and, 'drop'. Interpolation is performed with a standard
-            linear interpolation.
-        constant: Boolean
-            Add a constant to the model (Default=True).
-
-        """
         self.oseries = check_oseries(oseries, fillnan)
         self.oseries_calib = None
 
@@ -91,12 +99,13 @@ class Model:
 
         Parameters
         ----------
-        name: str
-            string with the name of the tseries object.
+        tseries: pastas.tseries
+            pastas.tseries object.
 
         Notes
         -----
         To obtain a list of the tseries names type:
+
         >>> ml.tseriesdict.keys()
 
         """
@@ -141,6 +150,7 @@ class Model:
         Notes
         -----
         To obtain a list of the tseries names type:
+
         >>> ml.tseriesdict.keys()
 
         """
@@ -182,17 +192,17 @@ class Model:
 
         Parameters
         ----------
-        parameters: Optional[list]
+        parameters: list, optional
             Array of the parameters used in the time series model.
-        tmin: Optional[str]
-        tmax: Optional[str]
-        freq: Optional[str]
+        tmin: str, optional
+        tmax: str, optional
+        freq: str, optional
             frequency at which the time series are simulated.
 
         Returns
         -------
-        h: pd.Series
-            Pandas Series object containing the simulated time series
+        h: pandas.Series
+            pandas.Series object containing the simulated time series
 
         Notes
         -----
@@ -238,19 +248,17 @@ class Model:
 
         Parameters
         ----------
-        parameters: Optional[list]
+        parameters: list, optional
             Array of the parameters used in the time series model.
-        tmin: Optional[str]
-        tmax: Optional[str]
-        freq: Optional[str]
+        tmin: str, optional
+        tmax: str, optional
+        freq: str, optional
             frequency at which the time series are simulated.
-        h_observed: Optional[pd.Series]
-            Pandas series containing the observed values.
 
         Returns
         -------
-        res: pd.Series
-            Pandas series with the residuals series.
+        res: pandas.Series
+            pandas.Series with the residuals series.
 
         """
         if freq is None:
@@ -288,9 +296,15 @@ class Model:
         return res
 
     def get_oseries_calib(self, tmin, tmax, sim_index):
+        """Method to get the oseries to use for calibration.
+
+        This method is for performance improvements only.
+
+        """
         oseries_calib = self.oseries[tmin: tmax]
         # sample measurements, so that frequency is not higher than model
-        # keep the original timestamps, as they will be used during interpolation of the simulation
+        # keep the original timestamps, as they will be used during
+        # interpolation of the simulation
         oseries_calib = self.sample(oseries_calib, sim_index)
         return oseries_calib
 
@@ -306,16 +320,16 @@ class Model:
 
         Parameters
         ----------
-        parameters: Optional[list]
+        parameters: list, optional
             Array of the parameters used in the time series model.
-        tmin: Optional[str]
-        tmax: Optional[str]
-        freq: Optional[str]
+        tmin: str, optional
+        tmax: str, optional
+        freq: str, optional
             frequency at which the time series are simulated.
 
         Returns
         -------
-        v: pd.Series
+        v : pandas.Series
             Pandas series of the innovations.
 
         Notes
@@ -356,10 +370,10 @@ class Model:
 
         Parameters
         ----------
-        initial: Boolean
+        initial: bool, optional
             Use initial values from parameter dataframe if True. If False, the
             optimal values are used.
-        noise: Boolean
+        noise: bool, optional
             Add the parameters for the noisemodel to the parameters
             Dataframe or not.
 
@@ -391,22 +405,21 @@ class Model:
 
     def solve(self, tmin=None, tmax=None, solver=LmfitSolve, report=True,
               noise=True, initial=True, weights=None):
-        """
-        Methods to solve the time series model.
+        """Methods to solve the time series model.
 
         Parameters
         ----------
-        tmin: Optional[str]
+        tmin: str, optional
             String with a start date for the simulation period (E.g. '1980')
-        tmax: Optional[str]
+        tmax: str, optional
             String with an end date for the simulation period (E.g. '2010')
-        solver: Optional[solver class]
+        solver: pastas.solver, optional
             Class used to solve the model. Default is lmfit (LmfitSolve)
-        report: Boolean
+        report: bool, optional
             Print a report to the screen after optimization finished.
-        noise: Boolean
+        noise: bool, optional
             Use the noise model (True) or not (False).
-        initial: Boolean
+        initial: bool, optional
             Reset initial parameters.
 
         """
@@ -444,20 +457,20 @@ class Model:
 
         Parameters
         ----------
-        tmin: str
+        tmin: str, optional
             string with a year or date that can be turned into a pandas
             Timestamp (e.g. pd.Timestamp(tmin)).
-        tmax: str
+        tmax: str, optional
             string with a year or date that can be turned into a pandas
             Timestamp (e.g. pd.Timestamp(tmax)).
-        freq: str
-
-        use_oseries: Boolean
+        freq: str, optional
+            string with the frequency.
+        use_oseries: bool, optional
             boolean to check the tmin and tmax against the oseries.
 
         Returns
         -------
-        tmin, tmax: pd.Timestamp
+        tmin, tmax: pandas.Timestamp
             returns a pandas timestamp for tmin and tmax.
 
         Notes
@@ -544,7 +557,7 @@ class Model:
         return tmin, tmax
 
     def set_freq_offset(self):
-        """
+        """Set the frequency offset for the model class.
 
         Notes
         -----
@@ -552,7 +565,11 @@ class Model:
 
         1. The frequency of the model is the highest frequency of the Tseries
         2. Tseries timestamps should match (e.g. similar hours)
-        3. TODO: freq of the tseries is lower than the max tdelta of the oseries
+
+        TODO
+        ----
+        Set freq_offset when freq of the tseries is lower than the max
+        tdelta of the oseries.
 
         """
 
@@ -593,14 +610,14 @@ class Model:
 
         Parameters
         ----------
-        noise: Boolean
+        noise: bool, optional
             Add the parameters for the noisemodel to the parameters
             Dataframe or not.
 
         Returns
         -------
-        parameters: pd.DataFrame
-            Pandas Dataframe with the parameters.
+        parameters: pandas.DataFrame
+            pandas.Dataframe with the parameters.
 
         """
         parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax',
@@ -619,9 +636,14 @@ class Model:
         none are provided. This method is used by the simulation, residuals
         and the innovations methods.
 
+        Parameters
+        ----------
+        name: str, optional
+            string with the name of the pastas.tseries object.
+
         Returns
         -------
-        p: list
+        p: list, optional
             Array of the parameters used in the time series model.
 
         """
@@ -692,20 +714,20 @@ class Model:
 
         Parameters
         ----------
-        series: pd.Series
+        series: pandas.Series
             pandas series object.
-        tindex: pd.index
+        tindex: pandas.index
             Pandas index object
 
         Returns
         -------
-        series: pd.Series
+        series: pandas.Series
 
 
         Notes
         -----
         Find the index closest to the tindex, and then return a selection
-        of series
+        of series.
 
         """
         f = interpolate.interp1d(series.index.asi8,
@@ -720,7 +742,7 @@ class Model:
 
         Parameters
         ----------
-        meta: dict
+        meta: dict, optional
             dictionary containing user defined metadata
 
         Returns
@@ -747,7 +769,7 @@ class Model:
 
         Parameters
         ----------
-        fname: str
+        fname: str, optional
             filename excluding the extension.
 
         Returns
@@ -778,17 +800,18 @@ class Model:
 
         return print("Model is stored succesfully as %s" % fname)
 
-    def import_model(self, fname=None):
+    def import_model(self, fname):
         """Temporary implementation of a load function, needs to be changed in the future, so PASTAS can support models from other versions..
 
-        TODO: probably it should copy the attributes only, so all methods are updated..? R. Collenteur 18/05/2017
+        TODO
+        ----
+        probably it should copy the attributes only, so all methods are
+        updated..? R. Collenteur 18/05/2017
 
         Parameters
         ----------
-        fname
-
-        Returns
-        -------
+        fname: str
+            filename without the .pkl extension
 
         """
 

@@ -1,8 +1,9 @@
-# coding=utf-8
-"""
-rfunc module.
+"""rfunc module.
+
 Contains classes for the response functions.
-Each response function class needs the following:
+
+More information on how to write a response class can be found :
+:ref:` here <http://pastas.github.io/pastas/developers.html>`
 """
 
 from __future__ import print_function, division
@@ -12,11 +13,11 @@ import pandas as pd
 from scipy.special import gammainc, gammaincinv, k0, exp1, erfc, lambertw
 
 _class_doc = """
-Attributes
+Parameters
 ----------
-nparam: integer
+nparam: int
     number of parameters.
-up: boolean
+up: bool
     indicates whether a positive stress will cause the head to go up
     (True) or down (False)
 meanstress: float
@@ -27,26 +28,6 @@ cutoff: float
 tmax: float
     time corresponding to the cutoff
 
-Functions
----------
-set_parameters(self, name)
-    A function that returns a Pandas DataFrame of the parameters of the
-    response function. Columns of the dataframe need to be
-    ['initial', 'pmin', 'pmax', 'vary'].
-    Rows of the DataFrame have names of the parameters.
-    Input name is used as a prefix.
-    This function is called by a Tseries object.
-step(self, p)
-    Returns an array of the step response. Input
-    p is a numpy array of parameter values in the same order as
-    defined in set_parameters.
-block(self, p)
-    Returns an array of the block response. Input
-    p is a numpy array of parameter values in the same order as
-    defined in set_parameters.
-
-More information on how to write a response class can be found here:
-http://pastas.github.io/pastas/developers.html
 """
 
 
@@ -71,10 +52,10 @@ class RfuncBase:
 
 
 class Gamma(RfuncBase):
-    __doc__ = """
-    Gamma response function with 3 parameters A, a, and n.
+    __doc__ = """Gamma response function with 3 parameters A, a, and n.
 
-    .. math:: step(t) = A * Gammainc(n, t / a)
+    .. math::
+        step(t) = A * Gammainc(n, t / a)
 
     %(doc)s
     """ % {'doc': _class_doc}
@@ -110,10 +91,10 @@ class Gamma(RfuncBase):
 
 
 class Exponential(RfuncBase):
-    __doc__ = """
-    Exponential response function with 2 parameters: A and a.
+    __doc__ = """Exponential response function with 2 parameters: A and a.
 
-    .. math:: step(t) = A * (1 - exp(-t / a))
+    .. math::
+        step(t) = A * (1 - exp(-t / a))
 
     %(doc)s
     """ % {'doc': _class_doc}
@@ -146,24 +127,20 @@ class Exponential(RfuncBase):
 
 
 class Hantush(RfuncBase):
-    """ The Hantush well function
+    """ The Hantush well function.
 
     Notes
     -----
-    Parameters are rho = r / lambda and cS
+    Parameters are ..math::
+        rho = r / lambda and cS
 
     References
     ----------
-    [1] Hantush, M. S., & Jacob, C. E. (1955). Non‐steady radial flow in an
-    infinite leaky aquifer. Eos, Transactions American Geophysical Union,
-    36(1), 95-100.
+    Hantush, M. S., & Jacob, C. E. (1955). Non‐steady radial flow in an infinite leaky aquifer. Eos, Transactions American Geophysical Union, 36(1), 95-100.
 
-    [2] Veling, E. J. M., & Maas, C. (2010). Hantush well function revisited.
-    Journal of hydrology, 393(3), 381-388.
+    Veling, E. J. M., & Maas, C. (2010). Hantush well function revisited. Journal of hydrology, 393(3), 381-388.
 
-    [3] Von Asmuth, J. R., Maas, K., Bakker, M., & Petersen, J. (2008). Modeling
-    time series of ground water head fluctuations subjected to multiple
-    stresses. Ground Water, 46(1), 30-40.
+    Von Asmuth, J. R., Maas, K., Bakker, M., & Petersen, J. (2008). Modeling time series of ground water head fluctuations subjected to multiple stresses. Ground Water, 46(1), 30-40.
 
     """
 
@@ -214,7 +191,7 @@ class Hantush(RfuncBase):
 
 
 class Theis(RfuncBase):
-    """ The Theis well function.
+    """The Theis well function.
 
     Notes
     -----
@@ -223,9 +200,7 @@ class Theis(RfuncBase):
 
     References
     ----------
-    [1] Theis, C. V. (1935). The relation between the lowering of the Piezometric
-    surface and the rate and duration of discharge of a well using ground‐water
-    storage. Eos, Transactions American Geophysical Union, 16(2), 519-524.
+    Theis, C. V. (1935). The relation between the lowering of the Piezometric surface and the rate and duration of discharge of a well using groundwater storage. Eos, Transactions American Geophysical Union, 16(2), 519-524.
 
     """
 
@@ -259,17 +234,14 @@ class Theis(RfuncBase):
 
 
 class Bruggeman(RfuncBase):
-    """ The function of Bruggeman, for a river in a confined aquifer, overlain
+    """The function of Bruggeman, for a river in a confined aquifer, overlain
     by an aquitard with aquiferous ditches.
 
     References
     ----------
-    [1] http://grondwaterformules.nl/index.php/formules/waterloop/deklaag-met-sloten
+    http://grondwaterformules.nl/index.php/formules/waterloop/deklaag-met-sloten
 
     """
-
-    #
-
     def __init__(self, up=True, meanstress=1, cutoff=0.99):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 3
@@ -308,6 +280,7 @@ class Bruggeman(RfuncBase):
 
 class One(RfuncBase):
     """Dummy class for Constant. Returns 1
+
     """
 
     def __init__(self, up, meanstress, cutoff):

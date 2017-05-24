@@ -1,10 +1,13 @@
-How time is handled in Pastas
-=============================
-Time in at the heart of time series analysis, and therefor needs to be
+Handling time
+=============
+Time is at the heart of time series analysis, and therefor needs to be
 carefully considered when dealing with time series models. In this section
-the choices of how Pastas handles all kind of timesettings are discussed, as
+the choices of how |Project| handles all kind of timesettings are discussed, as
 well as the methods that are available for changing these.
 
+ .. Note::
+     * Standard format for a date is the Pandas Timestamp.
+     * Standard format for a list of dates is the Pandas DatetimeIndex.
 
 Setting tmin and tmax
 ~~~~~~~~~~~~~~~~~~~~~
@@ -30,13 +33,10 @@ Basic tasks:
 
 What values do the stored tmin and tmax have?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The values for tmin and tmax are stored in the model class. These values change in three seperate cases (in order of events):
+The values for tmin and tmax are stored in the model class. These values change
+ in three seperate cases (in order of events):
+
 1. When creating a model, tmin and tmax are set to None.
 2. When added time series, tmin and tmax are set by the tseries.
 3. When solving a model, tmin and tmax are set by what is possible or by the
    user.
-
- Notes
- ~~~~~
- - Standard format for a date in Pastas is the Pandas Timestamp.
- - Standard format for a list of dates is the Pandas DatetimeIndex.

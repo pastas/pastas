@@ -1,11 +1,9 @@
-Introductie
-===========
-
-Pastas: What is it?
--------------------
-Pastas is an open source python package for processing, simulating and analyzing
-hydrological time series (models). The object oriented stucture allows for the
-quick implementation of new model components. Time series models can be created,
+============
+Introduction
+============
+|Project| is an open source python package for processing, simulating and analyzing
+hydrological time series. The object oriented stucture allows for the quick
+implementation of new model components. Time series models can be created,
 calibrated, and analysed with just a few lines of python code with the built-in
 optimization, visualisation, and statistical analysis tools.
 
@@ -17,25 +15,15 @@ Examples of response-functions are Gamma, Exponential or One (which is used for 
 Each Tseries has a number of parameters, which are optimized by the Solver.
 During optimization the residuals (the difference from the observations, or the innovations when a NoiseModel is used) are minimized.
 
-Stress-series
--------------
-Most Tseries-classes use one or more stress-series.
-Each TimeStamp in the series represents the end of the period that that record describes.
-For example, the precipitation of January 1st, has the TimeStamp of January 2nd 0:00 (this can be counter-intuitive).
-The stress-series have to be equidistant (at the moment, the observation-series can be non-equidistant).
-The user can use Pandas resample-methods to make sure the Series satisfy this condition, before using the Series for Pastas.
-The model frequency is set at the highest frequency of all the Tseries. Other frequencies are upscaled by using the bfill()-method.
-For these frequency-manipulations, the series need to have a frequency-independent unit. For example, precipitation needs to have the unit L/T, and not L.
-
 Examples
 --------
-Examples can be found on the `examples directory on the documentation website <http://pastas.github.io/pastas/examples.html>`_.
+Examples can be found on the examples directory on the documentation website.
 All examples are provided in the `examples directory on GitHub <https://github.com/pastas/pastas/tree/master/examples>`_.
 These include Python scripts and Jupyter Notebooks.
 
 Quick installation guide
 ------------------------
-To install Pastas, a working version of Python 2.7 or 3.5 has to be installed on
+To install |Project|, a working version of Python 2.7 or 3.5 has to be installed on
 your computer. We recommend using the `Anaconda Distribution <https://www.continuum.io/downloads>`_
 as it includes most of the python package dependencies and the Ipython Notebook
 software to run the notebooks. However, you are free to install any Python
@@ -53,29 +41,45 @@ or directly from Github::
 
 Update
 ~~~~~~
-To update pastas, use::
+To update |Project|, use::
 
   pip install pastas --upgrade
 
 Dependencies
 ------------
-Pastas depends on a number of Python packages, of which all of the necessary are
+|Project| depends on a number of Python packages, of which all of the necessary are
 automatically installed when using the pip install manager. To summarize, the
-following pacakges are necessary for a minimal function installation of Pasta:
-numpy>=1.9, matplotlib>=1.4, lmfit>=0.9, pandas>=0.15, scipy>=0.15,
-statsmodels>=0.5.
+following packages are necessary for a minimal function installation of |Project|:
+
+* numpy>=1.9
+* matplotlib>=1.4
+* lmfit>=0.9
+* pandas>=0.15
+* scipy>=0.15
+* statsmodels>=0.5
+
+Pastas Users
+------------
+We encourage users that have applied |Project| in their research or consultancy
+work to share any public reports that are available with other |Project| users.
+If you have a report you would like to share please sent an email an we will
+add a reference to your report to the list of showscases.
 
 Developers
 ----------
-Please take a look at the `developers section <http://pastas.github.io/pastas/developers.html>`_
-on the documentation website for more information on how to develop Pastas.
-
+Since |Project| is an open-source framework, it depends on the Open
+Source Community for continuous development of the software. Any help in
+maintaining the code, writing or updating documentation is more then
+welcome. Please take a look at the :ref:`developers`
+on the documentation website for more information on how to develop
+|Project|.
 
 .. toctree::
     :maxdepth: 2
     :hidden:
 
-    Introduction <index>
+    Getting Started <getting-started>
     Examples <examples>
+    Concept of Pastas <concepts>
     Developers <developers>
     API-Docs <modules>

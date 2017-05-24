@@ -1,17 +1,4 @@
-"""
-tseries module
-    Constains class for time series objects.
-
-    Each response function class needs the following:
-
-    Attributes
-    ----------
-    nparam : int
-        Number of parameters.
-    name : str
-        Name of this tseries object. Used as prefix for the parameters.
-    parameters : pandas Dataframe
-        Dataframe containing the parameters.
+"""tseries module constains class for time series objects.
 
 """
 
@@ -31,6 +18,15 @@ from .utils import get_dt
 class TseriesBase:
     """Tseries Base class called by each Tseries object.
 
+    Attributes
+    ----------
+    nparam : int
+        Number of parameters.
+    name : str
+        Name of this tseries object. Used as prefix for the parameters.
+    parameters : pandas.Dataframe
+        Dataframe containing the parameters.
+
     """
 
     def __init__(self, rfunc, name, xy, metadata, tmin, tmax, up, meanstress,
@@ -46,10 +42,11 @@ class TseriesBase:
         self.stress = pd.DataFrame()
 
     def set_initial(self, name, value):
-        """Method to set the initial parameter value
+        """Method to set the initial parameter value.
 
-        Usage
-        -----
+        Examples
+        --------
+
         >>> ts.set_initial('parametername', 200)
 
         """
@@ -77,12 +74,20 @@ class TseriesBase:
             print('Warning:', name, 'does not exist')
 
     def change_frequency(self, freq):
-        # change the frequency
-        # TODO: next lines of code are only correct when the frequencies are a multiple of each other, fix this.
-        # this is for example not the case when monthly data is resampled to weekly data. it would be better to
-        # work with weights. A week at the end of the month would then consist of the weighted data of that
-        # month and the next. Right now, this week will get the value of the next month. Did not find a Pandas
-        # method to perform this weighted mean.
+        """change the frequency.
+
+        TODO
+        ----
+        next lines of code are only correct when the frequencies are a multiple
+        of each other, fix this. This is for example not the case when monthly
+        data is resampled to weekly data. it would be better to work with
+        weights. A week at the end of the month would then consist of the
+        weighted data of that month and the next. Right now, this week will get
+        the value of the next month. Did not find a Pandas method to perform
+        this weighted mean.
+
+        """
+
         if get_dt(freq) > get_dt(self.freq):
             # downsample (for example from day to week), use mean
             # make sure the labels are still at the end of each period, and data at the right side of the bucket
@@ -95,14 +100,15 @@ class TseriesBase:
         self.freq = freq
 
     def get_stress(self, p=None, tindex=None):
-        """
-        Returns the stress or stresses of the time series object as a pandas
-        DataFrame. If the time series object has multiple stresses each column
+        """Returns the stress or stresses of the time series object as a pandas
+        DataFrame.
+
+        If the time series object has multiple stresses each column
         represents a stress.
 
         Returns
         -------
-        stress: pd.Dataframe()
+        stress: pd.Dataframe
             Pandas dataframe of the stress(es)
 
         """
@@ -113,29 +119,28 @@ class TseriesBase:
 
 
 class Tseries(TseriesBase):
-    """
-    Time series model consisting of the convolution of one stress with one
+    """Time series model consisting of the convolution of one stress with one
     response function.
 
     Parameters
     ----------
-    stress: pd.Series
+    stress: pandas.Series
         pandas Series object containing the stress.
     rfunc: rfunc class
         Response function used in the convolution with the stess.
     name: str
         Name of the stress
-    metadata: Optional[dict]
+    metadata: dict, optional
         dictionary containing metadata about the stress.
-    xy: Optional[tuple]
+    xy: tuple, optional
         XY location in lon-lat format used for making maps.
-    freq: Optional[str]
+    freq: str, optional
         Frequency to which the stress series are transformed. By default,
         the frequency is inferred from the data and that frequency is used.
         The required string format is found
         at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset
         -aliases
-    fillnan: Optional[str or float]
+    fillnan: str or float, optional
         Methods or float number to fill nan-values. Default values is
         'mean'. Currently supported options are: 'interpolate', float,
         and 'mean'. Interpolation is performed with a standard linear
@@ -154,25 +159,24 @@ class Tseries(TseriesBase):
         self.set_init_parameters()
 
     def set_init_parameters(self):
-        """
-        Set the initial parameters (back) to their default values.
+        """Set the initial parameters (back) to their default values.
 
         """
         self.parameters = self.rfunc.set_parameters(self.name)
 
     def simulate(self, p, tindex=None, dt=1):
-        """ Simulates the head contribution.
+        """Simulates the head contribution.
 
         Parameters
         ----------
         p: 1D array
            Parameters used for simulation.
-        tindex: Optional[Pandas time series]
+        tindex: pandas.Series, optional
            Time indices to simulate the model.
 
         Returns
         -------
-        Pandas Series Object
+        pandas.Series
             The simulated head contribution.
 
         """
@@ -186,32 +190,31 @@ class Tseries(TseriesBase):
 
 
 class Tseries2(TseriesBase):
-    """
-    Time series model consisting of the convolution of two stresses with one
+    """Time series model consisting of the convolution of two stresses with one
     response function. The first stress causes the head to go up and the second
     stress causes the head to go down.
 
     Parameters
     ----------
-    stress1: pd.Series
+    stress1: pandas.Series
         pandas Series object containing stress 1.
-    stress2: pd.Series
+    stress2: pandas.Series
         pandas Series object containing stress 2.
     rfunc: rfunc class
-        Response function used in the convolution with the stess.
+        Response function used in the convolution with the stress.
     name: str
         Name of the stress
-    metadata: Optional[dict]
+    metadata: dict, optional
         dictionary containing metadata about the stress.
-    xy: Optional[tuple]
+    xy: tuple, optional
         XY location in lon-lat format used for making maps.
-    freq: Optional[str]
+    freq: str, optional
         Frequency to which the stress series are transformed. By default,
         the frequency is inferred from the data and that frequency is used.
         The required string format is found
         at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset
         -aliases
-    fillnan: Optional[str or float]
+    fillnan: str or float, optional
         Methods or float number to fill nan-values. Default values is
         'mean'. Currently supported options are: 'interpolate', float,
         and 'mean'. Interpolation is performed with a standard linear
@@ -244,8 +247,7 @@ class Tseries2(TseriesBase):
         self.set_init_parameters()
 
     def set_init_parameters(self):
-        """
-        Set the initial parameters back to their default values.
+        """Set the initial parameters back to their default values.
 
         """
         self.parameters = self.rfunc.set_parameters(self.name)
@@ -253,18 +255,18 @@ class Tseries2(TseriesBase):
         self.nparam += 1
 
     def simulate(self, p, tindex=None, dt=1):
-        """ Simulates the head contribution.
+        """Simulates the head contribution.
 
         Parameters
         ----------
         p: 1D array
            Parameters used for simulation.
-        tindex: Optional[Pandas time series]
+        tindex: pandas.Series, optional
            Time indices to simulate the model.
 
         Returns
         -------
-        Pandas Series Object
+        pandas.Series
             The simulated head contribution.
 
         """
@@ -297,26 +299,26 @@ class Recharge(TseriesBase):
 
     Parameters
     ----------
-    precip: pd.Series
+    precip: pandas.Series
         pandas Series object containing the precipitation stress.
-    evap: pd.Series
+    evap: pandas.Series
         pandas Series object containing the evaporationstress.
     rfunc: rfunc class
         Response function used in the convolution with the stess.
     recharge: recharge_func class object
     name: str
         Name of the stress
-    metadata: Optional[dict]
+    metadata: dict, optional
         dictionary containing metadata about the stress.
-    xy: Optional[tuple]
+    xy: tuple, optional
         XY location in lon-lat format used for making maps.
-    freq: Optional[list of str]
+    freq: list of str, optional
         Frequency to which the stress series are transformed. By default,
         the frequency is inferred from the data and that frequency is used.
         The required string format is found
         at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset
         -aliases
-    fillnan: Optional[list of str or float]
+    fillnan: list of str or float, optional
         Methods or float number to fill nan-values. Default value for
         precipitation is 'mean' and default for evaporation is 'interpolate'.
         Currently supported options are: 'interpolate', float,
@@ -329,9 +331,7 @@ class Recharge(TseriesBase):
 
     References
     ----------
-    [1] R.A. Collenteur [2016] Non-linear time series analysis of deep groundwater
-    levels: Application to the Veluwe. MSc. thesis, TU Delft.
-    http://repository.tudelft.nl/view/ir/uuid:baf4fc8c-6311-407c-b01f-c80a96ecd584/
+    R.A. Collenteur [2016] Non-linear time series analysis of deep groundwater levels: Application to the Veluwe. MSc. thesis, TU Delft. http://repository.tudelft.nl/view/ir/uuid:baf4fc8c-6311-407c-b01f-c80a96ecd584/
 
     """
 
@@ -385,18 +385,17 @@ class Recharge(TseriesBase):
         return h
 
     def get_stress(self, p=None, tindex=None):
-        """
-        Returns the stress or stresses of the time series object as a pandas
+        """Returns the stress or stresses of the time series object as a pandas
         DataFrame. If the time series object has multiple stresses each column
         represents a stress.
 
         Parameters
         ----------
-        tindex: pd TimeIndex
+        tindex: pandas.TimeIndex
 
         Returns
         -------
-        stress: pd DataFrame
+        stress: pandas.DataFrame
             DataFrame containing the stresses with the required time indices.
 
         """
@@ -424,23 +423,23 @@ class Well(TseriesBase):
 
     Parameters
     ----------
-    stress: pd.DataFrame
+    stress: pandas.DataFrame
         Pandas DataFrame object containing the stresses.
     rfunc: rfunc class
         Response function used in the convolution with the stresses.
     name: str
         Name of the stress
-    metadata: Optional[dict]
+    metadata: dict, optional
         dictionary containing metadata about the stress.
-    xy: Optional[tuple]
+    xy: tuple, optional
         XY location in lon-lat format used for making maps.
-    freq: Optional[str]
+    freq: str, optional
         Frequency to which the stress series are transformed. By default,
         the frequency is inferred from the data and that frequency is used.
         The required string format is found
         at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset
         -aliases
-    fillnan: Optional[str or float]
+    fillnan: str or float, optional
         Methods or float number to fill nan-values. Default values is
         'mean'. Currently supported options are: 'interpolate', float,
         and 'mean'. Interpolation is performed with a standard linear
@@ -492,8 +491,10 @@ class Well(TseriesBase):
 
 
 class TseriesStep(TseriesBase):
-    """
-    A stress consisting of a step resonse from a specified time. The amplitude and form (if rfunc is not One) of the step is calibrated. Before t_step the response is zero.
+    """A stress consisting of a step resonse from a specified time. The
+    amplitude and form (if rfunc is not One) of the step is calibrated. Before
+    t_step the response is zero.
+
     """
 
     def __init__(self, t_step, name, rfunc=One, xy=None, metadata=None,
@@ -521,29 +522,27 @@ class TseriesStep(TseriesBase):
 
 
 class TseriesNoConv(TseriesBase):
-    """
-    Time series model consisting of the calculation of one stress with one
+    """Time series model consisting of the calculation of one stress with one
     response function, without the use of convolution (so it is slooooow)
 
     Parameters
     ----------
-    stress: pd.Series
+    stress: pandas.Series
         pandas Series object containing the stress.
-    rfunc: rfunc class
+    rfunc: pastas.rfunc
         Response function used in the convolution with the stess.
     name: str
         Name of the stress
-    metadata: Optional[dict]
+    metadata: dict, optional
         dictionary containing metadata about the stress.
-    xy: Optional[tuple]
+    xy: tuple, optional
         XY location in lon-lat format used for making maps.
-    freq: Optional[str]
+    freq: str, optional
         Frequency to which the stress series are transformed. By default,
         the frequency is inferred from the data and that frequency is used.
         The required string format is found
-        at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset
-        -aliases
-    fillnan: Optional[str or float]
+        at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
+    fillnan: str or float, optional
         Methods or float number to fill nan-values. Default values is
         'mean'. Currently supported options are: 'interpolate', float,
         and 'mean'. Interpolation is performed with a standard linear
@@ -562,8 +561,7 @@ class TseriesNoConv(TseriesBase):
         self.set_init_parameters()
 
     def set_init_parameters(self):
-        """
-        Set the initial parameters (back) to their default values.
+        """Set the initial parameters (back) to their default values.
 
         """
         self.parameters = self.rfunc.set_parameters(self.name)
@@ -573,14 +571,14 @@ class TseriesNoConv(TseriesBase):
 
         Parameters
         ----------
-        p: 1D array
+        p: array_like
            Parameters used for simulation.
-        tindex: Optional[Pandas time series]
+        tindex: pandas.Series, optional
            Time indices to simulate the model.
 
         Returns
         -------
-        Pandas Series Object
+        pandas.Series
             The simulated head contribution.
 
         """
@@ -611,9 +609,9 @@ class Constant(TseriesBase):
 
     Parameters
     ----------
-    value : Optional[float]
-        Initial estimate of the parameter value. E.g. The minimum of the observed
-        series.
+    value : float, optional
+        Initial estimate of the parameter value. E.g. The minimum of the
+        observed series.
 
     """
 
@@ -645,19 +643,21 @@ class NoiseModel:
     -----
     Calculates the innovations [1] according to:
 
-    ..math:: v(t1) = r(t1) - r(t0) * exp(- (t1 - t0) / alpha)
+    .. math::
+        v(t1) = r(t1) - r(t0) * exp(- (t1 - t0) / alpha)
 
+    Examples
+    --------
     It can happen that the noisemodel is used in during the model calibration
     to explain most of the variation in the data. A recommended solution is to
     scale the initial parameter with the model timestep, E.g.:
+
     >>> n = NoiseModel()
     >>> n.set_initial("noise_alpha", 1.0 * ml.get_dt(ml.freq))
 
     References
     ----------
-    .. [1] von Asmuth, J. R., and M. F. P. Bierkens (2005), Modeling irregularly
-    spaced residual series as a continuous stochastic process, Water Resour.
-    Res., 41, W12404, doi:10.1029/2004WR003726.
+    von Asmuth, J. R., and M. F. P. Bierkens (2005), Modeling irregularly spaced residual series as a continuous stochastic process, Water Resour. Res., 41, W12404, doi:10.1029/2004WR003726.
 
     """
 
@@ -667,10 +667,11 @@ class NoiseModel:
         self.set_init_parameters()
 
     def set_initial(self, name, value):
-        """Method to set the initial parameter value
+        """Method to set the initial parameter value.
 
-        Usage
-        -----
+        Examples
+        --------
+
         >>> ts.set_initial('parametername', 200)
 
         """
@@ -707,19 +708,20 @@ class NoiseModel:
 
         Parameters
         ----------
-        res : Pandas Series
+        res : pandas.Series
             The residual series.
-        delt : Pandas Series
+        delt : pandas.Series
             Time steps between observations.
-        tindex : Optional[None]
+        tindex : None, optional
             Time indices used for simulation.
-        p : Optional[array-like]
+        p : array-like, optional
             Alpha parameters used by the noisemodel.
 
         Returns
         -------
-        Pandas Series
+        pandas.Series
             Series of the innovations.
+
         """
         innovations = pd.Series(res, index=res.index, name="Innovations")
         # weights of innovations, see Eq. A17 in reference [1]
@@ -740,19 +742,21 @@ class NoiseModel2:
     -----
     Calculates the innovations [1] according to:
 
-    ..math:: v(t1) = r(t1) - r(t0) * exp(- (t1 - t0) / alpha)
+    .. math::
+        v(t1) = r(t1) - r(t0) * exp(- (t1 - t0) / alpha)
 
+    Examples
+    --------
     It can happen that the noisemodel is used in during the model calibration
     to explain most of the variation in the data. A recommended solution is to
-    scale the initial parameter with the model timestep, E.g.:
+    scale the initial parameter with the model timestep, E.g.::
+
     >>> n = NoiseModel()
     >>> n.set_initial("noise_alpha", 1.0 * ml.get_dt(ml.freq))
 
     References
     ----------
-    .. [1] von Asmuth, J. R., and M. F. P. Bierkens (2005), Modeling irregularly
-    spaced residual series as a continuous stochastic process, Water Resour.
-    Res., 41, W12404, doi:10.1029/2004WR003726.
+    von Asmuth, J. R., and M. F. P. Bierkens (2005), Modeling irregularly spaced residual series as a continuous stochastic process, Water Resour. Res., 41, W12404, doi:10.1029/2004WR003726.
 
     """
 
@@ -764,8 +768,9 @@ class NoiseModel2:
     def set_initial(self, name, value):
         """Method to set the initial parameter value
 
-        Usage
-        -----
+        Examples
+        --------
+
         >>> ts.set_initial('parametername', 200)
 
         """
@@ -802,19 +807,20 @@ class NoiseModel2:
 
         Parameters
         ----------
-        res : Pandas Series
+        res : pandas.Series
             The residual series.
-        delt : Pandas Series
+        delt : pandas.Series
             Time steps between observations.
-        tindex : Optional[None]
+        tindex : None, optional
             Time indices used for simulation.
-        p : Optional[array-like]
+        p : array-like, optional
             Alpha parameters used by the noisemodel.
 
         Returns
         -------
-        innovations: pd Series
+        innovations: pandas.Series
             Series of the innovations.
+
         """
         innovations = pd.Series(res, index=res.index, name="Innovations")
         # res.values is needed else it gets messed up with the dates
