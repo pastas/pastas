@@ -73,7 +73,7 @@ if errorlevel 9009 (
 
 
 if "%1" == "html" (
-    sphinx-apidoc ../pastas -o .
+    sphinx-apidoc ../pastas -o -a .
     python convert_nb.py
 	%SPHINXBUILD% -b html %ALLSPHINXOPTS% %BUILDDIR%
 	if errorlevel 1 exit /b 1

@@ -118,7 +118,7 @@ html_theme_path = [alabaster.get_path()]
 
 html_theme_options = {
     'travis_button': True,
-    'logo_name': True,
+    'logo_name': False,
     'github_user': 'pastas',
     'github_repo': 'pastas',
     'github_banner': True,
