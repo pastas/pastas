@@ -41,8 +41,7 @@ extensions = [
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-# templates_path = ['_templates']
-
+templates_path = ['_templates']
 source_suffix = '.rst'
 
 # The encoding of source files.
@@ -113,10 +112,11 @@ todo_include_todos = True
 # -- Options for HTML output ----------------------------------------------
 
 html_theme = 'alabaster'
-html_logo = '_static\\logo.png'
 html_theme_path = [alabaster.get_path()]
+html_static_path = ['_static']
 
 html_theme_options = {
+    'logo': 'logo.png',
     'travis_button': True,
     'logo_name': False,
     'github_user': 'pastas',
@@ -136,11 +136,10 @@ html_sidebars = {
         'navigation.html',
         'relations.html',
         'searchbox.html',
-        'donate.html',
+        # located at _templates/
+        'sidebar.html',
     ]
 }
-
-html_static_path = ['_static']
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 html_short_title = "PASTAS"
@@ -157,9 +156,6 @@ html_short_title = "PASTAS"
 # If true, SmartyPants will be used to convert quotes and dashes to
 # typographically correct entities.
 # html_use_smartypants = True
-
-# Custom sidebar templates, maps document names to template names.
-# html_sidebars = {}
 
 # If false, no module index is generated.
 # html_domain_indices = True
@@ -207,7 +203,7 @@ latex_documents = [
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
-# latex_logo = None
+latex_logo = '_static/logo.png'
 
 # For "manual" documents, if this is true, then toplevel headings are parts,
 # not chapters.

@@ -23,8 +23,8 @@ ts = Tseries2(rain.series, evap.series[1965:], Gamma, name='recharge')
 ml.add_tseries(ts)
 
 ## Add noise model
-n = NoiseModel2()
-ml.add_noisemodel(n)
+# n = NoiseModel2()
+# ml.add_noisemodel(n)
 
 ## Solve
 ml.solve(solver=LeastSquares, weights=None, tmin='11-1985', tmax='1-2011')
