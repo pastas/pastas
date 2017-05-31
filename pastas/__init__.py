@@ -1,6 +1,6 @@
 from __future__ import print_function, division
 
-from . import read
+import pastas.read as read
 from .model import Model
 from .recharge.recharge_func import Preferential, Linear, Percolation, \
     Combination

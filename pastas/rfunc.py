@@ -1,3 +1,4 @@
+# coding=utf-8
 """rfunc module.
 
 Contains classes for the response functions.
