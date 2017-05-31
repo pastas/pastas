@@ -344,7 +344,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         series = series.resample('d').median()
         inspring = self.__inspring__(series)
         if np.any(inspring):
-            return series.iloc[inspring].median()
+            return series.loc[inspring].median()
         else:
             return np.nan
 
@@ -389,7 +389,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """Worker method for classic GXG statistics. Resampling the series to
         every 14th and 28th of the month. Taking the mean of aggregated
         values per year.
-        
+
         Parameters
         ----------
         year_agg : function series -> scalar
@@ -406,12 +406,12 @@ included in Pastas. To obtain a list of all statistics that are included type:
         output : str
             output type 'yearly' for series of yearly values, 'mean' for
             mean of yearly values
-        
+
         Returns
         -------
         pandas.Series or scalar
             Series of yearly values or mean of yearly values
-        
+
         Raises
         ------
         ValueError
@@ -438,10 +438,10 @@ included in Pastas. To obtain a list of all statistics that are included type:
             series = series.interpolate(method=fill_method, limit=limit)
 
         the14or28 = lambda x: (x.day == 14) or (x.day == 28)
-        is14or28 = series.index.map(the14or28)
+        is14or28 = pd.Series(series.index.map(the14or28), index=series.index)
         if not np.any(is14or28):
             return np.nan
-        series = series.iloc[is14or28]
+        series = series.loc[is14or28]
         yearly = series.resample('a').apply(year_agg)
         if output == 'yearly':
             return yearly
@@ -563,7 +563,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         inspring = self.__inspring__(series)
         if np.any(inspring):
-            return series.iloc[inspring].mean()
+            return series.loc[inspring].mean()
         else:
             return np.nan
 
@@ -582,7 +582,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         isinspring = lambda x: (((x.month == 3) and (x.day >= 14)) or
                                 ((x.month == 4) and (x.day < 15)))
-        return series.index.map(isinspring)
+        return pd.Series(series.index.map(isinspring), index=series.index)
 
     def bykey(self, key, tmin=None, tmax=None):
         """Worker function for GHG and GLG statistcs.
