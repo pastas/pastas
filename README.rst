@@ -22,7 +22,7 @@ optimization, visualisation, and statistical analysis tools.
 
 Documentation
 ~~~~~~~~~~~~~
-Documentation is provided on a dedicated website: http://pastas.github.io/pastas/
+Documentation is provided on a dedicated website: http://pastas.readthedocs.io/
 
 Examples
 ~~~~~~~~
@@ -59,8 +59,8 @@ Dependencies
 Pastas depends on a number of Python packages, of which all of the necessary are 
 automatically installed when using the pip install manager. To summarize, the 
 following pacakges are necessary for a minimal function installation of Pasta: 
-numpy>=1.9, matplotlib>=1.4, lmfit>=0.9, pandas>=0.15, scipy>=0.15, 
-statsmodels>=0.5.
+numpy>=1.9, matplotlib>=1.5, lmfit>=0.9, pandas>=0.20, scipy>=0.15,
+statsmodels>=0.8.
   
 Developers
 ~~~~~~~~~~
