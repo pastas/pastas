@@ -27,7 +27,7 @@ Documentation is provided on a dedicated website: http://pastas.readthedocs.io/
 Examples
 ~~~~~~~~
 Examples can be found on the `examples directory on the documentation website <http://pastas.github.io/pastas/examples.html>`_.
-All examples are provided in the `examples directory on GitHub <https://github.com/pastas/pastas/tree/master/examples>`_.
+All examples are provided in the `examples directory on GitHub <http://pastas.readthedocs.io/en/dev/examples.html>`_.
 These include Python scripts and Jupyter Notebooks.
 
 Quick installation guide
@@ -73,7 +73,7 @@ improvement or enhancement, please submit a new Issue through the Github Issue
 tracker toward the upper-right corner of the Github repository. Pull requests will
 only be accepted on the development branch (dev) of this repository.
 
-Please take a look at the `developers section <http://pastas.github.io/pastas/developers.html>`_
+Please take a look at the `developers section <http://pastas.readthedocs.io/>`_
 on the documentation website for more information on how to develop Pastas.
 
 License

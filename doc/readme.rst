@@ -4,7 +4,7 @@ Automatic Sphinx documentation
 
 Follow these instructions when the documentation needs to be updated. Github stores the documentation in a special branch 
 named "gh-pages". This branch is different from all other branches in the sense that it only contains the html files for
-the documentation website (http://pastas.github.io/pasta/index.html).
+the documentation website (http://pastas.readthedocs.io/).
 
 On your computer, a folder needs to be dedicated. The structure is as follows:
   ../Project/pasta-master/
