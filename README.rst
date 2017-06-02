@@ -12,6 +12,10 @@ Latest Release  .. image:: https://img.shields.io/github/release/pastas/pastas.s
                     :target: https://github.com/pastas/pastas/releases
 ==============  ==================================================================
 
+.. image:: /doc/_static/logo.png
+   :width: 200px
+   :align: right
+
 Pastas: what is it?
 ~~~~~~~~~~~~~~~~~~~
 Pastas is an open source python package for processing, simulating and analyzing 
