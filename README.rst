@@ -1,6 +1,10 @@
 PASTAS: HYDROLOGICAL TIME SERIES ANALYSIS
 =========================================
 
+.. image:: /doc/_static/logo_small.png
+   :width: 200px
+   :align: left
+
 ==============  ==================================================================
 Build Status    .. image:: https://travis-ci.org/pastas/pastas.svg?branch=master
                     :target: https://travis-ci.org/pastas/pastas
@@ -12,9 +16,6 @@ Latest Release  .. image:: https://img.shields.io/github/release/pastas/pastas.s
                     :target: https://github.com/pastas/pastas/releases
 ==============  ==================================================================
 
-.. image:: /doc/_static/logo.png
-   :width: 200px
-   :align: right
 
 Pastas: what is it?
 ~~~~~~~~~~~~~~~~~~~
