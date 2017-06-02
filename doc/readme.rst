@@ -20,23 +20,30 @@ documentation website. To set up your github for the pasta-doc folder,
   >>> $ git branch
 
 Instructions for updating Sphinx documentation
----------------------------------------------
+----------------------------------------------
 1. Open your terminal (MacOS) or command window (Windows)
+
 2. Move to the doc folder in the pasta-master folder:
+
   >>> cd ../path-to-pasta-master/doc
 
 3. read pasta modules with sphinx-apidoc
+
   >>> sphinx-apidoc ../pasta -o .
 
 4. Run sphinx auto documentation:
+
   >>> cd html
 
 5. The html files have now been created in the html folder with the pasta-doc folder if Sphinxdoc was succesfull.
+
 6. Move to the html folder with the pasta-docs folder:
+
   >>> cd
   >>> cd ../path-to-pasta-docs/html
-  
+
 7. Update the gh-pages branch:
+
   >>> git branch # Check if we are in the gh-pages branch
   >>> git add .
   >>> git commit -a -m "Update Docs"
