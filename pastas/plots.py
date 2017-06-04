@@ -21,7 +21,7 @@ class Plotting():
         msg = "This module contains all the built-in plotting options that are available."
         return msg
 
-    def plot(self, tmin=None, tmax=None, oseries=True, simulate=True, figsize=None):
+    def plot(self, tmin=None, tmax=None, oseries=True, simulate=True, figsize=None, show=True):
         """
 
         Parameters
@@ -47,7 +47,7 @@ class Plotting():
             h = self.ml.simulate(tmin=tmin, tmax=tmax)
             h.plot(figsize=figsize)
 
-        plt.show()
+        if show: plt.show()
 
     def results(self, tmin=None, tmax=None, savefig=False, figsize=None):
         """Plot different results in one window to get a quick overview.
