@@ -316,5 +316,4 @@ class Plotting():
 
     def _get_figure(self):
         fig = plt.figure()
-        fig.tight_layout()
         return fig
