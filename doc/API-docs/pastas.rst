@@ -21,7 +21,6 @@ Submodules
    pastas.solver
    pastas.stats
    pastas.tseries
-   pastas.uncertainty
    pastas.utils
    pastas.version
 
