@@ -11,9 +11,9 @@ def check_oseries(oseries, fillnan='drop'):
 
     Parameters
     ----------
-    oseries: pd.Series
+    oseries: pandas.Series
         Pandas series object containing the observed time series.
-    fillnan: optional[str or float]
+    fillnan: str or float, optional
         Methods or float number to fill nan-values. Default values is
         'drop'. Currently supported options are: 'interpolate', float,
         'mean' and, 'drop'. Interpolation is performed with a standard linear
@@ -21,7 +21,7 @@ def check_oseries(oseries, fillnan='drop'):
 
     Returns
     -------
-    oseries: pd.Series
+    oseries: pandas.Series
         Pandas series object checked for nan-values and with the required frequency.
 
     """
@@ -34,9 +34,8 @@ def check_oseries(oseries, fillnan='drop'):
 
     # Handle nan-values in oseries
     if oseries.hasnans:
-        print(
-            '%i nan-value(s) in the oseries was/were found and handled/filled '
-            'with: %s' % (oseries.isnull().values.sum(), fillnan))
+        print('%i nan-value(s) in the oseries was/were found and handled/'
+              'filled with: %s' % (oseries.isnull().values.sum(), fillnan))
         if fillnan == 'drop':
             oseries.dropna(inplace=True)  # Default option
         elif fillnan == 'mean':
@@ -50,7 +49,7 @@ def check_oseries(oseries, fillnan='drop'):
                 'User-defined option for fillnan %s isinstance() not supported'
                 % fillnan)
 
-    # Drop dubplicate indexes
+    # Drop duplicate indexes
     if not oseries.index.is_unique:
         print(
             'duplicate time-indexes were found in the oseries. Values were averaged.')
@@ -65,13 +64,13 @@ def check_tseries(stress, freq, fillnan, name=''):
 
     Parameters
     ----------
-    stress: pd.Series
+    stress: pandas.Series
         Pandas series object containing the stress time series.
     freq: str
         String containing the desired frequency. The required string format is found
         at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset
         -aliases
-    fillnan: optional: str or float
+    fillnan: str or float, optional
         Methods or float number to fill nan-values. Default values is
         'mean'. Currently supported options are: 'interpolate', float,
         and 'mean'. Interpolation is performed with a standard linear
@@ -117,8 +116,15 @@ def check_tseries(stress, freq, fillnan, name=''):
         elif type(fillnan) == float:
             stress.fillna(fillnan, inplace=True)
         else:
-            print(
-                'User-defined option for fillnan %s isinstance() not supported'
-                % fillnan)
+            print('User-defined option for fillnan %s isinstance() not '
+                  'supported' % fillnan)
+
+    # Drop duplicate indexes
+    if not stress.index.is_unique:
+        print('duplicate time-indexes were found in the oseries. Values were '
+              'averaged. Please check original time series data for '
+              'duplicates.')
+        grouped = stress.groupby(level=0)
+        stress = grouped.mean()
 
     return stress

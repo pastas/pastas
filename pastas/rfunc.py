@@ -1,7 +1,5 @@
 # coding=utf-8
-"""rfunc module.
-
-Contains classes for the response functions.
+"""This module contains the classes for the response functions.
 
 More information on how to write a response class can be found :
 :ref:` here <http://pastas.github.io/pastas/developers.html>`

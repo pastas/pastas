@@ -51,6 +51,7 @@ class Model:
     >>> ml = Model(oseries)
 
     """
+
     def __init__(self, oseries, xy=(0, 0), name="PASTAS_Model", metadata=None,
                  warmup=0, fillnan='drop', constant=True):
         self.oseries = check_oseries(oseries, fillnan)
@@ -404,7 +405,7 @@ class Model:
             self.parameters.initial = optimal
 
     def solve(self, tmin=None, tmax=None, solver=LmfitSolve, report=True,
-              noise=True, initial=True, weights=None):
+              noise=True, initial=True, weights=None, **kwargs):
         """Methods to solve the time series model.
 
         Parameters
@@ -440,7 +441,7 @@ class Model:
 
         # Solve model
         fit = solver(self, tmin=self.tmin, tmax=self.tmax, noise=noise,
-                     freq=self.freq, weights=weights)
+                     freq=self.freq, weights=weights, **kwargs)
 
         # make calibration data empty again (was set in initialize)
         self.oseries_calib = None
@@ -503,7 +504,8 @@ class Model:
                 if tseries.tmax > ts_tmax:
                     ts_tmax = tseries.tmax
         else:
-            # for when there are no tseries, use the oseries, regardless of use_oseries:
+            # When there are no tseries use the oseries, regardless of
+            # use_oseries:
             ts_tmin = self.oseries.index.min()
             ts_tmax = self.oseries.index.max()
 
@@ -511,7 +513,7 @@ class Model:
         if not tmin and not use_oseries:
             tmin = ts_tmin
         elif not tmin:
-            tmin = self.oseries.index.min()
+            tmin = max(ts_tmin, self.oseries.index.min())
         else:
             tmin = pd.Timestamp(tmin)
             # Check if tmin > oseries.tmin (Needs to be True)
@@ -529,7 +531,7 @@ class Model:
         if not tmax and not use_oseries:
             tmax = ts_tmax
         elif not tmax:
-            tmax = self.oseries.index.max()
+            tmax = min(ts_tmax, self.oseries.index.max())
         else:
             tmax = pd.Timestamp(tmax)
             # Check if tmax < oseries.tmax (Needs to be True)
@@ -551,7 +553,7 @@ class Model:
 
         assert tmax > tmin, \
             'Error: Specified tmax not larger than specified tmin'
-        assert self.oseries[tmin: tmax].size > 0, \
+        assert self.oseries.loc[tmin: tmax].size > 0, \
             'Error: no observations between tmin and tmax'
 
         return tmin, tmax
@@ -701,6 +703,7 @@ class Model:
             return pd.Series(s, index=t, name=name)
 
     def get_stress(self, name):
+        # TODO: Rewrite function. possibly add a @property to these get_methods.
         try:
             p = self.parameters.loc[
                 self.parameters.name == name, 'optimal'].values
@@ -761,11 +764,13 @@ class Model:
         except:
             metadata["owner"] = "Unknown"
 
+        if meta: # Update metadata with user-provided metadata if possible
+            metadata.update(meta)
+
         return metadata
 
     def export_model(self, fname=None):
-        """
-        This method exports the model as an pickle (.pkl) file.
+        """This method exports the model as an pickle (.pkl) file.
 
         Parameters
         ----------
@@ -789,7 +794,7 @@ class Model:
 
         """
         if not fname:
-            fname = "model"
+            fname = self.name
 
         # Update metadata
         now = pd.datetime.now().strftime("%Y-%m-%d")
@@ -801,7 +806,8 @@ class Model:
         return print("Model is stored succesfully as %s" % fname)
 
     def import_model(self, fname):
-        """Temporary implementation of a load function, needs to be changed in the future, so PASTAS can support models from other versions..
+        """Temporary implementation of a load function, needs to be changed in
+        the future, so PASTAS can support models from other versions..
 
         TODO
         ----
