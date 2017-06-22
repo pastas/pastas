@@ -9,9 +9,11 @@ Examples
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as plticker
-from scipy.stats import probplot
 import numpy as np
+from scipy.stats import probplot
+
 from .utils import get_dt
+
 
 class Plotting():
     def __init__(self, ml):
@@ -21,8 +23,9 @@ class Plotting():
         msg = "This module contains all the built-in plotting options that are available."
         return msg
 
-    def plot(self, tmin=None, tmax=None, oseries=True, simulate=True, figsize=None, show=True):
-        """
+    def plot(self, tmin=None, tmax=None, show=True, oseries=True,
+             simulate=True):
+        """Make a plot of the observed and simulated series.
 
         Parameters
         ----------
@@ -31,40 +34,53 @@ class Plotting():
 
         Returns
         -------
-        Plot of the simulated and optionally the observed time series
+        fig: matplotlib figure instance
+            Plot of the simulated and optionally the observed time series.
 
         """
-        plt.figure()
-        plt.title(self.ml.name)
+        fig = self._get_figure()
+        fig.suptitle("Results of " + self.ml.name)
+
+        # Get right tmin and tmax
+        if not tmin and not tmax:
+            tmin, tmax = self.ml.get_tmin_tmax(use_oseries=oseries)
+        elif not tmin:
+            tmin = self.ml.get_tmin_tmax(use_oseries=oseries)[0]
+        elif not tmax:
+            tmin = self.ml.get_tmin_tmax(use_oseries=oseries)[1]
+
         if oseries:
-            self.ml.oseries.plot(linestyle='', marker='.', color='k',
-                                 markersize=3, figsize=figsize)
+            o = self.ml.observations(tmin=tmin, tmax=tmax)
+            o.plot(linestyle='', marker='.', color='k', fig=fig)
+
         if simulate:
-            if tmin is None:
-                tmin = self.ml.oseries.index.min()
-            if tmax is None:
-                tmax = self.ml.oseries.index.max()
             h = self.ml.simulate(tmin=tmin, tmax=tmax)
-            h.plot(figsize=figsize)
+            h.plot(fig=fig)
 
-        if show: plt.show()
+        plt.xlabel("Time [days]")
+        plt.ylabel("Groundwater levels [meter]")
+        plt.legend()
 
-    def results(self, tmin=None, tmax=None, savefig=False, figsize=None):
+        if show:
+            plt.show()
+
+        return fig
+
+    def results(self, tmin=None, tmax=None, show=True):
         """Plot different results in one window to get a quick overview.
 
         Parameters
         ----------
         tmin/tmax: str
             start and end time for plotting
-        savefig: boolean, optional
-            True to save the figure, False is default. Figure is saved in the
-            current working directory when running your python scripts.
+
 
         Returns
         -------
 
         """
-        fig = plt.figure(facecolor='white', figsize=figsize)
+        fig = self._get_figure()
+
         gs = plt.GridSpec(3, 4, wspace=0.4, hspace=0.4)
 
         # Plot the Groundwater levels
@@ -112,11 +128,13 @@ class Plotting():
         plt.text(0.05, 0.8, 'AIC: %.2f' % self.ml.stats.aic())
         plt.text(0.05, 0.6, 'BIC: %.2f' % self.ml.stats.aic())
         plt.title('Statistics', loc='left')
-        plt.show()
-        if savefig:
-            plt.savefig('pastas.eps', bbox_inches='tight')
 
-    def decomposition(self, tmin=None, tmax=None):
+        if show:
+            plt.show()
+
+        return fig
+
+    def decomposition(self, tmin=None, tmax=None, show=True):
         """Plot the decomposition of a time-series in the different stresses.
 
         """
@@ -139,31 +157,24 @@ class Plotting():
             h.append(self.ml.get_contribution(ts.name, tindex=tindex))
 
         # open the figure
-        if False:
-            f, axarr = plt.subplots(1 + len(self.ml.tseriesdict), sharex=True)
-        else:
-            # let the height of the axes be determined by the values
-            # height_ratios = [1]*(len(self.tseriesdict)+1)
-            height_ratios = [max([hsim.max(), self.ml.oseries.max()]) - min(
-                [hsim.min(), self.ml.oseries.min()])]
-            for ht in h[1:]:
-                height_ratios.append(ht.max() - ht.min())
-            f, axarr = plt.subplots(1 + len(self.ml.tseriesdict), sharex=True,
-                                    gridspec_kw={
-                                        'height_ratios': height_ratios})
-            axarr = np.atleast_1d(axarr)
+        height_ratios = [max([hsim.max(), self.ml.oseries.max()]) - min(
+            [hsim.min(), self.ml.oseries.min()])]
+        for ht in h[1:]:
+            height_ratios.append(ht.max() - ht.min())
+
+        fig, ax = plt.subplots(1 + len(self.ml.tseriesdict), sharex=True,
+                               gridspec_kw={'height_ratios': height_ratios})
+        ax = np.atleast_1d(ax)  # ax.Flatten is maybe better?
 
         # plot simulation and observations in top graph
-        plt.axes(axarr[0])
+        plt.axes(ax[0])
         self.ml.oseries.plot(linestyle='', marker='.', color='k', markersize=3,
-                             ax=axarr[0], label='observations')
-        hsim.plot(ax=axarr[0], label='simulation')
-        axarr[0].autoscale(enable=True, axis='y', tight=True)
-        axarr[0].grid(which='both')
-        axarr[0].minorticks_off()
-
-        # add a legend
-        axarr[0].legend(loc=(0, 1), ncol=3, frameon=False)
+                             ax=ax[0], label='observations', x_compat=True)
+        hsim.plot(ax=ax[0], label='simulation', x_compat=True)
+        ax[0].autoscale(enable=True, axis='y', tight=True)
+        ax[0].grid(which='both')
+        ax[0].minorticks_off()
+        ax[0].legend(loc=(0, 1), ncol=3, frameon=False)
 
         # determine the ytick-spacing of the top graph
         yticks, ylabels = plt.yticks()
@@ -173,29 +184,28 @@ class Plotting():
             base = None
 
         # plot the influence of the stresses
-        iax = 1
-        for ts in self.ml.tseriesdict.values():
-            plt.axes(axarr[iax])
-            plt.plot(h[iax].index, h[iax].values)
+        for i, ts in enumerate(self.ml.tseriesdict.values(), start=1):
+            h[i].plot(ax=ax[i], x_compat=True)
+
             if base is not None:
                 # set the ytick-spacing equal to the top graph
-                axarr[iax].yaxis.set_major_locator(
+                ax[i].yaxis.set_major_locator(
                     plticker.MultipleLocator(base=base))
 
-            axarr[iax].set_title(ts.name)
-            axarr[iax].autoscale(enable=True, axis='y', tight=True)
-            axarr[iax].grid(which='both')
-            axarr[iax].minorticks_off()
-            iax += 1
+            ax[i].set_title(ts.name)
+            ax[i].autoscale(enable=True, axis='y', tight=True)
+            ax[i].grid(which='both')
+            ax[i].minorticks_off()
 
-        # show the figure
-        plt.tight_layout()
-        plt.show()
+        if show:
+            plt.show()
 
-    def diagnostics(self, tmin=None, tmax=None):
+        return fig
+
+    def diagnostics(self, tmin=None, tmax=None, show=True):
         innovations = self.ml.innovations(tmin, tmax)
 
-        plt.figure()
+        fig = self._get_figure()
         gs = plt.GridSpec(2, 3, wspace=0.2)
 
         plt.subplot(gs[0, :2])
@@ -213,9 +223,13 @@ class Plotting():
 
         plt.subplot(gs[1, 2])
         probplot(innovations, plot=plt)
-        plt.show()
 
-    def block_response(self, series=None):
+        if show:
+            plt.show()
+
+        return fig
+
+    def block_response(self, series=None, show=True):
         """Plot the block response for a specific series.
 
         Returns
@@ -230,7 +244,7 @@ class Plotting():
             series = [series]
 
         legend = []
-        fig = plt.figure()
+        fig = self._get_figure()
 
         for name in series:
             if name not in self.ml.tseriesdict.keys():
@@ -251,9 +265,14 @@ class Plotting():
 
         plt.legend(legend)
         fig.suptitle("Block Response(s)")
+
+        if show:
+            plt.show()
+
         return fig
 
-    def step_response(self, series=None):
+    def step_response(self, series=None, show=True):
+
         """Plot the step response for a specific series.
 
         Returns
@@ -268,7 +287,7 @@ class Plotting():
             series = [series]
 
         legend = []
-        fig = plt.figure()
+        fig = self._get_figure()
 
         for name in series:
             if name not in self.ml.tseriesdict.keys():
@@ -289,4 +308,13 @@ class Plotting():
 
         plt.legend(legend)
         fig.suptitle("Step Response(s)")
+
+        if show:
+            plt.show()
+
+        return fig
+
+    def _get_figure(self):
+        fig = plt.figure()
+        fig.tight_layout()
         return fig
