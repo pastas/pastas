@@ -24,21 +24,24 @@ class Plotting():
         return msg
 
     def plot(self, tmin=None, tmax=None, show=True, oseries=True,
-             simulate=True):
+             simulate=True, **kwargs):
         """Make a plot of the observed and simulated series.
 
         Parameters
         ----------
         oseries: Boolean
             True to plot the observed time series.
+        simulate: Boolean
+            True to plot the simulated time series.
 
         Returns
         -------
-        fig: matplotlib figure instance
-            Plot of the simulated and optionally the observed time series.
+        fig: matplotlib.figure
+            MPL figure with the simulated and optionally the observed time
+            series.
 
         """
-        fig = self._get_figure()
+        fig = self._get_figure(**kwargs)
         fig.suptitle("Results of " + self.ml.name)
 
         # Get right tmin and tmax
@@ -153,8 +156,8 @@ class Plotting():
         h = [hsim]
 
         # determine the influence of the different stresses
-        for ts in self.ml.tseriesdict.values():
-            h.append(self.ml.get_contribution(ts.name, tindex=tindex))
+        for name in self.ml.tseriesdict.keys():
+            h.append(self.ml.get_contribution(name, tindex=tindex))
 
         # open the figure
         height_ratios = [max([hsim.max(), self.ml.oseries.max()]) - min(
@@ -167,7 +170,6 @@ class Plotting():
         ax = np.atleast_1d(ax)  # ax.Flatten is maybe better?
 
         # plot simulation and observations in top graph
-        plt.axes(ax[0])
         self.ml.oseries.plot(linestyle='', marker='.', color='k', markersize=3,
                              ax=ax[0], label='observations', x_compat=True)
         hsim.plot(ax=ax[0], label='simulation', x_compat=True)
@@ -184,7 +186,7 @@ class Plotting():
             base = None
 
         # plot the influence of the stresses
-        for i, ts in enumerate(self.ml.tseriesdict.values(), start=1):
+        for i, name in enumerate(self.ml.tseriesdict.keys(), start=1):
             h[i].plot(ax=ax[i], x_compat=True)
 
             if base is not None:
@@ -192,7 +194,7 @@ class Plotting():
                 ax[i].yaxis.set_major_locator(
                     plticker.MultipleLocator(base=base))
 
-            ax[i].set_title(ts.name)
+            ax[i].set_title(name)
             ax[i].autoscale(enable=True, axis='y', tight=True)
             ax[i].grid(which='both')
             ax[i].minorticks_off()
@@ -314,6 +316,6 @@ class Plotting():
 
         return fig
 
-    def _get_figure(self):
-        fig = plt.figure()
+    def _get_figure(self, **kwargs):
+        fig = plt.figure(**kwargs)
         return fig
