@@ -8,5 +8,5 @@ from .rfunc import Gamma, Exponential, Hantush, Theis, Bruggeman
 from .solver import LmfitSolve, LeastSquares, DESolve
 from .stats import Statistics
 from .tseries import Tseries, Tseries2, Recharge, Well, TseriesStep, Constant, \
-    NoiseModel, NoiseModel2
+    NoiseModel
 from .version import __version__

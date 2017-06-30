@@ -1,4 +1,4 @@
-"""tseries module constains class for time series objects.
+"""tseries module contains class for time series objects.
 
 """
 
@@ -145,16 +145,24 @@ class Tseries(TseriesBase):
         'mean'. Currently supported options are: 'interpolate', float,
         and 'mean'. Interpolation is performed with a standard linear
         interpolation.
+    norm_stress: Boolean, optional
+        normalize the stress by subtracting the mean. For example this is
+        convenient when simulating river levels.
 
     """
 
     def __init__(self, stress, rfunc, name, metadata=None, xy=(0, 0),
-                 freq=None, fillnan='mean', up=True, cutoff=0.99):
+                 freq=None, fillnan='mean', up=True, cutoff=0.99,
+                 normalize_stress=False):
         stress = check_tseries(stress, freq, fillnan, name=name)
         TseriesBase.__init__(self, rfunc, name, xy, metadata,
                              stress.index.min(), stress.index.max(),
                              up, stress.mean(), cutoff)
         self.freq = stress.index.freqstr
+
+        if normalize_stress:
+            stress = stress - stress.mean()
+
         self.stress[name] = stress
         self.set_init_parameters()
 
@@ -637,105 +645,6 @@ class Constant(TseriesBase):
 
 
 class NoiseModel:
-    """Noise model with exponential decay of the residual.
-
-    Notes
-    -----
-    Calculates the innovations [1] according to:
-
-    .. math::
-        v(t1) = r(t1) - r(t0) * exp(- (t1 - t0) / alpha)
-
-    Examples
-    --------
-    It can happen that the noisemodel is used in during the model calibration
-    to explain most of the variation in the data. A recommended solution is to
-    scale the initial parameter with the model timestep, E.g.:
-
-    >>> n = NoiseModel()
-    >>> n.set_initial("noise_alpha", 1.0 * ml.get_dt(ml.freq))
-
-    References
-    ----------
-    von Asmuth, J. R., and M. F. P. Bierkens (2005), Modeling irregularly spaced residual series as a continuous stochastic process, Water Resour. Res., 41, W12404, doi:10.1029/2004WR003726.
-
-    """
-
-    def __init__(self):
-        self.nparam = 1
-        self.name = "noise"
-        self.set_init_parameters()
-
-    def set_initial(self, name, value):
-        """Method to set the initial parameter value.
-
-        Examples
-        --------
-
-        >>> ts.set_initial('parametername', 200)
-
-        """
-        if name in self.parameters.index:
-            self.parameters.loc[name, 'initial'] = value
-        else:
-            print('Warning:', name, 'does not exist')
-
-    def set_min(self, name, value):
-        if name in self.parameters.index:
-            self.parameters.loc[name, 'pmin'] = value
-        else:
-            print('Warning:', name, 'does not exist')
-
-    def set_max(self, name, value):
-        if name in self.parameters.index:
-            self.parameters.loc[name, 'pmax'] = value
-        else:
-            print('Warning:', name, 'does not exist')
-
-    def fix_parameter(self, name):
-        if name in self.parameters.index:
-            self.parameters.loc[name, 'vary'] = 0
-        else:
-            print('Warning:', name, 'does not exist')
-
-    def set_init_parameters(self):
-        self.parameters = pd.DataFrame(
-            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        self.parameters.loc['noise_alpha'] = (14.0, 0, 5000, 1, 'noise')
-
-    def simulate(self, res, delt, p, tindex=None):
-        """
-
-        Parameters
-        ----------
-        res : pandas.Series
-            The residual series.
-        delt : pandas.Series
-            Time steps between observations.
-        tindex : None, optional
-            Time indices used for simulation.
-        p : array-like, optional
-            Alpha parameters used by the noisemodel.
-
-        Returns
-        -------
-        pandas.Series
-            Series of the innovations.
-
-        """
-        innovations = pd.Series(res, index=res.index, name="Innovations")
-        # weights of innovations, see Eq. A17 in reference [1]
-        power = (1.0 / (2.0 * (len(delt) - 1)))
-        w = np.exp(power * np.sum(np.log(1 - np.exp(-2 * delt[1:] / p)))) / \
-            np.sqrt(1.0 - np.exp(-2 * delt[1:] / p))
-        # res.values is needed else it gets messed up with the dates
-        innovations[1:] -= w * np.exp(-delt[1:] / p) * res.values[:-1]
-        if tindex is not None:
-            innovations = innovations[tindex]
-        return innovations
-
-
-class NoiseModel2:
     """Noise model with exponential decay of the residual.
 
     Notes

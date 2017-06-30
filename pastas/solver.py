@@ -1,3 +1,29 @@
+"""This module contains the different solvers that are available for PASTAS.
+
+All solvers inherit from the BaseSolver class, which contains general method
+for selecting the correct time series to minimize and options to weight the
+residuals series.
+
+Notes
+-----
+By default, when a model is solve with a noisemodel, the swsi-weights are
+applied. The use of these weights is necessary to obtain statistically sound
+results when applying a noisemodel.
+
+Examples
+--------
+To solve a model without a noisemodel and no weighting of the residuals,
+the following syntax can be used.
+
+>>> ml.solve(solver=LeastSquares, noise=False, weights=None)
+
+To solve the model with a noise model, an the weights according to the swsi
+criterion (default), use te following syntax.
+
+>>> ml.solve(solver=LmfitSolve)
+
+"""
+
 from __future__ import print_function, division
 
 from warnings import warn
@@ -19,13 +45,24 @@ class BaseSolver:
     """
 
     def __init__(self):
-        pass
+        self.default_kwargs = dict()
 
-    def get_residuals(self, parameters, tmin, tmax, noise, model, freq,
-                      weights=None):
+    def update_kwargs(self, kwargs):
+        if kwargs:
+            self.default_kwargs.update(kwargs)
+            return self.default_kwargs
+        else:
+            return self.default_kwargs
+
+    def minimize(self, parameters, tmin, tmax, noise, model, freq,
+                 weights=None):
         # Determine if a noise model needs to be applied
         if noise:
             res = model.innovations(parameters, tmin, tmax, freq)
+            if not weights:
+                warn("Caution, solving the model with a noisemodel but not "
+                     "weighting the innovations, please consider applying "
+                     "weights.")
         else:
             res = model.residuals(parameters, tmin, tmax, freq)
 
@@ -38,8 +75,8 @@ class BaseSolver:
                      "residuals series. A list with size %s is needed."
                      % res.size)
             return weights * res
-        elif hasattr(self, weights):
-            weights = getattr(self, weights)
+        elif hasattr(self, "weights_" + weights):
+            weights = getattr(self, "weights_" + weights)
             w = weights(parameters, model, res)
             res = res.multiply(w, fill_value=0.0)
             return res
@@ -47,7 +84,7 @@ class BaseSolver:
             warn("The weighting option is not valid. Please provide a valid "
                  "weighting argument.")
 
-    def swsi(self, parameters, model, res):
+    def weights_swsi(self, parameters, model, res):
         """
 
         Returns
@@ -61,7 +98,7 @@ class BaseSolver:
             np.sqrt(1.0 - np.exp(-2.0 * delt / p))
         return w
 
-    def swsi2(self, parameters, model, res):
+    def weights_swsi2(self, parameters, model, res):
         alpha = parameters[-1]
         dt = model.odelt[res.index][1:]
         N = res.index.size  # Number of innovations
@@ -70,53 +107,85 @@ class BaseSolver:
         w = np.sqrt((numerator / (1.0 - np.exp(-2.0 * dt / alpha))))
         return w
 
-    def time_step(self, parameters, model, res):
+    def weights_timestep(self, parameters, model, res):
         delt = model.odelt[res.index][1:]
         return delt
 
 
 class LeastSquares(BaseSolver):
-    """Solving the model using Scipy's least_squares method
+    """Solving the model using Scipy's least_squares method.
 
     Notes
     -----
-    This method uses the
+    This class is usually called by the pastas Model solve method. E.g.
+
+    >>> ml.solve(solver=LeastSquares)
+
+    References
+    ----------
     https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
 
     """
 
     def __init__(self, model, tmin=None, tmax=None, noise=True, freq='D',
-                 weights=None):
+                 weights=None, **kwargs):
         BaseSolver.__init__(self)
+
+        # Update the kwargs going to the solver
+        self.default_kwargs = dict(ftol=1e-3)
+        kwargs = self.update_kwargs(kwargs)
+
         parameters = model.parameters.initial.values
 
         # Set the boundaries
-        pmin = np.where(model.parameters.pmin.isnull(), -np.inf, model.parameters.pmin)
-        pmax = np.where(model.parameters.pmax.isnull(), np.inf, model.parameters.pmax)
+        pmin = np.where(model.parameters.pmin.isnull(), -np.inf,
+                        model.parameters.pmin)
+        pmax = np.where(model.parameters.pmax.isnull(), np.inf,
+                        model.parameters.pmax)
         bounds = (pmin, pmax)
 
-        # Set boundaries to initial values if vary is False
-        # TODO: make notification that fixing parameters is not (yet)
-        # supported.
         if False in model.parameters.vary.values.astype('bool'):
             warn("Fixing parameters is not supported with this solver. Please"
                  "use LmfitSolve or apply small boundaries as a solution.")
+
         self.fit = least_squares(self.objfunction, x0=parameters,
-                                 bounds=bounds, ftol=1e-3,
-                                 args=(
-                                     tmin, tmax, noise, model, freq, weights))
+                                 bounds=bounds,
+                                 args=(tmin, tmax, noise, model, freq, \
+                                       weights), **kwargs)
         self.optimal_params = self.fit.x
         self.report = None
 
     def objfunction(self, parameters, tmin, tmax, noise, model, freq, weights):
-        res = self.get_residuals(parameters, tmin, tmax, noise, model, freq,
-                                 weights)
+        """
+
+        Parameters
+        ----------
+        parameters
+        tmin
+        tmax
+        noise
+        model
+        freq
+        weights
+
+        Returns
+        -------
+
+        """
+        res = self.minimize(parameters, tmin, tmax, noise, model, freq,
+                            weights)
         return res
 
 
-class LmfitSolve:
+class LmfitSolve(BaseSolver):
     def __init__(self, model, tmin=None, tmax=None, noise=True, freq='D',
-                 weights=None):
+                 weights=None, **kwargs):
+        BaseSolver.__init__(self)
+
+        # Update the kwargs going to the solver
+        self.default_kwargs = dict(ftol=1e-3, epsfcn=1e-4)
+        kwargs = self.update_kwargs(kwargs)
+
         # Deal with the parameters
         parameters = lmfit.Parameters()
         p = model.parameters[['initial', 'pmin', 'pmax', 'vary']]
@@ -125,21 +194,20 @@ class LmfitSolve:
             parameters.add(k, value=pp[0], min=pp[1], max=pp[2], vary=pp[3])
 
         self.fit = lmfit.minimize(fcn=self.objfunction, params=parameters,
-                                  ftol=1e-3, epsfcn=1e-4,
-                                  args=(tmin, tmax, noise, model, freq))
+                                  args=(tmin, tmax, noise, model, freq,
+                                        weights), **kwargs)
         self.optimal_params = np.array([p.value for p in
                                         self.fit.params.values()])
         self.report = lmfit.fit_report(self.fit)
 
-    def objfunction(self, parameters, tmin, tmax, noise, model, freq):
-        p = np.array([p.value for p in parameters.values()])
-        if noise:
-            return model.innovations(p, tmin, tmax, freq)
-        else:
-            return model.residuals(p, tmin, tmax, freq)
+    def objfunction(self, parameters, tmin, tmax, noise, model, freq, weights):
+        param = np.array([p.value for p in parameters.values()])
+        res = self.minimize(param, tmin, tmax, noise, model, freq,
+                            weights)
+        return res
 
 
-class DESolve:
+class DESolve(BaseSolver):
     def __init__(self, model, tmin=None, tmax=None, noise=True, freq='D'):
         self.freq = freq
         self.model = model
