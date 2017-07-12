@@ -1,5 +1,7 @@
 nbsphinx
 
+Ipython
+
 numpy>=1.9
 
 matplotlib>=1.5
