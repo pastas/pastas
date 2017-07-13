@@ -198,18 +198,10 @@ class KnmiStation:
         header = [item.lstrip().rstrip() for item in header]
         line = f.readline()  # Skip empty line after header
 
-        # Set the right datatypes for the pandas DataFrame
-        dtype = [np.float64] * (len(self.variables) + 1)
-        if dtype:
-            dtype[0] = int  # station id
-        if dtype[1]:
-            dtype[1] = 'S8'
-        dtype = dict(zip(header, dtype))
-
         # Process the datablock
         string2datetime = lambda x: pd.to_datetime(x, format='%Y%m%d')
 
-        data = pd.read_csv(f, header=None, names=header, dtype=dtype,
+        data = pd.read_csv(f, header=None, names=header,
                            parse_dates=['YYYYMMDD'], index_col='YYYYMMDD',
                            na_values='     ', converters={1: string2datetime})
 

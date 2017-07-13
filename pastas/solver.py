@@ -56,7 +56,37 @@ class BaseSolver:
 
     def minimize(self, parameters, tmin, tmax, noise, model, freq,
                  weights=None):
-        # Determine if a noise model needs to be applied
+        """This method is called by all solvers to obtain a series that are
+        minimized in the optimization proces. It handles the application of
+        the weigths, a noisemodel and other optimization options.
+
+        Parameters
+        ----------
+        parameters: list, numpy.ndarray
+            list with the parameters
+        tmin: str
+
+        tmax: str
+
+        noise: Boolean
+
+        model: pastas.Model
+            Pastas Model instance
+        freq: str
+
+        weights: str, list, None
+            string with the name of the weights function (swsi, swsi2 or
+            timestep), a list with values to multiply each residual with. If
+            None, no weights are applied.
+
+        Returns
+        -------
+        res:
+            residuals series
+
+        """
+
+        # Get the residuals or the innovations
         if noise:
             res = model.innovations(parameters, tmin, tmax, freq)
             if not weights:
@@ -91,11 +121,11 @@ class BaseSolver:
         -------
 
         """
-        p = parameters[-1]
-        delt = model.odelt[res.index][1:]
-        power = (1.0 / (2.0 * (len(delt) - 1.0)))
-        w = np.exp(power * np.sum(np.log(1.0 - np.exp(-2.0 * delt / p)))) / \
-            np.sqrt(1.0 - np.exp(-2.0 * delt / p))
+        alpha = parameters[-1]
+        dt = model.odelt[res.index][1:]
+        power = (1.0 / (2.0 * (len(dt) - 1.0)))
+        w = np.exp(power * np.sum(np.log(1.0 - np.exp(-2.0 * dt / alpha)))) / \
+            np.sqrt(1.0 - np.exp(-2.0 * dt / alpha))
         return w
 
     def weights_swsi2(self, parameters, model, res):
@@ -103,7 +133,7 @@ class BaseSolver:
         dt = model.odelt[res.index][1:]
         N = res.index.size  # Number of innovations
         numerator = np.exp(
-            (1.0 / N) * sum(np.log(1.0 - np.exp(-2.0 * dt / alpha))))
+            (1.0 / N) * np.sum(np.log(1.0 - np.exp(-2.0 * dt / alpha))))
         w = np.sqrt((numerator / (1.0 - np.exp(-2.0 * dt / alpha))))
         return w
 
@@ -150,7 +180,7 @@ class LeastSquares(BaseSolver):
 
         self.fit = least_squares(self.objfunction, x0=parameters,
                                  bounds=bounds,
-                                 args=(tmin, tmax, noise, model, freq, \
+                                 args=(tmin, tmax, noise, model, freq,
                                        weights), **kwargs)
         self.optimal_params = self.fit.x
         self.report = None
@@ -209,6 +239,8 @@ class LmfitSolve(BaseSolver):
 
 class DESolve(BaseSolver):
     def __init__(self, model, tmin=None, tmax=None, noise=True, freq='D'):
+        BaseSolver.__init__(self)
+
         self.freq = freq
         self.model = model
         self.tmin = tmin
