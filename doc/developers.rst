@@ -1,3 +1,4 @@
+================
 Developers guide
 ================
 On this page resources for developers working on |Project| are provided. One
@@ -38,4 +39,4 @@ Resources
   :maxdepth: 1
   :glob:
 
-  developers/**
+  developers/*

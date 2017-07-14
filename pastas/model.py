@@ -1,7 +1,10 @@
 from __future__ import print_function, division
 
 import datetime
+import os
+import pickle
 from collections import OrderedDict
+from copy import deepcopy
 from warnings import warn
 
 import numpy as np
@@ -13,34 +16,44 @@ from .plots import Plotting
 from .solver import LmfitSolve
 from .stats import Statistics
 from .tseries import Constant
-from .plots import Plotting
+from .utils import get_dt, get_time_offset
+from .version import __version__
 
 
 class Model:
+    """Initiates a time series model.
+
+    Parameters
+    ----------
+    oseries: pandas.Series
+        pandas Series object containing the dependent time series. The
+        observation can be non-equidistant.
+    xy: tuple, optional
+        XY location of the oseries in lat-lon format.
+    name: str, optional
+        String with the name of the model, used in plotting and saving.
+    metadata: dict, optional
+        Dictionary containing metadata of the model.
+    warmup: float, optional
+        Number of days used for warmup.
+    fillnan: str or float, optional
+        Methods or float number to fill nan-values. Default values is
+        'drop'. Currently supported options are: 'interpolate', float,
+        'mean' and, 'drop'. Interpolation is performed with a standard
+        linear interpolation.
+    constant: bool, optional
+        Add a constant to the model (Default=True).
+
+    Examples
+    --------
+
+    >>> oseries = pd.Series([1,2,1], index=pd.to_datetime(range(3), unit="D"))
+    >>> ml = Model(oseries)
+
+    """
+
     def __init__(self, oseries, xy=(0, 0), name="PASTAS_Model", metadata=None,
                  warmup=0, fillnan='drop', constant=True):
-        """Initiates a time series model.
-
-        Parameters
-        ----------
-        oseries: pd.Series
-            pandas Series object containing the dependent time series. The
-            observation can be non-equidistant.
-        xy: Optional[tuple]
-            XY location of the oseries in lat-lon format.
-        metadata: Optional[dict]
-            Dictionary containing metadata of the model.
-        warmup: Optional[float]
-            Number of days used for warmup
-        fillnan: Optional[str or float]
-            Methods or float number to fill nan-values. Default values is
-            'drop'. Currently supported options are: 'interpolate', float,
-            'mean' and, 'drop'. Interpolation is performed with a standard
-            linear interpolation.
-        constant: Boolean
-            Add a constant to the model (Default=True).
-
-        """
         self.oseries = check_oseries(oseries, fillnan)
         self.oseries_calib = None
 
@@ -59,6 +72,9 @@ class Model:
         self.nparam = 0
 
         self.tseriesdict = OrderedDict()
+        self.tseriesdict_calib = None
+        self.interpolate_simulation = None
+
         self.noisemodel = None
 
         if constant:
@@ -68,7 +84,7 @@ class Model:
 
         # Metadata
         self.xy = xy
-        self.metadata = metadata
+        self.metadata = self.get_metadata(metadata)
         self.name = name
 
         self.fit = None
@@ -84,12 +100,13 @@ class Model:
 
         Parameters
         ----------
-        name: str
-            string with the name of the tseries object.
+        tseries: pastas.tseries
+            pastas.tseries object.
 
         Notes
         -----
         To obtain a list of the tseries names type:
+
         >>> ml.tseriesdict.keys()
 
         """
@@ -134,6 +151,7 @@ class Model:
         Notes
         -----
         To obtain a list of the tseries names type:
+
         >>> ml.tseriesdict.keys()
 
         """
@@ -175,17 +193,17 @@ class Model:
 
         Parameters
         ----------
-        parameters: Optional[list]
+        parameters: list, optional
             Array of the parameters used in the time series model.
-        tmin: Optional[str]
-        tmax: Optional[str]
-        freq: Optional[str]
+        tmin: str, optional
+        tmax: str, optional
+        freq: str, optional
             frequency at which the time series are simulated.
 
         Returns
         -------
-        h: pd.Series
-            Pandas Series object containing the simulated time series
+        h: pandas.Series
+            pandas.Series object containing the simulated time series
 
         Notes
         -----
@@ -199,20 +217,24 @@ class Model:
         # Default option when tmin and tmax and freq are not provided.
         if freq is None:
             freq = self.freq
-
         tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq, use_oseries=False)
 
         tmin = pd.to_datetime(tmin) - pd.DateOffset(days=self.warmup)
         sim_index = pd.date_range(tmin, tmax, freq=freq)
-        dt = self.get_dt(freq)
+        dt = get_dt(freq)
 
         # Get parameters if none are provided
         if parameters is None:
             parameters = self.get_parameters()
 
+        if self.tseriesdict_calib is None:
+            tseriesdict_calib = self.get_tseriesdict_calib()
+        else:
+            tseriesdict_calib = self.tseriesdict_calib
+
         h = pd.Series(data=0, index=sim_index)
         istart = 0  # Track parameters index to pass to ts object
-        for ts in self.tseriesdict.values():
+        for ts in tseriesdict_calib.values():
             c = ts.simulate(parameters[istart: istart + ts.nparam], sim_index,
                             dt)
             h = h.add(c, fill_value=0.0)
@@ -227,19 +249,17 @@ class Model:
 
         Parameters
         ----------
-        parameters: Optional[list]
+        parameters: list, optional
             Array of the parameters used in the time series model.
-        tmin: Optional[str]
-        tmax: Optional[str]
-        freq: Optional[str]
+        tmin: str, optional
+        tmax: str, optional
+        freq: str, optional
             frequency at which the time series are simulated.
-        h_observed: Optional[pd.Series]
-            Pandas series containing the observed values.
 
         Returns
         -------
-        res: pd.Series
-            Pandas series with the residuals series.
+        res: pandas.Series
+            pandas.Series with the residuals series.
 
         """
         if freq is None:
@@ -251,50 +271,66 @@ class Model:
         simulation = self.simulate(parameters, tmin, tmax, freq)
 
         if self.oseries_calib is None:
-            h_observed = self.get_h_observed(tmin, tmax, simulation.index)
+            oseries_calib = self.get_oseries_calib(tmin, tmax,
+                                                   simulation.index)
         else:
-            h_observed = self.oseries_calib
+            oseries_calib = self.oseries_calib
 
-        obs_index = h_observed.index  # times used for calibration
+        obs_index = oseries_calib.index  # times used for calibration
 
         # Get h_simulated at the correct indices
-        if obs_index.difference(simulation.index).size == 0:
+        interpolate_simulation = self.interpolate_simulation
+        if interpolate_simulation is None:
+            interpolate_simulation = obs_index.difference(
+                simulation.index).size != 0
+        if interpolate_simulation:
+            # interpolate simulation to measurement-times
+            h_simulated = np.interp(oseries_calib.index.asi8,
+                                    simulation.index.asi8, simulation)
+        else:
             # all of the observation indexes are in the simulation
             h_simulated = simulation[obs_index]
-        else:
-            # interpolate simulation to measurement-times
-            h_simulated = np.interp(h_observed.index.asi8,
-                                    simulation.index.asi8, simulation)
-        res = h_observed - h_simulated
+        res = oseries_calib - h_simulated
 
         if np.isnan(sum(res ** 2)):
             print('nan problem in residuals')  # quick and dirty check
         return res
 
-    def get_h_observed(self, tmin, tmax, sim_index):
-        h_observed = self.oseries[tmin: tmax]
+    def get_oseries_calib(self, tmin, tmax, sim_index):
+        """Method to get the oseries to use for calibration.
+
+        This method is for performance improvements only.
+
+        """
+        oseries_calib = self.oseries[tmin: tmax]
         # sample measurements, so that frequency is not higher than model
-        # keep the original timestamps, as they will be used during interpolation of the simulation
-        h_observed = self.sample(h_observed, sim_index)
-        return h_observed
+        # keep the original timestamps, as they will be used during
+        # interpolation of the simulation
+        oseries_calib = self.sample(oseries_calib, sim_index)
+        return oseries_calib
+
+    def get_tseriesdict_calib(self):
+        # tseriesdict_calib = self.tseriesdict.copy()
+        tseriesdict_calib = deepcopy(self.tseriesdict)
+        for tseries in tseriesdict_calib.values():
+            tseries.change_frequency(self.freq)
+        return tseriesdict_calib
 
     def innovations(self, parameters=None, tmin=None, tmax=None, freq=None):
         """Method to simulate the innovations when a noisemodel is present.
 
         Parameters
         ----------
-        parameters: Optional[list]
+        parameters: list, optional
             Array of the parameters used in the time series model.
-        tmin: Optional[str]
-        tmax: Optional[str]
-        freq: Optional[str]
+        tmin: str, optional
+        tmax: str, optional
+        freq: str, optional
             frequency at which the time series are simulated.
-        h_observed: Optional[pd.Series]
-            Pandas series containing the observed values.
 
         Returns
         -------
-        v: pd.Series
+        v : pandas.Series
             Pandas series of the innovations.
 
         Notes
@@ -335,10 +371,10 @@ class Model:
 
         Parameters
         ----------
-        initial: Boolean
-            Use initial values from parameter dataframe if True. If false, the
+        initial: bool, optional
+            Use initial values from parameter dataframe if True. If False, the
             optimal values are used.
-        noise: Boolean
+        noise: bool, optional
             Add the parameters for the noisemodel to the parameters
             Dataframe or not.
 
@@ -349,8 +385,16 @@ class Model:
 
         # make sure calibration data is renewed
         sim_index = pd.date_range(self.tmin, self.tmax, freq=self.freq)
-        self.oseries_calib = self.get_h_observed(self.tmin, self.tmax,
-                                                 sim_index)
+        self.oseries_calib = self.get_oseries_calib(self.tmin, self.tmax,
+                                                    sim_index)
+
+        self.tseries_calib = self.get_tseriesdict_calib()
+
+        self.interpolate_simulation = self.oseries_calib.index.difference(
+            sim_index).size != 0
+        if self.interpolate_simulation:
+            print(
+                'There are observations between the simulation-timesteps. Linear interpolation is used')
 
         # Set initial parameters
         self.parameters = self.get_init_parameters(noise=noise)
@@ -361,32 +405,33 @@ class Model:
             self.parameters.initial = optimal
 
     def solve(self, tmin=None, tmax=None, solver=LmfitSolve, report=True,
-              noise=True, initial=True):
-        """
-        Methods to solve the time series model.
+              noise=True, initial=True, weights=None, **kwargs):
+        """Methods to solve the time series model.
 
         Parameters
         ----------
-        tmin: Optional[str]
+        tmin: str, optional
             String with a start date for the simulation period (E.g. '1980')
-        tmax: Optional[str]
+        tmax: str, optional
             String with an end date for the simulation period (E.g. '2010')
-        solver: Optional[solver class]
+        solver: pastas.solver, optional
             Class used to solve the model. Default is lmfit (LmfitSolve)
-        report: Boolean
+        report: bool, optional
             Print a report to the screen after optimization finished.
-        noise: Boolean
+        noise: bool, optional
             Use the noise model (True) or not (False).
-        initial: Boolean
+        initial: bool, optional
             Reset initial parameters.
 
         """
         if noise and (self.noisemodel is None):
-            warn(message='Warning, solution with noise model while noise model'
-                         'is not defined. No noise model is used.')
+            warn(
+                message='Warning, solution with noise model while noise model '
+                        'is not defined. No noise model is used.')
+            noise = False
 
-        # Check frequency of tseries
-        self.set_freq_offset()
+        # Check frequency of tseries (is allready performed at add_tseries())
+        # self.set_freq_offset()
 
         # Check series with tmin, tmax
         self.tmin, self.tmax = self.get_tmin_tmax(tmin, tmax)
@@ -396,10 +441,12 @@ class Model:
 
         # Solve model
         fit = solver(self, tmin=self.tmin, tmax=self.tmax, noise=noise,
-                     freq=self.freq)
+                     freq=self.freq, weights=weights, **kwargs)
 
-        # make calibration data empty again
+        # make calibration data empty again (was set in initialize)
         self.oseries_calib = None
+        self.tseries_calib = None
+        self.interpolate_simulation = None
 
         self.fit = fit.fit
         self.parameters.optimal = fit.optimal_params
@@ -411,20 +458,20 @@ class Model:
 
         Parameters
         ----------
-        tmin: str
+        tmin: str, optional
             string with a year or date that can be turned into a pandas
-            Timestamp (e.g. pd.tslib.Timestamp(tmin)).
-        tmax: str
+            Timestamp (e.g. pd.Timestamp(tmin)).
+        tmax: str, optional
             string with a year or date that can be turned into a pandas
-            Timestamp (e.g. pd.tslib.Timestamp(tmax)).
-        freq: str
-
-        use_oseries: Boolean
+            Timestamp (e.g. pd.Timestamp(tmax)).
+        freq: str, optional
+            string with the frequency.
+        use_oseries: bool, optional
             boolean to check the tmin and tmax against the oseries.
 
         Returns
         -------
-        tmin, tmax: pd.Timestamp
+        tmin, tmax: pandas.Timestamp
             returns a pandas timestamp for tmin and tmax.
 
         Notes
@@ -457,7 +504,8 @@ class Model:
                 if tseries.tmax > ts_tmax:
                     ts_tmax = tseries.tmax
         else:
-            # for when there are no tseries, use the osseries, regardless of use_oseries:
+            # When there are no tseries use the oseries, regardless of
+            # use_oseries:
             ts_tmin = self.oseries.index.min()
             ts_tmax = self.oseries.index.max()
 
@@ -465,9 +513,9 @@ class Model:
         if not tmin and not use_oseries:
             tmin = ts_tmin
         elif not tmin:
-            tmin = self.oseries.index.min()
+            tmin = max(ts_tmin, self.oseries.index.min())
         else:
-            tmin = pd.tslib.Timestamp(tmin)
+            tmin = pd.Timestamp(tmin)
             # Check if tmin > oseries.tmin (Needs to be True)
             if tmin < self.oseries.index.min() and use_oseries:
                 warn("Specified tmin is before the first observation. tmin"
@@ -483,9 +531,9 @@ class Model:
         if not tmax and not use_oseries:
             tmax = ts_tmax
         elif not tmax:
-            tmax = self.oseries.index.max()
+            tmax = min(ts_tmax, self.oseries.index.max())
         else:
-            tmax = pd.tslib.Timestamp(tmax)
+            tmax = pd.Timestamp(tmax)
             # Check if tmax < oseries.tmax (Needs to be True)
             if tmax > self.oseries.index.max() and use_oseries:
                 warn("Specified tmax is after the last observation. tmax"
@@ -500,50 +548,57 @@ class Model:
         # adjust tmin and tmax so that the time-offset is equal to the tseries.
         if not freq:
             freq = self.freq
-        tmin = tmin - self.get_time_offset(tmin, freq) + self.time_offset
-        tmax = tmax - self.get_time_offset(tmax, freq) + self.time_offset
+        tmin = tmin - get_time_offset(tmin, freq) + self.time_offset
+        tmax = tmax - get_time_offset(tmax, freq) + self.time_offset
 
         assert tmax > tmin, \
             'Error: Specified tmax not larger than specified tmin'
-        assert self.oseries[tmin: tmax].size > 0, \
+        assert self.oseries.loc[tmin: tmax].size > 0, \
             'Error: no observations between tmin and tmax'
 
         return tmin, tmax
 
     def set_freq_offset(self):
-        """
+        """Set the frequency offset for the model class.
 
         Notes
         -----
         Methods to check if the frequency is:
 
-        1. The frequency should be the same for all tseries
-        2. tseries timestamps should match (e.g. similar hours)
-        3. freq of the tseries is lower than the max tdelta of the oseries
+        1. The frequency of the model is the highest frequency of the Tseries
+        2. Tseries timestamps should match (e.g. similar hours)
+
+        TODO
+        ----
+        Set freq_offset when freq of the tseries is lower than the max
+        tdelta of the oseries.
 
         """
 
-        # calculate frequency and time-difference with default frequency
-        freqs = set()
-        time_offsets = set()
-
+        # 1. The frequency of the model is the highest frequency of the Tseries
+        self.freq = None
         for tseries in self.tseriesdict.values():
             if not tseries.stress.empty:
-                freqs.add(tseries.freq)
-                # calculate the offset from the default frequency
-                time_offset = self.get_time_offset(tseries.stress.index[0],
-                                                   tseries.freq)
-                time_offsets.add(time_offset)
+                if self.freq is None:
+                    self.freq = tseries.freq
+                else:
+                    # use the highest frequency
+                    if get_dt(tseries.freq) < get_dt(self.freq):
+                        self.freq = tseries.freq
 
-        # 1. The frequency should be the same for all tseries
-        assert len(freqs) <= 1, 'The frequency of the tseries is not the ' \
-                                'same for all stresses.'
-        if len(freqs) == 1:
-            self.freq = next(iter(freqs))
-        else:
+        if self.freq is None:
             self.freq = 'D'
 
-        # 2. tseries timestamps should match (e.g. similar hours')
+        # 2. Tseries timestamps should match (e.g. similar hours')
+        # calculate frequency and time-difference with default frequency
+        time_offsets = set()
+        for tseries in self.tseriesdict.values():
+            if not tseries.stress.empty:
+                # calculate the offset from the default frequency
+                time_offset = get_time_offset(tseries.stress.index[0],
+                                              self.freq)
+                time_offsets.add(time_offset)
+
         assert len(
             time_offsets) <= 1, 'The time-differences with the default frequency is' \
                                 ' not the same for all stresses.'
@@ -557,14 +612,14 @@ class Model:
 
         Parameters
         ----------
-        noise: Boolean
+        noise: bool, optional
             Add the parameters for the noisemodel to the parameters
             Dataframe or not.
 
         Returns
         -------
-        parameters: pd.DataFrame
-            Pandas Dataframe with the parameters.
+        parameters: pandas.DataFrame
+            pandas.Dataframe with the parameters.
 
         """
         parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax',
@@ -583,9 +638,14 @@ class Model:
         none are provided. This method is used by the simulation, residuals
         and the innovations methods.
 
+        Parameters
+        ----------
+        name: str, optional
+            string with the name of the pastas.tseries object.
+
         Returns
         -------
-        p: list
+        p: list, optional
             Array of the parameters used in the time series model.
 
         """
@@ -602,101 +662,6 @@ class Model:
 
         return parameters.values
 
-    def get_dt(self, freq):
-        options = {'W': 7,  # weekly frequency
-                   'D': 1,  # calendar day frequency
-                   'H': 1 / 24,  # hourly frequency
-                   'T': 1 / 24 / 60,  # minutely frequency
-                   'min': 1 / 24 / 60,  # minutely frequency
-                   'S': 1 / 24 / 3600,  # secondly frequency
-                   'L': 1 / 24 / 3600000,  # milliseconds
-                   'ms': 1 / 24 / 3600000,  # milliseconds
-                   }
-        # Get the frequency string and multiplier
-        num, freq = self.get_freqstr(freq)
-        dt = num * options[freq]
-        return dt
-
-    def get_time_offset(self, t, freq):
-        if isinstance(t, pd.Series):
-            # Take the first timestep. The rest of index has the same offset,
-            # as the frequency is constant.
-            t = t.index[0]
-
-        # define the function blocks
-        def calc_week_offset(t):
-            return datetime.timedelta(days=t.weekday(), hours=t.hour,
-                                      minutes=t.minute, seconds=t.second)
-
-        def calc_day_offset(t):
-            return datetime.timedelta(hours=t.hour, minutes=t.minute,
-                                      seconds=t.second)
-
-        def calc_hour_offset(t):
-            return datetime.timedelta(minutes=t.minute, seconds=t.second)
-
-        def calc_minute_offset(t):
-            return datetime.timedelta(seconds=t.second)
-
-        def calc_second_offset(t):
-            return datetime.timedelta(microseconds=t.microsecond)
-
-        def calc_millisecond_offset(t):
-            # t has no millisecond attribute, so use microsecond and use the remainder after division by 1000
-            return datetime.timedelta(microseconds=t.microsecond % 1000.0)
-
-        # map the inputs to the function blocks
-        # see http://pandas.pydata.org/pandas-docs/stable/timeseries.html#timeseries-offset-aliases
-        options = {'W': calc_week_offset,  # weekly frequency
-                   'D': calc_day_offset,  # calendar day frequency
-                   'H': calc_hour_offset,  # hourly frequency
-                   'T': calc_minute_offset,  # minutely frequency
-                   'min': calc_minute_offset,  # minutely frequency
-                   'S': calc_second_offset,  # secondly frequency
-                   'L': calc_millisecond_offset,  # milliseconds
-                   'ms': calc_millisecond_offset,  # milliseconds
-                   }
-        # Get the frequency string and multiplier
-        num, freq = self.get_freqstr(freq)
-        offset = num * options[freq](t)
-        return offset
-
-    def get_freqstr(self, freqstr):
-        """Method to untangle the frequency string.
-
-        Parameters
-        ----------
-        freqstr: str
-            string with the frequency as defined by the pandas package,
-            possibly containing a numerical value.
-
-        Returns
-        -------
-        num: int
-            integer by which to multiply the frequency. 1 is returned if no
-            num is present in the string that has been provided.
-        freq: str
-            String with the frequency as defined by the pandas package.
-
-        """
-        # remove the day from the week
-        freqstr = freqstr.split("-", 1)[0]
-
-        # Find a number by which the frequency is multiplied
-        num = ''
-        freq = ''
-        for s in freqstr:
-            if s.isdigit():
-                num = num.__add__(s)
-            else:
-                freq = freq.__add__(s)
-        if num:
-            num = int(num)
-        else:
-            num = 1
-
-        return num, freq
-
     def get_contribution(self, name, tindex=None):
         if name not in self.tseriesdict.keys():
             warn("Name not in tseriesdict, available names are: %s"
@@ -704,8 +669,14 @@ class Model:
             return None
         else:
             p = self.get_parameters(name)
-            dt = self.get_dt(self.freq)
-            return self.tseriesdict[name].simulate(p, tindex=tindex, dt=dt)
+            dt = get_dt(self.freq)
+            if self.freq == self.tseriesdict[name]:
+                return self.tseriesdict[name].simulate(p, tindex=tindex, dt=dt)
+            else:
+                # first change the frequency to that of the model
+                ts_temp = deepcopy(self.tseriesdict[name])
+                ts_temp.change_frequency(self.freq)
+                return ts_temp.simulate(p, tindex=tindex, dt=dt)
 
     def get_block_response(self, name):
         if name not in self.tseriesdict.keys():
@@ -714,7 +685,7 @@ class Model:
             return None
         else:
             p = self.get_parameters(name)
-            dt = self.get_dt(self.freq)
+            dt = get_dt(self.freq)
             b = self.tseriesdict[name].rfunc.block(p, dt)
             t = np.arange(0, (len(b)) * dt, dt)
             return pd.Series(b, index=t, name=name)
@@ -726,12 +697,13 @@ class Model:
             return None
         else:
             p = self.get_parameters(name)
-            dt = self.get_dt(self.freq)
+            dt = get_dt(self.freq)
             s = self.tseriesdict[name].rfunc.step(p, dt)
             t = np.arange(0, (len(s)) * dt, dt)
             return pd.Series(s, index=t, name=name)
 
     def get_stress(self, name):
+        # TODO: Rewrite function. possibly add a @property to these get_methods.
         try:
             p = self.parameters.loc[
                 self.parameters.name == name, 'optimal'].values
@@ -745,20 +717,20 @@ class Model:
 
         Parameters
         ----------
-        series: pd.Series
+        series: pandas.Series
             pandas series object.
-        tindex: pd.index
+        tindex: pandas.index
             Pandas index object
 
         Returns
         -------
-        series: pd.Series
+        series: pandas.Series
 
 
         Notes
         -----
         Find the index closest to the tindex, and then return a selection
-        of series
+        of series.
 
         """
         f = interpolate.interp1d(series.index.asi8,
@@ -767,3 +739,93 @@ class Model:
                                  fill_value='extrapolate')
         ind = np.unique(f(tindex.asi8).astype(int))
         return series[ind]
+
+    def get_metadata(self, meta=None):
+        """Method that returns a metadata dict with the basic information.
+
+        Parameters
+        ----------
+        meta: dict, optional
+            dictionary containing user defined metadata
+
+        Returns
+        -------
+        metadata: dict
+            dictionary containing the basic information.
+
+        """
+        metadata = {}
+        now = pd.datetime.now().strftime("%Y-%m-%d")
+        metadata["date_created"] = now
+        metadata["date_modified"] = now
+        metadata["pastas_version"] = __version__
+        try:
+            metadata["owner"] = os.getlogin()
+        except:
+            metadata["owner"] = "Unknown"
+
+        if meta: # Update metadata with user-provided metadata if possible
+            metadata.update(meta)
+
+        return metadata
+
+    def export_model(self, fname=None):
+        """This method exports the model as an pickle (.pkl) file.
+
+        Parameters
+        ----------
+        fname: str, optional
+            filename excluding the extension.
+
+        Returns
+        -------
+        Message if the export was succesfull.
+
+        Notes
+        -----
+        After a PASTAS model has been stored, it is simple to load the model
+        object into python using pickle. The following lines of code show
+        how this is done. In the future an proper import method will be
+        supported.
+
+        >>> import pickle
+        >>> with open(fname + ".pkl", "rb") as output:
+        >>>    pickle.load(self, output)
+
+        """
+        if not fname:
+            fname = self.name
+
+        # Update metadata
+        now = pd.datetime.now().strftime("%Y-%m-%d")
+        self.metadata["date_modified"] = now
+
+        with open(fname + ".pkl", "wb") as output:
+            pickle.dump(self, output)
+
+        return print("Model is stored succesfully as %s" % fname)
+
+    def import_model(self, fname):
+        """Temporary implementation of a load function, needs to be changed in
+        the future, so PASTAS can support models from other versions..
+
+        TODO
+        ----
+        probably it should copy the attributes only, so all methods are
+        updated..? R. Collenteur 18/05/2017
+
+        Parameters
+        ----------
+        fname: str
+            filename without the .pkl extension
+
+        """
+
+        with open(fname + ".pkl", "rb") as output:
+            ml = pickle.load(output)
+
+        if ml.metadata["pastas_version"] == __version__:
+            warn("trying to import a PASTAS model that is created in an "
+                 "older version of PASTAS")
+
+        return print("Model succesfully imported!")

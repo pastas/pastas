@@ -1,6 +1,10 @@
 PASTAS: HYDROLOGICAL TIME SERIES ANALYSIS
 =========================================
 
+.. image:: /doc/_static/logo_small.png
+   :width: 200px
+   :align: left
+
 ==============  ==================================================================
 Build Status    .. image:: https://travis-ci.org/pastas/pastas.svg?branch=master
                     :target: https://travis-ci.org/pastas/pastas
@@ -12,6 +16,7 @@ Latest Release  .. image:: https://img.shields.io/github/release/pastas/pastas.s
                     :target: https://github.com/pastas/pastas/releases
 ==============  ==================================================================
 
+
 Pastas: what is it?
 ~~~~~~~~~~~~~~~~~~~
 Pastas is an open source python package for processing, simulating and analyzing 
@@ -22,21 +27,21 @@ optimization, visualisation, and statistical analysis tools.
 
 Documentation
 ~~~~~~~~~~~~~
-Documentation is provided on a dedicated website: http://pastas.github.io/pastas/
+Documentation is provided on a dedicated website: http://pastas.readthedocs.io/
 
 Examples
 ~~~~~~~~
 Examples can be found on the `examples directory on the documentation website <http://pastas.github.io/pastas/examples.html>`_.
-All examples are provided in the `examples directory on GitHub <https://github.com/pastas/pastas/tree/master/examples>`_.
+All examples are provided in the `examples directory on GitHub <http://pastas.readthedocs.io/en/dev/examples.html>`_.
 These include Python scripts and Jupyter Notebooks.
 
 Quick installation guide
 ~~~~~~~~~~~~~~~~~~~~~~~~
 To install Pastas, a working version of Python 2.7 or 3.5 has to be installed on 
 your computer. We recommend using the `Anaconda Distribution <https://www.continuum.io/downloads>`_
-as it includes most of the python package dependencies and the Ipython Notebook 
-software to run the notebooks. However, you are free to install any Python
-distribution you want. 
+as it includes most of the python package dependencies and the Jupyter
+Notebook software to run the notebooks. However, you are free to install any
+Python distribution you want.
 
 Stable version
 --------------
@@ -59,8 +64,8 @@ Dependencies
 Pastas depends on a number of Python packages, of which all of the necessary are 
 automatically installed when using the pip install manager. To summarize, the 
 following pacakges are necessary for a minimal function installation of Pasta: 
-numpy>=1.9, matplotlib>=1.4, lmfit>=0.9, pandas>=0.15, scipy>=0.15, 
-statsmodels>=0.5.
+numpy>=1.9, matplotlib>=1.5, lmfit>=0.9, pandas>=0.20, scipy>=0.15,
+statsmodels>=0.8.
   
 Developers
 ~~~~~~~~~~
@@ -73,7 +78,7 @@ improvement or enhancement, please submit a new Issue through the Github Issue
 tracker toward the upper-right corner of the Github repository. Pull requests will
 only be accepted on the development branch (dev) of this repository.
 
-Please take a look at the `developers section <http://pastas.github.io/pastas/developers.html>`_
+Please take a look at the `developers section <http://pastas.readthedocs.io/>`_
 on the documentation website for more information on how to develop Pastas.
 
 License
