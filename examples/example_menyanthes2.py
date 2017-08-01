@@ -12,8 +12,6 @@ meny = ps.read.menydata(fname)
 H=meny.H['Obsevation well']
 ml = ps.Model(H['values'])
 
-freq='W'
-
 # Add precipitation
 IN = meny.IN['Precipitation']
 # round to days (precipitation is measured at 9:00)

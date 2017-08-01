@@ -72,7 +72,7 @@ class Model:
         self.nparam = 0
 
         self.tseriesdict = OrderedDict()
-        self.tseriesdict_calib = None
+        self.tseries_calib = None
         self.interpolate_simulation = None
 
         self.noisemodel = None
@@ -217,24 +217,26 @@ class Model:
         # Default option when tmin and tmax and freq are not provided.
         if freq is None:
             freq = self.freq
-        tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq, use_oseries=False)
-
-        tmin = pd.to_datetime(tmin) - pd.DateOffset(days=self.warmup)
-        sim_index = pd.date_range(tmin, tmax, freq=freq)
+        if self.sim_index is None:
+            tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq, use_oseries=False)
+            tmin = pd.to_datetime(tmin) - pd.DateOffset(days=self.warmup)
+            sim_index = pd.date_range(tmin, tmax, freq=freq)
+        else:
+            sim_index = self.sim_index
         dt = get_dt(freq)
 
         # Get parameters if none are provided
         if parameters is None:
             parameters = self.get_parameters()
 
-        if self.tseriesdict_calib is None:
-            tseriesdict_calib = self.get_tseriesdict_calib()
+        if self.tseries_calib is None:
+            tseries_calib = self.get_tseries_calib()
         else:
-            tseriesdict_calib = self.tseriesdict_calib
+            tseries_calib = self.tseries_calib
 
         h = pd.Series(data=0, index=sim_index)
         istart = 0  # Track parameters index to pass to ts object
-        for ts in tseriesdict_calib.values():
+        for ts in tseries_calib.values():
             c = ts.simulate(parameters[istart: istart + ts.nparam], sim_index,
                             dt)
             h = h.add(c, fill_value=0.0)
@@ -309,12 +311,12 @@ class Model:
         oseries_calib = self.sample(oseries_calib, sim_index)
         return oseries_calib
 
-    def get_tseriesdict_calib(self):
-        # tseriesdict_calib = self.tseriesdict.copy()
-        tseriesdict_calib = deepcopy(self.tseriesdict)
-        for tseries in tseriesdict_calib.values():
+    def get_tseries_calib(self):
+        # tseries_calib = self.tseriesdict.copy()
+        tseries_calib = deepcopy(self.tseriesdict)
+        for tseries in tseries_calib.values():
             tseries.change_frequency(self.freq)
-        return tseriesdict_calib
+        return tseries_calib
 
     def innovations(self, parameters=None, tmin=None, tmax=None, freq=None):
         """Method to simulate the innovations when a noisemodel is present.
@@ -384,14 +386,14 @@ class Model:
             optimal = self.parameters.optimal
 
         # make sure calibration data is renewed
-        sim_index = pd.date_range(self.tmin, self.tmax, freq=self.freq)
+        self.sim_index = pd.date_range(self.tmin, self.tmax, freq=self.freq)
         self.oseries_calib = self.get_oseries_calib(self.tmin, self.tmax,
-                                                    sim_index)
+                                                    self.sim_index)
 
-        self.tseries_calib = self.get_tseriesdict_calib()
+        self.tseries_calib = self.get_tseries_calib()
 
         self.interpolate_simulation = self.oseries_calib.index.difference(
-            sim_index).size != 0
+            self.sim_index).size != 0
         if self.interpolate_simulation:
             print(
                 'There are observations between the simulation-timesteps. Linear interpolation is used')
@@ -444,6 +446,7 @@ class Model:
                      freq=self.freq, weights=weights, **kwargs)
 
         # make calibration data empty again (was set in initialize)
+        self.sim_index = None
         self.oseries_calib = None
         self.tseries_calib = None
         self.interpolate_simulation = None
@@ -670,7 +673,7 @@ class Model:
         else:
             p = self.get_parameters(name)
             dt = get_dt(self.freq)
-            if self.freq == self.tseriesdict[name]:
+            if self.freq == self.tseriesdict[name].freq:
                 return self.tseriesdict[name].simulate(p, tindex=tindex, dt=dt)
             else:
                 # first change the frequency to that of the model

@@ -97,6 +97,10 @@ class TseriesBase:
         elif get_dt(freq) < get_dt(self.freq):
             # upsample (for example from week to day), use bfill
             self.stress = self.stress.resample(freq).bfill()
+
+        # Drop nan-values at the beginning and end of the time series (which can be caused by the resampling)
+        self.stress = self.stress.loc[self.stress.first_valid_index():self.stress.last_valid_index()]
+
         self.freq = freq
 
     def get_stress(self, p=None, tindex=None):

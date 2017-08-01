@@ -95,12 +95,13 @@ def check_tseries(stress, freq, fillnan, name=''):
     stress.index = pd.to_datetime(stress.index)
 
     # Make frequency of the stress series constant
-    if freq:
-        stress = stress.asfreq(freq)
-    else:
+    if not freq:
         freq = pd.infer_freq(stress.index)
         print(
             'Inferred frequency from time series %s: freq=%s ' % (name, freq))
+    if fillnan in ['backfill','bfill','pad','ffill']:
+        stress = stress.asfreq(freq, method=fillnan)
+    else:
         stress = stress.asfreq(freq)
 
     # Handle nan-values in stress series
@@ -119,7 +120,7 @@ def check_tseries(stress, freq, fillnan, name=''):
             print('User-defined option for fillnan %s isinstance() not '
                   'supported' % fillnan)
 
-    # Drop duplicate indexes
+    # Drop duplicate indexes (can this happen after asfreq?)
     if not stress.index.is_unique:
         print('duplicate time-indexes were found in the oseries. Values were '
               'averaged. Please check original time series data for '
