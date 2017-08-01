@@ -73,6 +73,8 @@ class Model:
 
         self.tseriesdict = OrderedDict()
         self.tseries_calib = None
+
+        self.sim_index = None
         self.interpolate_simulation = None
 
         self.noisemodel = None
