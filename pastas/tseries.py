@@ -402,10 +402,6 @@ class Recharge(TseriesBase):
         self.stress[E.name] = E[index]
         self.freq = self.stress.index.freqstr
 
-        # The recharge calculation needs arrays
-        self.precip_array = np.array(self.stress[P.name])
-        self.evap_array = np.array(self.stress[E.name])
-
         self.recharge = recharge()
         self.set_init_parameters()
         self.nparam = self.rfunc.nparam + self.recharge.nparam
@@ -417,7 +413,10 @@ class Recharge(TseriesBase):
     def simulate(self, p, tindex=None, dt=1):
         dt = int(dt)
         b = self.rfunc.block(p[:-self.recharge.nparam], dt)  # Block response
-        rseries = self.recharge.simulate(self.precip_array, self.evap_array,
+        # The recharge calculation needs arrays
+        precip_array = np.array(self.stress.ix[:,0])
+        evap_array = np.array(self.stress.ix[:,1])
+        rseries = self.recharge.simulate(precip_array, evap_array,
                                          p[-self.recharge.nparam:])
         self.npoints = len(rseries)
         h = pd.Series(fftconvolve(rseries, b, 'full')[:self.npoints],
@@ -444,8 +443,10 @@ class Recharge(TseriesBase):
 
         # If parameters are not provided, don't calculate the recharge.
         if p is not None:
-            rseries = self.recharge.simulate(self.precip_array,
-                                             self.evap_array,
+            precip_array = np.array(self.stress.ix[:, 0])
+            evap_array = np.array(self.stress.ix[:, 1])
+            rseries = self.recharge.simulate(precip_array,
+                                             evap_array,
                                              p[-self.recharge.nparam:])
 
             stress = pd.Series(rseries, index=self.stress.index,
