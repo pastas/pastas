@@ -30,7 +30,7 @@ class TseriesBase:
     """
 
     def __init__(self, rfunc, name, xy, metadata, tmin, tmax, up, meanstress,
-                 cutoff):
+                 cutoff, fill_before, fill_after):
         self.rfunc = rfunc(up, meanstress, cutoff)
         self.nparam = self.rfunc.nparam
         self.name = name
@@ -38,6 +38,8 @@ class TseriesBase:
         self.metadata = metadata
         self.tmin = tmin
         self.tmax = tmax
+        self.fill_before = fill_before
+        self.fill_after = fill_after
         self.freq = None
         self.stress = pd.DataFrame()
 
@@ -103,6 +105,30 @@ class TseriesBase:
 
         self.freq = freq
 
+    def change_index(self, index):
+        # reindex the original
+        stress = self.stress.reindex(index)
+
+        # add data before and after this period, if needed
+        if stress.isnull().values.any():
+            if isinstance(stress, pd.Series):
+                fillna_value = pd.Series(index=stress.index)
+            else:
+                fillna_value = pd.DataFrame(index=index, columns=self.stress.columns)
+            if isinstance(self.fill_before,list) and len(self.fill_before)>1:
+                for ind, column in enumerate(fillna_value.columns):
+                    fillna_value.loc[:self.stress.first_valid_index(),column]=self.fill_before[ind]
+            else:
+                fillna_value[:self.stress.first_valid_index()] = self.fill_before
+            if isinstance(self.fill_after,list) and len(self.fill_after):
+                for ind,column in enumerate(fillna_value.columns):
+                    fillna_value.loc[self.stress.last_valid_index():,column]=self.fill_after[ind]
+            else:
+                fillna_value[self.stress.last_valid_index():] = self.fill_after
+            stress=stress.fillna(fillna_value)
+        # save result
+        self.stress = stress
+
     def get_stress(self, p=None, tindex=None):
         """Returns the stress or stresses of the time series object as a pandas
         DataFrame.
@@ -152,16 +178,20 @@ class Tseries(TseriesBase):
     norm_stress: Boolean, optional
         normalize the stress by subtracting the mean. For example this is
         convenient when simulating river levels.
+    fill_before: Boolean, optional
+        fill the stress-series before the beginning of this series with a certain value
+    fill_after: Boolean, optional
+        fill the stress-series after the end of this series with a certain value
 
     """
 
     def __init__(self, stress, rfunc, name, metadata=None, xy=(0, 0),
                  freq=None, fillnan='mean', up=True, cutoff=0.99,
-                 normalize_stress=False):
+                 normalize_stress=False, fill_before=0.0, fill_after=0.0):
         stress = check_tseries(stress, freq, fillnan, name=name)
         TseriesBase.__init__(self, rfunc, name, xy, metadata,
                              stress.index.min(), stress.index.max(),
-                             up, stress.mean(), cutoff)
+                             up, stress.mean(), cutoff, fill_before, fill_after)
         self.freq = stress.index.freqstr
 
         if normalize_stress:
@@ -196,8 +226,8 @@ class Tseries(TseriesBase):
         self.npoints = self.stress.index.size  # Why recompute?
         h = pd.Series(fftconvolve(self.stress[self.name], b, 'full')[
                       :self.npoints], index=self.stress.index, name=self.name)
-        if tindex is not None:
-            h = h[tindex]
+        #if tindex is not None:
+        #    h = h[tindex]
         return h
 
 
@@ -236,7 +266,7 @@ class Tseries2(TseriesBase):
 
     def __init__(self, stress0, stress1, rfunc, name, metadata=None, xy=(0, 0),
                  freq=None, fillnan=('mean', 'interpolate'),
-                 up=True, cutoff=0.99):
+                 up=True, cutoff=0.99, fill_before=0.0, fill_after=0.0):
         # First check the series, then determine tmin and tmax
         stress0 = check_tseries(stress0, freq, fillnan[0], name=name)
         stress1 = check_tseries(stress1, freq, fillnan[1], name=name)
@@ -250,7 +280,7 @@ class Tseries2(TseriesBase):
 
         TseriesBase.__init__(self, rfunc, name, xy, metadata, index.min(),
                              index.max(), up, stress0.mean() - stress1.mean(),
-                             cutoff)
+                             cutoff, fill_before, fill_after)
 
         self.stress["stress0"] = stress0[index]
         self.stress["stress1"] = stress1[index]
@@ -289,8 +319,8 @@ class Tseries2(TseriesBase):
                 self.stress["stress0"] + p[-1] * self.stress["stress1"],
                 b, 'full')[:self.npoints], index=self.stress.index,
             name=self.name)
-        if tindex is not None:
-            h = h[tindex]
+        #if tindex is not None:
+        #    h = h[tindex]
         return h
 
     def get_stress(self, p=None, tindex=None):
@@ -349,7 +379,7 @@ class Recharge(TseriesBase):
 
     def __init__(self, precip, evap, rfunc, recharge,
                  name, metadata=None, xy=(0, 0), freq=(None, None),
-                 fillnan=('mean', 'interpolate'), cutoff=0.99):
+                 fillnan=('mean', 'interpolate'), cutoff=0.99, fill_before=0.0, fill_after=0.0):
         # Check and name the time series
         P = check_tseries(precip, freq[0], fillnan[0], name=name + '_P')
         E = check_tseries(evap, freq[1], fillnan[1], name=name + '_E')
@@ -366,7 +396,7 @@ class Recharge(TseriesBase):
         # Store tmin and tmax
         TseriesBase.__init__(self, rfunc, name, xy, metadata, index.min(),
                              index.max(), True,
-                             precip.mean() - evap.mean(), cutoff)
+                             precip.mean() - evap.mean(), cutoff, fill_before, fill_after)
 
         self.stress[P.name] = P[index]
         self.stress[E.name] = E[index]
@@ -392,8 +422,8 @@ class Recharge(TseriesBase):
         self.npoints = len(rseries)
         h = pd.Series(fftconvolve(rseries, b, 'full')[:self.npoints],
                       index=self.stress.index, name=self.name)
-        if tindex is not None:
-            h = h[tindex]
+        #if tindex is not None:
+        #    h = h[tindex]
         return h
 
     def get_stress(self, p=None, tindex=None):
@@ -466,7 +496,7 @@ class Well(TseriesBase):
     """
 
     def __init__(self, stress, rfunc, name, r=None, metadata=None,
-                 xy=(0, 0), freq=None, fillna='mean', up=True, cutoff=0.99):
+                 xy=(0, 0), freq=None, fillna='mean', up=True, cutoff=0.99, fill_before=0.0, fill_after=0.0):
         # Check if number of stresses and radii match
         if len(stress.keys()) != len(r) and r:
             warn("The number of stresses applied does not match the number "
@@ -480,7 +510,7 @@ class Well(TseriesBase):
 
         TseriesBase.__init__(self, rfunc, name, xy, metadata,
                              self.stress.index.min(), self.stress.index.max(),
-                             up, self.stress.mean(), cutoff)
+                             up, self.stress.mean(), cutoff, fill_before, fill_after)
 
         for i in stress:
             self.stress.append(check_tseries(stress[i], freq, fillna, name))
@@ -497,8 +527,8 @@ class Well(TseriesBase):
             self.npoints = self.stress.index.size
             b = self.rfunc.block(p, self.r[i])  # nparam-1 depending on rfunc
             h += fftconvolve(self.stress[i], b, 'full')[:self.npoints]
-        if tindex is not None:
-            h = h[tindex]
+        #if tindex is not None:
+        #    h = h[tindex]
         return h
 
 
@@ -514,7 +544,7 @@ class TseriesStep(TseriesBase):
         assert t_step is not None, 'Error: Need to specify time of step (for now this will not be optimized)'
 
         TseriesBase.__init__(self, rfunc, name, xy, metadata,
-                             pd.Timestamp.min, pd.Timestamp.max, up, 1, None)
+                             pd.Timestamp.min, pd.Timestamp.max, up, 1, None, 0, 0)
         self.t_step = t_step
         self.set_init_parameters()
 
@@ -563,11 +593,11 @@ class TseriesNoConv(TseriesBase):
     """
 
     def __init__(self, stress, rfunc, name, metadata=None, xy=(0, 0),
-                 freq=None, fillnan='mean', up=True, cutoff=0.99):
+                 freq=None, fillnan='mean', up=True, cutoff=0.99, fill_before=0.0, fill_after=0.0):
         stress = check_tseries(stress, freq, fillnan, name=name)
         TseriesBase.__init__(self, rfunc, name, xy, metadata,
                              stress.index.min(), stress.index.max(),
-                             up, stress.mean(), cutoff)
+                             up, stress.mean(), cutoff, fill_before, fill_after)
         self.freq = stress.index.freqstr
         self.stress[name] = stress
         self.set_init_parameters()
@@ -635,7 +665,7 @@ class Constant(TseriesBase):
         self.pmax = pmax
         self.name = "constant"
         TseriesBase.__init__(self, One, name, xy, metadata,
-                             pd.Timestamp.min, pd.Timestamp.max, 1, 0, 0)
+                             pd.Timestamp.min, pd.Timestamp.max, 1, 0, 0, 0, 0)
         self.set_init_parameters()
 
     def set_init_parameters(self):

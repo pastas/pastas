@@ -53,7 +53,7 @@ class Model:
     """
 
     def __init__(self, oseries, xy=(0, 0), name="PASTAS_Model", metadata=None,
-                 warmup=0, fillnan='drop', constant=True):
+                 warmup=3650, fillnan='drop', constant=True):
         self.oseries = check_oseries(oseries, fillnan)
         self.oseries_calib = None
 
@@ -221,8 +221,7 @@ class Model:
             freq = self.freq
         if self.sim_index is None:
             tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq, use_oseries=False)
-            tmin = pd.to_datetime(tmin) - pd.DateOffset(days=self.warmup)
-            sim_index = pd.date_range(tmin, tmax, freq=freq)
+            sim_index = self.get_sim_index(tmin, tmax, freq, self.warmup)
         else:
             sim_index = self.sim_index
         dt = get_dt(freq)
@@ -232,7 +231,7 @@ class Model:
             parameters = self.get_parameters()
 
         if self.tseries_calib is None:
-            tseries_calib = self.get_tseries_calib()
+            tseries_calib = self.get_tseries_calib(sim_index)
         else:
             tseries_calib = self.tseries_calib
 
@@ -241,7 +240,8 @@ class Model:
         for ts in tseries_calib.values():
             c = ts.simulate(parameters[istart: istart + ts.nparam], sim_index,
                             dt)
-            h = h.add(c, fill_value=0.0)
+            #h = h.add(c, fill_value=0.0) # fill_value not needed anymore, because of change_index in tseries.py
+            h = h.add(c)
             istart += ts.nparam
         if self.constant:
             h += self.constant.simulate(parameters[istart])
@@ -313,11 +313,14 @@ class Model:
         oseries_calib = self.sample(oseries_calib, sim_index)
         return oseries_calib
 
-    def get_tseries_calib(self):
+    def get_tseries_calib(self, sim_index):
         # tseries_calib = self.tseriesdict.copy()
         tseries_calib = deepcopy(self.tseriesdict)
         for tseries in tseries_calib.values():
-            tseries.change_frequency(self.freq)
+            if tseries.freq != self.freq:
+                tseries.change_frequency(self.freq)
+            tseries.change_index(sim_index)
+
         return tseries_calib
 
     def innovations(self, parameters=None, tmin=None, tmax=None, freq=None):
@@ -370,7 +373,7 @@ class Model:
 
         return self.oseries.loc[tmin: tmax]
 
-    def initialize(self, initial=True, noise=True):
+    def initialize(self, initial=True, noise=True, tmin=None, tmax=None):
         """Initialize the model before solving.
 
         Parameters
@@ -387,12 +390,17 @@ class Model:
         if not initial:
             optimal = self.parameters.optimal
 
+        # Check frequency of tseries (is allready performed at add_tseries())
+        # self.set_freq_offset()
+
+        # Check series with tmin, tmax
+        self.tmin, self.tmax = self.get_tmin_tmax(tmin, tmax)
         # make sure calibration data is renewed
-        self.sim_index = pd.date_range(self.tmin, self.tmax, freq=self.freq)
+        self.sim_index = self.get_sim_index(self.tmin,self.tmax,self.freq,self.warmup)
         self.oseries_calib = self.get_oseries_calib(self.tmin, self.tmax,
                                                     self.sim_index)
 
-        self.tseries_calib = self.get_tseries_calib()
+        self.tseries_calib = self.get_tseries_calib(self.sim_index)
 
         self.interpolate_simulation = self.oseries_calib.index.difference(
             self.sim_index).size != 0
@@ -407,6 +415,12 @@ class Model:
         # Set initial parameters to optimal parameters
         if not initial:
             self.parameters.initial = optimal
+
+    def get_sim_index(self,tmin,tmax,freq,warmup):
+        # add warmup here
+        # warmup is not included in tmin, so that observations during the warmup period are not used by the solver
+        sim_index = pd.date_range(tmin - pd.DateOffset(days=warmup), tmax, freq=freq)
+        return sim_index
 
     def solve(self, tmin=None, tmax=None, solver=LmfitSolve, report=True,
               noise=True, initial=True, weights=None, **kwargs):
@@ -434,14 +448,8 @@ class Model:
                         'is not defined. No noise model is used.')
             noise = False
 
-        # Check frequency of tseries (is allready performed at add_tseries())
-        # self.set_freq_offset()
-
-        # Check series with tmin, tmax
-        self.tmin, self.tmax = self.get_tmin_tmax(tmin, tmax)
-
         # Initialize parameters
-        self.initialize(initial=initial, noise=noise)
+        self.initialize(initial=initial, noise=noise, tmin=None, tmax=None)
 
         # Solve model
         fit = solver(self, tmin=self.tmin, tmax=self.tmax, noise=noise,
@@ -676,12 +684,14 @@ class Model:
             p = self.get_parameters(name)
             dt = get_dt(self.freq)
             if self.freq == self.tseriesdict[name].freq:
-                return self.tseriesdict[name].simulate(p, tindex=tindex, dt=dt)
+                ts_temp = self.tseriesdict[name]
             else:
                 # first change the frequency to that of the model
                 ts_temp = deepcopy(self.tseriesdict[name])
                 ts_temp.change_frequency(self.freq)
-                return ts_temp.simulate(p, tindex=tindex, dt=dt)
+            if tindex is not None:
+                ts_temp.change_index(tindex)
+            return ts_temp.simulate(p, tindex=tindex, dt=dt)
 
     def get_block_response(self, name):
         if name not in self.tseriesdict.keys():
