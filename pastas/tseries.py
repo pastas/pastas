@@ -115,17 +115,17 @@ class TseriesBase:
                 fillna_value = pd.Series(index=stress.index)
             else:
                 fillna_value = pd.DataFrame(index=index, columns=self.stress.columns)
-            if isinstance(self.fill_before,list) and len(self.fill_before)>1:
+            if isinstance(self.fill_before, list) and len(self.fill_before) > 1:
                 for ind, column in enumerate(fillna_value.columns):
-                    fillna_value.loc[:self.stress.first_valid_index(),column]=self.fill_before[ind]
+                    fillna_value.loc[:self.stress.first_valid_index(), column] = self.fill_before[ind]
             else:
                 fillna_value[:self.stress.first_valid_index()] = self.fill_before
-            if isinstance(self.fill_after,list) and len(self.fill_after):
-                for ind,column in enumerate(fillna_value.columns):
-                    fillna_value.loc[self.stress.last_valid_index():,column]=self.fill_after[ind]
+            if isinstance(self.fill_after, list) and len(self.fill_after):
+                for ind, column in enumerate(fillna_value.columns):
+                    fillna_value.loc[self.stress.last_valid_index():, column] = self.fill_after[ind]
             else:
                 fillna_value[self.stress.last_valid_index():] = self.fill_after
-            stress=stress.fillna(fillna_value)
+            stress = stress.fillna(fillna_value)
         # save result
         self.stress = stress
 
@@ -224,9 +224,10 @@ class Tseries(TseriesBase):
         """
         b = self.rfunc.block(p, dt)
         self.npoints = self.stress.index.size  # Why recompute?
-        h = pd.Series(fftconvolve(self.stress[self.name], b, 'full')[
-                      :self.npoints], index=self.stress.index, name=self.name)
-        #if tindex is not None:
+        h = pd.Series(
+            self.rfunc.gain(p) * self.fill_before + fftconvolve(self.stress[self.name] - self.fill_before, b, 'full')[
+                                                    :self.npoints], index=self.stress.index, name=self.name)
+        # if tindex is not None:
         #    h = h[tindex]
         return h
 
@@ -266,7 +267,7 @@ class Tseries2(TseriesBase):
 
     def __init__(self, stress0, stress1, rfunc, name, metadata=None, xy=(0, 0),
                  freq=None, fillnan=('mean', 'interpolate'),
-                 up=True, cutoff=0.99, fill_before=0.0, fill_after=0.0):
+                 up=True, cutoff=0.99, fill_before=(0.0, 0.0), fill_after=(0.0, 0.0)):
         # First check the series, then determine tmin and tmax
         stress0 = check_tseries(stress0, freq, fillnan[0], name=name)
         stress1 = check_tseries(stress1, freq, fillnan[1], name=name)
@@ -314,12 +315,14 @@ class Tseries2(TseriesBase):
         """
         b = self.rfunc.block(p[:-1], dt)
         self.npoints = self.stress.index.size  # Why recompute?
-        h = pd.Series(
-            fftconvolve(
-                self.stress["stress0"] + p[-1] * self.stress["stress1"],
-                b, 'full')[:self.npoints], index=self.stress.index,
-            name=self.name)
-        #if tindex is not None:
+        gain = self.rfunc.gain(p[:-1])
+        h = pd.Series(gain * self.fill_before[0] + p[-1] * gain * self.fill_before[1] +
+                      fftconvolve(
+                          (self.stress["stress0"] - self.fill_before[0]) + p[-1] *
+                          (self.stress["stress1"] - self.fill_before[1]),
+                          b, 'full')[:self.npoints], index=self.stress.index,
+                      name=self.name)
+        # if tindex is not None:
         #    h = h[tindex]
         return h
 
@@ -414,14 +417,14 @@ class Recharge(TseriesBase):
         dt = int(dt)
         b = self.rfunc.block(p[:-self.recharge.nparam], dt)  # Block response
         # The recharge calculation needs arrays
-        precip_array = np.array(self.stress.ix[:,0])
-        evap_array = np.array(self.stress.ix[:,1])
+        precip_array = np.array(self.stress.iloc[:, 0])
+        evap_array = np.array(self.stress.iloc[:, 1])
         rseries = self.recharge.simulate(precip_array, evap_array,
                                          p[-self.recharge.nparam:])
         self.npoints = len(rseries)
         h = pd.Series(fftconvolve(rseries, b, 'full')[:self.npoints],
                       index=self.stress.index, name=self.name)
-        #if tindex is not None:
+        # if tindex is not None:
         #    h = h[tindex]
         return h
 
@@ -443,8 +446,8 @@ class Recharge(TseriesBase):
 
         # If parameters are not provided, don't calculate the recharge.
         if p is not None:
-            precip_array = np.array(self.stress.ix[:, 0])
-            evap_array = np.array(self.stress.ix[:, 1])
+            precip_array = np.array(self.stress.iloc[:, 0])
+            evap_array = np.array(self.stress.iloc[:, 1])
             rseries = self.recharge.simulate(precip_array,
                                              evap_array,
                                              p[-self.recharge.nparam:])
@@ -528,7 +531,7 @@ class Well(TseriesBase):
             self.npoints = self.stress.index.size
             b = self.rfunc.block(p, self.r[i])  # nparam-1 depending on rfunc
             h += fftconvolve(self.stress[i], b, 'full')[:self.npoints]
-        #if tindex is not None:
+        # if tindex is not None:
         #    h = h[tindex]
         return h
 
@@ -545,7 +548,7 @@ class TseriesStep(TseriesBase):
         assert t_step is not None, 'Error: Need to specify time of step (for now this will not be optimized)'
 
         TseriesBase.__init__(self, rfunc, name, xy, metadata,
-                             pd.Timestamp.min, pd.Timestamp.max, up, 1, None, 0, 0)
+                             pd.Timestamp.min, pd.Timestamp.max, up, 1.0, None, 0.0, 1.0)
         self.t_step = t_step
         self.set_init_parameters()
 
