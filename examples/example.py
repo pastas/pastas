@@ -13,12 +13,10 @@ ml = ps.Model(obs.series)
 
 # read weather data
 rain = ps.read.knmidata('data/neerslaggeg_HEIBLOEM-L_967-2.txt', variable='RD')
-# from pandas import read_csv
-# rain = read_csv('data/Heibloem_rain_data.dat', skiprows=4, sep=' ', skipinitialspace=True, parse_dates='date', index_col='date')
 evap = ps.read.knmidata('data/etmgeg_380.txt', variable='EV24')
 
 ## Create stress
-ts = ps.Tseries2(rain.series, evap.series, ps.Gamma, name='recharge')
+ts = ps.Tseries2(rain.series, evap.series, ps.Gamma, name='recharge', freq="D")
 ml.add_tseries(ts)
 
 ## Add noise model
@@ -26,6 +24,6 @@ n = ps.NoiseModel()
 ml.add_noisemodel(n)
 
 ## Solve
-ml.solve(noise=True)
+ml.solve(noise=True, weights="swsi", freq="W")
 
 ml.plot()

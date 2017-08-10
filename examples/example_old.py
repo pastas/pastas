@@ -19,19 +19,20 @@ EV24 = ps.read.knmidata(fname, variable='EV24')
 #rech = RH.series - EV24.series
 
 # Create stress
-#ts = Recharge(RH.series, EV24.series, Gamma, Preferential, name='recharge')
+#ts = ps.Recharge(RH.series, EV24.series, ps.Gamma, ps.Linear,
+#                 name='recharge')
 # ts = Recharge(RH.series, EV24.series, Gamma, Combination, name='recharge')
-# ts = Tseries2(RH.series, EV24.series, Gamma, name='recharge')
-ts = ps.Tseries(RH.series, ps.Gamma, name='precip', freq='D')
-ts1 = ps.Tseries(EV24.series, ps.Gamma, name='evap', freq='D')
+ts = ps.Tseries2(RH.series, EV24.series, ps.Gamma, name='recharge')
+#ts = ps.Tseries(RH.series, ps.Gamma, name='precip')
+#ts1 = ps.Tseries(EV24.series, ps.Gamma, name='evap')
 ml.add_tseries(ts)
-ml.add_tseries(ts1)
+#ml.add_tseries(ts1)
 
 # Add noise model
 n = ps.NoiseModel()
 ml.add_noisemodel(n)
 
 # Solve
-ml.solve(weights="swsi")
+ml.solve(noise=True, weights="swsi", freq="W")
 ml.plot()
 

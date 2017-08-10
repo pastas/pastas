@@ -4,14 +4,13 @@ import datetime
 import os
 import pickle
 from collections import OrderedDict
-from copy import deepcopy
 from warnings import warn
 
 import numpy as np
 import pandas as pd
 from scipy import interpolate
 
-from .checks import check_oseries
+from .timeseries import TimeSeries
 from .plots import Plotting
 from .solver import LmfitSolve
 from .stats import Statistics
@@ -53,8 +52,8 @@ class Model:
     """
 
     def __init__(self, oseries, xy=(0, 0), name="PASTAS_Model", metadata=None,
-                 warmup=3650, fillnan='drop', constant=True):
-        self.oseries = check_oseries(oseries, fillnan)
+                 warmup=3650, constant=True):
+        self.oseries = TimeSeries(oseries, type="oseries")
         self.oseries_calib = None
 
         # Min and max time of the model
@@ -72,7 +71,6 @@ class Model:
         self.nparam = 0
 
         self.tseriesdict = OrderedDict()
-        self.tseries_calib = None
 
         self.sim_index = None
         self.interpolate_simulation = None
@@ -117,6 +115,7 @@ class Model:
                  'already exists for this model. Select another '
                  'name.')
         else:
+            tseries.update_stress(freq=self.freq)
             self.tseriesdict[tseries.name] = tseries
             self.parameters = self.get_init_parameters()
             self.nparam += tseries.nparam
@@ -216,11 +215,14 @@ class Model:
         parameters and no calibration.
 
         """
-        # Default option when tmin and tmax and freq are not provided.
+
+        # Default option when freq is not provided.
         if freq is None:
             freq = self.freq
+
         if self.sim_index is None:
-            tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq, use_oseries=False)
+            tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq,
+                                            use_oseries=False)
             sim_index = self.get_sim_index(tmin, tmax, freq, self.warmup)
         else:
             sim_index = self.sim_index
@@ -230,18 +232,12 @@ class Model:
         if parameters is None:
             parameters = self.get_parameters()
 
-        if self.tseries_calib is None:
-            tseries_calib = self.get_tseries_calib(sim_index)
-        else:
-            tseries_calib = self.tseries_calib
-
         h = pd.Series(data=0, index=sim_index)
         istart = 0  # Track parameters index to pass to ts object
-        for ts in tseries_calib.values():
+        for ts in self.tseriesdict.values():
             c = ts.simulate(parameters[istart: istart + ts.nparam], sim_index,
                             dt)
-            #h = h.add(c, fill_value=0.0) # fill_value not needed anymore, because of change_index in tseries.py
-            h = h.add(c)
+            h = h.add(c, fill_value=0.0)
             istart += ts.nparam
         if self.constant:
             h += self.constant.simulate(parameters[istart])
@@ -313,16 +309,6 @@ class Model:
         oseries_calib = self.sample(oseries_calib, sim_index)
         return oseries_calib
 
-    def get_tseries_calib(self, sim_index):
-        # tseries_calib = self.tseriesdict.copy()
-        tseries_calib = deepcopy(self.tseriesdict)
-        for tseries in tseries_calib.values():
-            if tseries.freq != self.freq:
-                tseries.change_frequency(self.freq)
-            tseries.change_index(sim_index)
-
-        return tseries_calib
-
     def innovations(self, parameters=None, tmin=None, tmax=None, freq=None):
         """Method to simulate the innovations when a noisemodel is present.
 
@@ -390,23 +376,27 @@ class Model:
         if not initial:
             optimal = self.parameters.optimal
 
-        # Check frequency of tseries (is allready performed at add_tseries())
+        # Check frequency of tseries (is already performed at add_tseries())
         # self.set_freq_offset()
 
         # Check series with tmin, tmax
         self.tmin, self.tmax = self.get_tmin_tmax(tmin, tmax)
+
         # make sure calibration data is renewed
-        self.sim_index = self.get_sim_index(self.tmin,self.tmax,self.freq,self.warmup)
+        self.sim_index = self.get_sim_index(self.tmin, self.tmax, self.freq,
+                                            self.warmup)
         self.oseries_calib = self.get_oseries_calib(self.tmin, self.tmax,
                                                     self.sim_index)
 
-        self.tseries_calib = self.get_tseries_calib(self.sim_index)
+        # Prepare tseries stresses
+        for ts in self.tseriesdict.values():
+            ts.update_stress(freq=self.freq)
 
         self.interpolate_simulation = self.oseries_calib.index.difference(
             self.sim_index).size != 0
         if self.interpolate_simulation:
-            print(
-                'There are observations between the simulation-timesteps. Linear interpolation is used')
+            print('There are observations between the simulation-timesteps. '
+                  'Linear interpolation is used')
 
         # Set initial parameters
         self.parameters = self.get_init_parameters(noise=noise)
@@ -416,14 +406,16 @@ class Model:
         if not initial:
             self.parameters.initial = optimal
 
-    def get_sim_index(self,tmin,tmax,freq,warmup):
+    def get_sim_index(self, tmin, tmax, freq, warmup):
         # add warmup here
-        # warmup is not included in tmin, so that observations during the warmup period are not used by the solver
-        sim_index = pd.date_range(tmin - pd.DateOffset(days=warmup), tmax, freq=freq)
+        # warmup is not included in tmin, so that observations during the
+        # warmup period are not used by the solver
+        sim_index = pd.date_range(tmin - pd.DateOffset(days=warmup), tmax,
+                                  freq=freq)
         return sim_index
 
     def solve(self, tmin=None, tmax=None, solver=LmfitSolve, report=True,
-              noise=True, initial=True, weights=None, **kwargs):
+              noise=True, initial=True, weights=None, freq=None, **kwargs):
         """Methods to solve the time series model.
 
         Parameters
@@ -449,7 +441,10 @@ class Model:
             noise = False
 
         # Initialize parameters
-        self.initialize(initial=initial, noise=noise, tmin=None, tmax=None)
+        if freq:
+            self.freq = freq
+
+        self.initialize(initial=initial, noise=noise, tmin=tmin, tmax=tmax)
 
         # Solve model
         fit = solver(self, tmin=self.tmin, tmax=self.tmax, noise=noise,
@@ -458,7 +453,6 @@ class Model:
         # make calibration data empty again (was set in initialize)
         self.sim_index = None
         self.oseries_calib = None
-        self.tseries_calib = None
         self.interpolate_simulation = None
 
         self.fit = fit.fit
@@ -591,7 +585,7 @@ class Model:
         # 1. The frequency of the model is the highest frequency of the Tseries
         self.freq = None
         for tseries in self.tseriesdict.values():
-            if not tseries.stress.empty:
+            if tseries.stress:
                 if self.freq is None:
                     self.freq = tseries.freq
                 else:
@@ -606,15 +600,17 @@ class Model:
         # calculate frequency and time-difference with default frequency
         time_offsets = set()
         for tseries in self.tseriesdict.values():
-            if not tseries.stress.empty:
+            if tseries.stress:
                 # calculate the offset from the default frequency
-                time_offset = get_time_offset(tseries.stress.index[0],
+                # TODO: maybe implement a more formal method?
+                time_offset = get_time_offset(list(tseries.stress.values())[
+                                                  0].index[0],
                                               self.freq)
                 time_offsets.add(time_offset)
 
         assert len(
-            time_offsets) <= 1, 'The time-differences with the default frequency is' \
-                                ' not the same for all stresses.'
+            time_offsets) <= 1, 'The time-differences with the default ' \
+                                'frequency is not the same for all stresses.'
         if len(time_offsets) == 1:
             self.time_offset = next(iter(time_offsets))
         else:
@@ -683,15 +679,7 @@ class Model:
         else:
             p = self.get_parameters(name)
             dt = get_dt(self.freq)
-            if self.freq == self.tseriesdict[name].freq:
-                ts_temp = self.tseriesdict[name]
-            else:
-                # first change the frequency to that of the model
-                ts_temp = deepcopy(self.tseriesdict[name])
-                ts_temp.change_frequency(self.freq)
-            if tindex is not None:
-                ts_temp.change_index(tindex)
-            return ts_temp.simulate(p, tindex=tindex, dt=dt)
+            return self.tseriesdict[name].simulate(p, tindex=tindex, dt=dt)
 
     def get_block_response(self, name):
         if name not in self.tseriesdict.keys():
@@ -779,7 +767,7 @@ class Model:
         except:
             metadata["owner"] = "Unknown"
 
-        if meta: # Update metadata with user-provided metadata if possible
+        if meta:  # Update metadata with user-provided metadata if possible
             metadata.update(meta)
 
         return metadata
