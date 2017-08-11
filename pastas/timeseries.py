@@ -32,7 +32,7 @@ class TimeSeries(pd.Series):
                  "fill_nan": None, "fill_before": None, "fill_after": None},
     }
 
-    def __init__(self, stress, name=None, type=None, freq=None, **kwargs):
+    def __init__(self, stress, name=None, type=None, **kwargs):
         """Class that supports or user-provided time series within PASTAS.
 
         Parameters
@@ -77,8 +77,6 @@ class TimeSeries(pd.Series):
         # Update the options with user-provided values, if any.
         if kwargs:
             self.options.update(kwargs)
-        if freq:
-            self.options["freq"] = freq
 
         # Create a validated stress for computations
         self.stress = self.validate_stress(stress)
@@ -407,5 +405,17 @@ class TimeSeries(pd.Series):
         # save result
         self._update_inplace(stress)
 
-    def export_stress(self):
-        return None
+    def export(self):
+        """Method to export the Time Series to a json format.
+
+        Returns
+        -------
+
+        """
+        data = dict()
+        data["stress"] = self.stress_original.to_json(date_format='iso')
+        data["options"] = self.options
+        data["name"] = self.name
+        data["type"] = self.type
+
+        return data

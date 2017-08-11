@@ -54,5 +54,5 @@ n = ps.NoiseModel()
 ml.add_noisemodel(n)
 
 # Solve
-ml.solve(noise=True, weights="swsi")
+ml.solve(noise=True, weights="swsi", freq="W")
 ml.plots.decomposition()

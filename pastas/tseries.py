@@ -139,6 +139,12 @@ class TseriesBase:
         else:
             return self.stress
 
+    def export(self):
+        data = dict()
+        data["type"] = "TseriesBase"
+
+        return data
+
 
 class Tseries(TseriesBase):
     """Time series model consisting of the convolution of one stress with one
@@ -790,3 +796,8 @@ class NoiseModel:
         if tindex is not None:
             innovations = innovations[tindex]
         return innovations
+
+    def export(self):
+        data = dict()
+        data["type"] = "NoiseModel"
+        return data

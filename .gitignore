@@ -16,3 +16,4 @@ build
 dist
 
 .idea/.name
+pastas/utils.py

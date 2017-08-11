@@ -42,7 +42,7 @@ class Plotting():
 
         """
         fig = self._get_figure(**kwargs)
-        fig.suptitle("Results of " + self.ml.name)
+        fig.suptitle("Results of " + self.ml.metadata["name"])
 
         # Get right tmin and tmax
         if not tmin and not tmax:
@@ -114,7 +114,7 @@ class Plotting():
         ax3 = plt.subplot(gs[0, -1])
         tmax = 0
         for name, ts in self.ml.tseriesdict.items():
-            dt = get_dt(self.ml.freq)
+            dt = get_dt(self.ml.settings["freq"])
             if "rfunc" in dir(ts):
                 br = self.ml.get_block_response(name)
                 t = np.arange(0, len(br) * dt, dt)
@@ -144,9 +144,9 @@ class Plotting():
 
         # Default option when not tmin and tmax is provided
         if tmin is None:
-            tmin = self.ml.tmin
+            tmin = self.ml.settings["tmin"]
         if tmax is None:
-            tmax = self.ml.tmax
+            tmax = self.ml.settings["tmax"]
         assert (tmin is not None) and (
             tmax is not None), 'model needs to be solved first'
 
@@ -261,7 +261,7 @@ class Plotting():
 
         # Change xtickers to the correct time
         locs, labels = plt.xticks()
-        labels = locs * get_dt(self.ml.freq)
+        labels = locs * get_dt(self.ml.settings["freq"])
         plt.xticks(locs, labels)
         plt.xlabel("Time [days]")
 
@@ -304,7 +304,7 @@ class Plotting():
 
         # Change xtickers to the correct time
         locs, labels = plt.xticks()
-        labels = locs * get_dt(self.ml.freq)
+        labels = locs * get_dt(self.ml.settings["freq"])
         plt.xticks(locs, labels)
         plt.xlabel("Time [days]")
 

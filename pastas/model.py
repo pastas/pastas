@@ -1,8 +1,8 @@
 from __future__ import print_function, division
 
 import datetime
+import importlib
 import os
-import pickle
 from collections import OrderedDict
 from warnings import warn
 
@@ -10,10 +10,10 @@ import numpy as np
 import pandas as pd
 from scipy import interpolate
 
-from .timeseries import TimeSeries
 from .plots import Plotting
 from .solver import LmfitSolve
 from .stats import Statistics
+from .timeseries import TimeSeries
 from .tseries import Constant
 from .utils import get_dt, get_time_offset
 from .version import __version__
@@ -51,29 +51,16 @@ class Model:
 
     """
 
-    def __init__(self, oseries, xy=(0, 0), name="PASTAS_Model", metadata=None,
-                 warmup=3650, constant=True):
-        self.oseries = TimeSeries(oseries, type="oseries")
-        self.oseries_calib = None
-
-        # Min and max time of the model
-        self.tmin = None
-        self.tmax = None
+    def __init__(self, oseries, constant=True, metadata=None, settings=None):
+        # Construct the different model components
+        self.oseries = TimeSeries(oseries, name="Observations", type="oseries")
         self.odelt = self.oseries.index.to_series().diff() / \
-                     np.timedelta64(1, 'D')
-
-        self.warmup = warmup
-        self.freq = 'D'
-        self.time_offset = pd.to_timedelta(0)
+                     np.timedelta64(1, "D")
+        self.oseries_calib = None
 
         self.parameters = pd.DataFrame(
             columns=['initial', 'name', 'optimal', 'pmin', 'pmax', 'vary'])
-        self.nparam = 0
-
         self.tseriesdict = OrderedDict()
-
-        self.sim_index = None
-        self.interpolate_simulation = None
 
         self.noisemodel = None
 
@@ -82,11 +69,23 @@ class Model:
         else:
             self.constant = None
 
-        # Metadata
-        self.xy = xy
-        self.metadata = self.get_metadata(metadata)
-        self.name = name
+        # Store the simulation settings
+        self.settings = dict()
+        self.settings["tmin"] = None
+        self.settings["tmax"] = None
+        self.settings["freq"] = "D"
+        self.settings["warmup"] = 3650
+        self.settings["noise"] = False
+        if settings:
+            self.settings.update(settings)
 
+        # Metadata
+        self.metadata = self.get_metadata(metadata)
+
+        # initialize some attributes for solving and simulation
+        self.time_offset = pd.to_timedelta(0)
+        self.sim_index = None
+        self.interpolate_simulation = None
         self.fit = None
         self.report = "Model has not been solved yet. "
 
@@ -111,19 +110,16 @@ class Model:
 
         """
         if tseries.name in self.tseriesdict.keys():
-            warn('The name for the series you are trying to add '
-                 'already exists for this model. Select another '
-                 'name.')
+            warn('The name for the series you are trying to add already exists'
+                 ' for this model. Select another name.')
         else:
-            tseries.update_stress(freq=self.freq)
             self.tseriesdict[tseries.name] = tseries
             self.parameters = self.get_init_parameters()
-            self.nparam += tseries.nparam
 
-            # Call these methods to set tmin, tmax and freq and enable
-            # simulation.
-            self.set_freq_offset()
-            self.tmin, self.tmax = self.get_tmin_tmax()
+            # Call these methods to set tmin, tmax and freq
+            tseries.update_stress(freq=self.settings["freq"])
+            self.set_time_offset()
+            self.settings["tmin"], self.settings["tmax"] = self.get_tmin_tmax()
 
     def add_noisemodel(self, noisemodel):
         """Adds a noise model to the time series Model.
@@ -131,7 +127,6 @@ class Model:
         """
         self.noisemodel = noisemodel
         self.parameters = self.get_init_parameters()
-        self.nparam += noisemodel.nparam
 
     def add_constant(self):
         """Adds a Constant to the time series Model.
@@ -139,7 +134,6 @@ class Model:
         """
         self.constant = Constant(value=self.oseries.mean(), name='constant')
         self.parameters = self.get_init_parameters()
-        self.nparam += self.constant.nparam
 
     def del_tseries(self, name):
         """ Save deletion of a tseries from the tseriesdict.
@@ -161,7 +155,6 @@ class Model:
                          'tseriesdict. Please select from the following list: '
                          '%s' % self.tseriesdict.keys())
         else:
-            self.nparam -= self.tseriesdict[name].nparam
             self.parameters = self.parameters.ix[self.parameters.name != name]
             self.tseriesdict.pop(name)
 
@@ -172,7 +165,6 @@ class Model:
         if self.constant is None:
             warn("No constant is present in this model.")
         else:
-            self.nparam -= self.constant.nparam
             self.parameters = self.parameters.ix[self.parameters.name !=
                                                  'constant']
             self.constant = None
@@ -184,7 +176,6 @@ class Model:
         if self.noisemodel is None:
             warn("No noisemodel is present in this model.")
         else:
-            self.nparam -= self.noisemodel.nparam
             self.parameters = self.parameters.ix[self.parameters.name !=
                                                  self.noisemodel.name]
             self.noisemodel = None
@@ -218,14 +209,15 @@ class Model:
 
         # Default option when freq is not provided.
         if freq is None:
-            freq = self.freq
+            freq = self.settings["freq"]
 
         if self.sim_index is None:
             tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq,
                                             use_oseries=False)
-            sim_index = self.get_sim_index(tmin, tmax, freq, self.warmup)
+            sim_index = self.get_sim_index(tmin, tmax, freq, self.settings["warmup"])
         else:
             sim_index = self.sim_index
+
         dt = get_dt(freq)
 
         # Get parameters if none are provided
@@ -241,6 +233,8 @@ class Model:
             istart += ts.nparam
         if self.constant:
             h += self.constant.simulate(parameters[istart])
+
+        h.name = "Simulation"
 
         return h
 
@@ -263,7 +257,7 @@ class Model:
 
         """
         if freq is None:
-            freq = self.freq
+            freq = self.settings["freq"]
 
         tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq, use_oseries=True)
 
@@ -302,7 +296,7 @@ class Model:
         This method is for performance improvements only.
 
         """
-        oseries_calib = self.oseries[tmin: tmax]
+        oseries_calib = self.oseries.loc[tmin: tmax]
         # sample measurements, so that frequency is not higher than model
         # keep the original timestamps, as they will be used during
         # interpolation of the simulation
@@ -359,38 +353,41 @@ class Model:
 
         return self.oseries.loc[tmin: tmax]
 
-    def initialize(self, initial=True, noise=True, tmin=None, tmax=None):
-        """Initialize the model before solving.
+    def initialize(self, tmin=None, tmax=None, freq=None, warmup=None,
+                   noise=True, initial=True):
+        """Initialize the model. This method is called by "solve" but can
+        also be triggered manually.
 
         Parameters
         ----------
-        initial: bool, optional
-            Use initial values from parameter dataframe if True. If False, the
-            optimal values are used.
-        noise: bool, optional
-            Add the parameters for the noisemodel to the parameters
-            Dataframe or not.
+
 
         """
-        # Store optimized values in case they are needed
-        if not initial:
-            optimal = self.parameters.optimal
 
-        # Check frequency of tseries (is already performed at add_tseries())
-        # self.set_freq_offset()
+        if noise and (self.noisemodel is None):
+            warn('Warning, solution with noise model while noise model '
+                 'is not defined. No noise model is used.')
+            noise = False
+        self.settings["noise"] = noise
 
         # Check series with tmin, tmax
-        self.tmin, self.tmax = self.get_tmin_tmax(tmin, tmax)
+        self.settings["tmin"], self.settings["tmax"] = self.get_tmin_tmax(tmin, tmax)
+
+        # Set the frequency & warmup
+        if freq:
+            self.settings["freq"] = freq
+        if warmup:
+            self.warmpup = warmup
 
         # make sure calibration data is renewed
-        self.sim_index = self.get_sim_index(self.tmin, self.tmax, self.freq,
-                                            self.warmup)
-        self.oseries_calib = self.get_oseries_calib(self.tmin, self.tmax,
+        self.sim_index = self.get_sim_index(self.settings["tmin"], self.settings["tmax"], self.settings["freq"],
+                                            self.settings["warmup"])
+        self.oseries_calib = self.get_oseries_calib(self.settings["tmin"], self.settings["tmax"],
                                                     self.sim_index)
 
         # Prepare tseries stresses
         for ts in self.tseriesdict.values():
-            ts.update_stress(freq=self.freq)
+            ts.update_stress(freq=self.settings["freq"])
 
         self.interpolate_simulation = self.oseries_calib.index.difference(
             self.sim_index).size != 0
@@ -398,25 +395,33 @@ class Model:
             print('There are observations between the simulation-timesteps. '
                   'Linear interpolation is used')
 
-        # Set initial parameters
-        self.parameters = self.get_init_parameters(noise=noise)
-        self.nparam = len(self.parameters)
-
-        # Set initial parameters to optimal parameters
-        if not initial:
-            self.parameters.initial = optimal
+        # Initialize parameters
+        self.parameters = self.get_init_parameters(noise, initial)
 
     def get_sim_index(self, tmin, tmax, freq, warmup):
-        # add warmup here
-        # warmup is not included in tmin, so that observations during the
-        # warmup period are not used by the solver
+        """Method to get the indices for the simulation, including the warmpup
+        period.
+
+        Parameters
+        ----------
+        tmin
+        tmax
+        freq
+        warmup
+
+        Returns
+        -------
+
+        """
+
         sim_index = pd.date_range(tmin - pd.DateOffset(days=warmup), tmax,
                                   freq=freq)
         return sim_index
 
     def solve(self, tmin=None, tmax=None, solver=LmfitSolve, report=True,
-              noise=True, initial=True, weights=None, freq=None, **kwargs):
-        """Methods to solve the time series model.
+              noise=True, initial=True, weights=None, freq=None,
+              warmup=None, **kwargs):
+        """Method to solve the time series model.
 
         Parameters
         ----------
@@ -434,21 +439,13 @@ class Model:
             Reset initial parameters.
 
         """
-        if noise and (self.noisemodel is None):
-            warn(
-                message='Warning, solution with noise model while noise model '
-                        'is not defined. No noise model is used.')
-            noise = False
 
-        # Initialize parameters
-        if freq:
-            self.freq = freq
-
-        self.initialize(initial=initial, noise=noise, tmin=tmin, tmax=tmax)
+        # Initialize the model
+        self.initialize(tmin, tmax, freq, warmup, noise, initial)
 
         # Solve model
-        fit = solver(self, tmin=self.tmin, tmax=self.tmax, noise=noise,
-                     freq=self.freq, weights=weights, **kwargs)
+        fit = solver(self, tmin=self.settings["tmin"], tmax=self.settings["tmax"], noise=noise,
+                     freq=self.settings["freq"], weights=weights, **kwargs)
 
         # make calibration data empty again (was set in initialize)
         self.sim_index = None
@@ -457,8 +454,10 @@ class Model:
 
         self.fit = fit.fit
         self.parameters.optimal = fit.optimal_params
+
         self.report = fit.report
-        if report: print(self.report)
+        if report:
+            print(self.report)
 
     def get_tmin_tmax(self, tmin=None, tmax=None, freq=None, use_oseries=True):
         """Method that checks and returns valid values for tmin and tmax.
@@ -554,7 +553,7 @@ class Model:
 
         # adjust tmin and tmax so that the time-offset is equal to the tseries.
         if not freq:
-            freq = self.freq
+            freq = self.settings["freq"]
         tmin = tmin - get_time_offset(tmin, freq) + self.time_offset
         tmax = tmax - get_time_offset(tmax, freq) + self.time_offset
 
@@ -565,39 +564,14 @@ class Model:
 
         return tmin, tmax
 
-    def set_freq_offset(self):
-        """Set the frequency offset for the model class.
+    def set_time_offset(self):
+        """Set the time offset for the model class.
 
         Notes
         -----
-        Methods to check if the frequency is:
-
-        1. The frequency of the model is the highest frequency of the Tseries
-        2. Tseries timestamps should match (e.g. similar hours)
-
-        TODO
-        ----
-        Set freq_offset when freq of the tseries is lower than the max
-        tdelta of the oseries.
+        Method to check if the Tseries timestamps match (e.g. similar hours)
 
         """
-
-        # 1. The frequency of the model is the highest frequency of the Tseries
-        self.freq = None
-        for tseries in self.tseriesdict.values():
-            if tseries.stress:
-                if self.freq is None:
-                    self.freq = tseries.freq
-                else:
-                    # use the highest frequency
-                    if get_dt(tseries.freq) < get_dt(self.freq):
-                        self.freq = tseries.freq
-
-        if self.freq is None:
-            self.freq = 'D'
-
-        # 2. Tseries timestamps should match (e.g. similar hours')
-        # calculate frequency and time-difference with default frequency
         time_offsets = set()
         for tseries in self.tseriesdict.values():
             if tseries.stress:
@@ -605,7 +579,7 @@ class Model:
                 # TODO: maybe implement a more formal method?
                 time_offset = get_time_offset(list(tseries.stress.values())[
                                                   0].index[0],
-                                              self.freq)
+                                              self.settings["freq"])
                 time_offsets.add(time_offset)
 
         assert len(
@@ -616,7 +590,7 @@ class Model:
         else:
             self.time_offset = datetime.timedelta(0)
 
-    def get_init_parameters(self, noise=True):
+    def get_init_parameters(self, noise=True, initial=True):
         """Method to get all initial parameters from the individual objects.
 
         Parameters
@@ -631,6 +605,10 @@ class Model:
             pandas.Dataframe with the parameters.
 
         """
+        # Store optimized values in case they are needed
+        if not initial:
+            optimal = self.parameters.optimal
+
         parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax',
                                            'vary', 'optimal', 'name'])
         for ts in self.tseriesdict.values():
@@ -639,6 +617,10 @@ class Model:
             parameters = parameters.append(self.constant.parameters)
         if self.noisemodel and noise:
             parameters = parameters.append(self.noisemodel.parameters)
+
+        # Set initial parameters to optimal parameters
+        if not initial:
+            parameters.initial = optimal
 
         return parameters
 
@@ -678,7 +660,7 @@ class Model:
             return None
         else:
             p = self.get_parameters(name)
-            dt = get_dt(self.freq)
+            dt = get_dt(self.settings["freq"])
             return self.tseriesdict[name].simulate(p, tindex=tindex, dt=dt)
 
     def get_block_response(self, name):
@@ -688,7 +670,7 @@ class Model:
             return None
         else:
             p = self.get_parameters(name)
-            dt = get_dt(self.freq)
+            dt = get_dt(self.settings["freq"])
             b = self.tseriesdict[name].rfunc.block(p, dt)
             t = np.arange(0, (len(b)) * dt, dt)
             return pd.Series(b, index=t, name=name)
@@ -700,7 +682,7 @@ class Model:
             return None
         else:
             p = self.get_parameters(name)
-            dt = get_dt(self.freq)
+            dt = get_dt(self.settings["freq"])
             s = self.tseriesdict[name].rfunc.step(p, dt)
             t = np.arange(0, (len(s)) * dt, dt)
             return pd.Series(s, index=t, name=name)
@@ -767,68 +749,73 @@ class Model:
         except:
             metadata["owner"] = "Unknown"
 
+        metadata["xy"] = (0, 0)
+        metadata["name"] = "PASTAS_model"
+
         if meta:  # Update metadata with user-provided metadata if possible
             metadata.update(meta)
 
         return metadata
 
-    def export_model(self, fname=None):
-        """This method exports the model as an pickle (.pkl) file.
+    def export_data(self):
+        """Method to export a PASTAS model to the json export format. Helper
+         function for the self.export method.
 
-        Parameters
-        ----------
-        fname: str, optional
-            filename excluding the extension.
+         The following attributes are stored:
 
-        Returns
-        -------
-        Message if the export was succesfull.
+         - oseries
+         - tseriesdict
+         - noisemodel
+         - constant
+         - parameters
+         - metadata
+         - settings
+         - ..... future attributes?
 
-        Notes
-        -----
-        After a PASTAS model has been stored, it is simple to load the model
-        object into python using pickle. The following lines of code show
-        how this is done. In the future an proper import method will be
-        supported.
-
-        >>> import pickle
-        >>> with open(fname + ".pkl", "rb") as output:
-        >>>    pickle.load(self, output)
+         Notes
+         -----
+         To increase backward compatibility most attributes are stored in
+         dictionaries that can be updated when a model is created.
 
         """
-        if not fname:
-            fname = self.name
 
-        # Update metadata
+        # Create a dictionary to store all data
+        data = dict()
+        data["oseries"] = self.oseries.export()
+
+        # Tseriesdict
+        data["tseriesdict"] = dict()
+        for name, ts in self.tseriesdict.items():
+            data["tseriesdict"][name] = ts.export()
+
+        # Constant
+        if self.constant:
+            data["constant"] = True
+        if self.noisemodel:
+            data["noisemodel"] = self.noisemodel.export()
+
+        # Parameters
+        data["parameters"] = self.parameters.to_dict()
+
+        # Metadata
         now = pd.datetime.now().strftime("%Y-%m-%d")
         self.metadata["date_modified"] = now
+        data["metadata"] = self.metadata
 
-        with open(fname + ".pkl", "wb") as output:
-            pickle.dump(self, output)
+        # Simulation Settings
+        data["settings"] = self.settings
 
-        return print("Model is stored succesfully as %s" % fname)
+        return data
 
-    def import_model(self, fname):
-        """Temporary implementation of a load function, needs to be changed in
-        the future, so PASTAS can support models from other versions..
+    def export(self, fname):
+        # Dynamic import of the export module depending on file type
+        ext = os.path.splitext(fname)[1]
+        ext = ext.replace('.', '')
+        ext = '.io.' + ext + '.export'
+        export_mod = importlib.import_module(ext, "pastas")
 
-        TODO
-        ----
-        probably it should copy the attributes only, so all methods are
-        updated..? R. Collenteur 18/05/2017
+        # Get dicts for all data sources
+        data = self.export_data()
 
-        Parameters
-        ----------
-        fname: str
-            filename without the .pkl extension
-
-        """
-
-        with open(fname + ".pkl", "rb") as output:
-            ml = pickle.load(output)
-
-        if ml.metadata["pastas_version"] == __version__:
-            warn("trying to import a PASTAS model that is created in an "
-                 "older version of PASTAS")
-
-        return print("Model succesfully imported!")
+        # Write the dicts to a file
+        export_mod.export(fname, data)
