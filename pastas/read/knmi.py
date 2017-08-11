@@ -199,11 +199,18 @@ class KnmiStation:
         line = f.readline()  # Skip empty line after header
 
         # Process the datablock
-        string2datetime = lambda x: pd.to_datetime(x, format='%Y%m%d')
+        if False:
+            # older method, is much slower
+            string2datetime = lambda x: pd.to_datetime(x, format='%Y%m%d')
 
-        data = pd.read_csv(f, header=None, names=header,
-                           parse_dates=['YYYYMMDD'], index_col='YYYYMMDD',
-                           na_values='     ', converters={1: string2datetime})
+            data = pd.read_csv(f, header=None, names=header,
+                               parse_dates=['YYYYMMDD'], index_col='YYYYMMDD',
+                               na_values='     ', converters={1: string2datetime})
+        else:
+            # newer method, calculating the date afterwards is much faster
+            data = pd.read_csv(f, header=None, names=header, na_values='     ')
+            data.set_index(pd.to_datetime(data.YYYYMMDD, format='%Y%m%d'), inplace=True)
+            data = data.drop('YYYYMMDD', axis=1)
 
         # convert the hours if provided
         if 'HH' in data.keys():

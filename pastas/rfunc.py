@@ -73,6 +73,9 @@ class Gamma(RfuncBase):
         parameters.loc[name + '_a'] = (100, 1, 5000, 1, name)
         return parameters
 
+    def gain(self, p):
+        return p[0]
+
     def step(self, p, dt=1):
         if isinstance(dt, np.ndarray):
             t = dt
@@ -109,6 +112,9 @@ class Exponential(RfuncBase):
             1 / self.meanstress, 0, 100 / self.meanstress, 1, name)
         parameters.loc[name + '_a'] = (100, 1, 5000, 1, name)
         return parameters
+
+    def gain(self, p):
+        return p[0]
 
     def step(self, p, dt=1):
         if isinstance(dt, np.ndarray):
@@ -161,6 +167,9 @@ class Hantush(RfuncBase):
         cS = p[2]
         k0rho = k0(rho)
         return lambertw(1 / ((1 - self.cutoff) * k0rho)).real * cS
+
+    def gain(self, p):
+        return p[0]
 
     def step(self, p, dt=1):
         rho = p[1]
@@ -215,6 +224,9 @@ class Theis(RfuncBase):
         parameters.loc[name + '_r'] = (1000.0, 0.0, 100000.0, 0, name)
         return parameters
 
+    def gain(self, p):
+        return np.inf
+
     def step(self, p, dt=1):
         if isinstance(dt, np.ndarray):
             t = dt
@@ -256,6 +268,10 @@ class Bruggeman(RfuncBase):
         parameters.loc[name + '_c'] = (c_init, 0, c_init * 100, 1, name)
         return parameters
 
+    def gain(self, p):
+        # TODO: check line below
+        return p[2]
+
     def step(self, p, dt=1):
         # TODO: find tmax from cutoff, below is just an opproximation
         if isinstance(dt, np.ndarray):
@@ -291,6 +307,9 @@ class One(RfuncBase):
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         parameters.loc[name + '_d'] = (1, 0, 100, 1, name)
         return parameters
+
+    def gain(self,p):
+        return p[0]
 
     def step(self, p, dt=1):
         if isinstance(dt, np.ndarray):

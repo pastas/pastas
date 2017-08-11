@@ -182,7 +182,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         RSS = sum(res ** 2.0)
         TSS = sum((obs - obs.mean()) ** 2.0)
-        return 1.0 - (N - 1.0) / (N - self.ml.nparam) * RSS / TSS
+        nparam = self.ml.parameters.index.size
+        return 1.0 - (N - 1.0) / (N - nparam) * RSS / TSS
 
     def bic(self, tmin=None, tmax=None):
         """Bayesian Information Criterium.

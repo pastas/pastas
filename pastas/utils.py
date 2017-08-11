@@ -50,8 +50,8 @@ def get_time_offset(t, freq):
         # t has no millisecond attribute, so use microsecond and use the remainder after division by 1000
         return datetime.timedelta(microseconds=t.microsecond % 1000.0)
 
-    # map the inputs to the function blocks
-    # see http://pandas.pydata.org/pandas-docs/stable/timeseries.html#timeseries-offset-aliases
+    # map the inputs to the function blocks see
+    # http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
     options = {'W': calc_week_offset,  # weekly frequency
                'D': calc_day_offset,  # calendar day frequency
                'H': calc_hour_offset,  # hourly frequency
