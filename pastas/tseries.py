@@ -184,14 +184,14 @@ class Tseries(TseriesBase):
     """
 
     def __init__(self, stress, rfunc, name, metadata=None, xy=(0, 0),
-                 freq=None, fillnan='mean', up=True, cutoff=0.99,
+                 up=True, cutoff=0.99, type="none", settings=None,
                  normalize_stress=False, fill_before=0.0, fill_after=0.0):
-        stress = TimeSeries(stress, name=name, type="none", freq=freq)
+        stress = TimeSeries(stress, name=name, type=type, settings=settings)
         TseriesBase.__init__(self, rfunc, name, xy, metadata,
                              stress.index.min(), stress.index.max(),
                              up, stress.mean(), cutoff, fill_before,
                              fill_after)
-        self.freq = stress.options["freq"]
+        self.freq = stress.settings["freq"]
 
         # TODO: This can probably be moved to the TimeSeries class
         if normalize_stress:
@@ -269,8 +269,8 @@ class Tseries2(TseriesBase):
     """
 
     def __init__(self, stress0, stress1, rfunc, name, metadata=None, xy=(0, 0),
-                 freq=None, fillnan=('mean', 'interpolate'), up=True,
-                 cutoff=0.99, fill_before=(0.0, 0.0), fill_after=(0.0, 0.0)):
+                 up=True, cutoff=0.99, freq=None, fill_before=(0.0, 0.0),
+                 fill_after=(0.0, 0.0)):
 
         # First check the series, then determine tmin and tmax
         ts0 = TimeSeries(stress0, name="stress0", type="prec", freq=freq)
@@ -297,7 +297,7 @@ class Tseries2(TseriesBase):
         self.stress["stress0"] = stress0
         self.stress["stress1"] = stress1
 
-        self.freq = stress0.options["freq"]
+        self.freq = stress0.settings["freq"]
         self.set_init_parameters()
 
     def set_init_parameters(self):
@@ -418,7 +418,7 @@ class Recharge(TseriesBase):
         self.stress["evap"] = TimeSeries(evap[index], name=name + '_E',
                                          type="evap", freq=freq)
 
-        self.freq = self.stress["prec"].options["freq"]
+        self.freq = self.stress["prec"].settings["freq"]
 
         self.recharge = recharge()
         self.set_init_parameters()
@@ -537,7 +537,7 @@ class Well(TseriesBase):
             self.stress[name + str(i)] = TimeSeries(x, name=name, type="well",
                                                     freq=freq)
 
-        self.freq = self.stress[name + "0"].options["freq"]
+        self.freq = self.stress[name + "0"].settings["freq"]
         self.set_init_parameters()
 
     def set_init_parameters(self):
@@ -623,7 +623,7 @@ class TseriesNoConv(TseriesBase):
                              stress.index.min(), stress.index.max(),
                              up, stress.mean(), cutoff, fill_before,
                              fill_after)
-        self.freq = stress.options["freq"]
+        self.freq = stress.settings["freq"]
         self.stress[name] = stress
         self.set_init_parameters()
 

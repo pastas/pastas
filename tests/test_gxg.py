@@ -17,33 +17,29 @@ from pastas import Model
 class TestGXG(object):
     def test_ghg(self):
         idx = pd.to_datetime(['20160114', '20160115', '20160128', '20160214'])
-        s = pd.Series([10., 3., 30., 20], index=idx)
+        s = pd.Series([10., 3., 30., 20.], index=idx)
         ml = Model(s)
-        ml.freq = 'D'
         v = ml.stats.ghg(key='observations')
-        assert v == 20.
+        assert v == 20.0
 
     def test_ghg_ffill(self):
-        idx = pd.to_datetime(['20160101', '20160115'])
-        s = pd.Series([0., 10.], index=idx)
+        idx = pd.to_datetime(['20160101', '20160115', '20160130'])
+        s = pd.Series([0., 0., 10.], index=idx)
         ml = Model(s)
-        ml.freq = 'D'
         v = ml.stats.ghg(key='observations', fill_method='ffill')
         assert v == 0.
 
     def test_ghg_bfill(self):
-        idx = pd.to_datetime(['20160101', '20160115'])
-        s = pd.Series([0., 10.], index=idx)
+        idx = pd.to_datetime(['20160101', '20160115', '20160130'])
+        s = pd.Series([0., 0., 10.], index=idx)
         ml = Model(s)
-        ml.freq = 'D'
         v = ml.stats.ghg(key='observations', fill_method='bfill')
         assert v == 10.
 
     def test_ghg_linear(self):
-        idx = pd.to_datetime(['20160113', '20160115'])
-        s = pd.Series([0., 10.], index=idx)
+        idx = pd.to_datetime(['20160101', '20160115', '20160130'])
+        s = pd.Series([0., 0., 10.], index=idx)
         ml = Model(s)
-        ml.freq = 'D'
         v = ml.stats.ghg(key='observations', fill_method='linear')
         assert v == 5.
 
@@ -51,7 +47,6 @@ class TestGXG(object):
         idx = pd.date_range('20000101', '20550101', freq='d')
         s = pd.Series(np.ones(len(idx)), index=idx)
         ml = Model(s)
-        ml.freq = 'D'
         v = ml.stats.ghg(key='observations', output='yearly')
         assert len(v) == 55
 
@@ -59,7 +54,6 @@ class TestGXG(object):
         idx = pd.date_range('20000101', '20550101', freq='d')
         s = pd.Series([x.month + x.day for x in idx], index=idx)
         ml = Model(s)
-        ml.freq = 'D'
         v = ml.stats.glg(key='observations')
         assert v == 16.
 
@@ -67,7 +61,6 @@ class TestGXG(object):
         idx = pd.to_datetime(['20170115', '20170130', '20200101'])
         s = pd.Series(np.ones(len(idx)), index=idx)
         ml = Model(s)
-        ml.freq = 'D'
         v = ml.stats.glg(key='observations', fill_method='linear', limit=15,
                          output='yearly')
         assert v.count() == 1
@@ -95,30 +88,28 @@ class TestGXG(object):
         s = pd.Series([1., 2., 3.], index=idx)
         ml = Model(s)
         ml.freq = 'D'
-        v = ml.stats.gvg(key='observations',
-                         fill_method=None,
-                         output='mean', )
+        v = ml.stats.gvg(key='observations', fill_method=None, output='mean', )
         assert np.isnan(v)
 
-    # def test_gxg_series(self):
-    #     s = pd.read_csv('data\\hseries_gxg.csv', index_col=0, header=0,
-    #                     parse_dates=True, dayfirst=True, squeeze=True)
-    #     ml = Model(s)
-    #     ml.freq = 'D'
-    #     ghg = ml.stats.ghg(key='observations')
-    #     glg = ml.stats.glg(key='observations')
-    #     gvg = ml.stats.gvg(key='observations')
-    #     print('\n')
-    #     print('calculated GXG\'s classic method: \n')
-    #     print(('GHG: {ghg:.2f} m+NAP\n'
-    #            'GLG: {glg:.2f} m+NAP\n'
-    #            'GVG: {gvg:.2f} m+NAP\n').format(
-    #         ghg=ghg, glg=glg, gvg=gvg))
-    #     print('Menyanthes GXG\'s: \n')
-    #     print(('GHG: {ghg:.2f} m+NAP\n'
-    #            'GLG: {glg:.2f} m+NAP\n'
-    #            'GVG: {gvg:.2f} m+NAP\n').format(
-    #         ghg=-3.23, glg=-3.82, gvg=-3.43))
+        # def test_gxg_series(self):
+        #     s = pd.read_csv('data\\hseries_gxg.csv', index_col=0, header=0,
+        #                     parse_dates=True, dayfirst=True, squeeze=True)
+        #     ml = Model(s)
+        #     ml.freq = 'D'
+        #     ghg = ml.stats.ghg(key='observations')
+        #     glg = ml.stats.glg(key='observations')
+        #     gvg = ml.stats.gvg(key='observations')
+        #     print('\n')
+        #     print('calculated GXG\'s classic method: \n')
+        #     print(('GHG: {ghg:.2f} m+NAP\n'
+        #            'GLG: {glg:.2f} m+NAP\n'
+        #            'GVG: {gvg:.2f} m+NAP\n').format(
+        #         ghg=ghg, glg=glg, gvg=gvg))
+        #     print('Menyanthes GXG\'s: \n')
+        #     print(('GHG: {ghg:.2f} m+NAP\n'
+        #            'GLG: {glg:.2f} m+NAP\n'
+        #            'GVG: {gvg:.2f} m+NAP\n').format(
+        #         ghg=-3.23, glg=-3.82, gvg=-3.43))
 
         # def test_gxg_series(self, capsys):
         #     s = pd.read_csv(r'data/hseries_gxg.csv', index_col=0, header=0,

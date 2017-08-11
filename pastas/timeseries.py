@@ -26,13 +26,13 @@ class TimeSeries(pd.Series):
         "evap": {"freq": "D", "sample_up": "interpolate", "sample_down": "sum",
                  "fill_nan": "interpolate", "fill_before": None, "fill_after":
                      None},
-        "well": {"freq": "D", "sample_up": None, "sample_down": "sum",
+        "well": {"freq": "D", "sample_up": "bfill", "sample_down": "sum",
                  "fill_nan": None, "fill_before": None, "fill_after": None},
         "none": {"freq": "D", "sample_up": None, "sample_down": None,
                  "fill_nan": None, "fill_before": None, "fill_after": None},
     }
 
-    def __init__(self, stress, name=None, type=None, **kwargs):
+    def __init__(self, stress, name=None, type=None, settings=None, **kwargs):
         """Class that supports or user-provided time series within PASTAS.
 
         Parameters
@@ -70,19 +70,21 @@ class TimeSeries(pd.Series):
         # Options when creating the series
         self.type = type
         if type in self._type_options.keys():
-            self.options = self._type_options[type]
+            self.settings = self._type_options[type]
         else:
-            self.options = self._type_options["none"]
+            self.settings = self._type_options["none"]
 
         # Update the options with user-provided values, if any.
+        if settings:
+            self.settings.update(settings)
         if kwargs:
-            self.options.update(kwargs)
+            self.settings.update(kwargs)
 
         # Create a validated stress for computations
         self.stress = self.validate_stress(stress)
 
         # Finally, update the TimeSeries so it is ready for simulation
-        self.update_stress(**self.options)
+        self.update_stress(**self.settings)
 
     def validate_stress(self, stress):
         """ This method performs some PASTAS specific tests for the TimeSeries.
@@ -125,13 +127,13 @@ class TimeSeries(pd.Series):
 
         if freq:
             self.freq_original = freq
-            if not self.options["freq"]:
-                self.options["freq"] = freq
+            if not self.settings["freq"]:
+                self.settings["freq"] = freq
             print('Inferred frequency from time series %s: freq=%s ' % (
                 self.name, freq))
         else:
-            self.freq_original = self.options["freq"]
-            if self.options["fill_nan"] and self.options["fill_nan"] != \
+            self.freq_original = self.settings["freq"]
+            if self.settings["fill_nan"] and self.settings["fill_nan"] != \
                     "drop":
                 warn("User-provided frequency is applied when validating the "
                      "Time Series %s. Make sure the provided frequency is "
@@ -169,7 +171,7 @@ class TimeSeries(pd.Series):
 
         if kwargs:
             # Update the options with any provided arguments
-            self.options.update(kwargs)
+            self.settings.update(kwargs)
 
             # Update the stress with the new settings
             stress = self.change_frequency(stress)
@@ -195,10 +197,10 @@ class TimeSeries(pd.Series):
 
         """
 
-        freq = self.options["freq"]
+        freq = self.settings["freq"]
 
         # 1. If no freq string is present or is provided (e.g. Oseries)
-        if not self.freq_original and not freq:
+        if not freq:
             pass
 
         # 2. If new frequency is lower than its original.
@@ -233,8 +235,8 @@ class TimeSeries(pd.Series):
         -------
 
         """
-        method = self.options["sample_up"]
-        freq = self.options["freq"]
+        method = self.settings["sample_up"]
+        freq = self.settings["freq"]
 
         if method in ['backfill', 'bfill', 'pad', 'ffill']:
             stress = stress.asfreq(freq, method=method)
@@ -270,8 +272,8 @@ class TimeSeries(pd.Series):
         # http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.resample.html)
 
         """
-        method = self.options["sample_down"]
-        freq = self.options["freq"]
+        method = self.settings["sample_down"]
+        freq = self.settings["freq"]
 
         # Provide some standard pandas arguments for all options
         kwargs = {"label": 'right', "closed": 'right'}
@@ -311,7 +313,7 @@ class TimeSeries(pd.Series):
 
         """
 
-        method = self.options["fill_nan"]
+        method = self.settings["fill_nan"]
         freq = self.freq_original
 
         if freq:
@@ -350,11 +352,11 @@ class TimeSeries(pd.Series):
         """
 
         # method = self.options["fill_before"]
-        freq = self.options["freq"]
+        freq = self.settings["freq"]
 
         # If no index is provided, use the fill_before_period
         if not index:
-            period = self.options["fill_before_period"]
+            period = self.settings["fill_before_period"]
             index_extend = pd.date_range(end=self.index.min() - 1,
                                          periods=period, freq=freq)
             index = self.index.union(index_extend)
@@ -414,7 +416,7 @@ class TimeSeries(pd.Series):
         """
         data = dict()
         data["stress"] = self.stress_original.to_json(date_format='iso')
-        data["options"] = self.options
+        data["options"] = self.settings
         data["name"] = self.name
         data["type"] = self.type
 

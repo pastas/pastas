@@ -33,8 +33,8 @@ class TestQGXG(object):
         assert v == 6.
 
     def test_q_gxg_nan(self):
-        idx = pd.date_range('20160101', freq='d', periods=3)
-        s = pd.Series([1, 3, np.nan], index=idx)
+        idx = pd.date_range('20160101', freq='d', periods=4)
+        s = pd.Series([1, np.nan, 3, np.nan], index=idx)
         ml = Model(s)
         ml.freq = 'D'
         v = ml.stats.q_ghg(key='observations', q=.5)
