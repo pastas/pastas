@@ -25,7 +25,8 @@ install:
 
 # command to run tests
 script:
-   - py.test --cov=pastas tests/
+   - py.test --cov=. tests/
+   - codecov
 
 after_success:
    - codecov
