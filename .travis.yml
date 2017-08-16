@@ -25,7 +25,5 @@ install:
 
 # command to run tests
 script:
-   - py.test ./tests --cov=pastas --cov-report=xml
+   - py.test ./tests
 
-after_success:
-   - codecov
