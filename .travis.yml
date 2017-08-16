@@ -24,7 +24,7 @@ install:
 
 # command to run tests
 script:
-   - nosetests tests -v --with-coverage
+   - pytest tests/
    - codecov
 
 after_success:

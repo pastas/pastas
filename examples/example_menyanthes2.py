@@ -22,19 +22,25 @@ IN2['values'].index = IN2['values'].index.normalize()
 ts = ps.Tseries2(IN['values'], IN2['values'], ps.Gamma, 'Recharge')
 ml.add_tseries(ts)
 
+settings = dict(freq='4W')
+
 # Add well extraction 1
 IN = meny.IN['Extraction 1']
-ts = ps.Tseries(IN['values'], ps.Hantush, 'Extraction_1', up=False, freq='MS', fillnan='bfill')
+ts = ps.Tseries(IN['values'], ps.Hantush, 'Extraction_1', up=False,
+                type="well", settings=settings)
+print(ts.stress['Extraction_1'].settings)
 ml.add_tseries(ts)
 
 # Add well extraction 2
 IN = meny.IN['Extraction 2']
-ts = ps.Tseries(IN['values'], ps.Hantush, 'Extraction_2', up=False, freq='MS', fillnan='bfill')
+ts = ps.Tseries(IN['values'], ps.Hantush, 'Extraction_2', up=False,
+                type="well", settings=settings)
 ml.add_tseries(ts)
 
 # Add well extraction 3
 IN = meny.IN['Extraction 3']
-ts = ps.Tseries(IN['values'], ps.Hantush, 'Extraction_3', up=False, freq='MS', fillnan='bfill')
+ts = ps.Tseries(IN['values'], ps.Hantush, 'Extraction_3', up=False,
+                type="well", settings=settings)
 ml.add_tseries(ts)
 
 # replace extraction 3 by a step-function, to test the step-tseries
@@ -46,5 +52,5 @@ n = ps.NoiseModel()
 ml.add_noisemodel(n)
 
 # Solve
-ml.solve()
+ml.solve(noise=True, weights="swsi")
 ml.plots.decomposition()
