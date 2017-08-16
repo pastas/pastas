@@ -21,10 +21,10 @@ before_install:
 
 # Install dependencies
 install:
-    pip install -r requirements.travis.txt
+    - pip install -r requirements.travis.txt
+    - pip install .
 
 # command to run tests
 script:
-   - pip install .
-   - py.test /tests
+   - py.test ./tests
 
