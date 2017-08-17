@@ -214,7 +214,8 @@ class Model:
         if self.sim_index is None:
             tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq,
                                             use_oseries=False)
-            sim_index = self.get_sim_index(tmin, tmax, freq, self.settings["warmup"])
+            sim_index = self.get_sim_index(tmin, tmax, freq,
+                                           self.settings["warmup"])
         else:
             sim_index = self.sim_index
 
@@ -360,7 +361,15 @@ class Model:
 
         Parameters
         ----------
+        tmin
+        tmax
+        freq
+        warmup
+        noise
+        initial
 
+        Returns
+        -------
 
         """
 
@@ -370,24 +379,30 @@ class Model:
             noise = False
         self.settings["noise"] = noise
 
-        # Check series with tmin, tmax
-        self.settings["tmin"], self.settings["tmax"] = self.get_tmin_tmax(tmin, tmax)
+        # Set tmin and tmax
+        self.settings["tmin"], self.settings["tmax"] = self.get_tmin_tmax(tmin,
+                                                                          tmax)
 
         # Set the frequency & warmup
         if freq:
             self.settings["freq"] = freq
         if warmup:
-            self.warmpup = warmup
+            self.settings["warmup"] = warmup
 
         # make sure calibration data is renewed
-        self.sim_index = self.get_sim_index(self.settings["tmin"], self.settings["tmax"], self.settings["freq"],
+        self.sim_index = self.get_sim_index(self.settings["tmin"],
+                                            self.settings["tmax"],
+                                            self.settings["freq"],
                                             self.settings["warmup"])
-        self.oseries_calib = self.get_oseries_calib(self.settings["tmin"], self.settings["tmax"],
+        self.oseries_calib = self.get_oseries_calib(self.settings["tmin"],
+                                                    self.settings["tmax"],
                                                     self.sim_index)
 
         # Prepare tseries stresses
         for ts in self.tseriesdict.values():
-            ts.update_stress(freq=self.settings["freq"])
+            ts.update_stress(freq=self.settings["freq"],
+                             tmin=self.oseries_calib.index.min(),
+                             tmax=self.oseries_calib.index.max())
 
         self.interpolate_simulation = self.oseries_calib.index.difference(
             self.sim_index).size != 0
@@ -399,7 +414,7 @@ class Model:
         self.parameters = self.get_init_parameters(noise, initial)
 
     def get_sim_index(self, tmin, tmax, freq, warmup):
-        """Method to get the indices for the simulation, including the warmpup
+        """Method to get the indices for the simulation, including the warmup
         period.
 
         Parameters
@@ -419,8 +434,8 @@ class Model:
         return sim_index
 
     def solve(self, tmin=None, tmax=None, solver=LmfitSolve, report=True,
-              noise=True, initial=True, weights=None, freq=None,
-              warmup=None, **kwargs):
+              noise=True, initial=True, weights=None, freq=None, warmup=None,
+              **kwargs):
         """Method to solve the time series model.
 
         Parameters
@@ -444,7 +459,8 @@ class Model:
         self.initialize(tmin, tmax, freq, warmup, noise, initial)
 
         # Solve model
-        fit = solver(self, tmin=self.settings["tmin"], tmax=self.settings["tmax"], noise=noise,
+        fit = solver(self, tmin=self.settings["tmin"],
+                     tmax=self.settings["tmax"], noise=noise,
                      freq=self.settings["freq"], weights=weights, **kwargs)
 
         # make calibration data empty again (was set in initialize)
@@ -516,9 +532,9 @@ class Model:
             ts_tmax = self.oseries.index.max()
 
         # Set tmin properly
-        if not tmin and not use_oseries:
+        if tmin is None and use_oseries is None:
             tmin = ts_tmin
-        elif not tmin:
+        elif tmin is None:
             tmin = max(ts_tmin, self.oseries.index.min())
         else:
             tmin = pd.Timestamp(tmin)
@@ -534,9 +550,9 @@ class Model:
                 tmin = ts_tmin
 
         # Set tmax properly
-        if not tmax and not use_oseries:
+        if tmax is None and use_oseries is None:
             tmax = ts_tmax
-        elif not tmax:
+        elif tmax is None:
             tmax = min(ts_tmax, self.oseries.index.max())
         else:
             tmax = pd.Timestamp(tmax)
@@ -552,7 +568,7 @@ class Model:
                 tmax = ts_tmax
 
         # adjust tmin and tmax so that the time-offset is equal to the tseries.
-        if not freq:
+        if freq is None:
             freq = self.settings["freq"]
         tmin = tmin - get_time_offset(tmin, freq) + self.time_offset
         tmax = tmax - get_time_offset(tmax, freq) + self.time_offset
@@ -576,7 +592,6 @@ class Model:
         for tseries in self.tseriesdict.values():
             if tseries.stress:
                 # calculate the offset from the default frequency
-                # TODO: maybe implement a more formal method?
                 time_offset = get_time_offset(list(tseries.stress.values())[
                                                   0].index[0],
                                               self.settings["freq"])
@@ -688,7 +703,6 @@ class Model:
             return pd.Series(s, index=t, name=name)
 
     def get_stress(self, name):
-        # TODO: Rewrite function. possibly add a @property to these get_methods.
         try:
             p = self.parameters.loc[
                 self.parameters.name == name, 'optimal'].values

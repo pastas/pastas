@@ -22,14 +22,16 @@ class TimeSeries(pd.Series):
                     "fill_nan": "drop", "fill_before": None, "fill_after":
                         None},
         "prec": {"freq": "D", "sample_up": "mean", "sample_down": "sum",
-                 "fill_nan": 0.0, "fill_before": None, "fill_after": None},
+                 "fill_nan": 0.0, "fill_before": "mean", "fill_after": "mean"},
         "evap": {"freq": "D", "sample_up": "interpolate", "sample_down": "sum",
-                 "fill_nan": "interpolate", "fill_before": None, "fill_after":
-                     None},
+                 "fill_nan": "interpolate", "fill_before": "mean",
+                 "fill_after": "mean"},
         "well": {"freq": "D", "sample_up": "bfill", "sample_down": "sum",
-                 "fill_nan": None, "fill_before": None, "fill_after": None},
-        "none": {"freq": "D", "sample_up": None, "sample_down": None,
-                 "fill_nan": None, "fill_before": None, "fill_after": None},
+                 "fill_nan": 0.0, "fill_before": 0.0, "fill_after": 0.0},
+        "waterlevel": {"freq": "D", "sample_up": "mean",
+                       "sample_down": "interpolate",
+                       "fill_nan": "interpolate",
+                       "fill_before": "mean", "fill_after": "mean"},
     }
 
     def __init__(self, stress, name=None, type=None, settings=None, **kwargs):
@@ -69,10 +71,21 @@ class TimeSeries(pd.Series):
 
         # Options when creating the series
         self.type = type
+
+        self.settings = dict(
+            freq="D",
+            sample_up=None,
+            sample_down=None,
+            fill_nan=None,
+            fill_before=None,
+            fill_after=None,
+            tmin=None,
+            tmax=None,
+            norm=None
+        )
+
         if type in self._type_options.keys():
-            self.settings = self._type_options[type]
-        else:
-            self.settings = self._type_options["none"]
+            self.settings.update(self._type_options[type])
 
         # Update the options with user-provided values, if any.
         if settings:
@@ -167,7 +180,7 @@ class TimeSeries(pd.Series):
         """
 
         # Get the validated stress to start with
-        stress = self.stress
+        stress = self.stress.copy(deep=True)
 
         if kwargs:
             # Update the options with any provided arguments
@@ -175,11 +188,9 @@ class TimeSeries(pd.Series):
 
             # Update the stress with the new settings
             stress = self.change_frequency(stress)
-
-            if "start" in kwargs:
-                stress = self.fill_before(stress)
-            if "end" in kwargs:
-                stress = self.fill_after(stress)
+            stress = self.fill_before(stress)
+            stress = self.fill_after(stress)
+            stress = self.normalize(stress)
 
             self._update_inplace(stress)
 
@@ -343,69 +354,93 @@ class TimeSeries(pd.Series):
 
         Parameters
         ----------
-        method
-        period
+        stress: pandas.Series
+            the stress series which are updated.
 
         Returns
         -------
+        stress updated with the new tmin and
 
         """
 
-        # method = self.options["fill_before"]
         freq = self.settings["freq"]
+        method = self.settings["fill_before"]
+        tmin = self.settings["tmin"]
 
-        # If no index is provided, use the fill_before_period
-        if not index:
-            period = self.settings["fill_before_period"]
-            index_extend = pd.date_range(end=self.index.min() - 1,
-                                         periods=period, freq=freq)
-            index = self.index.union(index_extend)
+        if tmin is None:
+            pass
+        elif pd.Timestamp(tmin) >= stress.index.min():
+            pass
+        else:
+            index_extend = pd.date_range(start=tmin, end=stress.index.min(),
+                                         freq=freq)
+            index = self.index.union(index_extend[:-1])
+            stress = stress.reindex(index)
 
-        self.index.reindex(index)
+            if method == 'mean':
+                stress.fillna(stress.mean(), inplace=True)  # Default option
+            elif type(method) == float:
+                stress.fillna(method, inplace=True)
+            else:
+                warn('User-defined option for sample_up %s is not '
+                     'supported' % method)
 
         return stress
 
     def fill_after(self, stress):
+        """Method to add a period in front of the available time series
+
+        Parameters
+        ----------
+        stress: pandas.Series
+            the stress series which are updated.
+
+        Returns
+        -------
+        stress updated with the new tmin and
+
+        """
+
+        freq = self.settings["freq"]
+        method = self.settings["fill_after"]
+        tmax = self.settings["tmax"]
+
+        if tmax is None:
+            pass
+        elif pd.Timestamp(tmax) <= stress.index.max():
+            pass
+        else:
+            index_extend = pd.date_range(start=tmax, end=stress.index.max(),
+                                         freq=freq)
+            index = self.index.union(index_extend[:-1])
+            stress = stress.reindex(index)
+
+            if method == 'mean':
+                stress.fillna(stress.mean(), inplace=True)  # Default option
+            elif type(method) == float:
+                stress.fillna(method, inplace=True)
+            else:
+                warn('User-defined option for sample_up %s is not '
+                     'supported' % method)
+
         return stress
 
-    def normalize_series(self):
+    def normalize(self, stress):
         """
 
         Returns
         -------
 
         """
-        return None
 
-    def change_index(self, index):
-        # reindex the original
-        stress = self.reindex(index)
+        method = self.settings["norm"]
 
-        # add data before and after this period, if needed
-        if stress.isnull().values.any():
-            if isinstance(stress, pd.Series):
-                fillna_value = pd.Series(index=stress.index)
-            else:
-                fillna_value = pd.DataFrame(index=index,
-                                            columns=self.stress.columns)
-            if isinstance(self.fill_before, list) and len(
-                    self.fill_before) > 1:
-                for ind, column in enumerate(fillna_value.columns):
-                    fillna_value.loc[:self.stress.first_valid_index(),
-                    column] = self.fill_before[ind]
-            else:
-                fillna_value[
-                :self.stress.first_valid_index()] = self.fill_before
-            if isinstance(self.fill_after, list) and len(self.fill_after):
-                for ind, column in enumerate(fillna_value.columns):
-                    fillna_value.loc[self.stress.last_valid_index():, column] = \
-                        self.fill_after[ind]
-            else:
-                fillna_value[self.stress.last_valid_index():] = self.fill_after
-            stress = stress.fillna(fillna_value)
+        if method is None:
+            pass
+        elif method == "mean":
+            stress = stress.subtract(stress.mean())
 
-        # save result
-        self._update_inplace(stress)
+        return stress
 
     def export(self):
         """Method to export the Time Series to a json format.
