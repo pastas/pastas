@@ -30,5 +30,5 @@ install:
 
 # command to run tests
 script:
-   - pytest ./tests
+   - py.test ./tests --cov=pastas --cov-report=xml
 
