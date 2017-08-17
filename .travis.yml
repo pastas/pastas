@@ -6,10 +6,14 @@ env:
     #- DEPENDS="cython>=0.19"
     - NO_NET=1
 
+git:
+    depth: 1000
+
 matrix:
   include:
     - python: 2.7
     - python: 3.5
+    - python: 3.6
 
 # start Virtual X, so default matplotlib backend works
 before_install:
@@ -26,5 +30,5 @@ install:
 
 # command to run tests
 script:
-   - py.test ./tests
+   - pytest ./tests
 
