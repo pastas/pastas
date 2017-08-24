@@ -51,12 +51,14 @@ class Model:
 
     """
 
-    def __init__(self, oseries, constant=True, metadata=None, settings=None):
+    def __init__(self, oseries, constant=True, name="Observations",
+                 metadata=None, settings=None):
         # Construct the different model components
-        self.oseries = TimeSeries(oseries, name="Observations", type="oseries")
+        self.oseries = TimeSeries(oseries, name=name, type="oseries")
         self.odelt = self.oseries.index.to_series().diff() / \
                      np.timedelta64(1, "D")
         self.oseries_calib = None
+        self.name = name
 
         self.parameters = pd.DataFrame(
             columns=['initial', 'name', 'optimal', 'pmin', 'pmax', 'vary'])
@@ -764,7 +766,6 @@ class Model:
             metadata["owner"] = "Unknown"
 
         metadata["xy"] = (0, 0)
-        metadata["name"] = "PASTAS_model"
 
         if meta:  # Update metadata with user-provided metadata if possible
             metadata.update(meta)

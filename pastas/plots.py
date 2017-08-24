@@ -42,7 +42,7 @@ class Plotting():
 
         """
         fig = self._get_figure(**kwargs)
-        fig.suptitle("Results of " + self.ml.metadata["name"])
+        fig.suptitle("Results of " + self.ml.name)
 
         # Get right tmin and tmax
         if not tmin and not tmax:

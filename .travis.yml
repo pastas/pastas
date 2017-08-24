@@ -32,3 +32,5 @@ install:
 script:
    - py.test ./tests --cov=pastas --cov-report=xml
 
+after_success:
+   - codecov

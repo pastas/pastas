@@ -12,13 +12,12 @@ from __future__ import print_function, division
 from warnings import warn
 
 import pandas as pd
-
-from pastas.utils import get_dt
+from pastas.utils import get_dt, get_time_offset
 
 
 class TimeSeries(pd.Series):
     _type_options = {
-        "oseries": {"freq": None, "sample_up": None, "sample_down": None,
+        "oseries": {"freq": "D", "sample_up": None, "sample_down": None,
                     "fill_nan": "drop", "fill_before": None, "fill_after":
                         None},
         "prec": {"freq": "D", "sample_up": "mean", "sample_down": "sum",
@@ -128,12 +127,13 @@ class TimeSeries(pd.Series):
         assert isinstance(stress, pd.Series), 'Expected a Pandas Series, ' \
                                               'got %s' % type(stress)
 
+        # 4. Make sure the indices are Timestamps and sorted
+        stress.index = pd.to_datetime(stress.index)
+        stress.sort_index(inplace=True)
+
         # 2. Drop nan-values at the beginning and end of the time series
         stress = stress.loc[stress.first_valid_index():stress.last_valid_index(
         )].copy(deep=True)
-
-        # 4. Make sure the indices are Timestamps
-        stress.index = pd.to_datetime(stress.index)
 
         # 3. Find the frequency of the original series
         freq = pd.infer_freq(stress.index)
@@ -224,7 +224,7 @@ class TimeSeries(pd.Series):
 
         # 4. If new frequency is equal to its original.
         elif get_dt(freq) == get_dt(self.freq_original):
-            stress = self.sample_up(stress)
+            stress = self.fill_nan(stress)
         else:
             stress = self.stress
 
@@ -372,6 +372,10 @@ class TimeSeries(pd.Series):
         elif pd.Timestamp(tmin) >= stress.index.min():
             pass
         else:
+            # When time offsets are not equal
+            time_offset = get_time_offset(tmin, freq)
+            tmin = tmin - time_offset
+
             index_extend = pd.date_range(start=tmin, end=stress.index.min(),
                                          freq=freq)
             index = self.index.union(index_extend[:-1])
@@ -410,6 +414,9 @@ class TimeSeries(pd.Series):
         elif pd.Timestamp(tmax) <= stress.index.max():
             pass
         else:
+            # When time offsets are not equal
+            time_offset = get_time_offset(tmax, freq)
+            tmax = tmax - time_offset
             index_extend = pd.date_range(start=tmax, end=stress.index.max(),
                                          freq=freq)
             index = self.index.union(index_extend[:-1])
