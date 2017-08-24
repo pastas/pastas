@@ -163,7 +163,10 @@ class Plotting():
         height_ratios = [max([hsim.max(), self.ml.oseries.max()]) - min(
             [hsim.min(), self.ml.oseries.min()])]
         for ht in h[1:]:
-            height_ratios.append(ht.max() - ht.min())
+            hr = ht.max() - ht.min()
+            if np.isnan(hr):
+                hr = 0.0
+            height_ratios.append(hr)
 
         fig, ax = plt.subplots(1 + len(self.ml.tseriesdict), sharex=True,
                                gridspec_kw={'height_ratios': height_ratios})
