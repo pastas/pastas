@@ -403,8 +403,8 @@ class Model:
         # Prepare tseries stresses
         for ts in self.tseriesdict.values():
             ts.update_stress(freq=self.settings["freq"],
-                             tmin=self.oseries_calib.index.min(),
-                             tmax=self.oseries_calib.index.max())
+                             tmin=self.sim_index.min(),
+                             tmax=self.sim_index.max())
 
         self.interpolate_simulation = self.oseries_calib.index.difference(
             self.sim_index).size != 0

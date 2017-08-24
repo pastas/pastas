@@ -372,6 +372,7 @@ class TimeSeries(pd.Series):
         elif pd.Timestamp(tmin) >= stress.index.min():
             pass
         else:
+            tmin = pd.Timestamp(tmin)
             # When time offsets are not equal
             time_offset = get_time_offset(tmin, freq)
             tmin = tmin - time_offset
