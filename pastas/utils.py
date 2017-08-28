@@ -1,4 +1,3 @@
-import datetime
 import pandas as pd
 
 
@@ -30,25 +29,25 @@ def get_time_offset(t, freq):
 
     # define the function blocks
     def calc_week_offset(t):
-        return datetime.timedelta(days=t.weekday(), hours=t.hour,
+        return pd.Timedelta(days=t.weekday(), hours=t.hour,
                                   minutes=t.minute, seconds=t.second)
 
     def calc_day_offset(t):
-        return datetime.timedelta(hours=t.hour, minutes=t.minute,
+        return pd.Timedelta(hours=t.hour, minutes=t.minute,
                                   seconds=t.second)
 
     def calc_hour_offset(t):
-        return datetime.timedelta(minutes=t.minute, seconds=t.second)
+        return pd.Timedelta(minutes=t.minute, seconds=t.second)
 
     def calc_minute_offset(t):
-        return datetime.timedelta(seconds=t.second)
+        return pd.Timedelta(seconds=t.second)
 
     def calc_second_offset(t):
-        return datetime.timedelta(microseconds=t.microsecond)
+        return pd.Timedelta(microseconds=t.microsecond)
 
     def calc_millisecond_offset(t):
         # t has no millisecond attribute, so use microsecond and use the remainder after division by 1000
-        return datetime.timedelta(microseconds=t.microsecond % 1000.0)
+        return pd.Timedelta(microseconds=t.microsecond % 1000.0)
 
     # map the inputs to the function blocks see
     # http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases

@@ -12,7 +12,7 @@ from __future__ import print_function, division
 from warnings import warn
 
 import pandas as pd
-from pastas.utils import get_dt, get_time_offset
+from .utils import get_dt, get_time_offset
 
 
 class TimeSeries(pd.Series):
@@ -458,7 +458,7 @@ class TimeSeries(pd.Series):
 
         """
         data = dict()
-        data["stress"] = self.stress_original.to_json(date_format='iso')
+        data["stress"] = self.stress_original
         data["options"] = self.settings
         data["name"] = self.name
         data["type"] = self.type

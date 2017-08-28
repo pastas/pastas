@@ -1,6 +1,5 @@
 from __future__ import print_function, division
 
-import datetime
 import importlib
 import os
 from collections import OrderedDict
@@ -56,7 +55,7 @@ class Model:
         # Construct the different model components
         self.oseries = TimeSeries(oseries, name=name, type="oseries")
         self.odelt = self.oseries.index.to_series().diff() / \
-                     np.timedelta64(1, "D")
+                     pd.Timedelta(1, "D")
         self.oseries_calib = None
         self.name = name
 
@@ -78,6 +77,7 @@ class Model:
         self.settings["freq"] = "D"
         self.settings["warmup"] = 3650
         self.settings["noise"] = False
+        self.settings["time_offset"] = pd.Timedelta(0)
         if settings:
             self.settings.update(settings)
 
@@ -85,7 +85,6 @@ class Model:
         self.metadata = self.get_metadata(metadata)
 
         # initialize some attributes for solving and simulation
-        self.time_offset = pd.to_timedelta(0)
         self.sim_index = None
         self.interpolate_simulation = None
         self.fit = None
@@ -572,8 +571,10 @@ class Model:
         # adjust tmin and tmax so that the time-offset is equal to the tseries.
         if freq is None:
             freq = self.settings["freq"]
-        tmin = tmin - get_time_offset(tmin, freq) + self.time_offset
-        tmax = tmax - get_time_offset(tmax, freq) + self.time_offset
+        tmin = tmin - get_time_offset(tmin, freq) + self.settings[
+            "time_offset"]
+        tmax = tmax - get_time_offset(tmax, freq) + self.settings[
+            "time_offset"]
 
         assert tmax > tmin, \
             'Error: Specified tmax not larger than specified tmin'
@@ -603,9 +604,9 @@ class Model:
             time_offsets) <= 1, 'The time-differences with the default ' \
                                 'frequency is not the same for all stresses.'
         if len(time_offsets) == 1:
-            self.time_offset = next(iter(time_offsets))
+            self.settings["time_offset"] = next(iter(time_offsets))
         else:
-            self.time_offset = datetime.timedelta(0)
+            self.settings["time_offset"] = pd.Timedelta(0)
 
     def get_init_parameters(self, noise=True, initial=True):
         """Method to get all initial parameters from the individual objects.
@@ -756,9 +757,8 @@ class Model:
 
         """
         metadata = {}
-        now = pd.datetime.now().strftime("%Y-%m-%d")
-        metadata["date_created"] = now
-        metadata["date_modified"] = now
+        metadata["date_created"] = pd.Timestamp.now()
+        metadata["date_modified"] = pd.Timestamp.now()
         metadata["pastas_version"] = __version__
         try:
             metadata["owner"] = os.getlogin()
@@ -810,11 +810,10 @@ class Model:
             data["noisemodel"] = self.noisemodel.export()
 
         # Parameters
-        data["parameters"] = self.parameters.to_dict()
+        data["parameters"] = self.parameters
 
         # Metadata
-        now = pd.datetime.now().strftime("%Y-%m-%d")
-        self.metadata["date_modified"] = now
+        self.metadata["date_modified"] = pd.Timestamp.now()
         data["metadata"] = self.metadata
 
         # Simulation Settings

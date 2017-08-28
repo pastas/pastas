@@ -17,7 +17,7 @@ def import_model(fname):
     import_mod = importlib.import_module(ext, "pastas")
 
     # Get dicts for all data sources
-    data = import_mod.export_data(fname)
+    data = import_mod.import_data(fname)
 
 
     # Create model
