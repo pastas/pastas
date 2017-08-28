@@ -85,7 +85,7 @@ class TseriesBase:
 
         """
         for stress in self.stress.values():
-            stress.update_stress(**kwargs)
+            stress.update_series(**kwargs)
 
         if "freq" in kwargs:
             self.freq = kwargs["freq"]
@@ -195,6 +195,11 @@ class Tseries(TseriesBase):
             h = h[tindex]
         return h
 
+    def export(self):
+        data = dict()
+
+
+        return data
 
 class Tseries2(TseriesBase):
     """Time series model consisting of the convolution of two stresses with one
@@ -240,7 +245,7 @@ class Tseries2(TseriesBase):
                          settings=settings[1])
 
         # Select indices from validated stress where both series are available.
-        index = ts0.stress.index & ts1.stress.index
+        index = ts0.series.index & ts1.series.index
 
         # First check the series, then determine tmin and tmax
         stress0 = TimeSeries(stress0[index], name="stress0", type=type[0],
@@ -362,7 +367,7 @@ class Recharge(TseriesBase):
                            settings=settings[0])
 
         # Select indices where both series are available
-        index = prec1.stress.index & evap1.stress.index
+        index = prec1.series.index & evap1.series.index
 
         if index.size is 0:
             raise Warning('The two stresses that were provided have no '

@@ -1,6 +1,5 @@
 from __future__ import print_function, division
 
-import importlib
 import os
 from collections import OrderedDict
 from warnings import warn
@@ -15,6 +14,7 @@ from .stats import Statistics
 from .timeseries import TimeSeries
 from .tseries import Constant
 from .utils import get_dt, get_time_offset
+from .io.base import dump
 from .version import __version__
 
 
@@ -76,8 +76,9 @@ class Model:
         self.settings["tmax"] = None
         self.settings["freq"] = "D"
         self.settings["warmup"] = 3650
-        self.settings["noise"] = False
         self.settings["time_offset"] = pd.Timedelta(0)
+        self.settings["noise"] = False
+        self.settings["solver"] = None
         if settings:
             self.settings.update(settings)
 
@@ -460,6 +461,7 @@ class Model:
         self.initialize(tmin, tmax, freq, warmup, noise, initial)
 
         # Solve model
+        self.settings["solver"] = solver.__name__
         fit = solver(self, tmin=self.settings["tmin"],
                      tmax=self.settings["tmax"], noise=noise,
                      freq=self.settings["freq"], weights=weights, **kwargs)
@@ -822,14 +824,9 @@ class Model:
         return data
 
     def export(self, fname):
-        # Dynamic import of the export module depending on file type
-        ext = os.path.splitext(fname)[1]
-        ext = ext.replace('.', '')
-        ext = '.io.' + ext + '.export'
-        export_mod = importlib.import_module(ext, "pastas")
 
         # Get dicts for all data sources
         data = self.export_data()
 
         # Write the dicts to a file
-        export_mod.export(fname, data)
+        return dump(fname, data)

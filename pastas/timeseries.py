@@ -12,11 +12,12 @@ from __future__ import print_function, division
 from warnings import warn
 
 import pandas as pd
+
 from .utils import get_dt, get_time_offset
 
 
 class TimeSeries(pd.Series):
-    _type_options = {
+    _type_settings = {
         "oseries": {"freq": "D", "sample_up": None, "sample_down": None,
                     "fill_nan": "drop", "fill_before": None, "fill_after":
                         None},
@@ -33,17 +34,17 @@ class TimeSeries(pd.Series):
                        "fill_before": "mean", "fill_after": "mean"},
     }
 
-    def __init__(self, stress, name=None, type=None, settings=None, **kwargs):
+    def __init__(self, series, name=None, type=None, settings=None, **kwargs):
         """Class that supports or user-provided time series within PASTAS.
 
         Parameters
         ----------
-        stress: pandas.Series
-            original stress series, which will be stored
+        series: pandas.Series
+            original series, which will be stored.
         name: str
-            string with the name for this stress
+            string with the name for this series.
         type: str
-            string with the type of the stress, to autocomplete the
+            string with the type of the series, to autocomplete the
             following keywords. The user can choose from: oseries, evap,
             prec, well.
         freq: str
@@ -63,8 +64,8 @@ class TimeSeries(pd.Series):
         """
         pd.Series.__init__(self)
 
-        # Store a copy of the original stress
-        self.stress_original = stress.copy()
+        # Store a copy of the original series
+        self.series_original = series.copy()
         self.freq_original = None
         self.name = name
 
@@ -83,8 +84,8 @@ class TimeSeries(pd.Series):
             norm=None
         )
 
-        if type in self._type_options.keys():
-            self.settings.update(self._type_options[type])
+        if type in self._type_settings.keys():
+            self.settings.update(self._type_settings[type])
 
         # Update the options with user-provided values, if any.
         if settings:
@@ -92,24 +93,24 @@ class TimeSeries(pd.Series):
         if kwargs:
             self.settings.update(kwargs)
 
-        # Create a validated stress for computations
-        self.stress = self.validate_stress(stress)
+        # Create a validated series for computations
+        self.series = self.validate_series(series)
 
         # Finally, update the TimeSeries so it is ready for simulation
-        self.update_stress(**self.settings)
+        self.update_series(**self.settings)
 
-    def validate_stress(self, stress):
+    def validate_series(self, series):
         """ This method performs some PASTAS specific tests for the TimeSeries.
 
         Parameters
         ----------
-        stress: pd.Series
-            Pandas series object containing the stress time series.
+        series: pd.Series
+            Pandas series object containing the series time series.
 
         Returns
         -------
-        stress: pandas.Series
-            The validated stress as pd.Series
+        series: pandas.Series
+            The validated series as pd.Series
 
         Notes
         -----
@@ -123,20 +124,20 @@ class TimeSeries(pd.Series):
 
         """
 
-        # 1. Check if stress is a Pandas Series
-        assert isinstance(stress, pd.Series), 'Expected a Pandas Series, ' \
-                                              'got %s' % type(stress)
+        # 1. Check if series is a Pandas Series
+        assert isinstance(series, pd.Series), 'Expected a Pandas Series, ' \
+                                              'got %s' % type(series)
 
         # 4. Make sure the indices are Timestamps and sorted
-        stress.index = pd.to_datetime(stress.index)
-        stress.sort_index(inplace=True)
+        series.index = pd.to_datetime(series.index)
+        series.sort_index(inplace=True)
 
         # 2. Drop nan-values at the beginning and end of the time series
-        stress = stress.loc[stress.first_valid_index():stress.last_valid_index(
+        series = series.loc[series.first_valid_index():series.last_valid_index(
         )].copy(deep=True)
 
         # 3. Find the frequency of the original series
-        freq = pd.infer_freq(stress.index)
+        freq = pd.infer_freq(series.index)
 
         if freq:
             self.freq_original = freq
@@ -154,20 +155,20 @@ class TimeSeries(pd.Series):
                      (self.name))
 
         # 3. drop nan-values
-        if stress.hasnans:
-            stress = self.fill_nan(stress)
+        if series.hasnans:
+            series = self.fill_nan(series)
 
         # 5. Handle duplicate indices
-        if not stress.index.is_unique:
+        if not series.index.is_unique:
             print('duplicate time-indexes were found in the Time Series %s. '
                   'Values were averaged.' % (self.name))
-            grouped = stress.groupby(level=0)
-            stress = grouped.mean()
+            grouped = series.groupby(level=0)
+            series = grouped.mean()
 
-        return stress
+        return series
 
-    def update_stress(self, **kwargs):
-        """Method to update the stress with new options, but most likely
+    def update_series(self, **kwargs):
+        """Method to update the series with new options, but most likely
         only a change in the frequency before solving a PASTAS model.
 
         Parameters
@@ -179,22 +180,22 @@ class TimeSeries(pd.Series):
 
         """
 
-        # Get the validated stress to start with
-        stress = self.stress.copy(deep=True)
+        # Get the validated series to start with
+        series = self.series.copy(deep=True)
 
         if kwargs:
             # Update the options with any provided arguments
             self.settings.update(kwargs)
 
-            # Update the stress with the new settings
-            stress = self.change_frequency(stress)
-            stress = self.fill_before(stress)
-            stress = self.fill_after(stress)
-            stress = self.normalize(stress)
+            # Update the series with the new settings
+            series = self.change_frequency(series)
+            series = self.fill_before(series)
+            series = self.fill_after(series)
+            series = self.normalize(series)
 
-            self._update_inplace(stress)
+            self._update_inplace(series)
 
-    def change_frequency(self, stress):
+    def change_frequency(self, series):
         """Method to change the frequency of the time series.
 
         Parameters
@@ -216,31 +217,31 @@ class TimeSeries(pd.Series):
 
         # 2. If new frequency is lower than its original.
         elif get_dt(freq) < get_dt(self.freq_original):
-            stress = self.sample_up(stress)
+            series = self.sample_up(series)
 
         # 3. If new frequency is higher than its original, downsample.
         elif get_dt(freq) > get_dt(self.freq_original):
-            stress = self.sample_down(stress)
+            series = self.sample_down(series)
 
         # 4. If new frequency is equal to its original.
         elif get_dt(freq) == get_dt(self.freq_original):
-            stress = self.fill_nan(stress)
+            series = self.fill_nan(series)
         else:
-            stress = self.stress
+            series = self.series
 
         # Drop nan-values at the beginning and end of the time series
-        stress = stress.loc[
-                 stress.first_valid_index():stress.last_valid_index()]
+        series = series.loc[
+                 series.first_valid_index():series.last_valid_index()]
 
-        return stress
+        return series
 
-    def sample_up(self, stress):
+    def sample_up(self, series):
         """Resample the time series when the frequency increases (e.g. from
         weekly to daily values).
 
         Parameters
         ----------
-        stress
+        series
 
         Returns
         -------
@@ -250,25 +251,25 @@ class TimeSeries(pd.Series):
         freq = self.settings["freq"]
 
         if method in ['backfill', 'bfill', 'pad', 'ffill']:
-            stress = stress.asfreq(freq, method=method)
+            series = series.asfreq(freq, method=method)
         else:
-            stress = stress.asfreq(freq)
+            series = series.asfreq(freq)
             if method == 'mean':
-                stress.fillna(stress.mean(), inplace=True)  # Default option
+                series.fillna(series.mean(), inplace=True)  # Default option
             elif method == 'interpolate':
-                stress.interpolate(method='time', inplace=True)
+                series.interpolate(method='time', inplace=True)
             elif type(method) == float:
-                stress.fillna(method, inplace=True)
+                series.fillna(method, inplace=True)
             else:
                 warn('User-defined option for sample_up %s is not '
                      'supported' % method)
 
         print('%i nan-value(s) was/were found and filled with: %s'
-              % (stress.isnull().values.sum(), method))
+              % (series.isnull().values.sum(), method))
 
-        return stress
+        return series
 
-    def sample_down(self, stress):
+    def sample_down(self, series):
         """Resample the time series when the frequency decreases (e.g. from
         daily to weekly values).
 
@@ -290,15 +291,15 @@ class TimeSeries(pd.Series):
         kwargs = {"label": 'right', "closed": 'right'}
 
         if method == "mean":
-            stress = stress.resample(freq, **kwargs).mean()
+            series = series.resample(freq, **kwargs).mean()
         elif method == "drop":
-            stress = stress.resample(freq, **kwargs).dropna()
+            series = series.resample(freq, **kwargs).dropna()
         elif method == "sum":
-            stress = stress.resample(freq, **kwargs).sum()
+            series = series.resample(freq, **kwargs).sum()
         elif method == "min":
-            stress = stress.resample(freq, **kwargs).min()
+            series = series.resample(freq, **kwargs).min()
         elif method == "max":
-            stress = stress.resample(freq, **kwargs).max()
+            series = series.resample(freq, **kwargs).max()
         else:
             warn('User-defined option for sample_down %s is not '
                  'supported' % method)
@@ -306,21 +307,21 @@ class TimeSeries(pd.Series):
         print("Time Series %s were sampled down to freq %s with method %s" %
               (self.name, freq, method))
 
-        return stress
+        return series
 
-    def fill_nan(self, stress):
+    def fill_nan(self, series):
         """Fill up the nan-values when present and a constant frequency is
         required.
 
         Parameters
         ----------
-        stress: pandas.Series
-            stress series with nan-values
+        series: pandas.Series
+            series series with nan-values
 
         Returns
         -------
-        stress: pandas.Series
-            stress series with the nan-values filled up.
+        series: pandas.Series
+            series series with the nan-values filled up.
 
         """
 
@@ -328,38 +329,38 @@ class TimeSeries(pd.Series):
         freq = self.freq_original
 
         if freq:
-            stress = stress.asfreq(freq)
+            series = series.asfreq(freq)
 
             if method == "drop":
-                stress.dropna(inplace=True)
+                series.dropna(inplace=True)
             elif method == 'mean':
-                stress.fillna(stress.mean(), inplace=True)  # Default option
+                series.fillna(series.mean(), inplace=True)  # Default option
             elif method == 'interpolate':
-                stress.interpolate(method='time', inplace=True)
+                series.interpolate(method='time', inplace=True)
             elif type(method) == float:
-                stress.fillna(method, inplace=True)
+                series.fillna(method, inplace=True)
             else:
                 warn('User-defined option for sample_up %s is not '
                      'supported' % method)
         else:
-            stress.dropna(inplace=True)
+            series.dropna(inplace=True)
 
         print('%i nan-value(s) was/were found and filled with: %s'
-              % (stress.isnull().values.sum(), method))
+              % (series.isnull().values.sum(), method))
 
-        return stress
+        return series
 
-    def fill_before(self, stress):
+    def fill_before(self, series):
         """Method to add a period in front of the available time series
 
         Parameters
         ----------
-        stress: pandas.Series
-            the stress series which are updated.
+        series: pandas.Series
+            the series series which are updated.
 
         Returns
         -------
-        stress updated with the new tmin and
+        series updated with the new tmin and
 
         """
 
@@ -369,7 +370,7 @@ class TimeSeries(pd.Series):
 
         if tmin is None:
             pass
-        elif pd.Timestamp(tmin) >= stress.index.min():
+        elif pd.Timestamp(tmin) >= series.index.min():
             pass
         else:
             tmin = pd.Timestamp(tmin)
@@ -377,32 +378,32 @@ class TimeSeries(pd.Series):
             time_offset = get_time_offset(tmin, freq)
             tmin = tmin - time_offset
 
-            index_extend = pd.date_range(start=tmin, end=stress.index.min(),
+            index_extend = pd.date_range(start=tmin, end=series.index.min(),
                                          freq=freq)
             index = self.index.union(index_extend[:-1])
-            stress = stress.reindex(index)
+            series = series.reindex(index)
 
             if method == 'mean':
-                stress.fillna(stress.mean(), inplace=True)  # Default option
+                series.fillna(series.mean(), inplace=True)  # Default option
             elif type(method) == float:
-                stress.fillna(method, inplace=True)
+                series.fillna(method, inplace=True)
             else:
                 warn('User-defined option for sample_up %s is not '
                      'supported' % method)
 
-        return stress
+        return series
 
-    def fill_after(self, stress):
+    def fill_after(self, series):
         """Method to add a period in front of the available time series
 
         Parameters
         ----------
-        stress: pandas.Series
-            the stress series which are updated.
+        series: pandas.Series
+            the series series which are updated.
 
         Returns
         -------
-        stress updated with the new tmin and
+        series updated with the new tmin and
 
         """
 
@@ -412,28 +413,28 @@ class TimeSeries(pd.Series):
 
         if tmax is None:
             pass
-        elif pd.Timestamp(tmax) <= stress.index.max():
+        elif pd.Timestamp(tmax) <= series.index.max():
             pass
         else:
             # When time offsets are not equal
             time_offset = get_time_offset(tmax, freq)
             tmax = tmax - time_offset
-            index_extend = pd.date_range(start=tmax, end=stress.index.max(),
+            index_extend = pd.date_range(start=tmax, end=series.index.max(),
                                          freq=freq)
             index = self.index.union(index_extend[:-1])
-            stress = stress.reindex(index)
+            series = series.reindex(index)
 
             if method == 'mean':
-                stress.fillna(stress.mean(), inplace=True)  # Default option
+                series.fillna(series.mean(), inplace=True)  # Default option
             elif type(method) == float:
-                stress.fillna(method, inplace=True)
+                series.fillna(method, inplace=True)
             else:
                 warn('User-defined option for sample_up %s is not '
                      'supported' % method)
 
-        return stress
+        return series
 
-    def normalize(self, stress):
+    def normalize(self, series):
         """
 
         Returns
@@ -446,20 +447,22 @@ class TimeSeries(pd.Series):
         if method is None:
             pass
         elif method == "mean":
-            stress = stress.subtract(stress.mean())
+            series = series.subtract(series.mean())
 
-        return stress
+        return series
 
     def export(self):
         """Method to export the Time Series to a json format.
 
         Returns
         -------
-
+        data: dict
+            dictionary with the necessary information to recreate the
+            TimeSeries object completely.
         """
         data = dict()
-        data["stress"] = self.stress_original
-        data["options"] = self.settings
+        data["series"] = self.series_original
+        data["settings"] = self.settings
         data["name"] = self.name
         data["type"] = self.type
 
