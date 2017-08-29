@@ -15,7 +15,8 @@ from .timeseries import TimeSeries
 
 
 class TseriesBase:
-    """Tseries Base class called by each Tseries object.
+    _name = "TseriesBase"
+    __doc__ = """Tseries Base class called by each Tseries object.
 
     Attributes
     ----------
@@ -28,12 +29,11 @@ class TseriesBase:
 
     """
 
-    def __init__(self, rfunc, name, xy, metadata, tmin, tmax, up, meanstress,
+    def __init__(self, rfunc, name, metadata, tmin, tmax, up, meanstress,
                  cutoff):
         self.rfunc = rfunc(up, meanstress, cutoff)
         self.nparam = self.rfunc.nparam
         self.name = name
-        self.xy = xy
         self.metadata = metadata
         self.tmin = tmin
         self.tmax = tmax
@@ -116,7 +116,8 @@ class TseriesBase:
 
 
 class Tseries(TseriesBase):
-    """Time series model consisting of the convolution of one stress with one
+    _name = "Tseries"
+    __doc__ = """Time series model consisting of the convolution of one stress with one
     response function.
 
     Parameters
@@ -152,14 +153,12 @@ class Tseries(TseriesBase):
 
     """
 
-    def __init__(self, stress, rfunc, name, metadata=None, xy=(0, 0),
-                 up=True, cutoff=0.99, type="none", settings=None):
-        stress = TimeSeries(stress, name=name, type=type, settings=settings)
+    def __init__(self, stress, rfunc, name, metadata=None, up=True,
+                 cutoff=0.99, kind=None, settings=None):
+        stress = TimeSeries(stress, name=name, kind=kind, settings=settings)
 
-        TseriesBase.__init__(self, rfunc, name, xy, metadata,
-                             stress.index.min(), stress.index.max(),
-                             up, stress.mean(), cutoff)
-
+        TseriesBase.__init__(self, rfunc, name, metadata, stress.index.min(),
+                             stress.index.max(), up, stress.mean(), cutoff)
         self.freq = stress.settings["freq"]
         self.stress[name] = stress
         self.set_init_parameters()
@@ -196,13 +195,31 @@ class Tseries(TseriesBase):
         return h
 
     def export(self):
+        """Method to export the Tseries object.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct the
+            Tseries object.
+
+        """
         data = dict()
-
-
+        data["tseries_type"] = self._name
+        data["stress"] = self.stress[self.name].series_original
+        data["rfunc"] = self.rfunc._name
+        data["name"] = self.name
+        data["metadata"] = self.metadata
+        data["up"] = True if self.rfunc.up == 1 else False
+        data["cutoff"] = self.rfunc.cutoff
+        data["kind"] = self.stress[self.name].kind
+        data["settings"] = self.stress[self.name].settings
         return data
 
+
 class Tseries2(TseriesBase):
-    """Time series model consisting of the convolution of two stresses with one
+    _name = "Tseries2"
+    __doc__ = """Time series model consisting of the convolution of two stresses with one
     response function. The first stress causes the head to go up and the second
     stress causes the head to go down.
 
@@ -234,23 +251,21 @@ class Tseries2(TseriesBase):
 
     """
 
-    def __init__(self, stress0, stress1, rfunc, name, metadata=None, xy=(0, 0),
-                 up=True, cutoff=0.99, type=("prec", "evap"),
-                 settings=(None, None)):
-
+    def __init__(self, stress0, stress1, rfunc, name, metadata=None, up=True,
+                 cutoff=0.99, kind=("prec", "evap"), settings=(None, None)):
         # First check the series, then determine tmin and tmax
-        ts0 = TimeSeries(stress0, name="stress0", type=type[0],
+        ts0 = TimeSeries(stress0, name="stress0", kind=kind[0],
                          settings=settings[0])
-        ts1 = TimeSeries(stress1, name="stress1", type=type[1],
+        ts1 = TimeSeries(stress1, name="stress1", kind=kind[1],
                          settings=settings[1])
 
         # Select indices from validated stress where both series are available.
         index = ts0.series.index & ts1.series.index
 
         # First check the series, then determine tmin and tmax
-        stress0 = TimeSeries(stress0[index], name="stress0", type=type[0],
+        stress0 = TimeSeries(stress0[index], name="stress0", kind=kind[0],
                              settings=settings[0])
-        stress1 = TimeSeries(stress1[index], name="stress1", type=type[1],
+        stress1 = TimeSeries(stress1[index], name="stress1", kind=kind[1],
                              settings=settings[1])
 
         if index.size is 0:
@@ -258,10 +273,9 @@ class Tseries2(TseriesBase):
                  ' indices. Please make sure time indices overlap or apply to '
                  'separate time series objects.')
 
-        TseriesBase.__init__(self, rfunc, name, xy, metadata, index.min(),
+        TseriesBase.__init__(self, rfunc, name, metadata, index.min(),
                              index.max(), up, stress0.mean() - stress1.mean(),
                              cutoff)
-
         self.stress["stress0"] = stress0
         self.stress["stress1"] = stress1
 
@@ -314,9 +328,35 @@ class Tseries2(TseriesBase):
         else:
             print("parameter to calculate the stress is unknown")
 
+    def export(self):
+        """Method to export the Tseries object.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct the
+            Tseries object.
+
+        """
+        data = dict()
+        data["tseries_type"] = self._name
+        data["stress0"] = self.stress["stress0"].series_original
+        data["stress1"] = self.stress["stress1"].series_original
+        data["rfunc"] = self.rfunc._name
+        data["name"] = self.name
+        data["metadata"] = self.metadata
+        data["up"] = True if self.rfunc.up == 1 else False
+        data["cutoff"] = self.rfunc.cutoff
+        data["kind"] = (self.stress["stress0"].kind,
+                        self.stress["stress1"].kind)
+        data["settings"] = (self.stress["stress0"].settings,
+                            self.stress["stress1"].settings)
+        return data
+
 
 class Recharge(TseriesBase):
-    """Time series model performing convolution on groundwater recharge
+    _name = "Recharge"
+    __doc__ = """Time series model performing convolution on groundwater recharge
     calculated from precipitation and evaporation with a single response function.
 
     Parameters
@@ -358,12 +398,11 @@ class Recharge(TseriesBase):
     """
 
     def __init__(self, prec, evap, rfunc, recharge, name, metadata=None,
-                 xy=(0, 0), cutoff=0.99, type=("prec", "evap"),
-                 settings=(None, None)):
+                 cutoff=0.99, kind=("prec", "evap"), settings=(None, None)):
         # Check and name the time series
-        prec1 = TimeSeries(prec, name=name + '_P', type=type[0],
+        prec1 = TimeSeries(prec, name="prec", kind=kind[0],
                            settings=settings[0])
-        evap1 = TimeSeries(evap, name=name + '_E', type=type[0],
+        evap1 = TimeSeries(evap, name="evap", kind=kind[0],
                            settings=settings[0])
 
         # Select indices where both series are available
@@ -376,14 +415,14 @@ class Recharge(TseriesBase):
                           'objects.')
 
         # Store tmin and tmax
-        TseriesBase.__init__(self, rfunc, name, xy, metadata, index.min(),
+        TseriesBase.__init__(self, rfunc, name, metadata, index.min(),
                              index.max(), True, prec.mean() - evap.mean(),
                              cutoff)
 
-        self.stress["prec"] = TimeSeries(prec[index], name=name + '_P',
-                                         type=type[0], settings=settings[0])
-        self.stress["evap"] = TimeSeries(evap[index], name=name + '_E',
-                                         type=type[0], settings=settings[0])
+        self.stress["prec"] = TimeSeries(prec[index], name="prec",
+                                         kind=kind[0], settings=settings[0])
+        self.stress["evap"] = TimeSeries(evap[index], name="evap",
+                                         kind=kind[0], settings=settings[0])
 
         self.freq = self.stress["prec"].settings["freq"]
 
@@ -446,7 +485,9 @@ class Recharge(TseriesBase):
 
 
 class Well(TseriesBase):
-    """Time series model consisting of the convolution of one or more stresses
+    _name = "Well"
+    __doc__ = """Time series model consisting of the convolution of one or more
+    stresses
     with one response function.
 
     Parameters
@@ -481,27 +522,26 @@ class Well(TseriesBase):
 
     """
 
-    def __init__(self, stress, rfunc, name, r=None, metadata=None,
-                 xy=(0, 0), freq=None, fillna='mean', up=True, cutoff=0.99,
-                 fill_before=0.0, fill_after=0.0):
+    def __init__(self, stress, rfunc, name, radius, metadata=None,
+                 up=True, cutoff=0.99, kind="well", settings=None):
         # Check if number of stresses and radii match
-        if len(stress.keys()) != len(r) and r:
+        if len(stress.keys()) != len(radius) and radius:
             warn("The number of stresses applied does not match the number "
                  "of radii provided.")
         else:
-            self.r = r
+            self.r = radius
 
         # Check stresses
-        if type(stress) is pd.Series:
+        if isinstance(stress, pd.Series):
             stress = [stress]
 
-        TseriesBase.__init__(self, rfunc, name, xy, metadata,
+        TseriesBase.__init__(self, rfunc, name, metadata,
                              self.stress.index.min(), self.stress.index.max(),
                              up, self.stress.mean(), cutoff)
 
-        for i, x in enumerate(stress):
-            self.stress[name + str(i)] = TimeSeries(x, name=name, type="well",
-                                                    freq=freq)
+        for i, well in enumerate(stress):
+            self.stress[name + str(i)] = TimeSeries(well, name=name, kind=kind,
+                                                    settings=settings)
 
         self.freq = self.stress[name + "0"].settings["freq"]
         self.set_init_parameters()
@@ -521,19 +561,18 @@ class Well(TseriesBase):
 
 
 class TseriesStep(TseriesBase):
-    """A stress consisting of a step resonse from a specified time. The
+    _name = "TseriesStep"
+    __doc__ = """A stress consisting of a step resonse from a specified time. The
     amplitude and form (if rfunc is not One) of the step is calibrated. Before
     t_step the response is zero.
 
     """
 
-    def __init__(self, t_step, name, rfunc=One, xy=None, metadata=None,
-                 up=True):
+    def __init__(self, t_step, name, rfunc=One, metadata=None, up=True):
         assert t_step is not None, 'Error: Need to specify time of step (for now this will not be optimized)'
 
-        TseriesBase.__init__(self, rfunc, name, xy, metadata,
-                             pd.Timestamp.min, pd.Timestamp.max, up, 1.0, None,
-                             0.0, 1.0)
+        TseriesBase.__init__(self, rfunc, name, metadata, pd.Timestamp.min,
+                             pd.Timestamp.max, up, 1.0, None, 0.0, 1.0)
         self.t_step = t_step
         self.set_init_parameters()
 
@@ -553,7 +592,8 @@ class TseriesStep(TseriesBase):
 
 
 class TseriesNoConv(TseriesBase):
-    """Time series model consisting of the calculation of one stress with one
+    _name = "TseriesNoConv"
+    __doc__ = """Time series model consisting of the calculation of one stress with one
     response function, without the use of convolution (so it is slooooow)
 
     Parameters
@@ -581,14 +621,11 @@ class TseriesNoConv(TseriesBase):
 
     """
 
-    def __init__(self, stress, rfunc, name, metadata=None, xy=(0, 0),
-                 freq=None, fillnan='mean', up=True, cutoff=0.99,
-                 fill_before=0.0, fill_after=0.0):
-        stress = TimeSeries(stress, name=name, type="none", freq=freq)
-        TseriesBase.__init__(self, rfunc, name, xy, metadata,
-                             stress.index.min(), stress.index.max(),
-                             up, stress.mean(), cutoff, fill_before,
-                             fill_after)
+    def __init__(self, stress, rfunc, name, metadata=None, up=True,
+                 cutoff=0.99, kind=None, settings=None):
+        stress = TimeSeries(stress, name=name, kind=kind, settings=settings)
+        TseriesBase.__init__(self, rfunc, name, metadata, stress.index.min(),
+                             stress.index.max(), up, stress.mean(), cutoff)
         self.freq = stress.settings["freq"]
         self.stress[name] = stress
         self.set_init_parameters()
@@ -638,7 +675,8 @@ class TseriesNoConv(TseriesBase):
 
 
 class Constant(TseriesBase):
-    """A constant value that is added to the time series model.
+    _name = "Constant"
+    __doc__ = """A constant value that is added to the time series model.
 
     Parameters
     ----------
@@ -648,14 +686,14 @@ class Constant(TseriesBase):
 
     """
 
-    def __init__(self, name, xy=None, metadata=None, value=0.0,
+    def __init__(self, name, metadata=None, value=0.0,
                  pmin=np.nan, pmax=np.nan):
         self.nparam = 1
         self.value = value
         self.pmin = pmin
         self.pmax = pmax
         self.name = "constant"
-        TseriesBase.__init__(self, One, name, xy, metadata,
+        TseriesBase.__init__(self, One, name, metadata,
                              pd.Timestamp.min, pd.Timestamp.max, 1, 0, 0)
         self.set_init_parameters()
 
@@ -670,7 +708,8 @@ class Constant(TseriesBase):
 
 
 class NoiseModel:
-    """Noise model with exponential decay of the residual.
+    _name = "NoiseModel"
+    __doc__ = """Noise model with exponential decay of the residual.
 
     Notes
     -----

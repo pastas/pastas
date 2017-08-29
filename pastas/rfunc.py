@@ -31,6 +31,7 @@ tmax: float
 
 
 class RfuncBase:
+    _name = "RfuncBase"
     def __init__(self, up, meanstress, cutoff):
         if up:
             self.up = 1
@@ -51,6 +52,8 @@ class RfuncBase:
 
 
 class Gamma(RfuncBase):
+    _name = "Gamma"
+
     __doc__ = """Gamma response function with 3 parameters A, a, and n.
 
     .. math::
@@ -93,6 +96,8 @@ class Gamma(RfuncBase):
 
 
 class Exponential(RfuncBase):
+    _name = "Exponential"
+
     __doc__ = """Exponential response function with 2 parameters: A and a.
 
     .. math::
@@ -132,7 +137,8 @@ class Exponential(RfuncBase):
 
 
 class Hantush(RfuncBase):
-    """ The Hantush well function.
+    _name = "Hantush"
+    __doc__ = """ The Hantush well function.
 
     Notes
     -----
@@ -199,7 +205,8 @@ class Hantush(RfuncBase):
 
 
 class Theis(RfuncBase):
-    """The Theis well function.
+    _name = "Theis"
+    __doc__ = """The Theis well function.
 
     Notes
     -----
@@ -245,7 +252,9 @@ class Theis(RfuncBase):
 
 
 class Bruggeman(RfuncBase):
-    """The function of Bruggeman, for a river in a confined aquifer, overlain
+    _name = "Bruggeman"
+    __doc__ = """The function of Bruggeman, for a river in a confined aquifer,
+    overlain
     by an aquitard with aquiferous ditches.
 
     References
@@ -253,6 +262,7 @@ class Bruggeman(RfuncBase):
     http://grondwaterformules.nl/index.php/formules/waterloop/deklaag-met-sloten
 
     """
+
     def __init__(self, up=True, meanstress=1, cutoff=0.99):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 3
@@ -294,7 +304,8 @@ class Bruggeman(RfuncBase):
 
 
 class One(RfuncBase):
-    """Dummy class for Constant. Returns 1
+    _name = "One"
+    __doc__ = """Dummy class for Constant. Returns 1
 
     """
 
@@ -308,7 +319,7 @@ class One(RfuncBase):
         parameters.loc[name + '_d'] = (1, 0, 100, 1, name)
         return parameters
 
-    def gain(self,p):
+    def gain(self, p):
         return p[0]
 
     def step(self, p, dt=1):

@@ -21,7 +21,7 @@ def pastas_hook(obj):
     for key, value in obj.items():
         if key in ["tmin", "tmax", "date_modified", "date_created"]:
             obj[key] = pd.Timestamp(value)
-        elif key in ["series"]:
+        elif key in ["series", "stress", "stress0", "stress1"]:
             obj[key] = pd.read_json(value, typ='series')
         elif key in ["time_offset"]:
             obj[key] = pd.Timedelta(value)

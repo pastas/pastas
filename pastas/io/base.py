@@ -57,16 +57,18 @@ def load(fname, **kwargs):
     ml = ps.Model(oseries, name=name, constant=constant, metadata=metadata,
                   settings=settings)
 
+    # Add tseriesdict
+    for name, ts in data["tseriesdict"].items():
+        tseries = getattr(ps.tseries, ts["tseries_type"])
+        ts.pop("tseries_type")
+        ts["rfunc"] = getattr(ps.rfunc, ts["rfunc"])
+        tseries = tseries(**ts)
+        ml.add_tseries(tseries)
+
     # Add noisemodel if present
     if "noisemodel" in data.keys():
         n = getattr(ps.tseries, data["noisemodel"]["type"])()
         ml.add_noisemodel(n)
-
-    # Add tseriesdict
-    for name, ts in data["tseriesdict"].items():
-        ts = getattr(ps.tseries, ts["type"])
-        # ts = ts(name=name)
-        # ml.add_tseries(ts)
 
     # Add parameters
     ml.parameters = data["parameters"]

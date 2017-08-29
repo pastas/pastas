@@ -26,21 +26,21 @@ ml.add_tseries(ts)
 IN = meny.IN['Extraction 1']
 # extraction amount counts for the previous month
 ts = ps.Tseries(IN['values'], ps.Hantush, 'Extraction_1', up=False,
-                type="well", settings=dict(freq="W"))
+                kind="well", settings=dict(freq="W"))
 ml.add_tseries(ts)
 
 # Add well extraction 2
 IN = meny.IN['Extraction 2']
 # extraction amount counts for the previous month
 ts = ps.Tseries(IN['values'], ps.Hantush, 'Extraction_2', up=False,
-                type="well", settings=dict(freq="W"))
+                kind="well", settings=dict(freq="W"))
 ml.add_tseries(ts)
 
 # Add well extraction 3
 IN = meny.IN['Extraction 3']
 # extraction amount counts for the previous month
 ts = ps.Tseries(IN['values'], ps.Hantush, 'Extraction_3', up=False,
-                type="well", settings=dict(freq="W"))
+                kind="well", settings=dict(freq="W"))
 ml.add_tseries(ts)
 
 # Add noise model

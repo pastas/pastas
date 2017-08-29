@@ -8,13 +8,13 @@ import numpy as np
 import pandas as pd
 from scipy import interpolate
 
+from .io.base import dump
 from .plots import Plotting
 from .solver import LmfitSolve
 from .stats import Statistics
 from .timeseries import TimeSeries
 from .tseries import Constant
 from .utils import get_dt, get_time_offset
-from .io.base import dump
 from .version import __version__
 
 
@@ -53,7 +53,7 @@ class Model:
     def __init__(self, oseries, constant=True, name="Observations",
                  metadata=None, settings=None):
         # Construct the different model components
-        self.oseries = TimeSeries(oseries, name=name, type="oseries")
+        self.oseries = TimeSeries(oseries, name=name, kind="oseries")
         self.odelt = self.oseries.index.to_series().diff() / \
                      pd.Timedelta(1, "D")
         self.oseries_calib = None
@@ -585,7 +585,7 @@ class Model:
 
         return tmin, tmax
 
-    def set_time_offset(self):
+    def set_time_offset(self) -> object:
         """Set the time offset for the model class.
 
         Notes
@@ -597,9 +597,9 @@ class Model:
         for tseries in self.tseriesdict.values():
             if tseries.stress:
                 # calculate the offset from the default frequency
-                time_offset = get_time_offset(list(tseries.stress.values())[
-                                                  0].index[0],
-                                              self.settings["freq"])
+                time_offset = get_time_offset(
+                    list(tseries.stress.values())[0].index.min(),
+                    self.settings["freq"])
                 time_offsets.add(time_offset)
 
         assert len(

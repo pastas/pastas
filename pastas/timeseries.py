@@ -17,7 +17,7 @@ from .utils import get_dt, get_time_offset
 
 
 class TimeSeries(pd.Series):
-    _type_settings = {
+    _kind_settings = {
         "oseries": {"freq": "D", "sample_up": None, "sample_down": None,
                     "fill_nan": "drop", "fill_before": None, "fill_after":
                         None},
@@ -34,7 +34,7 @@ class TimeSeries(pd.Series):
                        "fill_before": "mean", "fill_after": "mean"},
     }
 
-    def __init__(self, series, name=None, type=None, settings=None, **kwargs):
+    def __init__(self, series, name=None, kind=None, settings=None, **kwargs):
         """Class that supports or user-provided time series within PASTAS.
 
         Parameters
@@ -43,8 +43,8 @@ class TimeSeries(pd.Series):
             original series, which will be stored.
         name: str
             string with the name for this series.
-        type: str
-            string with the type of the series, to autocomplete the
+        kind: str
+            string with the kind of the series, to autocomplete the
             following keywords. The user can choose from: oseries, evap,
             prec, well.
         freq: str
@@ -70,7 +70,7 @@ class TimeSeries(pd.Series):
         self.name = name
 
         # Options when creating the series
-        self.type = type
+        self.kind = kind
 
         self.settings = dict(
             freq="D",
@@ -84,8 +84,8 @@ class TimeSeries(pd.Series):
             norm=None
         )
 
-        if type in self._type_settings.keys():
-            self.settings.update(self._type_settings[type])
+        if kind in self._kind_settings.keys():
+            self.settings.update(self._kind_settings[kind])
 
         # Update the options with user-provided values, if any.
         if settings:
@@ -380,7 +380,7 @@ class TimeSeries(pd.Series):
 
             index_extend = pd.date_range(start=tmin, end=series.index.min(),
                                          freq=freq)
-            index = self.index.union(index_extend[:-1])
+            index = series.index.union(index_extend[:-1])
             series = series.reindex(index)
 
             if method == 'mean':
@@ -464,6 +464,6 @@ class TimeSeries(pd.Series):
         data["series"] = self.series_original
         data["settings"] = self.settings
         data["name"] = self.name
-        data["type"] = self.type
+        data["kind"] = self.kind
 
         return data
