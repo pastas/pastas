@@ -179,11 +179,10 @@ class TimeSeries(pd.Series):
                  "fill_before" and "fill_after".
 
         """
-
-        # Get the validated series to start with
-        series = self.series.copy(deep=True)
-
         if kwargs:
+            # Get the validated series to start with
+            series = self.series.copy(deep=True)
+
             # Update the options with any provided arguments
             self.settings.update(kwargs)
 
@@ -197,15 +196,6 @@ class TimeSeries(pd.Series):
 
     def change_frequency(self, series):
         """Method to change the frequency of the time series.
-
-        Parameters
-        ----------
-        freq: str
-            String containing the desired frequency. The required string format
-             is found at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
-
-        Returns
-        -------
 
         """
 
@@ -239,13 +229,6 @@ class TimeSeries(pd.Series):
         """Resample the time series when the frequency increases (e.g. from
         weekly to daily values).
 
-        Parameters
-        ----------
-        series
-
-        Returns
-        -------
-
         """
         method = self.settings["sample_up"]
         freq = self.settings["freq"]
@@ -273,15 +256,11 @@ class TimeSeries(pd.Series):
         """Resample the time series when the frequency decreases (e.g. from
         daily to weekly values).
 
-        Returns
-        -------
-
         Notes
         -----
-
-        # make sure the labels are still at the end of each period, and
-        # data at the right side of the bucket is included (see
-        # http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.resample.html)
+        make sure the labels are still at the end of each period, and
+        data at the right side of the bucket is included (see
+        http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.resample.html)
 
         """
         method = self.settings["sample_down"]
@@ -313,16 +292,6 @@ class TimeSeries(pd.Series):
         """Fill up the nan-values when present and a constant frequency is
         required.
 
-        Parameters
-        ----------
-        series: pandas.Series
-            series series with nan-values
-
-        Returns
-        -------
-        series: pandas.Series
-            series series with the nan-values filled up.
-
         """
 
         method = self.settings["fill_nan"]
@@ -351,16 +320,7 @@ class TimeSeries(pd.Series):
         return series
 
     def fill_before(self, series):
-        """Method to add a period in front of the available time series
-
-        Parameters
-        ----------
-        series: pandas.Series
-            the series series which are updated.
-
-        Returns
-        -------
-        series updated with the new tmin and
+        """Method to add a period in front of the available time series.
 
         """
 
@@ -394,16 +354,7 @@ class TimeSeries(pd.Series):
         return series
 
     def fill_after(self, series):
-        """Method to add a period in front of the available time series
-
-        Parameters
-        ----------
-        series: pandas.Series
-            the series series which are updated.
-
-        Returns
-        -------
-        series updated with the new tmin and
+        """Method to add a period in front of the available time series.
 
         """
 
@@ -435,10 +386,7 @@ class TimeSeries(pd.Series):
         return series
 
     def normalize(self, series):
-        """
-
-        Returns
-        -------
+        """Method to normalize the time series,
 
         """
 
@@ -459,6 +407,7 @@ class TimeSeries(pd.Series):
         data: dict
             dictionary with the necessary information to recreate the
             TimeSeries object completely.
+
         """
         data = dict()
         data["series"] = self.series_original

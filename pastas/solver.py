@@ -34,7 +34,8 @@ from scipy.optimize import least_squares, differential_evolution
 
 
 class BaseSolver:
-    """ Basesolver class that contains the basic function for each solver.
+    _name = "BaseSolver"
+    __doc__ = """Basesolver class that contains the basic function for each solver.
 
     A solver is implemented with a separate init method and objective function
     that returns the necessary format that is required by the specific solver.
@@ -143,7 +144,8 @@ class BaseSolver:
 
 
 class LeastSquares(BaseSolver):
-    """Solving the model using Scipy's least_squares method.
+    _name = "LeastSquares"
+    __doc__ = """Solving the model using Scipy's least_squares method.
 
     Notes
     -----
@@ -208,6 +210,17 @@ class LeastSquares(BaseSolver):
 
 
 class LmfitSolve(BaseSolver):
+    _name = "LmfitSolve"
+    __doc__ = """Solving the model using the LmFit solver. This is basically a
+    wrapper around the scipy solvers, adding some cool functionality for
+    boundary conditions.
+
+    Notes
+    -----
+    https://github.com/lmfit/lmfit-py/
+
+    """
+
     def __init__(self, model, tmin=None, tmax=None, noise=True, freq='D',
                  weights=None, **kwargs):
         BaseSolver.__init__(self)
@@ -238,6 +251,8 @@ class LmfitSolve(BaseSolver):
 
 
 class DESolve(BaseSolver):
+    _name = "DESolve"
+
     def __init__(self, model, tmin=None, tmax=None, noise=True, freq='D'):
         BaseSolver.__init__(self)
 

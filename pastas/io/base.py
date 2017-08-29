@@ -73,6 +73,11 @@ def load(fname, **kwargs):
     # Add parameters
     ml.parameters = data["parameters"]
 
+    print("Pastas model from file %s succesfully loaded. The Pastas-version "
+          "this file was created with was %s. Your current version of Pastas "
+          "is: %s" % (fname, data["metadata"]["pastas_version"],
+                      ps.__version__))
+
     return ml
 
 

@@ -585,7 +585,7 @@ class Model:
 
         return tmin, tmax
 
-    def set_time_offset(self) -> object:
+    def set_time_offset(self):
         """Set the time offset for the model class.
 
         Notes
