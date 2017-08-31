@@ -32,6 +32,7 @@ tmax: float
 
 class RfuncBase:
     _name = "RfuncBase"
+
     def __init__(self, up, meanstress, cutoff):
         if up:
             self.up = 1

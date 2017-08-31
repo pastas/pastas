@@ -26,8 +26,6 @@ class Model:
     oseries: pandas.Series
         pandas Series object containing the dependent time series. The
         observation can be non-equidistant.
-    xy: tuple, optional
-        XY location of the oseries in lat-lon format.
     name: str, optional
         String with the name of the model, used in plotting and saving.
     metadata: dict, optional
@@ -357,7 +355,7 @@ class Model:
         return self.oseries.loc[tmin: tmax]
 
     def initialize(self, tmin=None, tmax=None, freq=None, warmup=None,
-                   noise=True, initial=True):
+                   noise=True, weights=None, initial=True):
         """Initialize the model. This method is called by "solve" but can
         also be triggered manually.
 
@@ -380,6 +378,7 @@ class Model:
                  'is not defined. No noise model is used.')
             noise = False
         self.settings["noise"] = noise
+        self.settings["weights"] = weights
 
         # Set tmin and tmax
         self.settings["tmin"], self.settings["tmax"] = self.get_tmin_tmax(tmin,
@@ -458,13 +457,14 @@ class Model:
         """
 
         # Initialize the model
-        self.initialize(tmin, tmax, freq, warmup, noise, initial)
+        self.initialize(tmin, tmax, freq, warmup, noise, weights, initial)
 
         # Solve model
         self.settings["solver"] = solver.__name__
         fit = solver(self, tmin=self.settings["tmin"],
-                     tmax=self.settings["tmax"], noise=noise,
-                     freq=self.settings["freq"], weights=weights, **kwargs)
+                     tmax=self.settings["tmax"], noise=self.settings["noise"],
+                     freq=self.settings["freq"],
+                     weights=self.settings["weights"], **kwargs)
 
         # make calibration data empty again (was set in initialize)
         self.sim_index = None
@@ -758,7 +758,7 @@ class Model:
             dictionary containing the basic information.
 
         """
-        metadata = {}
+        metadata = dict()
         metadata["date_created"] = pd.Timestamp.now()
         metadata["date_modified"] = pd.Timestamp.now()
         metadata["pastas_version"] = __version__
@@ -774,9 +774,18 @@ class Model:
 
         return metadata
 
-    def export_data(self):
+    def dump_data(self, series=True, sim_series=False, metadata=True):
         """Method to export a PASTAS model to the json export format. Helper
          function for the self.export method.
+
+         Parameters
+         ----------
+         series: Boolean
+            True if the original series are to be stored.
+         sim_series: Boolean
+            True if the simulated series are to be stored.
+         metadata: Boolean
+            True if the model metadata is to be stored.
 
          The following attributes are stored:
 
@@ -798,35 +807,40 @@ class Model:
 
         # Create a dictionary to store all data
         data = dict()
-        data["oseries"] = self.oseries.export()
+        data["oseries"] = self.oseries.export(series=series)
 
         # Tseriesdict
         data["tseriesdict"] = dict()
         for name, ts in self.tseriesdict.items():
-            data["tseriesdict"][name] = ts.export()
+            data["tseriesdict"][name] = ts.dump(series=series)
 
         # Constant
         if self.constant:
             data["constant"] = True
         if self.noisemodel:
-            data["noisemodel"] = self.noisemodel.export()
+            data["noisemodel"] = self.noisemodel.dump()
 
         # Parameters
         data["parameters"] = self.parameters
 
         # Metadata
-        self.metadata["date_modified"] = pd.Timestamp.now()
-        data["metadata"] = self.metadata
+        if metadata:
+            self.metadata["date_modified"] = pd.Timestamp.now()
+            data["metadata"] = self.metadata
 
         # Simulation Settings
         data["settings"] = self.settings
 
+        # Export simulated series if necessary
+        if sim_series:
+            NotImplementedError()
+
         return data
 
-    def export(self, fname):
+    def dump(self, fname):
 
         # Get dicts for all data sources
-        data = self.export_data()
+        data = self.dump_data()
 
         # Write the dicts to a file
         return dump(fname, data)

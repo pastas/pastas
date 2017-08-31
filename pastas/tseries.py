@@ -108,7 +108,7 @@ class TseriesBase:
         else:
             return self.stress
 
-    def export(self):
+    def dump(self, series=True):
         data = dict()
         data["type"] = "TseriesBase"
 
@@ -194,7 +194,7 @@ class Tseries(TseriesBase):
             h = h[tindex]
         return h
 
-    def export(self):
+    def dump(self, series=True):
         """Method to export the Tseries object.
 
         Returns
@@ -328,7 +328,7 @@ class Tseries2(TseriesBase):
         else:
             print("parameter to calculate the stress is unknown")
 
-    def export(self):
+    def dump(self, series=True):
         """Method to export the Tseries object.
 
         Returns
@@ -797,12 +797,12 @@ class NoiseModel:
         """
         innovations = pd.Series(res, index=res.index, name="Innovations")
         # res.values is needed else it gets messed up with the dates
-        innovations[1:] -= np.exp(-delt[1:] / p) * res.values[:-1]
+        innovations[1:] -= np.exp(-delt[1:] / p[0]) * res.values[:-1]
         if tindex is not None:
             innovations = innovations[tindex]
         return innovations
 
-    def export(self):
+    def dump(self):
         data = dict()
-        data["type"] = "NoiseModel"
+        data["type"] = self._name
         return data

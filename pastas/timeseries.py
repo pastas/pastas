@@ -399,7 +399,7 @@ class TimeSeries(pd.Series):
 
         return series
 
-    def export(self):
+    def export(self, series=True):
         """Method to export the Time Series to a json format.
 
         Returns
@@ -410,7 +410,8 @@ class TimeSeries(pd.Series):
 
         """
         data = dict()
-        data["series"] = self.series_original
+        if series:
+            data["series"] = self.series_original
         data["settings"] = self.settings
         data["name"] = self.name
         data["kind"] = self.kind
