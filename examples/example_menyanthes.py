@@ -36,17 +36,17 @@ ts = ps.Tseries(IN['values'], ps.Hantush, 'Extraction_2', up=False,
                 kind="well", settings=dict(freq="W"))
 ml.add_tseries(ts)
 
-# Add well extraction 3
-IN = meny.IN['Extraction 3']
-# extraction amount counts for the previous month
-ts = ps.Tseries(IN['values'], ps.Hantush, 'Extraction_3', up=False,
-                kind="well", settings=dict(freq="W"))
-ml.add_tseries(ts)
+# # Add well extraction 3
+# IN = meny.IN['Extraction 3']
+# # extraction amount counts for the previous month
+# ts = ps.Tseries(IN['values'], ps.Hantush, 'Extraction_3', up=False,
+#                 kind="well", settings=dict(freq="W"))
+# ml.add_tseries(ts)
 
 # Add noise model
 n = ps.NoiseModel()
 ml.add_noisemodel(n)
 
 # Solve
-ml.solve(noise=True, weights="swsi", freq="W")
+ml.solve(noise=True, weights="swsi", freq="D")
 ml.plots.decomposition()

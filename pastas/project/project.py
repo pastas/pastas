@@ -137,7 +137,7 @@ class Project:
 
         return ml
 
-    def del_model(self, model_name):
+    def del_model(self, ml_name):
         """Method to safe-delete a model from the project.
 
         Parameters
@@ -146,7 +146,7 @@ class Project:
             String with the model name.
 
         """
-        return None
+        self.models.pop(ml_name)
 
     def set_stats(self, stats=None):
         if not stats:

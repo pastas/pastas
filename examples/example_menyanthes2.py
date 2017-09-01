@@ -18,9 +18,9 @@ IN = meny.IN['Precipitation']
 IN['values'].index = IN['values'].index.normalize()
 IN2 = meny.IN['Evaporation']
 # round to days (evaporation is measured at 1:00)
-IN2['values'].index = IN2['values'].index.normalize()
-ts = ps.Tseries2(IN['values'], IN2['values'], ps.Gamma, 'Recharge')
-ml.add_tseries(ts)
+# IN2['values'].index = IN2['values'].index.normalize()
+# ts = ps.Tseries2(IN['values'], IN2['values'], ps.Gamma, 'Recharge')
+# ml.add_tseries(ts)
 
 settings = dict(freq='4W')
 
