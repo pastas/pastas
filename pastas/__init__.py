@@ -10,3 +10,4 @@ from .tseries import Tseries, Tseries2, Recharge, Well, TseriesStep, Constant, \
     NoiseModel
 from .timeseries import TimeSeries
 from .version import __version__
+from .project import Project

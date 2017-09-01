@@ -31,6 +31,56 @@ def load(fname, **kwargs):
     # Get dicts for all data sources
     data = load_mod.load(fname, **kwargs)
 
+    # Determine whether it is a Pastas Project or a Pastas Model
+    if "models" in data.keys():
+        ml = load_project(data)
+        kind = "Project"
+    else:
+        ml = load_model(data)
+        kind = "Model"
+
+    print("Pastas %s from file %s succesfully loaded. The Pastas-version "
+          "this file was created with was %s. Your current version of Pastas "
+          "is: %s" % (kind, fname, data["file_info"]["pastas_version"],
+                      ps.__version__))
+
+    return ml
+
+
+def load_project(data):
+    """Method to load a Pastas project.
+
+    Parameters
+    ----------
+    data: dict
+        Dictionary containing all information to construct the project.
+
+    Returns
+    -------
+    mls: Pastas.Project class
+        Pastas Project class object
+
+    """
+
+    mls = ps.Project(name=data["name"])
+
+    mls.metadata = data["metadata"]
+    mls.file_info = data["file_info"]
+
+    # TODO construct tseries dataframe correctly
+    mls.tseries = data["tseries"]
+    # TODO construct oseries dataframe correctly
+    mls.oseries = data["oseries"]
+
+    # TODO use series from oseries and tseries to improve speed.
+    for name, ml in data["models"].items():
+        ml = load_model(ml)
+        mls.models[name] = ml
+
+    return mls
+
+
+def load_model(data):
     # Create model
     oseries = data["oseries"]["series"]
 
@@ -56,6 +106,8 @@ def load(fname, **kwargs):
 
     ml = ps.Model(oseries, name=name, constant=constant, metadata=metadata,
                   settings=settings)
+    if "file_info" in data.keys():
+        ml.file_info = data["file_info"]
 
     # Add tseriesdict
     for name, ts in data["tseriesdict"].items():
@@ -72,11 +124,6 @@ def load(fname, **kwargs):
 
     # Add parameters
     ml.parameters = data["parameters"]
-
-    print("Pastas model from file %s succesfully loaded. The Pastas-version "
-          "this file was created with was %s. Your current version of Pastas "
-          "is: %s" % (fname, data["metadata"]["pastas_version"],
-                      ps.__version__))
 
     return ml
 

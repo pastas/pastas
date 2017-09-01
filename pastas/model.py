@@ -80,8 +80,9 @@ class Model:
         if settings:
             self.settings.update(settings)
 
-        # Metadata
+        # Metadata & File Information
         self.metadata = self.get_metadata(metadata)
+        self.file_info = self.get_file_info()
 
         # initialize some attributes for solving and simulation
         self.sim_index = None
@@ -460,7 +461,7 @@ class Model:
         self.initialize(tmin, tmax, freq, warmup, noise, weights, initial)
 
         # Solve model
-        self.settings["solver"] = solver.__name__
+        self.settings["solver"] = solver._name
         fit = solver(self, tmin=self.settings["tmin"],
                      tmax=self.settings["tmax"], noise=self.settings["noise"],
                      freq=self.settings["freq"],
@@ -759,22 +760,39 @@ class Model:
 
         """
         metadata = dict()
-        metadata["date_created"] = pd.Timestamp.now()
-        metadata["date_modified"] = pd.Timestamp.now()
-        metadata["pastas_version"] = __version__
-        try:
-            metadata["owner"] = os.getlogin()
-        except:
-            metadata["owner"] = "Unknown"
-
-        metadata["xy"] = (0, 0)
+        metadata["y"] = None
+        metadata["x"] = None
+        metadata["z"] = None
+        metadata["projection"] = None
+        metadata["name"] = None
 
         if meta:  # Update metadata with user-provided metadata if possible
             metadata.update(meta)
 
         return metadata
 
-    def dump_data(self, series=True, sim_series=False, metadata=True):
+    def get_file_info(self):
+        """Method to get the file information, mainly used for saving files.
+
+        Returns
+        -------
+        file_info: dict
+            dictionary with file information.
+
+        """
+        file_info = dict()
+        file_info["date_created"] = pd.Timestamp.now()
+        file_info["date_modified"] = pd.Timestamp.now()
+        file_info["pastas_version"] = __version__
+        try:
+            file_info["owner"] = os.getlogin()
+        except:
+            file_info["owner"] = "Unknown"
+
+        return file_info
+
+    def dump_data(self, series=True, sim_series=False, metadata=True,
+                  file_info=True):
         """Method to export a PASTAS model to the json export format. Helper
          function for the self.export method.
 
@@ -807,6 +825,7 @@ class Model:
 
         # Create a dictionary to store all data
         data = dict()
+        data["name"] = self.name
         data["oseries"] = self.oseries.export(series=series)
 
         # Tseriesdict
@@ -825,14 +844,19 @@ class Model:
 
         # Metadata
         if metadata:
-            self.metadata["date_modified"] = pd.Timestamp.now()
             data["metadata"] = self.metadata
 
         # Simulation Settings
         data["settings"] = self.settings
 
+        # Update and save file information
+        if file_info:
+            self.file_info["date_modified"] = pd.Timestamp.now()
+            data["file_info"] = self.file_info
+
         # Export simulated series if necessary
         if sim_series:
+            # TODO dump the simulation, residuals and innovation series.
             NotImplementedError()
 
         return data
