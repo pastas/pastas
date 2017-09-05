@@ -451,7 +451,7 @@ class TimeSeries(pd.Series):
         data = dict()
 
         if key is None:
-            key ="series"
+            key = "series"
 
         if series:
             data[key] = self.series_original

@@ -233,7 +233,7 @@ class Project:
             file_info["owner"] = "Unknown"
         return file_info
 
-    def dump_data(self, series=True, sim_series=False, metadata=True):
+    def dump_data(self, series=False, metadata=True, sim_series=False):
         """Method to export a Pastas Project and return a dictionary with
         the data to be exported.
 
@@ -250,22 +250,35 @@ class Project:
         """
         data = dict(
             name=self.name,
-            oseries=self.oseries,
-            tseries=self.tseries,
             models=dict(),
             metadata=self.metadata,
             file_info=self.file_info
         )
+
+        # Series DataFrame
+        data["oseries"] = self.series_to_dict(self.oseries)
+        data["tseries"] = self.series_to_dict(self.tseries)
+
         # Models
+        data["models"] = dict()
         for name, ml in self.models.items():
             data["models"][name] = ml.dump_data(series=series,
-                                                sim_series=sim_series,
                                                 metadata=metadata,
+                                                sim_series=sim_series,
                                                 file_info=False)
 
         return data
 
-    def dump(self, fname=None):
+    def series_to_dict(self, series):
+        series = series.to_dict(orient="index")
+
+        for name in series.keys():
+            ts = series[name]["series"]
+            series[name]["series"] = ts.dump()
+
+        return series
+
+    def dump(self, fname=None, **kwargs):
         """Method to write a Pastas project to a file.
 
         Parameters
@@ -276,5 +289,5 @@ class Project:
         -------
 
         """
-        data = self.dump_data()
+        data = self.dump_data(**kwargs)
         return ps.io.base.dump(fname, data)

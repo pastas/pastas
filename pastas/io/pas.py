@@ -10,7 +10,7 @@ import json
 from collections import OrderedDict
 
 import pandas as pd
-
+import pastas as ps
 
 def load(fname):
     data = json.load(open(fname), object_hook=pastas_hook)
@@ -22,7 +22,14 @@ def pastas_hook(obj):
         if key in ["tmin", "tmax", "date_modified", "date_created"]:
             obj[key] = pd.Timestamp(value)
         elif key in ["series", "stress", "stress0", "stress1"]:
-            obj[key] = pd.read_json(value, typ='series')
+            try:
+                obj[key] = pd.read_json(value, typ='series')
+            except:
+                try:
+                     obj[key] = ps.TimeSeries(**value)
+                    #obj[key] = json.loads(value, object_hook=pastas_hook)
+                except:
+                    obj[key] = value
         elif key in ["time_offset"]:
             obj[key] = pd.Timedelta(value)
         elif key in ["parameters"]:
@@ -31,7 +38,7 @@ def pastas_hook(obj):
             obj[key] = pd.DataFrame(data=value, columns=value.keys()).T
         else:
             try:
-                json.loads(value, object_hook=pastas_hook)
+                obj[key] = json.loads(value, object_hook=pastas_hook)
             except:
                 obj[key] = value
     return obj
@@ -39,7 +46,6 @@ def pastas_hook(obj):
 
 def dump(fname, data):
     json.dump(data, open(fname, 'w'), indent=4, cls=PastasEncoder)
-
     return print("%s file succesfully exported" % fname)
 
 

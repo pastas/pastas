@@ -5,6 +5,7 @@ Import model
 import importlib
 import os
 
+import pandas as pd
 import pastas as ps
 
 
@@ -67,17 +68,26 @@ def load_project(data):
     mls.metadata = data["metadata"]
     mls.file_info = data["file_info"]
 
-    # TODO construct tseries dataframe correctly
-    mls.tseries = data["tseries"]
-    # TODO construct oseries dataframe correctly
-    mls.oseries = data["oseries"]
+    mls.tseries = pd.DataFrame(data["tseries"],
+                               columns=data["tseries"].keys()).T
 
-    # TODO use series from oseries and tseries to improve speed.
+    mls.oseries = pd.DataFrame(data["oseries"],
+                               columns=data["oseries"].keys()).T
+
     for name, ml in data["models"].items():
+        ml["oseries"]["series"] = mls.oseries.loc[ml["oseries"]["series"],
+                                                  "series"]
+        if ml["tseriesdict"]:
+            for ts in ml["tseriesdict"].values():
+
         ml = load_model(ml)
         mls.models[name] = ml
 
     return mls
+
+
+def load_project_series(series):
+    pass
 
 
 def load_model(data):
