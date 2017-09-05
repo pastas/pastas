@@ -155,7 +155,7 @@ class Tseries(TseriesBase):
 
     def __init__(self, stress, rfunc, name, metadata=None, up=True,
                  cutoff=0.99, kind=None, settings=None):
-        stress = TimeSeries(stress, name=name, kind=kind, settings=settings)
+        stress = TimeSeries(stress, kind=kind, settings=settings)
 
         TseriesBase.__init__(self, rfunc, name, metadata, stress.index.min(),
                              stress.index.max(), up, stress.mean(), cutoff)
@@ -206,14 +206,13 @@ class Tseries(TseriesBase):
         """
         data = dict()
         data["tseries_type"] = self._name
-        data["stress"] = self.stress[self.name].series_original
         data["rfunc"] = self.rfunc._name
         data["name"] = self.name
         data["metadata"] = self.metadata
         data["up"] = True if self.rfunc.up == 1 else False
         data["cutoff"] = self.rfunc.cutoff
-        data["kind"] = self.stress[self.name].kind
-        data["settings"] = self.stress[self.name].settings
+        data.update(self.stress["stress"].dump(series=series, key="stress"))
+
         return data
 
 
@@ -254,18 +253,16 @@ class Tseries2(TseriesBase):
     def __init__(self, stress0, stress1, rfunc, name, metadata=None, up=True,
                  cutoff=0.99, kind=("prec", "evap"), settings=(None, None)):
         # First check the series, then determine tmin and tmax
-        ts0 = TimeSeries(stress0, name="stress0", kind=kind[0],
-                         settings=settings[0])
-        ts1 = TimeSeries(stress1, name="stress1", kind=kind[1],
-                         settings=settings[1])
+        ts0 = TimeSeries(stress0, kind=kind[0], settings=settings[0])
+        ts1 = TimeSeries(stress1, kind=kind[1], settings=settings[1])
 
         # Select indices from validated stress where both series are available.
         index = ts0.series.index & ts1.series.index
 
         # First check the series, then determine tmin and tmax
-        stress0 = TimeSeries(stress0[index], name="stress0", kind=kind[0],
+        stress0 = TimeSeries(stress0[index], kind=kind[0],
                              settings=settings[0])
-        stress1 = TimeSeries(stress1[index], name="stress1", kind=kind[1],
+        stress1 = TimeSeries(stress1[index], kind=kind[1],
                              settings=settings[1])
 
         if index.size is 0:
@@ -340,17 +337,24 @@ class Tseries2(TseriesBase):
         """
         data = dict()
         data["tseries_type"] = self._name
-        data["stress0"] = self.stress["stress0"].series_original
-        data["stress1"] = self.stress["stress1"].series_original
         data["rfunc"] = self.rfunc._name
         data["name"] = self.name
         data["metadata"] = self.metadata
         data["up"] = True if self.rfunc.up == 1 else False
         data["cutoff"] = self.rfunc.cutoff
-        data["kind"] = (self.stress["stress0"].kind,
-                        self.stress["stress1"].kind)
-        data["settings"] = (self.stress["stress0"].settings,
-                            self.stress["stress1"].settings)
+
+        # Store the series or at least the settings
+        data["kind"] = list()
+        data["settings"] = list()
+
+        for stress_key, stress in self.stress.items():
+            stress = stress.dump(series=series, key=stress_key)
+            for key, value in stress.items():
+                if key in data.keys():
+                    data[key].append(value)
+                else:
+                    data[key] = value
+
         return data
 
 
@@ -400,10 +404,8 @@ class Recharge(TseriesBase):
     def __init__(self, prec, evap, rfunc, recharge, name, metadata=None,
                  cutoff=0.99, kind=("prec", "evap"), settings=(None, None)):
         # Check and name the time series
-        prec1 = TimeSeries(prec, name="prec", kind=kind[0],
-                           settings=settings[0])
-        evap1 = TimeSeries(evap, name="evap", kind=kind[0],
-                           settings=settings[0])
+        prec1 = TimeSeries(prec, kind=kind[0], settings=settings[0])
+        evap1 = TimeSeries(evap, kind=kind[0], settings=settings[0])
 
         # Select indices where both series are available
         index = prec1.series.index & evap1.series.index
@@ -419,10 +421,10 @@ class Recharge(TseriesBase):
                              index.max(), True, prec.mean() - evap.mean(),
                              cutoff)
 
-        self.stress["prec"] = TimeSeries(prec[index], name="prec",
-                                         kind=kind[0], settings=settings[0])
-        self.stress["evap"] = TimeSeries(evap[index], name="evap",
-                                         kind=kind[0], settings=settings[0])
+        self.stress["prec"] = TimeSeries(prec[index], kind=kind[0],
+                                         settings=settings[0])
+        self.stress["evap"] = TimeSeries(evap[index], kind=kind[0],
+                                         settings=settings[0])
 
         self.freq = self.stress["prec"].settings["freq"]
 

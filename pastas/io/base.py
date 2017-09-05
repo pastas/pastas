@@ -82,7 +82,7 @@ def load_project(data):
 
 def load_model(data):
     # Create model
-    oseries = data["oseries"]["series"]
+    oseries = ps.TimeSeries(**data["oseries"])
 
     if "constant" in data.keys():
         constant = data["constant"]
@@ -107,7 +107,7 @@ def load_model(data):
     ml = ps.Model(oseries, name=name, constant=constant, metadata=metadata,
                   settings=settings)
     if "file_info" in data.keys():
-        ml.file_info = data["file_info"]
+        ml.file_info.update(data["file_info"])
 
     # Add tseriesdict
     for name, ts in data["tseriesdict"].items():

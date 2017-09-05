@@ -826,7 +826,7 @@ class Model:
         # Create a dictionary to store all data
         data = dict()
         data["name"] = self.name
-        data["oseries"] = self.oseries.export(series=series)
+        data["oseries"] = self.oseries.dump(series=series)
 
         # Tseriesdict
         data["tseriesdict"] = dict()
@@ -861,10 +861,10 @@ class Model:
 
         return data
 
-    def dump(self, fname):
+    def dump(self, fname, series=True):
 
         # Get dicts for all data sources
-        data = self.dump_data()
+        data = self.dump_data(series)
 
         # Write the dicts to a file
         return dump(fname, data)
