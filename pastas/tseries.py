@@ -38,7 +38,7 @@ class TseriesBase:
         self.tmin = tmin
         self.tmax = tmax
         self.freq = None
-        self.stress = dict()
+        self.stress = list()
 
     def set_initial(self, name, value):
         """Method to set the initial parameter value.
@@ -84,11 +84,57 @@ class TseriesBase:
         -------
 
         """
-        for stress in self.stress.values():
+        for stress in self.stress:
             stress.update_series(**kwargs)
 
         if "freq" in kwargs:
             self.freq = kwargs["freq"]
+
+    def handle_stress(self, stress, kind, settings):
+        """Method to handle user provided stress in init
+
+        Parameters
+        ----------
+        stress: pandas.Series, pastas.TimeSeries or iterable
+        kind: str or iterable
+        settings: dict or iterable
+
+        Returns
+        -------
+        stress: dict
+            dictionary with strings
+
+        """
+        data = list()
+
+        if isinstance(stress, pd.Series):
+            data.append(TimeSeries(stress, kind, settings))
+        elif isinstance(stress, dict):
+            for i, value in enumerate(stress.values()):
+                data.append(TimeSeries(value, kind=kind[i],
+                                       settings=settings[i]))
+        elif isinstance(stress, list):
+            for i, value in enumerate(stress):
+                data.append(TimeSeries(value, kind=kind[i],
+                                       settings=settings[i]))
+        else:
+            warn("provided stress format is unknown. Provide a Series, "
+                 "dict or list.")
+        return data
+
+    def dump_stress(self, data=None, series=True):
+        if data is None:
+            data = dict()
+
+        for stress in self.stress:
+            stress = stress.dump(series=series, key="stress")
+            for key, value in stress.items():
+                if key in data.keys():
+                    data[key].append(value)
+                else:
+                    data[key] = [value]
+
+        return data
 
     def get_stress(self, p=None, tindex=None):
         """Returns the stress or stresses of the time series object as a pandas
@@ -160,7 +206,7 @@ class Tseries(TseriesBase):
         TseriesBase.__init__(self, rfunc, name, metadata, stress.index.min(),
                              stress.index.max(), up, stress.mean(), cutoff)
         self.freq = stress.settings["freq"]
-        self.stress[name] = stress
+        self.stress = [stress]
         self.set_init_parameters()
 
     def set_init_parameters(self):
@@ -186,7 +232,7 @@ class Tseries(TseriesBase):
 
         """
         b = self.rfunc.block(p, dt)
-        stress = list(self.stress.values())[0]
+        stress = self.stress[0]
         self.npoints = stress.index.size
         h = pd.Series(fftconvolve(stress, b, 'full')[:self.npoints],
                       index=stress.index, name=self.name)
@@ -211,7 +257,7 @@ class Tseries(TseriesBase):
         data["metadata"] = self.metadata
         data["up"] = True if self.rfunc.up == 1 else False
         data["cutoff"] = self.rfunc.cutoff
-        data.update(self.stress["stress"].dump(series=series, key="stress"))
+        data = self.dump_stress(data, series)
 
         return data
 
@@ -250,19 +296,19 @@ class Tseries2(TseriesBase):
 
     """
 
-    def __init__(self, stress0, stress1, rfunc, name, metadata=None, up=True,
+    def __init__(self, stress, rfunc, name, metadata=None, up=True,
                  cutoff=0.99, kind=("prec", "evap"), settings=(None, None)):
         # First check the series, then determine tmin and tmax
-        ts0 = TimeSeries(stress0, kind=kind[0], settings=settings[0])
-        ts1 = TimeSeries(stress1, kind=kind[1], settings=settings[1])
+        ts0 = TimeSeries(stress[0], kind=kind[0], settings=settings[0])
+        ts1 = TimeSeries(stress[1], kind=kind[1], settings=settings[1])
 
         # Select indices from validated stress where both series are available.
         index = ts0.series.index & ts1.series.index
 
         # First check the series, then determine tmin and tmax
-        stress0 = TimeSeries(stress0[index], kind=kind[0],
+        stress0 = TimeSeries(stress[0][index], kind=kind[0],
                              settings=settings[0])
-        stress1 = TimeSeries(stress1[index], kind=kind[1],
+        stress1 = TimeSeries(stress[1][index], kind=kind[1],
                              settings=settings[1])
 
         if index.size is 0:
@@ -273,8 +319,8 @@ class Tseries2(TseriesBase):
         TseriesBase.__init__(self, rfunc, name, metadata, index.min(),
                              index.max(), up, stress0.mean() - stress1.mean(),
                              cutoff)
-        self.stress["stress0"] = stress0
-        self.stress["stress1"] = stress1
+        self.stress.append(stress0)
+        self.stress.append(stress1)
 
         self.freq = stress0.settings["freq"]
         self.set_init_parameters()
@@ -304,12 +350,10 @@ class Tseries2(TseriesBase):
 
         """
         b = self.rfunc.block(p[:-1], dt)
-        self.npoints = self.stress["stress0"].index.size
-        h = pd.Series(
-            fftconvolve(self.stress["stress0"] + p[-1] * self.stress[
-                "stress1"], b, 'full')[:self.npoints],
-            index=self.stress["stress0"].index,
-            name=self.name)
+        self.npoints = self.stress[0].index.size
+        stress = self.get_stress(p=p)
+        h = pd.Series(fftconvolve(stress, b, 'full')[:self.npoints],
+                      index=self.stress[0].index, name=self.name)
         if tindex is not None:
             h = h[tindex]
         return h
@@ -342,18 +386,7 @@ class Tseries2(TseriesBase):
         data["metadata"] = self.metadata
         data["up"] = True if self.rfunc.up == 1 else False
         data["cutoff"] = self.rfunc.cutoff
-
-        # Store the series or at least the settings
-        data["kind"] = list()
-        data["settings"] = list()
-
-        for stress_key, stress in self.stress.items():
-            stress = stress.dump(series=series, key=stress_key)
-            for key, value in stress.items():
-                if key in data.keys():
-                    data[key].append(value)
-                else:
-                    data[key] = value
+        data = self.dump_stress(data, series)
 
         return data
 
@@ -401,11 +434,11 @@ class Recharge(TseriesBase):
 
     """
 
-    def __init__(self, prec, evap, rfunc, recharge, name, metadata=None,
+    def __init__(self, stress, rfunc, recharge, name, metadata=None,
                  cutoff=0.99, kind=("prec", "evap"), settings=(None, None)):
         # Check and name the time series
-        prec1 = TimeSeries(prec, kind=kind[0], settings=settings[0])
-        evap1 = TimeSeries(evap, kind=kind[0], settings=settings[0])
+        prec1 = TimeSeries(stress[0], kind=kind[0], settings=settings[0])
+        evap1 = TimeSeries(stress[1], kind=kind[0], settings=settings[0])
 
         # Select indices where both series are available
         index = prec1.series.index & evap1.series.index
@@ -418,12 +451,13 @@ class Recharge(TseriesBase):
 
         # Store tmin and tmax
         TseriesBase.__init__(self, rfunc, name, metadata, index.min(),
-                             index.max(), True, prec.mean() - evap.mean(),
+                             index.max(), True, stress[0].mean() -
+                             stress[1].mean(),
                              cutoff)
 
-        self.stress["prec"] = TimeSeries(prec[index], kind=kind[0],
+        self.stress["prec"] = TimeSeries(stress[0][index], kind=kind[0],
                                          settings=settings[0])
-        self.stress["evap"] = TimeSeries(evap[index], kind=kind[0],
+        self.stress["evap"] = TimeSeries(stress[1][index], kind=kind[0],
                                          settings=settings[0])
 
         self.freq = self.stress["prec"].settings["freq"]

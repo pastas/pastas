@@ -20,7 +20,7 @@ IN['values'].index = IN['values'].index.normalize()
 IN2 = meny.IN['Evaporation']
 IN2['values'].index = IN2['values'].index.normalize()
 
-ts = ps.Tseries2(IN['values'], IN2['values'], ps.Gamma, 'Recharge')
+ts = ps.Tseries2([IN['values'], IN2['values']], ps.Gamma, 'Recharge')
 ml.add_tseries(ts)
 
 settings = dict(freq='W')

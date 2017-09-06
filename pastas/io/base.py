@@ -79,15 +79,13 @@ def load_project(data):
                                                   "series"]
         if ml["tseriesdict"]:
             for ts in ml["tseriesdict"].values():
+                for i, tseries in enumerate(ts["stress"]):
+                    ts["stress"][i] = mls.tseries.loc[tseries, "series"]
 
         ml = load_model(ml)
         mls.models[name] = ml
 
     return mls
-
-
-def load_project_series(series):
-    pass
 
 
 def load_model(data):

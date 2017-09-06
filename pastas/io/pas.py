@@ -21,13 +21,19 @@ def pastas_hook(obj):
     for key, value in obj.items():
         if key in ["tmin", "tmax", "date_modified", "date_created"]:
             obj[key] = pd.Timestamp(value)
-        elif key in ["series", "stress", "stress0", "stress1"]:
+        elif key == "stress":
+            try:
+                obj[key] = list()
+                for ts in value:
+                    obj[key].append(pd.read_json(ts, typ='series'))
+            except:
+                obj[key] = value
+        elif key in ["series"]:
             try:
                 obj[key] = pd.read_json(value, typ='series')
             except:
                 try:
                      obj[key] = ps.TimeSeries(**value)
-                    #obj[key] = json.loads(value, object_hook=pastas_hook)
                 except:
                     obj[key] = value
         elif key in ["time_offset"]:

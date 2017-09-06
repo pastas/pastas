@@ -599,7 +599,7 @@ class Model:
             if tseries.stress:
                 # calculate the offset from the default frequency
                 time_offset = get_time_offset(
-                    list(tseries.stress.values())[0].index.min(),
+                    tseries.stress[0].index.min(),
                     self.settings["freq"])
                 time_offsets.add(time_offset)
 
