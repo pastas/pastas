@@ -693,7 +693,7 @@ class Model:
             p = self.get_parameters(name)
             dt = get_dt(self.settings["freq"])
             b = self.tseriesdict[name].rfunc.block(p, dt)
-            t = np.arange(0, (len(b)) * dt, dt)
+            t = np.arange(dt, (len(b)+1) * dt, dt)
             return pd.Series(b, index=t, name=name)
 
     def get_step_response(self, name):
@@ -705,7 +705,7 @@ class Model:
             p = self.get_parameters(name)
             dt = get_dt(self.settings["freq"])
             s = self.tseriesdict[name].rfunc.step(p, dt)
-            t = np.arange(0, (len(s)) * dt, dt)
+            t = np.arange(dt, (len(s)+1) * dt, dt)
             return pd.Series(s, index=t, name=name)
 
     def get_stress(self, name):

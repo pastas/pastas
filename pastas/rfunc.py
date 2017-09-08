@@ -93,7 +93,7 @@ class Gamma(RfuncBase):
 
     def block(self, p, dt=1):
         s = self.step(p, dt)
-        return s[1:] - s[:-1]
+        return np.append(s[0],s[1:] - s[:-1])
 
 
 class Exponential(RfuncBase):
@@ -134,7 +134,7 @@ class Exponential(RfuncBase):
 
     def block(self, p, dt=1):
         s = self.step(p, dt)
-        return s[1:] - s[:-1]
+        return np.append(s[0],s[1:] - s[:-1])
 
 
 class Hantush(RfuncBase):
@@ -202,7 +202,7 @@ class Hantush(RfuncBase):
 
     def block(self, p, dt=1):
         s = self.step(p, dt)
-        return s[1:] - s[:-1]
+        return np.append(s[0],s[1:] - s[:-1])
 
 
 class Theis(RfuncBase):
@@ -249,7 +249,7 @@ class Theis(RfuncBase):
 
     def block(self, p, dt=1):
         s = self.step(p, dt)
-        return s[1:] - s[:-1]
+        return np.append(s[0],s[1:] - s[:-1])
 
 
 class Bruggeman(RfuncBase):
@@ -301,7 +301,7 @@ class Bruggeman(RfuncBase):
 
     def block(self, p, dt=1):
         s = self.step(p, dt)
-        return s[1:] - s[:-1]
+        return np.append(s[0],s[1:] - s[:-1])
 
 
 class One(RfuncBase):
