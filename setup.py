@@ -4,7 +4,7 @@ l_d = ''
 try:
     import pypandoc
 
-    l_d = pypandoc.convert('README.md', 'rst')
+    l_d = pypandoc.convert('README.rst', 'rst')
 except:
     pass
 

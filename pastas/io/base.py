@@ -5,6 +5,7 @@ Import model
 import importlib
 import os
 
+import pandas as pd
 import pastas as ps
 
 
@@ -67,13 +68,20 @@ def load_project(data):
     mls.metadata = data["metadata"]
     mls.file_info = data["file_info"]
 
-    # TODO construct tseries dataframe correctly
-    mls.tseries = data["tseries"]
-    # TODO construct oseries dataframe correctly
-    mls.oseries = data["oseries"]
+    mls.tseries = pd.DataFrame(data["tseries"],
+                               columns=data["tseries"].keys()).T
 
-    # TODO use series from oseries and tseries to improve speed.
+    mls.oseries = pd.DataFrame(data["oseries"],
+                               columns=data["oseries"].keys()).T
+
     for name, ml in data["models"].items():
+        ml["oseries"]["series"] = mls.oseries.loc[ml["oseries"]["series"],
+                                                  "series"]
+        if ml["tseriesdict"]:
+            for ts in ml["tseriesdict"].values():
+                for i, tseries in enumerate(ts["stress"]):
+                    ts["stress"][i] = mls.tseries.loc[tseries, "series"]
+
         ml = load_model(ml)
         mls.models[name] = ml
 
@@ -82,7 +90,7 @@ def load_project(data):
 
 def load_model(data):
     # Create model
-    oseries = data["oseries"]["series"]
+    oseries = ps.TimeSeries(**data["oseries"])
 
     if "constant" in data.keys():
         constant = data["constant"]
@@ -107,7 +115,7 @@ def load_model(data):
     ml = ps.Model(oseries, name=name, constant=constant, metadata=metadata,
                   settings=settings)
     if "file_info" in data.keys():
-        ml.file_info = data["file_info"]
+        ml.file_info.update(data["file_info"])
 
     # Add tseriesdict
     for name, ts in data["tseriesdict"].items():

@@ -12,8 +12,7 @@ from __future__ import print_function, division
 from warnings import warn
 
 import pandas as pd
-
-from .utils import get_dt, get_time_offset
+from pastas.utils import get_dt, get_time_offset
 
 
 class TimeSeries(pd.Series):
@@ -63,41 +62,64 @@ class TimeSeries(pd.Series):
 
         """
         pd.Series.__init__(self)
+        if isinstance(series, TimeSeries):
+            self.series_original = series.series_original
+            self.freq_original = series.freq_original
+            self.settings = series.settings
+            self.series = series.series
+            self._update_inplace(series)
 
-        # Store a copy of the original series
-        self.series_original = series.copy()
-        self.freq_original = None
+            validate = False
+            update = False
+
+            if kind is None:
+                kind = series.kind
+            # In the strange case somebody changes the kind after creation..
+            elif kind is not series.kind:
+                validate = True
+                update = True
+                series = series.series_original
+        else:
+            validate = True
+            update = True
+            # Store a copy of the original series
+            self.series_original = series.copy()
+            self.freq_original = None
+            self.settings = dict(
+                freq="D",
+                sample_up=None,
+                sample_down=None,
+                fill_nan=None,
+                fill_before=None,
+                fill_after=None,
+                tmin=None,
+                tmax=None,
+                norm=None
+            )
+            if kind in self._kind_settings.keys():
+                self.settings.update(self._kind_settings[kind])
+
+        # Use user provided name or set from series
+        if name is None:
+            name = series.name
         self.name = name
 
         # Options when creating the series
         self.kind = kind
 
-        self.settings = dict(
-            freq="D",
-            sample_up=None,
-            sample_down=None,
-            fill_nan=None,
-            fill_before=None,
-            fill_after=None,
-            tmin=None,
-            tmax=None,
-            norm=None
-        )
-
-        if kind in self._kind_settings.keys():
-            self.settings.update(self._kind_settings[kind])
-
         # Update the options with user-provided values, if any.
         if settings:
-            self.settings.update(settings)
+            if self.update_settings(**settings):
+                update = True
         if kwargs:
-            self.settings.update(kwargs)
-
+            if self.update_settings(**kwargs):
+                update = True
         # Create a validated series for computations
-        self.series = self.validate_series(series)
+        if validate:
+            self.series = self.validate_series(series)
 
-        # Finally, update the TimeSeries so it is ready for simulation
-        self.update_series(**self.settings)
+        if update:
+            self.update_series(initial=True, **self.settings)
 
     def validate_series(self, series):
         """ This method performs some PASTAS specific tests for the TimeSeries.
@@ -165,9 +187,25 @@ class TimeSeries(pd.Series):
             grouped = series.groupby(level=0)
             series = grouped.mean()
 
+        self.settings["tmin"] = series.index.min()
+        self.settings["tmax"] = series.index.max()
+
         return series
 
-    def update_series(self, **kwargs):
+    def update_settings(self, **kwargs):
+        """Method that check if an update is actually necessary.
+
+        TODO still some bug in here when comparing timestamps. causing uneccesary updates..
+
+        """
+        update = False
+        for key, value in kwargs.items():
+            if value != self.settings[key]:
+                self.settings[key] = value
+                update = True
+        return update
+
+    def update_series(self, initial=False, **kwargs):
         """Method to update the series with new options, but most likely
         only a change in the frequency before solving a PASTAS model.
 
@@ -179,12 +217,9 @@ class TimeSeries(pd.Series):
                  "fill_before" and "fill_after".
 
         """
-        if kwargs:
+        if self.update_settings(**kwargs) or initial:
             # Get the validated series to start with
             series = self.series.copy(deep=True)
-
-            # Update the options with any provided arguments
-            self.settings.update(kwargs)
 
             # Update the series with the new settings
             series = self.change_frequency(series)
@@ -235,6 +270,8 @@ class TimeSeries(pd.Series):
 
         if method in ['backfill', 'bfill', 'pad', 'ffill']:
             series = series.asfreq(freq, method=method)
+        elif method is None:
+            pass
         else:
             series = series.asfreq(freq)
             if method == 'mean':
@@ -366,6 +403,8 @@ class TimeSeries(pd.Series):
             pass
         elif pd.Timestamp(tmax) <= series.index.max():
             pass
+        elif method is None:
+            pass
         else:
             # When time offsets are not equal
             time_offset = get_time_offset(tmax, freq)
@@ -380,7 +419,7 @@ class TimeSeries(pd.Series):
             elif type(method) == float:
                 series.fillna(method, inplace=True)
             else:
-                warn('User-defined option for sample_up %s is not '
+                warn('User-defined option for fill_after %s is not '
                      'supported' % method)
 
         return series
@@ -399,7 +438,7 @@ class TimeSeries(pd.Series):
 
         return series
 
-    def export(self, series=True):
+    def dump(self, series=True, key=None):
         """Method to export the Time Series to a json format.
 
         Returns
@@ -410,10 +449,16 @@ class TimeSeries(pd.Series):
 
         """
         data = dict()
+
+        if key is None:
+            key = "series"
+
         if series:
-            data["series"] = self.series_original
+            data[key] = self.series_original
+        else:
+            data[key] = self.name
+
         data["settings"] = self.settings
-        data["name"] = self.name
         data["kind"] = self.kind
 
         return data
