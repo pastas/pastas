@@ -36,7 +36,7 @@ from __future__ import print_function, division
 import numpy as np
 import pandas as pd
 from statsmodels.stats.stattools import durbin_watson
-from statsmodels.tsa.stattools import acf, pacf
+from statsmodels.tsa.stattools import pacf
 
 
 class Statistics(object):
@@ -241,23 +241,6 @@ included in Pastas. To obtain a list of all statistics that are included type:
         series = self.bykey(series, tmin, tmax)
         return durbin_watson(series)
 
-    def acf(self, tmin=None, tmax=None, nlags=20):
-        """Autocorrelation function.
-
-        Notes
-        -----
-        For the autocorrelation function the acf method from Statsmodels
-        package is used untill an alternative is found. However, please be
-        aware that this can lead to incorrect values for irregular time steps.
-
-        Please refer to the Statsmodels docs:
-        http://statsmodels.sourceforge.net/devel/_modules/statsmodels/tsa/stattools.html#acf
-
-        TODO: Compute autocorrelation for irregulat time steps.
-        """
-        innovations = self.ml.innovations(tmin=tmin, tmax=tmax)
-        return acf(innovations, nlags=nlags)
-
     def pacf(self, tmin=None, tmax=None, nlags=20):
         """Partial autocorrelation function.
 
@@ -280,6 +263,109 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         innovations = self.ml.innovations(tmin=tmin, tmax=tmax)
         return pacf(innovations, nlags=nlags)
+
+    def acf(self, x, lags=None, bin_width=None,
+            bin_method='rectangle', tmin=None, tmax=None):
+        """Method to calculate the autocorrelation for irregular timesteps.
+
+        See Also
+        --------
+        stats.ccf
+
+        """
+        C = self.ccf(x=x, y=x, lags=lags, bin_width=bin_width,
+                     bin_method=bin_method, tmin=tmin, tmax=tmax)
+
+        return C
+
+    def ccf(self, x, y, lags=None, bin_width=None,
+            bin_method='rectangle', tmin=None, tmax=None):
+        """Method to calculate the autocorrelation for irregular timesteps
+        based on the slotting technique. Different methods (kernels) to bin
+        the data are available.
+
+        Parameters
+        ----------
+        x: pandas.Series
+        y: pandas.Series
+        lags: numpy.array
+            numpy array containing the lags in DAYS for which the
+            cross-correlation if calculated.
+        bin_width
+        bin_method: str
+            method to determine the type of bin. Optiona are gaussian, sinc and rectangle.
+
+        Returns
+        -------
+        acf: array
+            autocorrelation function.
+
+        References
+        ----------
+        Rehfeld, K. & Marwan, N. & Heitzig, J. & Kurths, J. (2011). Comparison of correlation analysis techniques for irregularly sampled time series. Nonlinear Processes in Geophysics. 18. 389–404. 10.5194/npg-18-389-2011.
+
+
+        """
+        # Normalize the time values
+        dt_x = x.index.to_series().diff() / \
+               pd.Timedelta(1, "D")
+        dt_x[0] = 0.0
+        t_x = (dt_x.cumsum() / dt_x.mean()).values
+
+        dt_y = y.index.to_series().diff() / \
+               pd.Timedelta(1, "D")
+        dt_y[0] = 0.0
+        t_y = (dt_y.cumsum() / dt_y.mean()).values
+
+        dt_mu = max(dt_x.mean(), dt_y.mean())
+
+        # Create matrix with time differences
+        t1, t2 = np.meshgrid(t_x, t_y)
+        t = t1 - t2
+
+        # Normalize the values
+        x = (x.values - x.mean()) / x.std()
+        y = (y.values - y.mean()) / y.std()
+
+        # Create matrix for covariances
+        xx, yy = np.meshgrid(x, y)
+        xy = xx * yy
+
+        if lags is None:
+            lags = [0,1,14,28,180,165] # Default lags in Days
+
+        lags = np.array(lags) / dt_mu
+
+        # Select appropriate bin_width, default depend on bin_method
+        if bin_width is None:
+            # Select one of the standard options.
+            bin_width = {"rectangle": 2, "sinc": 1, "gaussian": 4}
+            h = 1 / bin_width[bin_method]
+        else:
+            h = bin_width / dt_mu
+
+        C = np.zeros_like(lags)
+
+        for i, k in enumerate(lags):
+            # Construct the kernel for the lag
+            d = np.abs(np.abs(t) - k)
+            if bin_method == "rectangle":
+                b = (d <= h) * 1.
+            elif bin_method == "gaussian":
+                b = np.exp(-d ** 2 / (2 * h ** 2)) / np.sqrt(2 * np.pi * h)
+            elif bin_method == "sinc":
+                NotImplementedError()
+                # b = np.sin(np.pi * h * d) / (np.pi * h * d) / dt.size
+            else:
+                NotImplementedError(
+                    "bin_method %s is not implemented." % bin_method)
+            c = xy * b
+            C[i] = c.sum() / b.sum()
+        C = C / C.max()
+
+        C = pd.Series(data=C, index=lags * dt_mu)
+
+        return C
 
     # Some Dutch statistics
 
