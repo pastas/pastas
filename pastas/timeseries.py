@@ -32,8 +32,15 @@ class TimeSeries(pd.Series):
                        "fill_nan": "interpolate",
                        "fill_before": "mean", "fill_after": "mean"},
     }
+    metadata = {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "projection": None
+    }
 
-    def __init__(self, series, name=None, kind=None, settings=None, **kwargs):
+    def __init__(self, series, name=None, kind=None, settings=None,
+                 metadata=None, **kwargs):
         """Class that supports or user-provided time series within PASTAS.
 
         Parameters
@@ -66,6 +73,7 @@ class TimeSeries(pd.Series):
             self.series_original = series.series_original
             self.freq_original = series.freq_original
             self.settings = series.settings
+            self.metadata = series.metadata
             self.series = series.series
             self._update_inplace(series)
 
@@ -106,6 +114,8 @@ class TimeSeries(pd.Series):
 
         # Options when creating the series
         self.kind = kind
+        if metadata:
+            self.metadata.update(metadata)
 
         # Update the options with user-provided values, if any.
         if settings:
@@ -346,7 +356,7 @@ class TimeSeries(pd.Series):
             elif type(method) == float:
                 series.fillna(method, inplace=True)
             else:
-                warn('User-defined option for sample_up %s is not '
+                warn('User-defined option for fill_nan %s is not '
                      'supported' % method)
         else:
             series.dropna(inplace=True)

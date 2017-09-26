@@ -25,7 +25,6 @@ Examples
 TODO
 ----
 
-* ACF for irregular timesteps
 * PACF for irregular timestep
 * Nash-Sutcliffe
 * portmanteau test (ljung-Box & Box-Pierce)
@@ -304,16 +303,13 @@ included in Pastas. To obtain a list of all statistics that are included type:
         ----------
         Rehfeld, K. & Marwan, N. & Heitzig, J. & Kurths, J. (2011). Comparison of correlation analysis techniques for irregularly sampled time series. Nonlinear Processes in Geophysics. 18. 389–404. 10.5194/npg-18-389-2011.
 
-
         """
         # Normalize the time values
-        dt_x = x.index.to_series().diff() / \
-               pd.Timedelta(1, "D")
+        dt_x = x.index.to_series().diff() / pd.Timedelta(1, "D")
         dt_x[0] = 0.0
         t_x = (dt_x.cumsum() / dt_x.mean()).values
 
-        dt_y = y.index.to_series().diff() / \
-               pd.Timedelta(1, "D")
+        dt_y = y.index.to_series().diff() / pd.Timedelta(1, "D")
         dt_y[0] = 0.0
         t_y = (dt_y.cumsum() / dt_y.mean()).values
 
@@ -332,7 +328,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         xy = xx * yy
 
         if lags is None:
-            lags = [0,1,14,28,180,165] # Default lags in Days
+            lags = [0, 1, 14, 28, 180, 365]  # Default lags in Days
 
         lags = np.array(lags) / dt_mu
 
@@ -361,7 +357,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
                     "bin_method %s is not implemented." % bin_method)
             c = xy * b
             C[i] = c.sum() / b.sum()
-        C = C / C.max()
+        C = C / np.abs(C).max()
 
         C = pd.Series(data=C, index=lags * dt_mu)
 
