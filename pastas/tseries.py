@@ -4,28 +4,17 @@
 
 from __future__ import print_function, division
 
-import functools
 import logging
 
 import numpy as np
 import pandas as pd
 from scipy.signal import fftconvolve
 
+from .decorators import set_parameter
 from .rfunc import One
 from .timeseries import TimeSeries
 
 logger = logging.getLogger(__name__)
-
-
-def set_parameter(function):
-    @functools.wraps(function)
-    def _set_parameter(self, name, value):
-        if name not in self.parameters.index:
-            logger.warning('%s does not exist' % name)
-        else:
-            return function(self, name, value)
-
-    return _set_parameter
 
 
 class TseriesBase():
@@ -38,7 +27,7 @@ class TseriesBase():
         Number of parameters.
     name : str
         Name of this tseries object. Used as prefix for the parameters.
-    parameters : pandas.Dataframe
+    parameters : pandas.DataFrame
         Dataframe containing the parameters.
 
     """
@@ -68,14 +57,38 @@ class TseriesBase():
 
     @set_parameter
     def set_min(self, name, value):
+        """Method to set the lower bound of the parameter value.
+
+        Examples
+        --------
+
+        >>> ts.set_min('parametername', 0)
+
+        """
         self.parameters.loc[name, 'pmin'] = value
 
     @set_parameter
     def set_max(self, name, value):
+        """Method to set the upper bound of the parameter value.
+
+        Examples
+        --------
+
+        >>> ts.set_max('parametername', 200)
+
+        """
         self.parameters.loc[name, 'pmax'] = value
 
     @set_parameter
     def set_vary(self, name, value):
+        """Method to set if the parameter is varied during optimization.
+
+        Examples
+        --------
+
+        >>> ts.set_initial('parametername', 200)
+
+        """
         self.parameters.loc[name, 'pmax'] = value
 
     def fix_parameter(self, name):

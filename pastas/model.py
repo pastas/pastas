@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from scipy import interpolate
 
+from .decorators import get_tseries
 from .io.base import dump
 from .plots import Plotting
 from .solver import LmfitSolve
@@ -141,6 +142,7 @@ class Model:
         self.constant = Constant(value=self.oseries.mean(), name='constant')
         self.parameters = self.get_init_parameters()
 
+    @get_tseries
     def del_tseries(self, name):
         """ Save deletion of a tseries from the tseriesdict.
 
@@ -156,13 +158,8 @@ class Model:
         >>> ml.tseriesdict.keys()
 
         """
-        if name not in self.tseriesdict.keys():
-            self.logger.warning('The tseries name you provided is not in the '
-                                'tseriesdict. Please select from the following list: '
-                                '%s' % self.tseriesdict.keys())
-        else:
-            self.parameters = self.parameters.ix[self.parameters.name != name]
-            self.tseriesdict.pop(name)
+        self.parameters = self.parameters.ix[self.parameters.name != name]
+        self.tseriesdict.pop(name)
 
     def del_constant(self):
         """ Save deletion of the constant from a Model.
@@ -628,6 +625,8 @@ class Model:
         noise: bool, optional
             Add the parameters for the noisemodel to the parameters
             Dataframe or not.
+        initial: Boolean
+            True to get initial parameters, False to get optimized parameters.
 
         Returns
         -------
@@ -635,6 +634,7 @@ class Model:
             pandas.Dataframe with the parameters.
 
         """
+
         # Store optimized values in case they are needed
         if not initial:
             optimal = self.parameters.optimal
@@ -684,48 +684,32 @@ class Model:
 
         return parameters.values
 
-    def get_contribution(self, name, tindex=None):
-        if name not in self.tseriesdict.keys():
-            self.logger.warning("Name not in tseriesdict, available names are:"
-                                " %s" % self.tseriesdict.keys())
-            return None
-        else:
-            p = self.get_parameters(name)
-            dt = get_dt(self.settings["freq"])
-            return self.tseriesdict[name].simulate(p, tindex=tindex, dt=dt)
+    @get_tseries
+    def get_contribution(self, name):
+        p = self.get_parameters(name)
+        dt = get_dt(self.settings["freq"])
+        return self.tseriesdict[name].simulate(p, dt=dt)
 
+    @get_tseries
     def get_block_response(self, name):
-        if name not in self.tseriesdict.keys():
-            self.logger.warning("Name not in tseriesdict, available names are:"
-                                "%s" % self.tseriesdict.keys())
-            return None
-        else:
-            p = self.get_parameters(name)
-            dt = get_dt(self.settings["freq"])
-            b = self.tseriesdict[name].rfunc.block(p, dt)
-            t = np.arange(dt, (len(b) + 1) * dt, dt)
-            return pd.Series(b, index=t, name=name)
+        p = self.get_parameters(name)
+        dt = get_dt(self.settings["freq"])
+        b = self.tseriesdict[name].rfunc.block(p, dt)
+        t = np.arange(dt, (len(b) + 1) * dt, dt)
+        return pd.Series(b, index=t, name=name)
 
+    @get_tseries
     def get_step_response(self, name):
-        if name not in self.tseriesdict.keys():
-            self.logger.warning("Name not in tseriesdict, available names are:"
-                                " %s" % self.tseriesdict.keys())
-            return None
-        else:
-            p = self.get_parameters(name)
-            dt = get_dt(self.settings["freq"])
-            s = self.tseriesdict[name].rfunc.step(p, dt)
-            t = np.arange(dt, (len(s) + 1) * dt, dt)
-            return pd.Series(s, index=t, name=name)
+        p = self.get_parameters(name)
+        dt = get_dt(self.settings["freq"])
+        s = self.tseriesdict[name].rfunc.step(p, dt)
+        t = np.arange(dt, (len(s) + 1) * dt, dt)
+        return pd.Series(s, index=t, name=name)
 
+    @get_tseries
     def get_stress(self, name):
-        try:
-            p = self.parameters.loc[
-                self.parameters.name == name, 'optimal'].values
-            return self.tseriesdict[name].get_stress(p)
-        except KeyError:
-            self.logger.warning("Name not in tseriesdict, available names are:"
-                                "%s" % self.tseriesdict.keys())
+        p = self.get_parameters(name)
+        self.tseriesdict[name].get_stress(p)
 
     def sample(self, series, tindex):
         """Sample the series so that the frequency is not higher that tindex.
