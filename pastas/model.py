@@ -1,5 +1,8 @@
 from __future__ import print_function, division
 
+import json
+import logging
+import logging.config
 import os
 from collections import OrderedDict
 from warnings import warn
@@ -49,7 +52,8 @@ class Model:
     """
 
     def __init__(self, oseries, constant=True, name="Observations",
-                 metadata=None, settings=None):
+                 metadata=None, settings=None, log_level=""):
+        self.logger = self.get_logger()
         # Construct the different model components
         self.oseries = TimeSeries(oseries, name=name, kind="oseries")
         self.odelt = self.oseries.index.to_series().diff() / \
@@ -100,7 +104,7 @@ class Model:
 
         Parameters
         ----------
-        tseries: pastas.tseries
+        tseries: pastas.tseries.TseriesBase
             pastas.tseries object.
 
         Notes
@@ -111,8 +115,9 @@ class Model:
 
         """
         if tseries.name in self.tseriesdict.keys():
-            warn('The name for the series you are trying to add already exists'
-                 ' for this model. Select another name.')
+            self.logger.warning('The name for the series you are trying to '
+                                'add already exists for this model. Select '
+                                'another name.')
         else:
             self.tseriesdict[tseries.name] = tseries
             self.parameters = self.get_init_parameters()
@@ -152,9 +157,9 @@ class Model:
 
         """
         if name not in self.tseriesdict.keys():
-            warn(message='The tseries name you provided is not in the '
-                         'tseriesdict. Please select from the following list: '
-                         '%s' % self.tseriesdict.keys())
+            self.logger.warning('The tseries name you provided is not in the '
+                                'tseriesdict. Please select from the following list: '
+                                '%s' % self.tseriesdict.keys())
         else:
             self.parameters = self.parameters.ix[self.parameters.name != name]
             self.tseriesdict.pop(name)
@@ -164,7 +169,7 @@ class Model:
 
         """
         if self.constant is None:
-            warn("No constant is present in this model.")
+            self.logger.warning("No constant is present in this model.")
         else:
             self.parameters = self.parameters.ix[self.parameters.name !=
                                                  'constant']
@@ -175,7 +180,7 @@ class Model:
 
         """
         if self.noisemodel is None:
-            warn("No noisemodel is present in this model.")
+            self.logger.warning("No noisemodel is present in this model.")
         else:
             self.parameters = self.parameters.ix[self.parameters.name !=
                                                  self.noisemodel.name]
@@ -289,7 +294,8 @@ class Model:
         res = oseries_calib - h_simulated
 
         if np.isnan(sum(res ** 2)):
-            print('nan problem in residuals')  # quick and dirty check
+            self.logger.warning(
+                'nan problem in residuals')  # quick and dirty check
         return res
 
     def get_oseries_calib(self, tmin, tmax, sim_index):
@@ -375,8 +381,9 @@ class Model:
         """
 
         if noise and (self.noisemodel is None):
-            warn('Warning, solution with noise model while noise model '
-                 'is not defined. No noise model is used.')
+            self.logger.warning('Warning, solution with noise model while '
+                                'noise model is not defined. No noise model is'
+                                'used.')
             noise = False
         self.settings["noise"] = noise
         self.settings["weights"] = weights
@@ -409,8 +416,8 @@ class Model:
         self.interpolate_simulation = self.oseries_calib.index.difference(
             self.sim_index).size != 0
         if self.interpolate_simulation:
-            print('There are observations between the simulation-timesteps. '
-                  'Linear interpolation is used')
+            self.logger.info('There are observations between the simulation'
+                             'timesteps. Linear interpolation is used')
 
         # Initialize parameters
         self.parameters = self.get_init_parameters(noise, initial)
@@ -430,7 +437,6 @@ class Model:
         -------
 
         """
-
         sim_index = pd.date_range(tmin - pd.DateOffset(days=warmup), tmax,
                                   freq=freq)
         return sim_index
@@ -446,7 +452,7 @@ class Model:
             String with a start date for the simulation period (E.g. '1980')
         tmax: str, optional
             String with an end date for the simulation period (E.g. '2010')
-        solver: pastas.solver, optional
+        solver: pastas.solver.BaseSolver, optional
             Class used to solve the model. Default is lmfit (LmfitSolve)
         report: bool, optional
             Print a report to the screen after optimization finished.
@@ -580,9 +586,10 @@ class Model:
             "time_offset"]
 
         assert tmax > tmin, \
-            'Error: Specified tmax not larger than specified tmin'
+            self.logger.error('Error: Specified tmax not larger than '
+                              'specified tmin')
         assert self.oseries.loc[tmin: tmax].size > 0, \
-            'Error: no observations between tmin and tmax'
+            self.logger.error('Error: no observations between tmin and tmax')
 
         return tmin, tmax
 
@@ -604,8 +611,10 @@ class Model:
                 time_offsets.add(time_offset)
 
         assert len(
-            time_offsets) <= 1, 'The time-differences with the default ' \
-                                'frequency is not the same for all stresses.'
+            time_offsets) <= 1, self.logger.error('The time-differences with '
+                                                  'the default frequency is '
+                                                  'not the same for all '
+                                                  'stresses.')
         if len(time_offsets) == 1:
             self.settings["time_offset"] = next(iter(time_offsets))
         else:
@@ -667,7 +676,8 @@ class Model:
             p = self.parameters
 
         if p.optimal.hasnans:
-            warn("Model is not optimized yet, initial parameters are used.")
+            self.logger.warning(
+                "Model is not optimized yet, initial parameters are used.")
             parameters = p.initial
         else:
             parameters = p.optimal
@@ -676,8 +686,8 @@ class Model:
 
     def get_contribution(self, name, tindex=None):
         if name not in self.tseriesdict.keys():
-            warn("Name not in tseriesdict, available names are: %s"
-                 % self.tseriesdict.keys())
+            self.logger.warning("Name not in tseriesdict, available names are:"
+                                " %s" % self.tseriesdict.keys())
             return None
         else:
             p = self.get_parameters(name)
@@ -686,26 +696,26 @@ class Model:
 
     def get_block_response(self, name):
         if name not in self.tseriesdict.keys():
-            warn("Name not in tseriesdict, available names are: %s"
-                 % self.tseriesdict.keys())
+            self.logger.warning("Name not in tseriesdict, available names are:"
+                                "%s" % self.tseriesdict.keys())
             return None
         else:
             p = self.get_parameters(name)
             dt = get_dt(self.settings["freq"])
             b = self.tseriesdict[name].rfunc.block(p, dt)
-            t = np.arange(dt, (len(b)+1) * dt, dt)
+            t = np.arange(dt, (len(b) + 1) * dt, dt)
             return pd.Series(b, index=t, name=name)
 
     def get_step_response(self, name):
         if name not in self.tseriesdict.keys():
-            warn("Name not in tseriesdict, available names are: %s"
-                 % self.tseriesdict.keys())
+            self.logger.warning("Name not in tseriesdict, available names are:"
+                                " %s" % self.tseriesdict.keys())
             return None
         else:
             p = self.get_parameters(name)
             dt = get_dt(self.settings["freq"])
             s = self.tseriesdict[name].rfunc.step(p, dt)
-            t = np.arange(dt, (len(s)+1) * dt, dt)
+            t = np.arange(dt, (len(s) + 1) * dt, dt)
             return pd.Series(s, index=t, name=name)
 
     def get_stress(self, name):
@@ -714,8 +724,8 @@ class Model:
                 self.parameters.name == name, 'optimal'].values
             return self.tseriesdict[name].get_stress(p)
         except KeyError:
-            print("Name not in tseriesdict, available names are: %s"
-                  % self.tseriesdict.keys())
+            self.logger.warning("Name not in tseriesdict, available names are:"
+                                "%s" % self.tseriesdict.keys())
 
     def sample(self, series, tindex):
         """Sample the series so that the frequency is not higher that tindex.
@@ -790,6 +800,35 @@ class Model:
             file_info["owner"] = "Unknown"
 
         return file_info
+
+    def get_logger(self, default_path='log_config.json',
+                   default_level=logging.WARNING,
+                   env_key='LOG_CFG'):
+        """This file creates a logger instance to log program output.
+
+        Returns
+        -------
+        logger: logging.Logger
+            Logging instance that handles all logging throughout pastas,
+            including all sub modules and packages.
+
+
+        """
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        path = os.path.join(dir_path, default_path)
+        value = os.getenv(env_key, None)
+        if value:
+            path = value
+        if os.path.exists(path):
+            with open(path, 'rt') as f:
+                config = json.load(f)
+            logging.config.dictConfig(config)
+        else:
+            logging.basicConfig(level=default_level)
+
+        logger = logging.getLogger(__name__)
+
+        return logger
 
     def dump_data(self, series=True, sim_series=False, metadata=True,
                   file_info=True):

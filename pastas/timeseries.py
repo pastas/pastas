@@ -9,10 +9,12 @@ August 2017, R.A. Collenteur
 """
 from __future__ import print_function, division
 
-from warnings import warn
+import logging
 
 import pandas as pd
 from pastas.utils import get_dt, get_time_offset
+
+logger = logging.getLogger(__name__)
 
 
 class TimeSeries(pd.Series):
@@ -175,16 +177,17 @@ class TimeSeries(pd.Series):
             self.freq_original = freq
             if not self.settings["freq"]:
                 self.settings["freq"] = freq
-            print('Inferred frequency from time series %s: freq=%s ' % (
+            logger.info('Inferred frequency from time series %s: freq=%s ' % (
                 self.name, freq))
         else:
             self.freq_original = self.settings["freq"]
             if self.settings["fill_nan"] and self.settings["fill_nan"] != \
                     "drop":
-                warn("User-provided frequency is applied when validating the "
-                     "Time Series %s. Make sure the provided frequency is "
-                     "close to the real frequency of the original series." %
-                     (self.name))
+                logger.warning("User-provided frequency is applied when "
+                               "validating the Time Series %s. Make sure the "
+                               "provided frequency is close to the real "
+                               "frequency of the original series." %
+                               (self.name))
 
         # 3. drop nan-values
         if series.hasnans:
@@ -192,8 +195,8 @@ class TimeSeries(pd.Series):
 
         # 5. Handle duplicate indices
         if not series.index.is_unique:
-            print('duplicate time-indexes were found in the Time Series %s. '
-                  'Values were averaged.' % (self.name))
+            logger.warning('duplicate time-indexes were found in the Time '
+                           'Series %s. Values were averaged.' % (self.name))
             grouped = series.groupby(level=0)
             series = grouped.mean()
 
@@ -291,11 +294,11 @@ class TimeSeries(pd.Series):
             elif type(method) == float:
                 series.fillna(method, inplace=True)
             else:
-                warn('User-defined option for sample_up %s is not '
-                     'supported' % method)
+                logger.warning('User-defined option for sample_up %s is not '
+                               'supported' % method)
 
-        print('%i nan-value(s) was/were found and filled with: %s'
-              % (series.isnull().values.sum(), method))
+        logger.info('%i nan-value(s) was/were found and filled with: %s'
+                    % (series.isnull().values.sum(), method))
 
         return series
 
@@ -327,11 +330,11 @@ class TimeSeries(pd.Series):
         elif method == "max":
             series = series.resample(freq, **kwargs).max()
         else:
-            warn('User-defined option for sample_down %s is not '
-                 'supported' % method)
+            logger.warning('User-defined option for sample_down %s is not '
+                           'supported' % method)
 
-        print("Time Series %s were sampled down to freq %s with method %s" %
-              (self.name, freq, method))
+        logger.info("Time Series %s were sampled down to freq %s with method "
+                    "%s" % (self.name, freq, method))
 
         return series
 
@@ -346,7 +349,7 @@ class TimeSeries(pd.Series):
 
         if freq:
             series = series.asfreq(freq)
-
+            n = series.isnull().values.sum()
             if method == "drop":
                 series.dropna(inplace=True)
             elif method == 'mean':
@@ -356,13 +359,15 @@ class TimeSeries(pd.Series):
             elif type(method) == float:
                 series.fillna(method, inplace=True)
             else:
-                warn('User-defined option for fill_nan %s is not '
-                     'supported' % method)
+                logger.warning('User-defined option for fill_nan %s is not '
+                               'supported' % method)
         else:
+            method = "drop"
+            n = series.isnull().values.sum()
             series.dropna(inplace=True)
 
-        print('%i nan-value(s) was/were found and filled with: %s'
-              % (series.isnull().values.sum(), method))
+        logger.info('%i nan-value(s) was/were found and filled with: %s'
+                    % (n, method))
 
         return series
 
@@ -395,8 +400,8 @@ class TimeSeries(pd.Series):
             elif type(method) == float:
                 series.fillna(method, inplace=True)
             else:
-                warn('User-defined option for sample_up %s is not '
-                     'supported' % method)
+                logger.warning('User-defined option for sample_up %s is not '
+                               'supported' % method)
 
         return series
 
@@ -429,8 +434,8 @@ class TimeSeries(pd.Series):
             elif type(method) == float:
                 series.fillna(method, inplace=True)
             else:
-                warn('User-defined option for fill_after %s is not '
-                     'supported' % method)
+                logger.warning('User-defined option for fill_after %s is not '
+                               'supported' % method)
 
         return series
 
@@ -448,8 +453,16 @@ class TimeSeries(pd.Series):
 
         return series
 
-    def dump(self, series=True, key=None):
+    def dump(self, series=True, key="series"):
         """Method to export the Time Series to a json format.
+
+        Parameters
+        ----------
+        series: Boolean
+            True to export the original time series, False to only export
+            the TimeSeries object's name.
+        key: str
+            string to give
 
         Returns
         -------
@@ -457,18 +470,20 @@ class TimeSeries(pd.Series):
             dictionary with the necessary information to recreate the
             TimeSeries object completely.
 
+        Notes
+        -----
+
+
         """
         data = dict()
-
-        if key is None:
-            key = "series"
 
         if series:
             data[key] = self.series_original
         else:
             data[key] = self.name
 
-        data["settings"] = self.settings
         data["kind"] = self.kind
+        data["settings"] = self.settings
+        data["metadata"] = self.metadata
 
         return data

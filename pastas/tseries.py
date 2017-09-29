@@ -4,7 +4,8 @@
 
 from __future__ import print_function, division
 
-from warnings import warn
+import functools
+import logging
 
 import numpy as np
 import pandas as pd
@@ -13,8 +14,21 @@ from scipy.signal import fftconvolve
 from .rfunc import One
 from .timeseries import TimeSeries
 
+logger = logging.getLogger(__name__)
 
-class TseriesBase:
+
+def set_parameter(function):
+    @functools.wraps(function)
+    def _set_parameter(self, name, value):
+        if name not in self.parameters.index:
+            logger.warning('%s does not exist' % name)
+        else:
+            return function(self, name, value)
+
+    return _set_parameter
+
+
+class TseriesBase():
     _name = "TseriesBase"
     __doc__ = """Tseries Base class called by each Tseries object.
 
@@ -29,17 +43,18 @@ class TseriesBase:
 
     """
 
-    def __init__(self, rfunc, name, metadata, tmin, tmax, up, meanstress,
-                 cutoff):
+    def __init__(self, rfunc, name, tmin, tmax, up, meanstress, cutoff):
         self.rfunc = rfunc(up, meanstress, cutoff)
+        self.parameters = pd.DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         self.nparam = self.rfunc.nparam
         self.name = name
-        self.metadata = metadata
         self.tmin = tmin
         self.tmax = tmax
         self.freq = None
         self.stress = list()
 
+    @set_parameter
     def set_initial(self, name, value):
         """Method to set the initial parameter value.
 
@@ -49,28 +64,22 @@ class TseriesBase:
         >>> ts.set_initial('parametername', 200)
 
         """
-        if name in self.parameters.index:
-            self.parameters.loc[name, 'initial'] = value
-        else:
-            print('Warning:', name, 'does not exist')
+        self.parameters.loc[name, 'initial'] = value
 
+    @set_parameter
     def set_min(self, name, value):
-        if name in self.parameters.index:
-            self.parameters.loc[name, 'pmin'] = value
-        else:
-            print('Warning:', name, 'does not exist')
+        self.parameters.loc[name, 'pmin'] = value
 
+    @set_parameter
     def set_max(self, name, value):
-        if name in self.parameters.index:
-            self.parameters.loc[name, 'pmax'] = value
-        else:
-            print('Warning:', name, 'does not exist')
+        self.parameters.loc[name, 'pmax'] = value
+
+    @set_parameter
+    def set_vary(self, name, value):
+        self.parameters.loc[name, 'pmax'] = value
 
     def fix_parameter(self, name):
-        if name in self.parameters.index:
-            self.parameters.loc[name, 'vary'] = 0
-        else:
-            print('Warning:', name, 'does not exist')
+        self.parameters.loc[name, 'vary'] = 0
 
     def update_stress(self, **kwargs):
         """Method to change the frequency of the individual TimeSeries in
@@ -118,11 +127,27 @@ class TseriesBase:
                 data.append(TimeSeries(value, kind=kind[i],
                                        settings=settings[i]))
         else:
-            warn("provided stress format is unknown. Provide a Series, "
-                 "dict or list.")
+            logger.warning("provided stress format is unknown. Provide a"
+                           "Series,dict or list.")
         return data
 
     def dump_stress(self, data=None, series=True):
+        """Method to dump all stresses in the stresses list.
+
+        Parameters
+        ----------
+        data: dict
+            Dictionary for the data to go into.
+        series: Boolean
+            True if time series are to be exported, False if only the name
+            of the time series are needed. Settings are always exported.
+
+        Returns
+        -------
+        data: dict
+            dictionary with the dump of the stresses.
+
+        """
         if data is None:
             data = dict()
 
@@ -174,36 +199,27 @@ class Tseries(TseriesBase):
         Response function used in the convolution with the stress.
     name: str
         Name of the stress
+    up: Boolean
+        True if response function is positive (default), False if negative.
+    cutoff: float
+        float between 0 and 1 to determine how long the response is (default 
+        is 99% of the actual response time). Used to reduce computation times.
+    kind: tuple with two strings
+        The kind of each stress, default is "prec" and "evap". This argument is
+        passen onto the TimeSeries.
+    settings: Tuple with two dicts
+        The settings of the individual TimeSeries. 
     metadata: dict, optional
         dictionary containing metadata about the stress.
-    xy: tuple, optional
-        XY location in lon-lat format used for making maps.
-    freq: str, optional
-        Frequency to which the stress series are transformed. By default,
-        the frequency is inferred from the data and that frequency is used.
-        The required string format is found
-        at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset
-        -aliases
-    fillnan: str or float, optional
-        Methods or float number to fill nan-values. Default values is
-        'mean'. Currently supported options are: 'interpolate', float,
-        and 'mean'. Interpolation is performed with a standard linear
-        interpolation.
-    norm_stress: Boolean, optional
-        normalize the stress by subtracting the mean. For example this is
-        convenient when simulating river levels.
-    fill_before: Boolean, optional
-        fill the stress-series before the beginning of this series with a certain value
-    fill_after: Boolean, optional
-        fill the stress-series after the end of this series with a certain value
 
     """
 
-    def __init__(self, stress, rfunc, name, metadata=None, up=True,
-                 cutoff=0.99, kind=None, settings=None):
-        stress = TimeSeries(stress, kind=kind, settings=settings)
+    def __init__(self, stress, rfunc, name, up=True, cutoff=0.99, kind=None,
+                 settings=None, metadata=None):
+        stress = TimeSeries(stress, kind=kind, settings=settings,
+                            metadata=metadata)
 
-        TseriesBase.__init__(self, rfunc, name, metadata, stress.index.min(),
+        TseriesBase.__init__(self, rfunc, name, stress.index.min(),
                              stress.index.max(), up, stress.mean(), cutoff)
         self.freq = stress.settings["freq"]
         self.stress = [stress]
@@ -254,7 +270,6 @@ class Tseries(TseriesBase):
         data["tseries_type"] = self._name
         data["rfunc"] = self.rfunc._name
         data["name"] = self.name
-        data["metadata"] = self.metadata
         data["up"] = True if self.rfunc.up == 1 else False
         data["cutoff"] = self.rfunc.cutoff
         data = self.dump_stress(data, series)
@@ -270,34 +285,31 @@ class Tseries2(TseriesBase):
 
     Parameters
     ----------
-    stress1: pandas.Series
-        pandas Series object containing stress 1.
-    stress2: pandas.Series
-        pandas Series object containing stress 2.
-    rfunc: rfunc class
+    stress: list of pandas.Series
+        list of pandas.Series or pastas.TimeSeries objects containing the 
+        stresses.
+    rfunc: pastas.rfunc instance
         Response function used in the convolution with the stress.
     name: str
         Name of the stress
+    up: Boolean
+        True if response function is positive (default), False if negative.
+    cutoff: float
+        float between 0 and 1 to determine how long the response is (default 
+        is 99% of the actual response time). Used to reduce computation times.
+    kind: tuple with two strings
+        The kind of each stress, default is "prec" and "evap". This argument is
+        passen onto the TimeSeries.
+    settings: Tuple with two dicts
+        The settings of the individual TimeSeries. 
     metadata: dict, optional
         dictionary containing metadata about the stress.
-    xy: tuple, optional
-        XY location in lon-lat format used for making maps.
-    freq: str, optional
-        Frequency to which the stress series are transformed. By default,
-        the frequency is inferred from the data and that frequency is used.
-        The required string format is found
-        at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset
-        -aliases
-    fillnan: str or float, optional
-        Methods or float number to fill nan-values. Default values is
-        'mean'. Currently supported options are: 'interpolate', float,
-        and 'mean'. Interpolation is performed with a standard linear
-        interpolation.
-
+    
     """
 
-    def __init__(self, stress, rfunc, name, metadata=None, up=True,
-                 cutoff=0.99, kind=("prec", "evap"), settings=(None, None)):
+    def __init__(self, stress, rfunc, name, up=True, cutoff=0.99,
+                 kind=("prec", "evap"), settings=(None, None),
+                 metadata=(None, None)):
         # First check the series, then determine tmin and tmax
         ts0 = TimeSeries(stress[0], kind=kind[0], settings=settings[0])
         ts1 = TimeSeries(stress[1], kind=kind[1], settings=settings[1])
@@ -307,18 +319,16 @@ class Tseries2(TseriesBase):
 
         # First check the series, then determine tmin and tmax
         stress0 = TimeSeries(stress[0][index], kind=kind[0],
-                             settings=settings[0])
+                             settings=settings[0], metadata=metadata[0])
         stress1 = TimeSeries(stress[1][index], kind=kind[1],
-                             settings=settings[1])
+                             settings=settings[1], metadata=metadata[1])
 
         if index.size is 0:
-            warn('The two stresses that were provided have no overlapping time'
-                 ' indices. Please make sure time indices overlap or apply to '
-                 'separate time series objects.')
+            logger.warning('The two stresses that were provided have no '
+                           'overlapping time indices. Please make sure time indices overlap or apply to separate time series objects.')
 
-        TseriesBase.__init__(self, rfunc, name, metadata, index.min(),
-                             index.max(), up, stress0.mean() - stress1.mean(),
-                             cutoff)
+        TseriesBase.__init__(self, rfunc, name, index.min(), index.max(), up,
+                             stress0.mean() - stress1.mean(), cutoff)
         self.stress.append(stress0)
         self.stress.append(stress1)
 
@@ -367,7 +377,7 @@ class Tseries2(TseriesBase):
             else:
                 return stress
         else:
-            print("parameter to calculate the stress is unknown")
+            logger.warning("parameter to calculate the stress is unknown")
 
     def dump(self, series=True):
         """Method to export the Tseries object.
@@ -383,7 +393,6 @@ class Tseries2(TseriesBase):
         data["tseries_type"] = self._name
         data["rfunc"] = self.rfunc._name
         data["name"] = self.name
-        data["metadata"] = self.metadata
         data["up"] = True if self.rfunc.up == 1 else False
         data["cutoff"] = self.rfunc.cutoff
         data = self.dump_stress(data, series)
@@ -407,35 +416,23 @@ class Recharge(TseriesBase):
     recharge: recharge_func class object
     name: str
         Name of the stress
-    metadata: dict, optional
-        dictionary containing metadata about the stress.
-    xy: tuple, optional
-        XY location in lon-lat format used for making maps.
-    freq: list of str, optional
-        Frequency to which the stress series are transformed. By default,
-        the frequency is inferred from the data and that frequency is used.
-        The required string format is found
-        at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset
-        -aliases
-    fillnan: list of str or float, optional
-        Methods or float number to fill nan-values. Default value for
-        precipitation is 'mean' and default for evaporation is 'interpolate'.
-        Currently supported options are: 'interpolate', float,
-        and 'mean'. Interpolation is performed with a standard linear
-        interpolation.
 
     Notes
     -----
-    Please check the documentation of the recharge_func classes for more details.
+    Please check the documentation of the recharge_func classes for more 
+    details.
 
     References
     ----------
-    R.A. Collenteur [2016] Non-linear time series analysis of deep groundwater levels: Application to the Veluwe. MSc. thesis, TU Delft. http://repository.tudelft.nl/view/ir/uuid:baf4fc8c-6311-407c-b01f-c80a96ecd584/
+    R.A. Collenteur [2016] Non-linear time series analysis of deep groundwater 
+    levels: Application to the Veluwe. MSc. thesis, TU Delft.
+    http://repository.tudelft.nl/view/ir/uuid:baf4fc8c-6311-407c-b01f-c80a96ecd584/
 
     """
 
-    def __init__(self, stress, rfunc, recharge, name, metadata=None,
-                 cutoff=0.99, kind=("prec", "evap"), settings=(None, None)):
+    def __init__(self, stress, rfunc, recharge, name, cutoff=0.99,
+                 kind=("prec", "evap"), settings=(None, None), metadata=(
+                    None, None)):
         # Check and name the time series
         prec1 = TimeSeries(stress[0], kind=kind[0], settings=settings[0])
         evap1 = TimeSeries(stress[1], kind=kind[0], settings=settings[0])
@@ -450,15 +447,15 @@ class Recharge(TseriesBase):
                           'objects.')
 
         # Store tmin and tmax
-        TseriesBase.__init__(self, rfunc, name, metadata, index.min(),
-                             index.max(), True, stress[0].mean() -
-                             stress[1].mean(),
-                             cutoff)
+        TseriesBase.__init__(self, rfunc, name, index.min(), index.max(), True,
+                             stress[0].mean() - stress[1].mean(), cutoff)
 
         self.stress["prec"] = TimeSeries(stress[0][index], kind=kind[0],
-                                         settings=settings[0])
+                                         settings=settings[0],
+                                         metadata=metadata[0])
         self.stress["evap"] = TimeSeries(stress[1][index], kind=kind[0],
-                                         settings=settings[0])
+                                         settings=settings[0],
+                                         metadata=metadata[1])
 
         self.freq = self.stress["prec"].settings["freq"]
 
@@ -517,7 +514,7 @@ class Recharge(TseriesBase):
             else:
                 return stress
         else:
-            print("parameter to calculate the stress is unknown")
+            logger.warning("parameter to calculate the stress is unknown")
 
 
 class Well(TseriesBase):
@@ -534,21 +531,6 @@ class Well(TseriesBase):
         Response function used in the convolution with the stresses.
     name: str
         Name of the stress
-    metadata: dict, optional
-        dictionary containing metadata about the stress.
-    xy: tuple, optional
-        XY location in lon-lat format used for making maps.
-    freq: str, optional
-        Frequency to which the stress series are transformed. By default,
-        the frequency is inferred from the data and that frequency is used.
-        The required string format is found
-        at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset
-        -aliases
-    fillnan: str or float, optional
-        Methods or float number to fill nan-values. Default values is
-        'mean'. Currently supported options are: 'interpolate', float,
-        and 'mean'. Interpolation is performed with a standard linear
-        interpolation.
 
     Notes
     -----
@@ -558,12 +540,12 @@ class Well(TseriesBase):
 
     """
 
-    def __init__(self, stress, rfunc, name, radius, metadata=None,
-                 up=True, cutoff=0.99, kind="well", settings=None):
+    def __init__(self, stress, rfunc, name, radius, up=True, cutoff=0.99,
+                 kind="well", settings=None):
         # Check if number of stresses and radii match
         if len(stress.keys()) != len(radius) and radius:
-            warn("The number of stresses applied does not match the number "
-                 "of radii provided.")
+            logger.warning("The number of stresses applied does not match the "
+                           "number of radii provided.")
         else:
             self.r = radius
 
@@ -571,9 +553,9 @@ class Well(TseriesBase):
         if isinstance(stress, pd.Series):
             stress = [stress]
 
-        TseriesBase.__init__(self, rfunc, name, metadata,
-                             self.stress.index.min(), self.stress.index.max(),
-                             up, self.stress.mean(), cutoff)
+        TseriesBase.__init__(self, rfunc, name, self.stress.index.min(),
+                             self.stress.index.max(), up, self.stress.mean(),
+                             cutoff)
 
         for i, well in enumerate(stress):
             self.stress[name + str(i)] = TimeSeries(well, name=name, kind=kind,
@@ -604,11 +586,10 @@ class TseriesStep(TseriesBase):
 
     """
 
-    def __init__(self, t_step, name, rfunc=One, metadata=None, up=True):
+    def __init__(self, t_step, name, rfunc=One, up=True):
         assert t_step is not None, 'Error: Need to specify time of step (for now this will not be optimized)'
-
-        TseriesBase.__init__(self, rfunc, name, metadata, pd.Timestamp.min,
-                             pd.Timestamp.max, up, 1.0, None, 0.0, 1.0)
+        TseriesBase.__init__(self, rfunc, name, pd.Timestamp.min,
+                             pd.Timestamp.max, up, 1.0, None)
         self.t_step = t_step
         self.set_init_parameters()
 
@@ -660,7 +641,7 @@ class TseriesNoConv(TseriesBase):
     def __init__(self, stress, rfunc, name, metadata=None, up=True,
                  cutoff=0.99, kind=None, settings=None):
         stress = TimeSeries(stress, name=name, kind=kind, settings=settings)
-        TseriesBase.__init__(self, rfunc, name, metadata, stress.index.min(),
+        TseriesBase.__init__(self, rfunc, name, stress.index.min(),
                              stress.index.max(), up, stress.mean(), cutoff)
         self.freq = stress.settings["freq"]
         self.stress[name] = stress
@@ -722,15 +703,14 @@ class Constant(TseriesBase):
 
     """
 
-    def __init__(self, name, metadata=None, value=0.0,
-                 pmin=np.nan, pmax=np.nan):
+    def __init__(self, name, value=0.0, pmin=np.nan, pmax=np.nan):
         self.nparam = 1
         self.value = value
         self.pmin = pmin
         self.pmax = pmax
         self.name = "constant"
-        TseriesBase.__init__(self, One, name, metadata,
-                             pd.Timestamp.min, pd.Timestamp.max, 1, 0, 0)
+        TseriesBase.__init__(self, One, name, pd.Timestamp.min,
+                             pd.Timestamp.max, 1, 0, 0)
         self.set_init_parameters()
 
     def set_init_parameters(self):
@@ -774,6 +754,7 @@ class NoiseModel:
         self.name = "noise"
         self.set_init_parameters()
 
+    @set_parameter
     def set_initial(self, name, value):
         """Method to set the initial parameter value
 
@@ -788,23 +769,29 @@ class NoiseModel:
         else:
             print('Warning:', name, 'does not exist')
 
+    @set_parameter
     def set_min(self, name, value):
         if name in self.parameters.index:
             self.parameters.loc[name, 'pmin'] = value
         else:
             print('Warning:', name, 'does not exist')
 
+    @set_parameter
     def set_max(self, name, value):
         if name in self.parameters.index:
             self.parameters.loc[name, 'pmax'] = value
         else:
             print('Warning:', name, 'does not exist')
 
+    @set_parameter
+    def set_vary(self, name, value):
+        self.parameters.loc[name, 'pmax'] = value
+
     def fix_parameter(self, name):
         if name in self.parameters.index:
             self.parameters.loc[name, 'vary'] = 0
         else:
-            print('Warning:', name, 'does not exist')
+            logger.warning('%s does not exist' % name)
 
     def set_init_parameters(self):
         self.parameters = pd.DataFrame(

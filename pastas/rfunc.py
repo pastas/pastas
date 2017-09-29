@@ -70,10 +70,10 @@ class Gamma(RfuncBase):
     def set_parameters(self, name):
         parameters = pd.DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        parameters.loc[name + '_A'] = (
-            1 / self.meanstress, 0, 100 / self.meanstress, 1, name)
-        parameters.loc[name + '_n'] = (1, 0.1, 5, 1,
-                                       name)  # if n is too small, the length of the response function is close to zero
+        parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
+                                       100 / self.meanstress, 1, name)
+        # if n is too small, the length of the response function is close to zero
+        parameters.loc[name + '_n'] = (1, 0.1, 5, 1, name)
         parameters.loc[name + '_a'] = (100, 1, 5000, 1, name)
         return parameters
 
@@ -93,7 +93,7 @@ class Gamma(RfuncBase):
 
     def block(self, p, dt=1):
         s = self.step(p, dt)
-        return np.append(s[0],s[1:] - s[:-1])
+        return np.append(s[0], s[1:] - s[:-1])
 
 
 class Exponential(RfuncBase):
@@ -134,7 +134,7 @@ class Exponential(RfuncBase):
 
     def block(self, p, dt=1):
         s = self.step(p, dt)
-        return np.append(s[0],s[1:] - s[:-1])
+        return np.append(s[0], s[1:] - s[:-1])
 
 
 class Hantush(RfuncBase):
@@ -202,7 +202,7 @@ class Hantush(RfuncBase):
 
     def block(self, p, dt=1):
         s = self.step(p, dt)
-        return np.append(s[0],s[1:] - s[:-1])
+        return np.append(s[0], s[1:] - s[:-1])
 
 
 class Theis(RfuncBase):
@@ -249,7 +249,7 @@ class Theis(RfuncBase):
 
     def block(self, p, dt=1):
         s = self.step(p, dt)
-        return np.append(s[0],s[1:] - s[:-1])
+        return np.append(s[0], s[1:] - s[:-1])
 
 
 class Bruggeman(RfuncBase):
@@ -301,7 +301,7 @@ class Bruggeman(RfuncBase):
 
     def block(self, p, dt=1):
         s = self.step(p, dt)
-        return np.append(s[0],s[1:] - s[:-1])
+        return np.append(s[0], s[1:] - s[:-1])
 
 
 class One(RfuncBase):
