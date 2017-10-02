@@ -685,10 +685,10 @@ class Model:
         return parameters.values
 
     @get_tseries
-    def get_contribution(self, name):
+    def get_contribution(self, name, tindex=None):
         p = self.get_parameters(name)
         dt = get_dt(self.settings["freq"])
-        return self.tseriesdict[name].simulate(p, dt=dt)
+        return self.tseriesdict[name].simulate(p, tindex=tindex, dt=dt)
 
     @get_tseries
     def get_block_response(self, name):
