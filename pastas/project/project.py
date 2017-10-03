@@ -12,12 +12,14 @@ Usage
 
 """
 
+import logging
 import os
-from warnings import warn
 
 import numpy as np
 import pandas as pd
 import pastas as ps
+
+logger = logging.getLogger(__name__)
 
 
 class Project:
@@ -71,10 +73,13 @@ class Project:
         -------
 
         """
-        ts = ps.TimeSeries(series=series, name=name, kind=kind,
+        try:
+            ts = ps.TimeSeries(series=series, name=name, kind=kind,
                                settings=settings, metadata=metadata)
-        # except:
-        #     return warn("Time series %s is ommitted from the database." % name)
+        except:
+            logger.warning("Time series %s is ommitted from the database."
+                           % name)
+            return
 
         if kind == "oseries":
             data = self.oseries
@@ -144,10 +149,10 @@ class Project:
 
         # Validate name and ml_name before continuing
         if ml_name in self.models.keys():
-            return warn("Model name is not unique, provide a new ml_name.")
+            logger.warning("Model name is not unique, provide a new ml_name.")
         if oseries not in self.oseries.index:
-            return warn("Oseries name is not present in the database. "
-                        "Make sure to provide a valid oseries name.")
+            logger.warning("Oseries name is not present in the database. "
+                           "Make sure to provide a valid oseries name.")
 
         oseries = self.oseries.loc[oseries, "series"]
         ml = ps.Model(oseries, name=ml_name, **kwargs)
@@ -251,6 +256,20 @@ class Project:
             file_info["owner"] = "Unknown"
         return file_info
 
+    def dump(self, fname=None, **kwargs):
+        """Method to write a Pastas project to a file.
+
+        Parameters
+        ----------
+        fname
+
+        Returns
+        -------
+
+        """
+        data = self.dump_data(**kwargs)
+        return ps.io.base.dump(fname, data)
+
     def dump_data(self, series=False, metadata=True, sim_series=False):
         """Method to export a Pastas Project and return a dictionary with
         the data to be exported.
@@ -292,23 +311,9 @@ class Project:
 
         for name in series.keys():
             ts = series[name]["series"]
-            series[name]["series"] = ts.dump()
+            series[name]["series"] = ts.dump(series=True)
 
         return series
-
-    def dump(self, fname=None, **kwargs):
-        """Method to write a Pastas project to a file.
-
-        Parameters
-        ----------
-        fname
-
-        Returns
-        -------
-
-        """
-        data = self.dump_data(**kwargs)
-        return ps.io.base.dump(fname, data)
 
     def get_nearest_tseries(self, oseries, kind, n=1):
         """Method to obtain the nearest (n) tseries of a specific kind.
@@ -328,18 +333,52 @@ class Project:
             List with the names of the tseries.
 
         """
+        if isinstance(oseries, str):
+            oseries = [oseries]
+
         tseries = self.tseries[self.tseries.kind == kind].index
 
+        distances = self.get_distances(oseries, tseries)
+
+        sorted = pd.DataFrame(columns=np.arange(n))
+
+        for series in oseries:
+            series = pd.Series(distances.loc[series].sort_values().index[:n],
+                               name=series)
+            sorted = sorted.append(series)
+
+        return sorted
+
+    def get_distances(self, oseries=None, tseries=None):
+        """Method to obtain the distances in meters between the tseries and
+        oseries.
+
+        Parameters
+        ----------
+        oseries: str or list of str
+        tseries: str or list of str
+
+        Returns
+        -------
+        distances: pandas.DataFrame
+            Pandas DataFrame with the distances between the oseries (index)
+            and the tseries (columns).
+
+        """
+        if oseries is None:
+            oseries = self.oseries.index
+        if tseries is None:
+            tseries = self.tseries.index
+
         xo = pd.to_numeric(self.oseries.loc[oseries, "x"])
-        xt = pd.to_numeric(self.tseries.loc[oseries, "x"])
+        xt = pd.to_numeric(self.tseries.loc[tseries, "x"])
         yo = pd.to_numeric(self.oseries.loc[oseries, "y"])
-        yt = pd.to_numeric(self.tseries.loc[oseries, "y"])
+        yt = pd.to_numeric(self.tseries.loc[tseries, "y"])
 
         xh, xi = np.meshgrid(xt, xo)
         yh, yi = np.meshgrid(yt, yo)
 
         distances = pd.DataFrame(np.sqrt((xh - xi) ** 2 + (yh - yi) ** 2),
-                                 index=oseries,
-                                 columns=tseries)
+                                 index=oseries, columns=tseries)
 
-        return distances.sort_values(axis=1).iloc[:n].index
+        return distances

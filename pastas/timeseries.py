@@ -481,6 +481,7 @@ class TimeSeries(pd.Series):
         else:
             data[key] = self.name
 
+        data["name"] = self.name
         data["kind"] = self.kind
         data["settings"] = self.settings
         data["metadata"] = self.metadata
