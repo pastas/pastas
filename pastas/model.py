@@ -379,7 +379,7 @@ class Model:
         # Set the frequency & warmup
         if freq:
             self.settings["freq"] = freq
-        if warmup:
+        if warmup is not None:
             self.settings["warmup"] = warmup
 
         # make sure calibration data is renewed
