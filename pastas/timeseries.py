@@ -30,8 +30,7 @@ class TimeSeries(pd.Series):
         "well": {"freq": "D", "sample_up": "bfill", "sample_down": "sum",
                  "fill_nan": 0.0, "fill_before": 0.0, "fill_after": 0.0},
         "waterlevel": {"freq": "D", "sample_up": "mean",
-                       "sample_down": "interpolate",
-                       "fill_nan": "interpolate",
+                       "sample_down": "interpolate", "fill_nan": "interpolate",
                        "fill_before": "mean", "fill_after": "mean"},
     }
     metadata = {
@@ -60,8 +59,8 @@ class TimeSeries(pd.Series):
              is found at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
         sample_up: optional: str or float
             Methods or float number to fill nan-values. Default values is
-            'mean'. Currently supported options are: 'interpolate', float,
-            and 'mean'. Interpolation is performed with a standard linear
+            "mean". Currently supported options are: "interpolate", float,
+            and "mean". Interpolation is performed with a standard linear
             interpolation.
         sample_down: str or float
             method
@@ -72,11 +71,11 @@ class TimeSeries(pd.Series):
         """
         pd.Series.__init__(self)
         if isinstance(series, TimeSeries):
-            self.series_original = series.series_original
+            self.series_original = series.series_original.copy()
             self.freq_original = series.freq_original
             self.settings = series.settings
             self.metadata = series.metadata
-            self.series = series.series
+            self.series = series.series.copy()
             self._update_inplace(series)
 
             validate = False
@@ -88,7 +87,7 @@ class TimeSeries(pd.Series):
             elif kind is not series.kind:
                 validate = True
                 update = True
-                series = series.series_original
+                series = series.series_original.copy()
         else:
             validate = True
             update = True
@@ -106,8 +105,6 @@ class TimeSeries(pd.Series):
                 tmax=None,
                 norm=None
             )
-            if kind in self._kind_settings.keys():
-                self.settings.update(self._kind_settings[kind])
 
         # Use user provided name or set from series
         if name is None:
@@ -120,16 +117,19 @@ class TimeSeries(pd.Series):
             self.metadata.update(metadata)
 
         # Update the options with user-provided values, if any.
+        if kind in self._kind_settings.keys():
+            if self.update_settings(**self._kind_settings[kind]):
+                update = True
         if settings:
             if self.update_settings(**settings):
                 update = True
         if kwargs:
             if self.update_settings(**kwargs):
                 update = True
-        # Create a validated series for computations
+
+        # Create a validated series for computations and update
         if validate:
             self.series = self.validate_series(series)
-
         if update:
             self.update_series(initial=True, **self.settings)
 
@@ -159,8 +159,8 @@ class TimeSeries(pd.Series):
         """
 
         # 1. Check if series is a Pandas Series
-        assert isinstance(series, pd.Series), 'Expected a Pandas Series, ' \
-                                              'got %s' % type(series)
+        assert isinstance(series, pd.Series), "Expected a Pandas Series, " \
+                                              "got %s" % type(series)
 
         # 4. Make sure the indices are Timestamps and sorted
         series.index = pd.to_datetime(series.index)
@@ -177,7 +177,7 @@ class TimeSeries(pd.Series):
             self.freq_original = freq
             if not self.settings["freq"]:
                 self.settings["freq"] = freq
-            logger.info('Inferred frequency from time series %s: freq=%s ' % (
+            logger.info("Inferred frequency from time series %s: freq=%s " % (
                 self.name, freq))
         else:
             self.freq_original = self.settings["freq"]
@@ -195,8 +195,8 @@ class TimeSeries(pd.Series):
 
         # 5. Handle duplicate indices
         if not series.index.is_unique:
-            logger.warning('duplicate time-indexes were found in the Time '
-                           'Series %s. Values were averaged.' % (self.name))
+            logger.warning("duplicate time-indexes were found in the Time "
+                           "Series %s. Values were averaged." % (self.name))
             grouped = series.groupby(level=0)
             series = grouped.mean()
 
@@ -252,15 +252,12 @@ class TimeSeries(pd.Series):
         # 1. If no freq string is present or is provided (e.g. Oseries)
         if not freq:
             pass
-
         # 2. If new frequency is lower than its original.
         elif get_dt(freq) < get_dt(self.freq_original):
             series = self.sample_up(series)
-
         # 3. If new frequency is higher than its original, downsample.
         elif get_dt(freq) > get_dt(self.freq_original):
             series = self.sample_down(series)
-
         # 4. If new frequency is equal to its original.
         elif get_dt(freq) == get_dt(self.freq_original):
             series = self.fill_nan(series)
@@ -281,24 +278,26 @@ class TimeSeries(pd.Series):
         method = self.settings["sample_up"]
         freq = self.settings["freq"]
 
-        if method in ['backfill', 'bfill', 'pad', 'ffill']:
+        n = series.isnull().values.sum()
+
+        if method in ["backfill", "bfill", "pad", "ffill"]:
             series = series.asfreq(freq, method=method)
         elif method is None:
             pass
         else:
             series = series.asfreq(freq)
-            if method == 'mean':
+            if method == "mean":
                 series.fillna(series.mean(), inplace=True)  # Default option
-            elif method == 'interpolate':
-                series.interpolate(method='time', inplace=True)
+            elif method == "interpolate":
+                series.interpolate(method="time", inplace=True)
             elif type(method) == float:
                 series.fillna(method, inplace=True)
             else:
-                logger.warning('User-defined option for sample_up %s is not '
-                               'supported' % method)
+                logger.warning("User-defined option for sample_up %s is not "
+                               "supported" % method)
 
-        logger.info('%i nan-value(s) was/were found and filled with: %s'
-                    % (series.isnull().values.sum(), method))
+        logger.info("%i nan-value(s) was/were found and filled with: %s"
+                    % (n, method))
 
         return series
 
@@ -317,7 +316,7 @@ class TimeSeries(pd.Series):
         freq = self.settings["freq"]
 
         # Provide some standard pandas arguments for all options
-        kwargs = {"label": 'right', "closed": 'right'}
+        kwargs = {"label": "right", "closed": "right"}
 
         if method == "mean":
             series = series.resample(freq, **kwargs).mean()
@@ -330,8 +329,8 @@ class TimeSeries(pd.Series):
         elif method == "max":
             series = series.resample(freq, **kwargs).max()
         else:
-            logger.warning('User-defined option for sample_down %s is not '
-                           'supported' % method)
+            logger.warning("User-defined option for sample_down %s is not "
+                           "supported" % method)
 
         logger.info("Time Series %s were sampled down to freq %s with method "
                     "%s" % (self.name, freq, method))
@@ -352,21 +351,21 @@ class TimeSeries(pd.Series):
             n = series.isnull().values.sum()
             if method == "drop":
                 series.dropna(inplace=True)
-            elif method == 'mean':
+            elif method == "mean":
                 series.fillna(series.mean(), inplace=True)  # Default option
-            elif method == 'interpolate':
-                series.interpolate(method='time', inplace=True)
+            elif method == "interpolate":
+                series.interpolate(method="time", inplace=True)
             elif type(method) == float:
                 series.fillna(method, inplace=True)
             else:
-                logger.warning('User-defined option for fill_nan %s is not '
-                               'supported' % method)
+                logger.warning("User-defined option for fill_nan %s is not "
+                               "supported" % method)
         else:
             method = "drop"
             n = series.isnull().values.sum()
             series.dropna(inplace=True)
 
-        logger.info('%i nan-value(s) was/were found and filled with: %s'
+        logger.info("%i nan-value(s) was/were found and filled with: %s"
                     % (n, method))
 
         return series
@@ -395,13 +394,13 @@ class TimeSeries(pd.Series):
             index = series.index.union(index_extend[:-1])
             series = series.reindex(index)
 
-            if method == 'mean':
+            if method == "mean":
                 series.fillna(series.mean(), inplace=True)  # Default option
             elif type(method) == float:
                 series.fillna(method, inplace=True)
             else:
-                logger.warning('User-defined option for sample_up %s is not '
-                               'supported' % method)
+                logger.warning("User-defined option for fill_before %s is not "
+                               "supported" % method)
 
         return series
 
@@ -429,13 +428,13 @@ class TimeSeries(pd.Series):
             index = self.index.union(index_extend[:-1])
             series = series.reindex(index)
 
-            if method == 'mean':
+            if method == "mean":
                 series.fillna(series.mean(), inplace=True)  # Default option
             elif type(method) == float:
                 series.fillna(method, inplace=True)
             else:
-                logger.warning('User-defined option for fill_after %s is not '
-                               'supported' % method)
+                logger.warning("User-defined option for fill_after %s is not "
+                               "supported" % method)
 
         return series
 
@@ -460,7 +459,7 @@ class TimeSeries(pd.Series):
         ----------
         series: Boolean
             True to export the original time series, False to only export
-            the TimeSeries object's name.
+            the TimeSeries object"s name.
         key: str
             string to give
 

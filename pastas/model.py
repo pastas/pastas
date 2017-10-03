@@ -5,7 +5,6 @@ import logging
 import logging.config
 import os
 from collections import OrderedDict
-from warnings import warn
 
 import numpy as np
 import pandas as pd
@@ -295,19 +294,6 @@ class Model:
                 'nan problem in residuals')  # quick and dirty check
         return res
 
-    def get_oseries_calib(self, tmin, tmax, sim_index):
-        """Method to get the oseries to use for calibration.
-
-        This method is for performance improvements only.
-
-        """
-        oseries_calib = self.oseries.loc[tmin: tmax]
-        # sample measurements, so that frequency is not higher than model
-        # keep the original timestamps, as they will be used during
-        # interpolation of the simulation
-        oseries_calib = self.sample(oseries_calib, sim_index)
-        return oseries_calib
-
     def innovations(self, parameters=None, tmin=None, tmax=None, freq=None):
         """Method to simulate the innovations when a noisemodel is present.
 
@@ -332,7 +318,8 @@ class Model:
 
         """
         if self.noisemodel is None:
-            warn("Innovations can not be calculated as there is no noisemodel")
+            self.logger.warning("Innovations can not be calculated as there is"
+                                " no noisemodel")
             return None
 
         tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq, use_oseries=True)
@@ -419,25 +406,6 @@ class Model:
         # Initialize parameters
         self.parameters = self.get_init_parameters(noise, initial)
 
-    def get_sim_index(self, tmin, tmax, freq, warmup):
-        """Method to get the indices for the simulation, including the warmup
-        period.
-
-        Parameters
-        ----------
-        tmin
-        tmax
-        freq
-        warmup
-
-        Returns
-        -------
-
-        """
-        sim_index = pd.date_range(tmin - pd.DateOffset(days=warmup), tmax,
-                                  freq=freq)
-        return sim_index
-
     def solve(self, tmin=None, tmax=None, solver=LmfitSolve, report=True,
               noise=True, initial=True, weights=None, freq=None, warmup=None,
               **kwargs):
@@ -481,6 +449,66 @@ class Model:
         self.report = fit.report
         if report:
             print(self.report)
+
+    def get_sample(self, series, tindex):
+        """Sample the series so that the frequency is not higher that tindex.
+
+        Parameters
+        ----------
+        series: pandas.Series
+            pandas series object.
+        tindex: pandas.index
+            Pandas index object
+
+        Returns
+        -------
+        series: pandas.Series
+
+
+        Notes
+        -----
+        Find the index closest to the tindex, and then return a selection
+        of series.
+
+        """
+        f = interpolate.interp1d(series.index.asi8,
+                                 np.arange(0, series.index.size),
+                                 kind='nearest', bounds_error=False,
+                                 fill_value='extrapolate')
+        ind = np.unique(f(tindex.asi8).astype(int))
+        return series[ind]
+
+    def get_sim_index(self, tmin, tmax, freq, warmup):
+        """Method to get the indices for the simulation, including the warmup
+        period.
+
+        Parameters
+        ----------
+        tmin
+        tmax
+        freq
+        warmup
+
+        Returns
+        -------
+
+        """
+        sim_index = pd.date_range(tmin - pd.DateOffset(days=warmup), tmax,
+                                  freq=freq)
+        return sim_index
+
+    def get_oseries_calib(self, tmin, tmax, sim_index):
+        """Method to get the oseries to use for calibration.
+
+        This method is for performance improvements only.
+
+        """
+        oseries_calib = self.oseries.loc[tmin: tmax]
+        # sample measurements, so that frequency is not higher than model
+        # keep the original timestamps, as they will be used during
+        # interpolation of the simulation
+        oseries_calib = self.get_sample(oseries_calib, sim_index)
+        return oseries_calib
 
     def get_tmin_tmax(self, tmin=None, tmax=None, freq=None, use_oseries=True):
         """Method that checks and returns valid values for tmin and tmax.
@@ -547,13 +575,15 @@ class Model:
             tmin = pd.Timestamp(tmin)
             # Check if tmin > oseries.tmin (Needs to be True)
             if tmin < self.oseries.index.min() and use_oseries:
-                warn("Specified tmin is before the first observation. tmin"
-                     " automatically set to %s" % self.oseries.index.min())
+                self.logger.warning(
+                    "Specified tmin is before the first observation. tmin"
+                    " automatically set to %s" % self.oseries.index.min())
                 tmin = self.oseries.index.min()
             # Check if tmin > tseries.tmin (Needs to be True)
             if tmin < ts_tmin:
-                warn("Specified tmin is before any of the tseries tmin. tmin"
-                     " automatically set to tseries tmin %s" % ts_tmin)
+                self.logger.warning("Specified tmin is before any of the"
+                                    "tseries tmin. tmin automatically set to"
+                                    "tseries tmin %s" % ts_tmin)
                 tmin = ts_tmin
 
         # Set tmax properly
@@ -565,13 +595,15 @@ class Model:
             tmax = pd.Timestamp(tmax)
             # Check if tmax < oseries.tmax (Needs to be True)
             if tmax > self.oseries.index.max() and use_oseries:
-                warn("Specified tmax is after the last observation. tmax"
-                     " automatically set to %s" % self.oseries.index.max())
+                self.logger.warning(
+                    "Specified tmax is after the last observation. tmax"
+                    " automatically set to %s" % self.oseries.index.max())
                 tmax = self.oseries.index.max()
             # Check if tmax < tseries.tmax (Needs to be True)
             if tmax > ts_tmax:
-                warn("Specified tmax is after any of the tseries tmax. tmax"
-                     " automatically set to tseries tmax %s" % ts_tmax)
+                self.logger.warning(
+                    "Specified tmax is after any of the tseries tmax. tmax"
+                    " automatically set to tseries tmax %s" % ts_tmax)
                 tmax = ts_tmax
 
         # adjust tmin and tmax so that the time-offset is equal to the tseries.
@@ -710,34 +742,6 @@ class Model:
     def get_stress(self, name):
         p = self.get_parameters(name)
         self.tseriesdict[name].get_stress(p)
-
-    def sample(self, series, tindex):
-        """Sample the series so that the frequency is not higher that tindex.
-
-        Parameters
-        ----------
-        series: pandas.Series
-            pandas series object.
-        tindex: pandas.index
-            Pandas index object
-
-        Returns
-        -------
-        series: pandas.Series
-
-
-        Notes
-        -----
-        Find the index closest to the tindex, and then return a selection
-        of series.
-
-        """
-        f = interpolate.interp1d(series.index.asi8,
-                                 np.arange(0, series.index.size),
-                                 kind='nearest', bounds_error=False,
-                                 fill_value='extrapolate')
-        ind = np.unique(f(tindex.asi8).astype(int))
-        return series[ind]
 
     def get_metadata(self, meta=None):
         """Method that returns a metadata dict with the basic information.
