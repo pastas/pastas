@@ -98,7 +98,7 @@ class TimeSeries(pd.Series):
                 freq="D",
                 sample_up=None,
                 sample_down=None,
-                fill_nan=None,
+                fill_nan="interpolate",
                 fill_before=None,
                 fill_after=None,
                 tmin=None,
@@ -199,9 +199,10 @@ class TimeSeries(pd.Series):
                            "Series %s. Values were averaged." % (self.name))
             grouped = series.groupby(level=0)
             series = grouped.mean()
-
-        self.settings["tmin"] = series.index.min()
-        self.settings["tmax"] = series.index.max()
+        if self.settings["tmin"] is None:
+            self.settings["tmin"] = series.index.min()
+        if self.settings["tmax"] is None:
+            self.settings["tmax"] = series.index.max()
 
         return series
 
@@ -478,10 +479,10 @@ class TimeSeries(pd.Series):
 
         if series:
             data[key] = self.series_original
+            data["name"] = self.name
         else:
             data[key] = self.name
 
-        data["name"] = self.name
         data["kind"] = self.kind
         data["settings"] = self.settings
         data["metadata"] = self.metadata
