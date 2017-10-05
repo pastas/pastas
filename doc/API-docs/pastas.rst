@@ -16,7 +16,9 @@ Submodules
 
 .. toctree::
 
+   pastas.decorators
    pastas.model
+   pastas.noisemodels
    pastas.plots
    pastas.rfunc
    pastas.solver
