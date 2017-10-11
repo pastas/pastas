@@ -233,8 +233,8 @@ class Project:
                                        "evap"].argmin()
         evap = self.tseries.loc[evap_name, "series"]
 
-        recharge = ps.Tseries2([prec, evap], ps.Gamma, name="recharge",
-                               **kwargs)
+        recharge = ps.StressModel2([prec, evap], ps.Gamma, name="recharge",
+                                   **kwargs)
 
         ml.add_tseries(recharge)
 

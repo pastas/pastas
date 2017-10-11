@@ -16,14 +16,14 @@ rain = ps.read.knmidata('data/neerslaggeg_HEIBLOEM-L_967-2.txt', variable='RD')
 evap = ps.read.knmidata('data/etmgeg_380.txt', variable='EV24')
 
 ## Create stress
-ts = ps.Tseries2([rain.series, evap.series], ps.Exponential, name='recharge')
+ts = ps.StressModel2([rain.series, evap.series], ps.Exponential,
+                    name='recharge')
 ml.add_tseries(ts)
 
 # Add noise model
-n = ps.NoiseModel()
+n = ps.noisemodels.NoiseModel()
 ml.add_noisemodel(n)
 
 ## Solve
-ml.solve(noise=True, weights="swsi")
+ml.solve()
 ml.plot()
-

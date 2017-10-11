@@ -35,11 +35,6 @@ class Model:
         Dictionary containing metadata of the model.
     warmup: float, optional
         Number of days used for warmup.
-    fillnan: str or float, optional
-        Methods or float number to fill nan-values. Default values is
-        'drop'. Currently supported options are: 'interpolate', float,
-        'mean' and, 'drop'. Interpolation is performed with a standard
-        linear interpolation.
     constant: bool, optional
         Add a constant to the model (Default=True).
 
@@ -627,7 +622,7 @@ class Model:
 
         Notes
         -----
-        Method to check if the Tseries timestamps match (e.g. similar hours)
+        Method to check if the StressModel timestamps match (e.g. similar hours)
 
         """
         time_offsets = set()
