@@ -15,13 +15,6 @@ explanatory time series.
     import pastas as ps
     %matplotlib inline
 
-
-.. parsed-literal::
-
-    C:\Anaconda\lib\site-packages\statsmodels\compat\pandas.py:56: FutureWarning: The pandas.core.datetools module is deprecated and will be removed in a future version. Please use the pandas.tseries module instead.
-      from pandas.core import datetools
-
-
 1. Importing the dependent time series data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -40,7 +33,7 @@ the observed time series: - The observed time series are stored as a
     # Import groundwater time seriesm and squeeze to Series object
     gwdata = pd.read_csv('../data/head_nb1.csv', parse_dates=['date'], index_col='date', squeeze=True)
     print('The data type of the oseries is: %s' %type(gwdata))
-
+    
     # Plot the observed groundwater levels
     gwdata.plot(style='.', figsize=(10, 4))
     plt.ylabel('Head [m]');
@@ -50,7 +43,7 @@ the observed time series: - The observed time series are stored as a
 .. parsed-literal::
 
     The data type of the oseries is: <class 'pandas.core.series.Series'>
-
+    
 
 
 .. image:: output_3_1.png
@@ -74,15 +67,15 @@ the same length units as for the observed heads.
     # Import observed precipitation series
     precip = pd.read_csv('../data/rain_nb1.csv', parse_dates=['date'], index_col='date', squeeze=True)
     print('The data type of the precip series is: %s' %type(precip))
-
+    
     # Import observed evaporation series
     evap = pd.read_csv('../data/evap_nb1.csv', parse_dates=['date'], index_col='date', squeeze=True)
     print('The data type of the evap series is: %s' %type(evap))
-
+    
     # Calculate the recharge to the groundwater
     recharge = precip - evap
     print('The data type of the recharge series is: %s' %type(recharge))
-
+    
     # Plot the time series of the precipitation and evaporation
     plt.figure()
     recharge.plot(label='Recharge', figsize=(10, 4))
@@ -95,7 +88,7 @@ the same length units as for the observed heads.
     The data type of the precip series is: <class 'pandas.core.series.Series'>
     The data type of the evap series is: <class 'pandas.core.series.Series'>
     The data type of the recharge series is: <class 'pandas.core.series.Series'>
-
+    
 
 
 .. image:: output_5_1.png
@@ -140,34 +133,28 @@ values and correlations.
 
 .. parsed-literal::
 
-    c:\python\pastas\pastas\solver.py:94: UserWarning: Caution, solving the model with a noisemodel but not weighting the innovations, please consider applying weights.
-      warn("Caution, solving the model with a noisemodel but not "
-
-
-.. parsed-literal::
-
     [[Fit Statistics]]
-        # function evals   = 45
+        # function evals   = 39
         # data points      = 644
         # variables        = 5
-        chi-square         = 4.196
-        reduced chi-square = 0.007
-        Akaike info crit   = -3231.665
-        Bayesian info crit = -3209.327
+        chi-square         = 4.144
+        reduced chi-square = 0.006
+        Akaike info crit   = -3239.652
+        Bayesian info crit = -3217.313
     [[Variables]]
-        recharge_A:    725.320673 +/- 33.19303 (4.58%) (init= 2081.857)
-        recharge_n:    1.05874456 +/- 0.013912 (1.31%) (init= 1)
-        recharge_a:    129.468904 +/- 7.846712 (6.06%) (init= 100)
-        constant_d:    27.5669199 +/- 0.020337 (0.07%) (init= 27.90008)
-        noise_alpha:   61.7214879 +/- 8.357141 (13.54%) (init= 14)
+        recharge_A:    726.162710 +/- 33.44861 (4.61%) (init= 2081.857)
+        recharge_n:    1.05986521 +/- 0.014364 (1.36%) (init= 1)
+        recharge_a:    129.292756 +/- 7.949492 (6.15%) (init= 100)
+        constant_d:    27.5686989 +/- 0.020562 (0.07%) (init= 27.90008)
+        noise_alpha:   60.0137199 +/- 8.059290 (13.43%) (init= 14)
     [[Correlations]] (unreported correlations are <  0.100)
-        C(recharge_A, recharge_a)    =  0.857
-        C(recharge_A, constant_d)    = -0.771
-        C(recharge_a, constant_d)    = -0.665
-        C(recharge_n, recharge_a)    = -0.610
-        C(recharge_A, recharge_n)    = -0.256
-        C(recharge_n, constant_d)    =  0.213
-
+        C(recharge_A, recharge_a)    =  0.846 
+        C(recharge_A, constant_d)    = -0.763 
+        C(recharge_a, constant_d)    = -0.644 
+        C(recharge_n, recharge_a)    = -0.619 
+        C(recharge_A, recharge_n)    = -0.248 
+        C(recharge_n, constant_d)    =  0.190 
+    
 
 5. Plot the results
 ~~~~~~~~~~~~~~~~~~~
@@ -234,11 +221,11 @@ gives a summary of the main statistics of the model.
         .dataframe thead tr:only-child th {
             text-align: right;
         }
-
+    
         .dataframe thead th {
             text-align: left;
         }
-
+    
         .dataframe tbody tr th {
             vertical-align: top;
         }
@@ -257,27 +244,27 @@ gives a summary of the main statistics of the model.
       <tbody>
         <tr>
           <th>Akaike Information Criterion</th>
-          <td>7.130791</td>
+          <td>7.156040</td>
         </tr>
         <tr>
           <th>Average Deviation</th>
-          <td>0.001135</td>
+          <td>-0.001033</td>
         </tr>
         <tr>
           <th>Bayesian Information Criterion</th>
-          <td>29.469284</td>
+          <td>29.494533</td>
         </tr>
         <tr>
           <th>Explained variance percentage</th>
-          <td>91.480248</td>
+          <td>91.484937</td>
         </tr>
         <tr>
           <th>Pearson R^2</th>
-          <td>0.956648</td>
+          <td>0.956700</td>
         </tr>
         <tr>
           <th>Root mean squared error</th>
-          <td>0.125464</td>
+          <td>0.125428</td>
         </tr>
       </tbody>
     </table>
@@ -295,41 +282,35 @@ potential evaporation. First, new model is created (called ``ml2`` here
 so that the original model ``ml`` does not get overwritten). Second, the
 ``StressModel2`` object is created, which combines the precipitation and
 evaporation series and adds a parameter for the evaporation factor
-``f``. The ``StressModel2`` object is added to the model, the noise model is
-added, the model is solved, and the results and statistics are plotted
-to the screen. Note that the new model gives a better fit (lower root
-mean squared error and higher explained variance), and that the Akiake
-information criterion indicates that the addition of the additional
-parameter improved the model signficantly (the Akaike criterion for
-model ``ml2`` is higher than for model ``ml``).
+``f``. The ``StressModel2`` object is added to the model, the noise
+model is added, the model is solved, and the results and statistics are
+plotted to the screen. Note that the new model gives a better fit (lower
+root mean squared error and higher explained variance), and that the
+Akiake information criterion indicates that the addition of the
+additional parameter improved the model signficantly (the Akaike
+criterion for model ``ml2`` is higher than for model ``ml``).
 
 .. code:: ipython3
 
     # Create a model object by passing it the observed series
     ml2 = ps.Model(gwdata)
-
+    
     # Add the recharge data as explanatory variable
     ts1 = ps.StressModel2([precip, evap], ps.Gamma, name='rainevap')
     ml2.add_tseries(ts1)
-
+    
     # Add a noisemodel
     n = ps.NoiseModel()
     ml2.add_noisemodel(n)
-
+    
     # Solve the model
     ml2.solve()
-
+    
     # Plot the results
     ml2.plot(figsize=(10, 4))
-
+    
     # Statistics
     ml2.stats.summary()
-
-
-.. parsed-literal::
-
-    c:\python\pastas\pastas\solver.py:94: UserWarning: Caution, solving the model with a noisemodel but not weighting the innovations, please consider applying weights.
-      warn("Caution, solving the model with a noisemodel but not "
 
 
 .. parsed-literal::
@@ -338,31 +319,31 @@ model ``ml2`` is higher than for model ``ml``).
         # function evals   = 48
         # data points      = 644
         # variables        = 6
-        chi-square         = 4.055
+        chi-square         = 3.990
         reduced chi-square = 0.006
-        Akaike info crit   = -3251.608
-        Bayesian info crit = -3224.802
+        Akaike info crit   = -3262.114
+        Bayesian info crit = -3235.308
     [[Variables]]
-        rainevap_A:    682.075315 +/- 34.31068 (5.03%) (init= 2081.857)
-        rainevap_n:    1.01737535 +/- 0.015792 (1.55%) (init= 1)
-        rainevap_a:    149.282350 +/- 11.23229 (7.52%) (init= 100)
-        rainevap_f:   -1.26591499 +/- 0.059604 (4.71%) (init=-1)
-        constant_d:    27.8770284 +/- 0.066449 (0.24%) (init= 27.90008)
-        noise_alpha:   51.4134489 +/- 6.683251 (13.00%) (init= 14)
+        rainevap_A:    670.244030 +/- 34.40857 (5.13%) (init= 2081.857)
+        rainevap_n:    1.01602644 +/- 0.016513 (1.63%) (init= 1)
+        rainevap_a:    148.806543 +/- 11.57697 (7.78%) (init= 100)
+        rainevap_f:   -1.28878508 +/- 0.061782 (4.79%) (init=-1)
+        constant_d:    27.9024648 +/- 0.067071 (0.24%) (init= 27.90008)
+        noise_alpha:   49.9383257 +/- 6.431908 (12.88%) (init= 14)
     [[Correlations]] (unreported correlations are <  0.100)
-        C(rainevap_f, constant_d)    = -0.986
-        C(rainevap_n, rainevap_a)    = -0.691
-        C(rainevap_A, rainevap_a)    =  0.654
-        C(rainevap_n, rainevap_f)    =  0.533
-        C(rainevap_n, constant_d)    = -0.519
-        C(rainevap_a, rainevap_f)    = -0.409
-        C(rainevap_a, constant_d)    =  0.393
-        C(rainevap_A, constant_d)    = -0.298
-        C(rainevap_A, rainevap_f)    =  0.290
+        C(rainevap_f, constant_d)    = -0.986 
+        C(rainevap_n, rainevap_a)    = -0.700 
+        C(rainevap_A, rainevap_a)    =  0.651 
+        C(rainevap_n, rainevap_f)    =  0.540 
+        C(rainevap_n, constant_d)    = -0.535 
+        C(rainevap_a, constant_d)    =  0.411 
+        C(rainevap_a, rainevap_f)    = -0.408 
+        C(rainevap_A, rainevap_f)    =  0.293 
+        C(rainevap_A, constant_d)    = -0.279 
+    
 
 
-
-.. image:: output_17_2.png
+.. image:: output_17_1.png
 
 
 
@@ -374,11 +355,11 @@ model ``ml2`` is higher than for model ``ml``).
         .dataframe thead tr:only-child th {
             text-align: right;
         }
-
+    
         .dataframe thead th {
             text-align: left;
         }
-
+    
         .dataframe tbody tr th {
             vertical-align: top;
         }
@@ -397,27 +378,27 @@ model ``ml2`` is higher than for model ``ml``).
       <tbody>
         <tr>
           <th>Akaike Information Criterion</th>
-          <td>9.200032</td>
+          <td>9.231551</td>
         </tr>
         <tr>
           <th>Average Deviation</th>
-          <td>-0.000625</td>
+          <td>-0.001418</td>
         </tr>
         <tr>
           <th>Bayesian Information Criterion</th>
-          <td>36.006225</td>
+          <td>36.037743</td>
         </tr>
         <tr>
           <th>Explained variance percentage</th>
-          <td>92.928602</td>
+          <td>92.995812</td>
         </tr>
         <tr>
           <th>Pearson R^2</th>
-          <td>0.964396</td>
+          <td>0.964702</td>
         </tr>
         <tr>
           <th>Root mean squared error</th>
-          <td>0.114300</td>
+          <td>0.113763</td>
         </tr>
       </tbody>
     </table>

@@ -53,7 +53,7 @@ funtionality.
 
 .. parsed-literal::
 
-    <matplotlib.axes._subplots.AxesSubplot at 0x25697559400>
+    <matplotlib.axes._subplots.AxesSubplot at 0x1505eb156d8>
 
 
 
@@ -114,7 +114,7 @@ fill\_nan="interpolate").
 
 .. parsed-literal::
 
-    <matplotlib.legend.Legend at 0x25697513240>
+    <matplotlib.legend.Legend at 0x1505eaeacc0>
 
 
 
@@ -398,7 +398,7 @@ data is maintained and can easily be recreated from a json file.
 
 .. parsed-literal::
 
-    <matplotlib.axes._subplots.AxesSubplot at 0x25696da3898>
+    <matplotlib.axes._subplots.AxesSubplot at 0x150615b0c18>
 
 
 
