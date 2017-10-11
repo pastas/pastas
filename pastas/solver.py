@@ -77,10 +77,10 @@ class BaseSolver:
             Pastas Model instance
         freq: str
 
-        weights: str, list, None
-            string with the name of the weights function (swsi, swsi2 or
-            timestep), a list with values to multiply each residual with. If
-            None, no weights are applied.
+        weights: pandas.Series
+            pandas Series by which the residual or innovation series are
+            multiplied. Typically values between 0 and 1.
+
 
         Returns
         -------
@@ -96,9 +96,10 @@ class BaseSolver:
             res = model.residuals(parameters, tmin, tmax, freq)
 
         # Determine if weights need to be applied
-        if weights:
-            logger.warning(NotImplementedError)
-            # TODO Implement multiplication by a pd.Series with weights
+        if weights is not None:
+            weights = weights.reindex(res.index)
+            weights.fillna(1.0, inplace=True)
+            res = res.multiply(weights)
 
         return res
 

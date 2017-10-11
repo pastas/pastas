@@ -313,7 +313,7 @@ class Model:
 
         """
         if self.noisemodel is None:
-            self.logger.error("Innovations can not be calculated if there is"
+            self.logger.error("Innovations can not be calculated if there is "
                               "no noisemodel.")
             return None
 
