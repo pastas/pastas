@@ -11,14 +11,14 @@ pasta/tree/master/examples>`_.
   :maxdepth: 1
   :glob:
 
-  examples/**
+  ../../examples/notebooks/**
 
 **Short Example**
 
 Examples of a short script to simulate groundwater levels::
 
    ml = Model(oseries)
-   ts1 = Tseries2([rain, evap], Gamma(), name='recharge')
+   ts1 = StressModel2([rain, evap], Gamma(), name='recharge')
    ml.addtseries(ts1)
    d = Constant()
    ml.addtseries(d)

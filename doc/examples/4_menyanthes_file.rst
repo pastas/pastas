@@ -20,7 +20,7 @@ extractions with a significant influence on groundwater head.
 
     C:\Anaconda\lib\site-packages\statsmodels\compat\pandas.py:56: FutureWarning: The pandas.core.datetools module is deprecated and will be removed in a future version. Please use the pandas.tseries module instead.
       from pandas.core import datetools
-    
+
 
 1. Importing the Menyanthes-file
 --------------------------------
@@ -34,7 +34,7 @@ file.
     # how to use it?
     fname = '../data/MenyanthesTest.men'
     meny = ps.read.menydata(fname)
-    
+
     # plot some series
     f1, axarr = plt.subplots(len(meny.IN)+1, sharex=True)
     oseries = meny.H['Obsevation well']["values"]
@@ -70,33 +70,33 @@ extractions.
 
     # Create the time series model
     ml = ps.Model(oseries)
-    
+
     # Add precipitation
     IN = meny.IN['Precipitation']['values']
     IN.index = IN.index.round("D")
     IN2 = meny.IN['Evaporation']['values']
     IN2.index = IN2.index.round("D")
-    ts = ps.Tseries2([IN, IN2], ps.Gamma, 'Recharge')
+    ts = ps.StressModel2([IN, IN2], ps.Gamma, 'Recharge')
     ml.add_tseries(ts)
-    
+
     # Add well extraction 1
     IN = meny.IN['Extraction 1']
     # extraction amount counts for the previous month
-    ts = ps.Tseries(IN['values'], ps.Hantush, 'Extraction_1', up=False,
+    ts = ps.StressModel(IN['values'], ps.Hantush, 'Extraction_1', up=False,
                     kind="well", settings=dict(freq="W"))
     ml.add_tseries(ts)
-    
+
     # Add well extraction 2
     IN = meny.IN['Extraction 2']
     # extraction amount counts for the previous month
-    ts = ps.Tseries(IN['values'], ps.Hantush, 'Extraction_2', up=False,
+    ts = ps.StressModel(IN['values'], ps.Hantush, 'Extraction_2', up=False,
                     kind="well", settings=dict(freq="W"))
     ml.add_tseries(ts)
-    
+
     # Add noise model
     n = ps.NoiseModel()
     ml.add_noisemodel(n)
-    
+
     # Solve
     ml.solve();
 
@@ -119,13 +119,13 @@ extractions.
     2017-10-03 12:49:00,248 - pastas.model - WARNING - Specified tmin is before the first observation. tmin automatically set to 1960-04-28 12:00:00
     2017-10-03 12:49:00,277 - pastas.model - WARNING - Specified tmin is before the first observation. tmin automatically set to 1960-04-28 12:00:00
     2017-10-03 12:49:00,280 - pastas.model - WARNING - Specified tmin is before the first observation. tmin automatically set to 1960-04-28 12:00:00
-    
+
 
 .. parsed-literal::
 
     c:\python\pastas\pastas\solver.py:94: UserWarning: Caution, solving the model with a noisemodel but not weighting the innovations, please consider applying weights.
       warn("Caution, solving the model with a noisemodel but not "
-    
+
 
 .. parsed-literal::
 
@@ -561,52 +561,52 @@ extractions.
         constant_d:         10.3522366 +/- 0.598539 (5.78%) (init= 8.475539)
         noise_alpha:        192.349276 +/- 25.63578 (13.33%) (init= 14)
     [[Correlations]] (unreported correlations are <  0.100)
-        C(Extraction_1_rho, Extraction_1_cS)  = -0.985 
-        C(Extraction_2_rho, Extraction_2_cS)  = -0.927 
-        C(Extraction_1_A, Extraction_1_cS)  =  0.818 
-        C(Extraction_1_A, Extraction_1_rho)  = -0.757 
-        C(Recharge_f, constant_d)    = -0.737 
-        C(Extraction_1_A, Extraction_2_A)  = -0.617 
-        C(Recharge_A, Recharge_n)    =  0.603 
-        C(Recharge_A, constant_d)    = -0.573 
-        C(Extraction_1_cS, Extraction_2_A)  = -0.552 
-        C(Extraction_1_rho, Extraction_2_A)  =  0.516 
-        C(Extraction_2_A, constant_d)  = -0.515 
-        C(Extraction_1_A, constant_d)  =  0.481 
-        C(Extraction_1_cS, constant_d)  =  0.451 
-        C(Extraction_1_rho, constant_d)  = -0.421 
-        C(Recharge_A, Recharge_f)    =  0.393 
-        C(Recharge_n, Recharge_a)    = -0.381 
-        C(Extraction_2_A, Extraction_2_cS)  =  0.325 
-        C(Extraction_1_A, Extraction_2_cS)  = -0.297 
-        C(Recharge_A, Extraction_2_A)  =  0.280 
-        C(Extraction_1_cS, Extraction_2_cS)  = -0.255 
-        C(Extraction_2_A, Extraction_2_rho)  = -0.251 
-        C(Extraction_1_rho, Extraction_2_cS)  =  0.238 
-        C(Recharge_a, constant_d)    = -0.234 
-        C(Extraction_1_A, Extraction_2_rho)  =  0.229 
-        C(Recharge_a, Recharge_f)    =  0.221 
-        C(Recharge_f, Extraction_2_A)  =  0.197 
-        C(Extraction_1_cS, Extraction_2_rho)  =  0.194 
-        C(Recharge_f, Extraction_1_A)  =  0.183 
-        C(Extraction_1_rho, Extraction_2_rho)  = -0.183 
-        C(Extraction_1_rho, noise_alpha)  =  0.173 
-        C(Recharge_A, noise_alpha)   = -0.171 
-        C(Extraction_1_cS, noise_alpha)  = -0.169 
-        C(Extraction_2_rho, noise_alpha)  =  0.147 
-        C(Recharge_n, constant_d)    = -0.147 
-        C(Recharge_n, noise_alpha)   = -0.138 
-        C(Recharge_A, Recharge_a)    =  0.132 
-        C(Extraction_2_cS, noise_alpha)  = -0.129 
-        C(Recharge_f, Extraction_2_cS)  = -0.124 
-        C(Recharge_A, Extraction_2_cS)  =  0.117 
-        C(Recharge_n, Extraction_2_A)  =  0.114 
-        C(Recharge_n, Extraction_2_rho)  = -0.111 
-        C(Recharge_A, Extraction_2_rho)  = -0.106 
-        C(Extraction_2_cS, constant_d)  = -0.104 
-        C(Recharge_a, Extraction_2_A)  =  0.103 
-        C(Recharge_f, Extraction_2_rho)  =  0.102 
-    
+        C(Extraction_1_rho, Extraction_1_cS)  = -0.985
+        C(Extraction_2_rho, Extraction_2_cS)  = -0.927
+        C(Extraction_1_A, Extraction_1_cS)  =  0.818
+        C(Extraction_1_A, Extraction_1_rho)  = -0.757
+        C(Recharge_f, constant_d)    = -0.737
+        C(Extraction_1_A, Extraction_2_A)  = -0.617
+        C(Recharge_A, Recharge_n)    =  0.603
+        C(Recharge_A, constant_d)    = -0.573
+        C(Extraction_1_cS, Extraction_2_A)  = -0.552
+        C(Extraction_1_rho, Extraction_2_A)  =  0.516
+        C(Extraction_2_A, constant_d)  = -0.515
+        C(Extraction_1_A, constant_d)  =  0.481
+        C(Extraction_1_cS, constant_d)  =  0.451
+        C(Extraction_1_rho, constant_d)  = -0.421
+        C(Recharge_A, Recharge_f)    =  0.393
+        C(Recharge_n, Recharge_a)    = -0.381
+        C(Extraction_2_A, Extraction_2_cS)  =  0.325
+        C(Extraction_1_A, Extraction_2_cS)  = -0.297
+        C(Recharge_A, Extraction_2_A)  =  0.280
+        C(Extraction_1_cS, Extraction_2_cS)  = -0.255
+        C(Extraction_2_A, Extraction_2_rho)  = -0.251
+        C(Extraction_1_rho, Extraction_2_cS)  =  0.238
+        C(Recharge_a, constant_d)    = -0.234
+        C(Extraction_1_A, Extraction_2_rho)  =  0.229
+        C(Recharge_a, Recharge_f)    =  0.221
+        C(Recharge_f, Extraction_2_A)  =  0.197
+        C(Extraction_1_cS, Extraction_2_rho)  =  0.194
+        C(Recharge_f, Extraction_1_A)  =  0.183
+        C(Extraction_1_rho, Extraction_2_rho)  = -0.183
+        C(Extraction_1_rho, noise_alpha)  =  0.173
+        C(Recharge_A, noise_alpha)   = -0.171
+        C(Extraction_1_cS, noise_alpha)  = -0.169
+        C(Extraction_2_rho, noise_alpha)  =  0.147
+        C(Recharge_n, constant_d)    = -0.147
+        C(Recharge_n, noise_alpha)   = -0.138
+        C(Recharge_A, Recharge_a)    =  0.132
+        C(Extraction_2_cS, noise_alpha)  = -0.129
+        C(Recharge_f, Extraction_2_cS)  = -0.124
+        C(Recharge_A, Extraction_2_cS)  =  0.117
+        C(Recharge_n, Extraction_2_A)  =  0.114
+        C(Recharge_n, Extraction_2_rho)  = -0.111
+        C(Recharge_A, Extraction_2_rho)  = -0.106
+        C(Extraction_2_cS, constant_d)  = -0.104
+        C(Recharge_a, Extraction_2_A)  =  0.103
+        C(Recharge_f, Extraction_2_rho)  =  0.102
+
 
 3. Plot the decomposition
 -------------------------

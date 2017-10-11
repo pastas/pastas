@@ -369,7 +369,7 @@ shows.
 
 
 5. Exporting the TimeSeries
-===========================
+---------------------------
 
 When done, we might want to store the TimeSeries object for later use. A
 ``dump`` method is built-in to export the original time series to a json

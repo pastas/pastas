@@ -1,10 +1,10 @@
-Add Tseries classes
+Add StressModel classes
 ===================
 In this section it is described how a new tseries object can be added to
 |Project|. The classes are defined in `tseries.py`, but this is not strictly
 necessary for your own project. All that is necessary is to write a class that
 can be imported and used by |Project|. Before you start, it is a good idea to
-study the Tseries and the TseriesBase classes in `tseries.py` to get a good idea of
+study the StressModel and the StressModelBase classes in `tseries.py` to get a good idea of
 the general form of a tseries class.
 
 In general, the following steps are necessary:
@@ -57,13 +57,13 @@ Example Response function class:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ::
 
-    class Tseries(TseriesBase):
+    class StressModel(StressModelBase):
         """
         Docs go here.
         """
         def __init__(self, stress, rfunc, name, metadata=None, xy=(0, 0), freq=None,
                      fillnan='mean'):
-            TseriesBase.__init__(self, rfunc, name, xy, metadata)
+            StressModelBase.__init__(self, rfunc, name, xy, metadata)
             self.stress = check_tseries(stress, freq, fillnan)
             self.set_init_parameters()
 

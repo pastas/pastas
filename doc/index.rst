@@ -9,10 +9,10 @@ optimization, visualisation, and statistical analysis tools.
 
 General Outline
 ---------------
-A time-series model consists of stresses, called Tseries, which together with a Constant and an optional NoiseModel form the simulation.
-Most Tseries use a response-function, called rfunc, that transform the stress in its contribution in the simulation.
+A time-series model consists of stresses, called StressModel, which together with a Constant and an optional NoiseModel form the simulation.
+Most StressModel use a response-function, called rfunc, that transform the stress in its contribution in the simulation.
 Examples of response-functions are Gamma, Exponential or One (which is used for the Constant).
-Each Tseries has a number of parameters, which are optimized by the Solver.
+Each StressModel has a number of parameters, which are optimized by the Solver.
 During optimization the residuals (the difference from the observations, or the innovations when a NoiseModel is used) are minimized.
 
 Examples

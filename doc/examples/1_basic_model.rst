@@ -20,7 +20,7 @@ explanatory time series.
 
     C:\Anaconda\lib\site-packages\statsmodels\compat\pandas.py:56: FutureWarning: The pandas.core.datetools module is deprecated and will be removed in a future version. Please use the pandas.tseries module instead.
       from pandas.core import datetools
-    
+
 
 1. Importing the dependent time series data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -40,7 +40,7 @@ the observed time series: - The observed time series are stored as a
     # Import groundwater time seriesm and squeeze to Series object
     gwdata = pd.read_csv('../data/head_nb1.csv', parse_dates=['date'], index_col='date', squeeze=True)
     print('The data type of the oseries is: %s' %type(gwdata))
-    
+
     # Plot the observed groundwater levels
     gwdata.plot(style='.', figsize=(10, 4))
     plt.ylabel('Head [m]');
@@ -50,7 +50,7 @@ the observed time series: - The observed time series are stored as a
 .. parsed-literal::
 
     The data type of the oseries is: <class 'pandas.core.series.Series'>
-    
+
 
 
 .. image:: output_3_1.png
@@ -74,15 +74,15 @@ the same length units as for the observed heads.
     # Import observed precipitation series
     precip = pd.read_csv('../data/rain_nb1.csv', parse_dates=['date'], index_col='date', squeeze=True)
     print('The data type of the precip series is: %s' %type(precip))
-    
+
     # Import observed evaporation series
     evap = pd.read_csv('../data/evap_nb1.csv', parse_dates=['date'], index_col='date', squeeze=True)
     print('The data type of the evap series is: %s' %type(evap))
-    
+
     # Calculate the recharge to the groundwater
     recharge = precip - evap
     print('The data type of the recharge series is: %s' %type(recharge))
-    
+
     # Plot the time series of the precipitation and evaporation
     plt.figure()
     recharge.plot(label='Recharge', figsize=(10, 4))
@@ -95,7 +95,7 @@ the same length units as for the observed heads.
     The data type of the precip series is: <class 'pandas.core.series.Series'>
     The data type of the evap series is: <class 'pandas.core.series.Series'>
     The data type of the recharge series is: <class 'pandas.core.series.Series'>
-    
+
 
 
 .. image:: output_5_1.png
@@ -117,7 +117,7 @@ nan-values are found this will be reported by ``pastas``.
     # Create a model object by passing it the observed series
     ml = ps.Model(gwdata)
     # Add the recharge data as explanatory variable
-    ts1 = ps.Tseries(recharge, ps.Gamma, name='recharge', kind="evap")
+    ts1 = ps.StressModel(recharge, ps.Gamma, name='recharge', kind="evap")
     ml.add_tseries(ts1)
     # Add a noisemodel
     n = ps.NoiseModel()
@@ -142,7 +142,7 @@ values and correlations.
 
     c:\python\pastas\pastas\solver.py:94: UserWarning: Caution, solving the model with a noisemodel but not weighting the innovations, please consider applying weights.
       warn("Caution, solving the model with a noisemodel but not "
-    
+
 
 .. parsed-literal::
 
@@ -161,13 +161,13 @@ values and correlations.
         constant_d:    27.5669199 +/- 0.020337 (0.07%) (init= 27.90008)
         noise_alpha:   61.7214879 +/- 8.357141 (13.54%) (init= 14)
     [[Correlations]] (unreported correlations are <  0.100)
-        C(recharge_A, recharge_a)    =  0.857 
-        C(recharge_A, constant_d)    = -0.771 
-        C(recharge_a, constant_d)    = -0.665 
-        C(recharge_n, recharge_a)    = -0.610 
-        C(recharge_A, recharge_n)    = -0.256 
-        C(recharge_n, constant_d)    =  0.213 
-    
+        C(recharge_A, recharge_a)    =  0.857
+        C(recharge_A, constant_d)    = -0.771
+        C(recharge_a, constant_d)    = -0.665
+        C(recharge_n, recharge_a)    = -0.610
+        C(recharge_A, recharge_n)    = -0.256
+        C(recharge_n, constant_d)    =  0.213
+
 
 5. Plot the results
 ~~~~~~~~~~~~~~~~~~~
@@ -234,11 +234,11 @@ gives a summary of the main statistics of the model.
         .dataframe thead tr:only-child th {
             text-align: right;
         }
-    
+
         .dataframe thead th {
             text-align: left;
         }
-    
+
         .dataframe tbody tr th {
             vertical-align: top;
         }
@@ -293,9 +293,9 @@ potential evaporation. A better model is to estimate the actual
 evaporation as a factor (called the evaporation factor here) times the
 potential evaporation. First, new model is created (called ``ml2`` here
 so that the original model ``ml`` does not get overwritten). Second, the
-``Tseries2`` object is created, which combines the precipitation and
+``StressModel2`` object is created, which combines the precipitation and
 evaporation series and adds a parameter for the evaporation factor
-``f``. The ``Tseries2`` object is added to the model, the noise model is
+``f``. The ``StressModel2`` object is added to the model, the noise model is
 added, the model is solved, and the results and statistics are plotted
 to the screen. Note that the new model gives a better fit (lower root
 mean squared error and higher explained variance), and that the Akiake
@@ -307,21 +307,21 @@ model ``ml2`` is higher than for model ``ml``).
 
     # Create a model object by passing it the observed series
     ml2 = ps.Model(gwdata)
-    
+
     # Add the recharge data as explanatory variable
-    ts1 = ps.Tseries2([precip, evap], ps.Gamma, name='rainevap')
+    ts1 = ps.StressModel2([precip, evap], ps.Gamma, name='rainevap')
     ml2.add_tseries(ts1)
-    
+
     # Add a noisemodel
     n = ps.NoiseModel()
     ml2.add_noisemodel(n)
-    
+
     # Solve the model
     ml2.solve()
-    
+
     # Plot the results
     ml2.plot(figsize=(10, 4))
-    
+
     # Statistics
     ml2.stats.summary()
 
@@ -330,7 +330,7 @@ model ``ml2`` is higher than for model ``ml``).
 
     c:\python\pastas\pastas\solver.py:94: UserWarning: Caution, solving the model with a noisemodel but not weighting the innovations, please consider applying weights.
       warn("Caution, solving the model with a noisemodel but not "
-    
+
 
 .. parsed-literal::
 
@@ -350,16 +350,16 @@ model ``ml2`` is higher than for model ``ml``).
         constant_d:    27.8770284 +/- 0.066449 (0.24%) (init= 27.90008)
         noise_alpha:   51.4134489 +/- 6.683251 (13.00%) (init= 14)
     [[Correlations]] (unreported correlations are <  0.100)
-        C(rainevap_f, constant_d)    = -0.986 
-        C(rainevap_n, rainevap_a)    = -0.691 
-        C(rainevap_A, rainevap_a)    =  0.654 
-        C(rainevap_n, rainevap_f)    =  0.533 
-        C(rainevap_n, constant_d)    = -0.519 
-        C(rainevap_a, rainevap_f)    = -0.409 
-        C(rainevap_a, constant_d)    =  0.393 
-        C(rainevap_A, constant_d)    = -0.298 
-        C(rainevap_A, rainevap_f)    =  0.290 
-    
+        C(rainevap_f, constant_d)    = -0.986
+        C(rainevap_n, rainevap_a)    = -0.691
+        C(rainevap_A, rainevap_a)    =  0.654
+        C(rainevap_n, rainevap_f)    =  0.533
+        C(rainevap_n, constant_d)    = -0.519
+        C(rainevap_a, rainevap_f)    = -0.409
+        C(rainevap_a, constant_d)    =  0.393
+        C(rainevap_A, constant_d)    = -0.298
+        C(rainevap_A, rainevap_f)    =  0.290
+
 
 
 .. image:: output_17_2.png
@@ -374,11 +374,11 @@ model ``ml2`` is higher than for model ``ml``).
         .dataframe thead tr:only-child th {
             text-align: right;
         }
-    
+
         .dataframe thead th {
             text-align: left;
         }
-    
+
         .dataframe tbody tr th {
             vertical-align: top;
         }

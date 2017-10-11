@@ -3,7 +3,7 @@ Recharge Example
 ================
 
 In this example the use of the ``TseriesRecharge class`` is explained.
-This ``Tseries class`` is developed to calculate the recharge series
+This ``StressModel class`` is developed to calculate the recharge series
 from the measured evaporation and precipitation series. Different
 recharge models are available: Linear, Preferential, Percolation, and
 Combination model. More information on these recharge models can be
@@ -52,10 +52,10 @@ object names ``oseries``.
 
     # Import and check the observed groundwater time series
     parse = lambda x: md.datetime.datetime.strptime(x, '%d-%m-%Y')
-    gwdata = pd.read_csv('../data/B33A0113001_1.csv', index_col=2, 
+    gwdata = pd.read_csv('../data/B33A0113001_1.csv', index_col=2,
                          skiprows=15, usecols=[2, 5], parse_dates=True,
                          date_parser=parse)
-    
+
     gwdata.rename(columns={'Stand (cm t.o.v. NAP)': 'h'}, inplace=True)
     gwdata.index.names = ['date']
     gwdata.h *= 0.01  # In meters
@@ -129,9 +129,9 @@ function for the recharge (:math:`R = P - f * E`). We use the
 
 .. parsed-literal::
 
-    Inferred frequency from time series recharge_P: freq=D 
-    Inferred frequency from time series recharge_E: freq=D 
-    
+    Inferred frequency from time series recharge_P: freq=D
+    Inferred frequency from time series recharge_E: freq=D
+
 
 4. A non-linear recharge model
 ------------------------------
@@ -154,9 +154,9 @@ recharge model.
 
 .. parsed-literal::
 
-    Inferred frequency from time series recharge_P: freq=D 
-    Inferred frequency from time series recharge_E: freq=D 
-    
+    Inferred frequency from time series recharge_P: freq=D
+    Inferred frequency from time series recharge_E: freq=D
+
 
 
 5. Calibration the time series models
@@ -198,18 +198,18 @@ are not compiled!)
         constant_d:    21.3835570 +/- 0.216538 (1.01%) (init= 26.27)
         noise_alpha:   374.208304 +/- 411.5153 (109.97%) (init= 14)
     [[Correlations]] (unreported correlations are <  0.100)
-        C(recharge_f, constant_d)    = -0.979 
-        C(recharge_a, recharge_f)    = -0.670 
-        C(recharge_a, constant_d)    =  0.637 
-        C(recharge_A, recharge_f)    = -0.567 
-        C(recharge_A, recharge_a)    =  0.467 
-        C(recharge_a, noise_alpha)   =  0.429 
-        C(recharge_n, recharge_a)    = -0.408 
-        C(recharge_f, noise_alpha)   = -0.395 
-        C(constant_d, noise_alpha)   =  0.394 
-        C(recharge_A, constant_d)    =  0.390 
-        C(recharge_A, noise_alpha)   =  0.206 
-    
+        C(recharge_f, constant_d)    = -0.979
+        C(recharge_a, recharge_f)    = -0.670
+        C(recharge_a, constant_d)    =  0.637
+        C(recharge_A, recharge_f)    = -0.567
+        C(recharge_A, recharge_a)    =  0.467
+        C(recharge_a, noise_alpha)   =  0.429
+        C(recharge_n, recharge_a)    = -0.408
+        C(recharge_f, noise_alpha)   = -0.395
+        C(constant_d, noise_alpha)   =  0.394
+        C(recharge_A, constant_d)    =  0.390
+        C(recharge_A, noise_alpha)   =  0.206
+
     results of the non-linear recharge model
     ----------------------------------------
     [[Fit Statistics]]
@@ -230,18 +230,18 @@ are not compiled!)
         constant_d:       23.7747918 +/- 0.029415 (0.12%) (init= 26.27)
         noise_alpha:      1374.70733 +/- 6.76e+03 (491.45%) (init= 14)
     [[Correlations]] (unreported correlations are <  0.100)
-        C(recharge_A, constant_d)    = -0.843 
-        C(recharge_n, recharge_a)    = -0.767 
-        C(recharge_A, recharge_Beta)  =  0.544 
-        C(recharge_n, noise_alpha)   =  0.360 
-        C(recharge_A, recharge_n)    = -0.250 
-        C(recharge_n, recharge_Beta)  = -0.237 
-        C(recharge_A, recharge_a)    =  0.206 
-        C(recharge_Beta, noise_alpha)  = -0.158 
-        C(recharge_a, constant_d)    = -0.154 
-        C(recharge_A, noise_alpha)   = -0.134 
-        C(recharge_n, constant_d)    =  0.120 
-    
+        C(recharge_A, constant_d)    = -0.843
+        C(recharge_n, recharge_a)    = -0.767
+        C(recharge_A, recharge_Beta)  =  0.544
+        C(recharge_n, noise_alpha)   =  0.360
+        C(recharge_A, recharge_n)    = -0.250
+        C(recharge_n, recharge_Beta)  = -0.237
+        C(recharge_A, recharge_a)    =  0.206
+        C(recharge_Beta, noise_alpha)  = -0.158
+        C(recharge_a, constant_d)    = -0.154
+        C(recharge_A, noise_alpha)   = -0.134
+        C(recharge_n, constant_d)    =  0.120
+
 
 6. Plotting the results
 -----------------------
@@ -294,24 +294,24 @@ be used to comparing model performances.
 .. parsed-literal::
 
     Statistics for the linear recharge model:
-    
+
                                         Value
-    Statistic                                
+    Statistic
     Root mean squared error          0.199526
     Akaike InformationCriterion      3.206552
     Pearson R^2                           NaN
     Average Deviation               -0.091608
     Explained variance percentage   90.067039
     Bayesian Information Criterion  33.056799
-    
+
     Statistics for the preferential recharge model:
-    
+
                                         Value
-    Statistic                                
+    Statistic
     Root mean squared error          0.218251
     Akaike InformationCriterion      6.356125
     Pearson R^2                           NaN
     Average Deviation                0.117580
     Explained variance percentage   89.311606
     Bayesian Information Criterion  48.146470
-    
+

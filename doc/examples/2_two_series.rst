@@ -16,7 +16,7 @@ Model with two time series
 
     C:\Anaconda\lib\site-packages\statsmodels\compat\pandas.py:56: FutureWarning: The pandas.core.datetools module is deprecated and will be removed in a future version. Please use the pandas.tseries module instead.
       from pandas.core import datetools
-    
+
 
 1. Importing the dependent time series data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -53,15 +53,15 @@ Model with two time series
 .. code:: ipython3
 
     # Import observed precipitation series
-    precip = pd.read_csv('../data/Heibloem_rain_data.dat', skiprows=4, 
-                         delim_whitespace=True, parse_dates=['date'], 
+    precip = pd.read_csv('../data/Heibloem_rain_data.dat', skiprows=4,
+                         delim_whitespace=True, parse_dates=['date'],
                          index_col='date')
     precip = precip.precip
     precip /= 1000.0  # Meters
-    
+
     # Import observed evaporation series
-    evap = pd.read_csv('../data/Maastricht_E_June2015.csv', 
-                       skiprows=4, sep=';', parse_dates=['DATE'], 
+    evap = pd.read_csv('../data/Maastricht_E_June2015.csv',
+                       skiprows=4, sep=';', parse_dates=['DATE'],
                        index_col='DATE')
     evap.rename(columns={'VALUE (m-ref)': 'evap'}, inplace=True)
     evap = evap.evap
@@ -73,15 +73,15 @@ Model with two time series
 
     # Initiate the base model
     ml = ps.Model(oseries)
-    
+
     # Add the precipitation data as explanatory variable
-    ts1 = ps.Tseries(precip, ps.Gamma, kind="prec", name='precip')
+    ts1 = ps.StressModel(precip, ps.Gamma, kind="prec", name='precip')
     ml.add_tseries(ts1)
-    
+
     # Add the evaporation data as explanatory variable
-    ts2 = ps.Tseries(evap, ps.Gamma, kind="evap", name='evap')
+    ts2 = ps.StressModel(evap, ps.Gamma, kind="evap", name='evap')
     ml.add_tseries(ts2)
-    
+
     # Add a noisemodel
     n = ps.NoiseModel()
     ml.add_noisemodel(n)
@@ -116,23 +116,23 @@ Model with two time series
         constant_d:    25.2658142 +/- 2.971590 (11.76%) (init= 27.90008)
         noise_alpha:   279.810323 +/- 71.10364 (25.41%) (init= 14)
     [[Correlations]] (unreported correlations are <  0.100)
-        C(evap_A, constant_d)        = -0.990 
-        C(precip_A, precip_a)        =  0.826 
-        C(evap_a, constant_d)        =  0.776 
-        C(evap_A, evap_a)            = -0.762 
-        C(evap_A, evap_n)            = -0.450 
-        C(evap_n, constant_d)        =  0.444 
-        C(precip_n, precip_a)        = -0.353 
-        C(precip_A, noise_alpha)     =  0.178 
-        C(precip_a, constant_d)      = -0.177 
-        C(evap_n, evap_a)            = -0.167 
-        C(precip_A, constant_d)      = -0.164 
-        C(constant_d, noise_alpha)   = -0.149 
-        C(precip_A, precip_n)        =  0.143 
-        C(evap_A, noise_alpha)       =  0.140 
-        C(evap_a, noise_alpha)       = -0.120 
-        C(precip_a, evap_a)          = -0.105 
-    
+        C(evap_A, constant_d)        = -0.990
+        C(precip_A, precip_a)        =  0.826
+        C(evap_a, constant_d)        =  0.776
+        C(evap_A, evap_a)            = -0.762
+        C(evap_A, evap_n)            = -0.450
+        C(evap_n, constant_d)        =  0.444
+        C(precip_n, precip_a)        = -0.353
+        C(precip_A, noise_alpha)     =  0.178
+        C(precip_a, constant_d)      = -0.177
+        C(evap_n, evap_a)            = -0.167
+        C(precip_A, constant_d)      = -0.164
+        C(constant_d, noise_alpha)   = -0.149
+        C(precip_A, precip_n)        =  0.143
+        C(evap_A, noise_alpha)       =  0.140
+        C(evap_a, noise_alpha)       = -0.120
+        C(precip_a, evap_a)          = -0.105
+
 
 .. code:: ipython3
 
