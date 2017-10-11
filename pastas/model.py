@@ -15,8 +15,8 @@ from .io.base import dump
 from .plots import Plotting
 from .solver import LmfitSolve
 from .stats import Statistics
-from .timeseries import TimeSeries
 from .stressmodels import Constant
+from .timeseries import TimeSeries
 from .utils import get_dt, get_time_offset
 from .version import __version__
 
@@ -313,8 +313,8 @@ class Model:
 
         """
         if self.noisemodel is None:
-            self.logger.warning("Innovations can not be calculated as there is"
-                                " no noisemodel")
+            self.logger.error("Innovations can not be calculated if there is"
+                              "no noisemodel.")
             return None
 
         tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq, use_oseries=True)
@@ -341,7 +341,7 @@ class Model:
         return self.oseries.loc[tmin: tmax]
 
     def initialize(self, tmin=None, tmax=None, freq=None, warmup=None,
-                   noise=True, weights=None, initial=True):
+                   noise=None, weights=None, initial=True):
         """Initialize the model. This method is called by "solve" but can
         also be triggered manually.
 
@@ -359,11 +359,14 @@ class Model:
 
         """
 
-        if noise and (self.noisemodel is None):
-            self.logger.warning('Warning, solution with noise model while '
-                                'noise model is not defined. No noise model is'
-                                'used.')
+        if noise is None and self.noisemodel:
+            noise = True
+        elif noise is True and self.noisemodel is None:
+            self.logger.error('Warning, solution with noise model while '
+                              'noise model is not defined. No noise model is '
+                              'used.')
             noise = False
+
         self.settings["noise"] = noise
         self.settings["weights"] = weights
 
@@ -402,7 +405,7 @@ class Model:
         self.parameters = self.get_init_parameters(noise, initial)
 
     def solve(self, tmin=None, tmax=None, solver=LmfitSolve, report=True,
-              noise=True, initial=True, weights=None, freq=None, warmup=None,
+              noise=None, initial=True, weights=None, freq=None, warmup=None,
               **kwargs):
         """Method to solve the time series model.
 

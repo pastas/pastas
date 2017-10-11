@@ -12,6 +12,7 @@ import matplotlib.ticker as plticker
 import numpy as np
 from scipy.stats import probplot
 
+import pastas as ps
 from .utils import get_dt
 
 
@@ -67,7 +68,7 @@ class Plotting():
         if show:
             plt.show()
 
-        return fig
+        return fig.axes
 
     def results(self, tmin=None, tmax=None, show=True):
         """Plot different results in one window to get a quick overview.
@@ -135,7 +136,7 @@ class Plotting():
         if show:
             plt.show()
 
-        return fig
+        return fig.axes
 
     def decomposition(self, tmin=None, tmax=None, show=True):
         """Plot the decomposition of a time-series in the different stresses.
@@ -205,7 +206,7 @@ class Plotting():
         if show:
             plt.show()
 
-        return fig
+        return fig.axes
 
     def diagnostics(self, tmin=None, tmax=None, show=True):
         innovations = self.ml.innovations(tmin, tmax)
@@ -216,12 +217,13 @@ class Plotting():
         plt.subplot(gs[0, :2])
         plt.title('Autocorrelation')
         # plt.axhline(0.2, '--')
-        plt.stem(self.ml.stats.acf())
+        r = ps.stats.acf(innovations)
+        plt.stem(r)
 
         plt.subplot(gs[1, :2])
         plt.title('Partial Autocorrelation')
         # plt.axhline(0.2, '--')
-        plt.stem(self.ml.stats.pacf())
+        # plt.stem(self.ml.stats.pacf())
 
         plt.subplot(gs[0, 2])
         innovations.hist(bins=20)
@@ -232,7 +234,7 @@ class Plotting():
         if show:
             plt.show()
 
-        return fig
+        return fig.axes
 
     def block_response(self, series=None, show=True):
         """Plot the block response for a specific series.
@@ -274,7 +276,7 @@ class Plotting():
         if show:
             plt.show()
 
-        return fig
+        return fig.axes
 
     def step_response(self, series=None, show=True):
 
@@ -317,7 +319,7 @@ class Plotting():
         if show:
             plt.show()
 
-        return fig
+        return fig.axes
 
     def _get_figure(self, **kwargs):
         fig = plt.figure(**kwargs)
