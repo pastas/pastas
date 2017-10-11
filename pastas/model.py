@@ -16,7 +16,7 @@ from .plots import Plotting
 from .solver import LmfitSolve
 from .stats import Statistics
 from .timeseries import TimeSeries
-from .tseries import Constant
+from .stressmodels import Constant
 from .utils import get_dt, get_time_offset
 from .version import __version__
 

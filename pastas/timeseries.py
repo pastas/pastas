@@ -12,6 +12,7 @@ from __future__ import print_function, division
 import logging
 
 import pandas as pd
+
 from pastas.utils import get_dt, get_time_offset
 
 logger = logging.getLogger(__name__)
@@ -64,7 +65,6 @@ class TimeSeries(pd.Series):
             interpolation.
         sample_down: str or float
             method
-
         fill_before
         fill_after
 
