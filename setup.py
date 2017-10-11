@@ -33,7 +33,7 @@ setup(
     ],
     platforms='Windows, Mac OS-X',
     install_requires=['numpy>=1.9', 'matplotlib>=1.5', 'lmfit>=0.9',
-                      'pandas>=0.19', 'scipy>=0.17', 'statsmodels>=0.8'],
+                      'pandas>=0.19', 'scipy>=0.17'],
     packages=find_packages(exclude=[]),
     include_package_data=True,
 )
