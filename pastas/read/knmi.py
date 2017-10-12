@@ -45,8 +45,8 @@ def read_knmi(fname, variables='RD'):
         variables = knmi.variables.keys()
     if type(variables)==str:
         variables = [variables]
-    if knmi.stations is None:
-        stn_codes = knmi.data['STN'].unique()
+
+    stn_codes = knmi.data['STN'].unique()
 
     ts=[]
     for code in stn_codes:
@@ -62,7 +62,7 @@ def read_knmi(fname, variables='RD'):
 
             metadata={}
             if knmi.stations is not None and not knmi.stations.empty:
-                station = knmi.stations[code]
+                station = knmi.stations.loc[str(code),:]
                 metadata['x'] = station.LON_east
                 metadata['y'] = station.LAT_north
                 metadata['z'] = station.ALT_m

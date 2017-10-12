@@ -20,22 +20,22 @@ IN['values'].index = IN['values'].index.normalize()
 IN2 = meny.IN['Evaporation']
 IN2['values'].index = IN2['values'].index.normalize()
 
-ts = ps.StressModel2([IN['values'], IN2['values']], ps.Gamma, 'Recharge')
-ml.add_stressmodel(ts)
+sm = ps.StressModel2([IN['values'], IN2['values']], ps.Gamma, 'Recharge')
+ml.add_stressmodel(sm)
 
 settings = dict(freq='W')
 
 # Add well extraction 1
 IN = meny.IN['Extraction 1']
-ts = ps.StressModel(IN['values'], ps.Hantush, 'Extraction_1', up=False,
+sm = ps.StressModel(IN['values'], ps.Hantush, 'Extraction_1', up=False,
                     kind="well", settings=settings)
-ml.add_stressmodel(ts)
+ml.add_stressmodel(sm)
 
 # Add well extraction 2
 IN = meny.IN['Extraction 2']
-ts = ps.StressModel(IN['values'], ps.Hantush, 'Extraction_2', up=False,
+sm = ps.StressModel(IN['values'], ps.Hantush, 'Extraction_2', up=False,
                     kind="well", settings=settings)
-ml.add_stressmodel(ts)
+ml.add_stressmodel(sm)
 
 #Add well extraction 3
 # IN = meny.IN['Extraction 3']

@@ -19,10 +19,10 @@ mls.add_series(rain, name="Prec", kind="prec", metadata=dict())
 mls.add_series(evap, name="Evap", kind="evap", metadata=dict())
 
 ml = mls.add_model(oseries="GWL")
-ts = ps.StressModel2([mls.stresses.loc["Prec", "series"],
+sm = ps.StressModel2([mls.stresses.loc["Prec", "series"],
                       mls.stresses.loc["Evap", "series"]],
                      ps.Exponential, name='recharge')
-ml.add_stressmodel(ts)
+ml.add_stressmodel(sm)
 n = ps.NoiseModel()
 ml.add_noisemodel(n)
 ml.solve(freq="D", warmup=1000, report=False)

@@ -19,13 +19,13 @@ EV24 = ps.read_knmi(fname, variables='EV24')
 #rech = RH.series - EV24.series
 
 # Create stress
-#ts = ps.Recharge(RH.series, EV24.series, ps.Gamma, ps.Linear, name='recharge')
-#ts = Recharge(RH.series, EV24.series, Gamma, Combination, name='recharge')
-ts = ps.StressModel2([RH.series, EV24.series], ps.Gamma, name='recharge')
-#ts = ps.StressModel(RH.series, ps.Gamma, name='precip')
-#ts1 = ps.StressModel(EV24.series, ps.Gamma, name='evap')
-ml.add_stressmodel(ts)
-#ml.add_tseries(ts1)
+#sm = ps.Recharge(RH, EV24, ps.Gamma, ps.Linear, name='recharge')
+#sm = Recharge(RH, EV24, Gamma, Combination, name='recharge')
+sm = ps.StressModel2([RH, EV24], ps.Gamma, name='recharge')
+#sm = ps.StressModel(RH, ps.Gamma, name='precip')
+#sm1 = ps.StressModel(EV24, ps.Gamma, name='evap')
+ml.add_stressmodel(sm)
+#ml.add_tseries(sm1)
 
 # Add noise model
 n = ps.NoiseModel()
