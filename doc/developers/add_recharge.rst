@@ -22,7 +22,7 @@ to reduce computation times but we'll come back to those.
 The recharge_func.py classes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The classes defined in this file are the classes that are provided when a
-Recharge tseries object is created. E.g.:
+Recharge StressModel object is created. E.g.:
 
 >>> ts = Recharge(precip, evap, Gamma(), Preferential())
 
