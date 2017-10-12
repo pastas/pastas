@@ -53,28 +53,6 @@ def read_meny(fname, locations = None, type='H'):
         ts = ts[0]
     return ts
 
-
-def menydata(fname, data='all'):
-    """This method can be used to import a menyanthes project file.
-
-    Parameters
-    ----------
-    fname: str
-        Filename and path to a Dino file.
-
-
-    Returns
-    -------
-    DataModel: object
-        returns a standard Pastas DataModel object or a list of objects when
-        more than one datatype is present.
-
-    """
-    meny = MenyData(fname, data=data)
-
-    return meny
-
-
 class MenyData:
     def __init__(self, fname, data='all'):
         """This class reads a menyanthes file.
