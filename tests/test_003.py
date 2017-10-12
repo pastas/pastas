@@ -15,6 +15,7 @@ def test_examples():
         os.chdir(pathname)
         for file in files:
             if file.endswith('.py'):
+                print('testing example ' + file)
                 exec (open(file).read())
                 # close the figures again
                 plt.close('all')

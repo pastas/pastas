@@ -13,5 +13,5 @@ fname = '../data/B32D0136001_1.csv'
 dino = ps.read_dino(fname)
 
 # plot
-dino[0].plot()
+dino.plot()
 plt.show()

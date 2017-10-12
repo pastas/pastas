@@ -11,6 +11,6 @@ obs = ps.read_dino(fname)
 fname = '../data/KNMI_Bilt.txt'
 stress = ps.read_knmi(fname, 'EV24')
 
-obs[0].plot()
-stress[0].plot()
+obs.plot()
+stress.plot()
 
