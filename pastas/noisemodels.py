@@ -65,7 +65,7 @@ class NoiseModelBase(ABC):
 
 
 class NoiseModel(NoiseModelBase):
-    _name = "NoiseModel2"
+    _name = "NoiseModel"
     __doc__ = """Noise model with exponential decay of the residual.
 
     Notes
@@ -161,7 +161,7 @@ class NoiseModel(NoiseModelBase):
 
 
 class NoiseModel2(NoiseModelBase):
-    _name = "NoiseModel"
+    _name = "NoiseModel2"
     __doc__ = """Noise model with exponential decay of the residual.
 
     Notes

@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from scipy import interpolate
 
-from .decorators import get_tseries
+from .decorators import get_stressmodel
 from .io.base import dump
 from .plots import Plotting
 from .solver import LmfitSolve
@@ -58,7 +58,7 @@ class Model:
 
         self.parameters = pd.DataFrame(
             columns=['initial', 'name', 'optimal', 'pmin', 'pmax', 'vary'])
-        self.tseriesdict = OrderedDict()
+        self.stressmodels = OrderedDict()
 
         self.noisemodel = None
 
@@ -94,31 +94,31 @@ class Model:
         self.plots = Plotting(self)
         self.plot = self.plots.plot  # because we are lazy
 
-    def add_tseries(self, tseries):
+    def add_stressmodel(self, stressmodel):
         """Adds a time series component to the model.
 
         Parameters
         ----------
-        tseries: pastas.tseries.TseriesBase
-            pastas.tseries object.
+        stressmodel: pastas.stressmodel.stressmodelBase
+            pastas.stressmodel object.
 
         Notes
         -----
-        To obtain a list of the tseries names type:
+        To obtain a list of the stressmodel names type:
 
-        >>> ml.tseriesdict.keys()
+        >>> ml.stressmodels.keys()
 
         """
-        if tseries.name in self.tseriesdict.keys():
+        if stressmodel.name in self.stressmodels.keys():
             self.logger.warning('The name for the series you are trying to '
                                 'add already exists for this model. Select '
                                 'another name.')
         else:
-            self.tseriesdict[tseries.name] = tseries
+            self.stressmodels[stressmodel.name] = stressmodel
             self.parameters = self.get_init_parameters()
 
             # Call these methods to set tmin, tmax and freq
-            tseries.update_stress(freq=self.settings["freq"])
+            stressmodel.update_stress(freq=self.settings["freq"])
             self.set_time_offset()
             self.settings["tmin"], self.settings["tmax"] = self.get_tmin_tmax()
 
@@ -136,24 +136,24 @@ class Model:
         self.constant = Constant(value=self.oseries.mean(), name='constant')
         self.parameters = self.get_init_parameters()
 
-    @get_tseries
-    def del_tseries(self, name):
-        """ Save deletion of a tseries from the tseriesdict.
+    @get_stressmodel
+    def del_stressmodels(self, name):
+        """ Save deletion of a stressmodel from the stressmodels dict.
 
         Parameters
         ----------
         name: str
-            string with the name of the tseries object.
+            string with the name of the stressmodel object.
 
         Notes
         -----
-        To obtain a list of the tseries names type:
+        To obtain a list of the stressmodel names type:
 
-        >>> ml.tseriesdict.keys()
+        >>> ml.stressmodels.keys()
 
         """
         self.parameters = self.parameters.ix[self.parameters.name != name]
-        self.tseriesdict.pop(name)
+        self.stressmodels.pop(name)
 
     def del_constant(self):
         """ Save deletion of the constant from a Model.
@@ -224,7 +224,7 @@ class Model:
 
         h = pd.Series(data=0, index=sim_index)
         istart = 0  # Track parameters index to pass to ts object
-        for ts in self.tseriesdict.values():
+        for ts in self.stressmodels.values():
             c = ts.simulate(parameters[istart: istart + ts.nparam], sim_index,
                             dt)
             h = h.add(c, fill_value=0.0)
@@ -389,8 +389,8 @@ class Model:
                                                     self.settings["tmax"],
                                                     self.sim_index)
 
-        # Prepare tseries stresses
-        for ts in self.tseriesdict.values():
+        # Prepare the stressmodels
+        for ts in self.stressmodels.values():
             ts.update_stress(freq=self.settings["freq"],
                              tmin=self.sim_index.min(),
                              tmax=self.sim_index.max())
@@ -420,9 +420,15 @@ class Model:
         report: bool, optional
             Print a report to the screen after optimization finished.
         noise: bool, optional
-            Use the noise model (True) or not (False).
+            Use the noise model (True) or not (False). The default is
+            noise=True when a noisemodel is found.
+        weights: pandas.Series
+            Pandas Series with values by which the residuals are multiplied,
+             index-based.
         initial: bool, optional
-            Reset initial parameters.
+            Reset initial parameters. Default is True.
+        freq: str
+            String with the frequency the stressmodels are simulated.
 
         """
 
@@ -535,13 +541,14 @@ class Model:
         following rules:
 
         A. If no value for tmin/tmax is provided:
-            1. if use_oseries is false, tmin is set to minimum of the tseries.
+            1. if use_oseries is false, tmin is set to minimum of the
+            stressmodels.
             2. if use_series is true tmin is set to minimum of the oseries.
 
         B. If a values for tmin/tmax is provided:
             1. A pandas timestamp is made from the string
             2. if use_oseries is True, tmin is checked against oseries.
-            3. tmin is checked against the tseries.
+            3. tmin is checked against the stressmodels.
 
         C. In all cases an offset for the tmin and tmax is added.
 
@@ -549,17 +556,17 @@ class Model:
         in general can be found in the developers section of the docs.
 
         """
-        # Get tmin and tmax from the tseries
-        if self.tseriesdict:
+        # Get tmin and tmax from the stressmodels
+        if self.stressmodels:
             ts_tmin = pd.Timestamp.max
             ts_tmax = pd.Timestamp.min
-            for tseries in self.tseriesdict.values():
-                if tseries.tmin < ts_tmin:
-                    ts_tmin = tseries.tmin
-                if tseries.tmax > ts_tmax:
-                    ts_tmax = tseries.tmax
+            for stressmodel in self.stressmodels.values():
+                if stressmodel.tmin < ts_tmin:
+                    ts_tmin = stressmodel.tmin
+                if stressmodel.tmax > ts_tmax:
+                    ts_tmax = stressmodel.tmax
         else:
-            # When there are no tseries use the oseries, regardless of
+            # When there are no stressmodels use the oseries, regardless of
             # use_oseries:
             ts_tmin = self.oseries.index.min()
             ts_tmax = self.oseries.index.max()
@@ -577,11 +584,11 @@ class Model:
                     "Specified tmin is before the first observation. tmin"
                     " automatically set to %s" % self.oseries.index.min())
                 tmin = self.oseries.index.min()
-            # Check if tmin > tseries.tmin (Needs to be True)
+            # Check if tmin > stressmodel.tmin (Needs to be True)
             if tmin < ts_tmin:
                 self.logger.warning("Specified tmin is before any of the"
-                                    "tseries tmin. tmin automatically set to"
-                                    "tseries tmin %s" % ts_tmin)
+                                    "stressmodels tmin. tmin automatically set to"
+                                    "stressmodels tmin %s" % ts_tmin)
                 tmin = ts_tmin
 
         # Set tmax properly
@@ -597,14 +604,14 @@ class Model:
                     "Specified tmax is after the last observation. tmax"
                     " automatically set to %s" % self.oseries.index.max())
                 tmax = self.oseries.index.max()
-            # Check if tmax < tseries.tmax (Needs to be True)
+            # Check if tmax < stressmodels.tmax (Needs to be True)
             if tmax > ts_tmax:
                 self.logger.warning(
-                    "Specified tmax is after any of the tseries tmax. tmax"
-                    " automatically set to tseries tmax %s" % ts_tmax)
+                    "Specified tmax is after any of the stressmodels tmax. tmax"
+                    " automatically set to stressmodels tmax %s" % ts_tmax)
                 tmax = ts_tmax
 
-        # adjust tmin and tmax so that the time-offset is equal to the tseries.
+        # adjust tmin and tmax so that the time-offset is equal to the stressmodels.
         if freq is None:
             freq = self.settings["freq"]
         tmin = tmin - get_time_offset(tmin, freq) + self.settings[
@@ -629,11 +636,11 @@ class Model:
 
         """
         time_offsets = set()
-        for tseries in self.tseriesdict.values():
-            if tseries.stress:
+        for stressmodel in self.stressmodels.values():
+            if stressmodel.stress:
                 # calculate the offset from the default frequency
                 time_offset = get_time_offset(
-                    tseries.stress[0].index.min(),
+                    stressmodel.stress[0].index.min(),
                     self.settings["freq"])
                 time_offsets.add(time_offset)
 
@@ -671,7 +678,7 @@ class Model:
 
         parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax',
                                            'vary', 'optimal', 'name'])
-        for ts in self.tseriesdict.values():
+        for ts in self.stressmodels.values():
             parameters = parameters.append(ts.parameters)
         if self.constant:
             parameters = parameters.append(self.constant.parameters)
@@ -692,7 +699,7 @@ class Model:
         Parameters
         ----------
         name: str, optional
-            string with the name of the pastas.tseries object.
+            string with the name of the pastas.stressmodel object.
 
         Returns
         -------
@@ -714,32 +721,32 @@ class Model:
 
         return parameters.values
 
-    @get_tseries
+    @get_stressmodel
     def get_contribution(self, name, tindex=None):
         p = self.get_parameters(name)
         dt = get_dt(self.settings["freq"])
-        return self.tseriesdict[name].simulate(p, tindex=tindex, dt=dt)
+        return self.stressmodels[name].simulate(p, tindex=tindex, dt=dt)
 
-    @get_tseries
+    @get_stressmodel
     def get_block_response(self, name):
         p = self.get_parameters(name)
         dt = get_dt(self.settings["freq"])
-        b = self.tseriesdict[name].rfunc.block(p, dt)
+        b = self.stressmodels[name].rfunc.block(p, dt)
         t = np.arange(dt, (len(b) + 1) * dt, dt)
         return pd.Series(b, index=t, name=name)
 
-    @get_tseries
+    @get_stressmodel
     def get_step_response(self, name):
         p = self.get_parameters(name)
         dt = get_dt(self.settings["freq"])
-        s = self.tseriesdict[name].rfunc.step(p, dt)
+        s = self.stressmodels[name].rfunc.step(p, dt)
         t = np.arange(dt, (len(s) + 1) * dt, dt)
         return pd.Series(s, index=t, name=name)
 
-    @get_tseries
+    @get_stressmodel
     def get_stress(self, name):
         p = self.get_parameters(name)
-        self.tseriesdict[name].get_stress(p)
+        self.stressmodels[name].get_stress(p)
 
     def get_metadata(self, meta=None):
         """Method that returns a metadata dict with the basic information.
@@ -833,7 +840,7 @@ class Model:
          The following attributes are stored:
 
          - oseries
-         - tseriesdict
+         - stressmodeldict
          - noisemodel
          - constant
          - parameters
@@ -853,10 +860,10 @@ class Model:
         data["name"] = self.name
         data["oseries"] = self.oseries.dump(series=series)
 
-        # Tseriesdict
-        data["tseriesdict"] = dict()
-        for name, ts in self.tseriesdict.items():
-            data["tseriesdict"][name] = ts.dump(series=series)
+        # stressmodels
+        data["stressmodels"] = dict()
+        for name, ts in self.stressmodels.items():
+            data["stressmodels"][name] = ts.dump(series=series)
 
         # Constant
         if self.constant:

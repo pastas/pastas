@@ -27,7 +27,6 @@ TODO
 
 * PACF for irregular timestep
 * Nash-Sutcliffe
-* portmanteau test (ljung-Box & Box-Pierce)
 
 """
 

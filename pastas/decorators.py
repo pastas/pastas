@@ -16,14 +16,14 @@ def set_parameter(function):
     return _set_parameter
 
 
-def get_tseries(function):
+def get_stressmodel(function):
     @functools.wraps(function)
-    def _get_tseries(self, name, **kwargs):
-        if name not in self.tseriesdict.keys():
-            logger.warning('The tseries name you provided is not in the '
-                           'tseriesdict. Please select from the following '
-                           'list: %s' % self.tseriesdict.keys())
+    def _get_stressmodel(self, name, **kwargs):
+        if name not in self.stressmodels.keys():
+            logger.warning('The stressmodel name you provided is not in the '
+                           'stressmodels dict. Please select from the '
+                           'following list: %s' % self.stressmodels.keys())
         else:
             return function(self, name, **kwargs)
 
-    return _get_tseries
+    return _get_stressmodel

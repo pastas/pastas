@@ -68,8 +68,8 @@ def load_project(data):
     mls.metadata = data["metadata"]
     mls.file_info = data["file_info"]
 
-    mls.tseries = pd.DataFrame(data["tseries"],
-                               columns=data["tseries"].keys()).T
+    mls.stressmodel = pd.DataFrame(data["stressmodel"],
+                               columns=data["stressmodel"].keys()).T
 
     mls.oseries = pd.DataFrame(data["oseries"],
                                columns=data["oseries"].keys()).T
@@ -77,10 +77,10 @@ def load_project(data):
     for name, ml in data["models"].items():
         ml["oseries"]["series"] = mls.oseries.loc[ml["oseries"]["series"],
                                                   "series"]
-        if ml["tseriesdict"]:
-            for ts in ml["tseriesdict"].values():
-                for i, tseries in enumerate(ts["stress"]):
-                    ts["stress"][i] = mls.tseries.loc[tseries, "series"]
+        if ml["stressmodels"]:
+            for ts in ml["stressmodels"].values():
+                for i, stressmodel in enumerate(ts["stress"]):
+                    ts["stress"][i] = mls.stressmodel.loc[stressmodel, "series"]
 
         ml = load_model(ml)
         mls.models[name] = ml
@@ -117,17 +117,17 @@ def load_model(data):
     if "file_info" in data.keys():
         ml.file_info.update(data["file_info"])
 
-    # Add tseriesdict
-    for name, ts in data["tseriesdict"].items():
-        tseries = getattr(ps.tseries, ts["tseries_type"])
-        ts.pop("tseries_type")
+    # Add stressmodels
+    for name, ts in data["stressmodels"].items():
+        stressmodel = getattr(ps.stressmodel, ts["type"])
+        ts.pop("type")
         ts["rfunc"] = getattr(ps.rfunc, ts["rfunc"])
-        tseries = tseries(**ts)
-        ml.add_tseries(tseries)
+        stressmodel = stressmodel(**ts)
+        ml.add_stressmodel(stressmodel)
 
     # Add noisemodel if present
     if "noisemodel" in data.keys():
-        n = getattr(ps.tseries, data["noisemodel"]["type"])()
+        n = getattr(ps.stressmodel, data["noisemodel"]["type"])()
         ml.add_noisemodel(n)
 
     # Add parameters

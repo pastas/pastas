@@ -28,7 +28,7 @@ class StressModelBase():
     nparam : int
         Number of parameters.
     name : str
-        Name of this tseries object. Used as prefix for the parameters.
+        Name of this stressmodel object. Used as prefix for the parameters.
     parameters : pandas.DataFrame
         Dataframe containing the parameters.
 
@@ -279,7 +279,7 @@ class StressModel(StressModelBase):
 
         """
         data = dict()
-        data["tseries_type"] = self._name
+        data["type"] = self._name
         data["rfunc"] = self.rfunc._name
         data["name"] = self.name
         data["up"] = True if self.rfunc.up == 1 else False
@@ -403,7 +403,7 @@ class StressModel2(StressModelBase):
 
         """
         data = dict()
-        data["tseries_type"] = self._name
+        data["type"] = self._name
         data["rfunc"] = self.rfunc._name
         data["name"] = self.name
         data["up"] = True if self.rfunc.up == 1 else False
@@ -594,7 +594,7 @@ class WellModel(StressModelBase):
 
 
 class StepModel(StressModelBase):
-    _name = "TseriesStep"
+    _name = "StepModel"
     __doc__ = """A stress consisting of a step resonse from a specified time. The
     amplitude and form (if rfunc is not One) of the step is calibrated. Before
     t_step the response is zero.

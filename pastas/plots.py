@@ -114,7 +114,7 @@ class Plotting():
         # Plot the block response function
         ax3 = plt.subplot(gs[0, -1])
         tmax = 0
-        for name, ts in self.ml.tseriesdict.items():
+        for name, ts in self.ml.stressmodels.items():
             dt = get_dt(self.ml.settings["freq"])
             if "rfunc" in dir(ts):
                 br = self.ml.get_block_response(name)
@@ -157,7 +157,7 @@ class Plotting():
         h = [hsim]
 
         # determine the influence of the different stresses
-        for name in self.ml.tseriesdict.keys():
+        for name in self.ml.stressmodels.keys():
             h.append(self.ml.get_contribution(name, tindex=tindex))
 
         # open the figure
@@ -169,7 +169,7 @@ class Plotting():
                 hr = 0.0
             height_ratios.append(hr)
 
-        fig, ax = plt.subplots(1 + len(self.ml.tseriesdict), sharex=True,
+        fig, ax = plt.subplots(1 + len(self.ml.stressmodels), sharex=True,
                                gridspec_kw={'height_ratios': height_ratios})
         ax = np.atleast_1d(ax)  # ax.Flatten is maybe better?
 
@@ -190,7 +190,7 @@ class Plotting():
             base = None
 
         # plot the influence of the stresses
-        for i, name in enumerate(self.ml.tseriesdict.keys(), start=1):
+        for i, name in enumerate(self.ml.stressmodels.keys(), start=1):
             h[i].plot(ax=ax[i], x_compat=True)
 
             if base is not None:
@@ -246,7 +246,7 @@ class Plotting():
 
         """
         if not series:
-            series = self.ml.tseriesdict.keys()
+            series = self.ml.stressmodels.keys()
         else:
             series = [series]
 
@@ -254,9 +254,9 @@ class Plotting():
         fig = self._get_figure()
 
         for name in series:
-            if name not in self.ml.tseriesdict.keys():
+            if name not in self.ml.stressmodels.keys():
                 return None
-            elif hasattr(self.ml.tseriesdict[name], 'rfunc'):
+            elif hasattr(self.ml.stressmodels[name], 'rfunc'):
                 plt.plot(self.ml.get_block_response(name))
                 legend.append(name)
             else:
@@ -289,7 +289,7 @@ class Plotting():
 
         """
         if not series:
-            series = self.ml.tseriesdict.keys()
+            series = self.ml.stressmodels.keys()
         else:
             series = [series]
 
@@ -297,9 +297,9 @@ class Plotting():
         fig = self._get_figure()
 
         for name in series:
-            if name not in self.ml.tseriesdict.keys():
+            if name not in self.ml.stressmodels.keys():
                 return None
-            elif hasattr(self.ml.tseriesdict[name], 'rfunc'):
+            elif hasattr(self.ml.stressmodels[name], 'rfunc'):
                 plt.plot(self.ml.get_step_response(name))
                 legend.append(name)
             else:

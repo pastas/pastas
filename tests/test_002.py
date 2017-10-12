@@ -33,7 +33,7 @@ def test_model():
     ml = Model(oseries)
 
     ts1 = StressModel2(stress=[rain, evap], rfunc=Gamma, name='recharge')
-    ml.add_tseries(ts1)
+    ml.add_stressmodel(ts1)
     n = NoiseModel()
     ml.add_noisemodel(n)
 

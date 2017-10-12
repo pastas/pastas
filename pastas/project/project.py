@@ -35,15 +35,15 @@ class Project:
         self.data = pd.DataFrame()
 
         # DataFrames to store the data of the oseries and stresses
-        self.tseries = pd.DataFrame(index=[],
-                                    columns=["name", "series", "kind", "x",
+        self.stresses = pd.DataFrame(index=[],
+                                     columns=["name", "series", "kind", "x",
                                              "y", "z", "metadata"])
         self.oseries = pd.DataFrame(index=[],
                                     columns=["name", "series", "kind", "x",
                                              "y", "z", "metadata"])
 
         self.distances = pd.DataFrame(index=self.oseries.index,
-                                      columns=self.tseries.index)
+                                      columns=self.stresses.index)
 
         # Project metadata and file information
         self.metadata = self.get_metadata(metadata)
@@ -84,7 +84,7 @@ class Project:
         if kind == "oseries":
             data = self.oseries
         else:
-            data = self.tseries
+            data = self.stresses
 
         data.set_value(name, "name", name)
         data.set_value(name, "series", ts)
@@ -122,7 +122,7 @@ class Project:
         -------
 
         """
-        self.tseries.drop(tseries, inplace=True)
+        self.stresses.drop(tseries, inplace=True)
         self.update_distances()
 
     def add_model(self, oseries, ml_name=None, **kwargs):
@@ -205,16 +205,16 @@ class Project:
         """
         # Make sure these are values, even when actually objects.
         xo = pd.to_numeric(self.oseries.x)
-        xt = pd.to_numeric(self.tseries.x)
+        xt = pd.to_numeric(self.stresses.x)
         yo = pd.to_numeric(self.oseries.y)
-        yt = pd.to_numeric(self.tseries.y)
+        yt = pd.to_numeric(self.stresses.y)
 
         xh, xi = np.meshgrid(xt, xo)
         yh, yi = np.meshgrid(yt, yo)
 
         self.distances = pd.DataFrame(np.sqrt((xh - xi) ** 2 + (yh - yi) ** 2),
                                       index=self.oseries.index,
-                                      columns=self.tseries.index)
+                                      columns=self.stresses.index)
 
     def add_recharge(self, ml, **kwargs):
         """Adds a recharge element to the time series model. The
@@ -226,17 +226,17 @@ class Project:
 
         """
         key = ml.name
-        prec_name = self.distances.loc[key, self.tseries.kind ==
+        prec_name = self.distances.loc[key, self.stresses.kind ==
                                        "prec"].argmin()
-        prec = self.tseries.loc[prec_name, "series"]
-        evap_name = self.distances.loc[key, self.tseries.kind ==
+        prec = self.stresses.loc[prec_name, "series"]
+        evap_name = self.distances.loc[key, self.stresses.kind ==
                                        "evap"].argmin()
-        evap = self.tseries.loc[evap_name, "series"]
+        evap = self.stresses.loc[evap_name, "series"]
 
         recharge = ps.StressModel2([prec, evap], ps.Gamma, name="recharge",
                                    **kwargs)
 
-        ml.add_tseries(recharge)
+        ml.add_stressmodel(recharge)
 
     def get_metadata(self, meta):
         metadata = dict(
@@ -294,7 +294,7 @@ class Project:
 
         # Series DataFrame
         data["oseries"] = self._series_to_dict(self.oseries)
-        data["tseries"] = self._series_to_dict(self.tseries)
+        data["tseries"] = self._series_to_dict(self.stresses)
 
         # Models
         data["models"] = dict()
@@ -336,7 +336,7 @@ class Project:
         if isinstance(oseries, str):
             oseries = [oseries]
 
-        tseries = self.tseries[self.tseries.kind == kind].index
+        tseries = self.stresses[self.stresses.kind == kind].index
 
         distances = self.get_distances(oseries, tseries)
 
@@ -368,12 +368,12 @@ class Project:
         if oseries is None:
             oseries = self.oseries.index
         if tseries is None:
-            tseries = self.tseries.index
+            tseries = self.stresses.index
 
         xo = pd.to_numeric(self.oseries.loc[oseries, "x"])
-        xt = pd.to_numeric(self.tseries.loc[tseries, "x"])
+        xt = pd.to_numeric(self.stresses.loc[tseries, "x"])
         yo = pd.to_numeric(self.oseries.loc[oseries, "y"])
-        yt = pd.to_numeric(self.tseries.loc[tseries, "y"])
+        yt = pd.to_numeric(self.stresses.loc[tseries, "y"])
 
         xh, xi = np.meshgrid(xt, xo)
         yh, yi = np.meshgrid(yt, yo)

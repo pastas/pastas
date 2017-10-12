@@ -24,7 +24,7 @@ EV24 = ps.read.knmidata(fname, variable='EV24')
 ts = ps.StressModel2([RH.series, EV24.series], ps.Gamma, name='recharge')
 #ts = ps.StressModel(RH.series, ps.Gamma, name='precip')
 #ts1 = ps.StressModel(EV24.series, ps.Gamma, name='evap')
-ml.add_tseries(ts)
+ml.add_stressmodel(ts)
 #ml.add_tseries(ts1)
 
 # Add noise model

@@ -18,7 +18,7 @@ evap = ps.read.knmidata('data/etmgeg_380.txt', variable='EV24')
 ## Create stress
 ts = ps.StressModel2([rain.series, evap.series], ps.Exponential,
                     name='recharge')
-ml.add_tseries(ts)
+ml.add_stressmodel(ts)
 
 # Add noise model
 n = ps.noisemodels.NoiseModel()
