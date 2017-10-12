@@ -1,5 +1,5 @@
 Add StressModel classes
-===================
+=======================
 In this section it is described how a new tseries object can be added to
 |Project|. The classes are defined in `tseries.py`, but this is not strictly
 necessary for your own project. All that is necessary is to write a class that
@@ -86,3 +86,4 @@ Example Response function class:
             if tindex is not None:
                 h = h[tindex]
             return h
+
