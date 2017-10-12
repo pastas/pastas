@@ -19,6 +19,8 @@ import os
 import sys
 
 import alabaster
+import matplotlib
+matplotlib.use('agg')
 from pastas.version import __version__
 
 
@@ -44,7 +46,6 @@ extensions = [
     'IPython.sphinxext.ipython_console_highlighting',  # lowercase didn't work
     'nbsphinx'
 ]
-autodoc_mock_imports = ['_tkinter']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
