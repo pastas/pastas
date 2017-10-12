@@ -7,15 +7,15 @@ import pastas as ps
 
 # read observations
 fname = 'data/B32D0136001_1.csv'
-obs = ps.read.dinodata(fname)
+obs = ps.read_dino(fname)
 
 # Create the time series model
-ml = ps.Model(obs.series)
+ml = ps.Model(obs)
 
 # read climate data
 fname = 'data/KNMI_Bilt.txt'
-RH = ps.read.knmidata(fname, variable='RH')
-EV24 = ps.read.knmidata(fname, variable='EV24')
+RH = ps.read_knmi(fname, variables='RH')
+EV24 = ps.read_knmi(fname, variables='EV24')
 #rech = RH.series - EV24.series
 
 # Create stress

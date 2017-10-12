@@ -453,6 +453,21 @@ class TimeSeries(pd.Series):
 
         return series
 
+    def transform_coordinates(self,to_projection):
+        try:
+            from pyproj import Proj, transform
+            inProj = Proj(init=self.metadata['projection'])
+            outProj = Proj(init=to_projection)
+            x, y = transform(inProj, outProj, self.metadata['x'], self.metadata['y'])
+            self.metadata['x'] = x
+            self.metadata['y'] = y
+            self.metadata['projection'] = to_projection
+        except ImportError:
+            raise ImportError('The module pyproj could not be imported. Please '
+                          'install through:'
+                          '>>> pip install pyproj'
+                          'or ... conda install pyproj')
+
     def dump(self, series=True, key="series"):
         """Method to export the Time Series to a json format.
 

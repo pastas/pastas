@@ -6,9 +6,9 @@ test the functioning of Pastas during development.
 import pastas as ps
 
 fname = 'data/MenyanthesTest.men'
-meny = ps.read.menydata(fname)
+meny = ps.read.MenyData(fname)
 
-# Create the time series model\
+# Create the time series model
 H = meny.H['Obsevation well']
 ml = ps.Model(H['values'])
 

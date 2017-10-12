@@ -23,42 +23,59 @@ from __future__ import print_function, division
 
 from datetime import date
 
-import numpy as np
 import pandas as pd
-from pastas.read.datamodel import DataModel
+from pastas.timeseries import TimeSeries
 
+def read_knmi(fname, variables='RD'):
+    """This method can be used to import KNMI data.
 
-class knmidata(DataModel):
-    def __init__(self, fname, variable='RD'):
-        """This method can be used to import KNMI data.
+    Parameters
+    ----------
+    fname: str
+        Filename and path to a Dino file.
 
-        Parameters
-        ----------
-        fname: str
-            Filename and path to a Dino file.
+    Returns
+    -------
+    DataModel: object
+        returns a standard Pastas DataModel object.
 
-        Returns
-        -------
-        DataModel: object
-            returns a standard Pastas DataModel object.
+    """
+    knmi = KnmiStation.fromfile(fname)
+    if variables is None:
+        variables = knmi.variables.keys()
+    if type(variables)==str:
+        variables = [variables]
+    if knmi.stations is None:
+        stn_codes = knmi.data['STN'].unique()
 
-        """
-        DataModel.__init__(self)
-        knmi = KnmiStation.fromfile(fname)
+    ts=[]
+    for code in stn_codes:
+        for variable in variables:
+            if variable not in knmi.data.keys():
+                raise (ValueError("variable %s is not in this dataset. Please use one of "
+                                  "the following keys: %s" % (variable, knmi.data.keys())))
 
-        if variable not in knmi.data.keys():
-            Warning("variable %s is not in this dataset. Please use one of "
-                    "the following keys: %s" % (variable, knmi.data.keys()))
-        else:
-            self.series = knmi.data[variable]
+            series = knmi.data.loc[knmi.data['STN']==code, variable]
             # get rid of the hours when data is daily
-            if pd.infer_freq(self.series.index) == 'D':
-                self.series.index = self.series.index.normalize()
+            if pd.infer_freq(series.index) == 'D':
+                series.index = series.index.normalize()
 
-        if knmi.stations is not None and not knmi.stations.empty:
-            self.x = knmi.stations['LAT_north'][0]
-            self.y = knmi.stations['LON_east'][0]
-            self.metadata = knmi.stations
+            metadata={}
+            if knmi.stations is not None and not knmi.stations.empty:
+                station = knmi.stations[code]
+                metadata['x'] = station.LON_east
+                metadata['y'] = station.LAT_north
+                metadata['z'] = station.ALT_m
+                metadata['projection'] = 'epsg:4326'
+                stationname = station.NAME
+            else:
+                stationname = str(code)
+            metadata['description'] = knmi.variables[variable]
+            ts.append(TimeSeries(series, name=variable + stationname, metadata=metadata))
+    if len(ts)==1:
+        ts = ts[0]
+    return ts
+
 
 
 class KnmiStation:
