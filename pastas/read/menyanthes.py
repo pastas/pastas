@@ -27,7 +27,7 @@ import scipy.io as sio
 from pastas.timeseries import TimeSeries
 
 
-def read_meny(fname, locations = None, type='H'):
+def read_meny(fname, locations=None, type='H'):
     meny = MenyData(fname, data=type)
     if type == 'H':
         data = meny.H
@@ -40,18 +40,33 @@ def read_meny(fname, locations = None, type='H'):
     if locations is None:
         locations = data.keys()
 
-    ts=[]
+    ts = []
     for location in locations:
-        metadata={}
+        metadata = {}
         metadata['x'] = data[location]['xcoord']
         metadata['y'] = data[location]['ycoord']
-        metadata['z'] = np.mean((data[location]['upfiltlev'],data[location]['lowfiltlev']))
+        metadata['z'] = np.mean((data[location]['upfiltlev'], data[location]['lowfiltlev']))
         metadata['projection'] = 'epsg:28992'
-        ts.append(TimeSeries(data[location]['values'], name = location, metadata = metadata))
-
-    if len(ts)==1:
+        if type == 'H':
+            kind = 'oseries'
+        else:
+            if data[location]['type'] == 'prec':
+                kind = 'prec'
+            elif data[location]['type'] == 'evap':
+                kind = 'evap'
+            elif data[location]['type'] == 'well':
+                kind = 'well'
+            elif data[location]['type'] == 'river':
+                kind = 'waterlevel'
+            else:
+                kind = None
+        if type == 'M':
+            kind = None
+        ts.append(TimeSeries(data[location]['values'], name=location, metadata=metadata, kind=kind))
+    if len(ts) == 1:
         ts = ts[0]
     return ts
+
 
 class MenyData:
     def __init__(self, fname, data='all'):

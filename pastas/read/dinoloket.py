@@ -13,7 +13,7 @@ import pandas as pd
 from pastas.timeseries import TimeSeries
 
 
-def read_dino(fname, variable='Stand_cm_tov_NAP', factor=1/100):
+def read_dino(fname, variable='Stand_cm_tov_NAP', factor=0.01):
     """This method can be used to import files from Dinoloket that contain
      groundwater level measurements (https://www.dinoloket.nl/)
 
@@ -44,13 +44,13 @@ def read_dino(fname, variable='Stand_cm_tov_NAP', factor=1/100):
 
     metadata['x'] = dino.x
     metadata['y'] = dino.y
-    metadata['z'] = np.mean((dino.bovenkant_filter,dino.onderkant_filter))
+    metadata['z'] = np.mean((dino.bovenkant_filter, dino.onderkant_filter))
     metadata['projection'] = 'epsg:28992'
 
     ts.append(TimeSeries(series,
                          name=dino.locatie + '_' + str(dino.filternummer),
-                         metadata=metadata))
-    if len(ts)==1:
+                         metadata=metadata, kind='oseries'))
+    if len(ts) == 1:
         ts = ts[0]
     return ts
 

@@ -26,6 +26,7 @@ from datetime import date
 import pandas as pd
 from pastas.timeseries import TimeSeries
 
+
 def read_knmi(fname, variables='RD'):
     """This method can be used to import KNMI data.
 
@@ -43,26 +44,26 @@ def read_knmi(fname, variables='RD'):
     knmi = KnmiStation.fromfile(fname)
     if variables is None:
         variables = knmi.variables.keys()
-    if type(variables)==str:
+    if type(variables) == str:
         variables = [variables]
 
     stn_codes = knmi.data['STN'].unique()
 
-    ts=[]
+    ts = []
     for code in stn_codes:
         for variable in variables:
             if variable not in knmi.data.keys():
                 raise (ValueError("variable %s is not in this dataset. Please use one of "
                                   "the following keys: %s" % (variable, knmi.data.keys())))
 
-            series = knmi.data.loc[knmi.data['STN']==code, variable]
+            series = knmi.data.loc[knmi.data['STN'] == code, variable]
             # get rid of the hours when data is daily
             if pd.infer_freq(series.index) == 'D':
                 series.index = series.index.normalize()
 
-            metadata={}
+            metadata = {}
             if knmi.stations is not None and not knmi.stations.empty:
-                station = knmi.stations.loc[str(code),:]
+                station = knmi.stations.loc[str(code), :]
                 metadata['x'] = station.LON_east
                 metadata['y'] = station.LAT_north
                 metadata['z'] = station.ALT_m
@@ -71,11 +72,16 @@ def read_knmi(fname, variables='RD'):
             else:
                 stationname = str(code)
             metadata['description'] = knmi.variables[variable]
-            ts.append(TimeSeries(series, name=variable + stationname, metadata=metadata))
-    if len(ts)==1:
+            if variable == 'RD' or variable == 'RH':
+                kind = 'prec'
+            elif variable == 'EV24':
+                kind = 'evap'
+            else:
+                kind = None
+            ts.append(TimeSeries(series, name=variable + stationname, metadata=metadata, kind=kind))
+    if len(ts) == 1:
         ts = ts[0]
     return ts
-
 
 
 class KnmiStation:
