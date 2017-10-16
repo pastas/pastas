@@ -216,11 +216,11 @@ class StressModel(StressModelBase):
     cutoff: float
         float between 0 and 1 to determine how long the response is (default 
         is 99% of the actual response time). Used to reduce computation times.
-    kind: tuple with two strings
-        The kind of each stress, default is "prec" and "evap". This argument is
-        passen onto the TimeSeries.
-    settings: Tuple with two dicts
-        The settings of the individual TimeSeries. 
+    kind: string or None
+        The kind of stress, default is None.
+        Options: 'prec', 'evap', and some others
+    settings: dict
+        The settings of the StressModel. 
     metadata: dict, optional
         dictionary containing metadata about the stress.
 
