@@ -91,7 +91,7 @@ class StressModelBase():
         >>> ts.set_initial('parametername', 200)
 
         """
-        self.parameters.loc[name, 'pmax'] = value
+        self.parameters.loc[name, 'vary'] = value
 
     def update_stress(self, **kwargs):
         """Method to change the frequency of the individual TimeSeries in

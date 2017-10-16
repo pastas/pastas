@@ -129,8 +129,8 @@ class Plotting():
         ax5 = plt.subplot(gs[2, -1])
         ax5.xaxis.set_visible(False)
         ax5.yaxis.set_visible(False)
-        plt.text(0.05, 0.8, 'AIC: %.2f' % self.ml.stats.aic())
-        plt.text(0.05, 0.6, 'BIC: %.2f' % self.ml.stats.aic())
+        plt.text(0.05, 0.8, 'Rsq: %.2f' % self.ml.stats.rsq())
+        plt.text(0.05, 0.6, 'EVP: %.2f' % self.ml.stats.evp())
         plt.title('Statistics', loc='left')
 
         if show:

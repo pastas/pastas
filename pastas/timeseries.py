@@ -43,7 +43,7 @@ class TimeSeries(pd.Series):
 
     def __init__(self, series, name=None, kind=None, settings=None,
                  metadata=None, **kwargs):
-        """Class that supports or user-provided time series within PASTAS.
+        """Class that supports user-provided time series within PASTAS.
 
         Parameters
         ----------
@@ -189,16 +189,17 @@ class TimeSeries(pd.Series):
                                "frequency of the original series." %
                                (self.name))
 
-        # 3. drop nan-values
-        if series.hasnans:
-            series = self.fill_nan(series)
-
         # 5. Handle duplicate indices
         if not series.index.is_unique:
             logger.warning("duplicate time-indexes were found in the Time "
                            "Series %s. Values were averaged." % (self.name))
             grouped = series.groupby(level=0)
             series = grouped.mean()
+
+        # 3. drop nan-values
+        if series.hasnans:
+            series = self.fill_nan(series)
+
         if self.settings["tmin"] is None:
             self.settings["tmin"] = series.index.min()
         if self.settings["tmax"] is None:
