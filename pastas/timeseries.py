@@ -12,7 +12,6 @@ from __future__ import print_function, division
 import logging
 
 import pandas as pd
-
 from pastas.utils import get_dt, get_time_offset
 
 logger = logging.getLogger(__name__)
@@ -31,7 +30,7 @@ class TimeSeries(pd.Series):
         "well": {"freq": "D", "sample_up": "bfill", "sample_down": "sum",
                  "fill_nan": 0.0, "fill_before": 0.0, "fill_after": 0.0},
         "waterlevel": {"freq": "D", "sample_up": "mean",
-                       "sample_down": "interpolate", "fill_nan": "interpolate",
+                       "sample_down": "mean", "fill_nan": "interpolate",
                        "fill_before": "mean", "fill_after": "mean"},
     }
     metadata = {
@@ -41,8 +40,15 @@ class TimeSeries(pd.Series):
         "projection": None
     }
 
+    #
+    # def __new__(cls, series, *args, **kwargs):
+    #     if isinstance(series, TimeSeries):
+    #         return series
+    #     else:
+    #         return TimeSeries.__init__(*args, **kwargs)
+
     def __init__(self, series, name=None, kind=None, settings=None,
-                 metadata=None, **kwargs):
+                 metadata=None, freq_original=None, **kwargs):
         """Class that supports user-provided time series within PASTAS.
 
         Parameters
@@ -93,7 +99,7 @@ class TimeSeries(pd.Series):
             update = True
             # Store a copy of the original series
             self.series_original = series.copy()
-            self.freq_original = None
+            self.freq_original = freq_original
             self.settings = dict(
                 freq="D",
                 sample_up=None,
@@ -162,23 +168,21 @@ class TimeSeries(pd.Series):
         assert isinstance(series, pd.Series), "Expected a Pandas Series, " \
                                               "got %s" % type(series)
 
-        # 4. Make sure the indices are Timestamps and sorted
+        # 2. Make sure the indices are Timestamps and sorted
         series.index = pd.to_datetime(series.index)
         series.sort_index(inplace=True)
 
-        # 2. Drop nan-values at the beginning and end of the time series
+        # 3. Drop nan-values at the beginning and end of the time series
         series = series.loc[series.first_valid_index():series.last_valid_index(
         )].copy(deep=True)
 
-        # 3. Find the frequency of the original series
-        freq = pd.infer_freq(series.index)
-
-        if freq:
-            self.freq_original = freq
-            if not self.settings["freq"]:
-                self.settings["freq"] = freq
+        # 4. Find the frequency of the original series
+        if self.freq_original:
+            pass
+        elif pd.infer_freq(series.index):
+            self.freq_original = pd.infer_freq(series.index)
             logger.info("Inferred frequency from time series %s: freq=%s " % (
-                self.name, freq))
+                self.name, self.freq_original))
         else:
             self.freq_original = self.settings["freq"]
             if self.settings["fill_nan"] and self.settings["fill_nan"] != \
@@ -196,7 +200,7 @@ class TimeSeries(pd.Series):
             grouped = series.groupby(level=0)
             series = grouped.mean()
 
-        # 3. drop nan-values
+        # 6. drop nan-values
         if series.hasnans:
             series = self.fill_nan(series)
 
@@ -454,20 +458,22 @@ class TimeSeries(pd.Series):
 
         return series
 
-    def transform_coordinates(self,to_projection):
+    def transform_coordinates(self, to_projection):
         try:
             from pyproj import Proj, transform
             inProj = Proj(init=self.metadata['projection'])
             outProj = Proj(init=to_projection)
-            x, y = transform(inProj, outProj, self.metadata['x'], self.metadata['y'])
+            x, y = transform(inProj, outProj, self.metadata['x'],
+                             self.metadata['y'])
             self.metadata['x'] = x
             self.metadata['y'] = y
             self.metadata['projection'] = to_projection
         except ImportError:
-            raise ImportError('The module pyproj could not be imported. Please '
-                          'install through:'
-                          '>>> pip install pyproj'
-                          'or ... conda install pyproj')
+            raise ImportError(
+                'The module pyproj could not be imported. Please '
+                'install through:'
+                '>>> pip install pyproj'
+                'or ... conda install pyproj')
 
     def dump(self, series=True, key="series"):
         """Method to export the Time Series to a json format.
@@ -502,5 +508,6 @@ class TimeSeries(pd.Series):
         data["kind"] = self.kind
         data["settings"] = self.settings
         data["metadata"] = self.metadata
+        data["freq_original"] = self.freq_original
 
         return data
