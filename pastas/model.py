@@ -16,6 +16,7 @@ from .plots import Plotting
 from .solver import LmfitSolve
 from .stats import Statistics
 from .stressmodels import Constant
+from .noisemodels import NoiseModel
 from .timeseries import TimeSeries
 from .utils import get_dt, get_time_offset
 from .version import __version__
@@ -59,13 +60,14 @@ class Model:
         self.parameters = pd.DataFrame(
             columns=['initial', 'name', 'optimal', 'pmin', 'pmax', 'vary'])
         self.stressmodels = OrderedDict()
+        
+        if not constant:
+            print('Deprecation Warning: constant=False is ignored. \
+                  Set constant equal to zero and fixed to obtain \
+                  solution without constant')
 
-        self.noisemodel = None
-
-        if constant:
-            self.add_constant()
-        else:
-            self.constant = None
+        self.add_noisemodel(NoiseModel())
+        self.add_constant()
 
         # Store the simulation settings
         self.settings = dict()
@@ -127,14 +129,14 @@ class Model:
 
         """
         self.noisemodel = noisemodel
-        self.parameters = self.get_init_parameters()
+        #self.parameters = self.get_init_parameters()
 
     def add_constant(self):
         """Adds a Constant to the time series Model.
 
         """
         self.constant = Constant(value=self.oseries.mean(), name='constant')
-        self.parameters = self.get_init_parameters()
+        #self.parameters = self.get_init_parameters()
 
     @get_stressmodel
     def del_stressmodels(self, name):
@@ -405,7 +407,7 @@ class Model:
         self.parameters = self.get_init_parameters(noise, initial)
 
     def solve(self, tmin=None, tmax=None, solver=LmfitSolve, report=True,
-              noise=None, initial=True, weights=None, freq=None, warmup=None,
+              noise=True, initial=True, weights=None, freq=None, warmup=None,
               **kwargs):
         """Method to solve the time series model.
 
@@ -421,7 +423,7 @@ class Model:
             Print a report to the screen after optimization finished.
         noise: bool, optional
             Use the noise model (True) or not (False). The default is
-            noise=True when a noisemodel is found.
+            noise=True
         weights: pandas.Series
             Pandas Series with values by which the residuals are multiplied,
              index-based.
