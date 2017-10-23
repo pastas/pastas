@@ -51,7 +51,7 @@ class Model:
                  metadata=None, settings=None, log_level=""):
         self.logger = self.get_logger()
         # Construct the different model components
-        self.oseries = TimeSeries(oseries, name=name, kind="oseries")
+        self.oseries = TimeSeries(oseries, kind="oseries")
         self.odelt = self.oseries.index.to_series().diff() / \
                      pd.Timedelta(1, "D")
         self.oseries_calib = None
@@ -60,7 +60,7 @@ class Model:
         self.parameters = pd.DataFrame(
             columns=['initial', 'name', 'optimal', 'pmin', 'pmax', 'vary'])
         self.stressmodels = OrderedDict()
-        
+
         if not constant:
             print('Deprecation Warning: constant=False is ignored. \
                   Set constant equal to zero and fixed to obtain \
@@ -139,7 +139,7 @@ class Model:
         #self.parameters = self.get_init_parameters()
 
     @get_stressmodel
-    def del_stressmodels(self, name):
+    def del_stressmodel(self, name):
         """ Save deletion of a stressmodel from the stressmodels dict.
 
         Parameters
@@ -797,7 +797,7 @@ class Model:
         return file_info
 
     def get_logger(self, default_path='log_config.json',
-                   default_level=logging.WARNING,
+                   default_level=logging.INFO,
                    env_key='LOG_CFG'):
         """This file creates a logger instance to log program output.
 
