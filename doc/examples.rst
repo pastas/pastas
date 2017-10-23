@@ -1,17 +1,16 @@
 ========
 Examples
 ========
-This page provides a list of example applications. For each example a Jupyter
-Notebook is available at the `github examples repository <https://github.com/pastas/
-pasta/tree/master/examples>`_.
+This page provides a list of example applications in Jupyter Notebooks.
+Examples in the form of Python scripts can also be found on the `examples directory on GitHub <https://github.com/pastas/pastas/tree/master/examples>`_.
 
-**examples**
+**Example Notebooks**
 
 .. toctree::
   :maxdepth: 1
   :glob:
 
-  ../../examples/notebooks/**
+  ../examples/**
 
 **Short Example**
 

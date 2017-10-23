@@ -65,9 +65,9 @@ Writing new recharge models
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Writing a new recharge model can be as simple as writing a new class in
 `recharge_func.py` with the same methods as the example above. if the calculation
- is simple it can be programmed directly in this class (as is the case for the
- Linear() recharge class), or it can be contained within a separate file and
- imported.
+is simple it can be programmed directly in this class (as is the case for the
+Linear() recharge class), or it can be contained within a separate file and
+imported.
 
 Compiling recharge functions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

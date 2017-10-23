@@ -51,7 +51,7 @@ Special classes
 ~~~~~~~~~~~~~~~
 The `NoiseModel` class is considered as a special class and does not comply with
 the above descriptions. It is recommended to closely studied the NoiseModel class
- when adding a new noise model.
+when adding a new noise model.
 
 Example Response function class:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

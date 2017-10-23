@@ -19,7 +19,8 @@ Getting PASTAS
 To get |Project|, there are several options available. The easiest is to use
 the Python Package Index (`PyPI <https://pypi.python.org/pypi>`_), where
 many official python packages are gathered. To get the latest version of
-|Project|, open a Windows command screen or a Mac terminal and type::
+|Project|, open the Anaconda Prompt, a Windows Command Prompt (also called
+command window) or a Mac terminal and type::
 
   pip install pastas
 
@@ -28,7 +29,7 @@ necessary for |Project| to work properly (called dependencies in Python
 language).
 
 It sometimes occurs that the automatic installation of the
-dependencies does not work. A safe method to update that package if you are
+dependencies does not work. A safe method to update another package if you are
 using Anaconda is to install a package with the follow command line::
 
   conda install package
