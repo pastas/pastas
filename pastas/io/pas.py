@@ -25,12 +25,13 @@ def pastas_hook(obj):
             try:
                 obj[key] = list()
                 for ts in value:
-                    obj[key].append(pd.read_json(ts, typ='series'))
+                    obj[key].append(pd.read_json(ts, typ='series',
+                                                 orient="split"))
             except:
                 obj[key] = value
         elif key in ["series"]:
             try:
-                obj[key] = pd.read_json(value, typ='series')
+                obj[key] = pd.read_json(value, typ='series', orient="split")
             except:
                 try:
                      obj[key] = ps.TimeSeries(**value)
@@ -72,7 +73,7 @@ class PastasEncoder(json.JSONEncoder):
         if isinstance(obj, pd.Timestamp):
             return obj.isoformat()
         elif isinstance(obj, pd.Series):
-            return obj.to_json(date_format="iso")
+            return obj.to_json(date_format="iso", orient="split")
         elif isinstance(obj, pd.DataFrame):
             # Necessary to maintain order when using the JSON format!
             return obj.to_json(orient="index")

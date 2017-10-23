@@ -295,7 +295,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         """
         if not stats:
-            stats = ['evp', 'rmse', 'rmsi', 'durbin_watson']
+            stats = ['evp', 'rmse', 'rmsi', 'rsq']
 
         data = pd.DataFrame(index=[0], columns=stats)
         for k in stats:

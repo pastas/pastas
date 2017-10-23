@@ -37,10 +37,10 @@ class Project:
         # DataFrames to store the data of the oseries and stresses
         self.stresses = pd.DataFrame(index=[],
                                      columns=["name", "series", "kind", "x",
-                                             "y", "z", "metadata"])
+                                              "y", "z"])
         self.oseries = pd.DataFrame(index=[],
                                     columns=["name", "series", "kind", "x",
-                                             "y", "z", "metadata"])
+                                             "y", "z"])
 
         self.distances = pd.DataFrame(index=self.oseries.index,
                                       columns=self.stresses.index)
@@ -49,12 +49,13 @@ class Project:
         self.metadata = self.get_metadata(metadata)
         self.file_info = self._get_file_info()
 
-    def add_series(self, series, name, kind, metadata=None, settings=None):
-        """Method to add series to the oseries or tseries database.
+    def add_series(self, series, name=None, kind=None, metadata=None,
+                   settings=None):
+        """Method to add series to the oseries or stresses database.
 
         Parameters
         ----------
-        series: pandas.Series or pastas.TimeSeries
+        series: pandas.Series / pastas.TimeSeries
             Series object.
         name: str
             String with the name of the series that will be maintained in
@@ -73,6 +74,9 @@ class Project:
         -------
 
         """
+        if name is None:
+            name = series.name
+
         try:
             ts = ps.TimeSeries(series=series, name=name, kind=kind,
                                settings=settings, metadata=metadata)
@@ -110,19 +114,19 @@ class Project:
         self.oseries.drop(oseries, inplace=True)
         self.update_distances()
 
-    def del_tseries(self, tseries):
+    def del_stress(self, name):
         """Method that removes oseries from the project.
 
         Parameters
         ----------
-        tseries: list or str
+        stress: list or str
             list with multiple or string with a single oseries name.
 
         Returns
         -------
 
         """
-        self.stresses.drop(tseries, inplace=True)
+        self.stresses.drop(name, inplace=True)
         self.update_distances()
 
     def add_model(self, oseries, ml_name=None, **kwargs):
@@ -219,18 +223,16 @@ class Project:
     def add_recharge(self, ml, **kwargs):
         """Adds a recharge element to the time series model. The
         selection of the precipitation and evaporation time series is based
-        on the shortest distance to the a tseries in the tserieslist.
+        on the shortest distance to the a stresses in the stresseslist.
 
         Returns
         -------
 
         """
-        key = ml.name
-        prec_name = self.distances.loc[key, self.stresses.kind ==
-                                       "prec"].argmin()
+        key = ml.oseries.name
+        prec_name = self.get_nearest_stresses(key, kind="prec").iloc[0][0]
         prec = self.stresses.loc[prec_name, "series"]
-        evap_name = self.distances.loc[key, self.stresses.kind ==
-                                       "evap"].argmin()
+        evap_name = self.get_nearest_stresses(key, kind="evap").iloc[0][0]
         evap = self.stresses.loc[evap_name, "series"]
 
         recharge = ps.StressModel2([prec, evap], ps.Gamma, name="recharge",
@@ -294,7 +296,7 @@ class Project:
 
         # Series DataFrame
         data["oseries"] = self._series_to_dict(self.oseries)
-        data["tseries"] = self._series_to_dict(self.stresses)
+        data["stresses"] = self._series_to_dict(self.stresses)
 
         # Models
         data["models"] = dict()
@@ -315,30 +317,30 @@ class Project:
 
         return series
 
-    def get_nearest_tseries(self, oseries, kind, n=1):
-        """Method to obtain the nearest (n) tseries of a specific kind.
+    def get_nearest_stresses(self, oseries, kind, n=1):
+        """Method to obtain the nearest (n) stresses of a specific kind.
 
         Parameters
         ----------
         oseries: str
             String with the name of the oseries
         kind:
-            String with the name of the tseries
+            String with the name of the stresses
         n: int
-            Number of tseries to obtain
+            Number of stresses to obtain
 
         Returns
         -------
-        tseries:
-            List with the names of the tseries.
+        stresses:
+            List with the names of the stresses.
 
         """
         if isinstance(oseries, str):
             oseries = [oseries]
 
-        tseries = self.stresses[self.stresses.kind == kind].index
+        stresses = self.stresses[self.stresses.kind == kind].index
 
-        distances = self.get_distances(oseries, tseries)
+        distances = self.get_distances(oseries, stresses)
 
         sorted = pd.DataFrame(columns=np.arange(n))
 
@@ -349,36 +351,36 @@ class Project:
 
         return sorted
 
-    def get_distances(self, oseries=None, tseries=None):
-        """Method to obtain the distances in meters between the tseries and
+    def get_distances(self, oseries=None, stresses=None):
+        """Method to obtain the distances in meters between the stresses and
         oseries.
 
         Parameters
         ----------
         oseries: str or list of str
-        tseries: str or list of str
+        stresses: str or list of str
 
         Returns
         -------
         distances: pandas.DataFrame
             Pandas DataFrame with the distances between the oseries (index)
-            and the tseries (columns).
+            and the stresses (columns).
 
         """
         if oseries is None:
             oseries = self.oseries.index
-        if tseries is None:
-            tseries = self.stresses.index
+        if stresses is None:
+            stresses = self.stresses.index
 
         xo = pd.to_numeric(self.oseries.loc[oseries, "x"])
-        xt = pd.to_numeric(self.stresses.loc[tseries, "x"])
+        xt = pd.to_numeric(self.stresses.loc[stresses, "x"])
         yo = pd.to_numeric(self.oseries.loc[oseries, "y"])
-        yt = pd.to_numeric(self.stresses.loc[tseries, "y"])
+        yt = pd.to_numeric(self.stresses.loc[stresses, "y"])
 
         xh, xi = np.meshgrid(xt, xo)
         yh, yi = np.meshgrid(yt, yo)
 
         distances = pd.DataFrame(np.sqrt((xh - xi) ** 2 + (yh - yi) ** 2),
-                                 index=oseries, columns=tseries)
+                                 index=oseries, columns=stresses)
 
         return distances

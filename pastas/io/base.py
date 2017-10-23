@@ -19,11 +19,6 @@ def load(fname, **kwargs):
         extension.
     kwargs: extension specific
 
-    Returns
-    -------
-    message: str
-        Returns a message if model import was successful.
-
     """
     # Dynamic import of the export module
     ext = os.path.splitext(fname)[1]
@@ -68,8 +63,8 @@ def load_project(data):
     mls.metadata = data["metadata"]
     mls.file_info = data["file_info"]
 
-    mls.stressmodel = pd.DataFrame(data["stressmodel"],
-                               columns=data["stressmodel"].keys()).T
+    mls.stresses = pd.DataFrame(data["stresses"],
+                               columns=data["stresses"].keys()).T
 
     mls.oseries = pd.DataFrame(data["oseries"],
                                columns=data["oseries"].keys()).T
@@ -80,7 +75,7 @@ def load_project(data):
         if ml["stressmodels"]:
             for ts in ml["stressmodels"].values():
                 for i, stressmodel in enumerate(ts["stress"]):
-                    ts["stress"][i] = mls.stressmodel.loc[stressmodel, "series"]
+                    ts["stress"][i] = mls.stresses.loc[stressmodel, "series"]
 
         ml = load_model(ml)
         mls.models[name] = ml

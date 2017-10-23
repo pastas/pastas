@@ -257,7 +257,7 @@ class TimeSeries(pd.Series):
 
         # 1. If no freq string is present or is provided (e.g. Oseries)
         if not freq:
-            pass
+            return series
         # 2. If new frequency is lower than its original.
         elif get_dt(freq) < get_dt(self.freq_original):
             series = self.sample_up(series)
