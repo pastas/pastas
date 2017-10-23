@@ -379,6 +379,8 @@ class StressModel2(StressModelBase):
                       index=self.stress[0].index, name=self.name)
         if tindex is not None:
             h = h[tindex]
+        # see whether it makes a difference to subtract gain * mean_stress
+        # h -= self.rfunc.gain(p) * stress.mean()
         return h
 
     def get_stress(self, p=None, tindex=None):
