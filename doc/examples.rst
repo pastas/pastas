@@ -22,8 +22,6 @@ Examples of a short script to simulate groundwater levels::
    ml.addtseries(ts1)
    d = Constant()
    ml.addtseries(d)
-   n = NoiseModel()
-   ml.addnoisemodel(n)
    ml.solve()
    ml.plot_results()
 
