@@ -351,9 +351,12 @@ def ccf(x, y, lags=None, bin_width=None,
 
     References
     ----------
-    Rehfeld, K. & Marwan, N. & Heitzig, J. & Kurths, J. (2011). Comparison of correlation analysis techniques for irregularly sampled time series. Nonlinear Processes in Geophysics. 18. 389–404. 10.5194/npg-18-389-2011.
+    Rehfeld, K., Marwan, N., Heitzig, J., Kurths, J. (2011). Comparison
+    of correlation analysis techniques for irregularly sampled time series.
+    Nonlinear Processes in Geophysics. 18. 389-404. 10.5194 pg-18-389-2011.
 
     """
+
     # Normalize the time values
     dt_x = x.index.to_series().diff() / pd.Timedelta(1, "D")
     dt_x[0] = 0.0
