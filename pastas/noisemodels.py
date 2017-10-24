@@ -24,6 +24,8 @@ class NoiseModelBase(ABC):
     def __init__(self):
         self.nparam = 0
         self.name = "noise"
+        self.parameters = pd.DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
 
     @set_parameter
     def set_initial(self, name, value):
@@ -95,15 +97,7 @@ class NoiseModel(NoiseModelBase):
         self.nparam = 1
         self.set_init_parameters()
 
-    def fix_parameter(self, name):
-        if name in self.parameters.index:
-            self.parameters.loc[name, 'vary'] = 0
-        else:
-            logger.warning('%s does not exist' % name)
-
     def set_init_parameters(self):
-        self.parameters = pd.DataFrame(
-            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         self.parameters.loc['noise_alpha'] = (14.0, 0, 5000, 1, 'noise')
 
     def simulate(self, res, delt, p, tindex=None):
@@ -192,8 +186,6 @@ class NoiseModel2(NoiseModelBase):
         self.set_init_parameters()
 
     def set_init_parameters(self):
-        self.parameters = pd.DataFrame(
-            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         self.parameters.loc['noise_alpha'] = (14.0, 0, 5000, 1, 'noise')
 
     def simulate(self, res, delt, p, tindex=None):
