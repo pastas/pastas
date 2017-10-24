@@ -143,7 +143,7 @@ class StressModelBase():
                            "Series,dict or list.")
         return data
 
-    def dump_stress(self, data=None, series=True):
+    def dump_stress(self, series=True):
         """Method to dump all stresses in the stresses list.
 
         Parameters
@@ -160,16 +160,10 @@ class StressModelBase():
             dictionary with the dump of the stresses.
 
         """
-        if data is None:
-            data = dict()
+        data = []
 
         for stress in self.stress:
-            stress = stress.dump(series=series, key="stress")
-            for key, value in stress.items():
-                if key in data.keys():
-                    data[key].append(value)
-                else:
-                    data[key] = [value]
+            data.append(stress.dump(series=series))
 
         return data
 
@@ -193,7 +187,7 @@ class StressModelBase():
 
     def dump(self, series=True):
         data = dict()
-        data["type"] = "StressModelBase"
+        data["stressmodel"] = "StressModelBase"
 
         return data
 
@@ -228,6 +222,8 @@ class StressModel(StressModelBase):
 
     def __init__(self, stress, rfunc, name, up=True, cutoff=0.99, kind=None,
                  settings=None, metadata=None):
+        if isinstance(stress, list):
+            stress = stress[0]  # Temporary fix Raoul, 2017-10-24
         stress = TimeSeries(stress, kind=kind, settings=settings,
                             metadata=metadata)
 
@@ -279,12 +275,12 @@ class StressModel(StressModelBase):
 
         """
         data = dict()
-        data["type"] = self._name
+        data["stressmodel"] = self._name
         data["rfunc"] = self.rfunc._name
         data["name"] = self.name
         data["up"] = True if self.rfunc.up == 1 else False
         data["cutoff"] = self.rfunc.cutoff
-        data = self.dump_stress(data, series)
+        data["stress"] = self.dump_stress(series)
 
         return data
 
@@ -405,12 +401,12 @@ class StressModel2(StressModelBase):
 
         """
         data = dict()
-        data["type"] = self._name
+        data["stressmodel"] = self._name
         data["rfunc"] = self.rfunc._name
         data["name"] = self.name
         data["up"] = True if self.rfunc.up == 1 else False
         data["cutoff"] = self.rfunc.cutoff
-        data = self.dump_stress(data, series)
+        data["stress"] = self.dump_stress(series)
 
         return data
 

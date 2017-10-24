@@ -116,7 +116,7 @@ class TimeSeries(pd.Series):
         if name is None:
             name = series.name
         self.name = name
-
+        self.series_original.name = name
         # Options when creating the series
         self.kind = kind
         if metadata:
@@ -475,7 +475,7 @@ class TimeSeries(pd.Series):
                 '>>> pip install pyproj'
                 'or ... conda install pyproj')
 
-    def dump(self, series=True, key="series"):
+    def dump(self, series=True):
         """Method to export the Time Series to a json format.
 
         Parameters
@@ -500,11 +500,9 @@ class TimeSeries(pd.Series):
         data = dict()
 
         if series:
-            data[key] = self.series_original
-            data["name"] = self.name
-        else:
-            data[key] = self.name
+            data["series"] = self.series_original
 
+        data["name"] = self.name
         data["kind"] = self.kind
         data["settings"] = self.settings
         data["metadata"] = self.metadata

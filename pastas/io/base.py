@@ -6,6 +6,7 @@ import importlib
 import os
 
 import pandas as pd
+
 import pastas as ps
 
 
@@ -64,21 +65,23 @@ def load_project(data):
     mls.file_info = data["file_info"]
 
     mls.stresses = pd.DataFrame(data["stresses"],
-                               columns=data["stresses"].keys()).T
+                                columns=data["stresses"].keys()).T
 
     mls.oseries = pd.DataFrame(data["oseries"],
                                columns=data["oseries"].keys()).T
 
-    for name, ml in data["models"].items():
-        ml["oseries"]["series"] = mls.oseries.loc[ml["oseries"]["series"],
-                                                  "series"]
+    for ml_name, ml in data["models"].items():
+        name = ml["oseries"]["name"]
+        ml["oseries"]["series"] = mls.oseries.loc[name, "series"]
         if ml["stressmodels"]:
             for ts in ml["stressmodels"].values():
-                for i, stressmodel in enumerate(ts["stress"]):
-                    ts["stress"][i] = mls.stresses.loc[stressmodel, "series"]
+                for i, stress in enumerate(ts["stress"]):
+                    stress_name = stress["name"]
+                    ts["stress"][i]["series"] = mls.stresses.loc[
+                        stress_name, "series"]
 
         ml = load_model(ml)
-        mls.models[name] = ml
+        mls.models[ml_name] = ml
 
     return mls
 
@@ -114,15 +117,17 @@ def load_model(data):
 
     # Add stressmodels
     for name, ts in data["stressmodels"].items():
-        stressmodel = getattr(ps.stressmodel, ts["type"])
-        ts.pop("type")
+        stressmodel = getattr(ps.stressmodels, ts["stressmodel"])
+        ts.pop("stressmodel")
         ts["rfunc"] = getattr(ps.rfunc, ts["rfunc"])
+        for i, stress in enumerate(ts["stress"]):
+            ts["stress"][i] = ps.TimeSeries(**stress)
         stressmodel = stressmodel(**ts)
         ml.add_stressmodel(stressmodel)
 
     # Add noisemodel if present
     if "noisemodel" in data.keys():
-        n = getattr(ps.stressmodel, data["noisemodel"]["type"])()
+        n = getattr(ps.noisemodels, data["noisemodel"]["type"])()
         ml.add_noisemodel(n)
 
     # Add parameters
