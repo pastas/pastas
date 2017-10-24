@@ -10,9 +10,9 @@ Examples
 import matplotlib.pyplot as plt
 import matplotlib.ticker as plticker
 import numpy as np
+import pastas as ps
 from scipy.stats import probplot
 
-import pastas as ps
 from .utils import get_dt
 
 
@@ -142,15 +142,6 @@ class Plotting():
         """Plot the decomposition of a time-series in the different stresses.
 
         """
-
-        # Default option when not tmin and tmax is provided
-        if tmin is None:
-            tmin = self.ml.settings["tmin"]
-        if tmax is None:
-            tmax = self.ml.settings["tmax"]
-        assert (tmin is not None) and (
-            tmax is not None), 'model needs to be solved first'
-
         # determine the simulation
         hsim = self.ml.simulate(tmin=tmin, tmax=tmax)
         tindex = hsim.index

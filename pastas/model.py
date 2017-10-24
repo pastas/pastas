@@ -12,11 +12,11 @@ from scipy import interpolate
 
 from .decorators import get_stressmodel
 from .io.base import dump
+from .noisemodels import NoiseModel
 from .plots import Plotting
 from .solver import LmfitSolve
 from .stats import Statistics
 from .stressmodels import Constant
-from .noisemodels import NoiseModel
 from .timeseries import TimeSeries
 from .utils import get_dt, get_time_offset
 from .version import __version__
@@ -129,14 +129,14 @@ class Model:
 
         """
         self.noisemodel = noisemodel
-        #self.parameters = self.get_init_parameters()
+        # self.parameters = self.get_init_parameters()
 
     def add_constant(self):
         """Adds a Constant to the time series Model.
 
         """
         self.constant = Constant(value=self.oseries.mean(), name='constant')
-        #self.parameters = self.get_init_parameters()
+        # self.parameters = self.get_init_parameters()
 
     @get_stressmodel
     def del_stressmodel(self, name):
@@ -211,10 +211,8 @@ class Model:
             freq = self.settings["freq"]
 
         if self.sim_index is None:
-            tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq,
-                                            use_oseries=False)
-            sim_index = self.get_sim_index(tmin, tmax, freq,
-                                           self.settings["warmup"])
+            tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq, False)
+            sim_index = self.get_sim_index(tmin, tmax, freq, 0)  # warmup = 0
         else:
             sim_index = self.sim_index
 
@@ -259,12 +257,11 @@ class Model:
         if freq is None:
             freq = self.settings["freq"]
 
-        tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq, use_oseries=True)
-
         # simulate model
         simulation = self.simulate(parameters, tmin, tmax, freq)
 
         if self.oseries_calib is None:
+            tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq, use_oseries=True)
             oseries_calib = self.get_oseries_calib(tmin, tmax,
                                                    simulation.index)
         else:
@@ -286,9 +283,8 @@ class Model:
             h_simulated = simulation[obs_index]
         res = oseries_calib - h_simulated
 
-        if np.isnan(sum(res ** 2)):
-            self.logger.warning(
-                'nan problem in residuals')  # quick and dirty check
+        if np.isnan(sum(res ** 2)):  # quick and dirty check
+            self.logger.warning('nan problem in residuals')
         return res
 
     def innovations(self, parameters=None, tmin=None, tmax=None, freq=None):
@@ -319,8 +315,6 @@ class Model:
                               "no noisemodel.")
             return None
 
-        tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq, use_oseries=True)
-
         # Get parameters if none are provided
         if parameters is None:
             parameters = self.get_parameters()
@@ -330,8 +324,7 @@ class Model:
 
         # Calculate the innovations
         v = self.noisemodel.simulate(res, self.odelt[res.index],
-                                     parameters[-self.noisemodel.nparam:],
-                                     res.index)
+                                     parameters[-self.noisemodel.nparam:])
         return v
 
     def observations(self, tmin=None, tmax=None):
