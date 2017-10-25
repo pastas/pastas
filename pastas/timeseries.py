@@ -219,6 +219,8 @@ class TimeSeries(pd.Series):
         """
         update = False
         for key, value in kwargs.items():
+            if key in ["tmin", "tmax"]:
+                value = pd.Timestamp(value)
             if value != self.settings[key]:
                 self.settings[key] = value
                 update = True
@@ -388,7 +390,7 @@ class TimeSeries(pd.Series):
         if tmin is None:
             pass
         elif pd.Timestamp(tmin) >= series.index.min():
-            pass
+            series = series.loc[pd.Timestamp(tmin):]
         else:
             tmin = pd.Timestamp(tmin)
             # When time offsets are not equal
@@ -422,7 +424,7 @@ class TimeSeries(pd.Series):
         if tmax is None:
             pass
         elif pd.Timestamp(tmax) <= series.index.max():
-            pass
+            series = series.loc[:pd.Timestamp(tmax)]
         elif method is None:
             pass
         else:
@@ -431,7 +433,7 @@ class TimeSeries(pd.Series):
             tmax = tmax - time_offset
             index_extend = pd.date_range(start=tmax, end=series.index.max(),
                                          freq=freq)
-            index = self.index.union(index_extend[:-1])
+            index = series.index.union(index_extend[:-1])
             series = series.reindex(index)
 
             if method == "mean":
