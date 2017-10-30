@@ -33,12 +33,6 @@ class TimeSeries(pd.Series):
                        "sample_down": "mean", "fill_nan": "interpolate",
                        "fill_before": "mean", "fill_after": "mean"},
     }
-    metadata = {
-        "x": 0.0,
-        "y": 0.0,
-        "z": 0.0,
-        "projection": None
-    }
 
     #
     # def __new__(cls, series, *args, **kwargs):
@@ -79,8 +73,8 @@ class TimeSeries(pd.Series):
         if isinstance(series, TimeSeries):
             self.series_original = series.series_original.copy()
             self.freq_original = series.freq_original
-            self.settings = series.settings
-            self.metadata = series.metadata
+            self.settings = series.settings.copy()
+            self.metadata = series.metadata.copy()
             self.series = series.series.copy()
             self._update_inplace(series)
 
@@ -111,6 +105,12 @@ class TimeSeries(pd.Series):
                 tmax=None,
                 norm=None
             )
+            self.metadata = {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "projection": None
+            }
 
         # Use user provided name or set from series
         if name is None:
@@ -119,6 +119,7 @@ class TimeSeries(pd.Series):
         self.series_original.name = name
         # Options when creating the series
         self.kind = kind
+
         if metadata:
             self.metadata.update(metadata)
 
@@ -263,7 +264,7 @@ class TimeSeries(pd.Series):
         # 2. If new frequency is lower than its original.
         elif get_dt(freq) < get_dt(self.freq_original):
             series = self.sample_up(series)
-        # 3. If new frequency is higher than its original, downsample.
+            # 3. If new frequency is higher than its original, downsample.
         elif get_dt(freq) > get_dt(self.freq_original):
             series = self.sample_down(series)
         # 4. If new frequency is equal to its original.
@@ -431,7 +432,7 @@ class TimeSeries(pd.Series):
             # When time offsets are not equal
             time_offset = get_time_offset(tmax, freq)
             tmax = tmax - time_offset
-            index_extend = pd.date_range(start=tmax, end=series.index.max(),
+            index_extend = pd.date_range(start=series.index.max(), end=tmax,
                                          freq=freq)
             index = series.index.union(index_extend[:-1])
             series = series.reindex(index)
@@ -459,6 +460,11 @@ class TimeSeries(pd.Series):
             series = series.subtract(series.mean())
 
         return series
+
+    def multiply(self, other):
+        self.series = self.series.multiply(other)
+        self.series_original = self.series_original.multiply(other)
+        self.update_series(initial=True)
 
     def transform_coordinates(self, to_projection):
         try:

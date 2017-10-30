@@ -336,8 +336,7 @@ class StressModel2(StressModelBase):
                            'overlapping time indices. Please make sure time indices overlap or apply to separate time series objects.')
 
         StressModelBase.__init__(self, rfunc, name, index.min(), index.max(),
-                                 up,
-                                 stress0.mean() - stress1.mean(), cutoff)
+                                 up, stress0.mean() - stress1.mean(), cutoff)
         self.stress.append(stress0)
         self.stress.append(stress1)
 

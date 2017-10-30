@@ -37,8 +37,8 @@ def read_knmi(fname, variables='RD'):
 
     Returns
     -------
-    DataModel: object
-        returns a standard Pastas DataModel object.
+    ts: Pandas Series
+        returns a standard Pastas TimeSeries object or a list of it.
 
     """
     knmi = KnmiStation.fromfile(fname)
@@ -53,8 +53,9 @@ def read_knmi(fname, variables='RD'):
     for code in stn_codes:
         for variable in variables:
             if variable not in knmi.data.keys():
-                raise (ValueError("variable %s is not in this dataset. Please use one of "
-                                  "the following keys: %s" % (variable, knmi.data.keys())))
+                raise (ValueError(
+                    "variable %s is not in this dataset. Please use one of "
+                    "the following keys: %s" % (variable, knmi.data.keys())))
 
             series = knmi.data.loc[knmi.data['STN'] == code, variable]
             # get rid of the hours when data is daily
@@ -78,7 +79,8 @@ def read_knmi(fname, variables='RD'):
                 kind = 'evap'
             else:
                 kind = None
-            ts.append(TimeSeries(series, name=variable + stationname, metadata=metadata, kind=kind))
+            ts.append(TimeSeries(series, name=variable + stationname,
+                                 metadata=metadata, kind=kind))
     if len(ts) == 1:
         ts = ts[0]
     return ts
@@ -228,11 +230,13 @@ class KnmiStation:
 
             data = pd.read_csv(f, header=None, names=header,
                                parse_dates=['YYYYMMDD'], index_col='YYYYMMDD',
-                               na_values='     ', converters={1: string2datetime})
+                               na_values='     ',
+                               converters={1: string2datetime})
         else:
             # newer method, calculating the date afterwards is much faster
             data = pd.read_csv(f, header=None, names=header, na_values='     ')
-            data.set_index(pd.to_datetime(data.YYYYMMDD, format='%Y%m%d'), inplace=True)
+            data.set_index(pd.to_datetime(data.YYYYMMDD, format='%Y%m%d'),
+                           inplace=True)
             data = data.drop('YYYYMMDD', axis=1)
 
         # convert the hours if provided
