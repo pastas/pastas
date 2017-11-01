@@ -111,10 +111,7 @@ nan-values are found this will be reported by ``pastas``.
     ml = ps.Model(gwdata)
     # Add the recharge data as explanatory variable
     ts1 = ps.StressModel(recharge, ps.Gamma, name='recharge', kind="evap")
-    ml.add_tseries(ts1)
-    # Add a noisemodel
-    n = ps.NoiseModel()
-    ml.add_noisemodel(n)
+    ml.add_stressmodel(ts1)
 
 4. Solve the model
 ~~~~~~~~~~~~~~~~~~
@@ -172,7 +169,9 @@ The solution can be plotted after a solution has been obtained.
 
 
 
-.. image:: output_11_1.png
+.. parsed-literal::
+
+    [<matplotlib.axes._subplots.AxesSubplot at 0x11237f668>]
 
 
 
@@ -196,7 +195,12 @@ plot with more information.
 
 
 
-.. image:: output_13_1.png
+.. parsed-literal::
+
+    [<matplotlib.axes._subplots.AxesSubplot at 0x11237f278>,
+     <matplotlib.axes._subplots.AxesSubplot at 0x11236ae48>,
+     <matplotlib.axes._subplots.AxesSubplot at 0x111ac19b0>,
+     <matplotlib.axes._subplots.AxesSubplot at 0x111d52080>]
 
 
 
@@ -282,13 +286,13 @@ potential evaporation. First, new model is created (called ``ml2`` here
 so that the original model ``ml`` does not get overwritten). Second, the
 ``StressModel2`` object is created, which combines the precipitation and
 evaporation series and adds a parameter for the evaporation factor
-``f``. The ``StressModel2`` object is added to the model, the noise
-model is added, the model is solved, and the results and statistics are
-plotted to the screen. Note that the new model gives a better fit (lower
-root mean squared error and higher explained variance), and that the
-Akiake information criterion indicates that the addition of the
-additional parameter improved the model signficantly (the Akaike
-criterion for model ``ml2`` is higher than for model ``ml``).
+``f``. The ``StressModel2`` object is added to the model, the model is
+solved, and the results and statistics are plotted to the screen. Note
+that the new model gives a better fit (lower root mean squared error and
+higher explained variance), and that the Akiake information criterion
+indicates that the addition of the additional parameter improved the
+model signficantly (the Akaike criterion for model ``ml2`` is higher
+than for model ``ml``).
 
 .. code:: ipython3
 
@@ -297,11 +301,7 @@ criterion for model ``ml2`` is higher than for model ``ml``).
     
     # Add the recharge data as explanatory variable
     ts1 = ps.StressModel2([precip, evap], ps.Gamma, name='rainevap')
-    ml2.add_tseries(ts1)
-    
-    # Add a noisemodel
-    n = ps.NoiseModel()
-    ml2.add_noisemodel(n)
+    ml2.add_stressmodel(ts1)
     
     # Solve the model
     ml2.solve()

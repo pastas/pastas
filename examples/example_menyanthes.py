@@ -12,8 +12,6 @@ meny = ps.read.MenyData(fname)
 H = meny.H['Obsevation well']
 ml = ps.Model(H['values'])
 
-freq = 'W'
-
 # Add precipitation
 IN = meny.IN['Precipitation']['values']
 IN.index = IN.index.round("D")
@@ -26,27 +24,28 @@ ml.add_stressmodel(sm)
 IN = meny.IN['Extraction 1']
 # extraction amount counts for the previous month
 sm = ps.StressModel(IN['values'], ps.Hantush, 'Extraction_1', up=False,
-                    kind="well", settings=dict(freq="W"))
+                    kind="well")
 ml.add_stressmodel(sm)
 
 # Add well extraction 2
 IN = meny.IN['Extraction 2']
 # extraction amount counts for the previous month
 sm = ps.StressModel(IN['values'], ps.Hantush, 'Extraction_2', up=False,
-                    kind="well", settings=dict(freq="W"))
+                    kind="well")
 ml.add_stressmodel(sm)
 
-# # Add well extraction 3
-# IN = meny.IN['Extraction 3']
-# # extraction amount counts for the previous month
-# sm = ps.StressModel(IN['values'], ps.Hantush, 'Extraction_3', up=False,
-#                 kind="well", settings=dict(freq="W"))
-# ml.add_tseries(sm)
-
-# Add noise model
-n = ps.NoiseModel()
-ml.add_noisemodel(n)
+# Add well extraction 3
+IN = meny.IN['Extraction 3']
+# extraction amount counts for the previous month
+sm = ps.StressModel(IN['values'], ps.Hantush, 'Extraction_3', up=False,
+                    kind="well")
+ml.add_stressmodel(sm)
 
 # Solve
-ml.solve(freq="D")
-ml.plots.decomposition()
+ml.solve()
+
+# make a decomposition-plot
+ax = ml.plots.decomposition(base=1.)
+ax[0].set_title('Observations vs simulation')
+ax[0].legend()
+ax[0].figure.tight_layout(pad=0)

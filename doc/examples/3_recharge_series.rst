@@ -122,9 +122,7 @@ function for the recharge (:math:`R = P - f * E`). We use the
     # Create the time series model with preferential recharge model
     ml = Model(oseries)
     ts = Recharge(data.P, data.E, Gamma, Linear, name='recharge')
-    ml.add_tseries(ts)
-    n = NoiseModel()
-    ml.add_noisemodel(n)
+    ml.add_stressmodel(ts)
 
 
 .. parsed-literal::
@@ -147,9 +145,7 @@ recharge model.
     # Create the time series model with linear recharge model
     ml1 = Model(oseries)
     ts1 = Recharge(data.P, data.E, Gamma, Preferential, name='recharge')
-    ml1.add_tseries(ts1)
-    n1 = NoiseModel()
-    ml1.add_noisemodel(n1)
+    ml1.add_stressmode(ts1)
 
 
 .. parsed-literal::
@@ -157,7 +153,6 @@ recharge model.
     Inferred frequency from time series recharge_P: freq=D 
     Inferred frequency from time series recharge_E: freq=D 
     
-
 
 5. Calibration the time series models
 -------------------------------------

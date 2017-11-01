@@ -138,7 +138,7 @@ class Plotting():
 
         return fig.axes
 
-    def decomposition(self, tmin=None, tmax=None, show=True):
+    def decomposition(self, tmin=None, tmax=None, show=True, base=True):
         """Plot the decomposition of a time-series in the different stresses.
 
         """
@@ -162,7 +162,7 @@ class Plotting():
 
         fig, ax = plt.subplots(1 + len(self.ml.stressmodels), sharex=True,
                                gridspec_kw={'height_ratios': height_ratios})
-        ax = np.atleast_1d(ax)  # ax.Flatten is maybe better?
+        ax = np.atleast_1d(ax)
 
         # plot simulation and observations in top graph
         self.ml.oseries.plot(linestyle='', marker='.', color='k', markersize=3,
@@ -172,19 +172,23 @@ class Plotting():
         ax[0].grid(which='both')
         ax[0].minorticks_off()
         ax[0].legend(loc=(0, 1), ncol=3, frameon=False)
-
-        # determine the ytick-spacing of the top graph
-        yticks, ylabels = plt.yticks()
-        if len(yticks) > 2:
-            base = yticks[1] - yticks[0]
-        else:
-            base = None
+        
+        if base:
+            if isinstance(base,bool):
+                # determine the ytick-spacing of the top graph
+                yticks = ax[0].yaxis.get_ticklocs()
+                if len(yticks) > 1:
+                    base = yticks[1] - yticks[0]
+                else:
+                    base = None
+            ax[0].yaxis.set_major_locator(
+                    plticker.MultipleLocator(base=base))
 
         # plot the influence of the stresses
         for i, name in enumerate(self.ml.stressmodels.keys(), start=1):
             h[i].plot(ax=ax[i], x_compat=True)
 
-            if base is not None:
+            if base:
                 # set the ytick-spacing equal to the top graph
                 ax[i].yaxis.set_major_locator(
                     plticker.MultipleLocator(base=base))

@@ -32,7 +32,7 @@ Model with two time series
 
 .. parsed-literal::
 
-    <matplotlib.axes._subplots.AxesSubplot at 0x2ae1864f630>
+    <matplotlib.axes._subplots.AxesSubplot at 0x1149207b8>
 
 
 
@@ -69,15 +69,11 @@ Model with two time series
     
     # Add the precipitation data as explanatory variable
     ts1 = ps.StressModel(precip, ps.Gamma, kind="prec", name='precip')
-    ml.add_tseries(ts1)
+    ml.add_stressmodel(ts1)
     
     # Add the evaporation data as explanatory variable
     ts2 = ps.StressModel(evap, ps.Gamma, kind="evap", name='evap')
-    ml.add_tseries(ts2)
-    
-    # Add a noisemodel
-    n = ps.NoiseModel()
-    ml.add_noisemodel(n)
+    ml.add_stressmodel(ts2)
 
 4. Solving and plotting the model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -90,7 +86,7 @@ Model with two time series
 
 .. parsed-literal::
 
-    2017-10-11 18:03:38,208 - pastas.model - WARNING - Specified tmin is before the first observation. tmin automatically set to 1985-11-14 00:00:00
+    2017-10-23 10:39:46,326 - pastas.model - WARNING - Specified tmin is before the first observation. tmin automatically set to 1985-11-14 00:00:00
     [[Fit Statistics]]
         # function evals   = 124
         # data points      = 644
@@ -103,9 +99,9 @@ Model with two time series
         precip_A:      1282.61256 +/- 174.4502 (13.60%) (init= 491.3195)
         precip_n:      1.04115167 +/- 0.023737 (2.28%) (init= 1)
         precip_a:      223.624690 +/- 31.32965 (14.01%) (init= 100)
-        evap_A:        5.55949345 +/- 2.50e+03 (44907.02%) (init= 634.8969)
+        evap_A:        5.55949283 +/- 2.50e+03 (44907.03%) (init= 634.8969)
         evap_n:        4.99603711 +/- 206.4343 (4131.96%) (init= 1)
-        evap_a:        1546.61801 +/- 1.04e+05 (6715.67%) (init= 100)
+        evap_a:        1546.61800 +/- 1.04e+05 (6715.67%) (init= 100)
         constant_d:    25.2658142 +/- 2.971590 (11.76%) (init= 27.90008)
         noise_alpha:   279.810323 +/- 71.10364 (25.41%) (init= 14)
     [[Correlations]] (unreported correlations are <  0.100)
@@ -134,5 +130,4 @@ Model with two time series
 
 
 .. image:: output_10_0.png
-
 
