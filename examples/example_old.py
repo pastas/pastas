@@ -7,31 +7,31 @@ import pastas as ps
 
 # read observations
 fname = 'data/B32D0136001_1.csv'
-obs = ps.read.dinodata(fname)
+obs = ps.read_dino(fname)
 
 # Create the time series model
-ml = ps.Model(obs.series)
+ml = ps.Model(obs)
 
 # read climate data
 fname = 'data/KNMI_Bilt.txt'
-RH = ps.read.knmidata(fname, variable='RH')
-EV24 = ps.read.knmidata(fname, variable='EV24')
+RH = ps.read_knmi(fname, variables='RH')
+EV24 = ps.read_knmi(fname, variables='EV24')
 #rech = RH.series - EV24.series
 
 # Create stress
-#ts = Recharge(RH.series, EV24.series, Gamma, Preferential, name='recharge')
-# ts = Recharge(RH.series, EV24.series, Gamma, Combination, name='recharge')
-# ts = Tseries2(RH.series, EV24.series, Gamma, name='recharge')
-ts = ps.Tseries(RH.series, ps.Gamma, name='precip', freq='D')
-ts1 = ps.Tseries(EV24.series, ps.Gamma, name='evap', freq='D')
-ml.add_tseries(ts)
-ml.add_tseries(ts1)
+#sm = ps.Recharge(RH, EV24, ps.Gamma, ps.Linear, name='recharge')
+#sm = Recharge(RH, EV24, Gamma, Combination, name='recharge')
+sm = ps.StressModel2([RH, EV24], ps.Gamma, name='recharge')
+#sm = ps.StressModel(RH, ps.Gamma, name='precip')
+#sm1 = ps.StressModel(EV24, ps.Gamma, name='evap')
+ml.add_stressmodel(sm)
+#ml.add_tseries(sm1)
 
 # Add noise model
 n = ps.NoiseModel()
 ml.add_noisemodel(n)
 
 # Solve
-ml.solve(weights="swsi")
+ml.solve(freq="W")
 ml.plot()
 

@@ -5,12 +5,11 @@
 """
 
 import matplotlib.pyplot as plt
-from pastas import read
+from pastas.read import MenyData
 
 # how to use it?
 fname = '../data/MenyanthesTest.men'
-meny = read.menydata(fname, 'all')
-
+meny = MenyData(fname)
 
 # plot some series
 f1, axarr = plt.subplots(len(meny.IN)+1, sharex=True)

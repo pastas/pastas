@@ -6,10 +6,13 @@ env:
     #- DEPENDS="cython>=0.19"
     - NO_NET=1
 
+git:
+    depth: 1000
+
 matrix:
   include:
-    - python: 2.7
     - python: 3.5
+    - python: 3.6
 
 # start Virtual X, so default matplotlib backend works
 before_install:
@@ -17,15 +20,16 @@ before_install:
     - "sh -e /etc/init.d/xvfb start"
     - pip install --upgrade pip
     - pip install codecov
+    - pip install pytest-cov
 
 # Install dependencies
 install:
-    pip install -r requirements.travis.txt
+    - pip install -r requirements.travis.txt
+    - pip install -e .
 
 # command to run tests
 script:
-   - nosetests tests -v --with-coverage
-   - codecov
+   - py.test ./tests --cov=pastas --cov-report=xml
 
 after_success:
    - codecov

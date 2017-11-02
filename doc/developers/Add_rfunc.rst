@@ -15,9 +15,9 @@ List of Attributes:
 
 - nparam: [int] that defines the number of parameters that is needed for this
   function.
-- cutoff: [float between 0 and 1] that defines the length of the response time that
-  is used for simulation. By default, this value should be 0.99, meaning that
-  after 99% of the response has passed, the function is cut off.
+- cutoff: [float between 0 and 1] that defines the length of the response time
+  that is used for simulation. By default, this value should be 0.99,
+  meaning that after 99% of the response has passed, the function is cut off.
 
 List of methods:
 
@@ -35,8 +35,8 @@ response function for model investigation.
 **Q: What is the standard scaling of the response function?**
 A: The response function need to be scaled such that the scaling parameter can
 have some physical interpretation for the step response function. E.g. if the
-groundwater recharge is continuously 1 mm/d, the groundwater level would rise 500
- mm before it reaches a steady state again.
+groundwater recharge is continuously 1 mm/d, the groundwater level would rise
+500mm before it reaches a steady state again.
 
 
 Example Response function class:
@@ -71,3 +71,4 @@ Example Response function class:
         def block(self, p):
             s = self.step(p)
             return s[1:] - s[:-1]
+

@@ -10,43 +10,49 @@ from __future__ import print_function, division
 
 import numpy as np
 import pandas as pd
-from pastas.read.datamodel import DataModel
+from pastas.timeseries import TimeSeries
 
 
-class dinodata(DataModel):
-    def __init__(self, fname, variable='Stand_cm_tov_NAP'):
-        """This method can be used to import files from Dinoloket that contain
-         groundwater level measurements (https://www.dinoloket.nl/)
+def read_dino(fname, variable='Stand_cm_tov_NAP', factor=0.01):
+    """This method can be used to import files from Dinoloket that contain
+     groundwater level measurements (https://www.dinoloket.nl/)
 
-        Parameters
-        ----------
-        fname: str
-            Filename and path to a Dino file.
+    Parameters
+    ----------
+    fname: str
+        Filename and path to a Dino file.
 
-        Returns
-        -------
-        DataModel: object
-            returns a standard Pastas DataModel object.
+    Returns
+    -------
+    DataModel: object
+        returns a standard Pastas DataModel object.
 
-        """
+    """
 
-        DataModel.__init__(self)
+    # Read the file
+    dino = DinoGrondwaterstand(fname)
+    ts = []
 
-        # Read the file
-        dino = DinoGrondwaterstand(fname)
+    if variable not in dino.data.keys():
+        raise (ValueError("variable %s is not in this dataset. Please use one of "
+                          "the following keys: %s" % (variable, dino.data.keys())))
+    series = dino.data[variable] * factor  # To make it meters)
+    if len(dino.meta) > 0:
+        metadata = dino.meta[-1]
+    else:
+        metadata = None
 
-        if variable not in dino.data.keys():
-            Warning("variable %s is not in this dataset. Please use one of "
-                    "the following keys: %s" % (variable, dino.data.keys()))
-        else:
-            self.series = dino.data[variable] / 100 # To make it meters
-        self.x = dino.x
-        self.y = dino.y
-        self.latlon = self.rd2wgs(dino.x, dino.y)
-        if len(dino.meta) > 0:
-            self.metadata = dino.meta[-1]
-        else:
-            self.metadata = {}
+    metadata['x'] = dino.x
+    metadata['y'] = dino.y
+    metadata['z'] = np.mean((dino.bovenkant_filter, dino.onderkant_filter))
+    metadata['projection'] = 'epsg:28992'
+
+    ts.append(TimeSeries(series,
+                         name=dino.locatie + '_' + str(dino.filternummer),
+                         metadata=metadata, kind='oseries'))
+    if len(ts) == 1:
+        ts = ts[0]
+    return ts
 
 
 class DinoGrondwaterstand:

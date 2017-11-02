@@ -1,3 +1,3 @@
-from .dinoloket import dinodata
-from .knmi import knmidata
-from .menyanthes import menydata
+from .dinoloket import read_dino, DinoGrondwaterstand
+from .knmi import read_knmi, KnmiStation
+from .menyanthes import read_meny, MenyData

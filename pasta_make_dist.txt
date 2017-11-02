@@ -1,0 +1,17 @@
+# How to update pastas?
+
+# To create release on github
+
+1. Update version.py to the correct version.
+2. Commit these changes to github and sync.
+3. Create a pull request to merge Dev into Master.
+4. Merge commmit the pull reqest. (Don't do squash and merge!!)
+
+# To create a new pip distribution
+
+1. python setup.py egg_info
+2. python setup.py sdist
+3. python setup.py bdist_wheel --universal
+4. twine upload dist/*
+
+# To create a new conda distribution

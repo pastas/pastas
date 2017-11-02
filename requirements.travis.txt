@@ -8,4 +8,3 @@ pandas>=0.19
 
 scipy>=0.15
 
-statsmodels>=0.8

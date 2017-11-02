@@ -26,15 +26,18 @@ criterion (default), use te following syntax.
 
 from __future__ import print_function, division
 
-from warnings import warn
+import logging
 
 import lmfit
 import numpy as np
 from scipy.optimize import least_squares, differential_evolution
 
+logger = logging.getLogger(__name__)
+
 
 class BaseSolver:
-    """ Basesolver class that contains the basic function for each solver.
+    _name = "BaseSolver"
+    __doc__ = """Basesolver class that contains the basic function for each solver.
 
     A solver is implemented with a separate init method and objective function
     that returns the necessary format that is required by the specific solver.
@@ -74,10 +77,10 @@ class BaseSolver:
             Pastas Model instance
         freq: str
 
-        weights: str, list, None
-            string with the name of the weights function (swsi, swsi2 or
-            timestep), a list with values to multiply each residual with. If
-            None, no weights are applied.
+        weights: pandas.Series
+            pandas Series by which the residual or innovation series are
+            multiplied. Typically values between 0 and 1.
+
 
         Returns
         -------
@@ -89,61 +92,21 @@ class BaseSolver:
         # Get the residuals or the innovations
         if noise:
             res = model.innovations(parameters, tmin, tmax, freq)
-            if not weights:
-                warn("Caution, solving the model with a noisemodel but not "
-                     "weighting the innovations, please consider applying "
-                     "weights.")
         else:
             res = model.residuals(parameters, tmin, tmax, freq)
 
         # Determine if weights need to be applied
-        if weights is None:
-            return res
-        elif type(weights) == list:
-            if len(weights) != res.size:
-                warn("Provided weights list does not match the size of the "
-                     "residuals series. A list with size %s is needed."
-                     % res.size)
-            return weights * res
-        elif hasattr(self, "weights_" + weights):
-            weights = getattr(self, "weights_" + weights)
-            w = weights(parameters, model, res)
-            res = res.multiply(w, fill_value=0.0)
-            return res
-        else:
-            warn("The weighting option is not valid. Please provide a valid "
-                 "weighting argument.")
+        if weights is not None:
+            weights = weights.reindex(res.index)
+            weights.fillna(1.0, inplace=True)
+            res = res.multiply(weights)
 
-    def weights_swsi(self, parameters, model, res):
-        """
-
-        Returns
-        -------
-
-        """
-        alpha = parameters[-1]
-        dt = model.odelt[res.index][1:]
-        power = (1.0 / (2.0 * (len(dt) - 1.0)))
-        w = np.exp(power * np.sum(np.log(1.0 - np.exp(-2.0 * dt / alpha)))) / \
-            np.sqrt(1.0 - np.exp(-2.0 * dt / alpha))
-        return w
-
-    def weights_swsi2(self, parameters, model, res):
-        alpha = parameters[-1]
-        dt = model.odelt[res.index][1:]
-        N = res.index.size  # Number of innovations
-        numerator = np.exp(
-            (1.0 / N) * np.sum(np.log(1.0 - np.exp(-2.0 * dt / alpha))))
-        w = np.sqrt((numerator / (1.0 - np.exp(-2.0 * dt / alpha))))
-        return w
-
-    def weights_timestep(self, parameters, model, res):
-        delt = model.odelt[res.index][1:]
-        return delt
+        return res
 
 
 class LeastSquares(BaseSolver):
-    """Solving the model using Scipy's least_squares method.
+    _name = "LeastSquares"
+    __doc__ = """Solving the model using Scipy's least_squares method.
 
     Notes
     -----
@@ -175,8 +138,9 @@ class LeastSquares(BaseSolver):
         bounds = (pmin, pmax)
 
         if False in model.parameters.vary.values.astype('bool'):
-            warn("Fixing parameters is not supported with this solver. Please"
-                 "use LmfitSolve or apply small boundaries as a solution.")
+            logger.warning("Fixing parameters is not supported with this"
+                           "solver. Please use LmfitSolve or apply small"
+                           "boundaries as a solution.")
 
         self.fit = least_squares(self.objfunction, x0=parameters,
                                  bounds=bounds,
@@ -208,6 +172,17 @@ class LeastSquares(BaseSolver):
 
 
 class LmfitSolve(BaseSolver):
+    _name = "LmfitSolve"
+    __doc__ = """Solving the model using the LmFit solver. This is basically a
+    wrapper around the scipy solvers, adding some cool functionality for
+    boundary conditions.
+
+    Notes
+    -----
+    https://github.com/lmfit/lmfit-py/
+
+    """
+
     def __init__(self, model, tmin=None, tmax=None, noise=True, freq='D',
                  weights=None, **kwargs):
         BaseSolver.__init__(self)
@@ -238,6 +213,8 @@ class LmfitSolve(BaseSolver):
 
 
 class DESolve(BaseSolver):
+    _name = "DESolve"
+
     def __init__(self, model, tmin=None, tmax=None, noise=True, freq='D'):
         BaseSolver.__init__(self)
 

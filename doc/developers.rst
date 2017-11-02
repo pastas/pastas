@@ -1,6 +1,13 @@
-================
+==========
+Developers
+==========
+Since |Project| is an open-source framework, it depends on the Open
+Source Community for continuous development of the software. Any help in
+maintaining the code, writing or updating documentation is more then
+welcome.
+
 Developers guide
-================
+----------------
 On this page resources for developers working on |Project| are provided. One
 of the main goals of |Project| is to boost research in the use of Time Series
 Analysis methods in hydrology. The software is written as an Object Oriented
