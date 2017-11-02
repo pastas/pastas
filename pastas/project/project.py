@@ -97,7 +97,7 @@ class Project:
         # Transfer x, y and z to dataframe as well to increase speed.
         for i in ["x", "y", "z"]:
             value = ts.metadata[i]
-            data.set_value(name, i, value)
+            data.loc[name, i] = value
 
     def del_oseries(self, oseries):
         """Method that removes oseries from the project.
@@ -384,3 +384,90 @@ class Project:
                                  index=oseries, columns=stresses)
 
         return distances
+
+    def get_parameters(self, parameters, models=None, param_value="optimal"):
+        """Method to get the parameters from each model. NaN-values are
+        returned when the parameters is not present in the model.
+
+        Parameters
+        ----------
+        parameters: list
+            List with the names of the parameters. The parameter does not
+            have to be used in all models.
+        models: list
+            List with the names of the models. These have to be in the
+            Project models dictionary.
+        param_value: str
+            String with the parameter value that needs to be collected:
+            Options are: initial, optimal (default), pmax, pmin and vary.
+
+        Returns
+        -------
+        data: pandas.DataFrame
+            Returns a pandas DataFrame with the models name as the index and
+            the parameters as columns. A pandas Series is returned when only
+            one parameter values is collected.
+
+        """
+        if models is None:
+            models = self.models.keys()
+
+        data = pd.DataFrame(index=models, columns=parameters)
+
+        for ml_name in models:
+            ml = self.models[ml_name]
+            for parameter in parameters:
+                if parameter in ml.parameters.index:
+                    value = ml.parameters.loc[parameter, param_value]
+                    data.loc[ml_name, parameter] = value
+
+        data = data.squeeze()
+        return data.astype(float)
+
+    def get_statistics(self, statistics, models=None, **kwargs):
+        """Method to get the statistics for each model.
+
+        Parameters
+        ----------
+        statistics: list
+            List with the names of the statistics to calculate for each model.
+        models: list
+            List with the names of the models. These have to be in the
+            Project models dictionary.
+
+        Returns
+        -------
+        data: pandas.DataFrame
+
+
+
+        """
+        if models is None:
+            models = self.models.keys()
+
+        data = pd.DataFrame(index=models, columns=statistics)
+
+        for ml_name in models:
+            ml = self.models[ml_name]
+            for statistic in statistics:
+                value = ml.stats.__getattribute__(statistic)(**kwargs)
+                data.loc[ml_name, statistic] = value
+
+        data = data.squeeze()
+        return data.astype(float)
+
+    def get_standard_error(self, parameters, models=None):
+        if models is None:
+            models = self.models.keys()
+
+        data = pd.DataFrame(index=models, columns=parameters)
+
+        for ml_name in models:
+            ml = self.models[ml_name]
+            for parameter in parameters:
+                if parameter in ml.parameters.index:
+                    value = ml.fit.params[parameter].stderr
+                    name = parameter + "_stderr"
+                    data.loc[ml_name, name] = value
+
+        return data.squeeze()

@@ -66,8 +66,11 @@ class Model:
                   Set constant equal to zero and fixed to obtain \
                   solution without constant')
 
-        self.add_noisemodel(NoiseModel())
+        self.noisemodel = None
+        self.constant = None
+
         self.add_constant()
+        self.add_noisemodel(NoiseModel())
 
         # Store the simulation settings
         self.settings = dict()
@@ -129,14 +132,14 @@ class Model:
 
         """
         self.noisemodel = noisemodel
-        # self.parameters = self.get_init_parameters()
+        self.parameters = self.get_init_parameters()
 
     def add_constant(self):
         """Adds a Constant to the time series Model.
 
         """
         self.constant = Constant(value=self.oseries.mean(), name='constant')
-        # self.parameters = self.get_init_parameters()
+        self.parameters = self.get_init_parameters()
 
     @get_stressmodel
     def del_stressmodel(self, name):
@@ -741,7 +744,8 @@ class Model:
     @get_stressmodel
     def get_stress(self, name):
         p = self.get_parameters(name)
-        self.stressmodels[name].get_stress(p)
+        stress = self.stressmodels[name].get_stress(p)
+        return stress
 
     def get_metadata(self, meta=None):
         """Method that returns a metadata dict with the basic information.
