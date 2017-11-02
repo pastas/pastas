@@ -18,18 +18,29 @@ logger = logging.getLogger(__name__)
 
 
 class TimeSeries(pd.Series):
+    # "sample_down": "sum" means the series is a quantity
+    # "sample_down": "mean" means the series is an intensity (flux)
+    # "sample_up": "bfill" means the series is an intensity (flux)
+    # therefore "sample_down": "sum" and "sample_up": "bfill" should not be used together
+    # "sample_up": "mean" is very strange, and should be deleted from PASTAS
+    # the same can be said about "sample_up": float
+    # We should only keep methods in PASTAS that are in line with the way we use the series:
+    # timestamps are at the end of the period that each datapoint describes
+    # thereforw I would also delete "sample_up": "pad" and "sample_up": "ffill"
+    # this would only keep "sample_up": "bfill" and "sample_up": "interpolate"
+    # and we should implement a new sample_up method for when the series is a quantity
     _kind_settings = {
         "oseries": {"freq": "D", "sample_up": None, "sample_down": None,
                     "fill_nan": "drop", "fill_before": None, "fill_after":
                         None},
-        "prec": {"freq": "D", "sample_up": "mean", "sample_down": "sum",
+        "prec": {"freq": "D", "sample_up": "bfill", "sample_down": "sum",
                  "fill_nan": 0.0, "fill_before": "mean", "fill_after": "mean"},
         "evap": {"freq": "D", "sample_up": "interpolate", "sample_down": "sum",
                  "fill_nan": "interpolate", "fill_before": "mean",
                  "fill_after": "mean"},
         "well": {"freq": "D", "sample_up": "bfill", "sample_down": "sum",
                  "fill_nan": 0.0, "fill_before": 0.0, "fill_after": 0.0},
-        "waterlevel": {"freq": "D", "sample_up": "mean",
+        "waterlevel": {"freq": "D", "sample_up": "interpolate",
                        "sample_down": "mean", "fill_nan": "interpolate",
                        "fill_before": "mean", "fill_after": "mean"},
     }
@@ -295,7 +306,7 @@ class TimeSeries(pd.Series):
             pass
         else:
             series = series.asfreq(freq)
-            if method == "mean":
+            if method == "mean": # when would you ever want this?
                 series.fillna(series.mean(), inplace=True)  # Default option
             elif method == "interpolate":
                 series.interpolate(method="time", inplace=True)
@@ -329,7 +340,7 @@ class TimeSeries(pd.Series):
 
         if method == "mean":
             series = series.resample(freq, **kwargs).mean()
-        elif method == "drop":
+        elif method == "drop": # does this work?
             series = series.resample(freq, **kwargs).dropna()
         elif method == "sum":
             series = series.resample(freq, **kwargs).sum()
@@ -458,6 +469,7 @@ class TimeSeries(pd.Series):
             pass
         elif method == "mean":
             series = series.subtract(series.mean())
+        # can we also choose to normalize by the fill_before-value?
 
         return series
 
