@@ -58,7 +58,8 @@ class Model:
         self.name = name
 
         self.parameters = pd.DataFrame(
-            columns=['initial', 'name', 'optimal', 'pmin', 'pmax', 'vary'])
+            columns=['initial', 'name', 'optimal', 'pmin', 'pmax', 'vary',
+                     'stderr'])
         self.stressmodels = OrderedDict()
 
         if not constant:
@@ -447,6 +448,7 @@ class Model:
 
         self.fit = fit.fit
         self.parameters.optimal = fit.optimal_params
+        self.parameters.stderr = fit.stderr
 
         self.report = fit.report
         if report:
@@ -674,8 +676,8 @@ class Model:
         if not initial:
             optimal = self.parameters.optimal
 
-        parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax',
-                                           'vary', 'optimal', 'name'])
+        parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary',
+                                           'optimal', 'name', 'stderr'])
         for ts in self.stressmodels.values():
             parameters = parameters.append(ts.parameters)
         if self.constant:
