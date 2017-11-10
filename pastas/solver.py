@@ -49,6 +49,7 @@ class BaseSolver:
 
     def __init__(self):
         self.default_kwargs = dict()
+        self.stderr = None
 
     def update_kwargs(self, kwargs):
         if kwargs:
@@ -203,6 +204,7 @@ class LmfitSolve(BaseSolver):
                                         weights), **kwargs)
         self.optimal_params = np.array([p.value for p in
                                         self.fit.params.values()])
+        self.stderr = np.array([p.stderr for p in self.fit.params.values()])
         self.report = lmfit.fit_report(self.fit)
 
     def objfunction(self, parameters, tmin, tmax, noise, model, freq, weights):
