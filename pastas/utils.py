@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 
 def get_dt(freq):
@@ -30,11 +31,11 @@ def get_time_offset(t, freq):
     # define the function blocks
     def calc_week_offset(t):
         return pd.Timedelta(days=t.weekday(), hours=t.hour,
-                                  minutes=t.minute, seconds=t.second)
+                            minutes=t.minute, seconds=t.second)
 
     def calc_day_offset(t):
         return pd.Timedelta(hours=t.hour, minutes=t.minute,
-                                  seconds=t.second)
+                            seconds=t.second)
 
     def calc_hour_offset(t):
         return pd.Timedelta(minutes=t.minute, seconds=t.second)
@@ -102,3 +103,42 @@ def get_freqstr(freqstr):
 
     return num, freq
 
+
+def timestep_weighted_resample(series, index):
+    # resample a timeseries to a new index, using an overlapping-timestep weighted average
+    # the new index does not have to be equidistant
+    # also, the timestep-edges of the new index do not have to overlap with the original series
+    # it is assumed the series consists of measurements that describe an intensity at the end of the period for which they hold
+    # therefore when upsampling, the values are uniformally spread over the new timestep (like bfill)
+    # this method unfortunately is slower than the pandas-reample methods
+
+    # determine some arrays for the input-series
+    t0e = series.index.get_values()
+    dt0 = np.diff(t0e)
+    dt0 = np.hstack((dt0[0], dt0))
+    t0s = t0e - dt0
+    v0 = series.values
+
+    # determine some arrays for the output-series
+    t1e = index.get_values()
+    dt1 = np.diff(t1e)
+    dt1 = np.hstack((dt1[0], dt1))
+    t1s = t1e - dt1
+    v1 = np.empty(t1e.shape)
+    v1[:] = np.nan
+    for i in range(len(v1)):
+        # determine which periods within the series are within the new index
+        mask = (t1s[i] < t0e) & (t1e[i] > t0s)
+        if any(mask):
+            # cut by the timestep-edges
+            ts = t0s[mask]
+            te = t0e[mask]
+            ts[ts < t1s[i]] = t1s[i]
+            te[te > t1e[i]] = t1e[i]
+            # determine timestep
+            dt = te - ts
+            # determine timestep-weighted value
+            v1[i] = np.sum(dt * v0[mask]) / np.sum(dt)
+    # replace all values in the series
+    series = pd.Series(v1, index=index)
+    return series
