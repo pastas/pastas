@@ -16,7 +16,7 @@ from .noisemodels import NoiseModel
 from .plots import Plotting
 from .solver import LmfitSolve
 from .stats import Statistics
-from .stressmodels import Constant
+from .stressmodels import Constant, NoConvModel
 from .timeseries import TimeSeries
 from .utils import get_dt, get_time_offset
 from .version import __version__
@@ -379,10 +379,15 @@ class Model:
             self.settings["warmup"] = warmup
 
         # make sure calibration data is renewed
-        self.sim_index = self.get_sim_index(self.settings["tmin"],
-                                            self.settings["tmax"],
-                                            self.settings["freq"],
-                                            self.settings["warmup"])
+        types = [type(self.stressmodels[key]) for key in self.stressmodels.keys()]
+        if all(type(self.stressmodels[key]) == NoConvModel for key in self.stressmodels.keys()):
+            self.sim_index = self.oseries.index
+        else:
+            self.sim_index = self.get_sim_index(self.settings["tmin"],
+                                                self.settings["tmax"],
+                                                self.settings["freq"],
+                                                self.settings["warmup"])
+
         self.oseries_calib = self.get_oseries_calib(self.settings["tmin"],
                                                     self.settings["tmax"],
                                                     self.sim_index)

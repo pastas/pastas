@@ -623,7 +623,10 @@ class StepModel(StressModelBase):
 class NoConvModel(StressModelBase):
     _name = "NoConvModel"
     __doc__ = """Time series model consisting of the calculation of one stress with one
-    response function, without the use of convolution (so it is slooooow)
+    response function, without the use of convolution (so it is much slower).
+    The advantage is that you do not have to interpolate the simulation to the observation timesteps,
+    because you calculate the simulation at the exact moment of the observations.
+    This StressModel works well for models with short observation-series and/or short stress-series.
 
     Parameters
     ----------
@@ -652,11 +655,11 @@ class NoConvModel(StressModelBase):
 
     def __init__(self, stress, rfunc, name, metadata=None, up=True,
                  cutoff=0.99, kind=None, settings=None):
-        stress = TimeSeries(stress, name=name, kind=kind, settings=settings)
+        stress = TimeSeries(stress, kind=kind, settings=settings, metadata=metadata)
         StressModelBase.__init__(self, rfunc, name, stress.index.min(),
                                  stress.index.max(), up, stress.mean(), cutoff)
         self.freq = stress.settings["freq"]
-        self.stress[name] = stress
+        self.stress = [stress]
         self.set_init_parameters()
 
     def set_init_parameters(self):
@@ -681,25 +684,47 @@ class NoConvModel(StressModelBase):
             The simulated head contribution.
 
         """
-        h = pd.Series(0, tindex, name=self.name)
-        stress = self.stress.diff()
-        if self.stress.values[0] != 0:
-            stress = stress.set_value(
-                stress.index[0] - (stress.index[1] - stress.index[0]),
-                stress.columns, 0)
-            stress = stress.sort_index()
-        # set the index at the beginning of each step
+
+        # take the difference in values,
+        # as we will calculate the step response
+        stress = self.stress[0].diff()
+        # set the index at the beginning of each period (it was at the end),
+        # as we will calculate the step response from the start of the period
         stress = stress.shift(-1).dropna()
+        # add a first value
+        ind = self.stress[0].index
+        stress=pd.concat((pd.Series(self.stress[0][0],index=[ind[0]-(ind[1] - ind[0])]),stress))
         # remove steps that do not change
-        stress = stress.loc[~(stress == 0).all(axis=1)]
-        # tmax = self.rfunc.calc_tmax(p)
-        for i in stress.index:
-            erin = (h.index > i)  # & ((h.index-i).days<tmax)
-            if any(erin):
-                r = stress.loc[i][0] * self.rfunc.step(p, (
-                    h.index[erin] - i).days)
-                h[erin] += r
-                # h[np.invert(erin) & (h.index > i)] = r[-1]
+        stress = stress[~(stress == 0)]
+        tmax = pd.to_timedelta(self.rfunc.calc_tmax(p),'d')
+        gain = self.rfunc.gain(p)
+        values = np.zeros(len(tindex))
+        if len(tindex)>len(stress):
+            # loop over the stress-series
+            for ind_str, val_str in stress.iteritems():
+                t = tindex - ind_str
+                mask = (tindex > ind_str) & (t <= tmax)
+                if np.any(mask):
+                    td = np.array(t[mask].total_seconds()/86400)
+                    r = val_str * self.rfunc.step(p, np.array(td))
+                    values[mask] += r
+                mask = t > tmax
+                if np.any(mask):
+                    values[mask] += val_str * gain
+        else:
+            # loop over the observation-series
+            for i, ind_obs in enumerate(tindex):
+                t = ind_obs - stress.index
+                mask = (ind_obs>stress.index) & (t<=tmax)
+                if np.any(mask):
+                    # calculate the step response
+                    td = np.array(t[mask].total_seconds()/86400)
+                    values[i] += np.sum(stress[mask] * self.rfunc.step(p,td))
+                mask = t > tmax
+                if np.any(mask):
+                    values[i] += np.sum(stress[mask] * gain)
+            pass
+        h = pd.Series(values, tindex, name=self.name)
         return h
 
 

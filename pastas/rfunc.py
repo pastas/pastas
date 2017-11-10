@@ -77,14 +77,17 @@ class Gamma(RfuncBase):
         parameters.loc[name + '_a'] = (100, 1, 5000, 1, name)
         return parameters
 
+    def calc_tmax(self,p):
+        return gammaincinv(p[1], self.cutoff) * p[2]
+
     def gain(self, p):
-        return p[0]
+        return self.up * p[0]
 
     def step(self, p, dt=1):
         if isinstance(dt, np.ndarray):
             t = dt
         else:
-            self.tmax = gammaincinv(p[1], self.cutoff) * p[2]
+            self.tmax = self.calc_tmax(p)
             self.tmax = max(self.tmax, 3 * dt)
             t = np.arange(dt, self.tmax, dt)
 
@@ -119,14 +122,17 @@ class Exponential(RfuncBase):
         parameters.loc[name + '_a'] = (100, 1, 5000, 1, name)
         return parameters
 
+    def calc_tmax(self,p):
+        return -np.log(1.0 / p[1]) * p[1]
+
     def gain(self, p):
-        return p[0]
+        return self.up * p[0]
 
     def step(self, p, dt=1):
         if isinstance(dt, np.ndarray):
             t = dt
         else:
-            self.tmax = -np.log(1.0 / p[1]) * p[1]
+            self.tmax = self.calc_tmax(p)
             self.tmax = max(self.tmax, 3 * dt)
             t = np.arange(dt, self.tmax, dt)
         s = self.up * p[0] * (1.0 - np.exp(-t / p[1]))
@@ -170,13 +176,14 @@ class Hantush(RfuncBase):
         return parameters
 
     def calc_tmax(self, p):
+        # approximate formula for tmax
         rho = p[1]
         cS = p[2]
         k0rho = k0(rho)
         return lambertw(1 / ((1 - self.cutoff) * k0rho)).real * cS
 
     def gain(self, p):
-        return p[0]
+        return self.up * p[0]
 
     def step(self, p, dt=1):
         rho = p[1]
@@ -185,8 +192,7 @@ class Hantush(RfuncBase):
         if isinstance(dt, np.ndarray):
             t = dt
         else:
-            # approximate formula for tmax
-            self.tmax = lambertw(1 / ((1 - self.cutoff) * k0rho)).real * cS
+            self.tmax = self.calc_tmax(p)
             self.tmax = max(self.tmax, 3 * dt)
             t = np.arange(dt, self.tmax, dt)
         tau = t / cS
@@ -233,7 +239,7 @@ class Theis(RfuncBase):
         return parameters
 
     def gain(self, p):
-        return np.inf
+        return self.up * np.inf
 
     def step(self, p, dt=1):
         if isinstance(dt, np.ndarray):
@@ -279,16 +285,20 @@ class Bruggeman(RfuncBase):
         parameters.loc[name + '_c'] = (c_init, 0, c_init * 100, 1, name)
         return parameters
 
+    def calc_tmax(self,p):
+        # TODO: find tmax from cutoff, below is just an opproximation
+        return 4 * p[0] / p[1] ** 2
+
     def gain(self, p):
         # TODO: check line below
-        return p[2]
+        return self.up * p[2]
 
     def step(self, p, dt=1):
-        # TODO: find tmax from cutoff, below is just an opproximation
+
         if isinstance(dt, np.ndarray):
             t = dt
         else:
-            self.tmax = 4 * p[0] / p[1] ** 2
+            self.tmax = self.calc_tmax(p)
             self.tmax = max(self.tmax, 3 * dt)
             t = np.arange(dt, self.tmax, dt)
         s = self.up * p[2] * self.polder_function(p[0], p[1] * np.sqrt(t))
@@ -321,7 +331,7 @@ class One(RfuncBase):
         return parameters
 
     def gain(self, p):
-        return p[0]
+        return self.up * p[0]
 
     def step(self, p, dt=1):
         if isinstance(dt, np.ndarray):
