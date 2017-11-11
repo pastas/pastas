@@ -12,7 +12,8 @@ from __future__ import print_function, division
 import logging
 
 import pandas as pd
-from pastas.utils import get_dt, get_time_offset
+import numpy as np
+from pastas.utils import get_dt, get_time_offset, timestep_weighted_resample
 
 logger = logging.getLogger(__name__)
 
@@ -26,21 +27,21 @@ class TimeSeries(pd.Series):
     # the same can be said about "sample_up": float
     # We should only keep methods in PASTAS that are in line with the way we use the series:
     # timestamps are at the end of the period that each datapoint describes
-    # thereforw I would also delete "sample_up": "pad" and "sample_up": "ffill"
+    # therefore I would also delete "sample_up": "pad" and "sample_up": "ffill"
     # this would only keep "sample_up": "bfill" and "sample_up": "interpolate"
     # and we should implement a new sample_up method for when the series is a quantity
     _kind_settings = {
-        "oseries": {"freq": "D", "sample_up": None, "sample_down": None,
+        "oseries": {"freq": None, "sample_up": None, "sample_down": None,
                     "fill_nan": "drop", "fill_before": None, "fill_after":
                         None},
-        "prec": {"freq": "D", "sample_up": "bfill", "sample_down": "sum",
+        "prec": {"freq": None, "sample_up": "bfill", "sample_down": "mean",
                  "fill_nan": 0.0, "fill_before": "mean", "fill_after": "mean"},
-        "evap": {"freq": "D", "sample_up": "interpolate", "sample_down": "sum",
+        "evap": {"freq": None, "sample_up": "interpolate", "sample_down": "mean",
                  "fill_nan": "interpolate", "fill_before": "mean",
                  "fill_after": "mean"},
-        "well": {"freq": "D", "sample_up": "bfill", "sample_down": "sum",
+        "well": {"freq": None, "sample_up": "bfill", "sample_down": "mean",
                  "fill_nan": 0.0, "fill_before": 0.0, "fill_after": 0.0},
-        "waterlevel": {"freq": "D", "sample_up": "interpolate",
+        "waterlevel": {"freq": None, "sample_up": "interpolate",
                        "sample_down": "mean", "fill_nan": "interpolate",
                        "fill_before": "mean", "fill_after": "mean"},
     }
@@ -106,7 +107,7 @@ class TimeSeries(pd.Series):
             self.series_original = series.copy()
             self.freq_original = freq_original
             self.settings = dict(
-                freq="D",
+                freq=None,
                 sample_up=None,
                 sample_down=None,
                 fill_nan="interpolate",
@@ -196,14 +197,18 @@ class TimeSeries(pd.Series):
             logger.info("Inferred frequency from time series %s: freq=%s " % (
                 self.name, self.freq_original))
         else:
-            self.freq_original = self.settings["freq"]
-            if self.settings["fill_nan"] and self.settings["fill_nan"] != \
-                    "drop":
-                logger.warning("User-provided frequency is applied when "
-                               "validating the Time Series %s. Make sure the "
-                               "provided frequency is close to the real "
-                               "frequency of the original series." %
-                               (self.name))
+            if False:
+                self.freq_original = self.settings["freq"]
+                if self.settings["fill_nan"] and self.settings["fill_nan"] != \
+                        "drop":
+                    logger.warning("User-provided frequency is applied when "
+                                   "validating the Time Series %s. Make sure the "
+                                   "provided frequency is close to the real "
+                                   "frequency of the original series." %
+                                   (self.name))
+            else:
+                self.freq_original = None
+                logger.info("Cannot determine frequency of series %s" % (self.name))
 
         # 5. Handle duplicate indices
         if not series.index.is_unique:
@@ -272,17 +277,26 @@ class TimeSeries(pd.Series):
         # 1. If no freq string is present or is provided (e.g. Oseries)
         if not freq:
             return series
-        # 2. If new frequency is lower than its original.
-        elif get_dt(freq) < get_dt(self.freq_original):
-            series = self.sample_up(series)
-            # 3. If new frequency is higher than its original, downsample.
-        elif get_dt(freq) > get_dt(self.freq_original):
-            series = self.sample_down(series)
-        # 4. If new frequency is equal to its original.
-        elif get_dt(freq) == get_dt(self.freq_original):
-            series = self.fill_nan(series)
+        # 2 If original frequency could not be determined
+        elif not self.freq_original:
+            series = self.sample_weighted(series)
         else:
-            series = self.series
+            dt_new = get_dt(freq)
+            dt_org = get_dt(self.freq_original)
+            # 3. If series frequency and model frequency are not a multiple of each other
+            if not ((dt_new % dt_org) == 0 or (dt_org % dt_new) == 0):
+                series = self.sample_weighted(series)
+            # 2. If new frequency is lower than its original.
+            elif dt_new < dt_org:
+                series = self.sample_up(series)
+            # 3. If new frequency is higher than its original, downsample.
+            elif dt_new > dt_org:
+                series = self.sample_down(series)
+            # 4. If new frequency is equal to its original.
+            elif dt_new == dt_org:
+                # This does not have anything to to with frequency.
+                # Shouldn't this be performed after change_frequency, also after the above methods?
+                series = self.fill_nan(series)
 
         # Drop nan-values at the beginning and end of the time series
         series = series.loc[
@@ -306,7 +320,7 @@ class TimeSeries(pd.Series):
             pass
         else:
             series = series.asfreq(freq)
-            if method == "mean": # when would you ever want this?
+            if method == "mean":  # when would you ever want this?
                 series.fillna(series.mean(), inplace=True)  # Default option
             elif method == "interpolate":
                 series.interpolate(method="time", inplace=True)
@@ -315,9 +329,9 @@ class TimeSeries(pd.Series):
             else:
                 logger.warning("User-defined option for sample_up %s is not "
                                "supported" % method)
-
-        logger.info("%i nan-value(s) was/were found and filled with: %s"
-                    % (n, method))
+        if n > 0:
+            logger.info("%i nan-value(s) was/were found and filled with: %s"
+                        % (n, method))
 
         return series
 
@@ -340,7 +354,7 @@ class TimeSeries(pd.Series):
 
         if method == "mean":
             series = series.resample(freq, **kwargs).mean()
-        elif method == "drop": # does this work?
+        elif method == "drop":  # does this work?
             series = series.resample(freq, **kwargs).dropna()
         elif method == "sum":
             series = series.resample(freq, **kwargs).sum()
@@ -355,6 +369,15 @@ class TimeSeries(pd.Series):
         logger.info("Time Series %s were sampled down to freq %s with method "
                     "%s" % (self.name, freq, method))
 
+        return series
+
+    def sample_weighted(self, series):
+        series0 = series
+        freq = self.settings["freq"]
+        series = series.resample(freq).mean()
+        series = timestep_weighted_resample(series0, series.index)
+        logger.info("Time Series %s were sampled down to freq %s with method "
+                    "%s" % (self.name, freq, 'timestep_weighted_resample'))
         return series
 
     def fill_nan(self, series):
@@ -384,9 +407,9 @@ class TimeSeries(pd.Series):
             method = "drop"
             n = series.isnull().values.sum()
             series.dropna(inplace=True)
-
-        logger.info("%i nan-value(s) was/were found and filled with: %s"
-                    % (n, method))
+        if n > 0:
+            logger.info("%i nan-value(s) was/were found and filled with: %s"
+                        % (n, method))
 
         return series
 

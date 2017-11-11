@@ -128,7 +128,7 @@ def timestep_weighted_resample(series, index):
     v1[:] = np.nan
     for i in range(len(v1)):
         # determine which periods within the series are within the new index
-        mask = (t1s[i] < t0e) & (t1e[i] > t0s)
+        mask = (t0e > t1s[i]) & (t0s < t1e[i])
         if any(mask):
             # cut by the timestep-edges
             ts = t0s[mask]
@@ -136,9 +136,11 @@ def timestep_weighted_resample(series, index):
             ts[ts < t1s[i]] = t1s[i]
             te[te > t1e[i]] = t1e[i]
             # determine timestep
-            dt = te - ts
+            dt = (te - ts).astype(float)
             # determine timestep-weighted value
             v1[i] = np.sum(dt * v0[mask]) / np.sum(dt)
+            if v1[i]<0:
+                test=1
     # replace all values in the series
     series = pd.Series(v1, index=index)
     return series

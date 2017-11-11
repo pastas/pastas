@@ -77,7 +77,7 @@ class Model:
         self.settings = dict()
         self.settings["tmin"] = None
         self.settings["tmax"] = None
-        self.settings["freq"] = "D"
+        self.settings["freq"] = None
         self.settings["warmup"] = 3650
         self.settings["time_offset"] = pd.Timedelta(0)
         self.settings["noise"] = False
@@ -125,6 +125,7 @@ class Model:
 
             # Call these methods to set tmin, tmax and freq
             stressmodel.update_stress(freq=self.settings["freq"])
+            self.set_freq()
             self.set_time_offset()
             self.settings["tmin"], self.settings["tmax"] = self.get_tmin_tmax()
 
@@ -631,6 +632,25 @@ class Model:
             self.logger.error('Error: no observations between tmin and tmax')
 
         return tmin, tmax
+
+    def set_freq(self):
+        freqs = set()
+        for stressmodel in self.stressmodels.values():
+            if stressmodel.stress:
+                for stress in stressmodel.stress:
+                    if stress.freq_original:
+                        freqs.add(stress.freq_original)
+
+        if len(freqs) == 1:
+            self.settings["freq"] = next(iter(freqs))
+        elif len(freqs) > 1:
+            # take the highest frequency (lowest dt)
+            freqs = list(freqs)
+            dt = np.array([get_dt(f) for f in freqs])
+            self.settings["freq"] = freqs[np.argmin(dt)]
+        else:
+            self.logger.info('Frequency of model cannot be determined. Frequency is set to daily')
+            self.settings["freq"] = 'D'
 
     def set_time_offset(self):
         """Set the time offset for the model class.
