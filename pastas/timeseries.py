@@ -284,7 +284,8 @@ class TimeSeries(pd.Series):
             dt_new = get_dt(freq)
             dt_org = get_dt(self.freq_original)
             # 3. If series frequency and model frequency are not a multiple of each other
-            if not ((dt_new % dt_org) == 0 or (dt_org % dt_new) == 0):
+            eps = 10**-10
+            if not ((dt_new % dt_org) < eps or (dt_org % dt_new) <eps):
                 series = self.sample_weighted(series)
             # 2. If new frequency is lower than its original.
             elif dt_new < dt_org:
