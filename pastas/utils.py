@@ -139,8 +139,6 @@ def timestep_weighted_resample(series, index):
             dt = (te - ts).astype(float)
             # determine timestep-weighted value
             v1[i] = np.sum(dt * v0[mask]) / np.sum(dt)
-            if v1[i]<0:
-                test=1
     # replace all values in the series
     series = pd.Series(v1, index=index)
     return series

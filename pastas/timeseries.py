@@ -277,23 +277,23 @@ class TimeSeries(pd.Series):
         # 1. If no freq string is present or is provided (e.g. Oseries)
         if not freq:
             return series
-        # 2 If original frequency could not be determined
+        # 2. If original frequency could not be determined
         elif not self.freq_original:
             series = self.sample_weighted(series)
         else:
             dt_new = get_dt(freq)
             dt_org = get_dt(self.freq_original)
-            # 3. If series frequency and model frequency are not a multiple of each other
+            # 3. If new and original frequency are not a multiple of each other
             eps = 10**-10
             if not ((dt_new % dt_org) < eps or (dt_org % dt_new) <eps):
                 series = self.sample_weighted(series)
-            # 2. If new frequency is lower than its original.
+            # 4. If new frequency is lower than its original
             elif dt_new < dt_org:
                 series = self.sample_up(series)
-            # 3. If new frequency is higher than its original, downsample.
+            # 5. If new frequency is higher than its original
             elif dt_new > dt_org:
                 series = self.sample_down(series)
-            # 4. If new frequency is equal to its original.
+            # 6. If new frequency is equal to its original
             elif dt_new == dt_org:
                 # This does not have anything to to with frequency.
                 # Shouldn't this be performed after change_frequency, also after the above methods?
