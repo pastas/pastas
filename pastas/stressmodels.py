@@ -45,6 +45,12 @@ class StressModelBase():
         self.freq = None
         self.stress = list()
 
+    def set_init_parameters(self):
+        """Set the initial parameters (back) to their default values.
+
+        """
+        pass
+
     @set_parameter
     def set_initial(self, name, value):
         """Method to set the initial parameter value.
@@ -622,11 +628,12 @@ class StepModel(StressModelBase):
 
 class NoConvModel(StressModelBase):
     _name = "NoConvModel"
-    __doc__ = """Time series model consisting of the calculation of one stress with one
-    response function, without the use of convolution (so it is much slower).
-    The advantage is that you do not have to interpolate the simulation to the observation timesteps,
-    because you calculate the simulation at the exact moment of the observations.
-    This StressModel works well for models with short observation-series and/or short stress-series.
+    __doc__ = """Time series model consisting of the calculation of one stress
+     with one response function, without the use of convolution (so it is much
+     slower). The advantage is that you do not have to interpolate the
+     simulation to the observation timesteps, because you calculate the 
+     simulation at the exact moment of the observations. This StressModel works
+     well for models with short observation-series and/or short stress series.
 
     Parameters
     ----------
@@ -655,7 +662,8 @@ class NoConvModel(StressModelBase):
 
     def __init__(self, stress, rfunc, name, metadata=None, up=True,
                  cutoff=0.99, kind=None, settings=None):
-        stress = TimeSeries(stress, kind=kind, settings=settings, metadata=metadata)
+        stress = TimeSeries(stress, kind=kind, settings=settings,
+                            metadata=metadata)
         StressModelBase.__init__(self, rfunc, name, stress.index.min(),
                                  stress.index.max(), up, stress.mean(), cutoff)
         self.freq = stress.settings["freq"]
@@ -693,19 +701,21 @@ class NoConvModel(StressModelBase):
         stress = stress.shift(-1).dropna()
         # add a first value
         ind = self.stress[0].index
-        stress=pd.concat((pd.Series(self.stress[0][0],index=[ind[0]-(ind[1] - ind[0])]),stress))
+        stress = pd.concat((pd.Series(self.stress[0][0],
+                                      index=[ind[0] - (ind[1] - ind[0])]),
+                            stress))
         # remove steps that do not change
         stress = stress[~(stress == 0)]
-        tmax = pd.to_timedelta(self.rfunc.calc_tmax(p),'d')
+        tmax = pd.to_timedelta(self.rfunc.calc_tmax(p), 'd')
         gain = self.rfunc.gain(p)
         values = np.zeros(len(tindex))
-        if len(tindex)>len(stress):
+        if len(tindex) > len(stress):
             # loop over the stress-series
-            for ind_str, val_str in stress.iteritems():
+            for ind_str, val_str in stress.items():
                 t = tindex - ind_str
                 mask = (tindex > ind_str) & (t <= tmax)
                 if np.any(mask):
-                    td = np.array(t[mask].total_seconds()/86400)
+                    td = np.array(t[mask].total_seconds() / 86400)
                     r = val_str * self.rfunc.step(p, np.array(td))
                     values[mask] += r
                 mask = t > tmax
@@ -715,11 +725,11 @@ class NoConvModel(StressModelBase):
             # loop over the observation-series
             for i, ind_obs in enumerate(tindex):
                 t = ind_obs - stress.index
-                mask = (ind_obs>stress.index) & (t<=tmax)
+                mask = (ind_obs > stress.index) & (t <= tmax)
                 if np.any(mask):
                     # calculate the step response
-                    td = np.array(t[mask].total_seconds()/86400)
-                    values[i] += np.sum(stress[mask] * self.rfunc.step(p,td))
+                    td = np.array(t[mask].total_seconds() / 86400)
+                    values[i] += np.sum(stress[mask] * self.rfunc.step(p, td))
                 mask = t > tmax
                 if np.any(mask):
                     values[i] += np.sum(stress[mask] * gain)
