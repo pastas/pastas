@@ -47,40 +47,39 @@ class Model:
 
     """
 
-    def __init__(self, oseries, constant=True, name="Observations",
-                 metadata=None, settings=None, log_level=""):
-        self.logger = self.get_logger()
+    def __init__(self, oseries, constant=True, noisemodel=True,
+                 name="Observations", metadata=None, settings=None,
+                 log_level="Error"):
+        self.logger = self.get_logger(log_level=log_level)
+
         # Construct the different model components
         self.oseries = TimeSeries(oseries, kind="oseries")
         self.odelt = self.oseries.index.to_series().diff() / \
                      pd.Timedelta(1, "D")
-        self.oseries_calib = None
         self.name = name
 
         self.parameters = pd.DataFrame(
-            columns=['initial', 'name', 'optimal', 'pmin', 'pmax', 'vary',
-                     'stderr'])
+            columns=["initial", "name", "optimal", "pmin", "pmax", "vary",
+                     "stderr"])
         self.stressmodels = OrderedDict()
-
-        if not constant:
-            print('Deprecation Warning: constant=False is ignored. \
-                  Set constant equal to zero and fixed to obtain \
-                  solution without constant')
 
         self.noisemodel = None
         self.constant = None
 
-        self.add_constant()
-        self.add_noisemodel(NoiseModel())
+        if constant:
+            constant = Constant(value=self.oseries.mean(), name="constant")
+            self.add_constant(constant)
+        if noisemodel:
+            self.add_noisemodel(NoiseModel())
 
         # Store the simulation settings
-        self.settings = dict()
+        self.settings = {}
         self.settings["tmin"] = None
         self.settings["tmax"] = None
-        self.settings["freq"] = 'D'
+        self.settings["freq"] = "D"
         self.settings["warmup"] = 3650
         self.settings["time_offset"] = pd.Timedelta(0)
-        self.settings["noise"] = False
+        self.settings["noise"] = noisemodel
         self.settings["solver"] = None
         if settings:
             self.settings.update(settings)
@@ -91,6 +90,7 @@ class Model:
 
         # initialize some attributes for solving and simulation
         self.sim_index = None
+        self.oseries_calib = None
         self.interpolate_simulation = None
         self.fit = None
         self.report = "Model has not been solved yet. "
@@ -101,12 +101,12 @@ class Model:
         self.plot = self.plots.plot  # because we are lazy
 
     def add_stressmodel(self, stressmodel):
-        """Adds a time series component to the model.
+        """Adds a stressmodel to the main model.
 
         Parameters
         ----------
         stressmodel: pastas.stressmodel.stressmodelBase
-            pastas.stressmodel object.
+            instance of a pastas.stressmodel object.
 
         Notes
         -----
@@ -116,9 +116,9 @@ class Model:
 
         """
         if stressmodel.name in self.stressmodels.keys():
-            self.logger.warning('The name for the series you are trying to '
-                                'add already exists for this model. Select '
-                                'another name.')
+            self.logger.error("""The name for the series you are trying to
+                                add already exists for this model. Select
+                                another name.""")
         else:
             self.stressmodels[stressmodel.name] = stressmodel
             self.parameters = self.get_init_parameters()
@@ -132,15 +132,25 @@ class Model:
     def add_noisemodel(self, noisemodel):
         """Adds a noise model to the time series Model.
 
+        Parameters
+        ----------
+        noisemodel: pastas.noisemodels.NoiseModelBase
+            Instance of NoiseModelBase
+
         """
         self.noisemodel = noisemodel
         self.parameters = self.get_init_parameters()
 
-    def add_constant(self):
+    def add_constant(self, constant):
         """Adds a Constant to the time series Model.
 
+        Parameters
+        ----------
+        constant: pastas.Constant
+            Pastas constant instance, possibly more things in the future.
+
         """
-        self.constant = Constant(value=self.oseries.mean(), name='constant')
+        self.constant = constant
         self.parameters = self.get_init_parameters()
 
     @get_stressmodel
@@ -342,20 +352,8 @@ class Model:
 
     def initialize(self, tmin=None, tmax=None, freq=None, warmup=None,
                    noise=None, weights=None, initial=True):
-        """Initialize the model. This method is called by "solve" but can
-        also be triggered manually.
-
-        Parameters
-        ----------
-        tmin
-        tmax
-        freq
-        warmup
-        noise
-        initial
-
-        Returns
-        -------
+        """Initialize the model. This method is called by the solve
+        method but can also be triggered manually.
 
         """
 
@@ -821,7 +819,7 @@ class Model:
         return file_info
 
     def get_logger(self, default_path='log_config.json',
-                   default_level=logging.INFO,
+                   log_level=logging.INFO,
                    env_key='LOG_CFG'):
         """This file creates a logger instance to log program output.
 
@@ -843,7 +841,7 @@ class Model:
                 config = json.load(f)
             logging.config.dictConfig(config)
         else:
-            logging.basicConfig(level=default_level)
+            logging.basicConfig(level=log_level)
 
         logger = logging.getLogger(__name__)
 
