@@ -16,7 +16,7 @@ from .noisemodels import NoiseModel
 from .plots import Plotting
 from .solver import LmfitSolve
 from .stats import Statistics
-from .stressmodels import Constant, NoConvModel
+from .stressmodels import Constant
 from .timeseries import TimeSeries
 from .utils import get_dt, get_time_offset
 from .version import __version__
@@ -77,7 +77,7 @@ class Model:
         self.settings = dict()
         self.settings["tmin"] = None
         self.settings["tmax"] = None
-        self.settings["freq"] = None
+        self.settings["freq"] = 'D'
         self.settings["warmup"] = 3650
         self.settings["time_offset"] = pd.Timedelta(0)
         self.settings["noise"] = False
@@ -125,7 +125,7 @@ class Model:
 
             # Call these methods to set tmin, tmax and freq
             stressmodel.update_stress(freq=self.settings["freq"])
-            self.set_freq()
+            # self.set_freq()
             self.set_time_offset()
             self.settings["tmin"], self.settings["tmax"] = self.get_tmin_tmax()
 
@@ -381,8 +381,8 @@ class Model:
             self.settings["warmup"] = warmup
 
         # make sure calibration data is renewed
-        types = [type(self.stressmodels[key]) for key in self.stressmodels.keys()]
-        if all(type(self.stressmodels[key]) == NoConvModel for key in self.stressmodels.keys()):
+        if all(self.stressmodels[key]._name == "NoConvModel" for key in
+               self.stressmodels.keys()):
             self.sim_index = self.oseries.index
         else:
             self.sim_index = self.get_sim_index(self.settings["tmin"],
@@ -439,26 +439,25 @@ class Model:
 
         # Initialize the model
         self.initialize(tmin, tmax, freq, warmup, noise, weights, initial)
+        self.settings["solver"] = solver._name
 
         # Solve model
-        self.settings["solver"] = solver._name
-        fit = solver(self, tmin=self.settings["tmin"],
-                     tmax=self.settings["tmax"], noise=self.settings["noise"],
-                     freq=self.settings["freq"],
-                     weights=self.settings["weights"], **kwargs)
+        self.fit = solver(self, tmin=self.settings["tmin"],
+                          tmax=self.settings["tmax"],
+                          noise=self.settings["noise"],
+                          freq=self.settings["freq"],
+                          weights=self.settings["weights"], **kwargs)
 
         # make calibration data empty again (was set in initialize)
         self.sim_index = None
         self.oseries_calib = None
         self.interpolate_simulation = None
 
-        self.fit = fit.fit
-        self.parameters.optimal = fit.optimal_params
-        self.parameters.stderr = fit.stderr
+        self.parameters.optimal = self.fit.optimal_params
+        self.parameters.stderr = self.fit.stderr
 
-        self.report = fit.report
         if report:
-            print(self.report)
+            print(self.fit_report())
 
     def get_sample(self, series, tindex):
         """Sample the series so that the frequency is not higher that tindex.
@@ -649,8 +648,9 @@ class Model:
             dt = np.array([get_dt(f) for f in freqs])
             self.settings["freq"] = freqs[np.argmin(dt)]
         else:
-            self.logger.info('Frequency of model cannot be determined. Frequency is set to daily')
-            self.settings["freq"] = 'D'
+            self.logger.info(
+                "Frequency of model cannot be determined. Frequency is set to daily")
+            self.settings["freq"] = "D"
 
     def set_time_offset(self):
         """Set the time offset for the model class.
@@ -670,10 +670,10 @@ class Model:
                 time_offsets.add(time_offset)
 
         assert len(
-            time_offsets) <= 1, self.logger.error('The time-differences with '
-                                                  'the default frequency is '
-                                                  'not the same for all '
-                                                  'stresses.')
+            time_offsets) <= 1, self.logger.error("""The time-differences with
+                                                  the default frequency is
+                                                  not the same for all
+                                                  stresses.""")
         if len(time_offsets) == 1:
             self.settings["time_offset"] = next(iter(time_offsets))
         else:
@@ -848,6 +848,23 @@ class Model:
         logger = logging.getLogger(__name__)
 
         return logger
+
+    def fit_report(self):
+        """Method that reports on the fit after a model is optimized. May be
+        called independently as well.
+
+        """
+        pp = self.parameters.loc[:, ["optimal", "stderr", "initial"]]
+
+        report = """Results for model %s:
+EVP: %s
+RMSE: %s
+Parameters:
+%s
+        
+        """ % (self.name, self.stats.evp(), self.stats.rmse(), pp)
+
+        return report
 
     def dump_data(self, series=True, sim_series=False, metadata=True,
                   file_info=True):
