@@ -100,6 +100,9 @@ class TimeSeries(pd.Series):
                 validate = True
                 update = True
                 series = series.series_original.copy()
+
+            if settings is None:
+                settings = self.settings.copy()
         else:
             validate = True
             update = True
