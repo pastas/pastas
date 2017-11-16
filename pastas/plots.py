@@ -138,7 +138,7 @@ class Plotting():
 
         return fig.axes
 
-    def decomposition(self, tmin=None, tmax=None, show=True, base=True):
+    def decomposition(self, tmin=None, tmax=None, show=True, ytick_base=True):
         """Plot the decomposition of a time-series in the different stresses.
 
         """
@@ -166,32 +166,32 @@ class Plotting():
 
         # plot simulation and observations in top graph
         self.ml.oseries.plot(linestyle='', marker='.', color='k', markersize=3,
-                             ax=ax[0], label='observations', x_compat=True)
+                             ax=ax[0], x_compat=True)
         hsim.plot(ax=ax[0], label='simulation', x_compat=True)
         ax[0].autoscale(enable=True, axis='y', tight=True)
         ax[0].grid(which='both')
-        ax[0].minorticks_off()
+        # ax[0].minorticks_off()
         ax[0].legend(loc=(0, 1), ncol=3, frameon=False)
-        
-        if base:
-            if isinstance(base,bool):
+
+        if ytick_base:
+            if isinstance(ytick_base, bool):
                 # determine the ytick-spacing of the top graph
                 yticks = ax[0].yaxis.get_ticklocs()
                 if len(yticks) > 1:
-                    base = yticks[1] - yticks[0]
+                    ytick_base = yticks[1] - yticks[0]
                 else:
-                    base = None
+                    ytick_base = None
             ax[0].yaxis.set_major_locator(
-                    plticker.MultipleLocator(base=base))
+                plticker.MultipleLocator(base=ytick_base))
 
         # plot the influence of the stresses
         for i, name in enumerate(self.ml.stressmodels.keys(), start=1):
             h[i].plot(ax=ax[i], x_compat=True)
 
-            if base:
+            if ytick_base:
                 # set the ytick-spacing equal to the top graph
                 ax[i].yaxis.set_major_locator(
-                    plticker.MultipleLocator(base=base))
+                    plticker.MultipleLocator(base=ytick_base))
 
             ax[i].set_title(name)
             ax[i].autoscale(enable=True, axis='y', tight=True)
@@ -315,6 +315,48 @@ class Plotting():
             plt.show()
 
         return fig.axes
+
+    def stresses(self, tmin=None, tmax=None, cols=1, **kwargs):
+        """This method creates a graph with all the stresses used in the
+         model.
+
+        Parameters
+        ----------
+        tmin
+        tmax
+        cols: int
+            number of columns used for plotting.
+
+        Returns
+        -------
+        axes: matplotlib.axes
+            matplotlib aes instance.
+
+        """
+        stresses = []
+
+        for name in self.ml.stressmodels.keys():
+            stress = self.ml.get_stress(name)
+            if isinstance(stress, list):
+                stresses.extend(stress)
+            else:
+                stresses.append(stress)
+
+        rows = len(stresses)
+        rows = -(-rows // cols)  # round up with out additional import
+
+        fig, axes = plt.subplots(rows, cols)
+
+        if hasattr(axes, "flatten"):
+            axes = axes.flatten()
+        else:
+            axes = [axes]
+
+        for ax, stress in zip(axes, stresses):
+            stress.plot(ax=ax, x_compat=True)
+            ax.legend([stress.name], loc=2)
+
+        return axes
 
     def _get_figure(self, **kwargs):
         fig = plt.figure(**kwargs)
