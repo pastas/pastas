@@ -852,17 +852,78 @@ class Model:
         called independently as well.
 
         """
-        pp = self.parameters.loc[:, ["optimal", "stderr", "initial"]]
+        model = {
+            "nfev": self.fit.nfev,
+            "nobs": self.oseries.index.size,
+            "noise": self.noisemodel._name if self.noisemodel else None,
+            "tmin": str(self.settings["tmin"]),
+            "tmax": str(self.settings["tmax"]),
+            "freq": self.settings["freq"],
+            "warmup": self.settings["warmup"],
+            "solver": self.settings["solver"]
+        }
 
-        report = """Results for model %s:
-EVP: %s
-RMSE: %s
-Parameters:
+        fit = {
+            "EVP": format("%.2f" % self.stats.evp()),
+            "RMSE": format("%.2f" % self.stats.rmse()),
+            "Pearson R2": format("%.2f" % self.stats.rsq()),
+            "AIC": format("%.2f" % self.stats.aic()),
+            "BIC": format("%.2f" % self.stats.bic()),
+            "_": "",
+            "__": "",
+            "___": ""
+        }
+
+        m = str()
+        for item, item2 in zip(model.items(), fit.items()):
+            val1, val2 = item
+            val3, val4 = item2
+            m = m + (
+                "{:<8} {:<22} {:<10} {:>17}\n".format(val1, val2, val3, val4))
+
+        parameters = self.parameters.loc[:,
+                     ["optimal", "stderr", "initial", "vary"]]
+
+        w = ["Standard Errors assume that the covariance matrix of the errors "
+             "is correctly specified."]
+        pmin, pmax = self.check_parameters_bounds()
+        if any(pmin):
+            w.append("Parameter values of %s are close to their minimum "
+                     "values." % self.parameters[pmin].index.tolist())
+        if any(pmax):
+            w.append("Parameter values of %s are close to their maximum "
+                     "values." % self.parameters[pmax].index.tolist())
+
+        warnings = str(
+            "Warnings\n============================================================\n")
+        for n, warn in enumerate(w, start=1):
+            warnings = warnings + "[{}] {}\n".format(n, warn)
+
+        report = """
+Model Results %s                Fit Statistics
+============================    ============================
 %s
-        
-        """ % (self.name, self.stats.evp(), self.stats.rmse(), pp)
+Parameters
+============================================================
+%s
+
+%s
+        """ % (self.name, m, parameters, warnings)
 
         return report
+
+    def check_parameters_bounds(self):
+        """Check if the optimal parameters are close to pmin or pmax
+
+        Returns
+        -------
+
+        """
+        prange = self.parameters.pmax - self.parameters.pmin
+        pnorm = (self.parameters.optimal - self.parameters.pmin) / prange
+        pmax = pnorm > 0.99
+        pmin = pnorm < 0.01
+        return pmin, pmax
 
     def dump_data(self, series=True, sim_series=False, metadata=True,
                   file_info=True):
