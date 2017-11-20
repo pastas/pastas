@@ -819,8 +819,7 @@ class Model:
         return file_info
 
     def get_logger(self, default_path='log_config.json',
-                   log_level=logging.INFO,
-                   env_key='LOG_CFG'):
+                   log_level=logging.INFO, env_key='LOG_CFG'):
         """This file creates a logger instance to log program output.
 
         Returns
@@ -847,7 +846,7 @@ class Model:
 
         return logger
 
-    def fit_report(self):
+    def fit_report(self, output="full"):
         """Method that reports on the fit after a model is optimized. May be
         called independently as well.
 
@@ -874,15 +873,16 @@ class Model:
             "___": ""
         }
 
-        m = str()
+        basic = str()
         for item, item2 in zip(model.items(), fit.items()):
             val1, val2 = item
             val3, val4 = item2
-            m = m + (
+            basic = basic + (
                 "{:<8} {:<22} {:<10} {:>17}\n".format(val1, val2, val3, val4))
 
         parameters = self.parameters.loc[:,
                      ["optimal", "stderr", "initial", "vary"]]
+        n_param = parameters.vary.sum()
 
         w = ["Standard Errors assume that the covariance matrix of the errors "
              "is correctly specified."]
@@ -894,21 +894,27 @@ class Model:
             w.append("Parameter values of %s are close to their maximum "
                      "values." % self.parameters[pmax].index.tolist())
 
-        warnings = str(
-            "Warnings\n============================================================\n")
+        warnings = str("Warnings\n============================================"
+                       "================\n")
         for n, warn in enumerate(w, start=1):
             warnings = warnings + "[{}] {}\n".format(n, warn)
+
+        if output == "basic":
+            output = ["model", "parameters"]
+        else:
+            output = ["model", "parameters", "correlations", "warnings",
+                      "tests"]
 
         report = """
 Model Results %s                Fit Statistics
 ============================    ============================
 %s
-Parameters
+Parameters (%s were optimized)
 ============================================================
 %s
 
 %s
-        """ % (self.name, m, parameters, warnings)
+        """ % (self.name, basic, n_param, parameters, warnings)
 
         return report
 
