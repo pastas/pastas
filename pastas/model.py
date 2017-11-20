@@ -125,7 +125,8 @@ class Model:
 
             # Call these methods to set tmin, tmax and freq
             stressmodel.update_stress(freq=self.settings["freq"])
-            # self.set_freq()
+            if self.settings["freq"] is None:
+                self.set_freq()
             self.set_time_offset()
             self.settings["tmin"], self.settings["tmax"] = self.get_tmin_tmax()
 
@@ -632,16 +633,26 @@ class Model:
 
     def set_freq(self):
         freqs = set()
-        for stressmodel in self.stressmodels.values():
-            if stressmodel.stress:
-                for stress in stressmodel.stress:
-                    if stress.freq_original:
-                        freqs.add(stress.freq_original)
+        if self.oseries.freq:
+            # when the oseries has a constant frequency, us this
+            freqs.add(self.oseries.freq)
+        else:
+            # otherwise determine frequency from the stressmodels
+            for stressmodel in self.stressmodels.values():
+                if stressmodel.stress:
+                    for stress in stressmodel.stress:
+                        if stress.settings['freq']:
+                            # first check the frequency, and use this
+                            freqs.add(stress.settings['freq'])
+                        elif stress.freq_original:
+                            # if this is not available, and the original frequency is, take the original frequency
+                            freqs.add(stress.freq_original)
 
         if len(freqs) == 1:
+            # if there is only one frequency, use this frequency
             self.settings["freq"] = next(iter(freqs))
         elif len(freqs) > 1:
-            # take the highest frequency (lowest dt)
+            # if there are more frequencies, take the highest frequency (lowest dt)
             freqs = list(freqs)
             dt = np.array([get_dt(f) for f in freqs])
             self.settings["freq"] = freqs[np.argmin(dt)]
