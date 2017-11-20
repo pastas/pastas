@@ -134,6 +134,8 @@ class LeastSquares(BaseSolver):
                                  args=(tmin, tmax, noise, model, freq,
                                        weights), **kwargs)
 
+        self.nfev = self.fit.nfev
+
         self.pcov = self.get_covariances(self.fit, model)
         self.pcor = self.get_correlations(self.pcov)
         self.stderr = np.sqrt(np.diag(self.pcov))
@@ -241,6 +243,8 @@ class LmfitSolve(BaseSolver):
                                   args=(tmin, tmax, noise, model, freq,
                                         weights),
                                   ftol=ftol, epsfcn=epsfcn, **kwargs)
+
+        self.nfev = self.fit.nfev
 
         self.optimal_params = np.array([p.value for p in
                                         self.fit.params.values()])
