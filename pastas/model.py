@@ -122,6 +122,8 @@ class Model:
         else:
             self.stressmodels[stressmodel.name] = stressmodel
             self.parameters = self.get_init_parameters()
+            if self.settings["freq"] is None:
+                self.set_freq()
             stressmodel.update_stress(freq=self.settings["freq"])
             # Call these methods to set time offset
             self.set_time_offset()
