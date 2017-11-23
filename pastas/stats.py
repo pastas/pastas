@@ -144,7 +144,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        evp = max(0.0, (np.var(obs) - np.var(res)) / np.var(obs) * 100.0)
+        evp = max(0.0, 100 * (1- (res.var() / obs.var())))
         return evp
 
     @stats_tmin_tmax

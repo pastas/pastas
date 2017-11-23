@@ -122,13 +122,9 @@ class Model:
         else:
             self.stressmodels[stressmodel.name] = stressmodel
             self.parameters = self.get_init_parameters()
-
-            # Call these methods to set tmin, tmax and freq
             stressmodel.update_stress(freq=self.settings["freq"])
-            if self.settings["freq"] is None:
-                self.set_freq()
+            # Call these methods to set time offset
             self.set_time_offset()
-            self.settings["tmin"], self.settings["tmax"] = self.get_tmin_tmax()
 
     def add_noisemodel(self, noisemodel):
         """Adds a noise model to the time series Model.
@@ -246,7 +242,7 @@ class Model:
             h = h.add(c, fill_value=0.0)
             istart += ts.nparam
         if self.constant:
-            h += self.constant.simulate(parameters[istart])
+            h = h + self.constant.simulate(parameters[istart])
 
         h.name = "Simulation"
 
@@ -560,6 +556,7 @@ class Model:
         in general can be found in the developers section of the docs.
 
         """
+
         # Get tmin and tmax from the stressmodels
         if self.stressmodels:
             ts_tmin = pd.Timestamp.max
@@ -657,8 +654,8 @@ class Model:
             dt = np.array([get_dt(f) for f in freqs])
             self.settings["freq"] = freqs[np.argmin(dt)]
         else:
-            self.logger.info(
-                "Frequency of model cannot be determined. Frequency is set to daily")
+            self.logger.info("Frequency of model cannot be determined. "
+                             "Frequency is set to daily")
             self.settings["freq"] = "D"
 
     def set_time_offset(self):

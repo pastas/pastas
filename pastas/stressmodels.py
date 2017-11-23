@@ -325,21 +325,20 @@ class StressModel2(StressModelBase):
                  kind=("prec", "evap"), settings=(None, None),
                  metadata=(None, None)):
         # First check the series, then determine tmin and tmax
-        ts0 = TimeSeries(stress[0], kind=kind[0], settings=settings[0])
-        ts1 = TimeSeries(stress[1], kind=kind[1], settings=settings[1])
+        stress0 = TimeSeries(stress[0], kind=kind[0], settings=settings[0],
+                             metadata=metadata[0])
+        stress1 = TimeSeries(stress[1], kind=kind[1], settings=settings[1],
+                             metadata=metadata[1])
 
         # Select indices from validated stress where both series are available.
-        index = ts0.series.index & ts1.series.index
-
-        # First check the series, then determine tmin and tmax
-        stress0 = TimeSeries(stress[0][index], kind=kind[0],
-                             settings=settings[0], metadata=metadata[0])
-        stress1 = TimeSeries(stress[1][index], kind=kind[1],
-                             settings=settings[1], metadata=metadata[1])
-
+        index = stress0.series.index & stress1.series.index
         if index.size is 0:
             logger.warning('The two stresses that were provided have no '
                            'overlapping time indices. Please make sure time indices overlap or apply to separate time series objects.')
+
+        # First check the series, then determine tmin and tmax
+        stress0.update_series(tmin=index.min(), tmax=index.max())
+        stress1.update_series(tmin=index.min(), tmax=index.max())
 
         StressModelBase.__init__(self, rfunc, name, index.min(), index.max(),
                                  up, stress0.mean() - stress1.mean(), cutoff)

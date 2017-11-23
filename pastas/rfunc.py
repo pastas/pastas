@@ -38,6 +38,9 @@ class RfuncBase:
             self.up = 1
         else:
             self.up = -1
+        # Completely arbitrary number to prevent  divsion by zero
+        if meanstress < 1e-8:
+            meanstress = 1e-8
         self.meanstress = meanstress
         self.cutoff = cutoff
         self.tmax = 0
