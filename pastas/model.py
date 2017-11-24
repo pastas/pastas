@@ -100,13 +100,17 @@ class Model:
         self.plots = Plotting(self)
         self.plot = self.plots.plot  # because we are lazy
 
-    def add_stressmodel(self, stressmodel):
+    def add_stressmodel(self, stressmodel, replace=False):
         """Adds a stressmodel to the main model.
 
         Parameters
         ----------
         stressmodel: pastas.stressmodel.stressmodelBase
             instance of a pastas.stressmodel object.
+        replace: bool
+            replace the stressmodel if a stressmodel with the same name
+            already exists. Not recommended but useful at times. Default is
+            False.
 
         Notes
         -----
@@ -115,7 +119,7 @@ class Model:
         >>> ml.stressmodels.keys()
 
         """
-        if stressmodel.name in self.stressmodels.keys():
+        if (stressmodel.name in self.stressmodels.keys()) and not replace:
             self.logger.error("""The name for the series you are trying to
                                 add already exists for this model. Select
                                 another name.""")
