@@ -12,7 +12,6 @@ from __future__ import print_function, division
 import logging
 
 import pandas as pd
-import numpy as np
 from pastas.utils import get_dt, get_time_offset, timestep_weighted_resample
 
 logger = logging.getLogger(__name__)
@@ -32,26 +31,19 @@ class TimeSeries(pd.Series):
     # and we should implement a new sample_up method for when the series is a quantity
     _kind_settings = {
         "oseries": {"freq": None, "sample_up": None, "sample_down": None,
-                    "fill_nan": "drop", "fill_before": None, "fill_after":
-                        None},
+                    "fill_nan": "drop", "fill_before": None,
+                    "fill_after": None},
         "prec": {"freq": None, "sample_up": "bfill", "sample_down": "mean",
                  "fill_nan": 0.0, "fill_before": "mean", "fill_after": "mean"},
-        "evap": {"freq": None, "sample_up": "interpolate", "sample_down": "mean",
-                 "fill_nan": "interpolate", "fill_before": "mean",
-                 "fill_after": "mean"},
+        "evap": {"freq": None, "sample_up": "interpolate",
+                 "sample_down": "mean", "fill_nan": "interpolate",
+                 "fill_before": "mean", "fill_after": "mean"},
         "well": {"freq": None, "sample_up": "bfill", "sample_down": "mean",
                  "fill_nan": 0.0, "fill_before": 0.0, "fill_after": 0.0},
         "waterlevel": {"freq": None, "sample_up": "interpolate",
                        "sample_down": "mean", "fill_nan": "interpolate",
                        "fill_before": "mean", "fill_after": "mean"},
     }
-
-    #
-    # def __new__(cls, series, *args, **kwargs):
-    #     if isinstance(series, TimeSeries):
-    #         return series
-    #     else:
-    #         return TimeSeries.__init__(*args, **kwargs)
 
     def __init__(self, series, name=None, kind=None, settings=None,
                  metadata=None, freq_original=None, **kwargs):
@@ -200,18 +192,17 @@ class TimeSeries(pd.Series):
             logger.info("Inferred frequency from time series %s: freq=%s " % (
                 self.name, self.freq_original))
         else:
-            if False:
-                self.freq_original = self.settings["freq"]
-                if self.settings["fill_nan"] and self.settings["fill_nan"] != \
-                        "drop":
-                    logger.warning("User-provided frequency is applied when "
-                                   "validating the Time Series %s. Make sure the "
-                                   "provided frequency is close to the real "
-                                   "frequency of the original series." %
-                                   (self.name))
-            else:
-                self.freq_original = None
-                logger.info("Cannot determine frequency of series %s" % (self.name))
+            self.freq_original = self.settings["freq"]
+            if self.freq_original is None:
+                logger.info(
+                    "Cannot determine frequency of series %s" % (self.name))
+            elif self.settings["fill_nan"] and self.settings["fill_nan"] != \
+                    "drop":
+                logger.warning("User-provided frequency is applied when "
+                               "validating the Time Series %s. Make sure the "
+                               "provided frequency is close to the real "
+                               "frequency of the original series." %
+                               (self.name))
 
         # 5. Handle duplicate indices
         if not series.index.is_unique:
@@ -274,7 +265,6 @@ class TimeSeries(pd.Series):
         """Method to change the frequency of the time series.
 
         """
-
         freq = self.settings["freq"]
 
         # 1. If no freq string is present or is provided (e.g. Oseries)
@@ -287,8 +277,8 @@ class TimeSeries(pd.Series):
             dt_new = get_dt(freq)
             dt_org = get_dt(self.freq_original)
             # 3. If new and original frequency are not a multiple of each other
-            eps = 10**-10
-            if not ((dt_new % dt_org) < eps or (dt_org % dt_new) <eps):
+            eps = 1e-10
+            if not ((dt_new % dt_org) < eps or (dt_org % dt_new) < eps):
                 series = self.sample_weighted(series)
             # 4. If new frequency is lower than its original
             elif dt_new < dt_org:
@@ -328,7 +318,7 @@ class TimeSeries(pd.Series):
                 series.fillna(series.mean(), inplace=True)  # Default option
             elif method == "interpolate":
                 series.interpolate(method="time", inplace=True)
-            elif type(method) == float:
+            elif isinstance(method, float):
                 series.fillna(method, inplace=True)
             else:
                 logger.warning("User-defined option for sample_up %s is not "
@@ -402,7 +392,7 @@ class TimeSeries(pd.Series):
                 series.fillna(series.mean(), inplace=True)  # Default option
             elif method == "interpolate":
                 series.interpolate(method="time", inplace=True)
-            elif type(method) == float:
+            elif isinstance(method, float):
                 series.fillna(method, inplace=True)
             else:
                 logger.warning("User-defined option for fill_nan %s is not "
@@ -428,6 +418,8 @@ class TimeSeries(pd.Series):
 
         if tmin is None:
             pass
+        elif method is None:
+            pass
         elif pd.Timestamp(tmin) >= series.index.min():
             series = series.loc[pd.Timestamp(tmin):]
         else:
@@ -443,7 +435,7 @@ class TimeSeries(pd.Series):
 
             if method == "mean":
                 series.fillna(series.mean(), inplace=True)  # Default option
-            elif type(method) == float:
+            elif isinstance(method, float):
                 series.fillna(method, inplace=True)
             else:
                 logger.warning("User-defined option for fill_before %s is not "
@@ -462,10 +454,10 @@ class TimeSeries(pd.Series):
 
         if tmax is None:
             pass
-        elif pd.Timestamp(tmax) <= series.index.max():
-            series = series.loc[:pd.Timestamp(tmax)]
         elif method is None:
             pass
+        elif pd.Timestamp(tmax) <= series.index.max():
+            series = series.loc[:pd.Timestamp(tmax)]
         else:
             # When time offsets are not equal
             time_offset = get_time_offset(tmax, freq)
@@ -477,7 +469,7 @@ class TimeSeries(pd.Series):
 
             if method == "mean":
                 series.fillna(series.mean(), inplace=True)  # Default option
-            elif type(method) == float:
+            elif isinstance(method, float):
                 series.fillna(method, inplace=True)
             else:
                 logger.warning("User-defined option for fill_after %s is not "
@@ -530,8 +522,6 @@ class TimeSeries(pd.Series):
         series: Boolean
             True to export the original time series, False to only export
             the TimeSeries object"s name.
-        key: str
-            string to give
 
         Returns
         -------
