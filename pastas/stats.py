@@ -31,12 +31,12 @@ TODO
 """
 
 from __future__ import print_function, division
-from pastas.decorators import stats_tmin_tmax
+
 import numpy as np
 import pandas as pd
-from scipy.stats import chi2
+from scipy.stats import chi2, norm
 
-
+from pastas.decorators import stats_tmin_tmax
 
 
 class Statistics:
@@ -144,7 +144,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        evp = max(0.0, 100 * (1- (res.var() / obs.var())))
+        evp = max(0.0, 100 * (1 - (res.var() / obs.var())))
         return evp
 
     @stats_tmin_tmax
@@ -545,6 +545,55 @@ def ljung_box(series, tmin=None, tmax=None, n_params=5, alpha=None, **kwargs):
     Qtest = chi2.ppf(alpha, h)
 
     return Q, Qtest
+
+
+def runs_test(series, tmin=None, tmax=None, cutoff="mean",
+              **kwargs):
+    """Runs test to test for serial autocorrelation.
+
+    Parameters
+    ----------
+    series
+    tmin
+    tmax
+    alpha
+    kwargs
+
+    Returns
+    -------
+
+    """
+    # Make dichotomous sequence
+    R = series.copy()
+    if cutoff == "mean":
+        cutoff = R.mean()
+    elif cutoff == "median":
+        cutoff = R.median()
+
+    R[R > cutoff] = 1
+    R[R < cutoff] = 0
+
+    # Calculate number of positive and negative innovations
+    n_pos = R.sum()
+    n_neg = R.index.size - n_pos
+
+    # Calculate the number of runs
+    runs = R.iloc[1:].values - R.iloc[0:-1].values
+    n_runs = sum(np.abs(runs)) + 1
+
+    # Calculate the expected number of runs and the standard deviation
+    n_neg_pos = 2.0 * n_neg * n_pos
+
+    n_runs_exp = n_neg_pos / (n_neg + n_pos) + 1
+
+    n_runs_std = (n_neg_pos * (n_neg_pos - n_neg - n_pos)) / \
+                 ((n_neg + n_pos) ** 2 * (n_neg + n_pos - 1))
+
+    # Calculate Z-statistic and pvalue
+    z = (n_runs - n_runs_exp) / np.sqrt(n_runs_std)
+    pval = 2 * norm.sf(np.abs(z))
+
+    return z, pval
 
 
 # Some Dutch statistics
