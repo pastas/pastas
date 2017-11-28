@@ -20,7 +20,10 @@ def load(fname):
 def pastas_hook(obj):
     for key, value in obj.items():
         if key in ["tmin", "tmax", "date_modified", "date_created"]:
-            obj[key] = pd.Timestamp(value)
+            val = pd.Timestamp(value)
+            if val is pd.NaT:
+                val = None
+            obj[key] = val
         elif key == "stress":
             try:
                 obj[key] = list()
