@@ -251,7 +251,7 @@ class Model:
             h = h + self.constant.simulate(parameters[istart])
 
         h.name = "Simulation"
-
+        h.index.name = "Date"
         return h
 
     def residuals(self, parameters=None, tmin=None, tmax=None, freq=None):
@@ -303,6 +303,8 @@ class Model:
 
         if np.isnan(sum(res ** 2)):  # quick and dirty check
             self.logger.warning('nan problem in residuals')
+        res.name = "Residuals"
+        res.index.name = "Date"
         return res
 
     def innovations(self, parameters=None, tmin=None, tmax=None, freq=None):
@@ -343,6 +345,8 @@ class Model:
         # Calculate the innovations
         v = self.noisemodel.simulate(res, self.odelt[res.index],
                                      parameters[-self.noisemodel.nparam:])
+        v.name = "Innovations"
+        v.index.name = "Date"
         return v
 
     def observations(self, tmin=None, tmax=None):
@@ -594,8 +598,8 @@ class Model:
             # Check if tmin > stressmodel.tmin (Needs to be True)
             if tmin < ts_tmin:
                 self.logger.warning("Specified tmin is before any of the"
-                                    "stressmodels tmin. tmin automatically set to"
-                                    "stressmodels tmin %s" % ts_tmin)
+                                    "stressmodels tmin. tmin automatically set"
+                                    " to stressmodels tmin %s" % ts_tmin)
                 tmin = ts_tmin
 
         # Set tmax properly

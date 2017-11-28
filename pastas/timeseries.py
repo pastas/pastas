@@ -74,6 +74,7 @@ class TimeSeries(pd.Series):
 
         """
         pd.Series.__init__(self)
+        self.index.name = "Date"
         if isinstance(series, TimeSeries):
             self.series_original = series.series_original.copy()
             self.freq_original = series.freq_original
