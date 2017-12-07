@@ -6,6 +6,7 @@ import importlib
 import os
 
 import pandas as pd
+
 import pastas as ps
 
 
@@ -109,8 +110,13 @@ def load_model(data):
     else:
         name = metadata["name"]
 
-    ml = ps.Model(oseries, name=name, constant=constant, metadata=metadata,
-                  settings=settings)
+    if "noisemodel" in data.keys():
+        noise = True
+    else:
+        noise = False
+
+    ml = ps.Model(oseries, constant=constant, noisemodel=noise, name=name,
+                  metadata=metadata, settings=settings)
     if "file_info" in data.keys():
         ml.file_info.update(data["file_info"])
 
@@ -129,8 +135,9 @@ def load_model(data):
         n = getattr(ps.noisemodels, data["noisemodel"]["type"])()
         ml.add_noisemodel(n)
 
-    # Add parameters
-    ml.parameters = data["parameters"]
+    # Add parameters, use update to maintain correct order
+    ml.parameters = ml.get_init_parameters(noise=ml.settings["noise"])
+    ml.parameters.update(data["parameters"])
 
     return ml
 
