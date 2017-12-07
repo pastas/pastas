@@ -6,6 +6,6 @@ import pastas as ps
 # True Z-statistic = 2.69
 
 # Read NIST test data
-data = pd.read_csv("data\\nist.csv")
+data = pd.read_csv("data/nist.csv")
 ps.stats.runs_test(data)
 

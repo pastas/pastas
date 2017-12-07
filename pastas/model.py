@@ -733,9 +733,10 @@ class Model:
         return parameters
 
     def get_parameters(self, name=None):
-        """Helper method to obtain the parameters needed for calculation if
+        """Internal method to obtain the parameters needed for calculation if
         none are provided. This method is used by the simulation, residuals
-        and the innovations methods.
+        and the innovations methods as well as other methods that need
+        parameters values as arrays.
 
         Parameters
         ----------
@@ -744,8 +745,8 @@ class Model:
 
         Returns
         -------
-        p: list, optional
-            Array of the parameters used in the time series model.
+        p: numpy.ndarray
+            Numpy array with the parameters used in the time series model.
 
         """
         if name:
@@ -763,10 +764,11 @@ class Model:
         return parameters.values
 
     @get_stressmodel
-    def get_contribution(self, name, tindex=None):
+    def get_contribution(self, name, tmin=None, tmax=None, tindex=None):
         p = self.get_parameters(name)
         dt = get_dt(self.settings["freq"])
-        return self.stressmodels[name].simulate(p, tindex=tindex, dt=dt)
+        contrib = self.stressmodels[name].simulate(p, tindex=tindex, dt=dt)
+        return contrib.loc[tmin:tmax]
 
     @get_stressmodel
     def get_block_response(self, name):

@@ -29,7 +29,7 @@ def get_stressmodel(function):
     return _get_stressmodel
 
 
-def stats_tmin_tmax(function):
+def model_tmin_tmax(function):
     @functools.wraps(function)
     def _stats_tmin_tmax(self, tmin=None, tmax=None, *args, **kwargs):
         if tmin is None:

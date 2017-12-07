@@ -36,7 +36,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import chi2, norm
 
-from pastas.decorators import stats_tmin_tmax
+from pastas.decorators import model_tmin_tmax
 
 
 class Statistics:
@@ -71,7 +71,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return msg
 
     # The statistical functions
-    @stats_tmin_tmax
+    @model_tmin_tmax
     def rmse(self, tmin=None, tmax=None):
         """Root mean squared error of the residuals.
 
@@ -85,7 +85,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         N = res.size
         return np.sqrt(sum(res ** 2) / N)
 
-    @stats_tmin_tmax
+    @model_tmin_tmax
     def rmsi(self, tmin=None, tmax=None):
         """Root mean squared error of the innovations.
 
@@ -99,7 +99,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         N = res.size
         return np.sqrt(sum(res ** 2) / N)
 
-    @stats_tmin_tmax
+    @model_tmin_tmax
     def sse(self, tmin=None, tmax=None):
         """Sum of the squares of the error (SSE)
 
@@ -115,7 +115,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         return sum(res ** 2)
 
-    @stats_tmin_tmax
+    @model_tmin_tmax
     def avg_dev(self, tmin=None, tmax=None):
         """Average deviation of the residuals.
 
@@ -129,7 +129,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         return res.mean()
 
-    @stats_tmin_tmax
+    @model_tmin_tmax
     def evp(self, tmin=None, tmax=None):
         """Explained variance percentage.
 
@@ -147,7 +147,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         evp = max(0.0, 100 * (1 - (res.var() / obs.var())))
         return evp
 
-    @stats_tmin_tmax
+    @model_tmin_tmax
     def rsq(self, tmin=None, tmax=None):
         """Correlation between observed and simulated series.
 
@@ -167,7 +167,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         sim = sim[obs.index]  # Make sure to correlate the same in time.
         return np.corrcoef(sim, obs)[0, 1]
 
-    @stats_tmin_tmax
+    @model_tmin_tmax
     def rsq_adj(self, tmin=None, tmax=None):
         """R-squared Adjusted for the number of free parameters.
 
@@ -191,7 +191,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         nparam = self.ml.parameters.index.size
         return 1.0 - (N - 1.0) / (N - nparam) * RSS / TSS
 
-    @stats_tmin_tmax
+    @model_tmin_tmax
     def bic(self, tmin=None, tmax=None):
         """Bayesian Information Criterium.
 
@@ -210,7 +210,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         bic = -2.0 * np.log(sum(innovations ** 2.0)) + nparam * np.log(n)
         return bic
 
-    @stats_tmin_tmax
+    @model_tmin_tmax
     def aic(self, tmin=None, tmax=None):
         """Akaike Information Criterium (AIC).
 
@@ -227,7 +227,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         aic = -2.0 * np.log(sum(innovations ** 2.0)) + 2.0 * nparam
         return aic
 
-    @stats_tmin_tmax
+    @model_tmin_tmax
     def summary(self, tmin=None, tmax=None, selected='basic'):
         """Prints a summary table of the model statistics. The set of statistics
         that are printed are selected by a dictionary of the desired statistics.
@@ -279,7 +279,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         stats.index.name = 'Statistic'
         return stats
 
-    @stats_tmin_tmax
+    @model_tmin_tmax
     def many(self, tmin=None, tmax=None, stats=None):
         """This method returns the values for a provided list of statistics.
 
@@ -303,7 +303,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         return data
 
-    @stats_tmin_tmax
+    @model_tmin_tmax
     def all(self, tmin=None, tmax=None):
         """Returns a dictionary with all the statistics.
 
