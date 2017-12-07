@@ -43,10 +43,19 @@ class BaseSolver:
     """
 
     def __init__(self):
-        self.default_kwargs = dict()
-        self.stderr = None
-        self.pcor = None
-        self.pcov = None
+
+        # Parameters attributes
+        self.popt = None # Optimal values of the parameters
+        self.stderr = None # Standard error of parameters
+        self.pcor = None #Correlation between parameters
+        self.pcov = None # Covariances of the parameters
+
+        # Optimization attributes
+        self.nfev = None # number of function evaluations
+        self.fit = None # Object that is returned by the optimization method
+
+
+
 
     def minimize(self, parameters, tmin, tmax, noise, model, freq,
                  weights=None):
@@ -230,8 +239,9 @@ class LmfitSolve(BaseSolver):
 
     def __init__(self, model, tmin=None, tmax=None, noise=True, freq=None,
                  weights=None, ftol=1e-3, epsfcn=1e-4, **kwargs):
+        import lmfit # Import Lmfit here, so it is no dependency
         BaseSolver.__init__(self)
-        import lmfit
+
         # Deal with the parameters
         parameters = lmfit.Parameters()
         p = model.parameters[['initial', 'pmin', 'pmax', 'vary']]
@@ -241,17 +251,18 @@ class LmfitSolve(BaseSolver):
 
         self.fit = lmfit.minimize(fcn=self.objfunction, params=parameters,
                                   args=(tmin, tmax, noise, model, freq,
-                                        weights),
-                                  ftol=ftol, epsfcn=epsfcn, **kwargs)
+                                        weights), ftol=ftol, epsfcn=epsfcn,
+                                  **kwargs)
 
-        self.nfev = self.fit.nfev
-
+        # Set all parameter attributes
         self.optimal_params = np.array([p.value for p in
                                         self.fit.params.values()])
         self.stderr = np.array([p.stderr for p in self.fit.params.values()])
         if self.fit.covar is not None:
             self.pcov = self.fit.covar
 
+        # Set all optimization attributes
+        self.nfev = self.fit.nfev
         self.report = lmfit.fit_report(self.fit)
 
     def objfunction(self, parameters, tmin, tmax, noise, model, freq, weights):
