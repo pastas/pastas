@@ -86,18 +86,18 @@ class Plotting():
         # Main frame
         ax1 = plt.subplot2grid((rows, 3), (0, 0), colspan=2, rowspan=2)
         o = self.ml.observations(tmin=tmin, tmax=tmax)
-        o.plot(ax=ax1, linestyle='',  marker='.', color='k')
+        o.plot(ax=ax1, linestyle='',  marker='.', color='k', x_compat=True)
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
-        sim.plot(ax=ax1)
+        sim.plot(ax=ax1, x_compat=True)
         plt.legend(loc=(0, 1), ncol=3, frameon=False)
 
         # Residuals and innovations
         ax2 = plt.subplot2grid((rows, 3), (2, 0), colspan=2, sharex=ax1)
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
-        res.plot(ax=ax2, sharex=ax1, color='k')
+        res.plot(ax=ax2, sharex=ax1, color='k', x_compat=True)
         if self.ml.settings["noise"]:
             v = self.ml.innovations(tmin=tmin, tmax=tmax)
-            v.plot(ax=ax2, sharex=ax1)
+            v.plot(ax=ax2, sharex=ax1, x_compat=True)
         plt.legend(loc=(0, 1), ncol=3, frameon=False)
 
         # Stats frame
@@ -334,7 +334,7 @@ class Plotting():
         rows = len(stresses)
         rows = -(-rows // cols)  # round up with out additional import
 
-        fig, axes = plt.subplots(rows, cols)
+        fig, axes = plt.subplots(rows, cols, **kwargs)
 
         if hasattr(axes, "flatten"):
             axes = axes.flatten()
