@@ -45,17 +45,14 @@ class BaseSolver:
     def __init__(self):
 
         # Parameters attributes
-        self.popt = None # Optimal values of the parameters
-        self.stderr = None # Standard error of parameters
-        self.pcor = None #Correlation between parameters
-        self.pcov = None # Covariances of the parameters
+        self.popt = None  # Optimal values of the parameters
+        self.stderr = None  # Standard error of parameters
+        self.pcor = None  # Correlation between parameters
+        self.pcov = None  # Covariances of the parameters
 
         # Optimization attributes
-        self.nfev = None # number of function evaluations
-        self.fit = None # Object that is returned by the optimization method
-
-
-
+        self.nfev = None  # number of function evaluations
+        self.fit = None  # Object that is returned by the optimization method
 
     def minimize(self, parameters, tmin, tmax, noise, model, freq,
                  weights=None):
@@ -238,8 +235,8 @@ class LmfitSolve(BaseSolver):
     """
 
     def __init__(self, model, tmin=None, tmax=None, noise=True, freq=None,
-                 weights=None, ftol=1e-3, epsfcn=1e-4, **kwargs):
-        import lmfit # Import Lmfit here, so it is no dependency
+                 weights=None, **kwargs):
+        import lmfit  # Import Lmfit here, so it is no dependency
         BaseSolver.__init__(self)
 
         # Deal with the parameters
@@ -251,8 +248,7 @@ class LmfitSolve(BaseSolver):
 
         self.fit = lmfit.minimize(fcn=self.objfunction, params=parameters,
                                   args=(tmin, tmax, noise, model, freq,
-                                        weights), ftol=ftol, epsfcn=epsfcn,
-                                  **kwargs)
+                                        weights), **kwargs)
 
         # Set all parameter attributes
         self.optimal_params = np.array([p.value for p in
