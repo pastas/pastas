@@ -23,42 +23,67 @@ from __future__ import print_function, division
 
 from datetime import date
 
-import numpy as np
 import pandas as pd
-from pastas.read.datamodel import DataModel
+from pastas.timeseries import TimeSeries
 
 
-class knmidata(DataModel):
-    def __init__(self, fname, variable='RD'):
-        """This method can be used to import KNMI data.
+def read_knmi(fname, variables='RD'):
+    """This method can be used to import KNMI data.
 
-        Parameters
-        ----------
-        fname: str
-            Filename and path to a Dino file.
+    Parameters
+    ----------
+    fname: str
+        Filename and path to a Dino file.
 
-        Returns
-        -------
-        DataModel: object
-            returns a standard Pastas DataModel object.
+    Returns
+    -------
+    ts: Pandas Series
+        returns a standard Pastas TimeSeries object or a list of it.
 
-        """
-        DataModel.__init__(self)
-        knmi = KnmiStation.fromfile(fname)
+    """
+    knmi = KnmiStation.fromfile(fname)
+    if variables is None:
+        variables = knmi.variables.keys()
+    if type(variables) == str:
+        variables = [variables]
 
-        if variable not in knmi.data.keys():
-            Warning("variable %s is not in this dataset. Please use one of "
-                    "the following keys: %s" % (variable, knmi.data.keys()))
-        else:
-            self.series = knmi.data[variable]
+    stn_codes = knmi.data['STN'].unique()
+
+    ts = []
+    for code in stn_codes:
+        for variable in variables:
+            if variable not in knmi.data.keys():
+                raise (ValueError(
+                    "variable %s is not in this dataset. Please use one of "
+                    "the following keys: %s" % (variable, knmi.data.keys())))
+
+            series = knmi.data.loc[knmi.data['STN'] == code, variable]
             # get rid of the hours when data is daily
-            if pd.infer_freq(self.series.index) == 'D':
-                self.series.index = self.series.index.normalize()
+            if pd.infer_freq(series.index) == 'D':
+                series.index = series.index.normalize()
 
-        if knmi.stations is not None and not knmi.stations.empty:
-            self.x = knmi.stations['LAT_north'][0]
-            self.y = knmi.stations['LON_east'][0]
-            self.metadata = knmi.stations
+            metadata = {}
+            if knmi.stations is not None and not knmi.stations.empty:
+                station = knmi.stations.loc[str(code), :]
+                metadata['x'] = station.LON_east
+                metadata['y'] = station.LAT_north
+                metadata['z'] = station.ALT_m
+                metadata['projection'] = 'epsg:4326'
+                stationname = station.NAME
+            else:
+                stationname = str(code)
+            metadata['description'] = knmi.variables[variable]
+            if variable == 'RD' or variable == 'RH':
+                kind = 'prec'
+            elif variable == 'EV24':
+                kind = 'evap'
+            else:
+                kind = None
+            ts.append(TimeSeries(series, name=variable + stationname,
+                                 metadata=metadata, kind=kind))
+    if len(ts) == 1:
+        ts = ts[0]
+    return ts
 
 
 class KnmiStation:
@@ -199,11 +224,20 @@ class KnmiStation:
         line = f.readline()  # Skip empty line after header
 
         # Process the datablock
-        string2datetime = lambda x: pd.to_datetime(x, format='%Y%m%d')
+        if False:
+            # older method, is much slower
+            string2datetime = lambda x: pd.to_datetime(x, format='%Y%m%d')
 
-        data = pd.read_csv(f, header=None, names=header,
-                           parse_dates=['YYYYMMDD'], index_col='YYYYMMDD',
-                           na_values='     ', converters={1: string2datetime})
+            data = pd.read_csv(f, header=None, names=header,
+                               parse_dates=['YYYYMMDD'], index_col='YYYYMMDD',
+                               na_values='     ',
+                               converters={1: string2datetime})
+        else:
+            # newer method, calculating the date afterwards is much faster
+            data = pd.read_csv(f, header=None, names=header, na_values='     ')
+            data.set_index(pd.to_datetime(data.YYYYMMDD, format='%Y%m%d'),
+                           inplace=True)
+            data = data.drop('YYYYMMDD', axis=1)
 
         # convert the hours if provided
         if 'HH' in data.keys():

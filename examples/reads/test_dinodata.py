@@ -6,12 +6,12 @@ Created on Wed Mar 30 16:07:44 2016
 """
 
 import matplotlib.pyplot as plt
-from pastas import read
+import pastas as ps
 
 # # How to use it?
 fname = '../data/B32D0136001_1.csv'
-dino = read.dinodata(fname)
+dino = ps.read_dino(fname)
 
 # plot
-dino.series.plot()
+dino.plot()
 plt.show()

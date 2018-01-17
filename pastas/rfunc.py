@@ -31,6 +31,8 @@ tmax: float
 
 
 class RfuncBase:
+    _name = "RfuncBase"
+
     def __init__(self, up, meanstress, cutoff):
         if up:
             self.up = 1
@@ -51,6 +53,8 @@ class RfuncBase:
 
 
 class Gamma(RfuncBase):
+    _name = "Gamma"
+
     __doc__ = """Gamma response function with 3 parameters A, a, and n.
 
     .. math::
@@ -66,12 +70,15 @@ class Gamma(RfuncBase):
     def set_parameters(self, name):
         parameters = pd.DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        parameters.loc[name + '_A'] = (
-            1 / self.meanstress, 0, 100 / self.meanstress, 1, name)
-        parameters.loc[name + '_n'] = (1, 0.1, 5, 1,
-                                       name)  # if n is too small, the length of the response function is close to zero
+        parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
+                                       100 / self.meanstress, 1, name)
+        # if n is too small, the length of the response function is close to zero
+        parameters.loc[name + '_n'] = (1, 0.1, 5, 1, name)
         parameters.loc[name + '_a'] = (100, 1, 5000, 1, name)
         return parameters
+
+    def gain(self, p):
+        return p[0]
 
     def step(self, p, dt=1):
         if isinstance(dt, np.ndarray):
@@ -86,10 +93,12 @@ class Gamma(RfuncBase):
 
     def block(self, p, dt=1):
         s = self.step(p, dt)
-        return s[1:] - s[:-1]
+        return np.append(s[0], s[1:] - s[:-1])
 
 
 class Exponential(RfuncBase):
+    _name = "Exponential"
+
     __doc__ = """Exponential response function with 2 parameters: A and a.
 
     .. math::
@@ -110,6 +119,9 @@ class Exponential(RfuncBase):
         parameters.loc[name + '_a'] = (100, 1, 5000, 1, name)
         return parameters
 
+    def gain(self, p):
+        return p[0]
+
     def step(self, p, dt=1):
         if isinstance(dt, np.ndarray):
             t = dt
@@ -122,11 +134,12 @@ class Exponential(RfuncBase):
 
     def block(self, p, dt=1):
         s = self.step(p, dt)
-        return s[1:] - s[:-1]
+        return np.append(s[0], s[1:] - s[:-1])
 
 
 class Hantush(RfuncBase):
-    """ The Hantush well function.
+    _name = "Hantush"
+    __doc__ = """ The Hantush well function.
 
     Notes
     -----
@@ -162,6 +175,9 @@ class Hantush(RfuncBase):
         k0rho = k0(rho)
         return lambertw(1 / ((1 - self.cutoff) * k0rho)).real * cS
 
+    def gain(self, p):
+        return p[0]
+
     def step(self, p, dt=1):
         rho = p[1]
         cS = p[2]
@@ -186,11 +202,12 @@ class Hantush(RfuncBase):
 
     def block(self, p, dt=1):
         s = self.step(p, dt)
-        return s[1:] - s[:-1]
+        return np.append(s[0], s[1:] - s[:-1])
 
 
 class Theis(RfuncBase):
-    """The Theis well function.
+    _name = "Theis"
+    __doc__ = """The Theis well function.
 
     Notes
     -----
@@ -215,6 +232,9 @@ class Theis(RfuncBase):
         parameters.loc[name + '_r'] = (1000.0, 0.0, 100000.0, 0, name)
         return parameters
 
+    def gain(self, p):
+        return np.inf
+
     def step(self, p, dt=1):
         if isinstance(dt, np.ndarray):
             t = dt
@@ -229,11 +249,13 @@ class Theis(RfuncBase):
 
     def block(self, p, dt=1):
         s = self.step(p, dt)
-        return s[1:] - s[:-1]
+        return np.append(s[0], s[1:] - s[:-1])
 
 
 class Bruggeman(RfuncBase):
-    """The function of Bruggeman, for a river in a confined aquifer, overlain
+    _name = "Bruggeman"
+    __doc__ = """The function of Bruggeman, for a river in a confined aquifer,
+    overlain
     by an aquitard with aquiferous ditches.
 
     References
@@ -241,6 +263,7 @@ class Bruggeman(RfuncBase):
     http://grondwaterformules.nl/index.php/formules/waterloop/deklaag-met-sloten
 
     """
+
     def __init__(self, up=True, meanstress=1, cutoff=0.99):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 3
@@ -255,6 +278,10 @@ class Bruggeman(RfuncBase):
         parameters.loc[name + '_b'] = (b_init, 0, 10, 1, name)
         parameters.loc[name + '_c'] = (c_init, 0, c_init * 100, 1, name)
         return parameters
+
+    def gain(self, p):
+        # TODO: check line below
+        return p[2]
 
     def step(self, p, dt=1):
         # TODO: find tmax from cutoff, below is just an opproximation
@@ -274,11 +301,12 @@ class Bruggeman(RfuncBase):
 
     def block(self, p, dt=1):
         s = self.step(p, dt)
-        return s[1:] - s[:-1]
+        return np.append(s[0], s[1:] - s[:-1])
 
 
 class One(RfuncBase):
-    """Dummy class for Constant. Returns 1
+    _name = "One"
+    __doc__ = """Dummy class for Constant. Returns 1
 
     """
 
@@ -291,6 +319,9 @@ class One(RfuncBase):
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         parameters.loc[name + '_d'] = (1, 0, 100, 1, name)
         return parameters
+
+    def gain(self, p):
+        return p[0]
 
     def step(self, p, dt=1):
         if isinstance(dt, np.ndarray):

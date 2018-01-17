@@ -24,33 +24,52 @@ import numpy as np
 import pandas as pd
 import scipy.io as sio
 
-
-# from pastas.read.datamodel import DataModel
-
-
-def menydata(fname, data='all'):
-    """This method can be used to import a menyanthes project file.
-
-    Parameters
-    ----------
-    fname: str
-        Filename and path to a Dino file.
+from pastas.timeseries import TimeSeries
 
 
-    Returns
-    -------
-    DataModel: object
-        returns a standard Pastas DataModel object or a list of objects when
-        more than one datatype is present.
+def read_meny(fname, locations=None, type='H'):
+    meny = MenyData(fname, data=type)
+    if type == 'H':
+        data = meny.H
+    elif type == 'IN':
+        data = meny.IN
+    elif type == 'M':
+        data = meny.M
+    else:
+        raise NotImplementedError('type ' + type + ' not supported (yet)')
+    if locations is None:
+        locations = data.keys()
 
-    """
-    meny = MenyData(fname, data=data)
-
-    return meny
+    ts = []
+    for location in locations:
+        metadata = {}
+        metadata['x'] = data[location]['xcoord']
+        metadata['y'] = data[location]['ycoord']
+        metadata['z'] = np.mean((data[location]['upfiltlev'], data[location]['lowfiltlev']))
+        metadata['projection'] = 'epsg:28992'
+        if type == 'H':
+            kind = 'oseries'
+        else:
+            if data[location]['type'] == 'prec':
+                kind = 'prec'
+            elif data[location]['type'] == 'evap':
+                kind = 'evap'
+            elif data[location]['type'] == 'well':
+                kind = 'well'
+            elif data[location]['type'] == 'river':
+                kind = 'waterlevel'
+            else:
+                kind = None
+        if type == 'M':
+            kind = None
+        ts.append(TimeSeries(data[location]['values'], name=location, metadata=metadata, kind=kind))
+    if len(ts) == 1:
+        ts = ts[0]
+    return ts
 
 
 class MenyData:
-    def __init__(self, fname, data='H'):
+    def __init__(self, fname, data='all'):
         """This class reads a menyanthes file.
 
         Parameters

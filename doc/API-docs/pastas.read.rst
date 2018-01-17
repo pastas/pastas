@@ -6,7 +6,6 @@ Submodules
 
 .. toctree::
 
-   pastas.read.datamodel
    pastas.read.dinoloket
    pastas.read.knmi
    pastas.read.menyanthes
