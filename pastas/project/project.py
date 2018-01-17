@@ -153,8 +153,8 @@ class Project:
         if ml_name in self.models.keys():
             logger.warning("Model name is not unique, provide a new ml_name.")
         if oseries not in self.oseries.index:
-            logger.warning("Oseries name is not present in the database. "
-                           "Make sure to provide a valid oseries name.")
+            logger.error("Oseries name is not present in the database. "
+                         "Make sure to provide a valid oseries name.")
 
         oseries = self.oseries.loc[oseries, "series"]
         ml = ps.Model(oseries, name=ml_name, **kwargs)
@@ -175,7 +175,7 @@ class Project:
         """
         self.models.pop(ml_name)
 
-    def add_recharge(self, ml, **kwargs):
+    def add_recharge(self, ml, rfunc, name="recharge", **kwargs):
         """Adds a recharge element to the time series model. The
         selection of the precipitation and evaporation time series is based
         on the shortest distance to the a stresses in the stresseslist.
@@ -190,12 +190,12 @@ class Project:
         evap_name = self.get_nearest_stresses(key, kind="evap").iloc[0][0]
         evap = self.stresses.loc[evap_name, "series"]
 
-        recharge = ps.StressModel2([prec, evap], ps.Gamma, name="recharge",
-                                   **kwargs)
+        recharge = ps.StressModel2([prec, evap], rfunc, name=name, **kwargs)
 
         ml.add_stressmodel(recharge)
 
-    def get_nearest_stresses(self, oseries, kind, n=1):
+    def get_nearest_stresses(self, oseries=None, stresses=None, kind=None,
+                             n=1):
         """Method to obtain the nearest (n) stresses of a specific kind.
 
         Parameters
@@ -213,23 +213,19 @@ class Project:
             List with the names of the stresses.
 
         """
-        if isinstance(oseries, str):
-            oseries = [oseries]
 
-        stresses = self.stresses[self.stresses.kind == kind].index
-
-        distances = self.get_distances(oseries, stresses)
+        distances = self.get_distances(oseries, stresses, kind)
 
         sorted = pd.DataFrame(columns=np.arange(n))
 
-        for series in oseries:
+        for series in distances.index:
             series = pd.Series(distances.loc[series].sort_values().index[:n],
                                name=series)
             sorted = sorted.append(series)
 
         return sorted
 
-    def get_distances(self, oseries=None, stresses=None):
+    def get_distances(self, oseries=None, stresses=None, kind=None, ):
         """Method to obtain the distances in meters between the stresses and
         oseries.
 
@@ -237,6 +233,7 @@ class Project:
         ----------
         oseries: str or list of str
         stresses: str or list of str
+        kind: str
 
         Returns
         -------
@@ -245,10 +242,15 @@ class Project:
             and the stresses (columns).
 
         """
-        if oseries is None:
+        if isinstance(oseries, str):
+            oseries = [oseries]
+        elif oseries is None:
             oseries = self.oseries.index
-        if stresses is None:
+
+        if stresses is None and kind is None:
             stresses = self.stresses.index
+        elif stresses is None:
+            stresses = self.stresses[self.stresses.kind == kind].index
 
         xo = pd.to_numeric(self.oseries.loc[oseries, "x"])
         xt = pd.to_numeric(self.stresses.loc[stresses, "x"])
@@ -334,7 +336,7 @@ class Project:
         data = data.squeeze()
         return data.astype(float)
 
-    def get_locations(self, models=None):
+    def get_locations(self, models=None, **kwargs):
         """Method to get the locations of the models."""
 
         locations = pd.Series()
@@ -356,7 +358,7 @@ class Project:
         data = gpd.GeoDataFrame(data, geometry="geometry", **kwargs)
         return data
 
-    def get_metadata(self, meta):
+    def get_metadata(self, meta=None):
         metadata = dict(
             projection=None
         )
