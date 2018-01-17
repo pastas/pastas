@@ -16,7 +16,8 @@ rain = ps.read_knmi('data/neerslaggeg_HEIBLOEM-L_967-2.txt', variables='RD')
 evap = ps.read_knmi('data/etmgeg_380.txt', variables='EV24')
 
 ## Create stress
-sm = ps.StressModel2(stress=[rain,evap], rfunc=ps.Exponential,name='recharge')
+sm = ps.StressModel2(stress=[rain, evap], rfunc=ps.Exponential,
+                     name='recharge')
 ml.add_stressmodel(sm)
 
 ## Solve

@@ -13,6 +13,7 @@ import numpy as np
 import pastas as ps
 from scipy.stats import probplot
 
+from .decorators import model_tmin_tmax
 from .utils import get_dt
 
 
@@ -21,18 +22,20 @@ class Plotting():
         self.ml = ml  # Store a reference to the model class
 
     def __repr__(self):
-        msg = "This module contains all the built-in plotting options that are available."
+        msg = "This module contains all the built-in plotting options that are " \
+              "available."
         return msg
 
-    def plot(self, tmin=None, tmax=None, show=True, oseries=True,
-             simulate=True, **kwargs):
+    @model_tmin_tmax
+    def plot(self, tmin=None, tmax=None, oseries=True, simulation=True,
+             show=True, **kwargs):
         """Make a plot of the observed and simulated series.
 
         Parameters
         ----------
         oseries: Boolean
             True to plot the observed time series.
-        simulate: Boolean
+        simulation: Boolean
             True to plot the simulated time series.
 
         Returns
@@ -45,23 +48,14 @@ class Plotting():
         fig = self._get_figure(**kwargs)
         fig.suptitle("Results of " + self.ml.name)
 
-        # Get right tmin and tmax
-        if not tmin and not tmax:
-            tmin, tmax = self.ml.get_tmin_tmax(use_oseries=oseries)
-        elif not tmin:
-            tmin = self.ml.get_tmin_tmax(use_oseries=oseries)[0]
-        elif not tmax:
-            tmin = self.ml.get_tmin_tmax(use_oseries=oseries)[1]
-
         if oseries:
             o = self.ml.observations(tmin=tmin, tmax=tmax)
             o.plot(linestyle='', marker='.', color='k', fig=fig)
 
-        if simulate:
+        if simulation:
             h = self.ml.simulate(tmin=tmin, tmax=tmax)
             h.plot(fig=fig)
 
-        plt.xlabel("Time [days]")
         plt.ylabel("Groundwater levels [meter]")
         plt.legend()
 
@@ -70,6 +64,7 @@ class Plotting():
 
         return fig.axes
 
+    @model_tmin_tmax
     def results(self, tmin=None, tmax=None, show=True):
         """Plot different results in one window to get a quick overview.
 
@@ -85,60 +80,52 @@ class Plotting():
         """
         fig = self._get_figure()
 
-        gs = plt.GridSpec(3, 4, wspace=0.4, hspace=0.4)
+        #Number of row to make the figure with
+        rows = 3 + len(self.ml.stressmodels)
 
-        # Plot the Groundwater levels
-        h = self.ml.simulate(tmin=tmin, tmax=tmax)
-        ax1 = plt.subplot(gs[:2, :-1])
-        self.ml.oseries.plot(linestyle='', marker='.', color='k',
-                             markersize=3, label='observed head', ax=ax1)
-        h.plot(label='modeled head', ax=ax1)
-        ax1.grid(which='both')
-        ax1.minorticks_off()
+        # Main frame
+        ax1 = plt.subplot2grid((rows, 3), (0, 0), colspan=2, rowspan=2)
+        o = self.ml.observations(tmin=tmin, tmax=tmax)
+        o.plot(ax=ax1, linestyle='',  marker='.', color='k', x_compat=True)
+        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        sim.plot(ax=ax1, x_compat=True)
         plt.legend(loc=(0, 1), ncol=3, frameon=False)
-        plt.ylabel('Head [m]')
 
-        # Plot the residuals and innovations
-        residuals = self.ml.residuals(tmin=tmin, tmax=tmax)
-        ax2 = plt.subplot(gs[2, :-1], sharex=ax1)
-        residuals.plot(color='k', label='residuals')
-        if self.ml.noisemodel is not None:
-            innovations = self.ml.innovations(tmin=tmin, tmax=tmax)
-            innovations.plot(label='innovations')
-        ax2.grid(which='both')
-        ax2.minorticks_off()
+        # Residuals and innovations
+        ax2 = plt.subplot2grid((rows, 3), (2, 0), colspan=2, sharex=ax1)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        res.plot(ax=ax2, sharex=ax1, color='k', x_compat=True)
+        if self.ml.settings["noise"]:
+            v = self.ml.innovations(tmin=tmin, tmax=tmax)
+            v.plot(ax=ax2, sharex=ax1, x_compat=True)
         plt.legend(loc=(0, 1), ncol=3, frameon=False)
-        plt.ylabel('Error [m]')
-        plt.xlabel('Time [Years]')
 
-        # Plot the block response function
-        ax3 = plt.subplot(gs[0, -1])
-        tmax = 0
-        for name, ts in self.ml.stressmodels.items():
-            dt = get_dt(self.ml.settings["freq"])
-            if "rfunc" in dir(ts):
-                br = self.ml.get_block_response(name)
-                t = np.arange(0, len(br) * dt, dt)
-                tmax = max(t[-1], tmax)
-                ax3.plot(t, br)
-        ax3.set_xlim(0, tmax)
-        ax3.grid(which='both')
-        ax3.set_title('Block Response', loc='left')
-
-        # Table of the numerical diagnostic statistics.
-        ax5 = plt.subplot(gs[2, -1])
-        ax5.xaxis.set_visible(False)
-        ax5.yaxis.set_visible(False)
+        # Stats frame
+        ax3 = plt.subplot2grid((rows, 3), (0, 2), rowspan=3)
+        ax3.xaxis.set_visible(False)
+        ax3.yaxis.set_visible(False)
         plt.text(0.05, 0.8, 'Rsq: %.2f' % self.ml.stats.rsq())
         plt.text(0.05, 0.6, 'EVP: %.2f' % self.ml.stats.evp())
-        plt.title('Statistics', loc='left')
+        plt.title('Model Information', loc='left')
+
+        # Add a row for each stressmodel
+        for i, ts in enumerate(self.ml.stressmodels.keys(), start=3):
+            ax = plt.subplot2grid((rows, 3), (i, 0), colspan=2, sharex=ax1)
+            contrib = self.ml.get_contribution(ts, tmin=tmin, tmax=tmax)
+            contrib.plot(ax=ax, sharex=ax1, x_compat=True)
+            title = [stress.name for stress in self.ml.stressmodels[ts].stress]
+            plt.title("Stresses:%s" % title, loc="right")
+            ax.legend(loc=(0, 1), ncol=3, frameon=False)
+            axb = plt.subplot2grid((rows, 3), (i, 2))
+            self.ml.get_step_response(ts).plot(ax=axb)
 
         if show:
             plt.show()
 
         return fig.axes
 
-    def decomposition(self, tmin=None, tmax=None, show=True, base=True):
+    @model_tmin_tmax
+    def decomposition(self, tmin=None, tmax=None, show=True, ytick_base=True):
         """Plot the decomposition of a time-series in the different stresses.
 
         """
@@ -166,32 +153,32 @@ class Plotting():
 
         # plot simulation and observations in top graph
         self.ml.oseries.plot(linestyle='', marker='.', color='k', markersize=3,
-                             ax=ax[0], label='observations', x_compat=True)
+                             ax=ax[0], x_compat=True)
         hsim.plot(ax=ax[0], label='simulation', x_compat=True)
         ax[0].autoscale(enable=True, axis='y', tight=True)
         ax[0].grid(which='both')
-        ax[0].minorticks_off()
+        # ax[0].minorticks_off()
         ax[0].legend(loc=(0, 1), ncol=3, frameon=False)
-        
-        if base:
-            if isinstance(base,bool):
+
+        if ytick_base:
+            if isinstance(ytick_base, bool):
                 # determine the ytick-spacing of the top graph
                 yticks = ax[0].yaxis.get_ticklocs()
                 if len(yticks) > 1:
-                    base = yticks[1] - yticks[0]
+                    ytick_base = yticks[1] - yticks[0]
                 else:
-                    base = None
+                    ytick_base = None
             ax[0].yaxis.set_major_locator(
-                    plticker.MultipleLocator(base=base))
+                plticker.MultipleLocator(base=ytick_base))
 
         # plot the influence of the stresses
         for i, name in enumerate(self.ml.stressmodels.keys(), start=1):
             h[i].plot(ax=ax[i], x_compat=True)
 
-            if base:
+            if ytick_base:
                 # set the ytick-spacing equal to the top graph
                 ax[i].yaxis.set_major_locator(
-                    plticker.MultipleLocator(base=base))
+                    plticker.MultipleLocator(base=ytick_base))
 
             ax[i].set_title(name)
             ax[i].autoscale(enable=True, axis='y', tight=True)
@@ -203,6 +190,7 @@ class Plotting():
 
         return fig.axes
 
+    @model_tmin_tmax
     def diagnostics(self, tmin=None, tmax=None, show=True):
         innovations = self.ml.innovations(tmin, tmax)
 
@@ -315,6 +303,49 @@ class Plotting():
             plt.show()
 
         return fig.axes
+
+    @model_tmin_tmax
+    def stresses(self, tmin=None, tmax=None, cols=1, **kwargs):
+        """This method creates a graph with all the stresses used in the
+         model.
+
+        Parameters
+        ----------
+        tmin
+        tmax
+        cols: int
+            number of columns used for plotting.
+
+        Returns
+        -------
+        axes: matplotlib.axes
+            matplotlib aes instance.
+
+        """
+        stresses = []
+
+        for name in self.ml.stressmodels.keys():
+            stress = self.ml.get_stress(name)
+            if isinstance(stress, list):
+                stresses.extend(stress)
+            else:
+                stresses.append(stress)
+
+        rows = len(stresses)
+        rows = -(-rows // cols)  # round up with out additional import
+
+        fig, axes = plt.subplots(rows, cols, **kwargs)
+
+        if hasattr(axes, "flatten"):
+            axes = axes.flatten()
+        else:
+            axes = [axes]
+
+        for ax, stress in zip(axes, stresses):
+            stress.plot(ax=ax, x_compat=True)
+            ax.legend([stress.name], loc=2)
+
+        return axes
 
     def _get_figure(self, **kwargs):
         fig = plt.figure(**kwargs)

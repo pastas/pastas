@@ -20,7 +20,10 @@ def load(fname):
 def pastas_hook(obj):
     for key, value in obj.items():
         if key in ["tmin", "tmax", "date_modified", "date_created"]:
-            obj[key] = pd.Timestamp(value)
+            val = pd.Timestamp(value)
+            if val is pd.NaT:
+                val = None
+            obj[key] = val
         elif key == "stress":
             try:
                 obj[key] = list()
@@ -70,6 +73,7 @@ class PastasEncoder(json.JSONEncoder):
     """
 
     def default(self, obj):
+
         if isinstance(obj, pd.Timestamp):
             return obj.isoformat()
         elif isinstance(obj, pd.Series):
@@ -79,5 +83,7 @@ class PastasEncoder(json.JSONEncoder):
             return obj.to_json(orient="index")
         elif isinstance(obj, pd.Timedelta):
             return obj.to_timedelta64().__str__()
+        elif isinstance(obj, pd._libs.tslib.NaTType):
+            return None
         else:
             return super(PastasEncoder, self).default(obj)

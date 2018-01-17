@@ -112,7 +112,6 @@ class Project:
 
         """
         self.oseries.drop(oseries, inplace=True)
-        self.update_distances()
 
     def del_stress(self, name):
         """Method that removes oseries from the project.
@@ -127,7 +126,6 @@ class Project:
 
         """
         self.stresses.drop(name, inplace=True)
-        self.update_distances()
 
     def add_model(self, oseries, ml_name=None, **kwargs):
         """Method to add a Pastas Model instance based on one of the oseries.
@@ -155,8 +153,8 @@ class Project:
         if ml_name in self.models.keys():
             logger.warning("Model name is not unique, provide a new ml_name.")
         if oseries not in self.oseries.index:
-            logger.warning("Oseries name is not present in the database. "
-                           "Make sure to provide a valid oseries name.")
+            logger.error("Oseries name is not present in the database. "
+                         "Make sure to provide a valid oseries name.")
 
         oseries = self.oseries.loc[oseries, "series"]
         ml = ps.Model(oseries, name=ml_name, **kwargs)
@@ -177,50 +175,7 @@ class Project:
         """
         self.models.pop(ml_name)
 
-    def set_stats(self, stats=None):
-        if not stats:
-            stats = ["evp", "rmse", "rmsi", "durbin_watson"]
-        data = pd.DataFrame(columns=stats)
-        for name, ml in self.models.items():
-            p = ml.stats.many(stats=stats).loc[0].values
-            data.loc[name] = p
-
-        self.data = pd.concat([self.data, data], axis=1)
-
-    def set_parameters(self, parameters=None):
-        data = pd.DataFrame(columns=parameters)
-
-        for name, ml in self.models.items():
-            p = ml.parameters.loc[parameters].optimal
-            data.loc[name] = p
-
-        self.data = pd.concat([self.data, data], axis=1)
-
-    def update_distances(self):
-        """
-        Calculate the distances between the observed series and the stresses.
-
-        Returns
-        -------
-        distances: pandas.DataFrame
-            pandas dataframe with the distances between the oseries (index)
-            and the stresses (columns).
-
-        """
-        # Make sure these are values, even when actually objects.
-        xo = pd.to_numeric(self.oseries.x)
-        xt = pd.to_numeric(self.stresses.x)
-        yo = pd.to_numeric(self.oseries.y)
-        yt = pd.to_numeric(self.stresses.y)
-
-        xh, xi = np.meshgrid(xt, xo)
-        yh, yi = np.meshgrid(yt, yo)
-
-        self.distances = pd.DataFrame(np.sqrt((xh - xi) ** 2 + (yh - yi) ** 2),
-                                      index=self.oseries.index,
-                                      columns=self.stresses.index)
-
-    def add_recharge(self, ml, **kwargs):
+    def add_recharge(self, ml, rfunc, name="recharge", **kwargs):
         """Adds a recharge element to the time series model. The
         selection of the precipitation and evaporation time series is based
         on the shortest distance to the a stresses in the stresseslist.
@@ -235,89 +190,12 @@ class Project:
         evap_name = self.get_nearest_stresses(key, kind="evap").iloc[0][0]
         evap = self.stresses.loc[evap_name, "series"]
 
-        recharge = ps.StressModel2([prec, evap], ps.Gamma, name="recharge",
-                                   **kwargs)
+        recharge = ps.StressModel2([prec, evap], rfunc, name=name, **kwargs)
 
         ml.add_stressmodel(recharge)
 
-    def get_metadata(self, meta):
-        metadata = dict(
-            projection=None
-        )
-
-        return metadata
-
-    def _get_file_info(self):
-        file_info = dict()
-        file_info["date_created"] = pd.Timestamp.now()
-        file_info["date_modified"] = pd.Timestamp.now()
-        file_info["pastas_version"] = ps.__version__
-        try:
-            file_info["owner"] = os.getlogin()
-        except:
-            file_info["owner"] = "Unknown"
-        return file_info
-
-    def dump(self, fname=None, **kwargs):
-        """Method to write a Pastas project to a file.
-
-        Parameters
-        ----------
-        fname
-
-        Returns
-        -------
-
-        """
-        data = self.dump_data(**kwargs)
-        return ps.io.base.dump(fname, data)
-
-    def dump_data(self, series=False, metadata=True, sim_series=False):
-        """Method to export a Pastas Project and return a dictionary with
-        the data to be exported.
-
-        Parameters
-        ----------
-        fname: string
-            string with the name and optionally the file-extension.
-
-        Returns
-        -------
-        message: str
-            Returns a message if export was successful or not.
-
-        """
-        data = dict(
-            name=self.name,
-            models=dict(),
-            metadata=self.metadata,
-            file_info=self.file_info
-        )
-
-        # Series DataFrame
-        data["oseries"] = self._series_to_dict(self.oseries)
-        data["stresses"] = self._series_to_dict(self.stresses)
-
-        # Models
-        data["models"] = dict()
-        for name, ml in self.models.items():
-            data["models"][name] = ml.dump_data(series=series,
-                                                metadata=metadata,
-                                                sim_series=sim_series,
-                                                file_info=False)
-
-        return data
-
-    def _series_to_dict(self, series):
-        series = series.to_dict(orient="index")
-
-        for name in series.keys():
-            ts = series[name]["series"]
-            series[name]["series"] = ts.dump(series=True)
-
-        return series
-
-    def get_nearest_stresses(self, oseries, kind, n=1):
+    def get_nearest_stresses(self, oseries=None, stresses=None, kind=None,
+                             n=1):
         """Method to obtain the nearest (n) stresses of a specific kind.
 
         Parameters
@@ -335,23 +213,19 @@ class Project:
             List with the names of the stresses.
 
         """
-        if isinstance(oseries, str):
-            oseries = [oseries]
 
-        stresses = self.stresses[self.stresses.kind == kind].index
-
-        distances = self.get_distances(oseries, stresses)
+        distances = self.get_distances(oseries, stresses, kind)
 
         sorted = pd.DataFrame(columns=np.arange(n))
 
-        for series in oseries:
+        for series in distances.index:
             series = pd.Series(distances.loc[series].sort_values().index[:n],
                                name=series)
             sorted = sorted.append(series)
 
         return sorted
 
-    def get_distances(self, oseries=None, stresses=None):
+    def get_distances(self, oseries=None, stresses=None, kind=None, ):
         """Method to obtain the distances in meters between the stresses and
         oseries.
 
@@ -359,6 +233,7 @@ class Project:
         ----------
         oseries: str or list of str
         stresses: str or list of str
+        kind: str
 
         Returns
         -------
@@ -367,10 +242,15 @@ class Project:
             and the stresses (columns).
 
         """
-        if oseries is None:
+        if isinstance(oseries, str):
+            oseries = [oseries]
+        elif oseries is None:
             oseries = self.oseries.index
-        if stresses is None:
+
+        if stresses is None and kind is None:
             stresses = self.stresses.index
+        elif stresses is None:
+            stresses = self.stresses[self.stresses.kind == kind].index
 
         xo = pd.to_numeric(self.oseries.loc[oseries, "x"])
         xt = pd.to_numeric(self.stresses.loc[stresses, "x"])
@@ -456,18 +336,101 @@ class Project:
         data = data.squeeze()
         return data.astype(float)
 
-    def get_standard_error(self, parameters, models=None):
+    def get_locations(self, models=None, **kwargs):
+        """Method to get the locations of the models."""
+
+        locations = pd.Series()
+
+        return locations
+
+    def get_locations_geodataframe(self, models=None, **kwargs):
+        import geopandas as gpd
+        from shapely.geometry import Point
+
         if models is None:
             models = self.models.keys()
 
-        data = pd.DataFrame(index=models, columns=parameters)
+        data = pd.DataFrame(index=models)
 
-        for ml_name in models:
-            ml = self.models[ml_name]
-            for parameter in parameters:
-                if parameter in ml.parameters.index:
-                    value = ml.fit.params[parameter].stderr
-                    name = parameter + "_stderr"
-                    data.loc[ml_name, name] = value
+        data = data.join(self.oseries.loc[models, "z"])
+        data["geometry"] = [Point(xy[0], xy[1]) for xy in
+                            self.oseries.loc[models, ["x", "y"]].values]
+        data = gpd.GeoDataFrame(data, geometry="geometry", **kwargs)
+        return data
 
-        return data.squeeze()
+    def get_metadata(self, meta=None):
+        metadata = dict(
+            projection=None
+        )
+
+        return metadata
+
+    def _get_file_info(self):
+        file_info = dict()
+        file_info["date_created"] = pd.Timestamp.now()
+        file_info["date_modified"] = pd.Timestamp.now()
+        file_info["pastas_version"] = ps.__version__
+        try:
+            file_info["owner"] = os.getlogin()
+        except:
+            file_info["owner"] = "Unknown"
+        return file_info
+
+    def dump(self, fname=None, **kwargs):
+        """Method to write a Pastas project to a file.
+
+        Parameters
+        ----------
+        fname
+
+        Returns
+        -------
+
+        """
+        data = self.dump_data(**kwargs)
+        return ps.io.base.dump(fname, data)
+
+    def dump_data(self, series=False, metadata=True, sim_series=False):
+        """Method to export a Pastas Project and return a dictionary with
+        the data to be exported.
+
+        Parameters
+        ----------
+        fname: string
+            string with the name and optionally the file-extension.
+
+        Returns
+        -------
+        message: str
+            Returns a message if export was successful or not.
+
+        """
+        data = dict(
+            name=self.name,
+            models=dict(),
+            metadata=self.metadata,
+            file_info=self.file_info
+        )
+
+        # Series DataFrame
+        data["oseries"] = self._series_to_dict(self.oseries)
+        data["stresses"] = self._series_to_dict(self.stresses)
+
+        # Models
+        data["models"] = dict()
+        for name, ml in self.models.items():
+            data["models"][name] = ml.dump_data(series=series,
+                                                metadata=metadata,
+                                                sim_series=sim_series,
+                                                file_info=False)
+
+        return data
+
+    def _series_to_dict(self, series):
+        series = series.to_dict(orient="index")
+
+        for name in series.keys():
+            ts = series[name]["series"]
+            series[name]["series"] = ts.dump(series=True)
+
+        return series

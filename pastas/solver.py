@@ -1,26 +1,20 @@
-"""This module contains the different solvers that are available for PASTAS.
+"""The solver module contains the different solvers that are available for
+PASTAS.
 
 All solvers inherit from the BaseSolver class, which contains general method
 for selecting the correct time series to minimize and options to weight the
-residuals series.
+residuals or innovations series.
 
 Notes
 -----
-By default, when a model is solve with a noisemodel, the swsi-weights are
-applied. The use of these weights is necessary to obtain statistically sound
-results when applying a noisemodel.
+By default, when a model is solved with a noisemodel, the swsi-weights are
+applied.
 
 Examples
 --------
-To solve a model without a noisemodel and no weighting of the residuals,
-the following syntax can be used.
+To solve a model the following syntax can be used:
 
->>> ml.solve(solver=LeastSquares, noise=False, weights=None)
-
-To solve the model with a noise model, an the weights according to the swsi
-criterion (default), use te following syntax.
-
->>> ml.solve(solver=LmfitSolve)
+>>> ml.solve(solver=LeastSquares)
 
 """
 
@@ -28,8 +22,8 @@ from __future__ import print_function, division
 
 import logging
 
-import lmfit
 import numpy as np
+from scipy.linalg import svd
 from scipy.optimize import least_squares, differential_evolution
 
 logger = logging.getLogger(__name__)
@@ -37,7 +31,8 @@ logger = logging.getLogger(__name__)
 
 class BaseSolver:
     _name = "BaseSolver"
-    __doc__ = """Basesolver class that contains the basic function for each solver.
+    __doc__ = """Basesolver class that contains the basic function for each 
+    solver.
 
     A solver is implemented with a separate init method and objective function
     that returns the necessary format that is required by the specific solver.
@@ -48,14 +43,16 @@ class BaseSolver:
     """
 
     def __init__(self):
-        self.default_kwargs = dict()
 
-    def update_kwargs(self, kwargs):
-        if kwargs:
-            self.default_kwargs.update(kwargs)
-            return self.default_kwargs
-        else:
-            return self.default_kwargs
+        # Parameters attributes
+        self.popt = None  # Optimal values of the parameters
+        self.stderr = None  # Standard error of parameters
+        self.pcor = None  # Correlation between parameters
+        self.pcov = None  # Covariances of the parameters
+
+        # Optimization attributes
+        self.nfev = None  # number of function evaluations
+        self.fit = None  # Object that is returned by the optimization method
 
     def minimize(self, parameters, tmin, tmax, noise, model, freq,
                  weights=None):
@@ -120,13 +117,9 @@ class LeastSquares(BaseSolver):
 
     """
 
-    def __init__(self, model, tmin=None, tmax=None, noise=True, freq='D',
+    def __init__(self, model, tmin=None, tmax=None, noise=True, freq=None,
                  weights=None, **kwargs):
         BaseSolver.__init__(self)
-
-        # Update the kwargs going to the solver
-        self.default_kwargs = dict(ftol=1e-3)
-        kwargs = self.update_kwargs(kwargs)
 
         parameters = model.parameters.initial.values
 
@@ -138,15 +131,22 @@ class LeastSquares(BaseSolver):
         bounds = (pmin, pmax)
 
         if False in model.parameters.vary.values.astype('bool'):
-            logger.warning("Fixing parameters is not supported with this"
-                           "solver. Please use LmfitSolve or apply small"
-                           "boundaries as a solution.")
+            logger.warning("""Fixing parameters is not supported with this
+                           solver. Please use LmfitSolve or apply small
+                           boundaries as a solution.""")
 
         self.fit = least_squares(self.objfunction, x0=parameters,
                                  bounds=bounds,
                                  args=(tmin, tmax, noise, model, freq,
                                        weights), **kwargs)
+
+        self.nfev = self.fit.nfev
+
+        self.pcov = self.get_covariances(self.fit, model)
+        self.pcor = self.get_correlations(self.pcov)
+        self.stderr = np.sqrt(np.diag(self.pcov))
         self.optimal_params = self.fit.x
+
         self.report = None
 
     def objfunction(self, parameters, tmin, tmax, noise, model, freq, weights):
@@ -170,6 +170,57 @@ class LeastSquares(BaseSolver):
                             weights)
         return res
 
+    def get_covariances(self, res, model, absolute_sigma=False):
+        """Method to get the covariance matrix from the jacobian.
+
+        Parameters
+        ----------
+        res
+
+        Returns
+        -------
+        pcov: numpy.array
+            numpy array with the covariance matrix.
+
+        Notes
+        -----
+        This method os copied from Scipy, please refer to:
+        https://github.com/scipy/scipy/blob/v1.0.0/scipy/optimize/optimize.py
+
+        """
+        cost = 2 * res.cost  # res.cost is half sum of squares!
+
+        # Do Moore-Penrose inverse discarding zero singular values.
+        _, s, VT = svd(res.jac, full_matrices=False)
+        threshold = np.finfo(float).eps * max(res.jac.shape) * s[0]
+        s = s[s > threshold]
+        VT = VT[:s.size]
+        pcov = np.dot(VT.T / s ** 2, VT)
+        n_param = model.parameters.index.size
+        warn_cov = False
+        if pcov is None:
+            # indeterminate covariance
+            pcov = np.zeros((n_param, n_param), dtype=float)
+            pcov.fill(np.inf)
+            warn_cov = True
+        elif not absolute_sigma:
+            if model.oseries.index.size > n_param:
+                s_sq = cost / (model.oseries.index.size - n_param)
+                pcov = pcov * s_sq
+            else:
+                pcov.fill(np.inf)
+                warn_cov = True
+
+        if warn_cov:
+            logger.warning(
+                'Covariance of the parameters could not be estimated')
+
+        return pcov
+
+    def get_correlations(self, pcov):
+        pcor = None
+        return pcor
+
 
 class LmfitSolve(BaseSolver):
     _name = "LmfitSolve"
@@ -183,13 +234,10 @@ class LmfitSolve(BaseSolver):
 
     """
 
-    def __init__(self, model, tmin=None, tmax=None, noise=True, freq='D',
+    def __init__(self, model, tmin=None, tmax=None, noise=True, freq=None,
                  weights=None, **kwargs):
+        import lmfit  # Import Lmfit here, so it is no dependency
         BaseSolver.__init__(self)
-
-        # Update the kwargs going to the solver
-        self.default_kwargs = dict(ftol=1e-3, epsfcn=1e-4)
-        kwargs = self.update_kwargs(kwargs)
 
         # Deal with the parameters
         parameters = lmfit.Parameters()
@@ -201,8 +249,16 @@ class LmfitSolve(BaseSolver):
         self.fit = lmfit.minimize(fcn=self.objfunction, params=parameters,
                                   args=(tmin, tmax, noise, model, freq,
                                         weights), **kwargs)
+
+        # Set all parameter attributes
         self.optimal_params = np.array([p.value for p in
                                         self.fit.params.values()])
+        self.stderr = np.array([p.stderr for p in self.fit.params.values()])
+        if self.fit.covar is not None:
+            self.pcov = self.fit.covar
+
+        # Set all optimization attributes
+        self.nfev = self.fit.nfev
         self.report = lmfit.fit_report(self.fit)
 
     def objfunction(self, parameters, tmin, tmax, noise, model, freq, weights):
