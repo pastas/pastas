@@ -76,11 +76,11 @@ class Gamma(RfuncBase):
         parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
                                        100 / self.meanstress, 1, name)
         # if n is too small, the length of the response function is close to zero
-        parameters.loc[name + '_n'] = (1, 0.1, 5, 1, name)
-        parameters.loc[name + '_a'] = (100, 1, 5000, 1, name)
+        parameters.loc[name + '_n'] = (1, 0.1, 10, 1, name)
+        parameters.loc[name + '_a'] = (10, 0.01, 5000, 1, name)
         return parameters
 
-    def calc_tmax(self,p):
+    def calc_tmax(self, p):
         return gammaincinv(p[1], self.cutoff) * p[2]
 
     def gain(self, p):
@@ -121,11 +121,11 @@ class Exponential(RfuncBase):
         parameters = pd.DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         parameters.loc[name + '_A'] = (
-            1 / self.meanstress, 0, 100 / self.meanstress, 1, name)
-        parameters.loc[name + '_a'] = (100, 1, 5000, 1, name)
+        1 / self.meanstress, 0, 100 / self.meanstress, 1, name)
+        parameters.loc[name + '_a'] = (10, 0.01, 5000, 1, name)
         return parameters
 
-    def calc_tmax(self,p):
+    def calc_tmax(self, p):
         return -np.log(1.0 / p[1]) * p[1]
 
     def gain(self, p):
@@ -288,7 +288,7 @@ class Bruggeman(RfuncBase):
         parameters.loc[name + '_c'] = (c_init, 0, c_init * 100, 1, name)
         return parameters
 
-    def calc_tmax(self,p):
+    def calc_tmax(self, p):
         # TODO: find tmax from cutoff, below is just an opproximation
         return 4 * p[0] / p[1] ** 2
 
