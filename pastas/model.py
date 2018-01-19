@@ -49,7 +49,7 @@ class Model:
 
     def __init__(self, oseries, constant=True, noisemodel=True,
                  name="Observations", metadata=None, settings=None,
-                 log_level="Error"):
+                 log_level="ERROR"):
         self.logger = self.get_logger(log_level=log_level)
 
         # Construct the different model components
@@ -695,6 +695,18 @@ class Model:
         else:
             self.settings["time_offset"] = pd.Timedelta(0)
 
+    def update_parameters(self, parameters):
+        """internal method to add parameters while maintaining the original
+        parameters dataframe.
+
+        Returns
+        -------
+
+        """
+        self.parameters = self.parameters.append(parameters)
+
+        pass
+
     def get_init_parameters(self, noise=True, initial=True):
         """Method to get all initial parameters from the individual objects.
 
@@ -807,11 +819,7 @@ class Model:
 
         """
         metadata = dict()
-        metadata["y"] = None
-        metadata["x"] = None
-        metadata["z"] = None
         metadata["projection"] = None
-        metadata["name"] = None
 
         if meta:  # Update metadata with user-provided metadata if possible
             metadata.update(meta)

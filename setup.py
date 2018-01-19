@@ -35,5 +35,5 @@ setup(
     install_requires=['numpy>=1.9', 'matplotlib>=1.5', 'lmfit>=0.9',
                       'pandas>=0.19', 'scipy>=0.17'],
     packages=find_packages(exclude=[]),
-    include_package_data=True,
+    package_data={"pastas": ["log_config.json"], },
 )
