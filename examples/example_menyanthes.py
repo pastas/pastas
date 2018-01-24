@@ -42,7 +42,7 @@ sm = ps.StressModel(well, ps.Hantush, 'Extraction_3', up=False, kind="well")
 ml.add_stressmodel(sm)
 
 # Solve
-ml.solve()
+ml.solve(solver=ps.LeastSquares)
 
 # make a decomposition-plot
 ax = ml.plots.decomposition(ytick_base=1.)

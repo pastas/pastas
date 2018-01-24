@@ -154,10 +154,9 @@ class Plotting():
         # plot simulation and observations in top graph
         self.ml.oseries.plot(linestyle='', marker='.', color='k', markersize=3,
                              ax=ax[0], x_compat=True)
-        hsim.plot(ax=ax[0], label='simulation', x_compat=True)
+        hsim.plot(ax=ax[0], x_compat=True)
         ax[0].autoscale(enable=True, axis='y', tight=True)
         ax[0].grid(which='both')
-        # ax[0].minorticks_off()
         ax[0].legend(loc=(0, 1), ncol=3, frameon=False)
 
         if ytick_base:

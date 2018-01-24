@@ -1,11 +1,13 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 def get_dt(freq):
     # method to calculate the timestep in days from the frequency string freq
-    options = {'MS': 30,  # monthly frequency (month-start), used just for comparison
-               'M': 30,  # monthly frequency (month-end), used just for comparison
+    options = {'MS': 30, # monthly frequency (month-start), used just for
+               # comparison
+               'M': 30, # monthly frequency (month-end), used just for
+               # comparison
                'W': 7,  # weekly frequency
                'D': 1,  # calendar day frequency
                'H': 1 / 24,  # hourly frequency
@@ -142,3 +144,22 @@ def timestep_weighted_resample(series, index):
     # replace all values in the series
     series = pd.Series(v1, index=index)
     return series
+
+
+def excel2datetime(excel_datenum, freq="D"):
+    """Method to convert excel datetime to pandas timetime objects.
+
+    Parameters
+    ----------
+    excel_datenum: datetime index
+        can be a datetime object or a pandas datetime index.
+    freq:
+
+    Returns
+    -------
+    datetimes: pandas.datetimeindex
+
+    """
+    datetimes = pd.to_datetime('1899-12-30') + pd.to_timedelta(excel_datenum,
+                                                               freq)
+    return datetimes
