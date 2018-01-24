@@ -229,8 +229,14 @@ class Model:
             freq = self.settings["freq"]
 
         if self.sim_index is None:
-            tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq, False)
-            sim_index = self.get_sim_index(tmin, tmax, freq, 0)  # warmup = 0
+            tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq,
+                                            use_oseries=False,
+                                            use_stresses=True)
+            sim_index = self.get_sim_index(tmin, tmax, freq, self.settings[
+                "warmup"])
+            self.update_stresses(tmin=sim_index.min(), tmax=sim_index.max(),
+                                 freq=freq)
+
         else:
             sim_index = self.sim_index
 
@@ -377,7 +383,8 @@ class Model:
 
         # Set tmin and tmax
         self.settings["tmin"], self.settings["tmax"] = self.get_tmin_tmax(tmin,
-                                                                          tmax)
+                                                                          tmax,
+                                                                          use_stresses=True)
 
         # Set the frequency & warmup
         if freq:
@@ -400,8 +407,7 @@ class Model:
                                                     self.sim_index)
 
         # Prepare the stressmodels
-        for ts in self.stressmodels.values():
-            ts.update_stress(freq=self.settings["freq"],
+        self.update_stresses(freq=self.settings["freq"],
                              tmin=self.sim_index.min(),
                              tmax=self.sim_index.max())
 
@@ -426,7 +432,7 @@ class Model:
         tmax: str, optional
             String with an end date for the simulation period (E.g. '2010')
         solver: pastas.solver.BaseSolver, optional
-            Class used to solve the model. Default is lmfit (LmfitSolve)
+            Class used to solve the model. Default is LmfitSolve
         report: bool, optional
             Print a report to the screen after optimization finished.
         noise: bool, optional
@@ -478,7 +484,6 @@ class Model:
         -------
         series: pandas.Series
 
-
         Notes
         -----
         Find the index closest to the tindex, and then return a selection
@@ -524,7 +529,8 @@ class Model:
         oseries_calib = self.get_sample(oseries_calib, sim_index)
         return oseries_calib
 
-    def get_tmin_tmax(self, tmin=None, tmax=None, freq=None, use_oseries=True):
+    def get_tmin_tmax(self, tmin=None, tmax=None, freq=None, use_oseries=True,
+                      use_stresses=False):
         """Method that checks and returns valid values for tmin and tmax.
 
         Parameters
@@ -538,27 +544,31 @@ class Model:
         freq: str, optional
             string with the frequency.
         use_oseries: bool, optional
-            boolean to check the tmin and tmax against the oseries.
+            Obtain the tmin and tmax from the oseries. Default is True.
+        use_stresses: bool, optional
+            Obtain the tmin and tmax from the stresses. The minimum/maximum
+            time from all stresses is taken.
 
         Returns
         -------
         tmin, tmax: pandas.Timestamp
-            returns a pandas timestamp for tmin and tmax.
+            returns pandas timestamps for tmin and tmax.
 
         Notes
         -----
-        The tmin and tmax are checked and returned according to the
-        following rules:
+        The parameters tmin and tmax are leading, unless use_oseries is
+        True, then these are checked against the oseries index. The tmin and
+        tmax are checked and returned according to the following rules:
 
         A. If no value for tmin/tmax is provided:
-            1. if use_oseries is false, tmin is set to minimum of the
+            1. If use_oseries is True, tmin and/or tmax is based on the
+            oseries.
+            2. If use_stresses is True, tmin and/or tmax is based on the
             stressmodels.
-            2. if use_series is true tmin is set to minimum of the oseries.
 
         B. If a values for tmin/tmax is provided:
             1. A pandas timestamp is made from the string
             2. if use_oseries is True, tmin is checked against oseries.
-            3. tmin is checked against the stressmodels.
 
         C. In all cases an offset for the tmin and tmax is added.
 
@@ -566,9 +576,12 @@ class Model:
         in general can be found in the developers section of the docs.
 
         """
-
+        # Get tmin and tmax from the oseries
+        if use_oseries:
+            ts_tmin = self.oseries.index.min()
+            ts_tmax = self.oseries.index.max()
         # Get tmin and tmax from the stressmodels
-        if self.stressmodels:
+        elif use_stresses:
             ts_tmin = pd.Timestamp.max
             ts_tmax = pd.Timestamp.min
             for stressmodel in self.stressmodels.values():
@@ -576,51 +589,26 @@ class Model:
                     ts_tmin = stressmodel.tmin
                 if stressmodel.tmax > ts_tmax:
                     ts_tmax = stressmodel.tmax
+        # Get tmin and tmax from user provided values
         else:
-            # When there are no stressmodels use the oseries, regardless of
-            # use_oseries:
-            ts_tmin = self.oseries.index.min()
-            ts_tmax = self.oseries.index.max()
+            ts_tmin = pd.Timestamp(tmin)
+            ts_tmax = pd.Timestamp(tmax)
 
         # Set tmin properly
-        if tmin is None and use_oseries is None:
-            tmin = ts_tmin
-        elif tmin is None:
-            tmin = max(ts_tmin, self.oseries.index.min())
-        else:
+        if tmin is not None and use_oseries:
+            tmin = max(pd.Timestamp(tmin), ts_tmin)
+        elif tmin is not None:
             tmin = pd.Timestamp(tmin)
-            # Check if tmin > oseries.tmin (Needs to be True)
-            if tmin < self.oseries.index.min() and use_oseries:
-                self.logger.warning(
-                    "Specified tmin is before the first observation. tmin"
-                    " automatically set to %s" % self.oseries.index.min())
-                tmin = self.oseries.index.min()
-            # Check if tmin > stressmodel.tmin (Needs to be True)
-            if tmin < ts_tmin:
-                self.logger.warning("Specified tmin is before any of the"
-                                    "stressmodels tmin. tmin automatically set"
-                                    " to stressmodels tmin %s" % ts_tmin)
-                tmin = ts_tmin
+        else:
+            tmin = ts_tmin
 
         # Set tmax properly
-        if tmax is None and use_oseries is None:
-            tmax = ts_tmax
-        elif tmax is None:
-            tmax = min(ts_tmax, self.oseries.index.max())
-        else:
+        if tmax is not None and use_oseries:
+            tmax = min(pd.Timestamp(tmax), ts_tmax)
+        elif tmax is not None:
             tmax = pd.Timestamp(tmax)
-            # Check if tmax < oseries.tmax (Needs to be True)
-            if tmax > self.oseries.index.max() and use_oseries:
-                self.logger.warning(
-                    "Specified tmax is after the last observation. tmax"
-                    " automatically set to %s" % self.oseries.index.max())
-                tmax = self.oseries.index.max()
-            # Check if tmax < stressmodels.tmax (Needs to be True)
-            if tmax > ts_tmax:
-                self.logger.warning(
-                    "Specified tmax is after any of the stressmodels tmax. tmax"
-                    " automatically set to stressmodels tmax %s" % ts_tmax)
-                tmax = ts_tmax
+        else:
+            tmax = ts_tmax
 
         # adjust tmin and tmax so that the time-offset is equal to the stressmodels.
         if freq is None:
@@ -694,6 +682,23 @@ class Model:
             self.settings["time_offset"] = next(iter(time_offsets))
         else:
             self.settings["time_offset"] = pd.Timedelta(0)
+
+    def update_stresses(self, tmin, tmax, freq, **kwargs):
+        """
+
+        Parameters
+        ----------
+        tmin
+        tmax
+        freq
+        kwargs
+
+        Returns
+        -------
+
+        """
+        for ts in self.stressmodels.values():
+            ts.update_stress(freq=freq, tmin=tmin, tmax=tmax, **kwargs)
 
     def update_parameters(self, parameters):
         """internal method to add parameters while maintaining the original
