@@ -37,9 +37,9 @@ These include Python scripts and Jupyter Notebooks.
 
 Quick installation guide
 ~~~~~~~~~~~~~~~~~~~~~~~~
-To install Pastas, a working version of Python 2.7 or 3.5 has to be installed on 
+To install Pastas, a working version of Python 3.4, 3.5 or 3.6 has to be installed on 
 your computer. We recommend using the `Anaconda Distribution <https://www.continuum.io/downloads>`_
-as it includes most of the python package dependencies and the Jupyter
+with Python 3.6 as it includes most of the python package dependencies and the Jupyter
 Notebook software to run the notebooks. However, you are free to install any
 Python distribution you want.
 
