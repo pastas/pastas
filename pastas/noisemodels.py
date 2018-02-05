@@ -58,7 +58,7 @@ class NoiseModelBase(ABC):
 
     @set_parameter
     def set_vary(self, name, value):
-        self.parameters.loc[name, 'pmax'] = value
+        self.parameters.loc[name, 'vary'] = value
 
     def dump(self):
         data = dict()
