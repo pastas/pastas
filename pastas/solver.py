@@ -246,6 +246,11 @@ class LmfitSolve(BaseSolver):
             pp = np.where(p.loc[k].isnull(), None, p.loc[k])
             parameters.add(k, value=pp[0], min=pp[1], max=pp[2], vary=pp[3])
 
+        # set ftol and epsfcn if no options for lmfit are provided. Only
+        # work with Lmfit's least squares solver method.
+        if not kwargs:
+            kwargs = {"ftol": 1e-3, "epsfcn"  :1e-4}
+
         self.fit = lmfit.minimize(fcn=self.objfunction, params=parameters,
                                   args=(tmin, tmax, noise, model, freq,
                                         weights), **kwargs)
