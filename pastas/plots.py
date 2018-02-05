@@ -28,7 +28,7 @@ class Plotting():
 
     @model_tmin_tmax
     def plot(self, tmin=None, tmax=None, oseries=True, simulation=True,
-             show=True, **kwargs):
+             **kwargs):
         """Make a plot of the observed and simulated series.
 
         Parameters
@@ -59,13 +59,10 @@ class Plotting():
         plt.ylabel("Groundwater levels [meter]")
         plt.legend()
 
-        if show:
-            plt.show()
-
         return fig.axes
 
     @model_tmin_tmax
-    def results(self, tmin=None, tmax=None, show=True):
+    def results(self, tmin=None, tmax=None):
         """Plot different results in one window to get a quick overview.
 
         Parameters
@@ -119,13 +116,10 @@ class Plotting():
             axb = plt.subplot2grid((rows, 3), (i, 2))
             self.ml.get_step_response(ts).plot(ax=axb)
 
-        if show:
-            plt.show()
-
         return fig.axes
 
     @model_tmin_tmax
-    def decomposition(self, tmin=None, tmax=None, show=True, ytick_base=True):
+    def decomposition(self, tmin=None, tmax=None, ytick_base=True):
         """Plot the decomposition of a time-series in the different stresses.
 
         """
@@ -184,13 +178,10 @@ class Plotting():
             ax[i].grid(which='both')
             ax[i].minorticks_off()
 
-        if show:
-            plt.show()
-
         return fig.axes
 
     @model_tmin_tmax
-    def diagnostics(self, tmin=None, tmax=None, show=True):
+    def diagnostics(self, tmin=None, tmax=None):
         innovations = self.ml.innovations(tmin, tmax)
 
         fig = self._get_figure()
@@ -213,12 +204,9 @@ class Plotting():
         plt.subplot(gs[1, 2])
         probplot(innovations, plot=plt)
 
-        if show:
-            plt.show()
-
         return fig.axes
 
-    def block_response(self, series=None, show=True):
+    def block_response(self, series=None):
         """Plot the block response for a specific series.
 
         Returns
@@ -255,12 +243,9 @@ class Plotting():
         plt.legend(legend)
         fig.suptitle("Block Response(s)")
 
-        if show:
-            plt.show()
-
         return fig.axes
 
-    def step_response(self, series=None, show=True):
+    def step_response(self, series=None):
 
         """Plot the step response for a specific series.
 
@@ -297,9 +282,6 @@ class Plotting():
 
         plt.legend(legend)
         fig.suptitle("Step Response(s)")
-
-        if show:
-            plt.show()
 
         return fig.axes
 
