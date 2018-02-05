@@ -55,7 +55,7 @@ class Plotting():
         if simulation:
             h = self.ml.simulate(tmin=tmin, tmax=tmax)
             h.plot(fig=fig)
-
+        plt.xlim(tmin, tmax)
         plt.ylabel("Groundwater levels [meter]")
         plt.legend()
 
@@ -116,10 +116,12 @@ class Plotting():
             axb = plt.subplot2grid((rows, 3), (i, 2))
             self.ml.get_step_response(ts).plot(ax=axb)
 
+        ax1.set_xlim(tmin, tmax)
+
         return fig.axes
 
     @model_tmin_tmax
-    def decomposition(self, tmin=None, tmax=None, ytick_base=True):
+    def decomposition(self, tmin=None, tmax=None, ytick_base=True, **kwargs):
         """Plot the decomposition of a time-series in the different stresses.
 
         """
@@ -142,7 +144,8 @@ class Plotting():
             height_ratios.append(hr)
 
         fig, ax = plt.subplots(1 + len(self.ml.stressmodels), sharex=True,
-                               gridspec_kw={'height_ratios': height_ratios})
+                               gridspec_kw={'height_ratios': height_ratios},
+                               **kwargs)
         ax = np.atleast_1d(ax)
 
         # plot simulation and observations in top graph
@@ -178,11 +181,13 @@ class Plotting():
             ax[i].grid(which='both')
             ax[i].minorticks_off()
 
+        ax[0].set_xlim(tmin, tmax)
+
         return fig.axes
 
     @model_tmin_tmax
     def diagnostics(self, tmin=None, tmax=None):
-        innovations = self.ml.innovations(tmin, tmax)
+        innovations = self.ml.innovations(tmin=tmin, tmax=tmax)
 
         fig = self._get_figure()
         gs = plt.GridSpec(2, 3, wspace=0.2)
@@ -203,6 +208,8 @@ class Plotting():
 
         plt.subplot(gs[1, 2])
         probplot(innovations, plot=plt)
+
+        plt.xlim(tmin, tmax)
 
         return fig.axes
 
@@ -315,18 +322,20 @@ class Plotting():
         rows = len(stresses)
         rows = -(-rows // cols)  # round up with out additional import
 
-        fig, axes = plt.subplots(rows, cols, **kwargs)
+        fig, ax = plt.subplots(rows, cols, **kwargs)
 
-        if hasattr(axes, "flatten"):
-            axes = axes.flatten()
+        if hasattr(ax, "flatten"):
+            ax = ax.flatten()
         else:
-            axes = [axes]
+            ax = [ax]
 
-        for ax, stress in zip(axes, stresses):
+        for ax, stress in zip(ax, stresses):
             stress.plot(ax=ax, x_compat=True)
             ax.legend([stress.name], loc=2)
 
-        return axes
+        plt.xlim(tmin, tmax)
+
+        return fig.axes
 
     def _get_figure(self, **kwargs):
         fig = plt.figure(**kwargs)
