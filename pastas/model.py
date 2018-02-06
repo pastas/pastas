@@ -732,7 +732,7 @@ class Model:
 
         # Store optimized values in case they are needed
         if not initial:
-            optimal = self.parameters.optimal
+            paramold = self.parameters
 
         parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary',
                                            'optimal', 'name', 'stderr'])
@@ -745,7 +745,7 @@ class Model:
 
         # Set initial parameters to optimal parameters
         if not initial:
-            parameters.initial = optimal
+            parameters.loc[paramold.index, 'initial'] = paramold.optimal
 
         return parameters
 
