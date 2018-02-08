@@ -126,7 +126,7 @@ class Exponential(RfuncBase):
         return parameters
 
     def calc_tmax(self, p):
-        return -np.log(1.0 / p[1]) * p[1]
+        return -p[1] * np.log(1 - self.cutoff)
 
     def gain(self, p):
         return self.up * p[0]
