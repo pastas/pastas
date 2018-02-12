@@ -34,10 +34,7 @@ class RfuncBase:
     _name = "RfuncBase"
 
     def __init__(self, up, meanstress, cutoff):
-        if up:
-            self.up = 1
-        else:
-            self.up = -1
+        self.up = up
         # Completely arbitrary number to prevent  divsion by zero
         if meanstress < 1e-8:
             meanstress = 1e-8
@@ -73,8 +70,12 @@ class Gamma(RfuncBase):
     def set_parameters(self, name):
         parameters = pd.DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
-                                       100 / self.meanstress, 1, name)
+        if self.up:
+            parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
+                                           100 / self.meanstress, 1, name)
+        else:
+            parameters.loc[name + '_A'] = (-1 / self.meanstress, -100 / self.meanstress,
+                                           0, 1, name)
         # if n is too small, the length of the response function is close to zero
         parameters.loc[name + '_n'] = (1, 0.1, 10, 1, name)
         parameters.loc[name + '_a'] = (10, 0.01, 5000, 1, name)
@@ -84,7 +85,7 @@ class Gamma(RfuncBase):
         return gammaincinv(p[1], self.cutoff) * p[2]
 
     def gain(self, p):
-        return self.up * p[0]
+        return p[0]
 
     def step(self, p, dt=1):
         if isinstance(dt, np.ndarray):
@@ -94,7 +95,7 @@ class Gamma(RfuncBase):
             self.tmax = max(self.tmax, 3 * dt)
             t = np.arange(dt, self.tmax, dt)
 
-        s = self.up * p[0] * gammainc(p[1], t / p[2])
+        s = p[0] * gammainc(p[1], t / p[2])
         return s
 
     def block(self, p, dt=1):
@@ -120,8 +121,12 @@ class Exponential(RfuncBase):
     def set_parameters(self, name):
         parameters = pd.DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        parameters.loc[name + '_A'] = (
-        1 / self.meanstress, 0, 100 / self.meanstress, 1, name)
+        if self.up:
+            parameters.loc[name + '_A'] = (
+                1 / self.meanstress, 0, 100 / self.meanstress, 1, name)
+        else:
+            parameters.loc[name + '_A'] = (
+                -1 / self.meanstress, -100 / self.meanstress, 0, 1, name)
         parameters.loc[name + '_a'] = (10, 0.01, 5000, 1, name)
         return parameters
 
@@ -129,7 +134,7 @@ class Exponential(RfuncBase):
         return -p[1] * np.log(1 - self.cutoff)
 
     def gain(self, p):
-        return self.up * p[0]
+        return p[0]
 
     def step(self, p, dt=1):
         if isinstance(dt, np.ndarray):
@@ -138,7 +143,7 @@ class Exponential(RfuncBase):
             self.tmax = self.calc_tmax(p)
             self.tmax = max(self.tmax, 3 * dt)
             t = np.arange(dt, self.tmax, dt)
-        s = self.up * p[0] * (1.0 - np.exp(-t / p[1]))
+        s = p[0] * (1.0 - np.exp(-t / p[1]))
         return s
 
     def block(self, p, dt=1):
@@ -172,8 +177,12 @@ class Hantush(RfuncBase):
     def set_parameters(self, name):
         parameters = pd.DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        parameters.loc[name + '_A'] = (
-            1 / self.meanstress, 0, 100 / self.meanstress, 1, name)
+        if self.up:
+            parameters.loc[name + '_A'] = (
+                1 / self.meanstress, 0, 100 / self.meanstress, 1, name)
+        else:
+            parameters.loc[name + '_A'] = (
+                -1 / self.meanstress, -100 / self.meanstress, 0, 1, name)
         parameters.loc[name + '_rho'] = (1, 0.0001, 10, 1, name)
         parameters.loc[name + '_cS'] = (100, 1e-3, 1e3, 1, name)
         return parameters
@@ -186,7 +195,7 @@ class Hantush(RfuncBase):
         return lambertw(1 / ((1 - self.cutoff) * k0rho)).real * cS
 
     def gain(self, p):
-        return self.up * p[0]
+        return p[0]
 
     def step(self, p, dt=1):
         rho = p[1]
@@ -207,7 +216,7 @@ class Hantush(RfuncBase):
             tau1 + rho ** 2 / (4 * tau1))
         F[tau >= rho / 2] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(
             tau2 + rho ** 2 / (4 * tau2))
-        return self.up * p[0] * F / (2 * k0rho)
+        return p[0] * F / (2 * k0rho)
 
     def block(self, p, dt=1):
         s = self.step(p, dt)
@@ -231,6 +240,10 @@ class Theis(RfuncBase):
 
     def __init__(self, up=True, meanstress=1, cutoff=0.99):
         RfuncBase.__init__(self, up, meanstress, cutoff)
+        if self.up:
+            self.up = 1
+        else:
+            self.up = -1
         self.nparam = 3
 
     def set_parameters(self, name):
@@ -285,7 +298,10 @@ class Bruggeman(RfuncBase):
         c_init = 1 / np.exp(-2 * a_init) / self.meanstress
         parameters.loc[name + '_a'] = (a_init, 0, 100, 1, name)
         parameters.loc[name + '_b'] = (b_init, 0, 10, 1, name)
-        parameters.loc[name + '_c'] = (c_init, 0, c_init * 100, 1, name)
+        if self.up:
+            parameters.loc[name + '_c'] = (c_init, 0, c_init * 100, 1, name)
+        else:
+            parameters.loc[name + '_c'] = (-c_init, -c_init * 100, 0, 1, name)
         return parameters
 
     def calc_tmax(self, p):
@@ -294,17 +310,16 @@ class Bruggeman(RfuncBase):
 
     def gain(self, p):
         # TODO: check line below
-        return self.up * p[2]
+        return p[2]
 
     def step(self, p, dt=1):
-
         if isinstance(dt, np.ndarray):
             t = dt
         else:
             self.tmax = self.calc_tmax(p)
             self.tmax = max(self.tmax, 3 * dt)
             t = np.arange(dt, self.tmax, dt)
-        s = self.up * p[2] * self.polder_function(p[0], p[1] * np.sqrt(t))
+        s = p[2] * self.polder_function(p[0], p[1] * np.sqrt(t))
         return s
 
     def polder_function(self, x, y):
@@ -330,11 +345,14 @@ class One(RfuncBase):
     def set_parameters(self, name):
         parameters = pd.DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        parameters.loc[name + '_d'] = (1, 0, 100, 1, name)
+        if self.up:
+            parameters.loc[name + '_d'] = (1, 0, 100, 1, name)
+        else:
+            parameters.loc[name + '_d'] = (-1, -100, 0, 1, name)
         return parameters
 
     def gain(self, p):
-        return self.up * p[0]
+        return p[0]
 
     def step(self, p, dt=1):
         if isinstance(dt, np.ndarray):
