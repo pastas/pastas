@@ -40,9 +40,8 @@ class Plotting():
 
         Returns
         -------
-        fig: matplotlib.figure
-            MPL figure with the simulated and optionally the observed time
-            series.
+        ax: matplotlib.axes
+            matplotlib axes with the simulated and optionally the observed time series.
 
         """
         fig = self._get_figure(**kwargs)
@@ -123,6 +122,17 @@ class Plotting():
     @model_tmin_tmax
     def decomposition(self, tmin=None, tmax=None, ytick_base=True, split=True, **kwargs):
         """Plot the decomposition of a time-series in the different stresses.
+        
+        Parameters
+        ----------
+        ytick_base: Boolean or float
+            Make the ytick-base constant if True, set this base to float if float
+        **kwargs: 
+            Optional arguments for the subplots method
+            
+        Returns
+        -------
+        axes: list of matplotlib.axes
 
         """
         # determine the simulation
@@ -156,6 +166,8 @@ class Plotting():
                 ylims.append((hs.min(), hs.max()))
         height_ratios = [0.0 if np.isnan(ylim[1] - ylim[0]) else ylim[1] - ylim[0] for ylim in ylims]
         # open the figure
+
+
         fig, ax = plt.subplots(len(h), sharex=True,
                                gridspec_kw={'height_ratios': height_ratios},
                                **kwargs)
@@ -183,10 +195,12 @@ class Plotting():
         # plot the influence of the stresses
         for i in range(1, len(h)):
             h[i].plot(ax=ax[i], x_compat=True)
+
             if ytick_base:
                 # set the ytick-spacing equal to the top graph
                 ax[i].yaxis.set_major_locator(
                     plticker.MultipleLocator(base=ytick_base))
+
             ax[i].set_title(names[i])
             ax[i].set_ylim(ylims[i])
             ax[i].grid(which='both')
@@ -229,8 +243,8 @@ class Plotting():
 
         Returns
         -------
-        fig: matplotlib.Figure
-            return a Matplotlib figure instance.
+        fig: matplotlib.axes
+            matplotlib axes instance.
 
         """
         if not series:
@@ -269,8 +283,8 @@ class Plotting():
 
         Returns
         -------
-        fig: matplotlib.Figure
-            return a Matplotlib figure instance.
+        axes: matplotlib.axes
+            matplotlib axes instance.
 
         """
         if not series:
@@ -318,7 +332,7 @@ class Plotting():
         Returns
         -------
         axes: matplotlib.axes
-            matplotlib aes instance.
+            matplotlib axes instance.
 
         """
         stresses = []
