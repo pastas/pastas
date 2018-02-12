@@ -781,10 +781,13 @@ class Model:
         return parameters.values
 
     @get_stressmodel
-    def get_contribution(self, name, tmin=None, tmax=None, tindex=None):
+    def get_contribution(self, name, tmin=None, tmax=None, tindex=None, istress=None):
         p = self.get_parameters(name)
         dt = get_dt(self.settings["freq"])
-        contrib = self.stressmodels[name].simulate(p, tindex=tindex, dt=dt)
+        if istress is None:
+            contrib = self.stressmodels[name].simulate(p, tindex=tindex, dt=dt)
+        else:
+            contrib = self.stressmodels[name].simulate(p, tindex=tindex, dt=dt, istress=istress)
         return contrib.loc[tmin:tmax]
 
     @get_stressmodel

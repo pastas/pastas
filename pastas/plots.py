@@ -77,13 +77,13 @@ class Plotting():
         """
         fig = self._get_figure()
 
-        #Number of row to make the figure with
+        # Number of rows to make the figure with
         rows = 3 + len(self.ml.stressmodels)
 
         # Main frame
         ax1 = plt.subplot2grid((rows, 3), (0, 0), colspan=2, rowspan=2)
         o = self.ml.observations(tmin=tmin, tmax=tmax)
-        o.plot(ax=ax1, linestyle='',  marker='.', color='k', x_compat=True)
+        o.plot(ax=ax1, linestyle='', marker='.', color='k', x_compat=True)
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
         sim.plot(ax=ax1, x_compat=True)
         plt.legend(loc=(0, 1), ncol=3, frameon=False)
@@ -121,7 +121,7 @@ class Plotting():
         return fig.axes
 
     @model_tmin_tmax
-    def decomposition(self, tmin=None, tmax=None, ytick_base=True, **kwargs):
+    def decomposition(self, tmin=None, tmax=None, ytick_base=True, split=True, **kwargs):
         """Plot the decomposition of a time-series in the different stresses.
 
         """
@@ -129,21 +129,34 @@ class Plotting():
         hsim = self.ml.simulate(tmin=tmin, tmax=tmax)
         tindex = hsim.index
         h = [hsim]
+        names = ['']
 
         # determine the influence of the different stresses
         for name in self.ml.stressmodels.keys():
-            h.append(self.ml.get_contribution(name, tindex=tindex))
+            nstress = len(self.ml.stressmodels[name].stress)
+            if split and nstress > 1:
+                for istress in range(nstress):
+                    h.append(self.ml.get_contribution(name, tindex=tindex, istress=istress))
+                    names.append(name + ' ' + str(istress + 1))
+            else:
+                h.append(self.ml.get_contribution(name, tindex=tindex))
+                names.append(name)
 
-        # open the figure
-        height_ratios = [max([hsim.max(), self.ml.oseries.max()]) - min(
-            [hsim.min(), self.ml.oseries.min()])]
+        # determine ylim for every graph, to scale the height
+        ylims = [(min([hsim[tmin:tmax].min(), self.ml.oseries[tmin:tmax].min()]),
+                  max([hsim[tmin:tmax].max(), self.ml.oseries[tmin:tmax].max()]))]
         for ht in h[1:]:
-            hr = ht.max() - ht.min()
-            if np.isnan(hr):
-                hr = 0.0
-            height_ratios.append(hr)
-
-        fig, ax = plt.subplots(1 + len(self.ml.stressmodels), sharex=True,
+            hs = ht[tmin:tmax]
+            if hs.empty:
+                if ht.empty:
+                    ylims.append((0.0, 0.0))
+                else:
+                    ylims.append((ht.min(), hs.max()))
+            else:
+                ylims.append((hs.min(), hs.max()))
+        height_ratios = [0.0 if np.isnan(ylim[1] - ylim[0]) else ylim[1] - ylim[0] for ylim in ylims]
+        # open the figure
+        fig, ax = plt.subplots(len(h), sharex=True,
                                gridspec_kw={'height_ratios': height_ratios},
                                **kwargs)
         ax = np.atleast_1d(ax)
@@ -152,7 +165,7 @@ class Plotting():
         self.ml.oseries.plot(linestyle='', marker='.', color='k', markersize=3,
                              ax=ax[0], x_compat=True)
         hsim.plot(ax=ax[0], x_compat=True)
-        ax[0].autoscale(enable=True, axis='y', tight=True)
+        ax[0].set_ylim(ylims[0])
         ax[0].grid(which='both')
         ax[0].legend(loc=(0, 1), ncol=3, frameon=False)
 
@@ -168,16 +181,14 @@ class Plotting():
                 plticker.MultipleLocator(base=ytick_base))
 
         # plot the influence of the stresses
-        for i, name in enumerate(self.ml.stressmodels.keys(), start=1):
+        for i in range(1, len(h)):
             h[i].plot(ax=ax[i], x_compat=True)
-
             if ytick_base:
                 # set the ytick-spacing equal to the top graph
                 ax[i].yaxis.set_major_locator(
                     plticker.MultipleLocator(base=ytick_base))
-
-            ax[i].set_title(name)
-            ax[i].autoscale(enable=True, axis='y', tight=True)
+            ax[i].set_title(names[i])
+            ax[i].set_ylim(ylims[i])
             ax[i].grid(which='both')
             ax[i].minorticks_off()
 

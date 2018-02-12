@@ -356,7 +356,7 @@ class StressModel2(StressModelBase):
         self.parameters.loc[self.name + '_f'] = (-1.0, -2.0, 2.0, 1, self.name)
         self.nparam += 1
 
-    def simulate(self, p, tindex=None, dt=1):
+    def simulate(self, p, tindex=None, dt=1, istress = None):
         """Simulates the head contribution.
 
         Parameters
@@ -374,7 +374,7 @@ class StressModel2(StressModelBase):
         """
         b = self.rfunc.block(p[:-1], dt)
         self.npoints = self.stress[0].index.size
-        stress = self.get_stress(p=p)
+        stress = self.get_stress(p=p, istress=istress)
         h = pd.Series(fftconvolve(stress, b, 'full')[:self.npoints],
                       index=self.stress[0].index, name=self.name)
         if tindex is not None:
@@ -383,9 +383,14 @@ class StressModel2(StressModelBase):
         # h -= self.rfunc.gain(p) * stress.mean()
         return h
 
-    def get_stress(self, p=None, tindex=None):
+    def get_stress(self, p=None, tindex=None, istress=None):
         if p is not None:
-            stress = self.stress[0] + p[-1] * self.stress[1]
+            if istress == 0:
+                stress = self.stress[0]
+            elif istress == 1:
+                stress = p[-1] * self.stress[1]
+            else:
+                stress = self.stress[0] + p[-1] * self.stress[1]
 
             if tindex is not None:
                 return stress[tindex]
