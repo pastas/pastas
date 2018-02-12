@@ -152,6 +152,10 @@ class Plotting():
                 h.append(self.ml.get_contribution(name, tindex=tindex))
                 names.append(name)
 
+        if self.ml.transform:
+            h.append(self.ml.get_transform_contribution(hsim))
+            names.append(self.ml.transform.name)
+
         # determine ylim for every graph, to scale the height
         ylims = [(min([hsim[tmin:tmax].min(), self.ml.oseries[tmin:tmax].min()]),
                   max([hsim[tmin:tmax].max(), self.ml.oseries[tmin:tmax].max()]))]

@@ -62,9 +62,9 @@ class Model:
             columns=["initial", "name", "optimal", "pmin", "pmax", "vary",
                      "stderr"])
         self.stressmodels = OrderedDict()
-
-        self.noisemodel = None
         self.constant = None
+        self.transform = None
+        self.noisemodel = None
 
         if constant:
             constant = Constant(value=self.oseries.mean(), name="constant")
@@ -132,18 +132,6 @@ class Model:
             # Call these methods to set time offset
             self.set_time_offset()
 
-    def add_noisemodel(self, noisemodel):
-        """Adds a noise model to the time series Model.
-
-        Parameters
-        ----------
-        noisemodel: pastas.noisemodels.NoiseModelBase
-            Instance of NoiseModelBase
-
-        """
-        self.noisemodel = noisemodel
-        self.parameters = self.get_init_parameters()
-
     def add_constant(self, constant):
         """Adds a Constant to the time series Model.
 
@@ -154,6 +142,22 @@ class Model:
 
         """
         self.constant = constant
+        self.parameters = self.get_init_parameters()
+
+    def add_transform(self, transform):
+        self.transform = transform
+        self.parameters = self.get_init_parameters()
+
+    def add_noisemodel(self, noisemodel):
+        """Adds a noise model to the time series Model.
+
+        Parameters
+        ----------
+        noisemodel: pastas.noisemodels.NoiseModelBase
+            Instance of NoiseModelBase
+
+        """
+        self.noisemodel = noisemodel
         self.parameters = self.get_init_parameters()
 
     @get_stressmodel
@@ -255,7 +259,9 @@ class Model:
             istart += ts.nparam
         if self.constant:
             h = h + self.constant.simulate(parameters[istart])
-
+            istart += 1
+        if self.transform:
+            h = self.transform.simulate(h,parameters[istart:istart+self.transform.nparam])
         h.name = "Simulation"
         h.index.name = "Date"
         return h
@@ -740,6 +746,8 @@ class Model:
             parameters = parameters.append(ts.parameters)
         if self.constant:
             parameters = parameters.append(self.constant.parameters)
+        if self.transform:
+            parameters = parameters.append(self.transform.parameters)
         if self.noisemodel and noise:
             parameters = parameters.append(self.noisemodel.parameters)
 
@@ -789,6 +797,10 @@ class Model:
         else:
             contrib = self.stressmodels[name].simulate(p, tindex=tindex, dt=dt, istress=istress)
         return contrib.loc[tmin:tmax]
+
+    def get_transform_contribution(self, simulation):
+        p = self.get_parameters(self.transform.name)
+        return self.transform.simulate(simulation,p) - simulation
 
     @get_stressmodel
     def get_block_response(self, name):

@@ -35,6 +35,7 @@ class StressModelBase():
     """
 
     def __init__(self, rfunc, name, tmin, tmax, up, meanstress, cutoff):
+        assert meanstress >= 0, 'All stress-series should be positive (for parameter bounds)'
         self.rfunc = rfunc(up, meanstress, cutoff)
         self.parameters = pd.DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
@@ -765,8 +766,6 @@ class Constant(StressModelBase):
         self.set_init_parameters()
 
     def set_init_parameters(self):
-        self.parameters = pd.DataFrame(
-            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         self.parameters.loc['constant_d'] = (
             self.value, self.pmin, self.pmax, 1, self.name)
 
