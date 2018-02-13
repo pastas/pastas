@@ -770,24 +770,3 @@ class Constant(StressModelBase):
 
     def simulate(self, p=None):
         return p
-
-
-class Constant2(StressModelBase):
-    _name = "Constant2"
-    __doc__ = """A constant value that is added to the time series model.
-        Its value consists of the mean of the residuals (without the constant).
-        In this way, the mean of the residuals is always 0, and the constant does not has to be estimated by the solver.
-
-        Parameters
-        ----------
-        value : float, optional
-            Initial estimate of the parameter value. E.g. The minimum of the
-            observed series.
-
-        """
-
-    def __init__(self, name="constant"):
-        self.nparam = 0
-        self.value = 0.
-        StressModelBase.__init__(self, One, name, pd.Timestamp.min,
-                                 pd.Timestamp.max, 1, 0, 0)
