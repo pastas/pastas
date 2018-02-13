@@ -1,10 +1,11 @@
 """The stressmodels module contains all the transforms that can be added to the simulation of a model.
 
 """
-import pandas as pd
 import numpy as np
+import pandas as pd
 
-class NonLinTransform():
+
+class NonLinTransform:
     def __init__(self, parameters, pmin=np.nan, pmax=np.nan):
         self.nparam = len(parameters)
         self.pmin = pmin
@@ -16,7 +17,8 @@ class NonLinTransform():
         self.parameters = pd.DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         for i in range(self.nparam):
-            self.parameters.loc[self.name + str(i+1)] = (parameters[i], self.pmin, self.pmax, 1, self.name)
+            self.parameters.loc[self.name + str(i + 1)] = (
+            parameters[i], self.pmin, self.pmax, 1, self.name)
 
     def simulate(self, h, p):
         if self.nparam == 1:

@@ -261,7 +261,8 @@ class Model:
             h = h + self.constant.simulate(parameters[istart])
             istart += 1
         if self.transform:
-            h = self.transform.simulate(h, parameters[istart:istart + self.transform.nparam])
+            h = self.transform.simulate(h, parameters[
+                                           istart:istart + self.transform.nparam])
         h.name = "Simulation"
         h.index.name = "Date"
         return h
@@ -788,13 +789,15 @@ class Model:
         return parameters.values
 
     @get_stressmodel
-    def get_contribution(self, name, tmin=None, tmax=None, tindex=None, istress=None):
+    def get_contribution(self, name, tmin=None, tmax=None, tindex=None,
+                         istress=None):
         p = self.get_parameters(name)
         dt = get_dt(self.settings["freq"])
         if istress is None:
             contrib = self.stressmodels[name].simulate(p, tindex=tindex, dt=dt)
         else:
-            contrib = self.stressmodels[name].simulate(p, tindex=tindex, dt=dt, istress=istress)
+            contrib = self.stressmodels[name].simulate(p, tindex=tindex, dt=dt,
+                                                       istress=istress)
         return contrib.loc[tmin:tmax]
 
     def get_transform_contribution(self, simulation):

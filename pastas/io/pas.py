@@ -10,7 +10,9 @@ import json
 from collections import OrderedDict
 
 import pandas as pd
+
 import pastas as ps
+
 
 def load(fname):
     data = json.load(open(fname), object_hook=pastas_hook)
@@ -37,7 +39,7 @@ def pastas_hook(obj):
                 obj[key] = pd.read_json(value, typ='series', orient="split")
             except:
                 try:
-                     obj[key] = ps.TimeSeries(**value)
+                    obj[key] = ps.TimeSeries(**value)
                 except:
                     obj[key] = value
         elif key in ["time_offset"]:

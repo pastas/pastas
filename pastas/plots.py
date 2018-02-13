@@ -10,14 +10,14 @@ Examples
 import matplotlib.pyplot as plt
 import matplotlib.ticker as plticker
 import numpy as np
-import pastas as ps
 from scipy.stats import probplot
 
+import pastas as ps
 from .decorators import model_tmin_tmax
 from .utils import get_dt
 
 
-class Plotting():
+class Plotting:
     def __init__(self, ml):
         self.ml = ml  # Store a reference to the model class
 
@@ -120,16 +120,17 @@ class Plotting():
         return fig.axes
 
     @model_tmin_tmax
-    def decomposition(self, tmin=None, tmax=None, ytick_base=True, split=True, **kwargs):
+    def decomposition(self, tmin=None, tmax=None, ytick_base=True, split=True,
+                      **kwargs):
         """Plot the decomposition of a time-series in the different stresses.
-        
+
         Parameters
         ----------
         ytick_base: Boolean or float
             Make the ytick-base constant if True, set this base to float if float
-        **kwargs: 
+        **kwargs:
             Optional arguments for the subplots method
-            
+
         Returns
         -------
         axes: list of matplotlib.axes
@@ -146,7 +147,8 @@ class Plotting():
             nstress = len(self.ml.stressmodels[name].stress)
             if split and nstress > 1:
                 for istress in range(nstress):
-                    h.append(self.ml.get_contribution(name, tindex=tindex, istress=istress))
+                    h.append(self.ml.get_contribution(name, tindex=tindex,
+                                                      istress=istress))
                     names.append(name + ' ' + str(istress + 1))
             else:
                 h.append(self.ml.get_contribution(name, tindex=tindex))
@@ -157,8 +159,9 @@ class Plotting():
             names.append(self.ml.transform.name)
 
         # determine ylim for every graph, to scale the height
-        ylims = [(min([hsim[tmin:tmax].min(), self.ml.oseries[tmin:tmax].min()]),
-                  max([hsim[tmin:tmax].max(), self.ml.oseries[tmin:tmax].max()]))]
+        ylims = [
+            (min([hsim[tmin:tmax].min(), self.ml.oseries[tmin:tmax].min()]),
+             max([hsim[tmin:tmax].max(), self.ml.oseries[tmin:tmax].max()]))]
         for ht in h[1:]:
             hs = ht[tmin:tmax]
             if hs.empty:
@@ -168,9 +171,10 @@ class Plotting():
                     ylims.append((ht.min(), hs.max()))
             else:
                 ylims.append((hs.min(), hs.max()))
-        height_ratios = [0.0 if np.isnan(ylim[1] - ylim[0]) else ylim[1] - ylim[0] for ylim in ylims]
+        height_ratios = [
+            0.0 if np.isnan(ylim[1] - ylim[0]) else ylim[1] - ylim[0] for ylim
+            in ylims]
         # open the figure
-
 
         fig, ax = plt.subplots(len(h), sharex=True,
                                gridspec_kw={'height_ratios': height_ratios},

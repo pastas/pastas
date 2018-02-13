@@ -249,7 +249,7 @@ class LmfitSolve(BaseSolver):
         # set ftol and epsfcn if no options for lmfit are provided. Only
         # work with Lmfit's least squares solver method.
         if not kwargs:
-            kwargs = {"ftol": 1e-3, "epsfcn"  :1e-4}
+            kwargs = {"ftol": 1e-3, "epsfcn": 1e-4}
 
         self.fit = lmfit.minimize(fcn=self.objfunction, params=parameters,
                                   args=(tmin, tmax, noise, model, freq,

@@ -148,7 +148,7 @@ class NoiseModel(NoiseModelBase):
         """
         alpha = p[-1]
         # divide power by 2 as nu / sigma is returned
-        power = (1.0 / (2.0 * (delt[1:].size)))
+        power = (1.0 / (2.0 * delt[1:].size))
         w = np.exp(
             power * np.sum(np.log(1.0 - np.exp(-2.0 * delt[1:] / alpha)))) / \
             np.sqrt(1.0 - np.exp(-2.0 * delt[1:] / alpha))

@@ -10,6 +10,7 @@ from __future__ import print_function, division
 
 import numpy as np
 import pandas as pd
+
 from pastas.timeseries import TimeSeries
 
 
@@ -34,8 +35,9 @@ def read_dino(fname, variable='Stand_cm_tov_NAP', factor=0.01):
     ts = []
 
     if variable not in dino.data.keys():
-        raise (ValueError("variable %s is not in this dataset. Please use one of "
-                          "the following keys: %s" % (variable, dino.data.keys())))
+        raise (
+        ValueError("variable %s is not in this dataset. Please use one of "
+                   "the following keys: %s" % (variable, dino.data.keys())))
     series = dino.data[variable] * factor  # To make it meters)
     if len(dino.meta) > 0:
         metadata = dino.meta[-1]

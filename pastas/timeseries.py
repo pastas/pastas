@@ -12,6 +12,7 @@ from __future__ import print_function, division
 import logging
 
 import pandas as pd
+
 from pastas.utils import get_dt, get_time_offset, timestep_weighted_resample
 
 logger = logging.getLogger(__name__)
@@ -197,19 +198,18 @@ class TimeSeries(pd.Series):
             self.freq_original = self.settings["freq"]
             if self.freq_original is None:
                 logger.info(
-                    "Cannot determine frequency of series %s" % (self.name))
+                    "Cannot determine frequency of series %s" % self.name)
             elif self.settings["fill_nan"] and self.settings["fill_nan"] != \
                     "drop":
                 logger.warning("User-provided frequency is applied when "
                                "validating the Time Series %s. Make sure the "
                                "provided frequency is close to the real "
-                               "frequency of the original series." %
-                               (self.name))
+                               "frequency of the original series." % self.name)
 
         # 5. Handle duplicate indices
         if not series.index.is_unique:
             logger.warning("duplicate time-indexes were found in the Time "
-                           "Series %s. Values were averaged." % (self.name))
+                           "Series %s. Values were averaged." % self.name)
             grouped = series.groupby(level=0)
             series = grouped.mean()
 

@@ -45,7 +45,8 @@ def read_meny(fname, locations=None, type='H'):
         metadata = {}
         metadata['x'] = data[location]['xcoord']
         metadata['y'] = data[location]['ycoord']
-        metadata['z'] = np.mean((data[location]['upfiltlev'], data[location]['lowfiltlev']))
+        metadata['z'] = np.mean(
+            (data[location]['upfiltlev'], data[location]['lowfiltlev']))
         metadata['projection'] = 'epsg:28992'
         if type == 'H':
             kind = 'oseries'
@@ -62,7 +63,8 @@ def read_meny(fname, locations=None, type='H'):
                 kind = None
         if type == 'M':
             kind = None
-        ts.append(TimeSeries(data[location]['values'], name=location, metadata=metadata, kind=kind))
+        ts.append(TimeSeries(data[location]['values'], name=location,
+                             metadata=metadata, kind=kind))
     if len(ts) == 1:
         ts = ts[0]
     return ts
@@ -100,7 +102,7 @@ class MenyData:
             self.M = dict()
             self.read_m(mat)
 
-        del (mat)  # Delete the mat file from memory again
+        del mat  # Delete the mat file from memory again
 
     def read_file(self, fname):
         """This method is used to read the file.

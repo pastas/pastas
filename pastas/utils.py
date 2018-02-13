@@ -3,10 +3,21 @@ import pandas as pd
 
 
 def get_dt(freq):
+    """Method to obtain a timestep from a frequency string.
+
+    Parameters
+    ----------
+    freq: str
+
+    Returns
+    -------
+    dt: float
+
+    """
     # method to calculate the timestep in days from the frequency string freq
-    options = {'MS': 30, # monthly frequency (month-start), used just for
+    options = {'MS': 30,  # monthly frequency (month-start), used just for
                # comparison
-               'M': 30, # monthly frequency (month-end), used just for
+               'M': 30,  # monthly frequency (month-end), used just for
                # comparison
                'W': 7,  # weekly frequency
                'D': 1,  # calendar day frequency
