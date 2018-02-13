@@ -49,7 +49,8 @@ class RfuncBase:
         pass
 
     def block(self, p, dt=1):
-        pass
+        s = self.step(p, dt)
+        return np.append(s[0], s[1:] - s[:-1])
 
 
 class Gamma(RfuncBase):
@@ -74,8 +75,8 @@ class Gamma(RfuncBase):
             parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
                                            100 / self.meanstress, 1, name)
         else:
-            parameters.loc[name + '_A'] = (-1 / self.meanstress, -100 / self.meanstress,
-                                           0, 1, name)
+            parameters.loc[name + '_A'] = (-1 / self.meanstress,
+                                           -100 / self.meanstress, 0, 1, name)
         # if n is too small, the length of the response function is close to zero
         parameters.loc[name + '_n'] = (1, 0.1, 10, 1, name)
         parameters.loc[name + '_a'] = (10, 0.01, 5000, 1, name)
@@ -91,16 +92,11 @@ class Gamma(RfuncBase):
         if isinstance(dt, np.ndarray):
             t = dt
         else:
-            self.tmax = self.calc_tmax(p)
-            self.tmax = max(self.tmax, 3 * dt)
+            self.tmax = max(self.calc_tmax(p), 3 * dt)
             t = np.arange(dt, self.tmax, dt)
 
         s = p[0] * gammainc(p[1], t / p[2])
         return s
-
-    def block(self, p, dt=1):
-        s = self.step(p, dt)
-        return np.append(s[0], s[1:] - s[:-1])
 
 
 class Exponential(RfuncBase):
@@ -140,15 +136,10 @@ class Exponential(RfuncBase):
         if isinstance(dt, np.ndarray):
             t = dt
         else:
-            self.tmax = self.calc_tmax(p)
-            self.tmax = max(self.tmax, 3 * dt)
+            self.tmax = max(self.calc_tmax(p), 3 * dt)
             t = np.arange(dt, self.tmax, dt)
         s = p[0] * (1.0 - np.exp(-t / p[1]))
         return s
-
-    def block(self, p, dt=1):
-        s = self.step(p, dt)
-        return np.append(s[0], s[1:] - s[:-1])
 
 
 class Hantush(RfuncBase):
@@ -204,8 +195,7 @@ class Hantush(RfuncBase):
         if isinstance(dt, np.ndarray):
             t = dt
         else:
-            self.tmax = self.calc_tmax(p)
-            self.tmax = max(self.tmax, 3 * dt)
+            self.tmax = max(self.calc_tmax(p), 3 * dt)
             t = np.arange(dt, self.tmax, dt)
         tau = t / cS
         tau1 = tau[tau < rho / 2]
@@ -217,10 +207,6 @@ class Hantush(RfuncBase):
         F[tau >= rho / 2] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(
             tau2 + rho ** 2 / (4 * tau2))
         return p[0] * F / (2 * k0rho)
-
-    def block(self, p, dt=1):
-        s = self.step(p, dt)
-        return np.append(s[0], s[1:] - s[:-1])
 
 
 class Theis(RfuncBase):
@@ -257,21 +243,20 @@ class Theis(RfuncBase):
     def gain(self, p):
         return self.up * np.inf
 
+    def calc_tmax(self, p):
+        # This should be changed with some analytical expression
+        return 10000
+
     def step(self, p, dt=1):
         if isinstance(dt, np.ndarray):
             t = dt
         else:
-            self.tmax = 10000  # This should be changed with some analytical expression
-            self.tmax = max(self.tmax, 3 * dt)
+            self.tmax = max(self.calc_tmax(p), 3 * dt)
             t = np.arange(dt, self.tmax, dt)
         r = p[2]
         u = r ** 2.0 * p[0] / (4.0 * p[1] * t)
         s = self.up * exp1(u)
         return s
-
-    def block(self, p, dt=1):
-        s = self.step(p, dt)
-        return np.append(s[0], s[1:] - s[:-1])
 
 
 class Bruggeman(RfuncBase):
@@ -316,8 +301,7 @@ class Bruggeman(RfuncBase):
         if isinstance(dt, np.ndarray):
             t = dt
         else:
-            self.tmax = self.calc_tmax(p)
-            self.tmax = max(self.tmax, 3 * dt)
+            self.tmax = max(self.calc_tmax(p), 3 * dt)
             t = np.arange(dt, self.tmax, dt)
         s = p[2] * self.polder_function(p[0], p[1] * np.sqrt(t))
         return s
@@ -326,10 +310,6 @@ class Bruggeman(RfuncBase):
         s = .5 * np.exp(2 * x) * erfc(x / y + y) + \
             .5 * np.exp(-2 * x) * erfc(x / y - y)
         return s
-
-    def block(self, p, dt=1):
-        s = self.step(p, dt)
-        return np.append(s[0], s[1:] - s[:-1])
 
 
 class One(RfuncBase):
