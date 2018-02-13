@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 all = ["StressModel", "StressModel2", "Constant"]
 
 
-class StressModelBase():
+class StressModelBase:
     _name = "StressModelBase"
     __doc__ = """StressModel Base class called by each StressModel object.
 
@@ -44,7 +44,7 @@ class StressModelBase():
         self.tmin = tmin
         self.tmax = tmax
         self.freq = None
-        self.stress = list()
+        self.stress = []
 
     def set_init_parameters(self):
         """Set the initial parameters (back) to their default values.
@@ -133,7 +133,7 @@ class StressModelBase():
             dictionary with strings
 
         """
-        data = list()
+        data = []
 
         if isinstance(stress, pd.Series):
             data.append(TimeSeries(stress, kind, settings))
@@ -174,7 +174,7 @@ class StressModelBase():
 
         return data
 
-    def get_stress(self, p=None, tindex=None):
+    def get_stress(self, p=None):
         """Returns the stress or stresses of the time series object as a pandas
         DataFrame.
 
@@ -187,10 +187,7 @@ class StressModelBase():
             Pandas dataframe of the stress(es)
 
         """
-        if tindex is not None:
-            return self.stress[tindex]
-        else:
-            return self.stress
+        return self.stress
 
     def dump(self, series=True):
         data = dict()
@@ -384,21 +381,13 @@ class StressModel2(StressModelBase):
         # h -= self.rfunc.gain(p) * stress.mean()
         return h
 
-    def get_stress(self, p=None, tindex=None, istress=None):
-        if p is not None:
-            if istress == 0:
-                stress = self.stress[0]
-            elif istress == 1:
-                stress = p[-1] * self.stress[1]
-            else:
-                stress = self.stress[0] + p[-1] * self.stress[1]
-
-            if tindex is not None:
-                return stress[tindex]
-            else:
-                return stress
+    def get_stress(self, p=None, istress=None):
+        if istress is None:
+            return self.stress[0] + p[-1] * self.stress[1]
+        elif istress == 0:
+            return self.stress[0]
         else:
-            logger.warning("parameter to calculate the stress is unknown")
+            return p[-1] * self.stress[1]
 
     def dump(self, series=True):
         """Method to export the StressModel object.
@@ -537,68 +526,6 @@ class Recharge(StressModelBase):
                 return stress
         else:
             logger.warning("parameter to calculate the stress is unknown")
-
-
-class WellModel(StressModelBase):
-    _name = "WellModel"
-    __doc__ = """Time series model consisting of the convolution of one or more
-    stresses
-    with one response function.
-
-    Parameters
-    ----------
-    stress: pandas.DataFrame
-        Pandas DataFrame object containing the stresses.
-    rfunc: rfunc class
-        Response function used in the convolution with the stresses.
-    name: str
-        Name of the stress
-
-    Notes
-    -----
-    This class implements convolution of multiple series with a the same
-    response function. This is often applied when dealing with multiple
-    wells in a time series model.
-
-    """
-
-    def __init__(self, stress, rfunc, name, radius, up=True, cutoff=0.99,
-                 kind="well", settings=None):
-        # Check if number of stresses and radii match
-        if len(stress.keys()) != len(radius) and radius:
-            logger.warning("The number of stresses applied does not match the "
-                           "number of radii provided.")
-        else:
-            self.r = radius
-
-        # Check stresses
-        if isinstance(stress, pd.Series):
-            stress = [stress]
-
-        StressModelBase.__init__(self, rfunc, name, self.stress.index.min(),
-                                 self.stress.index.max(), up,
-                                 self.stress.mean(),
-                                 cutoff)
-
-        for i, well in enumerate(stress):
-            self.stress[name + str(i)] = TimeSeries(well, name=name, kind=kind,
-                                                    settings=settings)
-
-        self.freq = self.stress[name + "0"].settings["freq"]
-        self.set_init_parameters()
-
-    def set_init_parameters(self):
-        self.parameters = self.rfunc.set_parameters(self.name)
-
-    def simulate(self, p=None, tindex=None, dt=1):
-        h = pd.Series(data=0, index=self.stress[0].index, name=self.name)
-        for i in self.stress:
-            self.npoints = self.stress.index.size
-            b = self.rfunc.block(p, self.r[i])  # nparam-1 depending on rfunc
-            h += fftconvolve(self.stress[i], b, 'full')[:self.npoints]
-        if tindex is not None:
-            h = h[tindex]
-        return h
 
 
 class StepModel(StressModelBase):
@@ -770,3 +697,85 @@ class Constant(StressModelBase):
 
     def simulate(self, p=None):
         return p
+
+
+class WellModel(StressModelBase):
+    _name = "WellModel"
+    __doc__ = """Time series model consisting of the convolution of one or more
+    stresses with one response function. The distance from an influence to 
+    the location of the oseries has to be provided for each 
+
+    Parameters
+    ----------
+    stress: pandas.DataFrame
+        Pandas DataFrame object containing the stresses.
+    rfunc: rfunc class
+        Response function used in the convolution with the stresses.
+    name: str
+        Name of the stress
+
+    Notes
+    -----
+    This class implements convolution of multiple series with a the same
+    response function. This is often applied when dealing with multiple
+    wells in a time series model.
+
+    """
+
+    def __init__(self, stress, rfunc, name, radius, up=False, cutoff=0.99,
+                 kind="well", settings=None):
+
+        meanstress = 1.0  # ? this should be something logical
+
+        tmin = pd.Timestamp.max
+        tmax = pd.Timestamp.min
+
+        StressModelBase.__init__(self, rfunc, name, tmin, tmax,
+                                 up, meanstress, cutoff)
+
+        if settings is None:
+            settings = len(stress) * [None]
+
+        self.stress = self.handle_stress(stress, kind, settings)
+
+        # Check if number of stresses and radii match
+        if len(self.stress) != len(radius) and radius:
+            logger.error("The number of stresses applied does not match the "
+                         "number of radii provided.")
+        else:
+            self.radius = radius
+
+        self.freq = self.stress[0].settings["freq"]
+
+        self.set_init_parameters()
+
+    def set_init_parameters(self):
+        self.parameters = self.rfunc.set_parameters(self.name)
+
+    def simulate(self, p=None, tindex=None, dt=1, istress=None):
+        h = pd.Series(data=0, index=self.stress[0].index, name=self.name)
+        stresses = self.get_stress(istress=istress)
+        radii = self.get_radii(irad=istress)
+        for stress, radius in zip(stresses, radii):
+            npoints = stress.index.size
+            # TODO Make response function that take the radius as input
+            # b = self.rfunc.block(p, dt=dt, radius=radius)
+            b = self.rfunc.block(p, dt)
+            c = fftconvolve(stress, b, 'full')[:npoints]
+            h = h.add(pd.Series(c, index=stress.index), fill_value=0.0)
+
+        if tindex is not None:
+            h = h[tindex]
+        return h
+
+    def get_stress(self, p=None, istress=None):
+        if istress is None:
+            return self.stress
+        else:
+            return [self.stress[istress]]
+
+    def get_radii(self, irad=None):
+        if irad is None:
+            return self.radius
+        else:
+            return [self.radius[irad]]
