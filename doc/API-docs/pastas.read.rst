@@ -9,6 +9,7 @@ Submodules
    pastas.read.dinoloket
    pastas.read.knmi
    pastas.read.menyanthes
+   pastas.read.waterbase
 
 Module contents
 ---------------

@@ -25,6 +25,7 @@ Submodules
    pastas.stats
    pastas.stressmodels
    pastas.timeseries
+   pastas.transform
    pastas.utils
    pastas.version
 

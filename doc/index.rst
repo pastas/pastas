@@ -14,7 +14,7 @@ optimization, visualisation, and statistical analysis tools.
     :hidden:
 
     Getting Started <getting-started>
-	Concept of Pastas <concepts>
+	Concepts of Pastas <concepts>
 	Examples <examples>
     Developers <developers>
     API-Docs <modules>

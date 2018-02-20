@@ -1,6 +1,6 @@
-=================
-Concept of PASTAS
-=================
+==================
+Concepts of PASTAS
+==================
 A time-series model consists of one or more StressModels which together with a Constant and a NoiseModel form the simulation.
 Most StressModels use a response-function, from the rfunc-module, that transform the stress in its contribution in the simulation.
 Examples of response-functions are Gamma, Exponential or One (which is used for the Constant).

@@ -58,3 +58,9 @@ Other optional dependencies include:
 
 * requests (For downloading KNMI data from the web)
 
+Using PASTAS
+------------
+To start using PASTAS, open your python GUI (Spyder, PyCharm or any other) to edit
+and run a script, or start typing in the Python console. See the :ref:`Examples`-section
+for some example-code.
+
