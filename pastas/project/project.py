@@ -36,15 +36,10 @@ class Project:
         self.data = pd.DataFrame()
 
         # DataFrames to store the data of the oseries and stresses
-        self.stresses = pd.DataFrame(index=[],
-                                     columns=["name", "series", "kind", "x",
+        self.stresses = pd.DataFrame(columns=["name", "series", "kind", "x",
                                               "y", "z"])
-        self.oseries = pd.DataFrame(index=[],
-                                    columns=["name", "series", "kind", "x",
+        self.oseries = pd.DataFrame(columns=["name", "series", "kind", "x",
                                              "y", "z"])
-
-        self.distances = pd.DataFrame(index=self.oseries.index,
-                                      columns=self.stresses.index)
 
         # Project metadata and file information
         self.metadata = self.get_metadata(metadata)
@@ -91,14 +86,14 @@ class Project:
         else:
             data = self.stresses
 
-        data.set_value(name, "name", name)
-        data.set_value(name, "series", ts)
-        data.set_value(name, "kind", kind)
+        data.at[name, "name"] = name
+        data.at[name, "series"] = ts # Do not add as first!
+        data.at[name, "kind"] = kind
 
         # Transfer x, y and z to dataframe as well to increase speed.
         for i in ["x", "y", "z"]:
             value = ts.metadata[i]
-            data.loc[name, i] = value
+            data.at[name, i] = value
 
     def del_oseries(self, oseries):
         """Method that removes oseries from the project.
