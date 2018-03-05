@@ -706,18 +706,6 @@ class Model:
         for ts in self.stressmodels.values():
             ts.update_stress(freq=freq, tmin=tmin, tmax=tmax, **kwargs)
 
-    def update_parameters(self, parameters):
-        """internal method to add parameters while maintaining the original
-        parameters dataframe.
-
-        Returns
-        -------
-
-        """
-        self.parameters = self.parameters.append(parameters)
-
-        pass
-
     def get_init_parameters(self, noise=True, initial=True):
         """Method to get all initial parameters from the individual objects.
 
@@ -738,7 +726,7 @@ class Model:
 
         # Store optimized values in case they are needed
         if not initial:
-            paramold = self.parameters
+            paramold = self.parameters.optimal
 
         parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary',
                                            'optimal', 'name', 'stderr'])
@@ -753,7 +741,7 @@ class Model:
 
         # Set initial parameters to optimal parameters
         if not initial:
-            parameters.loc[paramold.index, 'initial'] = paramold.optimal
+            parameters.loc[paramold.index, 'initial'] = paramold
 
         return parameters
 
