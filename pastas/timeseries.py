@@ -39,7 +39,7 @@ class TimeSeries(pd.Series):
         "evap": {"freq": None, "sample_up": "interpolate",
                  "sample_down": "mean", "fill_nan": "interpolate",
                  "fill_before": "mean", "fill_after": "mean"},
-        "well": {"freq": None, "sample_up": "bfill", "sample_down": "mean",
+        "well": {"freq": None, "sample_up": "divide", "sample_down": "sum",
                  "fill_nan": 0.0, "fill_before": 0.0, "fill_after": 0.0},
         "waterlevel": {"freq": None, "sample_up": "interpolate",
                        "sample_down": "mean", "fill_nan": "interpolate",
@@ -315,12 +315,18 @@ class TimeSeries(pd.Series):
         elif method is None:
             pass
         else:
-            series = series.asfreq(freq)
             if method == "mean":  # when would you ever want this?
+                series = series.asfreq(freq)
                 series.fillna(series.mean(), inplace=True)  # Default option
             elif method == "interpolate":
+                series = series.asfreq(freq)
                 series.interpolate(method="time", inplace=True)
+            elif method == "divide":
+                dt = series.index.to_series().diff() / pd.Timedelta(1, freq)
+                series = series.iloc[1:] / dt.iloc[1:]
+                series = series.asfreq(freq, method="bfill")
             elif isinstance(method, float):
+                series = series.asfreq(freq)
                 series.fillna(method, inplace=True)
             else:
                 logger.warning("User-defined option for sample_up %s is not "
