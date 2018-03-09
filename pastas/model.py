@@ -920,6 +920,13 @@ class Model:
 
         parameters = self.parameters.loc[:,
                      ["optimal", "stderr", "initial", "vary"]]
+
+        for name, vals in parameters.loc[:, ["optimal", "stderr"]].iterrows():
+            popt, stderr = vals
+            val = np.abs(stderr / popt * 100)
+            parameters.loc[name, "stderr"] = \
+            "{:} {:.5e} ({:.2f}{:})".format("\u00B1",stderr,  val,"\u0025")
+
         n_param = parameters.vary.sum()
 
         w = ["Standard Errors assume that the covariance matrix of the errors "
