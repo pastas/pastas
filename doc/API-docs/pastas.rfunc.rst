@@ -1,5 +1,5 @@
-pastas\.rfunc module
-====================
+pastas.rfunc module
+===================
 
 .. automodule:: pastas.rfunc
     :members:

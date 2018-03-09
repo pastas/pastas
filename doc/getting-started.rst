@@ -34,6 +34,12 @@ using Anaconda is to install a package with the follow command line::
 
   conda install package
 
+Using PASTAS
+------------
+To start using PASTAS, open your python GUI (Spyder, PyCharm or any other) to edit
+and run a script, or start typing in the IPython console (bottom right in Spyder). See the :ref:`Examples`-section
+for some example-code.
+  
 Updating PASTAS
 ---------------
 If you have already installed |Project|, it is possible to update |Project|
@@ -57,10 +63,4 @@ following packages are necessary for a minimal function installation of
 Other optional dependencies include:
 
 * requests (For downloading KNMI data from the web)
-
-Using PASTAS
-------------
-To start using PASTAS, open your python GUI (Spyder, PyCharm or any other) to edit
-and run a script, or start typing in the Python console. See the :ref:`Examples`-section
-for some example-code.
 

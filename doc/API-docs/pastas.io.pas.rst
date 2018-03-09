@@ -1,5 +1,5 @@
-pastas\.io\.pas module
-======================
+pastas.io.pas module
+====================
 
 .. automodule:: pastas.io.pas
     :members:

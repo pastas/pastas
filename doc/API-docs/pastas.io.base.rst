@@ -1,5 +1,5 @@
-pastas\.io\.base module
-=======================
+pastas.io.base module
+=====================
 
 .. automodule:: pastas.io.base
     :members:

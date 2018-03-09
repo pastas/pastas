@@ -1,5 +1,5 @@
-pastas\.recharge package
-========================
+pastas.recharge package
+=======================
 
 Submodules
 ----------

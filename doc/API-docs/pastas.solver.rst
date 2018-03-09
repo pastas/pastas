@@ -1,5 +1,5 @@
-pastas\.solver module
-=====================
+pastas.solver module
+====================
 
 .. automodule:: pastas.solver
     :members:

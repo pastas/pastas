@@ -1,5 +1,5 @@
-pastas\.transform module
-========================
+pastas.transform module
+=======================
 
 .. automodule:: pastas.transform
     :members:

@@ -1,5 +1,5 @@
-pastas\.project package
-=======================
+pastas.project package
+======================
 
 Submodules
 ----------

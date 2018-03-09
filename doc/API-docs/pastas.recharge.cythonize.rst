@@ -1,5 +1,5 @@
-pastas\.recharge\.cythonize module
-==================================
+pastas.recharge.cythonize module
+================================
 
 .. automodule:: pastas.recharge.cythonize
     :members:

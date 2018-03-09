@@ -1,5 +1,5 @@
-pastas\.read\.menyanthes module
-===============================
+pastas.read.menyanthes module
+=============================
 
 .. automodule:: pastas.read.menyanthes
     :members:

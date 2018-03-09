@@ -1,5 +1,5 @@
-pastas\.recharge\.recharge module
-=================================
+pastas.recharge.recharge module
+===============================
 
 .. automodule:: pastas.recharge.recharge
     :members:

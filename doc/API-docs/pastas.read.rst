@@ -1,5 +1,5 @@
-pastas\.read package
-====================
+pastas.read package
+===================
 
 Submodules
 ----------

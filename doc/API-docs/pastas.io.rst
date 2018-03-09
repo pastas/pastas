@@ -1,5 +1,5 @@
-pastas\.io package
-==================
+pastas.io package
+=================
 
 Submodules
 ----------

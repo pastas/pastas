@@ -31,9 +31,7 @@ Documentation is provided on a dedicated website: http://pastas.readthedocs.io/
 
 Examples
 ~~~~~~~~
-Examples can be found on the `examples directory on the documentation website <http://pastas.github.io/pastas/examples.html>`_.
-All examples are provided in the `examples directory on GitHub <http://pastas.readthedocs.io/en/dev/examples.html>`_.
-These include Python scripts and Jupyter Notebooks.
+Examples can be found on the `examples directory on the documentation website <http://pastas.readthedocs.io/en/dev/examples.html>`_.
 
 Quick installation guide
 ~~~~~~~~~~~~~~~~~~~~~~~~

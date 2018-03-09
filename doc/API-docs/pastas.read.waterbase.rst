@@ -1,5 +1,5 @@
-pastas\.read\.waterbase module
-==============================
+pastas.read.waterbase module
+============================
 
 .. automodule:: pastas.read.waterbase
     :members:
