@@ -11,7 +11,7 @@ from __future__ import print_function, division
 import numpy as np
 import pandas as pd
 
-from pastas.timeseries import TimeSeries
+from ..timeseries import TimeSeries
 
 
 def read_dino(fname, variable='Stand_cm_tov_NAP', factor=0.01):

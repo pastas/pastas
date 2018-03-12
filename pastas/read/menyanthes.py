@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 import scipy.io as sio
 
-from pastas.timeseries import TimeSeries
+from ..timeseries import TimeSeries
 
 
 def read_meny(fname, locations=None, type='H'):

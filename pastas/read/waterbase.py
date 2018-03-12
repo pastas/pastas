@@ -8,7 +8,7 @@ Author: R.A. Collenteur, Artesia Water 2017
 
 import pandas as pd
 
-from pastas.timeseries import TimeSeries
+from ..timeseries import TimeSeries
 
 
 def read_waterbase(fname, locations=None, variable="NUMERIEKEWAARDE",

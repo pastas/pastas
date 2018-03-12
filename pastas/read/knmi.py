@@ -25,7 +25,7 @@ from datetime import date
 
 import pandas as pd
 
-from pastas.timeseries import TimeSeries
+from ..timeseries import TimeSeries
 
 
 def read_knmi(fname, variables='RD'):
