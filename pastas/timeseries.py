@@ -31,19 +31,21 @@ class TimeSeries(pd.Series):
     # this would only keep "sample_up": "bfill" and "sample_up": "interpolate"
     # and we should implement a new sample_up method for when the series is a quantity
     _kind_settings = {
-        "oseries": {"freq": None, "sample_up": None, "sample_down": None,
-                    "fill_nan": "drop", "fill_before": None,
-                    "fill_after": None},
-        "prec": {"freq": None, "sample_up": "bfill", "sample_down": "mean",
+        "oseries": {"fill_nan": "drop"},
+        "prec": {"sample_up": "bfill", "sample_down": "mean",
                  "fill_nan": 0.0, "fill_before": "mean", "fill_after": "mean"},
-        "evap": {"freq": None, "sample_up": "interpolate",
-                 "sample_down": "mean", "fill_nan": "interpolate",
+        "evap": {"sample_up": "interpolate", "sample_down": "mean",
                  "fill_before": "mean", "fill_after": "mean"},
-        "well": {"freq": None, "sample_up": "divide", "sample_down": "sum",
+        "well": {"sample_up": "divide", "sample_down": "sum",
                  "fill_nan": 0.0, "fill_before": 0.0, "fill_after": 0.0},
-        "waterlevel": {"freq": None, "sample_up": "interpolate",
-                       "sample_down": "mean", "fill_nan": "interpolate",
+        "waterlevel": {"sample_up": "interpolate", "sample_down": "mean",
                        "fill_before": "mean", "fill_after": "mean"},
+        "level": {"sample_up": "interpolate", "sample_down": "mean",
+                  "fill_before": "mean", "fill_after": "mean"},
+        "flux": {"sample_up": "bfill", "sample_down": "mean",
+                  "fill_before": "mean", "fill_after": "mean"},
+        "quantity": {"sample_up": "divide", "sample_down": "sum",
+                  "fill_before": "mean", "fill_after": "mean"},
     }
 
     def __init__(self, series, name=None, kind=None, settings=None,
