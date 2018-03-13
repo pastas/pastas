@@ -5,6 +5,7 @@ import logging
 import logging.config
 import os
 from collections import OrderedDict
+import copy
 
 import numpy as np
 import pandas as pd
@@ -189,6 +190,14 @@ class Model:
             self.parameters = self.parameters.ix[self.parameters.name !=
                                                  self.constant.name]
             self.constant = None
+
+    def del_transform(self):
+        if self.transform is None:
+            self.logger.warning("No transform is present in this model.")
+        else:
+            self.parameters = self.parameters.ix[self.parameters.name !=
+                                                 self.transform.name]
+            self.transform = None
 
     def del_noisemodel(self):
         """Save deletion of the noisemodel from the Model.
@@ -788,9 +797,13 @@ class Model:
                                                        istress=istress)
         return contrib.loc[tmin:tmax]
 
-    def get_transform_contribution(self, simulation):
-        p = self.get_parameters(self.transform.name)
-        return self.transform.simulate(simulation, p) - simulation
+    def get_transform_contribution(self, tmin=None, tmax=None):
+        sim = self.simulate(tmin=tmin, tmax=tmax)
+        # calculate what the simulation without the transform is
+        ml = copy.copy(self)
+        ml.del_transform()
+        sim_org = ml.simulate(tmin=tmin, tmax=tmax)
+        return sim - sim_org
 
     @get_stressmodel
     def get_block_response(self, name):
@@ -1013,7 +1026,7 @@ Parameters (%s were optimized)
         data["name"] = self.name
         data["oseries"] = self.oseries.dump(series=series)
 
-        # stressmodels
+        # Stressmodels
         data["stressmodels"] = dict()
         for name, ts in self.stressmodels.items():
             data["stressmodels"][name] = ts.dump(series=series)
@@ -1021,6 +1034,12 @@ Parameters (%s were optimized)
         # Constant
         if self.constant:
             data["constant"] = True
+
+        # Transform
+        if self.transform:
+            data["transform"] = self.transform.dump()
+
+        # Noisemodel
         if self.noisemodel:
             data["noisemodel"] = self.noisemodel.dump()
 

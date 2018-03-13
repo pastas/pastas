@@ -155,7 +155,7 @@ class Plotting:
                 names.append(name)
 
         if self.ml.transform:
-            h.append(self.ml.get_transform_contribution(hsim))
+            h.append(self.ml.get_transform_contribution(tmin=tmin, tmax=tmax))
             names.append(self.ml.transform.name)
 
         # determine ylim for every graph, to scale the height

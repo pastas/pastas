@@ -130,6 +130,13 @@ def load_model(data):
         stressmodel = stressmodel(**ts)
         ml.add_stressmodel(stressmodel)
 
+    # Add transform
+    if "transform" in data.keys():
+        transform = getattr(ps.transform, data["transform"]["transform"])
+        data["transform"].pop("transform")
+        transform = transform(**data["transform"])
+        ml.add_transform(transform)
+
     # Add noisemodel if present
     if "noisemodel" in data.keys():
         n = getattr(ps.noisemodels, data["noisemodel"]["type"])()
