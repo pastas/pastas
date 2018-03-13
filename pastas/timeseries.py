@@ -43,13 +43,13 @@ class TimeSeries(pd.Series):
         "level": {"sample_up": "interpolate", "sample_down": "mean",
                   "fill_before": "mean", "fill_after": "mean"},
         "flux": {"sample_up": "bfill", "sample_down": "mean",
-                  "fill_before": "mean", "fill_after": "mean"},
+                 "fill_before": "mean", "fill_after": "mean"},
         "quantity": {"sample_up": "divide", "sample_down": "sum",
-                  "fill_before": "mean", "fill_after": "mean"},
+                     "fill_before": "mean", "fill_after": "mean"},
     }
 
-    def __init__(self, series, name=None, kind=None, settings=None,
-                 metadata=None, freq_original=None, **kwargs):
+    def __init__(self, series, name=None, settings=None, metadata=None,
+                 freq_original=None, **kwargs):
         """Class that supports user-provided time series within PASTAS.
 
         Parameters
@@ -58,10 +58,6 @@ class TimeSeries(pd.Series):
             original series, which will be stored.
         name: str
             string with the name for this series.
-        kind: str
-            string with the kind of the series, to autocomplete the
-            following keywords. The user can choose from: oseries, evap,
-            prec, well.
         freq: str
             String containing the desired frequency. The required string format
              is found at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
@@ -74,9 +70,14 @@ class TimeSeries(pd.Series):
             method
         fill_before
         fill_after
+        settings: optional: str or dict
+            string with the kind of the series, to autocomplete the
+            following keywords. The user can choose from: oseries, evap,
+            prec, well.
 
         """
         pd.Series.__init__(self)
+
         self.index.name = "Date"
         if isinstance(series, TimeSeries):
             self.series_original = series.series_original.copy()
@@ -88,14 +89,6 @@ class TimeSeries(pd.Series):
 
             validate = False
             update = False
-
-            if kind is None:
-                kind = series.kind
-            # In the strange case somebody changes the kind after creation..
-            elif kind is not series.kind:
-                validate = True
-                update = True
-                series = series.series_original.copy()
 
             if settings is None:
                 settings = self.settings.copy()
@@ -129,16 +122,29 @@ class TimeSeries(pd.Series):
         self.name = name
         self.series_original.name = name
         # Options when creating the series
-        self.kind = kind
 
         if metadata:
             self.metadata.update(metadata)
 
+        # kind argument will be deprecated in version 0.9.6
+        kind = kwargs.pop("kind", None)
+        if kind:
+            logger.warning("Deprecation error: the kind argument will be "
+                           "deprecated in Pastas 0.9.6. Please provide "
+                           "a string to the settings argument.")
+            if kind in self._kind_settings.keys():
+                if self.update_settings(**self._kind_settings[kind]):
+                    update = True
+
         # Update the options with user-provided values, if any.
-        if kind in self._kind_settings.keys():
-            if self.update_settings(**self._kind_settings[kind]):
-                update = True
         if settings:
+            if isinstance(settings, str):
+                if settings in self._kind_settings.keys():
+                    settings = self._kind_settings[settings]
+                else:
+                    logger.error("Settings shortcut code %s is not in the "
+                                 "predefined settings options. Please choose "
+                                 "from %s", self._kind_settings.keys())
             if self.update_settings(**settings):
                 update = True
         if kwargs:
@@ -550,7 +556,6 @@ class TimeSeries(pd.Series):
             data["series"] = self.series_original
 
         data["name"] = self.name
-        data["kind"] = self.kind
         data["settings"] = self.settings
         data["metadata"] = self.metadata
         data["freq_original"] = self.freq_original

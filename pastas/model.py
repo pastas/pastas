@@ -53,7 +53,7 @@ class Model:
         self.logger = self.get_logger(log_level=log_level)
 
         # Construct the different model components
-        self.oseries = TimeSeries(oseries, kind="oseries")
+        self.oseries = TimeSeries(oseries, settings="oseries")
         self.odelt = self.oseries.index.to_series().diff() / \
                      pd.Timedelta(1, "D")
         self.name = name
