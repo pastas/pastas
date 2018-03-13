@@ -51,7 +51,7 @@ def read_dino(fname, variable='Stand_cm_tov_NAP', factor=0.01):
 
     ts.append(TimeSeries(series,
                          name=dino.locatie + '_' + str(dino.filternummer),
-                         metadata=metadata, kind='oseries'))
+                         metadata=metadata, settings='oseries'))
     if len(ts) == 1:
         ts = ts[0]
     return ts

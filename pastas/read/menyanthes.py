@@ -64,7 +64,7 @@ def read_meny(fname, locations=None, type='H'):
         if type == 'M':
             kind = None
         ts.append(TimeSeries(data[location]['values'], name=location,
-                             metadata=metadata, kind=kind))
+                             metadata=metadata, settings=kind))
     if len(ts) == 1:
         ts = ts[0]
     return ts

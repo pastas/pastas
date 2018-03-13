@@ -35,7 +35,7 @@ class StressModelBase:
     """
 
     def __init__(self, rfunc, name, tmin, tmax, up, meanstress, cutoff):
-        #assert meanstress >= 0, 'All stress-series should be positive (for
+        # assert meanstress >= 0, 'All stress-series should be positive (for
         # parameter bounds)'
         self.rfunc = rfunc(up, meanstress, cutoff)
         self.parameters = pd.DataFrame(
@@ -119,13 +119,12 @@ class StressModelBase:
         if "freq" in kwargs:
             self.freq = kwargs["freq"]
 
-    def handle_stress(self, stress, kind, settings):
+    def handle_stress(self, stress, settings):
         """Method to handle user provided stress in init
 
         Parameters
         ----------
         stress: pandas.Series, pastas.TimeSeries or iterable
-        kind: str or iterable
         settings: dict or iterable
 
         Returns
@@ -137,15 +136,13 @@ class StressModelBase:
         data = []
 
         if isinstance(stress, pd.Series):
-            data.append(TimeSeries(stress, kind, settings))
+            data.append(TimeSeries(stress, settings))
         elif isinstance(stress, dict):
             for i, value in enumerate(stress.values()):
-                data.append(TimeSeries(value, kind=kind[i],
-                                       settings=settings[i]))
+                data.append(TimeSeries(value, settings=settings[i]))
         elif isinstance(stress, list):
             for i, value in enumerate(stress):
-                data.append(TimeSeries(value, kind=kind[i],
-                                       settings=settings[i]))
+                data.append(TimeSeries(value, settings=settings[i]))
         else:
             logger.warning("provided stress format is unknown. Provide a"
                            "Series,dict or list.")
@@ -215,8 +212,6 @@ class StressModel(StressModelBase):
     cutoff: float
         float between 0 and 1 to determine how long the response is (default 
         is 99% of the actual response time). Used to reduce computation times.
-    kind: string or None
-        The kind of stress, default is None.
         Options: 'prec', 'evap', and some others
     settings: dict
         The settings of the StressModel. 
@@ -225,10 +220,12 @@ class StressModel(StressModelBase):
 
     """
 
-    def __init__(self, stress, rfunc, name, up=True, cutoff=0.99, kind=None,
-                 settings=None, metadata=None):
+    def __init__(self, stress, rfunc, name, up=True, cutoff=0.99,
+                 settings=None, metadata=None, **kwargs):
         if isinstance(stress, list):
             stress = stress[0]  # Temporary fix Raoul, 2017-10-24
+
+        kind = kwargs.pop("kind", None)
         stress = TimeSeries(stress, kind=kind, settings=settings,
                             metadata=metadata)
 
@@ -310,9 +307,6 @@ class StressModel2(StressModelBase):
     cutoff: float
         float between 0 and 1 to determine how long the response is (default 
         is 99% of the actual response time). Used to reduce computation times.
-    kind: tuple with two strings
-        The kind of each stress, default is "prec" and "evap". This argument is
-        passen onto the TimeSeries.
     settings: Tuple with two dicts
         The settings of the individual TimeSeries. 
     metadata: dict, optional
@@ -321,9 +315,10 @@ class StressModel2(StressModelBase):
     """
 
     def __init__(self, stress, rfunc, name, up=True, cutoff=0.99,
-                 kind=("prec", "evap"), settings=(None, None),
-                 metadata=(None, None)):
+                 settings=(None, None), metadata=(None, None), **kwargs):
         # First check the series, then determine tmin and tmax
+        kind = kwargs.pop("kind", (None, None))
+
         stress0 = TimeSeries(stress[0], kind=kind[0], settings=settings[0],
                              metadata=metadata[0])
         stress1 = TimeSeries(stress[1], kind=kind[1], settings=settings[1],
@@ -442,11 +437,12 @@ class Recharge(StressModelBase):
     """
 
     def __init__(self, stress, rfunc, recharge, name, cutoff=0.99,
-                 kind=("prec", "evap"), settings=(None, None), metadata=(
-                    None, None)):
+                 settings=(None, None), metadata=(None, None), **kwargs):
+        kind = kwargs.pop("kind", None)
+
         # Check and name the time series
         prec1 = TimeSeries(stress[0], kind=kind[0], settings=settings[0])
-        evap1 = TimeSeries(stress[1], kind=kind[0], settings=settings[0])
+        evap1 = TimeSeries(stress[1], kind=kind[1], settings=settings[1])
 
         # Select indices where both series are available
         index = prec1.series.index & evap1.series.index
@@ -594,7 +590,10 @@ class NoConvModel(StressModelBase):
     """
 
     def __init__(self, stress, rfunc, name, metadata=None, up=True,
-                 cutoff=0.99, kind=None, settings=None):
+                 cutoff=0.99, settings=None, **kwargs):
+
+        kind = kwargs.pop("kind", None)
+
         stress = TimeSeries(stress, kind=kind, settings=settings,
                             metadata=metadata)
         StressModelBase.__init__(self, rfunc, name, stress.index.min(),
@@ -724,7 +723,7 @@ class WellModel(StressModelBase):
     """
 
     def __init__(self, stress, rfunc, name, radius, up=False, cutoff=0.99,
-                 kind="well", settings=None):
+                 settings="well"):
 
         meanstress = 1.0  # ? this should be something logical
 
@@ -734,10 +733,10 @@ class WellModel(StressModelBase):
         StressModelBase.__init__(self, rfunc, name, tmin, tmax,
                                  up, meanstress, cutoff)
 
-        if settings is None:
+        if settings is None or isinstance(settings, str):
             settings = len(stress) * [None]
 
-        self.stress = self.handle_stress(stress, kind, settings)
+        self.stress = self.handle_stress(stress, settings)
 
         # Check if number of stresses and radii match
         if len(self.stress) != len(radius) and radius:

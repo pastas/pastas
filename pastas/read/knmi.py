@@ -81,7 +81,7 @@ def read_knmi(fname, variables='RD'):
             else:
                 kind = None
             ts.append(TimeSeries(series, name=variable + stationname,
-                                 metadata=metadata, kind=kind))
+                                 metadata=metadata, settings=kind))
     if len(ts) == 1:
         ts = ts[0]
     return ts

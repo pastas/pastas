@@ -63,7 +63,7 @@ def read_waterbase(fname, locations=None, variable="NUMERIEKEWAARDE",
         }
         series = series.loc[:, variable].sort_index()
         ts.append(TimeSeries(series, name=name, metadata=metadata,
-                             kind=kind, freq_original=freq))
+                             settings=kind, freq_original=freq))
 
     if len(ts) == 1:
         ts = ts[0]
