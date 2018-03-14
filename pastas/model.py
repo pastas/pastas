@@ -1,11 +1,11 @@
 from __future__ import print_function, division
 
+import copy
 import json
 import logging
 import logging.config
 import os
 from collections import OrderedDict
-import copy
 
 import numpy as np
 import pandas as pd
@@ -55,8 +55,7 @@ class Model:
 
         # Construct the different model components
         self.oseries = TimeSeries(oseries, settings="oseries")
-        self.odelt = self.oseries.index.to_series().diff() / \
-                     pd.Timedelta(1, "D")
+        self.odelt = self.get_odelt()
         self.name = name
 
         self.parameters = pd.DataFrame(
@@ -259,6 +258,9 @@ class Model:
         if parameters is None:
             parameters = self.get_parameters()
 
+        pd.Series(data=np.zeros(sim_index.size, dtype=float),
+                  index=sim_index, name="Simulation", fastpath=True)
+
         h = pd.Series(data=0, index=sim_index)
         istart = 0  # Track parameters index to pass to ts object
         for ts in self.stressmodels.values():
@@ -272,8 +274,6 @@ class Model:
         if self.transform:
             h = self.transform.simulate(h, parameters[
                                            istart:istart + self.transform.nparam])
-        h.name = "Simulation"
-        h.index.name = "Date"
         return h
 
     def residuals(self, parameters=None, tmin=None, tmax=None, freq=None):
@@ -319,13 +319,13 @@ class Model:
                                     simulation.index.asi8, simulation)
         else:
             # all of the observation indexes are in the simulation
-            h_simulated = simulation[obs_index]
-        res = oseries_calib - h_simulated
+            h_simulated = simulation.loc[obs_index]
+        res = oseries_calib.subtract(h_simulated)
 
         if np.isnan(sum(res ** 2)):  # quick and dirty check
             self.logger.warning('nan problem in residuals')
+
         res.name = "Residuals"
-        res.index.name = "Date"
         return res
 
     def innovations(self, parameters=None, tmin=None, tmax=None, freq=None):
@@ -364,10 +364,8 @@ class Model:
         res = self.residuals(parameters, tmin, tmax, freq)
 
         # Calculate the innovations
-        v = self.noisemodel.simulate(res, self.odelt[res.index],
+        v = self.noisemodel.simulate(res, self.odelt.loc[res.index],
                                      parameters[-self.noisemodel.nparam:])
-        v.name = "Innovations"
-        v.index.name = "Date"
         return v
 
     def observations(self, tmin=None, tmax=None):
@@ -397,9 +395,8 @@ class Model:
         self.settings["weights"] = weights
 
         # Set tmin and tmax
-        self.settings["tmin"], self.settings["tmax"] = self.get_tmin_tmax(tmin,
-                                                                          tmax,
-                                                                          use_stresses=True)
+        self.settings["tmin"], self.settings["tmax"] = \
+            self.get_tmin_tmax(tmin, tmax, use_stresses=True)
 
         # Set the frequency & warmup
         if freq:
@@ -420,6 +417,8 @@ class Model:
         self.oseries_calib = self.get_oseries_calib(self.settings["tmin"],
                                                     self.settings["tmax"],
                                                     self.sim_index)
+
+        self.odelt = self.get_odelt()
 
         # Prepare the stressmodels
         self.update_stresses(freq=self.settings["freq"],
@@ -510,7 +509,7 @@ class Model:
                                  kind='nearest', bounds_error=False,
                                  fill_value='extrapolate')
         ind = np.unique(f(tindex.asi8).astype(int))
-        return series[ind]
+        return series.iloc[ind]
 
     def get_sim_index(self, tmin, tmax, freq, warmup):
         """Method to get the indices for the simulation, including the warmup
@@ -528,7 +527,7 @@ class Model:
 
         """
         sim_index = pd.date_range(tmin - pd.DateOffset(days=warmup), tmax,
-                                  freq=freq)
+                                  freq=freq, name="Date")
         return sim_index
 
     def get_oseries_calib(self, tmin, tmax, sim_index):
@@ -537,12 +536,29 @@ class Model:
         This method is for performance improvements only.
 
         """
-        oseries_calib = self.oseries.loc[tmin: tmax]
+        oseries_calib = self.oseries.loc[tmin:tmax]
         # sample measurements, so that frequency is not higher than model
         # keep the original timestamps, as they will be used during
         # interpolation of the simulation
         oseries_calib = self.get_sample(oseries_calib, sim_index)
         return oseries_calib
+
+    def get_odelt(self, freq="D"):
+        """Method to get the timesteps between the observations.
+
+        Parameters
+        ----------
+        freq: str
+            Frequency string.
+
+        Returns
+        -------
+        odelt: pandas.Series
+            Pandas Series object
+
+        """
+        odelt = self.oseries.index.to_series().diff() / pd.Timedelta(1, freq)
+        return odelt
 
     def get_tmin_tmax(self, tmin=None, tmax=None, freq=None, use_oseries=True,
                       use_stresses=False):
@@ -938,7 +954,8 @@ class Model:
             popt, stderr = vals
             val = np.abs(stderr / popt * 100)
             parameters.loc[name, "stderr"] = \
-            "{:} {:.5e} ({:.2f}{:})".format("\u00B1",stderr,  val,"\u0025")
+                "{:} {:.5e} ({:.2f}{:})".format("\u00B1", stderr, val,
+                                                "\u0025")
 
         n_param = parameters.vary.sum()
 
