@@ -24,12 +24,22 @@ logger = logging.getLogger(__name__)
 
 
 class Project:
-    """The Project class is a placeholder when multiple time series models are
-    analyzed in a batch.
+    """The Project class is a placeholder when multiple time series models
+    are analyzed in a batch.
 
     """
 
     def __init__(self, name, metadata=None):
+        """Initialize a Project instance.
+
+        Parameters
+        ----------
+        name: str
+            Name of the project
+        metadata: dict
+            Dictionary with any metadata information on the project.
+
+        """
         self.models = {}
         self.name = name
         # Store the data in Pandas dataframes
@@ -46,7 +56,7 @@ class Project:
         self.file_info = self._get_file_info()
 
     def add_series(self, series, name=None, kind=None, metadata=None,
-                   settings=None):
+                   settings=None, **kwargs):
         """Method to add series to the oseries or stresses database.
 
         Parameters
@@ -62,7 +72,7 @@ class Project:
         metadata: dict
             Dictionary with any metadata that will be passed to the
             TimeSeries object that is created internally.
-        settings: dict
+        settings: dict or str
             Dictionary with any settings that will be passed to the
             TimeSeries object that is created internally.
 
@@ -73,21 +83,25 @@ class Project:
         if name is None:
             name = series.name
 
-        try:
-            ts = ps.TimeSeries(series=series, name=name, kind=kind,
-                               settings=settings, metadata=metadata)
-        except:
-            logger.warning("Time series %s is ommitted from the database."
-                           % name)
-            return
-
         if kind == "oseries":
             data = self.oseries
         else:
             data = self.stresses
 
+        if name in data.index:
+            logger.error("Time series with name %s is already present in the \
+                         database. Please provide a different name." % name)
+
+        try:
+            ts = ps.TimeSeries(series=series, name=name, settings=settings,
+                               metadata=metadata, **kwargs)
+        except:
+            logger.warning("Time series %s is ommitted from the database."
+                           % name)
+            return
+
         data.at[name, "name"] = name
-        data.at[name, "series"] = ts # Do not add as first!
+        data.at[name, "series"] = ts  # Do not add as first!
         data.at[name, "kind"] = kind
 
         # Transfer x, y and z to dataframe as well to increase speed.
@@ -95,19 +109,21 @@ class Project:
             value = ts.metadata[i]
             data.at[name, i] = value
 
-    def del_oseries(self, oseries):
-        """Method that removes oseries from the project.
+    def del_oseries(self, name):
+        """Method that savely removes oseries from the project. It validates
+        that the oseries is not used in any model.
 
         Parameters
         ----------
-        oseries: list or str
-            list with multiple or string with a single oseries name.
-
-        Returns
-        -------
+        name: str
+            string with a single oseries name.
 
         """
-        self.oseries.drop(oseries, inplace=True)
+        if name in self.oseries.index:
+            logger.error("Time series with name %s is not present in the \
+                         database. Please provide a different name." % name)
+        else:
+            self.oseries.drop(name, inplace=True)
 
     def del_stress(self, name):
         """Method that removes oseries from the project.
@@ -123,14 +139,14 @@ class Project:
         """
         self.stresses.drop(name, inplace=True)
 
-    def add_model(self, oseries, ml_name=None, **kwargs):
+    def add_model(self, oseries, model_name=None, **kwargs):
         """Method to add a Pastas Model instance based on one of the oseries.
 
         Parameters
         ----------
         oseries: str
             string with the exact names of one of the oseries indices.
-        ml_name: str
+        model_name: str
             Name of the model
         kwargs: dict
             any arguments that are taken by the Pastas Model instance can be
@@ -142,21 +158,21 @@ class Project:
             Pastas Model generated with the oseries and arguments provided.
 
         """
-        if ml_name is None:
-            ml_name = oseries
+        if model_name is None:
+            model_name = oseries
 
         # Validate name and ml_name before continuing
-        if ml_name in self.models.keys():
-            logger.warning("Model name is not unique, provide a new ml_name.")
+        if model_name in self.models.keys():
+            logger.error("Model name is not unique, provide a new ml_name.")
         if oseries not in self.oseries.index:
             logger.error("Oseries name is not present in the database. "
                          "Make sure to provide a valid oseries name.")
 
         oseries = self.oseries.loc[oseries, "series"]
-        ml = ps.Model(oseries, name=ml_name, **kwargs)
+        ml = ps.Model(oseries, name=model_name, **kwargs)
 
         # Add new model to the models dictionary
-        self.models[ml_name] = ml
+        self.models[model_name] = ml
 
         return ml
 
@@ -332,13 +348,6 @@ class Project:
         data = data.squeeze()
         return data.astype(float)
 
-    def get_locations(self, models=None, **kwargs):
-        """Method to get the locations of the models."""
-
-        locations = pd.Series()
-
-        return locations
-
     def get_locations_geodataframe(self, models=None, **kwargs):
         import geopandas as gpd
         from shapely.geometry import Point
@@ -358,6 +367,8 @@ class Project:
         metadata = dict(
             projection=None
         )
+        if meta:
+            metadata.update(meta)
 
         return metadata
 
