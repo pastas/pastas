@@ -1,23 +1,82 @@
 import os
+
 import matplotlib.pyplot as plt
 
 
-def test_examples():
-    # run all the examples in the following folders
-    pathnames = ['examples']
-    cwd = os.getcwd()
-    # Turn interactive mode on, so that the figures do not block the main thread
+def test_example():
     plt.ion()
-    for pathname in pathnames:
-        os.chdir(cwd)
-        files = os.listdir(pathname)
-        os.chdir(pathname)
-        for file in files:
-            if file.endswith('.py'):
-                print('testing example ' + file)
-                exec (open(file).read())
-                # close the figures again
-                plt.close('all')
-
+    cwd = os.getcwd()
+    os.chdir("examples")
+    exec(open("example.py").read())
+    plt.close('all')
     os.chdir(cwd)
-    return 'all examples work!'
+    return
+
+
+def test_example_menyanthes():
+    plt.ion()
+    cwd = os.getcwd()
+    os.chdir("examples")
+    exec(open("example_menyanthes.py").read())
+    plt.close('all')
+    os.chdir(cwd)
+    return
+
+
+def test_example_project():
+    plt.ion()
+    cwd = os.getcwd()
+    os.chdir("examples")
+    exec(open("example_project.py").read())
+    plt.close('all')
+    os.chdir(cwd)
+    return
+
+
+def test_example_docs():
+    plt.ion()
+    cwd = os.getcwd()
+    os.chdir("examples")
+    exec(open("example_docs.py").read())
+    plt.close('all')
+    os.chdir(cwd)
+    return
+
+
+def test_example_stats():
+    plt.ion()
+    cwd = os.getcwd()
+    os.chdir("examples")
+    exec(open("example_stats.py").read())
+    plt.close('all')
+    os.chdir(cwd)
+    return
+
+
+def test_example_no_conv():
+    plt.ion()
+    cwd = os.getcwd()
+    os.chdir("examples")
+    exec(open("example_no_conv.py").read())
+    plt.close('all')
+    os.chdir(cwd)
+    return
+
+
+def test_example_WellModel():
+    plt.ion()
+    cwd = os.getcwd()
+    os.chdir("examples")
+    exec(open("example_WellModel.py").read())
+    plt.close('all')
+    os.chdir(cwd)
+    return
+
+
+def test_example_timestep_weighted_resample():
+    plt.ion()
+    cwd = os.getcwd()
+    os.chdir("examples")
+    exec(open("example_timestep_weighted_resample.py").read())
+    plt.close('all')
+    return os.chdir(cwd)
