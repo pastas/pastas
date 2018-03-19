@@ -16,10 +16,15 @@ def load(fname):
     raise(NotImplementedError('This is not implemented yet. See the reads-section for a Menyanthes-read'))
 
 
-def dump(fname, data, version='3.x.b.c (gamma)'):
+def dump(fname, data, version=3):
+    # version can also be a specific version, like '2.x.g.t (beta)', or an integer (see below)
+    if version == 3:
+        version = '3.x.b.c (gamma)'
+    elif version == 2:
+        version = '2.x.g.t (beta)'
     # load an empty menyanthes file
-    pastas_dir, model_filename = os.path.split(__file__)
-    base_fname = os.path.join(pastas_dir,'men',version + '.men')
+    io_dir, this_script_name = os.path.split(__file__)
+    base_fname = os.path.join(io_dir,'men',version + '.men')
     assert os.path.exists(base_fname),'No Menyanthes file found for version ' + version
     men = sio.loadmat(base_fname,matlab_compatible=True)
     
@@ -33,11 +38,11 @@ def dump(fname, data, version='3.x.b.c (gamma)'):
             men['ID']['H']+=1
         elif field == 'Name':
             Hdict[field] = data['oseries']['name']
-        elif field in ['NITGCode','OLGACode']:
+        elif field in ['NITGCode','OLGACode','NITGnr','OLGAnr']:
             Hdict[field] = '<no data> (1)'
         elif field == 'Type':
             Hdict[field] = 'Head'
-        elif field in ['Project','layercode','LoggerSerial']:
+        elif field in ['Project','layercode','LoggerSerial','area','datlog_serial']:
             Hdict[field] = ''
         elif field == 'values':
             date = np.array([datetime2matlab(x) for x in data['oseries']['series'].index])
@@ -47,7 +52,7 @@ def dump(fname, data, version='3.x.b.c (gamma)'):
             Hdict[field] = 1
         elif field in ['handmeas','aerialphoto','BWImage','photo']:
             Hdict[field] = [np.zeros(shape=(0,0))]
-        elif field in ['LastTUFExport','surflev','measpointlev','upfiltlev','lowfiltlev','sedsumplength','LoggerDepth']:
+        elif field in ['LastTUFExport','surflev','measpointlev','upfiltlev','lowfiltlev','sedsumplength','LoggerDepth','tranche','datlog_depth']:
             Hdict[field] = np.NaN
         elif field == 'xcoord':
             if 'x' in data['oseries']['metadata']:
@@ -85,6 +90,14 @@ def dump(fname, data, version='3.x.b.c (gamma)'):
                    ('battery_cap', 'O'), ('iscomp', 'O'), ('density', 'O'), ('compID', 'O'), ('ref', 'O'),
                    ('IsEquidistant', 'O'), ('IsLoggerfile', 'O'), ('timeshift', 'O')]
             Hdict[field] = [np.array([],dtype=dtype)]
+        elif field == 'oldmetadata':
+            # for version='2.x.g.t (beta)'
+            dtype=[('xcoord', 'O'), ('ycoord', 'O'), ('upfiltlev', 'O'), ('lowfiltlev', 'O'),
+                   ('surflev', 'O'), ('measpointlev', 'O'), ('sedsumplength', 'O'), ('datlog_serial', 'O'),
+                   ('datlog_depth', 'O'), ('date', 'O'), ('comment', 'O'), ('LoggerBrand', 'O'),
+                   ('LoggerType', 'O'), ('VegTypo', 'O'), ('VegType', 'O')]
+            Hdict[field] = [np.array([],dtype=dtype)]
+            
         else:
             raise(ValueError('Unknown field ' + field))
 		
@@ -111,7 +124,7 @@ def dump(fname, data, version='3.x.b.c (gamma)'):
                         INdict[field] = 'EVAP'
                     else:
                         INdict[field] = 'PREC'
-                elif field in ['LoggerSerial']:
+                elif field in ['LoggerSerial','datlog_serial']:
                     INdict[field] = ''
                 elif field == 'values':
                     date = np.array([datetime2matlab(x) for x in stress['series'].index])
@@ -137,13 +150,15 @@ def dump(fname, data, version='3.x.b.c (gamma)'):
                 INnew[key] = val
             men['IN']=np.vstack((men['IN'],INnew))
     
-    if True:
+    if False:
         # correct an error from loadmat
-        for i in range(len(men['PS']['AutoImport'][0][0][0])):
-            men['PS']['AutoImport'][0][0][0][i]['IsEnabled']=0
+        if 'AutoImport' in men['PS'].dtype.fields.keys():
+            for i in range(len(men['PS']['AutoImport'][0][0][0])):
+                men['PS']['AutoImport'][0][0][0][i]['IsEnabled']=0
         men['PS']['AutoLocalExportEnabled']=False
         men['PS']['DrainVisEnabled']=False
-        men['PS']['RemoteDb'][0][0]['IsConnected']=0
+        if 'RemoteDb' in men['PS'].dtype.fields.keys():
+            men['PS']['RemoteDb'][0][0]['IsConnected']=0
         
         for key in men['ID'].dtype.fields.keys():
             men['ID'][key]=0

@@ -1085,10 +1085,10 @@ Parameters (%s were optimized)
 
         return data
 
-    def dump(self, fname, series=True, transformed_series=False):
+    def dump(self, fname, series=True, transformed_series=False, **kwargs):
 
         # Get dicts for all data sources
         data = self.dump_data(series, transformed_series=transformed_series)
 
         # Write the dicts to a file
-        return dump(fname, data)
+        return dump(fname, data, **kwargs)
