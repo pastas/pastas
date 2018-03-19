@@ -6,6 +6,7 @@ import logging.config
 import os
 from collections import OrderedDict
 import copy
+import inspect
 
 import numpy as np
 import pandas as pd
@@ -146,6 +147,8 @@ class Model:
         self.parameters = self.get_init_parameters()
 
     def add_transform(self, transform):
+        if inspect.isclass(transform):
+            transform = transform(self)
         self.transform = transform
         self.parameters = self.get_init_parameters()
 
@@ -990,7 +993,7 @@ Parameters (%s were optimized)
         return pmin, pmax
 
     def dump_data(self, series=True, sim_series=False, metadata=True,
-                  file_info=True):
+                  file_info=True, transformed_series=False):
         """Method to export a PASTAS model to the json export format. Helper
          function for the self.export method.
 
@@ -1024,12 +1027,12 @@ Parameters (%s were optimized)
         # Create a dictionary to store all data
         data = dict()
         data["name"] = self.name
-        data["oseries"] = self.oseries.dump(series=series)
+        data["oseries"] = self.oseries.dump(series=series, transformed_series=transformed_series)
 
         # Stressmodels
         data["stressmodels"] = dict()
         for name, ts in self.stressmodels.items():
-            data["stressmodels"][name] = ts.dump(series=series)
+            data["stressmodels"][name] = ts.dump(series=series, transformed_series=transformed_series)
 
         # Constant
         if self.constant:
@@ -1065,10 +1068,10 @@ Parameters (%s were optimized)
 
         return data
 
-    def dump(self, fname, series=True):
+    def dump(self, fname, series=True, transformed_series=False):
 
         # Get dicts for all data sources
-        data = self.dump_data(series)
+        data = self.dump_data(series, transformed_series=transformed_series)
 
         # Write the dicts to a file
         return dump(fname, data)

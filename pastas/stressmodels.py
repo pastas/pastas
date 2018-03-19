@@ -148,7 +148,7 @@ class StressModelBase:
                            "Series,dict or list.")
         return data
 
-    def dump_stress(self, series=True):
+    def dump_stress(self, series=True, transformed_series=False):
         """Method to dump all stresses in the stresses list.
 
         Parameters
@@ -168,7 +168,7 @@ class StressModelBase:
         data = []
 
         for stress in self.stress:
-            data.append(stress.dump(series=series))
+            data.append(stress.dump(series=series, transformed_series=transformed_series))
 
         return data
 
@@ -266,7 +266,7 @@ class StressModel(StressModelBase):
             h = h[tindex]
         return h
 
-    def dump(self, series=True):
+    def dump(self, series=True, transformed_series=False):
         """Method to export the StressModel object.
 
         Returns
@@ -282,7 +282,7 @@ class StressModel(StressModelBase):
         data["name"] = self.name
         data["up"] = True if self.rfunc.up == 1 else False
         data["cutoff"] = self.rfunc.cutoff
-        data["stress"] = self.dump_stress(series)
+        data["stress"] = self.dump_stress(series, transformed_series=transformed_series)
 
         return data
 
@@ -385,7 +385,7 @@ class StressModel2(StressModelBase):
         else:
             return p[-1] * self.stress[1]
 
-    def dump(self, series=True):
+    def dump(self, series=True, transformed_series=False):
         """Method to export the StressModel object.
 
         Returns
@@ -401,7 +401,7 @@ class StressModel2(StressModelBase):
         data["name"] = self.name
         data["up"] = True if self.rfunc.up == 1 else False
         data["cutoff"] = self.rfunc.cutoff
-        data["stress"] = self.dump_stress(series)
+        data["stress"] = self.dump_stress(series, transformed_series=transformed_series)
 
         return data
 
