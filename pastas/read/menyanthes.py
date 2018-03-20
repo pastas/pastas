@@ -11,18 +11,15 @@ Currently only the observations (H) and stresses (IN) and model results are supp
 # Extraction - cubic meters(flux summed starting from date of previous data
 # entry)
 
-TODO: menyanthes-files contain a lot of data and a DataModel is not a good
-form to return... this needs some more work
-
 """
 from __future__ import print_function, division
 
-import datetime as dt
 import os.path
 
 import numpy as np
 import pandas as pd
 import scipy.io as sio
+from ..utils import matlab2datetime
 
 from ..timeseries import TimeSeries
 
@@ -135,7 +132,7 @@ class MenyData:
                 if name != 'values':
                     data[name] = getattr(IN, name)
                 else:
-                    tindex = [self.matlab2datetime(tval) for tval in
+                    tindex = [matlab2datetime(tval) for tval in
                               IN.values[:, 0]]
                     series = pd.Series(IN.values[:, 1], index=tindex)
 
@@ -179,7 +176,7 @@ class MenyData:
                 if name != 'values':
                     data[name] = getattr(H, name)
                 else:
-                    tindex = [self.matlab2datetime(tval) for tval in
+                    tindex = [matlab2datetime(tval) for tval in
                               H.values[:, 0]]
                     # measurement is used as is
                     series = pd.Series(H.values[:, 1], index=tindex)
@@ -211,7 +208,7 @@ class MenyData:
                 if name != 'values':
                     data[name] = getattr(M, name)
                 else:
-                    tindex = [self.matlab2datetime(tval) for tval in
+                    tindex = [matlab2datetime(tval) for tval in
                               M.values[:, 0]]
                     # measurement is used as is
                     series = pd.Series(M.values[:, 1], index=tindex)
@@ -226,12 +223,3 @@ class MenyData:
                 M.Name = M.name
 
             self.M[M.Name] = data
-
-    def matlab2datetime(self, matlab_datenum):
-        """
-        Transform a matlab time to a datetime, rounded to seconds
-        """
-        day = dt.datetime.fromordinal(int(matlab_datenum))
-        dayfrac = dt.timedelta(days=float(matlab_datenum) % 1) - dt.timedelta(
-            days=366)
-        return day + dayfrac

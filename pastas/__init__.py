@@ -11,5 +11,5 @@ from .rfunc import Gamma, Exponential, Hantush, Theis, Bruggeman
 from .solver import LmfitSolve, LeastSquares, DESolve
 from .stressmodels import (StressModel, StressModel2, Constant)
 from .timeseries import TimeSeries
-from .transform import NonLinTransform
+from .transform import ThresholdTransform
 from .version import __version__

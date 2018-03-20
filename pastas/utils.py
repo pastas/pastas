@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from datetime import datetime, timedelta
 
 
 def get_dt(freq):
@@ -174,3 +175,18 @@ def excel2datetime(excel_datenum, freq="D"):
     datetimes = pd.to_datetime('1899-12-30') + pd.to_timedelta(excel_datenum,
                                                                freq)
     return datetimes
+
+def matlab2datetime(matlab_datenum):
+    """
+    Transform a matlab time to a datetime, rounded to seconds
+    """
+    day = datetime.fromordinal(int(matlab_datenum))
+    dayfrac = timedelta(days=float(matlab_datenum) % 1) - timedelta(
+        days=366)
+    return day + dayfrac
+
+def datetime2matlab(dt):
+    mdn = dt + timedelta(days = 366)
+    frac = (dt-datetime(dt.year,dt.month,dt.day,0,0,0)).seconds / (24.0 * 60.0 * 60.0)
+    return mdn.toordinal() + frac
+    
