@@ -259,11 +259,11 @@ class StressModel(StressModelBase):
         """
         b = self.rfunc.block(p, dt)
         stress = self.stress[0]
-        self.npoints = stress.index.size
-        h = pd.Series(fftconvolve(stress, b, 'full')[:self.npoints],
-                      index=stress.index, name=self.name)
+        npoints = stress.index.size
+        h = pd.Series(data=fftconvolve(stress, b, 'full')[:npoints],
+                      index=stress.index, name=self.name, fastpath=True)
         if tindex is not None:
-            h = h[tindex]
+            h = h.loc[tindex]
         return h
 
     def dump(self, series=True):
@@ -315,7 +315,7 @@ class StressModel2(StressModelBase):
     """
 
     def __init__(self, stress, rfunc, name, up=True, cutoff=0.99,
-                 settings=(None, None), metadata=(None, None), **kwargs):
+                 settings=("prec", "evap"), metadata=(None, None), **kwargs):
         # First check the series, then determine tmin and tmax
         kind = kwargs.pop("kind", (None, None))
 
@@ -325,7 +325,7 @@ class StressModel2(StressModelBase):
                              metadata=metadata[1])
 
         # Select indices from validated stress where both series are available.
-        index = stress0.series.index & stress1.series.index
+        index = stress0.series.index.intersection(stress1.series.index)
         if index.size is 0:
             logger.warning('The two stresses that were provided have no '
                            'overlapping time indices. Please make sure time indices overlap or apply to separate time series objects.')
@@ -367,19 +367,20 @@ class StressModel2(StressModelBase):
 
         """
         b = self.rfunc.block(p[:-1], dt)
-        self.npoints = self.stress[0].index.size
+        npoints = self.stress[0].index.size
         stress = self.get_stress(p=p, istress=istress)
-        h = pd.Series(fftconvolve(stress, b, 'full')[:self.npoints],
-                      index=self.stress[0].index, name=self.name)
+        h = pd.Series(data=fftconvolve(stress, b, 'full')[:npoints],
+                      index=self.stress[0].index, name=self.name,
+                      fastpath=True)
         if tindex is not None:
-            h = h[tindex]
+            h = h.loc[tindex]
         # see whether it makes a difference to subtract gain * mean_stress
         # h -= self.rfunc.gain(p) * stress.mean()
         return h
 
     def get_stress(self, p=None, istress=None):
         if istress is None:
-            return self.stress[0] + p[-1] * self.stress[1]
+            return self.stress[0].add(p[-1] * self.stress[1])
         elif istress == 0:
             return self.stress[0]
         else:
