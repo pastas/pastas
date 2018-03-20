@@ -28,17 +28,31 @@ class Model:
 
     Parameters
     ----------
-    oseries: pandas.Series
+    oseries: pandas.Series or pastas.TimeSeries
         pandas Series object containing the dependent time series. The
         observation can be non-equidistant.
+    constant: bool, optional
+        Add a constant to the model (Default=True).
+    noisemodel: bool
+        Add the default noisemodel to the model. A custom noisemodel can be
+        added later in the modelling process as well.
     name: str, optional
         String with the name of the model, used in plotting and saving.
     metadata: dict, optional
-        Dictionary containing metadata of the model.
-    warmup: float, optional
-        Number of days used for warmup.
-    constant: bool, optional
-        Add a constant to the model (Default=True).
+        Dictionary containing metadata of the model. By default,
+        a dictionary containing basic metadata info is created.
+    settings: dict, optional
+        Dictionary containing the model settings used by the different
+        methods of the model instance. These values will be forwarded to the
+        model settings (see ml.settings).
+    log_level: str, optional
+        String to set the level of the log-messages that is forwarded to the
+        Python console. Options are: ERROR (default), WARNING and INFO.
+
+    Returns
+    -------
+    ml: pastas.Model
+        Pastas Model instance, the base object in Pastas.
 
     Examples
     --------
@@ -176,8 +190,8 @@ class Model:
         >>> ml.stressmodels.keys()
 
         """
-        self.parameters = self.parameters.ix[self.parameters.name != name]
-        self.stressmodels.pop(name)
+        self.stressmodels.pop(name, None)
+        self.parameters = self.get_init_parameters(initial=False)
 
     def del_constant(self):
         """ Save deletion of the constant from a Model.
@@ -186,17 +200,15 @@ class Model:
         if self.constant is None:
             self.logger.warning("No constant is present in this model.")
         else:
-            self.parameters = self.parameters.ix[self.parameters.name !=
-                                                 self.constant.name]
             self.constant = None
+            self.parameters = self.get_init_parameters(initial=False)
 
     def del_transform(self):
         if self.transform is None:
             self.logger.warning("No transform is present in this model.")
         else:
-            self.parameters = self.parameters.ix[self.parameters.name !=
-                                                 self.transform.name]
             self.transform = None
+            self.parameters = self.get_init_parameters(initial=False)
 
     def del_noisemodel(self):
         """Save deletion of the noisemodel from the Model.
@@ -205,9 +217,8 @@ class Model:
         if self.noisemodel is None:
             self.logger.warning("No noisemodel is present in this model.")
         else:
-            self.parameters = self.parameters.ix[self.parameters.name !=
-                                                 self.noisemodel.name]
             self.noisemodel = None
+            self.parameters = self.get_init_parameters(initial=False)
 
     def simulate(self, parameters=None, tmin=None, tmax=None, freq=None):
         """Simulate the time series model.
@@ -258,10 +269,9 @@ class Model:
         if parameters is None:
             parameters = self.get_parameters()
 
-        pd.Series(data=np.zeros(sim_index.size, dtype=float),
+        h = pd.Series(data=np.zeros(sim_index.size, dtype=float),
                   index=sim_index, name="Simulation", fastpath=True)
 
-        h = pd.Series(data=0, index=sim_index)
         istart = 0  # Track parameters index to pass to ts object
         for ts in self.stressmodels.values():
             c = ts.simulate(parameters[istart: istart + ts.nparam], sim_index,
@@ -425,11 +435,12 @@ class Model:
                              tmin=self.sim_index.min(),
                              tmax=self.sim_index.max())
 
-        self.interpolate_simulation = self.oseries_calib.index.difference(
-            self.sim_index).size != 0
-        if self.interpolate_simulation:
+        if self.oseries_calib.index.difference(self.sim_index).size is not 0:
+            self.interpolate_simulation = True
             self.logger.info('There are observations between the simulation'
                              'timesteps. Linear interpolation is used')
+        else:
+            self.interpolate_simulation = False
 
         # Initialize parameters
         self.parameters = self.get_init_parameters(noise, initial)
@@ -442,23 +453,37 @@ class Model:
         Parameters
         ----------
         tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980')
+            String with a start date for the simulation period (E.g. '1980').
+            If none is provided, the tmin from the oseries is used.
         tmax: str, optional
-            String with an end date for the simulation period (E.g. '2010')
+            String with an end date for the simulation period (E.g. '2010').
+            If none is provided, the tmax from the oseries is used.
         solver: pastas.solver.BaseSolver, optional
-            Class used to solve the model. Default is LmfitSolve
+            Class used to solve the model. Options are: ps.LmfitSolve
+            (default) or ps.LeastSquares. A class is needed, not an instance
+            of the class!
         report: bool, optional
-            Print a report to the screen after optimization finished.
+            Print a report to the screen after optimization finished. This
+            can also be manually triggered after optimization by calling
+            print(ml.fit_report()) on the Pastas model instance.
         noise: bool, optional
-            Use the noise model (True) or not (False). The default is
-            noise=True
-        weights: pandas.Series
-            Pandas Series with values by which the residuals are multiplied,
-             index-based.
+            Argument that determines if a noisemodel is used (only if
+            present). The default is noise=True
         initial: bool, optional
-            Reset initial parameters. Default is True.
+            Reset initial parameters from the individual stressmodels.
+            Default is True. If False, the optimal values from an earlier
+            optimization are used.
+        weights: pandas.Series, optional
+            Pandas Series with values by which the residuals are multiplied,
+            index-based.
         freq: str
             String with the frequency the stressmodels are simulated.
+        warmup: float/int, optinal
+            Warmup period (in Days) for which the simulation is calculated,
+            but not used for the calibration period.
+        **kwargs: dict
+            All keyword arguments will be passed onto the solver. It depends
+            on the solver used which
 
         """
 
@@ -517,15 +542,23 @@ class Model:
 
         Parameters
         ----------
-        tmin
-        tmax
-        freq
-        warmup
+        tmin: str or pd.TimeStamp
+        tmax: str or pd.TimeStamp
+        freq: str
+        warmup: int
 
         Returns
         -------
+        sim_index: pd.DatetimeIndex
+            Pandas DatetimeIndex instance with the datetimes values for
+            which the model is simulated.
 
         """
+        if isinstance(tmin, str):
+            tmin = pd.Timestamp(tmin)
+        if isinstance(tmax, str):
+            tmax = pd.Timestamp(tmax)
+
         sim_index = pd.date_range(tmin - pd.DateOffset(days=warmup), tmax,
                                   freq=freq, name="Date")
         return sim_index
@@ -714,8 +747,9 @@ class Model:
         else:
             self.settings["time_offset"] = pd.Timedelta(0)
 
-    def update_stresses(self, tmin, tmax, freq, **kwargs):
-        """
+    def update_stresses(self, tmin=None, tmax=None, freq=None, **kwargs):
+        """Method to update the settings of all stresses simultaneously.
+        This method is used in the initialize method of the model.
 
         Parameters
         ----------
@@ -724,12 +758,23 @@ class Model:
         freq
         kwargs
 
-        Returns
-        -------
-
         """
         for ts in self.stressmodels.values():
             ts.update_stress(freq=freq, tmin=tmin, tmax=tmax, **kwargs)
+
+    def update_oseries(self, tmin=None, tmax=None, freq=None, **kwargs):
+        """Method to update the oseries. This will change the values used by
+        the model when calibrating.
+
+        Parameters
+        ----------
+        tmin
+        tmax
+        freq
+        kwargs
+
+        """
+        self.oseries.update_series(tmin=tmin, tmax=tmax, freq=freq, **kwargs)
 
     def get_init_parameters(self, noise=True, initial=True):
         """Method to get all initial parameters from the individual objects.
@@ -739,7 +784,7 @@ class Model:
         noise: bool, optional
             Add the parameters for the noisemodel to the parameters
             Dataframe or not.
-        initial: Boolean
+        initial: bool, optional
             True to get initial parameters, False to get optimized parameters.
 
         Returns
@@ -748,11 +793,6 @@ class Model:
             pandas.Dataframe with the parameters.
 
         """
-
-        # Store optimized values in case they are needed
-        if not initial:
-            paramold = self.parameters.optimal
-
         parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary',
                                            'optimal', 'name', 'stderr'])
         for ts in self.stressmodels.values():
@@ -764,9 +804,10 @@ class Model:
         if self.noisemodel and noise:
             parameters = parameters.append(self.noisemodel.parameters)
 
-        # Set initial parameters to optimal parameters
+        # Set initial parameters to optimal parameters from model
         if not initial:
-            parameters.loc[paramold.index, 'initial'] = paramold
+            paramold = self.parameters.optimal
+            parameters.update(paramold)
 
         return parameters
 
@@ -917,7 +958,28 @@ class Model:
         """Method that reports on the fit after a model is optimized. May be
         called independently as well.
 
+        Parameters
+        ----------
+        output: str
+            NotImplementedYet
+
+
+        Returns
+        -------
+        report: str
+            String with the report.
+
+        Usage
+        -----
+        This method is called by the solve method if report=True, but can
+        also be called on its own:
+
+        >>> print(ml.fit_report)
+
         """
+        if output != "full":
+            raise NotImplementedError
+
         model = {
             "nfev": self.fit.nfev,
             "nobs": self.oseries.index.size,
@@ -959,8 +1021,7 @@ class Model:
 
         n_param = parameters.vary.sum()
 
-        w = ["Standard Errors assume that the covariance matrix of the errors "
-             "is correctly specified."]
+        w = []
         pmin, pmax = self.check_parameters_bounds()
         if any(pmin):
             w.append("Parameter values of %s are close to their minimum "
@@ -993,17 +1054,28 @@ Parameters (%s were optimized)
 
         return report
 
-    def check_parameters_bounds(self):
-        """Check if the optimal parameters are close to pmin or pmax
+    def check_parameters_bounds(self, alpha=0.01):
+        """Check if the optimal parameters are close to pmin or pmax.
 
         Returns
         -------
+        pmin: pandas.Series
+            pandas series with boolean values of the parameters that are
+            close to the minimum values.
+        pmax: pandas.Series
+            pandas series with boolean values of the parameters that are
+            close to the maximum values.
+
+        Notes
+        -----
+        The criteria to determine if the parameters is close to the maximum or
+        minimum is determined as the percentage of the parameter range.
 
         """
         prange = self.parameters.pmax - self.parameters.pmin
         pnorm = (self.parameters.optimal - self.parameters.pmin) / prange
-        pmax = pnorm > 0.99
-        pmin = pnorm < 0.01
+        pmax = pnorm > 1-alpha
+        pmin = pnorm < alpha
         return pmin, pmax
 
     def dump_data(self, series=True, sim_series=False, metadata=True,
