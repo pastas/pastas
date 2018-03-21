@@ -273,7 +273,7 @@ class Model:
             parameters = self.get_parameters()
 
         h = pd.Series(data=np.zeros(sim_index.size, dtype=float),
-                  index=sim_index, name="Simulation", fastpath=True)
+                  index=sim_index, fastpath=True)
 
         istart = 0  # Track parameters index to pass to ts object
         for ts in self.stressmodels.values():
@@ -287,6 +287,7 @@ class Model:
         if self.transform:
             h = self.transform.simulate(h, parameters[
                                            istart:istart + self.transform.nparam])
+        h.name='Simulation'
         return h
 
     def residuals(self, parameters=None, tmin=None, tmax=None, freq=None):
