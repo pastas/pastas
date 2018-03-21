@@ -80,13 +80,7 @@ class Model:
         self.constant = None
         self.transform = None
         self.noisemodel = None
-
-        if constant:
-            constant = Constant(value=self.oseries.mean(), name="constant")
-            self.add_constant(constant)
-        if noisemodel:
-            self.add_noisemodel(NoiseModel())
-
+        
         # Store the simulation settings
         self.settings = {}
         self.settings["tmin"] = None
@@ -98,6 +92,12 @@ class Model:
         self.settings["solver"] = None
         if settings:
             self.settings.update(settings)
+
+        if constant:
+            constant = Constant(value=self.oseries.mean(), name="constant")
+            self.add_constant(constant)
+        if noisemodel:
+            self.add_noisemodel(NoiseModel())
 
         # Metadata & File Information
         self.metadata = self.get_metadata(metadata)
@@ -779,7 +779,7 @@ class Model:
         """
         self.oseries.update_series(tmin=tmin, tmax=tmax, freq=freq, **kwargs)
 
-    def get_init_parameters(self, noise=True, initial=True):
+    def get_init_parameters(self, noise=None, initial=True):
         """Method to get all initial parameters from the individual objects.
 
         Parameters
@@ -796,6 +796,9 @@ class Model:
             pandas.Dataframe with the parameters.
 
         """
+        if noise is None:
+            noise = self.settings['noise']
+        
         parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary',
                                            'optimal', 'name', 'stderr'])
         for ts in self.stressmodels.values():
