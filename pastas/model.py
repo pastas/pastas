@@ -64,13 +64,17 @@ class Model:
     """
 
     def __init__(self, oseries, constant=True, noisemodel=True,
-                 name="Observations", metadata=None, settings=None,
+                 name=None, metadata=None, settings=None,
                  log_level="ERROR"):
         self.logger = self.get_logger(log_level=log_level)
 
         # Construct the different model components
         self.oseries = TimeSeries(oseries, settings="oseries")
         self.odelt = self.get_odelt()
+        if name is None:
+            name = self.oseries.name
+            if name is None:
+                name='Observations'
         self.name = name
 
         self.parameters = pd.DataFrame(
