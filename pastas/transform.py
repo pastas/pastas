@@ -12,9 +12,9 @@ class ThresholdTransform:
         if isinstance(value, Model):
             # determine the initial parameter from the model
             ml = value
-            value = ml.oseries.mean()
+            value = ml.oseries.min() + 0.75*(ml.oseries.max()-ml.oseries.min())
             if np.isnan(vmin):
-                vmin = ml.oseries.min()
+                vmin = ml.oseries.min() + 0.5*(ml.oseries.max()-ml.oseries.min())
             if np.isnan(vmax):
                 vmax = ml.oseries.max()
         self.value = value
