@@ -14,9 +14,22 @@ https://www.knmi.nl/nederland-nu/klimatologie/monv/reeksen
 Also, data from the meteorological stations can be downloaded directly, for example with
 knmi = KnmiStation(stns=260, start=datetime(1970, 1, 1), end=datetime(1971, 1, 1))  # 260 = de bilt
 knmi.download()
-For now the direct download only works for meteorological stations and daily data (so no rainfall stations or hourly data)
 
+Hourly data can be downloaded with the 'interval'keyword set to 'hour' or 'hourly':
+knmi = KnmiStation(stns=260, start='2017', end='2018', interval='hourly')
 
+Data from rainfall-stations can be downloaded by asking for the variable 'RD' (the stns variable now describes codes for rainfall-stations):
+knmi = KnmiStation(stns=550, start='2018', end='2019', vars='RD') # rainfall-station in de bilt
+
+Times are recalculated to UT+1 (standard-time in the Netherlands), from UT.
+Also the datetime-index of the data is set at the end of the period that the data describes.
+So the rainfall between 2018-01-01 09:00:00 (08:00:00 UT) and 2018-01-02 09:00:00 (08:00:00 UT) gets the timestamp of 2018-01-02 09:00:00
+
+Units in the data of the knmi are recalculated to more basic SI-units. So mm are transformed to m, and a factor of 0,1 is transformed to 1.
+
+A description of the variables is found in knmi.variables.
+Information about the measurement-station(s) is found in knmi.stations.
+The measurement-data itself is found in knmi.data
 """
 
 from __future__ import print_function, division
@@ -89,18 +102,22 @@ def read_knmi(fname, variables='RD'):
 
 class KnmiStation:
     def __init__(self, start=None, end=None, inseason=False, vars='ALL',
-                 stns='260'):
+                 stns='260', interval='daily'):
         if start is None:
             self.start = date(date.today().year, 1, 1)
         else:
-            self.start = start
+            self.start = pd.to_datetime(start)
         if end is None:
             self.end = date.today()
         else:
-            self.end = end
+            self.end = pd.to_datetime(end)
         self.inseason = inseason
         self.vars = vars
         self.stns = stns  # de Bilt (zou ook 'ALL' kunnen zijn)
+        self.interval = interval
+
+        if self.interval.startswith('hour') and vars=='RD':
+            raise(ValueError('Interval can not be hourly for rainfall-stations'))
 
         self.stations = None
         self.variables = dict()
@@ -145,21 +162,37 @@ class KnmiStation:
                 '>>> pip install StringIO (for python 2)'
                 'or: '
                 '>>> pip install io (for python 3)')
-
-        url = 'http://projects.knmi.nl/klimatologie/daggegevens/getdata_dag.cgi'
+        
+        if self.interval.startswith('hour'):
+            # hourly data from meteorological stations
+            url = 'http://projects.knmi.nl/klimatologie/uurgegevens/getdata_uur.cgi'
+        elif self.vars == 'RD':
+            # daily data from rainfall-stations
+            url = 'http://projects.knmi.nl/klimatologie/monv/reeksen/getdata_rr.cgi'
+        else:
+            # daily data from meteorological stations
+            url = 'http://projects.knmi.nl/klimatologie/daggegevens/getdata_dag.cgi'
         if not isinstance(self.stns, str):
             if isinstance(self.stns, int):
                 self.stns = str(self.stns)
             else:
                 raise NameError('Meerdere locaties nog niet ondersteund')
 
-        data = {
-            'start': self.start.strftime('%Y%m%d'),
-            'end': self.end.strftime('%Y%m%d'),
-            'inseason': str(int(self.inseason)),
-            'vars': self.vars,
-            'stns': self.stns,
-        }
+        if self.interval.startswith('hour'):
+            data = {
+                'start': self.start.strftime('%Y%m%d')+'01',
+                'end': self.end.strftime('%Y%m%d')+'24',
+                'vars': self.vars,
+                'stns': self.stns,
+            }
+        else:
+            data = {
+                'start': self.start.strftime('%Y%m%d'),
+                'end': self.end.strftime('%Y%m%d'),
+                'inseason': str(int(self.inseason)),
+                'vars': self.vars,
+                'stns': self.stns,
+            }
         self.result = requests.get(url, params=data).text
 
         f = StringIO(self.result)
@@ -222,8 +255,11 @@ class KnmiStation:
         line = line.lstrip('# ')
         header = line.split(',')
         header = [item.lstrip().rstrip() for item in header]
+        pos = f.tell()
         line = f.readline()  # Skip empty line after header
-
+        if line not in ["\n", "\r\n", "# \n", '# \r\n']:
+            # sometimes there is no empty line between the header and the data
+            f.seek(pos)
         # Process the datablock
         if False:
             # older method, is much slower
