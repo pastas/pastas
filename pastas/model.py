@@ -1,12 +1,12 @@
 from __future__ import print_function, division
 
 import copy
+import inspect
 import json
 import logging
 import logging.config
 import os
 from collections import OrderedDict
-import inspect
 
 import numpy as np
 import pandas as pd
@@ -74,7 +74,7 @@ class Model:
         if name is None:
             name = self.oseries.name
             if name is None:
-                name='Observations'
+                name = 'Observations'
         self.name = name
 
         self.parameters = pd.DataFrame(
@@ -84,7 +84,7 @@ class Model:
         self.constant = None
         self.transform = None
         self.noisemodel = None
-        
+
         # Store the simulation settings
         self.settings = {}
         self.settings["tmin"] = None
@@ -277,7 +277,7 @@ class Model:
             parameters = self.get_parameters()
 
         h = pd.Series(data=np.zeros(sim_index.size, dtype=float),
-                  index=sim_index, fastpath=True)
+                      index=sim_index, fastpath=True)
 
         istart = 0  # Track parameters index to pass to ts object
         for ts in self.stressmodels.values():
@@ -291,7 +291,7 @@ class Model:
         if self.transform:
             h = self.transform.simulate(h, parameters[
                                            istart:istart + self.transform.nparam])
-        h.name='Simulation'
+        h.name = 'Simulation'
         return h
 
     def residuals(self, parameters=None, tmin=None, tmax=None, freq=None):
@@ -803,7 +803,7 @@ class Model:
         """
         if noise is None:
             noise = self.settings['noise']
-        
+
         parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary',
                                            'optimal', 'name', 'stderr'])
         for ts in self.stressmodels.values():
@@ -818,7 +818,7 @@ class Model:
         # Set initial parameters to optimal parameters from model
         if not initial:
             paramold = self.parameters.optimal
-            parameters.update(paramold)
+            parameters.initial.update(paramold)
 
         return parameters
 
@@ -1085,7 +1085,7 @@ Parameters (%s were optimized)
         """
         prange = self.parameters.pmax - self.parameters.pmin
         pnorm = (self.parameters.optimal - self.parameters.pmin) / prange
-        pmax = pnorm > 1-alpha
+        pmax = pnorm > 1 - alpha
         pmin = pnorm < alpha
         return pmin, pmax
 
@@ -1124,12 +1124,14 @@ Parameters (%s were optimized)
         # Create a dictionary to store all data
         data = dict()
         data["name"] = self.name
-        data["oseries"] = self.oseries.dump(series=series, transformed_series=transformed_series)
+        data["oseries"] = self.oseries.dump(series=series,
+                                            transformed_series=transformed_series)
 
         # Stressmodels
         data["stressmodels"] = dict()
         for name, ts in self.stressmodels.items():
-            data["stressmodels"][name] = ts.dump(series=series, transformed_series=transformed_series)
+            data["stressmodels"][name] = ts.dump(series=series,
+                                                 transformed_series=transformed_series)
 
         # Constant
         if self.constant:
