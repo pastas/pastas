@@ -1,7 +1,6 @@
 from __future__ import print_function, division
 
 import pastas.read as read
-import pastas.recharge as recharge
 import pastas.stats
 from .model import Model
 from .noisemodels import NoiseModel, NoiseModel2
