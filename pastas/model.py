@@ -112,7 +112,6 @@ class Model:
         self.oseries_calib = None
         self.interpolate_simulation = None
         self.fit = None
-        self.report = "Model has not been solved yet. "
 
         # Load other modules
         self.stats = Statistics(self)
@@ -517,33 +516,6 @@ class Model:
         if report:
             print(self.fit_report())
 
-    def get_sample(self, series, tindex):
-        """Sample the series so that the frequency is not higher that tindex.
-
-        Parameters
-        ----------
-        series: pandas.Series
-            pandas series object.
-        tindex: pandas.index
-            Pandas index object
-
-        Returns
-        -------
-        series: pandas.Series
-
-        Notes
-        -----
-        Find the index closest to the tindex, and then return a selection
-        of series.
-
-        """
-        f = interpolate.interp1d(series.index.asi8,
-                                 np.arange(0, series.index.size),
-                                 kind='nearest', bounds_error=False,
-                                 fill_value='extrapolate')
-        ind = np.unique(f(tindex.asi8).astype(int))
-        return series.iloc[ind]
-
     def get_sim_index(self, tmin, tmax, freq, warmup):
         """Method to get the indices for the simulation, including the warmup
         period.
@@ -572,16 +544,37 @@ class Model:
         return sim_index
 
     def get_oseries_calib(self, tmin, tmax, sim_index):
-        """Method to get the oseries to use for calibration.
+        """Internal method to get the oseries to use for calibration.
 
-        This method is for performance improvements only.
+        Parameters
+        ----------
+        tmin: str
+        tmax: str
+        sim_index: pd.DatetimeIndex
+
+
+        Returns
+        -------
+        oseries_calib: pd.Series
+            pandas series of the oseries used for calibration of the model
+
+        Notes
+        -----
+        This method is for performance improvements only. Find the index
+        closest to the tindex, and then return a selection of series.
 
         """
         oseries_calib = self.oseries.loc[tmin:tmax]
         # sample measurements, so that frequency is not higher than model
         # keep the original timestamps, as they will be used during
         # interpolation of the simulation
-        oseries_calib = self.get_sample(oseries_calib, sim_index)
+        f = interpolate.interp1d(oseries_calib.index.asi8,
+                                 np.arange(0, oseries_calib.index.size),
+                                 kind='nearest', bounds_error=False,
+                                 fill_value='extrapolate')
+        ind = np.unique(f(sim_index.asi8).astype(int))
+        oseries_calib = oseries_calib.iloc[ind]
+
         return oseries_calib
 
     def get_odelt(self, freq="D"):
