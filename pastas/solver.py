@@ -121,21 +121,24 @@ class LeastSquares(BaseSolver):
                  weights=None, **kwargs):
         BaseSolver.__init__(self)
 
-        parameters = model.parameters.initial.values
+        self.modelparameters = model.parameters
+        self.vary = self.modelparameters.vary.values.astype('bool')
+        self.initial = self.modelparameters.initial.values.copy()
+        parameters = self.modelparameters.loc[self.vary]
 
         # Set the boundaries
-        pmin = np.where(model.parameters.pmin.isnull(), -np.inf,
-                        model.parameters.pmin)
-        pmax = np.where(model.parameters.pmax.isnull(), np.inf,
-                        model.parameters.pmax)
+        pmin = np.where(parameters.pmin.isnull(), -np.inf,
+                        parameters.pmin)
+        pmax = np.where(parameters.pmax.isnull(), np.inf,
+                        parameters.pmax)
         bounds = (pmin, pmax)
 
-        if False in model.parameters.vary.values.astype('bool'):
-            logger.warning("""Fixing parameters is not supported with this
-                           solver. Please use LmfitSolve or apply small
-                           boundaries as a solution.""")
+        #if False in model.parameters.vary.values.astype('bool'):
+        #    logger.warning("""Fixing parameters is not supported with this
+        #                   solver. Please use LmfitSolve or apply small
+        #                   boundaries as a solution.""")
 
-        self.fit = least_squares(self.objfunction, x0=parameters,
+        self.fit = least_squares(self.objfunction, x0=parameters.initial.values,
                                  bounds=bounds,
                                  args=(tmin, tmax, noise, model, freq,
                                        weights), **kwargs)
@@ -144,9 +147,10 @@ class LeastSquares(BaseSolver):
 
         self.pcov = self.get_covariances(self.fit, model)
         self.pcor = self.get_correlations(self.pcov)
-        self.stderr = np.sqrt(np.diag(self.pcov))
-        self.optimal_params = self.fit.x
-
+        self.optimal_params = self.initial
+        self.optimal_params[self.vary] = self.fit.x
+        self.stderr = np.zeros(len(self.optimal_params))
+        self.stderr[self.vary] = np.sqrt(np.diag(self.pcov))
         self.report = None
 
     def objfunction(self, parameters, tmin, tmax, noise, model, freq, weights):
@@ -166,7 +170,10 @@ class LeastSquares(BaseSolver):
         -------
 
         """
-        res = self.minimize(parameters, tmin, tmax, noise, model, freq,
+        p = self.initial
+        p[self.vary] = parameters
+        
+        res = self.minimize(p, tmin, tmax, noise, model, freq,
                             weights)
         return res
 
