@@ -17,7 +17,6 @@ import os
 
 import numpy as np
 import pandas as pd
-
 import pastas as ps
 
 logger = logging.getLogger(__name__)
@@ -185,7 +184,8 @@ class Project:
             String with the model name.
 
         """
-        self.models.pop(ml_name)
+        name = self.models.pop(ml_name, None)
+        logger.info("Model with name %s deleted from the database." % name)
 
     def add_recharge(self, ml, rfunc, name="recharge", **kwargs):
         """Adds a recharge element to the time series model. The
