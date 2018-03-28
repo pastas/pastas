@@ -122,7 +122,7 @@ class NoiseModel(NoiseModelBase):
         """
         delt = delt.iloc[1:]
         alpha = p[0]
-        innovations = pd.Series(data=res, name="Innovations")
+        innovations = pd.Series(data=res)
         # res.values is needed else it gets messed up with the dates
         innovations.iloc[1:] -= np.exp(delt / -alpha) * res.values[:-1]
 
@@ -131,6 +131,7 @@ class NoiseModel(NoiseModelBase):
 
         if tindex is not None:
             innovations = innovations.loc[tindex]
+        innovations.name = "Innovations"
         return innovations
 
     def weights(self, alpha, delt):
