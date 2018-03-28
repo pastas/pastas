@@ -105,7 +105,7 @@ class Project:
         data.at[name, "kind"] = kind
 
         # Transfer x, y and z to dataframe as well to increase speed.
-        for i in ["x", "y", "z"]:
+        for i in ts.metadata.keys():
             value = ts.metadata[i]
             data.at[name, i] = value
 
