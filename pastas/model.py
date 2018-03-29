@@ -470,7 +470,7 @@ class Model:
 
     def solve(self, tmin=None, tmax=None, solver=LmfitSolve, report=True,
               noise=True, initial=True, weights=None, freq=None, warmup=None,
-              fit_constant=False, **kwargs):
+              fit_constant=True, **kwargs):
         """Method to solve the time series model.
 
         Parameters
