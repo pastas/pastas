@@ -526,7 +526,7 @@ class Model:
                           weights=self.settings["weights"], **kwargs)
 
         if not self.settings['fit_constant']:
-            # do theis before setting oseries_calib to None
+            # do this before setting oseries_calib to None
             self.normalize_residuals = False
             res = self.residuals(self.fit.optimal_params,
                                  self.settings['tmin'], self.settings['tmax'],
