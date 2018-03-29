@@ -94,6 +94,7 @@ class Model:
         self.settings["time_offset"] = pd.Timedelta(0)
         self.settings["noise"] = noisemodel
         self.settings["solver"] = None
+        self.settings["fit_constant"] = True
         if settings:
             self.settings.update(settings)
 
@@ -111,6 +112,7 @@ class Model:
         self.sim_index = None
         self.oseries_calib = None
         self.interpolate_simulation = None
+        self.normalize_residuals = False
         self.fit = None
 
         # Load other modules
@@ -339,6 +341,9 @@ class Model:
             h_simulated = simulation.loc[obs_index]
         res = oseries_calib.subtract(h_simulated)
 
+        if self.normalize_residuals:
+            res = res - res.mean()
+
         if np.isnan(sum(res ** 2)):  # quick and dirty check
             self.logger.warning('nan problem in residuals')
 
@@ -394,9 +399,10 @@ class Model:
         return self.oseries.loc[tmin: tmax]
 
     def initialize(self, tmin=None, tmax=None, freq=None, warmup=None,
-                   noise=None, weights=None, initial=True):
-        """Initialize the model. This method is called by the solve
-        method but can also be triggered manually.
+                   noise=None, weights=None, initial=True, fit_constant=None):
+        """Initialize the model. This method is called by the solve-method,
+        but can also be triggered manually. See the solve-method for a
+        description of the arguments
 
         """
 
@@ -420,6 +426,10 @@ class Model:
             self.settings["freq"] = freq
         if warmup is not None:
             self.settings["warmup"] = warmup
+
+        # set fit_constant
+        if fit_constant is not None:
+            self.settings["fit_constant"] = fit_constant
 
         # make sure calibration data is renewed
         if all(self.stressmodels[key]._name == "NoConvModel" for key in
@@ -452,9 +462,15 @@ class Model:
         # Initialize parameters
         self.parameters = self.get_init_parameters(noise, initial)
 
+        # Prepare model if not fitting the constant as a parameter
+        if not self.settings["fit_constant"]:
+            self.parameters.loc["constant_d", "vary"] = 0
+            self.parameters.loc["constant_d", "initial"] = 0.0
+            self.normalize_residuals = True
+
     def solve(self, tmin=None, tmax=None, solver=LmfitSolve, report=True,
               noise=True, initial=True, weights=None, freq=None, warmup=None,
-              **kwargs):
+              fit_constant=False, **kwargs):
         """Method to solve the time series model.
 
         Parameters
@@ -488,6 +504,10 @@ class Model:
         warmup: float/int, optinal
             Warmup period (in Days) for which the simulation is calculated,
             but not used for the calibration period.
+        fit_constant: bool, optional
+            Argument that determines if the constant is fitted as a parameter.
+            If it is set to False, the constant is set equal to the mean of
+            the residuals.
         **kwargs: dict
             All keyword arguments will be passed onto the solver. It depends
             on the solver used which
@@ -495,7 +515,7 @@ class Model:
         """
 
         # Initialize the model
-        self.initialize(tmin, tmax, freq, warmup, noise, weights, initial)
+        self.initialize(tmin, tmax, freq, warmup, noise, weights, initial, fit_constant)
         self.settings["solver"] = solver._name
 
         # Solve model
@@ -504,6 +524,16 @@ class Model:
                           noise=self.settings["noise"],
                           freq=self.settings["freq"],
                           weights=self.settings["weights"], **kwargs)
+
+        if not self.settings['fit_constant']:
+            # do theis before setting oseries_calib to None
+            self.normalize_residuals = False
+            res = self.residuals(self.fit.optimal_params,
+                                 self.settings['tmin'], self.settings['tmax'],
+                                 self.settings["freq"])
+            # set the constant to the mean of the residuals
+            mask = self.parameters.index == "constant_d"
+            self.fit.optimal_params[mask] = res.mean()
 
         # make calibration data empty again (was set in initialize)
         self.sim_index = None
@@ -1018,7 +1048,7 @@ class Model:
 
         for name, vals in parameters.loc[:, ["optimal", "stderr"]].iterrows():
             popt, stderr = vals
-            val = np.abs(stderr / popt * 100)
+            val = np.abs(np.divide(stderr,popt) * 100)
             parameters.loc[name, "stderr"] = \
                 "{:} {:.5e} ({:.2f}{:})".format("\u00B1", stderr, val,
                                                 "\u0025")
