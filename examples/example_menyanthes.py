@@ -15,8 +15,10 @@ ml = ps.Model(H['values'])
 # Add precipitation
 IN = meny.IN['Precipitation']['values']
 IN.index = IN.index.round("D")
+IN.name = 'Precipitation'
 IN2 = meny.IN['Evaporation']['values']
 IN2.index = IN2.index.round("D")
+IN2.name = 'Evaporation'
 sm = ps.StressModel2([IN, IN2], ps.Gamma, 'Recharge')
 ml.add_stressmodel(sm)
 
@@ -48,7 +50,7 @@ sm = ps.StressModel(well, ps.Hantush, 'Extraction_3', up=False,
 ml.add_stressmodel(sm)
 
 # Solve
-ml.solve()
+ml.solve(solver=ps.LeastSquares)
 
 # make a decomposition-plot
 ax = ml.plots.decomposition(ytick_base=1.)

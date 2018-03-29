@@ -147,12 +147,13 @@ class Plotting:
             nstress = len(self.ml.stressmodels[name].stress)
             if split and nstress > 1:
                 for istress in range(nstress):
-                    h.append(self.ml.get_contribution(name, tindex=tindex,
-                                                      istress=istress))
-                    names.append(name + ' ' + str(istress + 1))
+                    hc = self.ml.get_contribution(name, tindex=tindex, istress=istress)
+                    h.append(hc)
+                    names.append(hc.name)
             else:
-                h.append(self.ml.get_contribution(name, tindex=tindex))
-                names.append(name)
+                hc = self.ml.get_contribution(name, tindex=tindex)
+                h.append(hc)
+                names.append(hc.name)
 
         if self.ml.transform:
             h.append(self.ml.get_transform_contribution(tmin=tmin, tmax=tmax))

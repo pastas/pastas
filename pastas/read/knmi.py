@@ -93,7 +93,7 @@ def read_knmi(fname, variables='RD'):
                 kind = 'evap'
             else:
                 kind = None
-            ts.append(TimeSeries(series, name=variable + stationname,
+            ts.append(TimeSeries(series, name=variable + ' ' + stationname,
                                  metadata=metadata, settings=kind))
     if len(ts) == 1:
         ts = ts[0]
