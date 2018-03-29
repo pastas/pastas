@@ -35,8 +35,6 @@ class StressModelBase:
     """
 
     def __init__(self, rfunc, name, tmin, tmax, up, meanstress, cutoff):
-        # assert meanstress >= 0, 'All stress-series should be positive (for
-        # parameter bounds)'
         self.rfunc = rfunc(up, meanstress, cutoff)
         self.parameters = pd.DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
@@ -55,48 +53,45 @@ class StressModelBase:
 
     @set_parameter
     def set_initial(self, name, value):
-        """Method to set the initial parameter value.
+        """Internal method to set the initial parameter value.
 
-        Examples
-        --------
-
-        >>> ts.set_initial('parametername', 200)
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
 
         """
         self.parameters.loc[name, 'initial'] = value
 
     @set_parameter
     def set_min(self, name, value):
-        """Method to set the lower bound of the parameter value.
+        """Internal method to set the lower bound of the parameter value.
 
-        Examples
-        --------
-
-        >>> ts.set_min('parametername', 0)
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
 
         """
         self.parameters.loc[name, 'pmin'] = value
 
     @set_parameter
     def set_max(self, name, value):
-        """Method to set the upper bound of the parameter value.
+        """Internal method to set the upper bound of the parameter value.
 
-        Examples
-        --------
-
-        >>> ts.set_max('parametername', 200)
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
 
         """
         self.parameters.loc[name, 'pmax'] = value
 
     @set_parameter
     def set_vary(self, name, value):
-        """Method to set if the parameter is varied during optimization.
+        """Internal method to set if the parameter is varied during
+        optimization.
 
-        Examples
-        --------
-
-        >>> ts.set_initial('parametername', 200)
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
 
         """
         self.parameters.loc[name, 'vary'] = value

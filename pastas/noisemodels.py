@@ -29,12 +29,11 @@ class NoiseModelBase(ABC):
 
     @set_parameter
     def set_initial(self, name, value):
-        """Method to set the initial parameter value
+        """Internal method to set the initial parameter value
 
-        Examples
-        --------
-
-        >>> ts.set_initial('parameter_name', 200)
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
 
         """
         if name in self.parameters.index:
@@ -44,6 +43,14 @@ class NoiseModelBase(ABC):
 
     @set_parameter
     def set_min(self, name, value):
+        """Internal method to set the minimum value of the noisemodel.
+
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
+
+
+        """
         if name in self.parameters.index:
             self.parameters.loc[name, 'pmin'] = value
         else:
@@ -51,6 +58,13 @@ class NoiseModelBase(ABC):
 
     @set_parameter
     def set_max(self, name, value):
+        """Internal method to set the maximum parameter values.
+
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
+
+        """
         if name in self.parameters.index:
             self.parameters.loc[name, 'pmax'] = value
         else:
@@ -58,6 +72,14 @@ class NoiseModelBase(ABC):
 
     @set_parameter
     def set_vary(self, name, value):
+        """Internal method to set if the parameter is varied during
+        optimization.
+
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
+
+        """
         self.parameters.loc[name, 'vary'] = value
 
     def dump(self):
