@@ -64,8 +64,7 @@ class Model:
     """
 
     def __init__(self, oseries, constant=True, noisemodel=True,
-                 name=None, metadata=None, settings=None,
-                 log_level=None):
+                 name=None, metadata=None, settings=None, log_level=None):
         self.logger = self.get_logger(log_level=log_level)
 
         # Construct the different model components
@@ -229,16 +228,16 @@ class Model:
             self.parameters = self.get_init_parameters(initial=False)
 
     def simulate(self, parameters=None, tmin=None, tmax=None, freq=None):
-        """Simulate the time series model.
+        """Method to simulate the time series model.
 
         Parameters
         ----------
-        parameters: list, optional
-            Array of the parameters used in the time series model.
+        parameters: array-like, optional
+            Array with the parameters used in the time series model.
         tmin: str, optional
         tmax: str, optional
         freq: str, optional
-            frequency at which the time series are simulated.
+            Frequency at which the time series are simulated.
 
         Returns
         -------
@@ -296,7 +295,7 @@ class Model:
         return h
 
     def residuals(self, parameters=None, tmin=None, tmax=None, freq=None):
-        """Calculate the residual series.
+        """Method to calculate the residual series.
 
         Parameters
         ----------
@@ -617,9 +616,70 @@ class Model:
             self.logger.warning("parameters with name %s is not present in"
                                 "the model" % name)
 
+    def set_freq(self):
+        """Internal method to set the frequency in the settings. This is
+        method is not yet applied and is for future development.
+
+        """
+        freqs = set()
+        if self.oseries.freq:
+            # when the oseries has a constant frequency, us this
+            freqs.add(self.oseries.freq)
+        else:
+            # otherwise determine frequency from the stressmodels
+            for stressmodel in self.stressmodels.values():
+                if stressmodel.stress:
+                    for stress in stressmodel.stress:
+                        if stress.settings['freq']:
+                            # first check the frequency, and use this
+                            freqs.add(stress.settings['freq'])
+                        elif stress.freq_original:
+                            # if this is not available, and the original frequency is, take the original frequency
+                            freqs.add(stress.freq_original)
+
+        if len(freqs) == 1:
+            # if there is only one frequency, use this frequency
+            self.settings["freq"] = next(iter(freqs))
+        elif len(freqs) > 1:
+            # if there are more frequencies, take the highest frequency (lowest dt)
+            freqs = list(freqs)
+            dt = np.array([get_dt(f) for f in freqs])
+            self.settings["freq"] = freqs[np.argmin(dt)]
+        else:
+            self.logger.info("Frequency of model cannot be determined. "
+                             "Frequency is set to daily")
+            self.settings["freq"] = "D"
+
+    def set_time_offset(self):
+        """Internal method to set the time offset for the model class.
+
+        Notes
+        -----
+        Method to check if the StressModel timestamps match (e.g. similar hours)
+
+        """
+        time_offsets = set()
+        for stressmodel in self.stressmodels.values():
+            if stressmodel.stress:
+                # calculate the offset from the default frequency
+                time_offset = get_time_offset(
+                    stressmodel.stress[0].index.min(),
+                    self.settings["freq"])
+                time_offsets.add(time_offset)
+
+        assert len(
+            time_offsets) <= 1, self.logger.error("""The time-differences with
+                                                  the default frequency is
+                                                  not the same for all
+                                                  stresses.""")
+        if len(time_offsets) == 1:
+            self.settings["time_offset"] = next(iter(time_offsets))
+        else:
+            self.settings["time_offset"] = pd.Timedelta(0)
+
     def get_sim_index(self, tmin, tmax, freq, warmup):
-        """Method to get the indices for the simulation, including the warmup
-        period.
+        """Internal method to get the indices for the simulation, including
+        the warmup period.
 
         Parameters
         ----------
@@ -679,7 +739,7 @@ class Model:
         return oseries_calib
 
     def get_odelt(self, freq="D"):
-        """Method to get the timesteps between the observations.
+        """Internal method to get the timesteps between the observations.
 
         Parameters
         ----------
@@ -791,92 +851,6 @@ class Model:
             self.logger.error('Error: no observations between tmin and tmax')
 
         return tmin, tmax
-
-    def set_freq(self):
-        freqs = set()
-        if self.oseries.freq:
-            # when the oseries has a constant frequency, us this
-            freqs.add(self.oseries.freq)
-        else:
-            # otherwise determine frequency from the stressmodels
-            for stressmodel in self.stressmodels.values():
-                if stressmodel.stress:
-                    for stress in stressmodel.stress:
-                        if stress.settings['freq']:
-                            # first check the frequency, and use this
-                            freqs.add(stress.settings['freq'])
-                        elif stress.freq_original:
-                            # if this is not available, and the original frequency is, take the original frequency
-                            freqs.add(stress.freq_original)
-
-        if len(freqs) == 1:
-            # if there is only one frequency, use this frequency
-            self.settings["freq"] = next(iter(freqs))
-        elif len(freqs) > 1:
-            # if there are more frequencies, take the highest frequency (lowest dt)
-            freqs = list(freqs)
-            dt = np.array([get_dt(f) for f in freqs])
-            self.settings["freq"] = freqs[np.argmin(dt)]
-        else:
-            self.logger.info("Frequency of model cannot be determined. "
-                             "Frequency is set to daily")
-            self.settings["freq"] = "D"
-
-    def set_time_offset(self):
-        """Set the time offset for the model class.
-
-        Notes
-        -----
-        Method to check if the StressModel timestamps match (e.g. similar hours)
-
-        """
-        time_offsets = set()
-        for stressmodel in self.stressmodels.values():
-            if stressmodel.stress:
-                # calculate the offset from the default frequency
-                time_offset = get_time_offset(
-                    stressmodel.stress[0].index.min(),
-                    self.settings["freq"])
-                time_offsets.add(time_offset)
-
-        assert len(
-            time_offsets) <= 1, self.logger.error("""The time-differences with
-                                                  the default frequency is
-                                                  not the same for all
-                                                  stresses.""")
-        if len(time_offsets) == 1:
-            self.settings["time_offset"] = next(iter(time_offsets))
-        else:
-            self.settings["time_offset"] = pd.Timedelta(0)
-
-    def update_stresses(self, tmin=None, tmax=None, freq=None, **kwargs):
-        """Method to update the settings of all stresses simultaneously.
-        This method is used in the initialize method of the model.
-
-        Parameters
-        ----------
-        tmin
-        tmax
-        freq
-        kwargs
-
-        """
-        for ts in self.stressmodels.values():
-            ts.update_stress(freq=freq, tmin=tmin, tmax=tmax, **kwargs)
-
-    def update_oseries(self, tmin=None, tmax=None, freq=None, **kwargs):
-        """Method to update the oseries. This will change the values used by
-        the model when calibrating.
-
-        Parameters
-        ----------
-        tmin
-        tmax
-        freq
-        kwargs
-
-        """
-        self.oseries.update_series(tmin=tmin, tmax=tmax, freq=freq, **kwargs)
 
     def get_init_parameters(self, noise=None, initial=True):
         """Method to get all initial parameters from the individual objects.
@@ -990,7 +964,8 @@ class Model:
         return stress
 
     def get_metadata(self, meta=None):
-        """Method that returns a metadata dict with the basic information.
+        """Internal method that returns a metadata dict with the basic
+        information.
 
         Parameters
         ----------
@@ -1012,7 +987,8 @@ class Model:
         return metadata
 
     def get_file_info(self):
-        """Method to get the file information, mainly used for saving files.
+        """Internal method to get the file information, mainly used for saving
+        files.
 
         Returns
         -------
@@ -1031,10 +1007,9 @@ class Model:
 
         return file_info
 
-    def get_logger(self, log_level=None,
-                   config_file='log_config.json',
+    def get_logger(self, log_level=None, config_file='log_config.json',
                    env_key='LOG_CFG'):
-        """This file creates a logger instance to log program output.
+        """Internal method to create a logger instance to log program output.
 
         Returns
         -------
@@ -1061,6 +1036,35 @@ class Model:
         logger = logging.getLogger(__name__)
 
         return logger
+
+    def update_stresses(self, tmin=None, tmax=None, freq=None, **kwargs):
+        """Method to update the settings of all stresses simultaneously.
+        This method is used in the initialize method of the model.
+
+        Parameters
+        ----------
+        tmin
+        tmax
+        freq
+        kwargs
+
+        """
+        for ts in self.stressmodels.values():
+            ts.update_stress(freq=freq, tmin=tmin, tmax=tmax, **kwargs)
+
+    def update_oseries(self, tmin=None, tmax=None, freq=None, **kwargs):
+        """Method to update the oseries. This will change the values used by
+        the model when calibrating.
+
+        Parameters
+        ----------
+        tmin
+        tmax
+        freq
+        kwargs
+
+        """
+        self.oseries.update_series(tmin=tmin, tmax=tmax, freq=freq, **kwargs)
 
     def fit_report(self, output="full"):
         """Method that reports on the fit after a model is optimized. May be
@@ -1188,7 +1192,8 @@ Parameters (%s were optimized)
 
     def dump_data(self, series=True, sim_series=False, metadata=True,
                   file_info=True, transformed_series=False):
-        """Method to export a PASTAS model to the json export format. Helper
+        """Internal method to export a PASTAS model to the json export format.
+        Helper
          function for the self.export method.
 
          Parameters
