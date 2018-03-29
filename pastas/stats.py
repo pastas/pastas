@@ -164,7 +164,13 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        sim = sim[obs.index]  # Make sure to correlate the same in time.
+        # Make sure to correlate the same in time
+        if obs.index.difference(sim.index).size != 0:
+            # interpolate simulation to measurement-times
+            sim = np.interp(obs.index.asi8, sim.index.asi8, sim)
+        else:
+            # just take the indexes
+            sim = sim[obs.index]
         return np.corrcoef(sim, obs)[0, 1]
 
     @model_tmin_tmax
