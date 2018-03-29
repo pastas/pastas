@@ -374,9 +374,6 @@ class StressModel2(StressModelBase):
                       fastpath=True)
         if tindex is not None:
             h = h.loc[tindex]
-        if istress is not None:
-            if self.stress[istress].name is not None:
-                h.name = h.name + ' (' + self.stress[istress].name + ')'
         # see whether it makes a difference to subtract gain * mean_stress
         # h -= self.rfunc.gain(p) * stress.mean()
         return h
