@@ -51,8 +51,8 @@ def read_knmi(fname, variables='RD'):
 
     Returns
     -------
-    ts: Pandas Series
-        returns a standard Pastas TimeSeries object or a list of it.
+    ts: pastas.TimeSeries
+        returns a Pastas TimeSeries object or a list of objects.
 
     """
     knmi = KnmiStation.fromfile(fname)

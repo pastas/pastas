@@ -26,7 +26,7 @@ def read_waterbase(fname, locations=None, variable="NUMERIEKEWAARDE",
     Returns
     -------
     ts: pastas.TimeSeries
-        dictionary with all the timeseries and metadata for each time series.
+        returns a Pastas TimeSeries object or a list of objects.
 
     Notes
     -----

@@ -65,7 +65,7 @@ class Model:
 
     def __init__(self, oseries, constant=True, noisemodel=True,
                  name=None, metadata=None, settings=None,
-                 log_level="ERROR"):
+                 log_level=None):
         self.logger = self.get_logger(log_level=log_level)
 
         # Construct the different model components
@@ -454,8 +454,8 @@ class Model:
 
         if self.oseries_calib.index.difference(self.sim_index).size is not 0:
             self.interpolate_simulation = True
-            self.logger.info('There are observations between the simulation'
-                             'timesteps. Linear interpolation is used')
+            self.logger.info('There are observations between the simulation '
+                             'timesteps. Linear interpolation is used.')
         else:
             self.interpolate_simulation = False
 
@@ -470,7 +470,7 @@ class Model:
 
     def solve(self, tmin=None, tmax=None, solver=LmfitSolve, report=True,
               noise=True, initial=True, weights=None, freq=None, warmup=None,
-              fit_constant=False, **kwargs):
+              fit_constant=True, **kwargs):
         """Method to solve the time series model.
 
         Parameters
@@ -527,7 +527,7 @@ class Model:
                           weights=self.settings["weights"], **kwargs)
 
         if not self.settings['fit_constant']:
-            # do theis before setting oseries_calib to None
+            # do this before setting oseries_calib to None
             self.normalize_residuals = False
             res = self.residuals(self.fit.optimal_params,
                                  self.settings['tmin'], self.settings['tmax'],
@@ -1031,8 +1031,9 @@ class Model:
 
         return file_info
 
-    def get_logger(self, default_path='log_config.json',
-                   log_level=logging.INFO, env_key='LOG_CFG'):
+    def get_logger(self, log_level=None,
+                   config_file='log_config.json',
+                   env_key='LOG_CFG'):
         """This file creates a logger instance to log program output.
 
         Returns
@@ -1043,15 +1044,17 @@ class Model:
 
 
         """
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        path = os.path.join(dir_path, default_path)
-        value = os.getenv(env_key, None)
-        if value:
-            path = value
-        if os.path.exists(path):
-            with open(path, 'rt') as f:
-                config = json.load(f)
-            logging.config.dictConfig(config)
+        if log_level is None:
+            fname = os.getenv(env_key, None)
+            if not fname or not os.path.exists(fname):
+                dir_path = os.path.dirname(os.path.realpath(__file__))
+                fname = os.path.join(dir_path, config_file)
+            if os.path.exists(fname):
+                with open(fname, 'rt') as f:
+                    config = json.load(f)
+                logging.config.dictConfig(config)
+            else:
+                logging.basicConfig(level=logging.INFO)
         else:
             logging.basicConfig(level=log_level)
 
