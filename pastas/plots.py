@@ -61,7 +61,7 @@ class Plotting:
         return fig.axes
 
     @model_tmin_tmax
-    def results(self, tmin=None, tmax=None):
+    def results(self, tmin=None, tmax=None, **kwargs):
         """Plot different results in one window to get a quick overview.
 
         Parameters
@@ -74,24 +74,29 @@ class Plotting:
         -------
 
         """
-        fig = self._get_figure()
+        figsize = kwargs.pop("figsize", None)
+        fig = self._get_figure(figsize=figsize, )
 
         # Number of rows to make the figure with
         rows = 3 + len(self.ml.stressmodels)
 
         # Main frame
-        ax1 = plt.subplot2grid((rows, 3), (0, 0), colspan=2, rowspan=2)
+        ax1 = plt.subplot2grid((rows, 3), (0, 0), colspan=2, rowspan=2,
+                               fig=fig)
         o = self.ml.observations(tmin=tmin, tmax=tmax)
         o.plot(ax=ax1, linestyle='', marker='.', color='k', x_compat=True)
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
         sim.plot(ax=ax1, x_compat=True)
         plt.legend(loc=(0, 1), ncol=3, frameon=False)
 
+        ax1.set_ylim(min(o.min(), sim.loc[tmin:tmax].min()),
+                     max(o.max(), sim.loc[tmin:tmax].max()))
+
         # Residuals and innovations
         ax2 = plt.subplot2grid((rows, 3), (2, 0), colspan=2, sharex=ax1)
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         res.plot(ax=ax2, sharex=ax1, color='k', x_compat=True)
-        if self.ml.settings["noise"]:
+        if self.ml.settings["noise"] and self.ml.noisemodel:
             v = self.ml.innovations(tmin=tmin, tmax=tmax)
             v.plot(ax=ax2, sharex=ax1, x_compat=True)
         plt.legend(loc=(0, 1), ncol=3, frameon=False)
@@ -100,9 +105,29 @@ class Plotting:
         ax3 = plt.subplot2grid((rows, 3), (0, 2), rowspan=3)
         ax3.xaxis.set_visible(False)
         ax3.yaxis.set_visible(False)
-        plt.text(0.05, 0.8, 'Rsq: %.2f' % self.ml.stats.rsq())
-        plt.text(0.05, 0.6, 'EVP: %.2f' % self.ml.stats.evp())
+        # plt.text(0.05, 0.8, 'Rsq: %.2f' % self.ml.stats.rsq())
+        # plt.text(0.05, 0.6, 'EVP: %.2f' % self.ml.stats.evp())
         plt.title('Model Information', loc='left')
+
+        # Draw parameters table
+        cols = ["optimal", "stderr"]
+        parameters = self.ml.parameters.loc[:, cols]
+        parameters.optimal = parameters.optimal.round(5)
+        for name, vals in parameters.loc[:, ["optimal", "stderr"]].iterrows():
+            popt, stderr = vals
+            val = np.abs(stderr / popt * 100)
+            parameters.loc[name, "stderr"] = \
+                "{:} {:.5e} ({:.2f}{:})".format("\u00B1", stderr, val,
+                                                "\u0025")
+
+        table = plt.table(cellText=parameters.values,
+                          rowLabels=parameters.index,
+                          colLabels=cols,
+                          colWidths=[0.2, 0.4],
+                          loc='center')
+        #table.auto_set_font_size(value=True)
+        ax3.add_table(table)
+        plt.setp(ax3.spines.values(), color=None)
 
         # Add a row for each stressmodel
         for i, ts in enumerate(self.ml.stressmodels.keys(), start=3):
@@ -112,7 +137,11 @@ class Plotting:
             title = [stress.name for stress in self.ml.stressmodels[ts].stress]
             plt.title("Stresses:%s" % title, loc="right")
             ax.legend(loc=(0, 1), ncol=3, frameon=False)
-            axb = plt.subplot2grid((rows, 3), (i, 2))
+            if i == 3:
+                sharex=None
+            else:
+                sharex = axb
+            axb = plt.subplot2grid((rows, 3), (i, 2), sharex=sharex)
             self.ml.get_step_response(ts).plot(ax=axb)
 
         ax1.set_xlim(tmin, tmax)
