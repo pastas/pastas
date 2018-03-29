@@ -25,8 +25,8 @@ def read_dino(fname, variable='Stand_cm_tov_NAP', factor=0.01):
 
     Returns
     -------
-    DataModel: object
-        returns a standard Pastas DataModel object.
+    ts: pastas.TimeSeries
+        returns a Pastas TimeSeries object or a list of objects.
 
     """
 
