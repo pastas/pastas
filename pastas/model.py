@@ -515,7 +515,8 @@ class Model:
         """
 
         # Initialize the model
-        self.initialize(tmin, tmax, freq, warmup, noise, weights, initial, fit_constant)
+        self.initialize(tmin, tmax, freq, warmup, noise, weights, initial,
+                        fit_constant)
         self.settings["solver"] = solver._name
 
         # Solve model
@@ -545,6 +546,76 @@ class Model:
 
         if report:
             print(self.fit_report())
+
+    def set_initial(self, name, value):
+        """Method to set the initial value of any parameter.
+
+        Parameters
+        ----------
+        name: str
+            name of the parameter to update.
+        value: float
+            parameters value to use as initial estimate.
+
+        """
+        self.set_parameter(name, value, "initial")
+
+    def set_vary(self, name, value):
+        """Method to set if the parameter is allowed to vary.
+
+        Parameters
+        ----------
+        name: str
+            name of the parameter to update.
+        value: bool
+            boolean (True, False, 0 or 1) to vary a parameter or not.
+
+        """
+        self.set_parameter(name, value, "vary")
+
+    def set_min(self, name, value):
+        """Method to set the minimum value of a parameter.
+
+        Parameters
+        ----------
+        name: str
+            name of the parameter to update.
+        value: float
+            minimum value for the parameter.
+
+        """
+        self.set_parameter(name, value, "min")
+
+    def set_max(self, name, value):
+        """
+
+        Parameters
+        ----------
+        name: str
+            name of the parameter to update.
+        value: float
+            maximum value for the parameter.
+
+
+        """
+        self.set_parameter(name, value, "max")
+
+    def set_parameter(self, name, value, kind):
+        """Internal method to set the parameter value for some kind.
+
+        """
+        cat, param = name.rsplit("_", maxsplit=1)
+        if cat in self.stressmodels.keys():
+            self.stressmodels[cat].__getattribute__("set_" + kind)(name, value)
+        elif self.noisemodel:
+            if cat == self.noisemodel.name:
+                self.noisemodel.__getattribute__("set_" + kind)(name, value)
+        elif self.constant:
+            if cat == self.constant.name:
+                self.constant.__getattribute__("set_" + kind)(name, value)
+        else:
+            self.logger.warning("parameters with name %s is not present in"
+                                "the model" % name)
 
     def get_sim_index(self, tmin, tmax, freq, warmup):
         """Method to get the indices for the simulation, including the warmup
@@ -1048,7 +1119,7 @@ class Model:
 
         for name, vals in parameters.loc[:, ["optimal", "stderr"]].iterrows():
             popt, stderr = vals
-            val = np.abs(np.divide(stderr,popt) * 100)
+            val = np.abs(np.divide(stderr, popt) * 100)
             parameters.loc[name, "stderr"] = \
                 "{:} {:.5e} ({:.2f}{:})".format("\u00B1", stderr, val,
                                                 "\u0025")
