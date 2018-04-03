@@ -16,7 +16,7 @@ from .decorators import get_stressmodel
 from .io.base import dump
 from .noisemodels import NoiseModel
 from .plots import Plotting
-from .solver import LmfitSolve
+from .solver import LeastSquares
 from .stats import Statistics
 from .stressmodels import Constant
 from .timeseries import TimeSeries
@@ -467,7 +467,7 @@ class Model:
             self.parameters.loc["constant_d", "initial"] = 0.0
             self.normalize_residuals = True
 
-    def solve(self, tmin=None, tmax=None, solver=LmfitSolve, report=True,
+    def solve(self, tmin=None, tmax=None, solver=LeastSquares, report=True,
               noise=True, initial=True, weights=None, freq=None, warmup=None,
               fit_constant=True, **kwargs):
         """Method to solve the time series model.
@@ -532,7 +532,7 @@ class Model:
                                  self.settings['tmin'], self.settings['tmax'],
                                  self.settings["freq"])
             # set the constant to the mean of the residuals
-            mask = self.parameters.index == "constant_d"
+            mask = self.parameters.name == self.constant.name
             self.fit.optimal_params[mask] = res.mean()
 
         # make calibration data empty again (was set in initialize)

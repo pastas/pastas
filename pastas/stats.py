@@ -24,9 +24,7 @@ Examples
 
 TODO
 ----
-
 * PACF for irregular timestep
-* Nash-Sutcliffe
 
 """
 

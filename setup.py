@@ -28,12 +28,11 @@ setup(
         'Intended Audience :: Science/Research',
         'Intended Audience :: Other Audience',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.5'
     ],
     platforms='Windows, Mac OS-X',
-    install_requires=['numpy>=1.9', 'matplotlib>=1.5', 'lmfit>=0.9',
-                      'pandas>=0.19', 'scipy>=0.17'],
+    install_requires=['numpy>=1.9', 'matplotlib>=1.5', 'pandas>=0.19',
+                      'scipy>=0.17'],
     packages=find_packages(exclude=[]),
     package_data={"pastas": ["log_config.json"], },
 )
