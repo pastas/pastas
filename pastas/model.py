@@ -34,7 +34,7 @@ class Model:
         observation can be non-equidistant.
     constant: bool, optional
         Add a constant to the model (Default=True).
-    noisemodel: bool
+    noisemodel: bool, optional
         Add the default noisemodel to the model. A custom noisemodel can be
         added later in the modelling process as well.
     name: str, optional
@@ -126,7 +126,7 @@ class Model:
         ----------
         stressmodel: pastas.stressmodel.stressmodelBase
             instance of a pastas.stressmodel object.
-        replace: bool
+        replace: bool, optional
             replace the stressmodel if a stressmodel with the same name
             already exists. Not recommended but useful at times. Default is
             False.
@@ -170,7 +170,7 @@ class Model:
         self.parameters = self.get_init_parameters()
 
     def add_noisemodel(self, noisemodel):
-        """Adds a noise model to the time series Model.
+        """Adds a noisemodel to the time series Model.
 
         Parameters
         ----------
@@ -233,7 +233,8 @@ class Model:
         Parameters
         ----------
         parameters: array-like, optional
-            Array with the parameters used in the time series model.
+            Array with the parameters used in the time series model. See
+            Model.get_parameters() for more info if parameters is None.
         tmin: str, optional
         tmax: str, optional
         freq: str, optional
@@ -300,7 +301,8 @@ class Model:
         Parameters
         ----------
         parameters: list, optional
-            Array of the parameters used in the time series model.
+            Array of the parameters used in the time series model. See
+            Model.get_parameters() for more info if parameters is None.
         tmin: str, optional
         tmax: str, optional
         freq: str, optional
@@ -355,7 +357,8 @@ class Model:
         Parameters
         ----------
         parameters: list, optional
-            Array of the parameters used in the time series model.
+            Array of the parameters used in the time series model. See
+            Model.get_parameters() for more info if parameters is None.
         tmin: str, optional
         tmax: str, optional
         freq: str, optional
@@ -399,12 +402,12 @@ class Model:
 
     def initialize(self, tmin=None, tmax=None, freq=None, warmup=None,
                    noise=None, weights=None, initial=True, fit_constant=None):
-        """Initialize the model. This method is called by the solve-method,
-        but can also be triggered manually. See the solve-method for a
-        description of the arguments
+        """Method to initialize the model.
+
+        This method is called by the solve-method, but can also be triggered
+        manually. See the solve-method for a description of the arguments.
 
         """
-
         if noise is None and self.noisemodel:
             noise = True
         elif noise is True and self.noisemodel is None:
@@ -481,8 +484,8 @@ class Model:
             String with an end date for the simulation period (E.g. '2010').
             If none is provided, the tmax from the oseries is used.
         solver: pastas.solver.BaseSolver, optional
-            Class used to solve the model. Options are: ps.LmfitSolve
-            (default) or ps.LeastSquares. A class is needed, not an instance
+            Class used to solve the model. Options are: ps.LeastSquares
+            (default) or ps.LmfitSolve. A class is needed, not an instance
             of the class!
         report: bool, optional
             Print a report to the screen after optimization finished. This
@@ -498,7 +501,7 @@ class Model:
         weights: pandas.Series, optional
             Pandas Series with values by which the residuals are multiplied,
             index-based.
-        freq: str
+        freq: str, optional
             String with the frequency the stressmodels are simulated.
         warmup: float/int, optinal
             Warmup period (in Days) for which the simulation is calculated,
@@ -507,7 +510,7 @@ class Model:
             Argument that determines if the constant is fitted as a parameter.
             If it is set to False, the constant is set equal to the mean of
             the residuals.
-        **kwargs: dict
+        **kwargs: dict, optional
             All keyword arguments will be passed onto the solver. It depends
             on the solver used which
 
@@ -586,7 +589,7 @@ class Model:
         self.set_parameter(name, value, "min")
 
     def set_max(self, name, value):
-        """
+        """Method to set the maximum values of a parameter.
 
         Parameters
         ----------
@@ -891,10 +894,10 @@ class Model:
         return parameters
 
     def get_parameters(self, name=None):
-        """Internal method to obtain the parameters needed for calculation if
-        none are provided. This method is used by the simulation, residuals
-        and the innovations methods as well as other methods that need
-        parameters values as arrays.
+        """Internal method to obtain the parameters needed for calculation.
+
+        This method is used by the simulation, residuals and the innovations
+        methods as well as other methods that need parameters values as arrays.
 
         Parameters
         ----------
@@ -924,6 +927,29 @@ class Model:
     @get_stressmodel
     def get_contribution(self, name, tmin=None, tmax=None, tindex=None,
                          istress=None):
+        """Method to get the contribution of a stressmodel.
+
+        The optimal parameters are used when available, initial otherwise.
+
+        Parameters
+        ----------
+        name: str
+            String with the name of the stressmodel.
+        tmin: str or pandas.TimeStamp
+        tmax: str or pandas.TimeStamp
+        tindex: pandas.DatetimeIndex
+            Pandas datetimeindex to simulate the contribution for.
+        istress: int
+            When multiple stresses are present in a stressmodel,
+            this keyword can be used to obtain the contribution of an
+            individual stress.
+
+        Returns
+        -------
+        contrib: pandas.Series
+            Pandas Series with the contribution.
+
+        """
         p = self.get_parameters(name)
         dt = get_dt(self.settings["freq"])
         if istress is None:
@@ -943,6 +969,26 @@ class Model:
 
     @get_stressmodel
     def get_block_response(self, name):
+        """Method to obtain the block response for a stressmodel.
+
+        The optimal parameters are used when available, initial otherwise.
+
+        Parameters
+        ----------
+        name: str
+            String with the name of the stressmodel.
+
+        Returns
+        -------
+        pandas.Series
+            Pandas Series with the block response. The index is based on the
+            frequency that is present in the model.settings.
+
+        TODO
+        ----
+        - Make sure an error is thrown when no rfunc is present.
+
+        """
         p = self.get_parameters(name)
         dt = get_dt(self.settings["freq"])
         b = self.stressmodels[name].rfunc.block(p, dt)
@@ -951,6 +997,26 @@ class Model:
 
     @get_stressmodel
     def get_step_response(self, name):
+        """Method to obtain the step response for a stressmodel.
+
+        The optimal parameters are used when available, initial otherwise.
+
+        Parameters
+        ----------
+        name: str
+            String with the name of the stressmodel.
+
+        Returns
+        -------
+        pandas.Series
+            Pandas Series with the step response. The index is based on the
+            frequency that is present in the model.settings.
+
+        TODO
+        ----
+        - Make sure an error is thrown when no rfunc is present.
+
+        """
         p = self.get_parameters(name)
         dt = get_dt(self.settings["freq"])
         s = self.stressmodels[name].rfunc.step(p, dt)
@@ -959,13 +1025,26 @@ class Model:
 
     @get_stressmodel
     def get_stress(self, name):
+        """Method to obtain the stress(es) from the stressmodel.
+
+        Parameters
+        ----------
+        name: str
+            String with the name of the stressmodel.
+
+        Returns
+        -------
+        stress: pandas.Series/list
+            If one stress is present, a pandas Series is returned. If more
+            are present, a list of pandas Series is returned.
+
+        """
         p = self.get_parameters(name)
         stress = self.stressmodels[name].get_stress(p)
         return stress
 
     def get_metadata(self, meta=None):
-        """Internal method that returns a metadata dict with the basic
-        information.
+        """Internal method that returns a metadata dictionary.
 
         Parameters
         ----------
@@ -987,8 +1066,7 @@ class Model:
         return metadata
 
     def get_file_info(self):
-        """Internal method to get the file information, mainly used for saving
-        files.
+        """Internal method to get the file information.
 
         Returns
         -------
@@ -1039,6 +1117,7 @@ class Model:
 
     def update_stresses(self, tmin=None, tmax=None, freq=None, **kwargs):
         """Method to update the settings of all stresses simultaneously.
+
         This method is used in the initialize method of the model.
 
         Parameters
@@ -1053,8 +1132,9 @@ class Model:
             ts.update_stress(freq=freq, tmin=tmin, tmax=tmax, **kwargs)
 
     def update_oseries(self, tmin=None, tmax=None, freq=None, **kwargs):
-        """Method to update the oseries. This will change the values used by
-        the model when calibrating.
+        """Method to update the oseries.
+
+        This will change the values used by the model when calibrating.
 
         Parameters
         ----------
@@ -1067,8 +1147,7 @@ class Model:
         self.oseries.update_series(tmin=tmin, tmax=tmax, freq=freq, **kwargs)
 
     def fit_report(self, output="full"):
-        """Method that reports on the fit after a model is optimized. May be
-        called independently as well.
+        """Method that reports on the fit after a model is optimized.
 
         Parameters
         ----------
@@ -1193,8 +1272,8 @@ Parameters (%s were optimized)
     def dump_data(self, series=True, sim_series=False, metadata=True,
                   file_info=True, transformed_series=False):
         """Internal method to export a PASTAS model to the json export format.
-        Helper
-         function for the self.export method.
+
+        Helper function for the self.export method.
 
          Parameters
          ----------
@@ -1270,6 +1349,20 @@ Parameters (%s were optimized)
         return data
 
     def dump(self, fname, series=True, transformed_series=False, **kwargs):
+        """Method to dump the Pastas model to a file.
+
+        Parameters
+        ----------
+        fname: str
+            String with the name and the extension of the file. File
+            extension has to be supported by Pastas. E.g. "model.pas"
+        series: bool
+            Export the simulated series or not. Default is False.
+        transformed_series: bool
+            Export transformed series.
+        kwargs: any argument that is passed to the Model.dump_data() method.
+
+        """
 
         # Get dicts for all data sources
         data = self.dump_data(series, transformed_series=transformed_series)
