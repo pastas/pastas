@@ -49,7 +49,7 @@ class TestGXG(object):
 
     def test_glg(self):
         idx = pd.date_range('20000101', '20550101', freq='d')
-        s = pd.Series([x.month + x.day for x in idx], index=idx,)
+        s = pd.Series([x.month + x.day for x in idx], index=idx, )
         v = ps.stats.glg(s, year_offset='a')
         assert v == 16.
 
@@ -70,13 +70,15 @@ class TestGXG(object):
     def test_gvg(self):
         idx = pd.to_datetime(['20170314', '20170328', '20170414', '20170428'])
         s = pd.Series([1., 2., 3., 4], index=idx)
-        v = ps.stats.gvg(s, fill_method='linear', output='mean', min_n_meas=1, min_n_years=1)
+        v = ps.stats.gvg(s, fill_method='linear', output='mean', min_n_meas=1,
+                         min_n_years=1)
         assert v == 2.
 
     def test_gvg_nan(self):
         idx = pd.to_datetime(['20170228', '20170428', '20170429'])
         s = pd.Series([1., 2., 3.], index=idx)
-        v = ps.stats.gvg(s, fill_method=None, output='mean', min_n_meas=1, min_n_years=1)
+        v = ps.stats.gvg(s, fill_method=None, output='mean', min_n_meas=1,
+                         min_n_years=1)
         assert np.isnan(v)
 
         # def test_gxg_series(self):
