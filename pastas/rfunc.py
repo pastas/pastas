@@ -1,8 +1,22 @@
 # coding=utf-8
-"""This module contains the classes for the response functions.
+"""This module contains all the response functions available in Pastas.
 
 More information on how to write a response class can be found :
-:ref:` here <http://pastas.github.io/pastas/developers.html>`
+:ref: `here <http://pastas.readthedocs.io/en/latest/developers.html>`
+
+Routines in Module
+------------------
+Fully supported and tested routines in this module are
+* Gamma()
+* Exponential()
+* Hantush()
+* One()
+
+TODO
+----
+- Test Theis response function
+- Test Bruggeman response function
+
 """
 
 from __future__ import print_function, division
@@ -11,23 +25,7 @@ import numpy as np
 import pandas as pd
 from scipy.special import gammainc, gammaincinv, k0, exp1, erfc, lambertw
 
-_class_doc = """
-Parameters
-----------
-nparam: int
-    number of parameters.
-up: bool
-    indicates whether a positive stress will cause the head to go up
-    (True) or down (False)
-meanstress: float
-    mean value of the stress, used to set the initial value such that
-    the final step times the mean stress equals 1
-cutoff: float
-    percentage after which the step function is cut off.
-tmax: float
-    time corresponding to the cutoff
-
-"""
+__all__ = ["Gamma", "Exponential", "Hantush", "One"]
 
 
 class RfuncBase:
@@ -35,7 +33,7 @@ class RfuncBase:
 
     def __init__(self, up, meanstress, cutoff):
         self.up = up
-        # Completely arbitrary number to prevent  divsion by zero
+        # Completely arbitrary number to prevent divsion by zero
         if meanstress < 1e-8:
             meanstress = 1e-8
         self.meanstress = meanstress
@@ -54,15 +52,27 @@ class RfuncBase:
 
 
 class Gamma(RfuncBase):
-    _name = "Gamma"
+    """Gamma response function with 3 parameters A, a, and n.
 
-    __doc__ = """Gamma response function with 3 parameters A, a, and n.
+    Parameters
+    ----------
+    up: bool, optional
+        indicates whether a positive stress will cause the head to go up
+        (True, default) or down (False)
+    meanstress: float
+        mean value of the stress, used to set the initial value such that
+        the final step times the mean stress equals 1
+    cutoff: float
+        percentage after which the step function is cut off. default=0.99.
+
+    Notes
+    -----
 
     .. math::
         step(t) = A * Gammainc(n, t / a)
 
-    %(doc)s
-    """ % {'doc': _class_doc}
+    """
+    _name = "Gamma"
 
     def __init__(self, up=True, meanstress=1, cutoff=0.99):
         RfuncBase.__init__(self, up, meanstress, cutoff)
@@ -92,23 +102,34 @@ class Gamma(RfuncBase):
         if isinstance(dt, np.ndarray):
             t = dt
         else:
-            self.tmax = max(self.calc_tmax(p), 3 * dt)
-            t = np.arange(dt, self.tmax, dt)
+            tmax = max(self.calc_tmax(p), 3 * dt)
+            t = np.arange(dt, tmax, dt)
 
         s = p[0] * gammainc(p[1], t / p[2])
         return s
 
 
 class Exponential(RfuncBase):
+    """Exponential response function with 2 parameters: A and a.
+
+        Parameters
+        ----------
+        up: bool, optional
+            indicates whether a positive stress will cause the head to go up
+            (True, default) or down (False)
+        meanstress: float
+            mean value of the stress, used to set the initial value such that
+            the final step times the mean stress equals 1
+        cutoff: float
+            percentage after which the step function is cut off. default=0.99.
+
+        Notes
+        -----
+        .. math::
+            step(t) = A * (1 - exp(-t / a))
+
+        """
     _name = "Exponential"
-
-    __doc__ = """Exponential response function with 2 parameters: A and a.
-
-    .. math::
-        step(t) = A * (1 - exp(-t / a))
-
-    %(doc)s
-    """ % {'doc': _class_doc}
 
     def __init__(self, up=True, meanstress=1, cutoff=0.99):
         RfuncBase.__init__(self, up, meanstress, cutoff)
@@ -136,15 +157,25 @@ class Exponential(RfuncBase):
         if isinstance(dt, np.ndarray):
             t = dt
         else:
-            self.tmax = max(self.calc_tmax(p), 3 * dt)
-            t = np.arange(dt, self.tmax, dt)
+            tmax = max(self.calc_tmax(p), 3 * dt)
+            t = np.arange(dt, tmax, dt)
         s = p[0] * (1.0 - np.exp(-t / p[1]))
         return s
 
 
 class Hantush(RfuncBase):
-    _name = "Hantush"
-    __doc__ = """ The Hantush well function.
+    """ The Hantush well function.
+
+    Parameters
+    ----------
+    up: bool, optional
+        indicates whether a positive stress will cause the head to go up
+        (True, default) or down (False)
+    meanstress: float
+        mean value of the stress, used to set the initial value such that
+        the final step times the mean stress equals 1
+    cutoff: float
+        percentage after which the step function is cut off. default=0.99.
 
     Notes
     -----
@@ -153,13 +184,19 @@ class Hantush(RfuncBase):
 
     References
     ----------
-    Hantush, M. S., & Jacob, C. E. (1955). Non‐steady radial flow in an infinite leaky aquifer. Eos, Transactions American Geophysical Union, 36(1), 95-100.
+    .. [1] Hantush, M. S., & Jacob, C. E. (1955). Non‐steady radial flow in an
+        infinite leaky aquifer. Eos, Transactions American Geophysical Union,
+        36(1), 95-100.
 
-    Veling, E. J. M., & Maas, C. (2010). Hantush well function revisited. Journal of hydrology, 393(3), 381-388.
+    .. [2] Veling, E. J. M., & Maas, C. (2010). Hantush well function
+    revisited. Journal of hydrology, 393(3), 381-388.
 
-    Von Asmuth, J. R., Maas, K., Bakker, M., & Petersen, J. (2008). Modeling time series of ground water head fluctuations subjected to multiple stresses. Ground Water, 46(1), 30-40.
+    .. [3] Von Asmuth, J. R., Maas, K., Bakker, M., & Petersen, J. (2008).
+    Modeling time series of ground water head fluctuations subjected to
+    multiple stresses. Ground Water, 46(1), 30-40.
 
     """
+    _name = "Hantush"
 
     def __init__(self, up=False, meanstress=1, cutoff=0.99):
         RfuncBase.__init__(self, up, meanstress, cutoff)
@@ -195,8 +232,8 @@ class Hantush(RfuncBase):
         if isinstance(dt, np.ndarray):
             t = dt
         else:
-            self.tmax = max(self.calc_tmax(p), 3 * dt)
-            t = np.arange(dt, self.tmax, dt)
+            tmax = max(self.calc_tmax(p), 3 * dt)
+            t = np.arange(dt, tmax, dt)
         tau = t / cS
         tau1 = tau[tau < rho / 2]
         tau2 = tau[tau >= rho / 2]
@@ -210,8 +247,7 @@ class Hantush(RfuncBase):
 
 
 class Theis(RfuncBase):
-    _name = "Theis"
-    __doc__ = """The Theis well function.
+    """The Theis well function.
 
     Notes
     -----
@@ -220,9 +256,13 @@ class Theis(RfuncBase):
 
     References
     ----------
-    Theis, C. V. (1935). The relation between the lowering of the Piezometric surface and the rate and duration of discharge of a well using groundwater storage. Eos, Transactions American Geophysical Union, 16(2), 519-524.
+    .. [1] Theis, C. V. (1935). The relation between the lowering of the
+    Piezometric surface and the rate and duration of discharge of a well using
+    groundwater storage. Eos, Transactions American Geophysical Union, 16(2),
+    519-524.
 
     """
+    _name = "Theis"
 
     def __init__(self, up=True, meanstress=1, cutoff=0.99):
         RfuncBase.__init__(self, up, meanstress, cutoff)
@@ -260,16 +300,16 @@ class Theis(RfuncBase):
 
 
 class Bruggeman(RfuncBase):
-    _name = "Bruggeman"
-    __doc__ = """The function of Bruggeman, for a river in a confined aquifer,
-    overlain
-    by an aquitard with aquiferous ditches.
+    """The function of Bruggeman, for a river in a confined aquifer,
+    overlain by an aquitard with aquiferous ditches.
 
     References
     ----------
-    http://grondwaterformules.nl/index.php/formules/waterloop/deklaag-met-sloten
+    .. [2] http://grondwaterformules.nl/index.php/formules/waterloop/deklaag
+    -met-sloten
 
     """
+    _name = "Bruggeman"
 
     def __init__(self, up=True, meanstress=1, cutoff=0.99):
         RfuncBase.__init__(self, up, meanstress, cutoff)
@@ -313,10 +353,10 @@ class Bruggeman(RfuncBase):
 
 
 class One(RfuncBase):
-    _name = "One"
-    __doc__ = """Dummy class for Constant. Returns 1
+    """Dummy class for Constant. Returns 1
 
     """
+    _name = "One"
 
     def __init__(self, up, meanstress, cutoff):
         RfuncBase.__init__(self, up, meanstress, cutoff)
