@@ -680,6 +680,19 @@ class Model:
         else:
             self.settings["time_offset"] = pd.Timedelta(0)
 
+    def set_log_level(self, log_level):
+        """Method to set the log_level for which messages are printen to the
+        Python console. This can be usefull for when more or less info is
+        desirable.
+
+        Parameters
+        ----------
+        log_level: str
+            String with the level, options are: ERROR, WARNING and INFO.
+
+        """
+        self.logger.parent.handlers[0].setLevel(log_level)
+
     def get_sim_index(self, tmin, tmax, freq, warmup):
         """Internal method to get the indices for the simulation, including
         the warmup period.
@@ -1095,23 +1108,26 @@ class Model:
             Logging instance that handles all logging throughout pastas,
             including all sub modules and packages.
 
+        Notes
+        -----
 
         """
-        if log_level is None:
-            fname = os.getenv(env_key, None)
-            if not fname or not os.path.exists(fname):
-                dir_path = os.path.dirname(os.path.realpath(__file__))
-                fname = os.path.join(dir_path, config_file)
-            if os.path.exists(fname):
-                with open(fname, 'rt') as f:
-                    config = json.load(f)
-                logging.config.dictConfig(config)
-            else:
-                logging.basicConfig(level=logging.INFO)
+        fname = os.getenv(env_key, None)
+        if not fname or not os.path.exists(fname):
+            dir_path = os.path.dirname(os.path.realpath(__file__))
+            fname = os.path.join(dir_path, config_file)
+        if os.path.exists(fname):
+            with open(fname, 'rt') as f:
+                config = json.load(f)
+            logging.config.dictConfig(config)
         else:
-            logging.basicConfig(level=log_level)
+            logging.basicConfig(level=logging.INFO)
 
         logger = logging.getLogger(__name__)
+
+        # Set log_level for console to user-defined value
+        if log_level is not None:
+            logger.parent.handlers[0].setLevel(log_level)
 
         return logger
 
