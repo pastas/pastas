@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class TimeSeries(pd.Series):
-    _kind_settings = {
+    _predefined_settings = {
         "oseries": {"fill_nan": "drop", "sample_down": "drop"},
         "prec": {"sample_up": "bfill", "sample_down": "mean",
                  "fill_nan": 0.0, "fill_before": "mean", "fill_after": "mean"},
@@ -39,32 +39,6 @@ class TimeSeries(pd.Series):
 
     def __init__(self, series, name=None, settings=None, metadata=None,
                  freq_original=None, **kwargs):
-        """Class that supports user-provided time series within PASTAS.
-
-        Parameters
-        ----------
-        series: pandas.Series or pastas.TimeSeries
-            Original series or a pastas TimeSeries instance. The original
-            series will internally be stored.
-        name: str
-            string with the name for this series.
-        settings: str or dict
-            string with the kind of the series, to autocomplete the following
-            keywords. The user can choose from: oseries, evap, prec, well.
-        metadata: dict
-        freq_original: str
-            String containing the original frequency. This can be usefull
-            for when PASTAS cannnot infer the frequency by itself. The
-            required string format is found at
-            http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
-
-        Notes
-        -----
-        Individual settings can also be provided through the kwargs. A table of
-        possible settings can be found at the PASTAS documentation website
-        at ReadTheDocs.
-
-        """
         pd.Series.__init__(self)
 
         self.index.name = "Date"
@@ -120,19 +94,19 @@ class TimeSeries(pd.Series):
             logger.warning("Deprecation error: the kind argument will be "
                            "deprecated in Pastas 0.9.6. Please provide "
                            "a string to the settings argument.")
-            if kind in self._kind_settings.keys():
-                if self.update_settings(**self._kind_settings[kind]):
+            if kind in self._predefined_settings.keys():
+                if self.update_settings(**self._predefined_settings[kind]):
                     update = True
 
         # Update the options with user-provided values, if any.
         if settings:
             if isinstance(settings, str):
-                if settings in self._kind_settings.keys():
-                    settings = self._kind_settings[settings]
+                if settings in self._predefined_settings.keys():
+                    settings = self._predefined_settings[settings]
                 else:
                     logger.error("Settings shortcut code %s is not in the "
                                  "predefined settings options. Please choose "
-                                 "from %s", self._kind_settings.keys())
+                                 "from %s", self._predefined_settings.keys())
             if self.update_settings(**settings):
                 update = True
         if kwargs:
