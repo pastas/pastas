@@ -1,16 +1,17 @@
 # coding=utf-8
 """This module contains all the response functions available in Pastas.
 
-More information on how to write a response class can be found :
-:ref: `here <http://pastas.readthedocs.io/en/latest/developers.html>`
+More information on how to write a response class can be found `here
+ <http://pastas.readthedocs.io/en/latest/developers.html>_`.
 
 Routines in Module
 ------------------
-Fully supported and tested routines in this module are
-* Gamma()
-* Exponential()
-* Hantush()
-* One()
+Fully supported and tested routines in this module are:
+
+- Gamma()
+- Exponential()
+- Hantush()
+- One()
 
 TODO
 ----

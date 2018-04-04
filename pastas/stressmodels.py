@@ -1,4 +1,21 @@
-"""The stressmodels module contains all the models that can be added to a Model.
+"""The stressmodels module contains all the stressmodels that available in
+Pastas.
+
+Supported Stressmodels
+----------------------
+The following stressmodels are supported and tested:
+
+- StressModel
+- StressModel2
+- Constant
+
+All other stressmodels are for research purposes only and are not (yet)
+fully supported and tested.
+
+TODO
+----
+- Test and support StepModel
+- Test and support LinearTrend
 
 """
 
@@ -16,12 +33,12 @@ from .timeseries import TimeSeries
 
 logger = logging.getLogger(__name__)
 
-all = ["StressModel", "StressModel2", "Constant"]
+__all__ = ["StressModel", "StressModel2", "Constant", "StepModel",
+           "LinearTrend"]
 
 
 class StressModelBase:
-    _name = "StressModelBase"
-    __doc__ = """StressModel Base class called by each StressModel object.
+    """StressModel Base class called by each StressModel object.
 
     Attributes
     ----------
@@ -33,6 +50,7 @@ class StressModelBase:
         Dataframe containing the parameters.
 
     """
+    _name = "StressModelBase"
 
     def __init__(self, rfunc, name, tmin, tmax, up, meanstress, cutoff):
         self.rfunc = rfunc(up, meanstress, cutoff)
@@ -163,7 +181,8 @@ class StressModelBase:
         data = []
 
         for stress in self.stress:
-            data.append(stress.dump(series=series, transformed_series=transformed_series))
+            data.append(stress.dump(series=series,
+                                    transformed_series=transformed_series))
 
         return data
 
@@ -190,8 +209,7 @@ class StressModelBase:
 
 
 class StressModel(StressModelBase):
-    _name = "StressModel"
-    __doc__ = """Time series model consisting of the convolution of one stress with one
+    """Time series model consisting of the convolution of one stress with one
     response function.
 
     Parameters
@@ -201,19 +219,34 @@ class StressModel(StressModelBase):
     rfunc: rfunc class
         Response function used in the convolution with the stress.
     name: str
-        Name of the stress
-    up: Boolean
+        Name of the stress.
+    up: Boolean, optional
         True if response function is positive (default), False if negative.
-    cutoff: float
-        float between 0 and 1 to determine how long the response is (default 
+    cutoff: float, optional
+        float between 0 and 1 to determine how long the response is (default
         is 99% of the actual response time). Used to reduce computation times.
-        Options: 'prec', 'evap', and some others
-    settings: dict
-        The settings of the StressModel. 
+    settings: dict or str, optional
+        The settings of the stress. This can be a string referring to a
+        predefined settings dict, or a dict with the settings to apply.
+        Refer to the docstring of pastas.Timeseries for further information.
     metadata: dict, optional
-        dictionary containing metadata about the stress.
+        dictionary containing metadata about the stress. This is passed onto
+        the TimeSeries object.
+
+    Examples
+    --------
+    >>> import pastas as ps
+    >>> import pandas as pd
+    >>> sm = ps.StressModel(stress=pd.Series(), rfunc=ps.Gamma, name="Prec", \
+    >>> settings="prec")
+
+    See Also
+    --------
+    pastas.rfunc
+    pastas.TimeSeries
 
     """
+    _name = "StressModel"
 
     def __init__(self, stress, rfunc, name, up=True, cutoff=0.99,
                  settings=None, metadata=None, **kwargs):
@@ -277,37 +310,56 @@ class StressModel(StressModelBase):
         data["name"] = self.name
         data["up"] = True if self.rfunc.up == 1 else False
         data["cutoff"] = self.rfunc.cutoff
-        data["stress"] = self.dump_stress(series, transformed_series=transformed_series)
+        data["stress"] = self.dump_stress(series,
+                                          transformed_series=transformed_series)
 
         return data
 
 
 class StressModel2(StressModelBase):
-    _name = "StressModel2"
-    __doc__ = """Time series model consisting of the convolution of two stresses with one
+    """Time series model consisting of the convolution of two stresses with one
     response function. The first stress causes the head to go up and the second
     stress causes the head to go down.
 
     Parameters
     ----------
     stress: list of pandas.Series
-        list of pandas.Series or pastas.TimeSeries objects containing the 
+        list of pandas.Series or pastas.TimeSeries objects containing the
         stresses.
     rfunc: pastas.rfunc instance
         Response function used in the convolution with the stress.
     name: str
         Name of the stress
-    up: Boolean
+    up: Boolean, optional
         True if response function is positive (default), False if negative.
     cutoff: float
-        float between 0 and 1 to determine how long the response is (default 
+        float between 0 and 1 to determine how long the response is (default
         is 99% of the actual response time). Used to reduce computation times.
     settings: Tuple with two dicts
-        The settings of the individual TimeSeries. 
-    metadata: dict, optional
-        dictionary containing metadata about the stress.
-    
+        The settings of the individual TimeSeries.
+    settings: list of dicts or strs, optional
+        The settings of the stresses. This can be a string referring to a
+        predefined settings dict, or a dict with the settings to apply.
+        Refer to the docstring of pastas.Timeseries for further information.
+        Default is ("prec", "evap").
+    metadata: list of dicts, optional
+        dictionary containing metadata about the stress. This is passed onto
+        the TimeSeries object.
+
+    Notes
+    -----
+    The order in which the stresses are provided is the order the metadata
+    and settings dictionaries or string are passed onto the TimeSeries
+    objects. By default, the precipitation stress is the first and the
+    evaporation stress the second stress.
+
+    See Also
+    --------
+    pastas.rfunc
+    pastas.TimeSeries
+
     """
+    _name = "StressModel2"
 
     def __init__(self, stress, rfunc, name, up=True, cutoff=0.99,
                  settings=("prec", "evap"), metadata=(None, None), **kwargs):
@@ -400,30 +452,35 @@ class StressModel2(StressModelBase):
         data["name"] = self.name
         data["up"] = True if self.rfunc.up == 1 else False
         data["cutoff"] = self.rfunc.cutoff
-        data["stress"] = self.dump_stress(series, transformed_series=transformed_series)
+        data["stress"] = self.dump_stress(series,
+                                          transformed_series=transformed_series)
 
         return data
 
 
 class StepModel(StressModelBase):
-    _name = "StepModel"
-    __doc__ = """A stress consisting of a step resonse from a specified time. The
+    """Stressmodel that simulates a step trend.
+
+    A stress consisting of a step resonse from a specified time. The
     amplitude and form (if rfunc is not One) of the step is calibrated. Before
     t_step the response is zero.
 
     """
+    _name = "StepModel"
 
-    def __init__(self, t_step, name, rfunc=One, up=True):
-        assert t_step is not None, 'Error: Need to specify time of step (for now this will not be optimized)'
+    def __init__(self, start, name, rfunc=One, up=True):
         StressModelBase.__init__(self, rfunc, name, pd.Timestamp.min,
                                  pd.Timestamp.max, up, 1.0, None)
-        self.t_step = t_step
+        self.t_step = start
         self.set_init_parameters()
 
     def set_init_parameters(self):
         self.parameters = self.rfunc.set_parameters(self.name)
-        self.parameters.loc['step_t'] = (
-            self.t_step.value, pd.Timestamp.min.value, pd.Timestamp.max.value,
+        tmin = pd.Timestamp.min.toordinal()
+        tmax = pd.Timestamp.max.toordinal()
+
+        self.parameters.loc['start'] = (
+            self.t_step.value, tmin, tmax,
             0, self.name)
         self.nparam += 1
 
@@ -435,12 +492,67 @@ class StepModel(StressModelBase):
         return h
 
 
+class LinearTrend(StressModelBase):
+    """Stressmodel that simulated a linear trend.
+
+    name: str
+        String with the name of the stressmodel
+    start: str
+        String with a date to start the trend, will be transformed to an
+        ordinal number internally. E.g. "2018-01-01"
+    end: str
+        String with a date to end the trend, will be transformed to an ordinal
+        number internally. E.g. "2018-01-01"
+
+    """
+    _name = "LinearTrend"
+
+    def __init__(self, name="linear_trend", start=0, end=0):
+        StressModelBase.__init__(self, One, name, pd.Timestamp.min,
+                                 pd.Timestamp.max, 1, 0, 0)
+        self.nparam = 3
+        self.set_init_parameters(start, end)
+
+    def set_init_parameters(self, start, end):
+        start = pd.Timestamp(start).toordinal()
+        end = pd.Timestamp(end).toordinal()
+        tmin = pd.Timestamp.min.toordinal()
+        tmax = pd.Timestamp.max.toordinal()
+
+        self.parameters.loc[self.name + "_a"] = (
+            0, -np.inf, np.inf, 1, self.name)
+        self.parameters.loc[self.name + "_tstart"] = (
+            start, tmin, tmax, 1, self.name)
+        self.parameters.loc[self.name + "_tend"] = (
+            end, tmin, tmax, 1, self.name)
+
+    def simulate(self, p, tindex, dt=1):
+        if tindex is None:
+            logger.error("A time index has to be provided to simulate this "
+                         "stressmodel")
+
+        if p[1] < tindex[0].toordinal():
+            tmin = tindex[0]
+        else:
+            tmin = pd.Timestamp.fromordinal(int(p[1]))
+
+        if p[2] >= tindex[-1].toordinal():
+            tmax = tindex[-1]
+        else:
+            tmax = pd.Timestamp.fromordinal(int(p[2]))
+
+        trend = tindex.to_series().diff() / pd.Timedelta(1, "D")
+        trend.loc[:tmin] = 0
+        trend.loc[tmax:] = 0
+        trend = trend.cumsum() * p[0]
+        return trend
+
+
 class NoConvModel(StressModelBase):
-    _name = "NoConvModel"
-    __doc__ = """Time series model consisting of the calculation of one stress
+    """Time series model consisting of the calculation of one stress
      with one response function, without the use of convolution (so it is much
      slower). The advantage is that you do not have to interpolate the
-     simulation to the observation timesteps, because you calculate the 
+     simulation to the observation timesteps, because you calculate the
      simulation at the exact moment of the observations. This StressModel works
      well for models with short observation-series and/or short stress series.
 
@@ -468,6 +580,7 @@ class NoConvModel(StressModelBase):
         interpolation.
 
     """
+    _name = "NoConvModel"
 
     def __init__(self, stress, rfunc, name, metadata=None, up=True,
                  cutoff=0.99, settings=None, **kwargs):
@@ -551,8 +664,7 @@ class NoConvModel(StressModelBase):
 
 
 class Constant(StressModelBase):
-    _name = "Constant"
-    __doc__ = """A constant value that is added to the time series model.
+    """A constant value that is added to the time series model.
 
     Parameters
     ----------
@@ -561,6 +673,7 @@ class Constant(StressModelBase):
         observed series.
 
     """
+    _name = "Constant"
 
     def __init__(self, name="constant", value=0.0, pmin=np.nan, pmax=np.nan):
         self.nparam = 1
@@ -572,7 +685,7 @@ class Constant(StressModelBase):
         self.set_init_parameters()
 
     def set_init_parameters(self):
-        self.parameters.loc['constant_d'] = (
+        self.parameters.loc[self.name + "_d"] = (
             self.value, self.pmin, self.pmax, 1, self.name)
 
     def simulate(self, p=None):
@@ -580,10 +693,9 @@ class Constant(StressModelBase):
 
 
 class WellModel(StressModelBase):
-    _name = "WellModel"
-    __doc__ = """Time series model consisting of the convolution of one or more
-    stresses with one response function. The distance from an influence to 
-    the location of the oseries has to be provided for each 
+    """Time series model consisting of the convolution of one or more
+    stresses with one response function. The distance from an influence to
+    the location of the oseries has to be provided for each
 
     Parameters
     ----------
@@ -601,6 +713,7 @@ class WellModel(StressModelBase):
     wells in a time series model.
 
     """
+    _name = "WellModel"
 
     def __init__(self, stress, rfunc, name, radius, up=False, cutoff=0.99,
                  settings="well"):
