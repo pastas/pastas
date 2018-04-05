@@ -230,7 +230,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         innovations = self.ml.innovations(tmin=tmin, tmax=tmax)
         n = innovations.size
-        nparam = len(self.ml.parameters[self.ml.parameters.vary is True])
+        nparam = len(self.ml.parameters[self.ml.parameters.vary == True])
         bic = -2.0 * np.log(sum(innovations ** 2.0)) + nparam * np.log(n)
         return bic
 
@@ -247,7 +247,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
             L = likelihood function for the model.
         """
         innovations = self.ml.innovations(tmin=tmin, tmax=tmax)
-        nparam = len(self.ml.parameters[self.ml.parameters.vary is True])
+        nparam = len(self.ml.parameters[self.ml.parameters.vary == True])
         aic = -2.0 * np.log(sum(innovations ** 2.0)) + 2.0 * nparam
         return aic
 
