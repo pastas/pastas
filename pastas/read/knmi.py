@@ -1,35 +1,6 @@
 """
 @author: ruben calje
-Reads daily meteorological data in a file from stations of the KNMI:
-knmi = KnmiStation.fromfile(filename)
 
-Data can be downloaded for the meteorological stations at:
-https://www.knmi.nl/nederland-nu/klimatologie/daggegevens
-or
-http://projects.knmi.nl/klimatologie/daggegevens/selectie.cgi
-
-For the rainfall stations data is available at:
-https://www.knmi.nl/nederland-nu/klimatologie/monv/reeksen
-
-Also, data from the meteorological stations can be downloaded directly, for example with
-knmi = KnmiStation(stns=260, start=datetime(1970, 1, 1), end=datetime(1971, 1, 1))  # 260 = de bilt
-knmi.download()
-
-Hourly data can be downloaded with the 'interval'keyword set to 'hour' or 'hourly':
-knmi = KnmiStation(stns=260, start='2017', end='2018', interval='hourly')
-
-Data from rainfall-stations can be downloaded by asking for the variable 'RD' (the stns variable now describes codes for rainfall-stations):
-knmi = KnmiStation(stns=550, start='2018', end='2019', vars='RD') # rainfall-station in de bilt
-
-Times are recalculated to UT+1 (standard-time in the Netherlands), from UT.
-Also the datetime-index of the data is set at the end of the period that the data describes.
-So the rainfall between 2018-01-01 09:00:00 (08:00:00 UT) and 2018-01-02 09:00:00 (08:00:00 UT) gets the timestamp of 2018-01-02 09:00:00
-
-Units in the data of the knmi are recalculated to more basic SI-units. So mm are transformed to m, and a factor of 0,1 is transformed to 1.
-
-A description of the variables is found in knmi.variables.
-Information about the measurement-station(s) is found in knmi.stations.
-The measurement-data itself is found in knmi.data
 """
 
 from __future__ import print_function, division
@@ -101,6 +72,38 @@ def read_knmi(fname, variables='RD'):
 
 
 class KnmiStation:
+    """
+    Reads daily meteorological data in a file from stations of the KNMI:
+    knmi = KnmiStation.fromfile(filename)
+
+    Data can be downloaded for the meteorological stations at:
+    https://www.knmi.nl/nederland-nu/klimatologie/daggegevens
+    or
+    http://projects.knmi.nl/klimatologie/daggegevens/selectie.cgi
+
+    For the rainfall stations data is available at:
+    https://www.knmi.nl/nederland-nu/klimatologie/monv/reeksen
+
+    Also, data from the meteorological stations can be downloaded directly, for example with
+    knmi = KnmiStation(stns=260, start=datetime(1970, 1, 1), end=datetime(1971, 1, 1))  # 260 = de bilt
+    knmi.download()
+
+    Hourly data can be downloaded with the 'interval'keyword set to 'hour' or 'hourly':
+    knmi = KnmiStation(stns=260, start='2017', end='2018', interval='hourly')
+
+    Data from rainfall-stations can be downloaded by asking for the variable 'RD' (the stns variable now describes codes for rainfall-stations):
+    knmi = KnmiStation(stns=550, start='2018', end='2019', vars='RD') # rainfall-station in de bilt
+
+    Times are recalculated to UT+1 (standard-time in the Netherlands), from UT.
+    Also the datetime-index of the data is set at the end of the period that the data describes.
+    So the rainfall between 2018-01-01 09:00:00 (08:00:00 UT) and 2018-01-02 09:00:00 (08:00:00 UT) gets the timestamp of 2018-01-02 09:00:00
+
+    Units in the data of the knmi are recalculated to more basic SI-units. So mm are transformed to m, and a factor of 0,1 is transformed to 1.
+
+    A description of the variables is found in knmi.variables.
+    Information about the measurement-station(s) is found in knmi.stations.
+    The measurement-data itself is found in knmi.data
+    """
     def __init__(self, start=None, end=None, inseason=False, vars='ALL',
                  stns='260', interval='daily'):
         if start is None:
