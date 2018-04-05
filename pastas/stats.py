@@ -137,7 +137,9 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         References
         ----------
-        Nash, J. E., & Sutcliffe, J. V. (1970). River flow forecasting through conceptual models part I—A discussion of principles. Journal of hydrology, 10(3), 282-290.
+        .. [NS] Nash, J. E., & Sutcliffe, J. V. (1970). River flow forecasting
+        through conceptual models part I—A discussion of principles. Journal
+        of hydrology, 10(3), 282-290.
 
         """
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
@@ -228,7 +230,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         innovations = self.ml.innovations(tmin=tmin, tmax=tmax)
         n = innovations.size
-        nparam = len(self.ml.parameters[self.ml.parameters.vary == True])
+        nparam = len(self.ml.parameters[self.ml.parameters.vary is True])
         bic = -2.0 * np.log(sum(innovations ** 2.0)) + nparam * np.log(n)
         return bic
 
@@ -245,30 +247,28 @@ included in Pastas. To obtain a list of all statistics that are included type:
             L = likelihood function for the model.
         """
         innovations = self.ml.innovations(tmin=tmin, tmax=tmax)
-        nparam = len(self.ml.parameters[self.ml.parameters.vary == True])
+        nparam = len(self.ml.parameters[self.ml.parameters.vary is True])
         aic = -2.0 * np.log(sum(innovations ** 2.0)) + 2.0 * nparam
         return aic
 
     @model_tmin_tmax
     def summary(self, tmin=None, tmax=None, stats='basic'):
-        """Prints a summary table of the model statistics. The set of statistics
-        that are printed are stats by a dictionary of the desired statistics.
+        """Prints a summary table of the model statistics. The set of
+        statistics that are printed are stats by a dictionary of the desired
+        statistics.
 
         Parameters
         ----------
-        selected_output : str or dict
+        tmin
+        tmax
+        stats : str or dict
             dictionary of the desired statistics or a string with one of the
             predefined sets. Supported options are: 'basic', 'all', and 'dutch'
-        tmin
-
-        tmax : None, optional
-            Description
-        tmax
 
         Returns
         -------
-        stats : Pandas Dataframe
-            single-column dataframe with calculated statistics
+        stats : Pandas.DataFrame
+            single-column DataFrame with calculated statistics
 
         """
         output = {
@@ -350,6 +350,11 @@ included in Pastas. To obtain a list of all statistics that are included type:
 def acf(x, lags=None, bin_width=None, bin_method='rectangle', tmin=None,
         tmax=None):
     """Method to calculate the autocorrelation for irregular timesteps.
+
+    Returns
+    -------
+    C: pandas.Series
+        The autocorrelation function for x.
 
     See Also
     --------
@@ -464,7 +469,7 @@ def durbin_watson(series, tmin=None, tmax=None, **kwargs):
     Parameters
     ----------
     series: pandas.Series
-        autocorrelation function
+        the autocorrelation function.
     tmin: str
     tmax: str
 
@@ -489,9 +494,12 @@ def durbin_watson(series, tmin=None, tmax=None, **kwargs):
 
     References
     ----------
-    Durbin, J., & Watson, G. S. (1951). Testing for serial correlation in least squares regression. II. Biometrika, 38(1/2), 159-177.
+    .. [DW} Durbin, J., & Watson, G. S. (1951). Testing for serial correlation
+    in least squares regression. II. Biometrika, 38(1/2), 159-177.
 
-    Fahidy, T. Z. (2004). On the Application of Durbin-Watson Statistics to Time-Series-Based Regression Models. CHEMICAL ENGINEERING EDUCATION, 38(1), 22-25.
+    .. [F] Fahidy, T. Z. (2004). On the Application of Durbin-Watson
+    Statistics to Time-Series-Based Regression Models. CHEMICAL ENGINEERING
+    EDUCATION, 38(1), 22-25.
 
     TODO
     ----
@@ -551,7 +559,8 @@ def ljung_box(series, tmin=None, tmax=None, n_params=5, alpha=None, **kwargs):
 
     References
     ----------
-    Ljung, G. and Box, G. (1978). "On a Measure of Lack of Fit in Time Series Models", Biometrika, 65, 297-303.
+    .. [LB] Ljung, G. and Box, G. (1978). "On a Measure of Lack of Fit in Time
+    Series Models", Biometrika, 65, 297-303.
 
     """
     r = acf(series, tmin=tmin, tmax=tmax, **kwargs)
@@ -570,19 +579,23 @@ def ljung_box(series, tmin=None, tmax=None, n_params=5, alpha=None, **kwargs):
     return Q, Qtest
 
 
-def runs_test(series, tmin=None, tmax=None, cutoff="mean", **kwargs):
+def runs_test(series, tmin=None, tmax=None, cutoff="mean"):
     """Runs test to test for serial autocorrelation.
 
     Parameters
     ----------
-    series
+    cutoff
+    series: pandas.Series
+        Series to perform the runs test on.
     tmin
     tmax
-    alpha
-    kwargs
+    cutoff: str or float
+        String set to "mean" or "median" or a float to use as the cutoff.
 
     Returns
     -------
+    z: float
+    pval: float
 
     """
     # Make dichotomous sequence
@@ -620,6 +633,7 @@ def runs_test(series, tmin=None, tmax=None, cutoff="mean", **kwargs):
 
 # Some Dutch statistics
 
+# noinspection PyIncorrectDocstring,PyIncorrectDocstring
 def q_ghg(series, tmin=None, tmax=None, q=0.94):
     """Gemiddeld Hoogste Grondwaterstand (GHG) also called MHGL (Mean High
     Groundwater Level) Approximated by taking a quantile of the
@@ -629,8 +643,8 @@ def q_ghg(series, tmin=None, tmax=None, q=0.94):
 
     Parameters
     ----------
-    key : None, optional
-        timeseries key ('observations' or 'simulated')
+    series: pandas.Series
+        Series to calculate the GHG for.
     tmin/tmax: pandas.Timestamp, optional
         Time indices to use for the simulation of the time series model.
     q : float, optional
@@ -641,6 +655,7 @@ def q_ghg(series, tmin=None, tmax=None, q=0.94):
     return series.quantile(q)
 
 
+# noinspection PyIncorrectDocstring,PyIncorrectDocstring
 def q_glg(series, tmin=None, tmax=None, q=0.06):
     """Gemiddeld Laagste Grondwaterstand (GLG) also called MLGL (Mean Low
     Groundwater Level) approximated by taking a quantile of the
@@ -650,8 +665,8 @@ def q_glg(series, tmin=None, tmax=None, q=0.06):
 
     Parameters
     ----------
-    key : None, optional
-        timeseries key ('observations' or 'simulated')
+    series: pandas.Series
+        Series to calculate the GLG for.
     tmin/tmax : pandas.Timestamp, optional
         Time indices to use for the simulation of the time series model.
     q : float, optional
@@ -672,8 +687,8 @@ def q_gvg(series, tmin=None, tmax=None):
 
     Parameters
     ----------
-    key : None, optional
-        timeseries key ('observations' or 'simulated')
+    series: pandas.Series
+        Series to calculate the GVG for.
     tmin/tmax: pandas.Timestamp, optional
         Time indices to use for the simulation of the time series model.
 
@@ -696,8 +711,7 @@ def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=8,
     ----------
     tmin/tmax : pandas.Timestamp, optional
         Time indices to use for the simulation of the time series model.
-    key : str, optional
-        timeseries key ('observations' or 'simulated')
+    series
     fill_method : str
         see .. :mod: pastas.stats.__gxg__
     limit : int or None, optional
@@ -710,8 +724,8 @@ def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=8,
         Minimum number of measurements per year (at maximum 24).
     min_n_years: int, optional
         Minimum number of years.
-    year_offset: resampling offset. Use 'a' for calendar years (jan 1 to dec 31)
-        and 'a-apr' for hydrological years (apr 1 to mar 31)
+    year_offset: resampling offset. Use 'a' for calendar years
+    (jan 1 to dec 31) and 'a-apr' for hydrological years (apr 1 to mar 31).
 
     Returns
     -------
@@ -742,8 +756,7 @@ def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=8,
     ----------
     tmin/tmax : pandas.Timestamp, optional
         Time indices to use for the simulation of the time series model.
-    key : str, optional
-        timeseries key ('observations' or 'simulated')
+    series
     fill_method : str, optional
         see .. :mod: pastas.stats.__gxg__
     limit : int or None, optional
@@ -756,8 +769,8 @@ def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=8,
         Minimum number of measurements per year (at maximum 24)
     min_n_years: int, optional
         Minimum number of years
-    year_offset: resampling offset. Use 'a' for calendar years (jan 1 to dec 31)
-        and 'a-apr' for hydrological years (apr 1 to mar 31)
+    year_offset: resampling offset. Use 'a' for calendar years
+    (jan 1 to dec 31) and 'a-apr' for hydrological years (apr 1 to mar 31)
 
     Returns
     -------
@@ -789,8 +802,7 @@ def gvg(series, tmin=None, tmax=None, fill_method='linear', limit=8,
     ----------
     tmin/tmax : pandas.Timestamp, optional
         Time indices to use for the simulation of the time series model.
-    key : str, optional
-        timeseries key ('observations' or 'simulated')
+    series
     fill_method : str, optional
         see .. :mod: pastas.stats.__gxg__
     limit : int or None, optional
@@ -803,8 +815,8 @@ def gvg(series, tmin=None, tmax=None, fill_method='linear', limit=8,
         Minimum number of measurements per year (at maximum 3)
     min_n_years: int, optional
         Minimum number of years
-    year_offset: resampling offset. Use 'a' for calendar years (jan 1 to dec 31)
-        and 'a-apr' for hydrological years (apr 1 to mar 31)
+    year_offset: resampling offset. Use 'a' for calendar years
+    (jan 1 to dec 31) and 'a-apr' for hydrological years (apr 1 to mar 31)
 
     Returns
     -------
@@ -874,8 +886,6 @@ def __gxg__(series, year_agg, tmin, tmax, fill_method, limit, output,
         Aggregator function to one value per year
     tmin/tmax : pandas.Timestamp, optional
         Time indices to use for the simulation of the time series model.
-    key : str, optional
-        timeseries key ('observations' or 'simulated')
     fill_method : str
         see notes below
     limit : int or None, optional
@@ -941,7 +951,7 @@ def __gxg__(series, year_agg, tmin, tmax, fill_method, limit, output,
                                                 min_n_meas=min_n_meas)
     yearly = yearly.dropna()
 
-    # resturn statements
+    # return statements
     if output.startswith('year'):
         return yearly
     elif output == 'mean':
