@@ -65,6 +65,7 @@ class Model:
 
     def __init__(self, oseries, constant=True, noisemodel=True,
                  name=None, metadata=None, settings=None, log_level=None):
+
         self.logger = self.get_logger(log_level=log_level)
 
         # Construct the different model components
