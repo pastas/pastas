@@ -608,12 +608,15 @@ class Model:
         cat, param = name.rsplit("_", maxsplit=1)
         if cat in self.stressmodels.keys():
             self.stressmodels[cat].__getattribute__("set_" + kind)(name, value)
+            self.parameters.loc[name, kind] = value
         elif self.noisemodel:
             if cat == self.noisemodel.name:
                 self.noisemodel.__getattribute__("set_" + kind)(name, value)
+                self.parameters.loc[name, kind] = value
         elif self.constant:
             if cat == self.constant.name:
                 self.constant.__getattribute__("set_" + kind)(name, value)
+                self.parameters.loc[name, kind] = value
         else:
             self.logger.warning("parameters with name %s is not present in"
                                 "the model" % name)
