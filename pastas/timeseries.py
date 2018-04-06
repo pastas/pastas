@@ -21,9 +21,9 @@ logger = logging.getLogger(__name__)
 class TimeSeries(pd.Series):
     _predefined_settings = {
         "oseries": {"fill_nan": "drop", "sample_down": "drop"},
-        "prec": {"sample_up": "bfill", "sample_down": "mean",
+        "prec": {"sample_up": "divide", "sample_down": "sum",
                  "fill_nan": 0.0, "fill_before": "mean", "fill_after": "mean"},
-        "evap": {"sample_up": "interpolate", "sample_down": "mean",
+        "evap": {"sample_up": "divide", "sample_down": "sum",
                  "fill_before": "mean", "fill_after": "mean"},
         "well": {"sample_up": "divide", "sample_down": "sum",
                  "fill_nan": 0.0, "fill_before": 0.0, "fill_after": 0.0},
@@ -215,6 +215,7 @@ class TimeSeries(pd.Series):
 
         Parameters
         ----------
+        initial
         kwargs: dict
             dictionary with the keyword arguments that are updated. Possible
             arguments are: "freq", "sample_up", "sample_down",
@@ -454,10 +455,9 @@ class TimeSeries(pd.Series):
         return series
 
     def normalize(self, series):
-        """Method to normalize the time series,
+        """Method to normalize the time series.
 
         """
-
         method = self.settings["norm"]
 
         if method is None:
@@ -495,6 +495,7 @@ class TimeSeries(pd.Series):
 
         Parameters
         ----------
+        transformed_series
         series: Boolean
             True to export the original time series, False to only export
             the TimeSeries object"s name.
@@ -504,10 +505,6 @@ class TimeSeries(pd.Series):
         data: dict
             dictionary with the necessary information to recreate the
             TimeSeries object completely.
-
-        Notes
-        -----
-
 
         """
         data = dict()
