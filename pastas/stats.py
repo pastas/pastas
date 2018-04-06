@@ -24,9 +24,7 @@ Examples
 
 TODO
 ----
-
 * PACF for irregular timestep
-* Nash-Sutcliffe
 
 """
 
@@ -38,8 +36,22 @@ from scipy.stats import chi2, norm
 
 from pastas.decorators import model_tmin_tmax
 
+__all__ = ["acf", "ccf", "ljung_box", "runs_test"]
+
 
 class Statistics:
+    # Save all statistics that can be calculated.
+    ops = {'evp': 'Explained variance percentage',
+           'rmse': 'Root mean squared error',
+           'rmsi': 'Root mean squared innovation',
+           'sse': 'Sum of squares of the error',
+           'avg_dev': 'Average Deviation',
+           'rsq': 'Pearson R^2',
+           'rsq_adj': 'Adjusted Pearson R^2',
+           'bic': 'Bayesian Information Criterion',
+           'aic': 'Akaike Information Criterion',
+           'nash_sutcliffe': 'Nash-Sutcliffe coefficient'}
+
     def __init__(self, ml):
         """
         To obtain a list of all statistics that are
@@ -52,16 +64,6 @@ class Statistics:
         """
         # Save a reference to the model.
         self.ml = ml
-        # Save all statistics that can be calculated.
-        self.ops = {'evp': 'Explained variance percentage',
-                    'rmse': 'Root mean squared error',
-                    'rmsi': 'Root mean squared innovation',
-                    'sse': 'Sum of squares of the error',
-                    'avg_dev': 'Average Deviation',
-                    'rsq': 'Pearson R^2',
-                    'rsq_adj': 'Adjusted Pearson R^2',
-                    'bic': 'Bayesian Information Criterion',
-                    'aic': 'Akaike Information Criterion'}
 
     def __repr__(self):
         msg = """This module contains all the statistical functions that are
@@ -130,6 +132,22 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return res.mean()
 
     @model_tmin_tmax
+    def nash_sutcliffe(self, tmin=None, tmax=None):
+        """Nash-Sutcliffe coefficient for model fit.
+
+        References
+        ----------
+        .. [NS] Nash, J. E., & Sutcliffe, J. V. (1970). River flow forecasting
+        through conceptual models part I—A discussion of principles. Journal
+        of hydrology, 10(3), 282-290.
+
+        """
+        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        E = 1 - sum(res ** 2) / sum((obs - obs.mean()) ** 2)
+        return E
+
+    @model_tmin_tmax
     def evp(self, tmin=None, tmax=None):
         """Explained variance percentage.
 
@@ -164,7 +182,13 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        sim = sim[obs.index]  # Make sure to correlate the same in time.
+        # Make sure to correlate the same in time
+        if obs.index.difference(sim.index).size != 0:
+            # interpolate simulation to measurement-times
+            sim = np.interp(obs.index.asi8, sim.index.asi8, sim)
+        else:
+            # just take the indexes
+            sim = sim[obs.index]
         return np.corrcoef(sim, obs)[0, 1]
 
     @model_tmin_tmax
@@ -228,25 +252,23 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return aic
 
     @model_tmin_tmax
-    def summary(self, tmin=None, tmax=None, selected='basic'):
-        """Prints a summary table of the model statistics. The set of statistics
-        that are printed are selected by a dictionary of the desired statistics.
+    def summary(self, tmin=None, tmax=None, stats='basic'):
+        """Prints a summary table of the model statistics. The set of
+        statistics that are printed are stats by a dictionary of the desired
+        statistics.
 
         Parameters
         ----------
-        selected_output : str or dict
+        tmin
+        tmax
+        stats : str or dict
             dictionary of the desired statistics or a string with one of the
             predefined sets. Supported options are: 'basic', 'all', and 'dutch'
-        tmin
-
-        tmax : None, optional
-            Description
-        tmax
 
         Returns
         -------
-        stats : Pandas Dataframe
-            single-column dataframe with calculated statistics
+        stats : Pandas.DataFrame
+            single-column DataFrame with calculated statistics
 
         """
         output = {
@@ -259,15 +281,15 @@ included in Pastas. To obtain a list of all statistics that are included type:
                 'aic': 'Akaike Information Criterion'},
         }
 
-        # get labels and method names for selected output
-        if selected == 'all':
+        # get labels and method names for stats output
+        if stats == 'all':
             # sort by key, label, method name
             selected_output = sorted([(k, l, f) for k, d in output.items()
                                       for f, l in d.items()])
         else:
             # sort by name, method name
             selected_output = sorted([(0, l, f) for f, l in
-                                      output[selected].items()])
+                                      output[stats].items()])
 
         # compute statistics
         labels_and_values = [(l, getattr(self, f)(tmin=tmin, tmax=tmax))
@@ -325,13 +347,18 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return stats
 
 
-def acf(x, lags=None, bin_width=None,
-        bin_method='rectangle', tmin=None, tmax=None):
+def acf(x, lags=None, bin_width=None, bin_method='rectangle', tmin=None,
+        tmax=None):
     """Method to calculate the autocorrelation for irregular timesteps.
+
+    Returns
+    -------
+    C: pandas.Series
+        The autocorrelation function for x.
 
     See Also
     --------
-    stats.ccf
+    ps.stats.ccf
 
     """
     C = ccf(x=x, y=x, lags=lags, bin_width=bin_width,
@@ -340,8 +367,8 @@ def acf(x, lags=None, bin_width=None,
     return C
 
 
-def ccf(x, y, lags=None, bin_width=None,
-        bin_method='rectangle', tmin=None, tmax=None):
+def ccf(x, y, lags=None, bin_width=None, bin_method='rectangle', tmin=None,
+        tmax=None):
     """Method to calculate the autocorrelation for irregular timesteps
     based on the slotting technique. Different methods (kernels) to bin
     the data are available.
@@ -353,9 +380,11 @@ def ccf(x, y, lags=None, bin_width=None,
     lags: numpy.array
         numpy array containing the lags in DAYS for which the
         cross-correlation if calculated.
-    bin_width
+    bin_width: float
+
     bin_method: str
-        method to determine the type of bin. Optiona are gaussian, sinc and rectangle.
+        method to determine the type of bin. Optiona are gaussian, sinc and
+        rectangle.
 
     Returns
     -------
@@ -440,10 +469,9 @@ def durbin_watson(series, tmin=None, tmax=None, **kwargs):
     Parameters
     ----------
     series: pandas.Series
+        the autocorrelation function.
     tmin: str
     tmax: str
-    kwargs: dict
-        Any keyword arguments that are passed to acf method.
 
     Returns
     -------
@@ -466,9 +494,12 @@ def durbin_watson(series, tmin=None, tmax=None, **kwargs):
 
     References
     ----------
-    Durbin, J., & Watson, G. S. (1951). Testing for serial correlation in least squares regression. II. Biometrika, 38(1/2), 159-177.
+    .. [DW} Durbin, J., & Watson, G. S. (1951). Testing for serial correlation
+    in least squares regression. II. Biometrika, 38(1/2), 159-177.
 
-    Fahidy, T. Z. (2004). On the Application of Durbin-Watson Statistics to Time-Series-Based Regression Models. CHEMICAL ENGINEERING EDUCATION, 38(1), 22-25.
+    .. [F] Fahidy, T. Z. (2004). On the Application of Durbin-Watson
+    Statistics to Time-Series-Based Regression Models. CHEMICAL ENGINEERING
+    EDUCATION, 38(1), 22-25.
 
     TODO
     ----
@@ -528,7 +559,8 @@ def ljung_box(series, tmin=None, tmax=None, n_params=5, alpha=None, **kwargs):
 
     References
     ----------
-    Ljung, G. and Box, G. (1978). "On a Measure of Lack of Fit in Time Series Models", Biometrika, 65, 297-303.
+    .. [LB] Ljung, G. and Box, G. (1978). "On a Measure of Lack of Fit in Time
+    Series Models", Biometrika, 65, 297-303.
 
     """
     r = acf(series, tmin=tmin, tmax=tmax, **kwargs)
@@ -547,20 +579,23 @@ def ljung_box(series, tmin=None, tmax=None, n_params=5, alpha=None, **kwargs):
     return Q, Qtest
 
 
-def runs_test(series, tmin=None, tmax=None, cutoff="mean",
-              **kwargs):
+def runs_test(series, tmin=None, tmax=None, cutoff="mean"):
     """Runs test to test for serial autocorrelation.
 
     Parameters
     ----------
-    series
+    cutoff
+    series: pandas.Series
+        Series to perform the runs test on.
     tmin
     tmax
-    alpha
-    kwargs
+    cutoff: str or float
+        String set to "mean" or "median" or a float to use as the cutoff.
 
     Returns
     -------
+    z: float
+    pval: float
 
     """
     # Make dichotomous sequence
@@ -598,6 +633,7 @@ def runs_test(series, tmin=None, tmax=None, cutoff="mean",
 
 # Some Dutch statistics
 
+# noinspection PyIncorrectDocstring,PyIncorrectDocstring
 def q_ghg(series, tmin=None, tmax=None, q=0.94):
     """Gemiddeld Hoogste Grondwaterstand (GHG) also called MHGL (Mean High
     Groundwater Level) Approximated by taking a quantile of the
@@ -607,8 +643,8 @@ def q_ghg(series, tmin=None, tmax=None, q=0.94):
 
     Parameters
     ----------
-    key : None, optional
-        timeseries key ('observations' or 'simulated')
+    series: pandas.Series
+        Series to calculate the GHG for.
     tmin/tmax: pandas.Timestamp, optional
         Time indices to use for the simulation of the time series model.
     q : float, optional
@@ -619,6 +655,7 @@ def q_ghg(series, tmin=None, tmax=None, q=0.94):
     return series.quantile(q)
 
 
+# noinspection PyIncorrectDocstring,PyIncorrectDocstring
 def q_glg(series, tmin=None, tmax=None, q=0.06):
     """Gemiddeld Laagste Grondwaterstand (GLG) also called MLGL (Mean Low
     Groundwater Level) approximated by taking a quantile of the
@@ -628,8 +665,8 @@ def q_glg(series, tmin=None, tmax=None, q=0.06):
 
     Parameters
     ----------
-    key : None, optional
-        timeseries key ('observations' or 'simulated')
+    series: pandas.Series
+        Series to calculate the GLG for.
     tmin/tmax : pandas.Timestamp, optional
         Time indices to use for the simulation of the time series model.
     q : float, optional
@@ -650,22 +687,196 @@ def q_gvg(series, tmin=None, tmax=None):
 
     Parameters
     ----------
-    key : None, optional
-        timeseries key ('observations' or 'simulated')
+    series: pandas.Series
+        Series to calculate the GVG for.
     tmin/tmax: pandas.Timestamp, optional
         Time indices to use for the simulation of the time series model.
 
     """
     series = series.resample('d').median()
-    inspring = _in_spring(series)
+    inspring = __in_spring__(series)
     if np.any(inspring):
         return series.loc[inspring].median()
     else:
         return np.nan
 
 
-def gxg(series, year_agg, tmin, tmax, fill_method, limit, output):
-    """Worker method for classic GXG statistics. Resampling the series to
+def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=8,
+        output='mean', min_n_meas=12, min_n_years=8, year_offset='a-apr'):
+    """Classic method resampling the series to every 14th and 28th of
+    the month. Taking the mean of the mean of three highest values per
+    year.
+
+    Parameters
+    ----------
+    tmin/tmax : pandas.Timestamp, optional
+        Time indices to use for the simulation of the time series model.
+    series
+    fill_method : str
+        see .. :mod: pastas.stats.__gxg__
+    limit : int or None, optional
+        Maximum number of days to fill using fill method, use None to
+        fill nothing.
+    output : str, optional
+        output type 'yearly' for series of yearly values, 'mean' for mean
+        of yearly values.
+    min_n_meas: int, optional
+        Minimum number of measurements per year (at maximum 24).
+    min_n_years: int, optional
+        Minimum number of years.
+    year_offset: resampling offset. Use 'a' for calendar years
+    (jan 1 to dec 31) and 'a-apr' for hydrological years (apr 1 to mar 31).
+
+    Returns
+    -------
+    pd.Series or scalar
+        Series of yearly values or mean of yearly values
+
+    """
+
+    # mean_high = lambda s: s.nlargest(3).mean()
+    def mean_high(s, min_n_meas):
+        if len(s) < min_n_meas:
+            return np.nan
+        else:
+            return s.nlargest(3).mean()
+
+    return __gxg__(series, mean_high, tmin=tmin, tmax=tmax,
+                   fill_method=fill_method, limit=limit, output=output,
+                   min_n_meas=min_n_meas, min_n_years=min_n_years,
+                   year_offset=year_offset)
+
+
+def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=8,
+        output='mean', min_n_meas=12, min_n_years=8, year_offset='a-apr'):
+    """Classic method resampling the series to every 14th and 28th of
+    the month. Taking the mean of the mean of three lowest values per year.
+
+    Parameters
+    ----------
+    tmin/tmax : pandas.Timestamp, optional
+        Time indices to use for the simulation of the time series model.
+    series
+    fill_method : str, optional
+        see .. :mod: pastas.stats.__gxg__
+    limit : int or None, optional
+        Maximum number of days to fill using fill method, use None to
+        fill nothing.
+    output : str, optional
+        output type 'yearly' for series of yearly values, 'mean' for
+        mean of yearly values
+    min_n_meas: int, optional
+        Minimum number of measurements per year (at maximum 24)
+    min_n_years: int, optional
+        Minimum number of years
+    year_offset: resampling offset. Use 'a' for calendar years
+    (jan 1 to dec 31) and 'a-apr' for hydrological years (apr 1 to mar 31)
+
+    Returns
+    -------
+    pd.Series or scalar
+        Series of yearly values or mean of yearly values
+
+    """
+
+    # mean_low = lambda s: s.nsmallest(3).mean()
+    def mean_low(s, min_n_meas):
+        if len(s) < min_n_meas:
+            return np.nan
+        else:
+            return s.nsmallest(3).mean()
+
+    return __gxg__(series, mean_low, tmin=tmin, tmax=tmax,
+                   fill_method=fill_method, limit=limit, output=output,
+                   min_n_meas=min_n_meas, min_n_years=min_n_years,
+                   year_offset=year_offset)
+
+
+def gvg(series, tmin=None, tmax=None, fill_method='linear', limit=8,
+        output='mean', min_n_meas=1, min_n_years=8, year_offset='a'):
+    """Classic method resampling the series to every 14th and 28th of
+    the month. Taking the mean of the values on March 14, March 28 and
+    April 14.
+
+    Parameters
+    ----------
+    tmin/tmax : pandas.Timestamp, optional
+        Time indices to use for the simulation of the time series model.
+    series
+    fill_method : str, optional
+        see .. :mod: pastas.stats.__gxg__
+    limit : int or None, optional
+        Maximum number of days to fill using fill method, use None to
+        fill nothing.
+    output : str, optional
+        output type 'yearly' for series of yearly values, 'mean' for
+        mean of yearly values
+    min_n_meas: int, optional
+        Minimum number of measurements per year (at maximum 3)
+    min_n_years: int, optional
+        Minimum number of years
+    year_offset: resampling offset. Use 'a' for calendar years
+    (jan 1 to dec 31) and 'a-apr' for hydrological years (apr 1 to mar 31)
+
+    Returns
+    -------
+    pandas.Series or scalar
+        Series of yearly values or mean of yearly values
+
+    """
+    return __gxg__(series, __mean_spring__, tmin=tmin, tmax=tmax,
+                   fill_method=fill_method, limit=limit, output=output,
+                   min_n_meas=min_n_meas, min_n_years=min_n_years,
+                   year_offset=year_offset)
+
+
+# Helper functions
+
+def __mean_spring__(series, min_n_meas):
+    """Internal method to determine mean of timeseries values in spring.
+
+    Year aggregator function for gvg method.
+
+    Parameters
+    ----------
+    series : pandas.Series
+        series with datetime index
+
+    Returns
+    -------
+    float
+        Mean of series, or NaN if no values in spring
+
+    """
+    inspring = __in_spring__(series)
+    if inspring.sum() < min_n_meas:
+        return np.nan
+    else:
+        return series.loc[inspring].mean()
+
+
+def __in_spring__(series):
+    """Internal method to test if timeseries index is between 14 March and 15
+    April.
+
+    Parameters
+    ----------
+    series : pd.Series
+        series with datetime index
+
+    Returns
+    -------
+    pd.Series
+        Boolean series with datetimeindex
+    """
+    isinspring = lambda x: (((x.month == 3) and (x.day >= 14)) or
+                            ((x.month == 4) and (x.day < 15)))
+    return pd.Series(series.index.map(isinspring), index=series.index)
+
+
+def __gxg__(series, year_agg, tmin, tmax, fill_method, limit, output,
+            min_n_meas, min_n_years, year_offset):
+    """Internal method for classic GXG statistics. Resampling the series to
     every 14th and 28th of the month. Taking the mean of aggregated
     values per year.
 
@@ -675,16 +886,22 @@ def gxg(series, year_agg, tmin, tmax, fill_method, limit, output):
         Aggregator function to one value per year
     tmin/tmax : pandas.Timestamp, optional
         Time indices to use for the simulation of the time series model.
-    key : str, optional
-        timeseries key ('observations' or 'simulated')
     fill_method : str
         see notes below
     limit : int or None, optional
-        Maximum number of timesteps to fill using fill method, use None to
-        fill all.
+        Maximum number of days to fill using fill method, use None to
+        fill nothing.
     output : str
         output type 'yearly' for series of yearly values, 'mean' for
         mean of yearly values
+    min_n_meas: int, optional
+        Minimum number of measurements per year
+    min_n_years: int
+        Minimum number of years.
+    year_offset: string
+        resampling offset. Use 'a' for calendar years (jan 1 to dec 31)
+        and 'a-apr' for hydrological years (apr 1 to mar 31)
+
 
     Returns
     -------
@@ -701,10 +918,18 @@ def gxg(series, year_agg, tmin, tmax, fill_method, limit, output):
     fill method for interpolation to 14th and 28th of the month see:
         * http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.ffill.html
         * http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.bfill.html
+        * https://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.reindex.html
         * http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.interpolate.html
         * Use None to omit filling and drop NaNs
 
     """
+    # handle tmin and tmax
+    if tmin:
+        series = series.loc[tmin:]
+    if tmax:
+        series = series.loc[:tmax]
+
+    # resample the series to values at the 14th and 28th of every month
     series = series.resample('d').mean()
     if fill_method is None:
         series = series.dropna()
@@ -712,157 +937,28 @@ def gxg(series, year_agg, tmin, tmax, fill_method, limit, output):
         series = series.ffill(limit=limit)
     elif fill_method == 'bfill':
         series = series.bfill(limit=limit)
+    elif fill_method == 'nearest':
+        series = series.dropna().reindex(series.index, method=fill_method,
+                                         limit=limit)
     else:
         series = series.interpolate(method=fill_method, limit=limit)
-
     the14or28 = lambda x: (x.day == 14) or (x.day == 28)
     is14or28 = pd.Series(series.index.map(the14or28), index=series.index)
-    if not np.any(is14or28):
-        return np.nan
     series = series.loc[is14or28]
-    yearly = series.resample('a').apply(year_agg)
-    if output == 'yearly':
+
+    # resample the series to yearly values
+    yearly = series.resample(year_offset).apply(year_agg,
+                                                min_n_meas=min_n_meas)
+    yearly = yearly.dropna()
+
+    # return statements
+    if output.startswith('year'):
         return yearly
     elif output == 'mean':
-        return yearly.mean()
+        if len(yearly) < min_n_years:
+            return np.nan
+        else:
+            return yearly.mean()
     else:
         ValueError('{output:} is not a valid output option'.format(
             output=output))
-
-
-def ghg(series, tmin=None, tmax=None, fill_method='linear', limit=15,
-        output='mean'):
-    """Classic method resampling the series to every 14th and 28th of
-    the month. Taking the mean of the mean of three highest values per
-    year. This function does not care about series length!
-
-    Parameters
-    ----------
-    tmin/tmax : pandas.Timestamp, optional
-        Time indices to use for the simulation of the time series model.
-    key : str, optional
-        timeseries key ('observations' or 'simulated')
-    fill_method : str
-        see .. :mod: pastas.stats.gxg
-    limit : int or None, optional
-        Maximum number of timesteps to fill using fill method, use None to
-        fill all.
-    output : str, optional
-        output type 'yearly' for series of yearly values, 'mean' for mean
-        of yearly values.
-
-    Returns
-    -------
-    pd.Series or scalar
-        Series of yearly values or mean of yearly values
-
-    """
-    mean_high = lambda s: s.nlargest(3).mean()
-    return gxg(series, mean_high, tmin=tmin, tmax=tmax,
-               fill_method=fill_method, limit=limit, output=output)
-
-
-def glg(series, tmin=None, tmax=None, fill_method='linear', limit=15,
-        output='mean'):
-    """Classic method resampling the series to every 14th and 28th of
-    the month. Taking the mean of the mean of three lowest values per year.
-    This function does not care about series length!
-
-    Parameters
-    ----------
-    tmin/tmax : pandas.Timestamp, optional
-        Time indices to use for the simulation of the time series model.
-    key : str, optional
-        timeseries key ('observations' or 'simulated')
-    fill_method : str, optional
-        see .. :mod: pastas.stats.gxg
-    limit : int or None, optional
-        Maximum number of timesteps to fill using fill method, use None to
-        fill all.
-    output : str, optional
-        output type 'yearly' for series of yearly values, 'mean' for
-        mean of yearly values
-
-    Returns
-    -------
-    pd.Series or scalar
-        Series of yearly values or mean of yearly values
-
-    """
-    mean_low = lambda s: s.nsmallest(3).mean()
-    return gxg(series, mean_low, tmin=tmin, tmax=tmax,
-               fill_method=fill_method, limit=limit, output=output)
-
-
-def gvg(series, tmin=None, tmax=None, fill_method='linear', limit=15,
-        output='mean'):
-    """Classic method resampling the series to every 14th and 28th of
-    the month. Taking the mean of the values on March 14, March 28 and
-    April 14. This function does not care about series length!
-
-    Parameters
-    ----------
-    tmin/tmax : pandas.Timestamp, optional
-        Time indices to use for the simulation of the time series model.
-    key : str, optional
-        timeseries key ('observations' or 'simulated')
-    fill_method : str, optional
-        see .. :mod: pastas.stats.gxg
-    limit : int or None, optional
-        Maximum number of timesteps to fill using fill method, use None to
-        fill all.
-    output : str, optional
-        output type 'yearly' for series of yearly values, 'mean' for
-        mean of yearly values
-
-    Returns
-    -------
-    pandas.Series or scalar
-        Series of yearly values or mean of yearly values
-
-    """
-    return gxg(series, _mean_spring, tmin=tmin, tmax=tmax,
-               fill_method=fill_method, limit=limit, output=output)
-
-
-# Helper functions
-
-def _mean_spring(series):
-    """Determine mean of timeseries values in spring.
-
-    Year aggregator function for gvg method.
-
-    Parameters
-    ----------
-    series : pandas.Series
-        series with datetime index
-
-    Returns
-    -------
-    float
-        Mean of series, or NaN if no values in spring
-
-    """
-    inspring = _in_spring(series)
-    if np.any(inspring):
-        return series.loc[inspring].mean()
-    else:
-        return np.nan
-
-
-def _in_spring(series):
-    """Test if timeseries index is between 14 March and 15 April.
-
-    Parameters
-    ----------
-    series : pd.Series
-        series with datetime index
-
-    Returns
-    -------
-    pd.Series
-        Boolean series with datetimeindex
-    """
-    isinspring = lambda x: (((x.month == 3) and (x.day >= 14)) or
-                            ((x.month == 4) and (x.day < 15)))
-    return pd.Series(series.index.map(isinspring), index=series.index)

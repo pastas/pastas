@@ -31,8 +31,9 @@ the observed time series: - The observed time series are stored as a
 .. code:: ipython3
 
     # Import groundwater time seriesm and squeeze to Series object
-    gwdata = pd.read_csv('../data/head_nb1.csv', parse_dates=['date'], index_col='date', squeeze=True)
-    print('The data type of the oseries is: %s' %type(gwdata))
+    gwdata = pd.read_csv('../data/head_nb1.csv', parse_dates=['date'],
+                         index_col='date', squeeze=True)
+    print('The data type of the oseries is: %s' % type(gwdata))
     
     # Plot the observed groundwater levels
     gwdata.plot(style='.', figsize=(10, 4))
@@ -65,22 +66,25 @@ the same length units as for the observed heads.
 .. code:: ipython3
 
     # Import observed precipitation series
-    precip = pd.read_csv('../data/rain_nb1.csv', parse_dates=['date'], index_col='date', squeeze=True)
-    print('The data type of the precip series is: %s' %type(precip))
+    precip = pd.read_csv('../data/rain_nb1.csv', parse_dates=['date'],
+                         index_col='date', squeeze=True)
+    print('The data type of the precip series is: %s' % type(precip))
     
     # Import observed evaporation series
-    evap = pd.read_csv('../data/evap_nb1.csv', parse_dates=['date'], index_col='date', squeeze=True)
-    print('The data type of the evap series is: %s' %type(evap))
+    evap = pd.read_csv('../data/evap_nb1.csv', parse_dates=['date'],
+                       index_col='date', squeeze=True)
+    print('The data type of the evap series is: %s' % type(evap))
     
     # Calculate the recharge to the groundwater
     recharge = precip - evap
-    print('The data type of the recharge series is: %s' %type(recharge))
+    print('The data type of the recharge series is: %s' % type(recharge))
     
     # Plot the time series of the precipitation and evaporation
     plt.figure()
     recharge.plot(label='Recharge', figsize=(10, 4))
     plt.xlabel('Time [years]')
     plt.ylabel('Recharge (m/year)');
+    
 
 
 .. parsed-literal::
@@ -108,20 +112,22 @@ nan-values are found this will be reported by ``pastas``.
 .. code:: ipython3
 
     # Create a model object by passing it the observed series
-    ml = ps.Model(gwdata)
+    ml = ps.Model(gwdata, name="GWL")
     # Add the recharge data as explanatory variable
-    ts1 = ps.StressModel(recharge, ps.Gamma, name='recharge', kind="evap")
+    ts1 = ps.StressModel(recharge, ps.Gamma, name='recharge', settings="evap")
     ml.add_stressmodel(ts1)
+    
 
 4. Solve the model
 ~~~~~~~~~~~~~~~~~~
 
 The next step is to compute the optimal model parameters. The default
 solver uses a non-linear least squares method for the optimization. The
-python package ``lmfit`` is used (info on ``lmfit`` can be found
-`here <https://github.com/lmfit/lmfit-py>`__). Some standard
-optimization statistics are reported along with the optimized parameter
-values and correlations.
+python package ``scipy`` is used (info on ``scipy's`` least\_squares
+solver can be found
+`here <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html>`__).
+Some standard optimization statistics are reported along with the
+optimized parameter values and correlations.
 
 .. code:: ipython3
 
@@ -130,27 +136,32 @@ values and correlations.
 
 .. parsed-literal::
 
-    [[Fit Statistics]]
-        # function evals   = 39
-        # data points      = 644
-        # variables        = 5
-        chi-square         = 4.144
-        reduced chi-square = 0.006
-        Akaike info crit   = -3239.652
-        Bayesian info crit = -3217.313
-    [[Variables]]
-        recharge_A:    726.162710 +/- 33.44861 (4.61%) (init= 2081.857)
-        recharge_n:    1.05986521 +/- 0.014364 (1.36%) (init= 1)
-        recharge_a:    129.292756 +/- 7.949492 (6.15%) (init= 100)
-        constant_d:    27.5686989 +/- 0.020562 (0.07%) (init= 27.90008)
-        noise_alpha:   60.0137199 +/- 8.059290 (13.43%) (init= 14)
-    [[Correlations]] (unreported correlations are <  0.100)
-        C(recharge_A, recharge_a)    =  0.846 
-        C(recharge_A, constant_d)    = -0.763 
-        C(recharge_a, constant_d)    = -0.644 
-        C(recharge_n, recharge_a)    = -0.619 
-        C(recharge_A, recharge_n)    = -0.248 
-        C(recharge_n, constant_d)    =  0.190 
+    
+    Model Results GWL                Fit Statistics
+    ============================    ============================
+    nfev     30                     EVP                    91.45
+    nobs     644                    NS                      0.91
+    noise    NoiseModel             Pearson R2              0.96
+    tmin     1985-11-14 00:00:00    RMSE                    0.13
+    tmax     2015-06-28 00:00:00    AIC                     7.15
+    freq     D                      BIC                    29.49
+    warmup   3650                   __                          
+    solver   LeastSquares           ___                         
+    
+    Parameters (5 were optimized)
+    ============================================================
+                    optimal                  stderr      initial vary
+    recharge_A   738.477722   ± 3.66458e+01 (4.96%)  2081.856867    1
+    recharge_n     1.056991   ± 1.58989e-02 (1.50%)     1.000000    1
+    recharge_a   131.804022   ± 8.95556e+00 (6.79%)    10.000000    1
+    constant_d    27.560621   ± 2.09842e-02 (0.08%)    27.900078    1
+    noise_alpha   64.604495  ± 8.52812e+00 (13.20%)    14.000000    1
+    
+    Warnings
+    ============================================================
+    [1] Parameter values of ['recharge_A'] are close to their minimum values.
+    
+            
     
 
 5. Plot the results
@@ -164,15 +175,15 @@ The solution can be plotted after a solution has been obtained.
 
 
 
-.. image:: output_11_0.png
-
-
-
 
 .. parsed-literal::
 
-    [<matplotlib.axes._subplots.AxesSubplot at 0x11237f668>]
+    [<matplotlib.axes._subplots.AxesSubplot at 0x1d5940ec3c8>]
 
+
+
+
+.. image:: output_11_1.png
 
 
 6. Advanced plotting
@@ -186,22 +197,23 @@ plot with more information.
 
 .. code:: ipython3
 
-    ml.plots.results()
-
-
-
-.. image:: output_13_0.png
+    ml.plots.results(figsize=(10, 6))
 
 
 
 
 .. parsed-literal::
 
-    [<matplotlib.axes._subplots.AxesSubplot at 0x11237f278>,
-     <matplotlib.axes._subplots.AxesSubplot at 0x11236ae48>,
-     <matplotlib.axes._subplots.AxesSubplot at 0x111ac19b0>,
-     <matplotlib.axes._subplots.AxesSubplot at 0x111d52080>]
+    [<matplotlib.axes._subplots.AxesSubplot at 0x1d594125c18>,
+     <matplotlib.axes._subplots.AxesSubplot at 0x1d595933438>,
+     <matplotlib.axes._subplots.AxesSubplot at 0x1d5959c08d0>,
+     <matplotlib.axes._subplots.AxesSubplot at 0x1d5959e84e0>,
+     <matplotlib.axes._subplots.AxesSubplot at 0x1d595acf4a8>]
 
+
+
+
+.. image:: output_13_1.png
 
 
 7. Statistics
@@ -221,17 +233,17 @@ gives a summary of the main statistics of the model.
 .. raw:: html
 
     <div>
-    <style>
-        .dataframe thead tr:only-child th {
-            text-align: right;
-        }
-    
-        .dataframe thead th {
-            text-align: left;
+    <style scoped>
+        .dataframe tbody tr th:only-of-type {
+            vertical-align: middle;
         }
     
         .dataframe tbody tr th {
             vertical-align: top;
+        }
+    
+        .dataframe thead th {
+            text-align: right;
         }
     </style>
     <table border="1" class="dataframe">
@@ -248,27 +260,27 @@ gives a summary of the main statistics of the model.
       <tbody>
         <tr>
           <th>Akaike Information Criterion</th>
-          <td>7.156040</td>
+          <td>7.151997</td>
         </tr>
         <tr>
           <th>Average Deviation</th>
-          <td>-0.001033</td>
+          <td>0.001649</td>
         </tr>
         <tr>
           <th>Bayesian Information Criterion</th>
-          <td>29.494533</td>
+          <td>29.490491</td>
         </tr>
         <tr>
           <th>Explained variance percentage</th>
-          <td>91.484937</td>
+          <td>91.445066</td>
         </tr>
         <tr>
           <th>Pearson R^2</th>
-          <td>0.956700</td>
+          <td>0.956596</td>
         </tr>
         <tr>
           <th>Root mean squared error</th>
-          <td>0.125428</td>
+          <td>0.125728</td>
         </tr>
       </tbody>
     </table>
@@ -300,7 +312,7 @@ than for model ``ml``).
     ml2 = ps.Model(gwdata)
     
     # Add the recharge data as explanatory variable
-    ts1 = ps.StressModel2([precip, evap], ps.Gamma, name='rainevap')
+    ts1 = ps.StressModel2([precip, evap], ps.Gamma, name='rainevap', settings=("prec", "evap"))
     ml2.add_stressmodel(ts1)
     
     # Solve the model
@@ -315,53 +327,51 @@ than for model ``ml``).
 
 .. parsed-literal::
 
-    [[Fit Statistics]]
-        # function evals   = 48
-        # data points      = 644
-        # variables        = 6
-        chi-square         = 3.990
-        reduced chi-square = 0.006
-        Akaike info crit   = -3262.114
-        Bayesian info crit = -3235.308
-    [[Variables]]
-        rainevap_A:    670.244030 +/- 34.40857 (5.13%) (init= 2081.857)
-        rainevap_n:    1.01602644 +/- 0.016513 (1.63%) (init= 1)
-        rainevap_a:    148.806543 +/- 11.57697 (7.78%) (init= 100)
-        rainevap_f:   -1.28878508 +/- 0.061782 (4.79%) (init=-1)
-        constant_d:    27.9024648 +/- 0.067071 (0.24%) (init= 27.90008)
-        noise_alpha:   49.9383257 +/- 6.431908 (12.88%) (init= 14)
-    [[Correlations]] (unreported correlations are <  0.100)
-        C(rainevap_f, constant_d)    = -0.986 
-        C(rainevap_n, rainevap_a)    = -0.700 
-        C(rainevap_A, rainevap_a)    =  0.651 
-        C(rainevap_n, rainevap_f)    =  0.540 
-        C(rainevap_n, constant_d)    = -0.535 
-        C(rainevap_a, constant_d)    =  0.411 
-        C(rainevap_a, rainevap_f)    = -0.408 
-        C(rainevap_A, rainevap_f)    =  0.293 
-        C(rainevap_A, constant_d)    = -0.279 
     
-
-
-.. image:: output_17_1.png
-
+    Model Results head                Fit Statistics
+    ============================    ============================
+    nfev     34                     EVP                    92.93
+    nobs     644                    NS                      0.93
+    noise    NoiseModel             Pearson R2              0.96
+    tmin     1985-11-14 00:00:00    RMSE                    0.11
+    tmax     2015-06-28 00:00:00    AIC                     9.23
+    freq     D                      BIC                    36.04
+    warmup   3650                   __                          
+    solver   LeastSquares           ___                         
+    
+    Parameters (6 were optimized)
+    ============================================================
+                    optimal                  stderr      initial vary
+    rainevap_A   684.819072   ± 3.58910e+01 (5.24%)  2081.856867    1
+    rainevap_n     1.018550   ± 1.79813e-02 (1.77%)     1.000000    1
+    rainevap_a   149.758848   ± 1.09607e+01 (7.32%)    10.000000    1
+    rainevap_f    -1.267278   ± 6.18520e-02 (4.88%)    -1.000000    1
+    constant_d    27.879403   ± 6.89486e-02 (0.25%)    27.900078    1
+    noise_alpha   52.973919  ± 6.53102e+00 (12.33%)    14.000000    1
+    
+    Warnings
+    ============================================================
+    [1] Parameter values of ['rainevap_A'] are close to their minimum values.
+    
+            
+    
 
 
 
 .. raw:: html
 
     <div>
-    <style>
-        .dataframe thead tr:only-child th {
-            text-align: right;
-        }
-    
-        .dataframe thead th {
-            text-align: left;
+    <style scoped>
+        .dataframe tbody tr th:only-of-type {
+            vertical-align: middle;
         }
     
         .dataframe tbody tr th {
             vertical-align: top;
+        }
+    
+        .dataframe thead th {
+            text-align: right;
         }
     </style>
     <table border="1" class="dataframe">
@@ -378,32 +388,36 @@ than for model ``ml``).
       <tbody>
         <tr>
           <th>Akaike Information Criterion</th>
-          <td>9.231551</td>
+          <td>9.230417</td>
         </tr>
         <tr>
           <th>Average Deviation</th>
-          <td>-0.001418</td>
+          <td>-0.001552</td>
         </tr>
         <tr>
           <th>Bayesian Information Criterion</th>
-          <td>36.037743</td>
+          <td>36.036610</td>
         </tr>
         <tr>
           <th>Explained variance percentage</th>
-          <td>92.995812</td>
+          <td>92.931220</td>
         </tr>
         <tr>
           <th>Pearson R^2</th>
-          <td>0.964702</td>
+          <td>0.964446</td>
         </tr>
         <tr>
           <th>Root mean squared error</th>
-          <td>0.113763</td>
+          <td>0.114288</td>
         </tr>
       </tbody>
     </table>
     </div>
 
+
+
+
+.. image:: output_17_2.png
 
 
 Origin of the series

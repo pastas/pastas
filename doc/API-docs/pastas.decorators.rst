@@ -1,5 +1,5 @@
-pastas\.decorators module
-=========================
+pastas.decorators module
+========================
 
 .. automodule:: pastas.decorators
     :members:

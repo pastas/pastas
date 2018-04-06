@@ -1,5 +1,5 @@
-pastas\.read\.knmi module
-=========================
+pastas.read.knmi module
+=======================
 
 .. automodule:: pastas.read.knmi
     :members:

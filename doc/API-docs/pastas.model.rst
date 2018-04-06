@@ -1,5 +1,5 @@
-pastas\.model module
-====================
+pastas.model module
+===================
 
 .. automodule:: pastas.model
     :members:

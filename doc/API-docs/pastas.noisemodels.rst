@@ -1,5 +1,5 @@
-pastas\.noisemodels module
-==========================
+pastas.noisemodels module
+=========================
 
 .. automodule:: pastas.noisemodels
     :members:

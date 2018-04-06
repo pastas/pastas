@@ -1,6 +1,6 @@
-===========
-StressModel
-===========
+============
+StressModels
+============
 
 A StressModel transforms the stress to the contribution on the simulation.
 Most StressModels consist of one or more TimeSeries and one or more Response Functions.

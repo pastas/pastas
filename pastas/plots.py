@@ -10,14 +10,14 @@ Examples
 import matplotlib.pyplot as plt
 import matplotlib.ticker as plticker
 import numpy as np
-import pastas as ps
 from scipy.stats import probplot
 
+import pastas as ps
 from .decorators import model_tmin_tmax
 from .utils import get_dt
 
 
-class Plotting():
+class Plotting:
     def __init__(self, ml):
         self.ml = ml  # Store a reference to the model class
 
@@ -28,7 +28,7 @@ class Plotting():
 
     @model_tmin_tmax
     def plot(self, tmin=None, tmax=None, oseries=True, simulation=True,
-             show=True, **kwargs):
+             **kwargs):
         """Make a plot of the observed and simulated series.
 
         Parameters
@@ -40,9 +40,8 @@ class Plotting():
 
         Returns
         -------
-        fig: matplotlib.figure
-            MPL figure with the simulated and optionally the observed time
-            series.
+        ax: matplotlib.axes
+            matplotlib axes with the simulated and optionally the observed time series.
 
         """
         fig = self._get_figure(**kwargs)
@@ -55,17 +54,14 @@ class Plotting():
         if simulation:
             h = self.ml.simulate(tmin=tmin, tmax=tmax)
             h.plot(fig=fig)
-
+        plt.xlim(tmin, tmax)
         plt.ylabel("Groundwater levels [meter]")
         plt.legend()
-
-        if show:
-            plt.show()
 
         return fig.axes
 
     @model_tmin_tmax
-    def results(self, tmin=None, tmax=None, show=True):
+    def results(self, tmin=None, tmax=None, **kwargs):
         """Plot different results in one window to get a quick overview.
 
         Parameters
@@ -78,24 +74,29 @@ class Plotting():
         -------
 
         """
-        fig = self._get_figure()
+        figsize = kwargs.pop("figsize", None)
+        fig = self._get_figure(figsize=figsize, )
 
-        #Number of row to make the figure with
+        # Number of rows to make the figure with
         rows = 3 + len(self.ml.stressmodels)
 
         # Main frame
-        ax1 = plt.subplot2grid((rows, 3), (0, 0), colspan=2, rowspan=2)
+        ax1 = plt.subplot2grid((rows, 3), (0, 0), colspan=2, rowspan=2,
+                               fig=fig)
         o = self.ml.observations(tmin=tmin, tmax=tmax)
-        o.plot(ax=ax1, linestyle='',  marker='.', color='k', x_compat=True)
+        o.plot(ax=ax1, linestyle='', marker='.', color='k', x_compat=True)
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
         sim.plot(ax=ax1, x_compat=True)
         plt.legend(loc=(0, 1), ncol=3, frameon=False)
+
+        ax1.set_ylim(min(o.min(), sim.loc[tmin:tmax].min()),
+                     max(o.max(), sim.loc[tmin:tmax].max()))
 
         # Residuals and innovations
         ax2 = plt.subplot2grid((rows, 3), (2, 0), colspan=2, sharex=ax1)
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         res.plot(ax=ax2, sharex=ax1, color='k', x_compat=True)
-        if self.ml.settings["noise"]:
+        if self.ml.settings["noise"] and self.ml.noisemodel:
             v = self.ml.innovations(tmin=tmin, tmax=tmax)
             v.plot(ax=ax2, sharex=ax1, x_compat=True)
         plt.legend(loc=(0, 1), ncol=3, frameon=False)
@@ -104,9 +105,29 @@ class Plotting():
         ax3 = plt.subplot2grid((rows, 3), (0, 2), rowspan=3)
         ax3.xaxis.set_visible(False)
         ax3.yaxis.set_visible(False)
-        plt.text(0.05, 0.8, 'Rsq: %.2f' % self.ml.stats.rsq())
-        plt.text(0.05, 0.6, 'EVP: %.2f' % self.ml.stats.evp())
+        # plt.text(0.05, 0.8, 'Rsq: %.2f' % self.ml.stats.rsq())
+        # plt.text(0.05, 0.6, 'EVP: %.2f' % self.ml.stats.evp())
         plt.title('Model Information', loc='left')
+
+        # Draw parameters table
+        cols = ["optimal", "stderr"]
+        parameters = self.ml.parameters.loc[:, cols]
+        parameters.optimal = parameters.optimal.round(5)
+        for name, vals in parameters.loc[:, ["optimal", "stderr"]].iterrows():
+            popt, stderr = vals
+            val = np.abs(stderr / popt * 100)
+            parameters.loc[name, "stderr"] = \
+                "{:} {:.5e} ({:.2f}{:})".format("\u00B1", stderr, val,
+                                                "\u0025")
+
+        table = plt.table(cellText=parameters.values,
+                          rowLabels=parameters.index,
+                          colLabels=cols,
+                          colWidths=[0.2, 0.4],
+                          loc='center')
+        #table.auto_set_font_size(value=True)
+        ax3.add_table(table)
+        plt.setp(ax3.spines.values(), color=None)
 
         # Add a row for each stressmodel
         for i, ts in enumerate(self.ml.stressmodels.keys(), start=3):
@@ -116,48 +137,87 @@ class Plotting():
             title = [stress.name for stress in self.ml.stressmodels[ts].stress]
             plt.title("Stresses:%s" % title, loc="right")
             ax.legend(loc=(0, 1), ncol=3, frameon=False)
-            axb = plt.subplot2grid((rows, 3), (i, 2))
+            if i == 3:
+                sharex=None
+            else:
+                sharex = axb
+            axb = plt.subplot2grid((rows, 3), (i, 2), sharex=sharex)
             self.ml.get_step_response(ts).plot(ax=axb)
 
-        if show:
-            plt.show()
+        ax1.set_xlim(tmin, tmax)
 
         return fig.axes
 
     @model_tmin_tmax
-    def decomposition(self, tmin=None, tmax=None, show=True, ytick_base=True):
+    def decomposition(self, tmin=None, tmax=None, ytick_base=True, split=True,
+                      **kwargs):
         """Plot the decomposition of a time-series in the different stresses.
+
+        Parameters
+        ----------
+        split
+        ytick_base: Boolean or float
+            Make the ytick-base constant if True, set this base to float if float
+        **kwargs:
+            Optional arguments for the subplots method
+
+        Returns
+        -------
+        axes: list of matplotlib.axes
 
         """
         # determine the simulation
         hsim = self.ml.simulate(tmin=tmin, tmax=tmax)
         tindex = hsim.index
         h = [hsim]
+        names = ['']
 
         # determine the influence of the different stresses
         for name in self.ml.stressmodels.keys():
-            h.append(self.ml.get_contribution(name, tindex=tindex))
+            nstress = len(self.ml.stressmodels[name].stress)
+            if split and nstress > 1:
+                for istress in range(nstress):
+                    hc = self.ml.get_contribution(name, tindex=tindex, istress=istress)
+                    h.append(hc)
+                    names.append(hc.name)
+            else:
+                hc = self.ml.get_contribution(name, tindex=tindex)
+                h.append(hc)
+                names.append(hc.name)
 
-        # open the figure
-        height_ratios = [max([hsim.max(), self.ml.oseries.max()]) - min(
-            [hsim.min(), self.ml.oseries.min()])]
+        if self.ml.transform:
+            h.append(self.ml.get_transform_contribution(tmin=tmin, tmax=tmax))
+            names.append(self.ml.transform.name)
+
+        # determine ylim for every graph, to scale the height
+        ylims = [
+            (min([hsim[tmin:tmax].min(), self.ml.oseries[tmin:tmax].min()]),
+             max([hsim[tmin:tmax].max(), self.ml.oseries[tmin:tmax].max()]))]
         for ht in h[1:]:
-            hr = ht.max() - ht.min()
-            if np.isnan(hr):
-                hr = 0.0
-            height_ratios.append(hr)
+            hs = ht[tmin:tmax]
+            if hs.empty:
+                if ht.empty:
+                    ylims.append((0.0, 0.0))
+                else:
+                    ylims.append((ht.min(), hs.max()))
+            else:
+                ylims.append((hs.min(), hs.max()))
+        height_ratios = [
+            0.0 if np.isnan(ylim[1] - ylim[0]) else ylim[1] - ylim[0] for ylim
+            in ylims]
+        # open the figure
 
-        fig, ax = plt.subplots(1 + len(self.ml.stressmodels), sharex=True,
-                               gridspec_kw={'height_ratios': height_ratios})
+        fig, ax = plt.subplots(len(h), sharex=True,
+                               gridspec_kw={'height_ratios': height_ratios},
+                               **kwargs)
         ax = np.atleast_1d(ax)
 
         # plot simulation and observations in top graph
         self.ml.oseries.plot(linestyle='', marker='.', color='k', markersize=3,
                              ax=ax[0], x_compat=True)
-        hsim.plot(ax=ax[0], label='simulation', x_compat=True)
-        ax[0].autoscale(enable=True, axis='y', tight=True)
+        hsim.plot(ax=ax[0], x_compat=True)
+        ax[0].set_ylim(ylims[0])
         ax[0].grid(which='both')
-        # ax[0].minorticks_off()
         ax[0].legend(loc=(0, 1), ncol=3, frameon=False)
 
         if ytick_base:
@@ -172,7 +232,7 @@ class Plotting():
                 plticker.MultipleLocator(base=ytick_base))
 
         # plot the influence of the stresses
-        for i, name in enumerate(self.ml.stressmodels.keys(), start=1):
+        for i in range(1, len(h)):
             h[i].plot(ax=ax[i], x_compat=True)
 
             if ytick_base:
@@ -180,19 +240,18 @@ class Plotting():
                 ax[i].yaxis.set_major_locator(
                     plticker.MultipleLocator(base=ytick_base))
 
-            ax[i].set_title(name)
-            ax[i].autoscale(enable=True, axis='y', tight=True)
+            ax[i].set_title(names[i])
+            ax[i].set_ylim(ylims[i])
             ax[i].grid(which='both')
             ax[i].minorticks_off()
 
-        if show:
-            plt.show()
+        ax[0].set_xlim(tmin, tmax)
 
         return fig.axes
 
     @model_tmin_tmax
-    def diagnostics(self, tmin=None, tmax=None, show=True):
-        innovations = self.ml.innovations(tmin, tmax)
+    def diagnostics(self, tmin=None, tmax=None):
+        innovations = self.ml.innovations(tmin=tmin, tmax=tmax)
 
         fig = self._get_figure()
         gs = plt.GridSpec(2, 3, wspace=0.2)
@@ -214,18 +273,17 @@ class Plotting():
         plt.subplot(gs[1, 2])
         probplot(innovations, plot=plt)
 
-        if show:
-            plt.show()
+        plt.xlim(tmin, tmax)
 
         return fig.axes
 
-    def block_response(self, series=None, show=True):
+    def block_response(self, series=None):
         """Plot the block response for a specific series.
 
         Returns
         -------
-        fig: matplotlib.Figure
-            return a Matplotlib figure instance.
+        fig: matplotlib.axes
+            matplotlib axes instance.
 
         """
         if not series:
@@ -248,27 +306,24 @@ class Plotting():
         plt.xlim(0)
 
         # Change xtickers to the correct time
-        locs, labels = plt.xticks()
-        labels = locs * get_dt(self.ml.settings["freq"])
-        plt.xticks(locs, labels)
+        # locs, labels = plt.xticks()
+        # labels = locs * get_dt(self.ml.settings["freq"])
+        # plt.xticks(locs, labels)
         plt.xlabel("Time [days]")
 
         plt.legend(legend)
         fig.suptitle("Block Response(s)")
 
-        if show:
-            plt.show()
-
         return fig.axes
 
-    def step_response(self, series=None, show=True):
+    def step_response(self, series=None):
 
         """Plot the step response for a specific series.
 
         Returns
         -------
-        fig: matplotlib.Figure
-            return a Matplotlib figure instance.
+        axes: matplotlib.axes
+            matplotlib axes instance.
 
         """
         if not series:
@@ -291,16 +346,13 @@ class Plotting():
         plt.xlim(0)
 
         # Change xtickers to the correct time
-        locs, labels = plt.xticks()
-        labels = locs * get_dt(self.ml.settings["freq"])
-        plt.xticks(locs, labels)
+        # locs, labels = plt.xticks()
+        # labels = locs * get_dt(self.ml.settings["freq"])
+        # plt.xticks(locs, labels)
         plt.xlabel("Time [days]")
 
         plt.legend(legend)
         fig.suptitle("Step Response(s)")
-
-        if show:
-            plt.show()
 
         return fig.axes
 
@@ -319,7 +371,7 @@ class Plotting():
         Returns
         -------
         axes: matplotlib.axes
-            matplotlib aes instance.
+            matplotlib axes instance.
 
         """
         stresses = []
@@ -334,18 +386,20 @@ class Plotting():
         rows = len(stresses)
         rows = -(-rows // cols)  # round up with out additional import
 
-        fig, axes = plt.subplots(rows, cols, **kwargs)
+        fig, ax = plt.subplots(rows, cols, **kwargs)
 
-        if hasattr(axes, "flatten"):
-            axes = axes.flatten()
+        if hasattr(ax, "flatten"):
+            ax = ax.flatten()
         else:
-            axes = [axes]
+            ax = [ax]
 
-        for ax, stress in zip(axes, stresses):
+        for ax, stress in zip(ax, stresses):
             stress.plot(ax=ax, x_compat=True)
             ax.legend([stress.name], loc=2)
 
-        return axes
+        plt.xlim(tmin, tmax)
+
+        return fig.axes
 
     def _get_figure(self, **kwargs):
         fig = plt.figure(**kwargs)

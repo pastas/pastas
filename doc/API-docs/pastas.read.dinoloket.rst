@@ -1,5 +1,5 @@
-pastas\.read\.dinoloket module
-==============================
+pastas.read.dinoloket module
+============================
 
 .. automodule:: pastas.read.dinoloket
     :members:

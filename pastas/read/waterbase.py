@@ -7,7 +7,8 @@ Author: R.A. Collenteur, Artesia Water 2017
 """
 
 import pandas as pd
-from pastas.timeseries import TimeSeries
+
+from ..timeseries import TimeSeries
 
 
 def read_waterbase(fname, locations=None, variable="NUMERIEKEWAARDE",
@@ -25,7 +26,7 @@ def read_waterbase(fname, locations=None, variable="NUMERIEKEWAARDE",
     Returns
     -------
     ts: pastas.TimeSeries
-        dictionary with all the timeseries and metadata for each time series.
+        returns a Pastas TimeSeries object or a list of objects.
 
     Notes
     -----
@@ -62,7 +63,7 @@ def read_waterbase(fname, locations=None, variable="NUMERIEKEWAARDE",
         }
         series = series.loc[:, variable].sort_index()
         ts.append(TimeSeries(series, name=name, metadata=metadata,
-                             kind=kind, freq_original=freq))
+                             settings=kind, freq_original=freq))
 
     if len(ts) == 1:
         ts = ts[0]

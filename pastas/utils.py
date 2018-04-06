@@ -1,11 +1,25 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
+from datetime import datetime, timedelta
 
 
 def get_dt(freq):
+    """Method to obtain a timestep from a frequency string.
+
+    Parameters
+    ----------
+    freq: str
+
+    Returns
+    -------
+    dt: float
+
+    """
     # method to calculate the timestep in days from the frequency string freq
-    options = {'MS': 30,  # monthly frequency (month-start), used just for comparison
-               'M': 30,  # monthly frequency (month-end), used just for comparison
+    options = {'MS': 30,  # monthly frequency (month-start), used just for
+               # comparison
+               'M': 30,  # monthly frequency (month-end), used just for
+               # comparison
                'W': 7,  # weekly frequency
                'D': 1,  # calendar day frequency
                'H': 1 / 24,  # hourly frequency
@@ -142,3 +156,37 @@ def timestep_weighted_resample(series, index):
     # replace all values in the series
     series = pd.Series(v1, index=index)
     return series
+
+
+def excel2datetime(excel_datenum, freq="D"):
+    """Method to convert excel datetime to pandas timetime objects.
+
+    Parameters
+    ----------
+    excel_datenum: datetime index
+        can be a datetime object or a pandas datetime index.
+    freq:
+
+    Returns
+    -------
+    datetimes: pandas.datetimeindex
+
+    """
+    datetimes = pd.to_datetime('1899-12-30') + pd.to_timedelta(excel_datenum,
+                                                               freq)
+    return datetimes
+
+def matlab2datetime(matlab_datenum):
+    """
+    Transform a matlab time to a datetime, rounded to seconds
+    """
+    day = datetime.fromordinal(int(matlab_datenum))
+    dayfrac = timedelta(days=float(matlab_datenum) % 1) - timedelta(
+        days=366)
+    return day + dayfrac
+
+def datetime2matlab(dt):
+    mdn = dt + timedelta(days = 366)
+    frac = (dt-datetime(dt.year,dt.month,dt.day,0,0,0)).seconds / (24.0 * 60.0 * 60.0)
+    return mdn.toordinal() + frac
+    

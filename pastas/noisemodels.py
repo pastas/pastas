@@ -29,12 +29,11 @@ class NoiseModelBase(ABC):
 
     @set_parameter
     def set_initial(self, name, value):
-        """Method to set the initial parameter value
+        """Internal method to set the initial parameter value
 
-        Examples
-        --------
-
-        >>> ts.set_initial('parameter_name', 200)
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
 
         """
         if name in self.parameters.index:
@@ -44,6 +43,14 @@ class NoiseModelBase(ABC):
 
     @set_parameter
     def set_min(self, name, value):
+        """Internal method to set the minimum value of the noisemodel.
+
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
+
+
+        """
         if name in self.parameters.index:
             self.parameters.loc[name, 'pmin'] = value
         else:
@@ -51,6 +58,13 @@ class NoiseModelBase(ABC):
 
     @set_parameter
     def set_max(self, name, value):
+        """Internal method to set the maximum parameter values.
+
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
+
+        """
         if name in self.parameters.index:
             self.parameters.loc[name, 'pmax'] = value
         else:
@@ -58,7 +72,15 @@ class NoiseModelBase(ABC):
 
     @set_parameter
     def set_vary(self, name, value):
-        self.parameters.loc[name, 'pmax'] = value
+        """Internal method to set if the parameter is varied during
+        optimization.
+
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
+
+        """
+        self.parameters.loc[name, 'vary'] = value
 
     def dump(self):
         data = dict()
@@ -120,18 +142,21 @@ class NoiseModel(NoiseModelBase):
             Series of the innovations.
 
         """
-        innovations = pd.Series(res, index=res.index, name="Innovations")
+        delt = delt.iloc[1:]
+        alpha = p[0]
+        innovations = pd.Series(data=res)
         # res.values is needed else it gets messed up with the dates
-        innovations[1:] -= np.exp(-delt[1:] / p[0]) * res.values[:-1]
+        innovations.iloc[1:] -= np.exp(delt / -alpha) * res.values[:-1]
 
-        weights = self.weights(p, delt)
+        weights = self.weights(alpha, delt)
         innovations = innovations.multiply(weights, fill_value=0.0)
 
         if tindex is not None:
-            innovations = innovations[tindex]
+            innovations = innovations.loc[tindex]
+        innovations.name = "Innovations"
         return innovations
 
-    def weights(self, p, delt):
+    def weights(self, alpha, delt):
         """Method to calculate the weights for the innovations based on the
         sum of weighted squares innovations (SWSI) method.
 
@@ -146,11 +171,10 @@ class NoiseModel(NoiseModelBase):
         -------
 
         """
-        alpha = p[-1]
-        power = (1.0 / (2.0 * (delt[1:].size - 1.0)))
-        w = np.exp(
-            power * np.sum(np.log(1.0 - np.exp(-2.0 * delt[1:] / alpha)))) / \
-            np.sqrt(1.0 - np.exp(-2.0 * delt[1:] / alpha))
+        # divide power by 2 as nu / sigma is returned
+        power = (1.0 / (2.0 * delt.size))
+        exp = np.exp(-2.0 / alpha * delt) # Twice as fast as 2*delt/alpha
+        w = np.exp(power * np.sum(np.log(1.0 - exp))) /  np.sqrt(1.0 - exp)
         return w
 
 

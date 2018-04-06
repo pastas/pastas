@@ -12,68 +12,35 @@ from __future__ import print_function, division
 import logging
 
 import pandas as pd
+
 from pastas.utils import get_dt, get_time_offset, timestep_weighted_resample
 
 logger = logging.getLogger(__name__)
 
 
 class TimeSeries(pd.Series):
-    # "sample_down": "sum" means the series is a quantity
-    # "sample_down": "mean" means the series is an intensity (flux)
-    # "sample_up": "bfill" means the series is an intensity (flux)
-    # therefore "sample_down": "sum" and "sample_up": "bfill" should not be used together
-    # "sample_up": "mean" is very strange, and should be deleted from PASTAS
-    # the same can be said about "sample_up": float
-    # We should only keep methods in PASTAS that are in line with the way we use the series:
-    # timestamps are at the end of the period that each datapoint describes
-    # therefore I would also delete "sample_up": "pad" and "sample_up": "ffill"
-    # this would only keep "sample_up": "bfill" and "sample_up": "interpolate"
-    # and we should implement a new sample_up method for when the series is a quantity
-    _kind_settings = {
-        "oseries": {"freq": None, "sample_up": None, "sample_down": None,
-                    "fill_nan": "drop", "fill_before": None,
-                    "fill_after": None},
-        "prec": {"freq": None, "sample_up": "bfill", "sample_down": "mean",
+    _predefined_settings = {
+        "oseries": {"fill_nan": "drop", "sample_down": "drop"},
+        "prec": {"sample_up": "divide", "sample_down": "sum",
                  "fill_nan": 0.0, "fill_before": "mean", "fill_after": "mean"},
-        "evap": {"freq": None, "sample_up": "interpolate",
-                 "sample_down": "mean", "fill_nan": "interpolate",
+        "evap": {"sample_up": "divide", "sample_down": "sum",
                  "fill_before": "mean", "fill_after": "mean"},
-        "well": {"freq": None, "sample_up": "bfill", "sample_down": "mean",
+        "well": {"sample_up": "divide", "sample_down": "sum",
                  "fill_nan": 0.0, "fill_before": 0.0, "fill_after": 0.0},
-        "waterlevel": {"freq": None, "sample_up": "interpolate",
-                       "sample_down": "mean", "fill_nan": "interpolate",
+        "waterlevel": {"sample_up": "interpolate", "sample_down": "mean",
                        "fill_before": "mean", "fill_after": "mean"},
+        "level": {"sample_up": "interpolate", "sample_down": "mean",
+                  "fill_before": "mean", "fill_after": "mean"},
+        "flux": {"sample_up": "bfill", "sample_down": "mean",
+                 "fill_before": "mean", "fill_after": "mean"},
+        "quantity": {"sample_up": "divide", "sample_down": "sum",
+                     "fill_before": "mean", "fill_after": "mean"},
     }
 
-    def __init__(self, series, name=None, kind=None, settings=None,
-                 metadata=None, freq_original=None, **kwargs):
-        """Class that supports user-provided time series within PASTAS.
-
-        Parameters
-        ----------
-        series: pandas.Series
-            original series, which will be stored.
-        name: str
-            string with the name for this series.
-        kind: str
-            string with the kind of the series, to autocomplete the
-            following keywords. The user can choose from: oseries, evap,
-            prec, well.
-        freq: str
-            String containing the desired frequency. The required string format
-             is found at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
-        sample_up: optional: str or float
-            Methods or float number to fill nan-values. Default values is
-            "mean". Currently supported options are: "interpolate", float,
-            and "mean". Interpolation is performed with a standard linear
-            interpolation.
-        sample_down: str or float
-            method
-        fill_before
-        fill_after
-
-        """
+    def __init__(self, series, name=None, settings=None, metadata=None,
+                 freq_original=None, **kwargs):
         pd.Series.__init__(self)
+
         self.index.name = "Date"
         if isinstance(series, TimeSeries):
             self.series_original = series.series_original.copy()
@@ -85,14 +52,6 @@ class TimeSeries(pd.Series):
 
             validate = False
             update = False
-
-            if kind is None:
-                kind = series.kind
-            # In the strange case somebody changes the kind after creation..
-            elif kind is not series.kind:
-                validate = True
-                update = True
-                series = series.series_original.copy()
 
             if settings is None:
                 settings = self.settings.copy()
@@ -125,17 +84,29 @@ class TimeSeries(pd.Series):
             name = series.name
         self.name = name
         self.series_original.name = name
-        # Options when creating the series
-        self.kind = kind
 
         if metadata:
             self.metadata.update(metadata)
 
+        # kind argument will be deprecated in version 0.9.6
+        kind = kwargs.pop("kind", None)
+        if kind:
+            logger.warning("Deprecation error: the kind argument will be "
+                           "deprecated in Pastas 0.9.6. Please provide "
+                           "a string to the settings argument.")
+            if kind in self._predefined_settings.keys():
+                if self.update_settings(**self._predefined_settings[kind]):
+                    update = True
+
         # Update the options with user-provided values, if any.
-        if kind in self._kind_settings.keys():
-            if self.update_settings(**self._kind_settings[kind]):
-                update = True
         if settings:
+            if isinstance(settings, str):
+                if settings in self._predefined_settings.keys():
+                    settings = self._predefined_settings[settings]
+                else:
+                    logger.error("Settings shortcut code %s is not in the "
+                                 "predefined settings options. Please choose "
+                                 "from %s", self._predefined_settings.keys())
             if self.update_settings(**settings):
                 update = True
         if kwargs:
@@ -197,19 +168,18 @@ class TimeSeries(pd.Series):
             self.freq_original = self.settings["freq"]
             if self.freq_original is None:
                 logger.info(
-                    "Cannot determine frequency of series %s" % (self.name))
+                    "Cannot determine frequency of series %s" % self.name)
             elif self.settings["fill_nan"] and self.settings["fill_nan"] != \
                     "drop":
                 logger.warning("User-provided frequency is applied when "
                                "validating the Time Series %s. Make sure the "
                                "provided frequency is close to the real "
-                               "frequency of the original series." %
-                               (self.name))
+                               "frequency of the original series." % self.name)
 
         # 5. Handle duplicate indices
         if not series.index.is_unique:
             logger.warning("duplicate time-indexes were found in the Time "
-                           "Series %s. Values were averaged." % (self.name))
+                           "Series %s. Values were averaged." % self.name)
             grouped = series.groupby(level=0)
             series = grouped.mean()
 
@@ -245,6 +215,7 @@ class TimeSeries(pd.Series):
 
         Parameters
         ----------
+        initial
         kwargs: dict
             dictionary with the keyword arguments that are updated. Possible
             arguments are: "freq", "sample_up", "sample_down",
@@ -290,8 +261,6 @@ class TimeSeries(pd.Series):
                 series = self.sample_down(series)
             # 6. If new frequency is equal to its original
             elif dt_new == dt_org:
-                # This does not have anything to to with frequency.
-                # Shouldn't this be performed after change_frequency, also after the above methods?
                 series = self.fill_nan(series)
 
         # Drop nan-values at the beginning and end of the time series
@@ -315,12 +284,18 @@ class TimeSeries(pd.Series):
         elif method is None:
             pass
         else:
-            series = series.asfreq(freq)
             if method == "mean":  # when would you ever want this?
+                series = series.asfreq(freq)
                 series.fillna(series.mean(), inplace=True)  # Default option
             elif method == "interpolate":
+                series = series.asfreq(freq)
                 series.interpolate(method="time", inplace=True)
+            elif method == "divide":
+                dt = series.index.to_series().diff() / pd.Timedelta(1, freq)
+                series = series.iloc[1:] / dt.iloc[1:]
+                series = series.asfreq(freq, method="bfill")
             elif isinstance(method, float):
+                series = series.asfreq(freq)
                 series.fillna(method, inplace=True)
             else:
                 logger.warning("User-defined option for sample_up %s is not "
@@ -351,7 +326,7 @@ class TimeSeries(pd.Series):
         if method == "mean":
             series = series.resample(freq, **kwargs).mean()
         elif method == "drop":  # does this work?
-            series = series.resample(freq, **kwargs).dropna()
+            series = series.resample(freq, **kwargs).mean().dropna()
         elif method == "sum":
             series = series.resample(freq, **kwargs).sum()
         elif method == "min":
@@ -480,10 +455,9 @@ class TimeSeries(pd.Series):
         return series
 
     def normalize(self, series):
-        """Method to normalize the time series,
+        """Method to normalize the time series.
 
         """
-
         method = self.settings["norm"]
 
         if method is None:
@@ -516,11 +490,12 @@ class TimeSeries(pd.Series):
                 '>>> pip install pyproj'
                 'or ... conda install pyproj')
 
-    def dump(self, series=True):
+    def dump(self, series=True, transformed_series=False):
         """Method to export the Time Series to a json format.
 
         Parameters
         ----------
+        transformed_series
         series: Boolean
             True to export the original time series, False to only export
             the TimeSeries object"s name.
@@ -531,18 +506,16 @@ class TimeSeries(pd.Series):
             dictionary with the necessary information to recreate the
             TimeSeries object completely.
 
-        Notes
-        -----
-
-
         """
         data = dict()
 
         if series:
-            data["series"] = self.series_original
+            if transformed_series:
+                data["series"] = self
+            else:
+                data["series"] = self.series_original
 
         data["name"] = self.name
-        data["kind"] = self.kind
         data["settings"] = self.settings
         data["metadata"] = self.metadata
         data["freq_original"] = self.freq_original

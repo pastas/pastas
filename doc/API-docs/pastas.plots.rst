@@ -1,5 +1,5 @@
-pastas\.plots module
-====================
+pastas.plots module
+===================
 
 .. automodule:: pastas.plots
     :members:

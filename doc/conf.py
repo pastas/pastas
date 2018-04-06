@@ -20,9 +20,9 @@ import sys
 
 import alabaster
 import matplotlib
+
 matplotlib.use('agg')
 from pastas.version import __version__
-
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -44,6 +44,7 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'IPython.sphinxext.ipython_console_highlighting',  # lowercase didn't work
+	'sphinx.ext.autosectionlabel',
     'nbsphinx'
 ]
 
@@ -210,7 +211,7 @@ latex_documents = [
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
-#latex_logo = '_static\\logo.png'
+# latex_logo = '_static\\logo.png'
 
 # For "manual" documents, if this is true, then toplevel headings are parts,
 # not chapters.

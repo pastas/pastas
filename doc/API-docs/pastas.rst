@@ -9,7 +9,6 @@ Subpackages
     pastas.io
     pastas.project
     pastas.read
-    pastas.recharge
 
 Submodules
 ----------
@@ -25,6 +24,8 @@ Submodules
    pastas.stats
    pastas.stressmodels
    pastas.timeseries
+   pastas.transform
+   pastas.uncertainty
    pastas.utils
    pastas.version
 

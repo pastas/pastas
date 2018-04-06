@@ -10,7 +10,8 @@ from __future__ import print_function, division
 
 import numpy as np
 import pandas as pd
-from pastas.timeseries import TimeSeries
+
+from ..timeseries import TimeSeries
 
 
 def read_dino(fname, variable='Stand_cm_tov_NAP', factor=0.01):
@@ -24,8 +25,8 @@ def read_dino(fname, variable='Stand_cm_tov_NAP', factor=0.01):
 
     Returns
     -------
-    DataModel: object
-        returns a standard Pastas DataModel object.
+    ts: pastas.TimeSeries
+        returns a Pastas TimeSeries object or a list of objects.
 
     """
 
@@ -34,8 +35,9 @@ def read_dino(fname, variable='Stand_cm_tov_NAP', factor=0.01):
     ts = []
 
     if variable not in dino.data.keys():
-        raise (ValueError("variable %s is not in this dataset. Please use one of "
-                          "the following keys: %s" % (variable, dino.data.keys())))
+        raise (
+        ValueError("variable %s is not in this dataset. Please use one of "
+                   "the following keys: %s" % (variable, dino.data.keys())))
     series = dino.data[variable] * factor  # To make it meters)
     if len(dino.meta) > 0:
         metadata = dino.meta[-1]
@@ -49,7 +51,7 @@ def read_dino(fname, variable='Stand_cm_tov_NAP', factor=0.01):
 
     ts.append(TimeSeries(series,
                          name=dino.locatie + '_' + str(dino.filternummer),
-                         metadata=metadata, kind='oseries'))
+                         metadata=metadata, settings='oseries'))
     if len(ts) == 1:
         ts = ts[0]
     return ts

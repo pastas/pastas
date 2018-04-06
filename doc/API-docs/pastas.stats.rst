@@ -1,5 +1,5 @@
-pastas\.stats module
-====================
+pastas.stats module
+===================
 
 .. automodule:: pastas.stats
     :members:

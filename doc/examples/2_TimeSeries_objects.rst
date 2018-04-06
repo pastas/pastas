@@ -6,26 +6,29 @@ R.A. Collenteur, 04-11-2017, Artesia Water
 
 In this Jupyter Notebook, the concept of the Pastas TimeSeries class is
 explained in full detail. The Pastas TimeSeries class is basically an
-enhanced Pandas Series object, indeed enheriting from that class as
-well, with some features specific for its use in Pastas. Documentation
-on the Pandas Series can be found here:
+enhanced Pandas Series object. It enhorits from the Pandas Series, and
+adds some features for its specific use in Pastas. Documentation on the
+Pandas Series can be found here:
 http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.html
+
+Basic concept
+~~~~~~~~~~~~~
 
 The central thought for the design of this class was that all
 manipulations made on the user-provided dependent and independent time
 series should be handled within this class. Moreover, while manipulating
 the TimeSeries when working with your Pastas model, the original data
-should be maintained such that only the definition of the TimeSeries and
-the original series can be stored. The definition of the class can be
-found on Github
+should be maintained such that only the settings and the original series
+can be stored. The definition of the class can be found on Github
 (https://github.com/pastas/pastas/blob/dev/pastas/timeseries.py)
 
 .. code:: ipython3
 
+    # Import some packages
     import pastas as ps
     import pandas as pd
     import matplotlib.pyplot as plt
-    % matplotlib inline
+    % matplotlib notebook
 
 1. Importing groundwater time series
 ------------------------------------
@@ -34,7 +37,7 @@ Let's first import some time series so we have some data to play around
 with. We use Pandas read\_csv method and obtain a Pandas Series object,
 pandas data structure to efficiently deal with 1D Time Series data. By
 default, Pandas adds a wealth of functionalities to a Series object,
-such as descriptive statistics (series.describe()) and plotting
+such as descriptive statistics (e.g. ``series.describe()``) and plotting
 funtionality.
 
 .. code:: ipython3
@@ -53,7 +56,7 @@ funtionality.
 
 .. parsed-literal::
 
-    <matplotlib.axes._subplots.AxesSubplot at 0x1505eb156d8>
+    <matplotlib.axes._subplots.AxesSubplot at 0x2a9d695c9e8>
 
 
 
@@ -65,7 +68,7 @@ funtionality.
 --------------------------------------
 
 The user will provide time series data when creating a model instance,
-or one of the tseries elements found in tseries.py. Pastas expects
+or one of the stressmodels found in stressmodels.py. Pastas expects
 Pandas Series as a standard format in which time series are provided,
 but will internally transform these to Pastas TimeSeries objects to add
 the necessary funtionality. It is therefore also possible to provide a
@@ -89,10 +92,10 @@ series for simulation without errors. The time series are checked for:
 
 If all of the above is OK, a TimeSeries object is returned. When valid
 time series are provided all of the above checks are no problem and no
-settings are required. However, all to often this is not the case and at
-least "fill\_nan" and "freq" are required. The first argument tells the
-TimeSeries object how to handle nan-values, and the freq argument
-provides the frequency of the original time series (default freq=D,
+settings are required. However, all too often this is not the case and
+at least "fill\_nan" and "freq" are required. The first argument tells
+the TimeSeries object how to handle nan-values, and the freq argument
+provides the frequency of the original time series (by default, freq=D,
 fill\_nan="interpolate").
 
 .. code:: ipython3
@@ -100,26 +103,22 @@ fill\_nan="interpolate").
     oseries = ps.TimeSeries(gwdata, name="Groundwater Level")
     
     # Plot the new time series and the original
-    oseries.plot(figsize=(15,4), label="pastas timeseries")
+    plt.figure(figsize=(10,4))
+    oseries.plot(label="pastas timeseries")
     gwdata.plot(label="original")
     plt.legend()
 
 
-.. parsed-literal::
-
-    User-provided frequency is applied when validating the Time Series Groundwater Level. Make sure the provided frequency is close to the real frequency of the original series.
-    
-
 
 
 .. parsed-literal::
 
-    <matplotlib.legend.Legend at 0x1505eaeacc0>
+    <matplotlib.legend.Legend at 0x2a9d695c940>
 
 
 
 
-.. image:: output_5_2.png
+.. image:: output_5_1.png
 
 
 3. Configuring a TimeSeries object
@@ -133,60 +132,67 @@ simulation, one of the benefits of the method of impulse response
 functions. The nan-values can simply be dropped. To configure a
 TimeSeries object the user has three options:
 
-1. Use a predefined configuration by using the kind="type" argument
-2. providing a dictonary with the options
-3. Providing the arguments as keyword arguments
+1. Use a predefined configuration by providing a string to the settings
+   argument
+2. Manually set all or some of the settings by providing a dictonary to
+   the settings argument
+3. Providing the arguments as keyword arguments to the TimeSeries object
+   (not recommended)
 
 For example, when creating a TimeSeries object for the groundwater
-levels consider the following examples for setting the fill\_nan option:
+levels consider the three following examples for setting the fill\_nan
+option:
 
 .. code:: ipython3
 
     # Options 1
-    oseries = ps.TimeSeries(gwdata, name="Groundwater Level", kind="oseries")
+    oseries = ps.TimeSeries(gwdata, name="Groundwater Level", settings="oseries")
     print(oseries.settings)
 
 
 .. parsed-literal::
 
-    {'freq': 'D', 'sample_up': None, 'sample_down': None, 'fill_nan': 'drop', 'fill_before': None, 'fill_after': None, 'tmin': Timestamp('1985-11-14 00:00:00'), 'tmax': Timestamp('2015-06-28 00:00:00'), 'norm': None}
+    {'freq': None, 'sample_up': None, 'sample_down': 'drop', 'fill_nan': 'drop', 'fill_before': None, 'fill_after': None, 'tmin': Timestamp('1985-11-14 00:00:00'), 'tmax': Timestamp('2015-06-28 00:00:00'), 'norm': None}
     
 
 .. code:: ipython3
 
     # Option 2
-    oseries = ps.TimeSeries(gwdata, name="Groundwater Level", fill_nan="drop")
-    print(oseries.settings)
-
-
-.. parsed-literal::
-
-    {'freq': 'D', 'sample_up': None, 'sample_down': None, 'fill_nan': 'drop', 'fill_before': None, 'fill_after': None, 'tmin': Timestamp('1985-11-14 00:00:00'), 'tmax': Timestamp('2015-06-28 00:00:00'), 'norm': None}
-    
-
-.. code:: ipython3
-
-    # Options 3
     oseries = ps.TimeSeries(gwdata, name="Groundwater Level", settings=dict(fill_nan="drop"))
     print(oseries.settings)
 
 
 .. parsed-literal::
 
-    {'freq': 'D', 'sample_up': None, 'sample_down': None, 'fill_nan': 'drop', 'fill_before': None, 'fill_after': None, 'tmin': Timestamp('1985-11-14 00:00:00'), 'tmax': Timestamp('2015-06-28 00:00:00'), 'norm': None}
+    {'freq': None, 'sample_up': None, 'sample_down': None, 'fill_nan': 'drop', 'fill_before': None, 'fill_after': None, 'tmin': Timestamp('1985-11-14 00:00:00'), 'tmax': Timestamp('2015-06-28 00:00:00'), 'norm': None}
     
-
-Wait, what?
-~~~~~~~~~~~
-
-All of the above methods yield the same result. It is up to the user
-which one is preferred. A question that may arise with options 1, is
-what the possible values for ``kind`` are and what configuration is then
-used. You can ask the TimeSeries class this question:
 
 .. code:: ipython3
 
-    pd.DataFrame(ps.TimeSeries._kind_settings).T
+    # Options 3
+    oseries = ps.TimeSeries(gwdata, name="Groundwater Level", fill_nan="drop")
+    print(oseries.settings)
+
+
+.. parsed-literal::
+
+    {'freq': None, 'sample_up': None, 'sample_down': None, 'fill_nan': 'drop', 'fill_before': None, 'fill_after': None, 'tmin': Timestamp('1985-11-14 00:00:00'), 'tmax': Timestamp('2015-06-28 00:00:00'), 'norm': None}
+    
+
+Predefined settings
+~~~~~~~~~~~~~~~~~~~
+
+All of the above methods yield the same result. It is up to the user
+which one is preferred.
+
+A question that may arise with options 1, is what the possible strings
+for ``settings`` are and what configuration is then used. The TimeSeries
+class contains a dictionary with predefined settings that are used
+often. You can ask the TimeSeries class this question:
+
+.. code:: ipython3
+
+    pd.DataFrame(ps.TimeSeries._predefined_settings).T
 
 
 
@@ -194,17 +200,17 @@ used. You can ask the TimeSeries class this question:
 .. raw:: html
 
     <div>
-    <style>
-        .dataframe thead tr:only-child th {
-            text-align: right;
-        }
-    
-        .dataframe thead th {
-            text-align: left;
+    <style scoped>
+        .dataframe tbody tr th:only-of-type {
+            vertical-align: middle;
         }
     
         .dataframe tbody tr th {
             vertical-align: top;
+        }
+    
+        .dataframe thead th {
+            text-align: right;
         }
     </style>
     <table border="1" class="dataframe">
@@ -214,7 +220,6 @@ used. You can ask the TimeSeries class this question:
           <th>fill_after</th>
           <th>fill_before</th>
           <th>fill_nan</th>
-          <th>freq</th>
           <th>sample_down</th>
           <th>sample_up</th>
         </tr>
@@ -224,46 +229,65 @@ used. You can ask the TimeSeries class this question:
           <th>evap</th>
           <td>mean</td>
           <td>mean</td>
-          <td>interpolate</td>
-          <td>D</td>
+          <td>NaN</td>
           <td>sum</td>
+          <td>divide</td>
+        </tr>
+        <tr>
+          <th>flux</th>
+          <td>mean</td>
+          <td>mean</td>
+          <td>NaN</td>
+          <td>mean</td>
+          <td>bfill</td>
+        </tr>
+        <tr>
+          <th>level</th>
+          <td>mean</td>
+          <td>mean</td>
+          <td>NaN</td>
+          <td>mean</td>
           <td>interpolate</td>
         </tr>
         <tr>
           <th>oseries</th>
-          <td>None</td>
-          <td>None</td>
+          <td>NaN</td>
+          <td>NaN</td>
           <td>drop</td>
-          <td>D</td>
-          <td>None</td>
-          <td>None</td>
+          <td>drop</td>
+          <td>NaN</td>
         </tr>
         <tr>
           <th>prec</th>
           <td>mean</td>
           <td>mean</td>
           <td>0</td>
-          <td>D</td>
           <td>sum</td>
+          <td>divide</td>
+        </tr>
+        <tr>
+          <th>quantity</th>
           <td>mean</td>
+          <td>mean</td>
+          <td>NaN</td>
+          <td>sum</td>
+          <td>divide</td>
         </tr>
         <tr>
           <th>waterlevel</th>
           <td>mean</td>
           <td>mean</td>
-          <td>interpolate</td>
-          <td>D</td>
-          <td>interpolate</td>
+          <td>NaN</td>
           <td>mean</td>
+          <td>interpolate</td>
         </tr>
         <tr>
           <th>well</th>
           <td>0</td>
           <td>0</td>
           <td>0</td>
-          <td>D</td>
           <td>sum</td>
-          <td>bfill</td>
+          <td>divide</td>
         </tr>
       </tbody>
     </table>
@@ -292,7 +316,7 @@ frequency and show how the above methods work
                          index_col='date')
     precip = precip.precip["2012"]
     precip /= 1000.0  # Meters
-    prec = ps.TimeSeries(precip, name="Precpipitation", kind="prec")
+    prec = ps.TimeSeries(precip, name="Precipitation", settings="prec")
 
 .. code:: ipython3
 
@@ -358,9 +382,9 @@ shows.
      'freq': 'W',
      'norm': None,
      'sample_down': 'sum',
-     'sample_up': 'mean',
+     'sample_up': 'divide',
      'tmax': Timestamp('2012-12-31 00:00:00'),
-     'tmin': '2011'}
+     'tmin': Timestamp('2011-01-01 00:00:00')}
 
 
 
@@ -384,7 +408,7 @@ data is maintained and can easily be recreated from a json file.
 
 .. parsed-literal::
 
-    dict_keys(['series', 'name', 'kind', 'settings', 'metadata'])
+    dict_keys(['series', 'name', 'settings', 'metadata', 'freq_original'])
     
 
 .. code:: ipython3
@@ -398,7 +422,7 @@ data is maintained and can easily be recreated from a json file.
 
 .. parsed-literal::
 
-    <matplotlib.axes._subplots.AxesSubplot at 0x150615b0c18>
+    <matplotlib.axes._subplots.AxesSubplot at 0x2a9d81a2668>
 
 
 

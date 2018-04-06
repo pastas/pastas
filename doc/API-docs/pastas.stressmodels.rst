@@ -1,5 +1,5 @@
-pastas\.stressmodels module
-===========================
+pastas.stressmodels module
+==========================
 
 .. automodule:: pastas.stressmodels
     :members:

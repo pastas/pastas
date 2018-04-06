@@ -1,5 +1,5 @@
-pastas\.timeseries module
-=========================
+pastas.timeseries module
+========================
 
 .. automodule:: pastas.timeseries
     :members:

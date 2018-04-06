@@ -1,5 +1,5 @@
-pastas\.version module
-======================
+pastas.version module
+=====================
 
 .. automodule:: pastas.version
     :members:

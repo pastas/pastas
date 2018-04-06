@@ -10,7 +10,9 @@ import json
 from collections import OrderedDict
 
 import pandas as pd
+
 import pastas as ps
+
 
 def load(fname):
     data = json.load(open(fname), object_hook=pastas_hook)
@@ -24,28 +26,21 @@ def pastas_hook(obj):
             if val is pd.NaT:
                 val = None
             obj[key] = val
-        elif key == "stress":
-            try:
-                obj[key] = list()
-                for ts in value:
-                    obj[key].append(pd.read_json(ts, typ='series',
-                                                 orient="split"))
-            except:
-                obj[key] = value
-        elif key in ["series"]:
+        elif key == "series":
             try:
                 obj[key] = pd.read_json(value, typ='series', orient="split")
             except:
                 try:
-                     obj[key] = ps.TimeSeries(**value)
+                    obj[key] = ps.TimeSeries(**value)
                 except:
                     obj[key] = value
-        elif key in ["time_offset"]:
+        elif key == "time_offset":
             obj[key] = pd.Timedelta(value)
-        elif key in ["parameters"]:
+        elif key == "parameters":
             # Necessary to maintain order when using the JSON format!
             value = json.loads(value, object_pairs_hook=OrderedDict)
-            obj[key] = pd.DataFrame(data=value, columns=value.keys()).T
+            param = pd.DataFrame(data=value, columns=value.keys()).T
+            obj[key] = param.apply(pd.to_numeric, errors="ignore")
         else:
             try:
                 obj[key] = json.loads(value, object_hook=pastas_hook)

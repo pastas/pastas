@@ -102,41 +102,42 @@ class BaseSolver:
 
 
 class LeastSquares(BaseSolver):
-    _name = "LeastSquares"
-    __doc__ = """Solving the model using Scipy's least_squares method.
+    """Solver based on Scipy's least_squares method [1]_.
 
     Notes
     -----
-    This class is usually called by the pastas Model solve method. E.g.
+    This class is the default solve method called by the pastas Model solve
+    method. All kwargs provided to the Model.solve() method are forwarded to
+    the solver. From there, they are forwarded to scipy least_squares solver.
+
+    Examples
+    --------
 
     >>> ml.solve(solver=LeastSquares)
 
     References
     ----------
-    https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
+    .. [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
 
     """
+    _name = "LeastSquares"
 
     def __init__(self, model, tmin=None, tmax=None, noise=True, freq=None,
                  weights=None, **kwargs):
         BaseSolver.__init__(self)
 
-        parameters = model.parameters.initial.values
+        self.modelparameters = model.parameters
+        self.vary = self.modelparameters.vary.values.astype('bool')
+        self.initial = self.modelparameters.initial.values.copy()
+        parameters = self.modelparameters.loc[self.vary]
 
         # Set the boundaries
-        pmin = np.where(model.parameters.pmin.isnull(), -np.inf,
-                        model.parameters.pmin)
-        pmax = np.where(model.parameters.pmax.isnull(), np.inf,
-                        model.parameters.pmax)
+        pmin = np.where(parameters.pmin.isnull(), -np.inf, parameters.pmin)
+        pmax = np.where(parameters.pmax.isnull(), np.inf, parameters.pmax)
         bounds = (pmin, pmax)
 
-        if False in model.parameters.vary.values.astype('bool'):
-            logger.warning("""Fixing parameters is not supported with this
-                           solver. Please use LmfitSolve or apply small
-                           boundaries as a solution.""")
-
-        self.fit = least_squares(self.objfunction, x0=parameters,
-                                 bounds=bounds,
+        self.fit = least_squares(self.objfunction,
+                                 x0=parameters.initial.values, bounds=bounds,
                                  args=(tmin, tmax, noise, model, freq,
                                        weights), **kwargs)
 
@@ -144,9 +145,10 @@ class LeastSquares(BaseSolver):
 
         self.pcov = self.get_covariances(self.fit, model)
         self.pcor = self.get_correlations(self.pcov)
-        self.stderr = np.sqrt(np.diag(self.pcov))
-        self.optimal_params = self.fit.x
-
+        self.optimal_params = self.initial
+        self.optimal_params[self.vary] = self.fit.x
+        self.stderr = np.zeros(len(self.optimal_params))
+        self.stderr[self.vary] = np.sqrt(np.diag(self.pcov))
         self.report = None
 
     def objfunction(self, parameters, tmin, tmax, noise, model, freq, weights):
@@ -166,7 +168,10 @@ class LeastSquares(BaseSolver):
         -------
 
         """
-        res = self.minimize(parameters, tmin, tmax, noise, model, freq,
+        p = self.initial
+        p[self.vary] = parameters
+
+        res = self.minimize(p, tmin, tmax, noise, model, freq,
                             weights)
         return res
 
@@ -223,16 +228,16 @@ class LeastSquares(BaseSolver):
 
 
 class LmfitSolve(BaseSolver):
-    _name = "LmfitSolve"
-    __doc__ = """Solving the model using the LmFit solver. This is basically a
+    """Solving the model using the LmFit solver [LM]_. This is basically a
     wrapper around the scipy solvers, adding some cool functionality for
     boundary conditions.
 
-    Notes
-    -----
-    https://github.com/lmfit/lmfit-py/
+    References
+    ----------
+    .. [LM] https://github.com/lmfit/lmfit-py/
 
     """
+    _name = "LmfitSolve"
 
     def __init__(self, model, tmin=None, tmax=None, noise=True, freq=None,
                  weights=None, **kwargs):
@@ -245,6 +250,11 @@ class LmfitSolve(BaseSolver):
         for k in p.index:
             pp = np.where(p.loc[k].isnull(), None, p.loc[k])
             parameters.add(k, value=pp[0], min=pp[1], max=pp[2], vary=pp[3])
+
+        # set ftol and epsfcn if no options for lmfit are provided. Only
+        # work with Lmfit's least squares solver method.
+        if not kwargs:
+            kwargs = {"ftol": 1e-3, "epsfcn": 1e-4}
 
         self.fit = lmfit.minimize(fcn=self.objfunction, params=parameters,
                                   args=(tmin, tmax, noise, model, freq,

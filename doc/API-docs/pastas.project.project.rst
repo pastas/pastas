@@ -1,5 +1,5 @@
-pastas\.project\.project module
-===============================
+pastas.project.project module
+=============================
 
 .. automodule:: pastas.project.project
     :members:

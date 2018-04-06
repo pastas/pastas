@@ -80,9 +80,15 @@ def load_project(data):
                     ts["stress"][i]["series"] = mls.stresses.loc[
                         stress_name, "series"]
 
-        ml = load_model(ml)
-        mls.models[ml_name] = ml
-
+        try:
+            ml = load_model(ml)
+            mls.models[ml_name] = ml
+        except:
+            try:
+                mls.del_model(ml_name)
+            except:
+                pass
+            print("model", ml_name, "could not be added")
     return mls
 
 
@@ -130,6 +136,13 @@ def load_model(data):
         stressmodel = stressmodel(**ts)
         ml.add_stressmodel(stressmodel)
 
+    # Add transform
+    if "transform" in data.keys():
+        transform = getattr(ps.transform, data["transform"]["transform"])
+        data["transform"].pop("transform")
+        transform = transform(**data["transform"])
+        ml.add_transform(transform)
+
     # Add noisemodel if present
     if "noisemodel" in data.keys():
         n = getattr(ps.noisemodels, data["noisemodel"]["type"])()
@@ -138,7 +151,6 @@ def load_model(data):
     # Add parameters, use update to maintain correct order
     ml.parameters = ml.get_init_parameters(noise=ml.settings["noise"])
     ml.parameters.update(data["parameters"])
-
     return ml
 
 
