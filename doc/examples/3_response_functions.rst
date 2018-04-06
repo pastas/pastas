@@ -1,16 +1,6 @@
 
-Impulse reponse functions
-=========================
-
-.. code:: ipython3
-
-    import pastas as ps
-    import matplotlib.pyplot as plt
-    import numpy as np
-    import pandas as pd
-
 Overview of the response functions available in Pastas
-------------------------------------------------------
+======================================================
 
 In this notebook an overview is provided of the response function that
 are available in Pastas. The below table summarizes all the response
@@ -117,22 +107,13 @@ not yet fully supported.
 |       |       | level |
 |       |       | s     |
 +-------+-------+-------+
-| Theis | 3 -   | Respo |
-|       | S, T, | nse   |
-|       | r     | funct |
-|       |       | ion   |
-|       |       | commo |
-|       |       | nly   |
-|       |       | used  |
-|       |       | for   |
-|       |       | groun |
-|       |       | dwate |
-|       |       | r     |
-|       |       | abstr |
-|       |       | actio |
-|       |       | n     |
-|       |       | wells |
-+-------+-------+-------+
+
+.. code:: ipython3
+
+    import pastas as ps
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import pandas as pd
 
 Parameters
 ----------
@@ -195,17 +176,17 @@ simulation time step is applied.
 .. raw:: html
 
     <div>
-    <style>
-        .dataframe thead tr:only-child th {
-            text-align: right;
-        }
-    
-        .dataframe thead th {
-            text-align: left;
+    <style scoped>
+        .dataframe tbody tr th:only-of-type {
+            vertical-align: middle;
         }
     
         .dataframe tbody tr th {
             vertical-align: top;
+        }
+    
+        .dataframe thead th {
+            text-align: right;
         }
     </style>
     <table border="1" class="dataframe">
