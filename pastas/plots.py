@@ -155,6 +155,7 @@ class Plotting:
 
         Parameters
         ----------
+        split
         ytick_base: Boolean or float
             Make the ytick-base constant if True, set this base to float if float
         **kwargs:
@@ -305,9 +306,9 @@ class Plotting:
         plt.xlim(0)
 
         # Change xtickers to the correct time
-        locs, labels = plt.xticks()
-        labels = locs * get_dt(self.ml.settings["freq"])
-        plt.xticks(locs, labels)
+        # locs, labels = plt.xticks()
+        # labels = locs * get_dt(self.ml.settings["freq"])
+        # plt.xticks(locs, labels)
         plt.xlabel("Time [days]")
 
         plt.legend(legend)
@@ -345,9 +346,9 @@ class Plotting:
         plt.xlim(0)
 
         # Change xtickers to the correct time
-        locs, labels = plt.xticks()
-        labels = locs * get_dt(self.ml.settings["freq"])
-        plt.xticks(locs, labels)
+        # locs, labels = plt.xticks()
+        # labels = locs * get_dt(self.ml.settings["freq"])
+        # plt.xticks(locs, labels)
         plt.xlabel("Time [days]")
 
         plt.legend(legend)
