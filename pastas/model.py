@@ -85,15 +85,14 @@ class Model:
         self.noisemodel = None
 
         # Store the simulation settings
-        self.settings = {}
-        self.settings["tmin"] = None
-        self.settings["tmax"] = None
-        self.settings["freq"] = "D"
-        self.settings["warmup"] = 3650
-        self.settings["time_offset"] = pd.Timedelta(0)
-        self.settings["noise"] = noisemodel
-        self.settings["solver"] = None
-        self.settings["fit_constant"] = True
+        self.settings = {"tmin": None,
+                         "tmax": None,
+                         "freq": "D",
+                         "warmup": 3650,
+                         "time_offset": pd.Timedelta(0),
+                         "noise": noisemodel,
+                         "solver": None,
+                         "fit_constant": True}
         if settings:
             self.settings.update(settings)
 
@@ -1293,6 +1292,8 @@ Parameters (%s were optimized)
 
          Parameters
          ----------
+         transformed_series
+         file_info
          series: Boolean
             True if the original series are to be stored.
          sim_series: Boolean
