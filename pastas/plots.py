@@ -374,7 +374,7 @@ class Plotting:
         return fig.axes
 
     @model_tmin_tmax
-    def stresses(self, tmin=None, tmax=None, cols=1, **kwargs):
+    def stresses(self, tmin=None, tmax=None, cols=1, split=True, **kwargs):
         """This method creates a graph with all the stresses used in the
          model.
 
@@ -394,11 +394,17 @@ class Plotting:
         stresses = []
 
         for name in self.ml.stressmodels.keys():
-            stress = self.ml.get_stress(name)
-            if isinstance(stress, list):
-                stresses.extend(stress)
+            nstress = len(self.ml.stressmodels[name].stress)
+            if split and nstress > 1:
+                for istress in range(nstress):
+                    stress = self.ml.get_stress(name,istress=istress)
+                    stresses.append(stress)
             else:
-                stresses.append(stress)
+                stress = self.ml.get_stress(name)
+                if isinstance(stress, list):
+                    stresses.extend(stress)
+                else:
+                    stresses.append(stress)
 
         rows = len(stresses)
         rows = -(-rows // cols)  # round up with out additional import

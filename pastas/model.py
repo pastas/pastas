@@ -20,7 +20,7 @@ from .solver import LeastSquares
 from .stats import Statistics
 from .stressmodels import Constant
 from .timeseries import TimeSeries
-from .utils import get_dt, get_time_offset
+from .utils import get_dt, get_time_offset, frequency_is_supported
 from .version import __version__
 
 
@@ -465,7 +465,11 @@ class Model:
 
         # Set the frequency & warmup
         if freq:
-            self.settings["freq"] = freq
+            if frequency_is_supported(freq):
+                self.settings["freq"] = freq
+            else:
+                self.logger.error(
+                    'Frequency of ' + freq + ' is not supported')
         if warmup is not None:
             self.settings["warmup"] = warmup
 
@@ -589,7 +593,7 @@ class Model:
         if report:
             print(self.fit_report())
 
-    def set_initial(self, name, value):
+    def set_initial(self, name, value, move_bounds=False):
         """Method to set the initial value of any parameter.
 
         Parameters
@@ -600,6 +604,13 @@ class Model:
             parameters value to use as initial estimate.
 
         """
+        if move_bounds:
+            factor = value / self.parameters.loc[name, 'initial']
+            min_new = self.parameters.loc[name, 'pmin'] * factor
+            self.set_parameter(name, min_new, 'pmin')
+            max_new = self.parameters.loc[name, 'pmax'] * factor
+            self.set_parameter(name, max_new, 'pmax')
+
         self.set_parameter(name, value, "initial")
 
     def set_vary(self, name, value):
@@ -615,7 +626,7 @@ class Model:
         """
         self.set_parameter(name, value, "vary")
 
-    def set_min(self, name, value):
+    def set_pmin(self, name, value):
         """Method to set the minimum value of a parameter.
 
         Parameters
@@ -626,9 +637,9 @@ class Model:
             minimum value for the parameter.
 
         """
-        self.set_parameter(name, value, "min")
+        self.set_parameter(name, value, "pmin")
 
-    def set_max(self, name, value):
+    def set_pmax(self, name, value):
         """Method to set the maximum values of a parameter.
 
         Parameters
@@ -640,7 +651,7 @@ class Model:
 
 
         """
-        self.set_parameter(name, value, "max")
+        self.set_parameter(name, value, "pmax")
 
     def set_parameter(self, name, value, kind):
         """Internal method to set the parameter value for some kind.
@@ -1080,7 +1091,7 @@ class Model:
         return pd.Series(s, index=t, name=name)
 
     @get_stressmodel
-    def get_stress(self, name):
+    def get_stress(self, name, istress=None):
         """Method to obtain the stress(es) from the stressmodel.
 
         Parameters
@@ -1096,7 +1107,10 @@ class Model:
 
         """
         p = self.get_parameters(name)
-        stress = self.stressmodels[name].get_stress(p)
+        if istress is None:
+            stress = self.stressmodels[name].get_stress(p)
+        else:
+            stress = self.stressmodels[name].get_stress(p, istress)
         return stress
 
     def get_metadata(self, meta=None):

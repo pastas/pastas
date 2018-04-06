@@ -81,7 +81,7 @@ class StressModelBase:
         self.parameters.loc[name, 'initial'] = value
 
     @set_parameter
-    def set_min(self, name, value):
+    def set_pmin(self, name, value):
         """Internal method to set the lower bound of the parameter value.
 
         Notes
@@ -92,7 +92,7 @@ class StressModelBase:
         self.parameters.loc[name, 'pmin'] = value
 
     @set_parameter
-    def set_max(self, name, value):
+    def set_pmax(self, name, value):
         """Internal method to set the upper bound of the parameter value.
 
         Notes

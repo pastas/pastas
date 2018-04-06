@@ -34,6 +34,9 @@ def get_dt(freq):
     dt = num * options[freq]
     return dt
 
+def frequency_is_supported(freq):
+    num, freq = get_freqstr(freq)
+    return freq in ['W','D','H','T','min','S','L','ms']
 
 def get_time_offset(t, freq):
     # method to calculate the time offset between a TimeStamp t and a default Series with a frequency of freq
