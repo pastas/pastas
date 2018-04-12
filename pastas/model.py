@@ -1059,7 +1059,7 @@ class Model:
         p = self.get_parameters(name)
         dt = get_dt(self.settings["freq"])
         b = self.stressmodels[name].rfunc.block(p, dt)
-        t = np.arange(dt, (len(b) + 1) * dt, dt)
+        t = np.linspace(dt, len(b) * dt, len(b))
         return pd.Series(b, index=t, name=name)
 
     @get_stressmodel
@@ -1087,7 +1087,7 @@ class Model:
         p = self.get_parameters(name)
         dt = get_dt(self.settings["freq"])
         s = self.stressmodels[name].rfunc.step(p, dt)
-        t = np.arange(dt, (len(s) + 1) * dt, dt)
+        t = np.linspace(dt, len(s) * dt, len(s))
         return pd.Series(s, index=t, name=name)
 
     @get_stressmodel
