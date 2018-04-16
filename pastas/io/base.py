@@ -151,6 +151,7 @@ def load_model(data):
     # Add parameters, use update to maintain correct order
     ml.parameters = ml.get_init_parameters(noise=ml.settings["noise"])
     ml.parameters.update(data["parameters"])
+    ml.parameters = ml.parameters.apply(pd.to_numeric, errors="ignore")
     return ml
 
 

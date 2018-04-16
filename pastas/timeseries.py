@@ -513,7 +513,7 @@ class TimeSeries(pd.Series):
             tmax = tmax - time_offset
             index_extend = pd.date_range(start=series.index.max(), end=tmax,
                                          freq=freq)
-            index = series.index.union(index_extend[:-1])
+            index = series.index.union(index_extend)
             series = series.reindex(index)
 
             if method == "mean":

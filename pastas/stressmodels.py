@@ -256,7 +256,7 @@ class StressModel(StressModelBase):
         kind = kwargs.pop("kind", None)
         stress = TimeSeries(stress, kind=kind, settings=settings,
                             metadata=metadata)
-        
+
         if meanstress is None:
             meanstress = stress.mean()
 
@@ -365,7 +365,8 @@ class StressModel2(StressModelBase):
     _name = "StressModel2"
 
     def __init__(self, stress, rfunc, name, up=True, cutoff=0.99,
-                 settings=("prec", "evap"), metadata=(None, None), meanstress=None, **kwargs):
+                 settings=("prec", "evap"), metadata=(None, None),
+                 meanstress=None, **kwargs):
         # First check the series, then determine tmin and tmax
         kind = kwargs.pop("kind", (None, None))
 
@@ -383,7 +384,7 @@ class StressModel2(StressModelBase):
         # First check the series, then determine tmin and tmax
         stress0.update_series(tmin=index.min(), tmax=index.max())
         stress1.update_series(tmin=index.min(), tmax=index.max())
-        
+
         if meanstress is None:
             meanstress = stress0.mean() - stress1.mean()
 

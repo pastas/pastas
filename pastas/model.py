@@ -278,7 +278,6 @@ class Model:
             sim_index = self.get_sim_index(tmin, tmax, freq, warmup)
             self.update_stresses(tmin=sim_index.min(), tmax=sim_index.max(),
                                  freq=freq)
-
         else:
             sim_index = self.sim_index
 
