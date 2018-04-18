@@ -103,8 +103,8 @@ class Gamma(RfuncBase):
         if isinstance(dt, np.ndarray):
             t = dt
         else:
-            tmax = max(self.calc_tmax(p), 3 * dt)
-            t = np.arange(dt, tmax, dt)
+            self.tmax = max(self.calc_tmax(p), 3 * dt)
+            t = np.arange(dt, self.tmax, dt)
 
         s = p[0] * gammainc(p[1], t / p[2])
         return s
@@ -158,8 +158,8 @@ class Exponential(RfuncBase):
         if isinstance(dt, np.ndarray):
             t = dt
         else:
-            tmax = max(self.calc_tmax(p), 3 * dt)
-            t = np.arange(dt, tmax, dt)
+            self.tmax = max(self.calc_tmax(p), 3 * dt)
+            t = np.arange(dt, self.tmax, dt)
         s = p[0] * (1.0 - np.exp(-t / p[1]))
         return s
 
@@ -233,8 +233,8 @@ class Hantush(RfuncBase):
         if isinstance(dt, np.ndarray):
             t = dt
         else:
-            tmax = max(self.calc_tmax(p), 3 * dt)
-            t = np.arange(dt, tmax, dt)
+            self.tmax = max(self.calc_tmax(p), 3 * dt)
+            t = np.arange(dt, self.tmax, dt)
         tau = t / cS
         tau1 = tau[tau < rho / 2]
         tau2 = tau[tau >= rho / 2]

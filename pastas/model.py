@@ -20,7 +20,7 @@ from .solver import LeastSquares
 from .stats import Statistics
 from .stressmodels import Constant
 from .timeseries import TimeSeries
-from .utils import get_dt, get_time_offset
+from .utils import get_dt, get_time_offset, frequency_is_supported
 from .version import __version__
 
 
@@ -227,7 +227,8 @@ class Model:
             self.noisemodel = None
             self.parameters = self.get_init_parameters(initial=False)
 
-    def simulate(self, parameters=None, tmin=None, tmax=None, freq=None):
+    def simulate(self, parameters=None, tmin=None, tmax=None, freq=None,
+                 warmup=None):
         """Method to simulate the time series model.
 
         Parameters
@@ -239,6 +240,8 @@ class Model:
         tmax: str, optional
         freq: str, optional
             Frequency at which the time series are simulated.
+        warmup: int, optional
+            length of the warmup period in days
 
         Returns
         -------
@@ -255,19 +258,26 @@ class Model:
 
         """
 
-        # Default option when freq is not provided.
+        # Default options when tmin, tmax, freq and warmup are not provided.
+        if tmin is None:
+            tmin = self.settings['tmin']
+        if tmax is None:
+            tmax = self.settings['tmax']
         if freq is None:
             freq = self.settings["freq"]
+        if warmup is None:
+            warmup = self.settings["warmup"]
 
-        if self.sim_index is None:
+        recalc_si = [tmin, tmax, freq, warmup] != [self.settings[x] for x in
+                                                   ['tmin', 'tmax', 'freq',
+                                                    'warmup']]
+        if self.sim_index is None or recalc_si:
             tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq,
                                             use_oseries=False,
                                             use_stresses=True)
-            sim_index = self.get_sim_index(tmin, tmax, freq, self.settings[
-                "warmup"])
+            sim_index = self.get_sim_index(tmin, tmax, freq, warmup)
             self.update_stresses(tmin=sim_index.min(), tmax=sim_index.max(),
                                  freq=freq)
-
         else:
             sim_index = self.sim_index
 
@@ -295,7 +305,8 @@ class Model:
         h.name = 'Simulation'
         return h
 
-    def residuals(self, parameters=None, tmin=None, tmax=None, freq=None):
+    def residuals(self, parameters=None, tmin=None, tmax=None, freq=None,
+                  warmup=None):
         """Method to calculate the residual series.
 
         Parameters
@@ -307,6 +318,8 @@ class Model:
         tmax: str, optional
         freq: str, optional
             frequency at which the time series are simulated.
+        warmup: int, optional
+            length of the warmup period in days
 
         Returns
         -------
@@ -314,12 +327,21 @@ class Model:
             pandas.Series with the residuals series.
 
         """
+        # Default options when tmin, tmax, freq and warmup are not provided.
+        if tmin is None:
+            tmin = self.settings['tmin']
+        if tmax is None:
+            tmax = self.settings['tmax']
         if freq is None:
             freq = self.settings["freq"]
+        if warmup is None:
+            warmup = self.settings["warmup"]
 
         # simulate model
-        simulation = self.simulate(parameters, tmin, tmax, freq)
-        if self.oseries_calib is None:
+        simulation = self.simulate(parameters, tmin, tmax, freq, warmup)
+        recalc_oc = [tmin, tmax, freq] != [self.settings[x] for x in
+                                           ['tmin', 'tmax', 'freq']]
+        if self.oseries_calib is None or recalc_oc:
             tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq, use_oseries=True)
             oseries_calib = self.get_oseries_calib(tmin, tmax,
                                                    simulation.index)
@@ -351,7 +373,8 @@ class Model:
         res.name = "Residuals"
         return res
 
-    def innovations(self, parameters=None, tmin=None, tmax=None, freq=None):
+    def innovations(self, parameters=None, tmin=None, tmax=None, freq=None,
+                    warmup=None):
         """Method to simulate the innovations when a noisemodel is present.
 
         Parameters
@@ -363,6 +386,8 @@ class Model:
         tmax: str, optional
         freq: str, optional
             frequency at which the time series are simulated.
+        warmup: int, optional
+            length of the warmup period in days
 
         Returns
         -------
@@ -385,7 +410,7 @@ class Model:
             parameters = self.get_parameters()
 
         # Calculate the residuals
-        res = self.residuals(parameters, tmin, tmax, freq)
+        res = self.residuals(parameters, tmin, tmax, freq, warmup)
 
         # Calculate the innovations
         v = self.noisemodel.simulate(res, self.odelt.loc[res.index],
@@ -393,12 +418,26 @@ class Model:
         return v
 
     def observations(self, tmin=None, tmax=None):
-        """Method that returns the observations series.
+        """Method that returns the observations series used for calibration.
 
         """
+        if tmin is None:
+            tmin = self.settings['tmin']
+        if tmax is None:
+            tmax = self.settings['tmax']
         tmin, tmax = self.get_tmin_tmax(tmin, tmax, use_oseries=True)
-
-        return self.oseries.loc[tmin: tmax]
+        if self.oseries_calib is None:
+            # model is not solved yet
+            return self.oseries.loc[tmin: tmax]
+        else:
+            if tmin == self.settings['tmin'] and tmax == self.settings['tmax']:
+                return self.oseries_calib
+            else:
+                # recalculate oseries_calib between tmin and tmax
+                sim_index = self.get_sim_index(tmin, tmax,
+                                               self.settings["freq"],
+                                               self.settings["warmup"])
+                return self.get_oseries_calib(tmin, tmax, sim_index)
 
     def initialize(self, tmin=None, tmax=None, freq=None, warmup=None,
                    noise=None, weights=None, initial=True, fit_constant=None):
@@ -425,7 +464,11 @@ class Model:
 
         # Set the frequency & warmup
         if freq:
-            self.settings["freq"] = freq
+            if frequency_is_supported(freq):
+                self.settings["freq"] = freq
+            else:
+                self.logger.error(
+                    'Frequency of ' + freq + ' is not supported')
         if warmup is not None:
             self.settings["warmup"] = warmup
 
@@ -539,8 +582,8 @@ class Model:
             self.fit.optimal_params[mask] = res.mean()
 
         # make calibration data empty again (was set in initialize)
-        self.sim_index = None
-        self.oseries_calib = None
+        # self.sim_index = None
+        # self.oseries_calib = None
         self.interpolate_simulation = None
 
         self.parameters.optimal = self.fit.optimal_params
@@ -549,7 +592,7 @@ class Model:
         if report:
             print(self.fit_report())
 
-    def set_initial(self, name, value):
+    def set_initial(self, name, value, move_bounds=False):
         """Method to set the initial value of any parameter.
 
         Parameters
@@ -560,6 +603,13 @@ class Model:
             parameters value to use as initial estimate.
 
         """
+        if move_bounds:
+            factor = value / self.parameters.loc[name, 'initial']
+            min_new = self.parameters.loc[name, 'pmin'] * factor
+            self.set_parameter(name, min_new, 'pmin')
+            max_new = self.parameters.loc[name, 'pmax'] * factor
+            self.set_parameter(name, max_new, 'pmax')
+
         self.set_parameter(name, value, "initial")
 
     def set_vary(self, name, value):
@@ -575,7 +625,7 @@ class Model:
         """
         self.set_parameter(name, value, "vary")
 
-    def set_min(self, name, value):
+    def set_pmin(self, name, value):
         """Method to set the minimum value of a parameter.
 
         Parameters
@@ -586,9 +636,9 @@ class Model:
             minimum value for the parameter.
 
         """
-        self.set_parameter(name, value, "min")
+        self.set_parameter(name, value, "pmin")
 
-    def set_max(self, name, value):
+    def set_pmax(self, name, value):
         """Method to set the maximum values of a parameter.
 
         Parameters
@@ -600,7 +650,7 @@ class Model:
 
 
         """
-        self.set_parameter(name, value, "max")
+        self.set_parameter(name, value, "pmax")
 
     def set_parameter(self, name, value, kind):
         """Internal method to set the parameter value for some kind.
@@ -1008,7 +1058,7 @@ class Model:
         p = self.get_parameters(name)
         dt = get_dt(self.settings["freq"])
         b = self.stressmodels[name].rfunc.block(p, dt)
-        t = np.arange(dt, (len(b) + 1) * dt, dt)
+        t = np.linspace(dt, len(b) * dt, len(b))
         return pd.Series(b, index=t, name=name)
 
     @get_stressmodel
@@ -1036,11 +1086,11 @@ class Model:
         p = self.get_parameters(name)
         dt = get_dt(self.settings["freq"])
         s = self.stressmodels[name].rfunc.step(p, dt)
-        t = np.arange(dt, (len(s) + 1) * dt, dt)
+        t = np.linspace(dt, len(s) * dt, len(s))
         return pd.Series(s, index=t, name=name)
 
     @get_stressmodel
-    def get_stress(self, name):
+    def get_stress(self, name, istress=None):
         """Method to obtain the stress(es) from the stressmodel.
 
         Parameters
@@ -1056,7 +1106,10 @@ class Model:
 
         """
         p = self.get_parameters(name)
-        stress = self.stressmodels[name].get_stress(p)
+        if istress is None:
+            stress = self.stressmodels[name].get_stress(p)
+        else:
+            stress = self.stressmodels[name].get_stress(p, istress)
         return stress
 
     def get_metadata(self, meta=None):
@@ -1187,12 +1240,14 @@ class Model:
         >>> print(ml.fit_report)
 
         """
+        if self.fit is None:
+            raise ValueError('The model is not solved yet')
         if output != "full":
             raise NotImplementedError
 
         model = {
             "nfev": self.fit.nfev,
-            "nobs": self.oseries.index.size,
+            "nobs": self.oseries_calib.index.size,
             "noise": self.noisemodel._name if self.noisemodel else None,
             "tmin": str(self.settings["tmin"]),
             "tmax": str(self.settings["tmax"]),

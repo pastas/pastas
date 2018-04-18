@@ -12,13 +12,49 @@ from __future__ import print_function, division
 import logging
 
 import pandas as pd
-
 from pastas.utils import get_dt, get_time_offset, timestep_weighted_resample
 
 logger = logging.getLogger(__name__)
 
 
 class TimeSeries(pd.Series):
+    """Class that deals with all user-provided Time Series.
+
+    Parameters
+    ----------
+    series: pandas.Series or pastas.TimeSeries
+        Pandas Series with time indices and values or a Pastas.TimeSeries
+        instance. If the latter is provided, a new TimeSeries.
+    name: str, optional
+        String with the name of the time series, if None is provided,
+        pastas will try to derive the name from the series.
+    settings: str or dict, optional
+        String with the name of one of the predefined settings (obtained
+        through ps.TimeSeries._predefined_settings.) or a dictionary with the
+        settings to be applied. This does not have to include all the
+        settings arguments.
+    metadata: dict, optional
+        Dictionary with metadata of the time series.
+    freq_original str, optional
+    **kwargs: dict, optional
+        Any keyword arguments that are provided but are not listed will be
+        passed as addiotional settings.
+
+    Notes
+    -----
+    For the individual options for the different settings please refer to
+    the docstring from the TimeSeries.update_series() method.
+
+    See Also
+    --------
+    ps.TimeSeries.update_series
+
+    Returns
+    -------
+    series: pastas.TimeSeries
+        Returns a pastas.TimeSeries object.
+
+    """
     _predefined_settings = {
         "oseries": {"fill_nan": "drop", "sample_down": "drop"},
         "prec": {"sample_up": "divide", "sample_down": "sum",
@@ -85,7 +121,7 @@ class TimeSeries(pd.Series):
         self.name = name
         self.series_original.name = name
 
-        if metadata:
+        if metadata is not None:
             self.metadata.update(metadata)
 
         # kind argument will be deprecated in version 0.9.6
@@ -117,7 +153,7 @@ class TimeSeries(pd.Series):
         if validate:
             self.series = self.validate_series(series)
         if update:
-            self.update_series(initial=True, **self.settings)
+            self.update_series(force_update=True, **self.settings)
 
     def validate_series(self, series):
         """ This method performs some PASTAS specific tests for the TimeSeries.
@@ -139,7 +175,8 @@ class TimeSeries(pd.Series):
             1. Series is an actual pandas Series;
             2. Nan-values from begin and end are removed;
             3. Nan-values between observations are removed;
-            4. Indices are in Timestamps (standard throughout PASTAS);
+            4. Indices are in Timestamps (standard throughout PASTAS),
+            making the index a pandas DateTimeIndex.
             5. Duplicate indices are removed (by averaging).
 
         """
@@ -195,7 +232,7 @@ class TimeSeries(pd.Series):
         return series
 
     def update_settings(self, **kwargs):
-        """Method that check if an update is actually necessary.
+        """Internal method that check if an update is actually necessary.
 
         TODO still some bug in here when comparing timestamps. causing uneccesary updates..
 
@@ -209,20 +246,55 @@ class TimeSeries(pd.Series):
                 update = True
         return update
 
-    def update_series(self, initial=False, **kwargs):
+    def update_series(self, force_update=False, **kwargs):
         """Method to update the series with new options, but most likely
         only a change in the frequency before solving a PASTAS model.
 
         Parameters
         ----------
-        initial
-        kwargs: dict
-            dictionary with the keyword arguments that are updated. Possible
-            arguments are: "freq", "sample_up", "sample_down",
-                 "fill_before" and "fill_after".
+        force_update: bool, optional
+            argument that is used to force an update, even when no changes
+            are found. Internally used by the __init__ method. Default is
+            False.
+        freq: str, optional
+            String representing the desired frequency of the time series.
+        sample_up: str or float, optional
+            String with the method to use when the frequency is increased (
+            e.g. Weekly to daily). Possible values are: "backfill", "bfill",
+            "pad", "ffill", "mean", "interpolate", "divide" or a float value
+            to fill the gaps.
+        sample_down: str, optional
+            String with the method to use when the frequency decreases
+            (e.g. from daily to weekly values). Possible values are: "mean",
+            "drop", "sum", "min", "max".
+        fill_nan: str or float, optional
+            Method to use when there ar nan-values in the time series.
+            Possible values are: "mean", "drop", "interpolate" (default) or a
+            float value.
+        fill_before: str or float, optional
+            Method used to extend a time series before any measurements are
+            available. possible values are: "mean" or a float value.
+        fill_after: str ir float, optional
+            Method used to extens a time series after any measurements are
+            available. Possible values are: "mean" or a float value.
+        tmin: str or pandas.TimeStamp, optional
+            String that can be converted to, or a Pandas TimeStamp with the
+            minimum time of the series.
+        tmax; str or pandas.TimeStamp, optional
+            String that can be converted to, or a Pandas TimeStamp with the
+            maximum time of the series.
+        norm: str or flaot, optional
+            String with the method to normalize the time series with.
+            Possible values are: "mean" or "median", "min", "max" or a float
+            value.
+
+        Notes
+        -----
+        The method will validate if any of the settings is changed to
+        determine if the series need to be updated.
 
         """
-        if self.update_settings(**kwargs) or initial:
+        if self.update_settings(**kwargs) or force_update:
             # Get the validated series to start with
             series = self.series.copy(deep=True)
 
@@ -441,7 +513,7 @@ class TimeSeries(pd.Series):
             tmax = tmax - time_offset
             index_extend = pd.date_range(start=series.index.max(), end=tmax,
                                          freq=freq)
-            index = series.index.union(index_extend[:-1])
+            index = series.index.union(index_extend)
             series = series.reindex(index)
 
             if method == "mean":
@@ -457,6 +529,8 @@ class TimeSeries(pd.Series):
     def normalize(self, series):
         """Method to normalize the time series.
 
+        TODO: can we also choose to normalize by the fill_before-value?
+
         """
         method = self.settings["norm"]
 
@@ -464,14 +538,24 @@ class TimeSeries(pd.Series):
             pass
         elif method == "mean":
             series = series.subtract(series.mean())
-        # can we also choose to normalize by the fill_before-value?
+        elif method == "median":
+            series = series.subtract(series.median())
+        elif method == "min":
+            series = series.subtract(series.min())
+        elif method == "max":
+            series = series.subtract(series.max())
+        elif isinstance(method, float):
+            series = series.subtract(method)
+        else:
+            logger.info("Selected method %s to normalize the time series is "
+                        "not supported" %method)
 
         return series
 
     def multiply(self, other):
         self.series = self.series.multiply(other)
         self.series_original = self.series_original.multiply(other)
-        self.update_series(initial=True)
+        self.update_series(force_update=True)
 
     def transform_coordinates(self, to_projection):
         try:

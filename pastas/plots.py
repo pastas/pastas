@@ -49,6 +49,10 @@ class Plotting:
 
         if oseries:
             o = self.ml.observations(tmin=tmin, tmax=tmax)
+            o_nu = self.ml.oseries.drop(o.index)
+            if not o_nu.empty:
+                # plot parts of the oseries that are not used in grey
+                o_nu.plot(linestyle='', marker='.', color='0.5', fig=fig)
             o.plot(linestyle='', marker='.', color='k', fig=fig)
 
         if simulation:
@@ -84,6 +88,11 @@ class Plotting:
         ax1 = plt.subplot2grid((rows, 3), (0, 0), colspan=2, rowspan=2,
                                fig=fig)
         o = self.ml.observations(tmin=tmin, tmax=tmax)
+        o_nu = self.ml.oseries.drop(o.index)
+        if not o_nu.empty:
+            # plot parts of the oseries that are not used in grey
+            o_nu.plot(ax=ax1, linestyle='', marker='.', color='0.5',
+                      x_compat=True)
         o.plot(ax=ax1, linestyle='', marker='.', color='k', x_compat=True)
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
         sim.plot(ax=ax1, x_compat=True)
@@ -125,7 +134,7 @@ class Plotting:
                           colLabels=cols,
                           colWidths=[0.2, 0.4],
                           loc='center')
-        #table.auto_set_font_size(value=True)
+        # table.auto_set_font_size(value=True)
         ax3.add_table(table)
         plt.setp(ax3.spines.values(), color=None)
 
@@ -138,7 +147,7 @@ class Plotting:
             plt.title("Stresses:%s" % title, loc="right")
             ax.legend(loc=(0, 1), ncol=3, frameon=False)
             if i == 3:
-                sharex=None
+                sharex = None
             else:
                 sharex = axb
             axb = plt.subplot2grid((rows, 3), (i, 2), sharex=sharex)
@@ -166,6 +175,8 @@ class Plotting:
         axes: list of matplotlib.axes
 
         """
+        o = self.ml.observations(tmin=tmin, tmax=tmax)
+
         # determine the simulation
         hsim = self.ml.simulate(tmin=tmin, tmax=tmax)
         tindex = hsim.index
@@ -177,7 +188,8 @@ class Plotting:
             nstress = len(self.ml.stressmodels[name].stress)
             if split and nstress > 1:
                 for istress in range(nstress):
-                    hc = self.ml.get_contribution(name, tindex=tindex, istress=istress)
+                    hc = self.ml.get_contribution(name, tindex=tindex,
+                                                  istress=istress)
                     h.append(hc)
                     names.append(hc.name)
             else:
@@ -191,8 +203,8 @@ class Plotting:
 
         # determine ylim for every graph, to scale the height
         ylims = [
-            (min([hsim[tmin:tmax].min(), self.ml.oseries[tmin:tmax].min()]),
-             max([hsim[tmin:tmax].max(), self.ml.oseries[tmin:tmax].max()]))]
+            (min([hsim[tmin:tmax].min(), o[tmin:tmax].min()]),
+             max([hsim[tmin:tmax].max(), o[tmin:tmax].max()]))]
         for ht in h[1:]:
             hs = ht[tmin:tmax]
             if hs.empty:
@@ -213,8 +225,13 @@ class Plotting:
         ax = np.atleast_1d(ax)
 
         # plot simulation and observations in top graph
-        self.ml.oseries.plot(linestyle='', marker='.', color='k', markersize=3,
-                             ax=ax[0], x_compat=True)
+        o_nu = self.ml.oseries.drop(o.index)
+        if not o_nu.empty:
+            # plot parts of the oseries that are not used in grey
+            o_nu.plot(linestyle='', marker='.', color='0.5',
+                                  markersize=2, ax=ax[0], x_compat=True)
+        o.plot(linestyle='', marker='.', color='k',
+                     markersize=3, ax=ax[0], x_compat=True)
         hsim.plot(ax=ax[0], x_compat=True)
         ax[0].set_ylim(ylims[0])
         ax[0].grid(which='both')
@@ -357,7 +374,7 @@ class Plotting:
         return fig.axes
 
     @model_tmin_tmax
-    def stresses(self, tmin=None, tmax=None, cols=1, **kwargs):
+    def stresses(self, tmin=None, tmax=None, cols=1, split=True, **kwargs):
         """This method creates a graph with all the stresses used in the
          model.
 
@@ -377,16 +394,26 @@ class Plotting:
         stresses = []
 
         for name in self.ml.stressmodels.keys():
-            stress = self.ml.get_stress(name)
-            if isinstance(stress, list):
-                stresses.extend(stress)
+            nstress = len(self.ml.stressmodels[name].stress)
+            if split and nstress > 1:
+                for istress in range(nstress):
+                    stress = self.ml.get_stress(name,istress=istress)
+                    stresses.append(stress)
             else:
-                stresses.append(stress)
+                stress = self.ml.get_stress(name)
+                if isinstance(stress, list):
+                    stresses.extend(stress)
+                else:
+                    stresses.append(stress)
 
         rows = len(stresses)
         rows = -(-rows // cols)  # round up with out additional import
 
-        fig, ax = plt.subplots(rows, cols, **kwargs)
+        sharex = True
+        if 'sharex' in kwargs:
+            sharex = kwargs['sharex']
+            kwargs.pop('sharex')
+        fig, ax = plt.subplots(rows, cols, sharex=sharex, **kwargs)
 
         if hasattr(ax, "flatten"):
             ax = ax.flatten()
