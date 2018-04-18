@@ -81,7 +81,7 @@ class StressModelBase:
         self.parameters.loc[name, 'initial'] = value
 
     @set_parameter
-    def set_min(self, name, value):
+    def set_pmin(self, name, value):
         """Internal method to set the lower bound of the parameter value.
 
         Notes
@@ -92,7 +92,7 @@ class StressModelBase:
         self.parameters.loc[name, 'pmin'] = value
 
     @set_parameter
-    def set_max(self, name, value):
+    def set_pmax(self, name, value):
         """Internal method to set the upper bound of the parameter value.
 
         Notes
@@ -249,7 +249,7 @@ class StressModel(StressModelBase):
     _name = "StressModel"
 
     def __init__(self, stress, rfunc, name, up=True, cutoff=0.99,
-                 settings=None, metadata=None, **kwargs):
+                 settings=None, metadata=None, meanstress=None, **kwargs):
         if isinstance(stress, list):
             stress = stress[0]  # Temporary fix Raoul, 2017-10-24
 
@@ -257,8 +257,11 @@ class StressModel(StressModelBase):
         stress = TimeSeries(stress, kind=kind, settings=settings,
                             metadata=metadata)
 
+        if meanstress is None:
+            meanstress = stress.mean()
+
         StressModelBase.__init__(self, rfunc, name, stress.index.min(),
-                                 stress.index.max(), up, stress.mean(), cutoff)
+                                 stress.index.max(), up, meanstress, cutoff)
         self.freq = stress.settings["freq"]
         self.stress = [stress]
         self.set_init_parameters()
@@ -362,7 +365,8 @@ class StressModel2(StressModelBase):
     _name = "StressModel2"
 
     def __init__(self, stress, rfunc, name, up=True, cutoff=0.99,
-                 settings=("prec", "evap"), metadata=(None, None), **kwargs):
+                 settings=("prec", "evap"), metadata=(None, None),
+                 meanstress=None, **kwargs):
         # First check the series, then determine tmin and tmax
         kind = kwargs.pop("kind", (None, None))
 
@@ -381,8 +385,11 @@ class StressModel2(StressModelBase):
         stress0.update_series(tmin=index.min(), tmax=index.max())
         stress1.update_series(tmin=index.min(), tmax=index.max())
 
+        if meanstress is None:
+            meanstress = stress0.mean() - stress1.mean()
+
         StressModelBase.__init__(self, rfunc, name, index.min(), index.max(),
-                                 up, stress0.mean() - stress1.mean(), cutoff)
+                                 up, meanstress, cutoff)
         self.stress.append(stress0)
         self.stress.append(stress1)
 

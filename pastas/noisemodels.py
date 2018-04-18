@@ -162,10 +162,8 @@ class NoiseModel(NoiseModelBase):
 
         Parameters
         ----------
-        p: nump.array
-            array or iterable containing the parameters.
+        alpha
         delt:
-
 
         Returns
         -------
