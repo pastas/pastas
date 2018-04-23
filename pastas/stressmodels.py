@@ -7,7 +7,7 @@ The following stressmodels are supported and tested:
 
 - StressModel
 - StressModel2
-- Constant
+- FactorModel
 
 All other stressmodels are for research purposes only and are not (yet)
 fully supported and tested.
@@ -16,6 +16,8 @@ TODO
 ----
 - Test and support StepModel
 - Test and support LinearTrend
+- Test and support WellModel
+
 
 """
 
@@ -34,7 +36,7 @@ from .timeseries import TimeSeries
 logger = logging.getLogger(__name__)
 
 __all__ = ["StressModel", "StressModel2", "Constant", "StepModel",
-           "LinearTrend"]
+           "LinearTrend", "FactorModel"]
 
 
 class StressModelBase:
@@ -253,9 +255,7 @@ class StressModel(StressModelBase):
         if isinstance(stress, list):
             stress = stress[0]  # Temporary fix Raoul, 2017-10-24
 
-        kind = kwargs.pop("kind", None)
-        stress = TimeSeries(stress, kind=kind, settings=settings,
-                            metadata=metadata)
+        stress = TimeSeries(stress, settings=settings, metadata=metadata)
 
         if meanstress is None:
             meanstress = stress.mean()
@@ -368,11 +368,9 @@ class StressModel2(StressModelBase):
                  settings=("prec", "evap"), metadata=(None, None),
                  meanstress=None, **kwargs):
         # First check the series, then determine tmin and tmax
-        kind = kwargs.pop("kind", (None, None))
-
-        stress0 = TimeSeries(stress[0], kind=kind[0], settings=settings[0],
+        stress0 = TimeSeries(stress[0], settings=settings[0],
                              metadata=metadata[0])
-        stress1 = TimeSeries(stress[1], kind=kind[1], settings=settings[1],
+        stress1 = TimeSeries(stress[1], settings=settings[1],
                              metadata=metadata[1])
 
         # Select indices from validated stress where both series are available.
@@ -591,11 +589,7 @@ class NoConvModel(StressModelBase):
 
     def __init__(self, stress, rfunc, name, metadata=None, up=True,
                  cutoff=0.99, settings=None, **kwargs):
-
-        kind = kwargs.pop("kind", None)
-
-        stress = TimeSeries(stress, kind=kind, settings=settings,
-                            metadata=metadata)
+        stress = TimeSeries(stress, settings=settings, metadata=metadata)
         StressModelBase.__init__(self, rfunc, name, stress.index.min(),
                                  stress.index.max(), up, stress.mean(), cutoff)
         self.freq = stress.settings["freq"]

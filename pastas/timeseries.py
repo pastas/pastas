@@ -124,16 +124,6 @@ class TimeSeries(pd.Series):
         if metadata is not None:
             self.metadata.update(metadata)
 
-        # kind argument will be deprecated in version 0.9.6
-        kind = kwargs.pop("kind", None)
-        if kind:
-            logger.warning("Deprecation error: the kind argument will be "
-                           "deprecated in Pastas 0.9.6. Please provide "
-                           "a string to the settings argument.")
-            if kind in self._predefined_settings.keys():
-                if self.update_settings(**self._predefined_settings[kind]):
-                    update = True
-
         # Update the options with user-provided values, if any.
         if settings:
             if isinstance(settings, str):
