@@ -1248,7 +1248,7 @@ class Model:
         model = {
             "nfev": self.fit.nfev,
             "nobs": self.oseries_calib.index.size,
-            "noise": self.noisemodel._name if self.noisemodel else None,
+            "noise": self.noisemodel._name if self.noisemodel else "None",
             "tmin": str(self.settings["tmin"]),
             "tmax": str(self.settings["tmax"]),
             "freq": self.settings["freq"],
@@ -1261,8 +1261,10 @@ class Model:
             "NS": format("%.2f" % self.stats.nash_sutcliffe()),
             "Pearson R2": format("%.2f" % self.stats.rsq()),
             "RMSE": format("%.2f" % self.stats.rmse()),
-            "AIC": format("%.2f" % self.stats.aic()),
-            "BIC": format("%.2f" % self.stats.bic()),
+            "AIC": format("%.2f" % self.stats.aic() if
+                          self.settings["noise"] else np.nan),
+            "BIC": format("%.2f" % self.stats.bic()  if
+                          self.settings["noise"] else np.nan),
             "__": "",
             "___": ""
         }
