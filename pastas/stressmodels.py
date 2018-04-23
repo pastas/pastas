@@ -779,3 +779,42 @@ class WellModel(StressModelBase):
             return self.radius
         else:
             return [self.radius[irad]]
+
+
+class FactorModel(StressModelBase):
+    """Model that multiplies a stress by a single value. Indepedent series
+    does not have to be equidistant.
+
+    Parameters
+    ----------
+    stress: pandas.Series or pastas.TimeSeries
+        Stress which will be multiplied by a factor. The stress does not
+        have to be equidistant.
+    name: str
+        String with the name of the stressmodel
+    settings: dict or str
+        Dict or String that is forwarded to the TimeSeries object created
+        from the stress.
+    metadata: dict
+        Dictionary with metadata, forwarded to the TimeSeries object created
+        from the stress.
+
+    """
+    _name = "FactorModel"
+
+    def __init__(self, stress, name="factor", settings=None, metadata=None):
+        StressModelBase.__init__(self, One, name, stress.index.min,
+                                 stress.index.max, up=True, meanstress=1,
+                                 cutoff=0.99)
+        self.nparam = 1
+        self.value = 1  # Initial value
+        stress = TimeSeries(stress, settings=settings, metadata=metadata)
+        self.stress = [stress]
+        self.set_init_parameters()
+
+    def set_init_parameters(self):
+        self.parameters.loc[self.name + "_f"] = (
+            self.value, -np.inf, np.inf, 1, self.name)
+
+    def simulate(self, p=None, tindex=None, dt=1):
+        return self.stress[0] * p[0]
