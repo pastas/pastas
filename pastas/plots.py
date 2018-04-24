@@ -52,7 +52,7 @@ class Plotting:
             o_nu = self.ml.oseries.drop(o.index)
             if not o_nu.empty:
                 # plot parts of the oseries that are not used in grey
-                o_nu.plot(linestyle='', marker='.', color='0.5', fig=fig)
+                o_nu.plot(linestyle='', marker='.', color='0.5', fig=fig, label='')
             o.plot(linestyle='', marker='.', color='k', fig=fig)
 
         if simulation:
@@ -91,7 +91,7 @@ class Plotting:
         o_nu = self.ml.oseries.drop(o.index)
         if not o_nu.empty:
             # plot parts of the oseries that are not used in grey
-            o_nu.plot(ax=ax1, linestyle='', marker='.', color='0.5',
+            o_nu.plot(ax=ax1, linestyle='', marker='.', color='0.5', label='',
                       x_compat=True)
         o.plot(ax=ax1, linestyle='', marker='.', color='k', x_compat=True)
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
@@ -228,7 +228,7 @@ class Plotting:
         o_nu = self.ml.oseries.drop(o.index)
         if not o_nu.empty:
             # plot parts of the oseries that are not used in grey
-            o_nu.plot(linestyle='', marker='.', color='0.5',
+            o_nu.plot(linestyle='', marker='.', color='0.5', label='',
                                   markersize=2, ax=ax[0], x_compat=True)
         o.plot(linestyle='', marker='.', color='k',
                      markersize=3, ax=ax[0], x_compat=True)
