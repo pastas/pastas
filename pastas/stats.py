@@ -737,7 +737,7 @@ def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
 
     # mean_high = lambda s: s.nlargest(3).mean()
     def mean_high(s, min_n_meas):
-        if len(s) < min_n_meas:
+        if s.notna().sum() < min_n_meas:
             return np.nan
         else:
             return s.nlargest(3).mean()
@@ -782,7 +782,7 @@ def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
 
     # mean_low = lambda s: s.nsmallest(3).mean()
     def mean_low(s, min_n_meas):
-        if len(s) < min_n_meas:
+        if s.notna().sum() < min_n_meas:
             return np.nan
         else:
             return s.nsmallest(3).mean()
@@ -971,13 +971,12 @@ def __gxg__(series, year_agg, tmin, tmax, fill_method, limit, output,
     # resample the series to yearly values
     yearly = series.resample(year_offset).apply(year_agg,
                                                 min_n_meas=min_n_meas)
-    yearly = yearly.dropna()
 
     # return statements
     if output.startswith('year'):
         return yearly
     elif output == 'mean':
-        if len(yearly) < min_n_years:
+        if yearly.notna().sum() < min_n_years:
             return np.nan
         else:
             return yearly.mean()
