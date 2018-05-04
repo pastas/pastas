@@ -20,7 +20,7 @@ from .solver import LeastSquares
 from .stats import Statistics
 from .stressmodels import Constant
 from .timeseries import TimeSeries
-from .utils import get_dt, get_time_offset, frequency_is_supported
+from .utils import get_dt, get_time_offset, frequency_is_supported, get_sample
 from .version import __version__
 
 
@@ -781,6 +781,7 @@ class Model:
         tmin: str
         tmax: str
         sim_index: pd.DatetimeIndex
+            pandas index of the simulation 
 
 
         Returns
@@ -790,22 +791,18 @@ class Model:
 
         Notes
         -----
-        This method is for performance improvements only. Find the index
-        closest to the tindex, and then return a selection of series.
+        This method makes sure the simulation is compared to the nearest
+        observation. It finds the index closest to sim_index, and then returns
+        a selection of the oseries.
+        Later, the simulation is interpolated to the observation-timestamps.
 
         """
         oseries_calib = self.oseries.loc[tmin:tmax]
         # sample measurements, so that frequency is not higher than model
         # keep the original timestamps, as they will be used during
         # interpolation of the simulation
-        f = interpolate.interp1d(oseries_calib.index.asi8,
-                                 np.arange(0, oseries_calib.index.size),
-                                 kind='nearest', bounds_error=False,
-                                 fill_value='extrapolate')
-        ind = np.unique(f(sim_index.asi8).astype(int))
-        oseries_calib = oseries_calib.iloc[ind]
-
-        return oseries_calib
+        index = get_sample(oseries_calib.index, sim_index)
+        return oseries_calib[index]
 
     def get_odelt(self, freq="D"):
         """Internal method to get the timesteps between the observations.

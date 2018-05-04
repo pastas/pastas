@@ -33,6 +33,7 @@ from __future__ import print_function, division
 import numpy as np
 import pandas as pd
 from scipy.stats import chi2, norm
+from .utils import get_sample
 
 from pastas.decorators import model_tmin_tmax
 
@@ -701,8 +702,8 @@ def q_gvg(series, tmin=None, tmax=None):
         return np.nan
 
 
-def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=8,
-        output='mean', min_n_meas=12, min_n_years=8, year_offset='a-apr'):
+def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
+        output='mean', min_n_meas=16, min_n_years=8, year_offset='a-apr'):
     """Classic method resampling the series to every 14th and 28th of
     the month. Taking the mean of the mean of three highest values per
     year.
@@ -716,16 +717,16 @@ def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=8,
         see .. :mod: pastas.stats.__gxg__
     limit : int or None, optional
         Maximum number of days to fill using fill method, use None to
-        fill nothing.
+        fill nothing
     output : str, optional
         output type 'yearly' for series of yearly values, 'mean' for mean
-        of yearly values.
+        of yearly values
     min_n_meas: int, optional
         Minimum number of measurements per year (at maximum 24).
     min_n_years: int, optional
-        Minimum number of years.
+        Minimum number of years
     year_offset: resampling offset. Use 'a' for calendar years
-    (jan 1 to dec 31) and 'a-apr' for hydrological years (apr 1 to mar 31).
+        (jan 1 to dec 31) and 'a-apr' for hydrological years (apr 1 to mar 31)
 
     Returns
     -------
@@ -747,8 +748,8 @@ def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=8,
                    year_offset=year_offset)
 
 
-def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=8,
-        output='mean', min_n_meas=12, min_n_years=8, year_offset='a-apr'):
+def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
+        output='mean', min_n_meas=16, min_n_years=8, year_offset='a-apr'):
     """Classic method resampling the series to every 14th and 28th of
     the month. Taking the mean of the mean of three lowest values per year.
 
@@ -770,7 +771,7 @@ def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=8,
     min_n_years: int, optional
         Minimum number of years
     year_offset: resampling offset. Use 'a' for calendar years
-    (jan 1 to dec 31) and 'a-apr' for hydrological years (apr 1 to mar 31)
+        (jan 1 to dec 31) and 'a-apr' for hydrological years (apr 1 to mar 31)
 
     Returns
     -------
@@ -793,7 +794,7 @@ def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=8,
 
 
 def gvg(series, tmin=None, tmax=None, fill_method='linear', limit=8,
-        output='mean', min_n_meas=1, min_n_years=8, year_offset='a'):
+        output='mean', min_n_meas=2, min_n_years=8, year_offset='a'):
     """Classic method resampling the series to every 14th and 28th of
     the month. Taking the mean of the values on March 14, March 28 and
     April 14.
@@ -807,7 +808,7 @@ def gvg(series, tmin=None, tmax=None, fill_method='linear', limit=8,
         see .. :mod: pastas.stats.__gxg__
     limit : int or None, optional
         Maximum number of days to fill using fill method, use None to
-        fill nothing.
+        fill nothing
     output : str, optional
         output type 'yearly' for series of yearly values, 'mean' for
         mean of yearly values
@@ -816,7 +817,7 @@ def gvg(series, tmin=None, tmax=None, fill_method='linear', limit=8,
     min_n_years: int, optional
         Minimum number of years
     year_offset: resampling offset. Use 'a' for calendar years
-    (jan 1 to dec 31) and 'a-apr' for hydrological years (apr 1 to mar 31)
+        (jan 1 to dec 31) and 'a-apr' for hydrological years (apr 1 to mar 31)
 
     Returns
     -------
@@ -890,7 +891,7 @@ def __gxg__(series, year_agg, tmin, tmax, fill_method, limit, output,
         see notes below
     limit : int or None, optional
         Maximum number of days to fill using fill method, use None to
-        fill nothing.
+        fill nothing
     output : str
         output type 'yearly' for series of yearly values, 'mean' for
         mean of yearly values
@@ -930,7 +931,9 @@ def __gxg__(series, year_agg, tmin, tmax, fill_method, limit, output,
         series = series.loc[:tmax]
 
     # resample the series to values at the 14th and 28th of every month
+    # first generate a daily series by averaging multiple measurements during the day
     series = series.resample('d').mean()
+    select14or28 = True
     if fill_method is None:
         series = series.dropna()
     elif fill_method == 'ffill':
@@ -938,14 +941,33 @@ def __gxg__(series, year_agg, tmin, tmax, fill_method, limit, output,
     elif fill_method == 'bfill':
         series = series.bfill(limit=limit)
     elif fill_method == 'nearest':
-        series = series.dropna().reindex(series.index, method=fill_method,
-                                         limit=limit)
+        if limit == 0:
+            # limit=0 is a trick to only use each measurements once
+            # only keep days with measurements
+            series = series.dropna()
+            # generate an index at the 14th and 28th of every month
+            buf = pd.to_timedelta(8,'d')
+            ref_index = pd.date_range(series.index.min()-buf,series.index.max()+buf)
+            mask = [(x.day==14) or (x.day==28) for x in ref_index]
+            ref_index = ref_index[mask]
+            # only keep the days that are closest to series.index
+            ref_index = get_sample(ref_index, series.index)
+            # and set the index of series to this index
+            # (and remove rows in series that are not in ref_index)
+            series = series.reindex(ref_index, method=fill_method)
+            select14or28 = False
+        else:
+            # with a large limit (larger than 6) it is possible that one measurement is used more than once
+            series = series.dropna().reindex(series.index, method=fill_method,
+                                             limit=limit)
     else:
-        series = series.interpolate(method=fill_method, limit=limit)
-    the14or28 = lambda x: (x.day == 14) or (x.day == 28)
-    is14or28 = pd.Series(series.index.map(the14or28), index=series.index)
-    series = series.loc[is14or28]
-
+        series = series.interpolate(method=fill_method, limit=limit, limit_direction='both')
+    
+    # and select the 14th and 28th of each month (if needed still)
+    if select14or28:
+        mask = [(x.day==14) or (x.day==28) for x in series.index]
+        series = series.loc[mask]
+    
     # resample the series to yearly values
     yearly = series.resample(year_offset).apply(year_agg,
                                                 min_n_meas=min_n_meas)

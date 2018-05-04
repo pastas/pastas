@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
+from scipy import interpolate
 
 
 def get_dt(freq):
@@ -192,4 +193,32 @@ def datetime2matlab(dt):
     mdn = dt + timedelta(days = 366)
     frac = (dt-datetime(dt.year,dt.month,dt.day,0,0,0)).seconds / (24.0 * 60.0 * 60.0)
     return mdn.toordinal() + frac
+
+def get_sample(index, ref_index):
+    """Sample the index so that the frequency is not higher than the frequency
+        of tindex.
+
+    Parameters
+    ----------
+    index: pandas.index
+        Pandas index object
+    ref_index: pandas.index
+        Pandas index object
+
+    Returns
+    -------
+    series: pandas.index
+
+    Notes
+    -----
+    Find the index closest to the ref_index, and then return a selection
+    of the index.
+
+    """
+    f = interpolate.interp1d(index.asi8,
+                             np.arange(0, index.size),
+                             kind='nearest', bounds_error=False,
+                             fill_value='extrapolate')
+    ind = np.unique(f(ref_index.asi8).astype(int))
+    return index[ind]
     
