@@ -745,6 +745,10 @@ class Model:
 
         """
         self.logger.parent.handlers[0].setLevel(log_level)
+        
+    def get_stressmodel_names(self):
+        """Returns list of stressmodel names"""
+        return list(self.stressmodels.keys())
 
     def get_sim_index(self, tmin, tmax, freq, warmup):
         """Internal method to get the indices for the simulation, including
