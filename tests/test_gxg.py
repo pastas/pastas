@@ -16,7 +16,7 @@ class TestGXG(object):
         idx = pd.to_datetime(['20160114', '20160115', '20160128', '20160214'])
         s = pd.Series([10., 3., 30., 20.], index=idx)
         v = ps.stats.ghg(s, min_n_meas=1, min_n_years=1)
-        assert v == 20.0
+        assert v == 30.0
 
     def test_ghg_ffill(self):
         idx = pd.to_datetime(['20160101', '20160115', '20160130'])
@@ -31,7 +31,7 @@ class TestGXG(object):
         v = ps.stats.ghg(s, fill_method='bfill', limit=15, min_n_meas=1,
                          min_n_years=1)
         # TODO is this correct?
-        assert v == 5.
+        assert v == 10.
 
     def test_ghg_linear(self):
         idx = pd.to_datetime(['20160101', '20160110', '20160120', '20160130'])
@@ -39,7 +39,7 @@ class TestGXG(object):
         v = ps.stats.ghg(s, fill_method='linear', min_n_meas=1,
                          min_n_years=1,limit=8)
         # TODO is this correct?
-        assert v == 7.
+        assert v == 10.
 
     def test_ghg_len_yearly(self):
         idx = pd.date_range('20000101', '20550101', freq='d')
