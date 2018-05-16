@@ -90,6 +90,7 @@ class Project:
         if name in data.index:
             logger.error("Time series with name %s is already present in the \
                          database. Please provide a different name." % name)
+            return
 
         try:
             ts = ps.TimeSeries(series=series, name=name, settings=settings,
@@ -196,7 +197,7 @@ class Project:
         -------
 
         """
-        key = ml.oseries.name
+        key = str(ml.oseries.name)
         prec_name = self.get_nearest_stresses(key, kind="prec").iloc[0][0]
         prec = self.stresses.loc[prec_name, "series"]
         evap_name = self.get_nearest_stresses(key, kind="evap").iloc[0][0]
