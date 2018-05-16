@@ -215,10 +215,13 @@ def get_sample(index, ref_index):
     of the index.
 
     """
-    f = interpolate.interp1d(index.asi8,
-                             np.arange(0, index.size),
-                             kind='nearest', bounds_error=False,
-                             fill_value='extrapolate')
-    ind = np.unique(f(ref_index.asi8).astype(int))
-    return index[ind]
+    if len(index)==1:
+        return index
+    else:
+        f = interpolate.interp1d(index.asi8,
+                                 np.arange(0, index.size),
+                                 kind='nearest', bounds_error=False,
+                                 fill_value='extrapolate')
+        ind = np.unique(f(ref_index.asi8).astype(int))
+        return index[ind]
     

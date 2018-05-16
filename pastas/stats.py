@@ -163,7 +163,10 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        evp = max(0.0, 100 * (1 - (res.var() / obs.var())))
+        if obs.var() == 0.0:
+            return 100.
+        else:
+            evp = max(0.0, 100 * (1 - (res.var() / obs.var())))
         return evp
 
     @model_tmin_tmax
@@ -703,7 +706,7 @@ def q_gvg(series, tmin=None, tmax=None):
 
 
 def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
-        output='mean', min_n_meas=16, min_n_years=8, year_offset='a-apr'):
+        output='mean', min_n_meas=16, min_n_years=8, year_offset='a-mar'):
     """Classic method resampling the series to every 14th and 28th of
     the month. Taking the mean of the mean of three highest values per
     year.
@@ -726,7 +729,7 @@ def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
     min_n_years: int, optional
         Minimum number of years
     year_offset: resampling offset. Use 'a' for calendar years
-        (jan 1 to dec 31) and 'a-apr' for hydrological years (apr 1 to mar 31)
+        (jan 1 to dec 31) and 'a-mar' for hydrological years (apr 1 to mar 31)
 
     Returns
     -------
@@ -737,10 +740,15 @@ def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
 
     # mean_high = lambda s: s.nlargest(3).mean()
     def mean_high(s, min_n_meas):
-        if s.notna().sum() < min_n_meas:
+        if len(s) < min_n_meas:
             return np.nan
         else:
-            return s.nlargest(3).mean()
+            if len(s)>20:
+                return s.nlargest(3).mean()
+            elif len(s)>12:
+                return s.nlargest(2).mean()
+            else:
+                return s.nlargest(1).mean()
 
     return __gxg__(series, mean_high, tmin=tmin, tmax=tmax,
                    fill_method=fill_method, limit=limit, output=output,
@@ -749,7 +757,7 @@ def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
 
 
 def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
-        output='mean', min_n_meas=16, min_n_years=8, year_offset='a-apr'):
+        output='mean', min_n_meas=16, min_n_years=8, year_offset='a-mar'):
     """Classic method resampling the series to every 14th and 28th of
     the month. Taking the mean of the mean of three lowest values per year.
 
@@ -771,7 +779,7 @@ def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
     min_n_years: int, optional
         Minimum number of years
     year_offset: resampling offset. Use 'a' for calendar years
-        (jan 1 to dec 31) and 'a-apr' for hydrological years (apr 1 to mar 31)
+        (jan 1 to dec 31) and 'a-mar' for hydrological years (apr 1 to mar 31)
 
     Returns
     -------
@@ -782,10 +790,15 @@ def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
 
     # mean_low = lambda s: s.nsmallest(3).mean()
     def mean_low(s, min_n_meas):
-        if s.notna().sum() < min_n_meas:
+        if len(s) < min_n_meas:
             return np.nan
         else:
-            return s.nsmallest(3).mean()
+            if len(s)>20:
+                return s.nsmallest(3).mean()
+            elif len(s)>12:
+                return s.nsmallest(2).mean()
+            else:
+                return s.nsmallest(1).mean()
 
     return __gxg__(series, mean_low, tmin=tmin, tmax=tmax,
                    fill_method=fill_method, limit=limit, output=output,
@@ -817,7 +830,7 @@ def gvg(series, tmin=None, tmax=None, fill_method='linear', limit=8,
     min_n_years: int, optional
         Minimum number of years
     year_offset: resampling offset. Use 'a' for calendar years
-        (jan 1 to dec 31) and 'a-apr' for hydrological years (apr 1 to mar 31)
+        (jan 1 to dec 31) and 'a-mar' for hydrological years (apr 1 to mar 31)
 
     Returns
     -------
@@ -901,7 +914,7 @@ def __gxg__(series, year_agg, tmin, tmax, fill_method, limit, output,
         Minimum number of years.
     year_offset: string
         resampling offset. Use 'a' for calendar years (jan 1 to dec 31)
-        and 'a-apr' for hydrological years (apr 1 to mar 31)
+        and 'a-mar' for hydrological years (apr 1 to mar 31)
 
 
     Returns
@@ -929,6 +942,14 @@ def __gxg__(series, year_agg, tmin, tmax, fill_method, limit, output,
         series = series.loc[tmin:]
     if tmax:
         series = series.loc[:tmax]
+    if series.empty:
+        if output.startswith('year'):
+            return pd.Series()
+        elif output == 'mean':
+            return np.nan
+        else:
+            ValueError('{output:} is not a valid output option'.format(
+                output=output))
 
     # resample the series to values at the 14th and 28th of every month
     # first generate a daily series by averaging multiple measurements during the day
@@ -967,6 +988,9 @@ def __gxg__(series, year_agg, tmin, tmax, fill_method, limit, output,
     if select14or28:
         mask = [(x.day==14) or (x.day==28) for x in series.index]
         series = series.loc[mask]
+    
+    # remove NaNs that may have formed in the process above
+    series.dropna(inplace=True)
     
     # resample the series to yearly values
     yearly = series.resample(year_offset).apply(year_agg,
