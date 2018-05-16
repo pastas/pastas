@@ -10,7 +10,6 @@ from collections import OrderedDict
 
 import numpy as np
 import pandas as pd
-from scipy import interpolate
 
 from .decorators import get_stressmodel
 from .io.base import dump
@@ -294,7 +293,7 @@ class Model:
         for ts in self.stressmodels.values():
             c = ts.simulate(parameters[istart: istart + ts.nparam], sim_index,
                             dt)
-            h = h.add(c, fill_value=0.0)
+            h = h + c
             istart += ts.nparam
         if self.constant:
             h = h + self.constant.simulate(parameters[istart])
@@ -302,6 +301,8 @@ class Model:
         if self.transform:
             h = self.transform.simulate(h, parameters[
                                            istart:istart + self.transform.nparam])
+
+        h.dropna(inplace=True)
         h.name = 'Simulation'
         return h
 
@@ -746,6 +747,10 @@ class Model:
         """
         self.logger.parent.handlers[0].setLevel(log_level)
 
+    def get_stressmodel_names(self):
+        """Returns list of stressmodel names"""
+        return list(self.stressmodels.keys())
+
     def get_sim_index(self, tmin, tmax, freq, warmup):
         """Internal method to get the indices for the simulation, including
         the warmup period.
@@ -781,7 +786,7 @@ class Model:
         tmin: str
         tmax: str
         sim_index: pd.DatetimeIndex
-            pandas index of the simulation 
+            pandas index of the simulation
 
 
         Returns
@@ -1260,7 +1265,7 @@ class Model:
             "RMSE": format("%.2f" % self.stats.rmse()),
             "AIC": format("%.2f" % self.stats.aic() if
                           self.settings["noise"] else np.nan),
-            "BIC": format("%.2f" % self.stats.bic()  if
+            "BIC": format("%.2f" % self.stats.bic() if
                           self.settings["noise"] else np.nan),
             "__": "",
             "___": ""
