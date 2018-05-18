@@ -49,6 +49,7 @@ class Project:
                                               "y", "z"])
         self.oseries = pd.DataFrame(columns=["name", "series", "kind", "x",
                                              "y", "z"])
+        self.oseries.index.astype(str)
 
         # Project metadata and file information
         self.metadata = self.get_metadata(metadata)
@@ -81,6 +82,9 @@ class Project:
         """
         if name is None:
             name = series.name
+
+        if not isinstance(name, str):
+            name = str(name)
 
         if kind == "oseries":
             data = self.oseries

@@ -179,6 +179,7 @@ class TimeSeries(pd.Series):
         series.index = pd.to_datetime(series.index)
         series.sort_index(inplace=True)
         series.index.name = "Date"
+        series = series.astype(float)
 
         # 3. Drop nan-values at the beginning and end of the time series
         series = series.loc[series.first_valid_index():series.last_valid_index(
