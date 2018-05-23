@@ -71,7 +71,8 @@ def load_project(data):
     mls.stresses = mls.stresses.append(stresses)
 
     for ml_name, ml in data["models"].items():
-        name = ml["oseries"]["name"]
+        name = str(ml["oseries"]["name"])
+        ml_name = str(ml_name)
         ml["oseries"]["series"] = mls.oseries.loc[name, "series"]
         if ml["stressmodels"]:
             for ts in ml["stressmodels"].values():
@@ -149,7 +150,7 @@ def load_model(data):
         ml.add_noisemodel(n)
 
     # Add parameters, use update to maintain correct order
-    ml.parameters = ml.get_init_parameters(noise=ml.settings["noise"])
+    ml.parameters = ml.get_init_parameters(noise=ml.settings["innovations"])
     ml.parameters.update(data["parameters"])
     ml.parameters = ml.parameters.apply(pd.to_numeric, errors="ignore")
     return ml

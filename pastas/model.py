@@ -74,7 +74,7 @@ class Model:
             name = self.oseries.name
             if name is None:
                 name = 'Observations'
-        self.name = name
+        self.name = str(name)
 
         self.parameters = pd.DataFrame(
             columns=["initial", "name", "optimal", "pmin", "pmax", "vary",

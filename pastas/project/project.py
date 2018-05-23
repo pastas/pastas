@@ -167,7 +167,7 @@ class Project:
 
         # Validate name and ml_name before continuing
         if model_name in self.models.keys():
-            logger.error("Model name is not unique, provide a new ml_name.")
+            logger.error("Model name is not unique, provide a new model_name.")
         if oseries not in self.oseries.index:
             logger.error("Oseries name is not present in the database. "
                          "Make sure to provide a valid oseries name.")
