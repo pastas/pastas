@@ -377,7 +377,7 @@ class StressModel2(StressModelBase):
         index = stress0.series.index.intersection(stress1.series.index)
         if index.size is 0:
             logger.warning('The two stresses that were provided have no '
-                           'overlapping time indices. Please make sure time indices overlap or apply to separate time series objects.')
+                           'overlapping time indices. Please make sure time indices overlap or separate time series objects.')
 
         # First check the series, then determine tmin and tmax
         stress0.update_series(tmin=index.min(), tmax=index.max())

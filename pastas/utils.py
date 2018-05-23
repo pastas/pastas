@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from pandas._libs.tslibs.frequencies import _base_and_stride
 from datetime import datetime, timedelta
 from scipy import interpolate
 
@@ -81,8 +82,9 @@ def get_time_offset(t, freq):
                }
     # Get the frequency string and multiplier
     num, freq = get_freqstr(freq)
-    offset = num * options[freq](t)
-    return offset
+    assert num==1,'An offset with a multiple (like "2W") is not yet supported'
+    #offset = num * options[freq](t)
+    return options[freq](t)
 
 
 def get_freqstr(freqstr):
@@ -103,23 +105,27 @@ def get_freqstr(freqstr):
         String with the frequency as defined by the pandas package.
 
     """
-    # remove the day from the week
-    freqstr = freqstr.split("-", 1)[0]
+    if True:
+        # remove the day from the week
+        freqstr = freqstr.split("-", 1)[0]
 
-    # Find a number by which the frequency is multiplied
-    num = ''
-    freq = ''
-    for s in freqstr:
-        if s.isdigit():
-            num = num.__add__(s)
+        # Find a number by which the frequency is multiplied
+        num = ''
+        freq = ''
+        for s in freqstr:
+            if s.isdigit():
+                num = num.__add__(s)
+            else:
+                freq = freq.__add__(s)
+        if num:
+            num = int(num)
         else:
-            freq = freq.__add__(s)
-    if num:
-        num = int(num)
-    else:
-        num = 1
+            num = 1
 
-    return num, freq
+        return num, freq
+    else:
+        freq, num = _base_and_stride(freqstr)
+        return num, freq
 
 
 def timestep_weighted_resample(series, index):

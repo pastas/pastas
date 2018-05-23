@@ -147,8 +147,6 @@ class Model:
             if self.settings["freq"] is None:
                 self.set_freq()
             stressmodel.update_stress(freq=self.settings["freq"])
-            # Call these methods to set time offset
-            self.set_time_offset()
 
     def add_constant(self, constant):
         """Adds a Constant to the time series Model.
@@ -459,10 +457,6 @@ class Model:
         self.settings["noise"] = noise
         self.settings["weights"] = weights
 
-        # Set tmin and tmax
-        self.settings["tmin"], self.settings["tmax"] = \
-            self.get_tmin_tmax(tmin, tmax, use_stresses=True)
-
         # Set the frequency & warmup
         if freq:
             if frequency_is_supported(freq):
@@ -472,6 +466,13 @@ class Model:
                     'Frequency of ' + freq + ' is not supported')
         if warmup is not None:
             self.settings["warmup"] = warmup
+
+        # Set the time offset from the frequency
+        self.set_time_offset()
+
+        # Set tmin and tmax
+        self.settings["tmin"], self.settings["tmax"] = \
+            self.get_tmin_tmax(tmin, tmax, use_stresses=True)
 
         # set fit_constant
         if fit_constant is not None:
@@ -720,7 +721,7 @@ class Model:
             if stressmodel.stress:
                 # calculate the offset from the default frequency
                 time_offset = get_time_offset(
-                    stressmodel.stress[0].index.min(),
+                    stressmodel.stress[0].series_original.index.min(),
                     self.settings["freq"])
                 time_offsets.add(time_offset)
 
