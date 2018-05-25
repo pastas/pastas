@@ -8,6 +8,7 @@ The following stressmodels are supported and tested:
 - StressModel
 - StressModel2
 - FactorModel
+- StepModel
 
 All other stressmodels are for research purposes only and are not (yet)
 fully supported and tested.
@@ -466,34 +467,53 @@ class StressModel2(StressModelBase):
 class StepModel(StressModelBase):
     """Stressmodel that simulates a step trend.
 
-    A stress consisting of a step resonse from a specified time. The
-    amplitude and form (if rfunc is not One) of the step is calibrated. Before
-    t_step the response is zero.
+    Parameters
+    ----------
+    start: str
+        String with the start date of the step, e.g. '2018-01-01'. This
+        value is fixed by default. Use ml.set_vary("step_tstart", 1) to vary
+        the start time of the step trend.
+    name: str
+        String with the name of the stressmodel.
+    rfunc: pastas.rfunc.RfuncBase
+        Pastas response function used to simulate the effect of the step.
+        Default is rfunc.One()
+
+    Notes
+    -----
+    This step trend is calculated as follows. First, a binary series is
+    created, with zero values before tstart, and ones after the start. This
+    series is convoluted with the block response to obtain a simulate step
+    trend.
 
     """
     _name = "StepModel"
 
-    def __init__(self, start, name, rfunc=One, up=True):
+    def __init__(self, tstart, name, rfunc=One, up=True):
         StressModelBase.__init__(self, rfunc, name, pd.Timestamp.min,
-                                 pd.Timestamp.max, up, 1.0, None)
-        self.t_step = start
+                                 pd.Timestamp.max, up, 1.0, 0.99)
+        self.t_step = pd.Timestamp(tstart)
         self.set_init_parameters()
 
     def set_init_parameters(self):
         self.parameters = self.rfunc.set_parameters(self.name)
         tmin = pd.Timestamp.min.toordinal()
         tmax = pd.Timestamp.max.toordinal()
+        tinit = self.t_step.toordinal()
 
-        self.parameters.loc['start'] = (
-            self.t_step.value, tmin, tmax,
-            0, self.name)
+        self.parameters.loc[self.name + "_tstart"] = (tinit, tmin, tmax,
+                                                      0, self.name)
         self.nparam += 1
 
-    def simulate(self, p, tindex=None, dt=1):
-        assert tindex is not None, 'Error: Need an index'
+    def simulate(self, p, tindex, dt=1):
+        tstart = pd.Timestamp.fromordinal(int(p[-1]), freq="D")
         h = pd.Series(0, tindex, name=self.name)
-        td = tindex - pd.Timestamp(p[-1])
-        h[td.days > 0] = self.rfunc.step(p[:-1], td[td.days > 0].days)
+        h.loc[h.index > tstart] = 1
+
+        b = self.rfunc.block(p[:-1], dt)
+        npoints = h.index.size
+        h = pd.Series(data=fftconvolve(h, b, 'full')[:npoints],
+                      index=h.index, name=self.name, fastpath=True)
         return h
 
 

@@ -379,7 +379,7 @@ class One(RfuncBase):
         if isinstance(dt, np.ndarray):
             return p[0] * np.ones(len(dt))
         else:
-            return p[0] * np.ones(2)
+            return p[0] * np.ones(1)
 
     def block(self, p, dt=1):
-        return p[0] * np.ones(2)
+        return p[0] * np.ones(1)
