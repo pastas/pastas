@@ -1,4 +1,4 @@
-"""This file contains an example of the use of the StepmModel stressmodel.
+"""This file contains an example of the use of the StepModel stressmodel.
 
 Author: R.A. Collenteur, Artesia B.V. 2018-05-25
 

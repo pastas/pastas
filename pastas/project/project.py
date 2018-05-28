@@ -100,7 +100,7 @@ class Project:
             ts = ps.TimeSeries(series=series, name=name, settings=settings,
                                metadata=metadata, **kwargs)
         except:
-            logger.warning("Time series %s is ommitted from the database."
+            logger.warning("An error occurred. Time series %s is omitted from the database."
                            % name)
             return
 
