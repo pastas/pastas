@@ -111,6 +111,7 @@ class NoiseModel(NoiseModelBase):
     References
     ----------
     von Asmuth, J. R., and M. F. P. Bierkens (2005), Modeling irregularly spaced residual series as a continuous stochastic process, Water Resour. Res., 41, W12404, doi:10.1029/2004WR003726.
+    Note that in this reference, alpha is defined as the inverse of alpha used in Pastas
 
     """
 
@@ -146,7 +147,7 @@ class NoiseModel(NoiseModelBase):
         alpha = p[0]
         innovations = pd.Series(data=res)
         # res.values is needed else it gets messed up with the dates
-        innovations.iloc[1:] -= np.exp(delt / -alpha) * res.values[:-1]
+        innovations.iloc[1:] -= np.exp(-delt / alpha) * res.values[:-1]
 
         weights = self.weights(alpha, delt)
         innovations = innovations.multiply(weights, fill_value=0.0)
@@ -170,7 +171,7 @@ class NoiseModel(NoiseModelBase):
 
         """
         # divide power by 2 as nu / sigma is returned
-        power = (1.0 / (2.0 * delt.size))
+        power = 1.0 / (2.0 * delt.size)
         exp = np.exp(-2.0 / alpha * delt) # Twice as fast as 2*delt/alpha
         w = np.exp(power * np.sum(np.log(1.0 - exp))) / np.sqrt(1.0 - exp)
         return w
