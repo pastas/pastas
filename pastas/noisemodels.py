@@ -172,9 +172,8 @@ class NoiseModel(NoiseModelBase):
         # divide power by 2 as nu / sigma is returned
         power = (1.0 / (2.0 * delt.size))
         exp = np.exp(-2.0 / alpha * delt) # Twice as fast as 2*delt/alpha
-        w = np.exp(power * np.sum(np.log(1.0 - exp))) / (1.0 - exp)
+        w = np.exp(power * np.sum(np.log(1.0 - exp))) / np.sqrt(1.0 - exp)
         return w
-
 
 class NoiseModel2(NoiseModelBase):
     _name = "NoiseModel2"
