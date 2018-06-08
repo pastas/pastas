@@ -3,7 +3,7 @@ Statistics can be calculated for the following time series:
 - Observation series
 - Simulated series
 - Residual series
-- Innovation series
+- Noise series
 Each of these series can be obtained through their individual (private) get
 method for a specific time frame.
 two different types of statistics are provided: model statistics and
@@ -44,7 +44,7 @@ class Statistics:
     # Save all statistics that can be calculated.
     ops = {'evp': 'Explained variance percentage',
            'rmse': 'Root mean squared error',
-           'rmsi': 'Root mean squared innovation',
+           'rmsi': 'Root mean squared noise',
            'sse': 'Sum of squares of the error',
            'avg_dev': 'Average Deviation',
            'rsq': 'Pearson R^2',
@@ -90,15 +90,15 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
     @model_tmin_tmax
     def rmsi(self, tmin=None, tmax=None):
-        """Root mean squared error of the innovations.
+        """Root mean squared error of the noise.
 
         Notes
         -----
-        .. math:: rmsi = sqrt(sum(innovations**2) / N)
+        .. math:: rmsi = sqrt(sum(noise**2) / N)
 
-        where N is the number of innovations.
+        where N is the number of noise.
         """
-        res = self.ml.innovations(tmin=tmin, tmax=tmax)
+        res = self.ml.noise(tmin=tmin, tmax=tmax)
         N = res.size
         return np.sqrt(sum(res ** 2) / N)
 
@@ -232,10 +232,10 @@ included in Pastas. To obtain a list of all statistics that are included type:
         Where:
             nparam : Number of free parameters
         """
-        innovations = self.ml.innovations(tmin=tmin, tmax=tmax)
-        n = innovations.size
+        noise = self.ml.noise(tmin=tmin, tmax=tmax)
+        n = noise.size
         nparam = len(self.ml.parameters[self.ml.parameters.vary == True])
-        bic = -2.0 * np.log(sum(innovations ** 2.0)) + nparam * np.log(n)
+        bic = -2.0 * np.log(sum(noise ** 2.0)) + nparam * np.log(n)
         return bic
 
     @model_tmin_tmax
@@ -250,9 +250,9 @@ included in Pastas. To obtain a list of all statistics that are included type:
             nparam = Number of free parameters
             L = likelihood function for the model.
         """
-        innovations = self.ml.innovations(tmin=tmin, tmax=tmax)
+        noise = self.ml.noise(tmin=tmin, tmax=tmax)
         nparam = len(self.ml.parameters[self.ml.parameters.vary == True])
-        aic = -2.0 * np.log(sum(innovations ** 2.0)) + 2.0 * nparam
+        aic = -2.0 * np.log(sum(noise ** 2.0)) + 2.0 * nparam
         return aic
 
     @model_tmin_tmax
@@ -612,7 +612,7 @@ def runs_test(series, tmin=None, tmax=None, cutoff="mean"):
     R[R > cutoff] = 1
     R[R < cutoff] = 0
 
-    # Calculate number of positive and negative innovations
+    # Calculate number of positive and negative noise
     n_pos = R.sum()
     n_neg = R.index.size - n_pos
 
@@ -983,15 +983,15 @@ def __gxg__(series, year_agg, tmin, tmax, fill_method, limit, output,
                                              limit=limit)
     else:
         series = series.interpolate(method=fill_method, limit=limit, limit_direction='both')
-    
+
     # and select the 14th and 28th of each month (if needed still)
     if select14or28:
         mask = [(x.day==14) or (x.day==28) for x in series.index]
         series = series.loc[mask]
-    
+
     # remove NaNs that may have formed in the process above
     series.dropna(inplace=True)
-    
+
     # resample the series to yearly values
     yearly = series.resample(year_offset).apply(year_agg,
                                                 min_n_meas=min_n_meas)

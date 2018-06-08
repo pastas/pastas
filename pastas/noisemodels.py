@@ -94,7 +94,7 @@ class NoiseModel(NoiseModelBase):
 
     Notes
     -----
-    Calculates the innovations [1] according to:
+    Calculates the noise [1] according to:
 
     .. math::
         v(t1) = r(t1) - r(t0) * exp(- (t1 - t0) / alpha)
@@ -138,8 +138,8 @@ class NoiseModel(NoiseModelBase):
 
         Returns
         -------
-        innovations: pandas.Series
-            Series of the innovations.
+        noise: pandas.Series
+            Series of the noise.
 
         """
         delt = delt.iloc[1:]
@@ -157,8 +157,8 @@ class NoiseModel(NoiseModelBase):
         return innovations
 
     def weights(self, alpha, delt):
-        """Method to calculate the weights for the innovations based on the
-        sum of weighted squares innovations (SWSI) method.
+        """Method to calculate the weights for the noise based on the
+        sum of weighted squares noise (SWSI) method.
 
         Parameters
         ----------
@@ -181,7 +181,7 @@ class NoiseModel2(NoiseModelBase):
 
     Notes
     -----
-    Calculates the innovations [1] according to:
+    Calculates the noise [1] according to:
 
     .. math::
         v(t1) = r(t1) - r(t0) * exp(- (t1 - t0) / alpha)
@@ -225,8 +225,8 @@ class NoiseModel2(NoiseModelBase):
 
         Returns
         -------
-        innovations: pandas.Series
-            Series of the innovations.
+        noise: pandas.Series
+            Series of the noise.
 
         """
         innovations = pd.Series(res, index=res.index, name="Innovations")

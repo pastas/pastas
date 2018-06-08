@@ -372,9 +372,9 @@ class Model:
         res.name = "Residuals"
         return res
 
-    def innovations(self, parameters=None, tmin=None, tmax=None, freq=None,
-                    warmup=None):
-        """Method to simulate the innovations when a noisemodel is present.
+    def noise(self, parameters=None, tmin=None, tmax=None, freq=None,
+              warmup=None):
+        """Method to simulate the noise when a noisemodel is present.
 
         Parameters
         ----------
@@ -391,11 +391,11 @@ class Model:
         Returns
         -------
         v : pandas.Series
-            Pandas series of the innovations.
+            Pandas series of the noise.
 
         Notes
         -----
-        The innovations are the time series that result when applying a noise
+        The noise are the time series that result when applying a noise
         model.
 
         """
@@ -411,10 +411,17 @@ class Model:
         # Calculate the residuals
         res = self.residuals(parameters, tmin, tmax, freq, warmup)
 
-        # Calculate the innovations
+        # Calculate the noise
         v = self.noisemodel.simulate(res, self.odelt.loc[res.index],
                                      parameters[-self.noisemodel.nparam:])
         return v
+
+    def innovations(self, **kwargs):
+        """Historic method name for the noise of the model. Please refer to
+        ml.noise for further documentation.
+
+        """
+        return self.noise(**kwargs)
 
     def observations(self, tmin=None, tmax=None):
         """Method that returns the observations series used for calibration.
@@ -965,7 +972,7 @@ class Model:
     def get_parameters(self, name=None):
         """Internal method to obtain the parameters needed for calculation.
 
-        This method is used by the simulation, residuals and the innovations
+        This method is used by the simulation, residuals and the noise
         methods as well as other methods that need parameters values as arrays.
 
         Parameters
