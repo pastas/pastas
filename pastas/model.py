@@ -1044,7 +1044,7 @@ class Model:
         return sim - sim_org
 
     @get_stressmodel
-    def get_block_response(self, name):
+    def get_block_response(self, name, **kwargs):
         """Method to obtain the block response for a stressmodel.
 
         The optimal parameters are used when available, initial otherwise.
@@ -1067,12 +1067,12 @@ class Model:
         """
         p = self.get_parameters(name)
         dt = get_dt(self.settings["freq"])
-        b = self.stressmodels[name].rfunc.block(p, dt)
+        b = self.stressmodels[name].rfunc.block(p, dt, **kwargs)
         t = np.linspace(dt, len(b) * dt, len(b))
         return pd.Series(b, index=t, name=name)
 
     @get_stressmodel
-    def get_step_response(self, name):
+    def get_step_response(self, name, **kwargs):
         """Method to obtain the step response for a stressmodel.
 
         The optimal parameters are used when available, initial otherwise.
@@ -1095,7 +1095,7 @@ class Model:
         """
         p = self.get_parameters(name)
         dt = get_dt(self.settings["freq"])
-        s = self.stressmodels[name].rfunc.step(p, dt)
+        s = self.stressmodels[name].rfunc.step(p, dt, **kwargs)
         t = np.linspace(dt, len(s) * dt, len(s))
         return pd.Series(s, index=t, name=name)
 
@@ -1299,13 +1299,6 @@ class Model:
         n_param = parameters.vary.sum()
 
         w = []
-        pmin, pmax = self.check_parameters_bounds()
-        if any(pmin):
-            w.append("Parameter values of %s are close to their minimum "
-                     "values." % self.parameters[pmin].index.tolist())
-        if any(pmax):
-            w.append("Parameter values of %s are close to their maximum "
-                     "values." % self.parameters[pmax].index.tolist())
 
         warnings = str("Warnings\n============================================"
                        "================\n")

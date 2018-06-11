@@ -652,7 +652,7 @@ class NoConvModel(StressModelBase):
                             stress))
         # remove steps that do not change
         stress = stress[~(stress == 0)]
-        tmax = pd.to_timedelta(self.rfunc.calc_tmax(p), 'd')
+        tmax = pd.to_timedelta(self.rfunc.get_tmax(p), 'd')
         gain = self.rfunc.gain(p)
         values = np.zeros(len(tindex))
         if len(tindex) > len(stress):
