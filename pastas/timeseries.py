@@ -38,12 +38,15 @@ class TimeSeries(pd.Series):
     freq_original str, optional
     **kwargs: dict, optional
         Any keyword arguments that are provided but are not listed will be
-        passed as addiotional settings.
+        passed as additional settings.
 
     Notes
     -----
     For the individual options for the different settings please refer to
     the docstring from the TimeSeries.update_series() method.
+
+    To obtain the predefined TimeSeries settings, you can run the following
+    line of code: 'ps.TimeSeries._predefined_settings'
 
     See Also
     --------
@@ -60,17 +63,22 @@ class TimeSeries(pd.Series):
         "prec": {"sample_up": "divide", "sample_down": "sum",
                  "fill_nan": 0.0, "fill_before": "mean", "fill_after": "mean"},
         "evap": {"sample_up": "divide", "sample_down": "sum",
-                 "fill_before": "mean", "fill_after": "mean"},
+                 "fill_before": "mean", "fill_after": "mean",
+                 "fill_nan": "interpolate"},
         "well": {"sample_up": "divide", "sample_down": "sum",
                  "fill_nan": 0.0, "fill_before": 0.0, "fill_after": 0.0},
         "waterlevel": {"sample_up": "interpolate", "sample_down": "mean",
-                       "fill_before": "mean", "fill_after": "mean"},
+                       "fill_before": "mean", "fill_after": "mean",
+                       "fill_nan": "interpolate"},
         "level": {"sample_up": "interpolate", "sample_down": "mean",
-                  "fill_before": "mean", "fill_after": "mean"},
+                  "fill_before": "mean", "fill_after": "mean",
+                  "fill_nan": "interpolate"},
         "flux": {"sample_up": "bfill", "sample_down": "mean",
-                 "fill_before": "mean", "fill_after": "mean"},
+                 "fill_before": "mean", "fill_after": "mean",
+                 "fill_nan": 0.0},
         "quantity": {"sample_up": "divide", "sample_down": "sum",
-                     "fill_before": "mean", "fill_after": "mean"},
+                     "fill_before": "mean", "fill_after": "mean",
+                     "fill_nan": 0.0},
     }
 
     def __init__(self, series, name=None, settings=None, metadata=None,
@@ -171,9 +179,14 @@ class TimeSeries(pd.Series):
 
         """
 
-        # 1. Check if series is a Pandas Series
-        assert isinstance(series, pd.Series), "Expected a Pandas Series, " \
-                                              "got %s" % type(series)
+        # 1. Check if series is a Pandas Series or create one from
+        if isinstance(series, pd.DataFrame):
+            if len(series.columns) is 1:
+                series = series.iloc[:, 0]
+            logger.warning("The provided time series %s were a 1D-DataFrame "
+                           "and was transformed to a pandas Series.")
+        elif not isinstance(series, pd.Series):
+            logger.error("Expected a Pandas Series, got %s" % type(series))
 
         # 2. Make sure the indices are Timestamps and sorted
         series.index = pd.to_datetime(series.index)
