@@ -49,6 +49,7 @@ class Project:
                                               "y", "z"])
         self.oseries = pd.DataFrame(columns=["name", "series", "kind", "x",
                                              "y", "z"])
+        self.oseries.index.astype(str)
 
         # Project metadata and file information
         self.metadata = self.get_metadata(metadata)
@@ -82,6 +83,9 @@ class Project:
         if name is None:
             name = series.name
 
+        if not isinstance(name, str):
+            name = str(name)
+
         if kind == "oseries":
             data = self.oseries
         else:
@@ -90,12 +94,13 @@ class Project:
         if name in data.index:
             logger.error("Time series with name %s is already present in the \
                          database. Please provide a different name." % name)
+            return
 
         try:
             ts = ps.TimeSeries(series=series, name=name, settings=settings,
                                metadata=metadata, **kwargs)
         except:
-            logger.warning("Time series %s is ommitted from the database."
+            logger.warning("An error occurred. Time series %s is omitted from the database."
                            % name)
             return
 
@@ -162,7 +167,7 @@ class Project:
 
         # Validate name and ml_name before continuing
         if model_name in self.models.keys():
-            logger.error("Model name is not unique, provide a new ml_name.")
+            logger.error("Model name is not unique, provide a new model_name.")
         if oseries not in self.oseries.index:
             logger.error("Oseries name is not present in the database. "
                          "Make sure to provide a valid oseries name.")
@@ -196,7 +201,7 @@ class Project:
         -------
 
         """
-        key = ml.oseries.name
+        key = str(ml.oseries.name)
         prec_name = self.get_nearest_stresses(key, kind="prec").iloc[0][0]
         prec = self.stresses.loc[prec_name, "series"]
         evap_name = self.get_nearest_stresses(key, kind="evap").iloc[0][0]

@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
+from pandas._libs.tslibs.frequencies import _base_and_stride
 from datetime import datetime, timedelta
+from scipy import interpolate
 
 
 def get_dt(freq):
@@ -80,8 +82,9 @@ def get_time_offset(t, freq):
                }
     # Get the frequency string and multiplier
     num, freq = get_freqstr(freq)
-    offset = num * options[freq](t)
-    return offset
+    assert num==1,'An offset with a multiple (like "2W") is not yet supported'
+    #offset = num * options[freq](t)
+    return options[freq](t)
 
 
 def get_freqstr(freqstr):
@@ -102,23 +105,27 @@ def get_freqstr(freqstr):
         String with the frequency as defined by the pandas package.
 
     """
-    # remove the day from the week
-    freqstr = freqstr.split("-", 1)[0]
+    if True:
+        # remove the day from the week
+        freqstr = freqstr.split("-", 1)[0]
 
-    # Find a number by which the frequency is multiplied
-    num = ''
-    freq = ''
-    for s in freqstr:
-        if s.isdigit():
-            num = num.__add__(s)
+        # Find a number by which the frequency is multiplied
+        num = ''
+        freq = ''
+        for s in freqstr:
+            if s.isdigit():
+                num = num.__add__(s)
+            else:
+                freq = freq.__add__(s)
+        if num:
+            num = int(num)
         else:
-            freq = freq.__add__(s)
-    if num:
-        num = int(num)
-    else:
-        num = 1
+            num = 1
 
-    return num, freq
+        return num, freq
+    else:
+        freq, num = _base_and_stride(freqstr)
+        return num, freq
 
 
 def timestep_weighted_resample(series, index):
@@ -192,4 +199,35 @@ def datetime2matlab(dt):
     mdn = dt + timedelta(days = 366)
     frac = (dt-datetime(dt.year,dt.month,dt.day,0,0,0)).seconds / (24.0 * 60.0 * 60.0)
     return mdn.toordinal() + frac
+
+def get_sample(index, ref_index):
+    """Sample the index so that the frequency is not higher than the frequency
+        of tindex.
+
+    Parameters
+    ----------
+    index: pandas.index
+        Pandas index object
+    ref_index: pandas.index
+        Pandas index object
+
+    Returns
+    -------
+    series: pandas.index
+
+    Notes
+    -----
+    Find the index closest to the ref_index, and then return a selection
+    of the index.
+
+    """
+    if len(index)==1:
+        return index
+    else:
+        f = interpolate.interp1d(index.asi8,
+                                 np.arange(0, index.size),
+                                 kind='nearest', bounds_error=False,
+                                 fill_value='extrapolate')
+        ind = np.unique(f(ref_index.asi8).astype(int))
+        return index[ind]
     

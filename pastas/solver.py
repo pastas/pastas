@@ -3,7 +3,7 @@ PASTAS.
 
 All solvers inherit from the BaseSolver class, which contains general method
 for selecting the correct time series to minimize and options to weight the
-residuals or innovations series.
+residuals or noise series.
 
 Notes
 -----
@@ -37,7 +37,7 @@ class BaseSolver:
     A solver is implemented with a separate init method and objective function
     that returns the necessary format that is required by the specific solver.
     The objective function calls the get_residuals method of the BaseSolver
-    class, which calculates the residuals or innovations (depending on the
+    class, which calculates the residuals or noise (depending on the
     noise keyword) and applies weights (depending on the weights keyword).
 
     """
@@ -86,9 +86,9 @@ class BaseSolver:
 
         """
 
-        # Get the residuals or the innovations
+        # Get the residuals or the noise
         if noise:
-            res = model.innovations(parameters, tmin, tmax, freq)
+            res = model.noise(parameters, tmin, tmax, freq)
         else:
             res = model.residuals(parameters, tmin, tmax, freq)
 
@@ -304,8 +304,8 @@ class DESolve(BaseSolver):
         self.parameters[self.vary] = parameters
 
         if self.noise:
-            res = self.model.innovations(self.parameters, tmin=self.tmin,
-                                         tmax=self.tmax, freq=self.freq)
+            res = self.model.noise(self.parameters, tmin=self.tmin,
+                                   tmax=self.tmax, freq=self.freq)
         else:
             res = self.model.residuals(self.parameters, tmin=self.tmin,
                                        tmax=self.tmax, freq=self.freq)

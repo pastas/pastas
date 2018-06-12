@@ -14,7 +14,6 @@ from scipy.stats import probplot
 
 import pastas as ps
 from .decorators import model_tmin_tmax
-from .utils import get_dt
 
 
 class Plotting:
@@ -52,7 +51,8 @@ class Plotting:
             o_nu = self.ml.oseries.drop(o.index)
             if not o_nu.empty:
                 # plot parts of the oseries that are not used in grey
-                o_nu.plot(linestyle='', marker='.', color='0.5', fig=fig)
+                o_nu.plot(linestyle='', marker='.', color='0.5', fig=fig,
+                          label='')
             o.plot(linestyle='', marker='.', color='k', fig=fig)
 
         if simulation:
@@ -91,22 +91,23 @@ class Plotting:
         o_nu = self.ml.oseries.drop(o.index)
         if not o_nu.empty:
             # plot parts of the oseries that are not used in grey
-            o_nu.plot(ax=ax1, linestyle='', marker='.', color='0.5',
+            o_nu.plot(ax=ax1, linestyle='', marker='.', color='0.5', label='',
                       x_compat=True)
         o.plot(ax=ax1, linestyle='', marker='.', color='k', x_compat=True)
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        tindex = sim.index
         sim.plot(ax=ax1, x_compat=True)
         plt.legend(loc=(0, 1), ncol=3, frameon=False)
 
         ax1.set_ylim(min(o.min(), sim.loc[tmin:tmax].min()),
                      max(o.max(), sim.loc[tmin:tmax].max()))
 
-        # Residuals and innovations
+        # Residuals and noise
         ax2 = plt.subplot2grid((rows, 3), (2, 0), colspan=2, sharex=ax1)
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         res.plot(ax=ax2, sharex=ax1, color='k', x_compat=True)
         if self.ml.settings["noise"] and self.ml.noisemodel:
-            v = self.ml.innovations(tmin=tmin, tmax=tmax)
+            v = self.ml.noise(tmin=tmin, tmax=tmax)
             v.plot(ax=ax2, sharex=ax1, x_compat=True)
         plt.legend(loc=(0, 1), ncol=3, frameon=False)
 
@@ -121,27 +122,24 @@ class Plotting:
         # Draw parameters table
         cols = ["optimal", "stderr"]
         parameters = self.ml.parameters.loc[:, cols]
-        parameters.optimal = parameters.optimal.round(5)
-        for name, vals in parameters.loc[:, ["optimal", "stderr"]].iterrows():
+        for name, vals in parameters.loc[:, cols].iterrows():
             popt, stderr = vals
-            val = np.abs(stderr / popt * 100)
+            val = np.abs(np.divide(stderr, popt) * 100)
             parameters.loc[name, "stderr"] = \
-                "{:} {:.5e} ({:.2f}{:})".format("\u00B1", stderr, val,
+                "{:}{:.5e} ({:.2f}{:})".format("\u00B1", stderr, val,
                                                 "\u0025")
 
-        table = plt.table(cellText=parameters.values,
-                          rowLabels=parameters.index,
-                          colLabels=cols,
-                          colWidths=[0.2, 0.4],
-                          loc='center')
-        # table.auto_set_font_size(value=True)
+        table = plt.table(colLabels=cols, colWidths=[0.2, 0.4],
+                          loc='center', cellText=parameters.values,
+                          rowLabels=parameters.index)
+        table.auto_set_font_size(value=True)
         ax3.add_table(table)
         plt.setp(ax3.spines.values(), color=None)
 
         # Add a row for each stressmodel
         for i, ts in enumerate(self.ml.stressmodels.keys(), start=3):
             ax = plt.subplot2grid((rows, 3), (i, 0), colspan=2, sharex=ax1)
-            contrib = self.ml.get_contribution(ts, tmin=tmin, tmax=tmax)
+            contrib = self.ml.get_contribution(ts, tindex=tindex)
             contrib.plot(ax=ax, sharex=ax1, x_compat=True)
             title = [stress.name for stress in self.ml.stressmodels[ts].stress]
             plt.title("Stresses:%s" % title, loc="right")
@@ -228,10 +226,10 @@ class Plotting:
         o_nu = self.ml.oseries.drop(o.index)
         if not o_nu.empty:
             # plot parts of the oseries that are not used in grey
-            o_nu.plot(linestyle='', marker='.', color='0.5',
-                                  markersize=2, ax=ax[0], x_compat=True)
+            o_nu.plot(linestyle='', marker='.', color='0.5', label='',
+                      markersize=2, ax=ax[0], x_compat=True)
         o.plot(linestyle='', marker='.', color='k',
-                     markersize=3, ax=ax[0], x_compat=True)
+               markersize=3, ax=ax[0], x_compat=True)
         hsim.plot(ax=ax[0], x_compat=True)
         ax[0].set_ylim(ylims[0])
         ax[0].grid(which='both')
@@ -268,7 +266,7 @@ class Plotting:
 
     @model_tmin_tmax
     def diagnostics(self, tmin=None, tmax=None):
-        innovations = self.ml.innovations(tmin=tmin, tmax=tmax)
+        noise= self.ml.noise(tmin=tmin, tmax=tmax)
 
         fig = self._get_figure()
         gs = plt.GridSpec(2, 3, wspace=0.2)
@@ -276,7 +274,7 @@ class Plotting:
         plt.subplot(gs[0, :2])
         plt.title('Autocorrelation')
         # plt.axhline(0.2, '--')
-        r = ps.stats.acf(innovations)
+        r = ps.stats.acf(noise)
         plt.stem(r)
 
         plt.subplot(gs[1, :2])
@@ -285,10 +283,10 @@ class Plotting:
         # plt.stem(self.ml.stats.pacf())
 
         plt.subplot(gs[0, 2])
-        innovations.hist(bins=20)
+        noise.hist(bins=20)
 
         plt.subplot(gs[1, 2])
-        probplot(innovations, plot=plt)
+        probplot(noise, plot=plt)
 
         plt.xlim(tmin, tmax)
 
@@ -397,7 +395,7 @@ class Plotting:
             nstress = len(self.ml.stressmodels[name].stress)
             if split and nstress > 1:
                 for istress in range(nstress):
-                    stress = self.ml.get_stress(name,istress=istress)
+                    stress = self.ml.get_stress(name, istress=istress)
                     stresses.append(stress)
             else:
                 stress = self.ml.get_stress(name)

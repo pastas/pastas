@@ -12,7 +12,7 @@ from __future__ import print_function, division
 import logging
 
 import pandas as pd
-from pastas.utils import get_dt, get_time_offset, timestep_weighted_resample
+from .utils import get_dt, get_time_offset, timestep_weighted_resample, get_freqstr
 
 logger = logging.getLogger(__name__)
 
@@ -124,16 +124,6 @@ class TimeSeries(pd.Series):
         if metadata is not None:
             self.metadata.update(metadata)
 
-        # kind argument will be deprecated in version 0.9.6
-        kind = kwargs.pop("kind", None)
-        if kind:
-            logger.warning("Deprecation error: the kind argument will be "
-                           "deprecated in Pastas 0.9.6. Please provide "
-                           "a string to the settings argument.")
-            if kind in self._predefined_settings.keys():
-                if self.update_settings(**self._predefined_settings[kind]):
-                    update = True
-
         # Update the options with user-provided values, if any.
         if settings:
             if isinstance(settings, str):
@@ -189,6 +179,7 @@ class TimeSeries(pd.Series):
         series.index = pd.to_datetime(series.index)
         series.sort_index(inplace=True)
         series.index.name = "Date"
+        series = series.astype(float)
 
         # 3. Drop nan-values at the beginning and end of the time series
         series = series.loc[series.first_valid_index():series.last_valid_index(
@@ -299,6 +290,7 @@ class TimeSeries(pd.Series):
             series = self.series.copy(deep=True)
 
             # Update the series with the new settings
+            # first fill Nan's?
             series = self.change_frequency(series)
             series = self.fill_before(series)
             series = self.fill_after(series)
@@ -333,6 +325,7 @@ class TimeSeries(pd.Series):
                 series = self.sample_down(series)
             # 6. If new frequency is equal to its original
             elif dt_new == dt_org:
+                # shouldn't we do this before changing frequency?
                 series = self.fill_nan(series)
 
         # Drop nan-values at the beginning and end of the time series
@@ -391,6 +384,12 @@ class TimeSeries(pd.Series):
         """
         method = self.settings["sample_down"]
         freq = self.settings["freq"]
+        if False:
+            t0_offset = get_time_offset(series.index[0],freq)
+            tmin = series.index[0] - t0_offset + self.settings['time_offset']
+            if t0_offset>self.settings['time_offset']:
+                tmin = tmin + get_dt(freq)
+            index = pd.date_range(tmin,series.index[-1],freq=freq)
 
         # Provide some standard pandas arguments for all options
         kwargs = {"label": "right", "closed": "right"}

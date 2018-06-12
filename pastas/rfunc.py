@@ -35,8 +35,10 @@ class RfuncBase:
     def __init__(self, up, meanstress, cutoff):
         self.up = up
         # Completely arbitrary number to prevent divsion by zero
-        if meanstress < 1e-8:
+        if meanstress < 1e-8 and meanstress > 0:
             meanstress = 1e-8
+        elif meanstress > -1e-8 and meanstress < 0:
+            meanstress = -1e-8
         self.meanstress = meanstress
         self.cutoff = cutoff
         self.tmax = 0
@@ -44,11 +46,62 @@ class RfuncBase:
     def set_parameters(self, name):
         pass
 
-    def step(self, p, dt=1):
+    def step(self, p, dt=1, cutoff=0.99):
+        """Method to return the step funtion.
+
+        Parameters
+        ----------
+        p: numpy.array
+            numpy array with the parameters.
+        dt: float
+            timestep as a multiple of of day.
+        cutoff: float, optional
+            float between 0 and 1. Default is 0.99.
+
+        Returns
+        -------
+        s: numpy.array
+            Array with the step response.
+        """
         pass
 
-    def block(self, p, dt=1):
-        s = self.step(p, dt)
+    def get_tmax(self, p, cutoff=0.99):
+        """Method to get the response time for a certain cutoff
+
+        Parameters
+        ----------
+        p:  numpy.array
+            numpy array with the parameters.
+        cutoff: float, optional
+            float between 0 and 1. Default is 0.99.
+
+        Returns
+        -------
+        tmax: float
+            Number of days when 99% of the response has passen, when the
+            cutoff is chosen at 0.99.
+
+        """
+        pass
+
+    def block(self, p, dt=1, cutoff=0.99):
+        """Method to return the block funtion.
+
+        Parameters
+        ----------
+        p: numpy.array
+            numpy array with the parameters.
+        dt: float
+            timestep as a multiple of of day.
+        cutoff: float, optional
+            float between 0 and 1. Default is 0.99.
+
+        Returns
+        -------
+        s: numpy.array
+            Array with the block response.
+        """
+        s = self.step(p, dt, cutoff)
         return np.append(s[0], s[1:] - s[:-1])
 
 
@@ -93,17 +146,19 @@ class Gamma(RfuncBase):
         parameters.loc[name + '_a'] = (10, 0.01, 5000, 1, name)
         return parameters
 
-    def calc_tmax(self, p):
-        return gammaincinv(p[1], self.cutoff) * p[2]
+    def get_tmax(self, p, cutoff=None):
+        if cutoff is None:
+            cutoff = self.cutoff
+        return gammaincinv(p[1], cutoff) * p[2]
 
     def gain(self, p):
         return p[0]
 
-    def step(self, p, dt=1):
+    def step(self, p, dt=1, cutoff=0.99):
         if isinstance(dt, np.ndarray):
             t = dt
         else:
-            self.tmax = max(self.calc_tmax(p), 3 * dt)
+            self.tmax = max(self.get_tmax(p, cutoff), 3 * dt)
             t = np.arange(dt, self.tmax, dt)
 
         s = p[0] * gammainc(p[1], t / p[2])
@@ -148,17 +203,19 @@ class Exponential(RfuncBase):
         parameters.loc[name + '_a'] = (10, 0.01, 5000, 1, name)
         return parameters
 
-    def calc_tmax(self, p):
-        return -p[1] * np.log(1 - self.cutoff)
+    def get_tmax(self, p, cutoff=None):
+        if cutoff is None:
+            cutoff = self.cutoff
+        return -p[1] * np.log(1 - cutoff)
 
     def gain(self, p):
         return p[0]
 
-    def step(self, p, dt=1):
+    def step(self, p, dt=1, cutoff=0.99):
         if isinstance(dt, np.ndarray):
             t = dt
         else:
-            self.tmax = max(self.calc_tmax(p), 3 * dt)
+            self.tmax = max(self.get_tmax(p, cutoff), 3 * dt)
             t = np.arange(dt, self.tmax, dt)
         s = p[0] * (1.0 - np.exp(-t / p[1]))
         return s
@@ -216,24 +273,26 @@ class Hantush(RfuncBase):
         parameters.loc[name + '_cS'] = (100, 1e-3, 1e3, 1, name)
         return parameters
 
-    def calc_tmax(self, p):
+    def get_tmax(self, p, cutoff=None):
         # approximate formula for tmax
+        if cutoff is None:
+            cutoff = self.cutoff
         rho = p[1]
         cS = p[2]
         k0rho = k0(rho)
-        return lambertw(1 / ((1 - self.cutoff) * k0rho)).real * cS
+        return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
 
     def gain(self, p):
         return p[0]
 
-    def step(self, p, dt=1):
+    def step(self, p, dt=1, cutoff=0.99):
         rho = p[1]
         cS = p[2]
         k0rho = k0(rho)
         if isinstance(dt, np.ndarray):
             t = dt
         else:
-            self.tmax = max(self.calc_tmax(p), 3 * dt)
+            self.tmax = max(self.get_tmax(p, cutoff), 3 * dt)
             t = np.arange(dt, self.tmax, dt)
         tau = t / cS
         tau1 = tau[tau < rho / 2]
@@ -284,15 +343,15 @@ class Theis(RfuncBase):
     def gain(self, p):
         return self.up * np.inf
 
-    def calc_tmax(self, p):
-        # This should be changed with some analytical expression
+    def get_tmax(self, p, cutoff=None):
+        # TODO: This should be changed with some analytical expression
         return 10000
 
-    def step(self, p, dt=1):
+    def step(self, p, dt=1, cutoff=0.99):
         if isinstance(dt, np.ndarray):
             t = dt
         else:
-            self.tmax = max(self.calc_tmax(p), 3 * dt)
+            self.tmax = max(self.get_tmax(p, cutoff), 3 * dt)
             t = np.arange(dt, self.tmax, dt)
         r = p[2]
         u = r ** 2.0 * p[0] / (4.0 * p[1] * t)
@@ -330,7 +389,7 @@ class Bruggeman(RfuncBase):
             parameters.loc[name + '_c'] = (-c_init, -c_init * 100, 0, 1, name)
         return parameters
 
-    def calc_tmax(self, p):
+    def get_tmax(self, p, cutoff=None):
         # TODO: find tmax from cutoff, below is just an opproximation
         return 4 * p[0] / p[1] ** 2
 
@@ -338,11 +397,11 @@ class Bruggeman(RfuncBase):
         # TODO: check line below
         return p[2]
 
-    def step(self, p, dt=1):
+    def step(self, p, dt=1, cutoff=0.99):
         if isinstance(dt, np.ndarray):
             t = dt
         else:
-            self.tmax = max(self.calc_tmax(p), 3 * dt)
+            self.tmax = max(self.get_tmax(p, cutoff), 3 * dt)
             t = np.arange(dt, self.tmax, dt)
         s = p[2] * self.polder_function(p[0], p[1] * np.sqrt(t))
         return s
@@ -379,7 +438,7 @@ class One(RfuncBase):
         if isinstance(dt, np.ndarray):
             return p[0] * np.ones(len(dt))
         else:
-            return p[0] * np.ones(2)
+            return p[0] * np.ones(1)
 
     def block(self, p, dt=1):
-        return p[0] * np.ones(2)
+        return p[0] * np.ones(1)

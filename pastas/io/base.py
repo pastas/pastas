@@ -6,7 +6,6 @@ import importlib
 import os
 
 import pandas as pd
-
 import pastas as ps
 
 
@@ -64,14 +63,16 @@ def load_project(data):
     mls.metadata = data["metadata"]
     mls.file_info = data["file_info"]
 
-    mls.stresses = pd.DataFrame(data["stresses"],
-                                columns=data["stresses"].keys()).T
+    oseries = pd.DataFrame(data["oseries"], columns=data["oseries"].keys()).T
+    mls.oseries = mls.oseries.append(oseries)
 
-    mls.oseries = pd.DataFrame(data["oseries"],
-                               columns=data["oseries"].keys()).T
+    stresses = pd.DataFrame(data=data["stresses"],
+                            columns=data["stresses"].keys()).T
+    mls.stresses = mls.stresses.append(stresses)
 
     for ml_name, ml in data["models"].items():
-        name = ml["oseries"]["name"]
+        name = str(ml["oseries"]["name"])
+        ml_name = str(ml_name)
         ml["oseries"]["series"] = mls.oseries.loc[name, "series"]
         if ml["stressmodels"]:
             for ts in ml["stressmodels"].values():

@@ -7,7 +7,8 @@ The following stressmodels are supported and tested:
 
 - StressModel
 - StressModel2
-- Constant
+- FactorModel
+- StepModel
 
 All other stressmodels are for research purposes only and are not (yet)
 fully supported and tested.
@@ -16,6 +17,8 @@ TODO
 ----
 - Test and support StepModel
 - Test and support LinearTrend
+- Test and support WellModel
+
 
 """
 
@@ -34,7 +37,7 @@ from .timeseries import TimeSeries
 logger = logging.getLogger(__name__)
 
 __all__ = ["StressModel", "StressModel2", "Constant", "StepModel",
-           "LinearTrend"]
+           "LinearTrend", "FactorModel"]
 
 
 class StressModelBase:
@@ -253,9 +256,7 @@ class StressModel(StressModelBase):
         if isinstance(stress, list):
             stress = stress[0]  # Temporary fix Raoul, 2017-10-24
 
-        kind = kwargs.pop("kind", None)
-        stress = TimeSeries(stress, kind=kind, settings=settings,
-                            metadata=metadata)
+        stress = TimeSeries(stress, settings=settings, metadata=metadata)
 
         if meanstress is None:
             meanstress = stress.mean()
@@ -368,18 +369,16 @@ class StressModel2(StressModelBase):
                  settings=("prec", "evap"), metadata=(None, None),
                  meanstress=None, **kwargs):
         # First check the series, then determine tmin and tmax
-        kind = kwargs.pop("kind", (None, None))
-
-        stress0 = TimeSeries(stress[0], kind=kind[0], settings=settings[0],
+        stress0 = TimeSeries(stress[0], settings=settings[0],
                              metadata=metadata[0])
-        stress1 = TimeSeries(stress[1], kind=kind[1], settings=settings[1],
+        stress1 = TimeSeries(stress[1], settings=settings[1],
                              metadata=metadata[1])
 
         # Select indices from validated stress where both series are available.
         index = stress0.series.index.intersection(stress1.series.index)
         if index.size is 0:
             logger.warning('The two stresses that were provided have no '
-                           'overlapping time indices. Please make sure time indices overlap or apply to separate time series objects.')
+                           'overlapping time indices. Please make sure time indices overlap or separate time series objects.')
 
         # First check the series, then determine tmin and tmax
         stress0.update_series(tmin=index.min(), tmax=index.max())
@@ -468,34 +467,53 @@ class StressModel2(StressModelBase):
 class StepModel(StressModelBase):
     """Stressmodel that simulates a step trend.
 
-    A stress consisting of a step resonse from a specified time. The
-    amplitude and form (if rfunc is not One) of the step is calibrated. Before
-    t_step the response is zero.
+    Parameters
+    ----------
+    start: str
+        String with the start date of the step, e.g. '2018-01-01'. This
+        value is fixed by default. Use ml.set_vary("step_tstart", 1) to vary
+        the start time of the step trend.
+    name: str
+        String with the name of the stressmodel.
+    rfunc: pastas.rfunc.RfuncBase
+        Pastas response function used to simulate the effect of the step.
+        Default is rfunc.One()
+
+    Notes
+    -----
+    This step trend is calculated as follows. First, a binary series is
+    created, with zero values before tstart, and ones after the start. This
+    series is convoluted with the block response to obtain a simulate step
+    trend.
 
     """
     _name = "StepModel"
 
-    def __init__(self, start, name, rfunc=One, up=True):
+    def __init__(self, tstart, name, rfunc=One, up=True):
         StressModelBase.__init__(self, rfunc, name, pd.Timestamp.min,
-                                 pd.Timestamp.max, up, 1.0, None)
-        self.t_step = start
+                                 pd.Timestamp.max, up, 1.0, 0.99)
+        self.t_step = pd.Timestamp(tstart)
         self.set_init_parameters()
 
     def set_init_parameters(self):
         self.parameters = self.rfunc.set_parameters(self.name)
         tmin = pd.Timestamp.min.toordinal()
         tmax = pd.Timestamp.max.toordinal()
+        tinit = self.t_step.toordinal()
 
-        self.parameters.loc['start'] = (
-            self.t_step.value, tmin, tmax,
-            0, self.name)
+        self.parameters.loc[self.name + "_tstart"] = (tinit, tmin, tmax,
+                                                      0, self.name)
         self.nparam += 1
 
-    def simulate(self, p, tindex=None, dt=1):
-        assert tindex is not None, 'Error: Need an index'
+    def simulate(self, p, tindex, dt=1):
+        tstart = pd.Timestamp.fromordinal(int(p[-1]), freq="D")
         h = pd.Series(0, tindex, name=self.name)
-        td = tindex - pd.Timestamp(p[-1])
-        h[td.days > 0] = self.rfunc.step(p[:-1], td[td.days > 0].days)
+        h.loc[h.index > tstart] = 1
+
+        b = self.rfunc.block(p[:-1], dt)
+        npoints = h.index.size
+        h = pd.Series(data=fftconvolve(h, b, 'full')[:npoints],
+                      index=h.index, name=self.name, fastpath=True)
         return h
 
 
@@ -591,11 +609,7 @@ class NoConvModel(StressModelBase):
 
     def __init__(self, stress, rfunc, name, metadata=None, up=True,
                  cutoff=0.99, settings=None, **kwargs):
-
-        kind = kwargs.pop("kind", None)
-
-        stress = TimeSeries(stress, kind=kind, settings=settings,
-                            metadata=metadata)
+        stress = TimeSeries(stress, settings=settings, metadata=metadata)
         StressModelBase.__init__(self, rfunc, name, stress.index.min(),
                                  stress.index.max(), up, stress.mean(), cutoff)
         self.freq = stress.settings["freq"]
@@ -638,7 +652,7 @@ class NoConvModel(StressModelBase):
                             stress))
         # remove steps that do not change
         stress = stress[~(stress == 0)]
-        tmax = pd.to_timedelta(self.rfunc.calc_tmax(p), 'd')
+        tmax = pd.to_timedelta(self.rfunc.get_tmax(p), 'd')
         gain = self.rfunc.gain(p)
         values = np.zeros(len(tindex))
         if len(tindex) > len(stress):
@@ -779,3 +793,42 @@ class WellModel(StressModelBase):
             return self.radius
         else:
             return [self.radius[irad]]
+
+
+class FactorModel(StressModelBase):
+    """Model that multiplies a stress by a single value. Indepedent series
+    does not have to be equidistant.
+
+    Parameters
+    ----------
+    stress: pandas.Series or pastas.TimeSeries
+        Stress which will be multiplied by a factor. The stress does not
+        have to be equidistant.
+    name: str
+        String with the name of the stressmodel
+    settings: dict or str
+        Dict or String that is forwarded to the TimeSeries object created
+        from the stress.
+    metadata: dict
+        Dictionary with metadata, forwarded to the TimeSeries object created
+        from the stress.
+
+    """
+    _name = "FactorModel"
+
+    def __init__(self, stress, name="factor", settings=None, metadata=None):
+        StressModelBase.__init__(self, One, name, stress.index.min,
+                                 stress.index.max, up=True, meanstress=1,
+                                 cutoff=0.99)
+        self.nparam = 1
+        self.value = 1  # Initial value
+        stress = TimeSeries(stress, settings=settings, metadata=metadata)
+        self.stress = [stress]
+        self.set_init_parameters()
+
+    def set_init_parameters(self):
+        self.parameters.loc[self.name + "_f"] = (
+            self.value, -np.inf, np.inf, 1, self.name)
+
+    def simulate(self, p=None, tindex=None, dt=1):
+        return self.stress[0] * p[0]

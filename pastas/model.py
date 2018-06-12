@@ -10,7 +10,6 @@ from collections import OrderedDict
 
 import numpy as np
 import pandas as pd
-from scipy import interpolate
 
 from .decorators import get_stressmodel
 from .io.base import dump
@@ -20,7 +19,7 @@ from .solver import LeastSquares
 from .stats import Statistics
 from .stressmodels import Constant
 from .timeseries import TimeSeries
-from .utils import get_dt, get_time_offset, frequency_is_supported
+from .utils import get_dt, get_time_offset, frequency_is_supported, get_sample
 from .version import __version__
 
 
@@ -75,7 +74,7 @@ class Model:
             name = self.oseries.name
             if name is None:
                 name = 'Observations'
-        self.name = name
+        self.name = str(name)
 
         self.parameters = pd.DataFrame(
             columns=["initial", "name", "optimal", "pmin", "pmax", "vary",
@@ -159,8 +158,6 @@ class Model:
             if self.settings["freq"] is None:
                 self.set_freq()
             stressmodel.update_stress(freq=self.settings["freq"])
-            # Call these methods to set time offset
-            self.set_time_offset()
 
     def add_constant(self, constant):
         """Adds a Constant to the time series Model.
@@ -305,7 +302,7 @@ class Model:
         for ts in self.stressmodels.values():
             c = ts.simulate(parameters[istart: istart + ts.nparam], sim_index,
                             dt)
-            h = h.add(c, fill_value=0.0)
+            h = h + c
             istart += ts.nparam
         if self.constant:
             h = h + self.constant.simulate(parameters[istart])
@@ -313,6 +310,8 @@ class Model:
         if self.transform:
             h = self.transform.simulate(h, parameters[
                                            istart:istart + self.transform.nparam])
+
+        h.dropna(inplace=True)
         h.name = 'Simulation'
         return h
 
@@ -384,9 +383,9 @@ class Model:
         res.name = "Residuals"
         return res
 
-    def innovations(self, parameters=None, tmin=None, tmax=None, freq=None,
-                    warmup=None):
-        """Method to simulate the innovations when a noisemodel is present.
+    def noise(self, parameters=None, tmin=None, tmax=None, freq=None,
+              warmup=None):
+        """Method to simulate the noise when a noisemodel is present.
 
         Parameters
         ----------
@@ -403,11 +402,11 @@ class Model:
         Returns
         -------
         v : pandas.Series
-            Pandas series of the innovations.
+            Pandas series of the noise.
 
         Notes
         -----
-        The innovations are the time series that result when applying a noise
+        The noise are the time series that result when applying a noise
         model.
 
         """
@@ -423,10 +422,17 @@ class Model:
         # Calculate the residuals
         res = self.residuals(parameters, tmin, tmax, freq, warmup)
 
-        # Calculate the innovations
+        # Calculate the noise
         v = self.noisemodel.simulate(res, self.odelt.loc[res.index],
                                      parameters[-self.noisemodel.nparam:])
         return v
+
+    def innovations(self, **kwargs):
+        """Historic method name for the noise of the model. Please refer to
+        ml.noise for further documentation.
+
+        """
+        return self.noise(**kwargs)
 
     def observations(self, tmin=None, tmax=None):
         """Method that returns the observations series used for calibration.
@@ -469,10 +475,6 @@ class Model:
         self.settings["noise"] = noise
         self.settings["weights"] = weights
 
-        # Set tmin and tmax
-        self.settings["tmin"], self.settings["tmax"] = \
-            self.get_tmin_tmax(tmin, tmax, use_stresses=True)
-
         # Set the frequency & warmup
         if freq:
             if frequency_is_supported(freq):
@@ -482,6 +484,13 @@ class Model:
                     'Frequency of ' + freq + ' is not supported')
         if warmup is not None:
             self.settings["warmup"] = warmup
+
+        # Set the time offset from the frequency
+        self.set_time_offset()
+
+        # Set tmin and tmax
+        self.settings["tmin"], self.settings["tmax"] = \
+            self.get_tmin_tmax(tmin, tmax, use_stresses=True)
 
         # set fit_constant
         if fit_constant is not None:
@@ -730,7 +739,7 @@ class Model:
             if stressmodel.stress:
                 # calculate the offset from the default frequency
                 time_offset = get_time_offset(
-                    stressmodel.stress[0].index.min(),
+                    stressmodel.stress[0].series_original.index.min(),
                     self.settings["freq"])
                 time_offsets.add(time_offset)
 
@@ -756,6 +765,10 @@ class Model:
 
         """
         self.logger.parent.handlers[0].setLevel(log_level)
+
+    def get_stressmodel_names(self):
+        """Returns list of stressmodel names"""
+        return list(self.stressmodels.keys())
 
     def get_sim_index(self, tmin, tmax, freq, warmup):
         """Internal method to get the indices for the simulation, including
@@ -792,6 +805,7 @@ class Model:
         tmin: str
         tmax: str
         sim_index: pd.DatetimeIndex
+            pandas index of the simulation
 
 
         Returns
@@ -801,22 +815,18 @@ class Model:
 
         Notes
         -----
-        This method is for performance improvements only. Find the index
-        closest to the tindex, and then return a selection of series.
+        This method makes sure the simulation is compared to the nearest
+        observation. It finds the index closest to sim_index, and then returns
+        a selection of the oseries.
+        Later, the simulation is interpolated to the observation-timestamps.
 
         """
         oseries_calib = self.oseries.loc[tmin:tmax]
         # sample measurements, so that frequency is not higher than model
         # keep the original timestamps, as they will be used during
         # interpolation of the simulation
-        f = interpolate.interp1d(oseries_calib.index.asi8,
-                                 np.arange(0, oseries_calib.index.size),
-                                 kind='nearest', bounds_error=False,
-                                 fill_value='extrapolate')
-        ind = np.unique(f(sim_index.asi8).astype(int))
-        oseries_calib = oseries_calib.iloc[ind]
-
-        return oseries_calib
+        index = get_sample(oseries_calib.index, sim_index)
+        return oseries_calib[index]
 
     def get_odelt(self, freq="D"):
         """Internal method to get the timesteps between the observations.
@@ -973,7 +983,7 @@ class Model:
     def get_parameters(self, name=None):
         """Internal method to obtain the parameters needed for calculation.
 
-        This method is used by the simulation, residuals and the innovations
+        This method is used by the simulation, residuals and the noise
         methods as well as other methods that need parameters values as arrays.
 
         Parameters
@@ -1045,7 +1055,7 @@ class Model:
         return sim - sim_org
 
     @get_stressmodel
-    def get_block_response(self, name):
+    def get_block_response(self, name, **kwargs):
         """Method to obtain the block response for a stressmodel.
 
         The optimal parameters are used when available, initial otherwise.
@@ -1068,12 +1078,12 @@ class Model:
         """
         p = self.get_parameters(name)
         dt = get_dt(self.settings["freq"])
-        b = self.stressmodels[name].rfunc.block(p, dt)
+        b = self.stressmodels[name].rfunc.block(p, dt, **kwargs)
         t = np.linspace(dt, len(b) * dt, len(b))
         return pd.Series(b, index=t, name=name)
 
     @get_stressmodel
-    def get_step_response(self, name):
+    def get_step_response(self, name, **kwargs):
         """Method to obtain the step response for a stressmodel.
 
         The optimal parameters are used when available, initial otherwise.
@@ -1096,7 +1106,7 @@ class Model:
         """
         p = self.get_parameters(name)
         dt = get_dt(self.settings["freq"])
-        s = self.stressmodels[name].rfunc.step(p, dt)
+        s = self.stressmodels[name].rfunc.step(p, dt, **kwargs)
         t = np.linspace(dt, len(s) * dt, len(s))
         return pd.Series(s, index=t, name=name)
 
@@ -1259,7 +1269,7 @@ class Model:
         model = {
             "nfev": self.fit.nfev,
             "nobs": self.oseries_calib.index.size,
-            "noise": self.noisemodel._name if self.noisemodel else None,
+            "noise": self.noisemodel._name if self.noisemodel else "None",
             "tmin": str(self.settings["tmin"]),
             "tmax": str(self.settings["tmax"]),
             "freq": self.settings["freq"],
@@ -1272,8 +1282,10 @@ class Model:
             "NS": format("%.2f" % self.stats.nash_sutcliffe()),
             "Pearson R2": format("%.2f" % self.stats.rsq()),
             "RMSE": format("%.2f" % self.stats.rmse()),
-            "AIC": format("%.2f" % self.stats.aic()),
-            "BIC": format("%.2f" % self.stats.bic()),
+            "AIC": format("%.2f" % self.stats.aic() if
+                          self.settings["noise"] else np.nan),
+            "BIC": format("%.2f" % self.stats.bic() if
+                          self.settings["noise"] else np.nan),
             "__": "",
             "___": ""
         }
@@ -1298,13 +1310,6 @@ class Model:
         n_param = parameters.vary.sum()
 
         w = []
-        pmin, pmax = self.check_parameters_bounds()
-        if any(pmin):
-            w.append("Parameter values of %s are close to their minimum "
-                     "values." % self.parameters[pmin].index.tolist())
-        if any(pmax):
-            w.append("Parameter values of %s are close to their maximum "
-                     "values." % self.parameters[pmax].index.tolist())
 
         warnings = str("Warnings\n============================================"
                        "================\n")

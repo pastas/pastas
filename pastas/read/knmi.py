@@ -179,7 +179,8 @@ class KnmiStation:
             if isinstance(self.stns, int):
                 self.stns = str(self.stns)
             else:
-                raise NameError('Meerdere locaties nog niet ondersteund')
+                self.stns = [str(i) for i in self.stns]
+                self.stns = ":".join(self.stns)
 
         if self.interval.startswith('hour'):
             data = {

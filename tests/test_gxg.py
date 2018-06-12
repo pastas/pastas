@@ -16,7 +16,7 @@ class TestGXG(object):
         idx = pd.to_datetime(['20160114', '20160115', '20160128', '20160214'])
         s = pd.Series([10., 3., 30., 20.], index=idx)
         v = ps.stats.ghg(s, min_n_meas=1, min_n_years=1)
-        assert v == 20.0
+        assert v == 30.0
 
     def test_ghg_ffill(self):
         idx = pd.to_datetime(['20160101', '20160115', '20160130'])
@@ -31,21 +31,21 @@ class TestGXG(object):
         v = ps.stats.ghg(s, fill_method='bfill', limit=15, min_n_meas=1,
                          min_n_years=1)
         # TODO is this correct?
-        assert v == 5.
+        assert v == 10.
 
     def test_ghg_linear(self):
         idx = pd.to_datetime(['20160101', '20160110', '20160120', '20160130'])
         s = pd.Series([0., 0., 10., 10.], index=idx)
         v = ps.stats.ghg(s, fill_method='linear', min_n_meas=1,
-                         min_n_years=1)
+                         min_n_years=1,limit=8)
         # TODO is this correct?
-        assert v == 7.
+        assert v == 10.
 
     def test_ghg_len_yearly(self):
         idx = pd.date_range('20000101', '20550101', freq='d')
         s = pd.Series(np.ones(len(idx)), index=idx)
         v = ps.stats.ghg(s, output='yearly')
-        assert len(v) == 55
+        assert v.notna().sum() == 55
 
     def test_glg(self):
         idx = pd.date_range('20000101', '20550101', freq='d')
@@ -57,15 +57,15 @@ class TestGXG(object):
         idx = pd.to_datetime(['20170115', '20170130', '20200101'])
         s = pd.Series(np.ones(len(idx)), index=idx)
         v = ps.stats.glg(s, fill_method='linear', limit=15,
-                         output='yearly', year_offset='a')
-        assert v.count() == 1
+                         output='yearly', year_offset='a',min_n_meas=1)
+        assert v.notna().sum() == 2
 
     def test_glg_fill_limit_null(self):
         idx = pd.to_datetime(['20170101', '20170131', '20200101'])
         s = pd.Series(np.ones(len(idx)), index=idx)
-        v = ps.stats.glg(s, fill_method='linear', limit=10,
-                         output='yearly', year_offset='a')
-        assert v.count() == 0
+        v = ps.stats.glg(s, fill_method='linear', limit=None,
+                         output='yearly', year_offset='a',min_n_meas=1)
+        assert v.notna().sum() == 3
 
     def test_gvg(self):
         idx = pd.to_datetime(['20170314', '20170328', '20170414', '20170428'])
