@@ -118,6 +118,17 @@ class Model:
         self.plots = Plotting(self)
         self.plot = self.plots.plot  # because we are lazy
 
+    def __repr__(self):
+        """Prints a simple string representation of the model.
+        """
+        template = ('{cls}(oseries={os}, name={name}, constant={const}, '
+                    'noisemodel={noise})')
+        return template.format(cls=self.__class__.__name__,
+                               os=self.oseries.name,
+                               name=self.name,
+                               const=not self.constant is None,
+                               noise=not self.noisemodel is None)
+
     def add_stressmodel(self, stressmodel, replace=False):
         """Adds a stressmodel to the main model.
 
