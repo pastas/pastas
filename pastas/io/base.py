@@ -110,12 +110,12 @@ def load_model(data):
     if "metadata" in data.keys():
         metadata = data["metadata"]
     else:
-        metadata = dict(name="Model")  # Make sure there is a name
+        metadata = None
 
     if "name" in data.keys():
         name = data["name"]
     else:
-        name = metadata["name"]
+        name = None
 
     if "noisemodel" in data.keys():
         noise = True

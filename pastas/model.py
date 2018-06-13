@@ -39,8 +39,9 @@ class Model:
     name: str, optional
         String with the name of the model, used in plotting and saving.
     metadata: dict, optional
-        Dictionary containing metadata of the model. By default,
-        a dictionary containing basic metadata info is created.
+        Dictionary containing metadata of the oseries, passed on the to
+        oseries when creating a pastas TimeSeries object. hence,
+        ml.oseries.metadata will give you the metadata.
     settings: dict, optional
         Dictionary containing the model settings used by the different
         methods of the model instance. These values will be forwarded to the
@@ -62,14 +63,16 @@ class Model:
 
     """
 
-    def __init__(self, oseries, constant=True, noisemodel=True,
-                 name=None, metadata=None, settings=None, log_level=None):
+    def __init__(self, oseries, constant=True, noisemodel=True, name=None,
+                 metadata=None, settings=None, log_level=None):
 
         self.logger = self.get_logger(log_level=log_level)
 
         # Construct the different model components
-        self.oseries = TimeSeries(oseries, settings="oseries")
+        self.oseries = TimeSeries(oseries, settings="oseries",
+                                  metadata=metadata)
         self.odelt = self.get_odelt()
+
         if name is None:
             name = self.oseries.name
             if name is None:
@@ -85,14 +88,16 @@ class Model:
         self.noisemodel = None
 
         # Store the simulation settings
-        self.settings = {"tmin": None,
-                         "tmax": None,
-                         "freq": "D",
-                         "warmup": 3650,
-                         "time_offset": pd.Timedelta(0),
-                         "noise": noisemodel,
-                         "solver": None,
-                         "fit_constant": True}
+        self.settings = {
+            "tmin": None,
+            "tmax": None,
+            "freq": "D",
+            "warmup": 3650,
+            "time_offset": pd.Timedelta(0),
+            "noise": noisemodel,
+            "solver": None,
+            "fit_constant": True,
+        }
         if settings:
             self.settings.update(settings)
 
@@ -102,8 +107,7 @@ class Model:
         if noisemodel:
             self.add_noisemodel(NoiseModel())
 
-        # Metadata & File Information
-        self.metadata = self.get_metadata(metadata)
+        # File Information
         self.file_info = self.get_file_info()
 
         # initialize some attributes for solving and simulation
@@ -147,11 +151,16 @@ class Model:
 
         >>> ml.stressmodels.keys()
 
+        Examples
+        --------
+        >>> sm = ps.StressModel(stress, rfunc=ps.Gamma, name="stress")
+        >>> ml.add_stressmodel(sm)
+
         """
         if (stressmodel.name in self.stressmodels.keys()) and not replace:
-            self.logger.error("""The name for the series you are trying to
-                                add already exists for this model. Select
-                                another name.""")
+            self.logger.error("The name for the stressmodel you are trying "
+                              "to add already exists for this model. Select "
+                              "another name.")
         else:
             self.stressmodels[stressmodel.name] = stressmodel
             self.parameters = self.get_init_parameters()
@@ -166,6 +175,11 @@ class Model:
         ----------
         constant: pastas.Constant
             Pastas constant instance, possibly more things in the future.
+
+        Examples
+        --------
+        >>> d = ps.Constant()
+        >>> ml.add_constant(d)
 
         """
         self.constant = constant
@@ -184,6 +198,11 @@ class Model:
         ----------
         noisemodel: pastas.noisemodels.NoiseModelBase
             Instance of NoiseModelBase
+
+        Examples
+        --------
+        >>> n = ps.NoiseModel()
+        >>> ml.add_noisemodel(n)
 
         """
         self.noisemodel = noisemodel
@@ -1133,28 +1152,6 @@ class Model:
             stress = self.stressmodels[name].get_stress(p, istress)
         return stress
 
-    def get_metadata(self, meta=None):
-        """Internal method that returns a metadata dictionary.
-
-        Parameters
-        ----------
-        meta: dict, optional
-            dictionary containing user defined metadata
-
-        Returns
-        -------
-        metadata: dict
-            dictionary containing the basic information.
-
-        """
-        metadata = dict()
-        metadata["projection"] = None
-
-        if meta:  # Update metadata with user-provided metadata if possible
-            metadata.update(meta)
-
-        return metadata
-
     def get_file_info(self):
         """Internal method to get the file information.
 
@@ -1420,10 +1417,6 @@ Parameters (%s were optimized)
 
         # Parameters
         data["parameters"] = self.parameters
-
-        # Metadata
-        if metadata:
-            data["metadata"] = self.metadata
 
         # Simulation Settings
         data["settings"] = self.settings
