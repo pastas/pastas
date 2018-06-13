@@ -123,14 +123,14 @@ class NoiseModel(NoiseModelBase):
     def set_init_parameters(self):
         self.parameters.loc['noise_alpha'] = (14.0, 0, 5000, 1, 'noise')
 
-    def simulate(self, res, delt, p, tindex=None):
+    def simulate(self, res, odelt, p, tindex=None):
         """
 
         Parameters
         ----------
         res : pandas.Series
             The residual series.
-        delt : pandas.Series
+        odelt : pandas.Series
             Time steps between observations.
         tindex : None, optional
             Time indices used for simulation.
@@ -143,36 +143,36 @@ class NoiseModel(NoiseModelBase):
             Series of the noise.
 
         """
-        delt = delt.iloc[1:]
+        odelt = odelt.iloc[1:]
         alpha = p[0]
-        innovations = pd.Series(data=res)
+        noise = pd.Series(data=res)
         # res.values is needed else it gets messed up with the dates
-        innovations.iloc[1:] -= np.exp(-delt / alpha) * res.values[:-1]
+        noise.iloc[1:] -= np.exp(-odelt / alpha) * res.values[:-1]
 
-        weights = self.weights(alpha, delt)
-        innovations = innovations.multiply(weights, fill_value=0.0)
+        weights = self.weights(alpha, odelt)
+        noise = noise.multiply(weights, fill_value=0.0)
 
         if tindex is not None:
-            innovations = innovations.loc[tindex]
-        innovations.name = "Innovations"
-        return innovations
+            noise = noise.loc[tindex]
+        noise.name = "Innovations"
+        return noise
 
-    def weights(self, alpha, delt):
+    def weights(self, alpha, odelt):
         """Method to calculate the weights for the noise based on the
         sum of weighted squares noise (SWSI) method.
 
         Parameters
         ----------
         alpha
-        delt:
+        odelt:
 
         Returns
         -------
 
         """
         # divide power by 2 as nu / sigma is returned
-        power = 1.0 / (2.0 * delt.size)
-        exp = np.exp(-2.0 / alpha * delt) # Twice as fast as 2*delt/alpha
+        power = 1.0 / (2.0 * odelt.size)
+        exp = np.exp(-2.0 / alpha * odelt) # Twice as fast as 2*odelt/alpha
         w = np.exp(power * np.sum(np.log(1.0 - exp))) / np.sqrt(1.0 - exp)
         return w
 
@@ -210,14 +210,14 @@ class NoiseModel2(NoiseModelBase):
     def set_init_parameters(self):
         self.parameters.loc['noise_alpha'] = (14.0, 0, 5000, 1, 'noise')
 
-    def simulate(self, res, delt, p, tindex=None):
+    def simulate(self, res, odelt, p, tindex=None):
         """
 
         Parameters
         ----------
         res : pandas.Series
             The residual series.
-        delt : pandas.Series
+        odelt : pandas.Series
             Time steps between observations.
         tindex : None, optional
             Time indices used for simulation.
@@ -230,9 +230,9 @@ class NoiseModel2(NoiseModelBase):
             Series of the noise.
 
         """
-        innovations = pd.Series(res, index=res.index, name="Innovations")
+        noise = pd.Series(res, index=res.index, name="Innovations")
         # res.values is needed else it gets messed up with the dates
-        innovations[1:] -= np.exp(-delt[1:] / p[0]) * res.values[:-1]
+        noise[1:] -= np.exp(-odelt[1:] / p[0]) * res.values[:-1]
         if tindex is not None:
-            innovations = innovations[tindex]
-        return innovations
+            noise = noise[tindex]
+        return noise

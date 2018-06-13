@@ -56,8 +56,8 @@ class Plotting:
             o.plot(linestyle='', marker='.', color='k', fig=fig)
 
         if simulation:
-            h = self.ml.simulate(tmin=tmin, tmax=tmax)
-            h.plot(fig=fig)
+            sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+            sim.plot(fig=fig)
         plt.xlim(tmin, tmax)
         plt.ylabel("Groundwater levels [meter]")
         plt.legend()
@@ -107,8 +107,8 @@ class Plotting:
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         res.plot(ax=ax2, sharex=ax1, color='k', x_compat=True)
         if self.ml.settings["noise"] and self.ml.noisemodel:
-            v = self.ml.noise(tmin=tmin, tmax=tmax)
-            v.plot(ax=ax2, sharex=ax1, x_compat=True)
+            noise = self.ml.noise(tmin=tmin, tmax=tmax)
+            noise.plot(ax=ax2, sharex=ax1, x_compat=True)
         plt.legend(loc=(0, 1), ncol=3, frameon=False)
 
         # Stats frame
@@ -127,7 +127,7 @@ class Plotting:
             val = np.abs(np.divide(stderr, popt) * 100)
             parameters.loc[name, "stderr"] = \
                 "{:}{:.5e} ({:.2f}{:})".format("\u00B1", stderr, val,
-                                                "\u0025")
+                                               "\u0025")
 
         table = plt.table(colLabels=cols, colWidths=[0.2, 0.4],
                           loc='center', cellText=parameters.values,
@@ -137,11 +137,11 @@ class Plotting:
         plt.setp(ax3.spines.values(), color=None)
 
         # Add a row for each stressmodel
-        for i, ts in enumerate(self.ml.stressmodels.keys(), start=3):
+        for i, sm in enumerate(self.ml.stressmodels.keys(), start=3):
             ax = plt.subplot2grid((rows, 3), (i, 0), colspan=2, sharex=ax1)
-            contrib = self.ml.get_contribution(ts, tindex=tindex)
+            contrib = self.ml.get_contribution(sm, tindex=tindex)
             contrib.plot(ax=ax, sharex=ax1, x_compat=True)
-            title = [stress.name for stress in self.ml.stressmodels[ts].stress]
+            title = [stress.name for stress in self.ml.stressmodels[sm].stress]
             plt.title("Stresses:%s" % title, loc="right")
             ax.legend(loc=(0, 1), ncol=3, frameon=False)
             if i == 3:
@@ -149,7 +149,7 @@ class Plotting:
             else:
                 sharex = axb
             axb = plt.subplot2grid((rows, 3), (i, 2), sharex=sharex)
-            self.ml.get_step_response(ts).plot(ax=axb)
+            self.ml.get_step_response(sm).plot(ax=axb)
 
         ax1.set_xlim(tmin, tmax)
 
@@ -176,9 +176,9 @@ class Plotting:
         o = self.ml.observations(tmin=tmin, tmax=tmax)
 
         # determine the simulation
-        hsim = self.ml.simulate(tmin=tmin, tmax=tmax)
-        tindex = hsim.index
-        h = [hsim]
+        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        tindex = sim.index
+        series = [sim]
         names = ['']
 
         # determine the influence of the different stresses
@@ -186,38 +186,39 @@ class Plotting:
             nstress = len(self.ml.stressmodels[name].stress)
             if split and nstress > 1:
                 for istress in range(nstress):
-                    hc = self.ml.get_contribution(name, tindex=tindex,
-                                                  istress=istress)
-                    h.append(hc)
-                    names.append(hc.name)
+                    contrib = self.ml.get_contribution(name, tindex=tindex,
+                                                       istress=istress)
+                    series.append(contrib)
+                    names.append(contrib.name)
             else:
-                hc = self.ml.get_contribution(name, tindex=tindex)
-                h.append(hc)
-                names.append(hc.name)
+                contrib = self.ml.get_contribution(name, tindex=tindex)
+                series.append(contrib)
+                names.append(contrib.name)
 
         if self.ml.transform:
-            h.append(self.ml.get_transform_contribution(tmin=tmin, tmax=tmax))
+            series.append(
+                self.ml.get_transform_contribution(tmin=tmin, tmax=tmax))
             names.append(self.ml.transform.name)
 
         # determine ylim for every graph, to scale the height
         ylims = [
-            (min([hsim[tmin:tmax].min(), o[tmin:tmax].min()]),
-             max([hsim[tmin:tmax].max(), o[tmin:tmax].max()]))]
-        for ht in h[1:]:
-            hs = ht[tmin:tmax]
+            (min([sim[tmin:tmax].min(), o[tmin:tmax].min()]),
+             max([sim[tmin:tmax].max(), o[tmin:tmax].max()]))]
+        for contrib in series[1:]:
+            hs = contrib[tmin:tmax]
             if hs.empty:
-                if ht.empty:
+                if contrib.empty:
                     ylims.append((0.0, 0.0))
                 else:
-                    ylims.append((ht.min(), hs.max()))
+                    ylims.append((contrib.min(), hs.max()))
             else:
                 ylims.append((hs.min(), hs.max()))
         height_ratios = [
             0.0 if np.isnan(ylim[1] - ylim[0]) else ylim[1] - ylim[0] for ylim
             in ylims]
-        # open the figure
 
-        fig, ax = plt.subplots(len(h), sharex=True,
+        # open the figure
+        fig, ax = plt.subplots(len(series), sharex=True,
                                gridspec_kw={'height_ratios': height_ratios},
                                **kwargs)
         ax = np.atleast_1d(ax)
@@ -230,7 +231,7 @@ class Plotting:
                       markersize=2, ax=ax[0], x_compat=True)
         o.plot(linestyle='', marker='.', color='k',
                markersize=3, ax=ax[0], x_compat=True)
-        hsim.plot(ax=ax[0], x_compat=True)
+        sim.plot(ax=ax[0], x_compat=True)
         ax[0].set_ylim(ylims[0])
         ax[0].grid(which='both')
         ax[0].legend(loc=(0, 1), ncol=3, frameon=False)
@@ -247,8 +248,8 @@ class Plotting:
                 plticker.MultipleLocator(base=ytick_base))
 
         # plot the influence of the stresses
-        for i in range(1, len(h)):
-            h[i].plot(ax=ax[i], x_compat=True)
+        for i, contrib in enumerate(series[1:], start=1):
+            contrib.plot(ax=ax[i], x_compat=True)
 
             if ytick_base:
                 # set the ytick-spacing equal to the top graph
@@ -266,7 +267,7 @@ class Plotting:
 
     @model_tmin_tmax
     def diagnostics(self, tmin=None, tmax=None):
-        noise= self.ml.noise(tmin=tmin, tmax=tmax)
+        noise = self.ml.noise(tmin=tmin, tmax=tmax)
 
         fig = self._get_figure()
         gs = plt.GridSpec(2, 3, wspace=0.2)

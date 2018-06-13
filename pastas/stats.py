@@ -33,9 +33,9 @@ from __future__ import print_function, division
 import numpy as np
 import pandas as pd
 from scipy.stats import chi2, norm
-from .utils import get_sample
 
 from pastas.decorators import model_tmin_tmax
+from .utils import get_sample
 
 __all__ = ["acf", "ccf", "ljung_box", "runs_test"]
 
@@ -588,7 +588,6 @@ def runs_test(series, tmin=None, tmax=None, cutoff="mean"):
 
     Parameters
     ----------
-    cutoff
     series: pandas.Series
         Series to perform the runs test on.
     tmin
@@ -743,9 +742,9 @@ def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
         if len(s) < min_n_meas:
             return np.nan
         else:
-            if len(s)>20:
+            if len(s) > 20:
                 return s.nlargest(3).mean()
-            elif len(s)>12:
+            elif len(s) > 12:
                 return s.nlargest(2).mean()
             else:
                 return s.nlargest(1).mean()
@@ -793,9 +792,9 @@ def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
         if len(s) < min_n_meas:
             return np.nan
         else:
-            if len(s)>20:
+            if len(s) > 20:
                 return s.nsmallest(3).mean()
-            elif len(s)>12:
+            elif len(s) > 12:
                 return s.nsmallest(2).mean()
             else:
                 return s.nsmallest(1).mean()
@@ -967,9 +966,10 @@ def __gxg__(series, year_agg, tmin, tmax, fill_method, limit, output,
             # only keep days with measurements
             series = series.dropna()
             # generate an index at the 14th and 28th of every month
-            buf = pd.to_timedelta(8,'d')
-            ref_index = pd.date_range(series.index.min()-buf,series.index.max()+buf)
-            mask = [(x.day==14) or (x.day==28) for x in ref_index]
+            buf = pd.to_timedelta(8, 'd')
+            ref_index = pd.date_range(series.index.min() - buf,
+                                      series.index.max() + buf)
+            mask = [(x.day == 14) or (x.day == 28) for x in ref_index]
             ref_index = ref_index[mask]
             # only keep the days that are closest to series.index
             ref_index = get_sample(ref_index, series.index)
@@ -982,11 +982,12 @@ def __gxg__(series, year_agg, tmin, tmax, fill_method, limit, output,
             series = series.dropna().reindex(series.index, method=fill_method,
                                              limit=limit)
     else:
-        series = series.interpolate(method=fill_method, limit=limit, limit_direction='both')
+        series = series.interpolate(method=fill_method, limit=limit,
+                                    limit_direction='both')
 
     # and select the 14th and 28th of each month (if needed still)
     if select14or28:
-        mask = [(x.day==14) or (x.day==28) for x in series.index]
+        mask = [(x.day == 14) or (x.day == 28) for x in series.index]
         series = series.loc[mask]
 
     # remove NaNs that may have formed in the process above

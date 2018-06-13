@@ -255,7 +255,7 @@ class Model:
             self.parameters = self.get_init_parameters(initial=False)
 
     def simulate(self, parameters=None, tmin=None, tmax=None, freq=None,
-                 warmup=None):
+                 warmup=None, return_warmup=False):
         """Method to simulate the time series model.
 
         Parameters
@@ -268,23 +268,25 @@ class Model:
         freq: str, optional
             Frequency at which the time series are simulated.
         warmup: int, optional
-            length of the warmup period in days
+            Length of the warmup period in days
+        return_warmup: bool, optional
+            Return the simulation including the the warmup period or not,
+            default is False.
 
         Returns
         -------
-        h: pandas.Series
-            pandas.Series object containing the simulated time series
+        sim: pandas.Series
+            pandas.Series containing the simulated time series
 
         Notes
         -----
         This method can be used without any parameters. When the model is
         solved, the optimal parameters values are used and if not,
         the initial parameter values are used. This allows the user to
-        obtain an idea of how the simulation looks with only the initial
+        get an idea of how the simulation looks with only the initial
         parameters and no calibration.
 
         """
-
         # Default options when tmin, tmax, freq and warmup are not provided.
         if tmin is None:
             tmin = self.settings['tmin']
@@ -295,44 +297,43 @@ class Model:
         if warmup is None:
             warmup = self.settings["warmup"]
 
-        recalc_si = [tmin, tmax, freq, warmup] != [self.settings[x] for x in
-                                                   ['tmin', 'tmax', 'freq',
-                                                    'warmup']]
-        if self.sim_index is None or recalc_si:
-            tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq,
-                                            use_oseries=False,
-                                            use_stresses=True)
-            sim_index = self.get_sim_index(tmin, tmax, freq, warmup)
-            self.update_stresses(tmin=sim_index.min(), tmax=sim_index.max(),
-                                 freq=freq)
-        else:
-            sim_index = self.sim_index
-
+        # Get the tmin, tmax, the simulation index and the time step
+        tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq, use_oseries=False,
+                                        use_stresses=True)
+        sim_index = self.get_sim_index(tmin, tmax, freq, warmup)
         dt = get_dt(freq)
+
+        # Update the stresses
+        self.update_stresses(sim_index.min(), sim_index.max(), freq)
 
         # Get parameters if none are provided
         if parameters is None:
             parameters = self.get_parameters()
 
-        h = pd.Series(data=np.zeros(sim_index.size, dtype=float),
-                      index=sim_index, fastpath=True)
+        sim = pd.Series(data=np.zeros(sim_index.size, dtype=float),
+                        index=sim_index, fastpath=True)
 
-        istart = 0  # Track parameters index to pass to ts object
-        for ts in self.stressmodels.values():
-            c = ts.simulate(parameters[istart: istart + ts.nparam], sim_index,
-                            dt)
-            h = h + c
-            istart += ts.nparam
+        istart = 0  # Track parameters index to pass to stressmodel object
+        for sm in self.stressmodels.values():
+            contrib = sm.simulate(parameters[istart: istart + sm.nparam],
+                                  sim_index, dt)
+            sim = sim + contrib
+            istart += sm.nparam
         if self.constant:
-            h = h + self.constant.simulate(parameters[istart])
+            sim = sim + self.constant.simulate(parameters[istart])
             istart += 1
         if self.transform:
-            h = self.transform.simulate(h, parameters[
-                                           istart:istart + self.transform.nparam])
+            sim = self.transform.simulate(sim, parameters[
+                                               istart:istart + self.transform.nparam])
 
-        h.dropna(inplace=True)
-        h.name = 'Simulation'
-        return h
+        # Respect provided tmin/tmax at this point, since warmup matters for
+        # simulation but should not be returned, unless include_warmup=True.
+        if not return_warmup:
+            sim = sim.loc[tmin:tmax]
+
+        sim.dropna(inplace=True)
+        sim.name = 'Simulation'
+        return sim
 
     def residuals(self, parameters=None, tmin=None, tmax=None, freq=None,
                   warmup=None):
@@ -367,31 +368,27 @@ class Model:
             warmup = self.settings["warmup"]
 
         # simulate model
-        simulation = self.simulate(parameters, tmin, tmax, freq, warmup)
-        recalc_oc = [tmin, tmax, freq] != [self.settings[x] for x in
-                                           ['tmin', 'tmax', 'freq']]
-        if self.oseries_calib is None or recalc_oc:
-            tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq, use_oseries=True)
-            oseries_calib = self.get_oseries_calib(tmin, tmax,
-                                                   simulation.index)
-        else:
-            oseries_calib = self.oseries_calib
+        sim = self.simulate(parameters, tmin, tmax, freq, warmup,
+                            return_warmup=False)
 
-        obs_index = oseries_calib.index  # times used for calibration
+        # Get the oseries calibration series
+        oseries_calib = self.observations(tmin, tmax, freq, sim.index)
 
-        # Get h_simulated at the correct indices
+        # Get simulation at the correct indices
         interpolate_simulation = self.interpolate_simulation
         if interpolate_simulation is None:
-            interpolate_simulation = obs_index.difference(
-                simulation.index).size != 0
+            if oseries_calib.index.difference(sim.index).size is not 0:
+                interpolate_simulation = True
         if interpolate_simulation:
             # interpolate simulation to measurement-times
-            h_simulated = np.interp(oseries_calib.index.asi8,
-                                    simulation.index.asi8, simulation)
+            sim_interpolated = np.interp(oseries_calib.index.asi8,
+                                         sim.index.asi8, sim)
         else:
             # all of the observation indexes are in the simulation
-            h_simulated = simulation.loc[obs_index]
-        res = oseries_calib.subtract(h_simulated)
+            sim_interpolated = sim.loc[oseries_calib.index]
+
+        # Calculate the actual residuals here
+        res = oseries_calib.subtract(sim_interpolated)
 
         if self.normalize_residuals:
             res = res - res.mean()
@@ -420,7 +417,7 @@ class Model:
 
         Returns
         -------
-        v : pandas.Series
+        noise : pandas.Series
             Pandas series of the noise.
 
         Notes
@@ -442,9 +439,9 @@ class Model:
         res = self.residuals(parameters, tmin, tmax, freq, warmup)
 
         # Calculate the noise
-        v = self.noisemodel.simulate(res, self.odelt.loc[res.index],
+        noise = self.noisemodel.simulate(res, self.odelt.loc[res.index],
                                      parameters[-self.noisemodel.nparam:])
-        return v
+        return noise
 
     def innovations(self, **kwargs):
         """Historic method name for the noise of the model. Please refer to
@@ -453,27 +450,59 @@ class Model:
         """
         return self.noise(**kwargs)
 
-    def observations(self, tmin=None, tmax=None):
+    def observations(self, tmin=None, tmax=None, freq=None, sim_index=None):
         """Method that returns the observations series used for calibration.
+
+        Parameters
+        ----------
+        tmin: pandas.TimeStamp
+        tmax: pandas.TimeStamp
+        freq: str
+        sim_index: pandas.DatetimeIndex
+            pandas index of the simulation
+
+        Returns
+        -------
+        oseries_calib: pandas.Series
+            pandas series of the oseries used for calibration of the model
+
+        Notes
+        -----
+        This method makes sure the simulation is compared to the nearest
+        observation. It finds the index closest to sim_index, and then returns
+        a selection of the oseries. in the residuals method, the simulation is
+        interpolated to the observation-timestamps.
 
         """
         if tmin is None:
             tmin = self.settings['tmin']
         if tmax is None:
             tmax = self.settings['tmax']
+        if freq is None:
+            freq = self.settings["freq"]
+
         tmin, tmax = self.get_tmin_tmax(tmin, tmax, use_oseries=True)
-        if self.oseries_calib is None:
-            # model is not solved yet
-            return self.oseries.loc[tmin: tmax]
+
+        update_observations = False
+        for key, setting in zip([tmin, tmax, freq], ["tmin", "tmax", "freq"]):
+            if key != self.settings[setting]:
+                update_observations = True
+
+        if self.oseries_calib is None or update_observations:
+            tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq, use_oseries=True)
+            oseries_calib = self.oseries.loc[tmin:tmax]
         else:
-            if tmin == self.settings['tmin'] and tmax == self.settings['tmax']:
-                return self.oseries_calib
-            else:
-                # recalculate oseries_calib between tmin and tmax
-                sim_index = self.get_sim_index(tmin, tmax,
-                                               self.settings["freq"],
-                                               self.settings["warmup"])
-                return self.get_oseries_calib(tmin, tmax, sim_index)
+            oseries_calib = self.oseries_calib
+
+        # sample measurements, so that frequency is not higher than model
+        # keep the original timestamps, as they will be used during
+        # interpolation of the simulation
+        if sim_index is None:
+            sim_index = self.get_sim_index(tmin, tmax, freq,
+                                           self.settings["warmup"])
+
+        index = get_sample(oseries_calib.index, sim_index)
+        return oseries_calib[index]
 
     def initialize(self, tmin=None, tmax=None, freq=None, warmup=None,
                    noise=None, weights=None, initial=True, fit_constant=None):
@@ -499,8 +528,7 @@ class Model:
             if frequency_is_supported(freq):
                 self.settings["freq"] = freq
             else:
-                self.logger.error(
-                    'Frequency of ' + freq + ' is not supported')
+                self.logger.error('Frequency of ' + freq + ' is not supported')
         if warmup is not None:
             self.settings["warmup"] = warmup
 
@@ -516,6 +544,7 @@ class Model:
             self.settings["fit_constant"] = fit_constant
 
         # make sure calibration data is renewed
+        self.sim_index = None
         if all(self.stressmodels[key]._name == "NoConvModel" for key in
                self.stressmodels.keys()):
             self.sim_index = self.oseries.index
@@ -524,10 +553,11 @@ class Model:
                                                 self.settings["tmax"],
                                                 self.settings["freq"],
                                                 self.settings["warmup"])
-
-        self.oseries_calib = self.get_oseries_calib(self.settings["tmin"],
-                                                    self.settings["tmax"],
-                                                    self.sim_index)
+        self.oseries_calib = None
+        self.oseries_calib = self.observations(self.settings["tmin"],
+                                               self.settings["tmax"],
+                                               self.settings["freq"],
+                                               self.sim_index)
 
         self.odelt = self.get_odelt()
 
@@ -619,11 +649,6 @@ class Model:
             # set the constant to the mean of the residuals
             mask = self.parameters.name == self.constant.name
             self.fit.optimal_params[mask] = res.mean()
-
-        # make calibration data empty again (was set in initialize)
-        # self.sim_index = None
-        # self.oseries_calib = None
-        self.interpolate_simulation = None
 
         self.parameters.optimal = self.fit.optimal_params
         self.parameters.stderr = self.fit.stderr
@@ -790,62 +815,38 @@ class Model:
         return list(self.stressmodels.keys())
 
     def get_sim_index(self, tmin, tmax, freq, warmup):
-        """Internal method to get the indices for the simulation, including
-        the warmup period.
+        """Internal method to get the simulation index, including the warmup
+        period.
 
         Parameters
         ----------
-        tmin: str or pd.TimeStamp
-        tmax: str or pd.TimeStamp
+        tmin: pandas.TimeStamp
+        tmax: pandas.TimeStamp
         freq: str
         warmup: int
 
         Returns
         -------
-        sim_index: pd.DatetimeIndex
+        sim_index: pandas.DatetimeIndex
             Pandas DatetimeIndex instance with the datetimes values for
             which the model is simulated.
 
         """
-        if isinstance(tmin, str):
-            tmin = pd.Timestamp(tmin)
-        if isinstance(tmax, str):
-            tmax = pd.Timestamp(tmax)
+        # Check if any of the settings are updated
+        update_sim_index = False
+        for key, setting in zip([tmin, tmax, freq, warmup],
+                                ["tmin", "tmax", "freq", "warmup"]):
+            if key != self.settings[setting]:
+                update_sim_index = True
 
-        sim_index = pd.date_range(tmin - pd.DateOffset(days=warmup), tmax,
-                                  freq=freq, name="Date")
+        if self.sim_index is None or update_sim_index:
+            sim_index = pd.date_range(tmin - pd.DateOffset(days=warmup), tmax,
+                                      freq=freq, name="Date")
+
+        else:
+            sim_index = self.sim_index
+
         return sim_index
-
-    def get_oseries_calib(self, tmin, tmax, sim_index):
-        """Internal method to get the oseries to use for calibration.
-
-        Parameters
-        ----------
-        tmin: str
-        tmax: str
-        sim_index: pd.DatetimeIndex
-            pandas index of the simulation
-
-
-        Returns
-        -------
-        oseries_calib: pd.Series
-            pandas series of the oseries used for calibration of the model
-
-        Notes
-        -----
-        This method makes sure the simulation is compared to the nearest
-        observation. It finds the index closest to sim_index, and then returns
-        a selection of the oseries.
-        Later, the simulation is interpolated to the observation-timestamps.
-
-        """
-        oseries_calib = self.oseries.loc[tmin:tmax]
-        # sample measurements, so that frequency is not higher than model
-        # keep the original timestamps, as they will be used during
-        # interpolation of the simulation
-        index = get_sample(oseries_calib.index, sim_index)
-        return oseries_calib[index]
 
     def get_odelt(self, freq="D"):
         """Internal method to get the timesteps between the observations.
@@ -983,8 +984,8 @@ class Model:
 
         parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary',
                                            'optimal', 'name', 'stderr'])
-        for ts in self.stressmodels.values():
-            parameters = parameters.append(ts.parameters)
+        for sm in self.stressmodels.values():
+            parameters = parameters.append(sm.parameters)
         if self.constant:
             parameters = parameters.append(self.constant.parameters)
         if self.transform:
@@ -1218,8 +1219,8 @@ class Model:
         kwargs
 
         """
-        for ts in self.stressmodels.values():
-            ts.update_stress(freq=freq, tmin=tmin, tmax=tmax, **kwargs)
+        for sm in self.stressmodels.values():
+            sm.update_stress(freq=freq, tmin=tmin, tmax=tmax, **kwargs)
 
     def update_oseries(self, tmin=None, tmax=None, freq=None, **kwargs):
         """Method to update the oseries.
@@ -1399,8 +1400,8 @@ Parameters (%s were optimized)
 
         # Stressmodels
         data["stressmodels"] = dict()
-        for name, ts in self.stressmodels.items():
-            data["stressmodels"][name] = ts.dump(series=series,
+        for name, sm in self.stressmodels.items():
+            data["stressmodels"][name] = sm.dump(series=series,
                                                  transformed_series=transformed_series)
 
         # Constant
@@ -1428,7 +1429,7 @@ Parameters (%s were optimized)
 
         # Export simulated series if necessary
         if sim_series:
-            # TODO dump the simulation, residuals and innovation series.
+            # TODO dump the simulation, residuals and noise series.
             NotImplementedError()
 
         return data
