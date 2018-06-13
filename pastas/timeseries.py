@@ -12,7 +12,8 @@ from __future__ import print_function, division
 import logging
 
 import pandas as pd
-from .utils import get_dt, get_time_offset, timestep_weighted_resample, get_freqstr
+
+from .utils import get_dt, get_time_offset, timestep_weighted_resample
 
 logger = logging.getLogger(__name__)
 
@@ -100,22 +101,31 @@ class TimeSeries(pd.Series):
             if settings is None:
                 settings = self.settings.copy()
         else:
+            # Make sure we have a Pandas Series and not a 1D-DataFrame
+            if isinstance(series, pd.DataFrame):
+                if len(series.columns) is 1:
+                    series = series.iloc[:, 0]
+                    logger.warning("The provided series %s was a 1D DataFrame"
+                                   " and was transformed to a pandas Series.")
+            if not isinstance(series, pd.Series):
+                logger.error("Expected a Pandas Series, got %s" % type(series))
+
             validate = True
             update = True
             # Store a copy of the original series
             self.series_original = series.copy()
             self.freq_original = freq_original
-            self.settings = dict(
-                freq=None,
-                sample_up=None,
-                sample_down=None,
-                fill_nan="interpolate",
-                fill_before=None,
-                fill_after=None,
-                tmin=None,
-                tmax=None,
-                norm=None
-            )
+            self.settings = {
+                "freq": None,
+                "sample_up": None,
+                "sample_down": None,
+                "fill_nan": "interpolate",
+                "fill_before": None,
+                "fill_after": None,
+                "tmin": None,
+                "tmax": None,
+                "norm": None
+            }
             self.metadata = {
                 "x": 0.0,
                 "y": 0.0,
@@ -178,15 +188,6 @@ class TimeSeries(pd.Series):
             5. Duplicate indices are removed (by averaging).
 
         """
-
-        # 1. Check if series is a Pandas Series or create one from
-        if isinstance(series, pd.DataFrame):
-            if len(series.columns) is 1:
-                series = series.iloc[:, 0]
-            logger.warning("The provided time series %s were a 1D-DataFrame "
-                           "and was transformed to a pandas Series.")
-        elif not isinstance(series, pd.Series):
-            logger.error("Expected a Pandas Series, got %s" % type(series))
 
         # 2. Make sure the indices are Timestamps and sorted
         series.index = pd.to_datetime(series.index)
@@ -303,7 +304,6 @@ class TimeSeries(pd.Series):
             series = self.series.copy(deep=True)
 
             # Update the series with the new settings
-            # first fill Nan's?
             series = self.change_frequency(series)
             series = self.fill_before(series)
             series = self.fill_after(series)
@@ -398,11 +398,11 @@ class TimeSeries(pd.Series):
         method = self.settings["sample_down"]
         freq = self.settings["freq"]
         if False:
-            t0_offset = get_time_offset(series.index[0],freq)
+            t0_offset = get_time_offset(series.index[0], freq)
             tmin = series.index[0] - t0_offset + self.settings['time_offset']
-            if t0_offset>self.settings['time_offset']:
+            if t0_offset > self.settings['time_offset']:
                 tmin = tmin + get_dt(freq)
-            index = pd.date_range(tmin,series.index[-1],freq=freq)
+            index = pd.date_range(tmin, series.index[-1], freq=freq)
 
         # Provide some standard pandas arguments for all options
         kwargs = {"label": "right", "closed": "right"}
@@ -560,7 +560,7 @@ class TimeSeries(pd.Series):
             series = series.subtract(method)
         else:
             logger.info("Selected method %s to normalize the time series is "
-                        "not supported" %method)
+                        "not supported" % method)
 
         return series
 
