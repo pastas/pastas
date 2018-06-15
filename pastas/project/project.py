@@ -19,6 +19,9 @@ import numpy as np
 import pandas as pd
 import pastas as ps
 
+from .plots import Plot
+from .maps import Map
+
 logger = logging.getLogger(__name__)
 
 
@@ -54,6 +57,10 @@ class Project:
         # Project metadata and file information
         self.metadata = self.get_metadata(metadata)
         self.file_info = self._get_file_info()
+
+        # Load other modules
+        self.plot = Plot(self)
+        self.map = Map(self)
 
     def add_series(self, series, name=None, kind=None, metadata=None,
                    settings=None, **kwargs):
@@ -100,8 +107,8 @@ class Project:
             ts = ps.TimeSeries(series=series, name=name, settings=settings,
                                metadata=metadata, **kwargs)
         except:
-            logger.warning("An error occurred. Time series %s is omitted from the database."
-                           % name)
+            logger.warning("An error occurred. Time series %s is omitted "
+                           "from the database." % name)
             return
 
         data.at[name, "name"] = name
@@ -362,10 +369,56 @@ class Project:
 
         data = pd.DataFrame(index=models)
 
-        data = data.join(self.oseries.loc[models, "z"])
+        data = data.join(self.oseries.loc[models, ["x", "y", "z"]])
         data["geometry"] = [Point(xy[0], xy[1]) for xy in
                             self.oseries.loc[models, ["x", "y"]].values]
         data = gpd.GeoDataFrame(data, geometry="geometry", **kwargs)
+        return data
+
+    def get_oseries_metadata(self, oseries, metadata):
+        """
+
+        Parameters
+        ----------
+        oseries
+        metadata
+
+        Returns
+        -------
+        data: pandas.DataFrame
+
+        """
+        data = pd.DataFrame(data=None, index=oseries, columns=metadata)
+
+        for oseries in data.index:
+            meta = self.oseries.loc[oseries, "series"].metadata
+            for key in metadata:
+                data.loc[oseries, key] = meta[key]
+
+        return data
+
+    def get_oseries_settings(self, oseries, settings):
+        """Method to obtain the settings from each oseries TimeSeries object.
+
+        Parameters
+        ----------
+        oseries
+        settings
+
+        Returns
+        -------
+        data: pandas.DataFrame
+            Pandas DataFrame with the oseries as index, settings as columns
+            and the values as data.
+
+        """
+        data = pd.DataFrame(data=None, index=oseries, columns=settings)
+
+        for oseries in data.index:
+            sets = self.oseries.loc[oseries, "series"].settings
+            for key in settings:
+                data.loc[oseries, key] = sets[key]
+
         return data
 
     def get_metadata(self, meta=None):
