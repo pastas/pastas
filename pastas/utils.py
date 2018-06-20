@@ -1,12 +1,48 @@
+import logging
+
 import numpy as np
-import pandas as pd
-from pandas._libs.tslibs.frequencies import _base_and_stride
-from datetime import datetime, timedelta
+from pandas import Series, to_datetime, Timedelta, Timestamp, to_timedelta
 from scipy import interpolate
+
+logger = logging.getLogger(__name__)
+
+_unit_map = {
+    'Y': 'Y',
+    'y': 'Y',
+    'W': 'W',
+    'w': 'W',
+    'D': 'D',
+    'd': 'D',
+    'days': 'D',
+    'Days': 'D',
+    'day': 'D',
+    'Day': 'D',
+    'M': 'M',
+    'H': 'h',
+    'h': 'h',
+    'm': 'm',
+    'min': 'm',
+    'T': 'm',
+    't': 'm',
+    'S': 's',
+    's': 's',
+    'L': 'ms',
+    'MS': 'ms',
+    'ms': 'ms',
+    'US': 'us',
+    'us': 'us',
+    'NS': 'ns',
+    'ns': 'ns',
+}
+
+
+def frequency_is_supported(freq):
+    num, freq = get_freqstr(freq)
+    return freq in _unit_map.keys()
 
 
 def get_dt(freq):
-    """Method to obtain a timestep from a frequency string.
+    """Method to obtain a timestep in days from a frequency string.
 
     Parameters
     ----------
@@ -17,74 +53,45 @@ def get_dt(freq):
     dt: float
 
     """
-    # method to calculate the timestep in days from the frequency string freq
-    options = {'MS': 30,  # monthly frequency (month-start), used just for
-               # comparison
-               'M': 30,  # monthly frequency (month-end), used just for
-               # comparison
-               'W': 7,  # weekly frequency
-               'D': 1,  # calendar day frequency
-               'H': 1 / 24,  # hourly frequency
-               'T': 1 / 24 / 60,  # minutely frequency
-               'min': 1 / 24 / 60,  # minutely frequency
-               'S': 1 / 24 / 3600,  # secondly frequency
-               'L': 1 / 24 / 3600000,  # milliseconds
-               'ms': 1 / 24 / 3600000,  # milliseconds
-               }
     # Get the frequency string and multiplier
     num, freq = get_freqstr(freq)
-    dt = num * options[freq]
+
+    if freq == "W":  # Deal with weeks.
+        num = num * 7
+        freq = "D"
+
+    dt_str = str(num) + freq
+    dt = to_timedelta(dt_str) / Timedelta(1, "D")
     return dt
 
-def frequency_is_supported(freq):
-    num, freq = get_freqstr(freq)
-    return freq in ['W','D','H','T','min','S','L','ms']
 
 def get_time_offset(t, freq):
-    # method to calculate the time offset between a TimeStamp t and a default Series with a frequency of freq
-    if isinstance(t, pd.Series):
-        # Take the first timestep. The rest of index has the same offset,
-        # as the frequency is constant.
-        t = t.index[0]
+    """ method to calculate the time offset between a TimeStamp t and a
+    default Series with a frequency of freq
 
-    # define the function blocks
-    def calc_week_offset(t):
-        return pd.Timedelta(days=t.weekday(), hours=t.hour,
-                            minutes=t.minute, seconds=t.second)
+    Parameters
+    ----------
+    t: pandas.Timestamp
+        Timestamp to calculate the offset from the desired freq for.
+    freq: str
+        String with the desired frequency.
 
-    def calc_day_offset(t):
-        return pd.Timedelta(hours=t.hour, minutes=t.minute,
-                            seconds=t.second)
+    Returns
+    -------
+    offset: pandas.Timedelta
+        Timedelta with the offset for the timestamp t.
 
-    def calc_hour_offset(t):
-        return pd.Timedelta(minutes=t.minute, seconds=t.second)
-
-    def calc_minute_offset(t):
-        return pd.Timedelta(seconds=t.second)
-
-    def calc_second_offset(t):
-        return pd.Timedelta(microseconds=t.microsecond)
-
-    def calc_millisecond_offset(t):
-        # t has no millisecond attribute, so use microsecond and use the remainder after division by 1000
-        return pd.Timedelta(microseconds=t.microsecond % 1000.0)
-
-    # map the inputs to the function blocks see
-    # http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
-    options = {'W': calc_week_offset,  # weekly frequency
-               'D': calc_day_offset,  # calendar day frequency
-               'H': calc_hour_offset,  # hourly frequency
-               'T': calc_minute_offset,  # minutely frequency
-               'min': calc_minute_offset,  # minutely frequency
-               'S': calc_second_offset,  # secondly frequency
-               'L': calc_millisecond_offset,  # milliseconds
-               'ms': calc_millisecond_offset,  # milliseconds
-               }
+    """
     # Get the frequency string and multiplier
     num, freq = get_freqstr(freq)
-    assert num==1,'An offset with a multiple (like "2W") is not yet supported'
-    #offset = num * options[freq](t)
-    return options[freq](t)
+
+    if freq in ["W"]:
+        offset = Timedelta(days=t.weekday(), hours=t.hour,
+                           minutes=t.minute, seconds=t.second)
+    else:
+        offset = t - t.round(freq)
+
+    return offset
 
 
 def get_freqstr(freqstr):
@@ -105,36 +112,83 @@ def get_freqstr(freqstr):
         String with the frequency as defined by the pandas package.
 
     """
-    if True:
-        # remove the day from the week
-        freqstr = freqstr.split("-", 1)[0]
+    # remove the day from the week
+    freqstr = freqstr.split("-", 1)[0]
 
-        # Find a number by which the frequency is multiplied
-        num = ''
-        freq = ''
-        for s in freqstr:
-            if s.isdigit():
-                num = num.__add__(s)
-            else:
-                freq = freq.__add__(s)
-        if num:
-            num = int(num)
+    # Find a number by which the frequency is multiplied
+    num = ""
+    freq = ""
+    for s in freqstr:
+        if s.isdigit():
+            num = num.__add__(s)
         else:
-            num = 1
-
-        return num, freq
+            freq = freq.__add__(s)
+    if num:
+        num = int(num)
     else:
-        freq, num = _base_and_stride(freqstr)
-        return num, freq
+        num = 1
+
+    if freq not in _unit_map.keys():
+        logger.error("Frequency %s not supported." % freq)
+    else:
+        freq = _unit_map[freq]
+
+    return num, freq
 
 
-def timestep_weighted_resample(series, index):
-    # resample a timeseries to a new index, using an overlapping-timestep weighted average
-    # the new index does not have to be equidistant
-    # also, the timestep-edges of the new index do not have to overlap with the original series
-    # it is assumed the series consists of measurements that describe an intensity at the end of the period for which they hold
-    # therefore when upsampling, the values are uniformally spread over the new timestep (like bfill)
-    # this method unfortunately is slower than the pandas-reample methods
+def get_sample(tindex, ref_tindex):
+    """Sample the index so that the frequency is not higher than the frequency
+        of ref_tindex.
+
+    Parameters
+    ----------
+    tindex: pandas.index
+        Pandas index object
+    ref_tindex: pandas.index
+        Pandas index object
+
+    Returns
+    -------
+    series: pandas.index
+
+    Notes
+    -----
+    Find the index closest to the ref_tindex, and then return a selection
+    of the index.
+
+    """
+    if len(tindex) == 1:
+        return tindex
+    else:
+        f = interpolate.interp1d(tindex.asi8,
+                                 np.arange(0, tindex.size),
+                                 kind='nearest', bounds_error=False,
+                                 fill_value='extrapolate')
+        ind = np.unique(f(ref_tindex.asi8).astype(int))
+        return tindex[ind]
+
+
+def timestep_weighted_resample(series, tindex):
+    """resample a timeseries to a new tindex, using an overlapping-timestep
+    weighted average the new tindex does not have to be equidistant also,
+    the timestep-edges of the new tindex do not have to overlap with the
+    original series it is assumed the series consists of measurements that
+    describe an intensity at the end of the period for which they hold
+    therefore when upsampling, the values are uniformally spread over the
+    new timestep (like bfill) this method unfortunately is slower than the
+    pandas-reample methods.
+
+    Parameters
+    ----------
+    series
+    tindex
+
+    Returns
+    -------
+
+    TODO Make faster, document and test.
+
+    """
 
     # determine some arrays for the input-series
     t0e = series.index.get_values()
@@ -144,14 +198,14 @@ def timestep_weighted_resample(series, index):
     v0 = series.values
 
     # determine some arrays for the output-series
-    t1e = index.get_values()
+    t1e = tindex.get_values()
     dt1 = np.diff(t1e)
     dt1 = np.hstack((dt1[0], dt1))
     t1s = t1e - dt1
     v1 = np.empty(t1e.shape)
     v1[:] = np.nan
     for i in range(len(v1)):
-        # determine which periods within the series are within the new index
+        # determine which periods within the series are within the new tindex
         mask = (t0e > t1s[i]) & (t0s < t1e[i])
         if any(mask):
             # cut by the timestep-edges
@@ -164,70 +218,38 @@ def timestep_weighted_resample(series, index):
             # determine timestep-weighted value
             v1[i] = np.sum(dt * v0[mask]) / np.sum(dt)
     # replace all values in the series
-    series = pd.Series(v1, index=index)
+    series = Series(v1, index=tindex)
     return series
 
 
-def excel2datetime(excel_datenum, freq="D"):
+def excel2datetime(tindex, freq="D"):
     """Method to convert excel datetime to pandas timetime objects.
 
     Parameters
     ----------
-    excel_datenum: datetime index
+    tindex: datetime index
         can be a datetime object or a pandas datetime index.
-    freq:
+    freq: str
 
     Returns
     -------
     datetimes: pandas.datetimeindex
 
     """
-    datetimes = pd.to_datetime('1899-12-30') + pd.to_timedelta(excel_datenum,
-                                                               freq)
+    datetimes = to_datetime('1899-12-30') + to_timedelta(tindex, freq)
     return datetimes
 
-def matlab2datetime(matlab_datenum):
+
+def matlab2datetime(tindex):
+    """ Transform a matlab time to a datetime, rounded to seconds
+
     """
-    Transform a matlab time to a datetime, rounded to seconds
-    """
-    day = datetime.fromordinal(int(matlab_datenum))
-    dayfrac = timedelta(days=float(matlab_datenum) % 1) - timedelta(
-        days=366)
+    day = Timestamp.fromordinal(int(tindex))
+    dayfrac = Timedelta(days=float(tindex) % 1) - Timedelta(days=366)
     return day + dayfrac
 
-def datetime2matlab(dt):
-    mdn = dt + timedelta(days = 366)
-    frac = (dt-datetime(dt.year,dt.month,dt.day,0,0,0)).seconds / (24.0 * 60.0 * 60.0)
+
+def datetime2matlab(tindex):
+    mdn = tindex + Timedelta(days=366)
+    frac = (tindex - tindex.round("D")).seconds / (24.0 * 60.0 * 60.0)
     return mdn.toordinal() + frac
-
-def get_sample(index, ref_index):
-    """Sample the index so that the frequency is not higher than the frequency
-        of tindex.
-
-    Parameters
-    ----------
-    index: pandas.index
-        Pandas index object
-    ref_index: pandas.index
-        Pandas index object
-
-    Returns
-    -------
-    series: pandas.index
-
-    Notes
-    -----
-    Find the index closest to the ref_index, and then return a selection
-    of the index.
-
-    """
-    if len(index)==1:
-        return index
-    else:
-        f = interpolate.interp1d(index.asi8,
-                                 np.arange(0, index.size),
-                                 kind='nearest', bounds_error=False,
-                                 fill_value='extrapolate')
-        ind = np.unique(f(ref_index.asi8).astype(int))
-        return index[ind]
-    
