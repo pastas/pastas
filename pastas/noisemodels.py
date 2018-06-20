@@ -154,7 +154,7 @@ class NoiseModel(NoiseModelBase):
 
         if tindex is not None:
             noise = noise.loc[tindex]
-        noise.name = "Innovations"
+        noise.name = "Noise"
         return noise
 
     def weights(self, alpha, odelt):
@@ -230,9 +230,10 @@ class NoiseModel2(NoiseModelBase):
             Series of the noise.
 
         """
-        noise = pd.Series(res, index=res.index, name="Innovations")
+        noise = pd.Series(res)
         # res.values is needed else it gets messed up with the dates
-        noise[1:] -= np.exp(-odelt[1:] / p[0]) * res.values[:-1]
+        noise.iloc[1:] -= np.exp(-odelt.iloc[1:] / p[0]) * res.values[:-1]
         if tindex is not None:
-            noise = noise[tindex]
+            noise = noise.loc[tindex]
+        noise.name = "Noise"
         return noise
