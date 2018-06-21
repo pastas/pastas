@@ -61,24 +61,3 @@ class TestQGXG(object):
                'GLG: {glg:.2f} m+NAP\n'
                'GVG: {gvg:.2f} m+NAP\n').format(
             ghg=-3.23, glg=-3.82, gvg=-3.43))
-
-        # def test_q_gxg_series(self, capsys):
-        #     s = pd.read_csv(r'data/hseries_gxg.csv', index_col=0, header=0,
-        #         parse_dates=True, dayfirst=True,
-        #         squeeze=True,)
-        #     ps = Model(s)
-        #     ghg = ps.stats.q_ghg(s)
-        #     glg = ps.stats.q_glg(s)
-        #     gvg = ps.stats.q_gvg(s)
-        #     with capsys.disabled():
-        #         print('\n')
-        #         print('calculated GXG\'s: \n')
-        #         print(('GHG: {ghg:.2f} m+NAP\n'
-        #                'GLG: {glg:.2f} m+NAP\n'
-        #                'GVG: {gvg:.2f} m+NAP\n').format(
-        #                ghg=ghg, glg=glg, gvg=gvg))
-        #         print('Menyanthes GXG\'s: \n')
-        #         print(('GHG: {ghg:.2f} m+NAP\n'
-        #                'GLG: {glg:.2f} m+NAP\n'
-        #                'GVG: {gvg:.2f} m+NAP\n').format(
-        #                ghg=-3.23, glg=-3.82, gvg=-3.43))
