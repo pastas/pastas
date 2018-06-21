@@ -654,6 +654,10 @@ def q_ghg(series, tmin=None, tmax=None, q=0.94):
         quantile fraction of exceedance (default 0.94)
 
     """
+    if tmin is not None:
+        series = series.loc[tmin:]
+    if tmax is not None:
+        series = series.loc[:tmax]
     series = series.resample('d').median()
     return series.quantile(q)
 
@@ -676,6 +680,10 @@ def q_glg(series, tmin=None, tmax=None, q=0.06):
         quantile, fraction of exceedance (default 0.06)
 
     """
+    if tmin is not None:
+        series = series.loc[tmin:]
+    if tmax is not None:
+        series = series.loc[:tmax]
     series = series.resample('d').median()
     return series.quantile(q)
 
@@ -696,6 +704,10 @@ def q_gvg(series, tmin=None, tmax=None):
         Time indices to use for the simulation of the time series model.
 
     """
+    if tmin is not None:
+        series = series.loc[tmin:]
+    if tmax is not None:
+        series = series.loc[:tmax]
     series = series.resample('d').median()
     inspring = __in_spring__(series)
     if np.any(inspring):
@@ -937,9 +949,9 @@ def __gxg__(series, year_agg, tmin, tmax, fill_method, limit, output,
 
     """
     # handle tmin and tmax
-    if tmin:
+    if tmin is not None:
         series = series.loc[tmin:]
-    if tmax:
+    if tmax is not None:
         series = series.loc[:tmax]
     if series.empty:
         if output.startswith('year'):
