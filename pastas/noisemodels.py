@@ -98,10 +98,13 @@ class NoiseModel(NoiseModelBase):
 
     .. math::
         v(t1) = r(t1) - r(t0) * exp(- (t1 - t0) / alpha)
-
+    
+    Note that in the referenced paper, alpha is defined as the inverse of 
+    alpha used in Pastas.
+    
     Examples
     --------
-    It can happen that the noisemodel is used in during the model calibration
+    It can happen that the noisemodel is used during model calibration
     to explain most of the variation in the data. A recommended solution is to
     scale the initial parameter with the model timestep, E.g.::
 
@@ -110,8 +113,7 @@ class NoiseModel(NoiseModelBase):
 
     References
     ----------
-    von Asmuth, J. R., and M. F. P. Bierkens (2005), Modeling irregularly spaced residual series as a continuous stochastic process, Water Resour. Res., 41, W12404, doi:10.1029/2004WR003726.
-    Note that in this reference, alpha is defined as the inverse of alpha used in Pastas
+    .. [1] von Asmuth, J. R., and M. F. P. Bierkens (2005), Modeling irregularly spaced residual series as a continuous stochastic process, Water Resour. Res., 41, W12404, doi:10.1029/2004WR003726.
 
     """
 
@@ -123,7 +125,7 @@ class NoiseModel(NoiseModelBase):
     def set_init_parameters(self):
         self.parameters.loc['noise_alpha'] = (14.0, 0, 5000, 1, 'noise')
 
-    def simulate(self, res, odelt, p, tindex=None):
+    def simulate(self, res, odelt, parameters):
         """
 
         Parameters
@@ -132,9 +134,7 @@ class NoiseModel(NoiseModelBase):
             The residual series.
         odelt : pandas.Series
             Time steps between observations.
-        tindex : None, optional
-            Time indices used for simulation.
-        p : array-like, optional
+        parameters : array-like, optional
             Alpha parameters used by the noisemodel.
 
         Returns
@@ -144,16 +144,13 @@ class NoiseModel(NoiseModelBase):
 
         """
         odelt = odelt.iloc[1:]
-        alpha = p[0]
+        alpha = parameters[0]
         noise = pd.Series(data=res)
         # res.values is needed else it gets messed up with the dates
         noise.iloc[1:] -= np.exp(-odelt / alpha) * res.values[:-1]
 
         weights = self.weights(alpha, odelt)
         noise = noise.multiply(weights, fill_value=0.0)
-
-        if tindex is not None:
-            noise = noise.loc[tindex]
         noise.name = "Noise"
         return noise
 
@@ -172,13 +169,13 @@ class NoiseModel(NoiseModelBase):
         """
         # divide power by 2 as nu / sigma is returned
         power = 1.0 / (2.0 * odelt.size)
-        exp = np.exp(-2.0 / alpha * odelt) # Twice as fast as 2*odelt/alpha
+        exp = np.exp(-2.0 / alpha * odelt)  # Twice as fast as 2*odelt/alpha
         w = np.exp(power * np.sum(np.log(1.0 - exp))) / np.sqrt(1.0 - exp)
         return w
 
+
 class NoiseModel2(NoiseModelBase):
-    _name = "NoiseModel2"
-    __doc__ = """Noise model with exponential decay of the residual.
+    """Noise model with exponential decay of the residual.
 
     Notes
     -----
@@ -189,7 +186,7 @@ class NoiseModel2(NoiseModelBase):
 
     Examples
     --------
-    It can happen that the noisemodel is used in during the model calibration
+    It can happen that the noisemodel is used during model calibration
     to explain most of the variation in the data. A recommended solution is to
     scale the initial parameter with the model timestep, E.g.::
 
@@ -198,9 +195,11 @@ class NoiseModel2(NoiseModelBase):
 
     References
     ----------
-    von Asmuth, J. R., and M. F. P. Bierkens (2005), Modeling irregularly spaced residual series as a continuous stochastic process, Water Resour. Res., 41, W12404, doi:10.1029/2004WR003726.
+    .. [A] von Asmuth, J. R., and M. F. P. Bierkens (2005), Modeling irregularly spaced residual series as a continuous stochastic process, Water Resour. Res., 41, W12404, doi:10.1029/2004WR003726.
 
     """
+    _name = "NoiseModel2"
+
 
     def __init__(self):
         NoiseModelBase.__init__(self)
@@ -210,7 +209,7 @@ class NoiseModel2(NoiseModelBase):
     def set_init_parameters(self):
         self.parameters.loc['noise_alpha'] = (14.0, 0, 5000, 1, 'noise')
 
-    def simulate(self, res, odelt, p, tindex=None):
+    def simulate(self, res, odelt, parameters):
         """
 
         Parameters
@@ -219,9 +218,7 @@ class NoiseModel2(NoiseModelBase):
             The residual series.
         odelt : pandas.Series
             Time steps between observations.
-        tindex : None, optional
-            Time indices used for simulation.
-        p : array-like, optional
+        parameters : array-like, optional
             Alpha parameters used by the noisemodel.
 
         Returns
@@ -231,9 +228,8 @@ class NoiseModel2(NoiseModelBase):
 
         """
         noise = pd.Series(res)
+        alpha = parameters[0]
         # res.values is needed else it gets messed up with the dates
-        noise.iloc[1:] -= np.exp(-odelt.iloc[1:] / p[0]) * res.values[:-1]
-        if tindex is not None:
-            noise = noise.loc[tindex]
+        noise.iloc[1:] -= np.exp(-odelt.iloc[1:] / alpha) * res.values[:-1]
         noise.name = "Noise"
         return noise
