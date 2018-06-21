@@ -949,9 +949,9 @@ def __gxg__(series, year_agg, tmin, tmax, fill_method, limit, output,
 
     """
     # handle tmin and tmax
-    if tmin:
+    if tmin is not None:
         series = series.loc[tmin:]
-    if tmax:
+    if tmax is not None:
         series = series.loc[:tmax]
     if series.empty:
         if output.startswith('year'):
