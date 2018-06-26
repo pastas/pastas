@@ -87,6 +87,7 @@ class TimeSeries(pd.Series):
         pd.Series.__init__(self)
 
         self.index.name = "Date"
+
         if isinstance(series, TimeSeries):
             self.series_original = series.series_original.copy()
             self.freq_original = series.freq_original
@@ -124,7 +125,8 @@ class TimeSeries(pd.Series):
                 "fill_after": None,
                 "tmin": None,
                 "tmax": None,
-                "norm": None
+                "norm": None,
+                "time_offset": pd.Timedelta(0)
             }
             self.metadata = {
                 "x": 0.0,
@@ -397,15 +399,13 @@ class TimeSeries(pd.Series):
         """
         method = self.settings["sample_down"]
         freq = self.settings["freq"]
-        if False:
-            t0_offset = get_time_offset(series.index[0], freq)
-            tmin = series.index[0] - t0_offset + self.settings['time_offset']
-            if t0_offset > self.settings['time_offset']:
-                tmin = tmin + get_dt(freq)
-            index = pd.date_range(tmin, series.index[-1], freq=freq)
+
+        # Shift time series by offset, as resample time_offset doesn't do it.
+        series = series.shift(1, freq=self.settings["time_offset"])
 
         # Provide some standard pandas arguments for all options
-        kwargs = {"label": "right", "closed": "right"}
+        kwargs = {"label": "right", "closed": "right",
+                  "loffset": self.settings["time_offset"]}
 
         if method == "mean":
             series = series.resample(freq, **kwargs).mean()

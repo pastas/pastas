@@ -1,3 +1,14 @@
+"""The Model class is the main object for creating model in Pastas.
+
+Examples
+--------
+
+>>> oseries = pd.Series([1,2,1], index=pd.to_datetime(range(3), unit="D"))
+>>> ml = Model(oseries)
+
+
+"""
+
 from __future__ import print_function, division
 
 import copy
@@ -19,7 +30,8 @@ from .solver import LeastSquares
 from .stats import Statistics
 from .stressmodels import Constant
 from .timeseries import TimeSeries
-from .utils import get_dt, get_time_offset, frequency_is_supported, get_sample
+from .utils import get_dt, get_time_offset, frequency_is_supported, \
+    get_sample, get_freqstr
 from .version import __version__
 
 
@@ -327,7 +339,7 @@ class Model:
                                                istart:istart + self.transform.nparam])
 
         # Respect provided tmin/tmax at this point, since warmup matters for
-        # simulation but should not be returned, unless include_warmup=True.
+        # simulation but should not be returned, unless return_warmup=True.
         if not return_warmup:
             sim = sim.loc[tmin:tmax]
 
@@ -381,6 +393,8 @@ class Model:
                 interpolate_simulation = True
         if interpolate_simulation:
             # interpolate simulation to measurement-times
+            # TODO RC: Somehow switch to pandas methods and limit_period
+            #num, freq = get_freqstr(freq)
             sim_interpolated = np.interp(oseries_calib.index.asi8,
                                          sim.index.asi8, sim)
         else:
@@ -389,6 +403,7 @@ class Model:
 
         # Calculate the actual residuals here
         res = oseries_calib.subtract(sim_interpolated)
+        res.dropna(inplace=True)
 
         if self.normalize_residuals:
             res = res - res.mean()
@@ -440,7 +455,7 @@ class Model:
 
         # Calculate the noise
         noise = self.noisemodel.simulate(res, self.odelt.loc[res.index],
-                                     parameters[-self.noisemodel.nparam:])
+                                         parameters[-self.noisemodel.nparam:])
         return noise
 
     def innovations(self, **kwargs):
@@ -455,9 +470,9 @@ class Model:
 
         Parameters
         ----------
-        tmin: pandas.TimeStamp
-        tmax: pandas.TimeStamp
-        freq: str
+        tmin: str or pandas.TimeStamp, optional
+        tmax: str or pandas.TimeStamp, optional
+        freq: str, optional
         sim_index: pandas.DatetimeIndex
             pandas index of the simulation
 
@@ -533,7 +548,7 @@ class Model:
             self.settings["warmup"] = warmup
 
         # Set the time offset from the frequency
-        self.set_time_offset()
+        # self.set_time_offset()
 
         # Set tmin and tmax
         self.settings["tmin"], self.settings["tmax"] = \
@@ -545,26 +560,25 @@ class Model:
 
         # make sure calibration data is renewed
         self.sim_index = None
-        if all(self.stressmodels[key]._name == "NoConvModel" for key in
-               self.stressmodels.keys()):
-            self.sim_index = self.oseries.index
-        else:
-            self.sim_index = self.get_sim_index(self.settings["tmin"],
-                                                self.settings["tmax"],
-                                                self.settings["freq"],
-                                                self.settings["warmup"])
+        self.sim_index = self.get_sim_index(tmin=self.settings["tmin"],
+                                            tmax=self.settings["tmax"],
+                                            freq=self.settings["freq"],
+                                            warmup=self.settings["warmup"])
+
+        # Prepare the stressmodels
+        self.update_stresses(freq=self.settings["freq"],
+                             tmin=self.sim_index.min(),
+                             tmax=self.sim_index.max(),
+                             time_offset=self.settings["time_offset"])
+
         self.oseries_calib = None
         self.oseries_calib = self.observations(self.settings["tmin"],
                                                self.settings["tmax"],
                                                self.settings["freq"],
                                                self.sim_index)
 
+        # Calculate odelt
         self.odelt = self.get_odelt()
-
-        # Prepare the stressmodels
-        self.update_stresses(freq=self.settings["freq"],
-                             tmin=self.sim_index.min(),
-                             tmax=self.sim_index.max())
 
         if self.oseries_calib.index.difference(self.sim_index).size is not 0:
             self.interpolate_simulation = True
@@ -787,11 +801,9 @@ class Model:
                     self.settings["freq"])
                 time_offsets.add(time_offset)
 
-        assert len(
-            time_offsets) <= 1, self.logger.error("""The time-differences with
-                                                  the default frequency is
-                                                  not the same for all
-                                                  stresses.""")
+        assert len(time_offsets) <= 1, self.logger.error(
+            """The time-differences with the default frequency is not the 
+            same for all stresses.""")
         if len(time_offsets) == 1:
             self.settings["time_offset"] = next(iter(time_offsets))
         else:
@@ -839,10 +851,13 @@ class Model:
             if key != self.settings[setting]:
                 update_sim_index = True
 
-        if self.sim_index is None or update_sim_index:
+        if all(self.stressmodels[key]._name == "NoConvModel" for key in
+               self.stressmodels.keys()):
+            sim_index = self.oseries.index
+        elif self.sim_index is None or update_sim_index:
             sim_index = pd.date_range(tmin - pd.DateOffset(days=warmup), tmax,
                                       freq=freq, name="Date")
-
+            sim_index = sim_index.shift(1, freq=self.settings["time_offset"])
         else:
             sim_index = self.sim_index
 

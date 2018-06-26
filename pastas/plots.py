@@ -126,13 +126,15 @@ class Plotting:
             popt, stderr = vals
             val = np.abs(np.divide(stderr, popt) * 100)
             parameters.loc[name, "stderr"] = \
-                "{:}{:.5e} ({:.2f}{:})".format("\u00B1", stderr, val,
-                                               "\u0025")
+                "{:}{:.2e}({:.2f}{:})".format("\u00B1", stderr, val, "\u0025")
+        parameters.loc[:, "optimal"] = \
+            parameters.loc[:, "optimal"].apply("{:.2f}".format)
 
         table = plt.table(colLabels=cols, colWidths=[0.2, 0.4],
                           loc='center', cellText=parameters.values,
                           rowLabels=parameters.index)
         table.auto_set_font_size(value=True)
+        table.auto_set_column_width([0, 1])
         ax3.add_table(table)
         plt.setp(ax3.spines.values(), color=None)
 
