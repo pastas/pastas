@@ -80,7 +80,6 @@ def load_project(data):
                     stress_name = stress["name"]
                     ts["stress"][i]["series"] = mls.stresses.loc[
                         stress_name, "series"]
-
         try:
             ml = load_model(ml)
             mls.models[ml_name] = ml
@@ -131,9 +130,11 @@ def load_model(data):
     for name, ts in data["stressmodels"].items():
         stressmodel = getattr(ps.stressmodels, ts["stressmodel"])
         ts.pop("stressmodel")
-        ts["rfunc"] = getattr(ps.rfunc, ts["rfunc"])
-        for i, stress in enumerate(ts["stress"]):
-            ts["stress"][i] = ps.TimeSeries(**stress)
+        if "rfunc" in ts.keys():
+            ts["rfunc"] = getattr(ps.rfunc, ts["rfunc"])
+        if "stress" in ts.keys():
+            for i, stress in enumerate(ts["stress"]):
+                ts["stress"][i] = ps.TimeSeries(**stress)
         stressmodel = stressmodel(**ts)
         ml.add_stressmodel(stressmodel)
 

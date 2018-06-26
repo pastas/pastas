@@ -204,9 +204,21 @@ class StressModelBase:
         """
         return self.stress
 
-    def dump(self, series=True):
+    def dump(self, series=True, transformed_series=False):
+        """Method to export the StressModel object.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct the
+            StressModel object.
+
+        """
         data = dict()
-        data["stressmodel"] = "StressModelBase"
+        data["stressmodel"] = self._name
+        data["name"] = self.name
+        data["stress"] = self.dump_stress(series,
+                                          transformed_series=transformed_series)
 
         return data
 
@@ -817,8 +829,11 @@ class FactorModel(StressModelBase):
     _name = "FactorModel"
 
     def __init__(self, stress, name="factor", settings=None, metadata=None):
-        StressModelBase.__init__(self, One, name, stress.index.min,
-                                 stress.index.max, up=True, meanstress=1,
+        if isinstance(stress, list):
+            stress = stress[0]  # Temporary fix Raoul, 2017-10-24
+
+        StressModelBase.__init__(self, One, name, stress.index.min(),
+                                 stress.index.max(), up=True, meanstress=1,
                                  cutoff=0.99)
         self.nparam = 1
         self.value = 1  # Initial value
@@ -832,3 +847,21 @@ class FactorModel(StressModelBase):
 
     def simulate(self, p=None, tindex=None, dt=1):
         return self.stress[0] * p[0]
+
+    def dump(self, series=True, transformed_series=False):
+        """Method to export the StressModel object.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct the
+            StressModel object.
+
+        """
+        data = dict()
+        data["stressmodel"] = self._name
+        data["name"] = self.name
+        data["stress"] = self.dump_stress(series,
+                                          transformed_series=transformed_series)
+
+        return data
