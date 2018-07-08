@@ -11,13 +11,12 @@ Examples
 
 from __future__ import print_function, division
 
-import copy
-import inspect
 import json
-import logging
-import logging.config
-import os
 from collections import OrderedDict
+from copy import copy
+from inspect import isclass
+from logging import basicConfig, getLogger, INFO, config
+from os import path, getlogin, getenv
 
 import numpy as np
 import pandas as pd
@@ -198,7 +197,7 @@ class Model:
         self.parameters = self.get_init_parameters()
 
     def add_transform(self, transform):
-        if inspect.isclass(transform):
+        if isclass(transform):
             transform = transform(self)
         self.transform = transform
         self.parameters = self.get_init_parameters()
@@ -1075,7 +1074,7 @@ class Model:
     def get_transform_contribution(self, tmin=None, tmax=None):
         sim = self.simulate(tmin=tmin, tmax=tmax)
         # calculate what the simulation without the transform is
-        ml = copy.copy(self)
+        ml = copy(self)
         ml.del_transform()
         sim_org = ml.simulate(tmin=tmin, tmax=tmax)
         return sim - sim_org
@@ -1173,7 +1172,7 @@ class Model:
         file_info["date_modified"] = pd.Timestamp.now()
         file_info["pastas_version"] = __version__
         try:
-            file_info["owner"] = os.getlogin()
+            file_info["owner"] = getlogin()
         except:
             file_info["owner"] = "Unknown"
 
@@ -1193,18 +1192,18 @@ class Model:
         -----
 
         """
-        fname = os.getenv(env_key, None)
-        if not fname or not os.path.exists(fname):
-            dir_path = os.path.dirname(os.path.realpath(__file__))
-            fname = os.path.join(dir_path, config_file)
-        if os.path.exists(fname):
+        fname = getenv(env_key, None)
+        if not fname or not path.exists(fname):
+            dir_path = path.dirname(path.realpath(__file__))
+            fname = path.join(dir_path, config_file)
+        if path.exists(fname):
             with open(fname, 'rt') as f:
-                config = json.load(f)
-            logging.config.dictConfig(config)
+                config_dict = json.load(f)
+            config.dictConfig(config_dict)
         else:
-            logging.basicConfig(level=logging.INFO)
+            basicConfig(level=INFO)
 
-        logger = logging.getLogger(__name__)
+        logger = getLogger(__name__)
 
         # Set log_level for console to user-defined value
         if log_level is not None:

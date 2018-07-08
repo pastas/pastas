@@ -5,7 +5,7 @@ Author: R.A. Collenteur, 2017
 
 """
 
-import logging
+from logging import getLogger
 from abc import ABC
 
 import numpy as np
@@ -13,7 +13,7 @@ import pandas as pd
 
 from .decorators import set_parameter
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 all = ["NoiseModel", "NoiseModel2"]
 

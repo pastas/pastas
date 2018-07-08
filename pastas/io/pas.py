@@ -11,7 +11,7 @@ from collections import OrderedDict
 
 import pandas as pd
 
-import pastas as ps
+from pastas import TimeSeries
 
 
 def load(fname):
@@ -31,7 +31,7 @@ def pastas_hook(obj):
                 obj[key] = pd.read_json(value, typ='series', orient="split")
             except:
                 try:
-                    obj[key] = ps.TimeSeries(**value)
+                    obj[key] = TimeSeries(**value)
                 except:
                     obj[key] = value
         elif key == "time_offset":

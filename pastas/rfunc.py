@@ -8,10 +8,10 @@ Routines in Module
 ------------------
 Fully supported and tested routines in this module are:
 
-- Gamma()
-- Exponential()
-- Hantush()
-- One()
+- .. class:: Gamma
+- .. class:: Exponential
+- .. class:: Hantush
+- .. class:: One
 
 TODO
 ----
@@ -23,7 +23,7 @@ TODO
 from __future__ import print_function, division
 
 import numpy as np
-import pandas as pd
+from pandas import DataFrame
 from scipy.special import gammainc, gammaincinv, k0, exp1, erfc, lambertw
 
 __all__ = ["Gamma", "Exponential", "Hantush", "One"]
@@ -37,8 +37,8 @@ class RfuncBase:
         # Completely arbitrary number to prevent divsion by zero
         if meanstress < 1e-8 and meanstress > 0:
             meanstress = 1e-8
-        elif meanstress > -1e-8 and meanstress < 0:
-            meanstress = -1e-8
+        elif meanstress < 0 and up is True:
+            meanstress = meanstress * -1
         self.meanstress = meanstress
         self.cutoff = cutoff
         self.tmax = 0
@@ -133,7 +133,7 @@ class Gamma(RfuncBase):
         self.nparam = 3
 
     def set_parameters(self, name):
-        parameters = pd.DataFrame(
+        parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
             parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
@@ -192,7 +192,7 @@ class Exponential(RfuncBase):
         self.nparam = 2
 
     def set_parameters(self, name):
-        parameters = pd.DataFrame(
+        parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
             parameters.loc[name + '_A'] = (
@@ -261,7 +261,7 @@ class Hantush(RfuncBase):
         self.nparam = 3
 
     def set_parameters(self, name):
-        parameters = pd.DataFrame(
+        parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
             parameters.loc[name + '_A'] = (
@@ -333,7 +333,7 @@ class Theis(RfuncBase):
         self.nparam = 3
 
     def set_parameters(self, name):
-        parameters = pd.DataFrame(
+        parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         parameters.loc[name + '_S'] = (0.25, 1e-3, 1.0, 1, name)
         parameters.loc[name + '_T'] = (100.0, 0.0, 10000.0, 1, name)
@@ -376,7 +376,7 @@ class Bruggeman(RfuncBase):
         self.nparam = 3
 
     def set_parameters(self, name):
-        parameters = pd.DataFrame(
+        parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         a_init = 1
         b_init = 0.1
@@ -423,7 +423,7 @@ class One(RfuncBase):
         self.nparam = 1
 
     def set_parameters(self, name):
-        parameters = pd.DataFrame(
+        parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
             parameters.loc[name + '_d'] = (1, 0, 100, 1, name)

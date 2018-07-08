@@ -1,10 +1,10 @@
-import logging
+from logging import getLogger
 
 import numpy as np
 from pandas import Series, to_datetime, Timedelta, Timestamp, to_timedelta
 from scipy import interpolate
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 _unit_map = {
     'Y': 'Y',

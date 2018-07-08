@@ -8,12 +8,12 @@ Examples
 """
 
 import matplotlib.pyplot as plt
-import matplotlib.ticker as plticker
 import numpy as np
+from matplotlib.ticker import MultipleLocator
 from scipy.stats import probplot
 
-import pastas as ps
 from .decorators import model_tmin_tmax
+from .stats import acf
 
 
 class Plotting:
@@ -246,7 +246,7 @@ class Plotting:
                 else:
                     ytick_base = None
             ax[0].yaxis.set_major_locator(
-                plticker.MultipleLocator(base=ytick_base))
+                MultipleLocator(base=ytick_base))
 
         # plot the influence of the stresses
         for i, contrib in enumerate(series[1:], start=1):
@@ -255,7 +255,7 @@ class Plotting:
             if ytick_base:
                 # set the ytick-spacing equal to the top graph
                 ax[i].yaxis.set_major_locator(
-                    plticker.MultipleLocator(base=ytick_base))
+                    MultipleLocator(base=ytick_base))
 
             ax[i].set_title(names[i])
             ax[i].set_ylim(ylims[i])
@@ -276,7 +276,7 @@ class Plotting:
         plt.subplot(gs[0, :2])
         plt.title('Autocorrelation')
         # plt.axhline(0.2, '--')
-        r = ps.stats.acf(noise)
+        r = acf(noise)
         plt.stem(r)
 
         plt.subplot(gs[1, :2])

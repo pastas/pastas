@@ -9,13 +9,13 @@ August 2017, R.A. Collenteur
 """
 from __future__ import print_function, division
 
-import logging
+from logging import getLogger
 
 import pandas as pd
 
 from .utils import get_dt, get_time_offset, timestep_weighted_resample
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 class TimeSeries(pd.Series):

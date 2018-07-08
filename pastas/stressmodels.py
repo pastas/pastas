@@ -24,7 +24,7 @@ TODO
 
 from __future__ import print_function, division
 
-import logging
+from logging import getLogger
 
 import numpy as np
 import pandas as pd
@@ -34,7 +34,7 @@ from .decorators import set_parameter
 from .rfunc import One
 from .timeseries import TimeSeries
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 __all__ = ["StressModel", "StressModel2", "Constant", "StepModel",
            "LinearTrend", "FactorModel"]

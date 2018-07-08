@@ -2,10 +2,10 @@
 Import model
 """
 
-import importlib
-import os
+from importlib import import_module
+from os import path
 
-import pandas as pd
+from pandas import DataFrame, to_numeric
 import pastas as ps
 
 
@@ -21,8 +21,8 @@ def load(fname, **kwargs):
 
     """
     # Dynamic import of the export module
-    ext = os.path.splitext(fname)[1]
-    load_mod = importlib.import_module("pastas.io" + ext)
+    ext = path.splitext(fname)[1]
+    load_mod = import_module("pastas.io" + ext)
 
     # Get dicts for all data sources
     data = load_mod.load(fname, **kwargs)
@@ -63,11 +63,11 @@ def load_project(data):
     mls.metadata = data["metadata"]
     mls.file_info = data["file_info"]
 
-    oseries = pd.DataFrame(data["oseries"], columns=data["oseries"].keys()).T
+    oseries = DataFrame(data["oseries"], columns=data["oseries"].keys()).T
     mls.oseries = mls.oseries.append(oseries)
 
-    stresses = pd.DataFrame(data=data["stresses"],
-                            columns=data["stresses"].keys()).T
+    stresses = DataFrame(data=data["stresses"],
+                         columns=data["stresses"].keys()).T
     mls.stresses = mls.stresses.append(stresses)
 
     for ml_name, ml in data["models"].items():
@@ -153,7 +153,7 @@ def load_model(data):
     # Add parameters, use update to maintain correct order
     ml.parameters = ml.get_init_parameters(noise=ml.settings["noise"])
     ml.parameters.update(data["parameters"])
-    ml.parameters = ml.parameters.apply(pd.to_numeric, errors="ignore")
+    ml.parameters = ml.parameters.apply(to_numeric, errors="ignore")
     return ml
 
 
@@ -176,6 +176,6 @@ def dump(fname, data, **kwargs):
         Message if the file-saving was successful.
 
     """
-    ext = os.path.splitext(fname)[1]
-    dump_mod = importlib.import_module("pastas.io" + ext)
+    ext = path.splitext(fname)[1]
+    dump_mod = import_module("pastas.io" + ext)
     return dump_mod.dump(fname, data, **kwargs)

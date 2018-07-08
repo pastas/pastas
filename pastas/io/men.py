@@ -6,11 +6,11 @@ R.C. Caljé - march 2018
 
 """
 
-import os
+from os import path
 
-import numpy as np
-import pandas as pd
-import scipy.io as sio
+from numpy import vstack, array, NaN, zeros, object
+from pandas import Timestamp
+from scipy.io import savemat, loadmat
 
 from ..utils import datetime2matlab
 
@@ -27,11 +27,11 @@ def dump(fname, data, version=3):
     elif version == 2:
         version = '2.x.g.t (beta)'
     # load an empty menyanthes file
-    io_dir, this_script_name = os.path.split(__file__)
-    base_fname = os.path.join(io_dir, 'men', version + '.men')
-    assert os.path.exists(
+    io_dir, this_script_name = path.split(__file__)
+    base_fname = path.join(io_dir, 'men', version + '.men')
+    assert path.exists(
         base_fname), 'No Menyanthes file found for version ' + version
-    men = sio.loadmat(base_fname, matlab_compatible=True)
+    men = loadmat(base_fname, matlab_compatible=True)
 
     # add the oseries
     dtypeH = men['H'].dtype
@@ -51,33 +51,33 @@ def dump(fname, data, version=3):
                        'datlog_serial']:
             Hdict[field] = ''
         elif field == 'values':
-            date = np.array(
+            date = array(
                 [datetime2matlab(x) for x in data['oseries']['series'].index])
             vals = data['oseries']['series'].values
-            Hdict[field] = [np.vstack((date, vals)).transpose()]
+            Hdict[field] = [vstack((date, vals)).transpose()]
         elif field == 'filtnr':
             Hdict[field] = 1
         elif field in ['handmeas', 'aerialphoto', 'BWImage', 'photo']:
-            Hdict[field] = [np.zeros(shape=(0, 0))]
+            Hdict[field] = [zeros(shape=(0, 0))]
         elif field in ['LastTUFExport', 'surflev', 'measpointlev', 'upfiltlev',
                        'lowfiltlev', 'sedsumplength', 'LoggerDepth', 'tranche',
                        'datlog_depth']:
-            Hdict[field] = np.NaN
+            Hdict[field] = NaN
         elif field == 'xcoord':
             if 'x' in data['oseries']['metadata']:
                 Hdict[field] = data['oseries']['metadata']['x']
             else:
-                Hdict[field] = np.NaN
+                Hdict[field] = NaN
         elif field == 'ycoord':
             if 'y' in data['oseries']['metadata']:
                 Hdict[field] = data['oseries']['metadata']['y']
             else:
-                Hdict[field] = np.NaN
+                Hdict[field] = NaN
         elif field == 'date':
-            Hdict[field] = datetime2matlab(pd.Timestamp.now())
+            Hdict[field] = datetime2matlab(Timestamp.now())
         elif field == 'comment':
             # Hdict[field] = [np.array(['',''])]
-            obj_arr = np.zeros((2,), dtype=np.object)
+            obj_arr = zeros((2,), dtype=object)
             obj_arr[0] = ''
             obj_arr[1] = ''
             Hdict[field] = [obj_arr]
@@ -104,7 +104,7 @@ def dump(fname, data, version=3):
                      ('compID', 'O'), ('ref', 'O'),
                      ('IsEquidistant', 'O'), ('IsLoggerfile', 'O'),
                      ('timeshift', 'O')]
-            Hdict[field] = [np.array([], dtype=dtype)]
+            Hdict[field] = [array([], dtype=dtype)]
         elif field == 'oldmetadata':
             # for version='2.x.g.t (beta)'
             dtype = [('xcoord', 'O'), ('ycoord', 'O'), ('upfiltlev', 'O'),
@@ -114,15 +114,15 @@ def dump(fname, data, version=3):
                      ('datlog_depth', 'O'), ('date', 'O'), ('comment', 'O'),
                      ('LoggerBrand', 'O'),
                      ('LoggerType', 'O'), ('VegTypo', 'O'), ('VegType', 'O')]
-            Hdict[field] = [np.array([], dtype=dtype)]
+            Hdict[field] = [array([], dtype=dtype)]
 
         else:
             raise (ValueError('Unknown field ' + field))
 
-    Hnew = np.zeros((1,), dtype=dtypeH)
+    Hnew = zeros((1,), dtype=dtypeH)
     for key, val in Hdict.items():
         Hnew[key] = val
-    men['H'] = np.vstack((men['H'], Hnew))
+    men['H'] = vstack((men['H'], Hnew))
 
     # add the stressmodels
     dtypeIN = men['IN'].dtype
@@ -145,29 +145,29 @@ def dump(fname, data, version=3):
                 elif field in ['LoggerSerial', 'datlog_serial']:
                     INdict[field] = ''
                 elif field == 'values':
-                    date = np.array(
+                    date = array(
                         [datetime2matlab(x) for x in stress['series'].index])
                     vals = stress['series'].values
-                    INdict[field] = [np.vstack((date, vals)).transpose()]
+                    INdict[field] = [vstack((date, vals)).transpose()]
                 elif field == 'filtnr':
                     INdict[field] = 1
                 elif field in ['surflev', 'upfiltlev', 'lowfiltlev']:
-                    INdict[field] = np.NaN
+                    INdict[field] = NaN
                 elif field == 'xcoord':
-                    INdict[field] = np.NaN
+                    INdict[field] = NaN
                 elif field == 'ycoord':
-                    INdict[field] = np.NaN
+                    INdict[field] = NaN
                 elif field == 'date':
-                    INdict[field] = datetime2matlab(pd.Timestamp.now())
+                    INdict[field] = datetime2matlab(Timestamp.now())
                 elif field == 'Meta':
                     # TODO: has to be a matlab-table
                     INdict[field] = ''
                 else:
                     raise (ValueError('Unknown field ' + field))
-            INnew = np.zeros((1,), dtype=dtypeIN)
+            INnew = zeros((1,), dtype=dtypeIN)
             for key, val in INdict.items():
                 INnew[key] = val
-            men['IN'] = np.vstack((men['IN'], INnew))
+            men['IN'] = vstack((men['IN'], INnew))
 
     if False:
         # correct an error from loadmat
@@ -187,5 +187,5 @@ def dump(fname, data, version=3):
     # save the file
     if not fname.endswith('.men'):
         fname = fname + '.men'
-    sio.savemat(fname, men, appendmat=False)
+    savemat(fname, men, appendmat=False)
     return print("%s file succesfully exported" % fname)

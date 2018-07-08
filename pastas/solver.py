@@ -20,13 +20,13 @@ To solve a model the following syntax can be used:
 
 from __future__ import print_function, division
 
-import logging
+from logging import getLogger
 
 import numpy as np
 from scipy.linalg import svd
 from scipy.optimize import least_squares, differential_evolution
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 class BaseSolver:
@@ -173,14 +173,14 @@ class LeastSquares(BaseSolver):
         res = self.minimize(p, tmin, tmax, noise, model, freq,
                             weights)
         return res
-    
+
     def get_covcorrmatrix(self, model):
         """Method to compute sigma, covariance and correlation matrix
         """
         nparam = len(self.fit.x)
         H = self.fit.jac.T @ self.fit.jac
         sigsq = np.var(self.fit.fun, ddof=nparam)
-        covmat = np.linalg.inv(H) * sigsq 
+        covmat = np.linalg.inv(H) * sigsq
         stderr = np.sqrt(np.diag(covmat))
         D = np.diag(1 / stderr)
         corrmat = D @ covmat @ D

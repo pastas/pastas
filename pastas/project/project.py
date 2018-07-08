@@ -17,10 +17,10 @@ import os
 
 import numpy as np
 import pandas as pd
-import pastas as ps
 
-from .plots import Plot
+import pastas as ps
 from .maps import Map
+from .plots import Plot
 
 logger = logging.getLogger(__name__)
 
@@ -485,7 +485,6 @@ class Project:
         data["models"] = dict()
         for name, ml in self.models.items():
             data["models"][name] = ml.dump_data(series=series,
-                                                metadata=metadata,
                                                 sim_series=sim_series,
                                                 file_info=False)
 
