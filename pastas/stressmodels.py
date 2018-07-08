@@ -285,15 +285,16 @@ class StressModel(StressModelBase):
         """
         self.parameters = self.rfunc.set_parameters(self.name)
 
-    def simulate(self, p, tindex=None, dt=1):
+    def simulate(self, p, tmin=None, tmax=None, freq=None, dt=1):
         """Simulates the head contribution.
 
         Parameters
         ----------
         p: 1D array
            Parameters used for simulation.
-        tindex: pandas.Series, optional
-           Time indices to simulate the model.
+        tmin: str, optional
+        tmax: str, optional
+        freq: str, optional
 
         Returns
         -------
@@ -301,13 +302,12 @@ class StressModel(StressModelBase):
             The simulated head contribution.
 
         """
+        self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
         b = self.rfunc.block(p, dt)
         stress = self.stress[0]
         npoints = stress.index.size
         h = pd.Series(data=fftconvolve(stress, b, 'full')[:npoints],
                       index=stress.index, name=self.name, fastpath=True)
-        if tindex is not None:
-            h = h.loc[tindex]
         return h
 
     def dump(self, series=True, transformed_series=False):
@@ -415,15 +415,16 @@ class StressModel2(StressModelBase):
         self.parameters.loc[self.name + '_f'] = (-1.0, -2.0, 2.0, 1, self.name)
         self.nparam += 1
 
-    def simulate(self, p, tindex=None, dt=1, istress=None):
+    def simulate(self, p, tmin=None, tmax=None, freq=None, dt=1, istress=None):
         """Simulates the head contribution.
 
         Parameters
         ----------
         p: 1D array
            Parameters used for simulation.
-        tindex: pandas.Series, optional
-           Time indices to simulate the model.
+        tmin: str, optional
+        tmax: str, optional
+        freq: str, optional
 
         Returns
         -------
@@ -431,14 +432,13 @@ class StressModel2(StressModelBase):
             The simulated head contribution.
 
         """
+        self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
         b = self.rfunc.block(p[:-1], dt)
         npoints = self.stress[0].index.size
         stress = self.get_stress(p=p, istress=istress)
         h = pd.Series(data=fftconvolve(stress, b, 'full')[:npoints],
                       index=self.stress[0].index, name=self.name,
                       fastpath=True)
-        if tindex is not None:
-            h = h.loc[tindex]
         if istress is not None:
             if self.stress[istress].name is not None:
                 h.name = h.name + ' (' + self.stress[istress].name + ')'
@@ -517,8 +517,9 @@ class StepModel(StressModelBase):
                                                       0, self.name)
         self.nparam += 1
 
-    def simulate(self, p, tindex, dt=1):
+    def simulate(self, p, tmin=None, tmax=None, freq=None, dt=1):
         tstart = pd.Timestamp.fromordinal(int(p[-1]), freq="D")
+        tindex = pd.date_range(tmin, tmax, freq=freq)
         h = pd.Series(0, tindex, name=self.name)
         h.loc[h.index > tstart] = 1
 
@@ -563,10 +564,8 @@ class LinearTrend(StressModelBase):
         self.parameters.loc[self.name + "_tend"] = (
             end, tmin, tmax, 1, self.name)
 
-    def simulate(self, p, tindex, dt=1):
-        if tindex is None:
-            logger.error("A time index has to be provided to simulate this "
-                         "stressmodel")
+    def simulate(self, p, tmin=None, tmax=None, freq=None, dt=1):
+        tindex = pd.date_range(tmin, tmax, freq=freq)
 
         if p[1] < tindex[0].toordinal():
             tmin = tindex[0]
@@ -634,15 +633,16 @@ class NoConvModel(StressModelBase):
         """
         self.parameters = self.rfunc.set_parameters(self.name)
 
-    def simulate(self, p, tindex=None, dt=None):
+    def simulate(self, p, tmin=None, tmax=None, freq=None, dt=None):
         """ Simulates the head contribution, without convolution.
 
         Parameters
         ----------
         p: array_like
            Parameters used for simulation.
-        tindex: pandas.Series, optional
-           Time indices to simulate the model.
+        tmin: str, optional
+        tmax: str, optional
+        freq: str, optional
 
         Returns
         -------
@@ -650,7 +650,7 @@ class NoConvModel(StressModelBase):
             The simulated head contribution.
 
         """
-
+        tindex = pd.date_range(tmin, tmax, freq=freq)
         # take the difference in values,
         # as we will calculate the step response
         stress = self.stress[0].diff()
@@ -778,7 +778,9 @@ class WellModel(StressModelBase):
     def set_init_parameters(self):
         self.parameters = self.rfunc.set_parameters(self.name)
 
-    def simulate(self, p=None, tindex=None, dt=1, istress=None):
+    def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1,
+                 istress=None):
+        self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
         h = pd.Series(data=0, index=self.stress[0].index, name=self.name)
         stresses = self.get_stress(istress=istress)
         radii = self.get_radii(irad=istress)
@@ -790,8 +792,6 @@ class WellModel(StressModelBase):
             c = fftconvolve(stress, b, 'full')[:npoints]
             h = h.add(pd.Series(c, index=stress.index), fill_value=0.0)
 
-        if tindex is not None:
-            h = h[tindex]
         return h
 
     def get_stress(self, p=None, istress=None):
@@ -808,8 +808,8 @@ class WellModel(StressModelBase):
 
 
 class FactorModel(StressModelBase):
-    """Model that multiplies a stress by a single value. Indepedent series
-    does not have to be equidistant.
+    """Model that multiplies a stress by a single value. The indepedent series
+    do not have to be equidistant and are allowed to have gaps.
 
     Parameters
     ----------
@@ -817,7 +817,7 @@ class FactorModel(StressModelBase):
         Stress which will be multiplied by a factor. The stress does not
         have to be equidistant.
     name: str
-        String with the name of the stressmodel
+        String with the name of the stressmodel.
     settings: dict or str
         Dict or String that is forwarded to the TimeSeries object created
         from the stress.
@@ -845,7 +845,8 @@ class FactorModel(StressModelBase):
         self.parameters.loc[self.name + "_f"] = (
             self.value, -np.inf, np.inf, 1, self.name)
 
-    def simulate(self, p=None, tindex=None, dt=1):
+    def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1):
+        self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
         return self.stress[0] * p[0]
 
     def dump(self, series=True, transformed_series=False):

@@ -31,7 +31,7 @@ from .stats import Statistics
 from .stressmodels import Constant
 from .timeseries import TimeSeries
 from .utils import get_dt, get_time_offset, frequency_is_supported, \
-    get_sample, get_freqstr
+    get_sample
 from .version import __version__
 
 
@@ -159,7 +159,7 @@ class Model:
 
         Notes
         -----
-        To obtain a list of the stressmodel names type:
+        To obtain a list of the stressmodel names, type:
 
         >>> ml.stressmodels.keys()
 
@@ -315,9 +315,6 @@ class Model:
         sim_index = self.get_sim_index(tmin, tmax, freq, warmup)
         dt = get_dt(freq)
 
-        # Update the stresses
-        self.update_stresses(sim_index.min(), sim_index.max(), freq)
-
         # Get parameters if none are provided
         if parameters is None:
             parameters = self.get_parameters()
@@ -328,7 +325,7 @@ class Model:
         istart = 0  # Track parameters index to pass to stressmodel object
         for sm in self.stressmodels.values():
             contrib = sm.simulate(parameters[istart: istart + sm.nparam],
-                                  sim_index, dt)
+                                  sim_index.min(), sim_index.max(), freq, dt)
             sim = sim + contrib
             istart += sm.nparam
         if self.constant:
@@ -387,14 +384,16 @@ class Model:
         oseries_calib = self.observations(tmin, tmax, freq, sim.index)
 
         # Get simulation at the correct indices
-        interpolate_simulation = self.interpolate_simulation
-        if interpolate_simulation is None:
+        if self.interpolate_simulation is None:
             if oseries_calib.index.difference(sim.index).size is not 0:
-                interpolate_simulation = True
-        if interpolate_simulation:
+                self.interpolate_simulation = True
+                self.logger.info('There are observations between the '
+                                 'simulation timesteps. Linear interpolation '
+                                 'is used.')
+        if self.interpolate_simulation:
             # interpolate simulation to measurement-times
             # TODO RC: Somehow switch to pandas methods and limit_period
-            #num, freq = get_freqstr(freq)
+            # num, freq = get_freqstr(freq)
             sim_interpolated = np.interp(oseries_calib.index.asi8,
                                          sim.index.asi8, sim)
         else:
@@ -442,7 +441,7 @@ class Model:
 
         """
         if self.noisemodel is None:
-            self.logger.error("Innovations can not be calculated if there is "
+            self.logger.error("Noise cannot be calculated if there is "
                               "no noisemodel.")
             return None
 
@@ -505,9 +504,9 @@ class Model:
 
         if self.oseries_calib is None or update_observations:
             tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq, use_oseries=True)
-            oseries_calib = self.oseries.loc[tmin:tmax]
-        else:
-            oseries_calib = self.oseries_calib
+            self.oseries_calib = self.oseries.loc[tmin:tmax]
+
+        oseries_calib = self.oseries_calib
 
         # sample measurements, so that frequency is not higher than model
         # keep the original timestamps, as they will be used during
@@ -517,7 +516,7 @@ class Model:
                                            self.settings["warmup"])
 
         index = get_sample(oseries_calib.index, sim_index)
-        return oseries_calib[index]
+        return oseries_calib.loc[index]
 
     def initialize(self, tmin=None, tmax=None, freq=None, warmup=None,
                    noise=None, weights=None, initial=True, fit_constant=None):
@@ -530,9 +529,8 @@ class Model:
         if noise is None and self.noisemodel:
             noise = True
         elif noise is True and self.noisemodel is None:
-            self.logger.error('Warning, solution with noise model while '
-                              'noise model is not defined. No noise model is '
-                              'used.')
+            self.logger.error("""Warning, solving with noisemodel while no
+                              noisemodel is defined. No noisemodel is used.""")
             noise = False
 
         self.settings["noise"] = noise
@@ -543,7 +541,8 @@ class Model:
             if frequency_is_supported(freq):
                 self.settings["freq"] = freq
             else:
-                self.logger.error('Frequency of ' + freq + ' is not supported')
+                self.logger.error('Frequency {freq} is not supported' %
+                                  freq)
         if warmup is not None:
             self.settings["warmup"] = warmup
 
@@ -560,32 +559,11 @@ class Model:
 
         # make sure calibration data is renewed
         self.sim_index = None
-        self.sim_index = self.get_sim_index(tmin=self.settings["tmin"],
-                                            tmax=self.settings["tmax"],
-                                            freq=self.settings["freq"],
-                                            warmup=self.settings["warmup"])
-
-        # Prepare the stressmodels
-        self.update_stresses(freq=self.settings["freq"],
-                             tmin=self.sim_index.min(),
-                             tmax=self.sim_index.max(),
-                             time_offset=self.settings["time_offset"])
-
         self.oseries_calib = None
-        self.oseries_calib = self.observations(self.settings["tmin"],
-                                               self.settings["tmax"],
-                                               self.settings["freq"],
-                                               self.sim_index)
+        self.interpolate_simulation = None
 
         # Calculate odelt
         self.odelt = self.get_odelt()
-
-        if self.oseries_calib.index.difference(self.sim_index).size is not 0:
-            self.interpolate_simulation = True
-            self.logger.info('There are observations between the simulation '
-                             'timesteps. Linear interpolation is used.')
-        else:
-            self.interpolate_simulation = False
 
         # Initialize parameters
         self.parameters = self.get_init_parameters(noise, initial)
@@ -597,7 +575,7 @@ class Model:
             self.normalize_residuals = True
 
     def solve(self, tmin=None, tmax=None, solver=LeastSquares, report=True,
-              noise=True, initial=True, weights=None, freq=None, warmup=None,
+              noise=None, initial=True, freq=None, warmup=None, weights=None,
               fit_constant=True, **kwargs):
         """Method to solve the time series model.
 
@@ -624,14 +602,17 @@ class Model:
             Reset initial parameters from the individual stressmodels.
             Default is True. If False, the optimal values from an earlier
             optimization are used.
-        weights: pandas.Series, optional
-            Pandas Series with values by which the residuals are multiplied,
-            index-based.
         freq: str, optional
             String with the frequency the stressmodels are simulated.
         warmup: float/int, optinal
             Warmup period (in Days) for which the simulation is calculated,
             but not used for the calibration period.
+                    weights: pandas.Series, optional
+            Pandas Series with values by which the residuals are multiplied,
+            index-based.
+        weights: pandas.Series, optional
+            Pandas Series with values by which the residuals are multiplied,
+            index-based.
         fit_constant: bool, optional
             Argument that determines if the constant is fitted as a parameter.
             If it is set to False, the constant is set equal to the mean of
@@ -784,7 +765,7 @@ class Model:
                              "Frequency is set to daily")
             self.settings["freq"] = "D"
 
-    def set_time_offset(self):
+    def _set_time_offset(self):
         """Internal method to set the time offset for the model class.
 
         Notes
@@ -857,9 +838,9 @@ class Model:
         elif self.sim_index is None or update_sim_index:
             sim_index = pd.date_range(tmin - pd.DateOffset(days=warmup), tmax,
                                       freq=freq, name="Date")
-            sim_index = sim_index.shift(1, freq=self.settings["time_offset"])
-        else:
-            sim_index = self.sim_index
+            self.sim_index = sim_index.shift(1, freq=self.settings[
+                "time_offset"])
+        sim_index = self.sim_index
 
         return sim_index
 
@@ -1047,7 +1028,7 @@ class Model:
         return parameters.values
 
     @get_stressmodel
-    def get_contribution(self, name, tmin=None, tmax=None, tindex=None,
+    def get_contribution(self, name, tmin=None, tmax=None, freq=None,
                          istress=None):
         """Method to get the contribution of a stressmodel.
 
@@ -1057,10 +1038,9 @@ class Model:
         ----------
         name: str
             String with the name of the stressmodel.
-        tmin: str or pandas.TimeStamp
-        tmax: str or pandas.TimeStamp
-        tindex: pandas.DatetimeIndex
-            Pandas datetimeindex to simulate the contribution for.
+        tmin: str or pandas.TimeStamp, optional
+        tmax: str or pandas.TimeStamp, optional
+        freq: str, optional
         istress: int
             When multiple stresses are present in a stressmodel,
             this keyword can be used to obtain the contribution of an
@@ -1073,13 +1053,24 @@ class Model:
 
         """
         p = self.get_parameters(name)
-        dt = get_dt(self.settings["freq"])
+
+        if tmin is None:
+            tmin = self.settings['tmin']
+        if tmax is None:
+            tmax = self.settings['tmax']
+        if freq is None:
+            freq = self.settings["freq"]
+
+        dt = get_dt(freq)
+
         if istress is None:
-            contrib = self.stressmodels[name].simulate(p, tindex=tindex, dt=dt)
+            contrib = self.stressmodels[name].simulate(p, tmin=tmin, tmax=tmax,
+                                                       freq=freq, dt=dt)
         else:
-            contrib = self.stressmodels[name].simulate(p, tindex=tindex, dt=dt,
+            contrib = self.stressmodels[name].simulate(p, tmin=tmin, tmax=tmax,
+                                                       dt=dt, freq=freq,
                                                        istress=istress)
-        return contrib.loc[tmin:tmax]
+        return contrib
 
     def get_transform_contribution(self, tmin=None, tmax=None):
         sim = self.simulate(tmin=tmin, tmax=tmax)
@@ -1224,8 +1215,6 @@ class Model:
     def update_stresses(self, tmin=None, tmax=None, freq=None, **kwargs):
         """Method to update the settings of all stresses simultaneously.
 
-        This method is used in the initialize method of the model.
-
         Parameters
         ----------
         tmin
@@ -1317,7 +1306,7 @@ class Model:
             popt, stderr = vals
             val = np.abs(np.divide(stderr, popt) * 100)
             parameters.loc[name, "stderr"] = \
-                "{:} {:.5e} ({:.2f}{:})".format("\u00B1", stderr, val,
+                "{:} {:.2e} ({:.2f}{:})".format("\u00B1", stderr, val,
                                                 "\u0025")
 
         n_param = parameters.vary.sum()

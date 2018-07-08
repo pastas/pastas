@@ -37,7 +37,7 @@ class TimeSeries(pd.Series):
     metadata: dict, optional
         Dictionary with metadata of the time series.
     freq_original str, optional
-    **kwargs: dict, optional
+    **kwargs: optional
         Any keyword arguments that are provided but are not listed will be
         passed as additional settings.
 
@@ -247,7 +247,10 @@ class TimeSeries(pd.Series):
         update = False
         for key, value in kwargs.items():
             if key in ["tmin", "tmax"]:
-                value = pd.Timestamp(value)
+                if value is None:
+                    pass
+                else:
+                    value = pd.Timestamp(value)
             if value != self.settings[key]:
                 self.settings[key] = value
                 update = True

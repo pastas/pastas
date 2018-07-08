@@ -95,7 +95,6 @@ class Plotting:
                       x_compat=True)
         o.plot(ax=ax1, linestyle='', marker='.', color='k', x_compat=True)
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
-        tindex = sim.index
         sim.plot(ax=ax1, x_compat=True)
         plt.legend(loc=(0, 1), ncol=3, frameon=False)
 
@@ -141,7 +140,7 @@ class Plotting:
         # Add a row for each stressmodel
         for i, sm in enumerate(self.ml.stressmodels.keys(), start=3):
             ax = plt.subplot2grid((rows, 3), (i, 0), colspan=2, sharex=ax1)
-            contrib = self.ml.get_contribution(sm, tindex=tindex)
+            contrib = self.ml.get_contribution(sm, tmin=tmin, tmax=tmax)
             contrib.plot(ax=ax, sharex=ax1, x_compat=True)
             title = [stress.name for stress in self.ml.stressmodels[sm].stress]
             plt.title("Stresses:%s" % title, loc="right")
@@ -179,7 +178,6 @@ class Plotting:
 
         # determine the simulation
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
-        tindex = sim.index
         series = [sim]
         names = ['']
 
@@ -188,12 +186,13 @@ class Plotting:
             nstress = len(self.ml.stressmodels[name].stress)
             if split and nstress > 1:
                 for istress in range(nstress):
-                    contrib = self.ml.get_contribution(name, tindex=tindex,
+                    contrib = self.ml.get_contribution(name, tmin=tmin,
+                                                       tmax=tmax,
                                                        istress=istress)
                     series.append(contrib)
                     names.append(contrib.name)
             else:
-                contrib = self.ml.get_contribution(name, tindex=tindex)
+                contrib = self.ml.get_contribution(name, tmin=tmin, tmax=tmax)
                 series.append(contrib)
                 names.append(contrib.name)
 
