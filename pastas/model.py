@@ -834,7 +834,7 @@ class Model:
 
         if all(self.stressmodels[key]._name == "NoConvModel" for key in
                self.stressmodels.keys()):
-            sim_index = self.oseries.index
+            self.sim_index = self.oseries.index
         elif self.sim_index is None or update_sim_index:
             sim_index = pd.date_range(tmin - pd.DateOffset(days=warmup), tmax,
                                       freq=freq, name="Date")
@@ -1361,8 +1361,8 @@ Parameters (%s were optimized)
         pmin = pnorm < alpha
         return pmin, pmax
 
-    def dump_data(self, series=True, sim_series=False, metadata=True,
-                  file_info=True, transformed_series=False):
+    def dump_data(self, series=True, sim_series=False, file_info=True,
+                  transformed_series=False):
         """Internal method to export a PASTAS model to the json export format.
 
         Helper function for the self.export method.
@@ -1375,10 +1375,13 @@ Parameters (%s were optimized)
             True if the original series are to be stored.
          sim_series: Boolean
             True if the simulated series are to be stored.
-         metadata: Boolean
-            True if the model metadata is to be stored.
 
-         The following attributes are stored:
+         Notes
+         -----
+         To increase backward compatibility most attributes are stored in
+         dictionaries that can be updated when a model is created.
+
+         The following attributes are exported:
 
          - oseries
          - stressmodeldict
@@ -1388,11 +1391,6 @@ Parameters (%s were optimized)
          - metadata
          - settings
          - ..... future attributes?
-
-         Notes
-         -----
-         To increase backward compatibility most attributes are stored in
-         dictionaries that can be updated when a model is created.
 
         """
 
