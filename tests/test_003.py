@@ -52,15 +52,15 @@ def test_example_stats():
     os.chdir(cwd)
     return
 
-
-def test_example_no_conv():
-    plt.ion()
-    cwd = os.getcwd()
-    os.chdir("examples")
-    exec(open("example_no_conv.py").read())
-    plt.close('all')
-    os.chdir(cwd)
-    return
+# TODO Make faster.Too slow for testing now
+# def test_example_no_conv():
+#     plt.ion()
+#     cwd = os.getcwd()
+#     os.chdir("examples")
+#     exec(open("example_no_conv.py").read())
+#     plt.close('all')
+#     os.chdir(cwd)
+#     return
 
 
 def test_example_WellModel():
