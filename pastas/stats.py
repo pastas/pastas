@@ -659,20 +659,15 @@ def __q_gxg__(series, q, tmin=None, tmax=None, by_year=True):
         series = series.loc[tmin:]
     if tmax is not None:
         series = series.loc[:tmax]
+    series = series.resample('d').median()
     if by_year:
         return (series
-            .resample('d')
-            .median()
             .resample('a')
             .apply(lambda s: s.quantile(q))
             .mean()
             )
     else:
-        return (series
-            .resample('d')
-            .median()
-            .s.quantile(q)
-            )   
+        return series.quantile(q) 
 
 
 # noinspection PyIncorrectDocstring,PyIncorrectDocstring
@@ -751,10 +746,7 @@ def q_gvg(series, tmin=None, tmax=None, by_year=True):
                 .mean()
                 )
         else:
-            return (series
-                .loc[inspring]
-                .median()
-                )
+            return series.loc[inspring].median()
     else:
         return np.nan
 
