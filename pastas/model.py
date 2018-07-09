@@ -9,8 +9,6 @@ Examples
 
 """
 
-from __future__ import print_function, division
-
 import json
 from collections import OrderedDict
 from copy import copy

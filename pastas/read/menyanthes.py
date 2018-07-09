@@ -12,16 +12,15 @@ Currently only the observations (H) and stresses (IN) and model results are supp
 # entry)
 
 """
-from __future__ import print_function, division
 
 from os import path
 
 import numpy as np
 from pandas import Series, offsets
 from scipy.io import loadmat
-from ..utils import matlab2datetime
 
 from ..timeseries import TimeSeries
+from ..utils import matlab2datetime
 
 
 def read_meny(fname, locations=None, type='H'):

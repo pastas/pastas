@@ -18,8 +18,6 @@ To solve a model the following syntax can be used:
 
 """
 
-from __future__ import print_function, division
-
 from logging import getLogger
 
 import numpy as np

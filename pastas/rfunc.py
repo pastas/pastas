@@ -20,8 +20,6 @@ TODO
 
 """
 
-from __future__ import print_function, division
-
 import numpy as np
 from pandas import DataFrame
 from scipy.special import gammainc, gammaincinv, k0, exp1, erfc, lambertw

@@ -22,8 +22,6 @@ TODO
 
 """
 
-from __future__ import print_function, division
-
 from logging import getLogger
 
 import numpy as np
@@ -164,7 +162,7 @@ class StressModelBase:
                            "Series,dict or list.")
         return data
 
-    def dump_stress(self, series=True, transformed_series=False):
+    def dump_stress(self, series=True):
         """Method to dump all stresses in the stresses list.
 
         Parameters
@@ -184,8 +182,7 @@ class StressModelBase:
         data = []
 
         for stress in self.stress:
-            data.append(stress.dump(series=series,
-                                    transformed_series=transformed_series))
+            data.append(stress.dump(series=series))
 
         return data
 
@@ -204,7 +201,7 @@ class StressModelBase:
         """
         return self.stress
 
-    def dump(self, series=True, transformed_series=False):
+    def dump(self, series=True):
         """Method to export the StressModel object.
 
         Returns
@@ -217,8 +214,7 @@ class StressModelBase:
         data = dict()
         data["stressmodel"] = self._name
         data["name"] = self.name
-        data["stress"] = self.dump_stress(series,
-                                          transformed_series=transformed_series)
+        data["stress"] = self.dump_stress(series)
 
         return data
 
@@ -310,7 +306,7 @@ class StressModel(StressModelBase):
                       index=stress.index, name=self.name, fastpath=True)
         return h
 
-    def dump(self, series=True, transformed_series=False):
+    def dump(self, series=True):
         """Method to export the StressModel object.
 
         Returns
@@ -326,8 +322,7 @@ class StressModel(StressModelBase):
         data["name"] = self.name
         data["up"] = True if self.rfunc.up == 1 else False
         data["cutoff"] = self.rfunc.cutoff
-        data["stress"] = self.dump_stress(series,
-                                          transformed_series=transformed_series)
+        data["stress"] = self.dump_stress(series)
 
         return data
 
@@ -379,7 +374,7 @@ class StressModel2(StressModelBase):
 
     def __init__(self, stress, rfunc, name, up=True, cutoff=0.99,
                  settings=("prec", "evap"), metadata=(None, None),
-                 meanstress=None, **kwargs):
+                 meanstress=None):
         # First check the series, then determine tmin and tmax
         stress0 = TimeSeries(stress[0], settings=settings[0],
                              metadata=metadata[0])
@@ -389,7 +384,7 @@ class StressModel2(StressModelBase):
         # Select indices from validated stress where both series are available.
         index = stress0.series.index.intersection(stress1.series.index)
         if index.size is 0:
-            logger.warning('The two stresses that were provided have no '
+            logger.error('The two stresses that were provided have no '
                            'overlapping time indices. Please make sure time indices overlap or separate time series objects.')
 
         # First check the series, then determine tmin and tmax
@@ -454,7 +449,7 @@ class StressModel2(StressModelBase):
         else:
             return p[-1] * self.stress[1]
 
-    def dump(self, series=True, transformed_series=False):
+    def dump(self, series=True):
         """Method to export the StressModel object.
 
         Returns
@@ -470,8 +465,7 @@ class StressModel2(StressModelBase):
         data["name"] = self.name
         data["up"] = True if self.rfunc.up == 1 else False
         data["cutoff"] = self.rfunc.cutoff
-        data["stress"] = self.dump_stress(series,
-                                          transformed_series=transformed_series)
+        data["stress"] = self.dump_stress(series)
 
         return data
 
@@ -849,7 +843,7 @@ class FactorModel(StressModelBase):
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
         return self.stress[0] * p[0]
 
-    def dump(self, series=True, transformed_series=False):
+    def dump(self, series=True):
         """Method to export the StressModel object.
 
         Returns
@@ -862,7 +856,6 @@ class FactorModel(StressModelBase):
         data = dict()
         data["stressmodel"] = self._name
         data["name"] = self.name
-        data["stress"] = self.dump_stress(series,
-                                          transformed_series=transformed_series)
+        data["stress"] = self.dump_stress(series)
 
         return data

@@ -3,8 +3,6 @@
 
 """
 
-from __future__ import print_function, division
-
 from datetime import date
 
 import pandas as pd
@@ -104,6 +102,7 @@ class KnmiStation:
     Information about the measurement-station(s) is found in knmi.stations.
     The measurement-data itself is found in knmi.data
     """
+
     def __init__(self, start=None, end=None, inseason=False, vars='ALL',
                  stns='260', interval='daily'):
         if start is None:
@@ -119,8 +118,9 @@ class KnmiStation:
         self.stns = stns  # de Bilt (zou ook 'ALL' kunnen zijn)
         self.interval = interval
 
-        if self.interval.startswith('hour') and vars=='RD':
-            raise(ValueError('Interval can not be hourly for rainfall-stations'))
+        if self.interval.startswith('hour') and vars == 'RD':
+            raise (
+                ValueError('Interval can not be hourly for rainfall-stations'))
 
         self.stations = None
         self.variables = dict()
@@ -165,7 +165,7 @@ class KnmiStation:
                 '>>> pip install StringIO (for python 2)'
                 'or: '
                 '>>> pip install io (for python 3)')
-        
+
         if self.interval.startswith('hour'):
             # hourly data from meteorological stations
             url = 'http://projects.knmi.nl/klimatologie/uurgegevens/getdata_uur.cgi'
@@ -184,8 +184,8 @@ class KnmiStation:
 
         if self.interval.startswith('hour'):
             data = {
-                'start': self.start.strftime('%Y%m%d')+'01',
-                'end': self.end.strftime('%Y%m%d')+'24',
+                'start': self.start.strftime('%Y%m%d') + '01',
+                'end': self.end.strftime('%Y%m%d') + '24',
                 'vars': self.vars,
                 'stns': self.stns,
             }

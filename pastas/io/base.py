@@ -5,8 +5,8 @@ Import model
 from importlib import import_module
 from os import path
 
-from pandas import DataFrame, to_numeric
 import pastas as ps
+from pandas import DataFrame, to_numeric
 
 
 def load(fname, **kwargs):

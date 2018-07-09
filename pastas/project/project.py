@@ -12,17 +12,17 @@ Usage
 
 """
 
-import logging
-import os
+from logging import getLogger
+from os import getlogin
 
 import numpy as np
 import pandas as pd
-
 import pastas as ps
+
 from .maps import Map
 from .plots import Plot
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 class Project:
@@ -436,7 +436,7 @@ class Project:
         file_info["date_modified"] = pd.Timestamp.now()
         file_info["pastas_version"] = ps.__version__
         try:
-            file_info["owner"] = os.getlogin()
+            file_info["owner"] = getlogin()
         except:
             file_info["owner"] = "Unknown"
         return file_info
@@ -455,7 +455,7 @@ class Project:
         data = self.dump_data(**kwargs)
         return ps.io.base.dump(fname, data)
 
-    def dump_data(self, series=False, metadata=True, sim_series=False):
+    def dump_data(self, series=False, sim_series=False):
         """Method to export a Pastas Project and return a dictionary with
         the data to be exported.
 
