@@ -6,6 +6,8 @@ Submodules
 
 .. toctree::
 
+   pastas.project.maps
+   pastas.project.plots
    pastas.project.project
 
 Module contents
