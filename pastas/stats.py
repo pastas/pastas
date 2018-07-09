@@ -639,11 +639,11 @@ def runs_test(series, tmin=None, tmax=None, cutoff="mean"):
 # noinspection PyIncorrectDocstring,PyIncorrectDocstring
 def q_ghg(series, tmin=None, tmax=None, q=0.94):
     """Gemiddeld Hoogste Grondwaterstand (GHG) also called MHGL (Mean High
-    Groundwater Level) Approximated by taking a quantile of the
-    timeseries values, after resampling to daily values.
+    Groundwater Level) Approximated by taking quantiles of the
+    timeseries values per year and taking the mean of the quantiles. 
 
-    This function does not care about series length!
-
+    The series is first resampled to daily values.
+ 
     Parameters
     ----------
     series: pandas.Series
@@ -658,17 +658,22 @@ def q_ghg(series, tmin=None, tmax=None, q=0.94):
         series = series.loc[tmin:]
     if tmax is not None:
         series = series.loc[:tmax]
-    series = series.resample('d').median()
-    return series.quantile(q)
+    q_yearly = (series
+        .resample('d')
+        .median()
+        .resample('a')
+        .apply(lambda s: s.quantile(q))
+        )
+    return q_yearly.mean()
 
 
 # noinspection PyIncorrectDocstring,PyIncorrectDocstring
 def q_glg(series, tmin=None, tmax=None, q=0.06):
     """Gemiddeld Laagste Grondwaterstand (GLG) also called MLGL (Mean Low
-    Groundwater Level) approximated by taking a quantile of the
-    timeseries values, after resampling to daily values.
+    Groundwater Level). Approximated by taking quantiles of the
+    timeseries values per year and calculating the mean of the quantiles. 
 
-    This function does not care about series length!
+    The series is first resampled to daily values.
 
     Parameters
     ----------
@@ -684,8 +689,13 @@ def q_glg(series, tmin=None, tmax=None, q=0.06):
         series = series.loc[tmin:]
     if tmax is not None:
         series = series.loc[:tmax]
-    series = series.resample('d').median()
-    return series.quantile(q)
+    q_yearly = (series
+        .resample('d')
+        .median()
+        .resample('a')
+        .apply(lambda s: s.quantile(q))
+        )
+    return q_yearly.mean()
 
 
 def q_gvg(series, tmin=None, tmax=None):
