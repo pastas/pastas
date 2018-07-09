@@ -589,7 +589,7 @@ class TimeSeries(pd.Series):
                 '>>> pip install pyproj'
                 'or ... conda install pyproj')
 
-    def dump(self, series=True, transformed_series=False):
+    def dump(self, series=True):
         """Method to export the Time Series to a json format.
 
         Parameters
@@ -608,11 +608,10 @@ class TimeSeries(pd.Series):
         """
         data = dict()
 
-        if series:
-            if transformed_series:
-                data["series"] = self
-            else:
-                data["series"] = self.series_original
+        if series is True or series == "original":
+            data["series"] = self.series_original
+        elif series == "modified":
+            data["series"] = self
 
         data["name"] = self.name
         data["settings"] = self.settings

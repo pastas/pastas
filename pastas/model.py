@@ -1360,50 +1360,38 @@ Parameters (%s were optimized)
         pmin = pnorm < alpha
         return pmin, pmax
 
-    def dump_data(self, series=True, sim_series=False, file_info=True,
-                  transformed_series=False):
+    def dump_data(self, series=True, sim_series=False, file_info=True):
         """Internal method to export a PASTAS model to the json export format.
 
         Helper function for the self.export method.
 
-         Parameters
-         ----------
-         transformed_series
-         file_info
-         series: Boolean
-            True if the original series are to be stored.
-         sim_series: Boolean
-            True if the simulated series are to be stored.
+        Notes
+        -----
+        To increase backward compatibility most attributes are stored in
+        dictionaries that can be updated when a model is created.
 
-         Notes
-         -----
-         To increase backward compatibility most attributes are stored in
-         dictionaries that can be updated when a model is created.
+        The following attributes are exported:
 
-         The following attributes are exported:
-
-         - oseries
-         - stressmodeldict
-         - noisemodel
-         - constant
-         - parameters
-         - metadata
-         - settings
-         - ..... future attributes?
+        - oseries
+        - stressmodeldict
+        - noisemodel
+        - constant
+        - parameters
+        - metadata
+        - settings
+        - ..... future attributes?
 
         """
 
         # Create a dictionary to store all data
         data = dict()
         data["name"] = self.name
-        data["oseries"] = self.oseries.dump(series=series,
-                                            transformed_series=transformed_series)
+        data["oseries"] = self.oseries.dump(series=series)
 
         # Stressmodels
         data["stressmodels"] = dict()
         for name, sm in self.stressmodels.items():
-            data["stressmodels"][name] = sm.dump(series=series,
-                                                 transformed_series=transformed_series)
+            data["stressmodels"][name] = sm.dump(series=series)
 
         # Constant
         if self.constant:
@@ -1435,7 +1423,7 @@ Parameters (%s were optimized)
 
         return data
 
-    def dump(self, fname, series=True, transformed_series=False, **kwargs):
+    def dump(self, fname, series=True, **kwargs):
         """Method to dump the Pastas model to a file.
 
         Parameters
@@ -1443,16 +1431,17 @@ Parameters (%s were optimized)
         fname: str
             String with the name and the extension of the file. File
             extension has to be supported by Pastas. E.g. "model.pas"
-        series: bool
-            Export the simulated series or not. Default is False.
-        transformed_series: bool
-            Export transformed series.
+        series: bool or str, optional
+            Export the simulated series or not. If series is "original", the
+            original series are exported, if series is "modified",
+            the series are exported after being changed with the timeseries
+            settings. Default is True.
         kwargs: any argument that is passed to the Model.dump_data() method.
 
         """
 
         # Get dicts for all data sources
-        data = self.dump_data(series, transformed_series=transformed_series)
+        data = self.dump_data(series)
 
         # Write the dicts to a file
         return dump(fname, data, **kwargs)
