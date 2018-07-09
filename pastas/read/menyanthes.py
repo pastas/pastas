@@ -188,6 +188,8 @@ class MenyData:
                 H.Name = 'H' + str(i)  # Give it the index name
             if hasattr(H, 'name'):
                 H.Name = H.name
+            if len(H.Name)==0:
+                H.Name = H.tnocode
 
             self.H[H.Name] = data
 
