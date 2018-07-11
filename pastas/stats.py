@@ -637,13 +637,47 @@ def runs_test(series, tmin=None, tmax=None, cutoff="mean"):
 # Some Dutch statistics
 
 # noinspection PyIncorrectDocstring,PyIncorrectDocstring
-def q_ghg(series, tmin=None, tmax=None, q=0.94):
+def __q_gxg__(series, q, tmin=None, tmax=None, by_year=True):
+    """Dutch groundwater statistics GHG and GLG approximated
+    by taking quantiles of the timeseries values per year
+    and taking the mean of the quantiles. 
+
+    The series is first resampled to daily values.
+ 
+    Parameters
+    ----------
+    series: pandas.Series
+        Series to calculate the GXG for.
+    q: float
+        quantile fraction of exceedance
+    tmin/tmax: pandas.Timestamp, optional
+        Time indices to use for the simulation of the time series model.
+    by_year: bool, optional
+        Take average over quantiles per year (default True)
+    """
+    if tmin is not None:
+        series = series.loc[tmin:]
+    if tmax is not None:
+        series = series.loc[:tmax]
+    series = series.resample('d').median()
+    if by_year:
+        return (series
+            .resample('a')
+            .apply(lambda s: s.quantile(q))
+            .mean()
+            )
+    else:
+        return series.quantile(q) 
+
+
+# noinspection PyIncorrectDocstring,PyIncorrectDocstring
+def q_ghg(series, tmin=None, tmax=None, q=0.94, by_year=True):
     """Gemiddeld Hoogste Grondwaterstand (GHG) also called MHGL (Mean High
-    Groundwater Level) Approximated by taking a quantile of the
-    timeseries values, after resampling to daily values.
+    Groundwater Level). Approximated by taking quantiles of the
+    timeseries values per year and calculating the mean of the quantiles.
 
-    This function does not care about series length!
-
+    The series is first resampled to daily values.
+ 
     Parameters
     ----------
     series: pandas.Series
@@ -652,23 +686,19 @@ def q_ghg(series, tmin=None, tmax=None, q=0.94):
         Time indices to use for the simulation of the time series model.
     q : float, optional
         quantile fraction of exceedance (default 0.94)
-
+    by_year: bool, optional
+        Take average over quantiles per year (default True)
     """
-    if tmin is not None:
-        series = series.loc[tmin:]
-    if tmax is not None:
-        series = series.loc[:tmax]
-    series = series.resample('d').median()
-    return series.quantile(q)
+    return __q_gxg__(series, q, tmin=tmin, tmax=tmax, by_year=by_year)     
 
 
 # noinspection PyIncorrectDocstring,PyIncorrectDocstring
-def q_glg(series, tmin=None, tmax=None, q=0.06):
+def q_glg(series, tmin=None, tmax=None, q=0.06, by_year=True):
     """Gemiddeld Laagste Grondwaterstand (GLG) also called MLGL (Mean Low
-    Groundwater Level) approximated by taking a quantile of the
-    timeseries values, after resampling to daily values.
+    Groundwater Level). Approximated by taking quantiles of the
+    timeseries values per year and calculating the mean of the quantiles. 
 
-    This function does not care about series length!
+    The series is first resampled to daily values.
 
     Parameters
     ----------
@@ -678,17 +708,13 @@ def q_glg(series, tmin=None, tmax=None, q=0.06):
         Time indices to use for the simulation of the time series model.
     q : float, optional
         quantile, fraction of exceedance (default 0.06)
-
+    by_year: bool, optional
+        Take average over quantiles per year (default True)
     """
-    if tmin is not None:
-        series = series.loc[tmin:]
-    if tmax is not None:
-        series = series.loc[:tmax]
-    series = series.resample('d').median()
-    return series.quantile(q)
+    return __q_gxg__(series, q, tmin=tmin, tmax=tmax, by_year=by_year)    
 
 
-def q_gvg(series, tmin=None, tmax=None):
+def q_gvg(series, tmin=None, tmax=None, by_year=True):
     """Gemiddeld Voorjaarsgrondwaterstand (GVG) also called MSGL (Mean
     Spring Groundwater Level) approximated by taking the median of the
     values in the period between 14 March and 15 April (after resampling to
@@ -702,7 +728,8 @@ def q_gvg(series, tmin=None, tmax=None):
         Series to calculate the GVG for.
     tmin/tmax: pandas.Timestamp, optional
         Time indices to use for the simulation of the time series model.
-
+    by_year: bool, optional
+        Take average over quantiles per year (default True)
     """
     if tmin is not None:
         series = series.loc[tmin:]
@@ -711,7 +738,15 @@ def q_gvg(series, tmin=None, tmax=None):
     series = series.resample('d').median()
     inspring = __in_spring__(series)
     if np.any(inspring):
-        return series.loc[inspring].median()
+        if by_year:
+            return (series
+                .loc[inspring]
+                .resample('a')
+                .median()
+                .mean()
+                )
+        else:
+            return series.loc[inspring].median()
     else:
         return np.nan
 
