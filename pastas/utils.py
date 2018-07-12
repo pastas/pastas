@@ -207,7 +207,7 @@ def timestep_weighted_resample(series, tindex):
     for i in range(len(v1)):
         # determine which periods within the series are within the new tindex
         mask = (t0e > t1s[i]) & (t0s < t1e[i])
-        if any(mask):
+        if np.any(mask):
             # cut by the timestep-edges
             ts = t0s[mask]
             te = t0e[mask]
