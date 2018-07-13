@@ -9,6 +9,8 @@ logger = getLogger(__name__)
 _unit_map = {
     'Y': 'Y',
     'y': 'Y',
+    'M': 'M',
+    'MS': 'M',
     'W': 'W',
     'w': 'W',
     'D': 'D',
@@ -17,7 +19,6 @@ _unit_map = {
     'Days': 'D',
     'day': 'D',
     'Day': 'D',
-    'M': 'M',
     'H': 'h',
     'h': 'h',
     'm': 'm',
@@ -27,7 +28,6 @@ _unit_map = {
     'S': 's',
     's': 's',
     'L': 'ms',
-    'MS': 'ms',
     'ms': 'ms',
     'US': 'us',
     'us': 'us',
@@ -58,6 +58,12 @@ def get_dt(freq):
 
     if freq == "W":  # Deal with weeks.
         num = num * 7
+        freq = "D"
+    elif freq == 'M':
+        num = num * 30
+        freq = "D"
+    elif freq == 'Y':
+        num = num * 365
         freq = "D"
 
     dt_str = str(num) + freq
