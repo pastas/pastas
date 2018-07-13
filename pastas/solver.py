@@ -21,6 +21,7 @@ To solve a model the following syntax can be used:
 from logging import getLogger
 
 import numpy as np
+from pandas import DataFrame
 from scipy.linalg import svd
 from scipy.optimize import least_squares, differential_evolution
 
@@ -141,11 +142,19 @@ class LeastSquares(BaseSolver):
 
         self.nfev = self.fit.nfev
 
-        sig, self.pcov, self.pcor = self.get_covcorrmatrix(model)
+        pcov = self.get_covariances(self.fit, model)
+        #self.pcor = self.get_correlations(self.pcov)
+
+        #sig, pcov, pcor = self.get_covcorrmatrix(model)
+        self.pcov = DataFrame(pcov, index=parameters.index,
+                              columns=parameters.index)
+        self.pcor = DataFrame(None, index=parameters.index,
+                              columns=parameters.index)
+
         self.optimal_params = self.initial
         self.optimal_params[self.vary] = self.fit.x
         self.stderr = np.zeros(len(self.optimal_params))
-        self.stderr[self.vary] = sig
+        self.stderr[self.vary] = np.sqrt(np.diag(self.pcov))
         self.report = None
 
     def objfunction(self, parameters, tmin, tmax, noise, model, freq, weights):
@@ -182,6 +191,7 @@ class LeastSquares(BaseSolver):
         stderr = np.sqrt(np.diag(covmat))
         D = np.diag(1 / stderr)
         corrmat = D @ covmat @ D
+
         return stderr, covmat, corrmat
 
     def get_covariances(self, res, model, absolute_sigma=False):
@@ -230,10 +240,6 @@ class LeastSquares(BaseSolver):
                 'Covariance of the parameters could not be estimated')
 
         return pcov
-
-    def get_correlations(self, pcov):
-        pcor = None
-        return pcor
 
 
 class LmfitSolve(BaseSolver):
