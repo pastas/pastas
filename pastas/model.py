@@ -1026,7 +1026,7 @@ class Model:
 
     @get_stressmodel
     def get_contribution(self, name, tmin=None, tmax=None, freq=None,
-                         istress=None):
+                         warmup=None, istress=None, return_warmup=False):
         """Method to get the contribution of a stressmodel.
 
         The optimal parameters are used when available, initial otherwise.
@@ -1057,16 +1057,26 @@ class Model:
             tmax = self.settings['tmax']
         if freq is None:
             freq = self.settings["freq"]
+        if warmup is None:
+            warmup = self.settings["warmup"]
+        
+        # use warmup
+        tmin_warm = tmin - pd.DateOffset(days=warmup)
 
         dt = get_dt(freq)
 
         if istress is None:
-            contrib = self.stressmodels[name].simulate(p, tmin=tmin, tmax=tmax,
+            contrib = self.stressmodels[name].simulate(p, tmin=tmin_warm, tmax=tmax,
                                                        freq=freq, dt=dt)
         else:
-            contrib = self.stressmodels[name].simulate(p, tmin=tmin, tmax=tmax,
+            contrib = self.stressmodels[name].simulate(p, tmin=tmin_warm, tmax=tmax,
                                                        dt=dt, freq=freq,
                                                        istress=istress)
+        # Respect provided tmin/tmax at this point, since warmup matters for
+        # simulation but should not be returned, unless return_warmup=True.
+        if not return_warmup:
+            contrib = contrib.loc[tmin:tmax]
+            
         return contrib
 
     def get_transform_contribution(self, tmin=None, tmax=None):
