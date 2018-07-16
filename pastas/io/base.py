@@ -5,8 +5,9 @@ Import model
 from importlib import import_module
 from os import path
 
-import pastas as ps
 from pandas import DataFrame, to_numeric
+
+import pastas as ps
 
 
 def load(fname, **kwargs):
@@ -154,6 +155,11 @@ def load_model(data):
     ml.parameters = ml.get_init_parameters(noise=ml.settings["noise"])
     ml.parameters.update(data["parameters"])
     ml.parameters = ml.parameters.apply(to_numeric, errors="ignore")
+
+    # When initial values changed
+    for param, value in ml.parameters.loc[:, "initial"].iteritems():
+        ml.set_initial(name=param, value=value)
+
     return ml
 
 
