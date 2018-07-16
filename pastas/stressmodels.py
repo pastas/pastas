@@ -267,10 +267,11 @@ class StressModel(StressModelBase):
         stress = TimeSeries(stress, settings=settings, metadata=metadata)
 
         if meanstress is None:
-            meanstress = stress.mean()
+            meanstress = stress.series.mean()
 
-        StressModelBase.__init__(self, rfunc, name, stress.index.min(),
-                                 stress.index.max(), up, meanstress, cutoff)
+        StressModelBase.__init__(self, rfunc, name, stress.series.index.min(),
+                                 stress.series.index.max(), up, meanstress,
+                                 cutoff)
         self.freq = stress.settings["freq"]
         self.stress = [stress]
         self.set_init_parameters()
@@ -300,7 +301,7 @@ class StressModel(StressModelBase):
         """
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
         b = self.rfunc.block(p, dt)
-        stress = self.stress[0]
+        stress = self.stress[0].series
         npoints = stress.index.size
         h = pd.Series(data=fftconvolve(stress, b, 'full')[:npoints],
                       index=stress.index, name=self.name, fastpath=True)
@@ -385,14 +386,15 @@ class StressModel2(StressModelBase):
         index = stress0.series.index.intersection(stress1.series.index)
         if index.size is 0:
             logger.error('The two stresses that were provided have no '
-                         'overlapping time indices. Please make sure time indices overlap or separate time series objects.')
+                         'overlapping time indices. Please make sure the '
+                         'indices of the time series overlap.')
 
         # First check the series, then determine tmin and tmax
         stress0.update_series(tmin=index.min(), tmax=index.max())
         stress1.update_series(tmin=index.min(), tmax=index.max())
 
         if meanstress is None:
-            meanstress = stress0.mean() - stress1.mean()
+            meanstress = stress0.series.mean() - stress1.series.mean()
 
         StressModelBase.__init__(self, rfunc, name, index.min(), index.max(),
                                  up, meanstress, cutoff)
@@ -429,11 +431,10 @@ class StressModel2(StressModelBase):
         """
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
         b = self.rfunc.block(p[:-1], dt)
-        npoints = self.stress[0].index.size
         stress = self.get_stress(p=p, istress=istress)
+        npoints = stress.index.size
         h = pd.Series(data=fftconvolve(stress, b, 'full')[:npoints],
-                      index=self.stress[0].index, name=self.name,
-                      fastpath=True)
+                      index=stress.index, name=self.name, fastpath=True)
         if istress is not None:
             if self.stress[istress].name is not None:
                 h.name = h.name + ' (' + self.stress[istress].name + ')'
@@ -443,11 +444,11 @@ class StressModel2(StressModelBase):
 
     def get_stress(self, p=None, istress=None):
         if istress is None:
-            return self.stress[0].add(p[-1] * self.stress[1])
+            return self.stress[0].series.add(p[-1] * self.stress[1].series)
         elif istress == 0:
-            return self.stress[0]
+            return self.stress[0].series
         else:
-            return p[-1] * self.stress[1]
+            return p[-1] * self.stress[1].series
 
     def dump(self, series=True):
         """Method to export the StressModel object.
@@ -795,7 +796,8 @@ class WellModel(StressModelBase):
     def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1,
                  istress=None):
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
-        h = pd.Series(data=0, index=self.stress[0].index, name=self.name)
+        h = pd.Series(data=0, index=self.stress[0].series.index,
+                      name=self.name)
         stresses = self.get_stress(istress=istress)
         radii = self.get_radii(irad=istress)
         for stress, radius in zip(stresses, radii):
@@ -861,7 +863,7 @@ class FactorModel(StressModelBase):
 
     def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1):
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
-        return self.stress[0] * p[0]
+        return self.stress[0].series * p[0]
 
     def dump(self, series=True):
         """Method to export the StressModel object.

@@ -48,7 +48,7 @@ class Plotting:
 
         if oseries:
             o = self.ml.observations(tmin=tmin, tmax=tmax)
-            o_nu = self.ml.oseries.drop(o.index)
+            o_nu = self.ml.oseries.series.drop(o.index)
             if not o_nu.empty:
                 # plot parts of the oseries that are not used in grey
                 o_nu.plot(linestyle='', marker='.', color='0.5', fig=fig,
@@ -88,7 +88,7 @@ class Plotting:
         ax1 = plt.subplot2grid((rows, 3), (0, 0), colspan=2, rowspan=2,
                                fig=fig)
         o = self.ml.observations(tmin=tmin, tmax=tmax)
-        o_nu = self.ml.oseries.drop(o.index)
+        o_nu = self.ml.oseries.series.drop(o.index)
         if not o_nu.empty:
             # plot parts of the oseries that are not used in grey
             o_nu.plot(ax=ax1, linestyle='', marker='.', color='0.5', label='',
@@ -225,7 +225,7 @@ class Plotting:
         ax = np.atleast_1d(ax)
 
         # plot simulation and observations in top graph
-        o_nu = self.ml.oseries.drop(o.index)
+        o_nu = self.ml.oseries.series.drop(o.index)
         if not o_nu.empty:
             # plot parts of the oseries that are not used in grey
             o_nu.plot(linestyle='', marker='.', color='0.5', label='',
@@ -334,7 +334,6 @@ class Plotting:
         return fig.axes
 
     def step_response(self, series=None):
-
         """Plot the step response for a specific series.
 
         Returns

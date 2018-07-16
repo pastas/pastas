@@ -7,7 +7,6 @@ data.
 August 2017, R.A. Collenteur
 
 """
-from __future__ import print_function, division
 
 from logging import getLogger
 
@@ -18,7 +17,7 @@ from .utils import get_dt, get_time_offset, timestep_weighted_resample
 logger = getLogger(__name__)
 
 
-class TimeSeries(pd.Series):
+class TimeSeries():
     """Class that deals with all user-provided Time Series.
 
     Parameters
@@ -84,17 +83,15 @@ class TimeSeries(pd.Series):
 
     def __init__(self, series, name=None, settings=None, metadata=None,
                  freq_original=None, **kwargs):
-        pd.Series.__init__(self)
-
-        self.index.name = "Date"
-
         if isinstance(series, TimeSeries):
+            # Copy all the series
             self.series_original = series.series_original.copy()
+            self.series_validated = series.series_validated.copy()
+            self.series = series.series.copy()
+            # Copy all the properties
             self.freq_original = series.freq_original
             self.settings = series.settings.copy()
             self.metadata = series.metadata.copy()
-            self.series = series.series.copy()
-            self._update_inplace(series)
 
             validate = False
             update = False
@@ -106,15 +103,14 @@ class TimeSeries(pd.Series):
             if isinstance(series, pd.DataFrame):
                 if len(series.columns) is 1:
                     series = series.iloc[:, 0]
-                    logger.warning("The provided series %s was a 1D DataFrame"
-                                   " and was transformed to a pandas Series.")
-            if not isinstance(series, pd.Series):
+            elif not isinstance(series, pd.Series):
                 logger.error("Expected a Pandas Series, got %s" % type(series))
 
             validate = True
             update = True
             # Store a copy of the original series
             self.series_original = series.copy()
+
             self.freq_original = freq_original
             self.settings = {
                 "freq": None,
@@ -144,7 +140,7 @@ class TimeSeries(pd.Series):
         if metadata is not None:
             self.metadata.update(metadata)
 
-        # Update the options with user-provided values, if any.
+        # Update the settings with user-provided values, if any.
         if settings:
             if isinstance(settings, str):
                 if settings in self._predefined_settings.keys():
@@ -161,9 +157,20 @@ class TimeSeries(pd.Series):
 
         # Create a validated series for computations and update
         if validate:
-            self.series = self.validate_series(series)
+            self.series_validated = self.validate_series(series)
         if update:
             self.update_series(force_update=True, **self.settings)
+
+    def __repr__(self):
+        """Prints a simple string representation of the time series.
+        """
+        template = ('{cls}(name={name}, freq={freq}, tmin={tmin}, '
+                    'tmax={tmax})')
+        return template.format(cls=self.__class__.__name__,
+                               name=self.name,
+                               freq=self.settings["freq"],
+                               tmin=self.settings["tmin"],
+                               tmax=self.settings["tmax"])
 
     def validate_series(self, series):
         """ This method performs some PASTAS specific tests for the TimeSeries.
@@ -306,7 +313,7 @@ class TimeSeries(pd.Series):
         """
         if self.update_settings(**kwargs) or force_update:
             # Get the validated series to start with
-            series = self.series.copy(deep=True)
+            series = self.series_validated.copy(deep=True)
 
             # Update the series with the new settings
             series = self.change_frequency(series)
@@ -314,7 +321,7 @@ class TimeSeries(pd.Series):
             series = self.fill_after(series)
             series = self.normalize(series)
 
-            self._update_inplace(series)
+            self.series = series
 
     def change_frequency(self, series):
         """Method to change the frequency of the time series.
@@ -572,23 +579,6 @@ class TimeSeries(pd.Series):
         self.series_original = self.series_original.multiply(other)
         self.update_series(force_update=True)
 
-    def transform_coordinates(self, to_projection):
-        try:
-            from pyproj import Proj, transform
-            inProj = Proj(init=self.metadata['projection'])
-            outProj = Proj(init=to_projection)
-            x, y = transform(inProj, outProj, self.metadata['x'],
-                             self.metadata['y'])
-            self.metadata['x'] = x
-            self.metadata['y'] = y
-            self.metadata['projection'] = to_projection
-        except ImportError:
-            raise ImportError(
-                'The module pyproj could not be imported. Please '
-                'install through:'
-                '>>> pip install pyproj'
-                'or ... conda install pyproj')
-
     def dump(self, series=True):
         """Method to export the Time Series to a json format.
 
@@ -619,3 +609,22 @@ class TimeSeries(pd.Series):
         data["freq_original"] = self.freq_original
 
         return data
+
+    def plot(self, original=False, **kwargs):
+        """Method to plot the TimeSeries object. Plots the edited series by
+        default.
+
+        Parameters
+        ----------
+        original: bool
+            Also plot the original series.
+        kwargs
+
+        Returns
+        -------
+
+        """
+        self.series.plot(**kwargs)
+
+        if original:
+            self.series_original.plot()

@@ -111,7 +111,8 @@ class Model:
             self.settings.update(settings)
 
         if constant:
-            constant = Constant(value=self.oseries.mean(), name="constant")
+            constant = Constant(value=self.oseries.series.mean(),
+                                name="constant")
             self.add_constant(constant)
         if noisemodel:
             self.add_noisemodel(NoiseModel())
@@ -501,7 +502,7 @@ class Model:
 
         if self.oseries_calib is None or update_observations:
             tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq, use_oseries=True)
-            self.oseries_calib = self.oseries.loc[tmin:tmax]
+            self.oseries_calib = self.oseries.series.loc[tmin:tmax]
 
         oseries_calib = self.oseries_calib
 
@@ -855,7 +856,8 @@ class Model:
             Pandas Series object
 
         """
-        odelt = self.oseries.index.to_series().diff() / pd.Timedelta(1, freq)
+        odelt = self.oseries.series.index.to_series().diff() / \
+                pd.Timedelta(1, freq)
         return odelt
 
     def get_tmin_tmax(self, tmin=None, tmax=None, freq=None, use_oseries=True,
@@ -907,8 +909,8 @@ class Model:
         """
         # Get tmin and tmax from the oseries
         if use_oseries:
-            ts_tmin = self.oseries.index.min()
-            ts_tmax = self.oseries.index.max()
+            ts_tmin = self.oseries.series.index.min()
+            ts_tmax = self.oseries.series.index.max()
         # Get tmin and tmax from the stressmodels
         elif use_stresses:
             ts_tmin = pd.Timestamp.max
@@ -950,7 +952,7 @@ class Model:
         assert tmax > tmin, \
             self.logger.error('Error: Specified tmax not larger than '
                               'specified tmin')
-        assert self.oseries.loc[tmin: tmax].size > 0, \
+        assert self.oseries.series.loc[tmin: tmax].size > 0, \
             self.logger.error('Error: no observations between tmin and tmax')
 
         return tmin, tmax
@@ -1059,24 +1061,26 @@ class Model:
             freq = self.settings["freq"]
         if warmup is None:
             warmup = self.settings["warmup"]
-        
+
         # use warmup
         tmin_warm = tmin - pd.DateOffset(days=warmup)
 
         dt = get_dt(freq)
 
         if istress is None:
-            contrib = self.stressmodels[name].simulate(p, tmin=tmin_warm, tmax=tmax,
+            contrib = self.stressmodels[name].simulate(p, tmin=tmin_warm,
+                                                       tmax=tmax,
                                                        freq=freq, dt=dt)
         else:
-            contrib = self.stressmodels[name].simulate(p, tmin=tmin_warm, tmax=tmax,
+            contrib = self.stressmodels[name].simulate(p, tmin=tmin_warm,
+                                                       tmax=tmax,
                                                        dt=dt, freq=freq,
                                                        istress=istress)
         # Respect provided tmin/tmax at this point, since warmup matters for
         # simulation but should not be returned, unless return_warmup=True.
         if not return_warmup:
             contrib = contrib.loc[tmin:tmax]
-            
+
         return contrib
 
     def get_transform_contribution(self, tmin=None, tmax=None):

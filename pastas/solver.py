@@ -228,8 +228,8 @@ class LeastSquares(BaseSolver):
             pcov.fill(np.inf)
             warn_cov = True
         elif not absolute_sigma:
-            if model.oseries.index.size > n_param:
-                s_sq = cost / (model.oseries.index.size - n_param)
+            if model.oseries.series.index.size > n_param:
+                s_sq = cost / (model.oseries.series.index.size - n_param)
                 pcov = pcov * s_sq
             else:
                 pcov.fill(np.inf)
