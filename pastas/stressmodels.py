@@ -260,7 +260,7 @@ class StressModel(StressModelBase):
     _name = "StressModel"
 
     def __init__(self, stress, rfunc, name, up=True, cutoff=0.99,
-                 settings=None, metadata=None, meanstress=None, **kwargs):
+                 settings=None, metadata=None, meanstress=None):
         if isinstance(stress, list):
             stress = stress[0]  # Temporary fix Raoul, 2017-10-24
 
@@ -613,7 +613,7 @@ class NoConvModel(StressModelBase):
     _name = "NoConvModel"
 
     def __init__(self, stress, rfunc, name, metadata=None, up=True,
-                 cutoff=0.99, settings=None, **kwargs):
+                 cutoff=0.99, settings=None):
         stress = TimeSeries(stress, settings=settings, metadata=metadata)
         StressModelBase.__init__(self, rfunc, name, stress.index.min(),
                                  stress.index.max(), up, stress.mean(), cutoff)
