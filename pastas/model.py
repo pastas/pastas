@@ -27,8 +27,7 @@ from .solver import LeastSquares
 from .stats import Statistics
 from .stressmodels import Constant
 from .timeseries import TimeSeries
-from .utils import get_dt, get_time_offset, frequency_is_supported, \
-    get_sample
+from .utils import get_dt, get_time_offset, get_freqstr, get_sample
 from .version import __version__
 
 
@@ -73,7 +72,7 @@ class Model:
     """
 
     def __init__(self, oseries, constant=True, noisemodel=True, name=None,
-                 metadata=None, settings=None, log_level=None):
+                 metadata=None, settings=None, log_level="INFO"):
 
         self.logger = self.get_logger(log_level=log_level)
 
@@ -536,10 +535,8 @@ class Model:
 
         # Set the frequency & warmup
         if freq:
-            if frequency_is_supported(freq):
-                self.settings["freq"] = freq
-            else:
-                self.logger.error('Frequency {} is not supported'.format(freq))
+            num, freq = get_freqstr(freq)
+            self.settings["freq"] = str(num) + freq
         if warmup is not None:
             self.settings["warmup"] = warmup
 
@@ -600,13 +597,12 @@ class Model:
             Default is True. If False, the optimal values from an earlier
             optimization are used.
         freq: str, optional
-            String with the frequency the stressmodels are simulated.
+            String with the frequency the stressmodels are simulated. Must
+            be one of the following: (D,h,m,s,ms,us,ns) or a multiple of
+            that e.g. "7D".
         warmup: float/int, optinal
             Warmup period (in Days) for which the simulation is calculated,
             but not used for the calibration period.
-                    weights: pandas.Series, optional
-            Pandas Series with values by which the residuals are multiplied,
-            index-based.
         weights: pandas.Series, optional
             Pandas Series with values by which the residuals are multiplied,
             index-based.

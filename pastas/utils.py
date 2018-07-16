@@ -1,20 +1,96 @@
 from logging import getLogger
 
 import numpy as np
-from pandas import Series, to_datetime, Timedelta, Timestamp, to_timedelta, tseries
+from pandas import Series, to_datetime, Timedelta, Timestamp, to_timedelta
+from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
 
 logger = getLogger(__name__)
 
-def frequency_is_supported(freq):
-    num, freq = get_freqstr(freq)
-    offset = tseries.frequencies.getOffset(freq)
-    return hasattr(offset,'delta')
+_unit_map = {
+    'D': 'D',
+    'd': 'D',
+    'days': 'D',
+    'Days': 'D',
+    'day': 'D',
+    'Day': 'D',
+    'H': 'h',
+    'h': 'h',
+    'm': 'm',
+    'min': 'm',
+    'T': 'm',
+    't': 'm',
+    'S': 's',
+    's': 's',
+    'L': 'ms',
+    'ms': 'ms',
+    'US': 'us',
+    'us': 'us',
+    'NS': 'ns',
+    'ns': 'ns',
+}
+
+
+def get_stress_dt(freq):
+    """Internal method to obtain a timestep in days from a frequency string
+    derived by Pandas Infer method or supplied by the user as a TimeSeries
+    settings. See pd.tseries.offsets.prefix_mapping for possible frequency
+    strings
+
+    Parameters
+    ----------
+    freq: str
+
+    Returns
+    -------
+    dt: float
+        Approximate number of days.
+
+    Notes
+    -----
+    Used for comparison to determine if a time series needs to be up or
+    downsampled.
+
+    See http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
+    for the offset_aliases supported by Pandas. These are
+
+    """
+    # Get the frequency string and multiplier
+    offset = to_offset(freq)
+    if hasattr(offset, 'delta'):
+        dt = offset.delta / Timedelta(1, "D")
+    else:
+        num = offset.n
+        freq = offset.name
+        if freq in ['A', 'AS', 'BA', 'BAS']:
+            # year
+            dt = num * 365
+        elif freq in ['BQ', 'BQS', 'Q', 'QS']:
+            # quarter
+            dt = num * 90
+        elif freq in ['BM', 'BMS', 'CBM', 'CBMS', 'M', 'MS']:
+            # month
+            dt = num * 30
+        elif freq in ['SM', 'SMS']:
+            # semi-month
+            dt = num * 15
+        elif freq in ['W']:
+            # week
+            dt = num * 7
+        elif freq in ['B', 'C']:
+            # day
+            dt = num
+        elif freq in ['BH', 'CBH']:
+            # hour
+            dt = num * 1 / 24
+        else:
+            raise (ValueError('freq of {} not supported'.format(freq)))
+
+    return dt
 
 
 def get_dt(freq):
-    """Method to obtain a timestep in days from a frequency string.
-    See pd.tseries.offsets.prefix_mapping for possible frequency strings
+    """Method to obtain a timestep in DAYS from a frequency string.
 
     Parameters
     ----------
@@ -27,35 +103,7 @@ def get_dt(freq):
 
     """
     # Get the frequency string and multiplier
-    num, freq = get_freqstr(freq)
-    offset = tseries.frequencies.getOffset(freq)
-    if hasattr(offset,'delta'):
-        dt = num * offset.delta / Timedelta(1, "D")
-    else:
-        if freq in ['A','AS','BA','BAS']:
-            # year
-            dt = num * 365
-        elif freq in ['BQ','BQS','Q','QS']:
-            # quarter
-            dt = num * 90
-        elif freq in ['BM','BMS','CBM','CBMS','M','MS']:
-            # month
-            dt = num * 30
-        elif freq in ['SM','SMS']:
-            # semi-month
-            dt = num * 15
-        elif freq in ['W']:
-            # week
-            dt = num * 7
-        elif freq in ['B','C']:
-            # day
-            dt = num
-        elif freq in ['BH','CBH']:
-            # hour
-            dt = num * 1/24
-        else:
-            raise(ValueError('freq of {} not supported'.format(freq)))
-
+    dt = to_timedelta(freq) / Timedelta(1, "D")
     return dt
 
 
@@ -91,8 +139,9 @@ def get_freqstr(freqstr):
     Parameters
     ----------
     freqstr: str
-        string with the frequency as defined by the pandas package,
-        possibly containing a numerical value.
+        String with the frequency the stressmodels are simulated. Must
+        be one of the following: (D,h,m,s,ms,us,ns) or a multiple of
+        that e.g. "7D".
 
     Returns
     -------
@@ -100,7 +149,11 @@ def get_freqstr(freqstr):
         integer by which to multiply the frequency. 1 is returned if no
         num is present in the string that has been provided.
     freq: str
-        String with the frequency as defined by the pandas package.
+
+    Notes
+    -----
+    This method also check if the frequency is suppported by Pastas. Must be
+    one of the following: (D,h,m,s,ms,us,ns) or a multiple of that e.g. "7D".
 
     """
     # remove the day from the week
@@ -118,6 +171,11 @@ def get_freqstr(freqstr):
         num = int(num)
     else:
         num = 1
+
+    if freq not in _unit_map.keys():
+        logger.error("Frequency %s not supported." % freq)
+    else:
+        freq = _unit_map[freq]
 
     return num, freq
 

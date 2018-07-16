@@ -12,7 +12,8 @@ from logging import getLogger
 
 import pandas as pd
 
-from .utils import get_dt, get_time_offset, timestep_weighted_resample
+from .utils import get_stress_dt, get_dt, get_time_offset, \
+    timestep_weighted_resample
 
 logger = getLogger(__name__)
 
@@ -337,7 +338,7 @@ class TimeSeries():
             series = self.sample_weighted(series)
         else:
             dt_new = get_dt(freq)
-            dt_org = get_dt(self.freq_original)
+            dt_org = get_stress_dt(self.freq_original)
             # 3. If new and original frequency are not a multiple of each other
             eps = 1e-10
             if not ((dt_new % dt_org) < eps or (dt_org % dt_new) < eps):
@@ -381,8 +382,7 @@ class TimeSeries():
                 series = series.asfreq(freq)
                 series.interpolate(method="time", inplace=True)
             elif method == "divide":
-                dt = series.index.to_series().diff() / pd.tseries.frequencies.to_offset(
-                    freq).delta
+                dt = series.index.to_series().diff() / pd.to_timedelta(freq)
                 series = series.iloc[1:] / dt.iloc[1:]
                 series = series.asfreq(freq, method="bfill")
             elif isinstance(method, float):
