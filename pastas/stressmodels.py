@@ -211,11 +211,11 @@ class StressModelBase:
             StressModel object.
 
         """
-        data = dict()
-        data["stressmodel"] = self._name
-        data["name"] = self.name
-        data["stress"] = self.dump_stress(series)
-
+        data = {
+            "stressmodel": self._name,
+            "name": self.name,
+            "stress": self.dump_stress(series)
+        }
         return data
 
 
@@ -260,7 +260,7 @@ class StressModel(StressModelBase):
     _name = "StressModel"
 
     def __init__(self, stress, rfunc, name, up=True, cutoff=0.99,
-                 settings=None, metadata=None, meanstress=None, **kwargs):
+                 settings=None, metadata=None, meanstress=None):
         if isinstance(stress, list):
             stress = stress[0]  # Temporary fix Raoul, 2017-10-24
 
@@ -316,14 +316,14 @@ class StressModel(StressModelBase):
             StressModel object.
 
         """
-        data = dict()
-        data["stressmodel"] = self._name
-        data["rfunc"] = self.rfunc._name
-        data["name"] = self.name
-        data["up"] = True if self.rfunc.up == 1 else False
-        data["cutoff"] = self.rfunc.cutoff
-        data["stress"] = self.dump_stress(series)
-
+        data = {
+            "stressmodel": self._name,
+            "rfunc": self.rfunc._name,
+            "name": self.name,
+            "up": True if self.rfunc.up == 1 else False,
+            "cutoff": self.rfunc.cutoff,
+            "stress": self.dump_stress(series)
+        }
         return data
 
 
@@ -385,7 +385,7 @@ class StressModel2(StressModelBase):
         index = stress0.series.index.intersection(stress1.series.index)
         if index.size is 0:
             logger.error('The two stresses that were provided have no '
-                           'overlapping time indices. Please make sure time indices overlap or separate time series objects.')
+                         'overlapping time indices. Please make sure time indices overlap or separate time series objects.')
 
         # First check the series, then determine tmin and tmax
         stress0.update_series(tmin=index.min(), tmax=index.max())
@@ -459,14 +459,14 @@ class StressModel2(StressModelBase):
             StressModel object.
 
         """
-        data = dict()
-        data["stressmodel"] = self._name
-        data["rfunc"] = self.rfunc._name
-        data["name"] = self.name
-        data["up"] = True if self.rfunc.up == 1 else False
-        data["cutoff"] = self.rfunc.cutoff
-        data["stress"] = self.dump_stress(series)
-
+        data = {
+            "stressmodel": self._name,
+            "rfunc": self.rfunc._name,
+            "name": self.name,
+            "up": True if self.rfunc.up == 1 else False,
+            "cutoff": self.rfunc.cutoff,
+            "stress": self.dump_stress(series)
+        }
         return data
 
 
@@ -489,8 +489,7 @@ class StepModel(StressModelBase):
     -----
     This step trend is calculated as follows. First, a binary series is
     created, with zero values before tstart, and ones after the start. This
-    series is convoluted with the block response to obtain a simulate step
-    trend.
+    series is convoluted with the block response to simulate step trend.
 
     """
     _name = "StepModel"
@@ -498,14 +497,14 @@ class StepModel(StressModelBase):
     def __init__(self, tstart, name, rfunc=One, up=True):
         StressModelBase.__init__(self, rfunc, name, pd.Timestamp.min,
                                  pd.Timestamp.max, up, 1.0, 0.99)
-        self.t_step = pd.Timestamp(tstart)
+        self.tstart = pd.Timestamp(tstart)
         self.set_init_parameters()
 
     def set_init_parameters(self):
         self.parameters = self.rfunc.set_parameters(self.name)
         tmin = pd.Timestamp.min.toordinal()
         tmax = pd.Timestamp.max.toordinal()
-        tinit = self.t_step.toordinal()
+        tinit = self.tstart.toordinal()
 
         self.parameters.loc[self.name + "_tstart"] = (tinit, tmin, tmax,
                                                       0, self.name)
@@ -522,6 +521,16 @@ class StepModel(StressModelBase):
         h = pd.Series(data=fftconvolve(h, b, 'full')[:npoints],
                       index=h.index, name=self.name, fastpath=True)
         return h
+
+    def dump(self, series=True):
+        data = {
+            "stressmodel": self._name,
+            'tstart': self.tstart,
+            'name': self.name,
+            "up": True if self.rfunc.up == 1 else False,
+            'rfunc': self.rfunc._name
+        }
+        return data
 
 
 class LinearTrend(StressModelBase):
@@ -543,6 +552,8 @@ class LinearTrend(StressModelBase):
         StressModelBase.__init__(self, One, name, pd.Timestamp.min,
                                  pd.Timestamp.max, 1, 0, 0)
         self.nparam = 3
+        self.start = start
+        self.end = end
         self.set_init_parameters(start, end)
 
     def set_init_parameters(self, start, end):
@@ -576,6 +587,15 @@ class LinearTrend(StressModelBase):
         trend.loc[tmax:] = 0
         trend = trend.cumsum() * p[0]
         return trend
+
+    def dump(self, series=None):
+        data = {
+            "stressmodel": self._name,
+            'start': self.start,
+            "end": self.end,
+            'name': self.name,
+        }
+        return data
 
 
 class NoConvModel(StressModelBase):
@@ -853,9 +873,9 @@ class FactorModel(StressModelBase):
             StressModel object.
 
         """
-        data = dict()
-        data["stressmodel"] = self._name
-        data["name"] = self.name
-        data["stress"] = self.dump_stress(series)
-
+        data = {
+            "stressmodel": self._name,
+            "name": self.name,
+            "stress": self.dump_stress(series)
+        }
         return data
