@@ -539,8 +539,7 @@ class Model:
             if frequency_is_supported(freq):
                 self.settings["freq"] = freq
             else:
-                self.logger.error('Frequency {freq} is not supported' %
-                                  freq)
+                self.logger.error('Frequency {} is not supported'.format(freq))
         if warmup is not None:
             self.settings["warmup"] = warmup
 
@@ -834,13 +833,11 @@ class Model:
                self.stressmodels.keys()):
             self.sim_index = self.oseries.index
         elif self.sim_index is None or update_sim_index:
-            sim_index = pd.date_range(tmin - pd.DateOffset(days=warmup), tmax,
-                                      freq=freq, name="Date")
-            self.sim_index = sim_index.shift(1, freq=self.settings[
-                "time_offset"])
-        sim_index = self.sim_index
+            tmin = (tmin - pd.DateOffset(days=warmup)).floor(freq) + \
+                   self.settings["time_offset"]
+            self.sim_index = pd.date_range(tmin, tmax, freq=freq, name="Date")
 
-        return sim_index
+        return self.sim_index
 
     def get_odelt(self, freq="D"):
         """Internal method to get the timesteps between the observations.
@@ -944,10 +941,8 @@ class Model:
         # adjust tmin and tmax so that the time-offset is equal to the stressmodels.
         if freq is None:
             freq = self.settings["freq"]
-        tmin = tmin - get_time_offset(tmin, freq) + self.settings[
-            "time_offset"]
-        tmax = tmax - get_time_offset(tmax, freq) + self.settings[
-            "time_offset"]
+        tmin = tmin.ceil(freq) + self.settings["time_offset"]
+        tmax = tmax.floor(freq) + self.settings["time_offset"]
 
         assert tmax > tmin, \
             self.logger.error('Error: Specified tmax not larger than '

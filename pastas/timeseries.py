@@ -381,7 +381,8 @@ class TimeSeries():
                 series = series.asfreq(freq)
                 series.interpolate(method="time", inplace=True)
             elif method == "divide":
-                dt = series.index.to_series().diff() / pd.Timedelta(1, freq)
+                dt = series.index.to_series().diff() / pd.tseries.frequencies.to_offset(
+                    freq).delta
                 series = series.iloc[1:] / dt.iloc[1:]
                 series = series.asfreq(freq, method="bfill")
             elif isinstance(method, float):
@@ -409,6 +410,10 @@ class TimeSeries():
         """
         method = self.settings["sample_down"]
         freq = self.settings["freq"]
+
+        # when a multiple freq is used (like '7D') make sure the first record
+        # has a rounded index
+        series = series[series.index[0].ceil(freq):]
 
         # Shift time series by offset, as resample time_offset doesn't do it.
         series = series.shift(1, freq=self.settings["time_offset"])

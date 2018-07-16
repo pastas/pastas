@@ -1,48 +1,20 @@
 from logging import getLogger
 
 import numpy as np
-from pandas import Series, to_datetime, Timedelta, Timestamp, to_timedelta
+from pandas import Series, to_datetime, Timedelta, Timestamp, to_timedelta, tseries
 from scipy import interpolate
 
 logger = getLogger(__name__)
 
-_unit_map = {
-    'Y': 'Y',
-    'y': 'Y',
-    'M': 'M',
-    'MS': 'M',
-    'W': 'W',
-    'w': 'W',
-    'D': 'D',
-    'd': 'D',
-    'days': 'D',
-    'Days': 'D',
-    'day': 'D',
-    'Day': 'D',
-    'H': 'h',
-    'h': 'h',
-    'm': 'm',
-    'min': 'm',
-    'T': 'm',
-    't': 'm',
-    'S': 's',
-    's': 's',
-    'L': 'ms',
-    'ms': 'ms',
-    'US': 'us',
-    'us': 'us',
-    'NS': 'ns',
-    'ns': 'ns',
-}
-
-
 def frequency_is_supported(freq):
     num, freq = get_freqstr(freq)
-    return freq in _unit_map.keys()
+    offset = tseries.frequencies.getOffset(freq)
+    return hasattr(offset,'delta')
 
 
 def get_dt(freq):
     """Method to obtain a timestep in days from a frequency string.
+    See pd.tseries.offsets.prefix_mapping for possible frequency strings
 
     Parameters
     ----------
@@ -51,23 +23,39 @@ def get_dt(freq):
     Returns
     -------
     dt: float
+        Number of days
 
     """
     # Get the frequency string and multiplier
     num, freq = get_freqstr(freq)
+    offset = tseries.frequencies.getOffset(freq)
+    if hasattr(offset,'delta'):
+        dt = num * offset.delta / Timedelta(1, "D")
+    else:
+        if freq in ['A','AS','BA','BAS']:
+            # year
+            dt = num * 365
+        elif freq in ['BQ','BQS','Q','QS']:
+            # quarter
+            dt = num * 90
+        elif freq in ['BM','BMS','CBM','CBMS','M','MS']:
+            # month
+            dt = num * 30
+        elif freq in ['SM','SMS']:
+            # semi-month
+            dt = num * 15
+        elif freq in ['W']:
+            # week
+            dt = num * 7
+        elif freq in ['B','C']:
+            # day
+            dt = num
+        elif freq in ['BH','CBH']:
+            # hour
+            dt = num * 1/24
+        else:
+            raise(ValueError('freq of {} not supported'.format(freq)))
 
-    if freq == "W":  # Deal with weeks.
-        num = num * 7
-        freq = "D"
-    elif freq == 'M':
-        num = num * 30
-        freq = "D"
-    elif freq == 'Y':
-        num = num * 365
-        freq = "D"
-
-    dt_str = str(num) + freq
-    dt = to_timedelta(dt_str) / Timedelta(1, "D")
     return dt
 
 
@@ -88,14 +76,11 @@ def get_time_offset(t, freq):
         Timedelta with the offset for the timestamp t.
 
     """
-    # Get the frequency string and multiplier
-    num, freq = get_freqstr(freq)
-
     if freq in ["W"]:
         offset = Timedelta(days=t.weekday(), hours=t.hour,
                            minutes=t.minute, seconds=t.second)
     else:
-        offset = t - t.round(freq)
+        offset = t - t.floor(freq)
 
     return offset
 
@@ -133,11 +118,6 @@ def get_freqstr(freqstr):
         num = int(num)
     else:
         num = 1
-
-    if freq not in _unit_map.keys():
-        logger.error("Frequency %s not supported." % freq)
-    else:
-        freq = _unit_map[freq]
 
     return num, freq
 
