@@ -57,6 +57,7 @@ class Plot:
             ax = [ax]
 
         for i, key in enumerate(stresses):
-            self.mls.stresses.loc[key, "series"].plot(ax=ax[i], x_compat=True)
+            self.mls.stresses.loc[key, "series"].series.plot(ax=ax[i],
+                                                             x_compat=True)
             ax[i].legend([key], loc=2)
         return ax

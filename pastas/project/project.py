@@ -59,8 +59,8 @@ class Project:
         self.file_info = self._get_file_info()
 
         # Load other modules
-        self.plot = Plot(self)
-        self.map = Map(self)
+        self.plots = Plot(self)
+        self.maps = Map(self)
 
     def add_series(self, series, name=None, kind=None, metadata=None,
                    settings=None, **kwargs):
