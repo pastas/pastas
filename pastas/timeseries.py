@@ -14,6 +14,7 @@ import pandas as pd
 
 from .utils import get_stress_dt, get_dt, get_time_offset, \
     timestep_weighted_resample
+from pandas.tseries.frequencies import to_offset
 
 logger = getLogger(__name__)
 
@@ -368,6 +369,12 @@ class TimeSeries():
         method = self.settings["sample_up"]
         freq = self.settings["freq"]
 
+        # adjust the first timestep, so that the output will have the
+        # correct frequncy
+        t0_new = series.index[0].ceil(freq)
+        if t0_new>series.index[0]:
+            series.index.set_value(series.index, series.index[0],t0_new)
+
         n = series.isnull().values.sum()
 
         if method in ["backfill", "bfill", "pad", "ffill"]:
@@ -382,8 +389,8 @@ class TimeSeries():
                 series = series.asfreq(freq)
                 series.interpolate(method="time", inplace=True)
             elif method == "divide":
-                dt = series.index.to_series().diff() / pd.to_timedelta(freq)
-                series = series.iloc[1:] / dt.iloc[1:]
+                dt = series.index.to_series().diff() / to_offset(freq).delta
+                series = series / dt
                 series = series.asfreq(freq, method="bfill")
             elif isinstance(method, float):
                 series = series.asfreq(freq)
@@ -442,10 +449,9 @@ class TimeSeries():
         return series
 
     def sample_weighted(self, series):
-        series0 = series
         freq = self.settings["freq"]
-        series = series.resample(freq).mean()
-        series = timestep_weighted_resample(series0, series.index)
+        tindex = pd.date_range(series.index[0].ceil(freq),series.index[-1],freq=freq)
+        series = timestep_weighted_resample(series, tindex)
         logger.info("Time Series %s were sampled down to freq %s with method "
                     "%s" % (self.name, freq, 'timestep_weighted_resample'))
         return series

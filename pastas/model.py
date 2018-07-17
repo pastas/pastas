@@ -27,7 +27,7 @@ from .solver import LeastSquares
 from .stats import Statistics
 from .stressmodels import Constant
 from .timeseries import TimeSeries
-from .utils import get_dt, get_time_offset, get_freqstr, get_sample
+from .utils import get_dt, get_time_offset, get_sample, frequency_is_supported
 from .version import __version__
 
 
@@ -535,8 +535,8 @@ class Model:
 
         # Set the frequency & warmup
         if freq:
-            num, freq = get_freqstr(freq)
-            self.settings["freq"] = str(num) + freq
+            self.settings["freq"] = frequency_is_supported(freq)
+
         if warmup is not None:
             self.settings["warmup"] = warmup
 

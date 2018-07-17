@@ -7,35 +7,49 @@ from scipy import interpolate
 
 logger = getLogger(__name__)
 
-_unit_map = {
-    'D': 'D',
-    'd': 'D',
-    'days': 'D',
-    'Days': 'D',
-    'day': 'D',
-    'Day': 'D',
-    'H': 'h',
-    'h': 'h',
-    'm': 'm',
-    'min': 'm',
-    'T': 'm',
-    't': 'm',
-    'S': 's',
-    's': 's',
-    'L': 'ms',
-    'ms': 'ms',
-    'US': 'us',
-    'us': 'us',
-    'NS': 'ns',
-    'ns': 'ns',
-}
+
+def frequency_is_supported(freq):
+    """Method to determine if a frequency is supported for a  pastas-model.
+    Possible frequency-offsets are listed in:
+    http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
+    The frequency can be a multiple of these offsets, like '7D'. Because of the
+    use in convolution, only frequencies with an equidistant offset are
+    allowed. This means monthly ('M'), yearly ('Y') or even weekly ('W')
+    frequencies are not allowed. Use '7D' for a weekly simulation.
+
+    D	calendar day frequency
+    H	hourly frequency
+    T, min	minutely frequency
+    S	secondly frequency
+    L, ms	milliseconds
+    U, us	microseconds
+    N	nanoseconds
+
+    Parameters
+    ----------
+    freq: str
+
+    Returns
+    -------
+    boolean
+        True when frequency can be used as a simulation frequency
+    """
+
+    offset = to_offset(freq)
+    if not hasattr(offset, 'delta'):
+        logger.error("Frequency %s not supported." % freq)
+    else:
+        if offset.n == 1:
+            freq = offset.name
+        else:
+            freq = str(offset.n) + offset.name
+    return freq
 
 
 def get_stress_dt(freq):
     """Internal method to obtain a timestep in days from a frequency string
     derived by Pandas Infer method or supplied by the user as a TimeSeries
-    settings. See pd.tseries.offsets.prefix_mapping for possible frequency
-    strings
+    settings.
 
     Parameters
     ----------
@@ -44,7 +58,7 @@ def get_stress_dt(freq):
     Returns
     -------
     dt: float
-        Approximate number of days.
+        Approximate timestep in number of days.
 
     Notes
     -----
@@ -52,7 +66,7 @@ def get_stress_dt(freq):
     downsampled.
 
     See http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
-    for the offset_aliases supported by Pandas. These are
+    for the offset_aliases supported by Pandas.
 
     """
     # Get the frequency string and multiplier
@@ -62,7 +76,7 @@ def get_stress_dt(freq):
     else:
         num = offset.n
         freq = offset.name
-        if freq in ['A', 'AS', 'BA', 'BAS']:
+        if freq in ['A', 'Y', 'AS', 'YS', 'BA', 'BY', 'BAS', 'BYS']:
             # year
             dt = num * 365
         elif freq in ['BQ', 'BQS', 'Q', 'QS']:
@@ -103,7 +117,7 @@ def get_dt(freq):
 
     """
     # Get the frequency string and multiplier
-    dt = to_timedelta(freq) / Timedelta(1, "D")
+    dt = to_offset(freq).delta / Timedelta(1, "D")
     return dt
 
 
@@ -124,60 +138,7 @@ def get_time_offset(t, freq):
         Timedelta with the offset for the timestamp t.
 
     """
-    if freq in ["W"]:
-        offset = Timedelta(days=t.weekday(), hours=t.hour,
-                           minutes=t.minute, seconds=t.second)
-    else:
-        offset = t - t.floor(freq)
-
-    return offset
-
-
-def get_freqstr(freqstr):
-    """Method to untangle the frequency string.
-
-    Parameters
-    ----------
-    freqstr: str
-        String with the frequency the stressmodels are simulated. Must
-        be one of the following: (D,h,m,s,ms,us,ns) or a multiple of
-        that e.g. "7D".
-
-    Returns
-    -------
-    num: int
-        integer by which to multiply the frequency. 1 is returned if no
-        num is present in the string that has been provided.
-    freq: str
-
-    Notes
-    -----
-    This method also check if the frequency is suppported by Pastas. Must be
-    one of the following: (D,h,m,s,ms,us,ns) or a multiple of that e.g. "7D".
-
-    """
-    # remove the day from the week
-    freqstr = freqstr.split("-", 1)[0]
-
-    # Find a number by which the frequency is multiplied
-    num = ""
-    freq = ""
-    for s in freqstr:
-        if s.isdigit():
-            num = num.__add__(s)
-        else:
-            freq = freq.__add__(s)
-    if num:
-        num = int(num)
-    else:
-        num = 1
-
-    if freq not in _unit_map.keys():
-        logger.error("Frequency %s not supported." % freq)
-    else:
-        freq = _unit_map[freq]
-
-    return num, freq
+    return t - t.floor(freq)
 
 
 def get_sample(tindex, ref_tindex):
