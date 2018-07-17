@@ -80,3 +80,12 @@ def test_example_timestep_weighted_resample():
     exec(open("example_timestep_weighted_resample.py").read())
     plt.close('all')
     return os.chdir(cwd)
+
+
+def test_example_transform():
+    plt.ion()
+    cwd = os.getcwd()
+    os.chdir("examples")
+    exec(open("example_transform.py").read())
+    plt.close('all')
+    return os.chdir(cwd)
