@@ -943,8 +943,9 @@ class Model:
         assert tmax > tmin, \
             self.logger.error('Error: Specified tmax not larger than '
                               'specified tmin')
-        assert self.oseries.series.loc[tmin: tmax].size > 0, \
-            self.logger.error('Error: no observations between tmin and tmax')
+        if use_oseries:
+            assert self.oseries.series.loc[tmin: tmax].size > 0, \
+                self.logger.error('Error: no observations between tmin and tmax')
 
         return tmin, tmax
 
