@@ -78,10 +78,15 @@ following pacakges are necessary for a minimal function installation of Pasta:
 - scipy>=0.15,
 - statsmodels>=0.8.
 
+Background
+~~~~~~~~~~
+Work on Pastas started in the spring of 2016 at the Delft University of Technology and `Artesia Water <http://www.artesia-water.nl/>`_. 
+
+How to Cite Pastas?
+~~~~~~~~~~~~~~~~~~~
+`Bakker, M., Collenteur, R., Calje, F. Schaars (2018, April) Untangling groundwater head series using time series analysis and Pastas. In EGU General Assembly 2018. <https://meetingorganizer.copernicus.org/EGU2018/EGU2018-7194.pdf>`_
+
 License
 ~~~~~~~
 MIT
 
-Background
-~~~~~~~~~~
-Work on Pastas started in the spring of 2016 at the Delft University of Technology and `Artesia Water <http://www.artesia-water.nl/>`_. 
