@@ -825,10 +825,7 @@ class Model:
             if key != self.settings[setting]:
                 update_sim_index = True
 
-        if all(self.stressmodels[key]._name == "NoConvModel" for key in
-               self.stressmodels.keys()):
-            self.sim_index = self.oseries.series.index
-        elif self.sim_index is None or update_sim_index:
+        if self.sim_index is None or update_sim_index:
             tmin = (tmin - pd.DateOffset(days=warmup)).floor(freq) + \
                    self.settings["time_offset"]
             self.sim_index = pd.date_range(tmin, tmax, freq=freq, name="Date")
