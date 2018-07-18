@@ -9,15 +9,15 @@ from .model import Model
 
 
 class ThresholdTransform:
-    """ThresholdTransform can be used as a transform in a Pastas-Model. This
-    transform lowers the simulation when it exceeds a certain value for
-    the simulation. In geohydrology this transform can for example be used
-    in a situation where the groundwater level reaches the surface level and
-    forms a lake. Beacuase of the larger storage of the lake,
-    the (groundwater) level then rises slower when it rains.
+    """ThresholdTransform lowers the simulation when it exceeds a certain value
+    
+    In geohydrology this transform can for example be used in a situation where
+    the groundwater level reaches the surface level and forms a lake. Beacuase
+    of the larger storage of the lake, the (groundwater) level then rises
+    slower when it rains.
 
 
-    Attributes
+    Parameters
     ----------
     value : float
         The starting value of the simulation above which the simulation is
@@ -28,6 +28,8 @@ class ThresholdTransform:
     vmin : float
         The maximum value of the simulation above which the simulation is
         lowered
+    name: str
+        Name of the transform
     nparam : int
         The number of parameters. Default is nparam=2. The first parameter
         then is the threshold, and the second parameter is the factor with
