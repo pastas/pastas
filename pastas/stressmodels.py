@@ -490,7 +490,7 @@ class StepModel(StressModelBase):
     -----
     This step trend is calculated as follows. First, a binary series is
     created, with zero values before tstart, and ones after the start. This
-    series is convoluted with the block response to simulate step trend.
+    series is convoluted with the block response to simulate a step trend.
 
     """
     _name = "StepModel"
@@ -535,7 +535,7 @@ class StepModel(StressModelBase):
 
 
 class LinearTrend(StressModelBase):
-    """Stressmodel that simulated a linear trend.
+    """Stressmodel that simulates a linear trend.
 
     name: str
         String with the name of the stressmodel
