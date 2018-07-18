@@ -636,8 +636,9 @@ class NoConvModel(StressModelBase):
     def __init__(self, stress, rfunc, name, metadata=None, up=True,
                  cutoff=0.99, settings=None):
         stress = TimeSeries(stress, settings=settings, metadata=metadata)
-        StressModelBase.__init__(self, rfunc, name, stress.index.min(),
-                                 stress.index.max(), up, stress.mean(), cutoff)
+        StressModelBase.__init__(self, rfunc, name, stress.series.index.min(),
+                                 stress.series.index.max(), up,
+                                 stress.series.mean(), cutoff)
         self.freq = stress.settings["freq"]
         self.stress = [stress]
         self.set_init_parameters()
@@ -668,23 +669,22 @@ class NoConvModel(StressModelBase):
         tindex = pd.date_range(tmin, tmax, freq=freq)
         # take the difference in values,
         # as we will calculate the step response
-        stress = self.stress[0].diff()
+        s = self.stress[0].series.diff()
         # set the index at the beginning of each period (it was at the end),
         # as we will calculate the step response from the start of the period
-        stress = stress.shift(-1).dropna()
+        s = s.shift(-1).dropna()
         # add a first value
-        ind = self.stress[0].index
-        stress = pd.concat((pd.Series(self.stress[0][0],
-                                      index=[ind[0] - (ind[1] - ind[0])]),
-                            stress))
+        ind = self.stress[0].series.index
+        s = pd.concat((pd.Series(self.stress[0].series[0],
+                                      index=[ind[0] - (ind[1] - ind[0])]),s))
         # remove steps that do not change
-        stress = stress[~(stress == 0)]
+        s = s[~(s == 0)]
         tmax = pd.to_timedelta(self.rfunc.get_tmax(p), 'd')
         gain = self.rfunc.gain(p)
         values = np.zeros(len(tindex))
-        if len(tindex) > len(stress):
+        if len(tindex) > len(s):
             # loop over the stress-series
-            for ind_str, val_str in stress.items():
+            for ind_str, val_str in s.items():
                 t = tindex - ind_str
                 mask = (tindex > ind_str) & (t <= tmax)
                 if np.any(mask):
@@ -697,15 +697,15 @@ class NoConvModel(StressModelBase):
         else:
             # loop over the observation-series
             for i, ind_obs in enumerate(tindex):
-                t = ind_obs - stress.index
-                mask = (ind_obs > stress.index) & (t <= tmax)
+                t = ind_obs - s.index
+                mask = (ind_obs > s.index) & (t <= tmax)
                 if np.any(mask):
                     # calculate the step response
                     td = np.array(t[mask].total_seconds() / 86400)
-                    values[i] += np.sum(stress[mask] * self.rfunc.step(p, td))
+                    values[i] += np.sum(s[mask] * self.rfunc.step(p, td))
                 mask = t > tmax
                 if np.any(mask):
-                    values[i] += np.sum(stress[mask] * gain)
+                    values[i] += np.sum(s[mask] * gain)
             pass
         h = pd.Series(values, tindex, name=self.name)
         return h

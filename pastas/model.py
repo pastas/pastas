@@ -827,7 +827,7 @@ class Model:
 
         if all(self.stressmodels[key]._name == "NoConvModel" for key in
                self.stressmodels.keys()):
-            self.sim_index = self.oseries.index
+            self.sim_index = self.oseries.series.index
         elif self.sim_index is None or update_sim_index:
             tmin = (tmin - pd.DateOffset(days=warmup)).floor(freq) + \
                    self.settings["time_offset"]
@@ -1055,7 +1055,10 @@ class Model:
             warmup = self.settings["warmup"]
 
         # use warmup
-        tmin_warm = tmin - pd.DateOffset(days=warmup)
+        if tmin:
+            tmin_warm = tmin - pd.DateOffset(days=warmup)
+        else:
+            tmin_warm = None
 
         dt = get_dt(freq)
 

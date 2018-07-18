@@ -8,8 +8,9 @@ import pastas as ps
 
 # Read observations
 obs = ps.read_dino('data/B58C0698001_1.csv')
-obs = obs.iloc[::5]
-obs = obs[obs.index > pd.to_datetime('1-1-2010')]
+obs.series_original = obs.series_original[::5]
+mask = obs.series_original.index > pd.to_datetime('1-1-2010')
+obs.series_original = obs.series_original[mask]
 
 # Create the time series model
 ml = ps.Model(obs)
