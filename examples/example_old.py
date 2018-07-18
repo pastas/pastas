@@ -32,6 +32,6 @@ n = ps.NoiseModel()
 ml.add_noisemodel(n)
 
 # Solve
-ml.solve(freq="W")
+ml.solve(freq="7D")
 ml.plot()
 
