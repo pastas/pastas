@@ -19,7 +19,7 @@ from pandas.tseries.frequencies import to_offset
 logger = getLogger(__name__)
 
 
-class TimeSeries():
+class TimeSeries(object):
     """Class that deals with all user-provided Time Series.
 
     Parameters
@@ -87,9 +87,9 @@ class TimeSeries():
                  freq_original=None, **kwargs):
         if isinstance(series, TimeSeries):
             # Copy all the series
-            self.series_original = series.series_original.copy()
-            self.series_validated = series.series_validated.copy()
-            self.series = series.series.copy()
+            self._series_original = series.series_original.copy()
+            self._series_validated = series.series_validated.copy()
+            self._series = series.series.copy()
             # Copy all the properties
             self.freq_original = series.freq_original
             self.settings = series.settings.copy()
@@ -106,12 +106,13 @@ class TimeSeries():
                 if len(series.columns) is 1:
                     series = series.iloc[:, 0]
             elif not isinstance(series, pd.Series):
-                logger.error("Expected a Pandas Series, got %s" % type(series))
+                error = "Expected a Pandas Series, got %s" % type(series)
+                raise(TypeError(error))
 
             validate = True
             update = True
             # Store a copy of the original series
-            self.series_original = series.copy()
+            self._series_original = series.copy()
 
             self.freq_original = freq_original
             self.settings = {
@@ -137,7 +138,7 @@ class TimeSeries():
         if name is None:
             name = series.name
         self.name = name
-        self.series_original.name = name
+        self._series_original.name = name
 
         if metadata is not None:
             self.metadata.update(metadata)
@@ -159,9 +160,42 @@ class TimeSeries():
 
         # Create a validated series for computations and update
         if validate:
-            self.series_validated = self.validate_series(series)
+            self._series_validated = self.validate_series(series)
         if update:
             self.update_series(force_update=True, **self.settings)
+
+    @property
+    def series_original(self):
+        return self._series_original
+
+    @series_original.setter
+    def series_original(self, series):
+        if not isinstance(series, pd.Series):
+            raise(TypeError("Expected a Pandas Series, got %s" % type(series)))
+        else:
+            self._series_original = series
+            self._series_validated = self.validate_series(series)
+            self.update_series(force_update=True, **self.settings)
+
+    @property
+    def series(self):
+        return self._series
+
+    @series.setter
+    def series(self, value):
+        raise (AttributeError('You cannot set series by yourself, as it is '
+                              'calculated from series_original. Please set '
+                              'series_original to update the series.'))
+
+    @property
+    def series_validated(self):
+        return self._series_validated
+
+    @series_validated.setter
+    def series_validated(self, value):
+        raise (AttributeError('You cannot set series_validated by yourself, as it is '
+                              'calculated from series_original. Please set '
+                              'series_original to update the series.'))
 
     def __repr__(self):
         """Prints a simple string representation of the time series.
@@ -323,7 +357,7 @@ class TimeSeries():
             series = self.fill_after(series)
             series = self.normalize(series)
 
-            self.series = series
+            self._series = series
 
     def change_frequency(self, series):
         """Method to change the frequency of the time series.
@@ -586,8 +620,8 @@ class TimeSeries():
         return series
 
     def multiply(self, other):
-        self.series = self.series.multiply(other)
-        self.series_original = self.series_original.multiply(other)
+        self._series = self.series.multiply(other)
+        self._series_original = self.series_original.multiply(other)
         self.update_series(force_update=True)
 
     def dump(self, series=True):
