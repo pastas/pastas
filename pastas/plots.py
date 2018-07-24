@@ -79,14 +79,13 @@ class Plotting:
 
         """
         figsize = kwargs.pop("figsize", None)
-        fig = self._get_figure(figsize=figsize, )
+        fig = self._get_figure(figsize=figsize)
 
         # Number of rows to make the figure with
         rows = 3 + len(self.ml.stressmodels)
 
         # Main frame
-        ax1 = plt.subplot2grid((rows, 3), (0, 0), colspan=2, rowspan=2,
-                               fig=fig)
+        ax1 = plt.subplot2grid((rows, 3), (0, 0), colspan=2, rowspan=2)
         o = self.ml.observations(tmin=tmin, tmax=tmax)
         o_nu = self.ml.oseries.series.drop(o.index)
         if not o_nu.empty:
@@ -135,7 +134,7 @@ class Plotting:
         table.auto_set_font_size(value=True)
         table.auto_set_column_width([0, 1])
         ax3.add_table(table)
-        plt.setp(ax3.spines.values(), color=None)
+        ax3.axis('off')
 
         # Add a row for each stressmodel
         for i, sm in enumerate(self.ml.stressmodels.keys(), start=3):
