@@ -65,7 +65,7 @@ class Plotting:
         return fig.axes
 
     @model_tmin_tmax
-    def results(self, tmin=None, tmax=None, **kwargs):
+    def results(self, tmin=None, tmax=None, figsize=(10,8), **kwargs):
         """Plot different results in one window to get a quick overview.
 
         Parameters
@@ -78,7 +78,6 @@ class Plotting:
         -------
 
         """
-        figsize = kwargs.pop("figsize", None)
         fig = self._get_figure(figsize=figsize)
 
         # Number of rows to make the figure with
@@ -95,7 +94,7 @@ class Plotting:
         o.plot(ax=ax1, linestyle='', marker='.', color='k', x_compat=True)
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
         sim.plot(ax=ax1, x_compat=True)
-        plt.legend(loc=(0, 1), ncol=3, frameon=False)
+        ax1.legend(loc=(0, 1), ncol=3, frameon=False)
 
         ax1.set_ylim(min(o.min(), sim.loc[tmin:tmax].min()),
                      max(o.max(), sim.loc[tmin:tmax].max()))
@@ -107,34 +106,11 @@ class Plotting:
         if self.ml.settings["noise"] and self.ml.noisemodel:
             noise = self.ml.noise(tmin=tmin, tmax=tmax)
             noise.plot(ax=ax2, sharex=ax1, x_compat=True)
-        plt.legend(loc=(0, 1), ncol=3, frameon=False)
+        ax2.legend(loc=(0, 1), ncol=3, frameon=False)
 
         # Stats frame
         ax3 = plt.subplot2grid((rows, 3), (0, 2), rowspan=3)
-        ax3.xaxis.set_visible(False)
-        ax3.yaxis.set_visible(False)
-        # plt.text(0.05, 0.8, 'Rsq: %.2f' % self.ml.stats.rsq())
-        # plt.text(0.05, 0.6, 'EVP: %.2f' % self.ml.stats.evp())
-        plt.title('Model Information', loc='left')
-
-        # Draw parameters table
-        cols = ["optimal", "stderr"]
-        parameters = self.ml.parameters.loc[:, cols]
-        for name, vals in parameters.loc[:, cols].iterrows():
-            popt, stderr = vals
-            val = np.abs(np.divide(stderr, popt) * 100)
-            parameters.loc[name, "stderr"] = \
-                "{:}{:.2e}({:.2f}{:})".format("\u00B1", stderr, val, "\u0025")
-        parameters.loc[:, "optimal"] = \
-            parameters.loc[:, "optimal"].apply("{:.2f}".format)
-
-        table = plt.table(colLabels=cols, colWidths=[0.2, 0.4],
-                          loc='center', cellText=parameters.values,
-                          rowLabels=parameters.index)
-        table.auto_set_font_size(value=True)
-        table.auto_set_column_width([0, 1])
-        ax3.add_table(table)
-        ax3.axis('off')
+        ax3.set_title('Model Information', loc='left')
 
         # Add a row for each stressmodel
         for i, sm in enumerate(self.ml.stressmodels.keys(), start=3):
@@ -153,11 +129,28 @@ class Plotting:
 
         ax1.set_xlim(tmin, tmax)
 
+        fig.tight_layout(pad=0.0)
+        
+        # Draw parameters table
+        parameters = self.ml.parameters.copy()
+        parameters['name']=parameters.index
+        cols = ["name","optimal", "stderr"]
+        parameters = parameters.loc[:, cols]
+        for name, vals in parameters.loc[:, cols].iterrows():
+            parameters.loc[name, "optimal"] = '{:.2f}'.format(vals.optimal)
+            stderr_perc = np.abs(np.divide(vals.stderr, vals.optimal) * 100)
+            parameters.loc[name, "stderr"] = '{:.1f}{}'.format(stderr_perc,
+                                                             "\u0025")
+        ax3.axis('off')
+        # loc='upper center'
+        ax3.table(bbox=(0.,0.,1.0,1.0), cellText=parameters.values,
+                  colWidths=[0.5,0.25,0.25],colLabels=cols)
+
         return fig.axes
 
     @model_tmin_tmax
     def decomposition(self, tmin=None, tmax=None, ytick_base=True, split=True,
-                      **kwargs):
+                      figsize=(10, 8), **kwargs):
         """Plot the decomposition of a time-series in the different stresses.
 
         Parameters
@@ -218,7 +211,7 @@ class Plotting:
             in ylims]
 
         # open the figure
-        fig, ax = plt.subplots(len(series), sharex=True,
+        fig, ax = plt.subplots(len(series), sharex=True, figsize=figsize,
                                gridspec_kw={'height_ratios': height_ratios},
                                **kwargs)
         ax = np.atleast_1d(ax)
@@ -232,9 +225,11 @@ class Plotting:
         o.plot(linestyle='', marker='.', color='k',
                markersize=3, ax=ax[0], x_compat=True)
         sim.plot(ax=ax[0], x_compat=True)
+        ax[0].set_title('Observations vs simulation')
         ax[0].set_ylim(ylims[0])
         ax[0].grid(which='both')
-        ax[0].legend(loc=(0, 1), ncol=3, frameon=False)
+        ax[0].legend(ncol=3, frameon=False)
+
 
         if ytick_base:
             if isinstance(ytick_base, bool):
@@ -262,8 +257,9 @@ class Plotting:
             ax[i].minorticks_off()
 
         ax[0].set_xlim(tmin, tmax)
+        fig.tight_layout(pad=0.0)
 
-        return fig.axes
+        return ax
 
     @model_tmin_tmax
     def diagnostics(self, tmin=None, tmax=None):

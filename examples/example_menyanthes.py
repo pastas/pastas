@@ -48,7 +48,5 @@ ml.solve()
 
 # make a decomposition-plot
 ax = ml.plots.decomposition(ytick_base=1.)
-ax[0].set_title('Observations vs simulation')
-ax[0].legend()
-ax[0].figure.tight_layout(pad=0)
 
+ml.plots.results()
