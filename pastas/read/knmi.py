@@ -47,7 +47,7 @@ def read_knmi(fname, variables='RD'):
 
             metadata = {}
             if knmi.stations is not None and not knmi.stations.empty:
-                station = knmi.stations.loc[str(code), :]
+                station = knmi.stations.loc[code, :]
                 metadata['x'] = station.LON_east
                 metadata['y'] = station.LAT_north
                 metadata['z'] = station.ALT_m
@@ -249,7 +249,14 @@ class KnmiStation:
                 line = line.replace('   ', '  ')
                 # Add station location data
                 line = line.split('  ')
-                self.stations.loc[line[0]] = line[1:]
+                stn = int(line[0])
+                def maybe_float(s):
+                    try:
+                        return float(s)
+                    except (ValueError, TypeError):
+                        return s
+                line = [maybe_float(v) for v in line[1:]]
+                self.stations.loc[stn] = line
 
             # Read in a new line and start over
             line = f.readline()
