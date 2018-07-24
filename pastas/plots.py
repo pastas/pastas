@@ -95,9 +95,9 @@ class Plotting:
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
         sim.plot(ax=ax1, x_compat=True)
         ax1.legend(loc=(0, 1), ncol=3, frameon=False)
-
         ax1.set_ylim(min(o.min(), sim.loc[tmin:tmax].min()),
                      max(o.max(), sim.loc[tmin:tmax].max()))
+        ax1.minorticks_off()
 
         # Residuals and noise
         ax2 = plt.subplot2grid((rows, 3), (2, 0), colspan=2, sharex=ax1)
@@ -107,6 +107,7 @@ class Plotting:
             noise = self.ml.noise(tmin=tmin, tmax=tmax)
             noise.plot(ax=ax2, sharex=ax1, x_compat=True)
         ax2.legend(loc=(0, 1), ncol=3, frameon=False)
+        ax2.minorticks_off()
 
         # Stats frame
         ax3 = plt.subplot2grid((rows, 3), (0, 2), rowspan=3)
@@ -126,6 +127,7 @@ class Plotting:
                 sharex = axb
             axb = plt.subplot2grid((rows, 3), (i, 2), sharex=sharex)
             self.ml.get_step_response(sm).plot(ax=axb)
+            ax.minorticks_off()
 
         ax1.set_xlim(tmin, tmax)
 
@@ -368,7 +370,8 @@ class Plotting:
         return fig.axes
 
     @model_tmin_tmax
-    def stresses(self, tmin=None, tmax=None, cols=1, split=True, **kwargs):
+    def stresses(self, tmin=None, tmax=None, cols=1, split=True,
+                 sharex=True, figsize=(10,8), **kwargs):
         """This method creates a graph with all the stresses used in the
          model.
 
@@ -402,25 +405,23 @@ class Plotting:
 
         rows = len(stresses)
         rows = -(-rows // cols)  # round up with out additional import
+            
+        fig, axes = plt.subplots(rows, cols, sharex=sharex, figsize=figsize,
+                               **kwargs)
 
-        sharex = True
-        if 'sharex' in kwargs:
-            sharex = kwargs['sharex']
-            kwargs.pop('sharex')
-        fig, ax = plt.subplots(rows, cols, sharex=sharex, **kwargs)
-
-        if hasattr(ax, "flatten"):
-            ax = ax.flatten()
+        if hasattr(axes, "flatten"):
+            axes = axes.flatten()
         else:
-            ax = [ax]
+            axes = [axes]
 
-        for ax, stress in zip(ax, stresses):
-            stress.plot(ax=ax, x_compat=True)
+        for ax, stress in zip(axes, stresses):
+            stress.plot(ax=ax)
             ax.legend([stress.name], loc=2)
 
         plt.xlim(tmin, tmax)
+        fig.tight_layout(pad=0.0)
 
-        return fig.axes
+        return axes
 
     def _get_figure(self, **kwargs):
         fig = plt.figure(**kwargs)
