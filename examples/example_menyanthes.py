@@ -48,5 +48,3 @@ ml.solve()
 
 # make a decomposition-plot
 ax = ml.plots.decomposition(ytick_base=1.)
-
-ml.plots.results()
