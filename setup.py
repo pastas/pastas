@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-with open("README.md", "r") as fh:
+with open("README.rst", "r") as fh:
     long_description = fh.read()
 
 # Get the version.
@@ -13,7 +13,7 @@ setup(
     version=version['__version__'],
     description='Python Applied System TimeSeries Analysis Software',
     long_description=long_description,
-    long_description_content_type="text/markdown",
+    long_description_content_type="text/x-rst",
     url='https://github.com/pastas/pastas',
     author='R.A. Collenteur, M. Bakker, R. Calje, F. Schaars',
     author_email='raoulcollenteur@gmail.com, markbak@gmail.com, '
