@@ -1053,7 +1053,7 @@ class Model:
 
         # use warmup
         if tmin:
-            tmin_warm = tmin - pd.DateOffset(days=warmup)
+            tmin_warm = pd.Timestamp(tmin) - pd.DateOffset(days=warmup)
         else:
             tmin_warm = None
 

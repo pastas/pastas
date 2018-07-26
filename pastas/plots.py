@@ -78,7 +78,7 @@ class Plotting:
         -------
 
         """
-        fig = self._get_figure(figsize=figsize)
+        fig = self._get_figure(figsize=figsize, **kwargs)
 
         # Number of rows to make the figure with
         rows = 3 + len(self.ml.stressmodels)
