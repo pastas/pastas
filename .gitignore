@@ -18,4 +18,3 @@ dist
 .idea/.name
 .cache/v/cache/lastfailed
 *.log
-*.pas
