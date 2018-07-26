@@ -307,7 +307,7 @@ class Project:
 
         Returns
         -------
-        data: pandas.DataFrame
+        data: pandas.DataFrame or pandas.Series
             Returns a pandas DataFrame with the models name as the index and
             the parameters as columns. A pandas Series is returned when only
             one parameter values is collected.
@@ -341,9 +341,7 @@ class Project:
 
         Returns
         -------
-        data: pandas.DataFrame
-
-
+        data: pandas.DataFrame or pandas.Series
 
         """
         if models is None:

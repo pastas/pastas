@@ -9,7 +9,9 @@ R.A. Collenteur - August 2017
 import json
 from collections import OrderedDict
 
-import pandas as pd
+from pandas import NaT, Series, Timedelta, DataFrame, read_json, Timestamp, \
+    to_numeric
+
 from pastas import TimeSeries
 
 
@@ -21,25 +23,25 @@ def load(fname):
 def pastas_hook(obj):
     for key, value in obj.items():
         if key in ["tmin", "tmax", "date_modified", "date_created"]:
-            val = pd.Timestamp(value)
-            if val is pd.NaT:
+            val = Timestamp(value)
+            if val is NaT:
                 val = None
             obj[key] = val
         elif key == "series":
             try:
-                obj[key] = pd.read_json(value, typ='series', orient="split")
+                obj[key] = read_json(value, typ='series', orient="split")
             except:
                 try:
                     obj[key] = TimeSeries(**value)
                 except:
                     obj[key] = value
         elif key == "time_offset":
-            obj[key] = pd.Timedelta(value)
+            obj[key] = Timedelta(value)
         elif key == "parameters":
             # Necessary to maintain order when using the JSON format!
             value = json.loads(value, object_pairs_hook=OrderedDict)
-            param = pd.DataFrame(data=value, columns=value.keys()).T
-            obj[key] = param.apply(pd.to_numeric, errors="ignore")
+            param = DataFrame(data=value, columns=value.keys()).T
+            obj[key] = param.apply(to_numeric, errors="ignore")
         else:
             try:
                 obj[key] = json.loads(value, object_hook=pastas_hook)
@@ -68,16 +70,16 @@ class PastasEncoder(json.JSONEncoder):
 
     def default(self, obj):
 
-        if isinstance(obj, pd.Timestamp):
+        if isinstance(obj, Timestamp):
             return obj.isoformat()
-        elif isinstance(obj, pd.Series):
+        elif isinstance(obj, Series):
             return obj.to_json(date_format="iso", orient="split")
-        elif isinstance(obj, pd.DataFrame):
+        elif isinstance(obj, DataFrame):
             # Necessary to maintain order when using the JSON format!
             return obj.to_json(orient="index")
-        elif isinstance(obj, pd.Timedelta):
+        elif isinstance(obj, Timedelta):
             return obj.to_timedelta64().__str__()
-        elif isinstance(obj, pd._libs.tslib.NaTType):
+        elif isinstance(obj, NaT):
             return None
         else:
             return super(PastasEncoder, self).default(obj)

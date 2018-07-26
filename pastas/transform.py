@@ -4,13 +4,14 @@
 
 """
 import numpy as np
-import pandas as pd
+from pandas import DataFrame
+
 from .model import Model
 
 
 class ThresholdTransform:
     """ThresholdTransform lowers the simulation when it exceeds a certain value
-    
+
     In geohydrology this transform can for example be used in a situation where
     the groundwater level reaches the surface level and forms a lake. Beacuase
     of the larger storage of the lake, the (groundwater) level then rises
@@ -57,7 +58,7 @@ class ThresholdTransform:
         self.set_init_parameters()
 
     def set_init_parameters(self):
-        self.parameters = pd.DataFrame(
+        self.parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         self.parameters.loc[self.name + '_1'] = (
             self.value, self.vmin, self.vmax, 1, self.name)

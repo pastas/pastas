@@ -598,6 +598,7 @@ class LinearTrend(StressModelBase):
         }
         return data
 
+
 class Constant(StressModelBase):
     """A constant value that is added to the time series model.
 

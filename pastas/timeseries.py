@@ -11,10 +11,10 @@ August 2017, R.A. Collenteur
 from logging import getLogger
 
 import pandas as pd
+from pandas.tseries.frequencies import to_offset
 
 from .utils import get_stress_dt, get_dt, get_time_offset, \
     timestep_weighted_resample
-from pandas.tseries.frequencies import to_offset
 
 logger = getLogger(__name__)
 
@@ -107,7 +107,7 @@ class TimeSeries(object):
                     series = series.iloc[:, 0]
             elif not isinstance(series, pd.Series):
                 error = "Expected a Pandas Series, got %s" % type(series)
-                raise(TypeError(error))
+                raise (TypeError(error))
 
             validate = True
             update = True
@@ -171,7 +171,8 @@ class TimeSeries(object):
     @series_original.setter
     def series_original(self, series):
         if not isinstance(series, pd.Series):
-            raise(TypeError("Expected a Pandas Series, got %s" % type(series)))
+            raise (
+                TypeError("Expected a Pandas Series, got %s" % type(series)))
         else:
             self._series_original = series
             self._series_validated = self.validate_series(series)
@@ -193,9 +194,10 @@ class TimeSeries(object):
 
     @series_validated.setter
     def series_validated(self, value):
-        raise (AttributeError('You cannot set series_validated by yourself, as it is '
-                              'calculated from series_original. Please set '
-                              'series_original to update the series.'))
+        raise (AttributeError(
+            'You cannot set series_validated by yourself, as it is '
+            'calculated from series_original. Please set '
+            'series_original to update the series.'))
 
     def __repr__(self):
         """Prints a simple string representation of the time series.
@@ -406,8 +408,8 @@ class TimeSeries(object):
         # adjust the first timestep, so that the output will have the
         # correct frequncy
         t0_new = series.index[0].ceil(freq)
-        if t0_new>series.index[0]:
-            series.index.set_value(series.index, series.index[0],t0_new)
+        if t0_new > series.index[0]:
+            series.index.set_value(series.index, series.index[0], t0_new)
 
         n = series.isnull().values.sum()
 
@@ -484,7 +486,8 @@ class TimeSeries(object):
 
     def sample_weighted(self, series):
         freq = self.settings["freq"]
-        tindex = pd.date_range(series.index[0].ceil(freq),series.index[-1],freq=freq)
+        tindex = pd.date_range(series.index[0].ceil(freq), series.index[-1],
+                               freq=freq)
         series = timestep_weighted_resample(series, tindex)
         logger.info("Time Series %s were sampled down to freq %s with method "
                     "%s" % (self.name, freq, 'timestep_weighted_resample'))

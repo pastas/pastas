@@ -143,9 +143,9 @@ class LeastSquares(BaseSolver):
         self.nfev = self.fit.nfev
 
         pcov = self.get_covariances(self.fit, model)
-        #self.pcor = self.get_correlations(self.pcov)
+        # self.pcor = self.get_correlations(self.pcov)
 
-        #sig, pcov, pcor = self.get_covcorrmatrix(model)
+        # sig, pcov, pcor = self.get_covcorrmatrix(model)
         self.pcov = DataFrame(pcov, index=parameters.index,
                               columns=parameters.index)
         self.pcor = DataFrame(None, index=parameters.index,

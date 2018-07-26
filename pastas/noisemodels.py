@@ -5,8 +5,8 @@ Author: R.A. Collenteur, 2017
 
 """
 
-from logging import getLogger
 from abc import ABC
+from logging import getLogger
 
 import numpy as np
 import pandas as pd
@@ -199,7 +199,6 @@ class NoiseModel2(NoiseModelBase):
 
     """
     _name = "NoiseModel2"
-
 
     def __init__(self):
         NoiseModelBase.__init__(self)

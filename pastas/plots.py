@@ -65,7 +65,7 @@ class Plotting:
         return fig.axes
 
     @model_tmin_tmax
-    def results(self, tmin=None, tmax=None, figsize=(10,8), **kwargs):
+    def results(self, tmin=None, tmax=None, figsize=(10, 8), **kwargs):
         """Plot different results in one window to get a quick overview.
 
         Parameters
@@ -132,21 +132,21 @@ class Plotting:
         ax1.set_xlim(tmin, tmax)
 
         fig.tight_layout(pad=0.0)
-        
+
         # Draw parameters table
         parameters = self.ml.parameters.copy()
-        parameters['name']=parameters.index
-        cols = ["name","optimal", "stderr"]
+        parameters['name'] = parameters.index
+        cols = ["name", "optimal", "stderr"]
         parameters = parameters.loc[:, cols]
         for name, vals in parameters.loc[:, cols].iterrows():
             parameters.loc[name, "optimal"] = '{:.2f}'.format(vals.optimal)
             stderr_perc = np.abs(np.divide(vals.stderr, vals.optimal) * 100)
             parameters.loc[name, "stderr"] = '{:.1f}{}'.format(stderr_perc,
-                                                             "\u0025")
+                                                               "\u0025")
         ax3.axis('off')
         # loc='upper center'
-        ax3.table(bbox=(0.,0.,1.0,1.0), cellText=parameters.values,
-                  colWidths=[0.5,0.25,0.25],colLabels=cols)
+        ax3.table(bbox=(0., 0., 1.0, 1.0), cellText=parameters.values,
+                  colWidths=[0.5, 0.25, 0.25], colLabels=cols)
 
         return fig.axes
 
@@ -231,7 +231,6 @@ class Plotting:
         ax[0].set_ylim(ylims[0])
         ax[0].grid(which='both')
         ax[0].legend(ncol=3, frameon=False)
-
 
         if ytick_base:
             if isinstance(ytick_base, bool):
@@ -371,7 +370,7 @@ class Plotting:
 
     @model_tmin_tmax
     def stresses(self, tmin=None, tmax=None, cols=1, split=True,
-                 sharex=True, figsize=(10,8), **kwargs):
+                 sharex=True, figsize=(10, 8), **kwargs):
         """This method creates a graph with all the stresses used in the
          model.
 
@@ -405,9 +404,9 @@ class Plotting:
 
         rows = len(stresses)
         rows = -(-rows // cols)  # round up with out additional import
-            
+
         fig, axes = plt.subplots(rows, cols, sharex=sharex, figsize=figsize,
-                               **kwargs)
+                                 **kwargs)
 
         if hasattr(axes, "flatten"):
             axes = axes.flatten()

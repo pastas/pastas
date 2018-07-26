@@ -168,9 +168,7 @@ class Map:
             Return the axes.
 
         """
-        if kind is None:
-            pass
-        elif kind == "oseries":
+        if kind == "oseries":
             series = self.mls.oseries
         elif kind == "stresses":
             series = self.mls.stresses

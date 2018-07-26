@@ -1,6 +1,6 @@
 """This module contains plottings methods for Pastas projects.
 
-Raoul Collenteur, 2018 - Artesia Water B.V.
+Raoul Collenteur, 2018 - Artesia Water.
 
 """
 import matplotlib.pyplot as plt

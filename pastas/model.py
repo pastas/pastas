@@ -581,7 +581,7 @@ class Model:
         tmax: str, optional
             String with an end date for the simulation period (E.g. '2010').
             If none is provided, the tmax from the oseries is used.
-        solver: pastas.solver.BaseSolver, optional
+        solver: pastas.solver.BaseSolver class, optional
             Class used to solve the model. Options are: ps.LeastSquares
             (default) or ps.LmfitSolve. A class is needed, not an instance
             of the class!
@@ -942,7 +942,8 @@ class Model:
                               'specified tmin')
         if use_oseries:
             assert self.oseries.series.loc[tmin: tmax].size > 0, \
-                self.logger.error('Error: no observations between tmin and tmax')
+                self.logger.error(
+                    'Error: no observations between tmin and tmax')
 
         return tmin, tmax
 
