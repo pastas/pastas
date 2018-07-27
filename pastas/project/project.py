@@ -12,14 +12,17 @@ Usage
 
 """
 
-import logging
-import os
+from logging import getLogger
+from os import getlogin
 
 import numpy as np
 import pandas as pd
 import pastas as ps
 
-logger = logging.getLogger(__name__)
+from .maps import Map
+from .plots import Plot
+
+logger = getLogger(__name__)
 
 
 class Project:
@@ -49,10 +52,15 @@ class Project:
                                               "y", "z"])
         self.oseries = pd.DataFrame(columns=["name", "series", "kind", "x",
                                              "y", "z"])
+        self.oseries.index.astype(str)
 
         # Project metadata and file information
         self.metadata = self.get_metadata(metadata)
         self.file_info = self._get_file_info()
+
+        # Load other modules
+        self.plots = Plot(self)
+        self.maps = Map(self)
 
     def add_series(self, series, name=None, kind=None, metadata=None,
                    settings=None, **kwargs):
@@ -82,6 +90,9 @@ class Project:
         if name is None:
             name = series.name
 
+        if not isinstance(name, str):
+            name = str(name)
+
         if kind == "oseries":
             data = self.oseries
         else:
@@ -90,13 +101,14 @@ class Project:
         if name in data.index:
             logger.error("Time series with name %s is already present in the \
                          database. Please provide a different name." % name)
+            return
 
         try:
             ts = ps.TimeSeries(series=series, name=name, settings=settings,
                                metadata=metadata, **kwargs)
         except:
-            logger.warning("Time series %s is ommitted from the database."
-                           % name)
+            logger.warning("An error occurred. Time series %s is omitted "
+                           "from the database." % name)
             return
 
         data.at[name, "name"] = name
@@ -162,7 +174,7 @@ class Project:
 
         # Validate name and ml_name before continuing
         if model_name in self.models.keys():
-            logger.error("Model name is not unique, provide a new ml_name.")
+            logger.error("Model name is not unique, provide a new model_name.")
         if oseries not in self.oseries.index:
             logger.error("Oseries name is not present in the database. "
                          "Make sure to provide a valid oseries name.")
@@ -196,7 +208,7 @@ class Project:
         -------
 
         """
-        key = ml.oseries.name
+        key = str(ml.oseries.name)
         prec_name = self.get_nearest_stresses(key, kind="prec").iloc[0][0]
         prec = self.stresses.loc[prec_name, "series"]
         evap_name = self.get_nearest_stresses(key, kind="evap").iloc[0][0]
@@ -295,7 +307,7 @@ class Project:
 
         Returns
         -------
-        data: pandas.DataFrame
+        data: pandas.DataFrame or pandas.Series
             Returns a pandas DataFrame with the models name as the index and
             the parameters as columns. A pandas Series is returned when only
             one parameter values is collected.
@@ -329,9 +341,7 @@ class Project:
 
         Returns
         -------
-        data: pandas.DataFrame
-
-
+        data: pandas.DataFrame or pandas.Series
 
         """
         if models is None:
@@ -357,10 +367,56 @@ class Project:
 
         data = pd.DataFrame(index=models)
 
-        data = data.join(self.oseries.loc[models, "z"])
+        data = data.join(self.oseries.loc[models, ["x", "y", "z"]])
         data["geometry"] = [Point(xy[0], xy[1]) for xy in
                             self.oseries.loc[models, ["x", "y"]].values]
         data = gpd.GeoDataFrame(data, geometry="geometry", **kwargs)
+        return data
+
+    def get_oseries_metadata(self, oseries, metadata):
+        """
+
+        Parameters
+        ----------
+        oseries
+        metadata
+
+        Returns
+        -------
+        data: pandas.DataFrame
+
+        """
+        data = pd.DataFrame(data=None, index=oseries, columns=metadata)
+
+        for oseries in data.index:
+            meta = self.oseries.loc[oseries, "series"].metadata
+            for key in metadata:
+                data.loc[oseries, key] = meta[key]
+
+        return data
+
+    def get_oseries_settings(self, oseries, settings):
+        """Method to obtain the settings from each oseries TimeSeries object.
+
+        Parameters
+        ----------
+        oseries
+        settings
+
+        Returns
+        -------
+        data: pandas.DataFrame
+            Pandas DataFrame with the oseries as index, settings as columns
+            and the values as data.
+
+        """
+        data = pd.DataFrame(data=None, index=oseries, columns=settings)
+
+        for oseries in data.index:
+            sets = self.oseries.loc[oseries, "series"].settings
+            for key in settings:
+                data.loc[oseries, key] = sets[key]
+
         return data
 
     def get_metadata(self, meta=None):
@@ -378,7 +434,7 @@ class Project:
         file_info["date_modified"] = pd.Timestamp.now()
         file_info["pastas_version"] = ps.__version__
         try:
-            file_info["owner"] = os.getlogin()
+            file_info["owner"] = getlogin()
         except:
             file_info["owner"] = "Unknown"
         return file_info
@@ -397,7 +453,7 @@ class Project:
         data = self.dump_data(**kwargs)
         return ps.io.base.dump(fname, data)
 
-    def dump_data(self, series=False, metadata=True, sim_series=False):
+    def dump_data(self, series=False, sim_series=False):
         """Method to export a Pastas Project and return a dictionary with
         the data to be exported.
 
@@ -427,7 +483,6 @@ class Project:
         data["models"] = dict()
         for name, ml in self.models.items():
             data["models"][name] = ml.dump_data(series=series,
-                                                metadata=metadata,
                                                 sim_series=sim_series,
                                                 file_info=False)
 

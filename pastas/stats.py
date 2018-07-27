@@ -3,7 +3,7 @@ Statistics can be calculated for the following time series:
 - Observation series
 - Simulated series
 - Residual series
-- Innovation series
+- Noise series
 Each of these series can be obtained through their individual (private) get
 method for a specific time frame.
 two different types of statistics are provided: model statistics and
@@ -35,15 +35,16 @@ import pandas as pd
 from scipy.stats import chi2, norm
 
 from pastas.decorators import model_tmin_tmax
+from .utils import get_sample
 
-__all__ = ["acf", "ccf", "ljung_box", "runs_test"]
+__all__ = ["acf", "ccf", "ljung_box", "runs_test", "durbin_watson", ]
 
 
 class Statistics:
     # Save all statistics that can be calculated.
     ops = {'evp': 'Explained variance percentage',
            'rmse': 'Root mean squared error',
-           'rmsi': 'Root mean squared innovation',
+           'rmsi': 'Root mean squared noise',
            'sse': 'Sum of squares of the error',
            'avg_dev': 'Average Deviation',
            'rsq': 'Pearson R^2',
@@ -89,15 +90,15 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
     @model_tmin_tmax
     def rmsi(self, tmin=None, tmax=None):
-        """Root mean squared error of the innovations.
+        """Root mean squared error of the noise.
 
         Notes
         -----
-        .. math:: rmsi = sqrt(sum(innovations**2) / N)
+        .. math:: rmsi = sqrt(sum(noise**2) / N)
 
-        where N is the number of innovations.
+        where N is the number of noise.
         """
-        res = self.ml.innovations(tmin=tmin, tmax=tmax)
+        res = self.ml.noise(tmin=tmin, tmax=tmax)
         N = res.size
         return np.sqrt(sum(res ** 2) / N)
 
@@ -162,7 +163,10 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        evp = max(0.0, 100 * (1 - (res.var() / obs.var())))
+        if obs.var() == 0.0:
+            return 100.
+        else:
+            evp = max(0.0, 100 * (1 - (res.var() / obs.var())))
         return evp
 
     @model_tmin_tmax
@@ -228,10 +232,10 @@ included in Pastas. To obtain a list of all statistics that are included type:
         Where:
             nparam : Number of free parameters
         """
-        innovations = self.ml.innovations(tmin=tmin, tmax=tmax)
-        n = innovations.size
+        noise = self.ml.noise(tmin=tmin, tmax=tmax)
+        n = noise.size
         nparam = len(self.ml.parameters[self.ml.parameters.vary == True])
-        bic = -2.0 * np.log(sum(innovations ** 2.0)) + nparam * np.log(n)
+        bic = -2.0 * np.log(sum(noise ** 2.0)) + nparam * np.log(n)
         return bic
 
     @model_tmin_tmax
@@ -246,9 +250,9 @@ included in Pastas. To obtain a list of all statistics that are included type:
             nparam = Number of free parameters
             L = likelihood function for the model.
         """
-        innovations = self.ml.innovations(tmin=tmin, tmax=tmax)
+        noise = self.ml.noise(tmin=tmin, tmax=tmax)
         nparam = len(self.ml.parameters[self.ml.parameters.vary == True])
-        aic = -2.0 * np.log(sum(innovations ** 2.0)) + 2.0 * nparam
+        aic = -2.0 * np.log(sum(noise ** 2.0)) + 2.0 * nparam
         return aic
 
     @model_tmin_tmax
@@ -584,7 +588,6 @@ def runs_test(series, tmin=None, tmax=None, cutoff="mean"):
 
     Parameters
     ----------
-    cutoff
     series: pandas.Series
         Series to perform the runs test on.
     tmin
@@ -608,7 +611,7 @@ def runs_test(series, tmin=None, tmax=None, cutoff="mean"):
     R[R > cutoff] = 1
     R[R < cutoff] = 0
 
-    # Calculate number of positive and negative innovations
+    # Calculate number of positive and negative noise
     n_pos = R.sum()
     n_neg = R.index.size - n_pos
 
@@ -631,53 +634,50 @@ def runs_test(series, tmin=None, tmax=None, cutoff="mean"):
     return z, pval
 
 
-# Some Dutch statistics
-
-# noinspection PyIncorrectDocstring,PyIncorrectDocstring
-def q_ghg(series, tmin=None, tmax=None, q=0.94):
+# %% Some Dutch statistics
+def q_ghg(series, tmin=None, tmax=None, q=0.94, by_year=True):
     """Gemiddeld Hoogste Grondwaterstand (GHG) also called MHGL (Mean High
-    Groundwater Level) Approximated by taking a quantile of the
-    timeseries values, after resampling to daily values.
+    Groundwater Level). Approximated by taking quantiles of the
+    timeseries values per year and calculating the mean of the quantiles.
 
-    This function does not care about series length!
+    The series is first resampled to daily values.
 
     Parameters
     ----------
     series: pandas.Series
         Series to calculate the GHG for.
-    tmin/tmax: pandas.Timestamp, optional
-        Time indices to use for the simulation of the time series model.
+    tmin: pandas.Timestamp, optional
+    tmax: pandas.Timestamp, optional
     q : float, optional
         quantile fraction of exceedance (default 0.94)
-
+    by_year: bool, optional
+        Take average over quantiles per year (default True)
     """
-    series = series.resample('d').median()
-    return series.quantile(q)
+    return __q_gxg__(series, q, tmin=tmin, tmax=tmax, by_year=by_year)
 
 
-# noinspection PyIncorrectDocstring,PyIncorrectDocstring
-def q_glg(series, tmin=None, tmax=None, q=0.06):
+def q_glg(series, tmin=None, tmax=None, q=0.06, by_year=True):
     """Gemiddeld Laagste Grondwaterstand (GLG) also called MLGL (Mean Low
-    Groundwater Level) approximated by taking a quantile of the
-    timeseries values, after resampling to daily values.
+    Groundwater Level). Approximated by taking quantiles of the
+    timeseries values per year and calculating the mean of the quantiles.
 
-    This function does not care about series length!
+    The series is first resampled to daily values.
 
     Parameters
     ----------
     series: pandas.Series
         Series to calculate the GLG for.
-    tmin/tmax : pandas.Timestamp, optional
-        Time indices to use for the simulation of the time series model.
+    tmin: pandas.Timestamp, optional
+    tmax: pandas.Timestamp, optional
     q : float, optional
         quantile, fraction of exceedance (default 0.06)
-
+    by_year: bool, optional
+        Take average over quantiles per year (default True)
     """
-    series = series.resample('d').median()
-    return series.quantile(q)
+    return __q_gxg__(series, q, tmin=tmin, tmax=tmax, by_year=by_year)
 
 
-def q_gvg(series, tmin=None, tmax=None):
+def q_gvg(series, tmin=None, tmax=None, by_year=True):
     """Gemiddeld Voorjaarsgrondwaterstand (GVG) also called MSGL (Mean
     Spring Groundwater Level) approximated by taking the median of the
     values in the period between 14 March and 15 April (after resampling to
@@ -689,43 +689,56 @@ def q_gvg(series, tmin=None, tmax=None):
     ----------
     series: pandas.Series
         Series to calculate the GVG for.
-    tmin/tmax: pandas.Timestamp, optional
-        Time indices to use for the simulation of the time series model.
-
+    tmin: pandas.Timestamp, optional
+    tmax: pandas.Timestamp, optional
+    by_year: bool, optional
+        Take average over quantiles per year (default True)
     """
+    if tmin is not None:
+        series = series.loc[tmin:]
+    if tmax is not None:
+        series = series.loc[:tmax]
     series = series.resample('d').median()
     inspring = __in_spring__(series)
     if np.any(inspring):
-        return series.loc[inspring].median()
+        if by_year:
+            return (series
+                    .loc[inspring]
+                    .resample('a')
+                    .median()
+                    .mean()
+                    )
+        else:
+            return series.loc[inspring].median()
     else:
         return np.nan
 
 
-def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=8,
-        output='mean', min_n_meas=12, min_n_years=8, year_offset='a-apr'):
+def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
+        output='mean', min_n_meas=16, min_n_years=8, year_offset='a-mar'):
     """Classic method resampling the series to every 14th and 28th of
     the month. Taking the mean of the mean of three highest values per
     year.
 
     Parameters
     ----------
-    tmin/tmax : pandas.Timestamp, optional
-        Time indices to use for the simulation of the time series model.
+    tmin: pandas.Timestamp, optional
+    tmax: pandas.Timestamp, optional
     series
     fill_method : str
         see .. :mod: pastas.stats.__gxg__
     limit : int or None, optional
         Maximum number of days to fill using fill method, use None to
-        fill nothing.
+        fill nothing
     output : str, optional
         output type 'yearly' for series of yearly values, 'mean' for mean
-        of yearly values.
+        of yearly values
     min_n_meas: int, optional
         Minimum number of measurements per year (at maximum 24).
     min_n_years: int, optional
-        Minimum number of years.
+        Minimum number of years
     year_offset: resampling offset. Use 'a' for calendar years
-    (jan 1 to dec 31) and 'a-apr' for hydrological years (apr 1 to mar 31).
+        (jan 1 to dec 31) and 'a-mar' for hydrological years (apr 1 to mar 31)
 
     Returns
     -------
@@ -739,7 +752,12 @@ def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=8,
         if len(s) < min_n_meas:
             return np.nan
         else:
-            return s.nlargest(3).mean()
+            if len(s) > 20:
+                return s.nlargest(3).mean()
+            elif len(s) > 12:
+                return s.nlargest(2).mean()
+            else:
+                return s.nlargest(1).mean()
 
     return __gxg__(series, mean_high, tmin=tmin, tmax=tmax,
                    fill_method=fill_method, limit=limit, output=output,
@@ -747,15 +765,15 @@ def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=8,
                    year_offset=year_offset)
 
 
-def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=8,
-        output='mean', min_n_meas=12, min_n_years=8, year_offset='a-apr'):
+def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
+        output='mean', min_n_meas=16, min_n_years=8, year_offset='a-mar'):
     """Classic method resampling the series to every 14th and 28th of
     the month. Taking the mean of the mean of three lowest values per year.
 
     Parameters
     ----------
-    tmin/tmax : pandas.Timestamp, optional
-        Time indices to use for the simulation of the time series model.
+    tmin: pandas.Timestamp, optional
+    tmax: pandas.Timestamp, optional
     series
     fill_method : str, optional
         see .. :mod: pastas.stats.__gxg__
@@ -770,7 +788,7 @@ def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=8,
     min_n_years: int, optional
         Minimum number of years
     year_offset: resampling offset. Use 'a' for calendar years
-    (jan 1 to dec 31) and 'a-apr' for hydrological years (apr 1 to mar 31)
+        (jan 1 to dec 31) and 'a-mar' for hydrological years (apr 1 to mar 31)
 
     Returns
     -------
@@ -784,7 +802,12 @@ def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=8,
         if len(s) < min_n_meas:
             return np.nan
         else:
-            return s.nsmallest(3).mean()
+            if len(s) > 20:
+                return s.nsmallest(3).mean()
+            elif len(s) > 12:
+                return s.nsmallest(2).mean()
+            else:
+                return s.nsmallest(1).mean()
 
     return __gxg__(series, mean_low, tmin=tmin, tmax=tmax,
                    fill_method=fill_method, limit=limit, output=output,
@@ -793,21 +816,21 @@ def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=8,
 
 
 def gvg(series, tmin=None, tmax=None, fill_method='linear', limit=8,
-        output='mean', min_n_meas=1, min_n_years=8, year_offset='a'):
+        output='mean', min_n_meas=2, min_n_years=8, year_offset='a'):
     """Classic method resampling the series to every 14th and 28th of
     the month. Taking the mean of the values on March 14, March 28 and
     April 14.
 
     Parameters
     ----------
-    tmin/tmax : pandas.Timestamp, optional
-        Time indices to use for the simulation of the time series model.
+    tmin: pandas.Timestamp, optional
+    tmax: pandas.Timestamp, optional
     series
     fill_method : str, optional
         see .. :mod: pastas.stats.__gxg__
     limit : int or None, optional
         Maximum number of days to fill using fill method, use None to
-        fill nothing.
+        fill nothing
     output : str, optional
         output type 'yearly' for series of yearly values, 'mean' for
         mean of yearly values
@@ -816,7 +839,7 @@ def gvg(series, tmin=None, tmax=None, fill_method='linear', limit=8,
     min_n_years: int, optional
         Minimum number of years
     year_offset: resampling offset. Use 'a' for calendar years
-    (jan 1 to dec 31) and 'a-apr' for hydrological years (apr 1 to mar 31)
+        (jan 1 to dec 31) and 'a-mar' for hydrological years (apr 1 to mar 31)
 
     Returns
     -------
@@ -884,13 +907,13 @@ def __gxg__(series, year_agg, tmin, tmax, fill_method, limit, output,
     ----------
     year_agg : function series -> scalar
         Aggregator function to one value per year
-    tmin/tmax : pandas.Timestamp, optional
-        Time indices to use for the simulation of the time series model.
+    tmin: pandas.Timestamp, optional
+    tmax: pandas.Timestamp, optional
     fill_method : str
         see notes below
     limit : int or None, optional
         Maximum number of days to fill using fill method, use None to
-        fill nothing.
+        fill nothing
     output : str
         output type 'yearly' for series of yearly values, 'mean' for
         mean of yearly values
@@ -900,7 +923,7 @@ def __gxg__(series, year_agg, tmin, tmax, fill_method, limit, output,
         Minimum number of years.
     year_offset: string
         resampling offset. Use 'a' for calendar years (jan 1 to dec 31)
-        and 'a-apr' for hydrological years (apr 1 to mar 31)
+        and 'a-mar' for hydrological years (apr 1 to mar 31)
 
 
     Returns
@@ -924,13 +947,23 @@ def __gxg__(series, year_agg, tmin, tmax, fill_method, limit, output,
 
     """
     # handle tmin and tmax
-    if tmin:
+    if tmin is not None:
         series = series.loc[tmin:]
-    if tmax:
+    if tmax is not None:
         series = series.loc[:tmax]
+    if series.empty:
+        if output.startswith('year'):
+            return pd.Series()
+        elif output == 'mean':
+            return np.nan
+        else:
+            ValueError('{output:} is not a valid output option'.format(
+                output=output))
 
     # resample the series to values at the 14th and 28th of every month
+    # first generate a daily series by averaging multiple measurements during the day
     series = series.resample('d').mean()
+    select14or28 = True
     if fill_method is None:
         series = series.dropna()
     elif fill_method == 'ffill':
@@ -938,27 +971,85 @@ def __gxg__(series, year_agg, tmin, tmax, fill_method, limit, output,
     elif fill_method == 'bfill':
         series = series.bfill(limit=limit)
     elif fill_method == 'nearest':
-        series = series.dropna().reindex(series.index, method=fill_method,
-                                         limit=limit)
+        if limit == 0:
+            # limit=0 is a trick to only use each measurements once
+            # only keep days with measurements
+            series = series.dropna()
+            # generate an index at the 14th and 28th of every month
+            buf = pd.to_timedelta(8, 'd')
+            ref_index = pd.date_range(series.index.min() - buf,
+                                      series.index.max() + buf)
+            mask = [(x.day == 14) or (x.day == 28) for x in ref_index]
+            ref_index = ref_index[mask]
+            # only keep the days that are closest to series.index
+            ref_index = get_sample(ref_index, series.index)
+            # and set the index of series to this index
+            # (and remove rows in series that are not in ref_index)
+            series = series.reindex(ref_index, method=fill_method)
+            select14or28 = False
+        else:
+            # with a large limit (larger than 6) it is possible that one measurement is used more than once
+            series = series.dropna().reindex(series.index, method=fill_method,
+                                             limit=limit)
     else:
-        series = series.interpolate(method=fill_method, limit=limit)
-    the14or28 = lambda x: (x.day == 14) or (x.day == 28)
-    is14or28 = pd.Series(series.index.map(the14or28), index=series.index)
-    series = series.loc[is14or28]
+        series = series.interpolate(method=fill_method, limit=limit,
+                                    limit_direction='both')
+
+    # and select the 14th and 28th of each month (if needed still)
+    if select14or28:
+        mask = [(x.day == 14) or (x.day == 28) for x in series.index]
+        series = series.loc[mask]
+
+    # remove NaNs that may have formed in the process above
+    series.dropna(inplace=True)
 
     # resample the series to yearly values
     yearly = series.resample(year_offset).apply(year_agg,
                                                 min_n_meas=min_n_meas)
-    yearly = yearly.dropna()
 
     # return statements
     if output.startswith('year'):
         return yearly
     elif output == 'mean':
-        if len(yearly) < min_n_years:
+        if yearly.notna().sum() < min_n_years:
             return np.nan
         else:
             return yearly.mean()
     else:
         ValueError('{output:} is not a valid output option'.format(
             output=output))
+
+
+def __q_gxg__(series, q, tmin=None, tmax=None, by_year=True):
+    """Dutch groundwater statistics GHG and GLG approximated
+    by taking quantiles of the timeseries values per year
+    and taking the mean of the quantiles.
+
+    The series is first resampled to daily values.
+
+    Parameters
+    ----------
+    series: pandas.Series
+        Series to calculate the GXG for.
+    q: float
+        quantile fraction of exceedance
+    tmin: pandas.Timestamp, optional
+    tmax: pandas.Timestamp, optional
+    by_year: bool, optional
+        Take average over quantiles per year (default True)
+    """
+    if tmin is not None:
+        series = series.loc[tmin:]
+    if tmax is not None:
+        series = series.loc[:tmax]
+    series = series.resample('d').median()
+    if by_year:
+        return (series
+                .resample('a')
+                .apply(lambda s: s.quantile(q))
+                .mean()
+                )
+    else:
+        return series.quantile(q)
+
+    # noinspection PyIncorrectDocstring,PyIncorrectDocstring

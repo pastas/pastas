@@ -7,17 +7,19 @@ data.
 August 2017, R.A. Collenteur
 
 """
-from __future__ import print_function, division
 
-import logging
+from logging import getLogger
 
 import pandas as pd
-from pastas.utils import get_dt, get_time_offset, timestep_weighted_resample
+from pandas.tseries.frequencies import to_offset
 
-logger = logging.getLogger(__name__)
+from .utils import get_stress_dt, get_dt, get_time_offset, \
+    timestep_weighted_resample
+
+logger = getLogger(__name__)
 
 
-class TimeSeries(pd.Series):
+class TimeSeries(object):
     """Class that deals with all user-provided Time Series.
 
     Parameters
@@ -36,14 +38,17 @@ class TimeSeries(pd.Series):
     metadata: dict, optional
         Dictionary with metadata of the time series.
     freq_original str, optional
-    **kwargs: dict, optional
+    **kwargs: optional
         Any keyword arguments that are provided but are not listed will be
-        passed as addiotional settings.
+        passed as additional settings.
 
     Notes
     -----
     For the individual options for the different settings please refer to
     the docstring from the TimeSeries.update_series() method.
+
+    To obtain the predefined TimeSeries settings, you can run the following
+    line of code: 'ps.TimeSeries._predefined_settings'
 
     See Also
     --------
@@ -60,31 +65,35 @@ class TimeSeries(pd.Series):
         "prec": {"sample_up": "divide", "sample_down": "sum",
                  "fill_nan": 0.0, "fill_before": "mean", "fill_after": "mean"},
         "evap": {"sample_up": "divide", "sample_down": "sum",
-                 "fill_before": "mean", "fill_after": "mean"},
+                 "fill_before": "mean", "fill_after": "mean",
+                 "fill_nan": "interpolate"},
         "well": {"sample_up": "divide", "sample_down": "sum",
                  "fill_nan": 0.0, "fill_before": 0.0, "fill_after": 0.0},
         "waterlevel": {"sample_up": "interpolate", "sample_down": "mean",
-                       "fill_before": "mean", "fill_after": "mean"},
+                       "fill_before": "mean", "fill_after": "mean",
+                       "fill_nan": "interpolate"},
         "level": {"sample_up": "interpolate", "sample_down": "mean",
-                  "fill_before": "mean", "fill_after": "mean"},
+                  "fill_before": "mean", "fill_after": "mean",
+                  "fill_nan": "interpolate"},
         "flux": {"sample_up": "bfill", "sample_down": "mean",
-                 "fill_before": "mean", "fill_after": "mean"},
+                 "fill_before": "mean", "fill_after": "mean",
+                 "fill_nan": 0.0},
         "quantity": {"sample_up": "divide", "sample_down": "sum",
-                     "fill_before": "mean", "fill_after": "mean"},
+                     "fill_before": "mean", "fill_after": "mean",
+                     "fill_nan": 0.0},
     }
 
     def __init__(self, series, name=None, settings=None, metadata=None,
                  freq_original=None, **kwargs):
-        pd.Series.__init__(self)
-
-        self.index.name = "Date"
         if isinstance(series, TimeSeries):
-            self.series_original = series.series_original.copy()
+            # Copy all the series
+            self._series_original = series.series_original.copy()
+            self._series_validated = series.series_validated.copy()
+            self._series = series.series.copy()
+            # Copy all the properties
             self.freq_original = series.freq_original
             self.settings = series.settings.copy()
             self.metadata = series.metadata.copy()
-            self.series = series.series.copy()
-            self._update_inplace(series)
 
             validate = False
             update = False
@@ -92,22 +101,32 @@ class TimeSeries(pd.Series):
             if settings is None:
                 settings = self.settings.copy()
         else:
+            # Make sure we have a Pandas Series and not a 1D-DataFrame
+            if isinstance(series, pd.DataFrame):
+                if len(series.columns) is 1:
+                    series = series.iloc[:, 0]
+            elif not isinstance(series, pd.Series):
+                error = "Expected a Pandas Series, got %s" % type(series)
+                raise (TypeError(error))
+
             validate = True
             update = True
             # Store a copy of the original series
-            self.series_original = series.copy()
+            self._series_original = series.copy()
+
             self.freq_original = freq_original
-            self.settings = dict(
-                freq=None,
-                sample_up=None,
-                sample_down=None,
-                fill_nan="interpolate",
-                fill_before=None,
-                fill_after=None,
-                tmin=None,
-                tmax=None,
-                norm=None
-            )
+            self.settings = {
+                "freq": None,
+                "sample_up": None,
+                "sample_down": None,
+                "fill_nan": "interpolate",
+                "fill_before": None,
+                "fill_after": None,
+                "tmin": None,
+                "tmax": None,
+                "norm": None,
+                "time_offset": pd.Timedelta(0)
+            }
             self.metadata = {
                 "x": 0.0,
                 "y": 0.0,
@@ -119,22 +138,12 @@ class TimeSeries(pd.Series):
         if name is None:
             name = series.name
         self.name = name
-        self.series_original.name = name
+        self._series_original.name = name
 
         if metadata is not None:
             self.metadata.update(metadata)
 
-        # kind argument will be deprecated in version 0.9.6
-        kind = kwargs.pop("kind", None)
-        if kind:
-            logger.warning("Deprecation error: the kind argument will be "
-                           "deprecated in Pastas 0.9.6. Please provide "
-                           "a string to the settings argument.")
-            if kind in self._predefined_settings.keys():
-                if self.update_settings(**self._predefined_settings[kind]):
-                    update = True
-
-        # Update the options with user-provided values, if any.
+        # Update the settings with user-provided values, if any.
         if settings:
             if isinstance(settings, str):
                 if settings in self._predefined_settings.keys():
@@ -151,9 +160,55 @@ class TimeSeries(pd.Series):
 
         # Create a validated series for computations and update
         if validate:
-            self.series = self.validate_series(series)
+            self._series_validated = self.validate_series(series)
         if update:
             self.update_series(force_update=True, **self.settings)
+
+    @property
+    def series_original(self):
+        return self._series_original
+
+    @series_original.setter
+    def series_original(self, series):
+        if not isinstance(series, pd.Series):
+            raise (
+                TypeError("Expected a Pandas Series, got %s" % type(series)))
+        else:
+            self._series_original = series
+            self._series_validated = self.validate_series(series)
+            self.update_series(force_update=True, **self.settings)
+
+    @property
+    def series(self):
+        return self._series
+
+    @series.setter
+    def series(self, value):
+        raise (AttributeError('You cannot set series by yourself, as it is '
+                              'calculated from series_original. Please set '
+                              'series_original to update the series.'))
+
+    @property
+    def series_validated(self):
+        return self._series_validated
+
+    @series_validated.setter
+    def series_validated(self, value):
+        raise (AttributeError(
+            'You cannot set series_validated by yourself, as it is '
+            'calculated from series_original. Please set '
+            'series_original to update the series.'))
+
+    def __repr__(self):
+        """Prints a simple string representation of the time series.
+        """
+        template = ('{cls}(name={name}, freq={freq}, tmin={tmin}, '
+                    'tmax={tmax})')
+        return template.format(cls=self.__class__.__name__,
+                               name=self.name,
+                               freq=self.settings["freq"],
+                               tmin=self.settings["tmin"],
+                               tmax=self.settings["tmax"])
 
     def validate_series(self, series):
         """ This method performs some PASTAS specific tests for the TimeSeries.
@@ -181,14 +236,11 @@ class TimeSeries(pd.Series):
 
         """
 
-        # 1. Check if series is a Pandas Series
-        assert isinstance(series, pd.Series), "Expected a Pandas Series, " \
-                                              "got %s" % type(series)
-
         # 2. Make sure the indices are Timestamps and sorted
         series.index = pd.to_datetime(series.index)
         series.sort_index(inplace=True)
         series.index.name = "Date"
+        series = series.astype(float)
 
         # 3. Drop nan-values at the beginning and end of the time series
         series = series.loc[series.first_valid_index():series.last_valid_index(
@@ -240,7 +292,10 @@ class TimeSeries(pd.Series):
         update = False
         for key, value in kwargs.items():
             if key in ["tmin", "tmax"]:
-                value = pd.Timestamp(value)
+                if value is None:
+                    pass
+                else:
+                    value = pd.Timestamp(value)
             if value != self.settings[key]:
                 self.settings[key] = value
                 update = True
@@ -296,7 +351,7 @@ class TimeSeries(pd.Series):
         """
         if self.update_settings(**kwargs) or force_update:
             # Get the validated series to start with
-            series = self.series.copy(deep=True)
+            series = self.series_validated.copy(deep=True)
 
             # Update the series with the new settings
             series = self.change_frequency(series)
@@ -304,7 +359,7 @@ class TimeSeries(pd.Series):
             series = self.fill_after(series)
             series = self.normalize(series)
 
-            self._update_inplace(series)
+            self._series = series
 
     def change_frequency(self, series):
         """Method to change the frequency of the time series.
@@ -320,7 +375,7 @@ class TimeSeries(pd.Series):
             series = self.sample_weighted(series)
         else:
             dt_new = get_dt(freq)
-            dt_org = get_dt(self.freq_original)
+            dt_org = get_stress_dt(self.freq_original)
             # 3. If new and original frequency are not a multiple of each other
             eps = 1e-10
             if not ((dt_new % dt_org) < eps or (dt_org % dt_new) < eps):
@@ -333,6 +388,7 @@ class TimeSeries(pd.Series):
                 series = self.sample_down(series)
             # 6. If new frequency is equal to its original
             elif dt_new == dt_org:
+                # shouldn't we do this before changing frequency?
                 series = self.fill_nan(series)
 
         # Drop nan-values at the beginning and end of the time series
@@ -349,6 +405,12 @@ class TimeSeries(pd.Series):
         method = self.settings["sample_up"]
         freq = self.settings["freq"]
 
+        # adjust the first timestep, so that the output will have the
+        # correct frequncy
+        t0_new = series.index[0].ceil(freq)
+        if t0_new > series.index[0]:
+            series.index.set_value(series.index, series.index[0], t0_new)
+
         n = series.isnull().values.sum()
 
         if method in ["backfill", "bfill", "pad", "ffill"]:
@@ -363,8 +425,8 @@ class TimeSeries(pd.Series):
                 series = series.asfreq(freq)
                 series.interpolate(method="time", inplace=True)
             elif method == "divide":
-                dt = series.index.to_series().diff() / pd.Timedelta(1, freq)
-                series = series.iloc[1:] / dt.iloc[1:]
+                dt = series.index.to_series().diff() / to_offset(freq).delta
+                series = series / dt
                 series = series.asfreq(freq, method="bfill")
             elif isinstance(method, float):
                 series = series.asfreq(freq)
@@ -392,8 +454,16 @@ class TimeSeries(pd.Series):
         method = self.settings["sample_down"]
         freq = self.settings["freq"]
 
+        # when a multiple freq is used (like '7D') make sure the first record
+        # has a rounded index
+        series = series[series.index[0].ceil(freq):]
+
+        # Shift time series by offset, as resample time_offset doesn't do it.
+        series = series.shift(1, freq=self.settings["time_offset"])
+
         # Provide some standard pandas arguments for all options
-        kwargs = {"label": "right", "closed": "right"}
+        kwargs = {"label": "right", "closed": "right",
+                  "loffset": self.settings["time_offset"]}
 
         if method == "mean":
             series = series.resample(freq, **kwargs).mean()
@@ -415,10 +485,10 @@ class TimeSeries(pd.Series):
         return series
 
     def sample_weighted(self, series):
-        series0 = series
         freq = self.settings["freq"]
-        series = series.resample(freq).mean()
-        series = timestep_weighted_resample(series0, series.index)
+        tindex = pd.date_range(series.index[0].ceil(freq), series.index[-1],
+                               freq=freq)
+        series = timestep_weighted_resample(series, tindex)
         logger.info("Time Series %s were sampled down to freq %s with method "
                     "%s" % (self.name, freq, 'timestep_weighted_resample'))
         return series
@@ -548,33 +618,16 @@ class TimeSeries(pd.Series):
             series = series.subtract(method)
         else:
             logger.info("Selected method %s to normalize the time series is "
-                        "not supported" %method)
+                        "not supported" % method)
 
         return series
 
     def multiply(self, other):
-        self.series = self.series.multiply(other)
-        self.series_original = self.series_original.multiply(other)
+        self._series = self.series.multiply(other)
+        self._series_original = self.series_original.multiply(other)
         self.update_series(force_update=True)
 
-    def transform_coordinates(self, to_projection):
-        try:
-            from pyproj import Proj, transform
-            inProj = Proj(init=self.metadata['projection'])
-            outProj = Proj(init=to_projection)
-            x, y = transform(inProj, outProj, self.metadata['x'],
-                             self.metadata['y'])
-            self.metadata['x'] = x
-            self.metadata['y'] = y
-            self.metadata['projection'] = to_projection
-        except ImportError:
-            raise ImportError(
-                'The module pyproj could not be imported. Please '
-                'install through:'
-                '>>> pip install pyproj'
-                'or ... conda install pyproj')
-
-    def dump(self, series=True, transformed_series=False):
+    def dump(self, series=True):
         """Method to export the Time Series to a json format.
 
         Parameters
@@ -593,11 +646,10 @@ class TimeSeries(pd.Series):
         """
         data = dict()
 
-        if series:
-            if transformed_series:
-                data["series"] = self
-            else:
-                data["series"] = self.series_original
+        if series is True or series == "original":
+            data["series"] = self.series_original
+        elif series == "modified":
+            data["series"] = self
 
         data["name"] = self.name
         data["settings"] = self.settings
@@ -605,3 +657,22 @@ class TimeSeries(pd.Series):
         data["freq_original"] = self.freq_original
 
         return data
+
+    def plot(self, original=False, **kwargs):
+        """Method to plot the TimeSeries object. Plots the edited series by
+        default.
+
+        Parameters
+        ----------
+        original: bool
+            Also plot the original series.
+        kwargs
+
+        Returns
+        -------
+
+        """
+        self.series.plot(**kwargs)
+
+        if original:
+            self.series_original.plot()

@@ -24,29 +24,23 @@ ml.add_stressmodel(sm)
 
 # Add well extraction 1
 IN = meny.IN['Extraction 1']
-well = ps.TimeSeries(IN["values"], freq_original="M", freq="D",
-                     settings="well")
+well = ps.TimeSeries(IN["values"], freq_original="M", settings="well")
 # extraction amount counts for the previous month
-sm = ps.StressModel(well, ps.Hantush, 'Extraction_1', up=False,
-                    settings="well")
+sm = ps.StressModel(well, ps.Hantush, 'Extraction_1', up=False)
 ml.add_stressmodel(sm)
 
 # Add well extraction 2
 IN = meny.IN['Extraction 2']
-well = ps.TimeSeries(IN["values"], freq_original="M", freq="D",
-                     settings="well")
+well = ps.TimeSeries(IN["values"], freq_original="M", settings="well")
 # extraction amount counts for the previous month
-sm = ps.StressModel(well, ps.Hantush, 'Extraction_2', up=False,
-                    settings="well")
+sm = ps.StressModel(well, ps.Hantush, 'Extraction_2', up=False)
 ml.add_stressmodel(sm)
 
 # Add well extraction 3
 IN = meny.IN['Extraction 3']
-well = ps.TimeSeries(IN["values"], freq_original="M", freq="D",
-                     settings="well")
+well = ps.TimeSeries(IN["values"], freq_original="M", settings="well")
 # extraction amount counts for the previous month
-sm = ps.StressModel(well, ps.Hantush, 'Extraction_3', up=False,
-                    settings="well")
+sm = ps.StressModel(well, ps.Hantush, 'Extraction_3', up=False)
 ml.add_stressmodel(sm)
 
 # Solve
@@ -54,7 +48,3 @@ ml.solve()
 
 # make a decomposition-plot
 ax = ml.plots.decomposition(ytick_base=1.)
-ax[0].set_title('Observations vs simulation')
-ax[0].legend()
-ax[0].figure.tight_layout(pad=0)
-

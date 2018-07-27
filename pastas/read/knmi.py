@@ -3,10 +3,6 @@
 
 """
 
-from __future__ import print_function, division
-
-from datetime import date
-
 import pandas as pd
 
 from ..timeseries import TimeSeries
@@ -19,6 +15,8 @@ def read_knmi(fname, variables='RD'):
     ----------
     fname: str
         Filename and path to a Dino file.
+    variables: str
+        String with the variable name to extract.
 
     Returns
     -------
@@ -49,7 +47,7 @@ def read_knmi(fname, variables='RD'):
 
             metadata = {}
             if knmi.stations is not None and not knmi.stations.empty:
-                station = knmi.stations.loc[str(code), :]
+                station = knmi.stations.loc[code, :]
                 metadata['x'] = station.LON_east
                 metadata['y'] = station.LAT_north
                 metadata['z'] = station.ALT_m
@@ -104,14 +102,15 @@ class KnmiStation:
     Information about the measurement-station(s) is found in knmi.stations.
     The measurement-data itself is found in knmi.data
     """
+
     def __init__(self, start=None, end=None, inseason=False, vars='ALL',
                  stns='260', interval='daily'):
         if start is None:
-            self.start = date(date.today().year, 1, 1)
+            self.start = pd.Timestamp(pd.Timestamp.today().year, 1, 1)
         else:
             self.start = pd.to_datetime(start)
         if end is None:
-            self.end = date.today()
+            self.end = pd.Timestamp.today()
         else:
             self.end = pd.to_datetime(end)
         self.inseason = inseason
@@ -119,8 +118,9 @@ class KnmiStation:
         self.stns = stns  # de Bilt (zou ook 'ALL' kunnen zijn)
         self.interval = interval
 
-        if self.interval.startswith('hour') and vars=='RD':
-            raise(ValueError('Interval can not be hourly for rainfall-stations'))
+        if self.interval.startswith('hour') and vars == 'RD':
+            raise (
+                ValueError('Interval can not be hourly for rainfall-stations'))
 
         self.stations = None
         self.variables = dict()
@@ -139,7 +139,6 @@ class KnmiStation:
     def download(self):
         """
 
-        :return:
         """
         # Import the necessary modules (optional and not included in the
         # installation of pastas).
@@ -152,20 +151,9 @@ class KnmiStation:
                 '>>> pip install requests'
                 'or:'
                 '>>> conda install requests')
-        try:
-            # StringIO changed from py27 to py35
-            try:
-                from StringIO import StringIO
-            except ImportError:
-                from io import StringIO
-        except ImportError:
-            raise ImportWarning(
-                'The module requests could not be imported. Please '
-                'install through:'
-                '>>> pip install StringIO (for python 2)'
-                'or: '
-                '>>> pip install io (for python 3)')
-        
+
+        from io import StringIO
+
         if self.interval.startswith('hour'):
             # hourly data from meteorological stations
             url = 'http://projects.knmi.nl/klimatologie/uurgegevens/getdata_uur.cgi'
@@ -179,12 +167,13 @@ class KnmiStation:
             if isinstance(self.stns, int):
                 self.stns = str(self.stns)
             else:
-                raise NameError('Meerdere locaties nog niet ondersteund')
+                self.stns = [str(i) for i in self.stns]
+                self.stns = ":".join(self.stns)
 
         if self.interval.startswith('hour'):
             data = {
-                'start': self.start.strftime('%Y%m%d')+'01',
-                'end': self.end.strftime('%Y%m%d')+'24',
+                'start': self.start.strftime('%Y%m%d') + '01',
+                'end': self.end.strftime('%Y%m%d') + '24',
                 'vars': self.vars,
                 'stns': self.stns,
             }
@@ -248,7 +237,16 @@ class KnmiStation:
                 line = line.replace('   ', '  ')
                 # Add station location data
                 line = line.split('  ')
-                self.stations.loc[line[0]] = line[1:]
+                stn = int(line[0])
+
+                def maybe_float(s):
+                    try:
+                        return float(s)
+                    except (ValueError, TypeError):
+                        return s
+
+                line = [maybe_float(v) for v in line[1:]]
+                self.stations.loc[stn] = line
 
             # Read in a new line and start over
             line = f.readline()

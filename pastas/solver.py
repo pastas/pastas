@@ -3,7 +3,7 @@ PASTAS.
 
 All solvers inherit from the BaseSolver class, which contains general method
 for selecting the correct time series to minimize and options to weight the
-residuals or innovations series.
+residuals or noise series.
 
 Notes
 -----
@@ -18,15 +18,14 @@ To solve a model the following syntax can be used:
 
 """
 
-from __future__ import print_function, division
-
-import logging
+from logging import getLogger
 
 import numpy as np
+from pandas import DataFrame
 from scipy.linalg import svd
 from scipy.optimize import least_squares, differential_evolution
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 class BaseSolver:
@@ -37,7 +36,7 @@ class BaseSolver:
     A solver is implemented with a separate init method and objective function
     that returns the necessary format that is required by the specific solver.
     The objective function calls the get_residuals method of the BaseSolver
-    class, which calculates the residuals or innovations (depending on the
+    class, which calculates the residuals or noise (depending on the
     noise keyword) and applies weights (depending on the weights keyword).
 
     """
@@ -86,9 +85,9 @@ class BaseSolver:
 
         """
 
-        # Get the residuals or the innovations
+        # Get the residuals or the noise
         if noise:
-            res = model.innovations(parameters, tmin, tmax, freq)
+            res = model.noise(parameters, tmin, tmax, freq)
         else:
             res = model.residuals(parameters, tmin, tmax, freq)
 
@@ -143,8 +142,15 @@ class LeastSquares(BaseSolver):
 
         self.nfev = self.fit.nfev
 
-        self.pcov = self.get_covariances(self.fit, model)
-        self.pcor = self.get_correlations(self.pcov)
+        pcov = self.get_covariances(self.fit, model)
+        # self.pcor = self.get_correlations(self.pcov)
+
+        # sig, pcov, pcor = self.get_covcorrmatrix(model)
+        self.pcov = DataFrame(pcov, index=parameters.index,
+                              columns=parameters.index)
+        self.pcor = DataFrame(None, index=parameters.index,
+                              columns=parameters.index)
+
         self.optimal_params = self.initial
         self.optimal_params[self.vary] = self.fit.x
         self.stderr = np.zeros(len(self.optimal_params))
@@ -174,6 +180,19 @@ class LeastSquares(BaseSolver):
         res = self.minimize(p, tmin, tmax, noise, model, freq,
                             weights)
         return res
+
+    def get_covcorrmatrix(self, model):
+        """Method to compute sigma, covariance and correlation matrix
+        """
+        nparam = len(self.fit.x)
+        H = self.fit.jac.T @ self.fit.jac
+        sigsq = np.var(self.fit.fun, ddof=nparam)
+        covmat = np.linalg.inv(H) * sigsq
+        stderr = np.sqrt(np.diag(covmat))
+        D = np.diag(1 / stderr)
+        corrmat = D @ covmat @ D
+
+        return stderr, covmat, corrmat
 
     def get_covariances(self, res, model, absolute_sigma=False):
         """Method to get the covariance matrix from the jacobian.
@@ -209,8 +228,8 @@ class LeastSquares(BaseSolver):
             pcov.fill(np.inf)
             warn_cov = True
         elif not absolute_sigma:
-            if model.oseries.index.size > n_param:
-                s_sq = cost / (model.oseries.index.size - n_param)
+            if model.oseries.series.index.size > n_param:
+                s_sq = cost / (model.oseries.series.index.size - n_param)
                 pcov = pcov * s_sq
             else:
                 pcov.fill(np.inf)
@@ -221,10 +240,6 @@ class LeastSquares(BaseSolver):
                 'Covariance of the parameters could not be estimated')
 
         return pcov
-
-    def get_correlations(self, pcov):
-        pcor = None
-        return pcor
 
 
 class LmfitSolve(BaseSolver):
@@ -304,8 +319,8 @@ class DESolve(BaseSolver):
         self.parameters[self.vary] = parameters
 
         if self.noise:
-            res = self.model.innovations(self.parameters, tmin=self.tmin,
-                                         tmax=self.tmax, freq=self.freq)
+            res = self.model.noise(self.parameters, tmin=self.tmin,
+                                   tmax=self.tmax, freq=self.freq)
         else:
             res = self.model.residuals(self.parameters, tmin=self.tmin,
                                        tmax=self.tmax, freq=self.freq)

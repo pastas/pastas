@@ -1,22 +1,55 @@
-"""The stressmodels module contains all the transforms that can be added to the simulation of a model.
+"""The stressmodels module contains all the transforms that can be added to the
+ simulation of a model. These transforms are applied after the simulation,
+ to incorporate nonlineair effects.
 
 """
 import numpy as np
-import pandas as pd
+from pandas import DataFrame
+
 from .model import Model
 
 
 class ThresholdTransform:
+    """ThresholdTransform lowers the simulation when it exceeds a certain value
+
+    In geohydrology this transform can for example be used in a situation where
+    the groundwater level reaches the surface level and forms a lake. Beacuase
+    of the larger storage of the lake, the (groundwater) level then rises
+    slower when it rains.
+
+
+    Parameters
+    ----------
+    value : float
+        The starting value of the simulation above which the simulation is
+        lowered
+    vmin : float
+        The minimum value of the simulation above which the simulation is
+        lowered
+    vmin : float
+        The maximum value of the simulation above which the simulation is
+        lowered
+    name: str
+        Name of the transform
+    nparam : int
+        The number of parameters. Default is nparam=2. The first parameter
+        then is the threshold, and the second parameter is the factor with
+        which the simulation is lowered.
+
+    """
     _name = "ThresholdTransform"
-    def __init__(self, value=0.0, vmin=np.nan, vmax = np.nan, name='ThresholdTransform', nparam=2):
+
+    def __init__(self, value=0.0, vmin=np.nan, vmax=np.nan,
+                 name='ThresholdTransform', nparam=2):
         if isinstance(value, Model):
             # determine the initial parameter from the model
             ml = value
-            value = ml.oseries.min() + 0.75*(ml.oseries.max()-ml.oseries.min())
+            obs = ml.observations()
+            value = obs.min() + 0.75 * (obs.max() - obs.min())
             if np.isnan(vmin):
-                vmin = ml.oseries.min() + 0.5*(ml.oseries.max()-ml.oseries.min())
+                vmin = obs.min() + 0.5 * (obs.max() - obs.min())
             if np.isnan(vmax):
-                vmax = ml.oseries.max()
+                vmax = obs.max()
         self.value = value
         self.vmin = vmin
         self.vmax = vmax
@@ -25,10 +58,11 @@ class ThresholdTransform:
         self.set_init_parameters()
 
     def set_init_parameters(self):
-        self.parameters = pd.DataFrame(
+        self.parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        self.parameters.loc[self.name + '_1'] = (self.value, self.vmin, self.vmax, 1, self.name)
-        if self.nparam==2:
+        self.parameters.loc[self.name + '_1'] = (
+            self.value, self.vmin, self.vmax, 1, self.name)
+        if self.nparam == 2:
             self.parameters.loc[self.name + '_2'] = (0.5, 0., 1., 1, self.name)
 
     def simulate(self, h, p):

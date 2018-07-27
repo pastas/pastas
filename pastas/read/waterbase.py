@@ -6,7 +6,7 @@ Author: R.A. Collenteur, Artesia Water 2017
 
 """
 
-import pandas as pd
+from pandas import read_csv
 
 from ..timeseries import TimeSeries
 
@@ -38,14 +38,12 @@ def read_waterbase(fname, locations=None, variable="NUMERIEKEWAARDE",
 
     """
     ts = []
-    df = pd.read_csv(fname, delimiter=";", index_col="Date", decimal=",",
-                     usecols=["MEETPUNT_IDENTIFICATIE", "WAARNEMINGDATUM",
-                              "WAARNEMINGTIJD", variable,
-                              "EPSG", "X", "Y"], dayfirst=True,
-                     parse_dates={
-                         "Date": ["WAARNEMINGDATUM", "WAARNEMINGTIJD"]},
-                     infer_datetime_format=True,
-                     na_values=[-999999999, 999999999])
+    df = read_csv(fname, delimiter=";", index_col="Date", decimal=",",
+                  usecols=["MEETPUNT_IDENTIFICATIE", "WAARNEMINGDATUM",
+                           "WAARNEMINGTIJD", variable, "EPSG", "X", "Y"],
+                  parse_dates={"Date": ["WAARNEMINGDATUM", "WAARNEMINGTIJD"]},
+                  infer_datetime_format=True, dayfirst=True,
+                  na_values=[-999999999, 999999999])
 
     if locations is None:
         locations = df.MEETPUNT_IDENTIFICATIE.unique()

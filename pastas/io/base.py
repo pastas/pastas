@@ -2,10 +2,10 @@
 Import model
 """
 
-import importlib
-import os
+from importlib import import_module
+from os import path
 
-import pandas as pd
+from pandas import DataFrame, to_numeric
 
 import pastas as ps
 
@@ -22,8 +22,8 @@ def load(fname, **kwargs):
 
     """
     # Dynamic import of the export module
-    ext = os.path.splitext(fname)[1]
-    load_mod = importlib.import_module("pastas.io" + ext)
+    ext = path.splitext(fname)[1]
+    load_mod = import_module("pastas.io" + ext)
 
     # Get dicts for all data sources
     data = load_mod.load(fname, **kwargs)
@@ -64,14 +64,16 @@ def load_project(data):
     mls.metadata = data["metadata"]
     mls.file_info = data["file_info"]
 
-    mls.stresses = pd.DataFrame(data["stresses"],
-                                columns=data["stresses"].keys()).T
+    oseries = DataFrame(data["oseries"], columns=data["oseries"].keys()).T
+    mls.oseries = mls.oseries.append(oseries)
 
-    mls.oseries = pd.DataFrame(data["oseries"],
-                               columns=data["oseries"].keys()).T
+    stresses = DataFrame(data=data["stresses"],
+                         columns=data["stresses"].keys()).T
+    mls.stresses = mls.stresses.append(stresses)
 
     for ml_name, ml in data["models"].items():
-        name = ml["oseries"]["name"]
+        name = str(ml["oseries"]["name"])
+        ml_name = str(ml_name)
         ml["oseries"]["series"] = mls.oseries.loc[name, "series"]
         if ml["stressmodels"]:
             for ts in ml["stressmodels"].values():
@@ -79,7 +81,6 @@ def load_project(data):
                     stress_name = stress["name"]
                     ts["stress"][i]["series"] = mls.stresses.loc[
                         stress_name, "series"]
-
         try:
             ml = load_model(ml)
             mls.models[ml_name] = ml
@@ -109,12 +110,12 @@ def load_model(data):
     if "metadata" in data.keys():
         metadata = data["metadata"]
     else:
-        metadata = dict(name="Model")  # Make sure there is a name
+        metadata = None
 
     if "name" in data.keys():
         name = data["name"]
     else:
-        name = metadata["name"]
+        name = None
 
     if "noisemodel" in data.keys():
         noise = True
@@ -130,9 +131,11 @@ def load_model(data):
     for name, ts in data["stressmodels"].items():
         stressmodel = getattr(ps.stressmodels, ts["stressmodel"])
         ts.pop("stressmodel")
-        ts["rfunc"] = getattr(ps.rfunc, ts["rfunc"])
-        for i, stress in enumerate(ts["stress"]):
-            ts["stress"][i] = ps.TimeSeries(**stress)
+        if "rfunc" in ts.keys():
+            ts["rfunc"] = getattr(ps.rfunc, ts["rfunc"])
+        if "stress" in ts.keys():
+            for i, stress in enumerate(ts["stress"]):
+                ts["stress"][i] = ps.TimeSeries(**stress)
         stressmodel = stressmodel(**ts)
         ml.add_stressmodel(stressmodel)
 
@@ -151,7 +154,12 @@ def load_model(data):
     # Add parameters, use update to maintain correct order
     ml.parameters = ml.get_init_parameters(noise=ml.settings["noise"])
     ml.parameters.update(data["parameters"])
-    ml.parameters = ml.parameters.apply(pd.to_numeric, errors="ignore")
+    ml.parameters = ml.parameters.apply(to_numeric, errors="ignore")
+
+    # When initial values changed
+    for param, value in ml.parameters.loc[:, "initial"].iteritems():
+        ml.set_initial(name=param, value=value)
+
     return ml
 
 
@@ -174,6 +182,6 @@ def dump(fname, data, **kwargs):
         Message if the file-saving was successful.
 
     """
-    ext = os.path.splitext(fname)[1]
-    dump_mod = importlib.import_module("pastas.io" + ext)
+    ext = path.splitext(fname)[1]
+    dump_mod = import_module("pastas.io" + ext)
     return dump_mod.dump(fname, data, **kwargs)

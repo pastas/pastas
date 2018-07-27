@@ -12,16 +12,15 @@ Currently only the observations (H) and stresses (IN) and model results are supp
 # entry)
 
 """
-from __future__ import print_function, division
 
-import os.path
+from os import path
 
 import numpy as np
-import pandas as pd
-import scipy.io as sio
-from ..utils import matlab2datetime
+from pandas import Series, offsets
+from scipy.io import loadmat
 
 from ..timeseries import TimeSeries
+from ..utils import matlab2datetime
 
 
 def read_meny(fname, locations=None, type='H'):
@@ -107,11 +106,11 @@ class MenyData:
         """
 
         # Check if file is present
-        if not (os.path.isfile(fname)):
+        if not (path.isfile(fname)):
             print('Could not find file ', fname)
 
-        mat = sio.loadmat(fname, struct_as_record=False, squeeze_me=True,
-                          chars_as_strings=True)
+        mat = loadmat(fname, struct_as_record=False, squeeze_me=True,
+                      chars_as_strings=True)
 
         return mat
 
@@ -134,7 +133,7 @@ class MenyData:
                 else:
                     tindex = [matlab2datetime(tval) for tval in
                               IN.values[:, 0]]
-                    series = pd.Series(IN.values[:, 1], index=tindex)
+                    series = Series(IN.values[:, 1], index=tindex)
 
                     # round on seconds, to get rid of conversion milliseconds
                     series.index = series.index.round('s')
@@ -142,7 +141,7 @@ class MenyData:
                     if IN.type in ['EVAP', 'PREC', 'WELL']:
                         # in menyanthes, the flux is summed over the
                         # time-step, so divide by the timestep now
-                        step = series.index.to_series().diff() / pd.offsets.Day(
+                        step = series.index.to_series().diff() / offsets.Day(
                             1)
                         step = step.values.astype(np.float)
                         series = series / step
@@ -179,7 +178,7 @@ class MenyData:
                     tindex = [matlab2datetime(tval) for tval in
                               H.values[:, 0]]
                     # measurement is used as is
-                    series = pd.Series(H.values[:, 1], index=tindex)
+                    series = Series(H.values[:, 1], index=tindex)
                     # round on seconds, to get rid of conversion milliseconds
                     series.index = series.index.round('s')
                     data['values'] = series
@@ -189,6 +188,8 @@ class MenyData:
                 H.Name = 'H' + str(i)  # Give it the index name
             if hasattr(H, 'name'):
                 H.Name = H.name
+            if len(H.Name) == 0:
+                H.Name = H.tnocode
 
             self.H[H.Name] = data
 
@@ -211,7 +212,7 @@ class MenyData:
                     tindex = [matlab2datetime(tval) for tval in
                               M.values[:, 0]]
                     # measurement is used as is
-                    series = pd.Series(M.values[:, 1], index=tindex)
+                    series = Series(M.values[:, 1], index=tindex)
                     # round on seconds, to get rid of conversion milliseconds
                     series.index = series.index.round('s')
                     data['values'] = series

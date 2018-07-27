@@ -1,12 +1,7 @@
 from setuptools import setup, find_packages
 
-l_d = ''
-try:
-    import pypandoc
-
-    l_d = pypandoc.convert('README.rst', 'rst')
-except:
-    pass
+with open("README.rst", "r") as fh:
+    long_description = fh.read()
 
 # Get the version.
 version = {}
@@ -16,23 +11,31 @@ with open("pastas/version.py") as fp:
 setup(
     name='pastas',
     version=version['__version__'],
-    description='Python Applied System TimeSeries AnalysiS',
-    long_description=l_d,
+    description='Python Applied System TimeSeries Analysis Software',
+    long_description=long_description,
+    long_description_content_type="text/x-rst",
     url='https://github.com/pastas/pastas',
-    author='Mark Bakker, Raoul Collenteur, Ruben Calje, Frans Schaars',
-    author_email='markbak@gmail.com, r.collenteur@artesia-water.nl, '
-                 'r.calje@artesia-water.nl, f.schaars@artesia-water.nl',
+    author='R.A. Collenteur, M. Bakker, R. Calje, F. Schaars',
+    author_email='raoulcollenteur@gmail.com, markbak@gmail.com, '
+                 'r.calje@artesia-water.nl',
+    project_urls={
+        'Source': 'https://github.com/pastas/pastas',
+        'Documentation': 'http://pastas.readthedocs.io/en/latest/',
+        'Tracker': 'https://github.com/pastas/pastas/issues',
+        'Help': 'https://stackoverflow.com/questions/tagged/pastas'
+    },
     license='MIT',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Science/Research',
         'Intended Audience :: Other Audience',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3.5'
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6'
     ],
     platforms='Windows, Mac OS-X',
-    install_requires=['numpy>=1.9', 'matplotlib>=1.5', 'pandas>=0.19',
-                      'scipy>=0.17'],
+    install_requires=['numpy>=1.10', 'matplotlib>=1.5', 'pandas>=0.22',
+                      'scipy>=1.0'],
     packages=find_packages(exclude=[]),
     package_data={"pastas": ["log_config.json"], },
 )

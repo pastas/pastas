@@ -7,7 +7,8 @@ The following stressmodels are supported and tested:
 
 - StressModel
 - StressModel2
-- Constant
+- FactorModel
+- StepModel
 
 All other stressmodels are for research purposes only and are not (yet)
 fully supported and tested.
@@ -16,12 +17,12 @@ TODO
 ----
 - Test and support StepModel
 - Test and support LinearTrend
+- Test and support WellModel
+
 
 """
 
-from __future__ import print_function, division
-
-import logging
+from logging import getLogger
 
 import numpy as np
 import pandas as pd
@@ -31,10 +32,10 @@ from .decorators import set_parameter
 from .rfunc import One
 from .timeseries import TimeSeries
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 __all__ = ["StressModel", "StressModel2", "Constant", "StepModel",
-           "LinearTrend"]
+           "LinearTrend", "FactorModel"]
 
 
 class StressModelBase:
@@ -161,7 +162,7 @@ class StressModelBase:
                            "Series,dict or list.")
         return data
 
-    def dump_stress(self, series=True, transformed_series=False):
+    def dump_stress(self, series=True):
         """Method to dump all stresses in the stresses list.
 
         Parameters
@@ -181,8 +182,7 @@ class StressModelBase:
         data = []
 
         for stress in self.stress:
-            data.append(stress.dump(series=series,
-                                    transformed_series=transformed_series))
+            data.append(stress.dump(series=series))
 
         return data
 
@@ -202,9 +202,20 @@ class StressModelBase:
         return self.stress
 
     def dump(self, series=True):
-        data = dict()
-        data["stressmodel"] = "StressModelBase"
+        """Method to export the StressModel object.
 
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct the
+            StressModel object.
+
+        """
+        data = {
+            "stressmodel": self._name,
+            "name": self.name,
+            "stress": self.dump_stress(series)
+        }
         return data
 
 
@@ -249,19 +260,18 @@ class StressModel(StressModelBase):
     _name = "StressModel"
 
     def __init__(self, stress, rfunc, name, up=True, cutoff=0.99,
-                 settings=None, metadata=None, meanstress=None, **kwargs):
+                 settings=None, metadata=None, meanstress=None):
         if isinstance(stress, list):
             stress = stress[0]  # Temporary fix Raoul, 2017-10-24
 
-        kind = kwargs.pop("kind", None)
-        stress = TimeSeries(stress, kind=kind, settings=settings,
-                            metadata=metadata)
+        stress = TimeSeries(stress, settings=settings, metadata=metadata)
 
         if meanstress is None:
-            meanstress = stress.mean()
+            meanstress = stress.series.mean()
 
-        StressModelBase.__init__(self, rfunc, name, stress.index.min(),
-                                 stress.index.max(), up, meanstress, cutoff)
+        StressModelBase.__init__(self, rfunc, name, stress.series.index.min(),
+                                 stress.series.index.max(), up, meanstress,
+                                 cutoff)
         self.freq = stress.settings["freq"]
         self.stress = [stress]
         self.set_init_parameters()
@@ -272,15 +282,16 @@ class StressModel(StressModelBase):
         """
         self.parameters = self.rfunc.set_parameters(self.name)
 
-    def simulate(self, p, tindex=None, dt=1):
+    def simulate(self, p, tmin=None, tmax=None, freq=None, dt=1):
         """Simulates the head contribution.
 
         Parameters
         ----------
         p: 1D array
            Parameters used for simulation.
-        tindex: pandas.Series, optional
-           Time indices to simulate the model.
+        tmin: str, optional
+        tmax: str, optional
+        freq: str, optional
 
         Returns
         -------
@@ -288,16 +299,15 @@ class StressModel(StressModelBase):
             The simulated head contribution.
 
         """
+        self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
         b = self.rfunc.block(p, dt)
-        stress = self.stress[0]
+        stress = self.stress[0].series
         npoints = stress.index.size
         h = pd.Series(data=fftconvolve(stress, b, 'full')[:npoints],
                       index=stress.index, name=self.name, fastpath=True)
-        if tindex is not None:
-            h = h.loc[tindex]
         return h
 
-    def dump(self, series=True, transformed_series=False):
+    def dump(self, series=True):
         """Method to export the StressModel object.
 
         Returns
@@ -307,15 +317,14 @@ class StressModel(StressModelBase):
             StressModel object.
 
         """
-        data = dict()
-        data["stressmodel"] = self._name
-        data["rfunc"] = self.rfunc._name
-        data["name"] = self.name
-        data["up"] = True if self.rfunc.up == 1 else False
-        data["cutoff"] = self.rfunc.cutoff
-        data["stress"] = self.dump_stress(series,
-                                          transformed_series=transformed_series)
-
+        data = {
+            "stressmodel": self._name,
+            "rfunc": self.rfunc._name,
+            "name": self.name,
+            "up": True if self.rfunc.up == 1 else False,
+            "cutoff": self.rfunc.cutoff,
+            "stress": self.dump_stress(series)
+        }
         return data
 
 
@@ -366,27 +375,26 @@ class StressModel2(StressModelBase):
 
     def __init__(self, stress, rfunc, name, up=True, cutoff=0.99,
                  settings=("prec", "evap"), metadata=(None, None),
-                 meanstress=None, **kwargs):
+                 meanstress=None):
         # First check the series, then determine tmin and tmax
-        kind = kwargs.pop("kind", (None, None))
-
-        stress0 = TimeSeries(stress[0], kind=kind[0], settings=settings[0],
+        stress0 = TimeSeries(stress[0], settings=settings[0],
                              metadata=metadata[0])
-        stress1 = TimeSeries(stress[1], kind=kind[1], settings=settings[1],
+        stress1 = TimeSeries(stress[1], settings=settings[1],
                              metadata=metadata[1])
 
         # Select indices from validated stress where both series are available.
         index = stress0.series.index.intersection(stress1.series.index)
         if index.size is 0:
-            logger.warning('The two stresses that were provided have no '
-                           'overlapping time indices. Please make sure time indices overlap or apply to separate time series objects.')
+            logger.error('The two stresses that were provided have no '
+                         'overlapping time indices. Please make sure the '
+                         'indices of the time series overlap.')
 
         # First check the series, then determine tmin and tmax
         stress0.update_series(tmin=index.min(), tmax=index.max())
         stress1.update_series(tmin=index.min(), tmax=index.max())
 
         if meanstress is None:
-            meanstress = stress0.mean() - stress1.mean()
+            meanstress = stress0.series.mean() - stress1.series.mean()
 
         StressModelBase.__init__(self, rfunc, name, index.min(), index.max(),
                                  up, meanstress, cutoff)
@@ -404,15 +412,16 @@ class StressModel2(StressModelBase):
         self.parameters.loc[self.name + '_f'] = (-1.0, -2.0, 2.0, 1, self.name)
         self.nparam += 1
 
-    def simulate(self, p, tindex=None, dt=1, istress=None):
+    def simulate(self, p, tmin=None, tmax=None, freq=None, dt=1, istress=None):
         """Simulates the head contribution.
 
         Parameters
         ----------
         p: 1D array
            Parameters used for simulation.
-        tindex: pandas.Series, optional
-           Time indices to simulate the model.
+        tmin: str, optional
+        tmax: str, optional
+        freq: str, optional
 
         Returns
         -------
@@ -420,14 +429,12 @@ class StressModel2(StressModelBase):
             The simulated head contribution.
 
         """
+        self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
         b = self.rfunc.block(p[:-1], dt)
-        npoints = self.stress[0].index.size
         stress = self.get_stress(p=p, istress=istress)
+        npoints = stress.index.size
         h = pd.Series(data=fftconvolve(stress, b, 'full')[:npoints],
-                      index=self.stress[0].index, name=self.name,
-                      fastpath=True)
-        if tindex is not None:
-            h = h.loc[tindex]
+                      index=stress.index, name=self.name, fastpath=True)
         if istress is not None:
             if self.stress[istress].name is not None:
                 h.name = h.name + ' (' + self.stress[istress].name + ')'
@@ -437,13 +444,13 @@ class StressModel2(StressModelBase):
 
     def get_stress(self, p=None, istress=None):
         if istress is None:
-            return self.stress[0].add(p[-1] * self.stress[1])
+            return self.stress[0].series.add(p[-1] * self.stress[1].series)
         elif istress == 0:
-            return self.stress[0]
+            return self.stress[0].series
         else:
-            return p[-1] * self.stress[1]
+            return p[-1] * self.stress[1].series
 
-    def dump(self, series=True, transformed_series=False):
+    def dump(self, series=True):
         """Method to export the StressModel object.
 
         Returns
@@ -453,54 +460,82 @@ class StressModel2(StressModelBase):
             StressModel object.
 
         """
-        data = dict()
-        data["stressmodel"] = self._name
-        data["rfunc"] = self.rfunc._name
-        data["name"] = self.name
-        data["up"] = True if self.rfunc.up == 1 else False
-        data["cutoff"] = self.rfunc.cutoff
-        data["stress"] = self.dump_stress(series,
-                                          transformed_series=transformed_series)
-
+        data = {
+            "stressmodel": self._name,
+            "rfunc": self.rfunc._name,
+            "name": self.name,
+            "up": True if self.rfunc.up == 1 else False,
+            "cutoff": self.rfunc.cutoff,
+            "stress": self.dump_stress(series)
+        }
         return data
 
 
 class StepModel(StressModelBase):
     """Stressmodel that simulates a step trend.
 
-    A stress consisting of a step resonse from a specified time. The
-    amplitude and form (if rfunc is not One) of the step is calibrated. Before
-    t_step the response is zero.
+    Parameters
+    ----------
+    start: str
+        String with the start date of the step, e.g. '2018-01-01'. This
+        value is fixed by default. Use ml.set_vary("step_tstart", 1) to vary
+        the start time of the step trend.
+    name: str
+        String with the name of the stressmodel.
+    rfunc: pastas.rfunc.RfuncBase
+        Pastas response function used to simulate the effect of the step.
+        Default is rfunc.One()
+
+    Notes
+    -----
+    This step trend is calculated as follows. First, a binary series is
+    created, with zero values before tstart, and ones after the start. This
+    series is convoluted with the block response to simulate a step trend.
 
     """
     _name = "StepModel"
 
-    def __init__(self, start, name, rfunc=One, up=True):
+    def __init__(self, tstart, name, rfunc=One, up=True):
         StressModelBase.__init__(self, rfunc, name, pd.Timestamp.min,
-                                 pd.Timestamp.max, up, 1.0, None)
-        self.t_step = start
+                                 pd.Timestamp.max, up, 1.0, 0.99)
+        self.tstart = pd.Timestamp(tstart)
         self.set_init_parameters()
 
     def set_init_parameters(self):
         self.parameters = self.rfunc.set_parameters(self.name)
         tmin = pd.Timestamp.min.toordinal()
         tmax = pd.Timestamp.max.toordinal()
+        tinit = self.tstart.toordinal()
 
-        self.parameters.loc['start'] = (
-            self.t_step.value, tmin, tmax,
-            0, self.name)
+        self.parameters.loc[self.name + "_tstart"] = (tinit, tmin, tmax,
+                                                      0, self.name)
         self.nparam += 1
 
-    def simulate(self, p, tindex=None, dt=1):
-        assert tindex is not None, 'Error: Need an index'
+    def simulate(self, p, tmin=None, tmax=None, freq=None, dt=1):
+        tstart = pd.Timestamp.fromordinal(int(p[-1]), freq="D")
+        tindex = pd.date_range(tmin, tmax, freq=freq)
         h = pd.Series(0, tindex, name=self.name)
-        td = tindex - pd.Timestamp(p[-1])
-        h[td.days > 0] = self.rfunc.step(p[:-1], td[td.days > 0].days)
+        h.loc[h.index > tstart] = 1
+
+        b = self.rfunc.block(p[:-1], dt)
+        npoints = h.index.size
+        h = pd.Series(data=fftconvolve(h, b, 'full')[:npoints],
+                      index=h.index, name=self.name, fastpath=True)
         return h
+
+    def dump(self, series=True):
+        data = {
+            "stressmodel": self._name,
+            'tstart': self.tstart,
+            'name': self.name,
+            "up": True if self.rfunc.up == 1 else False,
+            'rfunc': self.rfunc._name
+        }
+        return data
 
 
 class LinearTrend(StressModelBase):
-    """Stressmodel that simulated a linear trend.
+    """Stressmodel that simulates a linear trend.
 
     name: str
         String with the name of the stressmodel
@@ -518,6 +553,8 @@ class LinearTrend(StressModelBase):
         StressModelBase.__init__(self, One, name, pd.Timestamp.min,
                                  pd.Timestamp.max, 1, 0, 0)
         self.nparam = 3
+        self.start = start
+        self.end = end
         self.set_init_parameters(start, end)
 
     def set_init_parameters(self, start, end):
@@ -533,10 +570,8 @@ class LinearTrend(StressModelBase):
         self.parameters.loc[self.name + "_tend"] = (
             end, tmin, tmax, 1, self.name)
 
-    def simulate(self, p, tindex, dt=1):
-        if tindex is None:
-            logger.error("A time index has to be provided to simulate this "
-                         "stressmodel")
+    def simulate(self, p, tmin=None, tmax=None, freq=None, dt=1):
+        tindex = pd.date_range(tmin, tmax, freq=freq)
 
         if p[1] < tindex[0].toordinal():
             tmin = tindex[0]
@@ -554,120 +589,14 @@ class LinearTrend(StressModelBase):
         trend = trend.cumsum() * p[0]
         return trend
 
-
-class NoConvModel(StressModelBase):
-    """Time series model consisting of the calculation of one stress
-     with one response function, without the use of convolution (so it is much
-     slower). The advantage is that you do not have to interpolate the
-     simulation to the observation timesteps, because you calculate the
-     simulation at the exact moment of the observations. This StressModel works
-     well for models with short observation-series and/or short stress series.
-
-    Parameters
-    ----------
-    stress: pandas.Series
-        pandas Series object containing the stress.
-    rfunc: pastas.rfunc
-        Response function used in the convolution with the stess.
-    name: str
-        Name of the stress
-    metadata: dict, optional
-        dictionary containing metadata about the stress.
-    xy: tuple, optional
-        XY location in lon-lat format used for making maps.
-    freq: str, optional
-        Frequency to which the stress series are transformed. By default,
-        the frequency is inferred from the data and that frequency is used.
-        The required string format is found
-        at http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
-    fillnan: str or float, optional
-        Methods or float number to fill nan-values. Default values is
-        'mean'. Currently supported options are: 'interpolate', float,
-        and 'mean'. Interpolation is performed with a standard linear
-        interpolation.
-
-    """
-    _name = "NoConvModel"
-
-    def __init__(self, stress, rfunc, name, metadata=None, up=True,
-                 cutoff=0.99, settings=None, **kwargs):
-
-        kind = kwargs.pop("kind", None)
-
-        stress = TimeSeries(stress, kind=kind, settings=settings,
-                            metadata=metadata)
-        StressModelBase.__init__(self, rfunc, name, stress.index.min(),
-                                 stress.index.max(), up, stress.mean(), cutoff)
-        self.freq = stress.settings["freq"]
-        self.stress = [stress]
-        self.set_init_parameters()
-
-    def set_init_parameters(self):
-        """Set the initial parameters (back) to their default values.
-
-        """
-        self.parameters = self.rfunc.set_parameters(self.name)
-
-    def simulate(self, p, tindex=None, dt=None):
-        """ Simulates the head contribution, without convolution.
-
-        Parameters
-        ----------
-        p: array_like
-           Parameters used for simulation.
-        tindex: pandas.Series, optional
-           Time indices to simulate the model.
-
-        Returns
-        -------
-        pandas.Series
-            The simulated head contribution.
-
-        """
-
-        # take the difference in values,
-        # as we will calculate the step response
-        stress = self.stress[0].diff()
-        # set the index at the beginning of each period (it was at the end),
-        # as we will calculate the step response from the start of the period
-        stress = stress.shift(-1).dropna()
-        # add a first value
-        ind = self.stress[0].index
-        stress = pd.concat((pd.Series(self.stress[0][0],
-                                      index=[ind[0] - (ind[1] - ind[0])]),
-                            stress))
-        # remove steps that do not change
-        stress = stress[~(stress == 0)]
-        tmax = pd.to_timedelta(self.rfunc.calc_tmax(p), 'd')
-        gain = self.rfunc.gain(p)
-        values = np.zeros(len(tindex))
-        if len(tindex) > len(stress):
-            # loop over the stress-series
-            for ind_str, val_str in stress.items():
-                t = tindex - ind_str
-                mask = (tindex > ind_str) & (t <= tmax)
-                if np.any(mask):
-                    td = np.array(t[mask].total_seconds() / 86400)
-                    r = val_str * self.rfunc.step(p, np.array(td))
-                    values[mask] += r
-                mask = t > tmax
-                if np.any(mask):
-                    values[mask] += val_str * gain
-        else:
-            # loop over the observation-series
-            for i, ind_obs in enumerate(tindex):
-                t = ind_obs - stress.index
-                mask = (ind_obs > stress.index) & (t <= tmax)
-                if np.any(mask):
-                    # calculate the step response
-                    td = np.array(t[mask].total_seconds() / 86400)
-                    values[i] += np.sum(stress[mask] * self.rfunc.step(p, td))
-                mask = t > tmax
-                if np.any(mask):
-                    values[i] += np.sum(stress[mask] * gain)
-            pass
-        h = pd.Series(values, tindex, name=self.name)
-        return h
+    def dump(self, series=None):
+        data = {
+            "stressmodel": self._name,
+            'start': self.start,
+            "end": self.end,
+            'name': self.name,
+        }
+        return data
 
 
 class Constant(StressModelBase):
@@ -752,8 +681,11 @@ class WellModel(StressModelBase):
     def set_init_parameters(self):
         self.parameters = self.rfunc.set_parameters(self.name)
 
-    def simulate(self, p=None, tindex=None, dt=1, istress=None):
-        h = pd.Series(data=0, index=self.stress[0].index, name=self.name)
+    def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1,
+                 istress=None):
+        self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
+        h = pd.Series(data=0, index=self.stress[0].series.index,
+                      name=self.name)
         stresses = self.get_stress(istress=istress)
         radii = self.get_radii(irad=istress)
         for stress, radius in zip(stresses, radii):
@@ -764,8 +696,6 @@ class WellModel(StressModelBase):
             c = fftconvolve(stress, b, 'full')[:npoints]
             h = h.add(pd.Series(c, index=stress.index), fill_value=0.0)
 
-        if tindex is not None:
-            h = h[tindex]
         return h
 
     def get_stress(self, p=None, istress=None):
@@ -779,3 +709,63 @@ class WellModel(StressModelBase):
             return self.radius
         else:
             return [self.radius[irad]]
+
+
+class FactorModel(StressModelBase):
+    """Model that multiplies a stress by a single value. The indepedent series
+    do not have to be equidistant and are allowed to have gaps.
+
+    Parameters
+    ----------
+    stress: pandas.Series or pastas.TimeSeries
+        Stress which will be multiplied by a factor. The stress does not
+        have to be equidistant.
+    name: str
+        String with the name of the stressmodel.
+    settings: dict or str
+        Dict or String that is forwarded to the TimeSeries object created
+        from the stress.
+    metadata: dict
+        Dictionary with metadata, forwarded to the TimeSeries object created
+        from the stress.
+
+    """
+    _name = "FactorModel"
+
+    def __init__(self, stress, name="factor", settings=None, metadata=None):
+        if isinstance(stress, list):
+            stress = stress[0]  # Temporary fix Raoul, 2017-10-24
+
+        StressModelBase.__init__(self, One, name, stress.index.min(),
+                                 stress.index.max(), up=True, meanstress=1,
+                                 cutoff=0.99)
+        self.nparam = 1
+        self.value = 1  # Initial value
+        stress = TimeSeries(stress, settings=settings, metadata=metadata)
+        self.stress = [stress]
+        self.set_init_parameters()
+
+    def set_init_parameters(self):
+        self.parameters.loc[self.name + "_f"] = (
+            self.value, -np.inf, np.inf, 1, self.name)
+
+    def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1):
+        self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
+        return self.stress[0].series * p[0]
+
+    def dump(self, series=True):
+        """Method to export the StressModel object.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct the
+            StressModel object.
+
+        """
+        data = {
+            "stressmodel": self._name,
+            "name": self.name,
+            "stress": self.dump_stress(series)
+        }
+        return data

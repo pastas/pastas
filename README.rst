@@ -25,13 +25,16 @@ quick implementation of new model components. Time series models can be created,
 calibrated, and analysed with just a few lines of python code with the built-in 
 optimization, visualisation, and statistical analysis tools.
 
-Documentation
-~~~~~~~~~~~~~
-Documentation is provided on a dedicated website: http://pastas.readthedocs.io/
+Documentation & Examples
+~~~~~~~~~~~~~~~~~~~~~~~~
+- Documentation is provided on a dedicated website: http://pastas.readthedocs.io/
+- Examples can be found on the `examples directory on the documentation website <http://pastas.readthedocs.io/en/dev/examples.html>`_.
 
-Examples
-~~~~~~~~
-Examples can be found on the `examples directory on the documentation website <http://pastas.readthedocs.io/en/dev/examples.html>`_.
+Get in Touch
+~~~~~~~~~~~~
+- Questions on Pastas can be asked and answered on `StackOverFlow <https://stackoverflow.com/questions/tagged/pastas>`_.
+- Bugs, feature requests and other improvements can be posten as the `Github Issues <https://github.com/pastas/pastas/issues>`_.
+- Pull requests will only be accepted on the development branch (dev) of this repository. Please take a look at the `developers section <http://pastas.readthedocs.io/>`_ on the documentation website for more information on how to develop Pastas.
 
 Quick installation guide
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -57,32 +60,33 @@ To update pastas, use::
 
   pip install pastas --upgrade  
   
+Developers
+----------
+To get the latest development version, use::
+
+   pip install https://github.com/pastas/pastas/zipball/dev
+  
 Dependencies
 ~~~~~~~~~~~~
 Pastas depends on a number of Python packages, of which all of the necessary are 
 automatically installed when using the pip install manager. To summarize, the 
-following pacakges are necessary for a minimal function installation of Pasta: 
-numpy>=1.9, matplotlib>=1.5, lmfit>=0.9, pandas>=0.20, scipy>=0.15,
-statsmodels>=0.8.
-  
-Developers
+following pacakges are necessary for a minimal function installation of Pasta:
+
+- numpy>=1.9
+- matplotlib>=1.5
+- pandas>=0.20,
+- scipy>=0.15,
+- statsmodels>=0.8.
+
+Background
 ~~~~~~~~~~
-To get the latest development version, use::
+Work on Pastas started in the spring of 2016 at the Delft University of Technology and `Artesia Water <http://www.artesia-water.nl/>`_. 
 
-   pip install https://github.com/pastas/pastas/zipball/dev
-
-If you have found a bug in Pastas, or if you would like to suggest an
-improvement or enhancement, please submit a new Issue through the Github Issue
-tracker toward the upper-right corner of the Github repository. Pull requests will
-only be accepted on the development branch (dev) of this repository.
-
-Please take a look at the `developers section <http://pastas.readthedocs.io/>`_
-on the documentation website for more information on how to develop Pastas.
+How to Cite Pastas?
+~~~~~~~~~~~~~~~~~~~
+`Bakker, M., Collenteur, R., Calje, F. Schaars (2018, April) Untangling groundwater head series using time series analysis and Pastas. In EGU General Assembly 2018. <https://meetingorganizer.copernicus.org/EGU2018/EGU2018-7194.pdf>`_
 
 License
 ~~~~~~~
 MIT
 
-Background
-~~~~~~~~~~
-Work on Pastas started in the spring of 2016 at the Delft University of Technology. 
