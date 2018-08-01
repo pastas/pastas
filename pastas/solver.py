@@ -74,30 +74,30 @@ class BaseSolver:
         freq: str
 
         weights: pandas.Series
-            pandas Series by which the residual or innovation series are
+            pandas Series by which the residual or noise series are
             multiplied. Typically values between 0 and 1.
 
 
         Returns
         -------
-        res:
-            residuals series
+        rv:
+            residuals series (if noise=False) or noise series (if noise=True)
 
         """
 
         # Get the residuals or the noise
         if noise:
-            res = model.noise(parameters, tmin, tmax, freq)
+            rv = model.noise(parameters, tmin, tmax, freq)
         else:
-            res = model.residuals(parameters, tmin, tmax, freq)
+            rv = model.residuals(parameters, tmin, tmax, freq)
 
         # Determine if weights need to be applied
         if weights is not None:
-            weights = weights.reindex(res.index)
+            weights = weights.reindex(rv.index)
             weights.fillna(1.0, inplace=True)
-            res = res.multiply(weights)
+            rv = rv.multiply(weights)
 
-        return res
+        return rv
 
 
 class LeastSquares(BaseSolver):
@@ -326,3 +326,118 @@ class DESolve(BaseSolver):
                                        tmax=self.tmax, freq=self.freq)
 
         return sum(res ** 2)
+    
+class MarkSolver(BaseSolver):
+    """Experimental solver
+    """
+    _name = "MarkSolver"
+
+    def __init__(self, model, tmin=None, tmax=None, noise=True, freq=None,
+                 weights=None, **kwargs):
+        BaseSolver.__init__(self)
+
+        self.modelparameters = model.parameters
+        self.vary = self.modelparameters.vary.values.astype('bool')
+        self.initial = self.modelparameters.initial.values.copy()
+        parameters = self.modelparameters.loc[self.vary]
+
+        # Set the boundaries
+        pmin = np.where(parameters.pmin.isnull(), -np.inf, parameters.pmin)
+        pmax = np.where(parameters.pmax.isnull(), np.inf, parameters.pmax)
+        bounds = (pmin, pmax)
+
+        self.fit = least_squares(self.objfunction,
+                                 x0=parameters.initial.values, bounds=bounds,
+                                 args=(tmin, tmax, noise, model, freq,
+                                       weights), **kwargs)
+
+        self.nfev = self.fit.nfev
+
+        self.optimal_params = self.initial
+        self.optimal_params[self.vary] = self.fit.x
+        self.stderr = np.zeros(len(self.optimal_params))
+        self.report = None
+
+    def objfunction(self, parameters, tmin, tmax, noise, model, freq, weights):
+        """
+
+        Parameters
+        ----------
+        parameters
+        tmin
+        tmax
+        noise
+        model
+        freq
+        weights
+
+        Returns
+        -------
+
+        """
+        p = self.initial
+        p[self.vary] = parameters
+
+        res = self.minimize(p, tmin, tmax, noise, model, freq,
+                            weights)
+        return res
+
+    def get_covcorrmatrix(self, model):
+        """Method to compute sigma, covariance and correlation matrix
+        """
+        nparam = len(self.fit.x)
+        H = self.fit.jac.T @ self.fit.jac
+        sigsq = np.var(self.fit.fun, ddof=nparam)
+        covmat = np.linalg.inv(H) * sigsq
+        stderr = np.sqrt(np.diag(covmat))
+        D = np.diag(1 / stderr)
+        corrmat = D @ covmat @ D
+
+        return stderr, covmat, corrmat
+
+    def get_covariances(self, res, model, absolute_sigma=False):
+        """Method to get the covariance matrix from the jacobian.
+
+        Parameters
+        ----------
+        res
+
+        Returns
+        -------
+        pcov: numpy.array
+            numpy array with the covariance matrix.
+
+        Notes
+        -----
+        This method os copied from Scipy, please refer to:
+        https://github.com/scipy/scipy/blob/v1.0.0/scipy/optimize/optimize.py
+
+        """
+        cost = 2 * res.cost  # res.cost is half sum of squares!
+
+        # Do Moore-Penrose inverse discarding zero singular values.
+        _, s, VT = svd(res.jac, full_matrices=False)
+        threshold = np.finfo(float).eps * max(res.jac.shape) * s[0]
+        s = s[s > threshold]
+        VT = VT[:s.size]
+        pcov = np.dot(VT.T / s ** 2, VT)
+        n_param = model.parameters.index.size
+        warn_cov = False
+        if pcov is None:
+            # indeterminate covariance
+            pcov = np.zeros((n_param, n_param), dtype=float)
+            pcov.fill(np.inf)
+            warn_cov = True
+        elif not absolute_sigma:
+            if model.oseries.series.index.size > n_param:
+                s_sq = cost / (model.oseries.series.index.size - n_param)
+                pcov = pcov * s_sq
+            else:
+                pcov.fill(np.inf)
+                warn_cov = True
+
+        if warn_cov:
+            logger.warning(
+                'Covariance of the parameters could not be estimated')
+
+        return pcov
