@@ -17,7 +17,6 @@ logger = getLogger(__name__)
 
 all = ["NoiseModel", "NoiseModel2"]
 
-
 class NoiseModelBase(ABC):
     _name = "NoiseModelBase"
 
@@ -173,9 +172,9 @@ class NoiseModel(NoiseModelBase):
         w = np.exp(power * np.sum(np.log(1.0 - exp))) / np.sqrt(1.0 - exp)
         return w
 
-
 class NoiseModel2(NoiseModelBase):
-    """Noise model with exponential decay of the residual.
+    """
+    Noise model with exponential decay of the residual.
 
     Notes
     -----
