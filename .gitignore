@@ -18,3 +18,5 @@ dist
 .idea/.name
 .cache/v/cache/lastfailed
 *.log
+
+**/*.ipynb_checkpoints/
