@@ -21,9 +21,9 @@ To solve a model the following syntax can be used:
 from logging import getLogger
 
 import numpy as np
-from pandas import DataFrame
+from pandas import DataFrame, Series
 from scipy.linalg import svd
-from scipy.optimize import least_squares, differential_evolution
+from scipy.optimize import least_squares, differential_evolution, fmin
 
 logger = getLogger(__name__)
 
@@ -346,15 +346,13 @@ class MarkSolver(BaseSolver):
         pmax = np.where(parameters.pmax.isnull(), np.inf, parameters.pmax)
         bounds = (pmin, pmax)
 
-        self.fit = least_squares(self.objfunction,
-                                 x0=parameters.initial.values, bounds=bounds,
+        self.fit = fmin(self.objfunction,
+                                 x0=parameters.initial.values,
                                  args=(tmin, tmax, noise, model, freq,
                                        weights), **kwargs)
 
-        self.nfev = self.fit.nfev
-
         self.optimal_params = self.initial
-        self.optimal_params[self.vary] = self.fit.x
+        self.optimal_params[self.vary] = self.fit
         self.stderr = np.zeros(len(self.optimal_params))
         self.report = None
 
@@ -378,66 +376,28 @@ class MarkSolver(BaseSolver):
         p = self.initial
         p[self.vary] = parameters
 
-        res = self.minimize(p, tmin, tmax, noise, model, freq,
+        rv = self.minimize(p, tmin, tmax, noise, model, freq,
                             weights)
-        return res
+        
+        return rv
+    
+    def minimize(self, parameters, tmin, tmax, noise, model, freq,
+                 weights=None):
+  
+        res = model.residuals(parameters, tmin, tmax, freq)
+        alpha = parameters[-1]
+        print('alpha:', alpha)
+        odelt = model.odelt.loc[res.index]
+        noise = Series(data=res)
+        noise.iloc[1:] -= np.exp(-odelt[1:] / alpha) * res.values[:-1]
+        
+        res = res[1:]
+        noise = noise[1:]
+        delt = odelt[1:]
+        sigres = np.std(res)
+        sigi = sigres * np.sqrt(1 - np.exp(-2 * delt / alpha))
+        rv = -np.sum(np.log(sigi)) - np.sum(noise ** 2 / (2 * sigi ** 2))
+        
+        return -rv  # minus the log likelihood
 
-    def get_covcorrmatrix(self, model):
-        """Method to compute sigma, covariance and correlation matrix
-        """
-        nparam = len(self.fit.x)
-        H = self.fit.jac.T @ self.fit.jac
-        sigsq = np.var(self.fit.fun, ddof=nparam)
-        covmat = np.linalg.inv(H) * sigsq
-        stderr = np.sqrt(np.diag(covmat))
-        D = np.diag(1 / stderr)
-        corrmat = D @ covmat @ D
 
-        return stderr, covmat, corrmat
-
-    def get_covariances(self, res, model, absolute_sigma=False):
-        """Method to get the covariance matrix from the jacobian.
-
-        Parameters
-        ----------
-        res
-
-        Returns
-        -------
-        pcov: numpy.array
-            numpy array with the covariance matrix.
-
-        Notes
-        -----
-        This method os copied from Scipy, please refer to:
-        https://github.com/scipy/scipy/blob/v1.0.0/scipy/optimize/optimize.py
-
-        """
-        cost = 2 * res.cost  # res.cost is half sum of squares!
-
-        # Do Moore-Penrose inverse discarding zero singular values.
-        _, s, VT = svd(res.jac, full_matrices=False)
-        threshold = np.finfo(float).eps * max(res.jac.shape) * s[0]
-        s = s[s > threshold]
-        VT = VT[:s.size]
-        pcov = np.dot(VT.T / s ** 2, VT)
-        n_param = model.parameters.index.size
-        warn_cov = False
-        if pcov is None:
-            # indeterminate covariance
-            pcov = np.zeros((n_param, n_param), dtype=float)
-            pcov.fill(np.inf)
-            warn_cov = True
-        elif not absolute_sigma:
-            if model.oseries.series.index.size > n_param:
-                s_sq = cost / (model.oseries.series.index.size - n_param)
-                pcov = pcov * s_sq
-            else:
-                pcov.fill(np.inf)
-                warn_cov = True
-
-        if warn_cov:
-            logger.warning(
-                'Covariance of the parameters could not be estimated')
-
-        return pcov
