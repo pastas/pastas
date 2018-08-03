@@ -736,8 +736,8 @@ class FactorModel(StressModelBase):
         if isinstance(stress, list):
             stress = stress[0]  # Temporary fix Raoul, 2017-10-24
 
-        StressModelBase.__init__(self, One, name, stress.index.min(),
-                                 stress.index.max(), up=True, meanstress=1,
+        StressModelBase.__init__(self, One, name, stress.series.index.min(),
+                                 stress.series.index.max(), up=True, meanstress=1,
                                  cutoff=0.99)
         self.nparam = 1
         self.value = 1  # Initial value
