@@ -54,7 +54,7 @@ class BaseSolver:
         self.fit = None  # Object that is returned by the optimization method
 
     def minimize(self, parameters, tmin, tmax, noise, model, freq,
-                 weights=None):
+                 weights=None, noiseweights=0):
         """This method is called by all solvers to obtain a series that are
         minimized in the optimization proces. It handles the application of
         the weigths, a noisemodel and other optimization options.
@@ -86,8 +86,10 @@ class BaseSolver:
         """
 
         # Get the residuals or the noise
+        #TODO: warmup is not passed to noise or residuals here and comes in the arguments
+        # list before noiseweights
         if noise:
-            rv = model.noise(parameters, tmin, tmax, freq)
+            rv = model.noise(parameters, tmin, tmax, freq, noiseweights=noiseweights)
         else:
             rv = model.residuals(parameters, tmin, tmax, freq)
 
@@ -122,7 +124,7 @@ class LeastSquares(BaseSolver):
     _name = "LeastSquares"
 
     def __init__(self, model, tmin=None, tmax=None, noise=True, freq=None,
-                 weights=None, **kwargs):
+                 weights=None, noiseweights=0, **kwargs):
         BaseSolver.__init__(self)
 
         self.modelparameters = model.parameters
@@ -138,7 +140,7 @@ class LeastSquares(BaseSolver):
         self.fit = least_squares(self.objfunction,
                                  x0=parameters.initial.values, bounds=bounds,
                                  args=(tmin, tmax, noise, model, freq,
-                                       weights), **kwargs)
+                                       weights, noiseweights), **kwargs)
 
         self.nfev = self.fit.nfev
 
@@ -157,7 +159,7 @@ class LeastSquares(BaseSolver):
         self.stderr[self.vary] = np.sqrt(np.diag(self.pcov))
         self.report = None
 
-    def objfunction(self, parameters, tmin, tmax, noise, model, freq, weights):
+    def objfunction(self, parameters, tmin, tmax, noise, model, freq, weights, noiseweights):
         """
 
         Parameters
@@ -178,7 +180,14 @@ class LeastSquares(BaseSolver):
         p[self.vary] = parameters
 
         res = self.minimize(p, tmin, tmax, noise, model, freq,
-                            weights)
+                            weights, noiseweights)
+        
+        #if noise:
+        #    alpha = p.loc[]
+        #    power = 1.0 / (2.0 * odelt.size)
+        #    exp = np.exp(-2.0 / alpha * odelt)  # Twice as fast as 2*odelt/alpha
+        #    w = np.exp(power * np.sum(np.log(1.0 - exp))) / np.sqrt(1.0 - exp)
+        
         return res
 
     def get_covcorrmatrix(self, model):

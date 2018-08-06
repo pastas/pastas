@@ -411,7 +411,7 @@ class Model:
         return res
 
     def noise(self, parameters=None, tmin=None, tmax=None, freq=None,
-              warmup=None):
+              warmup=None, noiseweights=0):
         """Method to simulate the noise when a noisemodel is present.
 
         Parameters
@@ -425,6 +425,10 @@ class Model:
             frequency at which the time series are simulated.
         warmup: int, optional
             length of the warmup period in days
+        noiseweights: int, optional
+            if 0: no weights are applied
+            if 1: weights are applied according to the sum of squared
+            weighted noise criterium
 
         Returns
         -------
@@ -451,7 +455,8 @@ class Model:
 
         # Calculate the noise
         noise = self.noisemodel.simulate(res, self.odelt.loc[res.index],
-                                         parameters[-self.noisemodel.nparam:])
+                                         parameters[-self.noisemodel.nparam:],
+                                         noiseweights=noiseweights)
         return noise
 
     def innovations(self, **kwargs):
@@ -570,7 +575,7 @@ class Model:
 
     def solve(self, tmin=None, tmax=None, solver=LeastSquares, report=True,
               noise=None, initial=True, freq=None, warmup=None, weights=None,
-              fit_constant=True, **kwargs):
+              noiseweights=0, fit_constant=True, **kwargs):
         """Method to solve the time series model.
 
         Parameters
@@ -606,6 +611,8 @@ class Model:
         weights: pandas.Series, optional
             Pandas Series with values by which the residuals are multiplied,
             index-based.
+        noiseweights: int, optional
+            Explain
         fit_constant: bool, optional
             Argument that determines if the constant is fitted as a parameter.
             If it is set to False, the constant is set equal to the mean of
@@ -622,11 +629,14 @@ class Model:
         self.settings["solver"] = solver._name
 
         # Solve model
+        # TODO: noiseweights should probably be in self.settings
         self.fit = solver(self, tmin=self.settings["tmin"],
                           tmax=self.settings["tmax"],
                           noise=self.settings["noise"],
                           freq=self.settings["freq"],
-                          weights=self.settings["weights"], **kwargs)
+                          weights=self.settings["weights"],
+                          noiseweights=noiseweights,
+                          **kwargs)
 
         if not self.settings['fit_constant']:
             # do this before setting oseries_calib to None
