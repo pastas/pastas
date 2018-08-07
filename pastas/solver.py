@@ -53,8 +53,7 @@ class BaseSolver:
         self.nfev = None  # number of function evaluations
         self.fit = None  # Object that is returned by the optimization method
 
-    def minimize(self, parameters, tmin, tmax, noise, model, freq,
-                 weights=None, noiseweights=0):
+    def minimize(self, parameters, noise, model, weights=None, noiseweights=0):
         """This method is called by all solvers to obtain a series that are
         minimized in the optimization proces. It handles the application of
         the weigths, a noisemodel and other optimization options.
@@ -63,15 +62,11 @@ class BaseSolver:
         ----------
         parameters: list, numpy.ndarray
             list with the parameters
-        tmin: str
-
-        tmax: str
 
         noise: Boolean
 
         model: pastas.Model
             Pastas Model instance
-        freq: str
 
         weights: pandas.Series
             pandas Series by which the residual or noise series are
@@ -89,9 +84,9 @@ class BaseSolver:
         #TODO: warmup is not passed to noise or residuals here and comes in the arguments
         # list before noiseweights
         if noise:
-            rv = model.noise(parameters, tmin, tmax, freq, noiseweights=noiseweights)
+            rv = model.noise(parameters, noiseweights=noiseweights)
         else:
-            rv = model.residuals(parameters, tmin, tmax, freq)
+            rv = model.residuals(parameters)
 
         # Determine if weights need to be applied
         if weights is not None:
@@ -123,8 +118,7 @@ class LeastSquares(BaseSolver):
     """
     _name = "LeastSquares"
 
-    def __init__(self, model, tmin=None, tmax=None, noise=True, freq=None,
-                 weights=None, noiseweights=0, **kwargs):
+    def __init__(self, model, noise=True, weights=None, noiseweights=0, **kwargs):
         BaseSolver.__init__(self)
 
         self.modelparameters = model.parameters
@@ -139,8 +133,7 @@ class LeastSquares(BaseSolver):
 
         self.fit = least_squares(self.objfunction,
                                  x0=parameters.initial.values, bounds=bounds,
-                                 args=(tmin, tmax, noise, model, freq,
-                                       weights, noiseweights), **kwargs)
+                                 args=(noise, model, weights, noiseweights), **kwargs)
 
         self.nfev = self.fit.nfev
 
@@ -159,17 +152,14 @@ class LeastSquares(BaseSolver):
         self.stderr[self.vary] = np.sqrt(np.diag(self.pcov))
         self.report = None
 
-    def objfunction(self, parameters, tmin, tmax, noise, model, freq, weights, noiseweights):
+    def objfunction(self, parameters, noise, model, weights, noiseweights):
         """
 
         Parameters
         ----------
         parameters
-        tmin
-        tmax
         noise
         model
-        freq
         weights
 
         Returns
@@ -179,8 +169,7 @@ class LeastSquares(BaseSolver):
         p = self.initial
         p[self.vary] = parameters
 
-        res = self.minimize(p, tmin, tmax, noise, model, freq,
-                            weights, noiseweights)
+        res = self.minimize(p, noise, model, weights, noiseweights)
         
         #if noise:
         #    alpha = p.loc[]
@@ -263,8 +252,8 @@ class LmfitSolve(BaseSolver):
     """
     _name = "LmfitSolve"
 
-    def __init__(self, model, tmin=None, tmax=None, noise=True, freq=None,
-                 weights=None, **kwargs):
+    def __init__(self, model, noise=True, weights=None, noiseweights=0,
+                 **kwargs):
         import lmfit  # Import Lmfit here, so it is no dependency
         BaseSolver.__init__(self)
 
@@ -281,8 +270,7 @@ class LmfitSolve(BaseSolver):
             kwargs = {"ftol": 1e-3, "epsfcn": 1e-4}
 
         self.fit = lmfit.minimize(fcn=self.objfunction, params=parameters,
-                                  args=(tmin, tmax, noise, model, freq,
-                                        weights), **kwargs)
+                                  args=(noise, model, weights, noiseweights), **kwargs)
 
         # Set all parameter attributes
         self.optimal_params = np.array([p.value for p in
@@ -295,23 +283,19 @@ class LmfitSolve(BaseSolver):
         self.nfev = self.fit.nfev
         self.report = lmfit.fit_report(self.fit)
 
-    def objfunction(self, parameters, tmin, tmax, noise, model, freq, weights):
+    def objfunction(self, parameters, noise, model, weights, noiseweights):
         param = np.array([p.value for p in parameters.values()])
-        res = self.minimize(param, tmin, tmax, noise, model, freq,
-                            weights)
+        res = self.minimize(param, noise, model, weights, noiseweights)
         return res
 
 
 class DESolve(BaseSolver):
     _name = "DESolve"
 
-    def __init__(self, model, tmin=None, tmax=None, noise=True, freq='D'):
+    def __init__(self, model, noise=True):
         BaseSolver.__init__(self)
 
-        self.freq = freq
         self.model = model
-        self.tmin = tmin
-        self.tmax = tmax
         self.noise = noise
         self.parameters = self.model.parameters.initial.values
         self.vary = self.model.parameters.vary.values.astype('bool')
@@ -328,11 +312,9 @@ class DESolve(BaseSolver):
         self.parameters[self.vary] = parameters
 
         if self.noise:
-            res = self.model.noise(self.parameters, tmin=self.tmin,
-                                   tmax=self.tmax, freq=self.freq)
+            res = self.model.noise(self.parameters)
         else:
-            res = self.model.residuals(self.parameters, tmin=self.tmin,
-                                       tmax=self.tmax, freq=self.freq)
+            res = self.model.residuals(self.parameters)
 
         return sum(res ** 2)
     
@@ -341,8 +323,8 @@ class MarkSolver(BaseSolver):
     """
     _name = "MarkSolver"
 
-    def __init__(self, model, tmin=None, tmax=None, noise=True, freq=None,
-                 weights=None, **kwargs):
+    def __init__(self, model,  noise=True, weights=None, noiseweights=0,
+                 **kwargs):
         BaseSolver.__init__(self)
 
         self.modelparameters = model.parameters
@@ -357,25 +339,21 @@ class MarkSolver(BaseSolver):
 
         self.fit = fmin(self.objfunction,
                                  x0=parameters.initial.values,
-                                 args=(tmin, tmax, noise, model, freq,
-                                       weights), **kwargs)
+                                 args=(noise, model, weights, noiseweights), **kwargs)
 
         self.optimal_params = self.initial
         self.optimal_params[self.vary] = self.fit
         self.stderr = np.zeros(len(self.optimal_params))
         self.report = None
 
-    def objfunction(self, parameters, tmin, tmax, noise, model, freq, weights):
+    def objfunction(self, parameters, noise, model, weights, noiseweights):
         """
 
         Parameters
         ----------
         parameters
-        tmin
-        tmax
         noise
         model
-        freq
         weights
 
         Returns
@@ -385,15 +363,13 @@ class MarkSolver(BaseSolver):
         p = self.initial
         p[self.vary] = parameters
 
-        rv = self.minimize(p, tmin, tmax, noise, model, freq,
-                            weights)
+        rv = self.minimize(p, noise, model, weights, noiseweights)
         
         return rv
     
-    def minimize(self, parameters, tmin, tmax, noise, model, freq,
-                 weights=None):
+    def minimize(self, parameters, noise, model, weights=None, noiseweights=0):
   
-        res = model.residuals(parameters, tmin, tmax, freq)
+        res = model.residuals(parameters)
         alpha = parameters[-1]
         print('alpha:', alpha)
         odelt = model.odelt.loc[res.index]

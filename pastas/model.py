@@ -630,10 +630,8 @@ class Model:
 
         # Solve model
         # TODO: noiseweights should probably be in self.settings
-        self.fit = solver(self, tmin=self.settings["tmin"],
-                          tmax=self.settings["tmax"],
+        self.fit = solver(self,
                           noise=self.settings["noise"],
-                          freq=self.settings["freq"],
                           weights=self.settings["weights"],
                           noiseweights=noiseweights,
                           **kwargs)
