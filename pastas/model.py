@@ -641,9 +641,7 @@ class Model:
         if not self.settings['fit_constant']:
             # do this before setting oseries_calib to None
             self.normalize_residuals = False
-            res = self.residuals(self.fit.optimal_params,
-                                 self.settings['tmin'], self.settings['tmax'],
-                                 self.settings["freq"])
+            res = self.residuals(self.fit.optimal_params)
             # set the constant to the mean of the residuals
             mask = self.parameters.name == self.constant.name
             self.fit.optimal_params[mask] = res.mean()
