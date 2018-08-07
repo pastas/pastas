@@ -47,13 +47,13 @@ def read_meny(fname, locations=None, type='H'):
         if type == 'H':
             kind = 'oseries'
         else:
-            if data[location]['type'] == 'prec':
+            if data[location]['Type'] == 'prec':
                 kind = 'prec'
-            elif data[location]['type'] == 'evap':
+            elif data[location]['Type'] == 'evap':
                 kind = 'evap'
-            elif data[location]['type'] == 'well':
+            elif data[location]['Type'] == 'well':
                 kind = 'well'
-            elif data[location]['type'] == 'river':
+            elif data[location]['Type'] == 'river':
                 kind = 'waterlevel'
             else:
                 kind = None
@@ -138,7 +138,10 @@ class MenyData:
                     # round on seconds, to get rid of conversion milliseconds
                     series.index = series.index.round('s')
 
-                    if IN.type in ['EVAP', 'PREC', 'WELL']:
+                    if hasattr(IN,'type'):
+                        IN.Type = IN.type
+
+                    if IN.Type in ['EVAP', 'PREC', 'WELL']:
                         # in menyanthes, the flux is summed over the
                         # time-step, so divide by the timestep now
                         step = series.index.to_series().diff() / offsets.Day(
