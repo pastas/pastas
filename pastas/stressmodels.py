@@ -409,7 +409,7 @@ class StressModel2(StressModelBase):
 
         """
         self.parameters = self.rfunc.set_parameters(self.name)
-        self.parameters.loc[self.name + '_f'] = (-1.0, -2.0, 2.0, 1, self.name)
+        self.parameters.loc[self.name + '_f'] = (-1.0, -2.0, 0.0, 1, self.name)
         self.nparam += 1
 
     def simulate(self, p, tmin=None, tmax=None, freq=None, dt=1, istress=None):
