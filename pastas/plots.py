@@ -152,7 +152,8 @@ class Plotting:
 
     @model_tmin_tmax
     def decomposition(self, tmin=None, tmax=None, ytick_base=True, split=True,
-                      figsize=(10, 8), **kwargs):
+                      figsize=(10, 8), axes=None, name=None,
+                      return_warmup=False, **kwargs):
         """Plot the decomposition of a time-series in the different stresses.
 
         Parameters
@@ -171,7 +172,10 @@ class Plotting:
         o = self.ml.observations(tmin=tmin, tmax=tmax)
 
         # determine the simulation
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        sim = self.ml.simulate(tmin=tmin, tmax=tmax,
+                               return_warmup=return_warmup)
+        if name is not None:
+            sim.name = name
         series = [sim]
         names = ['']
 
@@ -182,11 +186,14 @@ class Plotting:
                 for istress in range(nstress):
                     contrib = self.ml.get_contribution(name, tmin=tmin,
                                                        tmax=tmax,
-                                                       istress=istress)
+                                                       istress=istress,
+                                                       return_warmup=return_warmup)
                     series.append(contrib)
                     names.append(contrib.name)
             else:
-                contrib = self.ml.get_contribution(name, tmin=tmin, tmax=tmax)
+                contrib = self.ml.get_contribution(name, tmin=tmin,
+                                                   tmax=tmax,
+                                                   return_warmup=return_warmup)
                 series.append(contrib)
                 names.append(contrib.name)
 
@@ -212,55 +219,66 @@ class Plotting:
             0.0 if np.isnan(ylim[1] - ylim[0]) else ylim[1] - ylim[0] for ylim
             in ylims]
 
-        # open the figure
-        fig, ax = plt.subplots(len(series), sharex=True, figsize=figsize,
-                               gridspec_kw={'height_ratios': height_ratios},
-                               **kwargs)
-        ax = np.atleast_1d(ax)
+        if axes is None:
+            # open a new figure
+            fig, axes = plt.subplots(len(series), sharex=True, figsize=figsize,
+                                     gridspec_kw={
+                                         'height_ratios': height_ratios},
+                                     **kwargs)
+            axes = np.atleast_1d(axes)
+            o_label = o.name
+            set_axes_properties = True
+        else:
+            assert len(axes) == len(series), 'Makes sure the number of axes ' \
+                                             'equals the number of series'
+            fig = axes[0].figure
+            o_label = ''
+            set_axes_properties = False
 
         # plot simulation and observations in top graph
         o_nu = self.ml.oseries.series.drop(o.index)
         if not o_nu.empty:
             # plot parts of the oseries that are not used in grey
             o_nu.plot(linestyle='', marker='.', color='0.5', label='',
-                      markersize=2, ax=ax[0], x_compat=True)
-        o.plot(linestyle='', marker='.', color='k',
-               markersize=3, ax=ax[0], x_compat=True)
-        sim.plot(ax=ax[0], x_compat=True)
-        ax[0].set_title('Observations vs simulation')
-        ax[0].set_ylim(ylims[0])
-        ax[0].grid(which='both')
-        ax[0].legend(ncol=3, frameon=False)
+                      markersize=2, ax=axes[0], x_compat=True)
+        o.plot(linestyle='', marker='.', color='k', label=o_label,
+               markersize=3, ax=axes[0], x_compat=True)
+        sim.plot(ax=axes[0], x_compat=True)
+        if set_axes_properties:
+            axes[0].set_title('Observations vs simulation')
+            axes[0].set_ylim(ylims[0])
+        axes[0].grid(which='both')
+        axes[0].legend(ncol=3, frameon=False)
 
-        if ytick_base:
+        if ytick_base and set_axes_properties:
             if isinstance(ytick_base, bool):
                 # determine the ytick-spacing of the top graph
-                yticks = ax[0].yaxis.get_ticklocs()
+                yticks = axes[0].yaxis.get_ticklocs()
                 if len(yticks) > 1:
                     ytick_base = yticks[1] - yticks[0]
                 else:
                     ytick_base = None
-            ax[0].yaxis.set_major_locator(
+            axes[0].yaxis.set_major_locator(
                 MultipleLocator(base=ytick_base))
 
         # plot the influence of the stresses
         for i, contrib in enumerate(series[1:], start=1):
-            contrib.plot(ax=ax[i], x_compat=True)
+            contrib.plot(ax=axes[i], x_compat=True)
+            if set_axes_properties:
+                if ytick_base:
+                    # set the ytick-spacing equal to the top graph
+                    axes[i].yaxis.set_major_locator(
+                        MultipleLocator(base=ytick_base))
 
-            if ytick_base:
-                # set the ytick-spacing equal to the top graph
-                ax[i].yaxis.set_major_locator(
-                    MultipleLocator(base=ytick_base))
-
-            ax[i].set_title(names[i])
-            ax[i].set_ylim(ylims[i])
-            ax[i].grid(which='both')
-            ax[i].minorticks_off()
-
-        ax[0].set_xlim(tmin, tmax)
+                axes[i].set_title(names[i])
+                axes[i].set_ylim(ylims[i])
+            axes[i].grid(which='both')
+            axes[i].minorticks_off()
+        if set_axes_properties:
+            axes[0].set_xlim(tmin, tmax)
         fig.tight_layout(pad=0.0)
 
-        return ax
+        return axes
 
     @model_tmin_tmax
     def diagnostics(self, tmin=None, tmax=None):
