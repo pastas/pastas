@@ -84,9 +84,9 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         where N is the number of residuals.
         """
-        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax).values
         N = res.size
-        return np.sqrt(sum(res ** 2) / N)
+        return np.sqrt((res ** 2).sum() / N)
 
     @model_tmin_tmax
     def rmsi(self, tmin=None, tmax=None):
@@ -98,9 +98,9 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         where N is the number of noise.
         """
-        res = self.ml.noise(tmin=tmin, tmax=tmax)
+        res = self.ml.noise(tmin=tmin, tmax=tmax).values
         N = res.size
-        return np.sqrt(sum(res ** 2) / N)
+        return np.sqrt((res ** 2).sum() / N)
 
     @model_tmin_tmax
     def sse(self, tmin=None, tmax=None):
@@ -115,8 +115,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
         Where E is an array of the residual series.
 
         """
-        res = self.ml.residuals(tmin=tmin, tmax=tmax)
-        return sum(res ** 2)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax).values
+        return (res ** 2).sum()
 
     @model_tmin_tmax
     def avg_dev(self, tmin=None, tmax=None):
@@ -129,7 +129,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         Where N is the number of the residuals.
 
         """
-        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax).values
         return res.mean()
 
     @model_tmin_tmax
@@ -139,13 +139,13 @@ included in Pastas. To obtain a list of all statistics that are included type:
         References
         ----------
         .. [NS] Nash, J. E., & Sutcliffe, J. V. (1970). River flow forecasting
-        through conceptual models part I—A discussion of principles. Journal
+        through conceptual models part I-A discussion of principles. Journal
         of hydrology, 10(3), 282-290.
 
         """
-        res = self.ml.residuals(tmin=tmin, tmax=tmax)
-        obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        E = 1 - sum(res ** 2) / sum((obs - obs.mean()) ** 2)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax).values
+        obs = self.ml.observations(tmin=tmin, tmax=tmax).values
+        E = 1 - (res ** 2).sum() / ((obs - obs.mean()) ** 2).sum()
         return E
 
     @model_tmin_tmax
@@ -161,8 +161,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
         .. math:: evp = (var(h) - var(res)) / var(h) * 100%
 
         """
-        res = self.ml.residuals(tmin=tmin, tmax=tmax)
-        obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax).values
+        obs = self.ml.observations(tmin=tmin, tmax=tmax).values
         if obs.var() == 0.0:
             return 100.
         else:
@@ -187,13 +187,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
         # Make sure to correlate the same in time
-        if obs.index.difference(sim.index).size != 0:
-            # interpolate simulation to measurement-times
-            sim = np.interp(obs.index.asi8, sim.index.asi8, sim)
-        else:
-            # just take the indexes
-            sim = sim[obs.index]
-        return np.corrcoef(sim, obs)[0, 1]
+        sim = sim.loc[obs.index]
+        return np.corrcoef(sim.values, obs.values)[0, 1]
 
     @model_tmin_tmax
     def rsq_adj(self, tmin=None, tmax=None):
@@ -210,12 +205,11 @@ included in Pastas. To obtain a list of all statistics that are included type:
             N_Param = Number of free parameters
         """
 
-        obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        obs = self.ml.observations(tmin=tmin, tmax=tmax).values
+        res = self.ml.residuals(tmin=tmin, tmax=tmax).values
         N = obs.size
-
-        RSS = sum(res ** 2.0)
-        TSS = sum((obs - obs.mean()) ** 2.0)
+        RSS = (res ** 2.0).sum()
+        TSS = ((obs - obs.mean()) ** 2.0).sum()
         nparam = self.ml.parameters.index.size
         return 1.0 - (N - 1.0) / (N - nparam) * RSS / TSS
 
@@ -232,10 +226,10 @@ included in Pastas. To obtain a list of all statistics that are included type:
         Where:
             nparam : Number of free parameters
         """
-        noise = self.ml.noise(tmin=tmin, tmax=tmax)
+        noise = self.ml.noise(tmin=tmin, tmax=tmax).values
         n = noise.size
-        nparam = len(self.ml.parameters[self.ml.parameters.vary == True])
-        bic = -2.0 * np.log(sum(noise ** 2.0)) + nparam * np.log(n)
+        nparam = self.ml.parameters[self.ml.parameters.vary == True].index.size
+        bic = -2.0 * np.log((noise ** 2.0).sum()) + nparam * np.log(n)
         return bic
 
     @model_tmin_tmax
@@ -250,9 +244,9 @@ included in Pastas. To obtain a list of all statistics that are included type:
             nparam = Number of free parameters
             L = likelihood function for the model.
         """
-        noise = self.ml.noise(tmin=tmin, tmax=tmax)
-        nparam = len(self.ml.parameters[self.ml.parameters.vary == True])
-        aic = -2.0 * np.log(sum(noise ** 2.0)) + 2.0 * nparam
+        noise = self.ml.noise(tmin=tmin, tmax=tmax).values
+        nparam = self.ml.parameters[self.ml.parameters.vary == True].index.size
+        aic = -2.0 * np.log((noise ** 2.0).sum()) + 2.0 * nparam
         return aic
 
     @model_tmin_tmax
