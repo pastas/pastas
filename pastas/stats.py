@@ -32,9 +32,9 @@ from __future__ import print_function, division
 
 import numpy as np
 import pandas as pd
+from pastas.decorators import model_tmin_tmax
 from scipy.stats import chi2, norm
 
-from pastas.decorators import model_tmin_tmax
 from .utils import get_sample
 
 __all__ = ["acf", "ccf", "ljung_box", "runs_test", "durbin_watson", ]
@@ -187,7 +187,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
         # Make sure to correlate the same in time
-        sim = sim.loc[obs.index]
+        sim = sim[obs.index]
         return np.corrcoef(sim.values, obs.values)[0, 1]
 
     @model_tmin_tmax

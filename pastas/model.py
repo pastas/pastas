@@ -402,9 +402,9 @@ class Model:
         res.dropna(inplace=True)
 
         if self.normalize_residuals:
-            res = res - res.mean()
+            res = res - res.values.mean()
 
-        if np.isnan(sum(res ** 2)):  # quick and dirty check
+        if np.isnan((res ** 2).sum()):  # quick and dirty check
             self.logger.warning('nan problem in residuals')
 
         res.name = "Residuals"
@@ -1273,8 +1273,8 @@ class Model:
         >>> print(ml.fit_report)
 
         """
-        if self.fit is None:
-            raise ValueError('The model is not solved yet')
+        # if self.fit is None:
+        #     raise ValueError('The model is not solved yet')
         if output != "full":
             raise NotImplementedError
 
