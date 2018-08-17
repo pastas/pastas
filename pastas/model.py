@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 
 from .decorators import get_stressmodel
-from .io.base import dump
+from .io.base import dump, load_model
 from .noisemodels import NoiseModel
 from .plots import Plotting
 from .solver import LeastSquares
@@ -1291,7 +1291,7 @@ class Model:
 
         fit = {
             "EVP": format("%.2f" % self.stats.evp()),
-            "NS": format("%.2f" % self.stats.nash_sutcliffe()),
+            "NSE": format("%.2f" % self.stats.nash_sutcliffe()),
             "Pearson R2": format("%.2f" % self.stats.rsq()),
             "RMSE": format("%.2f" % self.stats.rmse()),
             "AIC": format("%.2f" % self.stats.aic() if
@@ -1456,3 +1456,16 @@ Parameters (%s were optimized)
 
         # Write the dicts to a file
         return dump(fname, data, **kwargs)
+
+    def copy(self):
+        """Method to copy a model
+
+        Returns
+        -------
+        ml: pastas.Model instance
+            Copy of the original model with no references to the old model.
+
+        """
+        data = self.dump_data()
+        ml = load_model(data)
+        return ml
