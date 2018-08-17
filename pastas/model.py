@@ -24,7 +24,7 @@ from .io.base import dump, load_model
 from .noisemodels import NoiseModel
 from .plots import Plotting
 from .solver import LeastSquares
-from .stats import Statistics
+from .modelstats import Statistics
 from .stressmodels import Constant
 from .timeseries import TimeSeries
 from .utils import get_dt, get_time_offset, get_sample, frequency_is_supported
@@ -1291,7 +1291,7 @@ class Model:
 
         fit = {
             "EVP": format("%.2f" % self.stats.evp()),
-            "NSE": format("%.2f" % self.stats.nash_sutcliffe()),
+            "NSE": format("%.2f" % self.stats.nse()),
             "Pearson R2": format("%.2f" % self.stats.rsq()),
             "RMSE": format("%.2f" % self.stats.rmse()),
             "AIC": format("%.2f" % self.stats.aic() if
