@@ -378,7 +378,7 @@ class Model:
                             return_warmup=False)
 
         # Get the oseries calibration series
-        oseries_calib = self.observations(tmin, tmax, freq, sim.index)
+        oseries_calib = self.observations(tmin, tmax, freq)
 
         # Get simulation at the correct indices
         if self.interpolate_simulation is None:
@@ -389,8 +389,7 @@ class Model:
                                  'is used.')
         if self.interpolate_simulation:
             # interpolate simulation to measurement-times
-            # TODO RC: Somehow switch to pandas methods and limit_period
-            # num, freq = get_freqstr(freq)
+            # TODO RC: Somehow switch to pandas methods
             sim_interpolated = np.interp(oseries_calib.index.asi8,
                                          sim.index.asi8, sim)
         else:
@@ -466,7 +465,7 @@ class Model:
         """
         return self.noise(**kwargs)
 
-    def observations(self, tmin=None, tmax=None, freq=None, sim_index=None):
+    def observations(self, tmin=None, tmax=None, freq=None):
         """Method that returns the observations series used for calibration.
 
         Parameters
@@ -474,8 +473,6 @@ class Model:
         tmin: str or pandas.TimeStamp, optional
         tmax: str or pandas.TimeStamp, optional
         freq: str, optional
-        sim_index: pandas.DatetimeIndex
-            pandas index of the simulation
 
         Returns
         -------
@@ -506,19 +503,22 @@ class Model:
 
         if self.oseries_calib is None or update_observations:
             tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq, use_oseries=True)
-            self.oseries_calib = self.oseries.series.loc[tmin:tmax]
+            oseries_calib = self.oseries.series.loc[tmin:tmax]
 
-        oseries_calib = self.oseries_calib
-
-        # sample measurements, so that frequency is not higher than model
-        # keep the original timestamps, as they will be used during
-        # interpolation of the simulation
-        if sim_index is None:
+            # sample measurements, so that frequency is not higher than model
+            # keep the original timestamps, as they will be used during
+            # interpolation of the simulation
             sim_index = self.get_sim_index(tmin, tmax, freq,
                                            self.settings["warmup"])
 
-        index = get_sample(oseries_calib.index, sim_index)
-        return oseries_calib.loc[index]
+            index = get_sample(oseries_calib.index, sim_index)
+            oseries_calib = oseries_calib.loc[index]
+
+            if not update_observations:
+                self.oseries_calib = oseries_calib
+        else:
+            oseries_calib = self.oseries_calib
+        return oseries_calib
 
     def initialize(self, tmin=None, tmax=None, freq=None, warmup=None,
                    noise=None, weights=None, initial=True, fit_constant=None):
