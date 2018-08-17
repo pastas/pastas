@@ -17,7 +17,12 @@ from os import getlogin
 
 import numpy as np
 import pandas as pd
-import pastas as ps
+from ..rfunc import Gamma
+from ..timeseries import TimeSeries
+from ..io.base import dump
+from ..model import Model
+from ..version import __version__
+from ..stressmodels import StressModel2
 
 from .maps import Map
 from .plots import Plot
@@ -104,8 +109,8 @@ class Project:
             return
 
         try:
-            ts = ps.TimeSeries(series=series, name=name, settings=settings,
-                               metadata=metadata, **kwargs)
+            ts = TimeSeries(series=series, name=name, settings=settings,
+                            metadata=metadata, **kwargs)
         except:
             logger.warning("An error occurred. Time series %s is omitted "
                            "from the database." % name)
@@ -180,7 +185,7 @@ class Project:
                          "Make sure to provide a valid oseries name.")
 
         oseries = self.oseries.loc[oseries, "series"]
-        ml = ps.Model(oseries, name=model_name, **kwargs)
+        ml = Model(oseries, name=model_name, **kwargs)
 
         # Add new model to the models dictionary
         self.models[model_name] = ml
@@ -199,7 +204,7 @@ class Project:
         name = self.models.pop(ml_name, None)
         logger.info("Model with name %s deleted from the database." % name)
 
-    def add_recharge(self, ml, rfunc, name="recharge", **kwargs):
+    def add_recharge(self, ml, rfunc=Gamma, name="recharge", **kwargs):
         """Adds a recharge element to the time series model. The
         selection of the precipitation and evaporation time series is based
         on the shortest distance to the a stresses in the stresseslist.
@@ -214,7 +219,7 @@ class Project:
         evap_name = self.get_nearest_stresses(key, kind="evap").iloc[0][0]
         evap = self.stresses.loc[evap_name, "series"]
 
-        recharge = ps.StressModel2([prec, evap], rfunc, name=name, **kwargs)
+        recharge = StressModel2([prec, evap], rfunc, name=name, **kwargs)
 
         ml.add_stressmodel(recharge)
 
@@ -432,7 +437,7 @@ class Project:
         file_info = dict()
         file_info["date_created"] = pd.Timestamp.now()
         file_info["date_modified"] = pd.Timestamp.now()
-        file_info["pastas_version"] = ps.__version__
+        file_info["pastas_version"] = __version__
         try:
             file_info["owner"] = getlogin()
         except:
@@ -451,7 +456,7 @@ class Project:
 
         """
         data = self.dump_data(**kwargs)
-        return ps.io.base.dump(fname, data)
+        return dump(fname, data)
 
     def dump_data(self, series=False, sim_series=False):
         """Method to export a Pastas Project and return a dictionary with
