@@ -735,10 +735,10 @@ class FactorModel(StressModelBase):
     def __init__(self, stress, name="factor", settings=None, metadata=None):
         if isinstance(stress, list):
             stress = stress[0]  # Temporary fix Raoul, 2017-10-24
-
-        StressModelBase.__init__(self, One, name, stress.series.index.min(),
-                                 stress.series.index.max(), up=True, meanstress=1,
-                                 cutoff=0.99)
+        tmin = stress.series_original.index.min()
+        tmax = stress.series_original.index.max()
+        StressModelBase.__init__(self, One, name, tmin=tmin, tmax=tmax,
+                                 up=True, meanstress=1, cutoff=0.99)
         self.nparam = 1
         self.value = 1  # Initial value
         stress = TimeSeries(stress, settings=settings, metadata=metadata)
