@@ -2,7 +2,7 @@
 PASTAS.
 
 All solvers inherit from the BaseSolver class, which contains general method
-for selecting the correct time series to minimize and options to weight the
+for selecting the correct time series to misfit and options to weight the
 residuals or noise series.
 
 Notes
@@ -53,8 +53,8 @@ class BaseSolver:
         self.nfev = None  # number of function evaluations
         self.fit = None  # Object that is returned by the optimization method
 
-    def minimize(self, parameters, noise, model, weights=None,
-                 noiseweights=0, callback=None):
+    def misfit(self, parameters, noise, model, weights=None,
+               noiseweights=0, callback=None):
         """This method is called by all solvers to obtain a series that are
         minimized in the optimization proces. It handles the application of
         the weigths, a noisemodel and other optimization options.
@@ -175,22 +175,9 @@ class LeastSquares(BaseSolver):
         p = self.initial
         p[self.vary] = parameters
 
-        res = self.minimize(p, noise, model, weights, noiseweights, callback)
+        res = self.misfit(p, noise, model, weights, noiseweights, callback)
 
         return res
-
-    def get_covcorrmatrix(self, model):
-        """Method to compute sigma, covariance and correlation matrix
-        """
-        nparam = len(self.fit.x)
-        H = self.fit.jac.T @ self.fit.jac
-        sigsq = np.var(self.fit.fun, ddof=nparam)
-        covmat = np.linalg.inv(H) * sigsq
-        stderr = np.sqrt(np.diag(covmat))
-        D = np.diag(1 / stderr)
-        corrmat = D @ covmat @ D
-
-        return stderr, covmat, corrmat
 
     def get_covariances(self, res, model, absolute_sigma=False):
         """Method to get the covariance matrix from the jacobian.
@@ -286,7 +273,7 @@ class LmfitSolve(BaseSolver):
 
     def objfunction(self, parameters, noise, model, weights, noiseweights):
         param = np.array([p.value for p in parameters.values()])
-        res = self.minimize(param, noise, model, weights, noiseweights)
+        res = self.misfit(param, noise, model, weights, noiseweights)
         return res
 
 
@@ -365,11 +352,26 @@ class MarkSolver(BaseSolver):
         p = self.initial
         p[self.vary] = parameters
 
-        rv = self.minimize(p, noise, model, weights, noiseweights)
+        rv = self.misfit(p, noise, model, weights, noiseweights)
 
         return rv
 
-    def minimize(self, parameters, noise, model, weights=None, noiseweights=0):
+    def get_covcorrmatrix(self, model):
+        """Method to compute sigma, covariance and correlation matrix
+
+        TODO: make it work
+        """
+        nparam = len(self.fit.x)
+        H = self.fit.jac.T @ self.fit.jac
+        sigsq = np.var(self.fit.fun, ddof=nparam)
+        covmat = np.linalg.inv(H) * sigsq
+        stderr = np.sqrt(np.diag(covmat))
+        D = np.diag(1 / stderr)
+        corrmat = D @ covmat @ D
+
+        return stderr, covmat, corrmat
+
+    def misfit(self, parameters, noise, model, weights=None, noiseweights=0):
         res = model.residuals(parameters)
         alpha = parameters[-1]
         print('alpha:', alpha)
