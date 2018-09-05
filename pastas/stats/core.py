@@ -1,9 +1,8 @@
-from numpy import abs, array, sqrt, pi, exp, meshgrid, zeros_like
+import numpy as np
 from pandas import Series, Timedelta
 
 
-def acf(x, lags=None, bin_width=None, bin_method='rectangle', tmin=None,
-        tmax=None):
+def acf(x, lags=None, bin_width=None, bin_method='rectangle'):
     """Method to calculate the autocorrelation for irregular timesteps.
 
     Returns
@@ -16,14 +15,11 @@ def acf(x, lags=None, bin_width=None, bin_method='rectangle', tmin=None,
     ps.stats.ccf
 
     """
-    C = ccf(x=x, y=x, lags=lags, bin_width=bin_width,
-            bin_method=bin_method, tmin=tmin, tmax=tmax)
-
+    C = ccf(x=x, y=x, lags=lags, bin_width=bin_width, bin_method=bin_method)
     return C
 
 
-def ccf(x, y, lags=None, bin_width=None, bin_method='rectangle', tmin=None,
-        tmax=None):
+def ccf(x, y, lags=None, bin_width=None, bin_method='rectangle'):
     """Method to calculate the autocorrelation for irregular timesteps
     based on the slotting technique. Different methods (kernels) to bin
     the data are available.
@@ -55,36 +51,37 @@ def ccf(x, y, lags=None, bin_width=None, bin_method='rectangle', tmin=None,
     """
 
     # Normalize the time values
-    dt_x = x.index.to_series().diff() / Timedelta(1, "D")
+    dt_x = x.index.to_series().diff().values / Timedelta(1, "D")
     dt_x[0] = 0.0
-    t_x = (dt_x.cumsum() / dt_x.mean()).values
+    t_x = np.cumsum(dt_x) / dt_x.mean()
 
-    dt_y = y.index.to_series().diff() / Timedelta(1, "D")
+    dt_y = y.index.to_series().diff().values / Timedelta(1, "D")
     dt_y[0] = 0.0
-    t_y = (dt_y.cumsum() / dt_y.mean()).values
+    t_y = np.cumsum(dt_y) / dt_y.mean()
 
+    # TODO Deal with gaps in the data when determining dt_mu?
     dt_mu = max(dt_x.mean(), dt_y.mean())
+    dt_min = min(dt_x[1:].min(), dt_y[1:].min())
 
     # Create matrix with time differences
-    t1, t2 = meshgrid(t_x, t_y)
-    t = t1 - t2
+    t1, t2 = np.meshgrid(t_x, t_y)
+    t = np.abs(np.subtract(t1, t2))  # absolute values
 
-    # Normalize the values
-    x = (x.values - x.mean()) / x.std()
-    y = (y.values - y.mean()) / y.std()
+    # Normalize the values and create numpy arrays
+    x = (x.values - x.values.mean()) / x.values.std()
+    y = (y.values - y.values.mean()) / y.values.std()
 
     # Create matrix for covariances
-    xx, yy = meshgrid(x, y)
-    xy = xx * yy
+    # xx, yy = meshgrid(x, y)
+    # xy = xx * yy
+    xy = np.outer(y, x)
 
-    if lags is None:
-        lags = [0, 1, 14, 28, 180, 365]  # Default lags in Days
+    if lags is None:  # Default lags in Days
+        # lags = [0, 1, 14, 28, 180, 365]
+        lags = np.unique(np.logspace(-1, 2.563).astype(int)).tolist()
 
     # Remove lags that cannot be determined because lag < dt_min
-    dt_min = min(dt_x.iloc[1:].min(), dt_y.iloc[1:].min())
-    lags = [lag for lag in lags if lag > dt_min or lag is 0]
-
-    lags = array(lags) / dt_mu
+    lags = np.array([lag for lag in lags if lag > dt_min or lag is 0]) / dt_mu
 
     # Select appropriate bin_width, default depend on bin_method
     if bin_width is None:
@@ -94,25 +91,42 @@ def ccf(x, y, lags=None, bin_width=None, bin_method='rectangle', tmin=None,
     else:
         h = bin_width / dt_mu
 
-    C = zeros_like(lags)
+    # Select the binning method to calculate the cross-correlation
+    if bin_method == "rectangle":
+        kernel_func = lambda d: np.less_equal(d, h).astype(int)
+    elif bin_method == "gaussian":
+        kernel_func = lambda d: np.exp(-d ** 2 / (2 * h ** 2)) / \
+                                np.sqrt(2 * np.pi * h)
+    elif bin_method == "sinc":
+        raise NotImplementedError()
+        # b = np.sin(np.pi * h * d) / (np.pi * h * d) / dt.size
+    else:
+        raise NotImplementedError(
+            "bin_method %s is not implemented." % bin_method)
+
+    del x, y, dt_x, dt_y, t1, t2, t_x, t_y
+
+    C = np.zeros_like(lags)
+
+    # TODO this part can probably be vectorized (nope, too much data)
+    # Although we would then have to be aware of of memory errors due to the
+    # amount of data. Try to get rid of the for loop (or at least partly)
+    # tt = t[:, :, np.newaxis]
+    # dd = np.abs(np.subtract(tt, lags))
+
+    # Pre-allocate an array to speed up all numpy methods
+    d = np.zeros_like(t)
 
     for i, k in enumerate(lags):
         # Construct the kernel for the lag
-        d = abs(abs(t) - k)
-        if bin_method == "rectangle":
-            b = (d <= h) * 1.
-        elif bin_method == "gaussian":
-            b = exp(-d ** 2 / (2 * h ** 2)) / sqrt(2 * pi * h)
-        elif bin_method == "sinc":
-            NotImplementedError()
-            # b = np.sin(np.pi * h * d) / (np.pi * h * d) / dt.size
-        else:
-            NotImplementedError(
-                "bin_method %s is not implemented." % bin_method)
-        c = xy * b
-        C[i] = c.sum() / b.sum()
-    C = C / abs(C).max()
+        # d = dd[:, :, i]
+        np.abs(np.subtract(t, k, out=d), out=d)
+        b = kernel_func(d)
+        c = np.multiply(xy, b, out=d)  # Element-wise multiplication
+        C[i] = np.sum(c) / np.sum(b)
+        del b, c
+        # C[i] = calc_acf(xy, b) #
 
-    C = Series(data=C, index=lags * dt_mu)
+    C = C / np.abs(C).max()
 
-    return C
+    return Series(data=C, index=lags * dt_mu)
