@@ -172,7 +172,7 @@ class Model:
                               "another name.")
         else:
             self.stressmodels[stressmodel.name] = stressmodel
-            self.parameters = self.get_init_parameters()
+            self.parameters = self.get_init_parameters(initial=False)
             if self.settings["freq"] is None:
                 self.set_freq()
             stressmodel.update_stress(freq=self.settings["freq"])
@@ -192,13 +192,13 @@ class Model:
 
         """
         self.constant = constant
-        self.parameters = self.get_init_parameters()
+        self.parameters = self.get_init_parameters(initial=False)
 
     def add_transform(self, transform):
         if isclass(transform):
             transform = transform(self)
         self.transform = transform
-        self.parameters = self.get_init_parameters()
+        self.parameters = self.get_init_parameters(initial=False)
 
     def add_noisemodel(self, noisemodel):
         """Adds a noisemodel to the time series Model.
@@ -215,7 +215,7 @@ class Model:
 
         """
         self.noisemodel = noisemodel
-        self.parameters = self.get_init_parameters()
+        self.parameters = self.get_init_parameters(initial=False)
 
     @get_stressmodel
     def del_stressmodel(self, name):
@@ -410,7 +410,7 @@ class Model:
         return res
 
     def noise(self, parameters=None, tmin=None, tmax=None, freq=None,
-              warmup=None, noiseweights=0):
+              warmup=None, noiseweights=True):
         """Method to simulate the noise when a noisemodel is present.
 
         Parameters
@@ -630,11 +630,9 @@ class Model:
 
         # Solve model
         # TODO: noiseweights should probably be in self.settings
-        self.fit = solver(self,
-                          noise=self.settings["noise"],
+        self.fit = solver(self, noise=self.settings["noise"],
                           weights=self.settings["weights"],
-                          noiseweights=noiseweights,
-                          **kwargs)
+                          noiseweights=noiseweights, **kwargs)
 
         if not self.settings['fit_constant']:
             # do this before setting oseries_calib to None
@@ -988,6 +986,7 @@ class Model:
         if not initial:
             paramold = self.parameters.optimal
             parameters.initial.update(paramold)
+            parameters.optimal.update(paramold)
 
         return parameters
 
