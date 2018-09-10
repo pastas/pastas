@@ -282,30 +282,38 @@ class Plotting:
 
     @model_tmin_tmax
     def diagnostics(self, tmin=None, tmax=None):
-        noise = self.ml.noise(tmin=tmin, tmax=tmax)
+        if self.ml.settings["noise"]:
+            res = self.ml.noise(tmin=tmin, tmax=tmax)
+        else:
+            res = self.ml.residuals(tmin=tmin, tmax=tmax)
 
         fig = self._get_figure()
-        gs = plt.GridSpec(2, 3, wspace=0.2)
+        shape = (2, 3)
+        ax = plt.subplot2grid(shape, (0, 0), colspan=2, rowspan=1)
+        ax.set_title(res.name)
+        res.plot(ax=ax)
 
-        plt.subplot(gs[0, :2])
-        plt.title('Autocorrelation')
-        # plt.axhline(0.2, '--')
-        r = acf(noise)
-        plt.stem(r)
+        ax1 = plt.subplot2grid(shape, (1, 0), colspan=2, rowspan=1)
+        ax1.set_title('Autocorrelation')
+        conf = 1.96 / np.sqrt(res.index.size)
+        r = acf(res)
 
-        plt.subplot(gs[1, :2])
-        plt.title('Partial Autocorrelation')
-        # plt.axhline(0.2, '--')
-        # plt.stem(self.ml.stats.pacf())
+        ax1.axhline(conf, linestyle='--', color="dimgray")
+        ax1.axhline(-conf, linestyle='--', color="dimgray")
+        ax1.stem(r.index, r.values, basefmt="gray")
+        ax1.set_xlim(r.index.min(), r.index.max())
+        ax1.set_xlabel("Lag (Days)")
 
-        plt.subplot(gs[0, 2])
-        noise.hist(bins=20)
+        ax2 = plt.subplot2grid(shape, (0, 2), colspan=1, rowspan=1)
+        res.hist(bins=20, ax=ax2)
 
-        plt.subplot(gs[1, 2])
-        probplot(noise, plot=plt)
+        ax3 = plt.subplot2grid(shape, (1, 2), colspan=1, rowspan=1)
+        probplot(res, plot=ax3, dist="norm", rvalue=True)
 
-        plt.xlim(tmin, tmax)
+        c = ax.get_lines()[0]._color
+        ax3.get_lines()[0].set_color(c)
 
+        plt.tight_layout()
         return fig.axes
 
     def block_response(self, series=None):
