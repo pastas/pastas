@@ -72,7 +72,7 @@ class Model:
     """
 
     def __init__(self, oseries, constant=True, noisemodel=True, name=None,
-                 metadata=None, settings=None, log_level="INFO"):
+                 metadata=None, log_level="INFO"):
 
         self.logger = self.get_logger(log_level=log_level)
 
@@ -95,7 +95,7 @@ class Model:
         self.transform = None
         self.noisemodel = None
 
-        # Store the simulation settings
+        # Default solve/simulation settings
         self.settings = {
             "tmin": None,
             "tmax": None,
@@ -106,8 +106,6 @@ class Model:
             "solver": None,
             "fit_constant": True,
         }
-        if settings:
-            self.settings.update(settings)
 
         if constant:
             constant = Constant(value=self.oseries.series.mean(),
@@ -854,8 +852,7 @@ class Model:
                 pd.Timedelta(1, freq)
         return odelt
 
-    def get_tmin_tmax(self, tmin=None, tmax=None, freq=None, use_oseries=True,
-                      use_stresses=False):
+    def get_tmin_tmax(self, tmin=None, tmax=None, freq=None, use_oseries=True,                      use_stresses=False):
         """Method that checks and returns valid values for tmin and tmax.
 
         Parameters
