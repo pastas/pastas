@@ -193,8 +193,23 @@ class Model:
         self.parameters = self.get_init_parameters(initial=False)
 
     def add_transform(self, transform):
+        """Adds a Transform to the time series Model.
+
+        Parameters
+        ----------
+        transform: pastas.transform
+            instance of a pastas.transform object.
+
+        Examples
+        --------
+        >>> tt = ps.ThresholdTransform()
+        >>> ml.add_transform(tt)
+
+        """
         if isclass(transform):
-            transform = transform(self)
+            # keep this line for backwards compatibilty for now
+            transform = transform()
+        transform.set_model(self)
         self.transform = transform
         self.parameters = self.get_init_parameters(initial=False)
 
@@ -217,7 +232,7 @@ class Model:
 
     @get_stressmodel
     def del_stressmodel(self, name):
-        """ Save deletion of a stressmodel from the stressmodels dict.
+        """ Safe deletion of a stressmodel from the stressmodels dict.
 
         Parameters
         ----------
@@ -235,7 +250,7 @@ class Model:
         self.parameters = self.get_init_parameters(initial=False)
 
     def del_constant(self):
-        """ Save deletion of the constant from a Model.
+        """ Safe deletion of the constant from a Model.
 
         """
         if self.constant is None:
@@ -252,7 +267,7 @@ class Model:
             self.parameters = self.get_init_parameters(initial=False)
 
     def del_noisemodel(self):
-        """Save deletion of the noisemodel from the Model.
+        """Safe deletion of the noisemodel from the Model.
 
         """
         if self.noisemodel is None:
@@ -1077,6 +1092,19 @@ class Model:
         return contrib
 
     def get_transform_contribution(self, tmin=None, tmax=None):
+        """Method to get the contribution of a transform.
+
+        Parameters
+        ----------
+        tmin: str or pandas.TimeStamp, optional
+        tmax: str or pandas.TimeStamp, optional
+
+        Returns
+        -------
+        contrib: pandas.Series
+            Pandas Series with the contribution.
+
+        """
         sim = self.simulate(tmin=tmin, tmax=tmax)
         # calculate what the simulation without the transform is
         ml = copy(self)
