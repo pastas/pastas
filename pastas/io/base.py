@@ -22,6 +22,9 @@ def load(fname, **kwargs):
     kwargs: extension specific
 
     """
+    if not path.exists(fname):
+        raise(FileNotFoundError('File not found: {}'.format(fname)))
+    
     # Dynamic import of the export module
     ext = path.splitext(fname)[1]
     load_mod = import_module("pastas.io" + ext)
