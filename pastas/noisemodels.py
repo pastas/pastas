@@ -17,6 +17,7 @@ logger = getLogger(__name__)
 
 all = ["NoiseModel", "NoiseModel2"]
 
+
 class NoiseModelBase(ABC):
     _name = "NoiseModelBase"
 
@@ -89,7 +90,7 @@ class NoiseModelBase(ABC):
 
 class NoiseModel(NoiseModelBase):
     _name = "NoiseModel"
-    __doc__ = """Noise model with exponential decay of the residual.
+    __doc__ = """Noise model with exponential decay of the residual .
 
     Notes
     -----
@@ -124,7 +125,7 @@ class NoiseModel(NoiseModelBase):
     def set_init_parameters(self):
         self.parameters.loc['noise_alpha'] = (14.0, 0, 5000, 1, 'noise')
 
-    def simulate(self, res, odelt, parameters, noiseweights=0):
+    def simulate(self, res, odelt, parameters):
         """
 
         Parameters
@@ -148,16 +149,12 @@ class NoiseModel(NoiseModelBase):
         # res.values is needed else it gets messed up with the dates
         noise.iloc[1:] -= np.exp(-odelt / alpha) * res.values[:-1]
 
-        # weights are applied when noiseweights > 1
-        # other options may be added in the future
-        # Not sure if they should be here or in the objfunction of the solver
-        if noiseweights > 0:
-            weights = self.weights(alpha, odelt, noiseweights)
-            noise = noise.multiply(weights, fill_value=0.0)
+        weights = self.weights(alpha, odelt)
+        noise = noise.multiply(weights, fill_value=0.0)
         noise.name = "Noise"
         return noise
 
-    def weights(self, alpha, odelt, noiseweights):
+    def weights(self, alpha, odelt):
         """Method to calculate the weights for the noise based on the
         sum of weighted squared noise (SWSI) method.
 
@@ -171,12 +168,12 @@ class NoiseModel(NoiseModelBase):
 
         """
         w = 1
-        if noiseweights == 1:
         # divide power by 2 as nu / sigma is returned
-            power = 1.0 / (2.0 * odelt.size)
-            exp = np.exp(-2.0 / alpha * odelt)  # Twice as fast as 2*odelt/alpha
-            w = np.exp(power * np.sum(np.log(1.0 - exp))) / np.sqrt(1.0 - exp)
+        power = 1.0 / (2.0 * odelt.size)
+        exp = np.exp(-2.0 / alpha * odelt)  # Twice as fast as 2*odelt/alpha
+        w = np.exp(power * np.sum(np.log(1.0 - exp))) / np.sqrt(1.0 - exp)
         return w
+
 
 class NoiseModel2(NoiseModelBase):
     """

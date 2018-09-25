@@ -426,7 +426,7 @@ class Model:
         return res
 
     def noise(self, parameters=None, tmin=None, tmax=None, freq=None,
-              warmup=None, noiseweights=True):
+              warmup=None):
         """Method to simulate the noise when a noisemodel is present.
 
         Parameters
@@ -440,10 +440,6 @@ class Model:
             frequency at which the time series are simulated.
         warmup: int, optional
             length of the warmup period in days
-        noiseweights: int, optional
-            if 0: no weights are applied
-            if 1: weights are applied according to the sum of squared
-            weighted noise criterium
 
         Returns
         -------
@@ -589,9 +585,9 @@ class Model:
             self.parameters.loc["constant_d", "initial"] = 0.0
             self.normalize_residuals = True
 
-    def solve(self, tmin=None, tmax=None, solver=LeastSquares, report=True,
-              noise=None, initial=True, freq=None, warmup=None, weights=None,
-              noiseweights=0, fit_constant=True, **kwargs):
+    def solve(self, tmin=None, tmax=None, freq=None, warmup=None, noise=None,
+              solver=LeastSquares, report=True, initial=True, weights=None,
+              fit_constant=True, **kwargs):
         """Method to solve the time series model.
 
         Parameters
@@ -627,8 +623,6 @@ class Model:
         weights: pandas.Series, optional
             Pandas Series with values by which the residuals are multiplied,
             index-based.
-        noiseweights: int, optional
-            Explain
         fit_constant: bool, optional
             Argument that determines if the constant is fitted as a parameter.
             If it is set to False, the constant is set equal to the mean of
@@ -645,10 +639,8 @@ class Model:
         self.settings["solver"] = solver._name
 
         # Solve model
-        # TODO: noiseweights should probably be in self.settings
         self.fit = solver(self, noise=self.settings["noise"],
-                          weights=self.settings["weights"],
-                          noiseweights=noiseweights, **kwargs)
+                          weights=self.settings["weights"], **kwargs)
 
         if not self.settings['fit_constant']:
             # do this before setting oseries_calib to None
@@ -1462,7 +1454,7 @@ Parameters (%s were optimized)
         # Write the dicts to a file
         return dump(fname, data, **kwargs)
 
-    #TODO deprecation warning
+    # TODO deprecation warning
     def dump(self, **kwargs):
         self.to_file(**kwargs)
 
