@@ -452,10 +452,10 @@ class Model:
 
         # Calculate the noise
         noise = self.noisemodel.simulate(res, self.odelt.loc[res.index],
-                                         parameters[-self.noisemodel.nparam:],
-                                         noiseweights=noiseweights)
+                                         parameters[-self.noisemodel.nparam:])
         return noise
 
+    # TODO Deprecation warning
     def innovations(self, **kwargs):
         """Historic method name for the noise of the model. Please refer to
         ml.noise for further documentation.
@@ -655,6 +655,8 @@ class Model:
             name of the parameter to update.
         value: float
             parameters value to use as initial estimate.
+        move_bounds: bool, optional
+            Reset pmin/pmax based on new initial value.
 
         """
         if move_bounds:
@@ -710,7 +712,14 @@ class Model:
         """Internal method to set the parameter value for some kind.
 
         """
-        cat, param = name.rsplit("_", maxsplit=1)
+        if name not in self.parameters.index:
+            msg = "parameters with name {} is not present in the " \
+                  "model".format(name)
+            self.logger.error(msg)
+            raise Exception(msg)
+
+        cat = self.parameters.loc[name, "name"]
+
         if cat in self.stressmodels.keys():
             self.stressmodels[cat].__getattribute__("set_" + kind)(name, value)
             self.parameters.loc[name, kind] = value
@@ -720,9 +729,6 @@ class Model:
         elif cat == self.constant.name:
             self.constant.__getattribute__("set_" + kind)(name, value)
             self.parameters.loc[name, kind] = value
-        else:
-            self.logger.warning("parameters with name %s is not present in"
-                                "the model" % name)
 
     def set_freq(self):
         """Internal method to set the frequency in the settings. This is
@@ -850,7 +856,8 @@ class Model:
                 pd.Timedelta(1, freq)
         return odelt
 
-    def get_tmin_tmax(self, tmin=None, tmax=None, freq=None, use_oseries=True,                      use_stresses=False):
+    def get_tmin_tmax(self, tmin=None, tmax=None, freq=None, use_oseries=True,
+                      use_stresses=False):
         """Method that checks and returns valid values for tmin and tmax.
 
         Parameters
@@ -1110,7 +1117,9 @@ class Model:
         dt = get_dt(self.settings["freq"])
         b = self.stressmodels[name].rfunc.block(p, dt, **kwargs)
         t = np.linspace(dt, len(b) * dt, len(b))
-        return pd.Series(b, index=t, name=name)
+        b = pd.Series(b, index=t, name=name)
+        b.index.name = "Time [days]"
+        return b
 
     @get_stressmodel
     def get_step_response(self, name, **kwargs):
@@ -1138,7 +1147,9 @@ class Model:
         dt = get_dt(self.settings["freq"])
         s = self.stressmodels[name].rfunc.step(p, dt, **kwargs)
         t = np.linspace(dt, len(s) * dt, len(s))
-        return pd.Series(s, index=t, name=name)
+        s = pd.Series(s, index=t, name=name)
+        s.index.name = "Time [days]"
+        return s
 
     @get_stressmodel
     def get_stress(self, name, istress=None):
@@ -1216,35 +1227,6 @@ class Model:
 
         return logger
 
-    def update_stresses(self, tmin=None, tmax=None, freq=None, **kwargs):
-        """Method to update the settings of all stresses simultaneously.
-
-        Parameters
-        ----------
-        tmin
-        tmax
-        freq
-        kwargs
-
-        """
-        for sm in self.stressmodels.values():
-            sm.update_stress(freq=freq, tmin=tmin, tmax=tmax, **kwargs)
-
-    def update_oseries(self, tmin=None, tmax=None, freq=None, **kwargs):
-        """Method to update the oseries.
-
-        This will change the values used by the model when calibrating.
-
-        Parameters
-        ----------
-        tmin
-        tmax
-        freq
-        kwargs
-
-        """
-        self.oseries.update_series(tmin=tmin, tmax=tmax, freq=freq, **kwargs)
-
     def fit_report(self, output="full"):
         """Method that reports on the fit after a model is optimized.
 
@@ -1267,8 +1249,6 @@ class Model:
         >>> print(ml.fit_report)
 
         """
-        # if self.fit is None:
-        #     raise ValueError('The model is not solved yet')
         if output != "full":
             raise NotImplementedError
 
@@ -1366,7 +1346,7 @@ Parameters (%s were optimized)
         return pmin, pmax
 
     def dump_data(self, series=True, sim_series=False, file_info=True):
-        """Internal method to export a PASTAS model to the json export format.
+        """Internal method to export a model to a dictionary.
 
         Helper function for the self.export method.
 
@@ -1423,13 +1403,13 @@ Parameters (%s were optimized)
 
         # Export simulated series if necessary
         if sim_series:
-            # TODO dump the simulation, residuals and noise series.
+            # TODO to_file the simulation, residuals and noise series.
             NotImplementedError()
 
         return data
 
-    def dump(self, fname, series=True, **kwargs):
-        """Method to dump the Pastas model to a file.
+    def to_file(self, fname, series=True, **kwargs):
+        """Method to to_file the Pastas model to a file.
 
         Parameters
         ----------
@@ -1450,6 +1430,10 @@ Parameters (%s were optimized)
 
         # Write the dicts to a file
         return dump(fname, data, **kwargs)
+
+    #TODO deprecation warning
+    def dump(self, **kwargs):
+        self.to_file(**kwargs)
 
     def copy(self):
         """Method to copy a model
