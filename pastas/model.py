@@ -19,7 +19,7 @@ from os import path, getlogin, getenv
 import numpy as np
 import pandas as pd
 
-from .decorators import get_stressmodel
+from .decorators import get_stressmodel, PastasDeprecationWarning
 from .io.base import dump, load_model
 from .noisemodels import NoiseModel
 from .plots import Plotting
@@ -315,16 +315,20 @@ class Model:
         # Default options when tmin, tmax, freq and warmup are not provided.
         if tmin is None:
             tmin = self.settings['tmin']
+        else:
+            tmin = self.get_tmin(tmin, freq, use_oseries=False,
+                                 use_stresses=True)
         if tmax is None:
             tmax = self.settings['tmax']
+        else:
+            tmax = self.get_tmax(tmax, freq, use_oseries=False,
+                                 use_stresses=True)
         if freq is None:
             freq = self.settings["freq"]
         if warmup is None:
             warmup = self.settings["warmup"]
 
-        # Get the tmin, tmax, the simulation index and the time step
-        tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq, use_oseries=False,
-                                        use_stresses=True)
+        # Get the simulation index and the time step
         sim_index = self.get_sim_index(tmin, tmax, freq, warmup)
         dt = get_dt(freq)
 
@@ -414,13 +418,13 @@ class Model:
 
         # Calculate the actual residuals here
         res = oseries_calib.subtract(sim_interpolated)
-        res.dropna(inplace=True)
+
+        if res.hasnans:
+            res.dropna(inplace=True)
+            self.logger.warning('Nan-values were removed from the residuals.')
 
         if self.normalize_residuals:
             res = res - res.values.mean()
-
-        if np.isnan((res ** 2).sum()):  # quick and dirty check
-            self.logger.warning('nan problem in residuals')
 
         res.name = "Residuals"
         return res
@@ -469,7 +473,7 @@ class Model:
                                          parameters[-self.noisemodel.nparam:])
         return noise
 
-    # TODO Deprecation warning
+    @PastasDeprecationWarning
     def innovations(self, **kwargs):
         """Historic method name for the noise of the model. Please refer to
         ml.noise for further documentation.
@@ -501,12 +505,16 @@ class Model:
         """
         if tmin is None:
             tmin = self.settings['tmin']
+        else:
+            tmin = self.get_tmin(tmin, freq, use_oseries=False,
+                                 use_stresses=True)
         if tmax is None:
             tmax = self.settings['tmax']
+        else:
+            tmax = self.get_tmax(tmax, freq, use_oseries=False,
+                                 use_stresses=True)
         if freq is None:
             freq = self.settings["freq"]
-
-        tmin, tmax = self.get_tmin_tmax(tmin, tmax, use_oseries=True)
 
         update_observations = False
         for key, setting in zip([tmin, tmax, freq], ["tmin", "tmax", "freq"]):
@@ -514,7 +522,8 @@ class Model:
                 update_observations = True
 
         if self.oseries_calib is None or update_observations:
-            tmin, tmax = self.get_tmin_tmax(tmin, tmax, freq, use_oseries=True)
+            tmin, self.get_tmin(tmin, use_stresses=True)
+            tmax = self.get_tmax(tmax, use_stresses=True)
             oseries_calib = self.oseries.series.loc[tmin:tmax]
 
             # sample measurements, so that frequency is not higher than model
@@ -561,8 +570,8 @@ class Model:
         # self.set_time_offset()
 
         # Set tmin and tmax
-        self.settings["tmin"], self.settings["tmax"] = \
-            self.get_tmin_tmax(tmin, tmax, use_stresses=True)
+        self.settings["tmin"], self.get_tmin(tmin, use_stresses=True)
+        self.settings["tmax"] = self.get_tmax(tmax, use_stresses=True)
 
         # set fit_constant
         if fit_constant is not None:
@@ -866,6 +875,165 @@ class Model:
                 pd.Timedelta(1, freq)
         return odelt
 
+    def get_tmin(self, tmin=None, freq=None, use_oseries=True,
+                 use_stresses=False):
+        """Method that checks and returns valid values for tmin.
+
+        Parameters
+        ----------
+        tmin: str, optional
+            string with a year or date that can be turned into a pandas
+            Timestamp (e.g. pd.Timestamp(tmin)).
+        freq: str, optional
+            string with the frequency.
+        use_oseries: bool, optional
+            Obtain the tmin and tmax from the oseries. Default is True.
+        use_stresses: bool, optional
+            Obtain the tmin and tmax from the stresses. The minimum/maximum
+            time from all stresses is taken.
+
+        Returns
+        -------
+        tmin: pandas.Timestamp
+            returns pandas timestamps for tmin.
+
+        Notes
+        -----
+        The parameters tmin and tmax are leading, unless use_oseries is
+        True, then these are checked against the oseries index. The tmin and
+        tmax are checked and returned according to the following rules:
+
+        A. If no value for tmin is provided:
+            1. If use_oseries is True, tmin is based on the oseries.
+            2. If use_stresses is True, tmin is based on the stressmodels.
+
+        B. If a values for tmin is provided:
+            1. A pandas timestamp is made from the string
+            2. if use_oseries is True, tmin is checked against oseries.
+
+        C. In all cases an offset for the tmin is added.
+
+        A detailed description of dealing with tmin and timesteps in general
+        can be found in the developers section of the docs.
+
+        """
+        # Get tmin from the oseries
+        if use_oseries:
+            ts_tmin = self.oseries.series.index.min()
+        # Get tmin from the stressmodels
+        elif use_stresses:
+            ts_tmin = pd.Timestamp.max
+            for stressmodel in self.stressmodels.values():
+                if stressmodel.tmin < ts_tmin:
+                    ts_tmin = stressmodel.tmin
+        # Get tmin and tmax from user provided values
+        else:
+            ts_tmin = pd.Timestamp(tmin)
+
+        # Set tmin properly
+        if tmin is not None and use_oseries:
+            tmin = max(pd.Timestamp(tmin), ts_tmin)
+        elif tmin is not None:
+            tmin = pd.Timestamp(tmin)
+        else:
+            tmin = ts_tmin
+
+        # adjust tmin and tmax so that the time-offset is equal to the stressmodels.
+        if freq is None:
+            freq = self.settings["freq"]
+        tmin = tmin.ceil(freq) + self.settings["time_offset"]
+
+        # assert tmax > tmin, \
+        #     self.logger.error('Error: Specified tmax not larger than '
+        #                       'specified tmin')
+        # if use_oseries:
+        #     assert self.oseries.series.loc[tmin: tmax].size > 0, \
+        #         self.logger.error(
+        #             'Error: no observations between tmin and tmax')
+
+        return tmin
+
+    def get_tmax(self, tmax=None, freq=None, use_oseries=True,
+                 use_stresses=False):
+        """Method that checks and returns valid values for tmin and tmax.
+
+        Parameters
+        ----------
+        tmax: str, optional
+            string with a year or date that can be turned into a pandas
+            Timestamp (e.g. pd.Timestamp(tmax)).
+        freq: str, optional
+            string with the frequency.
+        use_oseries: bool, optional
+            Obtain the tmin and tmax from the oseries. Default is True.
+        use_stresses: bool, optional
+            Obtain the tmin and tmax from the stresses. The minimum/maximum
+            time from all stresses is taken.
+
+        Returns
+        -------
+        tmax: pandas.Timestamp
+            returns pandas timestamps for tmax.
+
+        Notes
+        -----
+        The parameters tmin and tmax are leading, unless use_oseries is
+        True, then these are checked against the oseries index. The tmin and
+        tmax are checked and returned according to the following rules:
+
+        A. If no value for tmax is provided:
+            1. If use_oseries is True, tmax is based on the
+            oseries.
+            2. If use_stresses is True, tmax is based on the
+            stressmodels.
+
+        B. If a values for tmax is provided:
+            1. A pandas timestamp is made from the string
+            2. if use_oseries is True, tmax is checked against oseries.
+
+        C. In all cases an offset for the tmax is added.
+
+        A detailed description of dealing with tmax and timesteps
+        in general can be found in the developers section of the docs.
+
+        """
+        # Get tmax from the oseries
+        if use_oseries:
+            ts_tmax = self.oseries.series.index.max()
+        # Get tmax from the stressmodels
+        elif use_stresses:
+            ts_tmax = pd.Timestamp.min
+            for stressmodel in self.stressmodels.values():
+                if stressmodel.tmax > ts_tmax:
+                    ts_tmax = stressmodel.tmax
+        # Get tmax from user provided values
+        else:
+            ts_tmax = pd.Timestamp(tmax)
+
+        # Set tmax properly
+        if tmax is not None and use_oseries:
+            tmax = min(pd.Timestamp(tmax), ts_tmax)
+        elif tmax is not None:
+            tmax = pd.Timestamp(tmax)
+        else:
+            tmax = ts_tmax
+
+        # adjust tmax so that the time-offset is equal to the stressmodels.
+        if freq is None:
+            freq = self.settings["freq"]
+        tmax = tmax.floor(freq) + self.settings["time_offset"]
+
+        # assert tmax > tmin, \
+        #     self.logger.error('Error: Specified tmax not larger than '
+        #                       'specified tmin')
+        # if use_oseries:
+        #     assert self.oseries.series.loc[tmin: tmax].size > 0, \
+        #         self.logger.error(
+        #             'Error: no observations between tmin and tmax')
+
+        return tmax
+
+    @PastasDeprecationWarning
     def get_tmin_tmax(self, tmin=None, tmax=None, freq=None, use_oseries=True,
                       use_stresses=False):
         """Method that checks and returns valid values for tmin and tmax.
@@ -1131,9 +1299,7 @@ class Model:
             Pandas Series with the block response. The index is based on the
             frequency that is present in the model.settings.
 
-        TODO
-        ----
-        - Make sure an error is thrown when no rfunc is present.
+        TODO: Make sure an error is thrown when no rfunc is present.
 
         """
         p = self.get_parameters(name)
@@ -1161,9 +1327,7 @@ class Model:
             Pandas Series with the step response. The index is based on the
             frequency that is present in the model.settings.
 
-        TODO
-        ----
-        - Make sure an error is thrown when no rfunc is present.
+        TODO: Make sure an error is thrown when no rfunc is present.
 
         """
         p = self.get_parameters(name)
@@ -1454,7 +1618,7 @@ Parameters (%s were optimized)
         # Write the dicts to a file
         return dump(fname, data, **kwargs)
 
-    # TODO deprecation warning
+    @PastasDeprecationWarning
     def dump(self, **kwargs):
         self.to_file(**kwargs)
 
