@@ -178,12 +178,16 @@ class MenyData:
                 if name != 'values':
                     data[name] = getattr(H, name)
                 else:
-                    tindex = [matlab2datetime(tval) for tval in
-                              H.values[:, 0]]
-                    # measurement is used as is
-                    series = Series(H.values[:, 1], index=tindex)
-                    # round on seconds, to get rid of conversion milliseconds
-                    series.index = series.index.round('s')
+                    if H.values.size==0:
+                        # when diver-files are used, values will be empty
+                        series = Series()
+                    else:
+                        tindex = [matlab2datetime(tval) for tval in
+                                  H.values[:, 0]]
+                        # measurement is used as is
+                        series = Series(H.values[:, 1], index=tindex)
+                        # round on seconds, to get rid of conversion milliseconds
+                        series.index = series.index.round('s')
                     data['values'] = series
 
             # add to self.H

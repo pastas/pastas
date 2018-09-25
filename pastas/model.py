@@ -56,7 +56,7 @@ class Model:
         model settings (see ml.settings).
     log_level: str, optional
         String to set the level of the log-messages that is forwarded to the
-        Python console. Options are: ERROR (default), WARNING and INFO.
+        Python console. Options are: ERROR, WARNING and INFO (default).
 
     Returns
     -------
@@ -193,8 +193,23 @@ class Model:
         self.parameters = self.get_init_parameters(initial=False)
 
     def add_transform(self, transform):
+        """Adds a Transform to the time series Model.
+
+        Parameters
+        ----------
+        transform: pastas.transform
+            instance of a pastas.transform object.
+
+        Examples
+        --------
+        >>> tt = ps.ThresholdTransform()
+        >>> ml.add_transform(tt)
+
+        """
         if isclass(transform):
-            transform = transform(self)
+            # keep this line for backwards compatibilty for now
+            transform = transform()
+        transform.set_model(self)
         self.transform = transform
         self.parameters = self.get_init_parameters(initial=False)
 
@@ -217,7 +232,7 @@ class Model:
 
     @get_stressmodel
     def del_stressmodel(self, name):
-        """ Save deletion of a stressmodel from the stressmodels dict.
+        """ Safely delete a stressmodel from the stressmodels dict.
 
         Parameters
         ----------
@@ -235,7 +250,7 @@ class Model:
         self.parameters = self.get_init_parameters(initial=False)
 
     def del_constant(self):
-        """ Save deletion of the constant from a Model.
+        """ Safely delete the constant from the Model.
 
         """
         if self.constant is None:
@@ -245,6 +260,9 @@ class Model:
             self.parameters = self.get_init_parameters(initial=False)
 
     def del_transform(self):
+        """Safely delete the transform from the Model.
+
+        """
         if self.transform is None:
             self.logger.warning("No transform is present in this model.")
         else:
@@ -252,7 +270,7 @@ class Model:
             self.parameters = self.get_init_parameters(initial=False)
 
     def del_noisemodel(self):
-        """Save deletion of the noisemodel from the Model.
+        """Safely delete the noisemodel from the Model.
 
         """
         if self.noisemodel is None:
@@ -384,10 +402,10 @@ class Model:
                 self.interpolate_simulation = True
                 self.logger.info('There are observations between the '
                                  'simulation timesteps. Linear interpolation '
-                                 'is used.')
+                                 'between simulated values is used.')
         if self.interpolate_simulation:
             # interpolate simulation to measurement-times
-            # TODO RC: Somehow switch to pandas methods
+            # TODO RC: Somehow switch to pandas methods with maximum gap (gap_limit?)
             sim_interpolated = np.interp(oseries_calib.index.asi8,
                                          sim.index.asi8, sim)
         else:
@@ -1084,6 +1102,19 @@ class Model:
         return contrib
 
     def get_transform_contribution(self, tmin=None, tmax=None):
+        """Method to get the contribution of a transform.
+
+        Parameters
+        ----------
+        tmin: str or pandas.TimeStamp, optional
+        tmax: str or pandas.TimeStamp, optional
+
+        Returns
+        -------
+        contrib: pandas.Series
+            Pandas Series with the contribution.
+
+        """
         sim = self.simulate(tmin=tmin, tmax=tmax)
         # calculate what the simulation without the transform is
         ml = copy(self)
