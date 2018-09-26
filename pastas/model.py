@@ -570,7 +570,7 @@ class Model:
         # self.set_time_offset()
 
         # Set tmin and tmax
-        self.settings["tmin"], self.get_tmin(tmin, use_stresses=True)
+        self.settings["tmin"] = self.get_tmin(tmin, use_stresses=True)
         self.settings["tmax"] = self.get_tmax(tmax, use_stresses=True)
 
         # set fit_constant
