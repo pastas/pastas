@@ -1469,13 +1469,10 @@ class Model:
 
         parameters = self.parameters.loc[:,
                      ["optimal", "stderr", "initial", "vary"]]
-
-        for name, vals in parameters.loc[:, ["optimal", "stderr"]].iterrows():
-            popt, stderr = vals
-            val = np.abs(np.divide(stderr, popt) * 100)
-            parameters.loc[name, "stderr"] = \
-                "{:} {:.2e} ({:.2f}{:})".format("\u00B1", stderr, val,
-                                                "\u0025")
+        parameters.loc[:, "stderr"] = \
+            (parameters.loc[:, "stderr"] / parameters.loc[:, "optimal"]) \
+                .abs() \
+                .apply("\u00B1{:.2%}".format)
 
         n_param = parameters.vary.sum()
 
@@ -1493,15 +1490,16 @@ class Model:
                       "tests"]
 
         report = """
-Model Results %s                Fit Statistics
+Model Results {name}                Fit Statistics
 ============================    ============================
-%s
-Parameters (%s were optimized)
+{basic}
+Parameters ({n_param} were optimized)
 ============================================================
-%s
+{parameters}
 
-%s
-        """ % (self.name, basic, n_param, parameters, warnings)
+{warnings}
+        """.format(name=self.name, basic=basic, n_param=n_param,
+                   parameters=parameters, warnings=warnings)
 
         return report
 
