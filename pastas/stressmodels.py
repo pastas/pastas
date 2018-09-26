@@ -186,7 +186,7 @@ class StressModelBase:
 
         return data
 
-    def get_stress(self, p=None):
+    def get_stress(self, p=None, original=False, **kwargs):
         """Returns the stress or stresses of the time series object as a pandas
         DataFrame.
 
@@ -199,7 +199,10 @@ class StressModelBase:
             Pandas dataframe of the stress(es)
 
         """
-        return self.stress
+        if original:
+            return self.stress[0].series_original
+        else:
+            return self.stress[0].series
 
     def dump(self, series=True):
         """Method to export the StressModel object.
@@ -335,7 +338,7 @@ class StressModel2(StressModelBase):
 
     Parameters
     ----------
-    stress: list of pandas.Series
+    stress: list of pandas.Series or list of pastas.TimeSeries
         list of pandas.Series or pastas.TimeSeries objects containing the
         stresses.
     rfunc: pastas.rfunc instance
@@ -394,7 +397,7 @@ class StressModel2(StressModelBase):
         stress1.update_series(tmin=index.min(), tmax=index.max())
 
         if meanstress is None:
-            meanstress = stress0.series.mean() - stress1.series.mean()
+            meanstress = (stress0.series - stress1.series).std()
 
         StressModelBase.__init__(self, rfunc, name, index.min(), index.max(),
                                  up, meanstress, cutoff)
@@ -442,7 +445,7 @@ class StressModel2(StressModelBase):
         # h -= self.rfunc.gain(p) * stress.mean()
         return h
 
-    def get_stress(self, p=None, istress=None):
+    def get_stress(self, p=None, original=False, istress=None):
         if istress is None:
             return self.stress[0].series.add(p[-1] * self.stress[1].series)
         elif istress == 0:

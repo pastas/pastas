@@ -1355,10 +1355,7 @@ class Model:
 
         """
         p = self.get_parameters(name)
-        if istress is None:
-            stress = self.stressmodels[name].get_stress(p)
-        else:
-            stress = self.stressmodels[name].get_stress(p, istress)
+        stress = self.stressmodels[name].get_stress(p=p, istress=istress)
         return stress
 
     def get_file_info(self):
@@ -1619,8 +1616,8 @@ Parameters (%s were optimized)
         return dump(fname, data, **kwargs)
 
     @PastasDeprecationWarning
-    def dump(self, **kwargs):
-        self.to_file(**kwargs)
+    def dump(self, *args, **kwargs):
+        self.to_file(*args, **kwargs)
 
     def copy(self):
         """Method to copy a model
