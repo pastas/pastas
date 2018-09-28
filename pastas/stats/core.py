@@ -1,8 +1,10 @@
 import numpy as np
-from pandas import Series, Timedelta
+from pandas import Series, Timedelta, DataFrame
+import matplotlib.pyplot as plt
 
 
-def acf(x, lags=None, bin_method='gaussian', bin_width=None, max_gap=np.inf):
+def acf(x, lags=None, bin_method='gaussian', bin_width=None, max_gap=np.inf,
+        min_obs=10, output="acf"):
     """Method to calculate the autocorrelation function for irregular
     timesteps based on the slotting technique. Different methods (kernels)
     to bin the data are available.
@@ -46,13 +48,13 @@ def acf(x, lags=None, bin_method='gaussian', bin_width=None, max_gap=np.inf):
 
     """
     C = ccf(x=x, y=x, lags=lags, bin_method=bin_method, bin_width=bin_width,
-            max_gap=max_gap)
-    C.name = "ACF"
+            max_gap=max_gap, min_obs=min_obs, output=output)
+    C.name = "ACF" #TODO Rename
     return C
 
 
 def ccf(x, y, lags=None, bin_method='gaussian', bin_width=None,
-        max_gap=np.inf):
+        max_gap=np.inf, min_obs=10, output="ccf"):
     """Method to calculate the cross-correlation function for irregular
     timesteps based on the slotting technique. Different methods (kernels)
     to bin the data are available.
@@ -95,19 +97,19 @@ def ccf(x, y, lags=None, bin_method='gaussian', bin_width=None,
     acf = ps.stats.ccf(x, y, bin_method="gaussian")
 
     """
-    # Normalize the time values
+    # prepare the time indices for x and y
     dt_x = x.index.to_series().diff().values / Timedelta(1, "D")
     dt_x[0] = 0.0
     dt_x_mu = dt_x[dt_x < max_gap].mean()  # Deal with big gaps if present
-    t_x = np.cumsum(dt_x) / dt_x_mu
+    t_x = np.cumsum(dt_x)
 
     dt_y = y.index.to_series().diff().values / Timedelta(1, "D")
     dt_y[0] = 0.0
     dt_y_mu = dt_y[dt_y < max_gap].mean()
-
-    t_y = np.cumsum(dt_y) / dt_y_mu
+    t_y = np.cumsum(dt_y)
 
     dt_mu = max(dt_x_mu, dt_y_mu)
+
     # Create matrix with time differences
     t1, t2 = np.meshgrid(t_x, t_y)
     t = np.abs(np.subtract(t1, t2))  # absolute values
@@ -124,47 +126,68 @@ def ccf(x, y, lags=None, bin_method='gaussian', bin_width=None,
                 150, 180, 210, 240, 270, 300, 330, 365]
 
     # Remove lags that cannot be determined because lag < dt_min
-    dt_min = min(dt_x[1:].min(), dt_y[1:].min())
-    lags = np.array([lag for lag in lags if lag >= dt_min or lag == 0]) / dt_mu
+    u, i = np.unique(dt_x, return_counts=True)
+    dt_x_min = u[Series(i, u).cumsum() >= min_obs][0]
+    u, i = np.unique(dt_y, return_counts=True)
+    dt_y_min = u[Series(i, u).cumsum() >= min_obs][0]
 
-    # Delete
+    dt_min = min(dt_x_min, dt_y_min)
+    # dt_min = min(dt_x[1:].min(), dt_y[1:].min())
+
+    lags = np.array([float(lag) for lag in lags if lag >= dt_min or lag == 0])
+
+    # Delete to free memory
     del (x, y, dt_x, dt_y, t1, t2, t_x, t_y)
 
     # Select appropriate bin_width, default depend on bin_method
     if bin_width is None:
-        bin_width = {"rectangle": 2, "sinc": 1, "gaussian": 4}
-        h = 1 / bin_width[bin_method]
+        options = {"rectangle": 0.5, "sinc": 1, "gaussian": 0.25}
+        bin_width = np.ones_like(lags) * options[bin_method] * dt_mu
+    elif type(bin_width) is float:
+        bin_width = np.ones_like(lags)
     else:
-        h = bin_width / dt_mu
+        bin_width = [0.5, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 5, 5, 5, 5,
+                     2, 2, 2, 2, 2, 2, 2, 2]
 
     # Select the binning method to calculate the cross-correlation
     if bin_method == "rectangle":
-        a = np.zeros_like(t)
-        kernel_func = lambda d: np.less_equal(d, h, out=a).astype(int)
+        a = np.zeros_like(t, dtype=float)
+        kernel_func = lambda d, h: np.less_equal(np.abs(d, out=a), h,
+                                                 out=a).astype(int)
     elif bin_method == "gaussian":
-        den1 = -2 * h ** 2  # denominator 1
-        den2 = np.sqrt(2 * np.pi * h)  # denominator 2
-        kernel_func = lambda d: np.exp(np.square(d) / den1) / den2
+        a = np.zeros_like(t, dtype=float)
+        def kernel_func(d, h):
+            den1 = -2 * h ** 2  # denominator 1
+            den2 = np.sqrt(2 * np.pi * h)  # denominator 2
+            return np.exp(np.square(d, out=a) / den1, out=a) / den2
     elif bin_method == "sinc":
-        raise NotImplementedError("bin_method %s is not implemented." %
-                                  bin_method)
-        # kernel_func = lambda d: np.sin(np.pi * h * d) / ( np.pi * h * d)
+        kernel_func = lambda d, h: np.sin(np.pi * h * d) / (np.pi * h * d)
     else:
         raise NotImplementedError("bin_method %s is not implemented." %
                                   bin_method)
 
     # Pre-allocate an array to speed up all numpy methods
-    C = np.zeros_like(lags)
-    d = np.zeros_like(t)
+    UDCF = np.zeros_like(lags, dtype=float)
+    M = np.zeros_like(lags, dtype=float)
+    d = np.zeros_like(t, dtype=float)
 
     for i, k in enumerate(lags):
         # Construct the kernel for the lag
-        np.abs(np.subtract(k, t, out=d), out=d)
-        b = kernel_func(d)
+        np.subtract(t, k, out=d)
+        h = bin_width[i]
+        b = kernel_func(d, h)
         c = np.multiply(xy, b, out=d)  # Element-wise multiplication
-        C[i] = np.sum(c) / np.sum(b)
+        UDCF[i] = np.sum(c)
+        M[i] = np.sum(b)
 
-    C = C / np.abs(C).max()
-    CCF = Series(data=C, index=lags * dt_mu, name="CCF")
+    DCF = UDCF / M
+
+    C = Series(data=DCF, index=lags, name="CCF")
+    CCF = C / C.abs().max()
+
+    if output == "full":
+        CCFstd = np.sqrt((np.cumsum(UDCF) - M * DCF) ** 2) / (M - 1)
+        CCF = DataFrame(data={"CCF": CCF.values, "stderr": CCFstd}, index=lags)
+
     CCF.index.name = "Lags (Days)"
     return CCF
