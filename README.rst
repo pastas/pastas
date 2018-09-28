@@ -18,6 +18,8 @@ License         .. image:: https://img.shields.io/pypi/l/pastas.svg
                     :target: https://mit-license.org/
 Latest Release  .. image:: https://img.shields.io/github/release/pastas/pastas.svg
                     :target: https://github.com/pastas/pastas/releases
+Code quality    .. image:: https://api.codacy.com/project/badge/Grade/0e0fad469a3c42a4a5c5d1c5fddd6bee
+                    :target: https://app.codacy.com/app/raoulcollenteur/pastas?utm_source=github.com&utm_medium=referral&utm_content=pastas/pastas&utm_campaign=Badge_Grade_Dashboard    
 ==============  ==================================================================
 
 
