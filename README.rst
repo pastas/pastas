@@ -1,10 +1,6 @@
 PASTAS: HYDROLOGICAL TIME SERIES ANALYSIS
 =========================================
 
-.. image:: https://api.codacy.com/project/badge/Grade/0e0fad469a3c42a4a5c5d1c5fddd6bee
-   :alt: Codacy Badge
-   :target: https://app.codacy.com/app/raoulcollenteur/pastas?utm_source=github.com&utm_medium=referral&utm_content=pastas/pastas&utm_campaign=Badge_Grade_Dashboard
-
 .. image:: /doc/_static/logo_small.png
    :width: 200px
    :align: left
