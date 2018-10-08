@@ -1203,7 +1203,8 @@ class Model:
 
     @get_stressmodel
     def get_contribution(self, name, tmin=None, tmax=None, freq=None,
-                         warmup=None, istress=None, return_warmup=False):
+                         warmup=None, istress=None, return_warmup=False,
+                         parameters=None):
         """Method to get the contribution of a stressmodel.
 
         The optimal parameters are used when available, initial otherwise.
@@ -1226,7 +1227,8 @@ class Model:
             Pandas Series with the contribution.
 
         """
-        p = self.get_parameters(name)
+        if parameters is None:
+            parameters = self.get_parameters(name)
 
         if tmin is None:
             tmin = self.settings['tmin']
@@ -1246,11 +1248,13 @@ class Model:
         dt = get_dt(freq)
 
         if istress is None:
-            contrib = self.stressmodels[name].simulate(p, tmin=tmin_warm,
+            contrib = self.stressmodels[name].simulate(parameters,
+                                                       tmin=tmin_warm,
                                                        tmax=tmax,
                                                        freq=freq, dt=dt)
         else:
-            contrib = self.stressmodels[name].simulate(p, tmin=tmin_warm,
+            contrib = self.stressmodels[name].simulate(parameters,
+                                                       tmin=tmin_warm,
                                                        tmax=tmax,
                                                        dt=dt, freq=freq,
                                                        istress=istress)
@@ -1283,7 +1287,7 @@ class Model:
         return sim - sim_org
 
     @get_stressmodel
-    def get_block_response(self, name, **kwargs):
+    def get_block_response(self, name, parameters=None, **kwargs):
         """Method to obtain the block response for a stressmodel.
 
         The optimal parameters are used when available, initial otherwise.
@@ -1302,16 +1306,17 @@ class Model:
         TODO: Make sure an error is thrown when no rfunc is present.
 
         """
-        p = self.get_parameters(name)
+        if parameters is None:
+            parameters = self.get_parameters(name)
         dt = get_dt(self.settings["freq"])
-        b = self.stressmodels[name].rfunc.block(p, dt, **kwargs)
+        b = self.stressmodels[name].rfunc.block(parameters, dt, **kwargs)
         t = np.linspace(dt, len(b) * dt, len(b))
         b = pd.Series(b, index=t, name=name)
         b.index.name = "Time [days]"
         return b
 
     @get_stressmodel
-    def get_step_response(self, name, **kwargs):
+    def get_step_response(self, name, parameters=None, **kwargs):
         """Method to obtain the step response for a stressmodel.
 
         The optimal parameters are used when available, initial otherwise.
@@ -1330,9 +1335,10 @@ class Model:
         TODO: Make sure an error is thrown when no rfunc is present.
 
         """
-        p = self.get_parameters(name)
+        if parameters is None:
+            parameters = self.get_parameters(name)
         dt = get_dt(self.settings["freq"])
-        s = self.stressmodels[name].rfunc.step(p, dt, **kwargs)
+        s = self.stressmodels[name].rfunc.step(parameters, dt, **kwargs)
         t = np.linspace(dt, len(s) * dt, len(s))
         s = pd.Series(s, index=t, name=name)
         s.index.name = "Time [days]"
@@ -1439,7 +1445,7 @@ class Model:
         model = {
             "nfev": self.fit.nfev,
             "nobs": self.oseries_calib.index.size,
-            "noise": self.noisemodel._name if self.noisemodel else "None",
+            "noise": self.settings["noise"],
             "tmin": str(self.settings["tmin"]),
             "tmax": str(self.settings["tmax"]),
             "freq": self.settings["freq"],
@@ -1448,13 +1454,13 @@ class Model:
         }
 
         fit = {
-            "EVP": format("%.2f" % self.stats.evp()),
-            "NSE": format("%.2f" % self.stats.nse()),
-            "Pearson R2": format("%.2f" % self.stats.rsq()),
-            "RMSE": format("%.2f" % self.stats.rmse()),
-            "AIC": format("%.2f" % self.stats.aic() if
+            "EVP": "{:.2f}".format(self.stats.evp()),
+            "NSE": "{:.2f}".format(self.stats.nse()),
+            "Pearson R2": "{:.2f}".format(self.stats.rsq()),
+            "RMSE": "{:.2f}".format(self.stats.rmse()),
+            "AIC": "{:.2f}".format(self.stats.aic() if
                           self.settings["noise"] else np.nan),
-            "BIC": format("%.2f" % self.stats.bic() if
+            "BIC": "{:.2f}".format(self.stats.bic() if
                           self.settings["noise"] else np.nan),
             "__": "",
             "___": ""
