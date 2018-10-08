@@ -24,7 +24,7 @@ def load(fname, **kwargs):
     """
     if not path.exists(fname):
         raise(FileNotFoundError('File not found: {}'.format(fname)))
-    
+
     # Dynamic import of the export module
     ext = path.splitext(fname)[1]
     load_mod = import_module("pastas.io" + ext)
@@ -128,6 +128,7 @@ def load_model(data):
         ml.settings.update(data["settings"])
     if "file_info" in data.keys():
         ml.file_info.update(data["file_info"])
+        ml.file_info["version"] = ps.__version__
 
     # Add stressmodels
     for name, ts in data["stressmodels"].items():
