@@ -327,6 +327,8 @@ class Model:
             freq = self.settings["freq"]
         if warmup is None:
             warmup = self.settings["warmup"]
+        elif isinstance(warmup, str):
+            warmup = get_dt(warmup)
 
         # Get the simulation index and the time step
         sim_index = self.get_sim_index(tmin, tmax, freq, warmup)
@@ -392,6 +394,8 @@ class Model:
             freq = self.settings["freq"]
         if warmup is None:
             warmup = self.settings["warmup"]
+        elif isinstance(warmup, str):
+            warmup = get_dt(warmup)
 
         # simulate model
         sim = self.simulate(parameters, tmin, tmax, freq, warmup,
@@ -564,6 +568,8 @@ class Model:
             self.settings["freq"] = frequency_is_supported(freq)
 
         if warmup is not None:
+            if isinstance(warmup, str):
+                warmup = get_dt(warmup)
             self.settings["warmup"] = warmup
 
         # Set the time offset from the frequency
@@ -1238,6 +1244,8 @@ class Model:
             freq = self.settings["freq"]
         if warmup is None:
             warmup = self.settings["warmup"]
+        elif isinstance(warmup, str):
+            warmup = get_dt(warmup)
 
         # use warmup
         if tmin:

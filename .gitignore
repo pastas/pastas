@@ -20,3 +20,5 @@ dist
 *.log
 
 **/*.ipynb_checkpoints/
+
+.vscode/*
