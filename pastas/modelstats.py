@@ -25,7 +25,7 @@ Examples
 
 """
 
-from numpy import sqrt, log
+from numpy import sqrt, log, nan
 from pandas import DataFrame
 
 from .decorators import model_tmin_tmax
@@ -83,15 +83,23 @@ included in Pastas. To obtain a list of all statistics that are included type:
     def rmsi(self, tmin=None, tmax=None):
         """Root mean squared error of the noise.
 
+        Returns
+        -------
+        float or nan
+            Return a float if noisemodel is present, nan if not.
+
         Notes
         -----
         .. math:: rmsi = sqrt(sum(noise**2) / N)
 
         where N is the number of noise.
         """
-        res = self.ml.noise(tmin=tmin, tmax=tmax).values
-        N = res.size
-        return sqrt((res ** 2).sum() / N)
+        if not self.ml.noisemodel:
+            return nan
+        else:
+            res = self.ml.noise(tmin=tmin, tmax=tmax).values
+            N = res.size
+            return sqrt((res ** 2).sum() / N)
 
     @model_tmin_tmax
     def sse(self, tmin=None, tmax=None):
@@ -194,7 +202,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
     @model_tmin_tmax
     def bic(self, tmin=None, tmax=None):
-        """Bayesian Information Criterium.
+        """Bayesian Information Criterium. The noise is used if a noisemodel is
+         present, otherwise the residuals are used.
 
         Notes
         -----
@@ -204,8 +213,14 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         Where:
             nparam : Number of free parameters
+
+
+
         """
-        noise = self.ml.noise(tmin=tmin, tmax=tmax).values
+        if self.ml.noisemodel:
+            noise = self.ml.noise(tmin=tmin, tmax=tmax).values
+        else:
+            noise = self.ml.residuals(tmin=tmin, tmax=tmax).values
         n = noise.size
         nparam = self.ml.parameters[self.ml.parameters.vary == True].index.size
         bic = -2.0 * log((noise ** 2.0).sum()) + nparam * log(n)
@@ -213,7 +228,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
     @model_tmin_tmax
     def aic(self, tmin=None, tmax=None):
-        """Akaike Information Criterium (AIC).
+        """Akaike Information Criterium (AIC). The noise is used if a
+        noisemodel is present, otherwise the residuals are used.
 
         Notes
         -----
@@ -222,8 +238,12 @@ included in Pastas. To obtain a list of all statistics that are included type:
         Where
             nparam = Number of free parameters
             L = likelihood function for the model.
+
         """
-        noise = self.ml.noise(tmin=tmin, tmax=tmax).values
+        if self.ml.noisemodel:
+            noise = self.ml.noise(tmin=tmin, tmax=tmax).values
+        else:
+            noise = self.ml.residuals(tmin=tmin, tmax=tmax).values
         nparam = self.ml.parameters[self.ml.parameters.vary == True].index.size
         aic = -2.0 * log((noise ** 2.0).sum()) + 2.0 * nparam
         return aic
