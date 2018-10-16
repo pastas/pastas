@@ -745,13 +745,17 @@ class Model:
 
         cat = self.parameters.loc[name, "name"]
 
+        # Because either of the following is not necessarily present
+        noisemodel = self.noisemodel.name if self.noisemodel else "NotPresent"
+        constant = self.constant.name if self.constant else "NotPresent"
+
         if cat in self.stressmodels.keys():
             self.stressmodels[cat].__getattribute__("set_" + kind)(name, value)
             self.parameters.loc[name, kind] = value
-        elif cat == self.noisemodel.name:
+        elif cat == noisemodel:
             self.noisemodel.__getattribute__("set_" + kind)(name, value)
             self.parameters.loc[name, kind] = value
-        elif cat == self.constant.name:
+        elif cat == constant:
             self.constant.__getattribute__("set_" + kind)(name, value)
             self.parameters.loc[name, kind] = value
 
@@ -1418,7 +1422,6 @@ class Model:
             basicConfig(level=INFO)
 
         logger = getLogger(__name__)
-
         # Set log_level for console to user-defined value
         if log_level is not None:
             logger.parent.handlers[0].setLevel(log_level)
@@ -1467,9 +1470,9 @@ class Model:
             "Pearson R2": "{:.2f}".format(self.stats.rsq()),
             "RMSE": "{:.2f}".format(self.stats.rmse()),
             "AIC": "{:.2f}".format(self.stats.aic() if
-                          self.settings["noise"] else np.nan),
+                                   self.settings["noise"] else np.nan),
             "BIC": "{:.2f}".format(self.stats.bic() if
-                          self.settings["noise"] else np.nan),
+                                   self.settings["noise"] else np.nan),
             "__": "",
             "___": ""
         }
