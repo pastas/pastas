@@ -313,12 +313,12 @@ class Model:
 
         """
         # Default options when tmin, tmax, freq and warmup are not provided.
-        if tmin is None:
+        if tmin is None and self.settings['tmin']:
             tmin = self.settings['tmin']
         else:
             tmin = self.get_tmin(tmin, freq, use_oseries=False,
                                  use_stresses=True)
-        if tmax is None:
+        if tmax is None and self.settings['tmax']:
             tmax = self.settings['tmax']
         else:
             tmax = self.get_tmax(tmax, freq, use_oseries=False,
@@ -507,12 +507,12 @@ class Model:
         interpolated to the observation-timestamps.
 
         """
-        if tmin is None:
+        if tmin is None and self.settings['tmin']:
             tmin = self.settings['tmin']
         else:
             tmin = self.get_tmin(tmin, freq, use_oseries=False,
                                  use_stresses=True)
-        if tmax is None:
+        if tmax is None and self.settings['tmax']:
             tmax = self.settings['tmax']
         else:
             tmax = self.get_tmax(tmax, freq, use_oseries=False,
