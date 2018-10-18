@@ -1,26 +1,58 @@
 
-Pastas TimeSeries Objects
-=========================
+.. raw:: html
 
-R.A. Collenteur, 04-11-2017, Artesia Water
+   <figure>
+
+.. raw:: html
+
+   </figure>
+
+The Pastas TimeSeries Class
+===========================
+
+*Developed by Raoul Collenteur* -
+
+**WARNING: This Notebook is work in progress, please check the
+development Branch at Github.**
 
 In this Jupyter Notebook, the concept of the Pastas TimeSeries class is
-explained in full detail. The Pastas TimeSeries class is basically an
-enhanced Pandas Series object. It enhorits from the Pandas Series, and
-adds some features for its specific use in Pastas. Documentation on the
-Pandas Series can be found here:
+explained in full detail.
+
+Objective of the Pastas TimeSeries class:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+"*To create one class that deals with all user-provided time series and
+the manipulations of the series while maintaining the original series.*"
+
+Desired Capabilities:
+~~~~~~~~~~~~~~~~~~~~~
+
+-  Validate user-provided time series
+-  Extend before and after
+-  Fill nan-values
+-  Change frequency
+
+   -  Upsample
+   -  Downsample
+
+-  Normalize values
+
+Resources
+~~~~~~~~~
+
+The definition of the class can be found on Github
+(https://github.com/pastas/pastas/blob/master/pastas/timeseries.py)
+Documentation on the Pandas Series can be found here:
 http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.html
 
 Basic concept
 ~~~~~~~~~~~~~
 
-The central thought for the design of this class was that all
-manipulations made on the user-provided dependent and independent time
-series should be handled within this class. Moreover, while manipulating
-the TimeSeries when working with your Pastas model, the original data
-should be maintained such that only the settings and the original series
-can be stored. The definition of the class can be found on Github
-(https://github.com/pastas/pastas/blob/dev/pastas/timeseries.py)
+The central idea behind the TimeSeries class is to solve all data
+manipulations in a single class while maintaining the original time
+series. While manipulating the TimeSeries when working with your Pastas
+model, the original data are to be maintained such that only the
+settings and the original series can be stored.
 
 .. code:: ipython3
 
@@ -56,12 +88,12 @@ funtionality.
 
 .. parsed-literal::
 
-    <matplotlib.axes._subplots.AxesSubplot at 0x2a9d695c9e8>
+    <matplotlib.axes._subplots.AxesSubplot at 0x1e9a9b77278>
 
 
 
 
-.. image:: output_3_1.png
+.. image:: output_4_1.png
 
 
 2. Creating a Pastas TimeSeries object
@@ -113,12 +145,12 @@ fill\_nan="interpolate").
 
 .. parsed-literal::
 
-    <matplotlib.legend.Legend at 0x2a9d695c940>
+    <matplotlib.legend.Legend at 0x1e9a9b8e6a0>
 
 
 
 
-.. image:: output_5_1.png
+.. image:: output_6_1.png
 
 
 3. Configuring a TimeSeries object
@@ -152,7 +184,7 @@ option:
 
 .. parsed-literal::
 
-    {'freq': None, 'sample_up': None, 'sample_down': 'drop', 'fill_nan': 'drop', 'fill_before': None, 'fill_after': None, 'tmin': Timestamp('1985-11-14 00:00:00'), 'tmax': Timestamp('2015-06-28 00:00:00'), 'norm': None}
+    {'freq': None, 'sample_up': None, 'sample_down': 'drop', 'fill_nan': 'drop', 'fill_before': None, 'fill_after': None, 'tmin': Timestamp('1985-11-14 00:00:00'), 'tmax': Timestamp('2015-06-28 00:00:00'), 'norm': None, 'time_offset': Timedelta('0 days 00:00:00')}
     
 
 .. code:: ipython3
@@ -164,7 +196,7 @@ option:
 
 .. parsed-literal::
 
-    {'freq': None, 'sample_up': None, 'sample_down': None, 'fill_nan': 'drop', 'fill_before': None, 'fill_after': None, 'tmin': Timestamp('1985-11-14 00:00:00'), 'tmax': Timestamp('2015-06-28 00:00:00'), 'norm': None}
+    {'freq': None, 'sample_up': None, 'sample_down': None, 'fill_nan': 'drop', 'fill_before': None, 'fill_after': None, 'tmin': Timestamp('1985-11-14 00:00:00'), 'tmax': Timestamp('2015-06-28 00:00:00'), 'norm': None, 'time_offset': Timedelta('0 days 00:00:00')}
     
 
 .. code:: ipython3
@@ -176,7 +208,7 @@ option:
 
 .. parsed-literal::
 
-    {'freq': None, 'sample_up': None, 'sample_down': None, 'fill_nan': 'drop', 'fill_before': None, 'fill_after': None, 'tmin': Timestamp('1985-11-14 00:00:00'), 'tmax': Timestamp('2015-06-28 00:00:00'), 'norm': None}
+    {'freq': None, 'sample_up': None, 'sample_down': None, 'fill_nan': 'drop', 'fill_before': None, 'fill_after': None, 'tmin': Timestamp('1985-11-14 00:00:00'), 'tmax': Timestamp('2015-06-28 00:00:00'), 'norm': None, 'time_offset': Timedelta('0 days 00:00:00')}
     
 
 Predefined settings
@@ -229,7 +261,7 @@ often. You can ask the TimeSeries class this question:
           <th>evap</th>
           <td>mean</td>
           <td>mean</td>
-          <td>NaN</td>
+          <td>interpolate</td>
           <td>sum</td>
           <td>divide</td>
         </tr>
@@ -237,7 +269,7 @@ often. You can ask the TimeSeries class this question:
           <th>flux</th>
           <td>mean</td>
           <td>mean</td>
-          <td>NaN</td>
+          <td>0</td>
           <td>mean</td>
           <td>bfill</td>
         </tr>
@@ -245,7 +277,7 @@ often. You can ask the TimeSeries class this question:
           <th>level</th>
           <td>mean</td>
           <td>mean</td>
-          <td>NaN</td>
+          <td>interpolate</td>
           <td>mean</td>
           <td>interpolate</td>
         </tr>
@@ -269,7 +301,7 @@ often. You can ask the TimeSeries class this question:
           <th>quantity</th>
           <td>mean</td>
           <td>mean</td>
-          <td>NaN</td>
+          <td>0</td>
           <td>sum</td>
           <td>divide</td>
         </tr>
@@ -277,7 +309,7 @@ often. You can ask the TimeSeries class this question:
           <th>waterlevel</th>
           <td>mean</td>
           <td>mean</td>
-          <td>NaN</td>
+          <td>interpolate</td>
           <td>mean</td>
           <td>interpolate</td>
         </tr>
@@ -322,9 +354,9 @@ frequency and show how the above methods work
 
     fig, ax = plt.subplots(2, 1, figsize=(10,8))
     prec.update_series(freq="D")
-    prec.plot.bar(ax=ax[0])
-    prec.update_series(freq="W")
-    prec.plot.bar(ax=ax[1])
+    prec.series.plot.bar(ax=ax[0])
+    prec.update_series(freq="7D")
+    prec.series.plot.bar(ax=ax[1])
     
     import matplotlib.dates as mdates
     ax[1].fmt_xdata = mdates.DateFormatter('%m')
@@ -332,7 +364,7 @@ frequency and show how the above methods work
 
 
 
-.. image:: output_14_0.png
+.. image:: output_15_0.png
 
 
 Wait, what?
@@ -379,17 +411,18 @@ shows.
     {'fill_after': 'mean',
      'fill_before': 'mean',
      'fill_nan': 0.0,
-     'freq': 'W',
+     'freq': '7D',
      'norm': None,
      'sample_down': 'sum',
      'sample_up': 'divide',
+     'time_offset': Timedelta('0 days 00:00:00'),
      'tmax': Timestamp('2012-12-31 00:00:00'),
      'tmin': Timestamp('2011-01-01 00:00:00')}
 
 
 
 
-.. image:: output_16_1.png
+.. image:: output_17_1.png
 
 
 5. Exporting the TimeSeries
@@ -419,13 +452,5 @@ data is maintained and can easily be recreated from a json file.
 
 
 
-
-.. parsed-literal::
-
-    <matplotlib.axes._subplots.AxesSubplot at 0x2a9d81a2668>
-
-
-
-
-.. image:: output_19_1.png
+.. image:: output_20_0.png
 
