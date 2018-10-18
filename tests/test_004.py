@@ -23,7 +23,7 @@ def test_create_model():
 
 def test_save_model():
     ml = test_create_model()
-    ml.dump("test.pas")
+    ml.to_file("test.pas")
 
     return
 
