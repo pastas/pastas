@@ -23,7 +23,7 @@ def load(fname, **kwargs):
 
     """
     if not path.exists(fname):
-        raise(FileNotFoundError('File not found: {}'.format(fname)))
+        raise (FileNotFoundError('File not found: {}'.format(fname)))
 
     # Dynamic import of the export module
     ext = path.splitext(fname)[1]

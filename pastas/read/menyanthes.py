@@ -138,7 +138,7 @@ class MenyData:
                     # round on seconds, to get rid of conversion milliseconds
                     series.index = series.index.round('s')
 
-                    if hasattr(IN,'type'):
+                    if hasattr(IN, 'type'):
                         IN.Type = IN.type
 
                     if IN.Type in ['EVAP', 'PREC', 'WELL']:
@@ -178,7 +178,7 @@ class MenyData:
                 if name != 'values':
                     data[name] = getattr(H, name)
                 else:
-                    if H.values.size==0:
+                    if H.values.size == 0:
                         # when diver-files are used, values will be empty
                         series = Series()
                     else:

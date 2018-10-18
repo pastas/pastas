@@ -44,7 +44,7 @@ class ThresholdTransform:
         self.name = name
         self.nparam = nparam
 
-    def set_model(self,ml):
+    def set_model(self, ml):
         obs = ml.observations()
         if np.isnan(self.value):
             self.value = obs.min() + 0.75 * (obs.max() - obs.min())

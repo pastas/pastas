@@ -49,7 +49,7 @@ def acf(x, lags=None, bin_method='gaussian', bin_width=None, max_gap=np.inf,
     """
     C = ccf(x=x, y=x, lags=lags, bin_method=bin_method, bin_width=bin_width,
             max_gap=max_gap, min_obs=min_obs, output=output)
-    C.name = "ACF" #TODO Rename
+    C.name = "ACF"  # TODO Rename
     return C
 
 
@@ -156,6 +156,7 @@ def ccf(x, y, lags=None, bin_method='gaussian', bin_width=None,
                                                  out=a).astype(int)
     elif bin_method == "gaussian":
         a = np.zeros_like(t, dtype=float)
+
         def kernel_func(d, h):
             den1 = -2 * h ** 2  # denominator 1
             den2 = np.sqrt(2 * np.pi * h)  # denominator 2

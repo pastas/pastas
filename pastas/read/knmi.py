@@ -5,7 +5,6 @@
 
 import pandas as pd
 import warnings
-import inspect
 
 from ..timeseries import TimeSeries
 
