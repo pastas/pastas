@@ -169,7 +169,8 @@ def ljung_box(series=None, acf=None, alpha=0.05, **kwargs):
 
 
 def runs_test(series, alpha=0.05, cutoff="mean"):
-    """Runs test to test for serial autocorrelation.
+    """Runs test to test for autocorrelation. Returns true is there is
+    significant autocorrelation according to this test.
 
     Parameters
     ----------
@@ -248,3 +249,28 @@ def acf_test(series=None, acf=None, alpha=0.05, **kwargs):
     report = concat([DW, LB], axis=1)
 
     return h, report
+
+
+def breusch_godfrey(series=None, acf=None, alpha=0.05, **kwargs):
+    return NotImplementedError("Method not implemented yet.")
+    # result = DataFrame()
+    # h = True
+    # return h, result
+
+
+def lilliefors(series, alpha=0.05, **kwargs):
+    """Lilliefors test to test for normality of the time series
+
+    Parameters
+    ----------
+    series
+    alpha
+    kwargs
+
+    Returns
+    -------
+    h: bool
+        boolean telling whether or not to reject the alternative hypothesis
+        that the data is not normally distributed.
+    """
+    return NotImplementedError("Method not implemented yet.")
