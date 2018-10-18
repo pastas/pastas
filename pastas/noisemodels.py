@@ -90,7 +90,7 @@ class NoiseModelBase(ABC):
 
 class NoiseModel(NoiseModelBase):
     _name = "NoiseModel"
-    __doc__ = """Noise model with exponential decay of the residual.
+    __doc__ = """Noise model with exponential decay of the residual .
 
     Notes
     -----
@@ -156,7 +156,7 @@ class NoiseModel(NoiseModelBase):
 
     def weights(self, alpha, odelt):
         """Method to calculate the weights for the noise based on the
-        sum of weighted squares noise (SWSI) method.
+        sum of weighted squared noise (SWSI) method.
 
         Parameters
         ----------
@@ -167,6 +167,7 @@ class NoiseModel(NoiseModelBase):
         -------
 
         """
+        w = 1
         # divide power by 2 as nu / sigma is returned
         power = 1.0 / (2.0 * odelt.size)
         exp = np.exp(-2.0 / alpha * odelt)  # Twice as fast as 2*odelt/alpha
@@ -175,7 +176,8 @@ class NoiseModel(NoiseModelBase):
 
 
 class NoiseModel2(NoiseModelBase):
-    """Noise model with exponential decay of the residual.
+    """
+    Noise model with exponential decay of the residual.
 
     Notes
     -----

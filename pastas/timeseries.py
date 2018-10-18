@@ -170,12 +170,20 @@ class TimeSeries(object):
 
     @series_original.setter
     def series_original(self, series):
+        """Sets a new freq_original for the TimeSeries"""
         if not isinstance(series, pd.Series):
             raise (
                 TypeError("Expected a Pandas Series, got %s" % type(series)))
         else:
             self._series_original = series
+            # make sure that tmin and tmax and freq_original are set in validate_series
+            self.settings["tmin"] = None
+            self.settings["tmax"] = None
+            freq_original = self.freq_original # remember what it was
+            self.freq_original = None
             self._series_validated = self.validate_series(series)
+            if self.freq_original is None:
+                self.freq_original = freq_original
             self.update_series(force_update=True, **self.settings)
 
     @property

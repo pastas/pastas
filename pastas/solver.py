@@ -2,7 +2,7 @@
 PASTAS.
 
 All solvers inherit from the BaseSolver class, which contains general method
-for selecting the correct time series to minimize and options to weight the
+for selecting the correct time series to misfit and options to weight the
 residuals or noise series.
 
 Notes
@@ -21,9 +21,9 @@ To solve a model the following syntax can be used:
 from logging import getLogger
 
 import numpy as np
-from pandas import DataFrame
+from pandas import DataFrame, Series
 from scipy.linalg import svd
-from scipy.optimize import least_squares, differential_evolution
+from scipy.optimize import least_squares, differential_evolution, fmin
 
 logger = getLogger(__name__)
 
@@ -53,8 +53,7 @@ class BaseSolver:
         self.nfev = None  # number of function evaluations
         self.fit = None  # Object that is returned by the optimization method
 
-    def minimize(self, parameters, tmin, tmax, noise, model, freq,
-                 weights=None):
+    def misfit(self, parameters, noise, model, weights=None, callback=None):
         """This method is called by all solvers to obtain a series that are
         minimized in the optimization proces. It handles the application of
         the weigths, a noisemodel and other optimization options.
@@ -63,41 +62,39 @@ class BaseSolver:
         ----------
         parameters: list, numpy.ndarray
             list with the parameters
-        tmin: str
-
-        tmax: str
-
         noise: Boolean
-
         model: pastas.Model
             Pastas Model instance
-        freq: str
-
-        weights: pandas.Series
-            pandas Series by which the residual or innovation series are
+        weights: pandas.Series, optional
+            pandas Series by which the residual or noise series are
             multiplied. Typically values between 0 and 1.
-
+        callback: ufunc, optional
+            function that is called after each iteration. the parameters are
+            provided to the func. E.g. "callback(parameters)"
 
         Returns
         -------
-        res:
-            residuals series
+        rv:
+            residuals series (if noise=False) or noise series (if noise=True)
 
         """
 
         # Get the residuals or the noise
         if noise:
-            res = model.noise(parameters, tmin, tmax, freq)
+            rv = model.noise(parameters)
         else:
-            res = model.residuals(parameters, tmin, tmax, freq)
+            rv = model.residuals(parameters)
 
         # Determine if weights need to be applied
         if weights is not None:
-            weights = weights.reindex(res.index)
+            weights = weights.reindex(rv.index)
             weights.fillna(1.0, inplace=True)
-            res = res.multiply(weights)
+            rv = rv.multiply(weights)
 
-        return res
+        if callback:
+            callback(parameters)
+
+        return rv
 
 
 class LeastSquares(BaseSolver):
@@ -121,8 +118,8 @@ class LeastSquares(BaseSolver):
     """
     _name = "LeastSquares"
 
-    def __init__(self, model, tmin=None, tmax=None, noise=True, freq=None,
-                 weights=None, **kwargs):
+    def __init__(self, model, noise=True, weights=None, callback=None,
+                 **kwargs):
         BaseSolver.__init__(self)
 
         self.modelparameters = model.parameters
@@ -137,8 +134,8 @@ class LeastSquares(BaseSolver):
 
         self.fit = least_squares(self.objfunction,
                                  x0=parameters.initial.values, bounds=bounds,
-                                 args=(tmin, tmax, noise, model, freq,
-                                       weights), **kwargs)
+                                 args=(noise, model, weights, callback),
+                                 **kwargs)
 
         self.nfev = self.fit.nfev
 
@@ -157,17 +154,14 @@ class LeastSquares(BaseSolver):
         self.stderr[self.vary] = np.sqrt(np.diag(self.pcov))
         self.report = None
 
-    def objfunction(self, parameters, tmin, tmax, noise, model, freq, weights):
+    def objfunction(self, parameters, noise, model, weights, callback):
         """
 
         Parameters
         ----------
         parameters
-        tmin
-        tmax
         noise
         model
-        freq
         weights
 
         Returns
@@ -177,22 +171,9 @@ class LeastSquares(BaseSolver):
         p = self.initial
         p[self.vary] = parameters
 
-        res = self.minimize(p, tmin, tmax, noise, model, freq,
-                            weights)
+        res = self.misfit(p, noise, model, weights, callback)
+
         return res
-
-    def get_covcorrmatrix(self, model):
-        """Method to compute sigma, covariance and correlation matrix
-        """
-        nparam = len(self.fit.x)
-        H = self.fit.jac.T @ self.fit.jac
-        sigsq = np.var(self.fit.fun, ddof=nparam)
-        covmat = np.linalg.inv(H) * sigsq
-        stderr = np.sqrt(np.diag(covmat))
-        D = np.diag(1 / stderr)
-        corrmat = D @ covmat @ D
-
-        return stderr, covmat, corrmat
 
     def get_covariances(self, res, model, absolute_sigma=False):
         """Method to get the covariance matrix from the jacobian.
@@ -254,8 +235,7 @@ class LmfitSolve(BaseSolver):
     """
     _name = "LmfitSolve"
 
-    def __init__(self, model, tmin=None, tmax=None, noise=True, freq=None,
-                 weights=None, **kwargs):
+    def __init__(self, model, noise=True, weights=None, **kwargs):
         import lmfit  # Import Lmfit here, so it is no dependency
         BaseSolver.__init__(self)
 
@@ -272,8 +252,7 @@ class LmfitSolve(BaseSolver):
             kwargs = {"ftol": 1e-3, "epsfcn": 1e-4}
 
         self.fit = lmfit.minimize(fcn=self.objfunction, params=parameters,
-                                  args=(tmin, tmax, noise, model, freq,
-                                        weights), **kwargs)
+                                  args=(noise, model, weights), **kwargs)
 
         # Set all parameter attributes
         self.optimal_params = np.array([p.value for p in
@@ -286,23 +265,19 @@ class LmfitSolve(BaseSolver):
         self.nfev = self.fit.nfev
         self.report = lmfit.fit_report(self.fit)
 
-    def objfunction(self, parameters, tmin, tmax, noise, model, freq, weights):
+    def objfunction(self, parameters, noise, model, weights):
         param = np.array([p.value for p in parameters.values()])
-        res = self.minimize(param, tmin, tmax, noise, model, freq,
-                            weights)
+        res = self.misfit(param, noise, model, weights)
         return res
 
 
 class DESolve(BaseSolver):
     _name = "DESolve"
 
-    def __init__(self, model, tmin=None, tmax=None, noise=True, freq='D'):
+    def __init__(self, model, noise=True):
         BaseSolver.__init__(self)
 
-        self.freq = freq
         self.model = model
-        self.tmin = tmin
-        self.tmax = tmax
         self.noise = noise
         self.parameters = self.model.parameters.initial.values
         self.vary = self.model.parameters.vary.values.astype('bool')
@@ -319,10 +294,88 @@ class DESolve(BaseSolver):
         self.parameters[self.vary] = parameters
 
         if self.noise:
-            res = self.model.noise(self.parameters, tmin=self.tmin,
-                                   tmax=self.tmax, freq=self.freq)
+            res = self.model.noise(self.parameters)
         else:
-            res = self.model.residuals(self.parameters, tmin=self.tmin,
-                                       tmax=self.tmax, freq=self.freq)
+            res = self.model.residuals(self.parameters)
 
         return sum(res ** 2)
+
+
+class MarkSolver(BaseSolver):
+    """Experimental solver
+    """
+    _name = "MarkSolver"
+
+    def __init__(self, model, noise=True, weights=None, **kwargs):
+        BaseSolver.__init__(self)
+
+        self.modelparameters = model.parameters
+        self.vary = self.modelparameters.vary.values.astype('bool')
+        self.initial = self.modelparameters.initial.values.copy()
+        parameters = self.modelparameters.loc[self.vary]
+
+        # Set the boundaries
+        pmin = np.where(parameters.pmin.isnull(), -np.inf, parameters.pmin)
+        pmax = np.where(parameters.pmax.isnull(), np.inf, parameters.pmax)
+        bounds = (pmin, pmax)
+
+        self.fit = fmin(self.objfunction, x0=parameters.initial.values,
+                        args=(noise, model, weights), **kwargs)
+
+        self.optimal_params = self.initial
+        self.optimal_params[self.vary] = self.fit
+        self.stderr = np.zeros(len(self.optimal_params))
+        self.report = None
+
+    def objfunction(self, parameters, noise, model, weights):
+        """
+
+        Parameters
+        ----------
+        parameters
+        noise
+        model
+        weights
+
+        Returns
+        -------
+
+        """
+        p = self.initial
+        p[self.vary] = parameters
+
+        rv = self.misfit(p, noise, model, weights)
+
+        return rv
+
+    def get_covcorrmatrix(self, model):
+        """Method to compute sigma, covariance and correlation matrix
+
+        TODO: make it work
+        """
+        nparam = len(self.fit.x)
+        H = self.fit.jac.T @ self.fit.jac
+        sigsq = np.var(self.fit.fun, ddof=nparam)
+        covmat = np.linalg.inv(H) * sigsq
+        stderr = np.sqrt(np.diag(covmat))
+        D = np.diag(1 / stderr)
+        corrmat = D @ covmat @ D
+
+        return stderr, covmat, corrmat
+
+    def misfit(self, parameters, noise, model, weights=None):
+        res = model.residuals(parameters)
+        alpha = parameters[-1]
+        print('alpha:', alpha)
+        odelt = model.odelt.loc[res.index]
+        noise = Series(data=res)
+        noise.iloc[1:] -= np.exp(-odelt[1:] / alpha) * res.values[:-1]
+
+        res = res[1:]
+        noise = noise[1:]
+        delt = odelt[1:]
+        sigres = np.std(res)
+        sigi = sigres * np.sqrt(1 - np.exp(-2 * delt / alpha))
+        rv = -np.sum(np.log(sigi)) - np.sum(noise ** 2 / (2 * sigi ** 2))
+
+        return -rv  # minus the log likelihood

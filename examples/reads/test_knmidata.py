@@ -3,20 +3,34 @@
 @author: ruben
 
 """
-from datetime import datetime
 import matplotlib.pyplot as plt
 from pastas.read.knmi import KnmiStation
 import numpy as np
 
 # How to use it?
 # data from a meteorological station
-download = False
+download = True
 meteo = True
 hourly = False
 if hourly and not meteo:
     raise(ValueError('Hourly data is only available in meteorological stations'))
 
-if not download:
+if download:
+    # download the data directly from the site of the KNMI
+    if meteo:
+        if hourly:
+            knmi = KnmiStation.download(stns=260, start='2017', end='2018',
+                                interval='hourly')  # de bilt
+        else:
+            # https://www.knmi.nl/nederland-nu/klimatologie/daggegevens
+            knmi = KnmiStation.download(stns=260, start='1970',end='1971')
+            # de bilt
+    else:
+        # from a rainfall-station
+        knmi = KnmiStation.download(stns=550, start='2018', end='2019',
+                                vars='RD') # de bilt
+else:
+    # import the data from files
     if meteo:
         if hourly:
             # hourly data without locations
@@ -29,18 +43,6 @@ if not download:
             knmi = KnmiStation.fromfile('../data/KNMI_Bilt.txt')
     else:
         knmi = KnmiStation.fromfile('../data/KNMI_Akkrum.txt')
-else:
-    # or download it directly from
-    if meteo:
-        if hourly:
-            knmi = KnmiStation(stns=260, start='2017', end='2018', interval='hourly')  # de bilt
-        else:
-            # https://www.knmi.nl/nederland-nu/klimatologie/daggegevens
-            knmi = KnmiStation(stns=260, start='1970',end='1971')  # de bilt
-    else:
-        # from a rainfall-station
-        knmi = KnmiStation(stns=550, start='2018', end='2019', vars='RD') # de bilt
-    knmi.download()
 
 # plot
 f1, axarr = plt.subplots(2, sharex=True)

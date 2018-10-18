@@ -118,6 +118,13 @@ nan-values are found this will be reported by ``pastas``.
     ml.add_stressmodel(ts1)
     
 
+
+.. parsed-literal::
+
+    INFO: Cannot determine frequency of series head
+    INFO: Inferred frequency from time series None: freq=D 
+    
+
 4. Solve the model
 ~~~~~~~~~~~~~~~~~~
 
@@ -140,8 +147,8 @@ optimized parameter values and correlations.
     Model Results GWL                Fit Statistics
     ============================    ============================
     nfev     30                     EVP                    91.45
-    nobs     644                    NS                      0.91
-    noise    NoiseModel             Pearson R2              0.96
+    nobs     644                    NSE                     0.91
+    noise    1                      Pearson R2              0.91
     tmin     1985-11-14 00:00:00    RMSE                    0.13
     tmax     2015-06-28 00:00:00    AIC                     7.15
     freq     D                      BIC                    29.49
@@ -150,16 +157,15 @@ optimized parameter values and correlations.
     
     Parameters (5 were optimized)
     ============================================================
-                    optimal                  stderr      initial vary
-    recharge_A   738.477722   ± 3.66458e+01 (4.96%)  2081.856867    1
-    recharge_n     1.056991   ± 1.58989e-02 (1.50%)     1.000000    1
-    recharge_a   131.804022   ± 8.95556e+00 (6.79%)    10.000000    1
-    constant_d    27.560621   ± 2.09842e-02 (0.08%)    27.900078    1
-    noise_alpha   64.604495  ± 8.52812e+00 (13.20%)    14.000000    1
+                    optimal   stderr      initial vary
+    recharge_A   738.477722   ±4.96%  2081.856867    1
+    recharge_n     1.056991   ±1.50%     1.000000    1
+    recharge_a   131.804022   ±6.79%    10.000000    1
+    constant_d    27.560621   ±0.08%    27.900078    1
+    noise_alpha   64.604495  ±13.20%    14.000000    1
     
     Warnings
     ============================================================
-    [1] Parameter values of ['recharge_A'] are close to their minimum values.
     
             
     
@@ -171,14 +177,14 @@ The solution can be plotted after a solution has been obtained.
 
 .. code:: ipython3
 
-    ml.plot(figsize=(10, 4))
+    ml.plot()
 
 
 
 
 .. parsed-literal::
 
-    [<matplotlib.axes._subplots.AxesSubplot at 0x1d5940ec3c8>]
+    <matplotlib.axes._subplots.AxesSubplot at 0x1db303bb4a8>
 
 
 
@@ -204,11 +210,11 @@ plot with more information.
 
 .. parsed-literal::
 
-    [<matplotlib.axes._subplots.AxesSubplot at 0x1d594125c18>,
-     <matplotlib.axes._subplots.AxesSubplot at 0x1d595933438>,
-     <matplotlib.axes._subplots.AxesSubplot at 0x1d5959c08d0>,
-     <matplotlib.axes._subplots.AxesSubplot at 0x1d5959e84e0>,
-     <matplotlib.axes._subplots.AxesSubplot at 0x1d595acf4a8>]
+    [<matplotlib.axes._subplots.AxesSubplot at 0x1db3041c978>,
+     <matplotlib.axes._subplots.AxesSubplot at 0x1db30504ef0>,
+     <matplotlib.axes._subplots.AxesSubplot at 0x1db305f12b0>,
+     <matplotlib.axes._subplots.AxesSubplot at 0x1db2ea0d208>,
+     <matplotlib.axes._subplots.AxesSubplot at 0x1db2e9d7f98>]
 
 
 
@@ -276,7 +282,7 @@ gives a summary of the main statistics of the model.
         </tr>
         <tr>
           <th>Pearson R^2</th>
-          <td>0.956596</td>
+          <td>0.914436</td>
         </tr>
         <tr>
           <th>Root mean squared error</th>
@@ -319,7 +325,7 @@ than for model ``ml``).
     ml2.solve()
     
     # Plot the results
-    ml2.plot(figsize=(10, 4))
+    ml2.plot()
     
     # Statistics
     ml2.stats.summary()
@@ -327,31 +333,33 @@ than for model ``ml``).
 
 .. parsed-literal::
 
+    INFO: Cannot determine frequency of series head
+    INFO: Inferred frequency from time series rain: freq=D 
+    INFO: Inferred frequency from time series evap: freq=D 
     
     Model Results head                Fit Statistics
     ============================    ============================
-    nfev     34                     EVP                    92.93
-    nobs     644                    NS                      0.93
-    noise    NoiseModel             Pearson R2              0.96
+    nfev     35                     EVP                    92.86
+    nobs     644                    NSE                     0.93
+    noise    1                      Pearson R2              0.93
     tmin     1985-11-14 00:00:00    RMSE                    0.11
     tmax     2015-06-28 00:00:00    AIC                     9.23
-    freq     D                      BIC                    36.04
+    freq     D                      BIC                    36.03
     warmup   3650                   __                          
     solver   LeastSquares           ___                         
     
     Parameters (6 were optimized)
     ============================================================
-                    optimal                  stderr      initial vary
-    rainevap_A   684.819072   ± 3.58910e+01 (5.24%)  2081.856867    1
-    rainevap_n     1.018550   ± 1.79813e-02 (1.77%)     1.000000    1
-    rainevap_a   149.758848   ± 1.09607e+01 (7.32%)    10.000000    1
-    rainevap_f    -1.267278   ± 6.18520e-02 (4.88%)    -1.000000    1
-    constant_d    27.879403   ± 6.89486e-02 (0.25%)    27.900078    1
-    noise_alpha   52.973919  ± 6.53102e+00 (12.33%)    14.000000    1
+                    optimal   stderr     initial vary
+    rainevap_A   695.094344   ±5.21%  215.674528    1
+    rainevap_n     1.019111   ±1.76%    1.000000    1
+    rainevap_a   150.793449   ±7.34%   10.000000    1
+    rainevap_f    -1.253082   ±4.86%   -1.000000    1
+    constant_d    27.863242   ±0.25%   27.900078    1
+    noise_alpha   52.470936  ±12.20%   14.000000    1
     
     Warnings
     ============================================================
-    [1] Parameter values of ['rainevap_A'] are close to their minimum values.
     
             
     
@@ -388,27 +396,27 @@ than for model ``ml``).
       <tbody>
         <tr>
           <th>Akaike Information Criterion</th>
-          <td>9.230417</td>
+          <td>9.227842</td>
         </tr>
         <tr>
           <th>Average Deviation</th>
-          <td>-0.001552</td>
+          <td>-0.001253</td>
         </tr>
         <tr>
           <th>Bayesian Information Criterion</th>
-          <td>36.036610</td>
+          <td>36.034034</td>
         </tr>
         <tr>
           <th>Explained variance percentage</th>
-          <td>92.931220</td>
+          <td>92.864826</td>
         </tr>
         <tr>
           <th>Pearson R^2</th>
-          <td>0.964446</td>
+          <td>0.928640</td>
         </tr>
         <tr>
           <th>Root mean squared error</th>
-          <td>0.114288</td>
+          <td>0.114819</td>
         </tr>
       </tbody>
     </table>

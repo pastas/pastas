@@ -4,6 +4,7 @@
 """
 
 import pandas as pd
+import warnings
 
 from ..timeseries import TimeSeries
 
@@ -103,49 +104,51 @@ class KnmiStation:
     The measurement-data itself is found in knmi.data
     """
 
-    def __init__(self, start=None, end=None, inseason=False, vars='ALL',
-                 stns='260', interval='daily'):
-        if start is None:
-            self.start = pd.Timestamp(pd.Timestamp.today().year, 1, 1)
-        else:
-            self.start = pd.to_datetime(start)
-        if end is None:
-            self.end = pd.Timestamp.today()
-        else:
-            self.end = pd.to_datetime(end)
-        self.inseason = inseason
-        self.vars = vars
-        self.stns = stns  # de Bilt (zou ook 'ALL' kunnen zijn)
-        self.interval = interval
-
-        if self.interval.startswith('hour') and vars == 'RD':
-            raise (
-                ValueError('Interval can not be hourly for rainfall-stations'))
-
-        self.stations = None
+    def __init__(self, *args, **kwargs):
+        self.stations = pd.DataFrame()
         self.variables = dict()
-        self.data = None
+        self.data = pd.DataFrame()
+        if len(args) > 0 or len(kwargs) > 0:
+            warnings.warn("In the future use KnmiStation.download(**kwargs) "
+                          "instead "
+                          "of KnmiStation(**kwargs)",
+                          FutureWarning)
+            self._download(*args, **kwargs)
+            # diable download method, as old code will call this again
+            self.download = lambda *args, **kwargs: None
+        else:
+            # change download method to the instance-method
+            self.download = self._download
 
-    # Alternate constructor
+    # Construct KnmiStation from file
     @classmethod
     def fromfile(cls, fname):
         self = cls()
         with open(fname, 'r') as f:
             self.readdata(f)
         f.close()
-
         return self
 
-    def download(self):
+    # Construct KnmiStation from download
+    @classmethod
+    def download(cls, start=None, end=None, inseason=False, vars='ALL',
+                 stns=260, interval='daily'):
         """
 
         """
+        self = cls()
+        self._download(start=start, end=end, inseason=inseason, vars=vars,
+                       stns=stns, interval=interval)
+        return self
+
+    def _download(self, start=None, end=None, inseason=False, vars='ALL',
+                  stns=260, interval='daily'):
         # Import the necessary modules (optional and not included in the
         # installation of pastas).
         try:
             import requests
         except ImportError:
-            raise ImportWarning(
+            raise ImportError(
                 'The module requests could not be imported. '
                 'Please install through:'
                 '>>> pip install requests'
@@ -154,43 +157,63 @@ class KnmiStation:
 
         from io import StringIO
 
-        if self.interval.startswith('hour'):
+        if start is None:
+            start = pd.Timestamp(pd.Timestamp.today().year, 1, 1)
+        else:
+            start = pd.to_datetime(start)
+        if end is None:
+            end = pd.Timestamp.today()
+        else:
+            end = pd.to_datetime(end)
+        inseason = inseason
+        vars = vars
+        stns = stns  # de Bilt (zou ook 'ALL' kunnen zijn)
+        interval = interval
+
+        if interval.startswith('hour') and vars == 'RD':
+            raise (
+                ValueError('Interval can not be hourly for rainfall-stations'))
+
+        if interval.startswith('hour'):
             # hourly data from meteorological stations
             url = 'http://projects.knmi.nl/klimatologie/uurgegevens/getdata_uur.cgi'
-        elif self.vars == 'RD':
+        elif vars == 'RD':
             # daily data from rainfall-stations
             url = 'http://projects.knmi.nl/klimatologie/monv/reeksen/getdata_rr.cgi'
         else:
             # daily data from meteorological stations
             url = 'http://projects.knmi.nl/klimatologie/daggegevens/getdata_dag.cgi'
-        if not isinstance(self.stns, str):
-            if isinstance(self.stns, int):
-                self.stns = str(self.stns)
+        if not isinstance(stns, str):
+            if isinstance(stns, int):
+                stns = str(stns)
             else:
-                self.stns = [str(i) for i in self.stns]
-                self.stns = ":".join(self.stns)
+                stns = [str(i) for i in stns]
+                stns = ":".join(stns)
 
-        if self.interval.startswith('hour'):
+        if interval.startswith('hour'):
             data = {
-                'start': self.start.strftime('%Y%m%d') + '01',
-                'end': self.end.strftime('%Y%m%d') + '24',
-                'vars': self.vars,
-                'stns': self.stns,
+                'start': start.strftime('%Y%m%d') + '01',
+                'end': end.strftime('%Y%m%d') + '24',
+                'vars': vars,
+                'stns': stns,
             }
         else:
             data = {
-                'start': self.start.strftime('%Y%m%d'),
-                'end': self.end.strftime('%Y%m%d'),
-                'inseason': str(int(self.inseason)),
-                'vars': self.vars,
-                'stns': self.stns,
+                'start': start.strftime('%Y%m%d'),
+                'end': end.strftime('%Y%m%d'),
+                'inseason': str(int(inseason)),
+                'vars': vars,
+                'stns': stns,
             }
-        self.result = requests.get(url, params=data).text
+        result = requests.get(url, params=data).text
 
-        f = StringIO(self.result)
+        f = StringIO(result)
         self.readdata(f)
 
     def readdata(self, f):
+        stations = pd.DataFrame()
+        variables = dict()
+
         isLocations = False
         line = f.readline()
         isMeteo = line.startswith('# ')
@@ -213,15 +236,14 @@ class KnmiStation:
                 titels = [x.replace(r')', '') for x in titels]
 
                 # Create pd.DataFrame for station data
-                if not self.stations:
-                    self.stations = pd.DataFrame(columns=titels)
-                    self.stations.set_index(['STN'], inplace=True)
+                stations = pd.DataFrame(columns=titels)
+                stations.set_index(['STN'], inplace=True)
 
             # If line contains variables
             elif ' = ' in line:
                 isLocations = False
                 varDes = line.split(' = ')
-                self.variables[varDes[0].strip()] = varDes[1].strip()
+                variables[varDes[0].strip()] = varDes[1].strip()
             # If location data is recognized in the previous line
             elif isLocations:
                 # Format line. Ensure delimiter is two spaces to read the
@@ -246,7 +268,7 @@ class KnmiStation:
                         return s
 
                 line = [maybe_float(v) for v in line[1:]]
-                self.stations.loc[stn] = line
+                stations.loc[stn] = line
 
             # Read in a new line and start over
             line = f.readline()
@@ -299,13 +321,13 @@ class KnmiStation:
             data.drop('', axis=1, inplace=True)
 
         # Adjust the unit of the measurements
-        for key, value in self.variables.items():
+        for key, value in variables.items():
             # test if key existst in data
             if key not in data.keys():
                 if key == 'YYYYMMDD' or key == 'HH':
                     pass
                 elif key == 'T10N':
-                    self.variables.pop(key)
+                    variables.pop(key)
                     key = 'T10'
                 else:
                     raise NameError(key + ' does not exist in data')
@@ -340,9 +362,11 @@ class KnmiStation:
                 # do not adjust (yet)
                 pass
             # Store new variable
-            self.variables[key] = value
+            variables[key] = value
 
         # Close file
         f.close()
 
+        self.stations = stations
+        self.variables = variables
         self.data = data

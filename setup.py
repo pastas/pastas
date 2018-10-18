@@ -31,10 +31,11 @@ setup(
         'Intended Audience :: Other Audience',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6'
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
     ],
     platforms='Windows, Mac OS-X',
-    install_requires=['numpy>=1.10', 'matplotlib>=1.5', 'pandas>=0.22',
+    install_requires=['numpy>=1.10', 'matplotlib>=2.0', 'pandas>=0.22',
                       'scipy>=1.0'],
     packages=find_packages(exclude=[]),
     package_data={"pastas": ["log_config.json"], },

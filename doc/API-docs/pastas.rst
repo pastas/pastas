@@ -9,6 +9,7 @@ Subpackages
     pastas.io
     pastas.project
     pastas.read
+    pastas.stats
 
 Submodules
 ----------
@@ -17,11 +18,11 @@ Submodules
 
    pastas.decorators
    pastas.model
+   pastas.modelstats
    pastas.noisemodels
    pastas.plots
    pastas.rfunc
    pastas.solver
-   pastas.stats
    pastas.stressmodels
    pastas.timeseries
    pastas.transform

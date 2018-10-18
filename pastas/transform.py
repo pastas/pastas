@@ -21,14 +21,11 @@ class ThresholdTransform:
     Parameters
     ----------
     value : float
-        The starting value of the simulation above which the simulation is
-        lowered
+        The starting value above which the simulation is lowered
     vmin : float
-        The minimum value of the simulation above which the simulation is
-        lowered
+        The minimum value above which the simulation is lowered
     vmin : float
-        The maximum value of the simulation above which the simulation is
-        lowered
+        The maximum value above which the simulation is lowered
     name: str
         Name of the transform
     nparam : int
@@ -39,22 +36,22 @@ class ThresholdTransform:
     """
     _name = "ThresholdTransform"
 
-    def __init__(self, value=0.0, vmin=np.nan, vmax=np.nan,
+    def __init__(self, value=np.nan, vmin=np.nan, vmax=np.nan,
                  name='ThresholdTransform', nparam=2):
-        if isinstance(value, Model):
-            # determine the initial parameter from the model
-            ml = value
-            obs = ml.observations()
-            value = obs.min() + 0.75 * (obs.max() - obs.min())
-            if np.isnan(vmin):
-                vmin = obs.min() + 0.5 * (obs.max() - obs.min())
-            if np.isnan(vmax):
-                vmax = obs.max()
         self.value = value
         self.vmin = vmin
         self.vmax = vmax
         self.name = name
         self.nparam = nparam
+
+    def set_model(self, ml):
+        obs = ml.observations()
+        if np.isnan(self.value):
+            self.value = obs.min() + 0.75 * (obs.max() - obs.min())
+        if np.isnan(self.vmin):
+            self.vmin = obs.min() + 0.5 * (obs.max() - obs.min())
+        if np.isnan(self.vmax):
+            self.vmax = obs.max()
         self.set_init_parameters()
 
     def set_init_parameters(self):

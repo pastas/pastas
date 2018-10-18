@@ -40,3 +40,13 @@ def model_tmin_tmax(function):
         return function(self, tmin, tmax, *args, **kwargs)
 
     return _model_tmin_tmax
+
+
+def PastasDeprecationWarning(function):
+    @wraps(function)
+    def _function(*args, **kwargs):
+        logger.warning("Deprecation warning: method will be deprecated "
+                       "in version 0.9.8.")
+        return function(*args, **kwargs)
+
+    return _function

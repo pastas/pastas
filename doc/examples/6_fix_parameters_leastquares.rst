@@ -196,11 +196,13 @@ can be constructed by going through the following three steps:
 
 .. parsed-literal::
 
+    INFO: Cannot determine frequency of series head
+    INFO: Inferred frequency from time series None: freq=D 
     
     Model Results head                Fit Statistics
     ============================    ============================
     nfev     31                     EVP                    92.19
-    nobs     644                    NS                      0.92
+    nobs     518                    NS                      0.92
     noise    NoiseModel             Pearson R2              0.96
     tmin     1985-11-14 00:00:00    RMSE                    0.12
     tmax     2010-01-01 00:00:00    AIC                     7.56
@@ -210,16 +212,15 @@ can be constructed by going through the following three steps:
     
     Parameters (5 were optimized)
     ============================================================
-                    optimal                  stderr      initial vary
-    recharge_A   726.323674   ± 3.36666e+01 (4.64%)  2081.856867    1
-    recharge_n     1.053553   ± 1.64060e-02 (1.56%)     1.000000    1
-    recharge_a   128.422622   ± 8.51685e+00 (6.63%)    10.000000    1
-    constant_d    27.559801   ± 1.95920e-02 (0.07%)    27.900078    1
-    noise_alpha   61.486142  ± 7.92002e+00 (12.88%)    14.000000    1
+                    optimal               stderr      initial vary
+    recharge_A   726.323674   ± 3.37e+01 (4.64%)  2081.856867    1
+    recharge_n     1.053553   ± 1.64e-02 (1.56%)     1.000000    1
+    recharge_a   128.422622   ± 8.52e+00 (6.63%)    10.000000    1
+    constant_d    27.559801   ± 1.96e-02 (0.07%)    27.900078    1
+    noise_alpha   61.486142  ± 7.92e+00 (12.88%)    14.000000    1
     
     Warnings
     ============================================================
-    [1] Parameter values of ['recharge_A'] are close to their minimum values.
     
             
     
@@ -254,11 +255,13 @@ later on in this notebook. The results of the model are plotted below.
 
 .. parsed-literal::
 
+    INFO: Cannot determine frequency of series head
+    INFO: Inferred frequency from time series None: freq=D 
     
     Model Results head                Fit Statistics
     ============================    ============================
     nfev     31                     EVP                    92.19
-    nobs     644                    NS                      0.92
+    nobs     518                    NS                      0.92
     noise    NoiseModel             Pearson R2              0.96
     tmin     1985-11-14 00:00:00    RMSE                    0.12
     tmax     2010-01-01 00:00:00    AIC                     7.56
@@ -268,16 +271,15 @@ later on in this notebook. The results of the model are plotted below.
     
     Parameters (5 were optimized)
     ============================================================
-                    optimal                  stderr      initial vary
-    recharge_A   726.323674   ± 3.36666e+01 (4.64%)  2081.856867    1
-    recharge_n     1.053553   ± 1.64060e-02 (1.56%)     1.000000    1
-    recharge_a   128.422622   ± 8.51685e+00 (6.63%)    10.000000    1
-    constant_d    27.559801   ± 1.95920e-02 (0.07%)    27.900078    1
-    noise_alpha   61.486142  ± 7.92002e+00 (12.88%)    14.000000    1
+                    optimal               stderr      initial vary
+    recharge_A   726.323674   ± 3.37e+01 (4.64%)  2081.856867    1
+    recharge_n     1.053553   ± 1.64e-02 (1.56%)     1.000000    1
+    recharge_a   128.422622   ± 8.52e+00 (6.63%)    10.000000    1
+    constant_d    27.559801   ± 1.96e-02 (0.07%)    27.900078    1
+    noise_alpha   61.486142  ± 7.92e+00 (12.88%)    14.000000    1
     
     Warnings
     ============================================================
-    [1] Parameter values of ['recharge_A'] are close to their minimum values.
     
             
     
@@ -293,11 +295,13 @@ later on in this notebook. The results of the model are plotted below.
 
 .. parsed-literal::
 
+    INFO: Cannot determine frequency of series head
+    INFO: Inferred frequency from time series None: freq=D 
     
     Model Results head                Fit Statistics
     ============================    ============================
     nfev     30                     EVP                    91.45
-    nobs     644                    NS                      0.91
+    nobs     518                    NS                      0.91
     noise    NoiseModel             Pearson R2              0.96
     tmin     1985-11-14 00:00:00    RMSE                    0.13
     tmax     2010-01-01 00:00:00    AIC                     5.51
@@ -307,16 +311,15 @@ later on in this notebook. The results of the model are plotted below.
     
     Parameters (4 were optimized)
     ============================================================
-                    optimal                  stderr      initial vary
-    recharge_A   777.944398   ± 3.98904e+01 (5.13%)  2081.856867    1
-    recharge_n     1.000000   ± 0.00000e+00 (0.00%)     1.000000    0
-    recharge_a   153.957311   ± 8.34328e+00 (5.42%)    10.000000    1
-    constant_d    27.539587   ± 2.22342e-02 (0.08%)    27.900078    1
-    noise_alpha   65.229372  ± 8.43104e+00 (12.93%)    14.000000    1
+                    optimal               stderr      initial vary
+    recharge_A   777.944398   ± 3.99e+01 (5.13%)  2081.856867    1
+    recharge_n     1.000000   ± 0.00e+00 (0.00%)     1.000000    0
+    recharge_a   153.957311   ± 8.34e+00 (5.42%)    10.000000    1
+    constant_d    27.539587   ± 2.22e-02 (0.08%)    27.900078    1
+    noise_alpha   65.229372  ± 8.43e+00 (12.93%)    14.000000    1
     
     Warnings
     ============================================================
-    [1] Parameter values of ['recharge_A'] are close to their minimum values.
     
             
     

@@ -11,7 +11,6 @@ from os import path
 from numpy import vstack, array, NaN, zeros, object
 from pandas import Timestamp
 from scipy.io import savemat, loadmat
-
 from ..utils import datetime2matlab
 
 

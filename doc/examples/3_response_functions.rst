@@ -149,7 +149,7 @@ simulation time step is applied.
     Hantush = ps.Hantush(up=up, meanstress=meanstress, cutoff=cutoff)
     responses["Hantush"] = Hantush
     
-    Bruggeman = ps.Bruggeman(up=up, meanstress=meanstress, cutoff=cutoff)
+    Bruggeman = ps.Polder(up=up, meanstress=meanstress, cutoff=cutoff)
     responses["Bruggeman"] = Bruggeman
     
     # Theis = ps.Theis(up=up, meanstress=meanstress, cutoff=cutoff)

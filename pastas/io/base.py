@@ -4,6 +4,7 @@ Import model
 
 from importlib import import_module
 from os import path
+import gc
 
 from pandas import DataFrame, to_numeric
 
@@ -21,6 +22,9 @@ def load(fname, **kwargs):
     kwargs: extension specific
 
     """
+    if not path.exists(fname):
+        raise (FileNotFoundError('File not found: {}'.format(fname)))
+
     # Dynamic import of the export module
     ext = path.splitext(fname)[1]
     load_mod = import_module("pastas.io" + ext)
@@ -102,11 +106,6 @@ def load_model(data):
     else:
         constant = False
 
-    if "settings" in data.keys():
-        settings = data["settings"]
-    else:
-        settings = dict()
-
     if "metadata" in data.keys():
         metadata = data["metadata"]
     else:
@@ -123,9 +122,13 @@ def load_model(data):
         noise = False
 
     ml = ps.Model(oseries, constant=constant, noisemodel=noise, name=name,
-                  metadata=metadata, settings=settings)
+                  metadata=metadata)
+
+    if "settings" in data.keys():
+        ml.settings.update(data["settings"])
     if "file_info" in data.keys():
         ml.file_info.update(data["file_info"])
+        ml.file_info["version"] = ps.__version__
 
     # Add stressmodels
     for name, ts in data["stressmodels"].items():
@@ -159,6 +162,8 @@ def load_model(data):
     # When initial values changed
     for param, value in ml.parameters.loc[:, "initial"].iteritems():
         ml.set_initial(name=param, value=value)
+
+    gc.collect()
 
     return ml
 

@@ -16,7 +16,7 @@ Fully supported and tested routines in this module are:
 TODO
 ----
 - Test Theis response function
-- Test Bruggeman response function
+- Test Polder response function
 
 """
 
@@ -44,25 +44,6 @@ class RfuncBase:
     def set_parameters(self, name):
         pass
 
-    def step(self, p, dt=1, cutoff=0.99):
-        """Method to return the step funtion.
-
-        Parameters
-        ----------
-        p: numpy.array
-            numpy array with the parameters.
-        dt: float
-            timestep as a multiple of of day.
-        cutoff: float, optional
-            float between 0 and 1. Default is 0.99.
-
-        Returns
-        -------
-        s: numpy.array
-            Array with the step response.
-        """
-        pass
-
     def get_tmax(self, p, cutoff=0.99):
         """Method to get the response time for a certain cutoff
 
@@ -79,6 +60,25 @@ class RfuncBase:
             Number of days when 99% of the response has passen, when the
             cutoff is chosen at 0.99.
 
+        """
+        pass
+
+    def step(self, p, dt=1, cutoff=0.99):
+        """Method to return the step funtion.
+
+        Parameters
+        ----------
+        p: numpy.array
+            numpy array with the parameters.
+        dt: float
+            timestep as a multiple of of day.
+        cutoff: float, optional
+            float between 0 and 1. Default is 0.99.
+
+        Returns
+        -------
+        s: numpy.array
+            Array with the step response.
         """
         pass
 
@@ -357,8 +357,8 @@ class Theis(RfuncBase):
         return s
 
 
-class Bruggeman(RfuncBase):
-    """The function of Bruggeman, for a river in a confined aquifer,
+class Polder(RfuncBase):
+    """The function of Polder, for a river in a confined aquifer,
     overlain by an aquitard with aquiferous ditches.
 
     References
@@ -367,7 +367,7 @@ class Bruggeman(RfuncBase):
     -met-sloten
 
     """
-    _name = "Bruggeman"
+    _name = "Polder"
 
     def __init__(self, up=True, meanstress=1, cutoff=0.99):
         RfuncBase.__init__(self, up, meanstress, cutoff)

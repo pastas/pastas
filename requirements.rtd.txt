@@ -4,11 +4,9 @@ Ipython
 
 ipykernel
 
-numpy>=1.9
+numpy>=1.10
 
-matplotlib>=1.5
-
-lmfit>=0.9
+matplotlib>=2.0
 
 pandas>=0.19
 

@@ -1,8 +1,16 @@
 
+.. raw:: html
+
+   <figure>
+
+.. raw:: html
+
+   </figure>
+
 Menyanthes File
 ===============
 
-R.J. Caljé, Artesia Water
+*Developed by Ruben Caljé*
 
 Menyanthes is timeseries analysis software used by many people in the
 Netherlands. In this example a Menyanthes-file with one
@@ -44,7 +52,7 @@ file.
 
 
 
-.. image:: output_3_0.png
+.. image:: output_4_0.png
 
 
 2. Run a model
@@ -93,41 +101,52 @@ extractions.
 
 .. parsed-literal::
 
+    INFO: Cannot determine frequency of series None
+    INFO: Inferred frequency from time series None: freq=D 
+    INFO: Inferred frequency from time series None: freq=D 
+    INFO: Cannot determine frequency of series None
+    INFO: Time Series None were sampled down to freq D with method timestep_weighted_resample
+    INFO: Cannot determine frequency of series None
+    INFO: Time Series None were sampled down to freq D with method timestep_weighted_resample
+    INFO: Cannot determine frequency of series None
+    INFO: Time Series None were sampled down to freq D with method timestep_weighted_resample
+    INFO: Time Series None were sampled down to freq D with method timestep_weighted_resample
+    INFO: Time Series None were sampled down to freq D with method timestep_weighted_resample
+    INFO: Time Series None were sampled down to freq D with method timestep_weighted_resample
+    INFO: There are observations between the simulation timesteps. Linear interpolation between simulated values is used.
     
     Model Results Observations                Fit Statistics
     ============================    ============================
-    nfev     36                     EVP                    95.85
-    nobs     2846                   NS                      0.96
-    noise    NoiseModel             Pearson R2              0.98
-    tmin     1960-04-28 00:00:00    RMSE                    0.18
-    tmax     2015-06-29 00:00:00    AIC                    23.80
-    freq     D                      BIC                   113.09
+    nfev     19                     EVP                    95.37
+    nobs     2842                   NSE                     0.95
+    noise    1                      Pearson R2              0.95
+    tmin     1960-04-29 00:00:00    RMSE                    0.19
+    tmax     2015-06-29 00:00:00    AIC                    23.78
+    freq     D                      BIC                   113.06
     warmup   3650                   __                          
     solver   LeastSquares           ___                         
     
     Parameters (15 were optimized)
     ============================================================
-                          optimal                   stderr      initial vary
-    Recharge_A        1464.425545   ± 1.52653e+02 (10.42%)  1518.442830    1
-    Recharge_n           1.079309    ± 3.16723e-02 (2.93%)     1.000000    1
-    Recharge_a         641.269246   ± 9.95430e+01 (15.52%)    10.000000    1
-    Recharge_f          -1.427450    ± 1.36050e-01 (9.53%)    -1.000000    1
-    Extraction_1_A      -0.000189   ± 2.68155e-05 (14.19%)    -0.000110    1
-    Extraction_1_rho     3.068035   ± 1.04033e+00 (33.91%)     1.000000    1
-    Extraction_1_cS    999.136190   ± 3.67656e+02 (36.80%)   100.000000    1
-    Extraction_2_A      -0.000084    ± 5.61839e-06 (6.71%)    -0.000092    1
-    Extraction_2_rho     0.581416   ± 2.14472e-01 (36.89%)     1.000000    1
-    Extraction_2_cS    928.406350   ± 3.97209e+02 (42.78%)   100.000000    1
-    Extraction_3_A      -0.000046    ± 3.96768e-06 (8.64%)    -0.000066    1
-    Extraction_3_rho     0.182493   ± 1.58133e-01 (86.65%)     1.000000    1
-    Extraction_3_cS    542.744605  ± 5.93183e+02 (109.29%)   100.000000    1
-    constant_d          13.131129    ± 3.89204e-01 (2.96%)     8.557530    1
-    noise_alpha         32.692227    ± 2.36039e+00 (7.22%)    14.000000    1
+                          optimal    stderr     initial vary
+    Recharge_A        1857.745129   ±24.42%  210.498526    1
+    Recharge_n           0.946361    ±3.25%    1.000000    1
+    Recharge_a        1545.754395   ±37.69%   10.000000    1
+    Recharge_f          -1.999248   ±13.47%   -1.000000    1
+    Extraction_1_A      -0.000142   ±29.81%   -0.000110    1
+    Extraction_1_rho     2.595789   ±62.10%    1.000000    1
+    Extraction_1_cS    999.999974   ±69.40%  100.000000    1
+    Extraction_2_A      -0.000095    ±7.14%   -0.000092    1
+    Extraction_2_rho     0.385018   ±37.86%    1.000000    1
+    Extraction_2_cS    999.902565   ±45.22%  100.000000    1
+    Extraction_3_A      -0.000044   ±11.15%   -0.000066    1
+    Extraction_3_rho     0.271402  ±102.32%    1.000000    1
+    Extraction_3_cS    259.942423  ±135.05%  100.000000    1
+    constant_d          14.304341    ±5.18%    8.557530    1
+    noise_alpha         41.724866    ±8.95%   14.000000    1
     
     Warnings
     ============================================================
-    [1] Parameter values of ['Recharge_A', 'noise_alpha'] are close to their minimum values.
-    [2] Parameter values of ['Extraction_1_cS', 'Extraction_2_A', 'Extraction_3_A'] are close to their maximum values.
     
             
     
@@ -147,5 +166,5 @@ influence on groundwater head of each of the stresses.
 
 
 
-.. image:: output_7_0.png
+.. image:: output_8_0.png
 
