@@ -455,3 +455,43 @@ class Plotting:
         fig.tight_layout(pad=0.0)
 
         return axes
+
+    @model_tmin_tmax
+    def contributions_pie(self, tmin=None, tmax=None, ax=None, **kwargs):
+        """Make a pie chart of the contributions. This plot is based on the
+        TNO Groundwatertoolbox.
+
+        Parameters
+        ----------
+        tmin
+        tmax
+        ax: matplotlib.axes, optional
+            Axes to plot the pie chart on. A new figure and axes will be
+            created of not providided.
+        kwargs: dict, optional
+            The keyword arguments are passed on to plt.pie.
+
+        Returns
+        -------
+        ax: matplotlib.axes
+
+        """
+        if ax is None:
+            _, ax = plt.subplots()
+
+        frac = []
+        for name in self.ml.stressmodels.keys():
+            frac.append(np.abs(self.ml.get_contribution(name, tmin=tmin,
+                                                        tmax=tmax)).sum())
+
+        evp = self.ml.stats.evp(tmin=tmin) / 100
+        frac = np.array(frac) / sum(frac) * evp
+        frac = frac.tolist()
+        frac.append(1 - evp)
+        frac = np.array(frac)
+        labels = list(self.ml.stressmodels.keys())
+        labels.append("Unexplained")
+        ax.pie(frac, labels=labels, autopct='%1.1f%%', startangle=90,
+               wedgeprops=dict(width=1, edgecolor='w'), **kwargs)
+        ax.axis('equal')
+        return ax
