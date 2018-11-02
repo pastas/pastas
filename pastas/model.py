@@ -19,7 +19,7 @@ from os import path, getlogin, getenv
 import numpy as np
 import pandas as pd
 
-from .decorators import get_stressmodel, PastasDeprecationWarning
+from .decorators import get_stressmodel
 from .io.base import dump, load_model
 from .noisemodels import NoiseModel
 from .plots import Plotting
@@ -50,10 +50,6 @@ class Model:
         Dictionary containing metadata of the oseries, passed on the to
         oseries when creating a pastas TimeSeries object. hence,
         ml.oseries.metadata will give you the metadata.
-    settings: dict, optional
-        Dictionary containing the model settings used by the different
-        methods of the model instance. These values will be forwarded to the
-        model settings (see ml.settings).
     log_level: str, optional
         String to set the level of the log-messages that is forwarded to the
         Python console. Options are: ERROR, WARNING and INFO (default).
@@ -476,14 +472,6 @@ class Model:
         noise = self.noisemodel.simulate(res, self.odelt.loc[res.index],
                                          parameters[-self.noisemodel.nparam:])
         return noise
-
-    @PastasDeprecationWarning
-    def innovations(self, **kwargs):
-        """Historic method name for the noise of the model. Please refer to
-        ml.noise for further documentation.
-
-        """
-        return self.noise(**kwargs)
 
     def observations(self, tmin=None, tmax=None, freq=None):
         """Method that returns the observations series used for calibration.
@@ -1043,104 +1031,6 @@ class Model:
 
         return tmax
 
-    @PastasDeprecationWarning
-    def get_tmin_tmax(self, tmin=None, tmax=None, freq=None, use_oseries=True,
-                      use_stresses=False):
-        """Method that checks and returns valid values for tmin and tmax.
-
-        Parameters
-        ----------
-        tmin: str, optional
-            string with a year or date that can be turned into a pandas
-            Timestamp (e.g. pd.Timestamp(tmin)).
-        tmax: str, optional
-            string with a year or date that can be turned into a pandas
-            Timestamp (e.g. pd.Timestamp(tmax)).
-        freq: str, optional
-            string with the frequency.
-        use_oseries: bool, optional
-            Obtain the tmin and tmax from the oseries. Default is True.
-        use_stresses: bool, optional
-            Obtain the tmin and tmax from the stresses. The minimum/maximum
-            time from all stresses is taken.
-
-        Returns
-        -------
-        tmin, tmax: pandas.Timestamp
-            returns pandas timestamps for tmin and tmax.
-
-        Notes
-        -----
-        The parameters tmin and tmax are leading, unless use_oseries is
-        True, then these are checked against the oseries index. The tmin and
-        tmax are checked and returned according to the following rules:
-
-        A. If no value for tmin/tmax is provided:
-            1. If use_oseries is True, tmin and/or tmax is based on the
-            oseries.
-            2. If use_stresses is True, tmin and/or tmax is based on the
-            stressmodels.
-
-        B. If a values for tmin/tmax is provided:
-            1. A pandas timestamp is made from the string
-            2. if use_oseries is True, tmin is checked against oseries.
-
-        C. In all cases an offset for the tmin and tmax is added.
-
-        A detailed description of dealing with tmin and tmax and timesteps
-        in general can be found in the developers section of the docs.
-
-        """
-        # Get tmin and tmax from the oseries
-        if use_oseries:
-            ts_tmin = self.oseries.series.index.min()
-            ts_tmax = self.oseries.series.index.max()
-        # Get tmin and tmax from the stressmodels
-        elif use_stresses:
-            ts_tmin = pd.Timestamp.max
-            ts_tmax = pd.Timestamp.min
-            for stressmodel in self.stressmodels.values():
-                if stressmodel.tmin < ts_tmin:
-                    ts_tmin = stressmodel.tmin
-                if stressmodel.tmax > ts_tmax:
-                    ts_tmax = stressmodel.tmax
-        # Get tmin and tmax from user provided values
-        else:
-            ts_tmin = pd.Timestamp(tmin)
-            ts_tmax = pd.Timestamp(tmax)
-
-        # Set tmin properly
-        if tmin is not None and use_oseries:
-            tmin = max(pd.Timestamp(tmin), ts_tmin)
-        elif tmin is not None:
-            tmin = pd.Timestamp(tmin)
-        else:
-            tmin = ts_tmin
-
-        # Set tmax properly
-        if tmax is not None and use_oseries:
-            tmax = min(pd.Timestamp(tmax), ts_tmax)
-        elif tmax is not None:
-            tmax = pd.Timestamp(tmax)
-        else:
-            tmax = ts_tmax
-
-        # adjust tmin and tmax so that the time-offset is equal to the stressmodels.
-        if freq is None:
-            freq = self.settings["freq"]
-        tmin = tmin.ceil(freq) + self.settings["time_offset"]
-        tmax = tmax.floor(freq) + self.settings["time_offset"]
-
-        assert tmax > tmin, \
-            self.logger.error('Error: Specified tmax not larger than '
-                              'specified tmin')
-        if use_oseries:
-            assert self.oseries.series.loc[tmin: tmax].size > 0, \
-                self.logger.error(
-                    'Error: no observations between tmin and tmax')
-
-        return tmin, tmax
-
     def get_init_parameters(self, noise=None, initial=True):
         """Method to get all initial parameters from the individual objects.
 
@@ -1164,13 +1054,16 @@ class Model:
         parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary',
                                            'optimal', 'name', 'stderr'])
         for sm in self.stressmodels.values():
-            parameters = parameters.append(sm.parameters)
+            parameters = parameters.append(sm.parameters, sort=False)
         if self.constant:
-            parameters = parameters.append(self.constant.parameters)
+            parameters = parameters.append(self.constant.parameters,
+                                           sort=False)
         if self.transform:
-            parameters = parameters.append(self.transform.parameters)
+            parameters = parameters.append(self.transform.parameters,
+                                           sort=False)
         if self.noisemodel and noise:
-            parameters = parameters.append(self.noisemodel.parameters)
+            parameters = parameters.append(self.noisemodel.parameters,
+                                           sort=False)
 
         # Set initial parameters to optimal parameters from model
         if not initial:
@@ -1629,10 +1522,6 @@ Parameters ({n_param} were optimized)
 
         # Write the dicts to a file
         return dump(fname, data, **kwargs)
-
-    @PastasDeprecationWarning
-    def dump(self, *args, **kwargs):
-        self.to_file(*args, **kwargs)
 
     def copy(self):
         """Method to copy a model
