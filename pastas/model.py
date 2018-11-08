@@ -544,7 +544,7 @@ class Model:
         if noise is None and self.noisemodel:
             noise = True
         elif noise is True and self.noisemodel is None:
-            self.logger.error("""Warning, solving with noisemodel while no
+            self.logger.warning("""Warning, solving with noisemodel while no
                               noisemodel is defined. No noisemodel is used.""")
             noise = False
 
