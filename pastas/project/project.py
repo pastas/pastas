@@ -179,10 +179,11 @@ class Project:
 
         # Validate name and ml_name before continuing
         if model_name in self.models.keys():
-            logger.error("Model name is not unique, provide a new model_name.")
+            logger.warning("Model name is not unique, existing model is overwritten.")
         if oseries not in self.oseries.index:
             logger.error("Oseries name is not present in the database. "
                          "Make sure to provide a valid oseries name.")
+            return
 
         oseries = self.oseries.loc[oseries, "series"]
         ml = Model(oseries, name=model_name, **kwargs)
