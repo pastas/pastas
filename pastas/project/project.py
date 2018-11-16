@@ -281,6 +281,8 @@ class Project:
             stresses = self.stresses.index
         elif stresses is None:
             stresses = self.stresses[self.stresses.kind == kind].index
+        elif stresses is not None and kind is not None:
+            stresses = self.stresses.loc[stresses].loc[self.stresses.kind == kind].index
 
         xo = pd.to_numeric(self.oseries.loc[oseries, "x"])
         xt = pd.to_numeric(self.stresses.loc[stresses, "x"])
