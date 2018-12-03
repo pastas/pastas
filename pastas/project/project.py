@@ -100,6 +100,8 @@ class Project:
 
         if kind == "oseries":
             data = self.oseries
+            if settings is None:
+                settings = 'oseries'
         else:
             data = self.stresses
 
