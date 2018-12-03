@@ -10,4 +10,4 @@ matplotlib>=2.0
 
 pandas>=0.23
 
-scipy>=0.15
+scipy>=1.0

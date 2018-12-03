@@ -77,7 +77,7 @@ following pacakges are necessary for a minimal function installation of Pastas:
 - numpy>=1.10
 - matplotlib>=2.0
 - pandas>=0.23
-- scipy>=0.15
+- scipy>=1.0
 
 Background
 ~~~~~~~~~~
