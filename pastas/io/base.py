@@ -69,11 +69,11 @@ def load_project(data):
     mls.file_info = data["file_info"]
 
     oseries = DataFrame(data["oseries"], columns=data["oseries"].keys()).T
-    mls.oseries = mls.oseries.append(oseries)
+    mls.oseries = mls.oseries.append(oseries, sort=False)
 
     stresses = DataFrame(data=data["stresses"],
                          columns=data["stresses"].keys()).T
-    mls.stresses = mls.stresses.append(stresses)
+    mls.stresses = mls.stresses.append(stresses, sort=False)
 
     for ml_name, ml in data["models"].items():
         name = str(ml["oseries"]["name"])
