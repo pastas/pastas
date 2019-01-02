@@ -75,7 +75,6 @@ class Model:
         # Construct the different model components
         self.oseries = TimeSeries(oseries, settings="oseries",
                                   metadata=metadata)
-        self.odelt = self.get_odelt()
 
         if name is None:
             name = self.oseries.name
@@ -469,7 +468,7 @@ class Model:
         res = self.residuals(parameters, tmin, tmax, freq, warmup)
 
         # Calculate the noise
-        noise = self.noisemodel.simulate(res, self.odelt.loc[res.index],
+        noise = self.noisemodel.simulate(res, self.get_odelt(),
                                          parameters[-self.noisemodel.nparam:])
         return noise
 
@@ -577,9 +576,6 @@ class Model:
         self.sim_index = None
         self.oseries_calib = None
         self.interpolate_simulation = None
-
-        # Calculate odelt
-        self.odelt = self.get_odelt()
 
         # Initialize parameters
         self.parameters = self.get_init_parameters(noise, initial)
@@ -876,7 +872,7 @@ class Model:
             Pandas Series object
 
         """
-        odelt = self.oseries.series.index.to_series().diff() / \
+        odelt = self.observations().index.to_series().diff() / \
                 pd.Timedelta(1, freq)
         return odelt
 
