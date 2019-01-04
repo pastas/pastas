@@ -83,6 +83,8 @@ def load_project(data):
             for ts in ml["stressmodels"].values():
                 for i, stress in enumerate(ts["stress"]):
                     stress_name = stress["name"]
+                    if stress_name not in mls.stresses.index:
+                        raise(ValueError('{} not found in stresses'.format(stress_name)))
                     ts["stress"][i]["series"] = mls.stresses.loc[
                         stress_name, "series"]
         try:
