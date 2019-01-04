@@ -469,13 +469,17 @@ class Project:
 
         Parameters
         ----------
-        fname: string
-            string with the name and optionally the file-extension.
+        series: bool
+            export model input-series when True. Only export the name of
+            the model input_series when False
+            
+        sim_series: bool
+            export model output-series when True
 
         Returns
         -------
-        message: str
-            Returns a message if export was successful or not.
+        data: dict
+            A dictionary with all the project data
 
         """
         data = dict(

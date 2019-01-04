@@ -246,6 +246,9 @@ class StressModel(StressModelBase):
     metadata: dict, optional
         dictionary containing metadata about the stress. This is passed onto
         the TimeSeries object.
+    meanstress: float, optional
+        The mean stress determines the initial parameters of rfunc. The initial
+        parameters are chosen in such a way that the gain of meanstress is 1
 
     Examples
     --------
