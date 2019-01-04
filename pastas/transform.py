@@ -6,8 +6,6 @@
 import numpy as np
 from pandas import DataFrame
 
-from .model import Model
-
 
 class ThresholdTransform:
     """ThresholdTransform lowers the simulation when it exceeds a certain value
