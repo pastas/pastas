@@ -440,11 +440,11 @@ class TimeSeries(object):
                 series = series.asfreq(freq)
                 series.fillna(method, inplace=True)
             else:
-                logger.warning("User-defined option for sample_up %s is not "
-                               "supported" % method)
+                logger.warning("Time Series %s: User-defined option for sample_up %s is not "
+                               "supported" % (self.name, method))
         if n > 0:
-            logger.info("%i nan-value(s) was/were found and filled with: %s"
-                        % (n, method))
+            logger.info("Time Series %s: %i nan-value(s) was/were found and filled with: %s"
+                        % (self.name, n, method))
 
         return series
 
@@ -484,10 +484,10 @@ class TimeSeries(object):
         elif method == "max":
             series = series.resample(freq, **kwargs).max()
         else:
-            logger.warning("User-defined option for sample_down %s is not "
-                           "supported" % method)
+            logger.warning("Time Series %s: User-defined option for sample_down %s is not "
+                           "supported" % (self.name, method))
 
-        logger.info("Time Series %s were sampled down to freq %s with method "
+        logger.info("Time Series %s was sampled down to freq %s with method "
                     "%s" % (self.name, freq, method))
 
         return series
@@ -497,7 +497,7 @@ class TimeSeries(object):
         tindex = pd.date_range(series.index[0].ceil(freq), series.index[-1],
                                freq=freq)
         series = timestep_weighted_resample(series, tindex)
-        logger.info("Time Series %s were sampled down to freq %s with method "
+        logger.info("Time Series %s was sampled down to freq %s with method "
                     "%s" % (self.name, freq, 'timestep_weighted_resample'))
         return series
 
@@ -522,15 +522,15 @@ class TimeSeries(object):
             elif isinstance(method, float):
                 series.fillna(method, inplace=True)
             else:
-                logger.warning("User-defined option for fill_nan %s is not "
-                               "supported" % method)
+                logger.warning("Time Series %s: User-defined option for fill_nan %s is not "
+                               "supported" % (self.name, method))
         else:
             method = "drop"
             n = series.isnull().values.sum()
             series.dropna(inplace=True)
         if n > 0:
-            logger.info("%i nan-value(s) was/were found and filled with: %s"
-                        % (n, method))
+            logger.info("Time Series %s: %i nan-value(s) was/were found and filled with: %s"
+                        % (self.name, n, method))
 
         return series
 
@@ -565,8 +565,8 @@ class TimeSeries(object):
             elif isinstance(method, float):
                 series.fillna(method, inplace=True)
             else:
-                logger.warning("User-defined option for fill_before %s is not "
-                               "supported" % method)
+                logger.warning("Time Series %s: User-defined option for fill_before %s is not "
+                               "supported" % (self.name, method))
 
         return series
 
@@ -599,8 +599,8 @@ class TimeSeries(object):
             elif isinstance(method, float):
                 series.fillna(method, inplace=True)
             else:
-                logger.warning("User-defined option for fill_after %s is not "
-                               "supported" % method)
+                logger.warning("Time Series %s: User-defined option for fill_after %s is not "
+                               "supported" % (self.name, method))
 
         return series
 
@@ -625,8 +625,8 @@ class TimeSeries(object):
         elif isinstance(method, float):
             series = series.subtract(method)
         else:
-            logger.info("Selected method %s to normalize the time series is "
-                        "not supported" % method)
+            logger.info("Time Series %s: Selected method %s to normalize the time series is "
+                        "not supported" % (self.name, method))
 
         return series
 
