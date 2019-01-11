@@ -106,16 +106,15 @@ class Project:
             data = self.stresses
 
         if name in data.index:
-            logger.error("Time series with name %s is already present in the "
-                         "database. Please provide a different name." % name)
-            return
-
+            warning = ("Time series with name {} is already present in the "
+                       "database. Existing series is overwitten.").format(name)
+            logger.warning(warning)
         try:
             ts = TimeSeries(series=series, name=name, settings=settings,
                             metadata=metadata, **kwargs)
         except:
-            logger.warning("An error occurred. Time series %s is omitted "
-                           "from the database." % name)
+            logger.error("An error occurred. Time series {} is omitted "
+                         "from the database.".format(name))
             return
 
         data.at[name, "name"] = name
@@ -137,11 +136,14 @@ class Project:
             string with a single oseries name.
 
         """
-        if name in self.oseries.index:
-            logger.error("Time series with name %s is not present in the \
-                         database. Please provide a different name." % name)
+        if name not in self.oseries.index:
+            error = ("Time series with name {} is not present in the database."
+                     " Please provide a different name.").format(name)
+            logger.error(error)
         else:
             self.oseries.drop(name, inplace=True)
+            logger.info(
+                "Oseries with name {} deleted from the database.".format(name))
 
     def del_stress(self, name):
         """Method that removes oseries from the project.
@@ -155,7 +157,14 @@ class Project:
         -------
 
         """
-        self.stresses.drop(name, inplace=True)
+        if name not in self.stresses.index:
+            error = ("Stress with name {} is not present in the database."
+                     " Please provide a different name.").format(name)
+            logger.error(error)
+        else:
+            self.stresses.drop(name, inplace=True)
+            logger.info(
+                "Stress with name {} deleted from the database.".format(name))
 
     def add_model(self, oseries, model_name=None, **kwargs):
         """Method to add a Pastas Model instance based on one of the oseries.
@@ -181,10 +190,13 @@ class Project:
 
         # Validate name and ml_name before continuing
         if model_name in self.models.keys():
-            logger.warning("Model name is not unique, existing model is overwritten.")
+            warning = ("Model name {} is not unique, existing model is "
+                       "overwritten.").format(model_name)
+            logger.warning(warning)
         if oseries not in self.oseries.index:
-            logger.error("Oseries name is not present in the database. "
-                         "Make sure to provide a valid oseries name.")
+            error = ("Oseries name {} is not present in the database. Make "
+                     "sure to provide a valid name.").format(model_name)
+            logger.error(error)
             return
 
         oseries = self.oseries.loc[oseries, "series"]
@@ -205,7 +217,8 @@ class Project:
 
         """
         name = self.models.pop(ml_name, None)
-        logger.info("Model with name %s deleted from the database." % name)
+        info = "Model with name {} deleted from the database.".format(name)
+        logger.info(info)
 
     def add_recharge(self, ml, rfunc=Gamma, name="recharge", **kwargs):
         """Adds a recharge element to the time series model. The
@@ -284,7 +297,8 @@ class Project:
         elif stresses is None:
             stresses = self.stresses[self.stresses.kind == kind].index
         elif stresses is not None and kind is not None:
-            stresses = self.stresses.loc[stresses].loc[self.stresses.kind == kind].index
+            mask = self.stresses.kind == kind
+            stresses = self.stresses.loc[stresses].loc[mask].index
 
         xo = pd.to_numeric(self.oseries.loc[oseries, "x"])
         xt = pd.to_numeric(self.stresses.loc[stresses, "x"])
