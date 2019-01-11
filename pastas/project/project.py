@@ -106,8 +106,8 @@ class Project:
             data = self.stresses
 
         if name in data.index:
-            logger.error("Time series with name %s is already present in the \
-                         database. Please provide a different name." % name)
+            logger.error("Time series with name %s is already present in the "
+                         "database. Please provide a different name." % name)
             return
 
         try:
@@ -122,7 +122,7 @@ class Project:
         data.at[name, "series"] = ts  # Do not add as first!
         data.at[name, "kind"] = kind
 
-        # Transfer x, y and z to dataframe as well to increase speed.
+        # Transfer the metadata (x, y and z) to dataframe as well to increase speed.
         for i in ts.metadata.keys():
             value = ts.metadata[i]
             data.at[name, i] = value
