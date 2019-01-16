@@ -522,9 +522,9 @@ class Model:
             # interpolation of the simulation
             sim_index = self.get_sim_index(tmin, tmax, freq,
                                            self.settings["warmup"])
-
-            index = get_sample(oseries_calib.index, sim_index)
-            oseries_calib = oseries_calib.loc[index]
+            if not oseries_calib.empty:
+                index = get_sample(oseries_calib.index, sim_index)
+                oseries_calib = oseries_calib.loc[index]
 
             if not update_observations:
                 # tmin, tmax and freq are equal to the settings
