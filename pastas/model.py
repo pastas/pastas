@@ -528,7 +528,7 @@ class Model:
 
             if not update_observations:
                 # tmin, tmax and freq are equal to the settings
-                # so we can set self.oseries_calib to improve speed
+                # so we can set self.oseries_calib to improve speed of next run
                 self.oseries_calib = oseries_calib
         else:
             oseries_calib = self.oseries_calib
@@ -852,7 +852,7 @@ class Model:
             sim_index = pd.date_range(tmin, tmax, freq=freq, name="Date")
             if not update_sim_index:
                 # tmin, tmax, freq and warmup are equal to the settings
-                # so we can set self.sim_index to improve speed
+                # so we can set self.sim_index to improve speed of next run
                 self.sim_index = sim_index
         else:
             sim_index = self.sim_index
