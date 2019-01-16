@@ -94,6 +94,8 @@ class Project:
         """
         if name is None:
             name = series.name
+        else:
+            series.name = name
 
         if not isinstance(name, str):
             name = str(name)
