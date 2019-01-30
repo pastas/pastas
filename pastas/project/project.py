@@ -221,7 +221,22 @@ class Project:
         name = self.models.pop(ml_name, None)
         info = "Model with name {} deleted from the database.".format(name)
         logger.info(info)
+        
+    def update_model_series(self):
+        """Update all the Model series by their originals in self.oseries and self.stresses.
+        This can for example be usefull when new data is added to any of the series in pr.oseries and pr.stresses
 
+        """
+        for name in self.models:
+            ml = self.models[name]
+            ml.oseries.series_original = self.oseries.loc[name,'series'].series_original
+            for sm in ml.stressmodels:
+                for sm in ml.stressmodels:
+                    for st in ml.stressmodels[sm].stress:
+                        st.series_original = self.stresses.loc[st.name,'series'].series_original
+            # set oseries_calib empty, so it is determined again the next time
+            ml.oseries_calib = None
+            
     def add_recharge(self, ml, rfunc=Gamma, name="recharge", **kwargs):
         """Adds a recharge element to the time series model. The
         selection of the precipitation and evaporation time series is based
