@@ -59,16 +59,15 @@ class StressModelBase:
         self.rfunc = rfunc(up, meanstress, cutoff)
         self.parameters = pd.DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        self.nparam = self.rfunc.nparam
         self.name = name
         self.tmin = tmin
         self.tmax = tmax
         self.freq = None
         self.stress = []
 
-    # @property
-    # def nparam(self):
-    #     return self.parameters.index.size
+    @property
+    def nparam(self):
+        return self.parameters.index.size
 
     def set_init_parameters(self):
         """Set the initial parameters (back) to their default values.
@@ -422,7 +421,6 @@ class StressModel2(StressModelBase):
         """
         self.parameters = self.rfunc.set_parameters(self.name)
         self.parameters.loc[self.name + '_f'] = (-1.0, -2.0, 0.0, 1, self.name)
-        self.nparam += 1
 
     def simulate(self, p, tmin=None, tmax=None, freq=None, dt=1, istress=None):
         """Simulates the head contribution.
@@ -521,7 +519,6 @@ class StepModel(StressModelBase):
 
         self.parameters.loc[self.name + "_tstart"] = (tinit, tmin, tmax,
                                                       0, self.name)
-        self.nparam += 1
 
     def simulate(self, p, tmin=None, tmax=None, freq=None, dt=1):
         tstart = pd.Timestamp.fromordinal(int(p[-1]), freq="D")
@@ -564,7 +561,6 @@ class LinearTrend(StressModelBase):
     def __init__(self, name="linear_trend", start=0, end=0):
         StressModelBase.__init__(self, One, name, pd.Timestamp.min,
                                  pd.Timestamp.max, 1, 0, 0)
-        self.nparam = 3
         self.start = start
         self.end = end
         self.set_init_parameters(start, end)
@@ -624,7 +620,6 @@ class Constant(StressModelBase):
     _name = "Constant"
 
     def __init__(self, name="constant", value=0.0, pmin=np.nan, pmax=np.nan):
-        self.nparam = 1
         self.value = value
         self.pmin = pmin
         self.pmax = pmax
@@ -751,7 +746,6 @@ class FactorModel(StressModelBase):
         tmax = stress.series_original.index.max()
         StressModelBase.__init__(self, One, name, tmin=tmin, tmax=tmax,
                                  up=True, meanstress=1, cutoff=0.99)
-        self.nparam = 1
         self.value = 1  # Initial value
         stress = TimeSeries(stress, settings=settings, metadata=metadata)
         self.stress = [stress]
@@ -864,7 +858,6 @@ class Recharge(StressModelBase):
         self.recharge = recharge()
 
         self.set_init_parameters()
-        self.nparam = self.rfunc.nparam + self.recharge.nparam
 
     def set_init_parameters(self):
         self.parameters = pd.concat([self.rfunc.set_parameters(self.name),
