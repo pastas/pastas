@@ -13,7 +13,7 @@ import json
 from collections import OrderedDict
 from copy import copy
 from inspect import isclass
-from logging import basicConfig, getLogger, INFO, config
+from logging import basicConfig, getLogger, config
 from os import path, getlogin, getenv
 
 import numpy as np
@@ -85,6 +85,8 @@ class Model:
         self.parameters = pd.DataFrame(
             columns=["initial", "name", "optimal", "pmin", "pmax", "vary",
                      "stderr"])
+
+        # Define the model components
         self.stressmodels = OrderedDict()
         self.constant = None
         self.transform = None
@@ -107,6 +109,7 @@ class Model:
                                 name="constant")
             self.add_constant(constant)
         if noisemodel:
+            noisemodel
             self.add_noisemodel(NoiseModel())
 
         # File Information
@@ -135,7 +138,7 @@ class Model:
                                const=not self.constant is None,
                                noise=not self.noisemodel is None)
 
-    def add_stressmodel(self, stressmodel, replace=False):
+    def add_stressmodel(self, stressmodel, *args, replace=False, **kwargs):
         """Adds a stressmodel to the main model.
 
         Parameters
@@ -159,6 +162,10 @@ class Model:
         >>> ml.add_stressmodel(sm)
 
         """
+        # Method can take multiple stressmodels at once through args
+        if args:
+            for arg in args:
+                self.add_stressmodel(arg)
         if (stressmodel.name in self.stressmodels.keys()) and not replace:
             self.logger.error("The name for the stressmodel you are trying "
                               "to add already exists for this model. Select "
@@ -354,7 +361,10 @@ class Model:
         if not return_warmup:
             sim = sim.loc[tmin:tmax]
 
-        sim.dropna(inplace=True)
+        if sim.hasnans:
+            sim = sim.dropna()
+            self.logger.warning('Nan-values were removed from the simulation.')
+
         sim.name = 'Simulation'
         return sim
 
@@ -419,7 +429,7 @@ class Model:
         res = oseries_calib.subtract(sim_interpolated)
 
         if res.hasnans:
-            res.dropna(inplace=True)
+            res = res.dropna()
             self.logger.warning('Nan-values were removed from the residuals.')
 
         if self.normalize_residuals:
@@ -1321,7 +1331,7 @@ class Model:
                 config_dict = json.load(f)
             config.dictConfig(config_dict)
         else:
-            basicConfig(level=INFO)
+            basicConfig(level="INFO")
 
         logger = getLogger(__name__)
         # Set log_level for console to user-defined value

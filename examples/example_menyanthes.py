@@ -27,21 +27,21 @@ IN = meny.IN['Extraction 1']
 well = ps.TimeSeries(IN["values"], freq_original="M", settings="well")
 # extraction amount counts for the previous month
 sm = ps.StressModel(well, ps.Hantush, 'Extraction_1', up=False)
-ml.add_stressmodel(sm)
 
 # Add well extraction 2
 IN = meny.IN['Extraction 2']
 well = ps.TimeSeries(IN["values"], freq_original="M", settings="well")
 # extraction amount counts for the previous month
-sm = ps.StressModel(well, ps.Hantush, 'Extraction_2', up=False)
-ml.add_stressmodel(sm)
+sm1 = ps.StressModel(well, ps.Hantush, 'Extraction_2', up=False)
 
 # Add well extraction 3
 IN = meny.IN['Extraction 3']
 well = ps.TimeSeries(IN["values"], freq_original="M", settings="well")
 # extraction amount counts for the previous month
-sm = ps.StressModel(well, ps.Hantush, 'Extraction_3', up=False)
-ml.add_stressmodel(sm)
+sm2 = ps.StressModel(well, ps.Hantush, 'Extraction_3', up=False)
+
+# add_stressmodels also allows addings multiple stressmodels at once
+ml.add_stressmodel(sm, sm1, sm2)
 
 # Solve
 ml.solve()
