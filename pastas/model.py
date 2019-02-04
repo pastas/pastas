@@ -1281,10 +1281,16 @@ class Model:
             dictionary with file information.
 
         """
-        file_info = dict()
-        file_info["date_created"] = pd.Timestamp.now()
+        # Check if file_info already exists
+        if hasattr(self, "file_info"):
+            file_info = self.file_info
+        else:
+            file_info = dict()
+            file_info["date_created"] = pd.Timestamp.now()
+
         file_info["date_modified"] = pd.Timestamp.now()
         file_info["pastas_version"] = __version__
+
         try:
             file_info["owner"] = getlogin()
         except:
@@ -1493,8 +1499,7 @@ Parameters ({n_param} were optimized)
 
         # Update and save file information
         if file_info:
-            self.file_info["date_modified"] = pd.Timestamp.now()
-            data["file_info"] = self.file_info
+            data["file_info"] = self.get_file_info()
 
         # Export simulated series if necessary
         if sim_series:

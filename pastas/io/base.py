@@ -86,8 +86,11 @@ def load_project(data):
                         # look up the stress-series in mls.stresses
                         stress_name = stress["name"]
                         if stress_name not in mls.stresses.index:
-                            raise(ValueError('{} not found in stresses'.format(stress_name)))
-                        stress["series"] = mls.stresses.loc[stress_name, "series"]
+                            raise (ValueError(
+                                '{} not found in stresses'.format(
+                                    stress_name)))
+                        stress["series"] = mls.stresses.loc[
+                            stress_name, "series"]
         try:
             ml = load_model(ml)
             mls.models[ml_name] = ml
@@ -131,7 +134,6 @@ def load_model(data):
         ml.settings.update(data["settings"])
     if "file_info" in data.keys():
         ml.file_info.update(data["file_info"])
-        ml.file_info["version"] = ps.__version__
 
     # Add stressmodels
     for name, ts in data["stressmodels"].items():
