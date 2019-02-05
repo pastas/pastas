@@ -304,59 +304,6 @@ class Hantush(RfuncBase):
         return p[0] * F / (2 * k0rho)
 
 
-class Theis(RfuncBase):
-    """The Theis well function.
-
-    Notes
-    -----
-    Theis may not be very appropiate, as the drawdown will continue
-    indefinitely.
-
-    References
-    ----------
-    .. [1] Theis, C. V. (1935). The relation between the lowering of the
-    Piezometric surface and the rate and duration of discharge of a well using
-    groundwater storage. Eos, Transactions American Geophysical Union, 16(2),
-    519-524.
-
-    """
-    _name = "Theis"
-
-    def __init__(self, up=True, meanstress=1, cutoff=0.99):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
-        if self.up:
-            self.up = 1
-        else:
-            self.up = -1
-        self.nparam = 3
-
-    def set_parameters(self, name):
-        parameters = DataFrame(
-            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        parameters.loc[name + '_S'] = (0.25, 1e-3, 1.0, 1, name)
-        parameters.loc[name + '_T'] = (100.0, 0.0, 10000.0, 1, name)
-        parameters.loc[name + '_r'] = (1000.0, 0.0, 100000.0, 0, name)
-        return parameters
-
-    def gain(self, p):
-        return self.up * np.inf
-
-    def get_tmax(self, p, cutoff=None):
-        # TODO: This should be changed with some analytical expression
-        return 10000
-
-    def step(self, p, dt=1, cutoff=0.99):
-        if isinstance(dt, np.ndarray):
-            t = dt
-        else:
-            self.tmax = max(self.get_tmax(p, cutoff), 3 * dt)
-            t = np.arange(dt, self.tmax, dt)
-        r = p[2]
-        u = r ** 2.0 * p[0] / (4.0 * p[1] * t)
-        s = self.up * exp1(u)
-        return s
-
-
 class Polder(RfuncBase):
     """The function of Polder, for a river in a confined aquifer,
     overlain by an aquitard with aquiferous ditches.
