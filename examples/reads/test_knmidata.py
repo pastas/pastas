@@ -28,7 +28,7 @@ if download:
     else:
         # from a rainfall-station
         knmi = KnmiStation.download(stns=550, start='2018', end='2019',
-                                vars='RD') # de bilt
+                                    variables='RD') # de bilt
 else:
     # import the data from files
     if meteo:

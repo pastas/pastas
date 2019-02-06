@@ -131,17 +131,17 @@ class KnmiStation:
 
     # Construct KnmiStation from download
     @classmethod
-    def download(cls, start=None, end=None, inseason=False, vars='ALL',
+    def download(cls, start=None, end=None, inseason=False, variables='ALL',
                  stns=260, interval='daily'):
         """
 
         """
         self = cls()
-        self._download(start=start, end=end, inseason=inseason, vars=vars,
-                       stns=stns, interval=interval)
+        self._download(start=start, end=end, inseason=inseason,
+                       variables=variables, stns=stns, interval=interval)
         return self
 
-    def _download(self, start=None, end=None, inseason=False, vars='ALL',
+    def _download(self, start=None, end=None, inseason=False, variables='ALL',
                   stns=260, interval='daily'):
         # Import the necessary modules (optional and not included in the
         # installation of pastas).
@@ -165,19 +165,15 @@ class KnmiStation:
             end = pd.Timestamp.today()
         else:
             end = pd.to_datetime(end)
-        inseason = inseason
-        vars = vars
-        stns = stns  # de Bilt (zou ook 'ALL' kunnen zijn)
-        interval = interval
 
-        if interval.startswith('hour') and vars == 'RD':
+        if interval.startswith('hour') and variables == 'RD':
             raise (
                 ValueError('Interval can not be hourly for rainfall-stations'))
 
         if interval.startswith('hour'):
             # hourly data from meteorological stations
             url = 'http://projects.knmi.nl/klimatologie/uurgegevens/getdata_uur.cgi'
-        elif vars == 'RD':
+        elif variables == 'RD':
             # daily data from rainfall-stations
             url = 'http://projects.knmi.nl/klimatologie/monv/reeksen/getdata_rr.cgi'
         else:
@@ -194,7 +190,7 @@ class KnmiStation:
             data = {
                 'start': start.strftime('%Y%m%d') + '01',
                 'end': end.strftime('%Y%m%d') + '24',
-                'vars': vars,
+                'vars': variables,
                 'stns': stns,
             }
         else:
@@ -202,7 +198,7 @@ class KnmiStation:
                 'start': start.strftime('%Y%m%d'),
                 'end': end.strftime('%Y%m%d'),
                 'inseason': str(int(inseason)),
-                'vars': vars,
+                'vars': variables,
                 'stns': stns,
             }
         result = requests.get(url, params=data).text
