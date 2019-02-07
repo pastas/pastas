@@ -15,7 +15,6 @@ Fully supported and tested routines in this module are:
 
 TODO
 ----
-- Test Theis response function
 - Test Polder response function
 
 """
