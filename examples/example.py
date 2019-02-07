@@ -22,7 +22,4 @@ ml.add_stressmodel(sm)
 
 ## Solve
 ml.solve()
-#ml.plot()
-axes=ml.plots.decomposition(name='run 1')
-#ml.solve(tmin='2004')
-#ml.plots.decomposition(axes=axes, name='run 2', tmin='1988')
+ml.plot()
