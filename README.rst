@@ -14,7 +14,9 @@ PASTAS: HYDROLOGICAL TIME SERIES ANALYSIS
 .. image:: https://img.shields.io/github/release/pastas/pastas.svg
                     :target: https://github.com/pastas/pastas/releases
 .. image:: https://api.codacy.com/project/badge/Grade/0e0fad469a3c42a4a5c5d1c5fddd6bee
-                    :target: https://app.codacy.com/app/raoulcollenteur/pastas?utm_source=github.com&utm_medium=referral&utm_content=pastas/pastas&utm_campaign=Badge_Grade_Dashboard    
+                    :target: https://app.codacy.com/app/raoulcollenteur/pastas?utm_source=github.com&utm_medium=referral&utm_content=pastas/pastas&utm_campaign=Badge_Grade_Dashboard
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1465866.svg
+                    :target: https://doi.org/10.5281/zenodo.1465866
 
 
 Pastas: what is it?
@@ -83,7 +85,9 @@ Work on Pastas started in the spring of 2016 at the Delft University of Technolo
 
 How to Cite Pastas?
 ~~~~~~~~~~~~~~~~~~~
-`Bakker, M., Collenteur, R., Calje, F. Schaars (2018, April) Untangling groundwater head series using time series analysis and Pastas. In EGU General Assembly 2018. <https://meetingorganizer.copernicus.org/EGU2018/EGU2018-7194.pdf>`_
+To cite a specific version of Python, you can use the DOI provided for each official release (>0.9.7) through Zenodo. Click on the link to get a specific version and DOI, depending on the Pastas version.
+
+Collenteur, R., Bakker, M., Caljé, R. & Schaars, F. (XXXX). Pastas: open-source software for time series analysis in hydrology (Version X.X.X). Zenodo. http://doi.org/10.5281/zenodo.1465866
 
 License (MIT License)
 ~~~~~~~
