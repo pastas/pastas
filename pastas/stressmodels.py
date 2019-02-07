@@ -253,7 +253,7 @@ class StressModel(StressModelBase):
         the TimeSeries object.
     meanstress: float, optional
         The mean stress determines the initial parameters of rfunc. The initial
-        parameters are chosen in such a way that the gain of meanstress is 1
+        parameters are chosen in such a way that the gain of meanstress is 1.
 
     Examples
     --------
@@ -278,7 +278,7 @@ class StressModel(StressModelBase):
         stress = TimeSeries(stress, settings=settings, metadata=metadata)
 
         if meanstress is None:
-            meanstress = stress.series.mean()
+            meanstress = stress.series.std()
 
         StressModelBase.__init__(self, rfunc, name, stress.series.index.min(),
                                  stress.series.index.max(), up, meanstress,
