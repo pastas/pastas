@@ -4,8 +4,6 @@ import numpy as np
 from pandas import Series, to_datetime, Timedelta, Timestamp, to_timedelta
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
-from .model import Model
-from .project import Project
 
 logger = getLogger(__name__)
 
@@ -260,20 +258,3 @@ def datetime2matlab(tindex):
     mdn = tindex + Timedelta(days=366)
     frac = (tindex - tindex.round("D")).seconds / (24.0 * 60.0 * 60.0)
     return mdn.toordinal() + frac
-
-def get_stress_tmin_tmax(ml):
-    """Get the minimum and maximum time that all of the stresses have data"""
-    tmin = Timestamp.min
-    tmax = Timestamp.max
-    if isinstance(ml,Model):
-        for sm in ml.stressmodels:
-            for st in ml.stressmodels[sm].stress:
-                tmin = max((tmin,st.series_original.index.min()))
-                tmax = min((tmax,st.series_original.index.max()))
-    elif isinstance(ml,Project):
-        for st in ml.stresses['series']:
-            tmin = max((tmin,st.series_original.index.min()))
-            tmax = min((tmax,st.series_original.index.max()))
-    else:
-        raise(TypeError('Unknown type {}'.format(type(ml))))
-    return tmin,tmax
