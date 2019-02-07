@@ -707,9 +707,9 @@ class WellModel(StressModelBase):
 
     def get_stress(self, p=None, istress=None):
         if istress is None:
-            return self.stress
+            return [s.series for s in self.stress]
         else:
-            return [self.stress[istress]]
+            return [self.stress[istress].series]
 
     def get_radii(self, irad=None):
         if irad is None:
