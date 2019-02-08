@@ -125,7 +125,7 @@ class NoiseModel(NoiseModelBase):
     def set_init_parameters(self):
         self.parameters.loc['noise_alpha'] = (14.0, 0, 5000, 1, 'noise')
 
-    def simulate(self, res, odelt, parameters):
+    def simulate(self, res, parameters, freq):
         """
 
         Parameters
@@ -143,6 +143,7 @@ class NoiseModel(NoiseModelBase):
             Series of the noise.
 
         """
+        odelt = res.index.to_series().diff() / pd.Timedelta(1, freq)
         odelt = odelt.iloc[1:]
         alpha = parameters[0]
         noise = pd.Series(data=res)
@@ -210,7 +211,7 @@ class NoiseModel2(NoiseModelBase):
     def set_init_parameters(self):
         self.parameters.loc['noise_alpha'] = (14.0, 0, 5000, 1, 'noise')
 
-    def simulate(self, res, odelt, parameters):
+    def simulate(self, res, parameters, freq):
         """
 
         Parameters
@@ -228,9 +229,11 @@ class NoiseModel2(NoiseModelBase):
             Series of the noise.
 
         """
+        odelt = res.index.to_series().diff() / pd.Timedelta(1, freq)
+        odelt = odelt.iloc[1:]
         noise = pd.Series(res)
         alpha = parameters[0]
         # res.values is needed else it gets messed up with the dates
-        noise.iloc[1:] -= np.exp(-odelt.iloc[1:] / alpha) * res.values[:-1]
+        noise.iloc[1:] -= np.exp(-odelt/ alpha) * res.values[:-1]
         noise.name = "Noise"
         return noise

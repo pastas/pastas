@@ -109,7 +109,6 @@ class Model:
                                 name="constant")
             self.add_constant(constant)
         if noisemodel:
-            noisemodel
             self.add_noisemodel(NoiseModel())
 
         # File Information
@@ -470,6 +469,9 @@ class Model:
                               "no noisemodel.")
             return None
 
+        if freq is None:
+            freq = self.settings["freq"]
+
         # Get parameters if none are provided
         if parameters is None:
             parameters = self.get_parameters()
@@ -478,8 +480,9 @@ class Model:
         res = self.residuals(parameters, tmin, tmax, freq, warmup)
 
         # Calculate the noise
-        noise = self.noisemodel.simulate(res, self.get_odelt(),
-                                         parameters[-self.noisemodel.nparam:])
+        noise = self.noisemodel.simulate(res,
+                                         parameters[-self.noisemodel.nparam:],
+                                         freq=freq)
         return noise
 
     def observations(self, tmin=None, tmax=None, freq=None):
@@ -867,24 +870,6 @@ class Model:
         else:
             sim_index = self.sim_index
         return sim_index
-
-    def get_odelt(self, freq="D"):
-        """Internal method to get the timesteps between the observations.
-
-        Parameters
-        ----------
-        freq: str
-            Frequency string.
-
-        Returns
-        -------
-        odelt: pandas.Series
-            Pandas Series object
-
-        """
-        odelt = self.observations().index.to_series().diff() / \
-                pd.Timedelta(1, freq)
-        return odelt
 
     def get_tmin(self, tmin=None, freq=None, use_oseries=True,
                  use_stresses=False):
