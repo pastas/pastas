@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 
 from .decorators import set_parameter
+from .utils import get_dt
 
 logger = getLogger(__name__)
 
@@ -143,7 +144,8 @@ class NoiseModel(NoiseModelBase):
             Series of the noise.
 
         """
-        odelt = res.index.to_series().diff() / pd.Timedelta(1, freq)
+        dt = get_dt(freq) # Get the
+        odelt = res.index.to_series().diff() / pd.Timedelta(dt, "D")
         odelt = odelt.iloc[1:]
         alpha = parameters[0]
         noise = pd.Series(data=res)
