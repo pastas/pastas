@@ -60,8 +60,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'PASTAS'
-copyright = u'2017, M. Bakker, R.A. Collenteur, R. Calje, F. Schaars'
-author = u'M. Bakker, R.A. Collenteur, R. Calje, F. Schaars'
+copyright = u'2019, R.A. Collenteur, M. Bakker, R. Calje, F. Schaars'
+author = u'R.A. Collenteur, M. Bakker, R. Calje, F. Schaars'
 rst_epilog = '.. |project| replace:: %s' % project
 
 # The version info for the project you're documenting, acts as replacement for

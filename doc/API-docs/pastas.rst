@@ -9,6 +9,7 @@ Subpackages
     pastas.io
     pastas.project
     pastas.read
+    pastas.recharge
     pastas.stats
 
 Submodules
