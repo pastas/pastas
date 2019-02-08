@@ -884,11 +884,7 @@ class Recharge(StressModelBase):
     def simulate(self, p, tmin=None, tmax=None, freq=None, dt=1):
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
         b = self.rfunc.block(p[:-self.recharge.nparam], dt)
-
-        # The recharge calculation needs arrays
-        prec = self.prec.series
-        evap = self.evap.series
-        stress = self.recharge.simulate(prec, evap, p[-self.recharge.nparam:])
+        stress = self.get_stress(p[-self.recharge.nparam:])
         npoints = stress.index.size
         h = pd.Series(data=fftconvolve(stress, b, 'full')[:npoints],
                       index=stress.index, name=self.name, fastpath=True)
@@ -898,8 +894,10 @@ class Recharge(StressModelBase):
         if istress is None:
             prec = self.prec.series
             evap = self.evap.series
-            stress = self.recharge.simulate(prec, evap,
-                                            p[-self.recharge.nparam:])
+            stress = self.recharge.simulate(prec, evap, p)
+
+            stress = pd.Series(data=stress, index=prec.index,
+                               name="recharge", fastpath=True)
             return stress
         elif istress == 0:
             return self.prec.series
