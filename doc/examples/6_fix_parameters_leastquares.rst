@@ -64,7 +64,7 @@ the correct data type, use the ``type`` command as shown below.
 .. parsed-literal::
 
     The data type of the oseries is: <class 'pandas.core.series.Series'>
-    
+
 
 The variable ``ho`` is now a ``pandas Series`` object. To see the first
 five lines, type ``ho.head()``.
@@ -130,7 +130,7 @@ and plotted.
 
     The data type of the rain series is: <class 'pandas.core.series.Series'>
     The data type of the evap series is <class 'pandas.core.series.Series'>
-    
+
 
 
 .. image:: output_11_1.png
@@ -201,9 +201,9 @@ can be constructed by going through the following three steps:
     
     Model Results head                Fit Statistics
     ============================    ============================
-    nfev     31                     EVP                    92.19
-    nobs     518                    NS                      0.92
-    noise    NoiseModel             Pearson R2              0.96
+    nfev     21                     EVP                    92.11
+    nobs     518                    NSE                     0.92
+    noise    1                      Pearson R2              0.92
     tmin     1985-11-14 00:00:00    RMSE                    0.12
     tmax     2010-01-01 00:00:00    AIC                     7.56
     freq     D                      BIC                    28.81
@@ -212,18 +212,18 @@ can be constructed by going through the following three steps:
     
     Parameters (5 were optimized)
     ============================================================
-                    optimal               stderr      initial vary
-    recharge_A   726.323674   ± 3.37e+01 (4.64%)  2081.856867    1
-    recharge_n     1.053553   ± 1.64e-02 (1.56%)     1.000000    1
-    recharge_a   128.422622   ± 8.52e+00 (6.63%)    10.000000    1
-    constant_d    27.559801   ± 1.96e-02 (0.07%)    27.900078    1
-    noise_alpha   61.486142  ± 7.92e+00 (12.88%)    14.000000    1
+                    optimal   stderr     initial vary
+    recharge_A   749.626162   ±4.57%  215.674528    1
+    recharge_n     1.046651   ±1.52%    1.000000    1
+    recharge_a   135.213902   ±6.45%   10.000000    1
+    constant_d    27.551998   ±0.07%   27.900078    1
+    noise_alpha   58.375259  ±12.31%   14.000000    1
     
     Warnings
     ============================================================
     
             
-    
+
 
 The ``solve`` function has a number of default options that can be
 specified with keyword arguments. One of these options is that by
@@ -238,7 +238,7 @@ later on in this notebook. The results of the model are plotted below.
 
 .. code:: ipython3
 
-    ml.plot(figsize=(16, 4));
+    ml.plot();
 
 
 
@@ -260,9 +260,9 @@ later on in this notebook. The results of the model are plotted below.
     
     Model Results head                Fit Statistics
     ============================    ============================
-    nfev     31                     EVP                    92.19
-    nobs     518                    NS                      0.92
-    noise    NoiseModel             Pearson R2              0.96
+    nfev     21                     EVP                    92.11
+    nobs     518                    NSE                     0.92
+    noise    1                      Pearson R2              0.92
     tmin     1985-11-14 00:00:00    RMSE                    0.12
     tmax     2010-01-01 00:00:00    AIC                     7.56
     freq     D                      BIC                    28.81
@@ -271,18 +271,18 @@ later on in this notebook. The results of the model are plotted below.
     
     Parameters (5 were optimized)
     ============================================================
-                    optimal               stderr      initial vary
-    recharge_A   726.323674   ± 3.37e+01 (4.64%)  2081.856867    1
-    recharge_n     1.053553   ± 1.64e-02 (1.56%)     1.000000    1
-    recharge_a   128.422622   ± 8.52e+00 (6.63%)    10.000000    1
-    constant_d    27.559801   ± 1.96e-02 (0.07%)    27.900078    1
-    noise_alpha   61.486142  ± 7.92e+00 (12.88%)    14.000000    1
+                    optimal   stderr     initial vary
+    recharge_A   749.626162   ±4.57%  215.674528    1
+    recharge_n     1.046651   ±1.52%    1.000000    1
+    recharge_a   135.213902   ±6.45%   10.000000    1
+    constant_d    27.551998   ±0.07%   27.900078    1
+    noise_alpha   58.375259  ±12.31%   14.000000    1
     
     Warnings
     ============================================================
     
             
-    
+
 
 .. code:: ipython3
 
@@ -300,33 +300,33 @@ later on in this notebook. The results of the model are plotted below.
     
     Model Results head                Fit Statistics
     ============================    ============================
-    nfev     30                     EVP                    91.45
-    nobs     518                    NS                      0.91
-    noise    NoiseModel             Pearson R2              0.96
+    nfev     31                     EVP                    91.49
+    nobs     518                    NSE                     0.91
+    noise    1                      Pearson R2              0.91
     tmin     1985-11-14 00:00:00    RMSE                    0.13
-    tmax     2010-01-01 00:00:00    AIC                     5.51
-    freq     D                      BIC                    22.51
+    tmax     2010-01-01 00:00:00    AIC                     5.52
+    freq     D                      BIC                    22.52
     warmup   3650                   __                          
     solver   LeastSquares           ___                         
     
     Parameters (4 were optimized)
     ============================================================
-                    optimal               stderr      initial vary
-    recharge_A   777.944398   ± 3.99e+01 (5.13%)  2081.856867    1
-    recharge_n     1.000000   ± 0.00e+00 (0.00%)     1.000000    0
-    recharge_a   153.957311   ± 8.34e+00 (5.42%)    10.000000    1
-    constant_d    27.539587   ± 2.22e-02 (0.08%)    27.900078    1
-    noise_alpha   65.229372  ± 8.43e+00 (12.93%)    14.000000    1
+                    optimal   stderr     initial vary
+    recharge_A   774.459823   ±5.02%  215.674528    1
+    recharge_n     1.000000   ±0.00%    1.000000    0
+    recharge_a   152.871577   ±5.32%   10.000000    1
+    constant_d    27.540915   ±0.08%   27.900078    1
+    noise_alpha   63.735380  ±12.73%   14.000000    1
     
     Warnings
     ============================================================
     
             
-    
+
 
 .. code:: ipython3
 
-    ml.plot(figsize=(16, 4));
+    ml.plot();
 
 
 

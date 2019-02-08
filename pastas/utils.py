@@ -165,8 +165,7 @@ def get_sample(tindex, ref_tindex):
     if len(tindex) == 1:
         return tindex
     else:
-        f = interpolate.interp1d(tindex.asi8,
-                                 np.arange(0, tindex.size),
+        f = interpolate.interp1d(tindex.asi8, np.arange(0, tindex.size),
                                  kind='nearest', bounds_error=False,
                                  fill_value='extrapolate')
         ind = np.unique(f(ref_tindex.asi8).astype(int))
@@ -258,3 +257,23 @@ def datetime2matlab(tindex):
     mdn = tindex + Timedelta(days=366)
     frac = (tindex - tindex.round("D")).seconds / (24.0 * 60.0 * 60.0)
     return mdn.toordinal() + frac
+
+
+def get_stress_tmin_tmax(ml):
+    """Get the minimum and maximum time that all of the stresses have data"""
+    from .model import Model
+    from .project import Project
+    tmin = Timestamp.min
+    tmax = Timestamp.max
+    if isinstance(ml, Model):
+        for sm in ml.stressmodels:
+            for st in ml.stressmodels[sm].stress:
+                tmin = max((tmin, st.series_original.index.min()))
+                tmax = min((tmax, st.series_original.index.max()))
+    elif isinstance(ml, Project):
+        for st in ml.stresses['series']:
+            tmin = max((tmin, st.series_original.index.min()))
+            tmax = min((tmax, st.series_original.index.max()))
+    else:
+        raise (TypeError('Unknown type {}'.format(type(ml))))
+    return tmin, tmax

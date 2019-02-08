@@ -13,13 +13,13 @@ import json
 from collections import OrderedDict
 from copy import copy
 from inspect import isclass
-from logging import basicConfig, getLogger, INFO, config
+from logging import basicConfig, getLogger, config
 from os import path, getlogin, getenv
 
 import numpy as np
 import pandas as pd
 
-from .decorators import get_stressmodel, PastasDeprecationWarning
+from .decorators import get_stressmodel
 from .io.base import dump, load_model
 from .noisemodels import NoiseModel
 from .plots import Plotting
@@ -50,10 +50,6 @@ class Model:
         Dictionary containing metadata of the oseries, passed on the to
         oseries when creating a pastas TimeSeries object. hence,
         ml.oseries.metadata will give you the metadata.
-    settings: dict, optional
-        Dictionary containing the model settings used by the different
-        methods of the model instance. These values will be forwarded to the
-        model settings (see ml.settings).
     log_level: str, optional
         String to set the level of the log-messages that is forwarded to the
         Python console. Options are: ERROR, WARNING and INFO (default).
@@ -79,7 +75,6 @@ class Model:
         # Construct the different model components
         self.oseries = TimeSeries(oseries, settings="oseries",
                                   metadata=metadata)
-        self.odelt = self.get_odelt()
 
         if name is None:
             name = self.oseries.name
@@ -90,6 +85,8 @@ class Model:
         self.parameters = pd.DataFrame(
             columns=["initial", "name", "optimal", "pmin", "pmax", "vary",
                      "stderr"])
+
+        # Define the model components
         self.stressmodels = OrderedDict()
         self.constant = None
         self.transform = None
@@ -140,7 +137,7 @@ class Model:
                                const=not self.constant is None,
                                noise=not self.noisemodel is None)
 
-    def add_stressmodel(self, stressmodel, replace=False):
+    def add_stressmodel(self, stressmodel, *args, replace=False, **kwargs):
         """Adds a stressmodel to the main model.
 
         Parameters
@@ -164,6 +161,10 @@ class Model:
         >>> ml.add_stressmodel(sm)
 
         """
+        # Method can take multiple stressmodels at once through args
+        if args:
+            for arg in args:
+                self.add_stressmodel(arg)
         if (stressmodel.name in self.stressmodels.keys()) and not replace:
             self.logger.error("The name for the stressmodel you are trying "
                               "to add already exists for this model. Select "
@@ -359,7 +360,10 @@ class Model:
         if not return_warmup:
             sim = sim.loc[tmin:tmax]
 
-        sim.dropna(inplace=True)
+        if sim.hasnans:
+            sim = sim.dropna()
+            self.logger.warning('Nan-values were removed from the simulation.')
+
         sim.name = 'Simulation'
         return sim
 
@@ -424,7 +428,7 @@ class Model:
         res = oseries_calib.subtract(sim_interpolated)
 
         if res.hasnans:
-            res.dropna(inplace=True)
+            res = res.dropna()
             self.logger.warning('Nan-values were removed from the residuals.')
 
         if self.normalize_residuals:
@@ -465,6 +469,9 @@ class Model:
                               "no noisemodel.")
             return None
 
+        if freq is None:
+            freq = self.settings["freq"]
+
         # Get parameters if none are provided
         if parameters is None:
             parameters = self.get_parameters()
@@ -473,17 +480,10 @@ class Model:
         res = self.residuals(parameters, tmin, tmax, freq, warmup)
 
         # Calculate the noise
-        noise = self.noisemodel.simulate(res, self.odelt.loc[res.index],
-                                         parameters[-self.noisemodel.nparam:])
+        noise = self.noisemodel.simulate(res,
+                                         parameters[-self.noisemodel.nparam:],
+                                         freq=freq)
         return noise
-
-    @PastasDeprecationWarning
-    def innovations(self, **kwargs):
-        """Historic method name for the noise of the model. Please refer to
-        ml.noise for further documentation.
-
-        """
-        return self.noise(**kwargs)
 
     def observations(self, tmin=None, tmax=None, freq=None):
         """Method that returns the observations series used for calibration.
@@ -535,11 +535,13 @@ class Model:
             # interpolation of the simulation
             sim_index = self.get_sim_index(tmin, tmax, freq,
                                            self.settings["warmup"])
-
-            index = get_sample(oseries_calib.index, sim_index)
-            oseries_calib = oseries_calib.loc[index]
+            if not oseries_calib.empty:
+                index = get_sample(oseries_calib.index, sim_index)
+                oseries_calib = oseries_calib.loc[index]
 
             if not update_observations:
+                # tmin, tmax and freq are equal to the settings
+                # so we can set self.oseries_calib to improve speed of next run
                 self.oseries_calib = oseries_calib
         else:
             oseries_calib = self.oseries_calib
@@ -556,7 +558,7 @@ class Model:
         if noise is None and self.noisemodel:
             noise = True
         elif noise is True and self.noisemodel is None:
-            self.logger.error("""Warning, solving with noisemodel while no
+            self.logger.warning("""Warning, solving with noisemodel while no
                               noisemodel is defined. No noisemodel is used.""")
             noise = False
 
@@ -587,9 +589,6 @@ class Model:
         self.sim_index = None
         self.oseries_calib = None
         self.interpolate_simulation = None
-
-        # Calculate odelt
-        self.odelt = self.get_odelt()
 
         # Initialize parameters
         self.parameters = self.get_init_parameters(noise, initial)
@@ -863,27 +862,14 @@ class Model:
         if self.sim_index is None or update_sim_index:
             tmin = (tmin - pd.DateOffset(days=warmup)).floor(freq) + \
                    self.settings["time_offset"]
-            self.sim_index = pd.date_range(tmin, tmax, freq=freq, name="Date")
-
-        return self.sim_index
-
-    def get_odelt(self, freq="D"):
-        """Internal method to get the timesteps between the observations.
-
-        Parameters
-        ----------
-        freq: str
-            Frequency string.
-
-        Returns
-        -------
-        odelt: pandas.Series
-            Pandas Series object
-
-        """
-        odelt = self.oseries.series.index.to_series().diff() / \
-                pd.Timedelta(1, freq)
-        return odelt
+            sim_index = pd.date_range(tmin, tmax, freq=freq, name="Date")
+            if not update_sim_index:
+                # tmin, tmax, freq and warmup are equal to the settings
+                # so we can set self.sim_index to improve speed of next run
+                self.sim_index = sim_index
+        else:
+            sim_index = self.sim_index
+        return sim_index
 
     def get_tmin(self, tmin=None, freq=None, use_oseries=True,
                  use_stresses=False):
@@ -1043,104 +1029,6 @@ class Model:
 
         return tmax
 
-    @PastasDeprecationWarning
-    def get_tmin_tmax(self, tmin=None, tmax=None, freq=None, use_oseries=True,
-                      use_stresses=False):
-        """Method that checks and returns valid values for tmin and tmax.
-
-        Parameters
-        ----------
-        tmin: str, optional
-            string with a year or date that can be turned into a pandas
-            Timestamp (e.g. pd.Timestamp(tmin)).
-        tmax: str, optional
-            string with a year or date that can be turned into a pandas
-            Timestamp (e.g. pd.Timestamp(tmax)).
-        freq: str, optional
-            string with the frequency.
-        use_oseries: bool, optional
-            Obtain the tmin and tmax from the oseries. Default is True.
-        use_stresses: bool, optional
-            Obtain the tmin and tmax from the stresses. The minimum/maximum
-            time from all stresses is taken.
-
-        Returns
-        -------
-        tmin, tmax: pandas.Timestamp
-            returns pandas timestamps for tmin and tmax.
-
-        Notes
-        -----
-        The parameters tmin and tmax are leading, unless use_oseries is
-        True, then these are checked against the oseries index. The tmin and
-        tmax are checked and returned according to the following rules:
-
-        A. If no value for tmin/tmax is provided:
-            1. If use_oseries is True, tmin and/or tmax is based on the
-            oseries.
-            2. If use_stresses is True, tmin and/or tmax is based on the
-            stressmodels.
-
-        B. If a values for tmin/tmax is provided:
-            1. A pandas timestamp is made from the string
-            2. if use_oseries is True, tmin is checked against oseries.
-
-        C. In all cases an offset for the tmin and tmax is added.
-
-        A detailed description of dealing with tmin and tmax and timesteps
-        in general can be found in the developers section of the docs.
-
-        """
-        # Get tmin and tmax from the oseries
-        if use_oseries:
-            ts_tmin = self.oseries.series.index.min()
-            ts_tmax = self.oseries.series.index.max()
-        # Get tmin and tmax from the stressmodels
-        elif use_stresses:
-            ts_tmin = pd.Timestamp.max
-            ts_tmax = pd.Timestamp.min
-            for stressmodel in self.stressmodels.values():
-                if stressmodel.tmin < ts_tmin:
-                    ts_tmin = stressmodel.tmin
-                if stressmodel.tmax > ts_tmax:
-                    ts_tmax = stressmodel.tmax
-        # Get tmin and tmax from user provided values
-        else:
-            ts_tmin = pd.Timestamp(tmin)
-            ts_tmax = pd.Timestamp(tmax)
-
-        # Set tmin properly
-        if tmin is not None and use_oseries:
-            tmin = max(pd.Timestamp(tmin), ts_tmin)
-        elif tmin is not None:
-            tmin = pd.Timestamp(tmin)
-        else:
-            tmin = ts_tmin
-
-        # Set tmax properly
-        if tmax is not None and use_oseries:
-            tmax = min(pd.Timestamp(tmax), ts_tmax)
-        elif tmax is not None:
-            tmax = pd.Timestamp(tmax)
-        else:
-            tmax = ts_tmax
-
-        # adjust tmin and tmax so that the time-offset is equal to the stressmodels.
-        if freq is None:
-            freq = self.settings["freq"]
-        tmin = tmin.ceil(freq) + self.settings["time_offset"]
-        tmax = tmax.floor(freq) + self.settings["time_offset"]
-
-        assert tmax > tmin, \
-            self.logger.error('Error: Specified tmax not larger than '
-                              'specified tmin')
-        if use_oseries:
-            assert self.oseries.series.loc[tmin: tmax].size > 0, \
-                self.logger.error(
-                    'Error: no observations between tmin and tmax')
-
-        return tmin, tmax
-
     def get_init_parameters(self, noise=None, initial=True):
         """Method to get all initial parameters from the individual objects.
 
@@ -1164,13 +1052,16 @@ class Model:
         parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary',
                                            'optimal', 'name', 'stderr'])
         for sm in self.stressmodels.values():
-            parameters = parameters.append(sm.parameters)
+            parameters = parameters.append(sm.parameters, sort=False)
         if self.constant:
-            parameters = parameters.append(self.constant.parameters)
+            parameters = parameters.append(self.constant.parameters,
+                                           sort=False)
         if self.transform:
-            parameters = parameters.append(self.transform.parameters)
+            parameters = parameters.append(self.transform.parameters,
+                                           sort=False)
         if self.noisemodel and noise:
-            parameters = parameters.append(self.noisemodel.parameters)
+            parameters = parameters.append(self.noisemodel.parameters,
+                                           sort=False)
 
         # Set initial parameters to optimal parameters from model
         if not initial:
@@ -1385,10 +1276,16 @@ class Model:
             dictionary with file information.
 
         """
-        file_info = dict()
-        file_info["date_created"] = pd.Timestamp.now()
+        # Check if file_info already exists
+        if hasattr(self, "file_info"):
+            file_info = self.file_info
+        else:
+            file_info = dict()
+            file_info["date_created"] = pd.Timestamp.now()
+
         file_info["date_modified"] = pd.Timestamp.now()
         file_info["pastas_version"] = __version__
+
         try:
             file_info["owner"] = getlogin()
         except:
@@ -1419,7 +1316,7 @@ class Model:
                 config_dict = json.load(f)
             config.dictConfig(config_dict)
         else:
-            basicConfig(level=INFO)
+            basicConfig(level="INFO")
 
         logger = getLogger(__name__)
         # Set log_level for console to user-defined value
@@ -1597,8 +1494,7 @@ Parameters ({n_param} were optimized)
 
         # Update and save file information
         if file_info:
-            self.file_info["date_modified"] = pd.Timestamp.now()
-            data["file_info"] = self.file_info
+            data["file_info"] = self.get_file_info()
 
         # Export simulated series if necessary
         if sim_series:
@@ -1629,10 +1525,6 @@ Parameters ({n_param} were optimized)
 
         # Write the dicts to a file
         return dump(fname, data, **kwargs)
-
-    @PastasDeprecationWarning
-    def dump(self, *args, **kwargs):
-        self.to_file(*args, **kwargs)
 
     def copy(self):
         """Method to copy a model

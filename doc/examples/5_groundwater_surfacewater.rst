@@ -44,14 +44,14 @@ levels. The following data is used:
     rain.plot(ax=axes[1], x_compat=True, legend=True)
     evap.plot(ax=axes[2], x_compat=True, legend=True)
     waterlevel.plot(ax=axes[3], x_compat=True, legend=True)
-    
+
 
 
 
 
 .. parsed-literal::
 
-    <matplotlib.axes._subplots.AxesSubplot at 0x1d09dc666d8>
+    <matplotlib.axes._subplots.AxesSubplot at 0x1c1b975c18>
 
 
 
@@ -77,13 +77,13 @@ levels. The following data is used:
 .. parsed-literal::
 
     INFO: Cannot determine frequency of series  Groundwater
-    INFO: 5 nan-value(s) was/were found and filled with: drop
+    INFO: Time Series  Groundwater: 5 nan-value(s) was/were found and filled with: drop
     INFO: Inferred frequency from time series  Precipitation: freq=D 
     INFO: Inferred frequency from time series  Evaporation: freq=D 
     
     Model Results  Groundwater                Fit Statistics
     ============================    ============================
-    nfev     29                     EVP                    54.70
+    nfev     33                     EVP                    54.70
     nobs     2412                   NSE                     0.55
     noise    1                      Pearson R2              0.55
     tmin     2000-01-01 00:00:00    RMSE                    0.15
@@ -95,19 +95,19 @@ levels. The following data is used:
     Parameters (6 were optimized)
     ============================================================
                     optimal   stderr     initial vary
-    recharge_A   221.973591   ±9.86%  203.104730    1
-    recharge_n     1.058145   ±1.26%    1.000000    1
-    recharge_a    37.155125  ±10.83%   10.000000    1
-    recharge_f    -0.587585  ±13.88%   -1.000000    1
+    recharge_A   221.973129   ±9.86%  203.104730    1
+    recharge_n     1.058144   ±1.26%    1.000000    1
+    recharge_a    37.155199  ±10.83%   10.000000    1
+    recharge_f    -0.587584  ±13.88%   -1.000000    1
     constant_d    11.760792   ±0.47%   12.026835    1
-    noise_alpha   69.687067  ±16.17%   14.000000    1
+    noise_alpha   69.686534  ±16.17%   14.000000    1
     
     Warnings
     ============================================================
     
             
-    The explained variance percentage over the period 2012-2017 is: 59.72525274482046
-    
+    The explained variance percentage over the period 2012-2017 is: 59.72536176112258
+
 
 
 .. image:: output_6_1.png
@@ -130,12 +130,12 @@ levels. The following data is used:
 .. parsed-literal::
 
     INFO: Cannot determine frequency of series  Waterlevel
-    INFO: Time Series  Waterlevel were sampled down to freq D with method timestep_weighted_resample
-    INFO: Time Series  Waterlevel were sampled down to freq D with method timestep_weighted_resample
+    INFO: Time Series  Waterlevel was sampled down to freq D with method timestep_weighted_resample
+    INFO: Time Series  Waterlevel was sampled down to freq D with method timestep_weighted_resample
     
     Model Results  Groundwater                Fit Statistics
     ============================    ============================
-    nfev     30                     EVP                    52.88
+    nfev     29                     EVP                    52.91
     nobs     1843                   NSE                     0.53
     noise    1                      Pearson R2              0.53
     tmin     2012-01-01 00:00:00    RMSE                    0.15
@@ -147,20 +147,20 @@ levels. The following data is used:
     Parameters (8 were optimized)
     ============================================================
                     optimal   stderr     initial vary
-    recharge_A    84.658784  ±10.92%  203.104730    1
-    recharge_n     1.333607   ±2.60%    1.000000    1
-    recharge_a    14.066842  ±11.77%   10.000000    1
-    recharge_f    -0.199337  ±84.40%   -1.000000    1
-    waterlevel_A   0.482584   ±4.59%    0.084191    1
-    waterlevel_a   0.547852   ±9.81%   10.000000    1
-    constant_d    11.883954   ±0.39%   12.026835    1
-    noise_alpha   75.436413  ±24.47%   14.000000    1
+    recharge_A    83.419870  ±10.86%  203.104730    1
+    recharge_n     1.337387   ±2.61%    1.000000    1
+    recharge_a    13.796457  ±11.73%   10.000000    1
+    recharge_f    -0.203675  ±83.13%   -1.000000    1
+    waterlevel_A   0.481944   ±4.60%    6.401099    1
+    waterlevel_a   0.544313   ±9.87%   10.000000    1
+    constant_d    11.886970   ±0.39%   12.026835    1
+    noise_alpha   75.473467  ±24.50%   14.000000    1
     
     Warnings
     ============================================================
     
             
-    
+
 
 .. code:: ipython3
 
@@ -171,13 +171,13 @@ levels. The following data is used:
 
 .. parsed-literal::
 
-    [<matplotlib.axes._subplots.AxesSubplot at 0x1d09f958198>,
-     <matplotlib.axes._subplots.AxesSubplot at 0x1d09e15e198>,
-     <matplotlib.axes._subplots.AxesSubplot at 0x1d09f2c0128>,
-     <matplotlib.axes._subplots.AxesSubplot at 0x1d09e10c8d0>,
-     <matplotlib.axes._subplots.AxesSubplot at 0x1d09e14ae48>,
-     <matplotlib.axes._subplots.AxesSubplot at 0x1d09f2b0fd0>,
-     <matplotlib.axes._subplots.AxesSubplot at 0x1d09e1acb00>]
+    [<matplotlib.axes._subplots.AxesSubplot at 0x1c1c135da0>,
+     <matplotlib.axes._subplots.AxesSubplot at 0x1c1bd1f1d0>,
+     <matplotlib.axes._subplots.AxesSubplot at 0x1c1c85e8d0>,
+     <matplotlib.axes._subplots.AxesSubplot at 0x1c1c87de48>,
+     <matplotlib.axes._subplots.AxesSubplot at 0x1c1c9022e8>,
+     <matplotlib.axes._subplots.AxesSubplot at 0x1c1c924f98>,
+     <matplotlib.axes._subplots.AxesSubplot at 0x1c1c9ba908>]
 
 
 

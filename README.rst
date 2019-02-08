@@ -5,21 +5,18 @@ PASTAS: HYDROLOGICAL TIME SERIES ANALYSIS
    :width: 200px
    :align: left
 
-==============  ==================================================================
-Build Status    .. image:: https://travis-ci.org/pastas/pastas.svg?branch=master
+.. image:: https://travis-ci.org/pastas/pastas.svg?branch=master
                     :target: https://travis-ci.org/pastas/pastas
-Pypi            .. image:: https://img.shields.io/pypi/v/pastas.svg
+.. image:: https://img.shields.io/pypi/v/pastas.svg
                     :target: https://pypi.python.org/pypi/pastas
-License         .. image:: https://img.shields.io/pypi/l/pastas.svg
+.. image:: https://img.shields.io/pypi/l/pastas.svg
                     :target: https://mit-license.org/
-Latest Release  .. image:: https://img.shields.io/github/release/pastas/pastas.svg
+.. image:: https://img.shields.io/github/release/pastas/pastas.svg
                     :target: https://github.com/pastas/pastas/releases
-Code quality    .. image:: https://api.codacy.com/project/badge/Grade/0e0fad469a3c42a4a5c5d1c5fddd6bee
-                    :target: https://app.codacy.com/app/raoulcollenteur/pastas?utm_source=github.com&utm_medium=referral&utm_content=pastas/pastas&utm_campaign=Badge_Grade_Dashboard    
-Citation DOI    .. image:: https://zenodo.org/badge/56300322.svg
-                    :target: https://zenodo.org/badge/latestdoi/56300322
-==============  ==================================================================
-
+.. image:: https://api.codacy.com/project/badge/Grade/0e0fad469a3c42a4a5c5d1c5fddd6bee
+                    :target: https://app.codacy.com/app/raoulcollenteur/pastas?utm_source=github.com&utm_medium=referral&utm_content=pastas/pastas&utm_campaign=Badge_Grade_Dashboard
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1465866.svg
+                    :target: https://doi.org/10.5281/zenodo.1465866
 
 Pastas: what is it?
 ~~~~~~~~~~~~~~~~~~~
@@ -74,13 +71,12 @@ Dependencies
 ~~~~~~~~~~~~
 Pastas depends on a number of Python packages, of which all of the necessary are 
 automatically installed when using the pip install manager. To summarize, the 
-following pacakges are necessary for a minimal function installation of Pasta:
+following pacakges are necessary for a minimal function installation of Pastas:
 
-- numpy>=1.9
-- matplotlib>=1.5
-- pandas>=0.20,
-- scipy>=0.15,
-- statsmodels>=0.8.
+- numpy>=1.10
+- matplotlib>=2.0
+- pandas>=0.23
+- scipy>=1.0
 
 Background
 ~~~~~~~~~~
@@ -88,7 +84,9 @@ Work on Pastas started in the spring of 2016 at the Delft University of Technolo
 
 How to Cite Pastas?
 ~~~~~~~~~~~~~~~~~~~
-`Bakker, M., Collenteur, R., Calje, F. Schaars (2018, April) Untangling groundwater head series using time series analysis and Pastas. In EGU General Assembly 2018. <https://meetingorganizer.copernicus.org/EGU2018/EGU2018-7194.pdf>`_
+To cite a specific version of Python, you can use the DOI provided for each official release (>0.9.7) through Zenodo. Click on the link to get a specific version and DOI, depending on the Pastas version.
+
+Collenteur, R., Bakker, M., Caljé, R. & Schaars, F. (XXXX). Pastas: open-source software for time series analysis in hydrology (Version X.X.X). Zenodo. http://doi.org/10.5281/zenodo.1465866
 
 License (MIT License)
 ~~~~~~~

@@ -23,7 +23,7 @@ stresses = [meny.IN['Extraction 1']["values"],
             meny.IN['Extraction 2']["values"],
             meny.IN['Extraction 3']["values"]]
 
-w = WellModel(stresses, ps.Theis, radius=[1, 1, 1], name="Wells")
+w = WellModel(stresses, ps.Hantush, radius=[1, 1, 1], name="Wells")
 
 ml.add_stressmodel(w)
 ml.solve()

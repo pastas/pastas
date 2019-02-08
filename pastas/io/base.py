@@ -69,11 +69,11 @@ def load_project(data):
     mls.file_info = data["file_info"]
 
     oseries = DataFrame(data["oseries"], columns=data["oseries"].keys()).T
-    mls.oseries = mls.oseries.append(oseries)
+    mls.oseries = mls.oseries.append(oseries, sort=False)
 
     stresses = DataFrame(data=data["stresses"],
                          columns=data["stresses"].keys()).T
-    mls.stresses = mls.stresses.append(stresses)
+    mls.stresses = mls.stresses.append(stresses, sort=False)
 
     for ml_name, ml in data["models"].items():
         name = str(ml["oseries"]["name"])
@@ -81,10 +81,16 @@ def load_project(data):
         ml["oseries"]["series"] = mls.oseries.loc[name, "series"]
         if ml["stressmodels"]:
             for ts in ml["stressmodels"].values():
-                for i, stress in enumerate(ts["stress"]):
-                    stress_name = stress["name"]
-                    ts["stress"][i]["series"] = mls.stresses.loc[
-                        stress_name, "series"]
+                for stress in ts["stress"]:
+                    if 'series' not in stress:
+                        # look up the stress-series in mls.stresses
+                        stress_name = stress["name"]
+                        if stress_name not in mls.stresses.index:
+                            raise (ValueError(
+                                '{} not found in stresses'.format(
+                                    stress_name)))
+                        stress["series"] = mls.stresses.loc[
+                            stress_name, "series"]
         try:
             ml = load_model(ml)
             mls.models[ml_name] = ml
@@ -128,7 +134,6 @@ def load_model(data):
         ml.settings.update(data["settings"])
     if "file_info" in data.keys():
         ml.file_info.update(data["file_info"])
-        ml.file_info["version"] = ps.__version__
 
     # Add stressmodels
     for name, ts in data["stressmodels"].items():

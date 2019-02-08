@@ -165,10 +165,6 @@ class KnmiStation:
             end = pd.Timestamp.today()
         else:
             end = pd.to_datetime(end)
-        inseason = inseason
-        vars = vars
-        stns = stns  # de Bilt (zou ook 'ALL' kunnen zijn)
-        interval = interval
 
         if interval.startswith('hour') and vars == 'RD':
             raise (

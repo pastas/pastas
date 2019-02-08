@@ -108,6 +108,7 @@ class Plotting:
 
         # Residuals and noise
         ax2 = plt.subplot2grid((rows, 3), (2, 0), colspan=2, sharex=ax1)
+        ax2.axhline(0.0, color='k', linestyle='--')
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         res.plot(ax=ax2, sharex=ax1, color='k', x_compat=True)
         if self.ml.settings["noise"] and self.ml.noisemodel:

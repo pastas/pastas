@@ -21,8 +21,8 @@ explained in full detail.
 Objective of the Pastas TimeSeries class:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-"*To create one class that deals with all user-provided time series and
-the manipulations of the series while maintaining the original series.*"
+“*To create one class that deals with all user-provided time series and
+the manipulations of the series while maintaining the original series.*”
 
 Desired Capabilities:
 ~~~~~~~~~~~~~~~~~~~~~
@@ -60,13 +60,14 @@ settings and the original series can be stored.
     import pastas as ps
     import pandas as pd
     import matplotlib.pyplot as plt
-    % matplotlib notebook
+    %matplotlib inline
+
 
 1. Importing groundwater time series
 ------------------------------------
 
-Let's first import some time series so we have some data to play around
-with. We use Pandas read\_csv method and obtain a Pandas Series object,
+Let’s first import some time series so we have some data to play around
+with. We use Pandas read_csv method and obtain a Pandas Series object,
 pandas data structure to efficiently deal with 1D Time Series data. By
 default, Pandas adds a wealth of functionalities to a Series object,
 such as descriptive statistics (e.g. ``series.describe()``) and plotting
@@ -88,7 +89,7 @@ funtionality.
 
 .. parsed-literal::
 
-    <matplotlib.axes._subplots.AxesSubplot at 0x1e9a9b77278>
+    <matplotlib.axes._subplots.AxesSubplot at 0x1c171adcf8>
 
 
 
@@ -117,18 +118,18 @@ series for simulation without errors. The time series are checked for:
 4. Dropping any nan-values before and after the first and final valid
    value;
 5. Frequency of the Series is inferred, or otherwise the user-provided
-   value for "freq" is applied;
+   value for “freq” is applied;
 6. Nan-values within the series are handled, depending on the value for
-   the "fill\_nan" argument;
+   the “fill_nan” argument;
 7. Duplicate indices are dropped from the series.
 
 If all of the above is OK, a TimeSeries object is returned. When valid
 time series are provided all of the above checks are no problem and no
 settings are required. However, all too often this is not the case and
-at least "fill\_nan" and "freq" are required. The first argument tells
+at least “fill_nan” and “freq” are required. The first argument tells
 the TimeSeries object how to handle nan-values, and the freq argument
 provides the frequency of the original time series (by default, freq=D,
-fill\_nan="interpolate").
+fill_nan=“interpolate”).
 
 .. code:: ipython3
 
@@ -145,7 +146,7 @@ fill\_nan="interpolate").
 
 .. parsed-literal::
 
-    <matplotlib.legend.Legend at 0x1e9a9b8e6a0>
+    <matplotlib.legend.Legend at 0x1041f6e80>
 
 
 
@@ -156,7 +157,7 @@ fill\_nan="interpolate").
 3. Configuring a TimeSeries object
 ----------------------------------
 
-So let's see how we can configure a TimeSeries object. In the case of
+So let’s see how we can configure a TimeSeries object. In the case of
 the observed groundwater levels (oseries) as in the example above,
 interpolating between observations might not be the preffered method to
 deal with gaps in your data. In fact, the do not have to be constant for
@@ -172,7 +173,7 @@ TimeSeries object the user has three options:
    (not recommended)
 
 For example, when creating a TimeSeries object for the groundwater
-levels consider the three following examples for setting the fill\_nan
+levels consider the three following examples for setting the fill_nan
 option:
 
 .. code:: ipython3
@@ -185,7 +186,7 @@ option:
 .. parsed-literal::
 
     {'freq': None, 'sample_up': None, 'sample_down': 'drop', 'fill_nan': 'drop', 'fill_before': None, 'fill_after': None, 'tmin': Timestamp('1985-11-14 00:00:00'), 'tmax': Timestamp('2015-06-28 00:00:00'), 'norm': None, 'time_offset': Timedelta('0 days 00:00:00')}
-    
+
 
 .. code:: ipython3
 
@@ -197,7 +198,7 @@ option:
 .. parsed-literal::
 
     {'freq': None, 'sample_up': None, 'sample_down': None, 'fill_nan': 'drop', 'fill_before': None, 'fill_after': None, 'tmin': Timestamp('1985-11-14 00:00:00'), 'tmax': Timestamp('2015-06-28 00:00:00'), 'norm': None, 'time_offset': Timedelta('0 days 00:00:00')}
-    
+
 
 .. code:: ipython3
 
@@ -209,7 +210,7 @@ option:
 .. parsed-literal::
 
     {'freq': None, 'sample_up': None, 'sample_down': None, 'fill_nan': 'drop', 'fill_before': None, 'fill_after': None, 'tmin': Timestamp('1985-11-14 00:00:00'), 'tmax': Timestamp('2015-06-28 00:00:00'), 'norm': None, 'time_offset': Timedelta('0 days 00:00:00')}
-    
+
 
 Predefined settings
 ~~~~~~~~~~~~~~~~~~~
@@ -258,30 +259,6 @@ often. You can ask the TimeSeries class this question:
       </thead>
       <tbody>
         <tr>
-          <th>evap</th>
-          <td>mean</td>
-          <td>mean</td>
-          <td>interpolate</td>
-          <td>sum</td>
-          <td>divide</td>
-        </tr>
-        <tr>
-          <th>flux</th>
-          <td>mean</td>
-          <td>mean</td>
-          <td>0</td>
-          <td>mean</td>
-          <td>bfill</td>
-        </tr>
-        <tr>
-          <th>level</th>
-          <td>mean</td>
-          <td>mean</td>
-          <td>interpolate</td>
-          <td>mean</td>
-          <td>interpolate</td>
-        </tr>
-        <tr>
           <th>oseries</th>
           <td>NaN</td>
           <td>NaN</td>
@@ -298,9 +275,17 @@ often. You can ask the TimeSeries class this question:
           <td>divide</td>
         </tr>
         <tr>
-          <th>quantity</th>
+          <th>evap</th>
           <td>mean</td>
           <td>mean</td>
+          <td>interpolate</td>
+          <td>sum</td>
+          <td>divide</td>
+        </tr>
+        <tr>
+          <th>well</th>
+          <td>0</td>
+          <td>0</td>
           <td>0</td>
           <td>sum</td>
           <td>divide</td>
@@ -314,9 +299,25 @@ often. You can ask the TimeSeries class this question:
           <td>interpolate</td>
         </tr>
         <tr>
-          <th>well</th>
+          <th>level</th>
+          <td>mean</td>
+          <td>mean</td>
+          <td>interpolate</td>
+          <td>mean</td>
+          <td>interpolate</td>
+        </tr>
+        <tr>
+          <th>flux</th>
+          <td>mean</td>
+          <td>mean</td>
           <td>0</td>
-          <td>0</td>
+          <td>mean</td>
+          <td>bfill</td>
+        </tr>
+        <tr>
+          <th>quantity</th>
+          <td>mean</td>
+          <td>mean</td>
           <td>0</td>
           <td>sum</td>
           <td>divide</td>
@@ -327,14 +328,14 @@ often. You can ask the TimeSeries class this question:
 
 
 
-4. Let's explore the possibilities
+4. Let’s explore the possibilities
 ----------------------------------
 
 As said, Pastas TimeSeries are capable of handling time series in a way
 that is convenient for Pastas.
 
--  Changing the frequency of the time series (sample\_up, sameple\_down)
--  Extending the time series (fill\_before and fill\_after)
+-  Changing the frequency of the time series (sample_up, sameple_down)
+-  Extending the time series (fill_before and fill_after)
 -  Normalizing the time series (norm \*not fully supported yet)
 
 We will now import some precipitation series measured at a daily
@@ -370,10 +371,9 @@ frequency and show how the above methods work
 Wait, what?
 ~~~~~~~~~~~
 
-For those of you wondering what just happened, some more words. We just
-changed the frequency of the TimeSeries without a problem. When reducing
-the frequency, the values were summed into the new bins. Conveniently,
-ALL pandas methods are still available and functional, such as the great
+We just changed the frequency of the TimeSeries. When reducing the
+frequency, the values were summed into the new bins. Conveniently, all
+pandas methods are still available and functional, such as the great
 plotting functionalities of Pandas.
 
 All this happened ``inplace``, meaning the same object just took another
@@ -384,14 +384,14 @@ information loss.
 
 Why is this so important? Because when solving or simulating a model,
 the Model will ask every member of the TimeSeries family to prepare
-itself with the necessary settings (e.g. new freq) and perform that
+itself with the necessary settings (e.g. new freq) and perform that
 operation only once. When asked for a time series, the TimeSeries object
-will "be" in that new shape.
+will “be” in that new shape.
 
 Some more action
 ~~~~~~~~~~~~~~~~
 
-Let's say, we want to simulate the groundwater series for a period where
+Let’s say, we want to simulate the groundwater series for a period where
 no data is available for the time series, but we need some kind of value
 for the warmup period to prevent things from getting messy. The
 TimeSeries object can easily extend itself, as the following example
@@ -408,16 +408,16 @@ shows.
 
 .. parsed-literal::
 
-    {'fill_after': 'mean',
-     'fill_before': 'mean',
-     'fill_nan': 0.0,
-     'freq': '7D',
-     'norm': None,
-     'sample_down': 'sum',
+    {'freq': '7D',
      'sample_up': 'divide',
-     'time_offset': Timedelta('0 days 00:00:00'),
+     'sample_down': 'sum',
+     'fill_nan': 0.0,
+     'fill_before': 'mean',
+     'fill_after': 'mean',
+     'tmin': Timestamp('2011-01-01 00:00:00'),
      'tmax': Timestamp('2012-12-31 00:00:00'),
-     'tmin': Timestamp('2011-01-01 00:00:00')}
+     'norm': None,
+     'time_offset': Timedelta('0 days 00:00:00')}
 
 
 
@@ -442,7 +442,7 @@ data is maintained and can easily be recreated from a json file.
 .. parsed-literal::
 
     dict_keys(['series', 'name', 'settings', 'metadata', 'freq_original'])
-    
+
 
 .. code:: ipython3
 

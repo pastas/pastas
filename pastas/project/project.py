@@ -98,29 +98,32 @@ class Project:
         if not isinstance(name, str):
             name = str(name)
 
+        series.name = name
+
         if kind == "oseries":
             data = self.oseries
+            if settings is None:
+                settings = 'oseries'
         else:
             data = self.stresses
 
         if name in data.index:
-            logger.error("Time series with name %s is already present in the \
-                         database. Please provide a different name." % name)
-            return
-
+            warning = ("Time series with name {} is already present in the "
+                       "database. Existing series is overwitten.").format(name)
+            logger.warning(warning)
         try:
             ts = TimeSeries(series=series, name=name, settings=settings,
                             metadata=metadata, **kwargs)
         except:
-            logger.warning("An error occurred. Time series %s is omitted "
-                           "from the database." % name)
+            logger.error("An error occurred. Time series {} is omitted "
+                         "from the database.".format(name))
             return
 
         data.at[name, "name"] = name
         data.at[name, "series"] = ts  # Do not add as first!
         data.at[name, "kind"] = kind
 
-        # Transfer x, y and z to dataframe as well to increase speed.
+        # Transfer the metadata (x, y and z) to dataframe as well to increase speed.
         for i in ts.metadata.keys():
             value = ts.metadata[i]
             data.at[name, i] = value
@@ -135,11 +138,14 @@ class Project:
             string with a single oseries name.
 
         """
-        if name in self.oseries.index:
-            logger.error("Time series with name %s is not present in the \
-                         database. Please provide a different name." % name)
+        if name not in self.oseries.index:
+            error = ("Time series with name {} is not present in the database."
+                     " Please provide a different name.").format(name)
+            logger.error(error)
         else:
             self.oseries.drop(name, inplace=True)
+            logger.info(
+                "Oseries with name {} deleted from the database.".format(name))
 
     def del_stress(self, name):
         """Method that removes oseries from the project.
@@ -153,7 +159,14 @@ class Project:
         -------
 
         """
-        self.stresses.drop(name, inplace=True)
+        if name not in self.stresses.index:
+            error = ("Stress with name {} is not present in the database."
+                     " Please provide a different name.").format(name)
+            logger.error(error)
+        else:
+            self.stresses.drop(name, inplace=True)
+            logger.info(
+                "Stress with name {} deleted from the database.".format(name))
 
     def add_model(self, oseries, model_name=None, **kwargs):
         """Method to add a Pastas Model instance based on one of the oseries.
@@ -179,10 +192,14 @@ class Project:
 
         # Validate name and ml_name before continuing
         if model_name in self.models.keys():
-            logger.error("Model name is not unique, provide a new model_name.")
+            warning = ("Model name {} is not unique, existing model is "
+                       "overwritten.").format(model_name)
+            logger.warning(warning)
         if oseries not in self.oseries.index:
-            logger.error("Oseries name is not present in the database. "
-                         "Make sure to provide a valid oseries name.")
+            error = ("Oseries name {} is not present in the database. Make "
+                     "sure to provide a valid name.").format(model_name)
+            logger.error(error)
+            return
 
         oseries = self.oseries.loc[oseries, "series"]
         ml = Model(oseries, name=model_name, **kwargs)
@@ -202,7 +219,25 @@ class Project:
 
         """
         name = self.models.pop(ml_name, None)
-        logger.info("Model with name %s deleted from the database." % name)
+        info = "Model with name {} deleted from the database.".format(name)
+        logger.info(info)
+
+    def update_model_series(self):
+        """Update all the Model series by their originals in self.oseries and self.stresses.
+        This can for example be usefull when new data is added to any of the series in pr.oseries and pr.stresses
+
+        """
+        for name in self.models:
+            ml = self.models[name]
+            ml.oseries.series_original = self.oseries.loc[
+                name, 'series'].series_original
+            for sm in ml.stressmodels:
+                for sm in ml.stressmodels:
+                    for st in ml.stressmodels[sm].stress:
+                        st.series_original = self.stresses.loc[
+                            st.name, 'series'].series_original
+            # set oseries_calib empty, so it is determined again the next time
+            ml.oseries_calib = None
 
     def add_recharge(self, ml, rfunc=Gamma, name="recharge", **kwargs):
         """Adds a recharge element to the time series model. The
@@ -280,6 +315,9 @@ class Project:
             stresses = self.stresses.index
         elif stresses is None:
             stresses = self.stresses[self.stresses.kind == kind].index
+        elif stresses is not None and kind is not None:
+            mask = self.stresses.kind == kind
+            stresses = self.stresses.loc[stresses].loc[mask].index
 
         xo = pd.to_numeric(self.oseries.loc[oseries, "x"])
         xt = pd.to_numeric(self.stresses.loc[stresses, "x"])
@@ -464,13 +502,17 @@ class Project:
 
         Parameters
         ----------
-        fname: string
-            string with the name and optionally the file-extension.
+        series: bool
+            export model input-series when True. Only export the name of
+            the model input_series when False
+            
+        sim_series: bool
+            export model output-series when True
 
         Returns
         -------
-        message: str
-            Returns a message if export was successful or not.
+        data: dict
+            A dictionary with all the project data
 
         """
         data = dict(

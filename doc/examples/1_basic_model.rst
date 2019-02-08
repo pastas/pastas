@@ -44,7 +44,7 @@ the observed time series: - The observed time series are stored as a
 .. parsed-literal::
 
     The data type of the oseries is: <class 'pandas.core.series.Series'>
-    
+
 
 
 .. image:: output_3_1.png
@@ -84,7 +84,7 @@ the same length units as for the observed heads.
     recharge.plot(label='Recharge', figsize=(10, 4))
     plt.xlabel('Time [years]')
     plt.ylabel('Recharge (m/year)');
-    
+
 
 
 .. parsed-literal::
@@ -92,7 +92,7 @@ the same length units as for the observed heads.
     The data type of the precip series is: <class 'pandas.core.series.Series'>
     The data type of the evap series is: <class 'pandas.core.series.Series'>
     The data type of the recharge series is: <class 'pandas.core.series.Series'>
-    
+
 
 
 .. image:: output_5_1.png
@@ -116,21 +116,21 @@ nan-values are found this will be reported by ``pastas``.
     # Add the recharge data as explanatory variable
     ts1 = ps.StressModel(recharge, ps.Gamma, name='recharge', settings="evap")
     ml.add_stressmodel(ts1)
-    
+
 
 
 .. parsed-literal::
 
     INFO: Cannot determine frequency of series head
     INFO: Inferred frequency from time series None: freq=D 
-    
+
 
 4. Solve the model
 ~~~~~~~~~~~~~~~~~~
 
 The next step is to compute the optimal model parameters. The default
 solver uses a non-linear least squares method for the optimization. The
-python package ``scipy`` is used (info on ``scipy's`` least\_squares
+python package ``scipy`` is used (info on ``scipy's`` least_squares
 solver can be found
 `here <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html>`__).
 Some standard optimization statistics are reported along with the
@@ -146,7 +146,7 @@ optimized parameter values and correlations.
     
     Model Results GWL                Fit Statistics
     ============================    ============================
-    nfev     30                     EVP                    91.45
+    nfev     28                     EVP                    91.35
     nobs     644                    NSE                     0.91
     noise    1                      Pearson R2              0.91
     tmin     1985-11-14 00:00:00    RMSE                    0.13
@@ -157,18 +157,18 @@ optimized parameter values and correlations.
     
     Parameters (5 were optimized)
     ============================================================
-                    optimal   stderr      initial vary
-    recharge_A   738.477722   ±4.96%  2081.856867    1
-    recharge_n     1.056991   ±1.50%     1.000000    1
-    recharge_a   131.804022   ±6.79%    10.000000    1
-    constant_d    27.560621   ±0.08%    27.900078    1
-    noise_alpha   64.604495  ±13.20%    14.000000    1
+                    optimal   stderr     initial vary
+    recharge_A   758.688413   ±5.02%  215.674528    1
+    recharge_n     1.053159   ±1.48%    1.000000    1
+    recharge_a   136.699494   ±6.78%   10.000000    1
+    constant_d    27.554115   ±0.08%   27.900078    1
+    noise_alpha   63.976525  ±13.01%   14.000000    1
     
     Warnings
     ============================================================
     
             
-    
+
 
 5. Plot the results
 ~~~~~~~~~~~~~~~~~~~
@@ -184,7 +184,7 @@ The solution can be plotted after a solution has been obtained.
 
 .. parsed-literal::
 
-    <matplotlib.axes._subplots.AxesSubplot at 0x1db303bb4a8>
+    <matplotlib.axes._subplots.AxesSubplot at 0x1c23b9eda0>
 
 
 
@@ -210,11 +210,11 @@ plot with more information.
 
 .. parsed-literal::
 
-    [<matplotlib.axes._subplots.AxesSubplot at 0x1db3041c978>,
-     <matplotlib.axes._subplots.AxesSubplot at 0x1db30504ef0>,
-     <matplotlib.axes._subplots.AxesSubplot at 0x1db305f12b0>,
-     <matplotlib.axes._subplots.AxesSubplot at 0x1db2ea0d208>,
-     <matplotlib.axes._subplots.AxesSubplot at 0x1db2e9d7f98>]
+    [<matplotlib.axes._subplots.AxesSubplot at 0x1c23cf1b00>,
+     <matplotlib.axes._subplots.AxesSubplot at 0x1c23d381d0>,
+     <matplotlib.axes._subplots.AxesSubplot at 0x1c2420d908>,
+     <matplotlib.axes._subplots.AxesSubplot at 0x1c2423e5c0>,
+     <matplotlib.axes._subplots.AxesSubplot at 0x1c24a47358>]
 
 
 
@@ -266,27 +266,27 @@ gives a summary of the main statistics of the model.
       <tbody>
         <tr>
           <th>Akaike Information Criterion</th>
-          <td>7.151997</td>
+          <td>7.150262</td>
         </tr>
         <tr>
           <th>Average Deviation</th>
-          <td>0.001649</td>
+          <td>-0.000661</td>
         </tr>
         <tr>
           <th>Bayesian Information Criterion</th>
-          <td>29.490491</td>
+          <td>29.488755</td>
         </tr>
         <tr>
           <th>Explained variance percentage</th>
-          <td>91.445066</td>
+          <td>91.351929</td>
         </tr>
         <tr>
           <th>Pearson R^2</th>
-          <td>0.914436</td>
+          <td>0.913517</td>
         </tr>
         <tr>
           <th>Root mean squared error</th>
-          <td>0.125728</td>
+          <td>0.126401</td>
         </tr>
       </tbody>
     </table>
@@ -339,7 +339,7 @@ than for model ``ml``).
     
     Model Results head                Fit Statistics
     ============================    ============================
-    nfev     35                     EVP                    92.86
+    nfev     32                     EVP                    92.86
     nobs     644                    NSE                     0.93
     noise    1                      Pearson R2              0.93
     tmin     1985-11-14 00:00:00    RMSE                    0.11
@@ -351,18 +351,18 @@ than for model ``ml``).
     Parameters (6 were optimized)
     ============================================================
                     optimal   stderr     initial vary
-    rainevap_A   695.094344   ±5.21%  215.674528    1
-    rainevap_n     1.019111   ±1.76%    1.000000    1
-    rainevap_a   150.793449   ±7.34%   10.000000    1
-    rainevap_f    -1.253082   ±4.86%   -1.000000    1
-    constant_d    27.863242   ±0.25%   27.900078    1
-    noise_alpha   52.470936  ±12.20%   14.000000    1
+    rainevap_A   695.097044   ±4.15%  215.674528    1
+    rainevap_n     1.019110   ±1.13%    1.000000    1
+    rainevap_a   150.793525   ±0.00%   10.000000    1
+    rainevap_f    -1.253062   ±4.42%   -1.000000    1
+    constant_d    27.863219   ±0.23%   27.900078    1
+    noise_alpha   52.470925  ±12.20%   14.000000    1
     
     Warnings
     ============================================================
     
             
-    
+
 
 
 
@@ -396,27 +396,27 @@ than for model ``ml``).
       <tbody>
         <tr>
           <th>Akaike Information Criterion</th>
-          <td>9.227842</td>
+          <td>9.227841</td>
         </tr>
         <tr>
           <th>Average Deviation</th>
-          <td>-0.001253</td>
+          <td>-0.001252</td>
         </tr>
         <tr>
           <th>Bayesian Information Criterion</th>
-          <td>36.034034</td>
+          <td>36.034033</td>
         </tr>
         <tr>
           <th>Explained variance percentage</th>
-          <td>92.864826</td>
+          <td>92.864784</td>
         </tr>
         <tr>
           <th>Pearson R^2</th>
-          <td>0.928640</td>
+          <td>0.928639</td>
         </tr>
         <tr>
           <th>Root mean squared error</th>
-          <td>0.114819</td>
+          <td>0.114820</td>
         </tr>
       </tbody>
     </table>
