@@ -21,11 +21,11 @@ matrix:
         dist: xenial
         sudo: true
 
+services:
+  - xvfb
+
 # start Virtual X, so default matplotlib backend works
 before_script:
-    - "export DISPLAY=:99.0"
-    - "sh -e /etc/init.d/xvfb start"
-    - sleep 3 # give xvfb some time to start
     - pip install --upgrade pip
     - pip install codecov
     - pip install pytest-cov
