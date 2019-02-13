@@ -15,6 +15,8 @@ PASTAS: HYDROLOGICAL TIME SERIES ANALYSIS
                     :target: https://github.com/pastas/pastas/releases
 .. image:: https://api.codacy.com/project/badge/Grade/0e0fad469a3c42a4a5c5d1c5fddd6bee
                     :target: https://app.codacy.com/app/raoulcollenteur/pastas?utm_source=github.com&utm_medium=referral&utm_content=pastas/pastas&utm_campaign=Badge_Grade_Dashboard
+.. image:: https://codecov.io/gh/pastas/pastas/branch/master/graph/badge.svg
+                    :target: https://codecov.io/gh/pastas/pastas
 .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1465866.svg
                     :target: https://doi.org/10.5281/zenodo.1465866
 
