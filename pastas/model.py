@@ -862,7 +862,7 @@ class Model:
         if self.sim_index is None or update_sim_index:
             tmin = (tmin - pd.DateOffset(days=warmup)).floor(freq) + \
                    self.settings["time_offset"]
-            sim_index = pd.date_range(tmin, tmax, freq=freq, name="Date")
+            sim_index = pd.date_range(tmin, tmax, freq=freq)
             if not update_sim_index:
                 # tmin, tmax, freq and warmup are equal to the settings
                 # so we can set self.sim_index to improve speed of next run
