@@ -148,13 +148,13 @@ def ljung_box(series=None, acf=None, alpha=0.05, **kwargs):
         acf = get_acf(series, **kwargs)
 
     # Drop zero-lag from the acf and drop nan-values
-    acf.drop(0, inplace=True, errors="ignore")
-    acf.dropna(inplace=True)
+    acf = acf.drop(0, errors="ignore").dropna()
 
     lags = acf.index.values
     nobs = acf.index.size
-
-    Qtest = nobs * (nobs + 2) * cumsum(acf.values ** 2 / (nobs - lags))
+    df = (nobs - lags)
+    df[df==0] = 1
+    Qtest = nobs * (nobs + 2) * cumsum(acf.values ** 2 / df)
 
     # TODO decrease lags by number of parameters?
     pval = chi2.sf(Qtest, lags)
