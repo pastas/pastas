@@ -133,7 +133,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
     @model_tmin_tmax
     def nse(self, tmin=None, tmax=None):
-        """Nash-Sutcliffe coefficient for model fit.
+        """Nash-Sutcliffe coefficient for model fit (same as rsq).
 
         References
         ----------

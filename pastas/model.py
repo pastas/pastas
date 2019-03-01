@@ -1363,15 +1363,15 @@ class Model:
 
         fit = {
             "EVP": "{:.2f}".format(self.stats.evp()),
-            "NSE": "{:.2f}".format(self.stats.nse()),
-            "Pearson R2": "{:.2f}".format(self.stats.rsq()),
+            "R2": "{:.2f}".format(self.stats.rsq()),
             "RMSE": "{:.2f}".format(self.stats.rmse()),
             "AIC": "{:.2f}".format(self.stats.aic() if
                                    self.settings["noise"] else np.nan),
             "BIC": "{:.2f}".format(self.stats.bic() if
                                    self.settings["noise"] else np.nan),
-            "__": "",
-            "___": ""
+            "___": "",
+            "___ ": "",
+            "___  ": ""
         }
 
         basic = str()
