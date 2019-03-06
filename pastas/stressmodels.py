@@ -37,7 +37,7 @@ from .timeseries import TimeSeries
 logger = getLogger(__name__)
 
 __all__ = ["StressModel", "StressModel2", "Constant", "StepModel",
-           "LinearTrend", "FactorModel"]
+           "LinearTrend", "FactorModel", "RechargeModel"]
 
 
 class StressModelBase:
@@ -777,21 +777,20 @@ class FactorModel(StressModelBase):
         return data
 
 
-class Recharge(StressModelBase):
+class RechargeModel(StressModelBase):
     """Stressmodel simulating the effect of groundwater recharge on the
-    groundwaterheads.
+    groundwater head.
 
     Parameters
     ----------
     prec: pandas.Series or pastas.TimeSeries
         pandas.Series or pastas.TimeSeries objects containing the
         precipitation series.
-    prec: pandas.Series or pastas.TimeSeries
+    evap: pandas.Series or pastas.TimeSeries
         pandas.Series or pastas.TimeSeries objects containing the
         evaporation series.
     rfunc: pastas.rfunc instance
         Response function used in the convolution with the stress.
-            recharge: recharge_func class object
     name: str
         Name of the stress
     recharge: string, optional
@@ -820,7 +819,11 @@ class Recharge(StressModelBase):
 
     Notes
     -----
-
+    This stressmodel computes the contribution of precipitation and
+    potential evaporation in two steps. In the first step a recharge flux is
+    computed by a method determined by the recharge input argument. In de
+    second step this recharge flux is convoluted with a response function to
+    obtain the final contribution.
 
     """
     _name = "Recharge"
