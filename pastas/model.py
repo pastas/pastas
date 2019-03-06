@@ -173,7 +173,7 @@ class Model:
             self.stressmodels[stressmodel.name] = stressmodel
             self.parameters = self.get_init_parameters(initial=False)
             if self.settings["freq"] is None:
-                self.set_freq()
+                self._set_freq()
             stressmodel.update_stress(freq=self.settings["freq"])
 
     def add_constant(self, constant):
@@ -526,8 +526,6 @@ class Model:
                 update_observations = True
 
         if self.oseries_calib is None or update_observations:
-            tmin, self.get_tmin(tmin, use_stresses=True)
-            tmax = self.get_tmax(tmax, use_stresses=True)
             oseries_calib = self.oseries.series.loc[tmin:tmax]
 
             # sample measurements, so that frequency is not higher than model
@@ -574,12 +572,12 @@ class Model:
                 warmup = get_dt(warmup)
             self.settings["warmup"] = warmup
 
-        # Set the time offset from the frequency
-        # self.set_time_offset()
+        # Set the time offset from the frequency (this does not work as expected yet)
+        # self._set_time_offset()
 
         # Set tmin and tmax
-        self.settings["tmin"] = self.get_tmin(tmin, use_stresses=True)
-        self.settings["tmax"] = self.get_tmax(tmax, use_stresses=True)
+        self.settings["tmin"] = self.get_tmin(tmin)
+        self.settings["tmax"] = self.get_tmax(tmax)
 
         # set fit_constant
         if fit_constant is not None:
@@ -657,7 +655,7 @@ class Model:
                           weights=self.settings["weights"], **kwargs)
 
         if not self.settings['fit_constant']:
-            # do this before setting oseries_calib to None
+            # Determine the residuals
             self.normalize_residuals = False
             res = self.residuals(self.fit.optimal_params)
             # set the constant to the mean of the residuals
@@ -758,7 +756,7 @@ class Model:
             self.constant.__getattribute__("set_" + kind)(name, value)
             self.parameters.loc[name, kind] = value
 
-    def set_freq(self):
+    def _set_freq(self):
         """Internal method to set the frequency in the settings. This is
         method is not yet applied and is for future development.
 
@@ -937,7 +935,7 @@ class Model:
         # adjust tmin and tmax so that the time-offset is equal to the stressmodels.
         if freq is None:
             freq = self.settings["freq"]
-        tmin = tmin.ceil(freq) + self.settings["time_offset"]
+        tmin = tmin.floor(freq) + self.settings["time_offset"]
 
         # assert tmax > tmin, \
         #     self.logger.error('Error: Specified tmax not larger than '

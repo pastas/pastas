@@ -80,3 +80,12 @@ def test_example_transform():
     exec(open("example_transform.py").read())
     plt.close('all')
     return os.chdir(cwd)
+
+def test_example_900():
+    plt.ion()
+    cwd = os.getcwd()
+    os.chdir("examples")
+    exec(open("example_900.py").read())
+    plt.close('all')
+    os.chdir(cwd)
+    return
