@@ -800,16 +800,17 @@ class Model:
         """
         time_offsets = set()
         for stressmodel in self.stressmodels.values():
-            if stressmodel.stress:
-                # calculate the offset from the default frequency
-                time_offset = get_time_offset(
-                    stressmodel.stress[0].series_original.index.min(),
-                    self.settings["freq"])
-                time_offsets.add(time_offset)
-
-        assert len(time_offsets) <= 1, self.logger.error(
-            """The time-differences with the default frequency is not the 
-            same for all stresses.""")
+            for st in stressmodel.stress:
+                if st.freq_original:
+                    # calculate the offset from the default frequency
+                    time_offset = get_time_offset(st.series_original.index.min(),
+                                                  self.settings["freq"])
+                    time_offsets.add(time_offset)
+        if len(time_offsets)>1:
+            msg = ("The time-differences with the default frequency is not the "
+               "same for all stresses.")
+            self.logger.error(msg)
+            raise(Exception(msg))
         if len(time_offsets) == 1:
             self.settings["time_offset"] = next(iter(time_offsets))
         else:
