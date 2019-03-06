@@ -89,3 +89,12 @@ def test_example_900():
     plt.close('all')
     os.chdir(cwd)
     return
+
+def test_example_step():
+    plt.ion()
+    cwd = os.getcwd()
+    os.chdir("examples")
+    exec(open("example_step.py").read())
+    plt.close('all')
+    os.chdir(cwd)
+    return
