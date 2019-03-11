@@ -32,5 +32,5 @@ ml.add_stressmodel(sm)
 ml._set_time_offset()
 
 ## Solve
-ml.solve(freq='7D')
+ml.solve(freq='D')
 ml.plots.decomposition()
