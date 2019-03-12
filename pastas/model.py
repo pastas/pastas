@@ -1393,8 +1393,12 @@ class Model:
 
         warnings = str("Warnings\n============================================"
                        "================\n")
+
         for n, warn in enumerate(w, start=1):
             warnings = warnings + "[{}] {}\n".format(n, warn)
+
+        if len(w) == 0:
+            warnings = ""
 
         if output == "basic":
             output = ["model", "parameters"]
