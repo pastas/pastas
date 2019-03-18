@@ -9,8 +9,7 @@ def test_example():
     os.chdir("examples")
     exec(open("example.py").read())
     plt.close('all')
-    os.chdir(cwd)
-    return
+    return os.chdir(cwd)
 
 
 def test_example_menyanthes():
@@ -19,8 +18,7 @@ def test_example_menyanthes():
     os.chdir("examples")
     exec(open("example_menyanthes.py").read())
     plt.close('all')
-    os.chdir(cwd)
-    return
+    return os.chdir(cwd)
 
 
 def test_example_project():
@@ -29,8 +27,7 @@ def test_example_project():
     os.chdir("examples")
     exec(open("example_project.py").read())
     plt.close('all')
-    os.chdir(cwd)
-    return
+    return os.chdir(cwd)
 
 
 def test_example_docs():
@@ -39,8 +36,7 @@ def test_example_docs():
     os.chdir("examples")
     exec(open("example_docs.py").read())
     plt.close('all')
-    os.chdir(cwd)
-    return
+    return os.chdir(cwd)
 
 
 def test_example_stats():
@@ -49,8 +45,7 @@ def test_example_stats():
     os.chdir("examples")
     exec(open("example_stats.py").read())
     plt.close('all')
-    os.chdir(cwd)
-    return
+    return os.chdir(cwd)
 
 
 # TODO Fix WellModel before testing again
@@ -60,8 +55,7 @@ def test_example_stats():
 #     os.chdir("examples")
 #     exec(open("example_WellModel.py").read())
 #     plt.close('all')
-#     os.chdir(cwd)
-#     return
+#     return os.chdir(cwd)
 
 
 def test_example_timestep_weighted_resample():
@@ -71,7 +65,6 @@ def test_example_timestep_weighted_resample():
     exec(open("example_timestep_weighted_resample.py").read())
     plt.close('all')
     return os.chdir(cwd)
-
 
 def test_example_transform():
     plt.ion()
@@ -87,8 +80,7 @@ def test_example_900():
     os.chdir("examples")
     exec(open("example_900.py").read())
     plt.close('all')
-    os.chdir(cwd)
-    return
+    return os.chdir(cwd)
 
 def test_example_step():
     plt.ion()
@@ -96,5 +88,4 @@ def test_example_step():
     os.chdir("examples")
     exec(open("example_step.py").read())
     plt.close('all')
-    os.chdir(cwd)
-    return
+    return os.chdir(cwd)

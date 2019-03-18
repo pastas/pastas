@@ -1350,7 +1350,10 @@ class Model:
         """
         if output != "full":
             raise NotImplementedError
-
+        
+        if self.fit is None:
+            return 'Model is not optimized or read from file. Solve first.'
+        
         model = {
             "nfev": self.fit.nfev,
             "nobs": self.oseries_calib.index.size,
