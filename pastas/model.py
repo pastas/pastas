@@ -803,14 +803,16 @@ class Model:
             for st in stressmodel.stress:
                 if st.freq_original:
                     # calculate the offset from the default frequency
-                    time_offset = get_time_offset(st.series_original.index.min(),
-                                                  self.settings["freq"])
+                    time_offset = get_time_offset(
+                        st.series_original.index.min(),
+                        self.settings["freq"])
                     time_offsets.add(time_offset)
-        if len(time_offsets)>1:
-            msg = ("The time-differences with the default frequency is not the "
-               "same for all stresses.")
+        if len(time_offsets) > 1:
+            msg = (
+                "The time-differences with the default frequency is not the "
+                "same for all stresses.")
             self.logger.error(msg)
-            raise(Exception(msg))
+            raise (Exception(msg))
         if len(time_offsets) == 1:
             self.settings["time_offset"] = next(iter(time_offsets))
         else:
@@ -1373,13 +1375,6 @@ class Model:
             "___  ": ""
         }
 
-        basic = str()
-        for item, item2 in zip(model.items(), fit.items()):
-            val1, val2 = item
-            val3, val4 = item2
-            basic = basic + (
-                "{:<8} {:<22} {:<10} {:>17}\n".format(val1, val2, val3, val4))
-
         parameters = self.parameters.loc[:,
                      ["optimal", "stderr", "initial", "vary"]]
         parameters.loc[:, "stderr"] = \
@@ -1387,36 +1382,50 @@ class Model:
                 .abs() \
                 .apply("\u00B1{:.2%}".format)
 
-        n_param = parameters.vary.sum()
+        # Determine the width of the fit_report based on the parameters
+        width = len(parameters.__str__().split("\n")[1])
+        string = "{:{fill}{align}{width}}"
 
-        w = []
+        # Create the first header with model information and stats
+        header = "Model Results {name:<16}{string}Fit Statistics\n" \
+                 "{line}\n".format(
+            name=self.name[:14],
+            string=string.format("", fill=' ', align='>', width=width - 44),
+            line=string.format("", fill='=', align='>', width=width)
+        )
 
-        warnings = str("Warnings\n============================================"
-                       "================\n")
+        basic = str()
+        for item, item2 in zip(model.items(), fit.items()):
+            val1, val2 = item
+            val3, val4 = item2
+            val4 = string.format(val4, fill=' ', align='>', width=width - 38)
+            basic = basic + (
+                "{:<8} {:<22} {:<5} {}\n".format(val1, val2, val3, val4))
 
-        for n, warn in enumerate(w, start=1):
-            warnings = warnings + "[{}] {}\n".format(n, warn)
+        # Create the parameters block
+        parameters = "\nParameters ({n_param} were optimized)\n{line}\n" \
+                     "{parameters}".format(
+            n_param=parameters.vary.sum(),
+            line=string.format("", fill='=', align='>', width=width),
+            parameters=parameters
+        )
 
-        if len(w) == 0:
-            warnings = ""
+        # w = []
+        #
+        # warnings = "Warnings\n{line}\n".format(
+        #     "",
+        #     line=string.format("", fill='=', align='>', width=width)
+        # )
+        #
+        # for n, warn in enumerate(w, start=1):
+        #     warnings = warnings + "[{}] {}\n".format(n, warn)
+        #
+        # if len(w) == 0:
+        #     warnings = ""
 
-        if output == "basic":
-            output = ["model", "parameters"]
-        else:
-            output = ["model", "parameters", "correlations", "warnings",
-                      "tests"]
-
-        report = """
-Model Results {name}                Fit Statistics
-============================    ============================
-{basic}
-Parameters ({n_param} were optimized)
-============================================================
-{parameters}
-
-{warnings}
-        """.format(name=self.name, basic=basic, n_param=n_param,
-                   parameters=parameters, warnings=warnings)
+        report = "{header}{basic}{parameters}".format(
+            header=header, basic=basic, parameters=parameters
+        )
 
         return report
 
