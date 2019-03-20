@@ -253,7 +253,7 @@ class Plotting:
                markersize=3, ax=axes[0], x_compat=True)
         sim.plot(ax=axes[0], x_compat=True)
         if set_axes_properties:
-            axes[0].set_title('Observations vs simulation')
+            axes[0].set_title('observations vs. simulation')
             axes[0].set_ylim(ylims[0])
         axes[0].grid(which='both')
         axes[0].legend(ncol=3, frameon=False)
