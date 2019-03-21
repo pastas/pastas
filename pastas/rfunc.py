@@ -43,7 +43,7 @@ class RfuncBase:
     def set_parameters(self, name):
         pass
 
-    def get_tmax(self, p, cutoff=0.99):
+    def get_tmax(self, p, cutoff=None):
         """Method to get the response time for a certain cutoff
 
         Parameters
@@ -62,7 +62,7 @@ class RfuncBase:
         """
         pass
 
-    def step(self, p, dt=1, cutoff=0.99):
+    def step(self, p, dt=1, cutoff=None):
         """Method to return the step funtion.
 
         Parameters
@@ -81,7 +81,7 @@ class RfuncBase:
         """
         pass
 
-    def block(self, p, dt=1, cutoff=0.99):
+    def block(self, p, dt=1, cutoff=None):
         """Method to return the block funtion.
 
         Parameters
@@ -336,7 +336,7 @@ class Polder(RfuncBase):
     def get_tmax(self, p, cutoff=None):
         if cutoff is None:
             cutoff = self.cutoff
-            
+
         # TODO: find tmax from cutoff, below is just an approximation
         return 4 * p[0] / p[1] ** 2
 
