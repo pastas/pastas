@@ -108,12 +108,12 @@ class Plotting:
 
         # Residuals and noise
         ax2 = plt.subplot2grid((rows, 3), (2, 0), colspan=2, sharex=ax1)
-        ax2.axhline(0.0, color='k', linestyle='--')
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         res.plot(ax=ax2, sharex=ax1, color='k', x_compat=True)
         if self.ml.settings["noise"] and self.ml.noisemodel:
             noise = self.ml.noise(tmin=tmin, tmax=tmax)
             noise.plot(ax=ax2, sharex=ax1, x_compat=True)
+        ax2.axhline(0.0, color='k', linestyle='--', zorder=0)
         ax2.legend(loc=(0, 1), ncol=3, frameon=False)
         ax2.minorticks_off()
 
