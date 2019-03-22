@@ -166,11 +166,21 @@ class Plotting:
 
         Parameters
         ----------
-        split
-        ytick_base: Boolean or float
-            Make the ytick-base constant if True, set this base to float if float
-        **kwargs:
-            Optional arguments for the subplots method
+        tmin: str or pandas.Timestamp, optional
+        tmax: str or pandas.Timestamp, optional
+        ytick_base: Boolean or float, optional
+            Make the ytick-base constant if True, set this base to float if
+            float.
+        split: bool, optional
+            Split the stresses in multiple stresses when possible.
+        axes: matplotlib.Axes instance, optional
+            Matplotlib Axes instance to plot the figure on to.
+        figsize: tuple, optional
+            tuple of size 2 to determine the figure size in inches.
+        name: str, optional
+            Name to give the simulated time series in the legend.
+        **kwargs: dict, optional
+            Optional arguments, passed on to the plt.subplots method.
 
         Returns
         -------
@@ -192,16 +202,17 @@ class Plotting:
             nstress = len(self.ml.stressmodels[name].stress)
             if split and nstress > 1:
                 for istress in range(nstress):
-                    contrib = self.ml.get_contribution(name, tmin=tmin,
-                                                       tmax=tmax,
-                                                       istress=istress,
-                                                       return_warmup=return_warmup)
+                    contrib = self.ml.get_contribution(
+                        name, tmin=tmin, tmax=tmax, istress=istress,
+                        return_warmup=return_warmup
+                    )
                     series.append(contrib)
                     names.append(contrib.name)
             else:
-                contrib = self.ml.get_contribution(name, tmin=tmin,
-                                                   tmax=tmax,
-                                                   return_warmup=return_warmup)
+                contrib = self.ml.get_contribution(
+                    name, tmin=tmin, tmax=tmax, return_warmup=return_warmup
+                )
+
                 series.append(contrib)
                 names.append(contrib.name)
 
