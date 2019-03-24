@@ -112,7 +112,11 @@ def ccf(x, y, lags=None, bin_method='gaussian', bin_width=None,
 
     # Create matrix with time differences
     t1, t2 = np.meshgrid(t_x, t_y)
-    t = np.abs(np.subtract(t1, t2))  # absolute values
+    
+    # Do not take absolute value (previous behavior) and set values to nan where t < 0.
+    # This means only positive lags can be calculated!
+    t = np.subtract(t1, t2)
+    t[t<0] = np.nan
 
     # Normalize the values and create numpy arrays
     x = (x.values - x.values.mean()) / x.values.std()
@@ -178,13 +182,12 @@ def ccf(x, y, lags=None, bin_method='gaussian', bin_width=None,
         h = bin_width[i]
         b = kernel_func(d, h)
         c = np.multiply(xy, b, out=d)  # Element-wise multiplication
-        UDCF[i] = np.sum(c)
-        M[i] = np.sum(b)
+        # Use nansum to avoid the NaNs that are now in these matrices
+        UDCF[i] = np.nansum(c)
+        M[i] = np.nansum(b)
 
     DCF = UDCF / M
-
-    C = Series(data=DCF, index=lags, name="CCF")
-    CCF = C / C.abs().max()
+    CCF = Series(data=DCF, index=lags, name="CCF")
 
     if output == "full":
         CCFstd = np.sqrt((np.cumsum(UDCF) - M * DCF) ** 2) / (M - 1)
