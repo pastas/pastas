@@ -35,8 +35,8 @@ setup(
         'Programming Language :: Python :: 3.7',
     ],
     platforms='Windows, Mac OS-X',
-    install_requires=['numpy>=1.10', 'matplotlib>=2.0', 'pandas>=0.23',
-                      'scipy>=1.0'],
+    install_requires=['numpy>=1.15', 'matplotlib>=2.0', 'pandas>=0.23',
+                      'scipy>=1.1'],
     packages=find_packages(exclude=[]),
     package_data={"pastas": ["log_config.json"], },
 )
