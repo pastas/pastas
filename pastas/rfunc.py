@@ -43,7 +43,7 @@ class RfuncBase:
     def set_parameters(self, name):
         pass
 
-    def get_tmax(self, p, cutoff=0.99):
+    def get_tmax(self, p, cutoff=None):
         """Method to get the response time for a certain cutoff
 
         Parameters
@@ -62,7 +62,7 @@ class RfuncBase:
         """
         pass
 
-    def step(self, p, dt=1, cutoff=0.99):
+    def step(self, p, dt=1, cutoff=None):
         """Method to return the step funtion.
 
         Parameters
@@ -81,7 +81,7 @@ class RfuncBase:
         """
         pass
 
-    def block(self, p, dt=1, cutoff=0.99):
+    def block(self, p, dt=1, cutoff=None):
         """Method to return the block funtion.
 
         Parameters
@@ -151,7 +151,7 @@ class Gamma(RfuncBase):
     def gain(self, p):
         return p[0]
 
-    def step(self, p, dt=1, cutoff=0.99):
+    def step(self, p, dt=1, cutoff=None):
         if isinstance(dt, np.ndarray):
             t = dt
         else:
@@ -208,11 +208,11 @@ class Exponential(RfuncBase):
     def gain(self, p):
         return p[0]
 
-    def step(self, p, dt=1, cutoff=0.99):
+    def step(self, p, dt=1, cutoff=None):
         if isinstance(dt, np.ndarray):
             t = dt
         else:
-            self.tmax = max(self.get_tmax(p, cutoff), 3 * dt)
+            self.tmax = max(self.get_tmax(p, cutoff), 10 * dt)
             t = np.arange(dt, self.tmax, dt)
         s = p[0] * (1.0 - np.exp(-t / p[1]))
         return s
@@ -266,8 +266,8 @@ class Hantush(RfuncBase):
         else:
             parameters.loc[name + '_A'] = (
                 -1 / self.meanstress, -100 / self.meanstress, 0, 1, name)
-        parameters.loc[name + '_rho'] = (1, 0.0001, 10, 1, name)
-        parameters.loc[name + '_cS'] = (100, 1e-3, 1e3, 1, name)
+        parameters.loc[name + '_rho'] = (1, 1e-4, 10, 1, name)
+        parameters.loc[name + '_cS'] = (100, 1e-3, 1e4, 1, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):
@@ -282,14 +282,14 @@ class Hantush(RfuncBase):
     def gain(self, p):
         return p[0]
 
-    def step(self, p, dt=1, cutoff=0.99):
+    def step(self, p, dt=1, cutoff=None):
         rho = p[1]
         cS = p[2]
         k0rho = k0(rho)
         if isinstance(dt, np.ndarray):
             t = dt
         else:
-            self.tmax = max(self.get_tmax(p, cutoff), 3 * dt)
+            self.tmax = max(self.get_tmax(p, cutoff), 10 * dt)
             t = np.arange(dt, self.tmax, dt)
         tau = t / cS
         tau1 = tau[tau < rho / 2]
@@ -334,14 +334,17 @@ class Polder(RfuncBase):
         return parameters
 
     def get_tmax(self, p, cutoff=None):
-        # TODO: find tmax from cutoff, below is just an opproximation
+        if cutoff is None:
+            cutoff = self.cutoff
+
+        # TODO: find tmax from cutoff, below is just an approximation
         return 4 * p[0] / p[1] ** 2
 
     def gain(self, p):
         # TODO: check line below
         return p[2]
 
-    def step(self, p, dt=1, cutoff=0.99):
+    def step(self, p, dt=1, cutoff=None):
         if isinstance(dt, np.ndarray):
             t = dt
         else:

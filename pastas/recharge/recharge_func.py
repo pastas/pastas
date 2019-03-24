@@ -41,7 +41,7 @@ class Linear:
     def set_parameters(self, name):
         parameters = pd.DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        parameters.loc[name + '_f'] = (-1.0, -5.0, 0.0, 1, name)
+        parameters.loc[name + '_f'] = (-1.0, -2.0, 0.0, 1, name)
         return parameters
 
     def simulate(self, precip, evap, p=None):

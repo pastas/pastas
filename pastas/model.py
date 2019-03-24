@@ -173,7 +173,7 @@ class Model:
             self.stressmodels[stressmodel.name] = stressmodel
             self.parameters = self.get_init_parameters(initial=False)
             if self.settings["freq"] is None:
-                self.set_freq()
+                self._set_freq()
             stressmodel.update_stress(freq=self.settings["freq"])
 
     def add_constant(self, constant):
@@ -526,8 +526,6 @@ class Model:
                 update_observations = True
 
         if self.oseries_calib is None or update_observations:
-            tmin, self.get_tmin(tmin, use_stresses=True)
-            tmax = self.get_tmax(tmax, use_stresses=True)
             oseries_calib = self.oseries.series.loc[tmin:tmax]
 
             # sample measurements, so that frequency is not higher than model
@@ -574,12 +572,12 @@ class Model:
                 warmup = get_dt(warmup)
             self.settings["warmup"] = warmup
 
-        # Set the time offset from the frequency
-        # self.set_time_offset()
+        # Set the time offset from the frequency (this does not work as expected yet)
+        # self._set_time_offset()
 
         # Set tmin and tmax
-        self.settings["tmin"] = self.get_tmin(tmin, use_stresses=True)
-        self.settings["tmax"] = self.get_tmax(tmax, use_stresses=True)
+        self.settings["tmin"] = self.get_tmin(tmin)
+        self.settings["tmax"] = self.get_tmax(tmax)
 
         # set fit_constant
         if fit_constant is not None:
@@ -657,7 +655,7 @@ class Model:
                           weights=self.settings["weights"], **kwargs)
 
         if not self.settings['fit_constant']:
-            # do this before setting oseries_calib to None
+            # Determine the residuals
             self.normalize_residuals = False
             res = self.residuals(self.fit.optimal_params)
             # set the constant to the mean of the residuals
@@ -758,7 +756,7 @@ class Model:
             self.constant.__getattribute__("set_" + kind)(name, value)
             self.parameters.loc[name, kind] = value
 
-    def set_freq(self):
+    def _set_freq(self):
         """Internal method to set the frequency in the settings. This is
         method is not yet applied and is for future development.
 
@@ -802,16 +800,19 @@ class Model:
         """
         time_offsets = set()
         for stressmodel in self.stressmodels.values():
-            if stressmodel.stress:
-                # calculate the offset from the default frequency
-                time_offset = get_time_offset(
-                    stressmodel.stress[0].series_original.index.min(),
-                    self.settings["freq"])
-                time_offsets.add(time_offset)
-
-        assert len(time_offsets) <= 1, self.logger.error(
-            """The time-differences with the default frequency is not the 
-            same for all stresses.""")
+            for st in stressmodel.stress:
+                if st.freq_original:
+                    # calculate the offset from the default frequency
+                    time_offset = get_time_offset(
+                        st.series_original.index.min(),
+                        self.settings["freq"])
+                    time_offsets.add(time_offset)
+        if len(time_offsets) > 1:
+            msg = (
+                "The time-differences with the default frequency is not the "
+                "same for all stresses.")
+            self.logger.error(msg)
+            raise (Exception(msg))
         if len(time_offsets) == 1:
             self.settings["time_offset"] = next(iter(time_offsets))
         else:
@@ -862,7 +863,7 @@ class Model:
         if self.sim_index is None or update_sim_index:
             tmin = (tmin - pd.DateOffset(days=warmup)).floor(freq) + \
                    self.settings["time_offset"]
-            sim_index = pd.date_range(tmin, tmax, freq=freq, name="Date")
+            sim_index = pd.date_range(tmin, tmax, freq=freq)
             if not update_sim_index:
                 # tmin, tmax, freq and warmup are equal to the settings
                 # so we can set self.sim_index to improve speed of next run
@@ -937,7 +938,7 @@ class Model:
         # adjust tmin and tmax so that the time-offset is equal to the stressmodels.
         if freq is None:
             freq = self.settings["freq"]
-        tmin = tmin.ceil(freq) + self.settings["time_offset"]
+        tmin = tmin.floor(freq) + self.settings["time_offset"]
 
         # assert tmax > tmin, \
         #     self.logger.error('Error: Specified tmax not larger than '
@@ -1349,7 +1350,10 @@ class Model:
         """
         if output != "full":
             raise NotImplementedError
-
+        
+        if self.fit is None:
+            return 'Model is not optimized or read from file. Solve first.'
+        
         model = {
             "nfev": self.fit.nfev,
             "nobs": self.oseries_calib.index.size,
@@ -1363,23 +1367,16 @@ class Model:
 
         fit = {
             "EVP": "{:.2f}".format(self.stats.evp()),
-            "NSE": "{:.2f}".format(self.stats.nse()),
-            "Pearson R2": "{:.2f}".format(self.stats.rsq()),
+            "R2": "{:.2f}".format(self.stats.rsq()),
             "RMSE": "{:.2f}".format(self.stats.rmse()),
             "AIC": "{:.2f}".format(self.stats.aic() if
                                    self.settings["noise"] else np.nan),
             "BIC": "{:.2f}".format(self.stats.bic() if
                                    self.settings["noise"] else np.nan),
-            "__": "",
-            "___": ""
+            "___": "",
+            "___ ": "",
+            "___  ": ""
         }
-
-        basic = str()
-        for item, item2 in zip(model.items(), fit.items()):
-            val1, val2 = item
-            val3, val4 = item2
-            basic = basic + (
-                "{:<8} {:<22} {:<10} {:>17}\n".format(val1, val2, val3, val4))
 
         parameters = self.parameters.loc[:,
                      ["optimal", "stderr", "initial", "vary"]]
@@ -1388,32 +1385,50 @@ class Model:
                 .abs() \
                 .apply("\u00B1{:.2%}".format)
 
-        n_param = parameters.vary.sum()
+        # Determine the width of the fit_report based on the parameters
+        width = len(parameters.__str__().split("\n")[1])
+        string = "{:{fill}{align}{width}}"
 
-        w = []
+        # Create the first header with model information and stats
+        header = "Model Results {name:<16}{string}Fit Statistics\n" \
+                 "{line}\n".format(
+            name=self.name[:14],
+            string=string.format("", fill=' ', align='>', width=width - 44),
+            line=string.format("", fill='=', align='>', width=width)
+        )
 
-        warnings = str("Warnings\n============================================"
-                       "================\n")
-        for n, warn in enumerate(w, start=1):
-            warnings = warnings + "[{}] {}\n".format(n, warn)
+        basic = str()
+        for item, item2 in zip(model.items(), fit.items()):
+            val1, val2 = item
+            val3, val4 = item2
+            val4 = string.format(val4, fill=' ', align='>', width=width - 38)
+            basic = basic + (
+                "{:<8} {:<22} {:<5} {}\n".format(val1, val2, val3, val4))
 
-        if output == "basic":
-            output = ["model", "parameters"]
-        else:
-            output = ["model", "parameters", "correlations", "warnings",
-                      "tests"]
+        # Create the parameters block
+        parameters = "\nParameters ({n_param} were optimized)\n{line}\n" \
+                     "{parameters}".format(
+            n_param=parameters.vary.sum(),
+            line=string.format("", fill='=', align='>', width=width),
+            parameters=parameters
+        )
 
-        report = """
-Model Results {name}                Fit Statistics
-============================    ============================
-{basic}
-Parameters ({n_param} were optimized)
-============================================================
-{parameters}
+        # w = []
+        #
+        # warnings = "Warnings\n{line}\n".format(
+        #     "",
+        #     line=string.format("", fill='=', align='>', width=width)
+        # )
+        #
+        # for n, warn in enumerate(w, start=1):
+        #     warnings = warnings + "[{}] {}\n".format(n, warn)
+        #
+        # if len(w) == 0:
+        #     warnings = ""
 
-{warnings}
-        """.format(name=self.name, basic=basic, n_param=n_param,
-                   parameters=parameters, warnings=warnings)
+        report = "{header}{basic}{parameters}".format(
+            header=header, basic=basic, parameters=parameters
+        )
 
         return report
 

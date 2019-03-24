@@ -15,6 +15,8 @@ PASTAS: HYDROLOGICAL TIME SERIES ANALYSIS
                     :target: https://github.com/pastas/pastas/releases
 .. image:: https://api.codacy.com/project/badge/Grade/0e0fad469a3c42a4a5c5d1c5fddd6bee
                     :target: https://app.codacy.com/app/raoulcollenteur/pastas?utm_source=github.com&utm_medium=referral&utm_content=pastas/pastas&utm_campaign=Badge_Grade_Dashboard
+.. image:: https://codecov.io/gh/pastas/pastas/branch/master/graph/badge.svg
+                    :target: https://codecov.io/gh/pastas/pastas
 .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1465866.svg
                     :target: https://doi.org/10.5281/zenodo.1465866
 
@@ -39,9 +41,9 @@ Get in Touch
 
 Quick installation guide
 ~~~~~~~~~~~~~~~~~~~~~~~~
-To install Pastas, a working version of Python 3.4, 3.5 or 3.6 has to be installed on 
+To install Pastas, a working version of Python 3.5 3.6 or 3.7 has to be installed on 
 your computer. We recommend using the `Anaconda Distribution <https://www.continuum.io/downloads>`_
-with Python 3.6 as it includes most of the python package dependencies and the Jupyter
+with Python 3.7 as it includes most of the python package dependencies and the Jupyter
 Notebook software to run the notebooks. However, you are free to install any
 Python distribution you want.
 

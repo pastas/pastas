@@ -37,7 +37,7 @@ from .timeseries import TimeSeries
 logger = getLogger(__name__)
 
 __all__ = ["StressModel", "StressModel2", "Constant", "StepModel",
-           "LinearTrend", "FactorModel"]
+           "LinearTrend", "FactorModel", "RechargeModel"]
 
 
 class StressModelBase:
@@ -395,10 +395,12 @@ class StressModel2(StressModelBase):
 
         # Select indices from validated stress where both series are available.
         index = stress0.series.index.intersection(stress1.series.index)
-        if index.size is 0:
-            logger.error('The two stresses that were provided have no '
-                         'overlapping time indices. Please make sure the '
-                         'indices of the time series overlap.')
+        if index.empty:
+            msg = ('The two stresses that were provided have no '
+                  'overlapping time indices. Please make sure the '
+                  'indices of the time series overlap.')
+            logger.error(msg)
+            raise Exception(msg)
 
         # First check the series, then determine tmin and tmax
         stress0.update_series(tmin=index.min(), tmax=index.max())
@@ -777,21 +779,20 @@ class FactorModel(StressModelBase):
         return data
 
 
-class Recharge(StressModelBase):
+class RechargeModel(StressModelBase):
     """Stressmodel simulating the effect of groundwater recharge on the
-    groundwaterheads.
+    groundwater head.
 
     Parameters
     ----------
     prec: pandas.Series or pastas.TimeSeries
         pandas.Series or pastas.TimeSeries objects containing the
         precipitation series.
-    prec: pandas.Series or pastas.TimeSeries
+    evap: pandas.Series or pastas.TimeSeries
         pandas.Series or pastas.TimeSeries objects containing the
         evaporation series.
     rfunc: pastas.rfunc instance
         Response function used in the convolution with the stress.
-            recharge: recharge_func class object
     name: str
         Name of the stress
     recharge: string, optional
@@ -820,7 +821,11 @@ class Recharge(StressModelBase):
 
     Notes
     -----
-
+    This stressmodel computes the contribution of precipitation and
+    potential evaporation in two steps. In the first step a recharge flux is
+    computed by a method determined by the recharge input argument. In de
+    second step this recharge flux is convoluted with a response function to
+    obtain the final contribution.
 
     """
     _name = "Recharge"

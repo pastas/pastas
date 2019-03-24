@@ -11,21 +11,33 @@ git:
 
 matrix:
   include:
-    - python: 3.5
-    - python: 3.6
-
-# start Virtual X, so default matplotlib backend works
-before_install:
-    - "export DISPLAY=:99.0"
-    - "sh -e /etc/init.d/xvfb start"
-    - pip install --upgrade pip
-    - pip install codecov
-    - pip install pytest-cov
+      - python: 3.5
+        dist: trusty
+        sudo: false
+        before_script:
+          - "export DISPLAY=:99.0"
+          - "sh -e /etc/init.d/xvfb start"
+          - sleep 3 # give xvfb some time to start
+      - python: 3.6
+        dist: trusty
+        sudo: false
+        before_script:
+          - "export DISPLAY=:99.0"
+          - "sh -e /etc/init.d/xvfb start"
+          - sleep 3 # give xvfb some time to start
+      - python: 3.7
+        dist: xenial
+        sudo: true
+        services:
+          - xvfb
 
 # Install dependencies
 install:
     - pip install -r requirements.travis.txt
     - pip install -e .
+    - pip install --upgrade pip
+    - pip install codecov
+    - pip install pytest-cov
 
 # command to run tests
 script:
