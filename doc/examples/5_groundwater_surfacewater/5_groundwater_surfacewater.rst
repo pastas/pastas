@@ -44,7 +44,7 @@ levels. The following data is used:
     rain.plot(ax=axes[1], x_compat=True, legend=True)
     evap.plot(ax=axes[2], x_compat=True, legend=True)
     waterlevel.plot(ax=axes[3], x_compat=True, legend=True)
-
+    
 
 
 
@@ -107,7 +107,7 @@ levels. The following data is used:
     
             
     The explained variance percentage over the period 2012-2017 is: 59.72536176112258
-
+    
 
 
 .. image:: output_6_1.png
@@ -160,7 +160,7 @@ levels. The following data is used:
     ============================================================
     
             
-
+    
 
 .. code:: ipython3
 

@@ -7,35 +7,106 @@ are available in Pastas. The below table summarizes all the response
 functions that are tested and supported. Others may be available but are
 not yet fully supported.
 
-+-----------------------+-----------------------+-----------------------+
-| Response function     | No. of Parameters     | Description           |
-+=======================+=======================+=======================+
-| Exponential           | 2 - A, a              | Response function     |
-|                       |                       | that can be used for  |
-|                       |                       | stresses that have an |
-|                       |                       | (almost) instant      |
-|                       |                       | effect.               |
-+-----------------------+-----------------------+-----------------------+
-| Gamma                 | 3 - A, a, n           | Response function     |
-|                       |                       | commonly used for the |
-|                       |                       | groundwater response  |
-|                       |                       | to precipitation and  |
-|                       |                       | evaporation. This     |
-|                       |                       | function is very      |
-|                       |                       | versatile in its      |
-|                       |                       | shape and is often    |
-|                       |                       | used for other        |
-|                       |                       | stresses as well.     |
-+-----------------------+-----------------------+-----------------------+
-| Hantush               | 3 - A, Rho, Cs        | Response function     |
-|                       |                       | commonly used for     |
-|                       |                       | groundwater           |
-|                       |                       | abstraction wells     |
-+-----------------------+-----------------------+-----------------------+
-| Bruggeman             | 3 - a, b, c           | Response function     |
-|                       |                       | commonly used for     |
-|                       |                       | (river) water levels  |
-+-----------------------+-----------------------+-----------------------+
++-------+-------+-------+
+| Respo | No.   | Descr |
+| nse   | of    | iptio |
+| funct | Param | n     |
+| ion   | eters |       |
++=======+=======+=======+
+| Expon | 2 -   | Respo |
+| entia | A, a  | nse   |
+| l     |       | funct |
+|       |       | ion   |
+|       |       | that  |
+|       |       | can   |
+|       |       | be    |
+|       |       | used  |
+|       |       | for   |
+|       |       | stres |
+|       |       | ses   |
+|       |       | that  |
+|       |       | have  |
+|       |       | an    |
+|       |       | (almo |
+|       |       | st)   |
+|       |       | insta |
+|       |       | nt    |
+|       |       | effec |
+|       |       | t.    |
++-------+-------+-------+
+| Gamma | 3 -   | Respo |
+|       | A, a, | nse   |
+|       | n     | funct |
+|       |       | ion   |
+|       |       | commo |
+|       |       | nly   |
+|       |       | used  |
+|       |       | for   |
+|       |       | the   |
+|       |       | groun |
+|       |       | dwate |
+|       |       | r     |
+|       |       | respo |
+|       |       | nse   |
+|       |       | to    |
+|       |       | preci |
+|       |       | pitat |
+|       |       | ion   |
+|       |       | and   |
+|       |       | evapo |
+|       |       | ratio |
+|       |       | n.    |
+|       |       | This  |
+|       |       | funct |
+|       |       | ion   |
+|       |       | is    |
+|       |       | very  |
+|       |       | versa |
+|       |       | tile  |
+|       |       | in    |
+|       |       | its   |
+|       |       | shape |
+|       |       | and   |
+|       |       | is    |
+|       |       | often |
+|       |       | used  |
+|       |       | for   |
+|       |       | other |
+|       |       | stres |
+|       |       | ses   |
+|       |       | as    |
+|       |       | well. |
++-------+-------+-------+
+| Hantu | 3 -   | Respo |
+| sh    | A,    | nse   |
+|       | Rho,  | funct |
+|       | Cs    | ion   |
+|       |       | commo |
+|       |       | nly   |
+|       |       | used  |
+|       |       | for   |
+|       |       | groun |
+|       |       | dwate |
+|       |       | r     |
+|       |       | abstr |
+|       |       | actio |
+|       |       | n     |
+|       |       | wells |
++-------+-------+-------+
+| Brugg | 3 -   | Respo |
+| eman  | a, b, | nse   |
+|       | c     | funct |
+|       |       | ion   |
+|       |       | commo |
+|       |       | nly   |
+|       |       | used  |
+|       |       | for   |
+|       |       | (rive |
+|       |       | r)    |
+|       |       | water |
+|       |       | level |
+|       |       | s     |
++-------+-------+-------+
 
 .. code:: ipython3
 
@@ -221,5 +292,6 @@ simulation time step is applied.
       </tbody>
     </table>
     </div>
+
 
 

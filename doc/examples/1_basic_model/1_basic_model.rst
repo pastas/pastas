@@ -44,7 +44,7 @@ the observed time series: - The observed time series are stored as a
 .. parsed-literal::
 
     The data type of the oseries is: <class 'pandas.core.series.Series'>
-
+    
 
 
 .. image:: output_3_1.png
@@ -84,7 +84,7 @@ the same length units as for the observed heads.
     recharge.plot(label='Recharge', figsize=(10, 4))
     plt.xlabel('Time [years]')
     plt.ylabel('Recharge (m/year)');
-
+    
 
 
 .. parsed-literal::
@@ -92,7 +92,7 @@ the same length units as for the observed heads.
     The data type of the precip series is: <class 'pandas.core.series.Series'>
     The data type of the evap series is: <class 'pandas.core.series.Series'>
     The data type of the recharge series is: <class 'pandas.core.series.Series'>
-
+    
 
 
 .. image:: output_5_1.png
@@ -116,21 +116,21 @@ nan-values are found this will be reported by ``pastas``.
     # Add the recharge data as explanatory variable
     ts1 = ps.StressModel(recharge, ps.Gamma, name='recharge', settings="evap")
     ml.add_stressmodel(ts1)
-
+    
 
 
 .. parsed-literal::
 
     INFO: Cannot determine frequency of series head
     INFO: Inferred frequency from time series None: freq=D 
-
+    
 
 4. Solve the model
 ~~~~~~~~~~~~~~~~~~
 
 The next step is to compute the optimal model parameters. The default
 solver uses a non-linear least squares method for the optimization. The
-python package ``scipy`` is used (info on ``scipy's`` least_squares
+python package ``scipy`` is used (info on ``scipy's`` least\_squares
 solver can be found
 `here <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html>`__).
 Some standard optimization statistics are reported along with the
@@ -168,7 +168,7 @@ optimized parameter values and correlations.
     ============================================================
     
             
-
+    
 
 5. Plot the results
 ~~~~~~~~~~~~~~~~~~~
@@ -362,7 +362,7 @@ than for model ``ml``).
     ============================================================
     
             
-
+    
 
 
 

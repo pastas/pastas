@@ -64,7 +64,7 @@ the correct data type, use the ``type`` command as shown below.
 .. parsed-literal::
 
     The data type of the oseries is: <class 'pandas.core.series.Series'>
-
+    
 
 The variable ``ho`` is now a ``pandas Series`` object. To see the first
 five lines, type ``ho.head()``.
@@ -130,7 +130,7 @@ and plotted.
 
     The data type of the rain series is: <class 'pandas.core.series.Series'>
     The data type of the evap series is <class 'pandas.core.series.Series'>
-
+    
 
 
 .. image:: output_11_1.png
@@ -223,7 +223,7 @@ can be constructed by going through the following three steps:
     ============================================================
     
             
-
+    
 
 The ``solve`` function has a number of default options that can be
 specified with keyword arguments. One of these options is that by
@@ -282,7 +282,7 @@ later on in this notebook. The results of the model are plotted below.
     ============================================================
     
             
-
+    
 
 .. code:: ipython3
 
@@ -322,7 +322,7 @@ later on in this notebook. The results of the model are plotted below.
     ============================================================
     
             
-
+    
 
 .. code:: ipython3
 
@@ -331,4 +331,5 @@ later on in this notebook. The results of the model are plotted below.
 
 
 .. image:: output_20_0.png
+
 
