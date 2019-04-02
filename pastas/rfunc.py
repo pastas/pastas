@@ -240,15 +240,15 @@ class Hantush(RfuncBase):
     References
     ----------
     .. [1] Hantush, M. S., & Jacob, C. E. (1955). Non‐steady radial flow in an
-        infinite leaky aquifer. Eos, Transactions American Geophysical Union,
-        36(1), 95-100.
+      infinite leaky aquifer. Eos, Transactions American Geophysical Union,
+      36(1), 95-100.
 
     .. [2] Veling, E. J. M., & Maas, C. (2010). Hantush well function
-    revisited. Journal of hydrology, 393(3), 381-388.
+      revisited. Journal of hydrology, 393(3), 381-388.
 
     .. [3] Von Asmuth, J. R., Maas, K., Bakker, M., & Petersen, J. (2008).
-    Modeling time series of ground water head fluctuations subjected to
-    multiple stresses. Ground Water, 46(1), 30-40.
+      Modeling time series of ground water head fluctuations subjected to
+      multiple stresses. Ground Water, 46(1), 30-40.
 
     """
     _name = "Hantush"

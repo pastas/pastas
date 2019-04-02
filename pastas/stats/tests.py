@@ -55,11 +55,11 @@ def durbin_watson(series=None, acf=None, alpha=0.05, **kwargs):
     References
     ----------
     .. [DW} Durbin, J., & Watson, G. S. (1951). Testing for serial correlation
-    in least squares regression. II. Biometrika, 38(1/2), 159-177.
+      in least squares regression. II. Biometrika, 38(1/2), 159-177.
 
     .. [F] Fahidy, T. Z. (2004). On the Application of Durbin-Watson
-    Statistics to Time-Series-Based Regression Models. CHEMICAL ENGINEERING
-    EDUCATION, 38(1), 22-25.
+      Statistics to Time-Series-Based Regression Models. CHEMICAL ENGINEERING
+      EDUCATION, 38(1), 22-25.
 
     TODO
     ----
@@ -134,11 +134,10 @@ def ljung_box(series=None, acf=None, alpha=0.05, **kwargs):
     References
     ----------
     .. [LB] Ljung, G. and Box, G. (1978). "On a Measure of Lack of Fit in Time
-    Series Models", Biometrika, 65, 297-303.
+      Series Models", Biometrika, 65, 297-303.
 
     Examples
     --------
-
     v = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
               data=np.random.rand(1000))
     ps.stats.acf(v)
