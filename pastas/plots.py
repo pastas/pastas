@@ -54,7 +54,7 @@ class Plotting:
         ax.set_title("Results of {}".format(self.ml.name))
 
         if oseries:
-            o = self.ml.observations(tmin=tmin, tmax=tmax)
+            o = self.ml.observations()
             o_nu = self.ml.oseries.series.drop(o.index)
             if not o_nu.empty:
                 # plot parts of the oseries that are not used in grey
@@ -92,7 +92,7 @@ class Plotting:
         fig = plt.figure(figsize=figsize, **kwargs)
         # Main frame
         ax1 = plt.subplot2grid((rows, 3), (0, 0), colspan=2, rowspan=2)
-        o = self.ml.observations(tmin=tmin, tmax=tmax)
+        o = self.ml.observations()
         o_nu = self.ml.oseries.series.drop(o.index)
         if not o_nu.empty:
             # plot parts of the oseries that are not used in grey
@@ -187,7 +187,7 @@ class Plotting:
         axes: list of matplotlib.axes
 
         """
-        o = self.ml.observations(tmin=tmin, tmax=tmax)
+        o = self.ml.observations()
 
         # determine the simulation
         sim = self.ml.simulate(tmin=tmin, tmax=tmax,
