@@ -1,6 +1,6 @@
 {
   "description": "Pastas is an open source Python package for the analysis of hydrogeological time series. Using Pastas, time series models can be created and analyzed in only a few lines of Python code.",
-  "license",: "MIT-license",
+  "license": "MIT-license",
   "title": "Pastas: open-source software for the analysis of hydrogeological time series",
   "upload_type": "software",
   "creators": [
