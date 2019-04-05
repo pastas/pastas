@@ -274,7 +274,10 @@ class Hantush(RfuncBase):
         # approximate formula for tmax
         if cutoff is None:
             cutoff = self.cutoff
-        rho = p[1]
+        if len(p) == 4:  # distance is provided as fixed param in p[3]
+            rho = p[1] * p[3]
+        else:  # distance is not provided as fixed param so rho is p[1]
+            rho = p[1]
         cS = p[2]
         k0rho = k0(rho)
         return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
@@ -283,7 +286,10 @@ class Hantush(RfuncBase):
         return p[0]
 
     def step(self, p, dt=1, cutoff=None):
-        rho = p[1]
+        if len(p) == 4:  # distance is provided as param in p[3], rho = p[1] * distance
+            rho = p[1] * p[3]
+        else:  # distance is not provided as fixed param so rho is p[1]
+            rho = p[1]
         cS = p[2]
         k0rho = k0(rho)
         if isinstance(dt, np.ndarray):
