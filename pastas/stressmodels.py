@@ -397,8 +397,8 @@ class StressModel2(StressModelBase):
         index = stress0.series.index.intersection(stress1.series.index)
         if index.empty:
             msg = ('The two stresses that were provided have no '
-                  'overlapping time indices. Please make sure the '
-                  'indices of the time series overlap.')
+                   'overlapping time indices. Please make sure the '
+                   'indices of the time series overlap.')
             logger.error(msg)
             raise Exception(msg)
 
@@ -660,7 +660,7 @@ class WellModel(StressModelBase):
     """
     _name = "WellModel"
 
-    def __init__(self, stress, rfunc, name, radius, up=False, cutoff=0.99,
+    def __init__(self, stresses, rfunc, name, distances, up=False, cutoff=0.99,
                  settings="well"):
 
         meanstress = 1.0  # ? this should be something logical
@@ -672,16 +672,16 @@ class WellModel(StressModelBase):
                                  up, meanstress, cutoff)
 
         if settings is None or isinstance(settings, str):
-            settings = len(stress) * [None]
+            settings = len(stresses) * [None]
 
-        self.stress = self.handle_stress(stress, settings)
+        self.stress = self.handle_stress(stresses, settings)
 
         # Check if number of stresses and radii match
-        if len(self.stress) != len(radius) and radius:
+        if len(self.stress) != len(distances):
             logger.error("The number of stresses applied does not match the "
                          "number of radii provided.")
         else:
-            self.radius = radius
+            self.distances = distances
 
         self.freq = self.stress[0].settings["freq"]
 
@@ -696,12 +696,11 @@ class WellModel(StressModelBase):
         h = pd.Series(data=0, index=self.stress[0].series.index,
                       name=self.name)
         stresses = self.get_stress(istress=istress)
-        radii = self.get_radii(irad=istress)
-        for stress, radius in zip(stresses, radii):
+        distances = self.get_distances(iwell=istress)
+        for stress, r in zip(stresses, distances):
             npoints = stress.index.size
-            # TODO Make response function that take the radius as input
-            # b = self.rfunc.block(p, dt=dt, radius=radius)
-            b = self.rfunc.block(p, dt)
+            p_with_r = np.concatenate([p, np.asarray([r])])
+            b = self.rfunc.block(p_with_r, dt)
             c = fftconvolve(stress, b, 'full')[:npoints]
             h = h.add(pd.Series(c, index=stress.index), fill_value=0.0)
 
@@ -713,11 +712,11 @@ class WellModel(StressModelBase):
         else:
             return [self.stress[istress].series]
 
-    def get_radii(self, irad=None):
-        if irad is None:
-            return self.radius
+    def get_distances(self, iwell=None):
+        if iwell is None:
+            return self.distances
         else:
-            return [self.radius[irad]]
+            return [self.distances[iwell]]
 
 
 class FactorModel(StressModelBase):
