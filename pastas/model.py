@@ -1390,10 +1390,11 @@ class Model:
         string = "{:{fill}{align}{width}}"
 
         # Create the first header with model information and stats
+        w = max(width - 44, 0)
         header = "Model Results {name:<16}{string}Fit Statistics\n" \
                  "{line}\n".format(
             name=self.name[:14],
-            string=string.format("", fill=' ', align='>', width=width - 44),
+            string=string.format("", fill=' ', align='>', width=w),
             line=string.format("", fill='=', align='>', width=width)
         )
 
@@ -1401,7 +1402,8 @@ class Model:
         for item, item2 in zip(model.items(), fit.items()):
             val1, val2 = item
             val3, val4 = item2
-            val4 = string.format(val4, fill=' ', align='>', width=width - 38)
+            w = max(width - 38, 0)
+            val4 = string.format(val4, fill=' ', align='>', width=w)
             basic = basic + (
                 "{:<8} {:<22} {:<5} {}\n".format(val1, val2, val3, val4))
 
