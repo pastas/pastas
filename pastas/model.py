@@ -590,6 +590,11 @@ class Model:
 
         # Initialize parameters
         self.parameters = self.get_init_parameters(noise, initial)
+        
+        for icol in self.parameters:
+            if icol != "name":
+                if self.parameters[icol].dtype == "O":
+                    self.parameters[icol] = pd.to_numeric(self.parameters[icol])
 
         # Prepare model if not fitting the constant as a parameter
         if not self.settings["fit_constant"]:
