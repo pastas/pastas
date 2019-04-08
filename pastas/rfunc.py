@@ -26,7 +26,8 @@ from pandas import DataFrame
 from scipy.special import gammainc, gammaincinv, k0, exp1, erfc, lambertw
 from scipy.integrate import quad
 
-__all__ = ["Gamma", "Exponential", "Hantush", "FourParam", "DoubleExponential", "One"]
+__all__ = ["Gamma", "Exponential", "Hantush", 
+           "FourParam", "DoubleExponential", "One"]
 
 
 class RfuncBase:
@@ -411,7 +412,8 @@ class FourParam(RfuncBase):
     -----
 
     .. math::
-        step(t) = A / quad(t**n * np.exp(-t/a - b/t),0,np.inf) * quad(t**n * np.exp(-t/a - b/t),0,t)
+        step(t) = A / quad(t**n * np.exp(-t/a - b/t),0,np.inf) * 
+                      quad(t**n * np.exp(-t/a - b/t),0,t)
 
     """
     _name = "FourParam"
@@ -429,7 +431,6 @@ class FourParam(RfuncBase):
         else:
             parameters.loc[name + '_A'] = (-1 / self.meanstress,
                                            -100 / self.meanstress, 0, 1, name)
-        # if n is too small, the length of the response function is close to zero
         parameters.loc[name + '_n'] = (1, -10, 10, 1, name)
         parameters.loc[name + '_a'] = (10, 0.01, 5000, 1, name)
         parameters.loc[name + '_b'] = (10, 0.01, 5000, 1, name)
@@ -453,7 +454,9 @@ class FourParam(RfuncBase):
         y = np.zeros_like(x)
         func = self.function(x, p)
         func_half = self.function(x[:-1] + 1 / 2, p)
-        y[0] = 0.5 * (w1 * self.function(0.5 * t1 + 0.5, p) + w2 * self.function(0.5 * t2 + 0.5, p) + w3 * self.function(0.5 * t3 + 0.5, p))
+        y[0] = 0.5 * (w1 * self.function(0.5 * t1 + 0.5, p) + 
+                      w2 * self.function(0.5 * t2 + 0.5, p) + 
+                      w3 * self.function(0.5 * t3 + 0.5, p))
         y[1:] = y[0] + np.cumsum(1 / 6 * (func[:-1] + 4 * func_half + func[1:]))
         y = y / quad(self.function, 0, np.inf, args=p)[0]
         return np.searchsorted(y, cutoff)
@@ -481,19 +484,23 @@ class FourParam(RfuncBase):
         w2 = 8 / 9
         w3 = 5 / 9
 
-        if dt > 0.1: # if step size > 0.1 the step size is reduced in the integration to improve integration result
+        if dt > 0.1: 
             step = 0.1 # step size for numerical integration
             self.tmax = max(self.get_tmax(p, cutoff), 3 * step)
             t = np.arange(step, self.tmax, step)
             s = np.zeros_like(t)
 
-            # for interval [0,dt] https://en.wikipedia.org/wiki/Gaussian_quadrature:
-            s[0] = (step/2) * (w1 * self.function((step/2) * t1 + (step/2), p) + w2 * self.function((step/2) * t2 + (step/2), p) + w3 * self.function((step/2) * t3 + (step/2), p))
+            # for interval [0,dt] :
+            s[0] = (step / 2) * \
+                   (w1 * self.function((step / 2) * t1 + (step / 2), p) +
+                    w2 * self.function((step / 2) * t2 + (step / 2), p) + 
+                    w3 * self.function((step / 2) * t3 + (step / 2), p))
 
             # for interval [dt,tmax]:
             func = self.function(t, p)
-            func_half = self.function(t[:-1] + step/2, p)
-            s[1:] = s[0] + np.cumsum(step / 6 * (func[:-1] + 4 * func_half + func[1:]))
+            func_half = self.function(t[:-1] + step / 2, p)
+            s[1:] = s[0] + np.cumsum(step / 6 * 
+                                     (func[:-1] + 4 * func_half + func[1:]))
             s = s * (p[0] / quad(self.function, 0, np.inf, args=p)[0])
             return s[int(dt/step-1)::int(dt/step)]
         else:
@@ -505,12 +512,16 @@ class FourParam(RfuncBase):
             s = np.zeros_like(t)
 
             # for interval [0,dt] Gaussian quadrate:
-            s[0] = (dt/2) * (w1 * self.function((dt/2) * t1 + (dt/2), p) + w2 * self.function((dt/2) * t2 + (dt/2), p) + w3 * self.function((dt/2) * t3 + (dt/2), p))
+            s[0] = (dt / 2) * \
+                   (w1 * self.function((dt / 2) * t1 + (dt / 2), p) + 
+                    w2 * self.function((dt / 2) * t2 + (dt / 2), p) + 
+                    w3 * self.function((dt / 2) * t3 + (dt / 2), p))
 
             # for interval [dt,tmax] Simpson integration:
             func = self.function(t, p)
             func_half = self.function(t[:-1] + dt / 2, p)
-            s[1:] = s[0] + np.cumsum(dt / 6 * (func[:-1] + 4 * func_half + func[1:]))
+            s[1:] = s[0] + np.cumsum(dt / 6 * 
+                                     (func[:-1] + 4 * func_half + func[1:]))
             s = s * (p[0] / quad(self.function, 0, np.inf, args=p)[0])
             return s
 
@@ -520,8 +531,6 @@ class FourParam(RfuncBase):
         else:
             self.tmax = max(self.get_tmax_quad(p, cutoff), 3 * dt)
             t = np.arange(dt, self.tmax, dt)
-        #         def function(t):
-        #             return (t**p[1]) * np.exp(-t/p[2] - p[3]/t)
         s = np.zeros_like(t)
         s[0] = quad(self.function, 0, dt, args=p)[0]
         for i in range(1, len(t)):
@@ -547,7 +556,7 @@ class DoubleExponential(RfuncBase):
     -----
 
     .. math::
-        step(t) = A * (1 - ( (1- alpha)* exp(-t / a1) + alpha * exp(-t / a2)))
+        step(t) = A * (1 - ( (1 - alpha)* exp(-t / a1) + alpha * exp(-t / a2)))
 
     """
     _name = "DoubleExponential"
@@ -589,5 +598,6 @@ class DoubleExponential(RfuncBase):
             self.tmax = max(self.calc_tmax(p, cutoff), 3 * dt)
             t = np.arange(dt, self.tmax, dt)
 
-        s = p[0] * (1 - ((1 - p[1]) * np.exp(-t / p[2]) + p[1] * np.exp(-t / p[3])))
+        s = p[0] * (1 - ((1 - p[1]) * np.exp(-t / p[2]) + 
+                         p[1] * np.exp(-t / p[3])))
         return s
