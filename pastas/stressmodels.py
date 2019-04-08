@@ -505,7 +505,7 @@ class StepModel(StressModelBase):
     """
     _name = "StepModel"
 
-    def __init__(self, tstart, name, rfunc=One, up=True):
+    def __init__(self, tstart, name, rfunc=One, up=None):
         StressModelBase.__init__(self, rfunc, name, pd.Timestamp.min,
                                  pd.Timestamp.max, up, 1.0, 0.99)
         self.tstart = pd.Timestamp(tstart)

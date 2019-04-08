@@ -208,6 +208,61 @@ class Project:
         self.models[model_name] = ml
 
         return ml
+    
+    def add_models(self, oseries='all', model_name_prefix='', **kwargs):
+        """Method to add multiple Pastas Model instances based on one 
+        or more of the oseries.
+
+        Parameters
+        ----------
+        oseries: str or list, optional
+            names of the oseries, if oseries is 'all' all series in self.series
+            are used
+        model_name_prefix: str, optional
+            prefix to use for model names
+        kwargs: dict
+            any arguments that are taken by the Pastas Model instance can be
+            provided.
+
+        Returns
+        -------
+        ml: pastas.Model
+            Pastas Model generated with the oseries and arguments provided.
+
+        """
+        
+        if oseries=='all':
+            oseries_list = self.oseries.index
+        elif type(oseries)==str:
+            oseries_list = [oseries]
+        elif type(oseries)==list:
+            oseries_list = oseries
+        
+        ml_list = []
+        for oseries_name in oseries_list:
+            
+            model_name = model_name_prefix + oseries_name
+    
+            # Validate name and ml_name before continuing
+            if model_name in self.models.keys():
+                warning = ("Model name {} is not unique, overwrite existing"
+                           "model").format(model_name)
+                logger.warning(warning)
+            if oseries_name not in self.oseries.index:
+                error = ("Oseries name {} is not present in the database. Make "
+                         "sure to provide a valid name.").format(oseries_name)
+                logger.error(error)
+                return
+
+            oseries_series = self.oseries.loc[oseries_name, "series"]
+            ml = Model(oseries_series, name=model_name, **kwargs)
+    
+            # Add new model to the models dictionary
+            self.models[model_name] = ml
+            ml_list.append(ml)
+        
+        return ml_list
+        
 
     def del_model(self, ml_name):
         """Method to safe-delete a model from the project.
@@ -239,25 +294,62 @@ class Project:
             # set oseries_calib empty, so it is determined again the next time
             ml.oseries_calib = None
 
-    def add_recharge(self, ml, rfunc=Gamma, name="recharge", **kwargs):
-        """Adds a recharge element to the time series model. The
+    def add_recharge(self, ml_list=None, rfunc=Gamma, name="recharge", **kwargs):
+        """Add a recharge element to the time series model. The
         selection of the precipitation and evaporation time series is based
         on the shortest distance to the a stresses in the stresseslist.
+
+        Parameters
+        ----------
+        ml_list: list, optional
+            list with pastas.Model objects, if None all models in project are used
+        rfunc: pastas.rfunc, optional
+            response function, default is the Gamma function
+        name: str, optional
+            name of the stress
+        **kwargs: arguments are pass to the StressModel2 function
 
         Returns
         -------
 
         """
-        key = str(ml.oseries.name)
-        prec_name = self.get_nearest_stresses(key, kind="prec").iloc[0][0]
-        prec = self.stresses.loc[prec_name, "series"]
-        evap_name = self.get_nearest_stresses(key, kind="evap").iloc[0][0]
-        evap = self.stresses.loc[evap_name, "series"]
-
-        recharge = StressModel2([prec, evap], rfunc, name=name, **kwargs)
-
-        ml.add_stressmodel(recharge)
-
+        if ml_list==None:
+            ml_list = self.models.values()
+        elif type(ml_list)==Model:
+            ml_list = [ml_list]
+        
+            
+        for ml in ml_list:
+            key = str(ml.oseries.name)
+            prec_name = self.get_nearest_stresses(key, kind="prec").iloc[0][0]
+            prec = self.stresses.loc[prec_name, "series"]
+            evap_name = self.get_nearest_stresses(key, kind="evap").iloc[0][0]
+            evap = self.stresses.loc[evap_name, "series"]
+    
+            recharge = StressModel2([prec, evap], rfunc, name=name, **kwargs)
+    
+            ml.add_stressmodel(recharge)
+            
+    def solve_models(self, ml_list=None, report=False, **kwargs):
+        """Solves the models in ml_list
+        
+        ml_list: list, optional
+            list with pastas.Model objects, if None all models in project are solved
+        report: boolean, optional
+            determines if a report is printed when the model is solved
+        **kwargs: arguments are passsed to the solve method
+            
+        
+        """
+        if ml_list==None:
+            ml_list = self.models.values()
+        elif type(ml_list)==Model:
+            ml_list = [ml_list]
+            
+        for ml in ml_list:
+            ml.solve(report=report, **kwargs)
+        
+        
     def get_nearest_stresses(self, oseries=None, stresses=None, kind=None,
                              n=1):
         """Method to obtain the nearest (n) stresses of a specific kind.
