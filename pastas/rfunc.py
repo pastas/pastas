@@ -26,7 +26,7 @@ from pandas import DataFrame
 from scipy.special import gammainc, gammaincinv, k0, exp1, erfc, lambertw
 from scipy.integrate import quad
 
-__all__ = ["Gamma", "Exponential", "Hantush", 
+__all__ = ["Gamma", "Exponential", "Hantush",
            "FourParam", "FourParamQuad",
            "DoubleExponential", "One"]
 
@@ -394,7 +394,8 @@ class One(RfuncBase):
 
     def block(self, p, dt=1):
         return p[0] * np.ones(1)
-    
+
+
 class FourParam(RfuncBase):
     """Four Parameter response function with 4 parameters A, a, b, and n.
 
@@ -489,7 +490,8 @@ class FourParam(RfuncBase):
             s = np.zeros_like(t)
             s[0] = quad(self.function, 0, dt, args=p)[0]
             for i in range(1, len(t)):
-                s[i] = s[i - 1] + quad(self.function, t[i - 1], t[i], args=p)[0]
+                s[i] = s[i - 1] + quad(self.function, t[i - 1], t[i], args=p)[
+                    0]
             s = s * (p[0] / (quad(self.function, 0, np.inf, args=p))[0])
             return s
 
@@ -518,7 +520,8 @@ class FourParam(RfuncBase):
                 func = self.function(t, p)
                 func_half = self.function(t[:-1] + step / 2, p)
                 s[1:] = s[0] + np.cumsum(step / 6 *
-                                         (func[:-1] + 4 * func_half + func[1:]))
+                                         (func[:-1] + 4 * func_half + func[
+                                                                      1:]))
                 s = s * (p[0] / quad(self.function, 0, np.inf, args=p)[0])
                 return s[int(dt / step - 1)::int(dt / step)]
             else:
@@ -539,7 +542,8 @@ class FourParam(RfuncBase):
                 func = self.function(t, p)
                 func_half = self.function(t[:-1] + dt / 2, p)
                 s[1:] = s[0] + np.cumsum(dt / 6 *
-                                         (func[:-1] + 4 * func_half + func[1:]))
+                                         (func[:-1] + 4 * func_half + func[
+                                                                      1:]))
                 s = s * (p[0] / quad(self.function, 0, np.inf, args=p)[0])
                 return s
 
@@ -575,6 +579,7 @@ class FourParamQuad(FourParam):
         FourParam.__init__(self, up, meanstress, cutoff)
         self.nparam = 4
         self.quad = True
+
 
 class DoubleExponential(RfuncBase):
     """Gamma response function with 3 parameters A, a, and n.
@@ -636,6 +641,6 @@ class DoubleExponential(RfuncBase):
             self.tmax = max(self.calc_tmax(p, cutoff), 3 * dt)
             t = np.arange(dt, self.tmax, dt)
 
-        s = p[0] * (1 - ((1 - p[1]) * np.exp(-t / p[2]) + 
+        s = p[0] * (1 - ((1 - p[1]) * np.exp(-t / p[2]) +
                          p[1] * np.exp(-t / p[3])))
         return s
