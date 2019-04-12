@@ -44,8 +44,9 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'IPython.sphinxext.ipython_console_highlighting',  # lowercase didn't work
-	'sphinx.ext.autosectionlabel',
-    'nbsphinx'
+    'sphinx.ext.autosectionlabel',
+    'nbsphinx',
+    'nbsphinx_link'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -150,7 +151,7 @@ html_sidebars = {
 }
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
-html_short_title = "PASTAS"
+html_short_title = "Pastas"
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
