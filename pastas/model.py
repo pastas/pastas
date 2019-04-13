@@ -819,8 +819,8 @@ class Model:
             self.settings["time_offset"] = pd.Timedelta(0)
 
     def set_log_level(self, log_level):
-        """Method to set the log_level for which messages are printen to the
-        Python console. This can be usefull for when more or less info is
+        """Method to set the log_level for which messages are printed to the
+        Python console. This can be useful for when more or less info is
         desirable.
 
         Parameters

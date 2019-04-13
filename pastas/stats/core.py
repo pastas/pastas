@@ -112,8 +112,8 @@ def ccf(x, y, lags=None, bin_method='gaussian', bin_width=None,
     # Create matrix with time differences
     t1, t2 = np.meshgrid(t_x, t_y)
 
-    # Do not take absolute value (previous behavior) and set values to nan where t < 0.
-    # This means only positive lags can be calculated!
+    # Do not take absolute value (previous behavior) and set values to nan
+    # where t < 0. This means only positive lags can be calculated!
     t = np.subtract(t1, t2)
     t[t < 0] = np.nan
 

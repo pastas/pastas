@@ -45,8 +45,6 @@ class StressModelBase:
 
     Attributes
     ----------
-    nparam : int
-        Number of parameters.
     name : str
         Name of this stressmodel object. Used as prefix for the parameters.
     parameters : pandas.DataFrame
@@ -173,8 +171,6 @@ class StressModelBase:
 
         Parameters
         ----------
-        data: dict
-            Dictionary for the data to go into.
         series: Boolean
             True if time series are to be exported, False if only the name
             of the time series are needed. Settings are always exported.
@@ -489,7 +485,7 @@ class StepModel(StressModelBase):
 
     Parameters
     ----------
-    start: str
+    tstart: str
         String with the start date of the step, e.g. '2018-01-01'. This
         value is fixed by default. Use ml.set_vary("step_tstart", 1) to vary
         the start time of the step trend.

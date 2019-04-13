@@ -250,7 +250,7 @@ class TimeSeries(object):
         # 2. Make sure the indices are Timestamps and sorted
         series = series.astype(float)
         series.index = pd.to_datetime(series.index)
-        series.sort_index(inplace=True)
+        series = series.sort_index()
         series.index.name = ""
 
         # 3. Drop nan-values at the beginning and end of the time series
@@ -651,7 +651,6 @@ class TimeSeries(object):
 
         Parameters
         ----------
-        transformed_series
         series: Boolean
             True to export the original time series, False to only export
             the TimeSeries object"s name.
