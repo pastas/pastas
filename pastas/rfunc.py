@@ -35,7 +35,7 @@ class RfuncBase:
 
     def __init__(self, up, meanstress, cutoff):
         self.up = up
-        # Completely arbitrary number to prevent divsion by zero
+        # Completely arbitrary number to prevent division by zero
         if meanstress < 1e-8 and meanstress > 0:
             meanstress = 1e-8
         elif meanstress < 0 and up is True:
@@ -44,7 +44,7 @@ class RfuncBase:
         self.cutoff = cutoff
         self.tmax = 0
 
-    def set_parameters(self, name):
+    def get_init_parameters(self, name):
         pass
 
     def get_tmax(self, p, cutoff=None):
@@ -133,7 +133,7 @@ class Gamma(RfuncBase):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 3
 
-    def set_parameters(self, name):
+    def get_init_parameters(self, name):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
@@ -192,7 +192,7 @@ class Exponential(RfuncBase):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 2
 
-    def set_parameters(self, name):
+    def get_init_parameters(self, name):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
@@ -261,7 +261,7 @@ class Hantush(RfuncBase):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 3
 
-    def set_parameters(self, name):
+    def get_init_parameters(self, name):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
@@ -323,7 +323,7 @@ class Polder(RfuncBase):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 3
 
-    def set_parameters(self, name):
+    def get_init_parameters(self, name):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         a_init = 1
@@ -373,7 +373,7 @@ class One(RfuncBase):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 1
 
-    def set_parameters(self, name):
+    def get_init_parameters(self, name):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
@@ -424,7 +424,7 @@ class FourParam(RfuncBase):
         self.nparam = 4
         self.quad = False
 
-    def set_parameters(self, name):
+    def get_init_parameters(self, name):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
@@ -607,7 +607,7 @@ class DoubleExponential(RfuncBase):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 4
 
-    def set_parameters(self, name):
+    def get_init_parameters(self, name):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
