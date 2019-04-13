@@ -1050,8 +1050,8 @@ class Model:
         if noise is None:
             noise = self.settings['noise']
 
-        parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary',
-                                           'optimal', 'name', 'stderr'])
+        parameters = pd.DataFrame(columns=["initial", "name", "optimal",
+                                           "pmin", "pmax", "vary", "stderr"])
         for sm in self.stressmodels.values():
             parameters = parameters.append(sm.parameters, sort=False)
         if self.constant:
@@ -1090,7 +1090,7 @@ class Model:
 
         """
         if name:
-            p = self.parameters[self.parameters.name == name]
+            p = self.parameters.loc[self.parameters.name == name]
         else:
             p = self.parameters
 
@@ -1350,10 +1350,10 @@ class Model:
         """
         if output != "full":
             raise NotImplementedError
-        
+
         if self.fit is None:
             return 'Model is not optimized or read from file. Solve first.'
-        
+
         model = {
             "nfev": self.fit.nfev,
             "nobs": self.oseries_calib.index.size,
