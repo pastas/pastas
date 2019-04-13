@@ -248,8 +248,10 @@ class Plotting:
             o_label = o.name
             set_axes_properties = True
         else:
-            assert len(axes) == len(series), 'Makes sure the number of axes ' \
-                                             'equals the number of series'
+            if len(axes) != len(series):
+                msg = 'Makes sure the number of axes equals the number of ' \
+                      'series'
+                raise Exception(msg)
             fig = axes[0].figure
             o_label = ''
             set_axes_properties = False
