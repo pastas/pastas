@@ -28,7 +28,7 @@ def read_knmi(fname, variables='RD'):
     knmi = KnmiStation.fromfile(fname)
     if variables is None:
         variables = knmi.variables.keys()
-    if type(variables) == str:
+    if isinstance(variables, str):
         variables = [variables]
 
     stn_codes = knmi.data['STN'].unique()
@@ -303,10 +303,12 @@ class KnmiStation:
         else:
             # daily data
             if 'RD' in data.keys():
-                # daily precipitation amount in 0.1 mm over the period 08.00 preceding day - 08.00 UTC present day
+                # daily precipitation amount in 0.1 mm over the period 08.00
+                # preceding day - 08.00 UTC present day
                 data.index = data.index + pd.to_timedelta(8, unit='h')
             else:
-                # add a full day for meteorologiscal data, so that the timestamp is at the end of the period that the data represenets
+                # add a full day for meteorological data, so that the
+                # timestamp is at the end of the period in the data
                 data.index = data.index + pd.to_timedelta(1, unit='d')
 
         # from UT to UT+1 (standard-time in the Netherlands)

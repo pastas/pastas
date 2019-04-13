@@ -12,7 +12,7 @@ Autocorrelation:
 
 """
 
-from numpy import abs, sqrt, cumsum
+from numpy import sqrt, cumsum
 from pandas import DataFrame, concat
 from scipy.stats import chi2, norm
 

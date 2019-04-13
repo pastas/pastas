@@ -146,7 +146,7 @@ def ccf(x, y, lags=None, bin_method='gaussian', bin_width=None,
     if bin_width is None:
         options = {"rectangle": 0.5, "sinc": 1, "gaussian": 0.25}
         bin_width = np.ones_like(lags) * options[bin_method] * dt_mu
-    elif type(bin_width) is float:
+    elif isinstance(bin_width, float):
         bin_width = np.ones_like(lags)
     else:
         bin_width = [0.5, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 5, 5, 5, 5,

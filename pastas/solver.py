@@ -30,7 +30,7 @@ logger = getLogger(__name__)
 
 class BaseSolver:
     _name = "BaseSolver"
-    __doc__ = """Basesolver class that contains the basic function for each 
+    __doc__ = """Basesolver class that contains the basic function for each
     solver.
 
     A solver is implemented with a separate init method and objective function

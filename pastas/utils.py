@@ -208,7 +208,7 @@ def timestep_weighted_resample(series, tindex):
     t1s = t1e - dt1
     v1 = np.empty(t1e.shape)
     v1[:] = np.nan
-    for i in range(len(v1)):
+    for i, _ in enumerate(v1):
         # determine which periods within the series are within the new tindex
         mask = (t0e > t1s[i]) & (t0s < t1e[i])
         if np.any(mask):

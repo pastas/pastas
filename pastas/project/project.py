@@ -277,14 +277,14 @@ class Project:
 
         distances = self.get_distances(oseries, stresses, kind)
 
-        sorted = pd.DataFrame(columns=np.arange(n))
+        data = pd.DataFrame(columns=np.arange(n))
 
         for series in distances.index:
             series = pd.Series(distances.loc[series].sort_values().index[:n],
                                name=series)
-            sorted = sorted.append(series)
+            data = data.append(series)
 
-        return sorted
+        return data
 
     def get_distances(self, oseries=None, stresses=None, kind=None, ):
         """Method to obtain the distances in meters between the stresses and
