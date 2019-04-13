@@ -26,8 +26,7 @@ from pandas import DataFrame
 from scipy.special import gammainc, gammaincinv, k0, exp1, erfc, lambertw
 from scipy.integrate import quad
 
-__all__ = ["Gamma", "Exponential", "Hantush",
-           "FourParam", "FourParamQuad",
+__all__ = ["Gamma", "Exponential", "Hantush", "FourParam", "FourParamQuad",
            "DoubleExponential", "One"]
 
 
@@ -386,13 +385,13 @@ class One(RfuncBase):
     def gain(self, p):
         return p[0]
 
-    def step(self, p, dt=1):
+    def step(self, p, dt=1, cutoff=None):
         if isinstance(dt, np.ndarray):
             return p[0] * np.ones(len(dt))
         else:
             return p[0] * np.ones(1)
 
-    def block(self, p, dt=1):
+    def block(self, p, dt=1, cutoff=None):
         return p[0] * np.ones(1)
 
 
