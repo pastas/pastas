@@ -26,7 +26,7 @@ from pandas import DataFrame
 from scipy.special import gammainc, gammaincinv, k0, exp1, erfc, lambertw
 from scipy.integrate import quad
 
-__all__ = ["Gamma", "Exponential", "Hantush", "FourParam", "FourParamQuad",
+__all__ = ["Gamma", "Exponential", "Hantush", "Polder", "FourParam",
            "DoubleExponential", "One"]
 
 
@@ -36,7 +36,7 @@ class RfuncBase:
     def __init__(self, up, meanstress, cutoff):
         self.up = up
         # Completely arbitrary number to prevent division by zero
-        if meanstress < 1e-8 and meanstress > 0:
+        if 1e-8 > meanstress > 0:
             meanstress = 1e-8
         elif meanstress < 0 and up is True:
             meanstress = meanstress * -1
@@ -478,7 +478,7 @@ class FourParam(RfuncBase):
     def gain(self, p):
         return p[0]
 
-    def step(self, p, dt=1, cutoff=0.99):
+    def step(self, p, dt=1, cutoff=None):
 
         if self.quad:
             if isinstance(dt, np.ndarray):
@@ -563,9 +563,9 @@ class FourParamQuad(FourParam):
 
     Notes
     -----
-    This response function uses np.quad to integrate the Four Parameter response
-    function, which requires more calculation time.
-    This response function can be used for testing purposes.
+    This response function uses np.quad to integrate the Four Parameter
+    response function, which requires more calculation time. This response
+    function can be used for testing purposes.
 
     .. math::
         step(t) = A / quad(t**n * np.exp(-t/a - b/t),0,np.inf) *
