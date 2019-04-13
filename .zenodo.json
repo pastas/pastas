@@ -7,7 +7,7 @@
     {
       "affiliation": "Institute of Earth Sciences, NAWI Graz Geocenter, University of Graz, Graz, Austria.",
       "name": "Raoul Collenteur",
-      "orcid": "0000-0001-7843-1538",
+      "orcid": "0000-0001-7843-1538"
     },
     {
       "affiliation": "Artesia Water, Schoonhoven, The Netherlands.",
@@ -30,6 +30,6 @@
     "time series",
     "response functions",
     "transfer function noise",
-    "open source",
+    "open source"
   ]
 }

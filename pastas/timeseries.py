@@ -151,7 +151,8 @@ class TimeSeries(object):
                 else:
                     logger.error("Settings shortcut code %s is not in the "
                                  "predefined settings options. Please choose "
-                                 "from %s", self._predefined_settings.keys())
+                                 "from %s", settings,
+                                 self._predefined_settings.keys())
             if self.update_settings(**settings):
                 update = True
         if kwargs:
@@ -160,7 +161,8 @@ class TimeSeries(object):
 
         # Create a validated series for computations and update
         if validate:
-            self._series_validated = self.validate_series(self._series_original)
+            self._series_validated = self.validate_series(
+                self._series_original)
         if update:
             self.update_series(force_update=True, **self.settings)
 
@@ -181,7 +183,8 @@ class TimeSeries(object):
             self.settings["tmax"] = None
             freq_original = self.freq_original  # remember what it was
             self.freq_original = None
-            self._series_validated = self.validate_series(self._series_original)
+            self._series_validated = self.validate_series(
+                self._series_original)
             if self.freq_original is None:
                 self.freq_original = freq_original
             self.update_series(force_update=True, **self.settings)

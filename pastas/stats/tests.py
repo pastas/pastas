@@ -152,7 +152,7 @@ def ljung_box(series=None, acf=None, alpha=0.05, **kwargs):
     lags = acf.index.values
     nobs = acf.index.size
     df = (nobs - lags)
-    df[df==0] = 1
+    df[df == 0] = 1
     Qtest = nobs * (nobs + 2) * cumsum(acf.values ** 2 / df)
 
     # TODO decrease lags by number of parameters?

@@ -566,11 +566,11 @@ class LinearTrend(StressModelBase):
                                  pd.Timestamp.max, 1, 0, 0)
         self.start = start
         self.end = end
-        self.set_init_parameters(start, end)
+        self.set_init_parameters()
 
-    def set_init_parameters(self, start, end):
-        start = pd.Timestamp(start).toordinal()
-        end = pd.Timestamp(end).toordinal()
+    def set_init_parameters(self):
+        start = pd.Timestamp(self.start).toordinal()
+        end = pd.Timestamp(self.end).toordinal()
         tmin = pd.Timestamp.min.toordinal()
         tmax = pd.Timestamp.max.toordinal()
 
@@ -708,7 +708,7 @@ class WellModel(StressModelBase):
 
         return h
 
-    def get_stress(self, p=None, istress=None):
+    def get_stress(self, p=None, istress=None, **kwargs):
         if istress is None:
             return [s.series for s in self.stress]
         else:
@@ -899,7 +899,7 @@ class RechargeModel(StressModelBase):
                       index=stress.index, name=self.name, fastpath=True)
         return h
 
-    def get_stress(self, p=None, original=False, istress=None):
+    def get_stress(self, p=None, original=False, istress=None, **kwargs):
         if istress is None:
             prec = self.prec.series
             evap = self.evap.series
