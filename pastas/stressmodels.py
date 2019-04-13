@@ -121,15 +121,16 @@ class StressModelBase:
         self.parameters.loc[name, 'vary'] = value
 
     def update_stress(self, **kwargs):
-        """Method to change the frequency of the individual TimeSeries in
-        the Pandas DataFrame.
+        """Method to update the settings of the individual TimeSeries.
 
-        Parameters
-        ----------
-        freq
+        Notes
+        -----
+        For the individual options for the different settings please refer to
+        the docstring from the TimeSeries.update_series() method.
 
-        Returns
-        -------
+        See Also
+        --------
+        ps.TimeSeries.update_series
 
         """
         for stress in self.stress:
@@ -828,7 +829,7 @@ class RechargeModel(StressModelBase):
     obtain the final contribution.
 
     """
-    _name = "Recharge"
+    _name = "RechargeModel"
 
     def __init__(self, prec, evap, rfunc, name, recharge="Linear", up=True,
                  cutoff=0.99, settings=("prec", "evap"), metadata=(None, None),
@@ -871,15 +872,16 @@ class RechargeModel(StressModelBase):
              ])
 
     def update_stress(self, **kwargs):
-        """Method to change the frequency of the individual TimeSeries in
-        the Pandas DataFrame.
+        """Method to update the settings of the individual TimeSeries.
 
-        Parameters
-        ----------
-        freq
+        Notes
+        -----
+        For the individual options for the different settings please refer to
+        the docstring from the TimeSeries.update_series() method.
 
-        Returns
-        -------
+        See Also
+        --------
+        ps.TimeSeries.update_series
 
         """
         self.prec.update_series(**kwargs)
@@ -903,8 +905,8 @@ class RechargeModel(StressModelBase):
             evap = self.evap.series
             stress = self.recharge.simulate(prec, evap, p)
 
-            stress = pd.Series(data=stress, index=prec.index,
-                               name="recharge", fastpath=True)
+            stress = pd.Series(data=stress, index=prec.index, name="recharge",
+                               fastpath=True)
             return stress
         elif istress == 0:
             return self.prec.series
