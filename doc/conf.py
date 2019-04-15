@@ -60,7 +60,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'PASTAS'
+project = u'Pastas'
 copyright = u'2019, R.A. Collenteur, M. Bakker, R. Calje, F. Schaars'
 author = u'R.A. Collenteur, M. Bakker, R. Calje, F. Schaars'
 rst_epilog = '.. |project| replace:: %s' % project
