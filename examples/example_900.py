@@ -13,14 +13,15 @@ obs = ps.read_dino('data/B58C0698001_1.csv')
 ml = ps.Model(obs)
 
 # read weather data
-knmi = ps.read.knmi.KnmiStation.fromfile('data/neerslaggeg_HEIBLOEM-L_967-2.txt')
-rain = ps.TimeSeries(knmi.data['RD'],settings='prec')
+knmi = ps.read.knmi.KnmiStation.fromfile(
+    'data/neerslaggeg_HEIBLOEM-L_967-2.txt')
+rain = ps.TimeSeries(knmi.data['RD'], settings='prec')
 
 evap = ps.read_knmi('data/etmgeg_380.txt', variables='EV24')
 if True:
     # also add 9 hours to the evaporation
     s = evap.series_original
-    s.index = s.index+pd.to_timedelta(9,'h')
+    s.index = s.index + pd.to_timedelta(9, 'h')
     evap.series_original = s
 
 # Create stress

@@ -83,7 +83,7 @@ class MenyData:
         # Figure out which data to collect from the file.
         if data == 'all':
             data = ['H', 'IN', 'M']
-        elif type(data) is str:
+        elif isinstance(data, str):
             data = [data]
 
         if 'IN' in data:

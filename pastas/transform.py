@@ -41,6 +41,8 @@ class ThresholdTransform:
         self.vmax = vmax
         self.name = name
         self.nparam = nparam
+        self.parameters = DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
 
     def set_model(self, ml):
         obs = ml.observations()
@@ -53,8 +55,6 @@ class ThresholdTransform:
         self.set_init_parameters()
 
     def set_init_parameters(self):
-        self.parameters = DataFrame(
-            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         self.parameters.loc[self.name + '_1'] = (
             self.value, self.vmin, self.vmax, 1, self.name)
         if self.nparam == 2:

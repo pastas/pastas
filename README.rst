@@ -75,10 +75,10 @@ Pastas depends on a number of Python packages, of which all of the necessary are
 automatically installed when using the pip install manager. To summarize, the 
 following pacakges are necessary for a minimal function installation of Pastas:
 
-- numpy>=1.10
+- numpy>=1.15
 - matplotlib>=2.0
 - pandas>=0.23
-- scipy>=1.0
+- scipy>=1.1
 
 Background
 ~~~~~~~~~~

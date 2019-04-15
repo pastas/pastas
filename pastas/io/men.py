@@ -28,8 +28,11 @@ def dump(fname, data, version=3):
     # load an empty menyanthes file
     io_dir, this_script_name = path.split(__file__)
     base_fname = path.join(io_dir, 'men', version + '.men')
-    assert path.exists(
-        base_fname), 'No Menyanthes file found for version ' + version
+
+    if not path.exists(base_fname):
+        msg = "No Menyanthes file found for version {}".format(version)
+        raise Exception(msg)
+
     men = loadmat(base_fname, matlab_compatible=True)
 
     # add the oseries

@@ -16,7 +16,7 @@ from .utils import get_dt
 
 logger = getLogger(__name__)
 
-all = ["NoiseModel", "NoiseModel2"]
+__all__ = ["NoiseModel", "NoiseModel2"]
 
 
 class NoiseModelBase(ABC):
@@ -133,8 +133,6 @@ class NoiseModel(NoiseModelBase):
         ----------
         res : pandas.Series
             The residual series.
-        odelt : pandas.Series
-            Time steps between observations.
         parameters : array-like, optional
             Alpha parameters used by the noisemodel.
 
@@ -144,7 +142,7 @@ class NoiseModel(NoiseModelBase):
             Series of the noise.
 
         """
-        dt = get_dt(freq) # Get the
+        dt = get_dt(freq)
         odelt = res.index.to_series().diff() / pd.Timedelta(dt, "D")
         odelt = odelt.iloc[1:]
         alpha = parameters[0]
@@ -170,7 +168,6 @@ class NoiseModel(NoiseModelBase):
         -------
 
         """
-        w = 1
         # divide power by 2 as nu / sigma is returned
         power = 1.0 / (2.0 * odelt.size)
         exp = np.exp(-2.0 / alpha * odelt)  # Twice as fast as 2*odelt/alpha
@@ -220,9 +217,7 @@ class NoiseModel2(NoiseModelBase):
         ----------
         res : pandas.Series
             The residual series.
-        odelt : pandas.Series
-            Time steps between observations.
-        parameters : array-like, optional
+        parameters : array_like, optional
             Alpha parameters used by the noisemodel.
 
         Returns
@@ -236,6 +231,6 @@ class NoiseModel2(NoiseModelBase):
         noise = pd.Series(res)
         alpha = parameters[0]
         # res.values is needed else it gets messed up with the dates
-        noise.iloc[1:] -= np.exp(-odelt/ alpha) * res.values[:-1]
+        noise.iloc[1:] -= np.exp(-odelt / alpha) * res.values[:-1]
         noise.name = "Noise"
         return noise

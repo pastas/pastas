@@ -45,8 +45,6 @@ class StressModelBase:
 
     Attributes
     ----------
-    nparam : int
-        Number of parameters.
     name : str
         Name of this stressmodel object. Used as prefix for the parameters.
     parameters : pandas.DataFrame
@@ -121,15 +119,16 @@ class StressModelBase:
         self.parameters.loc[name, 'vary'] = value
 
     def update_stress(self, **kwargs):
-        """Method to change the frequency of the individual TimeSeries in
-        the Pandas DataFrame.
+        """Method to update the settings of the individual TimeSeries.
 
-        Parameters
-        ----------
-        freq
+        Notes
+        -----
+        For the individual options for the different settings please refer to
+        the docstring from the TimeSeries.update_series() method.
 
-        Returns
-        -------
+        See Also
+        --------
+        ps.TimeSeries.update_series
 
         """
         for stress in self.stress:
@@ -172,8 +171,6 @@ class StressModelBase:
 
         Parameters
         ----------
-        data: dict
-            Dictionary for the data to go into.
         series: Boolean
             True if time series are to be exported, False if only the name
             of the time series are needed. Settings are always exported.
@@ -291,7 +288,7 @@ class StressModel(StressModelBase):
         """Set the initial parameters (back) to their default values.
 
         """
-        self.parameters = self.rfunc.set_parameters(self.name)
+        self.parameters = self.rfunc.get_init_parameters(self.name)
 
     def simulate(self, p, tmin=None, tmax=None, freq=None, dt=1):
         """Simulates the head contribution.
@@ -397,8 +394,8 @@ class StressModel2(StressModelBase):
         index = stress0.series.index.intersection(stress1.series.index)
         if index.empty:
             msg = ('The two stresses that were provided have no '
-                  'overlapping time indices. Please make sure the '
-                  'indices of the time series overlap.')
+                   'overlapping time indices. Please make sure the '
+                   'indices of the time series overlap.')
             logger.error(msg)
             raise Exception(msg)
 
@@ -421,7 +418,7 @@ class StressModel2(StressModelBase):
         """Set the initial parameters back to their default values.
 
         """
-        self.parameters = self.rfunc.set_parameters(self.name)
+        self.parameters = self.rfunc.get_init_parameters(self.name)
         self.parameters.loc[self.name + '_f'] = (-1.0, -2.0, 0.0, 1, self.name)
 
     def simulate(self, p, tmin=None, tmax=None, freq=None, dt=1, istress=None):
@@ -488,7 +485,7 @@ class StepModel(StressModelBase):
 
     Parameters
     ----------
-    start: str
+    tstart: str
         String with the start date of the step, e.g. '2018-01-01'. This
         value is fixed by default. Use ml.set_vary("step_tstart", 1) to vary
         the start time of the step trend.
@@ -514,7 +511,7 @@ class StepModel(StressModelBase):
         self.set_init_parameters()
 
     def set_init_parameters(self):
-        self.parameters = self.rfunc.set_parameters(self.name)
+        self.parameters = self.rfunc.get_init_parameters(self.name)
         tmin = pd.Timestamp.min.toordinal()
         tmax = pd.Timestamp.max.toordinal()
         tinit = self.tstart.toordinal()
@@ -565,11 +562,11 @@ class LinearTrend(StressModelBase):
                                  pd.Timestamp.max, 1, 0, 0)
         self.start = start
         self.end = end
-        self.set_init_parameters(start, end)
+        self.set_init_parameters()
 
-    def set_init_parameters(self, start, end):
-        start = pd.Timestamp(start).toordinal()
-        end = pd.Timestamp(end).toordinal()
+    def set_init_parameters(self):
+        start = pd.Timestamp(self.start).toordinal()
+        end = pd.Timestamp(self.end).toordinal()
         tmin = pd.Timestamp.min.toordinal()
         tmax = pd.Timestamp.max.toordinal()
 
@@ -688,7 +685,7 @@ class WellModel(StressModelBase):
         self.set_init_parameters()
 
     def set_init_parameters(self):
-        self.parameters = self.rfunc.set_parameters(self.name)
+        self.parameters = self.rfunc.get_init_parameters(self.name)
 
     def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1,
                  istress=None):
@@ -707,7 +704,7 @@ class WellModel(StressModelBase):
 
         return h
 
-    def get_stress(self, p=None, istress=None):
+    def get_stress(self, p=None, istress=None, **kwargs):
         if istress is None:
             return [s.series for s in self.stress]
         else:
@@ -828,7 +825,7 @@ class RechargeModel(StressModelBase):
     obtain the final contribution.
 
     """
-    _name = "Recharge"
+    _name = "RechargeModel"
 
     def __init__(self, prec, evap, rfunc, name, recharge="Linear", up=True,
                  cutoff=0.99, settings=("prec", "evap"), metadata=(None, None),
@@ -865,19 +862,22 @@ class RechargeModel(StressModelBase):
         self.set_init_parameters()
 
     def set_init_parameters(self):
-        self.parameters = pd.concat([self.rfunc.set_parameters(self.name),
-                                     self.recharge.set_parameters(self.name)])
+        self.parameters = pd.concat(
+            [self.rfunc.get_init_parameters(self.name),
+             self.recharge.get_init_parameters(self.name)
+             ])
 
     def update_stress(self, **kwargs):
-        """Method to change the frequency of the individual TimeSeries in
-        the Pandas DataFrame.
+        """Method to update the settings of the individual TimeSeries.
 
-        Parameters
-        ----------
-        freq
+        Notes
+        -----
+        For the individual options for the different settings please refer to
+        the docstring from the TimeSeries.update_series() method.
 
-        Returns
-        -------
+        See Also
+        --------
+        ps.TimeSeries.update_series
 
         """
         self.prec.update_series(**kwargs)
@@ -889,20 +889,21 @@ class RechargeModel(StressModelBase):
     def simulate(self, p, tmin=None, tmax=None, freq=None, dt=1):
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
         b = self.rfunc.block(p[:-self.recharge.nparam], dt)
-        stress = self.get_stress(p[-self.recharge.nparam:])
+        stress = self.get_stress(p)
         npoints = stress.index.size
         h = pd.Series(data=fftconvolve(stress, b, 'full')[:npoints],
                       index=stress.index, name=self.name, fastpath=True)
         return h
 
-    def get_stress(self, p=None, original=False, istress=None):
+    def get_stress(self, p=None, original=False, istress=None, **kwargs):
         if istress is None:
             prec = self.prec.series
             evap = self.evap.series
-            stress = self.recharge.simulate(prec, evap, p)
+            stress = self.recharge.simulate(prec, evap,
+                                            p[-self.recharge.nparam:])
 
-            stress = pd.Series(data=stress, index=prec.index,
-                               name="recharge", fastpath=True)
+            stress = pd.Series(data=stress, index=prec.index, name="recharge",
+                               fastpath=True)
             return stress
         elif istress == 0:
             return self.prec.series

@@ -151,7 +151,8 @@ class TimeSeries(object):
                 else:
                     logger.error("Settings shortcut code %s is not in the "
                                  "predefined settings options. Please choose "
-                                 "from %s", self._predefined_settings.keys())
+                                 "from %s", settings,
+                                 self._predefined_settings.keys())
             if self.update_settings(**settings):
                 update = True
         if kwargs:
@@ -160,7 +161,8 @@ class TimeSeries(object):
 
         # Create a validated series for computations and update
         if validate:
-            self._series_validated = self.validate_series(self._series_original)
+            self._series_validated = self.validate_series(
+                self._series_original)
         if update:
             self.update_series(force_update=True, **self.settings)
 
@@ -181,7 +183,8 @@ class TimeSeries(object):
             self.settings["tmax"] = None
             freq_original = self.freq_original  # remember what it was
             self.freq_original = None
-            self._series_validated = self.validate_series(self._series_original)
+            self._series_validated = self.validate_series(
+                self._series_original)
             if self.freq_original is None:
                 self.freq_original = freq_original
             self.update_series(force_update=True, **self.settings)
@@ -247,7 +250,7 @@ class TimeSeries(object):
         # 2. Make sure the indices are Timestamps and sorted
         series = series.astype(float)
         series.index = pd.to_datetime(series.index)
-        series.sort_index(inplace=True)
+        series = series.sort_index()
         series.index.name = ""
 
         # 3. Drop nan-values at the beginning and end of the time series
@@ -648,7 +651,6 @@ class TimeSeries(object):
 
         Parameters
         ----------
-        transformed_series
         series: Boolean
             True to export the original time series, False to only export
             the TimeSeries object"s name.

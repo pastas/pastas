@@ -3,7 +3,7 @@
 Author: R.A. Collenteur
 
 Contains the classes for the different models that are available to calculate
-the recharge from evaporation and precipitation data.
+the recharge from precipitation and evaporation data.
 
 Each Recharge class contains at least the following:
 
@@ -14,7 +14,7 @@ nparam: int
 
 Functions
 ---------
-set_parameters(self, name)
+get_init_parameters(self, name)
     A function that returns a Pandas DataFrame of the parameters of the
     recharge function. Columns of the dataframe need to be ['value', 'pmin',
     'pmax', 'vary']. Rows of the DataFrame have names of the parameters. Input
@@ -38,12 +38,28 @@ class Linear:
     def __init__(self):
         self.nparam = 1
 
-    def set_parameters(self, name):
+    def get_init_parameters(self, name):
         parameters = pd.DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         parameters.loc[name + '_f'] = (-1.0, -2.0, 0.0, 1, name)
         return parameters
 
-    def simulate(self, precip, evap, p=None):
-        recharge = precip + p * evap
+    def simulate(self, prec, evap, p):
+        """
+
+        Parameters
+        ----------
+        prec, evap: array_like
+            array with the precipitation and evaporation values. These
+            arrays must be of the same length and at the same time steps.
+        p: float
+            parameter value used in recharge calculation.
+
+        Returns
+        -------
+        recharge: array_like
+            array with the recharge series.
+
+        """
+        recharge = prec + p * evap
         return recharge

@@ -819,8 +819,8 @@ class Model:
             self.settings["time_offset"] = pd.Timedelta(0)
 
     def set_log_level(self, log_level):
-        """Method to set the log_level for which messages are printen to the
-        Python console. This can be usefull for when more or less info is
+        """Method to set the log_level for which messages are printed to the
+        Python console. This can be useful for when more or less info is
         desirable.
 
         Parameters
@@ -1050,8 +1050,8 @@ class Model:
         if noise is None:
             noise = self.settings['noise']
 
-        parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary',
-                                           'optimal', 'name', 'stderr'])
+        parameters = pd.DataFrame(columns=["initial", "name", "optimal",
+                                           "pmin", "pmax", "vary", "stderr"])
         for sm in self.stressmodels.values():
             parameters = parameters.append(sm.parameters, sort=False)
         if self.constant:
@@ -1090,7 +1090,7 @@ class Model:
 
         """
         if name:
-            p = self.parameters[self.parameters.name == name]
+            p = self.parameters.loc[self.parameters.name == name]
         else:
             p = self.parameters
 
@@ -1350,10 +1350,10 @@ class Model:
         """
         if output != "full":
             raise NotImplementedError
-        
+
         if self.fit is None:
             return 'Model is not optimized or read from file. Solve first.'
-        
+
         model = {
             "nfev": self.fit.nfev,
             "nobs": self.oseries_calib.index.size,
@@ -1390,10 +1390,11 @@ class Model:
         string = "{:{fill}{align}{width}}"
 
         # Create the first header with model information and stats
+        w = max(width - 44, 0)
         header = "Model Results {name:<16}{string}Fit Statistics\n" \
                  "{line}\n".format(
             name=self.name[:14],
-            string=string.format("", fill=' ', align='>', width=width - 44),
+            string=string.format("", fill=' ', align='>', width=w),
             line=string.format("", fill='=', align='>', width=width)
         )
 
@@ -1401,7 +1402,8 @@ class Model:
         for item, item2 in zip(model.items(), fit.items()):
             val1, val2 = item
             val3, val4 = item2
-            val4 = string.format(val4, fill=' ', align='>', width=width - 38)
+            w = max(width - 38, 0)
+            val4 = string.format(val4, fill=' ', align='>', width=w)
             basic = basic + (
                 "{:<8} {:<22} {:<5} {}\n".format(val1, val2, val3, val4))
 
