@@ -20,8 +20,8 @@ evap = ps.read_knmi('data/etmgeg_380.txt', variables='EV24')
 evap.multiply(1000)
 
 # Create stress
-sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, recharge="Linear",
-                      name='recharge')
+sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential,
+                      recharge="Linear", name='recharge')
 ml.add_stressmodel(sm)
 
 ## Solve
