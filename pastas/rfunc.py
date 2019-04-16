@@ -23,7 +23,8 @@ TODO
 
 import numpy as np
 from pandas import DataFrame
-from scipy.special import gammainc, gammaincinv, k0, exp1, erfc, lambertw
+from scipy.special import gammainc, gammaincinv, k0, exp1, erfc, lambertw, \
+    erfcinv
 from scipy.integrate import quad
 
 __all__ = ["Gamma", "Exponential", "Hantush", "Polder", "FourParam",
@@ -642,4 +643,62 @@ class DoubleExponential(RfuncBase):
 
         s = p[0] * (1 - ((1 - p[1]) * np.exp(-t / p[2]) +
                          p[1] * np.exp(-t / p[3])))
+        return s
+
+
+class Edelman(RfuncBase):
+    """The function of Edelman, describing the propagation of an instantaneous
+    water level change into an adjacent half-infinite aquifer.
+
+    Parameters
+    ----------
+    up: bool, optional
+        indicates whether a positive stress will cause the head to go up
+        (True, default) or down (False)
+    meanstress: float
+        mean value of the stress, used to set the initial value such that
+        the final step times the mean stress equals 1
+    cutoff: float
+        percentage after which the step function is cut off. default=0.99.
+
+    Notes
+    -----
+    Parameter p[0]..math::
+        \\beta = \\frac{\\sqrt{\\frac{kD}{S}}}{x}
+
+    References
+    ----------
+    .. [2] http://grondwaterformules.nl/index.php/formules/waterloop/
+    peilverandering
+
+    """
+    _name = "Edelman"
+
+    def __init__(self, up=True, meanstress=1, cutoff=0.99):
+        RfuncBase.__init__(self, up, meanstress, cutoff)
+        self.nparam = 1
+
+    def set_parameters(self, name):
+        parameters = DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        beta_init = 1.0
+        parameters.loc[name + '_beta'] = (beta_init, 0, 1000, 1, name)
+        return parameters
+
+    def get_tmax(self, p, cutoff=None):
+        if cutoff is None:
+            cutoff = self.cutoff
+        # use maximum value to prevent performance issues
+        return min(20000, 1. / (2 * p[0] * erfcinv(cutoff * erfc(0))) ** 2)
+
+    def gain(self, p):
+        return 1.
+
+    def step(self, p, dt=1, cutoff=None):
+        if isinstance(dt, np.ndarray):
+            t = dt
+        else:
+            self.tmax = max(self.get_tmax(p, cutoff), 3 * dt)
+            t = np.arange(dt, self.tmax, dt)
+        s = erfc(1 / (2 * p[0] * np.sqrt(t)))
         return s
