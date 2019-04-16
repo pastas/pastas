@@ -9,8 +9,8 @@ R.A. Collenteur - August 2017
 import json
 from collections import OrderedDict
 
-from pandas import NaT, Series, Timedelta, DataFrame, read_json, Timestamp, \
-    to_numeric
+from pandas import Series, Timedelta, DataFrame, read_json, Timestamp, \
+    to_numeric, isna
 
 from pastas import TimeSeries
 
@@ -24,7 +24,7 @@ def pastas_hook(obj):
     for key, value in obj.items():
         if key in ["tmin", "tmax", "date_modified", "date_created"]:
             val = Timestamp(value)
-            if val is NaT:
+            if isna(val):
                 val = None
             obj[key] = val
         elif key == "series":
@@ -79,7 +79,7 @@ class PastasEncoder(json.JSONEncoder):
             return obj.to_json(orient="index")
         elif isinstance(obj, Timedelta):
             return obj.to_timedelta64().__str__()
-        elif isinstance(obj, NaT):
+        elif isna(obj):
             return None
         else:
             return super(PastasEncoder, self).default(obj)
