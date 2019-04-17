@@ -1,8 +1,8 @@
 # coding=utf-8
 """This module contains all the response functions available in Pastas.
 
-More information on how to write a response class can be found `here
- <http://pastas.readthedocs.io/en/latest/developers.html>_`.
+More information on how to write a response class can be found
+`here <http://pastas.readthedocs.io/en/latest/developers.html>`_.
 
 Routines in Module
 ------------------
@@ -239,11 +239,13 @@ class Hantush(RfuncBase):
 
     Notes
     -----
-    Parameters are:
+    The Hantush well function is emplained in [1]_, [2]_ and [3]_.
+    It's parameters are:
 
     .. math:: p[0] = A = \\frac{1}{4 \\pi kD}
     .. math:: p[1] = rho = \\frac{r}{\\lambda}
-    .. math::  p[2] = cS
+    .. math:: p[2] = cS
+
     where :math:`\\lambda = \\sqrt{\\frac{kD}{c}}`
 
     References
@@ -313,20 +315,21 @@ class Hantush(RfuncBase):
 
 
 class Polder(RfuncBase):
-    """The function of Polder, for a river in a confined aquifer,
+    """The Polder function, for a river in a confined aquifer,
     overlain by an aquitard with aquiferous ditches.
 
     Notes
     -----
-    Parameters are:
+    The Polder function is explained in [4]_. It's parameters are:
 
     .. math:: p[0] = \\frac{x}{2\\lambda}
     .. math:: p[1] = \\sqrt{\\frac{1}{cS}}
+
     where :math:`\\lambda = \\sqrt{\\frac{kD}{c}}`
 
     References
     ----------
-    .. [2] http://grondwaterformules.nl/index.php/formules/waterloop/deklaag-met-sloten
+    .. [4] http://grondwaterformules.nl/index.php/formules/waterloop/deklaag-met-sloten
 
     """
     _name = "Polder"
@@ -676,13 +679,13 @@ class Edelman(RfuncBase):
 
     Notes
     -----
-    Parameters are:
+    The Edelman function is emplained in [5]_. It's parameters are:
 
     .. math:: p[0] = \\beta = \\frac{\\sqrt{\\frac{4kD}{S}}}{x}
 
     References
     ----------
-    .. [2] http://grondwaterformules.nl/index.php/formules/waterloop/peilverandering
+    .. [5] http://grondwaterformules.nl/index.php/formules/waterloop/peilverandering
 
     """
     _name = "Edelman"
