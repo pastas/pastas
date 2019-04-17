@@ -241,7 +241,7 @@ class Hantush(RfuncBase):
     -----
     Parameters are:
 
-    .. math:: p[0] = \\frac{1}{4 \\pi kD}
+    .. math:: p[0] = A = \\frac{1}{4 \\pi kD}
     .. math:: p[1] = rho = \\frac{r}{\\lambda}
     .. math::  p[2] = cS
     where :math:`\\lambda = \\sqrt{\\frac{kD}{c}}`
