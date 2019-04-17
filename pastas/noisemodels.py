@@ -95,7 +95,7 @@ class NoiseModel(NoiseModelBase):
 
     Notes
     -----
-    Calculates the noise [1] according to:
+    Calculates the noise [1]_ according to:
 
     .. math::
         v(t1) = r(t1) - r(t0) * exp(- (t1 - t0) / alpha)
@@ -181,7 +181,7 @@ class NoiseModel2(NoiseModelBase):
 
     Notes
     -----
-    Calculates the noise [1] according to:
+    Calculates the noise according to:
 
     .. math::
         v(t1) = r(t1) - r(t0) * exp(- (t1 - t0) / alpha)
@@ -194,10 +194,6 @@ class NoiseModel2(NoiseModelBase):
 
     >>> n = NoiseModel()
     >>> n.set_initial("noise_alpha", 1.0 * ml.get_dt(ml.freq))
-
-    References
-    ----------
-    .. [A] von Asmuth, J. R., and M. F. P. Bierkens (2005), Modeling irregularly spaced residual series as a continuous stochastic process, Water Resour. Res., 41, W12404, doi:10.1029/2004WR003726.
 
     """
     _name = "NoiseModel2"

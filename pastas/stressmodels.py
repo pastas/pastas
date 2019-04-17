@@ -256,13 +256,12 @@ class StressModel(StressModelBase):
     --------
     >>> import pastas as ps
     >>> import pandas as pd
-    >>> sm = ps.StressModel(stress=pd.Series(), rfunc=ps.Gamma, name="Prec", \
-    >>> settings="prec")
+    >>> sm = ps.StressModel(stress=pd.Series(), rfunc=ps.Gamma, name="Prec",settings="prec")
 
     See Also
     --------
     pastas.rfunc
-    pastas.TimeSeries
+    pastas.timeseries.TimeSeries
 
     """
     _name = "StressModel"

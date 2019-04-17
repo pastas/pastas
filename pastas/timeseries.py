@@ -52,7 +52,7 @@ class TimeSeries(object):
 
     See Also
     --------
-    ps.TimeSeries.update_series
+    ps.timeseries.TimeSeries.update_series
 
     Returns
     -------
@@ -238,12 +238,11 @@ class TimeSeries(object):
         -----
         The Series are validated for the following cases:
 
-            1. Series is an actual pandas Series;
-            2. Nan-values from begin and end are removed;
-            3. Nan-values between observations are removed;
-            4. Indices are in Timestamps (standard throughout PASTAS),
-            making the index a pandas DateTimeIndex.
-            5. Duplicate indices are removed (by averaging).
+        1. Series is an actual pandas Series;
+        2. Nan-values from begin and end are removed;
+        3. Nan-values between observations are removed;
+        4. Indices are in Timestamps (standard throughout PASTAS), making the index a pandas DateTimeIndex.
+        5. Duplicate indices are removed (by averaging).
 
         """
 
