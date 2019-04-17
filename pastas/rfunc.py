@@ -28,7 +28,7 @@ from scipy.special import gammainc, gammaincinv, k0, exp1, erfc, lambertw, \
 from scipy.integrate import quad
 
 __all__ = ["Gamma", "Exponential", "Hantush", "Polder", "FourParam",
-           "DoubleExponential", "One"]
+           "DoubleExponential", "One", "Edelman"]
 
 
 class RfuncBase:
@@ -170,23 +170,23 @@ class Gamma(RfuncBase):
 class Exponential(RfuncBase):
     """Exponential response function with 2 parameters: A and a.
 
-        Parameters
-        ----------
-        up: bool, optional
-            indicates whether a positive stress will cause the head to go up
-            (True, default) or down (False)
-        meanstress: float
-            mean value of the stress, used to set the initial value such that
-            the final step times the mean stress equals 1
-        cutoff: float
-            percentage after which the step function is cut off. default=0.99.
+    Parameters
+    ----------
+    up: bool, optional
+        indicates whether a positive stress will cause the head to go up
+        (True, default) or down (False)
+    meanstress: float
+        mean value of the stress, used to set the initial value such that
+        the final step times the mean stress equals 1
+    cutoff: float
+        percentage after which the step function is cut off. default=0.99.
 
-        Notes
-        -----
-        .. math::
-            step(t) = A * (1 - exp(-t / a))
+    Notes
+    -----
+    .. math::
+        step(t) = A * (1 - e^{-\\frac{t}{a}})
 
-        """
+    """
     _name = "Exponential"
 
     def __init__(self, up=True, meanstress=1, cutoff=0.99):
@@ -239,8 +239,12 @@ class Hantush(RfuncBase):
 
     Notes
     -----
-    Parameters are ..math::
-        rho = r / lambda and cS
+    Parameters are:
+
+    .. math:: p[0] = \\frac{1}{4 \\pi kD}
+    .. math:: p[1] = rho = \\frac{r}{\\lambda}
+    .. math::  p[2] = cS
+    where :math:`\\lambda = \\sqrt{\\frac{kD}{c}}`
 
     References
     ----------
@@ -312,17 +316,24 @@ class Polder(RfuncBase):
     """The function of Polder, for a river in a confined aquifer,
     overlain by an aquitard with aquiferous ditches.
 
+    Notes
+    -----
+    Parameters are:
+
+    .. math:: p[0] = \\frac{x}{2\\lambda}
+    .. math:: p[1] = \\sqrt{\\frac{1}{cS}}
+    where :math:`\\lambda = \\sqrt{\\frac{kD}{c}}`
+
     References
     ----------
-    .. [2] http://grondwaterformules.nl/index.php/formules/waterloop/deklaag
-    -met-sloten
+    .. [2] http://grondwaterformules.nl/index.php/formules/waterloop/deklaag-met-sloten
 
     """
     _name = "Polder"
 
     def __init__(self, up=True, meanstress=1, cutoff=0.99):
         RfuncBase.__init__(self, up, meanstress, cutoff)
-        self.nparam = 3
+        self.nparam = 2
 
     def get_init_parameters(self, name):
         parameters = DataFrame(
@@ -346,8 +357,8 @@ class Polder(RfuncBase):
         return 4 * p[0] / p[1] ** 2
 
     def gain(self, p):
-        # TODO: check line below
-        return p[2]
+        # the steady state solution of Mazure
+        return np.exp(-2 * p[0])
 
     def step(self, p, dt=1, cutoff=None):
         if isinstance(dt, np.ndarray):
@@ -355,10 +366,11 @@ class Polder(RfuncBase):
         else:
             self.tmax = max(self.get_tmax(p, cutoff), 3 * dt)
             t = np.arange(dt, self.tmax, dt)
-        s = p[2] * self.polder_function(p[0], p[1] * np.sqrt(t))
+        s = self.polder_function(p[0], p[1] * np.sqrt(t))
         return s
 
-    def polder_function(self, x, y):
+    @staticmethod
+    def polder_function(x, y):
         s = .5 * np.exp(2 * x) * erfc(x / y + y) + \
             .5 * np.exp(-2 * x) * erfc(x / y - y)
         return s
@@ -414,8 +426,8 @@ class FourParam(RfuncBase):
     -----
 
     .. math::
-        step(t) = A / quad(t**n * np.exp(-t/a - b/t),0,np.inf) *
-                      quad(t**n * np.exp(-t/a - b/t),0,t)
+        step(t) = \\frac{A}{quad(t^n*e^{-\\frac{t}{a} - \\frac{b}{t}},0,inf)} *
+                            quad(t^n*e^{-\\frac{t}{a} - \\frac{b}{t}},0,t)
 
     """
     _name = "FourParam"
@@ -569,11 +581,11 @@ class FourParamQuad(FourParam):
     function can be used for testing purposes.
 
     .. math::
-        step(t) = A / quad(t**n * np.exp(-t/a - b/t),0,np.inf) *
-                      quad(t**n * np.exp(-t/a - b/t),0,t)
+        step(t) = \\frac{A}{quad(t^n*e^{-\\frac{t}{a} - \\frac{b}{t}},0,inf)} *
+                            quad(t^n*e^{-\\frac{t}{a} - \\frac{b}{t}},0,t)
 
     """
-    _name = "FourParam"
+    _name = "FourParamQuad"
 
     def __init__(self, up=True, meanstress=1, cutoff=0.99):
         FourParam.__init__(self, up, meanstress, cutoff)
@@ -599,7 +611,8 @@ class DoubleExponential(RfuncBase):
     -----
 
     .. math::
-        step(t) = A * (1 - ( (1 - alpha)* exp(-t / a1) + alpha * exp(-t / a2)))
+        step(t) = A * (1 - ( (1 - \\alpha)* e^{-\\frac{t}{a1}} +
+                                  \\alpha * e^{-\\frac{t}{a2}}))
 
     """
     _name = "DoubleExponential"
@@ -663,8 +676,9 @@ class Edelman(RfuncBase):
 
     Notes
     -----
-    Parameter p[0]..math::
-        \\beta = \\frac{\\sqrt{\\frac{kD}{S}}}{x}
+    Parameters are:
+
+    .. math:: p[0] = \\beta = \\frac{\\sqrt{\\frac{kD}{S}}}{x}
 
     References
     ----------
@@ -689,7 +703,7 @@ class Edelman(RfuncBase):
         if cutoff is None:
             cutoff = self.cutoff
         # use maximum value to prevent performance issues
-        return min(20000, 1. / (2 * p[0] * erfcinv(cutoff * erfc(0))) ** 2)
+        return 1. / (2 * p[0] * erfcinv(cutoff * erfc(0))) ** 2
 
     def gain(self, p):
         return 1.
