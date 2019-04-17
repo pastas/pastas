@@ -678,12 +678,12 @@ class Edelman(RfuncBase):
     -----
     Parameters are:
 
-    .. math:: p[0] = \\beta = \\frac{\\sqrt{\\frac{kD}{S}}}{x}
+    .. math:: p[0] = \\frac{2\\beta}{x} = \\frac{2\\sqrt{\\frac{kD}{S}}}{x}
+    where response capacity :math:`\\beta^2 = \\frac{kD}{S}`
 
     References
     ----------
-    .. [2] http://grondwaterformules.nl/index.php/formules/waterloop/
-    peilverandering
+    .. [2] http://grondwaterformules.nl/index.php/formules/waterloop/peilverandering
 
     """
     _name = "Edelman"
@@ -703,7 +703,7 @@ class Edelman(RfuncBase):
         if cutoff is None:
             cutoff = self.cutoff
         # use maximum value to prevent performance issues
-        return 1. / (2 * p[0] * erfcinv(cutoff * erfc(0))) ** 2
+        return 1. / (p[0] * erfcinv(cutoff * erfc(0))) ** 2
 
     def gain(self, p):
         return 1.
@@ -714,5 +714,5 @@ class Edelman(RfuncBase):
         else:
             self.tmax = max(self.get_tmax(p, cutoff), 3 * dt)
             t = np.arange(dt, self.tmax, dt)
-        s = erfc(1 / (2 * p[0] * np.sqrt(t)))
+        s = erfc(1 / (p[0] * np.sqrt(t)))
         return s
