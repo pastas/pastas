@@ -10,7 +10,7 @@ from ..timeseries import TimeSeries
 
 
 def read_knmi(fname, variables='RD'):
-    """This method can be used to import KNMI data.
+    """This method can be used to import KNMI data from a file in Pastas.
 
     Parameters
     ----------
@@ -123,6 +123,7 @@ class KnmiStation:
     # Construct KnmiStation from file
     @classmethod
     def fromfile(cls, fname):
+        """Reads data from a KNMI-file"""
         self = cls()
         with open(fname, 'r') as f:
             self.readdata(f)
@@ -133,7 +134,34 @@ class KnmiStation:
     @classmethod
     def download(cls, start=None, end=None, inseason=False, vars='ALL',
                  stns=260, interval='daily'):
-        """
+        """Downloads data from the KNMI-server
+
+        Parameters
+        ----------
+        start : str or pandas Timestamp
+            The start-date of the data to be downloaded
+            (defaults to start of current year)
+        end : str or pandas Timestamp
+            The end-date of the data to be downloaded
+            (defaults to today)
+        inseason : bool
+            Only download the data in the season between start and end
+            (defaults to False)
+        vars : str or list
+            The variable(s) to be downloaded
+            Use 'RD' to download from rainfall stations
+            (defaults to 'ALL')
+        stns : int, str or list
+            station number(s) to be downloaded
+            (defauls to 260 : 'De Bilt')
+        interval : str
+            The required data interval: 'daily' or 'hourly'
+            (defaults to 'daily')
+
+        Notes
+        -----
+        For more information see
+        https://www.knmi.nl/kennis-en-datacentrum/achtergrond/data-ophalen-vanuit-een-script
 
         """
         self = cls()
@@ -166,26 +194,34 @@ class KnmiStation:
         else:
             end = pd.to_datetime(end)
 
-        if interval.startswith('hour') and vars == 'RD':
-            raise (
-                ValueError('Interval can not be hourly for rainfall-stations'))
+        if not isinstance(vars, list):
+            vars = [vars]
+
+        if not isinstance(stns, list):
+            stns = [stns]
+        # convert possible integers to string
+        stns = [str(i) for i in stns]
+
+        if interval.startswith('hour') and 'RD' in vars:
+            message = 'Interval can not be hourly for rainfall-stations'
+            raise (ValueError(message))
+        if 'RD' in vars and len(vars) > 1:
+            message = 'Only daily precipitation can be downloaded from ' \
+                      'rainfall-stations'
+            raise (ValueError(message))
 
         if interval.startswith('hour'):
             # hourly data from meteorological stations
             url = 'http://projects.knmi.nl/klimatologie/uurgegevens/getdata_uur.cgi'
-        elif vars == 'RD':
+        elif 'RD' in vars:
             # daily data from rainfall-stations
             url = 'http://projects.knmi.nl/klimatologie/monv/reeksen/getdata_rr.cgi'
         else:
             # daily data from meteorological stations
             url = 'http://projects.knmi.nl/klimatologie/daggegevens/getdata_dag.cgi'
-        if not isinstance(stns, str):
-            if isinstance(stns, int):
-                stns = str(stns)
-            else:
-                stns = [str(i) for i in stns]
-                stns = ":".join(stns)
 
+        vars = ":".join(vars)
+        stns = ":".join(stns)
         if interval.startswith('hour'):
             data = {
                 'start': start.strftime('%Y%m%d') + '01',
