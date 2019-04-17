@@ -678,8 +678,7 @@ class Edelman(RfuncBase):
     -----
     Parameters are:
 
-    .. math:: p[0] = \\frac{2\\beta}{x} = \\frac{2\\sqrt{\\frac{kD}{S}}}{x}
-    where response capacity :math:`\\beta^2 = \\frac{kD}{S}`
+    .. math:: p[0] = \\beta = \\frac{\\sqrt{\\frac{4kD}{S}}}{x}
 
     References
     ----------
