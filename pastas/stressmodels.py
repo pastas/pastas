@@ -680,6 +680,8 @@ class WellModel(StressModelBase):
         if len(self.stress) != len(distances):
             logger.error("The number of stresses applied does not match the "
                          "number of radii provided.")
+            raise(ValueError("The number of stresses applied does not match the "
+                             "number of radii provided."))
         else:
             self.distances = distances
 
