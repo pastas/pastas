@@ -185,6 +185,9 @@ class KnmiStation:
             else:
                 stns = [str(i) for i in stns]
                 stns = ":".join(stns)
+        
+        if isinstance(vars, list):
+            vars = ":".join(vars)
 
         if interval.startswith('hour'):
             data = {
