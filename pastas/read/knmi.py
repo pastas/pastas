@@ -3,6 +3,7 @@
 
 """
 
+import numpy as np
 import pandas as pd
 import warnings
 
@@ -147,11 +148,11 @@ class KnmiStation:
         inseason : bool
             Only download the data in the season between start and end
             (defaults to False)
-        vars : str or list
+        vars : str or list/ndarray
             The variable(s) to be downloaded
             Use 'RD' to download from rainfall stations
             (defaults to 'ALL')
-        stns : int, str or list
+        stns : int, str or list/ndarray
             station number(s) to be downloaded
             (defauls to 260 : 'De Bilt')
         interval : str
@@ -195,10 +196,16 @@ class KnmiStation:
             end = pd.to_datetime(end)
 
         if not isinstance(vars, list):
-            vars = [vars]
+            if isinstance(vars,np.ndarray):
+                vars = list(vars)
+            else:
+                vars = [vars]
 
         if not isinstance(stns, list):
-            stns = [stns]
+            if isinstance(stns,np.ndarray):
+                stns = list(stns)
+            else:
+                stns = [stns]
         # convert possible integers to string
         stns = [str(i) for i in stns]
 
