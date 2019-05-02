@@ -672,9 +672,9 @@ class WellModel(StressModelBase):
                                  up, meanstress, cutoff)
 
         if settings is None or isinstance(settings, str):
-            settings = len(stresses) * [None]
+            settings = len(stress) * [None]
 
-        self.stress = self.handle_stress(stresses, settings)
+        self.stress = self.handle_stress(stress, settings)
 
         # Check if number of stresses and radii match
         if len(self.stress) != len(distances):
