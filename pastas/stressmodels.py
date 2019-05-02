@@ -660,7 +660,7 @@ class WellModel(StressModelBase):
     """
     _name = "WellModel"
 
-    def __init__(self, stresses, rfunc, name, distances, up=False, cutoff=0.99,
+    def __init__(self, stress, rfunc, name, distances, up=False, cutoff=0.99,
                  settings="well"):
 
         meanstress = 1.0  # ? this should be something logical
@@ -719,6 +719,27 @@ class WellModel(StressModelBase):
             return self.distances
         else:
             return [self.distances[iwell]]
+
+    def dump(self, series=True):
+        """Method to export the WellModel object.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct the
+            WellModel object.
+
+        """
+        data = {
+            "stressmodel": self._name,
+            "rfunc": self.rfunc._name,
+            "name": self.name,
+            "up": True if self.rfunc.up == 1 else False,
+            "distances": self.distances,
+            "cutoff": self.rfunc.cutoff,
+            "stress": self.dump_stress(series)
+        }
+        return data
 
 
 class FactorModel(StressModelBase):
