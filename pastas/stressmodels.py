@@ -19,7 +19,6 @@ TODO
 - Test and support LinearTrend
 - Test and support WellModel
 
-
 """
 
 from logging import getLogger
@@ -31,7 +30,7 @@ import pandas as pd
 from scipy.signal import fftconvolve
 
 from .decorators import set_parameter
-from .rfunc import One
+from .rfunc import One, Exponential
 from .timeseries import TimeSeries
 
 logger = getLogger(__name__)
@@ -787,16 +786,19 @@ class RechargeModel(StressModelBase):
     evap: pandas.Series or pastas.TimeSeries
         pandas.Series or pastas.TimeSeries objects containing the
         evaporation series.
-    rfunc: pastas.rfunc instance
-        Response function used in the convolution with the stress.
-    name: str
-        Name of the stress
+    rfunc: pastas.rfunc instance, optional
+        Response function used in the convolution with the stress. Default
+        is Exponential.
+    name: str, optional
+        Name of the stress. Default is "recharge".
     recharge: string, optional
         String with the name of the recharge model. Options are: "Linear" (
         default).
-    up: Boolean, optional
-        True if response function is positive (default), False if negative.
-    cutoff: float
+    temp: pandas.Series or pastas.TimeSeries, optional
+        pandas.Series or pastas.TimeSeries objects containing the
+        temperature series. It depends on the recharge model is this
+        argument is required or not.
+    cutoff: float, optional
         float between 0 and 1 to determine how long the response is (default
         is 99% of the actual response time). Used to reduce computation times.
     settings: list of dicts or strs, optional
@@ -819,44 +821,62 @@ class RechargeModel(StressModelBase):
     -----
     This stressmodel computes the contribution of precipitation and
     potential evaporation in two steps. In the first step a recharge flux is
-    computed by a method determined by the recharge input argument. In de
+    computed by a method determined by the recharge input argument. In the
     second step this recharge flux is convoluted with a response function to
-    obtain the final contribution.
+    obtain the contribution of recharge to the groundwater levels.
 
     """
     _name = "RechargeModel"
 
-    def __init__(self, prec, evap, rfunc, name, recharge="Linear", up=True,
-                 cutoff=0.99, settings=("prec", "evap"), metadata=(None, None),
-                 meanstress=None):
+    def __init__(self, prec, evap, rfunc=Exponential, name="recharge",
+                 recharge="Linear", temp=None, cutoff=0.99,
+                 settings=("prec", "evap", "evap"),
+                 metadata=(None, None, None)):
         # First check the series, then determine tmin and tmax
-        stress0 = TimeSeries(prec, settings=settings[0], metadata=metadata[0])
-        stress1 = TimeSeries(evap, settings=settings[1], metadata=metadata[1])
+        prec = TimeSeries(prec, settings=settings[0], metadata=metadata[0])
+        evap = TimeSeries(evap, settings=settings[1], metadata=metadata[1])
 
         # Select indices from validated stress where both series are available.
-        index = stress0.series.index.intersection(stress1.series.index)
-        if index.size is 0:
-            logger.error('The two stresses that were provided have no '
-                         'overlapping time indices. Please make sure the '
-                         'indices of the time series overlap.')
+        index = prec.series.index.intersection(evap.series.index)
+        if index.empty:
+            msg = ('The stresses that were provided have no overlapping '
+                   'time indices. Please make sure the indices of the time '
+                   'series overlap.')
+            logger.error(msg)
+            raise Exception(msg)
 
         # First check the series, then determine tmin and tmax
-        stress0.update_series(tmin=index.min(), tmax=index.max())
-        stress1.update_series(tmin=index.min(), tmax=index.max())
+        prec.update_series(tmin=index.min(), tmax=index.max())
+        evap.update_series(tmin=index.min(), tmax=index.max())
 
-        if meanstress is None:
-            meanstress = (stress0.series - stress1.series).std()
+        # Todo make this dependent on initial recharge calculation
+        meanstress = (prec.series - evap.series).std()
 
-        StressModelBase.__init__(self, rfunc, name, index.min(), index.max(),
-                                 up, meanstress, cutoff)
-        self.prec = stress0
-        self.evap = stress1
-
-        self.freq = stress0.settings["freq"]
+        StressModelBase.__init__(self, rfunc=rfunc, name=name,
+                                 tmin=index.min(), tmax=index.max(),
+                                 meanstress=meanstress, cutoff=cutoff,
+                                 up=True)
 
         # Dynamically load the required recharge model from string
-        recharge = getattr(import_module("pastas.recharge"), recharge)
-        self.recharge = recharge()
+        recharge_mod = getattr(import_module("pastas.recharge"), recharge)
+        self.recharge = recharge_mod()
+
+        # Store a temperature time series or set to None
+        if self.recharge.temp is True:
+            if temp is None:
+                msg = "Recharge module {} requires a temperature series. " \
+                      "No temperature series were provided".format(recharge)
+                raise TypeError(msg)
+            else:
+                self.temp = TimeSeries(temp, settings=settings[2],
+                                       metadata=metadata[2])
+                self.temp.update_series(tmin=index.min(), tmax=index.max())
+        else:
+            self.temp = None
+
+        self.prec = prec
+        self.evap = evap
+        self.freq = prec.settings["freq"]
 
         self.set_init_parameters()
 
@@ -881,6 +901,8 @@ class RechargeModel(StressModelBase):
         """
         self.prec.update_series(**kwargs)
         self.evap.update_series(**kwargs)
+        if self.temp is not None:
+            self.temp.update_series(**kwargs)
 
         if "freq" in kwargs:
             self.freq = kwargs["freq"]
@@ -898,13 +920,19 @@ class RechargeModel(StressModelBase):
         if istress is None:
             prec = self.prec.series
             evap = self.evap.series
-            stress = self.recharge.simulate(prec, evap,
-                                            p[-self.recharge.nparam:])
+            if self.temp is not None:
+                temp = self.temp.series
+            else:
+                temp = None
+            stress = self.recharge.simulate(prec=prec, evap=evap, temp=temp,
+                                            p=p[-self.recharge.nparam:])
 
             stress = pd.Series(data=stress, index=prec.index, name="recharge",
                                fastpath=True)
             return stress
         elif istress == 0:
             return self.prec.series
-        else:
+        elif istress == 1:
             return self.evap.series
+        else:
+            return self.temp.series
