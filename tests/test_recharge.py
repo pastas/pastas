@@ -1,6 +1,7 @@
 import pastas as ps
 import pandas as pd
 
+
 def test_linear():
     index = pd.date_range("2000-01-01", "2000-01-10")
     prec = pd.Series([1, 2] * 5, index=index)
@@ -8,3 +9,9 @@ def test_linear():
     rm = ps.RechargeModel(prec=prec, evap=evap, rfunc=ps.Exponential,
                           recharge="Linear", name="recharge")
     return rm
+
+
+def test_get_stress():
+    rm = test_linear()
+    rm.get_stress()
+    return
