@@ -1,6 +1,6 @@
 """recharge_func module
 
-Author: R.A. Collenteur
+Author: R.A. Collenteur, University of Graz
 
 Contains the classes for the different models that are available to calculate
 the recharge from precipitation and evaporation data.
@@ -27,8 +27,39 @@ simulate(self, evap, prec, p=None)
 import pandas as pd
 
 
-class Linear:
-    """Linear recharge model
+class RechargeBase:
+    """Base class for classes that calculate the recharge.
+
+    """
+
+    def __init__(self):
+        self.temp = False
+        self.nparam = 0
+
+    def get_init_parameters(self, name="recharge"):
+        """
+
+        Parameters
+        ----------
+        name: str, optional
+            String with the name that is used as prefix for the parameters.
+
+        Returns
+        -------
+        parameters: pandas.DataFrame
+            Pandas DataFrame with the parameters.
+
+        """
+        parameters = pd.DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        return parameters
+
+    def simulate(self, prec, evap, p, temp=None):
+        pass
+
+
+class Linear(RechargeBase):
+    """Linear recharge model.
 
     The recharge to the groundwater is calculated as:
     R = P - f * E
@@ -36,15 +67,16 @@ class Linear:
     """
 
     def __init__(self):
+        RechargeBase.__init__(self)
         self.nparam = 1
 
-    def get_init_parameters(self, name):
+    def get_init_parameters(self, name="recharge"):
         parameters = pd.DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         parameters.loc[name + '_f'] = (-1.0, -2.0, 0.0, 1, name)
         return parameters
 
-    def simulate(self, prec, evap, p):
+    def simulate(self, prec, evap, p, **kwargs):
         """
 
         Parameters
