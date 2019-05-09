@@ -832,36 +832,17 @@ class RechargeModel(StressModelBase):
                  recharge="Linear", temp=None, cutoff=0.99,
                  settings=("prec", "evap", "evap"),
                  metadata=(None, None, None)):
-        # First check the series, then determine tmin and tmax
-        prec = TimeSeries(prec, settings=settings[0], metadata=metadata[0])
-        evap = TimeSeries(evap, settings=settings[1], metadata=metadata[1])
-
-        # Select indices from validated stress where both series are available.
-        index = prec.series.index.intersection(evap.series.index)
-        if index.empty:
-            msg = ('The stresses that were provided have no overlapping '
-                   'time indices. Please make sure the indices of the time '
-                   'series overlap.')
-            logger.error(msg)
-            raise Exception(msg)
-
-        # First check the series, then determine tmin and tmax
-        prec.update_series(tmin=index.min(), tmax=index.max())
-        evap.update_series(tmin=index.min(), tmax=index.max())
-
-        # Todo make this dependent on initial recharge calculation
-        meanstress = (prec.series - evap.series).std()
-
-        StressModelBase.__init__(self, rfunc=rfunc, name=name,
-                                 tmin=index.min(), tmax=index.max(),
-                                 meanstress=meanstress, cutoff=cutoff,
-                                 up=True)
+        # Store the precipitation and evaporation time series
+        self.prec = TimeSeries(prec, settings=settings[0],
+                               metadata=metadata[0])
+        self.evap = TimeSeries(evap, settings=settings[1],
+                               metadata=metadata[1])
 
         # Dynamically load the required recharge model from string
         recharge_mod = getattr(import_module("pastas.recharge"), recharge)
         self.recharge = recharge_mod()
 
-        # Store a temperature time series or set to None
+        # Store a temperature time series if needed or set to None
         if self.recharge.temp is True:
             if temp is None:
                 msg = "Recharge module {} requires a temperature series. " \
@@ -870,14 +851,30 @@ class RechargeModel(StressModelBase):
             else:
                 self.temp = TimeSeries(temp, settings=settings[2],
                                        metadata=metadata[2])
-                self.temp.update_series(tmin=index.min(), tmax=index.max())
         else:
             self.temp = None
 
-        self.prec = prec
-        self.evap = evap
-        self.freq = prec.settings["freq"]
+        # Select indices from validated stress where both series are available.
+        index = self.prec.series.index.intersection(self.evap.series.index)
+        if index.empty:
+            msg = ('The stresses that were provided have no overlapping '
+                   'time indices. Please make sure the indices of the time '
+                   'series overlap.')
+            logger.error(msg)
+            raise Exception(msg)
 
+        # Update all stresses to an equal tmin and tmax
+        self.update_stress(tmin=index.min(), tmax=index.max())
+
+        # Calculate initial recharge estimation for initial rfunc parameters
+        meanstress = self.get_stress().std()
+
+        StressModelBase.__init__(self, rfunc=rfunc, name=name,
+                                 tmin=index.min(), tmax=index.max(),
+                                 meanstress=meanstress, cutoff=cutoff,
+                                 up=True)
+
+        self.freq = prec.settings["freq"]
         self.set_init_parameters()
 
     def set_init_parameters(self):
@@ -908,6 +905,22 @@ class RechargeModel(StressModelBase):
             self.freq = kwargs["freq"]
 
     def simulate(self, p, tmin=None, tmax=None, freq=None, dt=1):
+        """Method to simulate the contribution of the groundwater
+        recharge to the head.
+
+        Parameters
+        ----------
+        p: array of floats
+        tmin: string, optional
+        tmax: string, optional
+        freq: dtring, optional
+        dt: float, optional
+            Time step to use in the recharge calculation.
+
+        Returns
+        -------
+
+        """
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
         b = self.rfunc.block(p[:-self.recharge.nparam], dt)
         stress = self.get_stress(p)
@@ -917,6 +930,25 @@ class RechargeModel(StressModelBase):
         return h
 
     def get_stress(self, p=None, original=False, istress=None, **kwargs):
+        """
+
+        Parameters
+        ----------
+        p: array, optional
+
+        istress: int, optional
+            Return one of the stresses used for the recharge calculation.
+            0 for precipitation, 1 for evaporation and 2 for temperature.
+        kwargs
+
+        Returns
+        -------
+        stress: pandas.Series
+            When no istress is selected, this return the estimated recharge
+            flux that is convoluted with a response function on the
+            "simulate" method.
+
+        """
         if istress is None:
             prec = self.prec.series
             evap = self.evap.series
@@ -924,6 +956,8 @@ class RechargeModel(StressModelBase):
                 temp = self.temp.series
             else:
                 temp = None
+            if p is None:
+                p = self.recharge.get_init_parameters().initial.values
             stress = self.recharge.simulate(prec=prec, evap=evap, temp=temp,
                                             p=p[-self.recharge.nparam:])
 
