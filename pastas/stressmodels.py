@@ -187,7 +187,7 @@ class StressModelBase:
 
         return data
 
-    def get_stress(self, p=None, original=False, **kwargs):
+    def get_stress(self, p=None, **kwargs):
         """Returns the stress or stresses of the time series object as a pandas
         DataFrame.
 
@@ -200,10 +200,7 @@ class StressModelBase:
             Pandas dataframe of the stress(es)
 
         """
-        if original:
-            return self.stress[0].series_original
-        else:
-            return self.stress[0].series
+        return self.stress[0].series
 
     def dump(self, series=True):
         """Method to export the StressModel object.
@@ -449,8 +446,10 @@ class StressModel2(StressModelBase):
         # h -= self.rfunc.gain(p) * stress.mean()
         return h
 
-    def get_stress(self, p=None, original=False, istress=None):
+    def get_stress(self, p=None, istress=None):
         if istress is None:
+            if p is None:
+                p = self.parameters.initial.values
             return self.stress[0].series.add(p[-1] * self.stress[1].series)
         elif istress == 0:
             return self.stress[0].series
@@ -840,10 +839,14 @@ class RechargeModel(StressModelBase):
 
         # Check if both series have a regular time step
         if self.prec.freq_original is None:
-            msg = "Frequency of the precipitation series cannot be determined."
+            msg = "Frequency of the precipitation series could not be " \
+                  "determined. Please provide a time series with a regular " \
+                  "time step."
             raise IndexError(msg)
         if self.evap.freq_original is None:
-            msg = "Frequency of the evaporation series cannot be determined."
+            msg = "Frequency of the evaporation series could not be " \
+                  "determined. Please provide a time series with a regular " \
+                  "time step."
             raise IndexError(msg)
 
         # Dynamically load the required recharge model from string
@@ -937,13 +940,14 @@ class RechargeModel(StressModelBase):
                       index=stress.index, name=self.name, fastpath=True)
         return h
 
-    def get_stress(self, p=None, original=False, istress=None, **kwargs):
-        """
+    def get_stress(self, p=None, istress=None, **kwargs):
+        """Method to obtain the recharge stress calculated by the recharge
+        model.
 
         Parameters
         ----------
         p: array, optional
-
+            array with the parameters values. Must be the length self.nparam.
         istress: int, optional
             Return one of the stresses used for the recharge calculation.
             0 for precipitation, 1 for evaporation and 2 for temperature.
