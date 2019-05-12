@@ -838,6 +838,14 @@ class RechargeModel(StressModelBase):
         self.evap = TimeSeries(evap, settings=settings[1],
                                metadata=metadata[1])
 
+        # Check if both series have a regular time step
+        if self.prec.freq_original is None:
+            msg = "Frequency of the precipitation series cannot be determined."
+            raise IndexError(msg)
+        if self.evap.freq_original is None:
+            msg = "Frequency of the evaporation series cannot be determined."
+            raise IndexError(msg)
+
         # Dynamically load the required recharge model from string
         recharge_mod = getattr(import_module("pastas.recharge"), recharge)
         self.recharge = recharge_mod()
