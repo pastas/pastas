@@ -343,13 +343,8 @@ class Polder(RfuncBase):
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         a_init = 1
         b_init = 0.1
-        c_init = 1 / np.exp(-2 * a_init) / self.meanstress
         parameters.loc[name + '_a'] = (a_init, 0, 100, 1, name)
         parameters.loc[name + '_b'] = (b_init, 0, 10, 1, name)
-        if self.up:
-            parameters.loc[name + '_c'] = (c_init, 0, c_init * 100, 1, name)
-        else:
-            parameters.loc[name + '_c'] = (-c_init, -c_init * 100, 0, 1, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):
@@ -361,7 +356,10 @@ class Polder(RfuncBase):
 
     def gain(self, p):
         # the steady state solution of Mazure
-        return np.exp(-2 * p[0])
+        g = np.exp(-2 * p[0])
+        if not self.up:
+            g = -g
+        return g
 
     def step(self, p, dt=1, cutoff=None):
         if isinstance(dt, np.ndarray):
@@ -370,6 +368,8 @@ class Polder(RfuncBase):
             self.tmax = max(self.get_tmax(p, cutoff), 3 * dt)
             t = np.arange(dt, self.tmax, dt)
         s = self.polder_function(p[0], p[1] * np.sqrt(t))
+        if not self.up:
+            s = -s
         return s
 
     @staticmethod
@@ -704,7 +704,6 @@ class Edelman(RfuncBase):
     def get_tmax(self, p, cutoff=None):
         if cutoff is None:
             cutoff = self.cutoff
-        # use maximum value to prevent performance issues
         return 1. / (p[0] * erfcinv(cutoff * erfc(0))) ** 2
 
     def gain(self, p):
