@@ -161,7 +161,7 @@ class Plotting:
     @model_tmin_tmax
     def decomposition(self, tmin=None, tmax=None, ytick_base=True, split=True,
                       figsize=(10, 8), axes=None, name=None,
-                      return_warmup=False, **kwargs):
+                      return_warmup=False, min_ylim_diff=None, **kwargs):
         """Plot the decomposition of a time-series in the different stresses.
 
         Parameters
@@ -234,6 +234,11 @@ class Plotting:
                     ylims.append((contrib.min(), hs.max()))
             else:
                 ylims.append((hs.min(), hs.max()))
+        if min_ylim_diff is not None:
+            for i, ylim in enumerate(ylims):
+                if np.diff(ylim)<min_ylim_diff:
+                    ylims[i] = (np.mean(ylim) - min_ylim_diff / 2,
+                               np.mean(ylim) + min_ylim_diff / 2)
         height_ratios = [
             0.0 if np.isnan(ylim[1] - ylim[0]) else ylim[1] - ylim[0] for ylim
             in ylims]
