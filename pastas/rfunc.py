@@ -46,6 +46,19 @@ class RfuncBase:
         self.tmax = 0
 
     def get_init_parameters(self, name):
+        """Get initial parameters and bounds. It is called by the stressmodel.
+
+        Parameters
+        ----------
+        name :  str
+            Name of the stressmodel
+
+        Returns
+        -------
+        parameters : pandas DataFrame
+            The initial parameters and parameter bounds used by the solver
+
+        """
         pass
 
     def get_tmax(self, p, cutoff=None):
@@ -694,7 +707,7 @@ class Edelman(RfuncBase):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 1
 
-    def set_parameters(self, name):
+    def get_init_parameters(self, name):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         beta_init = 1.0
