@@ -25,9 +25,10 @@ from .solver import LeastSquares
 from .modelstats import Statistics
 from .stressmodels import Constant
 from .timeseries import TimeSeries
-from .utils import get_dt, get_time_offset, get_sample, frequency_is_supported
+from .utils import get_dt, get_time_offset, get_sample, frequency_is_supported, set_log_level
 from .version import __version__
 from logging import getLogger
+
 
 class Model:
     """Initiates a time series model.
@@ -48,7 +49,7 @@ class Model:
         Dictionary containing metadata of the oseries, passed on the to
         oseries when creating a pastas TimeSeries object. hence,
         ml.oseries.metadata will give you the metadata.
-    log_level: str, optional
+    log_level: str, optional, depcrecated
         String to set the level of the log-messages that is forwarded to the
         Python console. Options are: ERROR, WARNING and INFO (default).
 
@@ -66,9 +67,13 @@ class Model:
     """
 
     def __init__(self, oseries, constant=True, noisemodel=True, name=None,
-                 metadata=None):
+                 metadata=None, log_level=None):
 
         self.logger = getLogger(__name__)
+        if log_level is not None:
+            self.logger.warning(
+                "Deprecation warning: the log_level-parameter in Model will be removed in version Pastas version 0.12. Use ps.set_log_level(log_level) instead")
+            set_log_level(log_level)
 
         # Construct the different model components
         self.oseries = TimeSeries(oseries, settings="oseries",

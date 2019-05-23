@@ -10,8 +10,9 @@ from .stressmodels import StressModel, StressModel2, Constant, FactorModel, \
 from .timeseries import TimeSeries
 from .transform import ThresholdTransform
 from .version import __version__
-from .utils import initialize_logger
+from .utils import initialize_logger, set_log_level
 
 import logging
+
 logger = logging.getLogger(__name__)
 initialize_logger(logger)

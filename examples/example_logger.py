@@ -10,6 +10,8 @@ import pastas as ps
 obs = ps.read_dino('data/B58C0698001_1.csv')
 
 # when we set the level to WARNING we do not see any output anymore
+ps.set_log_level('WARNING')
+# which is just a wrapper around
 ps.utils.set_console_handler(ps.logger,level='WARNING')
 obs = ps.read_dino('data/B58C0698001_1.csv')
 

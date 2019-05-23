@@ -279,7 +279,8 @@ def get_stress_tmin_tmax(ml):
         raise (TypeError('Unknown type {}'.format(type(ml))))
     return tmin, tmax
 
-def initialize_logger(logger, level=logging.INFO):
+
+def initialize_logger(logger=None, level=logging.INFO):
     """Internal method to create a logger instance to log program output.
 
     Parameters
@@ -290,12 +291,15 @@ def initialize_logger(logger, level=logging.INFO):
         and packages.
 
     """
+    if logger is None:
+        logger = logging.getLogger('pastas')
     logger.setLevel(level)
     remove_file_handlers(logger)
     set_console_handler(logger)
-    #add_file_handlers(logger)
-        
-def set_console_handler(logger,level=logging.INFO, fmt="%(levelname)s: %(message)s"):
+    # add_file_handlers(logger)
+
+
+def set_console_handler(logger=None, level=logging.INFO, fmt="%(levelname)s: %(message)s"):
     """Method to add a console handler to the logger of Pastas
 
     Parameters
@@ -306,14 +310,22 @@ def set_console_handler(logger,level=logging.INFO, fmt="%(levelname)s: %(message
         and packages.
 
     """
+    if logger is None:
+        logger = logging.getLogger('pastas')
     remove_console_handler(logger)
     ch = logging.StreamHandler()
     ch.setLevel(level)
-    formatter = logging.Formatter(fmt = fmt)
+    formatter = logging.Formatter(fmt=fmt)
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 
-def remove_console_handler(logger):
+
+def set_log_level(level):
+    """Set the log-level of the console. This method is just a wrapper around set_console_handler"""
+    set_console_handler(level=level)
+
+
+def remove_console_handler(logger=None):
     """Method to remove the console handler to the logger of Pastas
 
     Parameters
@@ -324,15 +336,18 @@ def remove_console_handler(logger):
         and packages.
 
     """
+    if logger is None:
+        logger = logging.getLogger('pastas')
     for handler in logger.handlers:
-        if isinstance(handler,logging.StreamHandler):
+        if isinstance(handler, logging.StreamHandler):
             logger.removeHandler(handler)
 
-def add_file_handlers(logger, filenames = ('info.log','errors.log'),
-                      levels=(logging.INFO,logging.ERROR), maxBytes=10485760,
+
+def add_file_handlers(logger=None, filenames=('info.log', 'errors.log'),
+                      levels=(logging.INFO, logging.ERROR), maxBytes=10485760,
                       backupCount=20, encoding='utf8',
-                      fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                      datefmt = '%y-%m-%d %H:%M'):
+                      fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                      datefmt='%y-%m-%d %H:%M'):
     """Method to add file handlers in the logger of Pastas
 
     Parameters
@@ -343,19 +358,22 @@ def add_file_handlers(logger, filenames = ('info.log','errors.log'),
         and packages.
 
     """
+    if logger is None:
+        logger = logging.getLogger('pastas')
     # create formatter
-    formatter = logging.Formatter(fmt = fmt, datefmt = datefmt)
-    
+    formatter = logging.Formatter(fmt=fmt, datefmt=datefmt)
+
     # create file handlers, set the level & formatter, and add it to the logger
-    for filename, level in zip(filenames,levels):
-        fh = handlers.RotatingFileHandler(filename,maxBytes = maxBytes,
-                                                  backupCount=backupCount,
-                                                  encoding = encoding)
+    for filename, level in zip(filenames, levels):
+        fh = handlers.RotatingFileHandler(filename, maxBytes=maxBytes,
+                                          backupCount=backupCount,
+                                          encoding=encoding)
         fh.setLevel(level)
         fh.setFormatter(formatter)
         logger.addHandler(fh)
 
-def remove_file_handlers(logger):
+
+def remove_file_handlers(logger=None):
     """Method to remove any file handlers in the logger of Pastas
 
     Parameters
@@ -366,6 +384,8 @@ def remove_file_handlers(logger):
         and packages.
 
     """
+    if logger is None:
+        logger = logging.getLogger('pastas')
     for handler in logger.handlers:
-        if isinstance(handler,handlers.RotatingFileHandler):
+        if isinstance(handler, handlers.RotatingFileHandler):
             logger.removeHandler(handler)
