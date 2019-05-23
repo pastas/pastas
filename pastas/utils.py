@@ -2,9 +2,8 @@ import numpy as np
 from pandas import Series, to_datetime, Timedelta, Timestamp, to_timedelta
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
-from os import path, getenv
-import json
 import logging
+from logging import handlers
 
 logger = logging.getLogger(__name__)
 
@@ -349,7 +348,7 @@ def add_file_handlers(logger, filenames = ('info.log','errors.log'),
     
     # create file handlers, set the level & formatter, and add it to the logger
     for filename, level in zip(filenames,levels):
-        fh = logging.handlers.RotatingFileHandler(filename,maxBytes = maxBytes,
+        fh = handlers.RotatingFileHandler(filename,maxBytes = maxBytes,
                                                   backupCount=backupCount,
                                                   encoding = encoding)
         fh.setLevel(level)
@@ -368,5 +367,5 @@ def remove_file_handlers(logger):
 
     """
     for handler in logger.handlers:
-        if isinstance(handler,logging.handlers.RotatingFileHandler):
+        if isinstance(handler,handlers.RotatingFileHandler):
             logger.removeHandler(handler)
