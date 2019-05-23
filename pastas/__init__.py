@@ -1,5 +1,3 @@
-import pastas.read as read
-import pastas.stats as stats
 from .model import Model
 from .noisemodels import NoiseModel, NoiseModel2
 from .project import Project
@@ -12,3 +10,8 @@ from .stressmodels import StressModel, StressModel2, Constant, FactorModel, \
 from .timeseries import TimeSeries
 from .transform import ThresholdTransform
 from .version import __version__
+from .utils import initialize_logger
+
+import logging
+logger = logging.getLogger(__name__)
+initialize_logger(logger)

@@ -9,12 +9,10 @@ Examples
 
 """
 
-import json
 from collections import OrderedDict
 from copy import copy
 from inspect import isclass
-from logging import basicConfig, getLogger, config
-from os import path, getlogin, getenv
+from os import getlogin
 
 import numpy as np
 import pandas as pd
@@ -29,7 +27,7 @@ from .stressmodels import Constant
 from .timeseries import TimeSeries
 from .utils import get_dt, get_time_offset, get_sample, frequency_is_supported
 from .version import __version__
-
+from logging import getLogger
 
 class Model:
     """Initiates a time series model.
@@ -68,9 +66,9 @@ class Model:
     """
 
     def __init__(self, oseries, constant=True, noisemodel=True, name=None,
-                 metadata=None, log_level="INFO"):
+                 metadata=None):
 
-        self.logger = self.get_logger(log_level=log_level)
+        self.logger = getLogger(__name__)
 
         # Construct the different model components
         self.oseries = TimeSeries(oseries, settings="oseries",
@@ -1293,38 +1291,6 @@ class Model:
             file_info["owner"] = "Unknown"
 
         return file_info
-
-    def get_logger(self, log_level=None, config_file='log_config.json',
-                   env_key='LOG_CFG'):
-        """Internal method to create a logger instance to log program output.
-
-        Returns
-        -------
-        logger: logging.Logger
-            Logging instance that handles all logging throughout pastas,
-            including all sub modules and packages.
-
-        Notes
-        -----
-
-        """
-        fname = getenv(env_key, None)
-        if not fname or not path.exists(fname):
-            dir_path = path.dirname(path.realpath(__file__))
-            fname = path.join(dir_path, config_file)
-        if path.exists(fname):
-            with open(fname, 'rt') as f:
-                config_dict = json.load(f)
-            config.dictConfig(config_dict)
-        else:
-            basicConfig(level="INFO")
-
-        logger = getLogger(__name__)
-        # Set log_level for console to user-defined value
-        if log_level is not None:
-            logger.parent.handlers[0].setLevel(log_level)
-
-        return logger
 
     def fit_report(self, output="full"):
         """Method that reports on the fit after a model is optimized.

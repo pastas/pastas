@@ -89,3 +89,9 @@ def test_example_step():
     exec(open("example_step.py").read())
     plt.close('all')
     return os.chdir(cwd)
+
+def test_example_logger():
+    cwd = os.getcwd()
+    os.chdir("examples")
+    exec(open("example_logger.py").read())
+    return os.chdir(cwd)
