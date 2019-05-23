@@ -207,21 +207,20 @@ def timestep_weighted_resample(series, tindex):
     dt1 = np.diff(t1e)
     dt1 = np.hstack((dt1[0], dt1))
     t1s = t1e - dt1
-    v1 = np.empty(t1e.shape)
-    v1[:] = np.nan
-    for i, _ in enumerate(v1):
+    v1 = []
+    for t1si, t1ei in zip(t1s,t1e):
         # determine which periods within the series are within the new tindex
-        mask = (t0e > t1s[i]) & (t0s < t1e[i])
+        mask = (t0e > t1si) & (t0s < t1ei)
         if np.any(mask):
             # cut by the timestep-edges
             ts = t0s[mask]
             te = t0e[mask]
-            ts[ts < t1s[i]] = t1s[i]
-            te[te > t1e[i]] = t1e[i]
+            ts[ts < t1si] = t1si
+            te[te > t1ei] = t1ei
             # determine timestep
             dt = (te - ts).astype(float)
             # determine timestep-weighted value
-            v1[i] = np.sum(dt * v0[mask]) / np.sum(dt)
+            v1.append(np.sum(dt * v0[mask]) / np.sum(dt))
     # replace all values in the series
     series = Series(v1, index=tindex)
     return series
