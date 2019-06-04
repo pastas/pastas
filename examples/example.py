@@ -9,7 +9,7 @@ import pastas as ps
 obs = ps.read_dino('data/B58C0698001_1.csv')
 
 # Create the time series model
-ml = ps.Model(obs, name="groundwater head")
+ml = ps.Model(obs)
 
 # read weather data
 rain = ps.read_knmi('data/neerslaggeg_HEIBLOEM-L_967-2.txt', variables='RD')

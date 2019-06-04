@@ -38,7 +38,6 @@ install:
     - pip install --upgrade pip
     - pip install codecov
     - pip install pytest-cov
-    - pip install nbconvert
 
 # command to run tests
 script:
