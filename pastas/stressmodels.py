@@ -972,9 +972,7 @@ class RechargeModel(StressModelBase):
                 p = self.recharge.get_init_parameters().initial.values
             stress = self.recharge.simulate(prec=prec, evap=evap, temp=temp,
                                             p=p[-self.recharge.nparam:])
-
-            stress = pd.Series(data=stress, index=prec.index, name="recharge",
-                               fastpath=True)
+            stress = pd.Series(data=stress, index=prec.index, name="recharge")
             return stress
         elif istress == 0:
             return self.prec.series
