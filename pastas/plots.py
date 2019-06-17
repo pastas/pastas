@@ -31,7 +31,7 @@ class Plotting:
 
     @model_tmin_tmax
     def plot(self, tmin=None, tmax=None, oseries=True, simulation=True,
-             **kwargs):
+             ax=None, figsize=None, **kwargs):
         """Make a plot of the observed and simulated series.
 
         Parameters
@@ -50,7 +50,9 @@ class Plotting:
             timeseries.
 
         """
-        ax = plt.subplot(**kwargs)
+        if ax is None:
+            fig, ax = plt.subplots(figsize=figsize, **kwargs)
+
         ax.set_title("Results of {}".format(self.ml.name))
 
         if oseries:
@@ -236,9 +238,9 @@ class Plotting:
                 ylims.append((hs.min(), hs.max()))
         if min_ylim_diff is not None:
             for i, ylim in enumerate(ylims):
-                if np.diff(ylim)<min_ylim_diff:
+                if np.diff(ylim) < min_ylim_diff:
                     ylims[i] = (np.mean(ylim) - min_ylim_diff / 2,
-                               np.mean(ylim) + min_ylim_diff / 2)
+                                np.mean(ylim) + min_ylim_diff / 2)
         height_ratios = [
             0.0 if np.isnan(ylim[1] - ylim[0]) else ylim[1] - ylim[0] for ylim
             in ylims]
@@ -353,7 +355,8 @@ class Plotting:
         plt.tight_layout(pad=0.0)
         return plt.gca()
 
-    def block_response(self, stressmodels=None, **kwargs):
+    def block_response(self, stressmodels=None, ax=None, figsize=None,
+                       **kwargs):
         """Plot the block response for a specific stressmodels.
 
         Parameters
@@ -367,12 +370,13 @@ class Plotting:
             matplotlib axes instance.
 
         """
+        if ax is None:
+            fig, ax = plt.subplots(figsize=figsize, **kwargs)
+
         if not stressmodels:
             stressmodels = self.ml.stressmodels.keys()
 
         legend = []
-
-        ax = plt.subplot(**kwargs)
 
         for name in stressmodels:
             if hasattr(self.ml.stressmodels[name], 'rfunc'):
@@ -387,7 +391,8 @@ class Plotting:
         plt.legend(legend)
         return ax
 
-    def step_response(self, stressmodels=None, **kwargs):
+    def step_response(self, stressmodels=None, ax=None, figsize=None,
+                      **kwargs):
         """Plot the block response for a specific stressmodels.
 
         Parameters
@@ -401,12 +406,13 @@ class Plotting:
             matplotlib axes instance.
 
         """
+        if ax is None:
+            fig, ax = plt.subplots(figsize=figsize, **kwargs)
+
         if not stressmodels:
             stressmodels = self.ml.stressmodels.keys()
 
         legend = []
-
-        ax = plt.subplot(**kwargs)
 
         for name in stressmodels:
             if hasattr(self.ml.stressmodels[name], 'rfunc'):
@@ -476,7 +482,8 @@ class Plotting:
         return axes
 
     @model_tmin_tmax
-    def contributions_pie(self, tmin=None, tmax=None, ax=None, **kwargs):
+    def contributions_pie(self, tmin=None, tmax=None, ax=None,
+                          figsize=None, **kwargs):
         """Make a pie chart of the contributions. This plot is based on the
         TNO Groundwatertoolbox.
 
@@ -496,7 +503,7 @@ class Plotting:
 
         """
         if ax is None:
-            _, ax = plt.subplots()
+            fig, ax = plt.subplots(**kwargs)
 
         frac = []
         for name in self.ml.stressmodels.keys():
@@ -511,6 +518,6 @@ class Plotting:
         labels = list(self.ml.stressmodels.keys())
         labels.append("Unexplained")
         ax.pie(frac, labels=labels, autopct='%1.1f%%', startangle=90,
-               wedgeprops=dict(width=1, edgecolor='w'), **kwargs)
+               wedgeprops=dict(width=1, edgecolor='w'))
         ax.axis('equal')
         return ax
