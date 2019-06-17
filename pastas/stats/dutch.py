@@ -5,7 +5,7 @@ Authors: R. Calje, T. van Steijn and R. Collenteur
 
 """
 
-from numpy import nan, any
+from numpy import nan
 from pandas import date_range, Series, to_timedelta
 
 from ..utils import get_sample
