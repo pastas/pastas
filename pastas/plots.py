@@ -31,7 +31,7 @@ class Plotting:
 
     @model_tmin_tmax
     def plot(self, tmin=None, tmax=None, oseries=True, simulation=True,
-             ax=None, figsize=None, **kwargs):
+             ax=None, figsize=None, legend=True, **kwargs):
         """Make a plot of the observed and simulated series.
 
         Parameters
@@ -69,7 +69,8 @@ class Plotting:
             sim.plot(ax=ax)
         plt.xlim(tmin, tmax)
         plt.ylabel("Groundwater levels [meter]")
-        plt.legend()
+        if legend:
+            plt.legend()
         plt.tight_layout()
         return ax
 

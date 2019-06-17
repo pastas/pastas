@@ -885,7 +885,9 @@ class RechargeModel(StressModelBase):
                                  meanstress=meanstress, cutoff=cutoff,
                                  up=True)
 
-        self.stress = [self.prec, self.evap, self.temp]
+        self.stress = [self.prec, self.evap]
+        if self.temp:
+            self.stress.append(self.temp)
         self.freq = self.prec.settings["freq"]
         self.set_init_parameters()
 

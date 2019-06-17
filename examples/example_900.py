@@ -1,6 +1,6 @@
 """
 In this example a daily simulation is conducted from 9:00 until 9:00 (dutch standard time)
-This is the time at which precipitation is logged in dutch KNMI-stations. 
+This is the time at which precipitation is logged in dutch KNMI-stations.
 
 """
 import pastas as ps
