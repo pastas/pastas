@@ -68,18 +68,18 @@ class PastasEncoder(json.JSONEncoder):
 
     """
 
-    def default(self, obj):
+    def default(self, o):
 
-        if isinstance(obj, Timestamp):
-            return obj.isoformat()
-        elif isinstance(obj, Series):
-            return obj.to_json(date_format="iso", orient="split")
-        elif isinstance(obj, DataFrame):
+        if isinstance(o, Timestamp):
+            return o.isoformat()
+        elif isinstance(o, Series):
+            return o.to_json(date_format="iso", orient="split")
+        elif isinstance(o, DataFrame):
             # Necessary to maintain order when using the JSON format!
-            return obj.to_json(orient="index")
-        elif isinstance(obj, Timedelta):
-            return obj.to_timedelta64().__str__()
-        elif isna(obj):
+            return o.to_json(orient="index")
+        elif isinstance(o, Timedelta):
+            return o.to_timedelta64().__str__()
+        elif isna(o):
             return None
         else:
-            return super(PastasEncoder, self).default(obj)
+            return super(PastasEncoder, self).default(o)
