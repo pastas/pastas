@@ -25,7 +25,8 @@ from .solver import LeastSquares
 from .modelstats import Statistics
 from .stressmodels import Constant
 from .timeseries import TimeSeries
-from .utils import get_dt, get_time_offset, get_sample, frequency_is_supported, set_log_level
+from .utils import get_dt, get_time_offset, get_sample, frequency_is_supported, \
+    set_log_level
 from .version import __version__
 from logging import getLogger
 
@@ -178,6 +179,12 @@ class Model:
             if self.settings["freq"] is None:
                 self._set_freq()
             stressmodel.update_stress(freq=self.settings["freq"])
+
+            # Check if stress overlaps with oseries, if not give a warning
+            if (stressmodel.tmin > self.oseries.series.index.max()) or \
+                    (stressmodel.tmax < self.oseries.series.index.min()):
+                self.logger.warning("The stress of the stressmodel has no "
+                                    "overlap with ml.oseries.")
 
     def add_constant(self, constant):
         """Adds a Constant to the time series Model.
