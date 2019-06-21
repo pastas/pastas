@@ -12,10 +12,11 @@ pathname = 'examples'
 # get list of examples to run
 files = [f for f in os.listdir(pathname) if f.endswith('.py')]
 
+
 @pytest.mark.parametrize("file", files)
 def test_example(file):
     cwd = os.getcwd()
-    
+
     os.chdir(pathname)
     # TODO: fix example_recharge.py
     if file not in ["example_recharge.py"]:
@@ -28,6 +29,7 @@ def test_example(file):
             msg = 'could not run {}'.format(file)
             raise Exception(msg) from e
     os.chdir(cwd)
+
 
 if __name__ == '__main__':
     for file in files:

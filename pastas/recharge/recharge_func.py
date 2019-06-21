@@ -18,7 +18,7 @@ get_init_parameters(self, name)
     A function that returns a Pandas DataFrame of the parameters of the
     recharge function. Columns of the dataframe need to be ['value', 'pmin',
     'pmax', 'vary']. Rows of the DataFrame have names of the parameters. Input
-    name is used as a prefix. This function is called by a Tseries object.
+    name is used as a prefix. This function is called by a stressmodel object.
 simulate(self, evap, prec, p=None)
     A function that returns an array of the simulated recharge series.
 

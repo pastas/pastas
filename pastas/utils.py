@@ -208,7 +208,7 @@ def timestep_weighted_resample(series, tindex):
     dt1 = np.hstack((dt1[0], dt1))
     t1s = t1e - dt1
     v1 = []
-    for t1si, t1ei in zip(t1s,t1e):
+    for t1si, t1ei in zip(t1s, t1e):
         # determine which periods within the series are within the new tindex
         mask = (t0e > t1si) & (t0s < t1ei)
         if np.any(mask):
@@ -298,7 +298,8 @@ def initialize_logger(logger=None, level=logging.INFO):
     # add_file_handlers(logger)
 
 
-def set_console_handler(logger=None, level=logging.INFO, fmt="%(levelname)s: %(message)s"):
+def set_console_handler(logger=None, level=logging.INFO,
+                        fmt="%(levelname)s: %(message)s"):
     """Method to add a console handler to the logger of Pastas
 
     Parameters

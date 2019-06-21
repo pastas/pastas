@@ -37,7 +37,7 @@ class TestGXG(object):
         idx = pd.to_datetime(['20160101', '20160110', '20160120', '20160130'])
         s = pd.Series([0., 0., 10., 10.], index=idx)
         v = ps.stats.ghg(s, fill_method='linear', min_n_meas=1,
-                         min_n_years=1,limit=8)
+                         min_n_years=1, limit=8)
         # TODO is this correct?
         assert v == 10.
 
@@ -57,14 +57,14 @@ class TestGXG(object):
         idx = pd.to_datetime(['20170115', '20170130', '20200101'])
         s = pd.Series(np.ones(len(idx)), index=idx)
         v = ps.stats.glg(s, fill_method='linear', limit=15,
-                         output='yearly', year_offset='a',min_n_meas=1)
+                         output='yearly', year_offset='a', min_n_meas=1)
         assert v.notna().sum() == 2
 
     def test_glg_fill_limit_null(self):
         idx = pd.to_datetime(['20170101', '20170131', '20200101'])
         s = pd.Series(np.ones(len(idx)), index=idx)
         v = ps.stats.glg(s, fill_method='linear', limit=None,
-                         output='yearly', year_offset='a',min_n_meas=1)
+                         output='yearly', year_offset='a', min_n_meas=1)
         assert v.notna().sum() == 3
 
     def test_gvg(self):

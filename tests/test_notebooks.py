@@ -13,14 +13,15 @@ pathname = os.path.join('examples', 'notebooks')
 files = [f for f in os.listdir(pathname) if f.endswith('.ipynb')]
 
 testdir = 'build'
-if os.path.isdir(os.path.join(pathname,testdir)):
-    shutil.rmtree(os.path.join(pathname,testdir))
-os.mkdir(os.path.join(pathname,testdir))
+if os.path.isdir(os.path.join(pathname, testdir)):
+    shutil.rmtree(os.path.join(pathname, testdir))
+os.mkdir(os.path.join(pathname, testdir))
+
 
 @pytest.mark.parametrize("file", files)
 def test_notebook(file):
     cwd = os.getcwd()
-    
+
     os.chdir(pathname)
     # TODO: make 10_pastas_project.ipynb run in tests as well
     if file not in ['10_pastas_project.ipynb']:
@@ -34,11 +35,12 @@ def test_notebook(file):
             ival = os.system(cmd)
             msg = 'could not run {}'.format(file)
             assert ival == 0, msg
-            assert os.path.isfile(os.path.join(testdir,file)), msg
+            assert os.path.isfile(os.path.join(testdir, file)), msg
         except Exception as e:
             os.chdir(cwd)
             raise Exception(e)
     os.chdir(cwd)
+
 
 if __name__ == '__main__':
     for file in files:
