@@ -6,7 +6,6 @@ Author: R.A. Collenteur, University of Graz.
 
 """
 import pandas as pd
-
 import pastas as ps
 
 # read observations
@@ -18,24 +17,21 @@ head = pd.read_csv("notebooks/data_notebook_7/head_wellex.csv",
 ml = ps.Model(head, name="groundwater head")
 
 # read weather data
-rain =  pd.read_csv("notebooks/data_notebook_7/prec_wellex.csv",
-                    index_col="Date",
-                   parse_dates=True)
-evap =  pd.read_csv("notebooks/data_notebook_7/evap_wellex.csv",
-                    index_col="Date",
-                   parse_dates=True)
+rain = pd.read_csv("notebooks/data_notebook_7/prec_wellex.csv",
+                   index_col="Date", parse_dates=True)
+evap = pd.read_csv("notebooks/data_notebook_7/evap_wellex.csv",
+                   index_col="Date", parse_dates=True)
 
 # Create stress
 rm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential,
-                   recharge="Linear", name='recharge', cutoff=0.999)
+                      recharge="Linear", name='recharge', cutoff=0.99)
 ml.add_stressmodel(rm)
 
-well =  pd.read_csv("notebooks/data_notebook_7/well_wellex.csv",
-                    index_col="Date",
-                   parse_dates=True)
+well = pd.read_csv("notebooks/data_notebook_7/well_wellex.csv",
+                   index_col="Date", parse_dates=True)
 sm = ps.StressModel(well, rfunc=ps.Gamma, name="well", up=False)
 ml.add_stressmodel(sm)
 
-## Solve
-ml.solve(noise=False, tmax="2010")
-ml.plots.decomposition()
+# Solve
+ml.solve(noise=True, tmax="2010")
+ml.plots.results()
