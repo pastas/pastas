@@ -300,7 +300,7 @@ def initialize_logger(logger=None, level=logging.INFO):
 
 def set_console_handler(logger=None, level=logging.INFO,
                         fmt="%(levelname)s: %(message)s"):
-    """Method to add a console handler to the logger of Pastas
+    """Method to add a console handler to the logger of Pastas.
 
     Parameters
     -------
@@ -321,12 +321,15 @@ def set_console_handler(logger=None, level=logging.INFO,
 
 
 def set_log_level(level):
-    """Set the log-level of the console. This method is just a wrapper around set_console_handler"""
+    """Set the log-level of the console. This method is just a wrapper around
+    set_console_handler.
+
+    """
     set_console_handler(level=level)
 
 
 def remove_console_handler(logger=None):
-    """Method to remove the console handler to the logger of Pastas
+    """Method to remove the console handler to the logger of Pastas.
 
     Parameters
     -------
@@ -374,7 +377,7 @@ def add_file_handlers(logger=None, filenames=('info.log', 'errors.log'),
 
 
 def remove_file_handlers(logger=None):
-    """Method to remove any file handlers in the logger of Pastas
+    """Method to remove any file handlers in the logger of Pastas.
 
     Parameters
     -------
