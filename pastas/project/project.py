@@ -246,8 +246,14 @@ class Project:
 
         """
         key = str(ml.oseries.name)
+        if 'prec' not in self.stresses['kind'].values:
+            logger.error('No precipitation-series (kind="prec") in project')
+            return
         prec_name = self.get_nearest_stresses(key, kind="prec").iloc[0][0]
         prec = self.stresses.loc[prec_name, "series"]
+        if 'evap' not in self.stresses['kind'].values:
+            logger.error('No evaporation-series (kind="evap") in project')
+            return
         evap_name = self.get_nearest_stresses(key, kind="evap").iloc[0][0]
         evap = self.stresses.loc[evap_name, "series"]
 

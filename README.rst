@@ -94,7 +94,7 @@ To cite a specific version of Python, you can use the DOI provided for each offi
 Collenteur, R., Bakker, M., Caljé, R. & Schaars, F. (XXXX). Pastas: open-source software for time series analysis in hydrology (Version X.X.X). Zenodo. http://doi.org/10.5281/zenodo.1465866
 
 License (MIT License)
-~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 Copyright (c) 2016-2018 R.A. Collenteur, M. Bakker, R. Calje, F. Schaars
 
 Permission is hereby granted, free of charge, to any person obtaining a copy

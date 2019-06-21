@@ -9,12 +9,10 @@ Examples
 
 """
 
-import json
 from collections import OrderedDict
 from copy import copy
 from inspect import isclass
-from logging import basicConfig, getLogger, config
-from os import path, getlogin, getenv
+from os import getlogin
 
 import numpy as np
 import pandas as pd
@@ -27,8 +25,10 @@ from .solver import LeastSquares
 from .modelstats import Statistics
 from .stressmodels import Constant
 from .timeseries import TimeSeries
-from .utils import get_dt, get_time_offset, get_sample, frequency_is_supported
+from .utils import get_dt, get_time_offset, get_sample, frequency_is_supported, \
+    set_log_level
 from .version import __version__
+from logging import getLogger
 
 
 class Model:
@@ -50,7 +50,7 @@ class Model:
         Dictionary containing metadata of the oseries, passed on the to
         oseries when creating a pastas TimeSeries object. hence,
         ml.oseries.metadata will give you the metadata.
-    log_level: str, optional
+    log_level: str, optional, depcrecated
         String to set the level of the log-messages that is forwarded to the
         Python console. Options are: ERROR, WARNING and INFO (default).
 
@@ -68,9 +68,13 @@ class Model:
     """
 
     def __init__(self, oseries, constant=True, noisemodel=True, name=None,
-                 metadata=None, log_level="INFO"):
+                 metadata=None, log_level=None):
 
-        self.logger = self.get_logger(log_level=log_level)
+        self.logger = getLogger(__name__)
+        if log_level is not None:
+            self.logger.warning(
+                "Deprecation warning: the log_level-parameter in Model will be removed in version Pastas version 0.12. Use ps.set_log_level(log_level) instead")
+            set_log_level(log_level)
 
         # Construct the different model components
         self.oseries = TimeSeries(oseries, settings="oseries",
@@ -175,6 +179,12 @@ class Model:
             if self.settings["freq"] is None:
                 self._set_freq()
             stressmodel.update_stress(freq=self.settings["freq"])
+
+            # Check if stress overlaps with oseries, if not give a warning
+            if (stressmodel.tmin > self.oseries.series.index.max()) or \
+                    (stressmodel.tmax < self.oseries.series.index.min()):
+                self.logger.warning("The stress of the stressmodel has no "
+                                    "overlap with ml.oseries.")
 
     def add_constant(self, constant):
         """Adds a Constant to the time series Model.
@@ -818,6 +828,7 @@ class Model:
         else:
             self.settings["time_offset"] = pd.Timedelta(0)
 
+    @DeprecationWarning
     def set_log_level(self, log_level):
         """Method to set the log_level for which messages are printed to the
         Python console. This can be useful for when more or less info is
@@ -1293,38 +1304,6 @@ class Model:
             file_info["owner"] = "Unknown"
 
         return file_info
-
-    def get_logger(self, log_level=None, config_file='log_config.json',
-                   env_key='LOG_CFG'):
-        """Internal method to create a logger instance to log program output.
-
-        Returns
-        -------
-        logger: logging.Logger
-            Logging instance that handles all logging throughout pastas,
-            including all sub modules and packages.
-
-        Notes
-        -----
-
-        """
-        fname = getenv(env_key, None)
-        if not fname or not path.exists(fname):
-            dir_path = path.dirname(path.realpath(__file__))
-            fname = path.join(dir_path, config_file)
-        if path.exists(fname):
-            with open(fname, 'rt') as f:
-                config_dict = json.load(f)
-            config.dictConfig(config_dict)
-        else:
-            basicConfig(level="INFO")
-
-        logger = getLogger(__name__)
-        # Set log_level for console to user-defined value
-        if log_level is not None:
-            logger.parent.handlers[0].setLevel(log_level)
-
-        return logger
 
     def fit_report(self, output="full"):
         """Method that reports on the fit after a model is optimized.

@@ -13,7 +13,12 @@ for file in os.listdir(to_path):
 # then add new linkt to jupyter notebooks
 for file in os.listdir(from_path):
     if file.endswith('.ipynb'):
-        fname = os.path.join(to_path,'{}.nblink'.format(file))
+        try:
+            nr, name = file.split('_',maxsplit=1)
+            fname = '{:03d}_{}.nblink'.format(int(nr),name)
+            fname = os.path.join(to_path,fname)
+        except:
+            fname = os.path.join(to_path,'{}.nblink'.format(file))
         with open(fname,'w') as f:
-            f.write('{{\n    "path": "../{}/{}"\n}}'.format(from_path,file))
+            f.write('{{\n    "path": "../{}/{}"\n}}\n'.format(from_path,file))
 print("Links successfully placed to jupyter notebooks")

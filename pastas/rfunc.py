@@ -1,8 +1,8 @@
 # coding=utf-8
 """This module contains all the response functions available in Pastas.
 
-More information on how to write a response class can be found `here
- <http://pastas.readthedocs.io/en/latest/developers.html>_`.
+More information on how to write a response class can be found
+`here <http://pastas.readthedocs.io/en/latest/developers.html>`_.
 
 Routines in Module
 ------------------
@@ -23,11 +23,12 @@ TODO
 
 import numpy as np
 from pandas import DataFrame
-from scipy.special import gammainc, gammaincinv, k0, exp1, erfc, lambertw
+from scipy.special import gammainc, gammaincinv, k0, exp1, erfc, lambertw, \
+    erfcinv
 from scipy.integrate import quad
 
 __all__ = ["Gamma", "Exponential", "Hantush", "Polder", "FourParam",
-           "DoubleExponential", "One"]
+           "DoubleExponential", "One", "Edelman"]
 
 
 class RfuncBase:
@@ -45,6 +46,19 @@ class RfuncBase:
         self.tmax = 0
 
     def get_init_parameters(self, name):
+        """Get initial parameters and bounds. It is called by the stressmodel.
+
+        Parameters
+        ----------
+        name :  str
+            Name of the stressmodel
+
+        Returns
+        -------
+        parameters : pandas DataFrame
+            The initial parameters and parameter bounds used by the solver
+
+        """
         pass
 
     def get_tmax(self, p, cutoff=None):
@@ -169,23 +183,23 @@ class Gamma(RfuncBase):
 class Exponential(RfuncBase):
     """Exponential response function with 2 parameters: A and a.
 
-        Parameters
-        ----------
-        up: bool, optional
-            indicates whether a positive stress will cause the head to go up
-            (True, default) or down (False)
-        meanstress: float
-            mean value of the stress, used to set the initial value such that
-            the final step times the mean stress equals 1
-        cutoff: float
-            percentage after which the step function is cut off. default=0.99.
+    Parameters
+    ----------
+    up: bool, optional
+        indicates whether a positive stress will cause the head to go up
+        (True, default) or down (False)
+    meanstress: float
+        mean value of the stress, used to set the initial value such that
+        the final step times the mean stress equals 1
+    cutoff: float
+        percentage after which the step function is cut off. default=0.99.
 
-        Notes
-        -----
-        .. math::
-            step(t) = A * (1 - exp(-t / a))
+    Notes
+    -----
+    .. math::
+        step(t) = A * (1 - e^{-\\frac{t}{a}})
 
-        """
+    """
     _name = "Exponential"
 
     def __init__(self, up=True, meanstress=1, cutoff=0.99):
@@ -238,8 +252,14 @@ class Hantush(RfuncBase):
 
     Notes
     -----
-    Parameters are ..math::
-        rho = r / lambda and cS
+    The Hantush well function is emplained in [1]_, [2]_ and [3]_.
+    It's parameters are:
+
+    .. math:: p[0] = A = \\frac{1}{4 \\pi kD}
+    .. math:: p[1] = rho = \\frac{r}{\\lambda}
+    .. math:: p[2] = cS
+
+    where :math:`\\lambda = \\sqrt{\\frac{kD}{c}}`
 
     References
     ----------
@@ -308,33 +328,36 @@ class Hantush(RfuncBase):
 
 
 class Polder(RfuncBase):
-    """The function of Polder, for a river in a confined aquifer,
+    """The Polder function, for a river in a confined aquifer,
     overlain by an aquitard with aquiferous ditches.
+
+    Notes
+    -----
+    The Polder function is explained in [4]_. It's parameters are:
+
+    .. math:: p[0] = \\frac{x}{2\\lambda}
+    .. math:: p[1] = \\sqrt{\\frac{1}{cS}}
+
+    where :math:`\\lambda = \\sqrt{\\frac{kD}{c}}`
 
     References
     ----------
-    .. [2] http://grondwaterformules.nl/index.php/formules/waterloop/deklaag
-    -met-sloten
+    .. [4] http://grondwaterformules.nl/index.php/formules/waterloop/deklaag-met-sloten
 
     """
     _name = "Polder"
 
     def __init__(self, up=True, meanstress=1, cutoff=0.99):
         RfuncBase.__init__(self, up, meanstress, cutoff)
-        self.nparam = 3
+        self.nparam = 2
 
     def get_init_parameters(self, name):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         a_init = 1
         b_init = 0.1
-        c_init = 1 / np.exp(-2 * a_init) / self.meanstress
         parameters.loc[name + '_a'] = (a_init, 0, 100, 1, name)
         parameters.loc[name + '_b'] = (b_init, 0, 10, 1, name)
-        if self.up:
-            parameters.loc[name + '_c'] = (c_init, 0, c_init * 100, 1, name)
-        else:
-            parameters.loc[name + '_c'] = (-c_init, -c_init * 100, 0, 1, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):
@@ -345,8 +368,11 @@ class Polder(RfuncBase):
         return 4 * p[0] / p[1] ** 2
 
     def gain(self, p):
-        # TODO: check line below
-        return p[2]
+        # the steady state solution of Mazure
+        g = np.exp(-2 * p[0])
+        if not self.up:
+            g = -g
+        return g
 
     def step(self, p, dt=1, cutoff=None):
         if isinstance(dt, np.ndarray):
@@ -354,10 +380,13 @@ class Polder(RfuncBase):
         else:
             self.tmax = max(self.get_tmax(p, cutoff), 3 * dt)
             t = np.arange(dt, self.tmax, dt)
-        s = p[2] * self.polder_function(p[0], p[1] * np.sqrt(t))
+        s = self.polder_function(p[0], p[1] * np.sqrt(t))
+        if not self.up:
+            s = -s
         return s
 
-    def polder_function(self, x, y):
+    @staticmethod
+    def polder_function(x, y):
         s = .5 * np.exp(2 * x) * erfc(x / y + y) + \
             .5 * np.exp(-2 * x) * erfc(x / y - y)
         return s
@@ -413,8 +442,8 @@ class FourParam(RfuncBase):
     -----
 
     .. math::
-        step(t) = A / quad(t**n * np.exp(-t/a - b/t),0,np.inf) *
-                      quad(t**n * np.exp(-t/a - b/t),0,t)
+        step(t) = \\frac{A}{quad(t^n*e^{-\\frac{t}{a} - \\frac{b}{t}},0,inf)} *
+                            quad(t^n*e^{-\\frac{t}{a} - \\frac{b}{t}},0,t)
 
     """
     _name = "FourParam"
@@ -568,11 +597,11 @@ class FourParamQuad(FourParam):
     function can be used for testing purposes.
 
     .. math::
-        step(t) = A / quad(t**n * np.exp(-t/a - b/t),0,np.inf) *
-                      quad(t**n * np.exp(-t/a - b/t),0,t)
+        step(t) = \\frac{A}{quad(t^n*e^{-\\frac{t}{a} - \\frac{b}{t}},0,inf)} *
+                            quad(t^n*e^{-\\frac{t}{a} - \\frac{b}{t}},0,t)
 
     """
-    _name = "FourParam"
+    _name = "FourParamQuad"
 
     def __init__(self, up=True, meanstress=1, cutoff=0.99):
         FourParam.__init__(self, up, meanstress, cutoff)
@@ -598,7 +627,8 @@ class DoubleExponential(RfuncBase):
     -----
 
     .. math::
-        step(t) = A * (1 - ( (1 - alpha)* exp(-t / a1) + alpha * exp(-t / a2)))
+        step(t) = A * (1 - ( (1 - \\alpha)* e^{-\\frac{t}{a1}} +
+                                  \\alpha * e^{-\\frac{t}{a2}}))
 
     """
     _name = "DoubleExponential"
@@ -642,4 +672,61 @@ class DoubleExponential(RfuncBase):
 
         s = p[0] * (1 - ((1 - p[1]) * np.exp(-t / p[2]) +
                          p[1] * np.exp(-t / p[3])))
+        return s
+
+
+class Edelman(RfuncBase):
+    """The function of Edelman, describing the propagation of an instantaneous
+    water level change into an adjacent half-infinite aquifer.
+
+    Parameters
+    ----------
+    up: bool, optional
+        indicates whether a positive stress will cause the head to go up
+        (True, default) or down (False)
+    meanstress: float
+        mean value of the stress, used to set the initial value such that
+        the final step times the mean stress equals 1
+    cutoff: float
+        percentage after which the step function is cut off. default=0.99.
+
+    Notes
+    -----
+    The Edelman function is emplained in [5]_. It's parameters are:
+
+    .. math:: p[0] = \\beta = \\frac{\\sqrt{\\frac{4kD}{S}}}{x}
+
+    References
+    ----------
+    .. [5] http://grondwaterformules.nl/index.php/formules/waterloop/peilverandering
+
+    """
+    _name = "Edelman"
+
+    def __init__(self, up=True, meanstress=1, cutoff=0.99):
+        RfuncBase.__init__(self, up, meanstress, cutoff)
+        self.nparam = 1
+
+    def get_init_parameters(self, name):
+        parameters = DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        beta_init = 1.0
+        parameters.loc[name + '_beta'] = (beta_init, 0, 1000, 1, name)
+        return parameters
+
+    def get_tmax(self, p, cutoff=None):
+        if cutoff is None:
+            cutoff = self.cutoff
+        return 1. / (p[0] * erfcinv(cutoff * erfc(0))) ** 2
+
+    def gain(self, p):
+        return 1.
+
+    def step(self, p, dt=1, cutoff=None):
+        if isinstance(dt, np.ndarray):
+            t = dt
+        else:
+            self.tmax = max(self.get_tmax(p, cutoff), 3 * dt)
+            t = np.arange(dt, self.tmax, dt)
+        s = erfc(1 / (p[0] * np.sqrt(t)))
         return s

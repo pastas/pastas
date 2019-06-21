@@ -1,4 +1,4 @@
-"""The stressmodels module contains all the transforms that can be added to the
+"""The transforms module contains all the transforms that can be added to the
  simulation of a model. These transforms are applied after the simulation,
  to incorporate nonlineair effects.
 
@@ -14,7 +14,6 @@ class ThresholdTransform:
     the groundwater level reaches the surface level and forms a lake. Beacuase
     of the larger storage of the lake, the (groundwater) level then rises
     slower when it rains.
-
 
     Parameters
     ----------

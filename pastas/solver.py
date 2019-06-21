@@ -363,7 +363,7 @@ class MarkSolver(BaseSolver):
 
         return stderr, covmat, corrmat
 
-    def misfit(self, parameters, noise, model, weights=None):
+    def misfit(self, parameters, noise, model, weights=None, callback=None):
         res = model.residuals(parameters)
         alpha = parameters[-1]
         print('alpha:', alpha)

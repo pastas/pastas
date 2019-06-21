@@ -6,6 +6,7 @@ Author: R.A. Collenteur, University of Graz.
 
 """
 import pastas as ps
+ps.set_log_level("ERROR")
 
 # read observations
 obs = ps.read_dino('data/B58C0698001_1.csv')
@@ -24,6 +25,6 @@ sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential,
                       recharge="Linear", name='recharge')
 ml.add_stressmodel(sm)
 
-## Solve
+# Solve
 ml.solve()
 ml.plot()

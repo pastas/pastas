@@ -95,7 +95,7 @@ class NoiseModel(NoiseModelBase):
 
     Notes
     -----
-    Calculates the noise [1] according to:
+    Calculates the noise [1]_ according to:
 
     .. math::
         v(t1) = r(t1) - r(t0) * exp(- (t1 - t0) / alpha)
@@ -142,14 +142,12 @@ class NoiseModel(NoiseModelBase):
             Series of the noise.
 
         """
-        dt = get_dt(freq)
-        odelt = res.index.to_series().diff() / pd.Timedelta(dt, "D")
+        odelt = res.index.to_series().diff() / pd.Timedelta(1, 'd')
         odelt = odelt.iloc[1:]
-        alpha = parameters[0]
         noise = pd.Series(data=res)
+        alpha = parameters[0]
         # res.values is needed else it gets messed up with the dates
         noise.iloc[1:] -= np.exp(-odelt / alpha) * res.values[:-1]
-
         weights = self.weights(alpha, odelt)
         noise = noise.multiply(weights, fill_value=0.0)
         noise.name = "Noise"
@@ -181,7 +179,7 @@ class NoiseModel2(NoiseModelBase):
 
     Notes
     -----
-    Calculates the noise [1] according to:
+    Calculates the noise according to:
 
     .. math::
         v(t1) = r(t1) - r(t0) * exp(- (t1 - t0) / alpha)
@@ -194,10 +192,6 @@ class NoiseModel2(NoiseModelBase):
 
     >>> n = NoiseModel()
     >>> n.set_initial("noise_alpha", 1.0 * ml.get_dt(ml.freq))
-
-    References
-    ----------
-    .. [A] von Asmuth, J. R., and M. F. P. Bierkens (2005), Modeling irregularly spaced residual series as a continuous stochastic process, Water Resour. Res., 41, W12404, doi:10.1029/2004WR003726.
 
     """
     _name = "NoiseModel2"
@@ -226,7 +220,7 @@ class NoiseModel2(NoiseModelBase):
             Series of the noise.
 
         """
-        odelt = res.index.to_series().diff() / pd.Timedelta(1, freq)
+        odelt = res.index.to_series().diff() / pd.Timedelta(1, 'd')
         odelt = odelt.iloc[1:]
         noise = pd.Series(res)
         alpha = parameters[0]

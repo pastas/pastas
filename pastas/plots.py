@@ -31,7 +31,7 @@ class Plotting:
 
     @model_tmin_tmax
     def plot(self, tmin=None, tmax=None, oseries=True, simulation=True,
-             **kwargs):
+             ax=None, figsize=None, legend=True, **kwargs):
         """Make a plot of the observed and simulated series.
 
         Parameters
@@ -50,7 +50,9 @@ class Plotting:
             timeseries.
 
         """
-        ax = plt.subplot(**kwargs)
+        if ax is None:
+            fig, ax = plt.subplots(figsize=figsize, **kwargs)
+
         ax.set_title("Results of {}".format(self.ml.name))
 
         if oseries:
@@ -67,7 +69,8 @@ class Plotting:
             sim.plot(ax=ax)
         plt.xlim(tmin, tmax)
         plt.ylabel("Groundwater levels [meter]")
-        plt.legend()
+        if legend:
+            plt.legend()
         plt.tight_layout()
         return ax
 
@@ -159,9 +162,9 @@ class Plotting:
         return fig.axes
 
     @model_tmin_tmax
-    def decomposition(self, tmin=None, tmax=None, ytick_base=True, split=True,
+    def decomposition(self, tmin=None, tmax=None, ytick_base=True, split=False,
                       figsize=(10, 8), axes=None, name=None,
-                      return_warmup=False, **kwargs):
+                      return_warmup=False, min_ylim_diff=None, **kwargs):
         """Plot the decomposition of a time-series in the different stresses.
 
         Parameters
@@ -202,12 +205,20 @@ class Plotting:
             nstress = len(self.ml.stressmodels[name].stress)
             if split and nstress > 1:
                 for istress in range(nstress):
-                    contrib = self.ml.get_contribution(
-                        name, tmin=tmin, tmax=tmax, istress=istress,
-                        return_warmup=return_warmup
-                    )
-                    series.append(contrib)
-                    names.append(contrib.name)
+                    # Try/Except as not all stressmodels support istress
+                    try:
+                        contrib = self.ml.get_contribution(
+                            name, tmin=tmin, tmax=tmax, istress=istress,
+                            return_warmup=return_warmup
+                        )
+                        series.append(contrib)
+                        names.append(contrib.name)
+                    except TypeError as e:
+                        msg = "keyword split is not supported for " \
+                              "stressmodel {}.".format(name)
+                        logger.error(msg, )
+                        plt.close()
+                        raise
             else:
                 contrib = self.ml.get_contribution(
                     name, tmin=tmin, tmax=tmax, return_warmup=return_warmup
@@ -234,6 +245,11 @@ class Plotting:
                     ylims.append((contrib.min(), hs.max()))
             else:
                 ylims.append((hs.min(), hs.max()))
+        if min_ylim_diff is not None:
+            for i, ylim in enumerate(ylims):
+                if np.diff(ylim) < min_ylim_diff:
+                    ylims[i] = (np.mean(ylim) - min_ylim_diff / 2,
+                                np.mean(ylim) + min_ylim_diff / 2)
         height_ratios = [
             0.0 if np.isnan(ylim[1] - ylim[0]) else ylim[1] - ylim[0] for ylim
             in ylims]
@@ -302,7 +318,7 @@ class Plotting:
         return axes
 
     @model_tmin_tmax
-    def diagnostics(self, tmin=None, tmax=None):
+    def diagnostics(self, tmin=None, tmax=None, figsize=(10, 8), **kwargs):
         """Plot a window that helps in diagnosing basic model assumptions.
 
         Parameters
@@ -319,6 +335,8 @@ class Plotting:
             res = self.ml.noise(tmin=tmin, tmax=tmax)
         else:
             res = self.ml.residuals(tmin=tmin, tmax=tmax)
+
+        fig = plt.figure(figsize=figsize, **kwargs)
 
         shape = (2, 3)
         ax = plt.subplot2grid(shape, (0, 0), colspan=2, rowspan=1)
@@ -348,7 +366,8 @@ class Plotting:
         plt.tight_layout(pad=0.0)
         return plt.gca()
 
-    def block_response(self, stressmodels=None, **kwargs):
+    def block_response(self, stressmodels=None, ax=None, figsize=None,
+                       **kwargs):
         """Plot the block response for a specific stressmodels.
 
         Parameters
@@ -362,12 +381,13 @@ class Plotting:
             matplotlib axes instance.
 
         """
+        if ax is None:
+            fig, ax = plt.subplots(figsize=figsize, **kwargs)
+
         if not stressmodels:
             stressmodels = self.ml.stressmodels.keys()
 
         legend = []
-
-        ax = plt.subplot(**kwargs)
 
         for name in stressmodels:
             if hasattr(self.ml.stressmodels[name], 'rfunc'):
@@ -382,7 +402,8 @@ class Plotting:
         plt.legend(legend)
         return ax
 
-    def step_response(self, stressmodels=None, **kwargs):
+    def step_response(self, stressmodels=None, ax=None, figsize=None,
+                      **kwargs):
         """Plot the block response for a specific stressmodels.
 
         Parameters
@@ -396,12 +417,13 @@ class Plotting:
             matplotlib axes instance.
 
         """
+        if ax is None:
+            fig, ax = plt.subplots(figsize=figsize, **kwargs)
+
         if not stressmodels:
             stressmodels = self.ml.stressmodels.keys()
 
         legend = []
-
-        ax = plt.subplot(**kwargs)
 
         for name in stressmodels:
             if hasattr(self.ml.stressmodels[name], 'rfunc'):
@@ -471,7 +493,8 @@ class Plotting:
         return axes
 
     @model_tmin_tmax
-    def contributions_pie(self, tmin=None, tmax=None, ax=None, **kwargs):
+    def contributions_pie(self, tmin=None, tmax=None, ax=None,
+                          figsize=None, **kwargs):
         """Make a pie chart of the contributions. This plot is based on the
         TNO Groundwatertoolbox.
 
@@ -491,7 +514,7 @@ class Plotting:
 
         """
         if ax is None:
-            _, ax = plt.subplots()
+            fig, ax = plt.subplots(figsize=figsize, **kwargs)
 
         frac = []
         for name in self.ml.stressmodels.keys():
@@ -506,6 +529,6 @@ class Plotting:
         labels = list(self.ml.stressmodels.keys())
         labels.append("Unexplained")
         ax.pie(frac, labels=labels, autopct='%1.1f%%', startangle=90,
-               wedgeprops=dict(width=1, edgecolor='w'), **kwargs)
+               wedgeprops=dict(width=1, edgecolor='w'))
         ax.axis('equal')
         return ax
