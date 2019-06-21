@@ -162,7 +162,7 @@ class Plotting:
         return fig.axes
 
     @model_tmin_tmax
-    def decomposition(self, tmin=None, tmax=None, ytick_base=True, split=True,
+    def decomposition(self, tmin=None, tmax=None, ytick_base=True, split=False,
                       figsize=(10, 8), axes=None, name=None,
                       return_warmup=False, min_ylim_diff=None, **kwargs):
         """Plot the decomposition of a time-series in the different stresses.
@@ -205,12 +205,20 @@ class Plotting:
             nstress = len(self.ml.stressmodels[name].stress)
             if split and nstress > 1:
                 for istress in range(nstress):
-                    contrib = self.ml.get_contribution(
-                        name, tmin=tmin, tmax=tmax, istress=istress,
-                        return_warmup=return_warmup
-                    )
-                    series.append(contrib)
-                    names.append(contrib.name)
+                    # Try/Except as not all stressmodels support istress
+                    try:
+                        contrib = self.ml.get_contribution(
+                            name, tmin=tmin, tmax=tmax, istress=istress,
+                            return_warmup=return_warmup
+                        )
+                        series.append(contrib)
+                        names.append(contrib.name)
+                    except TypeError as e:
+                        msg = "keyword split is not supported for " \
+                              "stressmodel {}.".format(name)
+                        logger.error(msg, )
+                        plt.close()
+                        raise
             else:
                 contrib = self.ml.get_contribution(
                     name, tmin=tmin, tmax=tmax, return_warmup=return_warmup
@@ -310,7 +318,7 @@ class Plotting:
         return axes
 
     @model_tmin_tmax
-    def diagnostics(self, tmin=None, tmax=None):
+    def diagnostics(self, tmin=None, tmax=None, figsize=(10, 8), **kwargs):
         """Plot a window that helps in diagnosing basic model assumptions.
 
         Parameters
@@ -327,6 +335,8 @@ class Plotting:
             res = self.ml.noise(tmin=tmin, tmax=tmax)
         else:
             res = self.ml.residuals(tmin=tmin, tmax=tmax)
+
+        fig = plt.figure(figsize=figsize, **kwargs)
 
         shape = (2, 3)
         ax = plt.subplot2grid(shape, (0, 0), colspan=2, rowspan=1)
@@ -504,7 +514,7 @@ class Plotting:
 
         """
         if ax is None:
-            fig, ax = plt.subplots(**kwargs)
+            fig, ax = plt.subplots(figsize=figsize, **kwargs)
 
         frac = []
         for name in self.ml.stressmodels.keys():
