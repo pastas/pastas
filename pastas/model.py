@@ -141,13 +141,14 @@ class Model:
                                const=not self.constant is None,
                                noise=not self.noisemodel is None)
 
-    def add_stressmodel(self, stressmodel, *args, replace=False, **kwargs):
+    def add_stressmodel(self, stressmodel, *args, replace=False):
         """Adds a stressmodel to the main model.
 
         Parameters
         ----------
         stressmodel: pastas.stressmodel.stressmodelBase
-            instance of a pastas.stressmodel object.
+            instance of a pastas.stressmodel object. Multiple stress models
+            can be provided (e.g., ml.add_stressmodel(sm1, sm2) in one call.
         replace: bool, optional
             replace the stressmodel if a stressmodel with the same name
             already exists. Not recommended but useful at times. Default is
