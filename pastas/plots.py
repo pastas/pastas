@@ -248,10 +248,9 @@ class Plotting:
 
         if axes is None:
             # open a new figure
+            gridspec_kw = {'height_ratios': height_ratios}
             fig, axes = plt.subplots(len(series), sharex=True, figsize=figsize,
-                                     gridspec_kw={
-                                         'height_ratios': height_ratios},
-                                     **kwargs)
+                                     gridspec_kw=gridspec_kw, **kwargs)
             axes = np.atleast_1d(axes)
             o_label = o.name
             set_axes_properties = True
@@ -320,7 +319,7 @@ class Plotting:
 
         Returns
         -------
-        matplotlib.axes
+        axes: list of matplotlib.axes
 
         """
         if self.ml.settings["noise"]:
@@ -355,8 +354,8 @@ class Plotting:
         c = ax.get_lines()[0]._color
         ax3.get_lines()[0].set_color(c)
 
-        plt.tight_layout(pad=0.0)
-        return plt.gca()
+        fig.tight_layout(pad=0.0)
+        return fig.axes
 
     def block_response(self, stressmodels=None, ax=None, figsize=None,
                        **kwargs):
