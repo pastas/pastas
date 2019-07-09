@@ -218,6 +218,13 @@ class StressModelBase:
             "stress": self.dump_stress(series)
         }
         return data
+    
+    def get_nsplit(self):
+        """Determine in how many timeseries the contribution can be splitted"""
+        if hasattr(self,'nsplit'):
+            return self.nsplit
+        else:
+            return len(self.stress)
 
 
 class StressModel(StressModelBase):
@@ -890,6 +897,8 @@ class RechargeModel(StressModelBase):
             self.stress.append(self.temp)
         self.freq = self.prec.settings["freq"]
         self.set_init_parameters()
+        
+        self.nsplit = 1
 
     def set_init_parameters(self):
         self.parameters = pd.concat(

@@ -162,7 +162,7 @@ class Plotting:
         return fig.axes
 
     @model_tmin_tmax
-    def decomposition(self, tmin=None, tmax=None, ytick_base=True, split=False,
+    def decomposition(self, tmin=None, tmax=None, ytick_base=True, split=True,
                       figsize=(10, 8), axes=None, name=None,
                       return_warmup=False, min_ylim_diff=None, **kwargs):
         """Plot the decomposition of a time-series in the different stresses.
@@ -202,23 +202,15 @@ class Plotting:
 
         # determine the influence of the different stresses
         for name in self.ml.stressmodels.keys():
-            nstress = len(self.ml.stressmodels[name].stress)
-            if split and nstress > 1:
-                for istress in range(nstress):
-                    # Try/Except as not all stressmodels support istress
-                    try:
-                        contrib = self.ml.get_contribution(
-                            name, tmin=tmin, tmax=tmax, istress=istress,
-                            return_warmup=return_warmup
-                        )
-                        series.append(contrib)
-                        names.append(contrib.name)
-                    except TypeError as e:
-                        msg = "keyword split is not supported for " \
-                              "stressmodel {}.".format(name)
-                        logger.error(msg, )
-                        plt.close()
-                        raise
+            nsplit = self.ml.stressmodels[name].get_nsplit()
+            if split and nsplit > 1:
+                for istress in range(nsplit):
+                    contrib = self.ml.get_contribution(
+                        name, tmin=tmin, tmax=tmax, istress=istress,
+                        return_warmup=return_warmup)
+                    series.append(contrib)
+                    names.append(contrib.name)
+
             else:
                 contrib = self.ml.get_contribution(
                     name, tmin=tmin, tmax=tmax, return_warmup=return_warmup

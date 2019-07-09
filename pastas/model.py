@@ -1162,18 +1162,12 @@ class Model:
             tmin_warm = None
 
         dt = get_dt(freq)
+        
+        kwargs = dict(tmin=tmin_warm, tmax=tmax, freq=freq, dt=dt)
+        if istress is not None:
+            kwargs['istress'] = istress
+        contrib = self.stressmodels[name].simulate(parameters, **kwargs)
 
-        if istress is None:
-            contrib = self.stressmodels[name].simulate(parameters,
-                                                       tmin=tmin_warm,
-                                                       tmax=tmax,
-                                                       freq=freq, dt=dt)
-        else:
-            contrib = self.stressmodels[name].simulate(parameters,
-                                                       tmin=tmin_warm,
-                                                       tmax=tmax,
-                                                       dt=dt, freq=freq,
-                                                       istress=istress)
         # Respect provided tmin/tmax at this point, since warmup matters for
         # simulation but should not be returned, unless return_warmup=True.
         if not return_warmup:
