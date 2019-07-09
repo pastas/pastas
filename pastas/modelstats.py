@@ -80,30 +80,6 @@ included in Pastas. To obtain a list of all statistics that are included type:
         N = res.size
         return sqrt((res ** 2).sum() / N)
 
-    @PastasDeprecationWarning
-    @model_tmin_tmax
-    def rmsi(self, tmin=None, tmax=None):
-        """Root mean squared error of the noise.
-
-        Returns
-        -------
-        float or nan
-            Return a float if noisemodel is present, nan if not.
-
-        Notes
-        -----
-        .. math:: rmsi = \\sqrt{\\frac{\\sum(noise^2)}{N}}
-
-        where N is the number of noise.
-
-        """
-        if not self.ml.noisemodel:
-            return nan
-        else:
-            res = self.ml.noise(tmin=tmin, tmax=tmax).values
-            N = res.size
-            return sqrt((res ** 2).sum() / N)
-
     @model_tmin_tmax
     def rmsn(self, tmin=None, tmax=None):
         """Root mean squared error of the noise.

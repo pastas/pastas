@@ -68,13 +68,9 @@ class Model:
     """
 
     def __init__(self, oseries, constant=True, noisemodel=True, name=None,
-                 metadata=None, log_level=None):
+                 metadata=None):
 
         self.logger = getLogger(__name__)
-        if log_level is not None:
-            self.logger.warning(
-                "Deprecation warning: the log_level-parameter in Model will be removed in version Pastas version 0.12. Use ps.set_log_level(log_level) instead")
-            set_log_level(log_level)
 
         # Construct the different model components
         self.oseries = TimeSeries(oseries, settings="oseries",
@@ -828,20 +824,6 @@ class Model:
             self.settings["time_offset"] = next(iter(time_offsets))
         else:
             self.settings["time_offset"] = pd.Timedelta(0)
-
-    @DeprecationWarning
-    def set_log_level(self, log_level):
-        """Method to set the log_level for which messages are printed to the
-        Python console. This can be useful for when more or less info is
-        desirable.
-
-        Parameters
-        ----------
-        log_level: str
-            String with the level, options are: ERROR, WARNING and INFO.
-
-        """
-        self.logger.parent.handlers[0].setLevel(log_level)
 
     def get_stressmodel_names(self):
         """Returns list of stressmodel names"""
