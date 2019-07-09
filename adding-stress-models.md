@@ -1,2 +1,0 @@
-# Adding Stress models
-
