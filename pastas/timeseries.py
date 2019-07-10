@@ -418,8 +418,8 @@ class TimeSeries(object):
                 if not (dt == 1.0).all():
                     series = series / dt
                     logger.info(
-                        "Time Series %s: values were transfered to daily "
-                        "values with: %s" % (self.name, method))
+                        "Time Series %s: values of stress were transformed to daily "
+                        "values (frequency not altered) with: %s" % (self.name, method))
             else:
                 logger.warning(
                     "Time Series %s: User-defined option for to_daily_unit %s is not "
