@@ -416,7 +416,7 @@ class TimeSeries(object):
             if method == True or method == "divide":
                 dt = series.index.to_series().diff() / pd.Timedelta(1, 'd')
                 if not (dt == 1.0).all():
-                    series = series[1:] / dt[1:]
+                    series = series / dt
                     logger.info(
                         "Time Series %s: values of stress were transformed to daily "
                         "values (frequency not altered) with: %s" % (self.name, method))
