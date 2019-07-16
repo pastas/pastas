@@ -128,6 +128,56 @@ class Project:
             value = ts.metadata[i]
             data.at[name, i] = value
 
+    def add_oseries(self, series, name=None, metadata=None, settings="oseries",
+                    **kwargs):
+        """Convenience method to add oseries to project
+
+        Parameters
+        ----------
+        series: pandas.Series / pastas.TimeSeries
+            Series object.
+        name: str
+            String with the name of the series that will be maintained in
+            the database.
+        metadata: dict
+            Dictionary with any metadata that will be passed to the
+            TimeSeries object that is created internally.
+        settings: dict or str
+            Dictionary with any settings that will be passed to the
+            TimeSeries object that is created internally.
+
+        Returns
+        -------
+
+        """
+        self.add_series(series, name=name, metadata=metadata,
+                        settings=settings, kind="oseries", **kwargs)
+
+    def add_stress(self, series, name=None, kind=None, metadata=None,
+                   settings=None, **kwargs):
+        """Convenience method to add stress series to project
+
+        Parameters
+        ----------
+        series: pandas.Series / pastas.TimeSeries
+            Series object.
+        name: str
+            String with the name of the series that will be maintained in
+            the database.
+        metadata: dict
+            Dictionary with any metadata that will be passed to the
+            TimeSeries object that is created internally.
+        settings: dict or str
+            Dictionary with any settings that will be passed to the
+            TimeSeries object that is created internally.
+
+        Returns
+        -------
+
+        """
+        self.add_series(series, name=name, metadata=metadata,
+                        settings=settings, kind=kind, **kwargs)
+
     def del_oseries(self, name):
         """Method that savely removes oseries from the project. It validates
         that the oseries is not used in any model.
