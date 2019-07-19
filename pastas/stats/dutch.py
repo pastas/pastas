@@ -393,8 +393,8 @@ def __gxg__(series, year_agg, tmin, tmax, fill_method, limit, output,
         else:
             return yearly.mean()
     else:
-        ValueError('{output:} is not a valid output option'.format(
-            output=output))
+        msg = '{} is not a valid output option'.format(output)
+        raise(ValueError(msg))
 
 
 def __q_gxg__(series, q, tmin=None, tmax=None, by_year=True):
