@@ -196,14 +196,14 @@ def timestep_weighted_resample(series, tindex):
     """
 
     # determine some arrays for the input-series
-    t0e = series.index.get_values()
+    t0e = np.array(series.index)
     dt0 = np.diff(t0e)
     dt0 = np.hstack((dt0[0], dt0))
     t0s = t0e - dt0
     v0 = series.values
 
     # determine some arrays for the output-series
-    t1e = tindex.get_values()
+    t1e = np.array(tindex)
     dt1 = np.diff(t1e)
     dt1 = np.hstack((dt1[0], dt1))
     t1s = t1e - dt1
