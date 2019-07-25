@@ -14,7 +14,6 @@ Usage
 
 from logging import getLogger
 from os import getlogin
-import warnings
 
 import numpy as np
 import pandas as pd
@@ -388,8 +387,8 @@ class Project:
                 try:
                     ml.solve(report=report, **kwargs)
                 except ValueError:
-                    warnings.warn(
-                        'solve error ignored for -> {}'.format(ml.name))
+                    warning = "solve error ignored for -> {}".format(ml.name)
+                    logger.warning(warning)
             else:
                 ml.solve(report=report, **kwargs)
 
