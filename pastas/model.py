@@ -50,9 +50,6 @@ class Model:
         Dictionary containing metadata of the oseries, passed on the to
         oseries when creating a pastas TimeSeries object. hence,
         ml.oseries.metadata will give you the metadata.
-    log_level: str, optional, depcrecated
-        String to set the level of the log-messages that is forwarded to the
-        Python console. Options are: ERROR, WARNING and INFO (default).
 
     Returns
     -------
@@ -236,6 +233,7 @@ class Model:
 
         """
         self.noisemodel = noisemodel
+        self.noisemodel.set_init_parameters(oseries=self.oseries.series)
         self.parameters = self.get_init_parameters(initial=False)
 
     @get_stressmodel
