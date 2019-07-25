@@ -128,6 +128,56 @@ class Project:
             value = ts.metadata[i]
             data.at[name, i] = value
 
+    def add_oseries(self, series, name=None, metadata=None, settings="oseries",
+                    **kwargs):
+        """Convenience method to add oseries to project
+
+        Parameters
+        ----------
+        series: pandas.Series / pastas.TimeSeries
+            Series object.
+        name: str
+            String with the name of the series that will be maintained in
+            the database.
+        metadata: dict
+            Dictionary with any metadata that will be passed to the
+            TimeSeries object that is created internally.
+        settings: dict or str
+            Dictionary with any settings that will be passed to the
+            TimeSeries object that is created internally.
+
+        Returns
+        -------
+
+        """
+        self.add_series(series, name=name, metadata=metadata,
+                        settings=settings, kind="oseries", **kwargs)
+
+    def add_stress(self, series, name=None, kind=None, metadata=None,
+                   settings=None, **kwargs):
+        """Convenience method to add stress series to project
+
+        Parameters
+        ----------
+        series: pandas.Series / pastas.TimeSeries
+            Series object.
+        name: str
+            String with the name of the series that will be maintained in
+            the database.
+        metadata: dict
+            Dictionary with any metadata that will be passed to the
+            TimeSeries object that is created internally.
+        settings: dict or str
+            Dictionary with any settings that will be passed to the
+            TimeSeries object that is created internally.
+
+        Returns
+        -------
+
+        """
+        self.add_series(series, name=name, metadata=metadata,
+                        settings=settings, kind=kind, **kwargs)
+
     def del_oseries(self, name):
         """Method that savely removes oseries from the project. It validates
         that the oseries is not used in any model.
@@ -152,11 +202,8 @@ class Project:
 
         Parameters
         ----------
-        stress: list or str
-            list with multiple or string with a single oseries name.
-
-        Returns
-        -------
+        name: list or str
+            list with multiple or string with a single stress name.
 
         """
         if name not in self.stresses.index:
@@ -214,7 +261,7 @@ class Project:
 
         Parameters
         ----------
-        model_name: str
+        ml_name: str
             String with the model name.
 
         """
@@ -223,8 +270,9 @@ class Project:
         logger.info(info)
 
     def update_model_series(self):
-        """Update all the Model series by their originals in self.oseries and self.stresses.
-        This can for example be usefull when new data is added to any of the series in pr.oseries and pr.stresses
+        """Update all the Model series by their originals in self.oseries and
+        self.stresses. This can for example be useful when new data is
+        added to any of the series in pr.oseries and pr.stresses
 
         """
         for name in self.models:
@@ -232,10 +280,9 @@ class Project:
             ml.oseries.series_original = self.oseries.loc[
                 name, 'series'].series_original
             for sm in ml.stressmodels:
-                for sm in ml.stressmodels:
-                    for st in ml.stressmodels[sm].stress:
-                        st.series_original = self.stresses.loc[
-                            st.name, 'series'].series_original
+                for st in ml.stressmodels[sm].stress:
+                    st.series_original = self.stresses.loc[
+                        st.name, 'series'].series_original
             # set oseries_calib empty, so it is determined again the next time
             ml.oseries_calib = None
 
@@ -249,8 +296,14 @@ class Project:
 
         """
         key = str(ml.oseries.name)
+        if 'prec' not in self.stresses['kind'].values:
+            logger.error('No precipitation-series (kind="prec") in project')
+            return
         prec_name = self.get_nearest_stresses(key, kind="prec").iloc[0][0]
         prec = self.stresses.loc[prec_name, "series"]
+        if 'evap' not in self.stresses['kind'].values:
+            logger.error('No evaporation-series (kind="evap") in project')
+            return
         evap_name = self.get_nearest_stresses(key, kind="evap").iloc[0][0]
         evap = self.stresses.loc[evap_name, "series"]
 
@@ -280,14 +333,14 @@ class Project:
 
         distances = self.get_distances(oseries, stresses, kind)
 
-        sorted = pd.DataFrame(columns=np.arange(n))
+        data = pd.DataFrame(columns=np.arange(n))
 
         for series in distances.index:
             series = pd.Series(distances.loc[series].sort_values().index[:n],
                                name=series)
-            sorted = sorted.append(series)
+            data = data.append(series)
 
-        return sorted
+        return data
 
     def get_distances(self, oseries=None, stresses=None, kind=None, ):
         """Method to obtain the distances in meters between the stresses and
@@ -505,7 +558,7 @@ class Project:
         series: bool
             export model input-series when True. Only export the name of
             the model input_series when False
-            
+
         sim_series: bool
             export model output-series when True
 

@@ -28,7 +28,7 @@ Examples
 from numpy import sqrt, log, nan
 from pandas import DataFrame
 
-from .decorators import model_tmin_tmax
+from .decorators import model_tmin_tmax, PastasDeprecationWarning
 
 
 class Statistics:
@@ -71,16 +71,17 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         Notes
         -----
-        .. math:: rmse = sqrt(sum(residuals**2) / N)
+        .. math:: rmse = \\sqrt{\\frac{\\sum{residuals^2}}{N}}
 
         where N is the number of residuals.
+
         """
         res = self.ml.residuals(tmin=tmin, tmax=tmax).values
         N = res.size
         return sqrt((res ** 2).sum() / N)
 
     @model_tmin_tmax
-    def rmsi(self, tmin=None, tmax=None):
+    def rmsn(self, tmin=None, tmax=None):
         """Root mean squared error of the noise.
 
         Returns
@@ -90,9 +91,10 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         Notes
         -----
-        .. math:: rmsi = sqrt(sum(noise**2) / N)
+        .. math:: rmsi = \\sqrt{\\frac{\\sum(noise^2)}{N}}
 
         where N is the number of noise.
+
         """
         if not self.ml.noisemodel:
             return nan
@@ -109,7 +111,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         -----
         The SSE is calculated as follows:
 
-        .. math:: SSE = sum(E ** 2)
+        .. math:: SSE = \\sum(E^2)
 
         Where E is an array of the residual series.
 
@@ -123,7 +125,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         Notes
         -----
-        .. math:: avg_dev = sum(E) / N
+        .. math:: avg_dev = \\frac{\\sum(E)}{N}
 
         Where N is the number of the residuals.
 
@@ -133,13 +135,13 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
     @model_tmin_tmax
     def nse(self, tmin=None, tmax=None):
-        """Nash-Sutcliffe coefficient for model fit (same as rsq).
+        """Nash-Sutcliffe coefficient [1]_ for model fit (same as rsq).
 
         References
         ----------
-        .. [NS] Nash, J. E., & Sutcliffe, J. V. (1970). River flow forecasting
-        through conceptual models part I-A discussion of principles. Journal
-        of hydrology, 10(3), 282-290.
+        .. [1] Nash, J. E., & Sutcliffe, J. V. (1970). River flow forecasting
+          through conceptual models part I-A discussion of principles. Journal
+          of hydrology, 10(3), 282-290.
 
         """
         res = self.ml.residuals(tmin=tmin, tmax=tmax).values
@@ -155,7 +157,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         -----
         Commonly used statistic in time series models of groundwater levels.
 
-        .. math:: evp = (var(h) - var(res)) / var(h) * 100%
+        .. math:: evp = \\frac{var(h) - var(res)}{var(h)} * 100
 
         """
         res = self.ml.residuals(tmin=tmin, tmax=tmax).values
@@ -183,13 +185,15 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         Notes
         -----
-        .. math:: R_{corrected} = 1 - (n-1) / (n-N_param) * RSS/TSS
+        .. math:: R_{corrected} = 1-  \\frac{n-1}{n-N_{param}}*\\frac{RSS}{TSS}
 
         Where:
-            RSS = sum of the squared residuals.
-            TSS = total sum of squared residuals
-            N = Number of observations
-            N_Param = Number of free parameters
+
+        * n = Number of observations
+        * :math:`N_{param}` = Number of free parameters
+        * RSS = sum of the squared residuals
+        * TSS = total sum of squared residuals
+
         """
 
         obs = self.ml.observations(tmin=tmin, tmax=tmax).values
@@ -211,10 +215,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         .. math:: BIC = -2 log(L) + nparam * log(N)
 
-        Where:
-            nparam : Number of free parameters
-
-
+        Where nparam  is the number of free parameters
 
         """
         if self.ml.noisemodel:
@@ -236,8 +237,9 @@ included in Pastas. To obtain a list of all statistics that are included type:
         .. math:: AIC = -2 log(L) + 2 nparam
 
         Where
-            nparam = Number of free parameters
-            L = likelihood function for the model.
+
+        * nparam = Number of free parameters
+        * L = likelihood function for the model.
 
         """
         if self.ml.noisemodel:

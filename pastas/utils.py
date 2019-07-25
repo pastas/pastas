@@ -1,14 +1,15 @@
-from logging import getLogger
-
 import numpy as np
 from pandas import Series, to_datetime, Timedelta, Timestamp, to_timedelta
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
+import logging
+from logging import handlers
 
-logger = getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def frequency_is_supported(freq):
+    # TODO: Rename to get_frequency_string and change Returns-documentation
     """Method to determine if a frequency is supported for a  pastas-model.
     Possible frequency-offsets are listed in:
     http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
@@ -195,32 +196,31 @@ def timestep_weighted_resample(series, tindex):
     """
 
     # determine some arrays for the input-series
-    t0e = series.index.get_values()
+    t0e = np.array(series.index)
     dt0 = np.diff(t0e)
     dt0 = np.hstack((dt0[0], dt0))
     t0s = t0e - dt0
     v0 = series.values
 
     # determine some arrays for the output-series
-    t1e = tindex.get_values()
+    t1e = np.array(tindex)
     dt1 = np.diff(t1e)
     dt1 = np.hstack((dt1[0], dt1))
     t1s = t1e - dt1
-    v1 = np.empty(t1e.shape)
-    v1[:] = np.nan
-    for i in range(len(v1)):
+    v1 = []
+    for t1si, t1ei in zip(t1s, t1e):
         # determine which periods within the series are within the new tindex
-        mask = (t0e > t1s[i]) & (t0s < t1e[i])
+        mask = (t0e > t1si) & (t0s < t1ei)
         if np.any(mask):
             # cut by the timestep-edges
             ts = t0s[mask]
             te = t0e[mask]
-            ts[ts < t1s[i]] = t1s[i]
-            te[te > t1e[i]] = t1e[i]
+            ts[ts < t1si] = t1si
+            te[te > t1ei] = t1ei
             # determine timestep
             dt = (te - ts).astype(float)
             # determine timestep-weighted value
-            v1[i] = np.sum(dt * v0[mask]) / np.sum(dt)
+            v1.append(np.sum(dt * v0[mask]) / np.sum(dt))
     # replace all values in the series
     series = Series(v1, index=tindex)
     return series
@@ -277,3 +277,118 @@ def get_stress_tmin_tmax(ml):
     else:
         raise (TypeError('Unknown type {}'.format(type(ml))))
     return tmin, tmax
+
+
+def initialize_logger(logger=None, level=logging.INFO):
+    """Internal method to create a logger instance to log program output.
+
+    Parameters
+    -------
+    logger : logging.Logger
+        A Logger-instance. Use ps.logger to initialise the Logging instance
+        that handles all logging throughout pastas,  including all sub modules
+        and packages.
+
+    """
+    if logger is None:
+        logger = logging.getLogger('pastas')
+    logger.setLevel(level)
+    remove_file_handlers(logger)
+    set_console_handler(logger)
+    # add_file_handlers(logger)
+
+
+def set_console_handler(logger=None, level=logging.INFO,
+                        fmt="%(levelname)s: %(message)s"):
+    """Method to add a console handler to the logger of Pastas.
+
+    Parameters
+    -------
+    logger : logging.Logger
+        A Logger-instance. Use ps.logger to initialise the Logging instance
+        that handles all logging throughout pastas,  including all sub modules
+        and packages.
+
+    """
+    if logger is None:
+        logger = logging.getLogger('pastas')
+    remove_console_handler(logger)
+    ch = logging.StreamHandler()
+    ch.setLevel(level)
+    formatter = logging.Formatter(fmt=fmt)
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+
+
+def set_log_level(level):
+    """Set the log-level of the console. This method is just a wrapper around
+    set_console_handler.
+
+    """
+    set_console_handler(level=level)
+
+
+def remove_console_handler(logger=None):
+    """Method to remove the console handler to the logger of Pastas.
+
+    Parameters
+    -------
+    logger : logging.Logger
+        A Logger-instance. Use ps.logger to initialise the Logging instance
+        that handles all logging throughout pastas,  including all sub modules
+        and packages.
+
+    """
+    if logger is None:
+        logger = logging.getLogger('pastas')
+    for handler in logger.handlers:
+        if isinstance(handler, logging.StreamHandler):
+            logger.removeHandler(handler)
+
+
+def add_file_handlers(logger=None, filenames=('info.log', 'errors.log'),
+                      levels=(logging.INFO, logging.ERROR), maxBytes=10485760,
+                      backupCount=20, encoding='utf8',
+                      fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                      datefmt='%y-%m-%d %H:%M'):
+    """Method to add file handlers in the logger of Pastas
+
+    Parameters
+    -------
+    logger : logging.Logger
+        A Logger-instance. Use ps.logger to initialise the Logging instance
+        that handles all logging throughout pastas,  including all sub modules
+        and packages.
+
+    """
+    if logger is None:
+        logger = logging.getLogger('pastas')
+    # create formatter
+    formatter = logging.Formatter(fmt=fmt, datefmt=datefmt)
+
+    # create file handlers, set the level & formatter, and add it to the logger
+    for filename, level in zip(filenames, levels):
+        fh = handlers.RotatingFileHandler(filename, maxBytes=maxBytes,
+                                          backupCount=backupCount,
+                                          encoding=encoding)
+        fh.setLevel(level)
+        fh.setFormatter(formatter)
+        logger.addHandler(fh)
+
+
+def remove_file_handlers(logger=None):
+    """Method to remove any file handlers in the logger of Pastas.
+
+    Parameters
+    -------
+    logger : logging.Logger
+        A Logger-instance. Use ps.logger to initialise the Logging instance
+        that handles all logging throughout pastas,  including all sub modules
+        and packages.
+
+    """
+    if logger is None:
+        logger = logging.getLogger('pastas')
+    for handler in logger.handlers:
+        if isinstance(handler, handlers.RotatingFileHandler):
+            logger.removeHandler(handler)

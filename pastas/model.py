@@ -9,12 +9,10 @@ Examples
 
 """
 
-import json
 from collections import OrderedDict
 from copy import copy
 from inspect import isclass
-from logging import basicConfig, getLogger, config
-from os import path, getlogin, getenv
+from os import getlogin
 
 import numpy as np
 import pandas as pd
@@ -27,8 +25,10 @@ from .solver import LeastSquares
 from .modelstats import Statistics
 from .stressmodels import Constant
 from .timeseries import TimeSeries
-from .utils import get_dt, get_time_offset, get_sample, frequency_is_supported
+from .utils import get_dt, get_time_offset, get_sample, frequency_is_supported, \
+    set_log_level
 from .version import __version__
+from logging import getLogger
 
 
 class Model:
@@ -50,7 +50,7 @@ class Model:
         Dictionary containing metadata of the oseries, passed on the to
         oseries when creating a pastas TimeSeries object. hence,
         ml.oseries.metadata will give you the metadata.
-    log_level: str, optional
+    log_level: str, optional, depcrecated
         String to set the level of the log-messages that is forwarded to the
         Python console. Options are: ERROR, WARNING and INFO (default).
 
@@ -68,9 +68,9 @@ class Model:
     """
 
     def __init__(self, oseries, constant=True, noisemodel=True, name=None,
-                 metadata=None, log_level="INFO"):
+                 metadata=None):
 
-        self.logger = self.get_logger(log_level=log_level)
+        self.logger = getLogger(__name__)
 
         # Construct the different model components
         self.oseries = TimeSeries(oseries, settings="oseries",
@@ -137,13 +137,14 @@ class Model:
                                const=not self.constant is None,
                                noise=not self.noisemodel is None)
 
-    def add_stressmodel(self, stressmodel, *args, replace=False, **kwargs):
+    def add_stressmodel(self, stressmodel, *args, replace=False):
         """Adds a stressmodel to the main model.
 
         Parameters
         ----------
         stressmodel: pastas.stressmodel.stressmodelBase
-            instance of a pastas.stressmodel object.
+            instance of a pastas.stressmodel object. Multiple stress models
+            can be provided (e.g., ml.add_stressmodel(sm1, sm2) in one call.
         replace: bool, optional
             replace the stressmodel if a stressmodel with the same name
             already exists. Not recommended but useful at times. Default is
@@ -175,6 +176,12 @@ class Model:
             if self.settings["freq"] is None:
                 self._set_freq()
             stressmodel.update_stress(freq=self.settings["freq"])
+
+            # Check if stress overlaps with oseries, if not give a warning
+            if (stressmodel.tmin > self.oseries.series.index.max()) or \
+                    (stressmodel.tmax < self.oseries.series.index.min()):
+                self.logger.warning("The stress of the stressmodel has no "
+                                    "overlap with ml.oseries.")
 
     def add_constant(self, constant):
         """Adds a Constant to the time series Model.
@@ -481,8 +488,7 @@ class Model:
 
         # Calculate the noise
         noise = self.noisemodel.simulate(res,
-                                         parameters[-self.noisemodel.nparam:],
-                                         freq=freq)
+                                         parameters[-self.noisemodel.nparam:])
         return noise
 
     def observations(self, tmin=None, tmax=None, freq=None):
@@ -823,19 +829,6 @@ class Model:
         else:
             self.settings["time_offset"] = pd.Timedelta(0)
 
-    def set_log_level(self, log_level):
-        """Method to set the log_level for which messages are printen to the
-        Python console. This can be usefull for when more or less info is
-        desirable.
-
-        Parameters
-        ----------
-        log_level: str
-            String with the level, options are: ERROR, WARNING and INFO.
-
-        """
-        self.logger.parent.handlers[0].setLevel(log_level)
-
     def get_stressmodel_names(self):
         """Returns list of stressmodel names"""
         return list(self.stressmodels.keys())
@@ -1055,8 +1048,8 @@ class Model:
         if noise is None:
             noise = self.settings['noise']
 
-        parameters = pd.DataFrame(columns=['initial', 'pmin', 'pmax', 'vary',
-                                           'optimal', 'name', 'stderr'])
+        parameters = pd.DataFrame(columns=["initial", "name", "optimal",
+                                           "pmin", "pmax", "vary", "stderr"])
         for sm in self.stressmodels.values():
             parameters = parameters.append(sm.parameters, sort=False)
         if self.constant:
@@ -1095,7 +1088,7 @@ class Model:
 
         """
         if name:
-            p = self.parameters[self.parameters.name == name]
+            p = self.parameters.loc[self.parameters.name == name]
         else:
             p = self.parameters
 
@@ -1155,18 +1148,12 @@ class Model:
             tmin_warm = None
 
         dt = get_dt(freq)
+        
+        kwargs = dict(tmin=tmin_warm, tmax=tmax, freq=freq, dt=dt)
+        if istress is not None:
+            kwargs['istress'] = istress
+        contrib = self.stressmodels[name].simulate(parameters, **kwargs)
 
-        if istress is None:
-            contrib = self.stressmodels[name].simulate(parameters,
-                                                       tmin=tmin_warm,
-                                                       tmax=tmax,
-                                                       freq=freq, dt=dt)
-        else:
-            contrib = self.stressmodels[name].simulate(parameters,
-                                                       tmin=tmin_warm,
-                                                       tmax=tmax,
-                                                       dt=dt, freq=freq,
-                                                       istress=istress)
         # Respect provided tmin/tmax at this point, since warmup matters for
         # simulation but should not be returned, unless return_warmup=True.
         if not return_warmup:
@@ -1299,38 +1286,6 @@ class Model:
 
         return file_info
 
-    def get_logger(self, log_level=None, config_file='log_config.json',
-                   env_key='LOG_CFG'):
-        """Internal method to create a logger instance to log program output.
-
-        Returns
-        -------
-        logger: logging.Logger
-            Logging instance that handles all logging throughout pastas,
-            including all sub modules and packages.
-
-        Notes
-        -----
-
-        """
-        fname = getenv(env_key, None)
-        if not fname or not path.exists(fname):
-            dir_path = path.dirname(path.realpath(__file__))
-            fname = path.join(dir_path, config_file)
-        if path.exists(fname):
-            with open(fname, 'rt') as f:
-                config_dict = json.load(f)
-            config.dictConfig(config_dict)
-        else:
-            basicConfig(level="INFO")
-
-        logger = getLogger(__name__)
-        # Set log_level for console to user-defined value
-        if log_level is not None:
-            logger.parent.handlers[0].setLevel(log_level)
-
-        return logger
-
     def fit_report(self, output="full"):
         """Method that reports on the fit after a model is optimized.
 
@@ -1355,10 +1310,10 @@ class Model:
         """
         if output != "full":
             raise NotImplementedError
-        
+
         if self.fit is None:
             return 'Model is not optimized or read from file. Solve first.'
-        
+
         model = {
             "nfev": self.fit.nfev,
             "nobs": self.oseries_calib.index.size,
@@ -1395,10 +1350,11 @@ class Model:
         string = "{:{fill}{align}{width}}"
 
         # Create the first header with model information and stats
+        w = max(width - 44, 0)
         header = "Model Results {name:<16}{string}Fit Statistics\n" \
                  "{line}\n".format(
             name=self.name[:14],
-            string=string.format("", fill=' ', align='>', width=width - 44),
+            string=string.format("", fill=' ', align='>', width=w),
             line=string.format("", fill='=', align='>', width=width)
         )
 
@@ -1406,7 +1362,8 @@ class Model:
         for item, item2 in zip(model.items(), fit.items()):
             val1, val2 = item
             val3, val4 = item2
-            val4 = string.format(val4, fill=' ', align='>', width=width - 38)
+            w = max(width - 38, 0)
+            val4 = string.format(val4, fill=' ', align='>', width=w)
             basic = basic + (
                 "{:<8} {:<22} {:<5} {}\n".format(val1, val2, val3, val4))
 

@@ -12,7 +12,7 @@ Autocorrelation:
 
 """
 
-from numpy import abs, sqrt, cumsum
+from numpy import sqrt, cumsum
 from pandas import DataFrame, concat
 from scipy.stats import chi2, norm
 
@@ -39,8 +39,8 @@ def durbin_watson(series=None, acf=None, alpha=0.05, **kwargs):
 
     Notes
     -----
-    The Durban Watson statistic can be used to make a statement on the
-    correlation between the values. The formula to calculate the Durbin
+    The Durban Watson statistic [1]_ [2]_ can be used to make a statement on
+    the correlation between the values. The formula to calculate the Durbin
     Watson statistic (DW) is:
 
     .. math::
@@ -54,12 +54,12 @@ def durbin_watson(series=None, acf=None, alpha=0.05, **kwargs):
 
     References
     ----------
-    .. [DW} Durbin, J., & Watson, G. S. (1951). Testing for serial correlation
-    in least squares regression. II. Biometrika, 38(1/2), 159-177.
+    .. [1] Durbin, J., & Watson, G. S. (1951). Testing for serial correlation
+      in least squares regression. II. Biometrika, 38(1/2), 159-177.
 
-    .. [F] Fahidy, T. Z. (2004). On the Application of Durbin-Watson
-    Statistics to Time-Series-Based Regression Models. CHEMICAL ENGINEERING
-    EDUCATION, 38(1), 22-25.
+    .. [2] Fahidy, T. Z. (2004). On the Application of Durbin-Watson
+      Statistics to Time-Series-Based Regression Models. CHEMICAL ENGINEERING
+      EDUCATION, 38(1), 22-25.
 
     TODO
     ----
@@ -109,13 +109,13 @@ def ljung_box(series=None, acf=None, alpha=0.05, **kwargs):
 
     Notes
     -----
-    The Ljung-Box test can be used to test autocorrelation in the
+    The Ljung-Box test [3]_ can be used to test autocorrelation in the
     residuals series which are used during optimization of a model. The
     Ljung-Box Q-test statistic is calculated as :
 
     .. math::
 
-        Q(k) = nobs * (n + 2) * \Sum(acf^2(k) / (n - k)
+        Q(k) = nobs * (n + 2) * \\sum(\\frac{acf^2(k)}{n - k}
 
     where `k` are the lags to calculate the autocorrelation for,
     nobs is the number of observations and `acf(k)` is the autocorrelation for
@@ -125,22 +125,20 @@ def ljung_box(series=None, acf=None, alpha=0.05, **kwargs):
 
     .. math::
 
-        Q(k) > Chi^2(\alpha, h)
+        Q(k) > Chi^2(\\alpha, h)
 
-    Where \alpha is the significance level and `h` is the degree of
+    Where :math:`\\alpha` is the significance level and `h` is the degree of
     freedom defined by `h = nobs - p` where `p` is the number of parameters
     in the model.
 
     References
     ----------
-    .. [LB] Ljung, G. and Box, G. (1978). "On a Measure of Lack of Fit in Time
-    Series Models", Biometrika, 65, 297-303.
+    .. [3] Ljung, G. and Box, G. (1978). On a Measure of Lack of Fit in Time
+      Series Models, Biometrika, 65, 297-303.
 
     Examples
     --------
-
-    v = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
-              data=np.random.rand(1000))
+    v = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"), data=np.random.rand(1000))
     ps.stats.acf(v)
 
     """
@@ -153,7 +151,7 @@ def ljung_box(series=None, acf=None, alpha=0.05, **kwargs):
     lags = acf.index.values
     nobs = acf.index.size
     df = (nobs - lags)
-    df[df==0] = 1
+    df[df == 0] = 1
     Qtest = nobs * (nobs + 2) * cumsum(acf.values ** 2 / df)
 
     # TODO decrease lags by number of parameters?
@@ -193,11 +191,12 @@ def runs_test(series, alpha=0.05, cutoff="mean"):
 
     Notes
     -----
-    Ho: The series is a result of a random process
-    Ha: The series is not the result of a random process
+    If :math:`|Z| \\geq Z_{1-\\frac{\\alpha}{2}}` then the null hypothesis (Ho)
+    is rejected and the alternative hypothesis (Ha) is accepted.
 
-    If |Z| >= Z$_1-\alpha / 2$ then the null hypothesis (Ho) is rejected and
-    the alternative hypothesis (Ha) is accepted.
+    Ho: The series is a result of a random process
+
+    Ha: The series is not the result of a random process
 
     """
     # Make dichotomous sequence

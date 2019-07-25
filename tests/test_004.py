@@ -1,5 +1,6 @@
 import pastas as ps
 
+
 def test_create_model():
     # Import and check the observed groundwater time series
     obs = ps.read_dino('tests/data/dino_gwl_data.csv')
@@ -21,11 +22,13 @@ def test_create_model():
 
     return ml
 
+
 def test_save_model():
     ml = test_create_model()
     ml.to_file("test.pas")
 
     return
+
 
 def test_load_model():
     test_save_model()

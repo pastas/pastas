@@ -1,5 +1,7 @@
 nbsphinx
 
+nbsphinx_link
+
 Ipython
 
 ipykernel

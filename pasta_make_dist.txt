@@ -5,7 +5,7 @@
 1. Update version.py to the correct version.
 2. Commit these changes to github and sync.
 3. Create a pull request to merge Dev into Master.
-4. Merge commmit the pull reqest. (Don't do squash and merge!!)
+4. Merge commit the pull request. (Don't do squash and merge!!)
 
 # To create a new pip distribution
 

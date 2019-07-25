@@ -19,6 +19,8 @@ PASTAS: HYDROLOGICAL TIME SERIES ANALYSIS
                     :target: https://codecov.io/gh/pastas/pastas
 .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1465866.svg
                     :target: https://doi.org/10.5281/zenodo.1465866
+.. image:: https://mybinder.org/badge_logo.svg
+ :target: https://mybinder.org/v2/gh/pastas/pastas/master?filepath=examples%2Fnotebooks%2F1_basic_model.ipynb
 
 Pastas: what is it?
 ~~~~~~~~~~~~~~~~~~~
@@ -32,6 +34,7 @@ Documentation & Examples
 ~~~~~~~~~~~~~~~~~~~~~~~~
 - Documentation is provided on a dedicated website: http://pastas.readthedocs.io/
 - Examples can be found on the `examples directory on the documentation website <http://pastas.readthedocs.io/en/dev/examples.html>`_.
+- View and edit a working example notebook of a Pastas model in `MyBinder <https://mybinder.org/v2/gh/pastas/pastas/master?filepath=examples%2Fnotebooks%2F1_basic_model.ipynb>`_
 
 Get in Touch
 ~~~~~~~~~~~~
@@ -91,7 +94,7 @@ To cite a specific version of Python, you can use the DOI provided for each offi
 Collenteur, R., Bakker, M., Caljé, R. & Schaars, F. (XXXX). Pastas: open-source software for time series analysis in hydrology (Version X.X.X). Zenodo. http://doi.org/10.5281/zenodo.1465866
 
 License (MIT License)
-~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 Copyright (c) 2016-2018 R.A. Collenteur, M. Bakker, R. Calje, F. Schaars
 
 Permission is hereby granted, free of charge, to any person obtaining a copy

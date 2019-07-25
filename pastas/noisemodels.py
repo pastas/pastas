@@ -16,7 +16,7 @@ from .utils import get_dt
 
 logger = getLogger(__name__)
 
-all = ["NoiseModel", "NoiseModel2"]
+__all__ = ["NoiseModel", "NoiseModel2"]
 
 
 class NoiseModelBase(ABC):
@@ -91,17 +91,18 @@ class NoiseModelBase(ABC):
 
 class NoiseModel(NoiseModelBase):
     _name = "NoiseModel"
-    __doc__ = """Noise model with exponential decay of the residual .
+    __doc__ = """Noise model with exponential decay of the residual and 
+    weighting with the time step between observations.
 
     Notes
     -----
-    Calculates the noise [1] according to:
+    Calculates the noise [1]_ according to:
 
     .. math::
         v(t1) = r(t1) - r(t0) * exp(- (t1 - t0) / alpha)
     
     Note that in the referenced paper, alpha is defined as the inverse of 
-    alpha used in Pastas.
+    alpha used in Pastas. The unit of the alpha parameter is always in days.
     
     Examples
     --------
@@ -126,15 +127,13 @@ class NoiseModel(NoiseModelBase):
     def set_init_parameters(self):
         self.parameters.loc['noise_alpha'] = (14.0, 0, 5000, 1, 'noise')
 
-    def simulate(self, res, parameters, freq):
+    def simulate(self, res, parameters):
         """
 
         Parameters
         ----------
         res : pandas.Series
             The residual series.
-        odelt : pandas.Series
-            Time steps between observations.
         parameters : array-like, optional
             Alpha parameters used by the noisemodel.
 
@@ -144,14 +143,12 @@ class NoiseModel(NoiseModelBase):
             Series of the noise.
 
         """
-        dt = get_dt(freq) # Get the
-        odelt = res.index.to_series().diff() / pd.Timedelta(dt, "D")
+        odelt = res.index.to_series().diff() / pd.Timedelta(1, 'd')
         odelt = odelt.iloc[1:]
-        alpha = parameters[0]
         noise = pd.Series(data=res)
+        alpha = parameters[0]
         # res.values is needed else it gets messed up with the dates
         noise.iloc[1:] -= np.exp(-odelt / alpha) * res.values[:-1]
-
         weights = self.weights(alpha, odelt)
         noise = noise.multiply(weights, fill_value=0.0)
         noise.name = "Noise"
@@ -170,7 +167,6 @@ class NoiseModel(NoiseModelBase):
         -------
 
         """
-        w = 1
         # divide power by 2 as nu / sigma is returned
         power = 1.0 / (2.0 * odelt.size)
         exp = np.exp(-2.0 / alpha * odelt)  # Twice as fast as 2*odelt/alpha
@@ -184,10 +180,12 @@ class NoiseModel2(NoiseModelBase):
 
     Notes
     -----
-    Calculates the noise [1] according to:
+    Calculates the noise according to:
 
     .. math::
         v(t1) = r(t1) - r(t0) * exp(- (t1 - t0) / alpha)
+
+    The unit of the alpha parameter is always in days.
 
     Examples
     --------
@@ -197,10 +195,6 @@ class NoiseModel2(NoiseModelBase):
 
     >>> n = NoiseModel()
     >>> n.set_initial("noise_alpha", 1.0 * ml.get_dt(ml.freq))
-
-    References
-    ----------
-    .. [A] von Asmuth, J. R., and M. F. P. Bierkens (2005), Modeling irregularly spaced residual series as a continuous stochastic process, Water Resour. Res., 41, W12404, doi:10.1029/2004WR003726.
 
     """
     _name = "NoiseModel2"
@@ -213,16 +207,14 @@ class NoiseModel2(NoiseModelBase):
     def set_init_parameters(self):
         self.parameters.loc['noise_alpha'] = (14.0, 0, 5000, 1, 'noise')
 
-    def simulate(self, res, parameters, freq):
+    def simulate(self, res, parameters):
         """
 
         Parameters
         ----------
         res : pandas.Series
             The residual series.
-        odelt : pandas.Series
-            Time steps between observations.
-        parameters : array-like, optional
+        parameters : array_like, optional
             Alpha parameters used by the noisemodel.
 
         Returns
@@ -231,11 +223,11 @@ class NoiseModel2(NoiseModelBase):
             Series of the noise.
 
         """
-        odelt = res.index.to_series().diff() / pd.Timedelta(1, freq)
+        odelt = res.index.to_series().diff() / pd.Timedelta(1, 'd')
         odelt = odelt.iloc[1:]
         noise = pd.Series(res)
         alpha = parameters[0]
         # res.values is needed else it gets messed up with the dates
-        noise.iloc[1:] -= np.exp(-odelt/ alpha) * res.values[:-1]
+        noise.iloc[1:] -= np.exp(-odelt / alpha) * res.values[:-1]
         noise.name = "Noise"
         return noise
