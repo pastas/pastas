@@ -488,8 +488,7 @@ class Model:
 
         # Calculate the noise
         noise = self.noisemodel.simulate(res,
-                                         parameters[-self.noisemodel.nparam:],
-                                         freq=freq)
+                                         parameters[-self.noisemodel.nparam:])
         return noise
 
     def observations(self, tmin=None, tmax=None, freq=None):

@@ -127,7 +127,7 @@ class NoiseModel(NoiseModelBase):
     def set_init_parameters(self):
         self.parameters.loc['noise_alpha'] = (14.0, 0, 5000, 1, 'noise')
 
-    def simulate(self, res, parameters, freq):
+    def simulate(self, res, parameters):
         """
 
         Parameters
@@ -207,7 +207,7 @@ class NoiseModel2(NoiseModelBase):
     def set_init_parameters(self):
         self.parameters.loc['noise_alpha'] = (14.0, 0, 5000, 1, 'noise')
 
-    def simulate(self, res, parameters, freq):
+    def simulate(self, res, parameters):
         """
 
         Parameters
