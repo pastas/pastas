@@ -260,27 +260,32 @@ class Project:
 
     def add_recharge(self, ml_list=None, rfunc=Gamma, name="recharge",
                      **kwargs):
-        """Add a recharge stress model to the time series models. The
+        """Add a StressModel2 to the time series models. The
         selection of the precipitation and evaporation time series is based
-        on the shortest distance to the a stresses in the stresseslist.
+        on the shortest distance to the a stresses in the stresses list.
 
         Parameters
         ----------
         ml_list: list, optional
-            list with pastas.Model objects, if None all models in project are used
+            list with pastas.Model objects, if None all models in project are
+            used.
         rfunc: pastas.rfunc, optional
-            response function, default is the Gamma function
+            response function, default is the Gamma function.
         name: str, optional
-            name of the stress
-        **kwargs: arguments are pass to the StressModel2 function
+            name of the stress, default is 'recharge'.
+        **kwargs:
+            arguments are pass to the StressModel2 function
 
-        Returns
-        -------
+        Notes
+        -----
+        The behaviour of this method will change in the future to add a
+        RechargeModel instead of StressModel2.
+
 
         """
         if ml_list == None:
             ml_list = self.models.values()
-        elif type(ml_list) == Model:
+        elif isinstance(ml_list, Model):
             ml_list = [ml_list]
 
         for ml in ml_list:
