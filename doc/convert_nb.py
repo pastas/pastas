@@ -1,25 +1,24 @@
-""" This script is called by sphinxdoc to convert all Jupyter notebooks in the
-Examples folder to ReStructured Text files and stores them in the documentation
-folder.
-
-Author: R.A. Collenteur 2016
+""" This script is called by sphinxdoc, to add a link to all Jupyter notebooks
+in the Examples folder, so they are converted to HTML for the documentation.
 """
 
-import nbconvert
-from nbconvert import RSTExporter
-import glob
-import io
 import os
 
-notebooks = glob.iglob('../examples/notebooks/*.ipynb')
-for nb in notebooks:
-    (x,resources) = nbconvert.export(RSTExporter, nb)
-    with io.open('../doc/examples/%s.rst' % os.path.basename(nb)[:-6], 'w',
-                 encoding='utf-8') as f:
-        f.write(x[:])
-    for fname in resources['outputs'].keys():
-        with io.open('../doc/examples/%s' % fname, 'wb') as f:
-            f.write(resources['outputs'][fname])
-        
-
-print("example notebooks successfully converted to .rst files")
+from_path = '../examples/notebooks'
+to_path = 'examples'
+# first delete existing links in examples directory
+for file in os.listdir(to_path):
+    if file.endswith('.ipynb.nblink'):
+        os.remove(os.path.join(to_path,file))
+# then add new linkt to jupyter notebooks
+for file in os.listdir(from_path):
+    if file.endswith('.ipynb'):
+        try:
+            nr, name = file.split('_',maxsplit=1)
+            fname = '{:03d}_{}.nblink'.format(int(nr),name)
+            fname = os.path.join(to_path,fname)
+        except:
+            fname = os.path.join(to_path,'{}.nblink'.format(file))
+        with open(fname,'w') as f:
+            f.write('{{\n    "path": "../{}/{}"\n}}\n'.format(from_path,file))
+print("Links successfully placed to jupyter notebooks")

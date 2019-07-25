@@ -15,8 +15,12 @@ PASTAS: HYDROLOGICAL TIME SERIES ANALYSIS
                     :target: https://github.com/pastas/pastas/releases
 .. image:: https://api.codacy.com/project/badge/Grade/0e0fad469a3c42a4a5c5d1c5fddd6bee
                     :target: https://app.codacy.com/app/raoulcollenteur/pastas?utm_source=github.com&utm_medium=referral&utm_content=pastas/pastas&utm_campaign=Badge_Grade_Dashboard
+.. image:: https://codecov.io/gh/pastas/pastas/branch/master/graph/badge.svg
+                    :target: https://codecov.io/gh/pastas/pastas
 .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1465866.svg
                     :target: https://doi.org/10.5281/zenodo.1465866
+.. image:: https://mybinder.org/badge_logo.svg
+ :target: https://mybinder.org/v2/gh/pastas/pastas/master?filepath=examples%2Fnotebooks%2F1_basic_model.ipynb
 
 Pastas: what is it?
 ~~~~~~~~~~~~~~~~~~~
@@ -30,6 +34,7 @@ Documentation & Examples
 ~~~~~~~~~~~~~~~~~~~~~~~~
 - Documentation is provided on a dedicated website: http://pastas.readthedocs.io/
 - Examples can be found on the `examples directory on the documentation website <http://pastas.readthedocs.io/en/dev/examples.html>`_.
+- View and edit a working example notebook of a Pastas model in `MyBinder <https://mybinder.org/v2/gh/pastas/pastas/master?filepath=examples%2Fnotebooks%2F1_basic_model.ipynb>`_
 
 Get in Touch
 ~~~~~~~~~~~~
@@ -39,9 +44,9 @@ Get in Touch
 
 Quick installation guide
 ~~~~~~~~~~~~~~~~~~~~~~~~
-To install Pastas, a working version of Python 3.4, 3.5 or 3.6 has to be installed on 
+To install Pastas, a working version of Python 3.5 3.6 or 3.7 has to be installed on 
 your computer. We recommend using the `Anaconda Distribution <https://www.continuum.io/downloads>`_
-with Python 3.6 as it includes most of the python package dependencies and the Jupyter
+with Python 3.7 as it includes most of the python package dependencies and the Jupyter
 Notebook software to run the notebooks. However, you are free to install any
 Python distribution you want.
 
@@ -73,10 +78,10 @@ Pastas depends on a number of Python packages, of which all of the necessary are
 automatically installed when using the pip install manager. To summarize, the 
 following pacakges are necessary for a minimal function installation of Pastas:
 
-- numpy>=1.10
+- numpy>=1.15
 - matplotlib>=2.0
 - pandas>=0.23
-- scipy>=1.0
+- scipy>=1.1
 
 Background
 ~~~~~~~~~~
@@ -89,7 +94,7 @@ To cite a specific version of Python, you can use the DOI provided for each offi
 Collenteur, R., Bakker, M., Caljé, R. & Schaars, F. (XXXX). Pastas: open-source software for time series analysis in hydrology (Version X.X.X). Zenodo. http://doi.org/10.5281/zenodo.1465866
 
 License (MIT License)
-~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 Copyright (c) 2016-2018 R.A. Collenteur, M. Bakker, R. Calje, F. Schaars
 
 Permission is hereby granted, free of charge, to any person obtaining a copy

@@ -9,8 +9,8 @@ R.A. Collenteur - August 2017
 import json
 from collections import OrderedDict
 
-from pandas import NaT, Series, Timedelta, DataFrame, read_json, Timestamp, \
-    to_numeric
+from pandas import Series, Timedelta, DataFrame, read_json, Timestamp, \
+    to_numeric, isna
 
 from pastas import TimeSeries
 
@@ -24,7 +24,7 @@ def pastas_hook(obj):
     for key, value in obj.items():
         if key in ["tmin", "tmax", "date_modified", "date_created"]:
             val = Timestamp(value)
-            if val is NaT:
+            if isna(val):
                 val = None
             obj[key] = val
         elif key == "series":
@@ -35,6 +35,7 @@ def pastas_hook(obj):
                     obj[key] = TimeSeries(**value)
                 except:
                     obj[key] = value
+            obj[key].index = obj[key].index.tz_localize(None)
         elif key == "time_offset":
             obj[key] = Timedelta(value)
         elif key == "parameters":
@@ -68,18 +69,18 @@ class PastasEncoder(json.JSONEncoder):
 
     """
 
-    def default(self, obj):
+    def default(self, o):
 
-        if isinstance(obj, Timestamp):
-            return obj.isoformat()
-        elif isinstance(obj, Series):
-            return obj.to_json(date_format="iso", orient="split")
-        elif isinstance(obj, DataFrame):
+        if isinstance(o, Timestamp):
+            return o.isoformat()
+        elif isinstance(o, Series):
+            return o.to_json(date_format="iso", orient="split")
+        elif isinstance(o, DataFrame):
             # Necessary to maintain order when using the JSON format!
-            return obj.to_json(orient="index")
-        elif isinstance(obj, Timedelta):
-            return obj.to_timedelta64().__str__()
-        elif isinstance(obj, NaT):
+            return o.to_json(orient="index")
+        elif isinstance(o, Timedelta):
+            return o.to_timedelta64().__str__()
+        elif isna(o):
             return None
         else:
-            return super(PastasEncoder, self).default(obj)
+            return super(PastasEncoder, self).default(o)

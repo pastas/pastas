@@ -47,7 +47,7 @@ def read_waterbase(fname, locations=None, variable="NUMERIEKEWAARDE",
 
     if locations is None:
         locations = df.MEETPUNT_IDENTIFICATIE.unique()
-    elif type(locations) == str:
+    elif isinstance(locations, str):
         locations = [locations]
 
     for name in locations:

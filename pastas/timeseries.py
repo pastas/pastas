@@ -52,7 +52,7 @@ class TimeSeries(object):
 
     See Also
     --------
-    ps.TimeSeries.update_series
+    ps.timeseries.TimeSeries.update_series
 
     Returns
     -------
@@ -62,13 +62,14 @@ class TimeSeries(object):
     """
     _predefined_settings = {
         "oseries": {"fill_nan": "drop", "sample_down": "drop"},
-        "prec": {"sample_up": "divide", "sample_down": "sum",
+        "prec": {"sample_up": "bfill", "sample_down": "mean",
                  "fill_nan": 0.0, "fill_before": "mean", "fill_after": "mean"},
-        "evap": {"sample_up": "divide", "sample_down": "sum",
+        "evap": {"sample_up": "bfill", "sample_down": "mean",
                  "fill_before": "mean", "fill_after": "mean",
                  "fill_nan": "interpolate"},
-        "well": {"sample_up": "divide", "sample_down": "sum",
-                 "fill_nan": 0.0, "fill_before": 0.0, "fill_after": 0.0},
+        "well": {"sample_up": "bfill", "sample_down": "mean",
+                 "fill_nan": 0.0, "fill_before": 0.0, "fill_after": 0.0,
+                 "to_daily_unit": "divide"},
         "waterlevel": {"sample_up": "interpolate", "sample_down": "mean",
                        "fill_before": "mean", "fill_after": "mean",
                        "fill_nan": "interpolate"},
@@ -116,6 +117,7 @@ class TimeSeries(object):
 
             self.freq_original = freq_original
             self.settings = {
+                "to_daily_unit": None,
                 "freq": None,
                 "sample_up": None,
                 "sample_down": None,
@@ -149,9 +151,11 @@ class TimeSeries(object):
                 if settings in self._predefined_settings.keys():
                     settings = self._predefined_settings[settings]
                 else:
-                    logger.error("Settings shortcut code %s is not in the "
-                                 "predefined settings options. Please choose "
-                                 "from %s", self._predefined_settings.keys())
+                    error = "Settings shortcut code '{}' is not in the " \
+                            "predefined settings options. Please choose " \
+                            "from {}".format(settings,
+                                             self._predefined_settings.keys())
+                    raise KeyError(error)
             if self.update_settings(**settings):
                 update = True
         if kwargs:
@@ -160,7 +164,8 @@ class TimeSeries(object):
 
         # Create a validated series for computations and update
         if validate:
-            self._series_validated = self.validate_series(series)
+            self._series_validated = self.validate_series(
+                self._series_original)
         if update:
             self.update_series(force_update=True, **self.settings)
 
@@ -181,7 +186,8 @@ class TimeSeries(object):
             self.settings["tmax"] = None
             freq_original = self.freq_original  # remember what it was
             self.freq_original = None
-            self._series_validated = self.validate_series(series)
+            self._series_validated = self.validate_series(
+                self._series_original)
             if self.freq_original is None:
                 self.freq_original = freq_original
             self.update_series(force_update=True, **self.settings)
@@ -235,20 +241,19 @@ class TimeSeries(object):
         -----
         The Series are validated for the following cases:
 
-            1. Series is an actual pandas Series;
-            2. Nan-values from begin and end are removed;
-            3. Nan-values between observations are removed;
-            4. Indices are in Timestamps (standard throughout PASTAS),
-            making the index a pandas DateTimeIndex.
-            5. Duplicate indices are removed (by averaging).
+        1. Series is an actual pandas Series;
+        2. Nan-values from begin and end are removed;
+        3. Nan-values between observations are removed;
+        4. Indices are in Timestamps (standard throughout PASTAS), making the index a pandas DateTimeIndex.
+        5. Duplicate indices are removed (by averaging).
 
         """
 
         # 2. Make sure the indices are Timestamps and sorted
-        series.index = pd.to_datetime(series.index)
-        series.sort_index(inplace=True)
-        series.index.name = "Date"
         series = series.astype(float)
+        series.index = pd.to_datetime(series.index)
+        series = series.sort_index()
+        series.index.name = ""
 
         # 3. Drop nan-values at the beginning and end of the time series
         series = series.loc[series.first_valid_index():series.last_valid_index(
@@ -362,6 +367,7 @@ class TimeSeries(object):
             series = self.series_validated.copy(deep=True)
 
             # Update the series with the new settings
+            series = self.to_daily_unit(series)
             series = self.change_frequency(series)
             series = self.fill_before(series)
             series = self.fill_after(series)
@@ -403,6 +409,23 @@ class TimeSeries(object):
         series = series.loc[
                  series.first_valid_index():series.last_valid_index()]
 
+        return series
+
+    def to_daily_unit(self, series):
+        method = self.settings["to_daily_unit"]
+        if method is not None:
+            if method == True or method == "divide":
+                dt = series.index.to_series().diff() / pd.Timedelta(1, 'd')
+                if not (dt == 1.0).all():
+                    series = series / dt
+                    logger.info(
+                        "Time Series %s: values of stress were transformed to daily "
+                        "values (frequency not altered) with: %s" % (
+                            self.name, method))
+            else:
+                logger.warning(
+                    "Time Series %s: User-defined option for to_daily_unit %s is not "
+                    "supported" % (self.name, method))
         return series
 
     def sample_up(self, series):
@@ -648,7 +671,6 @@ class TimeSeries(object):
 
         Parameters
         ----------
-        transformed_series
         series: Boolean
             True to export the original time series, False to only export
             the TimeSeries object"s name.

@@ -103,8 +103,8 @@ class DinoGrondwaterstand:
                 meta = dict()
                 line = line.strip()
                 values = line.split(',')
-                for i in range(0, len(values)):
-                    meta[properties[i]] = values[i]
+                for i, value in enumerate(values):
+                    meta[properties[i]] = value
                 metaList.append(meta)
                 line = f.readline()
 

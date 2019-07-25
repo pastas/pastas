@@ -54,11 +54,10 @@ automatically installed when using the pip install manager. To summarize, the
 following packages are necessary for a minimal function installation of
 |Project|:
 
-* numpy>=1.9
-* matplotlib>=1.4
-* lmfit>=0.9
-* pandas>=0.20
-* scipy>=0.15
+* numpy>=1.15
+* matplotlib>=2.0
+* pandas>=0.23
+* scipy>=1.1
 
 Other optional dependencies include:
 

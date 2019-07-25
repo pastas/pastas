@@ -1,13 +1,15 @@
 nbsphinx
 
+nbsphinx_link
+
 Ipython
 
 ipykernel
 
-numpy>=1.10
+numpy>=1.15
 
 matplotlib>=2.0
 
 pandas>=0.23
 
-scipy>=1.0
+scipy>=1.1

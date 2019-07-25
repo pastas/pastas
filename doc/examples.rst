@@ -30,5 +30,5 @@ Below is a list of Jupyter Notebooks with code, comments and figures:
   :maxdepth: 1
   :glob:
 
-  ../examples/**
+  examples/*
 

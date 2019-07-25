@@ -1,0 +1,36 @@
+{
+  "description": "Pastas is an open source Python package for the analysis of hydrogeological time series. Using Pastas, time series models can be created and analyzed in only a few lines of Python code.",
+  "license": "MIT",
+  "title": "Pastas: open-source software for the analysis of hydrogeological time series",
+  "upload_type": "software",
+  "creators": [
+    {
+      "affiliation": "University of Graz, Graz, Austria.",
+      "name": "Raoul Collenteur",
+      "orcid": "0000-0001-7843-1538"
+    },
+    {
+      "affiliation": "Delft University of Technology, Delft, The Netherlands.",
+      "name": "Mark Bakker",
+      "orcid": "0000-0002-5629-2861"
+    },
+    {
+      "affiliation": "Artesia Water, Schoonhoven, The Netherlands.",
+      "name": "Ruben Caljé"
+    },
+    {
+      "affiliation": "Artesia Water, Schoonhoven, The Netherlands.",
+      "name": "Frans Schaars"
+    }
+  ],
+  "access_right": "open",
+  "keywords": [
+    "python",
+    "groundwater",
+    "hydrology",
+    "time series",
+    "response functions",
+    "transfer function noise",
+    "open source"
+  ]
+}
