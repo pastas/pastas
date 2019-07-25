@@ -179,43 +179,6 @@ class Project:
         self.add_series(series, name=name, metadata=metadata,
                         settings=settings, kind=kind, **kwargs)
 
-    def del_oseries(self, name):
-        """Method that savely removes oseries from the project. It validates
-        that the oseries is not used in any model.
-
-        Parameters
-        ----------
-        name: str
-            string with a single oseries name.
-
-        """
-        if name not in self.oseries.index:
-            error = ("Time series with name {} is not present in the database."
-                     " Please provide a different name.").format(name)
-            logger.error(error)
-        else:
-            self.oseries.drop(name, inplace=True)
-            logger.info(
-                "Oseries with name {} deleted from the database.".format(name))
-
-    def del_stress(self, name):
-        """Method that removes oseries from the project.
-
-        Parameters
-        ----------
-        name: list or str
-            list with multiple or string with a single stress name.
-
-        """
-        if name not in self.stresses.index:
-            error = ("Stress with name {} is not present in the database."
-                     " Please provide a different name.").format(name)
-            logger.error(error)
-        else:
-            self.stresses.drop(name, inplace=True)
-            logger.info(
-                "Stress with name {} deleted from the database.".format(name))
-
     def add_model(self, oseries, model_name=None, **kwargs):
         """Method to add a Pastas Model instance based on one of the oseries.
 
@@ -258,7 +221,7 @@ class Project:
         return ml
 
     def add_models(self, oseries='all', model_name_prefix='', **kwargs):
-        """Method to add multiple Pastas Model instances based on one 
+        """Method to add multiple Pastas Model instances based on one
         or more of the oseries.
 
         Parameters
@@ -279,16 +242,15 @@ class Project:
 
         """
 
-        if oseries=='all':
+        if oseries == 'all':
             oseries_list = self.oseries.index
-        elif type(oseries)==str:
+        elif type(oseries) == str:
             oseries_list = [oseries]
-        elif type(oseries)==list:
+        elif type(oseries) == list:
             oseries_list = oseries
 
         ml_list = []
         for oseries_name in oseries_list:
-
             model_name = model_name_prefix + oseries_name
 
             # Add new model
@@ -297,6 +259,78 @@ class Project:
 
         return ml_list
 
+    def add_recharge(self, ml_list=None, rfunc=Gamma, name="recharge",
+                     **kwargs):
+        """Add a recharge stress model to the time series models. The
+        selection of the precipitation and evaporation time series is based
+        on the shortest distance to the a stresses in the stresseslist.
+
+        Parameters
+        ----------
+        ml_list: list, optional
+            list with pastas.Model objects, if None all models in project are used
+        rfunc: pastas.rfunc, optional
+            response function, default is the Gamma function
+        name: str, optional
+            name of the stress
+        **kwargs: arguments are pass to the StressModel2 function
+
+        Returns
+        -------
+
+        """
+        if ml_list == None:
+            ml_list = self.models.values()
+        elif type(ml_list) == Model:
+            ml_list = [ml_list]
+
+        for ml in ml_list:
+            key = str(ml.oseries.name)
+            prec_name = self.get_nearest_stresses(key, kind="prec").iloc[0][0]
+            prec = self.stresses.loc[prec_name, "series"]
+            evap_name = self.get_nearest_stresses(key, kind="evap").iloc[0][0]
+            evap = self.stresses.loc[evap_name, "series"]
+
+            recharge = StressModel2([prec, evap], rfunc, name=name, **kwargs)
+
+            ml.add_stressmodel(recharge)
+
+    def del_oseries(self, name):
+        """Method that savely removes oseries from the project. It validates
+        that the oseries is not used in any model.
+
+        Parameters
+        ----------
+        name: str
+            string with a single oseries name.
+
+        """
+        if name not in self.oseries.index:
+            error = ("Time series with name {} is not present in the database."
+                     " Please provide a different name.").format(name)
+            logger.error(error)
+        else:
+            self.oseries.drop(name, inplace=True)
+            logger.info(
+                "Oseries with name {} deleted from the database.".format(name))
+
+    def del_stress(self, name):
+        """Method that removes oseries from the project.
+
+        Parameters
+        ----------
+        name: list or str
+            list with multiple or string with a single stress name.
+
+        """
+        if name not in self.stresses.index:
+            error = ("Stress with name {} is not present in the database."
+                     " Please provide a different name.").format(name)
+            logger.error(error)
+        else:
+            self.stresses.drop(name, inplace=True)
+            logger.info(
+                "Stress with name {} deleted from the database.".format(name))
 
     def del_model(self, ml_name):
         """Method to safe-delete a model from the project.
@@ -328,42 +362,6 @@ class Project:
             # set oseries_calib empty, so it is determined again the next time
             ml.oseries_calib = None
 
-    def add_recharge(self, ml_list=None, rfunc=Gamma, name="recharge", **kwargs):
-        """Add a recharge element to the time series model. The
-        selection of the precipitation and evaporation time series is based
-        on the shortest distance to the a stresses in the stresseslist.
-
-        Parameters
-        ----------
-        ml_list: list, optional
-            list with pastas.Model objects, if None all models in project are used
-        rfunc: pastas.rfunc, optional
-            response function, default is the Gamma function
-        name: str, optional
-            name of the stress
-        **kwargs: arguments are pass to the StressModel2 function
-
-        Returns
-        -------
-
-        """
-        if ml_list==None:
-            ml_list = self.models.values()
-        elif type(ml_list)==Model:
-            ml_list = [ml_list]
-
-
-        for ml in ml_list:
-            key = str(ml.oseries.name)
-            prec_name = self.get_nearest_stresses(key, kind="prec").iloc[0][0]
-            prec = self.stresses.loc[prec_name, "series"]
-            evap_name = self.get_nearest_stresses(key, kind="evap").iloc[0][0]
-            evap = self.stresses.loc[evap_name, "series"]
-
-            recharge = StressModel2([prec, evap], rfunc, name=name, **kwargs)
-
-            ml.add_stressmodel(recharge)
-
     def solve_models(self, ml_list=None, report=False,
                      ignore_solve_errors=False, verbose=False, **kwargs):
         """Solves the models in ml_list
@@ -378,9 +376,9 @@ class Project:
             
         
         """
-        if ml_list==None:
+        if ml_list == None:
             ml_list = self.models.values()
-        elif type(ml_list)==Model:
+        elif type(ml_list) == Model:
             ml_list = [ml_list]
 
         for ml in ml_list:
@@ -390,7 +388,8 @@ class Project:
                 try:
                     ml.solve(report=report, **kwargs)
                 except ValueError:
-                    warnings.warn('solve error ignored for -> {}'.format(ml.name))
+                    warnings.warn(
+                        'solve error ignored for -> {}'.format(ml.name))
             else:
                 ml.solve(report=report, **kwargs)
 
