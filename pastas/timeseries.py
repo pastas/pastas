@@ -151,10 +151,11 @@ class TimeSeries(object):
                 if settings in self._predefined_settings.keys():
                     settings = self._predefined_settings[settings]
                 else:
-                    logger.error("Settings shortcut code %s is not in the "
-                                 "predefined settings options. Please choose "
-                                 "from %s", settings,
-                                 self._predefined_settings.keys())
+                    error = "Settings shortcut code '{}' is not in the " \
+                            "predefined settings options. Please choose " \
+                            "from {}".format(settings,
+                                             self._predefined_settings.keys())
+                    raise KeyError(error)
             if self.update_settings(**settings):
                 update = True
         if kwargs:
@@ -419,7 +420,8 @@ class TimeSeries(object):
                     series = series / dt
                     logger.info(
                         "Time Series %s: values of stress were transformed to daily "
-                        "values (frequency not altered) with: %s" % (self.name, method))
+                        "values (frequency not altered) with: %s" % (
+                            self.name, method))
             else:
                 logger.warning(
                     "Time Series %s: User-defined option for to_daily_unit %s is not "
