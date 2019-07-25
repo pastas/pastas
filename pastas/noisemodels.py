@@ -91,7 +91,8 @@ class NoiseModelBase(ABC):
 
 class NoiseModel(NoiseModelBase):
     _name = "NoiseModel"
-    __doc__ = """Noise model with exponential decay of the residual .
+    __doc__ = """Noise model with exponential decay of the residual and 
+    weighting with the time step between observations.
 
     Notes
     -----
@@ -101,7 +102,7 @@ class NoiseModel(NoiseModelBase):
         v(t1) = r(t1) - r(t0) * exp(- (t1 - t0) / alpha)
     
     Note that in the referenced paper, alpha is defined as the inverse of 
-    alpha used in Pastas.
+    alpha used in Pastas. The unit of the alpha parameter is always in days.
     
     Examples
     --------
@@ -183,6 +184,8 @@ class NoiseModel2(NoiseModelBase):
 
     .. math::
         v(t1) = r(t1) - r(t0) * exp(- (t1 - t0) / alpha)
+
+    The unit of the alpha parameter is always in days.
 
     Examples
     --------
