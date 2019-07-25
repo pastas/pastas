@@ -405,9 +405,7 @@ class One(RfuncBase):
     def get_init_parameters(self, name):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        if self.up is None:
-            parameters.loc[name + '_d'] = (1, -100, 100, 1, name)
-        elif self.up:
+        if self.up:
             parameters.loc[name + '_d'] = (1, 0, 100, 1, name)
         else:
             parameters.loc[name + '_d'] = (-1, -100, 0, 1, name)
