@@ -236,8 +236,9 @@ class Project:
 
         Returns
         -------
-        ml: pastas.Model
-            Pastas Model generated with the oseries and arguments provided.
+        mls: list of str
+            list of modelnames corresponding to the keys in the self.models
+            dictionary
 
         """
 
@@ -248,17 +249,17 @@ class Project:
         elif type(oseries) == list:
             oseries_list = oseries
 
-        ml_list = []
+        mls = []
         for oseries_name in oseries_list:
             model_name = model_name_prefix + oseries_name
 
             # Add new model
             ml = self.add_model(oseries_name, model_name, **kwargs)
-            ml_list.append(ml)
+            mls.append(ml.name)
 
-        return ml_list
+        return mls
 
-    def add_recharge(self, ml_list=None, rfunc=Gamma, name="recharge",
+    def add_recharge(self, mls=None, rfunc=Gamma, name="recharge",
                      **kwargs):
         """Add a StressModel2 to the time series models. The
         selection of the precipitation and evaporation time series is based
@@ -266,8 +267,8 @@ class Project:
 
         Parameters
         ----------
-        ml_list: list, optional
-            list with pastas.Model objects, if None all models in project are
+        mls: list of str, optional
+            list of model names, if None all models in project are
             used.
         rfunc: pastas.rfunc, optional
             response function, default is the Gamma function.
@@ -283,16 +284,16 @@ class Project:
 
 
         """
-        if ml_list == None:
-            ml_list = self.models.values()
-        elif isinstance(ml_list, Model):
-            ml_list = [ml_list]
+        if mls is None:
+            mls = self.models.keys()
+        elif isinstance(mls, Model):
+            mls = [mls.name]
 
-        for ml in ml_list:
-            key = str(ml.oseries.name)
-            prec_name = self.get_nearest_stresses(key, kind="prec").iloc[0][0]
+        for mlname in mls:
+            ml = self.models[mlname]
+            prec_name = self.get_nearest_stresses(mlname, kind="prec").iloc[0][0]
             prec = self.stresses.loc[prec_name, "series"]
-            evap_name = self.get_nearest_stresses(key, kind="evap").iloc[0][0]
+            evap_name = self.get_nearest_stresses(mlname, kind="evap").iloc[0][0]
             evap = self.stresses.loc[evap_name, "series"]
 
             recharge = StressModel2([prec, evap], rfunc, name=name, **kwargs)
@@ -366,12 +367,12 @@ class Project:
             # set oseries_calib empty, so it is determined again the next time
             ml.oseries_calib = None
 
-    def solve_models(self, ml_list=None, report=False,
+    def solve_models(self, mls=None, report=False,
                      ignore_solve_errors=False, verbose=False, **kwargs):
-        """Solves the models in ml_list
+        """Solves the models in mls
         
-        ml_list: list, optional
-            list with pastas.Model objects, if None all models in project are solved
+        mls: list of str, optional
+            list of model names, if None all models in the project are solved
         report: boolean, optional
             determines if a report is printed when the model is solved
         ignore_solve_errors: boolean, optional
@@ -380,14 +381,15 @@ class Project:
             
         
         """
-        if ml_list == None:
-            ml_list = self.models.values()
-        elif type(ml_list) == Model:
-            ml_list = [ml_list]
+        if mls is None:
+            mls = self.models.keys()
+        elif isinstance(mls, Model):
+            mls = [mls.name]
 
-        for ml in ml_list:
+        for mlname in mls:
             if verbose:
-                print('solving model for -> {}'.format(ml.name))
+                print('solving model -> {}'.format(mlname))
+            ml = self.models[mlname]
             if ignore_solve_errors:
                 try:
                     ml.solve(report=report, **kwargs)
