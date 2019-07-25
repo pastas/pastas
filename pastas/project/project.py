@@ -14,6 +14,7 @@ Usage
 
 from logging import getLogger
 from os import getlogin
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -330,13 +331,16 @@ class Project:
     
             ml.add_stressmodel(recharge)
             
-    def solve_models(self, ml_list=None, report=False, **kwargs):
+    def solve_models(self, ml_list=None, report=False, 
+                     ignore_solve_errors=False, verbose=False, **kwargs):
         """Solves the models in ml_list
         
         ml_list: list, optional
             list with pastas.Model objects, if None all models in project are solved
         report: boolean, optional
             determines if a report is printed when the model is solved
+        ignore_solve_errors: boolean, optional
+            if True ValueErrors emerging from the solve method are ignored
         **kwargs: arguments are passsed to the solve method
             
         
@@ -347,7 +351,15 @@ class Project:
             ml_list = [ml_list]
             
         for ml in ml_list:
-            ml.solve(report=report, **kwargs)
+            if verbose:
+                print('solving model for -> {}'.format(ml.name))
+            if ignore_solve_errors:
+                try:
+                    ml.solve(report=report, **kwargs)
+                except ValueError:
+                    warnings.warn('solve error ignored for -> {}'.format(ml.name))
+            else:
+                ml.solve(report=report, **kwargs)
         
         
     def get_nearest_stresses(self, oseries=None, stresses=None, kind=None,
