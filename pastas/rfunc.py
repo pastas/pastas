@@ -330,7 +330,7 @@ class Hantush(RfuncBase):
             tau1 + rho ** 2 / (4 * tau1))
         F[tau >= rho / 2] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(
             tau2 + rho ** 2 / (4 * tau2))
-        return p[0] * F / (2 * k0rho)
+        return p[0] * F  # / (2 * k0rho)
 
 
 class Polder(RfuncBase):
