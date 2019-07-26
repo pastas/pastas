@@ -19,7 +19,7 @@ from .utils import get_stress_dt, get_dt, get_time_offset, \
 logger = getLogger(__name__)
 
 
-class TimeSeries(object):
+class TimeSeries:
     """Class that deals with all user-provided Time Series.
 
     Parameters
@@ -351,7 +351,7 @@ class TimeSeries(object):
         tmax; str or pandas.TimeStamp, optional
             String that can be converted to, or a Pandas TimeStamp with the
             maximum time of the series.
-        norm: str or flaot, optional
+        norm: str or float, optional
             String with the method to normalize the time series with.
             Possible values are: "mean" or "median", "min", "max" or a float
             value.
@@ -414,18 +414,19 @@ class TimeSeries(object):
     def to_daily_unit(self, series):
         method = self.settings["to_daily_unit"]
         if method is not None:
-            if method == True or method == "divide":
+            if method is True or method == "divide":
                 dt = series.index.to_series().diff() / pd.Timedelta(1, 'd')
+                dt = dt.fillna(1)
                 if not (dt == 1.0).all():
                     series = series / dt
                     logger.info(
-                        "Time Series %s: values of stress were transformed to daily "
-                        "values (frequency not altered) with: %s" % (
+                        "Time Series %s: values of stress were transformed to "
+                        "daily values (frequency not altered) with: %s" % (
                             self.name, method))
             else:
                 logger.warning(
-                    "Time Series %s: User-defined option for to_daily_unit %s is not "
-                    "supported" % (self.name, method))
+                    "Time Series %s: User-defined option for to_daily_unit %s "
+                    "is not supported" % (self.name, method))
         return series
 
     def sample_up(self, series):
