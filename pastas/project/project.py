@@ -178,43 +178,6 @@ class Project:
         self.add_series(series, name=name, metadata=metadata,
                         settings=settings, kind=kind, **kwargs)
 
-    def del_oseries(self, name):
-        """Method that savely removes oseries from the project. It validates
-        that the oseries is not used in any model.
-
-        Parameters
-        ----------
-        name: str
-            string with a single oseries name.
-
-        """
-        if name not in self.oseries.index:
-            error = ("Time series with name {} is not present in the database."
-                     " Please provide a different name.").format(name)
-            logger.error(error)
-        else:
-            self.oseries.drop(name, inplace=True)
-            logger.info(
-                "Oseries with name {} deleted from the database.".format(name))
-
-    def del_stress(self, name):
-        """Method that removes oseries from the project.
-
-        Parameters
-        ----------
-        name: list or str
-            list with multiple or string with a single stress name.
-
-        """
-        if name not in self.stresses.index:
-            error = ("Stress with name {} is not present in the database."
-                     " Please provide a different name.").format(name)
-            logger.error(error)
-        else:
-            self.stresses.drop(name, inplace=True)
-            logger.info(
-                "Stress with name {} deleted from the database.".format(name))
-
     def add_model(self, oseries, model_name=None, **kwargs):
         """Method to add a Pastas Model instance based on one of the oseries.
 
@@ -256,6 +219,124 @@ class Project:
 
         return ml
 
+    def add_models(self, oseries='all', model_name_prefix='', **kwargs):
+        """Method to add multiple Pastas Model instances based on one
+        or more of the oseries.
+
+        Parameters
+        ----------
+        oseries: str or list, optional
+            names of the oseries, if oseries is 'all' all series in self.series
+            are used
+        model_name_prefix: str, optional
+            prefix to use for model names
+        kwargs: dict
+            any arguments that are taken by the Pastas Model instance can be
+            provided.
+
+        Returns
+        -------
+        mls: list of str
+            list of modelnames corresponding to the keys in the self.models
+            dictionary
+
+        """
+
+        if oseries == 'all':
+            oseries_list = self.oseries.index
+        elif type(oseries) == str:
+            oseries_list = [oseries]
+        elif type(oseries) == list:
+            oseries_list = oseries
+
+        mls = []
+        for oseries_name in oseries_list:
+            model_name = model_name_prefix + oseries_name
+
+            # Add new model
+            ml = self.add_model(oseries_name, model_name, **kwargs)
+            mls.append(ml.name)
+
+        return mls
+
+    def add_recharge(self, mls=None, rfunc=Gamma, name="recharge",
+                     **kwargs):
+        """Add a StressModel2 to the time series models. The
+        selection of the precipitation and evaporation time series is based
+        on the shortest distance to the a stresses in the stresses list.
+
+        Parameters
+        ----------
+        mls: list of str, optional
+            list of model names, if None all models in project are
+            used.
+        rfunc: pastas.rfunc, optional
+            response function, default is the Gamma function.
+        name: str, optional
+            name of the stress, default is 'recharge'.
+        **kwargs:
+            arguments are pass to the StressModel2 function
+
+        Notes
+        -----
+        The behaviour of this method will change in the future to add a
+        RechargeModel instead of StressModel2.
+
+
+        """
+        if mls is None:
+            mls = self.models.keys()
+        elif isinstance(mls, Model):
+            mls = [mls.name]
+
+        for mlname in mls:
+            ml = self.models[mlname]
+            prec_name = self.get_nearest_stresses(mlname, kind="prec").iloc[0][0]
+            prec = self.stresses.loc[prec_name, "series"]
+            evap_name = self.get_nearest_stresses(mlname, kind="evap").iloc[0][0]
+            evap = self.stresses.loc[evap_name, "series"]
+
+            recharge = StressModel2([prec, evap], rfunc, name=name, **kwargs)
+
+            ml.add_stressmodel(recharge)
+
+    def del_oseries(self, name):
+        """Method that savely removes oseries from the project. It validates
+        that the oseries is not used in any model.
+
+        Parameters
+        ----------
+        name: str
+            string with a single oseries name.
+
+        """
+        if name not in self.oseries.index:
+            error = ("Time series with name {} is not present in the database."
+                     " Please provide a different name.").format(name)
+            logger.error(error)
+        else:
+            self.oseries.drop(name, inplace=True)
+            logger.info(
+                "Oseries with name {} deleted from the database.".format(name))
+
+    def del_stress(self, name):
+        """Method that removes oseries from the project.
+
+        Parameters
+        ----------
+        name: list or str
+            list with multiple or string with a single stress name.
+
+        """
+        if name not in self.stresses.index:
+            error = ("Stress with name {} is not present in the database."
+                     " Please provide a different name.").format(name)
+            logger.error(error)
+        else:
+            self.stresses.drop(name, inplace=True)
+            logger.info(
+                "Stress with name {} deleted from the database.".format(name))
+
     def del_model(self, ml_name):
         """Method to safe-delete a model from the project.
 
@@ -286,30 +367,37 @@ class Project:
             # set oseries_calib empty, so it is determined again the next time
             ml.oseries_calib = None
 
-    def add_recharge(self, ml, rfunc=Gamma, name="recharge", **kwargs):
-        """Adds a recharge element to the time series model. The
-        selection of the precipitation and evaporation time series is based
-        on the shortest distance to the a stresses in the stresseslist.
-
-        Returns
-        -------
-
+    def solve_models(self, mls=None, report=False,
+                     ignore_solve_errors=False, verbose=False, **kwargs):
+        """Solves the models in mls
+        
+        mls: list of str, optional
+            list of model names, if None all models in the project are solved
+        report: boolean, optional
+            determines if a report is printed when the model is solved
+        ignore_solve_errors: boolean, optional
+            if True ValueErrors emerging from the solve method are ignored
+        **kwargs: arguments are passsed to the solve method
+            
+        
         """
-        key = str(ml.oseries.name)
-        if 'prec' not in self.stresses['kind'].values:
-            logger.error('No precipitation-series (kind="prec") in project')
-            return
-        prec_name = self.get_nearest_stresses(key, kind="prec").iloc[0][0]
-        prec = self.stresses.loc[prec_name, "series"]
-        if 'evap' not in self.stresses['kind'].values:
-            logger.error('No evaporation-series (kind="evap") in project')
-            return
-        evap_name = self.get_nearest_stresses(key, kind="evap").iloc[0][0]
-        evap = self.stresses.loc[evap_name, "series"]
+        if mls is None:
+            mls = self.models.keys()
+        elif isinstance(mls, Model):
+            mls = [mls.name]
 
-        recharge = StressModel2([prec, evap], rfunc, name=name, **kwargs)
-
-        ml.add_stressmodel(recharge)
+        for mlname in mls:
+            if verbose:
+                print('solving model -> {}'.format(mlname))
+            ml = self.models[mlname]
+            if ignore_solve_errors:
+                try:
+                    ml.solve(report=report, **kwargs)
+                except ValueError:
+                    warning = "solve error ignored for -> {}".format(ml.name)
+                    logger.warning(warning)
+            else:
+                ml.solve(report=report, **kwargs)
 
     def get_nearest_stresses(self, oseries=None, stresses=None, kind=None,
                              n=1):
