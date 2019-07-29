@@ -360,7 +360,7 @@ class Model:
             istart += 1
         if self.transform:
             sim = self.transform.simulate(sim, parameters[
-                                               istart:istart + self.transform.nparam])
+                istart:istart + self.transform.nparam])
 
         # Respect provided tmin/tmax at this point, since warmup matters for
         # simulation but should not be returned, unless return_warmup=True.
@@ -596,11 +596,12 @@ class Model:
 
         # Initialize parameters
         self.parameters = self.get_init_parameters(noise, initial)
-        
+
         for icol in self.parameters:
             if icol != "name":
                 if self.parameters[icol].dtype == "O":
-                    self.parameters[icol] = pd.to_numeric(self.parameters[icol])
+                    self.parameters[icol] = pd.to_numeric(
+                        self.parameters[icol])
 
         # Prepare model if not fitting the constant as a parameter
         if not self.settings["fit_constant"]:
@@ -860,7 +861,7 @@ class Model:
 
         if self.sim_index is None or update_sim_index:
             tmin = (tmin - pd.DateOffset(days=warmup)).floor(freq) + \
-                   self.settings["time_offset"]
+                self.settings["time_offset"]
             sim_index = pd.date_range(tmin, tmax, freq=freq)
             if not update_sim_index:
                 # tmin, tmax, freq and warmup are equal to the settings
@@ -1148,7 +1149,7 @@ class Model:
             tmin_warm = None
 
         dt = get_dt(freq)
-        
+
         kwargs = dict(tmin=tmin_warm, tmax=tmax, freq=freq, dt=dt)
         if istress is not None:
             kwargs['istress'] = istress
@@ -1335,15 +1336,17 @@ class Model:
                                    self.settings["noise"] else np.nan),
             "___": "",
             "___ ": "",
-            "___  ": ""
+            "fobj": "{0:.2f}".format(self.fit.fit["cost"] if
+                                     self.fit._name == "LeastSquares" else
+                                     np.nan)
         }
 
-        parameters = self.parameters.loc[:,
-                     ["optimal", "stderr", "initial", "vary"]]
+        parameters = self.parameters.loc[:, ["optimal", "stderr",
+                                             "initial", "vary"]]
         parameters.loc[:, "stderr"] = \
             (parameters.loc[:, "stderr"] / parameters.loc[:, "optimal"]) \
-                .abs() \
-                .apply("\u00B1{:.2%}".format)
+            .abs() \
+            .apply("\u00B1{:.2%}".format)
 
         # Determine the width of the fit_report based on the parameters
         width = len(parameters.__str__().split("\n")[1])
@@ -1353,10 +1356,10 @@ class Model:
         w = max(width - 44, 0)
         header = "Model Results {name:<16}{string}Fit Statistics\n" \
                  "{line}\n".format(
-            name=self.name[:14],
-            string=string.format("", fill=' ', align='>', width=w),
-            line=string.format("", fill='=', align='>', width=width)
-        )
+                     name=self.name[:14],
+                     string=string.format("", fill=' ', align='>', width=w),
+                     line=string.format("", fill='=', align='>', width=width)
+                 )
 
         basic = str()
         for item, item2 in zip(model.items(), fit.items()):
@@ -1370,10 +1373,11 @@ class Model:
         # Create the parameters block
         parameters = "\nParameters ({n_param} were optimized)\n{line}\n" \
                      "{parameters}".format(
-            n_param=parameters.vary.sum(),
-            line=string.format("", fill='=', align='>', width=width),
-            parameters=parameters
-        )
+                         n_param=parameters.vary.sum(),
+                         line=string.format(
+                             "", fill='=', align='>', width=width),
+                         parameters=parameters
+                     )
 
         # w = []
         #
