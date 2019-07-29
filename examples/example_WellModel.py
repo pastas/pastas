@@ -1,6 +1,7 @@
 # In this example the MultiWell StressModel is showcased and tested.
 # R.A. Collenteur - Artesia Water 2018
 
+import numpy as np
 import pastas as ps
 from pastas.stressmodels import WellModel
 
@@ -23,7 +24,16 @@ stresses = [meny.IN['Extraction 1']["values"],
             meny.IN['Extraction 2']["values"],
             meny.IN['Extraction 3']["values"]]
 
-w = WellModel(stresses, ps.Hantush, radius=[1, 1, 1], name="Wells")
+# Get distances from metadata
+xo = meny.H["Obsevation well"]['xcoord']
+yo = meny.H["Obsevation well"]['ycoord']
+distances = []
+for extr in ['Extraction 1', 'Extraction 2', 'Extraction 3']:
+    xw = meny.IN[extr]["xcoord"]
+    yw = meny.IN[extr]["ycoord"]
+    distances.append(np.sqrt((xo-xw)**2 + (yo-yw)**2))
+
+w = WellModel(stresses, ps.Hantush, distances=distances, name="Wells")
 
 ml.add_stressmodel(w)
 ml.solve()
