@@ -9,6 +9,7 @@ The following stressmodels are supported and tested:
 - StressModel2
 - FactorModel
 - StepModel
+- WellModel
 
 All other stressmodels are for research purposes only and are not (yet)
 fully supported and tested.
@@ -17,7 +18,6 @@ TODO
 ----
 - Test and support StepModel
 - Test and support LinearTrend
-- Test and support WellModel
 
 """
 
