@@ -701,6 +701,9 @@ class WellModel(StressModelBase):
         if sort_wells:
             stress = [s for _, s in sorted(zip(distances, stress),
                                            key=lambda pair: pair[0])]
+            if isinstance(settings, list):
+                settings = [s for _, s in sorted(zip(distances, settings),
+                                           key=lambda pair: pair[0])]
             distances.sort()
 
         meanstress = 1.0  # ? this should be something logical
