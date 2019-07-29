@@ -11,6 +11,8 @@ PASTAS: HYDROLOGICAL TIME SERIES ANALYSIS
                     :target: https://pypi.python.org/pypi/pastas
 .. image:: https://img.shields.io/pypi/l/pastas.svg
                     :target: https://mit-license.org/
+.. image:: https://img.shields.io/pypi/pyversions/pastas
+                    :target: https://pypi.python.org/pypi/pastas
 .. image:: https://img.shields.io/github/release/pastas/pastas.svg
                     :target: https://github.com/pastas/pastas/releases
 .. image:: https://api.codacy.com/project/badge/Grade/0e0fad469a3c42a4a5c5d1c5fddd6bee
@@ -35,6 +37,7 @@ Documentation & Examples
 - Documentation is provided on a dedicated website: http://pastas.readthedocs.io/
 - Examples can be found on the `examples directory on the documentation website <http://pastas.readthedocs.io/en/dev/examples.html>`_.
 - View and edit a working example notebook of a Pastas model in `MyBinder <https://mybinder.org/v2/gh/pastas/pastas/master?filepath=examples%2Fnotebooks%2F1_basic_model.ipynb>`_
+- A list of Publications that used Pastas is available in a `dedicated GitHub repo <https://github.com/pastas/pastas_research>`_
 
 Get in Touch
 ~~~~~~~~~~~~
@@ -44,7 +47,7 @@ Get in Touch
 
 Quick installation guide
 ~~~~~~~~~~~~~~~~~~~~~~~~
-To install Pastas, a working version of Python 3.5 3.6 or 3.7 has to be installed on 
+To install Pastas, a working version of Python 3.5, 3.6, or 3.7 has to be installed on 
 your computer. We recommend using the `Anaconda Distribution <https://www.continuum.io/downloads>`_
 with Python 3.7 as it includes most of the python package dependencies and the Jupyter
 Notebook software to run the notebooks. However, you are free to install any
@@ -55,10 +58,6 @@ Stable version
 To get the latest stable version, use::
 
   pip install pastas
-  
-or directly from Github::
-  
-  pip install https://github.com/pastas/pastas/zipball/master
 
 Update
 ------
@@ -83,15 +82,15 @@ following pacakges are necessary for a minimal function installation of Pastas:
 - pandas>=0.23
 - scipy>=1.1
 
-Background
-~~~~~~~~~~
-Work on Pastas started in the spring of 2016 at the Delft University of Technology and `Artesia Water <http://www.artesia-water.nl/>`_. 
-
 How to Cite Pastas?
 ~~~~~~~~~~~~~~~~~~~
+If you use Pastas in one of your studies, please cite the Pastas article in Groundwater:
+
+- Collenteur, R.A., Bakker, M., Caljé, R., Klop, S.A., Schaars, F. (2019) `Pastas: open source software for the analysis of groundwater time series <https://ngwa.onlinelibrary.wiley.com/doi/abs/10.1111/gwat.12925>`_. Groundwater. doi: 10.1111/gwat.12925.
+
 To cite a specific version of Python, you can use the DOI provided for each official release (>0.9.7) through Zenodo. Click on the link to get a specific version and DOI, depending on the Pastas version.
 
-Collenteur, R., Bakker, M., Caljé, R. & Schaars, F. (XXXX). Pastas: open-source software for time series analysis in hydrology (Version X.X.X). Zenodo. http://doi.org/10.5281/zenodo.1465866
+- Collenteur, R., Bakker, M., Caljé, R. & Schaars, F. (XXXX). Pastas: open-source software for time series analysis in hydrology (Version X.X.X). Zenodo. http://doi.org/10.5281/zenodo.1465866
 
 License (MIT License)
 ~~~~~~~~~~~~~~~~~~~~~

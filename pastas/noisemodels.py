@@ -124,8 +124,13 @@ class NoiseModel(NoiseModelBase):
         self.nparam = 1
         self.set_init_parameters()
 
-    def set_init_parameters(self):
-        self.parameters.loc['noise_alpha'] = (14.0, 0, 5000, 1, 'noise')
+    def set_init_parameters(self, oseries=None):
+        if oseries is not None:
+            pinit = oseries.index.to_series().diff() / pd.Timedelta(1, 'd')
+            pinit = pinit.median()
+        else:
+            pinit = 14.0
+        self.parameters.loc['noise_alpha'] = (pinit, 0, 5000, 1, 'noise')
 
     def simulate(self, res, parameters):
         """
@@ -204,8 +209,13 @@ class NoiseModel2(NoiseModelBase):
         self.nparam = 1
         self.set_init_parameters()
 
-    def set_init_parameters(self):
-        self.parameters.loc['noise_alpha'] = (14.0, 0, 5000, 1, 'noise')
+    def set_init_parameters(self, oseries=None):
+        if oseries is not None:
+            pinit = oseries.index.to_series().diff() / pd.Timedelta(1, 'd')
+            pinit = pinit.median()
+        else:
+            pinit = 14.0
+        self.parameters.loc['noise_alpha'] = (pinit, 0, 5000, 1, 'noise')
 
     def simulate(self, res, parameters):
         """
