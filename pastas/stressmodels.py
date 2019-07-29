@@ -30,7 +30,7 @@ import pandas as pd
 from scipy.signal import fftconvolve
 
 from .decorators import set_parameter
-from .rfunc import One, Exponential
+from .rfunc import One, Exponential, Hantush
 from .timeseries import TimeSeries
 
 logger = getLogger(__name__)
@@ -162,7 +162,7 @@ class StressModelBase:
                 data.append(TimeSeries(value, settings=settings[i]))
         else:
             logger.warning("provided stress format is unknown. Provide a"
-                           "Series,dict or list.")
+                           "Series, dict or list.")
         return data
 
     def dump_stress(self, series=True):
@@ -641,16 +641,19 @@ class Constant(StressModelBase):
 class WellModel(StressModelBase):
     """Time series model consisting of the convolution of one or more
     stresses with one response function. The distance from an influence to
-    the location of the oseries has to be provided for each
+    the location of the oseries has to be provided for each stress.
 
     Parameters
     ----------
-    stress: pandas.DataFrame
-        Pandas DataFrame object containing the stresses.
-    rfunc: rfunc class
-        Response function used in the convolution with the stresses.
-    name: str
-        Name of the stress
+    stress : pandas.DataFrame
+        list containing the stresses.
+    rfunc : pastas.rfunc
+        WellModel only works with Hantush!
+    name : str
+        Name of the stressmodel
+    distances : list or list-like
+        list of distances to oseries
+
 
     Notes
     -----
@@ -662,7 +665,43 @@ class WellModel(StressModelBase):
     _name = "WellModel"
 
     def __init__(self, stress, rfunc, name, distances, up=False, cutoff=0.99,
-                 settings="well"):
+                 settings="well", sort_wells=True):
+        """Time series model consisting of the convolution of one or more
+        stresses with one response function. The distance from an influence
+        to the location of the oseries has to be provided for each stress.
+
+        Parameters
+        ----------
+        stress : list
+            list containing the stresses timeseries
+        rfunc : pastas.rfunc
+            WellModel only works with Hantush!
+        name : str
+            Name of the stressmodel
+        distances : list or list-like
+            list of distances to oseries, must be ordered the same as the
+            stresses
+        up : bool, optional
+            whether positive stress has increasing or decreasing effect on
+            the model, by default False, in which case positive stress lowers
+            e.g. the groundwater level
+        cutoff : float, optional
+            percentage at which to cutoff the step response, by default 0.99
+        settings : str, list of dict, optional
+            settings of the timeseries, by default "well"
+        sort_wells : bool, optional
+            sort wells from closest to furthest, by default True
+
+        """
+
+        assert rfunc._name == "Hantush", ("WellModel only supports "
+                                          "rfunc Hantush!")
+
+        # sort wells by distance
+        if sort_wells:
+            stress = [s for _, s in sorted(zip(distances, stress),
+                                           key=lambda pair: pair[0])]
+            distances.sort()
 
         meanstress = 1.0  # ? this should be something logical
 
