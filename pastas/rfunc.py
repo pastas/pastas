@@ -252,7 +252,7 @@ class Hantush(RfuncBase):
 
     Notes
     -----
-    The Hantush well function is emplained in [1]_, [2]_ and [3]_.
+    The Hantush well function is explained in [1]_, [2]_ and [3]_.
     It's parameters are:
 
     .. math:: p[0] = A = \\frac{1}{4 \\pi kD}
@@ -310,7 +310,8 @@ class Hantush(RfuncBase):
         return p[0]
 
     def step(self, p, dt=1, cutoff=None):
-        if len(p) == 4:  # distance is provided as param in p[3], rho = p[1] * distance
+        if len(p) == 4:  # distance is provided as param in p[3]
+            # rho = p[1] * distance
             rho = p[1] * p[3]
         else:  # distance is not provided as fixed param so rho is p[1]
             rho = p[1]

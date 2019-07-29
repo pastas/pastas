@@ -218,10 +218,10 @@ class StressModelBase:
             "stress": self.dump_stress(series)
         }
         return data
-    
+
     def get_nsplit(self):
         """Determine in how many timeseries the contribution can be splitted"""
-        if hasattr(self,'nsplit'):
+        if hasattr(self, 'nsplit'):
             return self.nsplit
         else:
             return len(self.stress)
@@ -677,12 +677,12 @@ class WellModel(StressModelBase):
 
         self.stress = self.handle_stress(stress, settings)
 
-        # Check if number of stresses and radii match
+        # Check if number of stresses and distances match
         if len(self.stress) != len(distances):
             logger.error("The number of stresses applied does not match the "
-                         "number of radii provided.")
-            raise(ValueError("The number of stresses applied does not match the "
-                             "number of radii provided."))
+                         "number of distances provided.")
+            raise(ValueError("The number of stresses applied does not match the"
+                             " number of distances provided."))
         else:
             self.distances = distances
 
@@ -692,6 +692,14 @@ class WellModel(StressModelBase):
 
     def set_init_parameters(self):
         self.parameters = self.rfunc.get_init_parameters(self.name)
+        # reset pmin/pmax and initial params to account for r being passed
+        # as known value
+        self.parameters.loc[self.name + "_rho", "pmin"] = \
+            1e-4 / np.max(self.distances)
+        self.parameters.loc[self.name + "_rho", "pmax"] = \
+            1 / np.max(self.distances)
+        self.parameters.loc[self.name + "_rho", "initial"] = \
+            1. / np.max(self.distances)
 
     def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1,
                  istress=None):
@@ -919,7 +927,7 @@ class RechargeModel(StressModelBase):
             self.stress.append(self.temp)
         self.freq = self.prec.settings["freq"]
         self.set_init_parameters()
-        
+
         self.nsplit = 1
 
     def set_init_parameters(self):
