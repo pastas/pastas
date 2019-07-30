@@ -540,7 +540,7 @@ class StepModel(StressModelBase):
             "stressmodel": self._name,
             'tstart': self.tstart,
             'name': self.name,
-            "up": True if self.rfunc.up == 1 else False,
+            "up": self.rfunc.up,
             'rfunc': self.rfunc._name
         }
         return data
