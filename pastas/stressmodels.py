@@ -645,20 +645,30 @@ class WellModel(StressModelBase):
 
     Parameters
     ----------
-    stress : pandas.DataFrame
-        list containing the stresses.
+    stress : list
+        list containing the stresses timeseries.
     rfunc : pastas.rfunc
         WellModel only works with Hantush!
     name : str
-        Name of the stressmodel
+        Name of the stressmodel.
     distances : list or list-like
-        list of distances to oseries
-
+        list of distances to oseries, must be ordered the same as the
+        stresses.
+    up : bool, optional
+        whether positive stress has increasing or decreasing effect on
+        the model, by default False, in which case positive stress lowers
+        e.g. the groundwater level.
+    cutoff : float, optional
+        percentage at which to cutoff the step response, by default 0.99.
+    settings : str, list of dict, optional
+        settings of the timeseries, by default "well".
+    sort_wells : bool, optional
+        sort wells from closest to furthest, by default True.
 
     Notes
     -----
     This class implements convolution of multiple series with a the same
-    response function. This is often applied when dealing with multiple
+    response function. This can be applied when dealing with multiple
     wells in a time series model.
 
     """
@@ -666,36 +676,8 @@ class WellModel(StressModelBase):
 
     def __init__(self, stress, rfunc, name, distances, up=False, cutoff=0.99,
                  settings="well", sort_wells=True):
-        """Time series model consisting of the convolution of one or more
-        stresses with one response function. The distance from an influence
-        to the location of the oseries has to be provided for each stress.
-
-        Parameters
-        ----------
-        stress : list
-            list containing the stresses timeseries
-        rfunc : pastas.rfunc
-            WellModel only works with Hantush!
-        name : str
-            Name of the stressmodel
-        distances : list or list-like
-            list of distances to oseries, must be ordered the same as the
-            stresses
-        up : bool, optional
-            whether positive stress has increasing or decreasing effect on
-            the model, by default False, in which case positive stress lowers
-            e.g. the groundwater level
-        cutoff : float, optional
-            percentage at which to cutoff the step response, by default 0.99
-        settings : str, list of dict, optional
-            settings of the timeseries, by default "well"
-        sort_wells : bool, optional
-            sort wells from closest to furthest, by default True
-
-        """
-
-        assert rfunc._name == "Hantush", ("WellModel only supports "
-                                          "rfunc Hantush!")
+        if not issubclass(rfunc, Hantush):
+            raise NotImplementedError("WellModel only supports rfunc Hantush!")
 
         # sort wells by distance
         if sort_wells:
@@ -703,10 +685,10 @@ class WellModel(StressModelBase):
                                            key=lambda pair: pair[0])]
             if isinstance(settings, list):
                 settings = [s for _, s in sorted(zip(distances, settings),
-                                           key=lambda pair: pair[0])]
+                                                 key=lambda pair: pair[0])]
             distances.sort()
 
-        meanstress = 1.0  # ? this should be something logical
+        meanstress = 1.0  # TODO: this should be something logical
 
         tmin = pd.Timestamp.max
         tmax = pd.Timestamp.min
@@ -721,27 +703,24 @@ class WellModel(StressModelBase):
 
         # Check if number of stresses and distances match
         if len(self.stress) != len(distances):
-            logger.error("The number of stresses applied does not match the "
-                         "number of distances provided.")
-            raise(ValueError("The number of stresses applied does not match the"
-                             " number of distances provided."))
+            msg = "The number of stresses applied does not match the  number" \
+                  "of distances provided."
+            logger.error(msg)
+            raise ValueError(msg)
         else:
             self.distances = distances
 
         self.freq = self.stress[0].settings["freq"]
-
         self.set_init_parameters()
 
     def set_init_parameters(self):
         self.parameters = self.rfunc.get_init_parameters(self.name)
         # reset pmin/pmax and initial params to account for r being passed
         # as known value
-        self.parameters.loc[self.name + "_rho", "pmin"] = \
-            1e-4 / np.max(self.distances)
-        self.parameters.loc[self.name + "_rho", "pmax"] = \
-            1 / np.max(self.distances)
-        self.parameters.loc[self.name + "_rho", "initial"] = \
-            1. / np.max(self.distances)
+        self.parameters.loc[self.name + "_rho", ["pmin", "pmax", "initial"]] \
+            = (1e-4 / np.max(self.distances),
+               1 / np.max(self.distances),
+               1. / np.max(self.distances))
 
     def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1,
                  istress=None):
@@ -785,7 +764,7 @@ class WellModel(StressModelBase):
             "stressmodel": self._name,
             "rfunc": self.rfunc._name,
             "name": self.name,
-            "up": True if self.rfunc.up == 1 else False,
+            "up": True if self.rfunc.up is 1 else False,
             "distances": self.distances,
             "cutoff": self.rfunc.cutoff,
             "stress": self.dump_stress(series)
