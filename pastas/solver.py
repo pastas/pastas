@@ -236,7 +236,11 @@ class LmfitSolve(BaseSolver):
     _name = "LmfitSolve"
 
     def __init__(self, model, noise=True, weights=None, **kwargs):
-        import lmfit  # Import Lmfit here, so it is no dependency
+        try:
+            import lmfit  # Import Lmfit here, so it is no dependency
+        except ImportError as e:
+            msg = "lmfit not installed. Please install lmfit first."
+            raise ImportError(msg)
         BaseSolver.__init__(self)
 
         # Deal with the parameters
