@@ -1315,7 +1315,7 @@ class Model:
             "tmax": str(self.settings["tmax"]),
             "freq": self.settings["freq"],
             "warmup": self.settings["warmup"],
-            "solver": self.settings["solver"],
+            "solver": self.settings["solver"]
         }
 
         fit = {
@@ -1328,7 +1328,7 @@ class Model:
                                    self.settings["noise"] else np.nan),
             "___": "",
             "___ ": "",
-            "___  ": "",
+            "___  ": ""
         }
 
         parameters = self.parameters.loc[:, ["optimal", "stderr",
@@ -1353,7 +1353,6 @@ class Model:
 
         basic = str()
         for item, item2 in zip(model.items(), fit.items()):
-            print(item)
             val1, val2 = item
             val3, val4 = item2
             w = max(width - 38, 0)
@@ -1365,10 +1364,8 @@ class Model:
         parameters = "\nParameters ({n_param} were optimized)\n{line}\n" \
                      "{parameters}".format(
             n_param=parameters.vary.sum(),
-            line=string.format(
-                "", fill='=', align='>', width=width),
-            parameters=parameters
-        )
+            line=string.format("", fill='=', align='>', width=width),
+            parameters=parameters)
 
         # w = []
         #
