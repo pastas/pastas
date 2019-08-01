@@ -239,8 +239,9 @@ class StressModel(StressModelBase):
         Response function used in the convolution with the stress.
     name: str
         Name of the stress.
-    up: Boolean, optional
+    up: Boolean or None, optional
         True if response function is positive (default), False if negative.
+        None if you don't want to define if response is positive or negative.
     cutoff: float, optional
         float between 0 and 1 to determine how long the response is (default
         is 99% of the actual response time). Used to reduce computation times.
@@ -331,7 +332,7 @@ class StressModel(StressModelBase):
             "stressmodel": self._name,
             "rfunc": self.rfunc._name,
             "name": self.name,
-            "up": True if self.rfunc.up == 1 else False,
+            "up": self.rfunc.up,
             "cutoff": self.rfunc.cutoff,
             "stress": self.dump_stress(series)
         }
@@ -352,8 +353,9 @@ class StressModel2(StressModelBase):
         Response function used in the convolution with the stress.
     name: str
         Name of the stress
-    up: Boolean, optional
+    up: Boolean or None, optional
         True if response function is positive (default), False if negative.
+        None if you don't want to define if response is positive or negative.
     cutoff: float
         float between 0 and 1 to determine how long the response is (default
         is 99% of the actual response time). Used to reduce computation times.
@@ -477,7 +479,7 @@ class StressModel2(StressModelBase):
             "stressmodel": self._name,
             "rfunc": self.rfunc._name,
             "name": self.name,
-            "up": True if self.rfunc.up == 1 else False,
+            "up": self.rfunc.up,
             "cutoff": self.rfunc.cutoff,
             "stress": self.dump_stress(series)
         }
