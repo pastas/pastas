@@ -150,16 +150,16 @@ class Gamma(RfuncBase):
     def get_init_parameters(self, name):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        if self.up is None:
-            parameters.loc[name + '_A'] = (1 / self.meanstress, 
-                                          -100 / self.meanstress,
-                                           100 / self.meanstress, 1, name)
-        elif self.up:
+        if self.up:
             parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
                                            100 / self.meanstress, 1, name)
-        else:
+        elif self.up is False:
             parameters.loc[name + '_A'] = (-1 / self.meanstress,
                                            -100 / self.meanstress, 0, 1, name)
+        else:
+            parameters.loc[name + '_A'] = (1 / self.meanstress,
+                                           np.nan, np.nan, 1, name)
+
         # if n is too small, the length of the response function is close to zero
         parameters.loc[name + '_n'] = (1, 0.1, 10, 1, name)
         parameters.loc[name + '_a'] = (10, 0.01, 5000, 1, name)
@@ -213,16 +213,16 @@ class Exponential(RfuncBase):
     def get_init_parameters(self, name):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        if self.up is None:
-            parameters.loc[name + '_A'] = (
-                1 / self.meanstress, -100 / self.meanstress, 
-                100 / self.meanstress, 1, name)
-        elif self.up:
-            parameters.loc[name + '_A'] = (
-                1 / self.meanstress, 0, 100 / self.meanstress, 1, name)
+        if self.up:
+            parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
+                                           100 / self.meanstress, 1, name)
+        elif self.up is False:
+            parameters.loc[name + '_A'] = (-1 / self.meanstress,
+                                           -100 / self.meanstress, 0, 1, name)
         else:
-            parameters.loc[name + '_A'] = (
-                -1 / self.meanstress, -100 / self.meanstress, 0, 1, name)
+            parameters.loc[name + '_A'] = (1 / self.meanstress,
+                                           np.nan, np.nan, 1, name)
+
         parameters.loc[name + '_a'] = (10, 0.01, 5000, 1, name)
         return parameters
 
@@ -292,16 +292,16 @@ class Hantush(RfuncBase):
     def get_init_parameters(self, name):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        if self.up is None:
-            parameters.loc[name + '_A'] = (
-                1 / self.meanstress, -100 / self.meanstress, 
-                100 / self.meanstress, 1, name)
-        elif self.up:
-            parameters.loc[name + '_A'] = (
-                1 / self.meanstress, 0, 100 / self.meanstress, 1, name)
+        if self.up:
+            parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
+                                           100 / self.meanstress, 1, name)
+        elif self.up is False:
+            parameters.loc[name + '_A'] = (-1 / self.meanstress,
+                                           -100 / self.meanstress, 0, 1, name)
         else:
-            parameters.loc[name + '_A'] = (
-                -1 / self.meanstress, -100 / self.meanstress, 0, 1, name)
+            parameters.loc[name + '_A'] = (1 / self.meanstress,
+                                           np.nan, np.nan, 1, name)
+
         parameters.loc[name + '_rho'] = (1, 1e-4, 10, 1, name)
         parameters.loc[name + '_cS'] = (100, 1e-3, 1e4, 1, name)
         return parameters
@@ -471,16 +471,16 @@ class FourParam(RfuncBase):
     def get_init_parameters(self, name):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        if self.up is None:
-            parameters.loc[name + '_A'] = (1 / self.meanstress, 
-                                          -100 / self.meanstress,
-                                           100 / self.meanstress, 1, name)
-        elif self.up:
+        if self.up:
             parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
                                            100 / self.meanstress, 1, name)
-        else:
+        elif self.up is False:
             parameters.loc[name + '_A'] = (-1 / self.meanstress,
                                            -100 / self.meanstress, 0, 1, name)
+        else:
+            parameters.loc[name + '_A'] = (1 / self.meanstress,
+                                           np.nan, np.nan, 1, name)
+
         parameters.loc[name + '_n'] = (1, -10, 10, 1, name)
         parameters.loc[name + '_a'] = (10, 0.01, 5000, 1, name)
         parameters.loc[name + '_b'] = (10, 0.01, 5000, 1, name)
@@ -659,16 +659,15 @@ class DoubleExponential(RfuncBase):
     def get_init_parameters(self, name):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        if self.up is None:
-            parameters.loc[name + '_A'] = (1 / self.meanstress, 
-                                          -100 / self.meanstress,
-                                           100 / self.meanstress, 1, name)
-        elif self.up:
+        if self.up:
             parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
                                            100 / self.meanstress, 1, name)
-        else:
+        elif self.up is False:
             parameters.loc[name + '_A'] = (-1 / self.meanstress,
                                            -100 / self.meanstress, 0, 1, name)
+        else:
+            parameters.loc[name + '_A'] = (1 / self.meanstress,
+                                           np.nan, np.nan, 1, name)
 
         parameters.loc[name + '_alpha'] = (0.1, 0.01, 0.99, 1, name)
         parameters.loc[name + '_a1'] = (10, 0.01, 5000, 1, name)
