@@ -32,6 +32,7 @@ from scipy.signal import fftconvolve
 from .decorators import set_parameter
 from .rfunc import One, Exponential, HantushWellModel
 from .timeseries import TimeSeries
+from .utils import validate_name
 
 logger = getLogger(__name__)
 
@@ -56,7 +57,7 @@ class StressModelBase:
         self.rfunc = rfunc(up, meanstress, cutoff)
         self.parameters = pd.DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        self.name = name
+        self.name = validate_name(name)
         self.tmin = tmin
         self.tmax = tmax
         self.freq = None

@@ -25,8 +25,8 @@ from .solver import LeastSquares
 from .modelstats import Statistics
 from .stressmodels import Constant
 from .timeseries import TimeSeries
-from .utils import get_dt, get_time_offset, get_sample, frequency_is_supported, \
-    set_log_level
+from .utils import get_dt, get_time_offset, get_sample, \
+    frequency_is_supported, validate_name
 from .version import __version__
 from logging import getLogger
 
@@ -77,7 +77,7 @@ class Model:
             name = self.oseries.name
             if name is None:
                 name = 'Observations'
-        self.name = str(name)
+        self.name = validate_name(name)
 
         self.parameters = pd.DataFrame(
             columns=["initial", "name", "optimal", "pmin", "pmax", "vary",

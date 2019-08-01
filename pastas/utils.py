@@ -392,3 +392,32 @@ def remove_file_handlers(logger=None):
     for handler in logger.handlers:
         if isinstance(handler, handlers.RotatingFileHandler):
             logger.removeHandler(handler)
+
+
+def validate_name(name):
+    """Method to check user-provided names and log a warning if wrong.
+
+    Parameters
+    ----------
+    name: str
+        String with the name to check for 'illegal' characters.
+
+    Returns
+    -------
+    name: str
+        Unchanged name string
+
+    Notes
+    -----
+    Forbidden characters are: "/", "\", " ".
+
+    """
+    name = str(name)  # Make sure it is a string
+
+    for char in ["\\", "/", " "]:
+        if char in name:
+            msg = "User-provided name '{}' contains illegal character " \
+                  "{}".format(name, char)
+            logger.warning(msg)
+
+    return name
