@@ -30,7 +30,7 @@ import pandas as pd
 from scipy.signal import fftconvolve
 
 from .decorators import set_parameter
-from .rfunc import One, Exponential, Hantush
+from .rfunc import One, Exponential, HantushWellModel
 from .timeseries import TimeSeries
 
 logger = getLogger(__name__)
@@ -676,8 +676,9 @@ class WellModel(StressModelBase):
 
     def __init__(self, stress, rfunc, name, distances, up=False, cutoff=0.99,
                  settings="well", sort_wells=True):
-        if not issubclass(rfunc, Hantush):
-            raise NotImplementedError("WellModel only supports rfunc Hantush!")
+        if not issubclass(rfunc, HantushWellModel):
+            raise NotImplementedError("WellModel only supports rfunc "
+                                      "HantushWellModel!")
 
         # sort wells by distance
         if sort_wells:
@@ -688,7 +689,8 @@ class WellModel(StressModelBase):
                                                  key=lambda pair: pair[0])]
             distances.sort()
 
-        meanstress = 1.0  # TODO: this should be something logical
+        # get largest std for meanstress
+        meanstress = np.max([s.series.std() for s in stress])
 
         tmin = pd.Timestamp.max
         tmax = pd.Timestamp.min
@@ -715,12 +717,6 @@ class WellModel(StressModelBase):
 
     def set_init_parameters(self):
         self.parameters = self.rfunc.get_init_parameters(self.name)
-        # reset pmin/pmax and initial params to account for r being passed
-        # as known value
-        self.parameters.loc[self.name + "_rho", ["pmin", "pmax", "initial"]] \
-            = (1e-4 / np.max(self.distances),
-               1 / np.max(self.distances),
-               1. / np.max(self.distances))
 
     def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1,
                  istress=None):
@@ -728,14 +724,13 @@ class WellModel(StressModelBase):
         h = pd.Series(data=0, index=self.stress[0].series.index,
                       name=self.name)
         stresses = self.get_stress(istress=istress)
-        distances = self.get_distances(iwell=istress)
+        distances = self.get_distances(istress=istress)
         for stress, r in zip(stresses, distances):
             npoints = stress.index.size
             p_with_r = np.concatenate([p, np.asarray([r])])
             b = self.rfunc.block(p_with_r, dt)
             c = fftconvolve(stress, b, 'full')[:npoints]
             h = h.add(pd.Series(c, index=stress.index), fill_value=0.0)
-
         return h
 
     def get_stress(self, p=None, istress=None, **kwargs):
@@ -744,11 +739,42 @@ class WellModel(StressModelBase):
         else:
             return [self.stress[istress].series]
 
-    def get_distances(self, iwell=None):
-        if iwell is None:
+    def get_distances(self, istress=None):
+        if istress is None:
             return self.distances
         else:
-            return [self.distances[iwell]]
+            return [self.distances[istress]]
+
+    def get_parameters(self, model=None, istress=None):
+        """ Get parameters including distance to observation point
+        and return as array (dimensions (nstresses, 4))
+
+        Parameters
+        ----------
+        model : pastas.Model, optional
+            if not None (default), use optimal model parameters
+        istress : int, optional
+            if not None (default), return all parameters
+
+        Returns
+        -------
+        p : np.array
+            parameters for each stress as row of array, if istress is used
+            returns only one row.
+
+        """
+        if model is None:
+            p = self.parameters.initial.values
+        else:
+            p = model.get_parameters(self.name)
+
+        distances = np.array(self.get_distances(istress=istress))
+        if len(distances) > 1:
+            p_with_r = np.concatenate([np.tile(p, (len(distances), 1)),
+                                       distances[:, np.newaxis]], axis=1)
+        else:
+            p_with_r = np.r_[p, distances]
+        return p_with_r
 
     def dump(self, series=True):
         """Method to export the WellModel object.
