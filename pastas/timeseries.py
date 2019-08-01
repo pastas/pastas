@@ -198,9 +198,9 @@ class TimeSeries:
 
     @series.setter
     def series(self, value):
-        raise (AttributeError('You cannot set series by yourself, as it is '
-                              'calculated from series_original. Please set '
-                              'series_original to update the series.'))
+        raise(AttributeError('You cannot set series by yourself, as it is '
+                             'calculated from series_original. Please set '
+                             'series_original to update the series.'))
 
     @property
     def series_validated(self):
@@ -208,7 +208,7 @@ class TimeSeries:
 
     @series_validated.setter
     def series_validated(self, value):
-        raise (AttributeError(
+        raise(AttributeError(
             'You cannot set series_validated by yourself, as it is '
             'calculated from series_original. Please set '
             'series_original to update the series.'))
@@ -711,7 +711,9 @@ class TimeSeries:
         -------
 
         """
-        self.series.plot(**kwargs)
 
         if original:
-            self.series_original.plot()
+            ax = self.series_original.plot()
+        else:
+            ax = self.series.plot(**kwargs)
+        return ax

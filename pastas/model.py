@@ -25,8 +25,8 @@ from .solver import LeastSquares
 from .modelstats import Statistics
 from .stressmodels import Constant
 from .timeseries import TimeSeries
-from .utils import get_dt, get_time_offset, get_sample, frequency_is_supported, \
-    set_log_level
+from .utils import get_dt, get_time_offset, get_sample, \
+    frequency_is_supported, validate_name
 from .version import __version__
 from logging import getLogger
 
@@ -77,7 +77,7 @@ class Model:
             name = self.oseries.name
             if name is None:
                 name = 'Observations'
-        self.name = str(name)
+        self.name = validate_name(name)
 
         self.parameters = pd.DataFrame(
             columns=["initial", "name", "optimal", "pmin", "pmax", "vary",
@@ -1141,7 +1141,7 @@ class Model:
             tmin_warm = None
 
         dt = get_dt(freq)
-        
+
         kwargs = dict(tmin=tmin_warm, tmax=tmax, freq=freq, dt=dt)
         if istress is not None:
             kwargs['istress'] = istress
@@ -1331,8 +1331,8 @@ class Model:
             "___  ": ""
         }
 
-        parameters = self.parameters.loc[:,
-                     ["optimal", "stderr", "initial", "vary"]]
+        parameters = self.parameters.loc[:, ["optimal", "stderr",
+                                             "initial", "vary"]]
         parameters.loc[:, "stderr"] = \
             (parameters.loc[:, "stderr"] / parameters.loc[:, "optimal"]) \
                 .abs() \
@@ -1365,8 +1365,7 @@ class Model:
                      "{parameters}".format(
             n_param=parameters.vary.sum(),
             line=string.format("", fill='=', align='>', width=width),
-            parameters=parameters
-        )
+            parameters=parameters)
 
         # w = []
         #
