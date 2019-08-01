@@ -624,17 +624,13 @@ class Constant(StressModelBase):
     """
     _name = "Constant"
 
-    def __init__(self, name="constant", value=0.0, pmin=np.nan, pmax=np.nan):
-        self.value = value
-        self.pmin = pmin
-        self.pmax = pmax
+    def __init__(self, name="constant", initial=0.0):
         StressModelBase.__init__(self, One, name, pd.Timestamp.min,
-                                 pd.Timestamp.max, 1, 0, 0)
+                                 pd.Timestamp.max, None, initial, 0)
         self.set_init_parameters()
 
     def set_init_parameters(self):
-        self.parameters.loc[self.name + "_d"] = (
-            self.value, self.pmin, self.pmax, 1, self.name)
+        self.parameters = self.rfunc.get_init_parameters(self.name)
 
     def simulate(self, p=None):
         return p
