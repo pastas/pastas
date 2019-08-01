@@ -690,6 +690,10 @@ class WellModel(StressModelBase):
 
     def set_init_parameters(self):
         self.parameters = self.rfunc.get_init_parameters(self.name)
+        # ensure lambda can't get too small
+        # r/lambda <= 702 else get_tmax() will yield np.inf
+        self.parameters.loc[self.name + "_lab", "pmin"] = \
+            np.max(self.distances) / 702.
 
     def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1,
                  istress=None):
