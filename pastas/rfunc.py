@@ -28,7 +28,7 @@ from scipy.special import gammainc, gammaincinv, k0, exp1, erfc, lambertw, \
 from scipy.integrate import quad
 
 __all__ = ["Gamma", "Exponential", "Hantush", "Polder", "FourParam",
-           "DoubleExponential", "One", "Edelman"]
+           "DoubleExponential", "One", "Edelman", "HantushWellModel"]
 
 
 class RfuncBase:
@@ -380,6 +380,10 @@ class HantushWellModel(RfuncBase):
 
     """
     _name = "HantushWellModel"
+
+    def __init__(self, up=False, meanstress=1, cutoff=0.99):
+        RfuncBase.__init__(self, up, meanstress, cutoff)
+        self.nparam = 3
 
     def get_init_parameters(self, name):
         parameters = DataFrame(
