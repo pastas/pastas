@@ -240,8 +240,9 @@ class StressModel(StressModelBase):
         Response function used in the convolution with the stress.
     name: str
         Name of the stress.
-    up: Boolean, optional
+    up: Boolean or None, optional
         True if response function is positive (default), False if negative.
+        None if you don't want to define if response is positive or negative.
     cutoff: float, optional
         float between 0 and 1 to determine how long the response is (default
         is 99% of the actual response time). Used to reduce computation times.
@@ -332,7 +333,7 @@ class StressModel(StressModelBase):
             "stressmodel": self._name,
             "rfunc": self.rfunc._name,
             "name": self.name,
-            "up": True if self.rfunc.up == 1 else False,
+            "up": self.rfunc.up,
             "cutoff": self.rfunc.cutoff,
             "stress": self.dump_stress(series)
         }
@@ -353,8 +354,9 @@ class StressModel2(StressModelBase):
         Response function used in the convolution with the stress.
     name: str
         Name of the stress
-    up: Boolean, optional
+    up: Boolean or None, optional
         True if response function is positive (default), False if negative.
+        None if you don't want to define if response is positive or negative.
     cutoff: float
         float between 0 and 1 to determine how long the response is (default
         is 99% of the actual response time). Used to reduce computation times.
@@ -478,7 +480,7 @@ class StressModel2(StressModelBase):
             "stressmodel": self._name,
             "rfunc": self.rfunc._name,
             "name": self.name,
-            "up": True if self.rfunc.up == 1 else False,
+            "up": self.rfunc.up,
             "cutoff": self.rfunc.cutoff,
             "stress": self.dump_stress(series)
         }
@@ -509,7 +511,7 @@ class StepModel(StressModelBase):
     """
     _name = "StepModel"
 
-    def __init__(self, tstart, name, rfunc=One, up=True):
+    def __init__(self, tstart, name, rfunc=One, up=None):
         StressModelBase.__init__(self, rfunc, name, pd.Timestamp.min,
                                  pd.Timestamp.max, up, 1.0, 0.99)
         self.tstart = pd.Timestamp(tstart)
@@ -541,7 +543,7 @@ class StepModel(StressModelBase):
             "stressmodel": self._name,
             'tstart': self.tstart,
             'name': self.name,
-            "up": True if self.rfunc.up == 1 else False,
+            "up": self.rfunc.up,
             'rfunc': self.rfunc._name
         }
         return data
@@ -623,17 +625,13 @@ class Constant(StressModelBase):
     """
     _name = "Constant"
 
-    def __init__(self, name="constant", value=0.0, pmin=np.nan, pmax=np.nan):
-        self.value = value
-        self.pmin = pmin
-        self.pmax = pmax
+    def __init__(self, name="constant", initial=0.0):
         StressModelBase.__init__(self, One, name, pd.Timestamp.min,
-                                 pd.Timestamp.max, 1, 0, 0)
+                                 pd.Timestamp.max, None, initial, 0)
         self.set_init_parameters()
 
     def set_init_parameters(self):
-        self.parameters.loc[self.name + "_d"] = (
-            self.value, self.pmin, self.pmax, 1, self.name)
+        self.parameters = self.rfunc.get_init_parameters(self.name)
 
     def simulate(self, p=None):
         return p

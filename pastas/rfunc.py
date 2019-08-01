@@ -125,9 +125,9 @@ class Gamma(RfuncBase):
 
     Parameters
     ----------
-    up: bool, optional
+    up: bool or None, optional
         indicates whether a positive stress will cause the head to go up
-        (True, default) or down (False)
+        (True, default) or down (False), if None the head can go both ways.
     meanstress: float
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
@@ -153,9 +153,13 @@ class Gamma(RfuncBase):
         if self.up:
             parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
                                            100 / self.meanstress, 1, name)
-        else:
+        elif self.up is False:
             parameters.loc[name + '_A'] = (-1 / self.meanstress,
                                            -100 / self.meanstress, 0, 1, name)
+        else:
+            parameters.loc[name + '_A'] = (1 / self.meanstress,
+                                           np.nan, np.nan, 1, name)
+
         # if n is too small, the length of the response function is close to zero
         parameters.loc[name + '_n'] = (1, 0.1, 10, 1, name)
         parameters.loc[name + '_a'] = (10, 0.01, 5000, 1, name)
@@ -185,9 +189,9 @@ class Exponential(RfuncBase):
 
     Parameters
     ----------
-    up: bool, optional
+    up: bool or None, optional
         indicates whether a positive stress will cause the head to go up
-        (True, default) or down (False)
+        (True, default) or down (False), if None the head can go both ways.
     meanstress: float
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
@@ -210,11 +214,15 @@ class Exponential(RfuncBase):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
-            parameters.loc[name + '_A'] = (
-                1 / self.meanstress, 0, 100 / self.meanstress, 1, name)
+            parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
+                                           100 / self.meanstress, 1, name)
+        elif self.up is False:
+            parameters.loc[name + '_A'] = (-1 / self.meanstress,
+                                           -100 / self.meanstress, 0, 1, name)
         else:
-            parameters.loc[name + '_A'] = (
-                -1 / self.meanstress, -100 / self.meanstress, 0, 1, name)
+            parameters.loc[name + '_A'] = (1 / self.meanstress,
+                                           np.nan, np.nan, 1, name)
+
         parameters.loc[name + '_a'] = (10, 0.01, 5000, 1, name)
         return parameters
 
@@ -241,9 +249,9 @@ class Hantush(RfuncBase):
 
     Parameters
     ----------
-    up: bool, optional
+    up: bool or None, optional
         indicates whether a positive stress will cause the head to go up
-        (True, default) or down (False)
+        (True, default) or down (False), if None the head can go both ways.
     meanstress: float
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
@@ -285,11 +293,15 @@ class Hantush(RfuncBase):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
-            parameters.loc[name + '_A'] = (
-                1 / self.meanstress, 0, 100 / self.meanstress, 1, name)
+            parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
+                                           100 / self.meanstress, 1, name)
+        elif self.up is False:
+            parameters.loc[name + '_A'] = (-1 / self.meanstress,
+                                           -100 / self.meanstress, 0, 1, name)
         else:
-            parameters.loc[name + '_A'] = (
-                -1 / self.meanstress, -100 / self.meanstress, 0, 1, name)
+            parameters.loc[name + '_A'] = (1 / self.meanstress,
+                                           np.nan, np.nan, 1, name)
+
         parameters.loc[name + '_rho'] = (1, 1e-4, 10, 1, name)
         parameters.loc[name + '_cS'] = (100, 1e-3, 1e4, 1, name)
         return parameters
@@ -513,9 +525,12 @@ class One(RfuncBase):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
-            parameters.loc[name + '_d'] = (1, 0, 100, 1, name)
+            parameters.loc[name + '_d'] = (self.meanstress, 0, np.nan, 1, name)
+        elif self.up is False:
+            parameters.loc[name + '_d'] = (self.meanstress, np.nan, 0, 1, name)
         else:
-            parameters.loc[name + '_d'] = (-1, -100, 0, 1, name)
+            parameters.loc[name + '_d'] = (self.meanstress, np.nan, np.nan, 1,
+                                           name)
         return parameters
 
     def gain(self, p):
@@ -536,9 +551,9 @@ class FourParam(RfuncBase):
 
     Parameters
     ----------
-    up: bool, optional
+    up: bool or None, optional
         indicates whether a positive stress will cause the head to go up
-        (True, default) or down (False)
+        (True, default) or down (False), if None the head can go both ways.
     meanstress: float
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
@@ -566,9 +581,13 @@ class FourParam(RfuncBase):
         if self.up:
             parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
                                            100 / self.meanstress, 1, name)
-        else:
+        elif self.up is False:
             parameters.loc[name + '_A'] = (-1 / self.meanstress,
                                            -100 / self.meanstress, 0, 1, name)
+        else:
+            parameters.loc[name + '_A'] = (1 / self.meanstress,
+                                           np.nan, np.nan, 1, name)
+
         parameters.loc[name + '_n'] = (1, -10, 10, 1, name)
         parameters.loc[name + '_a'] = (10, 0.01, 5000, 1, name)
         parameters.loc[name + '_b'] = (10, 0.01, 5000, 1, name)
@@ -688,9 +707,9 @@ class FourParamQuad(FourParam):
 
     Parameters
     ----------
-    up: bool, optional
+    up: bool or None, optional
         indicates whether a positive stress will cause the head to go up
-        (True, default) or down (False)
+        (True, default) or down (False), if None the head can go both ways.
     meanstress: float
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
@@ -721,9 +740,9 @@ class DoubleExponential(RfuncBase):
 
     Parameters
     ----------
-    up: bool, optional
+    up: bool or None, optional
         indicates whether a positive stress will cause the head to go up
-        (True, default) or down (False)
+        (True, default) or down (False), if None the head can go both ways.
     meanstress: float
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
@@ -750,9 +769,12 @@ class DoubleExponential(RfuncBase):
         if self.up:
             parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
                                            100 / self.meanstress, 1, name)
-        else:
+        elif self.up is False:
             parameters.loc[name + '_A'] = (-1 / self.meanstress,
                                            -100 / self.meanstress, 0, 1, name)
+        else:
+            parameters.loc[name + '_A'] = (1 / self.meanstress,
+                                           np.nan, np.nan, 1, name)
 
         parameters.loc[name + '_alpha'] = (0.1, 0.01, 0.99, 1, name)
         parameters.loc[name + '_a1'] = (10, 0.01, 5000, 1, name)
@@ -788,9 +810,9 @@ class Edelman(RfuncBase):
 
     Parameters
     ----------
-    up: bool, optional
+    up: bool or None, optional
         indicates whether a positive stress will cause the head to go up
-        (True, default) or down (False)
+        (True, default) or down (False), if None the head can go both ways.
     meanstress: float
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
