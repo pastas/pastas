@@ -9,6 +9,7 @@ The following stressmodels are supported and tested:
 - StressModel2
 - FactorModel
 - StepModel
+- WellModel
 
 All other stressmodels are for research purposes only and are not (yet)
 fully supported and tested.
@@ -17,7 +18,6 @@ TODO
 ----
 - Test and support StepModel
 - Test and support LinearTrend
-- Test and support WellModel
 
 """
 
@@ -30,7 +30,7 @@ import pandas as pd
 from scipy.signal import fftconvolve
 
 from .decorators import set_parameter
-from .rfunc import One, Exponential
+from .rfunc import One, Exponential, HantushWellModel
 from .timeseries import TimeSeries
 
 logger = getLogger(__name__)
@@ -162,7 +162,7 @@ class StressModelBase:
                 data.append(TimeSeries(value, settings=settings[i]))
         else:
             logger.warning("provided stress format is unknown. Provide a"
-                           "Series,dict or list.")
+                           "Series, dict or list.")
         return data
 
     def dump_stress(self, series=True):
@@ -218,10 +218,10 @@ class StressModelBase:
             "stress": self.dump_stress(series)
         }
         return data
-    
+
     def get_nsplit(self):
         """Determine in how many timeseries the contribution can be splitted"""
-        if hasattr(self,'nsplit'):
+        if hasattr(self, 'nsplit'):
             return self.nsplit
         else:
             return len(self.stress)
@@ -641,30 +641,56 @@ class Constant(StressModelBase):
 class WellModel(StressModelBase):
     """Time series model consisting of the convolution of one or more
     stresses with one response function. The distance from an influence to
-    the location of the oseries has to be provided for each
+    the location of the oseries has to be provided for each stress.
 
     Parameters
     ----------
-    stress: pandas.DataFrame
-        Pandas DataFrame object containing the stresses.
-    rfunc: rfunc class
-        Response function used in the convolution with the stresses.
-    name: str
-        Name of the stress
+    stress : list
+        list containing the stresses timeseries.
+    rfunc : pastas.rfunc
+        WellModel only works with Hantush!
+    name : str
+        Name of the stressmodel.
+    distances : list or list-like
+        list of distances to oseries, must be ordered the same as the
+        stresses.
+    up : bool, optional
+        whether positive stress has increasing or decreasing effect on
+        the model, by default False, in which case positive stress lowers
+        e.g. the groundwater level.
+    cutoff : float, optional
+        percentage at which to cutoff the step response, by default 0.99.
+    settings : str, list of dict, optional
+        settings of the timeseries, by default "well".
+    sort_wells : bool, optional
+        sort wells from closest to furthest, by default True.
 
     Notes
     -----
     This class implements convolution of multiple series with a the same
-    response function. This is often applied when dealing with multiple
+    response function. This can be applied when dealing with multiple
     wells in a time series model.
 
     """
     _name = "WellModel"
 
-    def __init__(self, stress, rfunc, name, radius, up=False, cutoff=0.99,
-                 settings="well"):
+    def __init__(self, stress, rfunc, name, distances, up=False, cutoff=0.99,
+                 settings="well", sort_wells=True):
+        if not issubclass(rfunc, HantushWellModel):
+            raise NotImplementedError("WellModel only supports rfunc "
+                                      "HantushWellModel!")
 
-        meanstress = 1.0  # ? this should be something logical
+        # sort wells by distance
+        if sort_wells:
+            stress = [s for _, s in sorted(zip(distances, stress),
+                                           key=lambda pair: pair[0])]
+            if isinstance(settings, list):
+                settings = [s for _, s in sorted(zip(distances, settings),
+                                                 key=lambda pair: pair[0])]
+            distances.sort()
+
+        # get largest std for meanstress
+        meanstress = np.max([s.series.std() for s in stress])
 
         tmin = pd.Timestamp.max
         tmax = pd.Timestamp.min
@@ -677,15 +703,16 @@ class WellModel(StressModelBase):
 
         self.stress = self.handle_stress(stress, settings)
 
-        # Check if number of stresses and radii match
-        if len(self.stress) != len(radius) and radius:
-            logger.error("The number of stresses applied does not match the "
-                         "number of radii provided.")
+        # Check if number of stresses and distances match
+        if len(self.stress) != len(distances):
+            msg = "The number of stresses applied does not match the  number" \
+                  "of distances provided."
+            logger.error(msg)
+            raise ValueError(msg)
         else:
-            self.radius = radius
+            self.distances = distances
 
         self.freq = self.stress[0].settings["freq"]
-
         self.set_init_parameters()
 
     def set_init_parameters(self):
@@ -697,15 +724,13 @@ class WellModel(StressModelBase):
         h = pd.Series(data=0, index=self.stress[0].series.index,
                       name=self.name)
         stresses = self.get_stress(istress=istress)
-        radii = self.get_radii(irad=istress)
-        for stress, radius in zip(stresses, radii):
+        distances = self.get_distances(istress=istress)
+        for stress, r in zip(stresses, distances):
             npoints = stress.index.size
-            # TODO Make response function that take the radius as input
-            # b = self.rfunc.block(p, dt=dt, radius=radius)
-            b = self.rfunc.block(p, dt)
+            p_with_r = np.concatenate([p, np.asarray([r])])
+            b = self.rfunc.block(p_with_r, dt)
             c = fftconvolve(stress, b, 'full')[:npoints]
             h = h.add(pd.Series(c, index=stress.index), fill_value=0.0)
-
         return h
 
     def get_stress(self, p=None, istress=None, **kwargs):
@@ -714,11 +739,63 @@ class WellModel(StressModelBase):
         else:
             return [self.stress[istress].series]
 
-    def get_radii(self, irad=None):
-        if irad is None:
-            return self.radius
+    def get_distances(self, istress=None):
+        if istress is None:
+            return self.distances
         else:
-            return [self.radius[irad]]
+            return [self.distances[istress]]
+
+    def get_parameters(self, model=None, istress=None):
+        """ Get parameters including distance to observation point
+        and return as array (dimensions (nstresses, 4))
+
+        Parameters
+        ----------
+        model : pastas.Model, optional
+            if not None (default), use optimal model parameters
+        istress : int, optional
+            if not None (default), return all parameters
+
+        Returns
+        -------
+        p : np.array
+            parameters for each stress as row of array, if istress is used
+            returns only one row.
+
+        """
+        if model is None:
+            p = self.parameters.initial.values
+        else:
+            p = model.get_parameters(self.name)
+
+        distances = np.array(self.get_distances(istress=istress))
+        if len(distances) > 1:
+            p_with_r = np.concatenate([np.tile(p, (len(distances), 1)),
+                                       distances[:, np.newaxis]], axis=1)
+        else:
+            p_with_r = np.r_[p, distances]
+        return p_with_r
+
+    def dump(self, series=True):
+        """Method to export the WellModel object.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct the
+            WellModel object.
+
+        """
+        data = {
+            "stressmodel": self._name,
+            "rfunc": self.rfunc._name,
+            "name": self.name,
+            "up": True if self.rfunc.up is 1 else False,
+            "distances": self.distances,
+            "cutoff": self.rfunc.cutoff,
+            "stress": self.dump_stress(series)
+        }
+        return data
 
 
 class FactorModel(StressModelBase):
@@ -897,7 +974,7 @@ class RechargeModel(StressModelBase):
             self.stress.append(self.temp)
         self.freq = self.prec.settings["freq"]
         self.set_init_parameters()
-        
+
         self.nsplit = 1
 
     def set_init_parameters(self):
