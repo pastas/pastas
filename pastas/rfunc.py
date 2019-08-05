@@ -352,6 +352,7 @@ class HantushWellModel(RfuncBase):
     - lab: lambda, the r parameter is passed separately to calculate
         rho = r / lambda internally
     - cS: stays the same
+    - r: distance, used to calculate rho, see lab.
 
     Parameters
     ----------
@@ -370,10 +371,10 @@ class HantushWellModel(RfuncBase):
     It's parameters are (note the addition of the r parameter in this
     implementation):
 
-    .. math:: p[0] = A = \\frac{1}{4 \\pi kD}
+    .. math:: p[0] = A = \\frac{1}{4 \\pi kD} \\cdot 2 k_0 \\left( \\frac{r}{\\lambda} \\right)
     .. math:: p[1] = lab = \\lambda
     .. math:: p[2] = cS
-    .. math:: p[3] = r (not optimized)
+    .. math:: p[3] = r \\text{(not optimized)}
 
     where :math:`\\lambda = \\sqrt{\\frac{kD}{c}}`
 
@@ -406,7 +407,7 @@ class HantushWellModel(RfuncBase):
         else:
             parameters.loc[name + '_A'] = (
                 -1 / self.meanstress, -100 / self.meanstress, 0, 1, name)
-        parameters.loc[name + '_lab'] = (100, 1, 1e6, 1, name)
+        parameters.loc[name + '_lab'] = (1000, 1, 1e6, 1, name)
         parameters.loc[name + '_cS'] = (100, 1e-3, 1e4, 1, name)
         return parameters
 

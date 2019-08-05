@@ -680,7 +680,8 @@ class WellModel(StressModelBase):
                                       "HantushWellModel!")
 
         # sort wells by distance
-        if sort_wells:
+        self.sort_wells = sort_wells
+        if self.sort_wells:
             stress = [s for _, s in sorted(zip(distances, stress),
                                            key=lambda pair: pair[0])]
             if isinstance(settings, list):
@@ -720,6 +721,9 @@ class WellModel(StressModelBase):
         # r/lambda <= 702 else get_tmax() will yield np.inf
         self.parameters.loc[self.name + "_lab", "pmin"] = \
             np.max(self.distances) / 702.
+        # set initial lambda to largest distance
+        self.parameters.loc[self.name + "_lab", "initial"] = \
+            np.max(self.distances)
 
     def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1,
                  istress=None):
@@ -796,7 +800,8 @@ class WellModel(StressModelBase):
             "up": True if self.rfunc.up is 1 else False,
             "distances": self.distances,
             "cutoff": self.rfunc.cutoff,
-            "stress": self.dump_stress(series)
+            "stress": self.dump_stress(series),
+            "sort_wells": self.sort_wells
         }
         return data
 
