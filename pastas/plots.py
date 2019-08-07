@@ -547,9 +547,9 @@ class TrackSolve:
 
     Notes
     -----
-    - Requires the user to use a matplotlib backend that supports interactive
+    - Requires a matplotlib backend that supports interactive
       plotting, i.e. mpl.use("TkAgg").
-    - Some possible speedups:
+    - Some possible speedups on the matplotlib side:
         - mpl.style.use("fast")
         - mpl.rcParams['path.simplify_threshold'] = 1.0
     - Since only parameters are passed to callback function in ml.solve,
@@ -569,7 +569,7 @@ class TrackSolve:
 
     Examples
     --------
-    Create a track object for your model:
+    Create a TrackSolve object for your model:
 
     >>> track = TrackSolve(ml)
 
@@ -623,11 +623,11 @@ class TrackSolve:
 
         # get observations
         self.obs = self.ml.observations(tmin=self.tmin,
-                                        tmax=self.tmax).values
+                                        tmax=self.tmax)
         # calculate EVP
-        self.evp = self._calc_evp(res.values)
+        self.evp = self._calc_evp(res.values, self.obs.values)
 
-    def append_params(self, params):
+    def _append_params(self, params):
         """Append parameters to self.parameters DataFrame and
         update itercount, rmse values and evp.
 
@@ -653,7 +653,7 @@ class TrackSolve:
             self.rmse_noise = np.r_[self.rmse_noise, np.sqrt(np.sum(n_res**2))]
 
         # recalculate EVP
-        self.evp = self._calc_evp(r_res.values)
+        self.evp = self._calc_evp(r_res.values, self.obs.values)
 
     def _update_axes(self):
         """extend xlim if no. of iterations exceeds
@@ -664,14 +664,19 @@ class TrackSolve:
             iax.set_xlim(right=self.viewlim)
             self.fig.canvas.draw()
 
-    def _calc_evp(self, res):
+    def _update_settings(self):
+        self.tmin = self.ml.settings["tmin"]
+        self.tmax = self.ml.settings["tmax"]
+        self.freq = self.ml.settings["freq"]
+
+    def _calc_evp(self, res, obs):
         """ calculate evp
         """
-        if self.obs.var() == 0.0:
+        if obs.var() == 0.0:
             evp = 1.
         else:
             evp = max(0.0, (1 - (res.var(ddof=0) /
-                                 self.obs.var(ddof=0))))
+                                 obs.var(ddof=0))))
         return evp
 
     def _noise(self, params):
@@ -748,13 +753,13 @@ class TrackSolve:
         self.ax0, self.ax1, self.ax2 = self.axes
 
         # plot oseries
-        self.ml.oseries.series.plot(marker=".", ls="none", label="observations",
-                                    color="k", ms=4, x_compat=True, ax=self.ax0)
+        self.obs.plot(marker=".", ls="none", label="observations",
+                      color="k", ms=4, x_compat=True, ax=self.ax0)
 
         # plot simulation
         sim = self._simulate()
         self.simplot, = self.ax0.plot(sim.index, sim, label="model")
-        self.ax0.set_ylabel("Oseries")
+        self.ax0.set_ylabel("oseries/model")
         self.ax0.set_title("Iteration: {0} (EVP: {1:.2%})".format(self.itercount,
                                                                   self.evp))
         self.ax0.legend(loc="lower right")
@@ -828,7 +833,10 @@ class TrackSolve:
         """
 
         # update parameters
-        self.append_params(params)
+        self._append_params(params)
+
+        # update settings from ml.settings
+        self._update_settings()
 
         # check if figure should be updated
         if self.itercount % self.update_iter != 0:
