@@ -657,7 +657,7 @@ class Model:
         # Store the solve instance
         if solver is None:
             if self.solver is None:
-                solver = LeastSquares(model=self)
+                self.solver = LeastSquares(model=self)
                 self.settings["solver"] = solver._name
         elif not issubclass(solver, self.solver.__class__):
             self.solver = solver(model=self)
