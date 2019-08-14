@@ -88,6 +88,7 @@ class Model:
         self.constant = None
         self.transform = None
         self.noisemodel = None
+        self.solver = None
 
         # Default solve/simulation settings
         self.settings = {
@@ -652,11 +653,17 @@ class Model:
         # Initialize the model
         self.initialize(tmin, tmax, freq, warmup, noise, weights, initial,
                         fit_constant)
-        self.settings["solver"] = solver._name
+
+        # Store the solve instance
+        if self.solver is None:
+            self.solver = solver
+            self.settings["solver"] = solver._name
+        elif not issubclass(solver, self.solver):
+            self.solver = solver
+            self.settings["solver"] = solver._name
 
         # Solve model
-        self.fit = solver(self, noise=self.settings["noise"],
-                          weights=self.settings["weights"], **kwargs)
+        self.fit = self.solver(self, noise=noise, weights=weights, **kwargs)
 
         if not self.settings['fit_constant']:
             # Determine the residuals
