@@ -656,14 +656,14 @@ class Model:
 
         # Store the solve instance
         if self.solver is None:
-            self.solver = solver
+            self.solver = solver(model=self)
             self.settings["solver"] = solver._name
-        elif not issubclass(solver, self.solver):
-            self.solver = solver
+        elif not issubclass(solver, self.solver.__class__):
+            self.solver = solver(model=self)
             self.settings["solver"] = solver._name
 
         # Solve model
-        self.fit = self.solver(self, noise=noise, weights=weights, **kwargs)
+        self.fit = self.solver.solve(noise=noise, weights=weights, **kwargs)
 
         if not self.settings['fit_constant']:
             # Determine the residuals
@@ -673,8 +673,8 @@ class Model:
             mask = self.parameters.name == self.constant.name
             self.fit.optimal_params[mask] = res.mean()
 
-        self.parameters.optimal = self.fit.optimal_params
-        self.parameters.stderr = self.fit.stderr
+        self.parameters.optimal = self.solver.optimal_params
+        self.parameters.stderr = self.solver.stderr
 
         if report:
             print(self.fit_report())
@@ -1311,11 +1311,11 @@ class Model:
         if output != "full":
             raise NotImplementedError
 
-        if self.fit is None:
+        if self.solver is None:
             return 'Model is not optimized or read from file. Solve first.'
 
         model = {
-            "nfev": self.fit.nfev,
+            "nfev": self.solver.nfev,
             "nobs": self.oseries_calib.index.size,
             "noise": self.settings["noise"],
             "tmin": str(self.settings["tmin"]),

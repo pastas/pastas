@@ -41,8 +41,8 @@ class BaseSolver:
 
     """
 
-    def __init__(self):
-
+    def __init__(self, model):
+        self.model = model
         # Parameters attributes
         self.popt = None  # Optimal values of the parameters
         self.stderr = None  # Standard error of parameters
@@ -53,7 +53,7 @@ class BaseSolver:
         self.nfev = None  # number of function evaluations
         self.fit = None  # Object that is returned by the optimization method
 
-    def misfit(self, parameters, noise, model, weights=None, callback=None):
+    def misfit(self, parameters, noise, weights=None, callback=None):
         """This method is called by all solvers to obtain a series that are
         minimized in the optimization proces. It handles the application of
         the weigths, a noisemodel and other optimization options.
@@ -63,8 +63,6 @@ class BaseSolver:
         parameters: list, numpy.ndarray
             list with the parameters
         noise: Boolean
-        model: pastas.Model
-            Pastas Model instance
         weights: pandas.Series, optional
             pandas Series by which the residual or noise series are
             multiplied. Typically values between 0 and 1.
@@ -81,9 +79,9 @@ class BaseSolver:
 
         # Get the residuals or the noise
         if noise:
-            rv = model.noise(parameters)
+            rv = self.model.noise(parameters)
         else:
-            rv = model.residuals(parameters)
+            rv = self.model.residuals(parameters)
 
         # Determine if weights need to be applied
         if weights is not None:
@@ -118,11 +116,12 @@ class LeastSquares(BaseSolver):
     """
     _name = "LeastSquares"
 
-    def __init__(self, model, noise=True, weights=None, callback=None,
-                 **kwargs):
-        BaseSolver.__init__(self)
+    def __init__(self, model):
+        BaseSolver.__init__(self, model=model)
 
-        self.modelparameters = model.parameters
+    def solve(self, noise=True, weights=None, callback=None,
+              **kwargs):
+        self.modelparameters = self.model.parameters
         self.vary = self.modelparameters.vary.values.astype('bool')
         self.initial = self.modelparameters.initial.values.copy()
         parameters = self.modelparameters.loc[self.vary]
@@ -134,12 +133,11 @@ class LeastSquares(BaseSolver):
 
         self.fit = least_squares(self.objfunction,
                                  x0=parameters.initial.values, bounds=bounds,
-                                 args=(noise, model, weights, callback),
-                                 **kwargs)
+                                 args=(noise, weights, callback), **kwargs)
 
         self.nfev = self.fit.nfev
 
-        pcov = self.get_covariances(self.fit, model)
+        pcov = self.get_covariances(self.fit)
         # self.pcor = self.get_correlations(self.pcov)
 
         # sig, pcov, pcor = self.get_covcorrmatrix(model)
@@ -154,15 +152,15 @@ class LeastSquares(BaseSolver):
         self.stderr[self.vary] = np.sqrt(np.diag(self.pcov))
         self.report = None
 
-    def objfunction(self, parameters, noise, model, weights, callback):
+    def objfunction(self, parameters, noise, weights, callback):
         """
 
         Parameters
         ----------
         parameters
         noise
-        model
         weights
+        callback
 
         Returns
         -------
@@ -171,11 +169,11 @@ class LeastSquares(BaseSolver):
         p = self.initial
         p[self.vary] = parameters
 
-        res = self.misfit(p, noise, model, weights, callback)
+        res = self.misfit(p, noise, weights, callback)
 
         return res
 
-    def get_covariances(self, res, model, absolute_sigma=False):
+    def get_covariances(self, res, absolute_sigma=False):
         """Method to get the covariance matrix from the jacobian.
 
         Parameters
@@ -201,7 +199,7 @@ class LeastSquares(BaseSolver):
         s = s[s > threshold]
         VT = VT[:s.size]
         pcov = np.dot(VT.T / s ** 2, VT)
-        n_param = model.parameters.index.size
+        n_param = self.model.parameters.index.size
         warn_cov = False
         if pcov is None:
             # indeterminate covariance
@@ -209,8 +207,8 @@ class LeastSquares(BaseSolver):
             pcov.fill(np.inf)
             warn_cov = True
         elif not absolute_sigma:
-            if model.oseries.series.index.size > n_param:
-                s_sq = cost / (model.oseries.series.index.size - n_param)
+            if self.model.oseries.series.index.size > n_param:
+                s_sq = cost / (self.model.oseries.series.index.size - n_param)
                 pcov = pcov * s_sq
             else:
                 pcov.fill(np.inf)
@@ -235,17 +233,20 @@ class LmfitSolve(BaseSolver):
     """
     _name = "LmfitSolve"
 
-    def __init__(self, model, noise=True, weights=None, **kwargs):
+    def __init__(self, model):
         try:
+            global lmfit
             import lmfit  # Import Lmfit here, so it is no dependency
-        except ImportError as e:
+        except ImportError:
             msg = "lmfit not installed. Please install lmfit first."
             raise ImportError(msg)
-        BaseSolver.__init__(self)
+        BaseSolver.__init__(self, model=model)
+
+    def solve(self, noise=True, weights=None, **kwargs):
 
         # Deal with the parameters
         parameters = lmfit.Parameters()
-        p = model.parameters[['initial', 'pmin', 'pmax', 'vary']]
+        p = self.model.parameters[['initial', 'pmin', 'pmax', 'vary']]
         for k in p.index:
             pp = np.where(p.loc[k].isnull(), None, p.loc[k])
             parameters.add(k, value=pp[0], min=pp[1], max=pp[2], vary=pp[3])
@@ -256,7 +257,7 @@ class LmfitSolve(BaseSolver):
             kwargs = {"ftol": 1e-3, "epsfcn": 1e-4}
 
         self.fit = lmfit.minimize(fcn=self.objfunction, params=parameters,
-                                  args=(noise, model, weights), **kwargs)
+                                  args=(noise, weights), **kwargs)
 
         # Set all parameter attributes
         self.optimal_params = np.array([p.value for p in
@@ -269,9 +270,9 @@ class LmfitSolve(BaseSolver):
         self.nfev = self.fit.nfev
         self.report = lmfit.fit_report(self.fit)
 
-    def objfunction(self, parameters, noise, model, weights):
+    def objfunction(self, parameters, noise, weights):
         param = np.array([p.value for p in parameters.values()])
-        res = self.misfit(param, noise, model, weights)
+        res = self.misfit(param, noise, weights)
         return res
 
 
