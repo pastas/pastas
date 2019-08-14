@@ -76,7 +76,6 @@ class BaseSolver:
             residuals series (if noise=False) or noise series (if noise=True)
 
         """
-
         # Get the residuals or the noise
         if noise:
             rv = self.model.noise(parameters)
@@ -92,7 +91,7 @@ class BaseSolver:
         if callback:
             callback(parameters)
 
-        return rv
+        return rv.values
 
 
 class LeastSquares(BaseSolver):
@@ -119,8 +118,7 @@ class LeastSquares(BaseSolver):
     def __init__(self, model):
         BaseSolver.__init__(self, model=model)
 
-    def solve(self, noise=True, weights=None, callback=None,
-              **kwargs):
+    def solve(self, noise=True, weights=None, callback=None, **kwargs):
         self.modelparameters = self.model.parameters
         self.vary = self.modelparameters.vary.values.astype('bool')
         self.initial = self.modelparameters.initial.values.copy()
@@ -242,7 +240,7 @@ class LmfitSolve(BaseSolver):
             raise ImportError(msg)
         BaseSolver.__init__(self, model=model)
 
-    def solve(self, noise=True, weights=None, **kwargs):
+    def solve(self, noise=True, weights=None, callback=None, **kwargs):
 
         # Deal with the parameters
         parameters = lmfit.Parameters()
@@ -257,22 +255,22 @@ class LmfitSolve(BaseSolver):
             kwargs = {"ftol": 1e-3, "epsfcn": 1e-4}
 
         self.fit = lmfit.minimize(fcn=self.objfunction, params=parameters,
-                                  args=(noise, weights), **kwargs)
+                                  args=(noise, weights, callback), **kwargs)
 
         # Set all parameter attributes
         self.optimal_params = np.array([p.value for p in
                                         self.fit.params.values()])
         self.stderr = np.array([p.stderr for p in self.fit.params.values()])
-        if self.fit.covar is not None:
-            self.pcov = self.fit.covar
+        if hasattr(self.fit, "covar"):
+            if self.fit.covar is not None:
+                self.pcov = self.fit.covar
 
         # Set all optimization attributes
         self.nfev = self.fit.nfev
-        self.report = lmfit.fit_report(self.fit)
 
-    def objfunction(self, parameters, noise, weights):
+    def objfunction(self, parameters, noise, weights, callback):
         param = np.array([p.value for p in parameters.values()])
-        res = self.misfit(param, noise, weights)
+        res = self.misfit(param, noise, weights, callback)
         return res
 
 

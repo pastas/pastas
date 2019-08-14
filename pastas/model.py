@@ -602,7 +602,7 @@ class Model:
             self.parameters.loc["constant_d", "initial"] = 0.0
             self.normalize_residuals = True
 
-    def solve(self, tmin=None, tmax=None, freq=None, warmup=None, noise=None,
+    def solve(self, tmin=None, tmax=None, freq=None, warmup=None, noise=True,
               solver=LeastSquares, report=True, initial=True, weights=None,
               fit_constant=True, **kwargs):
         """Method to solve the time series model.
