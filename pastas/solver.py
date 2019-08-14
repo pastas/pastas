@@ -144,11 +144,14 @@ class LeastSquares(BaseSolver):
         self.pcor = DataFrame(None, index=parameters.index,
                               columns=parameters.index)
 
-        self.optimal_params = self.initial
-        self.optimal_params[self.vary] = self.fit.x
-        self.stderr = np.zeros(len(self.optimal_params))
-        self.stderr[self.vary] = np.sqrt(np.diag(self.pcov))
-        self.report = None
+        # Prepare return values
+        success = self.fit.success
+        optimal = self.initial
+        optimal[self.vary] = self.fit.x
+        stderr = np.zeros(len(optimal))
+        stderr[self.vary] = np.sqrt(np.diag(self.pcov))
+
+        return success, optimal, stderr
 
     def objfunction(self, parameters, noise, weights, callback):
         """
@@ -258,15 +261,18 @@ class LmfitSolve(BaseSolver):
                                   args=(noise, weights, callback), **kwargs)
 
         # Set all parameter attributes
-        self.optimal_params = np.array([p.value for p in
-                                        self.fit.params.values()])
-        self.stderr = np.array([p.stderr for p in self.fit.params.values()])
         if hasattr(self.fit, "covar"):
             if self.fit.covar is not None:
                 self.pcov = self.fit.covar
 
         # Set all optimization attributes
         self.nfev = self.fit.nfev
+
+        success = self.fit.success
+        optimal = np.array([p.value for p in self.fit.params.values()])
+        stderr = np.array([p.stderr for p in self.fit.params.values()])
+
+        return success, optimal, stderr
 
     def objfunction(self, parameters, noise, weights, callback):
         param = np.array([p.value for p in parameters.values()])

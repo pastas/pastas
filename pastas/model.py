@@ -603,7 +603,7 @@ class Model:
             self.normalize_residuals = True
 
     def solve(self, tmin=None, tmax=None, freq=None, warmup=None, noise=True,
-              solver=LeastSquares, report=True, initial=True, weights=None,
+              solver=None, report=True, initial=True, weights=None,
               fit_constant=True, **kwargs):
         """Method to solve the time series model.
 
@@ -655,26 +655,26 @@ class Model:
                         fit_constant)
 
         # Store the solve instance
-        if self.solver is None:
-            self.solver = solver(model=self)
-            self.settings["solver"] = solver._name
+        if solver is None:
+            if self.solver is None:
+                solver = LeastSquares(model=self)
+                self.settings["solver"] = solver._name
         elif not issubclass(solver, self.solver.__class__):
             self.solver = solver(model=self)
             self.settings["solver"] = solver._name
 
         # Solve model
-        self.fit = self.solver.solve(noise=noise, weights=weights, **kwargs)
+        success, popt, perr = self.solver.solve(noise=noise, weights=weights,
+                                                **kwargs)
 
         if not self.settings['fit_constant']:
-            # Determine the residuals
+            # Determine the residuals and set the constant to their mean
             self.normalize_residuals = False
-            res = self.residuals(self.fit.optimal_params)
-            # set the constant to the mean of the residuals
-            mask = self.parameters.name == self.constant.name
-            self.fit.optimal_params[mask] = res.mean()
+            res = self.residuals(popt)
+            popt[self.parameters.name == self.constant.name] = res.mean()
 
-        self.parameters.optimal = self.solver.optimal_params
-        self.parameters.stderr = self.solver.stderr
+        self.parameters.optimal = popt
+        self.parameters.stderr = perr
 
         if report:
             print(self.fit_report())
