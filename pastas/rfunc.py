@@ -155,7 +155,8 @@ class Gamma(RfuncBase):
                                            100 / self.meanstress, True, name)
         elif self.up is False:
             parameters.loc[name + '_A'] = (-1 / self.meanstress,
-                                           -100 / self.meanstress, 0, True, name)
+                                           -100 / self.meanstress, 0, True,
+                                           name)
         else:
             parameters.loc[name + '_A'] = (1 / self.meanstress,
                                            np.nan, np.nan, True, name)
@@ -218,7 +219,8 @@ class Exponential(RfuncBase):
                                            100 / self.meanstress, True, name)
         elif self.up is False:
             parameters.loc[name + '_A'] = (-1 / self.meanstress,
-                                           -100 / self.meanstress, 0, True, name)
+                                           -100 / self.meanstress, 0, True,
+                                           name)
         else:
             parameters.loc[name + '_A'] = (1 / self.meanstress,
                                            np.nan, np.nan, True, name)
@@ -297,7 +299,8 @@ class Hantush(RfuncBase):
                                            100 / self.meanstress, True, name)
         elif self.up is False:
             parameters.loc[name + '_A'] = (-1 / self.meanstress,
-                                           -100 / self.meanstress, 0, True, name)
+                                           -100 / self.meanstress, 0, True,
+                                           name)
         else:
             parameters.loc[name + '_A'] = (1 / self.meanstress,
                                            np.nan, np.nan, True, name)
@@ -526,12 +529,15 @@ class One(RfuncBase):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
-            parameters.loc[name + '_d'] = (self.meanstress, 0, np.nan, True, name)
+            parameters.loc[name + '_d'] = (
+            self.meanstress, 0, np.nan, True, name)
         elif self.up is False:
-            parameters.loc[name + '_d'] = (self.meanstress, np.nan, 0, True, name)
+            parameters.loc[name + '_d'] = (
+            self.meanstress, np.nan, 0, True, name)
         else:
-            parameters.loc[name + '_d'] = (self.meanstress, np.nan, np.nan, True,
-                                           name)
+            parameters.loc[name + '_d'] = (
+            self.meanstress, np.nan, np.nan, True,
+            name)
         return parameters
 
     def gain(self, p):
@@ -584,7 +590,8 @@ class FourParam(RfuncBase):
                                            100 / self.meanstress, True, name)
         elif self.up is False:
             parameters.loc[name + '_A'] = (-1 / self.meanstress,
-                                           -100 / self.meanstress, 0, True, name)
+                                           -100 / self.meanstress, 0, True,
+                                           name)
         else:
             parameters.loc[name + '_A'] = (1 / self.meanstress,
                                            np.nan, np.nan, True, name)
@@ -772,7 +779,8 @@ class DoubleExponential(RfuncBase):
                                            100 / self.meanstress, True, name)
         elif self.up is False:
             parameters.loc[name + '_A'] = (-1 / self.meanstress,
-                                           -100 / self.meanstress, 0, True, name)
+                                           -100 / self.meanstress, 0, True,
+                                           name)
         else:
             parameters.loc[name + '_A'] = (1 / self.meanstress,
                                            np.nan, np.nan, True, name)
