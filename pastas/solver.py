@@ -30,26 +30,35 @@ logger = getLogger(__name__)
 
 class BaseSolver:
     _name = "BaseSolver"
-    __doc__ = """Basesolver class that contains the basic function for each
-    solver.
+    __doc__ = """All solver instances inherit from the BaseSolver class.
 
-    A solver is implemented with a separate init method and objective function
-    that returns the necessary format that is required by the specific solver.
-    The objective function calls the get_residuals method of the BaseSolver
-    class, which calculates the residuals or noise (depending on the
-    noise keyword) and applies weights (depending on the weights keyword).
+    Attributes
+    ----------
+    model: pastas.Model instance
+    pcor: pandas.DataFrame
+        Pandas DataFrame with the correlation between the optimized parameters.
+    pcov: pandas.DataFrame
+        Pandas DataFrame with the correlation between the optimized parameters.
+    nfev: int
+        Number of times the model is called during optimization.
+    result: object
+        The object returned by the minimization method that is used. It depends
+        on the solver what is actually returned.
+    
+    Methods
+    -------
+    misfit
+    get_correlations
 
+    \b
     """
 
     def __init__(self, model):
         self.model = model
-        # Parameters attributes
         self.pcor = None  # Correlation between parameters
         self.pcov = None  # Covariances of the parameters
-
-        # Optimization attributes
         self.nfev = None  # number of function evaluations
-        self.fit = None  # Object that is returned by the optimization method
+        self.result = None  # Object returned by the optimization method
 
     def misfit(self, parameters, noise, weights=None, callback=None):
         """This method is called by all solvers to obtain a series that are
@@ -115,27 +124,28 @@ class BaseSolver:
 
 
 class LeastSquares(BaseSolver):
-    """Solver based on Scipy's least_squares method [1]_.
-
-    Notes
-    -----
-    This class is the default solve method called by the pastas Model solve
-    method. All kwargs provided to the Model.solve() method are forwarded to
-    the solver. From there, they are forwarded to scipy least_squares solver.
-
-    Examples
-    --------
-
-    >>> ml.solve(solver=LeastSquares)
-
-    References
-    ----------
-    .. [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
-
-    """
     _name = "LeastSquares"
 
     def __init__(self, model):
+        """Solver based on Scipy's least_squares method [1]_.
+
+        Notes
+        -----
+        This class is the default solve method called by the pastas Model solve
+        method. All kwargs provided to the Model.solve() method are forwarded
+        to the solver. From there, they are forwarded to Scipy least_squares
+        solver.
+
+        Examples
+        --------
+
+        >>> ml.solve(solver=ps.LeastSquares)
+
+        References
+        ----------
+        .. [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
+
+        """
         BaseSolver.__init__(self, model=model)
 
     def solve(self, noise=True, weights=None, callback=None, **kwargs):
@@ -149,48 +159,32 @@ class LeastSquares(BaseSolver):
         pmax = np.where(parameters.pmax.isnull(), np.inf, parameters.pmax)
         bounds = (pmin, pmax)
 
-        self.fit = least_squares(self.objfunction,
-                                 x0=parameters.initial.values, bounds=bounds,
-                                 args=(noise, weights, callback), **kwargs)
+        self.result = least_squares(self.objfunction, bounds=bounds,
+                                    x0=parameters.initial.values,
+                                    args=(noise, weights, callback), **kwargs)
 
-        self.nfev = self.fit.nfev
-
-        pcov = self.get_covariances(self.fit.jac, self.fit.cost)
+        pcov = self.get_covariances(self.result.jac, self.result.cost)
         pcor = self.get_correlations(pcov)
 
         self.pcov = DataFrame(pcov, index=parameters.index,
                               columns=parameters.index)
         self.pcor = DataFrame(pcor, index=parameters.index,
                               columns=parameters.index)
+        self.nfev = self.result.nfev
 
         # Prepare return values
-        success = self.fit.success
+        success = self.result.success
         optimal = self.initial
-        optimal[self.vary] = self.fit.x
+        optimal[self.vary] = self.result.x
         stderr = np.zeros(len(optimal))
         stderr[self.vary] = np.sqrt(np.diag(self.pcov))
 
         return success, optimal, stderr
 
     def objfunction(self, parameters, noise, weights, callback):
-        """
-
-        Parameters
-        ----------
-        parameters
-        noise
-        weights
-        callback
-
-        Returns
-        -------
-
-        """
         p = self.initial
         p[self.vary] = parameters
-
         res = self.misfit(p, noise, weights, callback)
-
         return res
 
     def get_covariances(self, jacobian, cost, absolute_sigma=False):
@@ -242,18 +236,18 @@ class LeastSquares(BaseSolver):
 
 
 class LmfitSolve(BaseSolver):
-    """Solving the model using the LmFit solver [LM]_. This is basically a
-    wrapper around the scipy solvers, adding some cool functionality for
-    boundary conditions.
-
-    References
-    ----------
-    .. [LM] https://github.com/lmfit/lmfit-py/
-
-    """
     _name = "LmfitSolve"
 
     def __init__(self, model):
+        """Solving the model using the LmFit solver [LM]_.
+
+         This is basically a wrapper around the scipy solvers, adding some
+         cool functionality for boundary conditions.
+
+        References
+        ----------
+        .. [LM] https://github.com/lmfit/lmfit-py/
+        """
         try:
             global lmfit
             import lmfit  # Import Lmfit here, so it is no dependency

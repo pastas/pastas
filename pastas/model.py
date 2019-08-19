@@ -88,7 +88,6 @@ class Model:
         self.constant = None
         self.transform = None
         self.noisemodel = None
-        self.solver = None
 
         # Default solve/simulation settings
         self.settings = {
@@ -656,16 +655,16 @@ class Model:
 
         # Store the solve instance
         if solver is None:
-            if self.solver is None:
-                self.solver = LeastSquares(model=self)
-                self.settings["solver"] = self.solver._name
-        elif not issubclass(solver, self.solver.__class__):
-            self.solver = solver(model=self)
+            if self.fit is None:
+                self.fit = LeastSquares(model=self)
+                self.settings["solver"] = self.fit._name
+        elif not issubclass(solver, self.fit.__class__):
+            self.fit = solver(model=self)
             self.settings["solver"] = solver._name
 
         # Solve model
-        success, popt, perr = self.solver.solve(noise=noise, weights=weights,
-                                                **kwargs)
+        success, popt, perr = self.fit.solve(noise=noise, weights=weights,
+                                             **kwargs)
 
         if not self.settings['fit_constant']:
             # Determine the residuals and set the constant to their mean
@@ -1294,7 +1293,6 @@ class Model:
         output: str
             NotImplementedYet
 
-
         Returns
         -------
         report: str
@@ -1311,11 +1309,11 @@ class Model:
         if output != "full":
             raise NotImplementedError
 
-        if self.solver is None:
+        if self.fit is None:
             return 'Model is not optimized or read from file. Solve first.'
 
         model = {
-            "nfev": self.solver.nfev,
+            "nfev": self.fit.nfev,
             "nobs": self.oseries_calib.index.size,
             "noise": self.settings["noise"],
             "tmin": str(self.settings["tmin"]),
@@ -1376,7 +1374,7 @@ class Model:
 
         if output == "full":
             cor = dict()
-            pcor = self.solver.pcor
+            pcor = self.fit.pcor
             for idx in pcor:
                 for col in pcor:
                     if (np.abs(pcor.loc[idx, col]) > 0.3) and (idx != col) \
