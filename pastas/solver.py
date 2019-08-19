@@ -21,9 +21,9 @@ To solve a model the following syntax can be used:
 from logging import getLogger
 
 import numpy as np
-from pandas import DataFrame, Series
+from pandas import DataFrame
 from scipy.linalg import svd
-from scipy.optimize import least_squares, differential_evolution, fmin
+from scipy.optimize import least_squares
 
 logger = getLogger(__name__)
 
@@ -138,7 +138,6 @@ class LeastSquares(BaseSolver):
         pcov = self.get_covariances(self.fit)
         # self.pcor = self.get_correlations(self.pcov)
 
-        # sig, pcov, pcor = self.get_covcorrmatrix(model)
         self.pcov = DataFrame(pcov, index=parameters.index,
                               columns=parameters.index)
         self.pcor = DataFrame(None, index=parameters.index,
@@ -278,113 +277,3 @@ class LmfitSolve(BaseSolver):
         param = np.array([p.value for p in parameters.values()])
         res = self.misfit(param, noise, weights, callback)
         return res
-
-
-class DESolve(BaseSolver):
-    _name = "DESolve"
-
-    def __init__(self, model, noise=True):
-        BaseSolver.__init__(self)
-
-        self.model = model
-        self.noise = noise
-        self.parameters = self.model.parameters.initial.values
-        self.vary = self.model.parameters.vary.values.astype('bool')
-        self.pmin = self.model.parameters.pmin.values[self.vary]
-        self.pmax = self.model.parameters.pmax.values[self.vary]
-        self.fit = differential_evolution(self.objfunction,
-                                          zip(self.pmin, self.pmax))
-        self.optimal_params = self.model.parameters.initial.values
-        self.optimal_params[self.vary] = self.fit.values()[3]
-        self.report = str(self.fit)
-
-    def objfunction(self, parameters):
-        print('.'),
-        self.parameters[self.vary] = parameters
-
-        if self.noise:
-            res = self.model.noise(self.parameters)
-        else:
-            res = self.model.residuals(self.parameters)
-
-        return sum(res ** 2)
-
-
-class MarkSolver(BaseSolver):
-    """Experimental solver
-    """
-    _name = "MarkSolver"
-
-    def __init__(self, model, noise=True, weights=None, **kwargs):
-        BaseSolver.__init__(self)
-
-        self.modelparameters = model.parameters
-        self.vary = self.modelparameters.vary.values.astype('bool')
-        self.initial = self.modelparameters.initial.values.copy()
-        parameters = self.modelparameters.loc[self.vary]
-
-        # Set the boundaries
-        pmin = np.where(parameters.pmin.isnull(), -np.inf, parameters.pmin)
-        pmax = np.where(parameters.pmax.isnull(), np.inf, parameters.pmax)
-        bounds = (pmin, pmax)
-
-        self.fit = fmin(self.objfunction, x0=parameters.initial.values,
-                        args=(noise, model, weights), **kwargs)
-
-        self.optimal_params = self.initial
-        self.optimal_params[self.vary] = self.fit
-        self.stderr = np.zeros(len(self.optimal_params))
-        self.report = None
-
-    def objfunction(self, parameters, noise, model, weights):
-        """
-
-        Parameters
-        ----------
-        parameters
-        noise
-        model
-        weights
-
-        Returns
-        -------
-
-        """
-        p = self.initial
-        p[self.vary] = parameters
-
-        rv = self.misfit(p, noise, model, weights)
-
-        return rv
-
-    def get_covcorrmatrix(self, model):
-        """Method to compute sigma, covariance and correlation matrix
-
-        TODO: make it work
-        """
-        nparam = len(self.fit.x)
-        H = self.fit.jac.T @ self.fit.jac
-        sigsq = np.var(self.fit.fun, ddof=nparam)
-        covmat = np.linalg.inv(H) * sigsq
-        stderr = np.sqrt(np.diag(covmat))
-        D = np.diag(1 / stderr)
-        corrmat = D @ covmat @ D
-
-        return stderr, covmat, corrmat
-
-    def misfit(self, parameters, noise, model, weights=None, callback=None):
-        res = model.residuals(parameters)
-        alpha = parameters[-1]
-        print('alpha:', alpha)
-        odelt = model.odelt.loc[res.index]
-        noise = Series(data=res)
-        noise.iloc[1:] -= np.exp(-odelt[1:] / alpha) * res.values[:-1]
-
-        res = res[1:]
-        noise = noise[1:]
-        delt = odelt[1:]
-        sigres = np.std(res)
-        sigi = sigres * np.sqrt(1 - np.exp(-2 * delt / alpha))
-        rv = -np.sum(np.log(sigi)) - np.sum(noise ** 2 / (2 * sigi ** 2))
-
-        return -rv  # minus the log likelihood
