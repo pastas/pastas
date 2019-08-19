@@ -44,8 +44,6 @@ class BaseSolver:
     def __init__(self, model):
         self.model = model
         # Parameters attributes
-        self.popt = None  # Optimal values of the parameters
-        self.stderr = None  # Standard error of parameters
         self.pcor = None  # Correlation between parameters
         self.pcov = None  # Covariances of the parameters
 
@@ -93,6 +91,28 @@ class BaseSolver:
 
         return rv.values
 
+    def get_correlations(self, pcov):
+        """Method to obtain the parameter correlations from the covariance
+        matrix.
+
+        Parameters
+        ----------
+        pcov: np.ndarray
+            n x n numpy array with the covariances.
+
+        Returns
+        -------
+        pcor: np.ndarray
+            Numpy array with the correlations
+
+        """
+        pcor = np.zeros_like(pcov)
+
+        for i in range(pcov.shape[0]):
+            for j in range(pcov.shape[1]):
+                pcor[i, j] = pcov[i, j] / np.sqrt(pcov[i, i] * pcov[j, j])
+        return pcor
+
 
 class LeastSquares(BaseSolver):
     """Solver based on Scipy's least_squares method [1]_.
@@ -135,12 +155,12 @@ class LeastSquares(BaseSolver):
 
         self.nfev = self.fit.nfev
 
-        pcov = self.get_covariances(self.fit)
-        # self.pcor = self.get_correlations(self.pcov)
+        pcov = self.get_covariances(self.fit.jac, self.fit.cost)
+        pcor = self.get_correlations(pcov)
 
         self.pcov = DataFrame(pcov, index=parameters.index,
                               columns=parameters.index)
-        self.pcor = DataFrame(None, index=parameters.index,
+        self.pcor = DataFrame(pcor, index=parameters.index,
                               columns=parameters.index)
 
         # Prepare return values
@@ -173,12 +193,12 @@ class LeastSquares(BaseSolver):
 
         return res
 
-    def get_covariances(self, res, absolute_sigma=False):
+    def get_covariances(self, jacobian, cost, absolute_sigma=False):
         """Method to get the covariance matrix from the jacobian.
 
         Parameters
         ----------
-        res
+        jacobian
 
         Returns
         -------
@@ -191,11 +211,11 @@ class LeastSquares(BaseSolver):
         https://github.com/scipy/scipy/blob/v1.0.0/scipy/optimize/optimize.py
 
         """
-        cost = 2 * res.cost  # res.cost is half sum of squares!
+        cost = 2 * cost  # res.cost is half sum of squares!
 
         # Do Moore-Penrose inverse discarding zero singular values.
-        _, s, VT = svd(res.jac, full_matrices=False)
-        threshold = np.finfo(float).eps * max(res.jac.shape) * s[0]
+        _, s, VT = svd(jacobian, full_matrices=False)
+        threshold = np.finfo(float).eps * max(jacobian.shape) * s[0]
         s = s[s > threshold]
         VT = VT[:s.size]
         pcov = np.dot(VT.T / s ** 2, VT)
@@ -262,7 +282,15 @@ class LmfitSolve(BaseSolver):
         # Set all parameter attributes
         if hasattr(self.fit, "covar"):
             if self.fit.covar is not None:
-                self.pcov = self.fit.covar
+                pcov = self.fit.covar
+                pcor = self.get_correlations(pcov)
+            else:
+                pcov = None
+                pcor = None
+
+        names = self.fit.var_names
+        self.pcov = DataFrame(pcov, index=names, columns=names)
+        self.pcor = DataFrame(pcor, index=names, columns=names)
 
         # Set all optimization attributes
         self.nfev = self.fit.nfev
