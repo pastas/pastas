@@ -102,7 +102,7 @@ class Model:
         }
 
         if constant:
-            constant = Constant(value=self.oseries.series.mean(),
+            constant = Constant(initial=self.oseries.series.mean(),
                                 name="constant")
             self.add_constant(constant)
         if noisemodel:

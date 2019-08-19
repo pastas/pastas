@@ -9,6 +9,7 @@ Examples
 
 import matplotlib.pyplot as plt
 import numpy as np
+from pandas import DataFrame, Timestamp
 from matplotlib.ticker import MultipleLocator
 from scipy.stats import probplot
 
@@ -130,6 +131,8 @@ class Plotting:
             contrib = self.ml.get_contribution(sm, tmin=tmin, tmax=tmax)
             contrib.plot(ax=ax, sharex=ax1, x_compat=True)
             title = [stress.name for stress in self.ml.stressmodels[sm].stress]
+            if len(title) > 3:
+                title = title[:3] + ["..."]
             plt.title("Stresses:%s" % title, loc="right")
             ax.legend(loc=(0, 1), ncol=3, frameon=False)
             if i == 3:
@@ -523,3 +526,351 @@ class Plotting:
                wedgeprops=dict(width=1, edgecolor='w'))
         ax.axis('equal')
         return ax
+
+
+class TrackSolve:
+    """ Track and visualize optimization progress for pastas models.
+
+    Parameters
+    ----------
+    ml : pastas.Model
+        pastas Model to set up tracking for
+    tmin : str or pandas.Timestamp, optional
+        start time for simulation, by default None which
+        defaults to first index in ml.oseries.series
+    tmax : str or pandas.Timestamp, optional
+        end time for simulation, by default None which
+        defaults to last index in ml.oseries.series
+    update_iter : int, optional
+        update plot every update_iter iterations,
+        by default 1
+
+    Notes
+    -----
+    - Requires a matplotlib backend that supports interactive
+      plotting, i.e. mpl.use("TkAgg").
+    - Some possible speedups on the matplotlib side:
+        - mpl.style.use("fast")
+        - mpl.rcParams['path.simplify_threshold'] = 1.0
+    - Since only parameters are passed to callback function in ml.solve,
+      everything else passed to ml.solve must be known beforehand(?). This means
+      if the tmin/tmax are passed in ml.solve() and not to TrackSolve(), the
+      resulting plot will not correctly represent the statistics of the
+      optimization.
+    - TODO: check if more information passed to solve can be picked up
+      from the model object instead of having to pass to TrackSolve.
+    - TODO: check if statistics are calculated correctly as compared to
+      results from ml.solve().
+    - TODO: check if animation can be sped up somehow.
+    - TODO: check what the relationship is between no. of iterations
+      and the LeastSquares nfev and njev values. Model fit is only updated
+      every few iterations ( = nparams?). Perhaps only update figure when
+      fit and parameter values actually change?
+
+    Examples
+    --------
+    Create a TrackSolve object for your model:
+
+    >>> track = TrackSolve(ml)
+
+    Initialize figure:
+
+    >>> fig = track.initialize_figure()
+
+    Solve model and pass track.update_figure as callback function:
+
+    >>> ml.solve(callback=track.update_figure)
+
+    """
+
+    def __init__(self, ml, tmin=None, tmax=None, update_iter=1):
+        logger.warning("TrackSolve feature under development. If you find any "
+                       "bugs please comment on the issue on GitHub: "
+                       "https://github.com/pastas/pastas/issues/137")
+
+        self.ml = ml
+        self.viewlim = 75  # no of iterations on axes by default
+        self.update_iter = update_iter  # update plot every update_iter
+
+        # get tmin/tmax
+        if tmin is None:
+            self.tmin = self.ml.oseries.series.index[0]
+        else:
+            self.tmin = Timestamp(tmin)
+
+        if tmax is None:
+            self.tmax = self.ml.oseries.series.index[-1]
+        else:
+            self.tmax = Timestamp(tmax)
+
+        # parameters
+        self.parameters = DataFrame(columns=self.ml.parameters.index)
+        self.parameters.loc[0] = self.ml.parameters.initial.values
+
+        # iteration counter
+        self.itercount = 0
+
+        # calculate RMSE residuals
+        res = self._residuals(self.ml.parameters.initial.values)
+        r_rmse = np.sqrt(np.sum(res**2))
+        self.rmse_res = np.array([r_rmse])
+
+        # calculate RMSE noise
+        if self.ml.noisemodel is not None:
+            noise = self._noise(self.ml.parameters.initial.values)
+            n_rmse = np.sqrt(np.sum(noise**2))
+            self.rmse_noise = np.array([n_rmse])
+
+        # get observations
+        self.obs = self.ml.observations(tmin=self.tmin,
+                                        tmax=self.tmax)
+        # calculate EVP
+        self.evp = self._calc_evp(res.values, self.obs.values)
+
+    def _append_params(self, params):
+        """Append parameters to self.parameters DataFrame and
+        update itercount, rmse values and evp.
+
+        Parameters
+        ----------
+        params : np.array
+            array containing parameters
+
+        """
+        # update itercount
+        self.itercount += 1
+
+        # add parameters to DataFrame
+        self.parameters.loc[self.itercount,
+                            self.ml.parameters.index] = params.copy()
+
+        # calculate new RMSE values
+        r_res = self._residuals(params)
+        self.rmse_res = np.r_[self.rmse_res, np.sqrt(np.sum(r_res**2))]
+
+        if self.ml.noisemodel is not None:
+            n_res = self._noise(params)
+            self.rmse_noise = np.r_[self.rmse_noise, np.sqrt(np.sum(n_res**2))]
+
+        # recalculate EVP
+        self.evp = self._calc_evp(r_res.values, self.obs.values)
+
+    def _update_axes(self):
+        """extend xlim if no. of iterations exceeds
+        current window.
+
+        """
+        for iax in self.axes[1:]:
+            iax.set_xlim(right=self.viewlim)
+            self.fig.canvas.draw()
+
+    def _update_settings(self):
+        self.tmin = self.ml.settings["tmin"]
+        self.tmax = self.ml.settings["tmax"]
+        self.freq = self.ml.settings["freq"]
+
+    def _calc_evp(self, res, obs):
+        """ calculate evp
+        """
+        if obs.var() == 0.0:
+            evp = 1.
+        else:
+            evp = max(0.0, (1 - (res.var(ddof=0) /
+                                 obs.var(ddof=0))))
+        return evp
+
+    def _noise(self, params):
+        """get noise
+
+        Parameters
+        ----------
+        params : np.array
+            array containing parameters
+
+        Returns
+        -------
+        noise: np.array
+            array containing noise
+
+        """
+        noise = self.ml.noise(parameters=params,
+                              tmin=self.tmin,
+                              tmax=self.tmax)
+        return noise
+
+    def _residuals(self, params):
+        """calculate residuals
+
+        Parameters
+        ----------
+        params : np.array
+            array containing parameters
+
+        Returns
+        -------
+        res: np.array
+            array containing residuals
+
+        """
+        res = self.ml.residuals(parameters=params,
+                                tmin=self.tmin,
+                                tmax=self.tmax)
+        return res
+
+    def _simulate(self):
+        """simulate model with last entry in self.parameters
+
+        Returns
+        -------
+        sim: pd.Series
+            series containing model evaluation
+
+        """
+        sim = self.ml.simulate(parameters=self.parameters.iloc[-1, :].values,
+                               tmin=self.tmin,
+                               tmax=self.tmax,
+                               freq=self.ml.settings["freq"])
+        return sim
+
+    def initialize_figure(self, figsize=(10, 8), dpi=100):
+        """Initialize figure for plotting optimization progress.
+
+        Parameters
+        ----------
+        figsize : tuple, optional
+            figure size, passed to plt.subplots(), by default (10, 8)
+        dpi : int, optional
+            dpi of the figure passed to plt.subplots(), by default 100
+
+        Returns
+        -------
+        fig: matplotlib.pyplot.Figure
+            handle to the figure
+
+        """
+        # create plot
+        self.fig, self.axes = plt.subplots(3, 1, figsize=(10, 8), dpi=100)
+        self.ax0, self.ax1, self.ax2 = self.axes
+
+        # plot oseries
+        self.obs.plot(marker=".", ls="none", label="observations",
+                      color="k", ms=4, x_compat=True, ax=self.ax0)
+
+        # plot simulation
+        sim = self._simulate()
+        self.simplot, = self.ax0.plot(sim.index, sim, label="model")
+        self.ax0.set_ylabel("oseries/model")
+        self.ax0.set_title("Iteration: {0} (EVP: {1:.2%})".format(self.itercount,
+                                                                  self.evp))
+        self.ax0.legend(loc="lower right")
+
+        # plot RMSE (residuals and/or residuals)
+        legend_handles = []
+        self.r_rmse_plot_line, = self.ax1.plot(
+            range(self.itercount+1), self.rmse_res, c="k", ls="solid",
+            label="Residuals")
+        self.r_rmse_plot_dot, = self.ax1.plot(
+            self.itercount, self.rmse_res[-1], c="k", marker="o", ls="none")
+        legend_handles.append(self.r_rmse_plot_line)
+        self.ax1.set_xlim(0, self.viewlim)
+        self.ax1.set_ylim(0, 1.05*self.rmse_res[-1])
+        self.ax1.set_ylabel("RMSE")
+
+        if self.ml.noisemodel is not None:
+            self.n_rmse_plot_line, = self.ax1.plot(
+                range(self.itercount+1), self.rmse_noise, c="C0", ls="solid",
+                label="Noise")
+            self.n_rmse_plot_dot, = self.ax1.plot(
+                self.itercount, self.rmse_res[-1], c="C0", marker="o",
+                ls="none")
+            legend_handles.append(self.n_rmse_plot_line)
+        legend_labels = [i.get_label() for i in legend_handles]
+        self.ax1.legend(legend_handles, legend_labels, loc="upper right")
+
+        # plot parameters values on semilogy
+        plt.sca(self.ax2)
+        plt.yscale("log")
+        self.param_plot_handles = []
+        legend_handles = []
+        for pname, row in self.ml.parameters.iterrows():
+            pa, = self.ax2.plot(
+                range(self.itercount+1), np.abs(row.initial), marker=".",
+                ls="none", label=pname)
+            pb, = self.ax2.plot(range(self.itercount+1),
+                                np.abs(row.initial), ls="solid",
+                                c=pa.get_color())
+            self.param_plot_handles.append((pa, pb))
+            legend_handles.append(pa)
+
+        legend_labels = [i.get_label() for i in legend_handles]
+        self.ax2.legend(legend_handles, legend_labels, loc="lower right",
+                        ncol=3)
+        self.ax2.set_xlim(0, self.viewlim)
+        self.ax2.set_ylim(1e-6, 1e5)
+        self.ax2.set_ylabel("Parameter values")
+        self.ax2.set_xlabel("Iteration")
+
+        # set grid for each plot
+        for iax in [self.ax0, self.ax1, self.ax2]:
+            iax.grid(b=True)
+
+        self.fig.tight_layout()
+        return self.fig
+
+    def update_figure(self, params):
+        """Method to update figure while model is being solved. Pass this
+        method to ml.solve(), e.g.:
+
+        >>> track = TrackSolve(ml)
+        >>> fig = track.initialize_figure()
+        >>> ml.solve(callback=track.update_figure)
+
+        Parameters
+        ----------
+        params : np.array
+            array containing parameters
+
+        """
+
+        # update parameters
+        self._append_params(params)
+
+        # update settings from ml.settings
+        self._update_settings()
+
+        # check if figure should be updated
+        if self.itercount % self.update_iter != 0:
+            return
+
+        # update view limits if needed
+        if self.itercount >= self.viewlim:
+            self.viewlim += 50
+            self._update_axes()
+
+        # update simulation
+        sim = self._simulate()
+        self.simplot.set_data(sim.index, sim.values)
+
+        # update rmse residuals
+        self.r_rmse_plot_line.set_data(
+            range(self.itercount+1), np.array(self.rmse_res))
+        self.r_rmse_plot_dot.set_data(
+            np.array([self.itercount]), np.array(self.rmse_res[-1]))
+        # update rmse noise
+        self.n_rmse_plot_line.set_data(
+            range(self.itercount+1), np.array(self.rmse_noise))
+        self.n_rmse_plot_dot.set_data(
+            np.array([self.itercount]), np.array(self.rmse_noise[-1]))
+
+        # update parameter plots
+        for j, (p1, p2) in enumerate(self.param_plot_handles):
+            p1.set_data(np.array([self.itercount]),
+                        np.abs(self.parameters.iloc[-1, j]))
+            p2.set_data(range(self.itercount+1),
+                        self.parameters.iloc[:, j].abs().values)
+
+        # update title
+        self.ax0.set_title(
+            "Iteration: {0} (EVP: {1:.2%})".format(self.itercount,
+                                                   self.evp))
+        self.fig.canvas.draw()
