@@ -675,6 +675,9 @@ class Model:
         # Solve model
         success, optimal, stderr = self.fit.solve(noise=noise, weights=weights,
                                                   **kwargs)
+        if not success:
+            self.logger.warning("Model parameters could not be estimated "
+                                "well.")
 
         if not self.settings['fit_constant']:
             # Determine the residuals and set the constant to their mean
