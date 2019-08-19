@@ -1390,7 +1390,7 @@ class Model:
             pcor = self.fit.pcor
             for idx in pcor:
                 for col in pcor:
-                    if (np.abs(pcor.loc[idx, col]) > 0.3) and (idx != col) \
+                    if (np.abs(pcor.loc[idx, col]) > 0.5) and (idx != col) \
                             and ((col, idx) not in cor.keys()):
                         cor[(idx, col)] = pcor.loc[idx, col].round(2)
 
