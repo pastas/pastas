@@ -1,20 +1,15 @@
 """The solver module contains the different solvers that are available for
-PASTAS.
+Pastas.
 
 All solvers inherit from the BaseSolver class, which contains general method
 for selecting the correct time series to misfit and options to weight the
 residuals or noise series.
 
-Notes
------
-By default, when a model is solved with a noisemodel, the swsi-weights are
-applied.
-
 Examples
 --------
 To solve a model the following syntax can be used:
 
->>> ml.solve(solver=LeastSquares)
+>>> ml.solve(solver=ps.LeastSquares)
 
 """
 
