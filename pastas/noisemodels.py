@@ -130,7 +130,7 @@ class NoiseModel(NoiseModelBase):
             pinit = pinit.median()
         else:
             pinit = 14.0
-        self.parameters.loc['noise_alpha'] = (pinit, 0, 5000, 1, 'noise')
+        self.parameters.loc['noise_alpha'] = (pinit, 0, 5000, True, 'noise')
 
     def simulate(self, res, parameters):
         """
@@ -215,7 +215,7 @@ class NoiseModel2(NoiseModelBase):
             pinit = pinit.median()
         else:
             pinit = 14.0
-        self.parameters.loc['noise_alpha'] = (pinit, 0, 5000, 1, 'noise')
+        self.parameters.loc['noise_alpha'] = (pinit, 0, 5000, True, 'noise')
 
     def simulate(self, res, parameters):
         """

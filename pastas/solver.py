@@ -150,7 +150,7 @@ class LeastSquares(BaseSolver):
 
     def solve(self, noise=True, weights=None, callback=None, **kwargs):
         self.modelparameters = self.model.parameters
-        self.vary = self.modelparameters.vary.values.astype('bool')
+        self.vary = self.modelparameters.vary.values.astype(bool)
         self.initial = self.modelparameters.initial.values.copy()
         parameters = self.modelparameters.loc[self.vary]
 

@@ -708,10 +708,10 @@ class Model:
         name: str
             name of the parameter to update.
         value: bool
-            boolean (True, False, 0 or 1) to vary a parameter or not.
+            boolean to vary a parameter (True) or not (False).
 
         """
-        self.set_parameter(name, value, "vary")
+        self.set_parameter(name, bool(value), "vary")
 
     def set_pmin(self, name, value):
         """Method to set the minimum value of a parameter.
