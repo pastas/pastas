@@ -126,7 +126,7 @@ class Project:
         # Transfer the metadata (x, y and z) to dataframe as well to increase speed.
         for i in ts.metadata.keys():
             value = ts.metadata[i]
-            data.at[name, i] = value
+            data.loc[name, i] = value
 
     def add_oseries(self, series, name=None, metadata=None, settings="oseries",
                     **kwargs):
