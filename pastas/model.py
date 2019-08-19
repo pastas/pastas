@@ -1374,22 +1374,25 @@ class Model:
             line=string.format("", fill='=', align='>', width=width),
             parameters=parameters)
 
-        # w = []
-        #
-        # warnings = "Warnings\n{line}\n".format(
-        #     "",
-        #     line=string.format("", fill='=', align='>', width=width)
-        # )
-        #
-        # for n, warn in enumerate(w, start=1):
-        #     warnings = warnings + "[{}] {}\n".format(n, warn)
-        #
-        # if len(w) == 0:
-        #     warnings = ""
+        if output == "full":
+            cor = dict()
+            pcor = self.solver.pcor
+            for idx in pcor:
+                for col in pcor:
+                    if (np.abs(pcor.loc[idx, col]) > 0.3) and (idx != col) \
+                            and ((col, idx) not in cor.keys()):
+                        cor[(idx, col)] = pcor.loc[idx, col].round(2)
 
-        report = "{header}{basic}{parameters}".format(
-            header=header, basic=basic, parameters=parameters
-        )
+            cor = pd.DataFrame(data=cor.values(), index=cor.keys(),
+                               columns=["rho"])
+            correlations = "\n\nParameter correlations |rho| > 0.5\n{" \
+                           "line}\n{correlation}".format(
+                line=string.format("", fill='=', align='>', width=width),
+                correlation=cor.to_string(header=False))
+
+        report = "{header}{basic}{parameters}{correlations}".format(
+            header=header, basic=basic, parameters=parameters,
+            correlations=correlations)
 
         return report
 
