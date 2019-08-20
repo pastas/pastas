@@ -143,7 +143,7 @@ class Gamma(RfuncBase):
     """
     _name = "Gamma"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.99):
+    def __init__(self, up=True, meanstress=1, cutoff=0.999):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 3
 
@@ -207,7 +207,7 @@ class Exponential(RfuncBase):
     """
     _name = "Exponential"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.99):
+    def __init__(self, up=True, meanstress=1, cutoff=0.999):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 2
 
@@ -287,7 +287,7 @@ class Hantush(RfuncBase):
     """
     _name = "Hantush"
 
-    def __init__(self, up=False, meanstress=1, cutoff=0.99):
+    def __init__(self, up=False, meanstress=1, cutoff=0.999):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 3
 
@@ -397,7 +397,7 @@ class HantushWellModel(RfuncBase):
     """
     _name = "HantushWellModel"
 
-    def __init__(self, up=False, meanstress=1, cutoff=0.99):
+    def __init__(self, up=False, meanstress=1, cutoff=0.999):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 3
 
@@ -470,7 +470,7 @@ class Polder(RfuncBase):
     """
     _name = "Polder"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.99):
+    def __init__(self, up=True, meanstress=1, cutoff=0.999):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 2
 
@@ -577,7 +577,7 @@ class FourParam(RfuncBase):
     """
     _name = "FourParam"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.99):
+    def __init__(self, up=True, meanstress=1, cutoff=0.999):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 4
         self.quad = False
@@ -737,7 +737,7 @@ class FourParamQuad(FourParam):
     """
     _name = "FourParamQuad"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.99):
+    def __init__(self, up=True, meanstress=1, cutoff=0.999):
         FourParam.__init__(self, up, meanstress, cutoff)
         self.nparam = 4
         self.quad = True
@@ -767,7 +767,7 @@ class DoubleExponential(RfuncBase):
     """
     _name = "DoubleExponential"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.99):
+    def __init__(self, up=True, meanstress=1, cutoff=0.999):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 4
 
@@ -841,7 +841,7 @@ class Edelman(RfuncBase):
     """
     _name = "Edelman"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.99):
+    def __init__(self, up=True, meanstress=1, cutoff=0.999):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 1
 
