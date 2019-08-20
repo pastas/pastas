@@ -152,17 +152,18 @@ class Gamma(RfuncBase):
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
             parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
-                                           100 / self.meanstress, 1, name)
+                                           100 / self.meanstress, True, name)
         elif self.up is False:
             parameters.loc[name + '_A'] = (-1 / self.meanstress,
-                                           -100 / self.meanstress, 0, 1, name)
+                                           -100 / self.meanstress, 0, True,
+                                           name)
         else:
             parameters.loc[name + '_A'] = (1 / self.meanstress,
-                                           np.nan, np.nan, 1, name)
+                                           np.nan, np.nan, True, name)
 
         # if n is too small, the length of the response function is close to zero
-        parameters.loc[name + '_n'] = (1, 0.1, 10, 1, name)
-        parameters.loc[name + '_a'] = (10, 0.01, 5000, 1, name)
+        parameters.loc[name + '_n'] = (1, 0.1, 10, True, name)
+        parameters.loc[name + '_a'] = (10, 0.01, 5000, True, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):
@@ -215,15 +216,16 @@ class Exponential(RfuncBase):
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
             parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
-                                           100 / self.meanstress, 1, name)
+                                           100 / self.meanstress, True, name)
         elif self.up is False:
             parameters.loc[name + '_A'] = (-1 / self.meanstress,
-                                           -100 / self.meanstress, 0, 1, name)
+                                           -100 / self.meanstress, 0, True,
+                                           name)
         else:
             parameters.loc[name + '_A'] = (1 / self.meanstress,
-                                           np.nan, np.nan, 1, name)
+                                           np.nan, np.nan, True, name)
 
-        parameters.loc[name + '_a'] = (10, 0.01, 5000, 1, name)
+        parameters.loc[name + '_a'] = (10, 0.01, 5000, True, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):
@@ -294,16 +296,17 @@ class Hantush(RfuncBase):
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
             parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
-                                           100 / self.meanstress, 1, name)
+                                           100 / self.meanstress, True, name)
         elif self.up is False:
             parameters.loc[name + '_A'] = (-1 / self.meanstress,
-                                           -100 / self.meanstress, 0, 1, name)
+                                           -100 / self.meanstress, 0, True,
+                                           name)
         else:
             parameters.loc[name + '_A'] = (1 / self.meanstress,
-                                           np.nan, np.nan, 1, name)
+                                           np.nan, np.nan, True, name)
 
-        parameters.loc[name + '_rho'] = (1, 1e-4, 10, 1, name)
-        parameters.loc[name + '_cS'] = (100, 1e-3, 1e4, 1, name)
+        parameters.loc[name + '_rho'] = (1, 1e-4, 10, True, name)
+        parameters.loc[name + '_cS'] = (100, 1e-3, 1e4, True, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):
@@ -403,12 +406,12 @@ class HantushWellModel(RfuncBase):
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
             parameters.loc[name + '_A'] = (
-                1 / self.meanstress, 0, 100 / self.meanstress, 1, name)
+                1 / self.meanstress, 0, 100 / self.meanstress, True, name)
         else:
             parameters.loc[name + '_A'] = (
-                -1 / self.meanstress, -100 / self.meanstress, 0, 1, name)
-        parameters.loc[name + '_lab'] = (1000, 1, 1e6, 1, name)
-        parameters.loc[name + '_cS'] = (100, 1e-3, 1e4, 1, name)
+                -1 / self.meanstress, -100 / self.meanstress, 0, True, name)
+        parameters.loc[name + '_lab'] = (1000, 1, 1e6, True, name)
+        parameters.loc[name + '_cS'] = (100, 1e-3, 1e4, True, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):
@@ -476,8 +479,8 @@ class Polder(RfuncBase):
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         a_init = 1
         b_init = 0.1
-        parameters.loc[name + '_a'] = (a_init, 0, 100, 1, name)
-        parameters.loc[name + '_b'] = (b_init, 0, 10, 1, name)
+        parameters.loc[name + '_a'] = (a_init, 0, 100, True, name)
+        parameters.loc[name + '_b'] = (b_init, 0, 10, True, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):
@@ -526,12 +529,15 @@ class One(RfuncBase):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
-            parameters.loc[name + '_d'] = (self.meanstress, 0, np.nan, 1, name)
+            parameters.loc[name + '_d'] = (
+            self.meanstress, 0, np.nan, True, name)
         elif self.up is False:
-            parameters.loc[name + '_d'] = (self.meanstress, np.nan, 0, 1, name)
+            parameters.loc[name + '_d'] = (
+            self.meanstress, np.nan, 0, True, name)
         else:
-            parameters.loc[name + '_d'] = (self.meanstress, np.nan, np.nan, 1,
-                                           name)
+            parameters.loc[name + '_d'] = (
+            self.meanstress, np.nan, np.nan, True,
+            name)
         return parameters
 
     def gain(self, p):
@@ -581,17 +587,18 @@ class FourParam(RfuncBase):
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
             parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
-                                           100 / self.meanstress, 1, name)
+                                           100 / self.meanstress, True, name)
         elif self.up is False:
             parameters.loc[name + '_A'] = (-1 / self.meanstress,
-                                           -100 / self.meanstress, 0, 1, name)
+                                           -100 / self.meanstress, 0, True,
+                                           name)
         else:
             parameters.loc[name + '_A'] = (1 / self.meanstress,
-                                           np.nan, np.nan, 1, name)
+                                           np.nan, np.nan, True, name)
 
-        parameters.loc[name + '_n'] = (1, -10, 10, 1, name)
-        parameters.loc[name + '_a'] = (10, 0.01, 5000, 1, name)
-        parameters.loc[name + '_b'] = (10, 0.01, 5000, 1, name)
+        parameters.loc[name + '_n'] = (1, -10, 10, True, name)
+        parameters.loc[name + '_a'] = (10, 0.01, 5000, True, name)
+        parameters.loc[name + '_b'] = (10, 0.01, 5000, True, name)
         return parameters
 
     def function(self, t, p):
@@ -769,17 +776,18 @@ class DoubleExponential(RfuncBase):
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
             parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
-                                           100 / self.meanstress, 1, name)
+                                           100 / self.meanstress, True, name)
         elif self.up is False:
             parameters.loc[name + '_A'] = (-1 / self.meanstress,
-                                           -100 / self.meanstress, 0, 1, name)
+                                           -100 / self.meanstress, 0, True,
+                                           name)
         else:
             parameters.loc[name + '_A'] = (1 / self.meanstress,
-                                           np.nan, np.nan, 1, name)
+                                           np.nan, np.nan, True, name)
 
-        parameters.loc[name + '_alpha'] = (0.1, 0.01, 0.99, 1, name)
-        parameters.loc[name + '_a1'] = (10, 0.01, 5000, 1, name)
-        parameters.loc[name + '_a2'] = (10, 0.01, 5000, 1, name)
+        parameters.loc[name + '_alpha'] = (0.1, 0.01, 0.99, True, name)
+        parameters.loc[name + '_a1'] = (10, 0.01, 5000, True, name)
+        parameters.loc[name + '_a2'] = (10, 0.01, 5000, True, name)
         return parameters
 
     def calc_tmax(self, p, cutoff=None):
@@ -841,7 +849,7 @@ class Edelman(RfuncBase):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         beta_init = 1.0
-        parameters.loc[name + '_beta'] = (beta_init, 0, 1000, 1, name)
+        parameters.loc[name + '_beta'] = (beta_init, 0, 1000, True, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):

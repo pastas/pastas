@@ -601,8 +601,8 @@ class Model:
             self.parameters.loc["constant_d", "initial"] = 0.0
             self.normalize_residuals = True
 
-    def solve(self, tmin=None, tmax=None, freq=None, warmup=None, noise=None,
-              solver=LeastSquares, report=True, initial=True, weights=None,
+    def solve(self, tmin=None, tmax=None, freq=None, warmup=None, noise=True,
+              solver=None, report=True, initial=True, weights=None,
               fit_constant=True, **kwargs):
         """Method to solve the time series model.
 
@@ -614,6 +614,16 @@ class Model:
         tmax: str, optional
             String with an end date for the simulation period (E.g. '2010').
             If none is provided, the tmax from the oseries is used.
+        freq: str, optional
+            String with the frequency the stressmodels are simulated. Must
+            be one of the following: (D, h, m, s, ms, us, ns) or a multiple of
+            that e.g. "7D".
+        warmup: float/int, optinal
+            Warmup period (in Days) for which the simulation is calculated,
+            but not used for the calibration period.
+        noise: bool, optional
+            Argument that determines if a noisemodel is used (only if
+            present). The default is noise=True.
         solver: pastas.solver.BaseSolver class, optional
             Class used to solve the model. Options are: ps.LeastSquares
             (default) or ps.LmfitSolve. A class is needed, not an instance
@@ -622,20 +632,10 @@ class Model:
             Print a report to the screen after optimization finished. This
             can also be manually triggered after optimization by calling
             print(ml.fit_report()) on the Pastas model instance.
-        noise: bool, optional
-            Argument that determines if a noisemodel is used (only if
-            present). The default is noise=True
         initial: bool, optional
             Reset initial parameters from the individual stressmodels.
             Default is True. If False, the optimal values from an earlier
             optimization are used.
-        freq: str, optional
-            String with the frequency the stressmodels are simulated. Must
-            be one of the following: (D,h,m,s,ms,us,ns) or a multiple of
-            that e.g. "7D".
-        warmup: float/int, optinal
-            Warmup period (in Days) for which the simulation is calculated,
-            but not used for the calibration period.
         weights: pandas.Series, optional
             Pandas Series with values by which the residuals are multiplied,
             index-based.
@@ -644,30 +644,49 @@ class Model:
             If it is set to False, the constant is set equal to the mean of
             the residuals.
         **kwargs: dict, optional
-            All keyword arguments will be passed onto the solver. It depends
-            on the solver used which
+            All keyword arguments will be passed onto minimization method
+            from the solver. It depends on the solver used which arguments
+            can be used.
+
+        Notes
+        -----
+        - The solver object including some results are stored as ml.fit. From
+        here one can access the covariance (ml.fit.pcov) and correlation
+        matrix (ml.fit.pcor).
+        - Each solver return a number of results after optimization. These
+        solver specific results are stored in ml.fit.result and can be
+        accessed from there.
 
         """
 
         # Initialize the model
         self.initialize(tmin, tmax, freq, warmup, noise, weights, initial,
                         fit_constant)
-        self.settings["solver"] = solver._name
+
+        # Store the solve instance
+        if solver is None:
+            if self.fit is None:
+                self.fit = LeastSquares(model=self)
+        elif not issubclass(solver, self.fit.__class__):
+            self.fit = solver(model=self)
+
+        self.settings["solver"] = self.fit._name
 
         # Solve model
-        self.fit = solver(self, noise=self.settings["noise"],
-                          weights=self.settings["weights"], **kwargs)
+        success, optimal, stderr = self.fit.solve(noise=noise, weights=weights,
+                                                  **kwargs)
+        if not success:
+            self.logger.warning("Model parameters could not be estimated "
+                                "well.")
 
         if not self.settings['fit_constant']:
-            # Determine the residuals
+            # Determine the residuals and set the constant to their mean
             self.normalize_residuals = False
-            res = self.residuals(self.fit.optimal_params)
-            # set the constant to the mean of the residuals
-            mask = self.parameters.name == self.constant.name
-            self.fit.optimal_params[mask] = res.mean()
+            res = self.residuals(optimal).mean()
+            optimal[self.parameters.name == self.constant.name] = res
 
-        self.parameters.optimal = self.fit.optimal_params
-        self.parameters.stderr = self.fit.stderr
+        self.parameters.optimal = optimal
+        self.parameters.stderr = stderr
 
         if report:
             print(self.fit_report())
@@ -702,10 +721,10 @@ class Model:
         name: str
             name of the parameter to update.
         value: bool
-            boolean (True, False, 0 or 1) to vary a parameter or not.
+            boolean to vary a parameter (True) or not (False).
 
         """
-        self.set_parameter(name, value, "vary")
+        self.set_parameter(name, bool(value), "vary")
 
     def set_pmin(self, name, value):
         """Method to set the minimum value of a parameter.
@@ -1287,7 +1306,6 @@ class Model:
         output: str
             NotImplementedYet
 
-
         Returns
         -------
         report: str
@@ -1367,22 +1385,25 @@ class Model:
             line=string.format("", fill='=', align='>', width=width),
             parameters=parameters)
 
-        # w = []
-        #
-        # warnings = "Warnings\n{line}\n".format(
-        #     "",
-        #     line=string.format("", fill='=', align='>', width=width)
-        # )
-        #
-        # for n, warn in enumerate(w, start=1):
-        #     warnings = warnings + "[{}] {}\n".format(n, warn)
-        #
-        # if len(w) == 0:
-        #     warnings = ""
+        if output == "full":
+            cor = dict()
+            pcor = self.fit.pcor
+            for idx in pcor:
+                for col in pcor:
+                    if (np.abs(pcor.loc[idx, col]) > 0.5) and (idx != col) \
+                            and ((col, idx) not in cor.keys()):
+                        cor[(idx, col)] = pcor.loc[idx, col].round(2)
 
-        report = "{header}{basic}{parameters}".format(
-            header=header, basic=basic, parameters=parameters
-        )
+            cor = pd.DataFrame(data=cor.values(), index=cor.keys(),
+                               columns=["rho"])
+            correlations = "\n\nParameter correlations |rho| > 0.5\n{" \
+                           "line}\n{correlation}".format(
+                line=string.format("", fill='=', align='>', width=width),
+                correlation=cor.to_string(header=False))
+
+        report = "{header}{basic}{parameters}{correlations}".format(
+            header=header, basic=basic, parameters=parameters,
+            correlations=correlations)
 
         return report
 

@@ -116,7 +116,7 @@ class StressModelBase:
         The preferred method for parameter setting is through the model.
 
         """
-        self.parameters.loc[name, 'vary'] = value
+        self.parameters.loc[name, 'vary'] = bool(value)
 
     def update_stress(self, **kwargs):
         """Method to update the settings of the individual TimeSeries.
@@ -424,7 +424,8 @@ class StressModel2(StressModelBase):
 
         """
         self.parameters = self.rfunc.get_init_parameters(self.name)
-        self.parameters.loc[self.name + '_f'] = (-1.0, -2.0, 0.0, 1, self.name)
+        self.parameters.loc[self.name + '_f'] = \
+            (-1.0, -2.0, 0.0, True, self.name)
 
     def simulate(self, p, tmin=None, tmax=None, freq=None, dt=1, istress=None):
         """Simulates the head contribution.
@@ -524,7 +525,7 @@ class StepModel(StressModelBase):
         tinit = self.tstart.toordinal()
 
         self.parameters.loc[self.name + "_tstart"] = (tinit, tmin, tmax,
-                                                      0, self.name)
+                                                      False, self.name)
 
     def simulate(self, p, tmin=None, tmax=None, freq=None, dt=1):
         tstart = pd.Timestamp.fromordinal(int(p[-1]), freq="D")
@@ -578,11 +579,11 @@ class LinearTrend(StressModelBase):
         tmax = pd.Timestamp.max.toordinal()
 
         self.parameters.loc[self.name + "_a"] = (
-            0, -np.inf, np.inf, 1, self.name)
+            0, -np.inf, np.inf, True, self.name)
         self.parameters.loc[self.name + "_tstart"] = (
-            start, tmin, tmax, 1, self.name)
+            start, tmin, tmax, True, self.name)
         self.parameters.loc[self.name + "_tend"] = (
-            end, tmin, tmax, 1, self.name)
+            end, tmin, tmax, True, self.name)
 
     def simulate(self, p, tmin=None, tmax=None, freq=None, dt=1):
         tindex = pd.date_range(tmin, tmax, freq=freq)
@@ -841,7 +842,7 @@ class FactorModel(StressModelBase):
 
     def set_init_parameters(self):
         self.parameters.loc[self.name + "_f"] = (
-            self.value, -np.inf, np.inf, 1, self.name)
+            self.value, -np.inf, np.inf, True, self.name)
 
     def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1):
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)

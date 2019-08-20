@@ -4,7 +4,7 @@ from .project import Project
 from .read import read_meny, read_dino, read_knmi, read_waterbase
 from .rfunc import Gamma, Exponential, Hantush, Polder, One, FourParam, \
     DoubleExponential, HantushWellModel
-from .solver import LmfitSolve, LeastSquares, DESolve, MarkSolver
+from .solver import LmfitSolve, LeastSquares
 from .stressmodels import StressModel, StressModel2, Constant, FactorModel, \
     RechargeModel
 from .timeseries import TimeSeries
