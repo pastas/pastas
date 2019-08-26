@@ -580,8 +580,17 @@ class Model:
         # self._set_time_offset()
 
         # Set tmin and tmax
-        self.settings["tmin"] = self.get_tmin(tmin)
-        self.settings["tmax"] = self.get_tmax(tmax)
+        # Only overwrite settings dic if settins['tmin'] is None or tmin is
+        # not None
+        if self.settings["tmin"] is None:
+            self.settings["tmin"] = self.get_tmin(tmin)
+        elif tmin is not None:
+            self.settings["tmin"] = self.get_tmin(tmin)
+        
+        if self.settings["tmax"] is None:            
+            self.settings["tmax"] = self.get_tmax(tmax)
+        elif tmax is not None:
+            self.settings["tmax"] = self.get_tmax(tmax)
 
         # set fit_constant
         if fit_constant is not None:
