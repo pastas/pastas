@@ -26,7 +26,6 @@ evap.multiply(1000)
 sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential,
                       recharge="Linear", name='recharge')
 ml.add_stressmodel(sm)
-#%%
 
 # Set tmin
 ml.settings['tmin'] = pd.Timestamp('2010-1-1')
