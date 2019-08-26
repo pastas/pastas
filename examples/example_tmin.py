@@ -28,10 +28,13 @@ sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential,
 ml.add_stressmodel(sm)
 
 # Set tmin
-ml.settings['tmin'] = pd.Timestamp('2010-1-1')
+tmin = pd.Timestamp('2010-1-1')
+ml.settings['tmin'] = tmin
 
 # Solve
 ml.solve()
+
+assert ml.settings['tmin']==tmin
 
 
 ml.plot()
