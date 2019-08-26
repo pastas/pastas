@@ -1,8 +1,9 @@
 """
 This test file is meant for developing purposes, providing an easy method to
-test the functioning of Pastas recharge module during development.
+test the functioning of tmin in the solve method. This code is mostly similar
+to example_recharge.py.
 
-Author: R.A. Collenteur, University of Graz.
+Author: O.N. Ebbens, Artesia.
 
 """
 import pastas as ps
