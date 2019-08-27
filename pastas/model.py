@@ -1362,7 +1362,7 @@ class Model:
         model = {
             "nfev": self.fit.nfev,
             "nobs": self.oseries_calib.index.size,
-            "noise": self.settings["noise"],
+            "noise": str(self.settings["noise"]),
             "tmin": str(self.settings["tmin"]),
             "tmax": str(self.settings["tmax"]),
             "freq": self.settings["freq"],

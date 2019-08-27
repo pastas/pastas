@@ -15,3 +15,8 @@ def test_get_stress():
     rm = test_linear()
     rm.get_stress()
     return
+
+def test_copy():
+    rm = test_linear()
+    rm.copy()
+    return

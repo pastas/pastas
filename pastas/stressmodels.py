@@ -1079,3 +1079,16 @@ class RechargeModel(StressModelBase):
             return self.evap.series
         else:
             return self.temp.series
+
+    def dump(self, series=True):
+        data = {
+            "stressmodel": self._name,
+            "prec": self.prec.dump(),
+            "evap": self.evap.dump(),
+            "rfunc": self.rfunc._name,
+            "name": self.name,
+            "recharge": self.recharge._name,
+            "cutoff": self.rfunc.cutoff,
+            "temp": self.temp.dump() if self.temp else None
+        }
+        return data

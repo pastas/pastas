@@ -65,6 +65,7 @@ class Linear(RechargeBase):
     R = P - f * E
 
     """
+    _name = "Linear"
 
     def __init__(self):
         RechargeBase.__init__(self)

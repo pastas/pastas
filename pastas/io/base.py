@@ -2,13 +2,16 @@
 Import model
 """
 
-from importlib import import_module
-from os import path
 import gc
+from importlib import import_module
+from logging import getLogger
+from os import path
 
 from pandas import DataFrame, to_numeric
 
 import pastas as ps
+
+logger = getLogger(__name__)
 
 
 def load(fname, **kwargs):
@@ -21,9 +24,15 @@ def load(fname, **kwargs):
         extension.
     kwargs: extension specific
 
+    Returns
+    -------
+    ml: pastas.Model
+        Pastas Model instance.
+
     """
     if not path.exists(fname):
-        raise (FileNotFoundError('File not found: {}'.format(fname)))
+        msg = "File not found: {}".format(fname)
+        logger.error(msg)
 
     # Dynamic import of the export module
     ext = path.splitext(fname)[1]
@@ -40,10 +49,11 @@ def load(fname, **kwargs):
         ml = load_model(data)
         kind = "Model"
 
-    print("Pastas %s from file %s succesfully loaded. The Pastas-version "
-          "this file was created with was %s. Your current version of Pastas "
-          "is: %s" % (kind, fname, data["file_info"]["pastas_version"],
-                      ps.__version__))
+    logger.info("Pastas {} from file {} succesfully loaded. This file was "
+                "created with was Pastas{}. Your current version of Pastas "
+                "is: {}".format(kind, fname,
+                                data["file_info"]["pastas_version"],
+                                ps.__version__))
 
     return ml
 
@@ -144,6 +154,12 @@ def load_model(data):
         if "stress" in ts.keys():
             for i, stress in enumerate(ts["stress"]):
                 ts["stress"][i] = ps.TimeSeries(**stress)
+        if "prec" in ts.keys():
+            ts["prec"] = ps.TimeSeries(**ts["prec"])
+        if "evap" in ts.keys():
+            ts["evap"] = ps.TimeSeries(**ts["evap"])
+        if "temp" in ts.keys() and ts["temp"] is not None:
+            ts["temp"] = ps.TimeSeries(**ts["temp"])
         stressmodel = stressmodel(**ts)
         ml.add_stressmodel(stressmodel)
 
