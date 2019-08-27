@@ -53,10 +53,9 @@ class Project:
         self.name = name
 
         # DataFrames to store the data of the oseries and stresses
-        self.stresses = pd.DataFrame(columns=["name", "series", "kind", "x",
-                                              "y", "z"])
-        self.oseries = pd.DataFrame(columns=["name", "series", "kind", "x",
-                                             "y", "z"])
+        columns = ["name", "series", "kind", "x", "y", "z"]
+        self.stresses = pd.DataFrame(columns=columns)
+        self.oseries = pd.DataFrame(columns=columns)
 
         # Project metadata and file information
         self.metadata = self.get_metadata(metadata)
@@ -351,11 +350,10 @@ class Project:
     def update_model_series(self):
         """Update all the Model series by their originals in self.oseries and
         self.stresses. This can for example be useful when new data is
-        added to any of the series in pr.oseries and pr.stresses
+        added to any of the series in mls.oseries and mls.stresses
 
         """
-        for name in self.models:
-            ml = self.models[name]
+        for name, ml in self.models.items():
             ml.oseries.series_original = self.oseries.loc[
                 name, 'series'].series_original
             for sm in ml.stressmodels:
@@ -370,32 +368,33 @@ class Project:
         """Solves the models in mls
         
         mls: list of str, optional
-            list of model names, if None all models in the project are solved
+            list of model names, if None all models in the project are solved.
         report: boolean, optional
-            determines if a report is printed when the model is solved
+            determines if a report is printed when the model is solved.
         ignore_solve_errors: boolean, optional
-            if True ValueErrors emerging from the solve method are ignored
-        **kwargs: arguments are passsed to the solve method
-            
-        
+            if True ValueErrors emerging from the solve method are ignored.
+        **kwargs:
+            arguments are passed to the solve method.
+
         """
         if mls is None:
             mls = self.models.keys()
         elif isinstance(mls, Model):
             mls = [mls.name]
 
-        for mlname in mls:
+        for ml_name in mls:
             if verbose:
-                print('solving model -> {}'.format(mlname))
-            ml = self.models[mlname]
-            if ignore_solve_errors:
-                try:
-                    ml.solve(report=report, **kwargs)
-                except ValueError:
+                print('solving model -> {}'.format(ml_name))
+
+            ml = self.models[ml_name]
+            try:
+                ml.solve(report=report, **kwargs)
+            except Exception as e:
+                if ignore_solve_errors:
                     warning = "solve error ignored for -> {}".format(ml.name)
                     logger.warning(warning)
-            else:
-                ml.solve(report=report, **kwargs)
+                else:
+                    raise e
 
     def get_nearest_stresses(self, oseries=None, stresses=None, kind=None,
                              n=1):
