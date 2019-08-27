@@ -582,14 +582,10 @@ class Model:
         # Set tmin and tmax
         # Only overwrite settings dic if tmin is not None or if
         # settins['tmin'] is None. Same for tmax
-        if tmin:
-            self.settings["tmin"] = self.get_tmin(tmin)
-        elif self.settings["tmin"] is None:
+        if tmin or self.settings["tmin"] is None:
             self.settings["tmin"] = self.get_tmin(tmin)
 
-        if tmax:
-            self.settings["tmax"] = self.get_tmax(tmax)
-        elif self.settings["tmax"] is None:
+        if tmax or self.settings['tmax'] is None:
             self.settings["tmax"] = self.get_tmax(tmax)
 
         # set fit_constant
