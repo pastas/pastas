@@ -27,4 +27,4 @@ n = ps.NoiseModel()
 ml.add_noisemodel(n)
 ml.solve(freq="D", warmup=1000, report=False)
 
-mls.dump("test_project.pas")
+mls.to_file("test_project.pas")

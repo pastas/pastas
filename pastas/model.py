@@ -1431,7 +1431,7 @@ class Model:
         pmin = pnorm < alpha
         return pmin, pmax
 
-    def dump_data(self, series=True, sim_series=False, file_info=True):
+    def to_dict(self, series=True, sim_series=False, file_info=True):
         """Internal method to export a model to a dictionary.
 
         Helper function for the self.export method.
@@ -1511,7 +1511,7 @@ class Model:
         """
 
         # Get dicts for all data sources
-        data = self.dump_data(series)
+        data = self.to_dict(series)
 
         # Write the dicts to a file
         return dump(fname, data, **kwargs)
@@ -1525,6 +1525,6 @@ class Model:
             Copy of the original model with no references to the old model.
 
         """
-        data = self.dump_data()
+        data = self.to_dict()
         ml = load_model(data)
         return ml

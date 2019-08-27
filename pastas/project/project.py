@@ -27,6 +27,8 @@ from ..stressmodels import StressModel2
 from .maps import Map
 from .plots import Plot
 
+from ..decorators import PastasDeprecationWarning
+
 logger = getLogger(__name__)
 
 
@@ -49,24 +51,22 @@ class Project:
         """
         self.models = {}
         self.name = name
-        # Store the data in Pandas dataframes
-        self.data = pd.DataFrame()
 
         # DataFrames to store the data of the oseries and stresses
         self.stresses = pd.DataFrame(columns=["name", "series", "kind", "x",
                                               "y", "z"])
         self.oseries = pd.DataFrame(columns=["name", "series", "kind", "x",
                                              "y", "z"])
-        self.oseries.index.astype(str)
 
         # Project metadata and file information
         self.metadata = self.get_metadata(metadata)
-        self.file_info = self._get_file_info()
+        self.file_info = self.get_file_info()
 
         # Load other modules
         self.plots = Plot(self)
         self.maps = Map(self)
 
+    @PastasDeprecationWarning
     def add_series(self, series, name=None, kind=None, metadata=None,
                    settings=None, **kwargs):
         """Method to add series to the oseries or stresses database.
@@ -87,9 +87,6 @@ class Project:
         settings: dict or str
             Dictionary with any settings that will be passed to the
             TimeSeries object that is created internally.
-
-        Returns
-        -------
 
         """
         if name is None:
@@ -164,15 +161,15 @@ class Project:
         name: str
             String with the name of the series that will be maintained in
             the database.
+        kind: str
+            The kind of series that is added. When oseries are added it is
+            necessary to state "oseries" here.
         metadata: dict
             Dictionary with any metadata that will be passed to the
             TimeSeries object that is created internally.
         settings: dict or str
             Dictionary with any settings that will be passed to the
             TimeSeries object that is created internally.
-
-        Returns
-        -------
 
         """
         self.add_series(series, name=name, metadata=metadata,
@@ -259,8 +256,7 @@ class Project:
 
         return mls
 
-    def add_recharge(self, mls=None, rfunc=Gamma, name="recharge",
-                     **kwargs):
+    def add_recharge(self, mls=None, rfunc=Gamma, name="recharge", **kwargs):
         """Add a StressModel2 to the time series models. The
         selection of the precipitation and evaporation time series is based
         on the shortest distance to the a stresses in the stresses list.
@@ -291,9 +287,11 @@ class Project:
 
         for mlname in mls:
             ml = self.models[mlname]
-            prec_name = self.get_nearest_stresses(mlname, kind="prec").iloc[0][0]
+            prec_name = self.get_nearest_stresses(mlname, kind="prec").iloc[0][
+                0]
             prec = self.stresses.loc[prec_name, "series"]
-            evap_name = self.get_nearest_stresses(mlname, kind="evap").iloc[0][0]
+            evap_name = self.get_nearest_stresses(mlname, kind="evap").iloc[0][
+                0]
             evap = self.stresses.loc[evap_name, "series"]
 
             recharge = StressModel2([prec, evap], rfunc, name=name, **kwargs)
@@ -367,8 +365,8 @@ class Project:
             # set oseries_calib empty, so it is determined again the next time
             ml.oseries_calib = None
 
-    def solve_models(self, mls=None, report=False,
-                     ignore_solve_errors=False, verbose=False, **kwargs):
+    def solve_models(self, mls=None, report=False, ignore_solve_errors=False,
+                     verbose=False, **kwargs):
         """Solves the models in mls
         
         mls: list of str, optional
@@ -407,6 +405,8 @@ class Project:
         ----------
         oseries: str
             String with the name of the oseries
+        stresses: str or list of str
+            String with the name of the stresses
         kind:
             String with the name of the stresses
         n: int
@@ -430,7 +430,7 @@ class Project:
 
         return data
 
-    def get_distances(self, oseries=None, stresses=None, kind=None, ):
+    def get_distances(self, oseries=None, stresses=None, kind=None):
         """Method to obtain the distances in meters between the stresses and
         oseries.
 
@@ -612,7 +612,7 @@ class Project:
 
         return metadata
 
-    def _get_file_info(self):
+    def get_file_info(self):
         file_info = dict()
         file_info["date_created"] = pd.Timestamp.now()
         file_info["date_modified"] = pd.Timestamp.now()
@@ -623,30 +623,33 @@ class Project:
             file_info["owner"] = "Unknown"
         return file_info
 
-    def dump(self, fname=None, **kwargs):
+    @PastasDeprecationWarning
+    def dump(self, fname, **kwargs):
+        return self.to_file(fname, **kwargs)
+
+    def to_file(self, fname, **kwargs):
         """Method to write a Pastas project to a file.
 
         Parameters
         ----------
-        fname
+        fname: str
+
 
         Returns
         -------
 
         """
-        data = self.dump_data(**kwargs)
+        data = self.to_dict(**kwargs)
         return dump(fname, data)
 
-    def dump_data(self, series=False, sim_series=False):
-        """Method to export a Pastas Project and return a dictionary with
-        the data to be exported.
+    def to_dict(self, series=False, sim_series=False):
+        """Internal method to export a Pastas Project as a dictionary.
 
         Parameters
         ----------
         series: bool
             export model input-series when True. Only export the name of
-            the model input_series when False
-
+            the model input_series when Fals
         sim_series: bool
             export model output-series when True
 
@@ -664,19 +667,20 @@ class Project:
         )
 
         # Series DataFrame
-        data["oseries"] = self._series_to_dict(self.oseries)
-        data["stresses"] = self._series_to_dict(self.stresses)
+        data["oseries"] = self.series_to_dict(self.oseries)
+        data["stresses"] = self.series_to_dict(self.stresses)
 
         # Models
         data["models"] = dict()
         for name, ml in self.models.items():
-            data["models"][name] = ml.dump_data(series=series,
-                                                sim_series=sim_series,
-                                                file_info=False)
+            data["models"][name] = ml.to_dict(series=series,
+                                              sim_series=sim_series,
+                                              file_info=False)
 
         return data
 
-    def _series_to_dict(self, series):
+    def series_to_dict(self, series):
+        """Internal method used to export the time series."""
         series = series.to_dict(orient="index")
 
         for name in series.keys():
