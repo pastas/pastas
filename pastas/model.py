@@ -868,22 +868,21 @@ class Model:
         return list(self.stressmodels.keys())
 
     def get_sim_index(self, tmin, tmax, freq, warmup):
-        """Internal method to get the simulation index, including the warmup
-        period.
+        """Internal method to get the simulation index, including the warmup.
 
         Parameters
         ----------
-        tmin: str, optional
+        tmin: str
             String with a start date for the simulation period (E.g. '1980').
             If none is provided, the tmin from the oseries is used.
-        tmax: str, optional
+        tmax: str
             String with an end date for the simulation period (E.g. '2010').
             If none is provided, the tmax from the oseries is used.
-        freq: str, optional
+        freq: str
             String with the frequency the stressmodels are simulated. Must
             be one of the following: (D, h, m, s, ms, us, ns) or a multiple of
             that e.g. "7D".
-        warmup: float/int, optional
+        warmup: float/int
             Warmup period (in Days).
 
         Returns
@@ -901,13 +900,10 @@ class Model:
                 update_sim_index = True
 
         if self.sim_index is None or update_sim_index:
-            print(warmup)
-            tmin = (tmin - warmup).floor(freq) + \
-                   self.settings["time_offset"]
+            tmin = (tmin - warmup).floor(freq) + self.settings["time_offset"]
             sim_index = pd.date_range(tmin, tmax, freq=freq)
             if not update_sim_index:
-                # tmin, tmax, freq and warmup are equal to the settings
-                # so we can set self.sim_index to improve speed of next run
+                # Improve speed of next run if args are equal to ml.settings.
                 self.sim_index = sim_index
         else:
             sim_index = self.sim_index
