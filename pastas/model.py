@@ -1119,8 +1119,6 @@ class Model:
                          parameters=None):
         """Method to get the contribution of a stressmodel.
 
-        The optimal parameters are used when available, initial otherwise.
-
         Parameters
         ----------
         name: str
@@ -1128,10 +1126,15 @@ class Model:
         tmin: str or pandas.TimeStamp, optional
         tmax: str or pandas.TimeStamp, optional
         freq: str, optional
-        istress: int
-            When multiple stresses are present in a stressmodel,
-            this keyword can be used to obtain the contribution of an
-            individual stress.
+        warmup:
+        istress: int, optional
+            When multiple stresses are present in a stressmodel, this keyword
+            can be used to obtain the contribution of an individual stress.
+        return_warmup: bool, optional
+            Include warmup in contribution calculation or not.
+        parameters: list or numpy.ndarray
+            iterable with the parameters. If none, the optimal parameters are
+            used when available, initial otherwise.
 
         Returns
         -------
@@ -1204,6 +1207,9 @@ class Model:
         ----------
         name: str
             String with the name of the stressmodel.
+        parameters: list or numpy.ndarray
+            iterable with the parameters. If none, the optimal parameters are
+            used when available, initial otherwise.
 
         Returns
         -------
@@ -1211,9 +1217,10 @@ class Model:
             Pandas Series with the block response. The index is based on the
             frequency that is present in the model.settings.
 
-        TODO: Make sure an error is thrown when no rfunc is present.
-
         """
+        if self.stressmodels[name].rfunc is None:
+            raise TypeError("Stressmodel {} has no rfunc".format(name))
+
         if parameters is None:
             parameters = self.get_parameters(name)
         dt = get_dt(self.settings["freq"])
@@ -1233,6 +1240,9 @@ class Model:
         ----------
         name: str
             String with the name of the stressmodel.
+        parameters: list or numpy.ndarray
+            iterable with the parameters. If none, the optimal parameters are
+            used when available, initial otherwise.
 
         Returns
         -------
@@ -1240,9 +1250,9 @@ class Model:
             Pandas Series with the step response. The index is based on the
             frequency that is present in the model.settings.
 
-        TODO: Make sure an error is thrown when no rfunc is present.
-
         """
+        if self.stressmodels[name].rfunc is None:
+            raise TypeError("Stressmodel {} has no rfunc".format(name))
         if parameters is None:
             parameters = self.get_parameters(name)
         dt = get_dt(self.settings["freq"])
