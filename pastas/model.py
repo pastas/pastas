@@ -58,7 +58,6 @@ class Model:
 
     Examples
     --------
-
     >>> oseries = pd.Series([1,2,1], index=pd.to_datetime(range(3), unit="D"))
     >>> ml = Model(oseries)
 
@@ -94,7 +93,7 @@ class Model:
             "tmin": None,
             "tmax": None,
             "freq": "D",
-            "warmup": 3650,
+            "warmup": pd.Timedelta(days=3650),
             "time_offset": pd.Timedelta(0),
             "noise": noisemodel,
             "solver": None,
@@ -295,11 +294,17 @@ class Model:
             Array with the parameters used in the time series model. See
             Model.get_parameters() for more info if parameters is None.
         tmin: str, optional
+            String with a start date for the simulation period (E.g. '1980').
+            If none is provided, the tmin from the oseries is used.
         tmax: str, optional
+            String with an end date for the simulation period (E.g. '2010').
+            If none is provided, the tmax from the oseries is used.
         freq: str, optional
-            Frequency at which the time series are simulated.
-        warmup: int, optional
-            Length of the warmup period in days
+            String with the frequency the stressmodels are simulated. Must
+            be one of the following: (D, h, m, s, ms, us, ns) or a multiple of
+            that e.g. "7D".
+        warmup: float/int, optional
+            Warmup period (in Days).
         return_warmup: bool, optional
             Return the simulation including the the warmup period or not,
             default is False.
@@ -333,8 +338,8 @@ class Model:
             freq = self.settings["freq"]
         if warmup is None:
             warmup = self.settings["warmup"]
-        elif isinstance(warmup, str):
-            warmup = get_dt(warmup)
+        elif not isinstance(warmup, pd.Timedelta):
+            warmup = pd.Timedelta(days=warmup)
 
         # Get the simulation index and the time step
         sim_index = self.get_sim_index(tmin, tmax, freq, warmup)
@@ -382,11 +387,17 @@ class Model:
             Array of the parameters used in the time series model. See
             Model.get_parameters() for more info if parameters is None.
         tmin: str, optional
+            String with a start date for the simulation period (E.g. '1980').
+            If none is provided, the tmin from the oseries is used.
         tmax: str, optional
+            String with an end date for the simulation period (E.g. '2010').
+            If none is provided, the tmax from the oseries is used.
         freq: str, optional
-            frequency at which the time series are simulated.
-        warmup: int, optional
-            length of the warmup period in days
+            String with the frequency the stressmodels are simulated. Must
+            be one of the following: (D, h, m, s, ms, us, ns) or a multiple of
+            that e.g. "7D".
+        warmup: float/int, optional
+            Warmup period (in Days).
 
         Returns
         -------
@@ -403,8 +414,8 @@ class Model:
             freq = self.settings["freq"]
         if warmup is None:
             warmup = self.settings["warmup"]
-        elif isinstance(warmup, str):
-            warmup = get_dt(warmup)
+        else:
+            warmup = pd.Timedelta(days=warmup)
 
         # simulate model
         sim = self.simulate(parameters, tmin, tmax, freq, warmup,
@@ -452,11 +463,17 @@ class Model:
             Array of the parameters used in the time series model. See
             Model.get_parameters() for more info if parameters is None.
         tmin: str, optional
+            String with a start date for the simulation period (E.g. '1980').
+            If none is provided, the tmin from the oseries is used.
         tmax: str, optional
+            String with an end date for the simulation period (E.g. '2010').
+            If none is provided, the tmax from the oseries is used.
         freq: str, optional
-            frequency at which the time series are simulated.
-        warmup: int, optional
-            length of the warmup period in days
+            String with the frequency the stressmodels are simulated. Must
+            be one of the following: (D, h, m, s, ms, us, ns) or a multiple of
+            that e.g. "7D".
+        warmup: float/int, optional
+            Warmup period (in Days).
 
         Returns
         -------
@@ -494,9 +511,16 @@ class Model:
 
         Parameters
         ----------
-        tmin: str or pandas.TimeStamp, optional
-        tmax: str or pandas.TimeStamp, optional
+        tmin: str, optional
+            String with a start date for the simulation period (E.g. '1980').
+            If none is provided, the tmin from the oseries is used.
+        tmax: str, optional
+            String with an end date for the simulation period (E.g. '2010').
+            If none is provided, the tmax from the oseries is used.
         freq: str, optional
+            String with the frequency the stressmodels are simulated. Must
+            be one of the following: (D, h, m, s, ms, us, ns) or a multiple of
+            that e.g. "7D".
 
         Returns
         -------
@@ -572,9 +596,7 @@ class Model:
             self.settings["freq"] = frequency_is_supported(freq)
 
         if warmup is not None:
-            if isinstance(warmup, str):
-                warmup = get_dt(warmup)
-            self.settings["warmup"] = warmup
+            self.settings["warmup"] = pd.Timedelta(days=warmup)
 
         # Set the time offset from the frequency (this does not work as expected yet)
         # self._set_time_offset()
@@ -618,7 +640,7 @@ class Model:
             String with the frequency the stressmodels are simulated. Must
             be one of the following: (D, h, m, s, ms, us, ns) or a multiple of
             that e.g. "7D".
-        warmup: float/int, optinal
+        warmup: float/int, optional
             Warmup period (in Days) for which the simulation is calculated,
             but not used for the calibration period.
         noise: bool, optional
@@ -851,10 +873,18 @@ class Model:
 
         Parameters
         ----------
-        tmin: pandas.TimeStamp
-        tmax: pandas.TimeStamp
-        freq: str
-        warmup: int
+        tmin: str, optional
+            String with a start date for the simulation period (E.g. '1980').
+            If none is provided, the tmin from the oseries is used.
+        tmax: str, optional
+            String with an end date for the simulation period (E.g. '2010').
+            If none is provided, the tmax from the oseries is used.
+        freq: str, optional
+            String with the frequency the stressmodels are simulated. Must
+            be one of the following: (D, h, m, s, ms, us, ns) or a multiple of
+            that e.g. "7D".
+        warmup: float/int, optional
+            Warmup period (in Days).
 
         Returns
         -------
@@ -871,7 +901,8 @@ class Model:
                 update_sim_index = True
 
         if self.sim_index is None or update_sim_index:
-            tmin = (tmin - pd.DateOffset(days=warmup)).floor(freq) + \
+            print(warmup)
+            tmin = (tmin - warmup).floor(freq) + \
                    self.settings["time_offset"]
             sim_index = pd.date_range(tmin, tmax, freq=freq)
             if not update_sim_index:
@@ -950,14 +981,6 @@ class Model:
             freq = self.settings["freq"]
         tmin = tmin.floor(freq) + self.settings["time_offset"]
 
-        # assert tmax > tmin, \
-        #     self.logger.error('Error: Specified tmax not larger than '
-        #                       'specified tmin')
-        # if use_oseries:
-        #     assert self.oseries.series.loc[tmin: tmax].size > 0, \
-        #         self.logger.error(
-        #             'Error: no observations between tmin and tmax')
-
         return tmin
 
     def get_tmax(self, tmax=None, freq=None, use_oseries=True,
@@ -1029,14 +1052,6 @@ class Model:
         if freq is None:
             freq = self.settings["freq"]
         tmax = tmax.floor(freq) + self.settings["time_offset"]
-
-        # assert tmax > tmin, \
-        #     self.logger.error('Error: Specified tmax not larger than '
-        #                       'specified tmin')
-        # if use_oseries:
-        #     assert self.oseries.series.loc[tmin: tmax].size > 0, \
-        #         self.logger.error(
-        #             'Error: no observations between tmin and tmax')
 
         return tmax
 
@@ -1123,10 +1138,18 @@ class Model:
         ----------
         name: str
             String with the name of the stressmodel.
-        tmin: str or pandas.TimeStamp, optional
-        tmax: str or pandas.TimeStamp, optional
+        tmin: str, optional
+            String with a start date for the simulation period (E.g. '1980').
+            If none is provided, the tmin from the oseries is used.
+        tmax: str, optional
+            String with an end date for the simulation period (E.g. '2010').
+            If none is provided, the tmax from the oseries is used.
         freq: str, optional
-        warmup:
+            String with the frequency the stressmodels are simulated. Must
+            be one of the following: (D, h, m, s, ms, us, ns) or a multiple of
+            that e.g. "7D".
+        warmup: float/int, optional
+            Warmup period (in Days).
         istress: int, optional
             When multiple stresses are present in a stressmodel, this keyword
             can be used to obtain the contribution of an individual stress.
@@ -1153,12 +1176,12 @@ class Model:
             freq = self.settings["freq"]
         if warmup is None:
             warmup = self.settings["warmup"]
-        elif isinstance(warmup, str):
-            warmup = get_dt(warmup)
+        else:
+            warmup = pd.Timedelta(days=warmup)
 
         # use warmup
         if tmin:
-            tmin_warm = pd.Timestamp(tmin) - pd.DateOffset(days=warmup)
+            tmin_warm = pd.Timestamp(tmin) - warmup
         else:
             tmin_warm = None
 
@@ -1181,8 +1204,12 @@ class Model:
 
         Parameters
         ----------
-        tmin: str or pandas.TimeStamp, optional
-        tmax: str or pandas.TimeStamp, optional
+        tmin: str, optional
+            String with a start date for the simulation period (E.g. '1980').
+            If none is provided, the tmin from the oseries is used.
+        tmax: str, optional
+            String with an end date for the simulation period (E.g. '2010').
+            If none is provided, the tmax from the oseries is used.
 
         Returns
         -------
@@ -1213,7 +1240,7 @@ class Model:
 
         Returns
         -------
-        pandas.Series
+        b: pandas.Series
             Pandas Series with the block response. The index is based on the
             frequency that is present in the model.settings.
 
@@ -1225,7 +1252,7 @@ class Model:
             parameters = self.get_parameters(name)
         dt = get_dt(self.settings["freq"])
         b = self.stressmodels[name].rfunc.block(parameters, dt, **kwargs)
-        t = np.linspace(dt, len(b) * dt, len(b))
+        t = np.linspace(dt, b.size * dt, b.size)
         b = pd.Series(b, index=t, name=name)
         b.index.name = "Time [days]"
         return b
@@ -1246,18 +1273,19 @@ class Model:
 
         Returns
         -------
-        pandas.Series
+        s: pandas.Series
             Pandas Series with the step response. The index is based on the
             frequency that is present in the model.settings.
 
         """
         if self.stressmodels[name].rfunc is None:
             raise TypeError("Stressmodel {} has no rfunc".format(name))
+
         if parameters is None:
             parameters = self.get_parameters(name)
         dt = get_dt(self.settings["freq"])
         s = self.stressmodels[name].rfunc.step(parameters, dt, **kwargs)
-        t = np.linspace(dt, len(s) * dt, len(s))
+        t = np.linspace(dt, s.size * dt, s.size)
         s = pd.Series(s, index=t, name=name)
         s.index.name = "Time [days]"
         return s
@@ -1342,7 +1370,7 @@ class Model:
             "tmin": str(self.settings["tmin"]),
             "tmax": str(self.settings["tmax"]),
             "freq": self.settings["freq"],
-            "warmup": self.settings["warmup"],
+            "warmup": str(self.settings["warmup"]),
             "solver": self.settings["solver"]
         }
 
