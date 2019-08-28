@@ -15,8 +15,8 @@ from ..utils import datetime2matlab
 
 
 def load(fname):
-    raise (NotImplementedError(
-        'This is not implemented yet. See the reads-section for a Menyanthes-read'))
+    raise NotImplementedError("This is not implemented yet. See the "
+                              "reads-section for a Menyanthes-read")
 
 
 def dump(fname, data, version=3):

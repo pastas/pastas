@@ -148,8 +148,7 @@ class NoiseModel(NoiseModelBase):
 
         """
         alpha = parameters[0]
-        odelt = (res.index[1:] - res.index[:-1]).days.values
-
+        odelt = (res.index[1:] - res.index[:-1]).values / pd.Timedelta("1d")
         # res.values is needed else it gets messed up with the dates
         v = res.values[1:] - np.exp(-odelt / alpha) * res.values[:-1]
         res.iloc[1:] = v * self.weights(alpha, odelt)

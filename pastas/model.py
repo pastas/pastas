@@ -356,7 +356,7 @@ class Model:
         for sm in self.stressmodels.values():
             contrib = sm.simulate(parameters[istart: istart + sm.nparam],
                                   sim_index.min(), sim_index.max(), freq, dt)
-            sim = sim + contrib
+            sim = sim.add(contrib)
             istart += sm.nparam
         if self.constant:
             sim = sim + self.constant.simulate(parameters[istart])
@@ -432,13 +432,12 @@ class Model:
                                  'simulation timesteps. Linear interpolation '
                                  'between simulated values is used.')
         if self.interpolate_simulation:
-            # interpolate simulation to measurement-times
-            # TODO RC: Somehow switch to pandas methods with maximum gap (gap_limit?)
+            # interpolate simulation to times of observations
             sim_interpolated = np.interp(oseries_calib.index.asi8,
-                                         sim.index.asi8, sim)
+                                         sim.index.asi8, sim.values)
         else:
             # all of the observation indexes are in the simulation
-            sim_interpolated = sim.loc[oseries_calib.index]
+            sim_interpolated = sim.reindex(oseries_calib.index)
 
         # Calculate the actual residuals here
         res = oseries_calib.subtract(sim_interpolated)
