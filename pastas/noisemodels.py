@@ -147,16 +147,15 @@ class NoiseModel(NoiseModelBase):
             Series of the noise.
 
         """
-        odelt = res.index.to_series().diff() / pd.Timedelta(1, 'd')
-        odelt = odelt.iloc[1:]
-        noise = pd.Series(data=res)
         alpha = parameters[0]
+        odelt = (res.index[1:] - res.index[:-1]).days.values
+
         # res.values is needed else it gets messed up with the dates
-        noise.iloc[1:] -= np.exp(-odelt / alpha) * res.values[:-1]
-        weights = self.weights(alpha, odelt)
-        noise = noise.multiply(weights, fill_value=0.0)
-        noise.name = "Noise"
-        return noise
+        v = res.values[1:] - np.exp(-odelt / alpha) * res.values[:-1]
+        res.iloc[1:] = v * self.weights(alpha, odelt)
+        res.iloc[0] = 0
+        res.name = "Noise"
+        return res
 
     def weights(self, alpha, odelt):
         """Method to calculate the weights for the noise based on the

@@ -12,6 +12,7 @@ Examples
 from collections import OrderedDict
 from copy import copy
 from inspect import isclass
+from logging import getLogger
 from os import getlogin
 
 import numpy as np
@@ -19,16 +20,15 @@ import pandas as pd
 
 from .decorators import get_stressmodel
 from .io.base import dump, load_model
+from .modelstats import Statistics
 from .noisemodels import NoiseModel
 from .plots import Plotting
 from .solver import LeastSquares
-from .modelstats import Statistics
 from .stressmodels import Constant
 from .timeseries import TimeSeries
 from .utils import get_dt, get_time_offset, get_sample, \
     frequency_is_supported, validate_name
 from .version import __version__
-from logging import getLogger
 
 
 class Model:

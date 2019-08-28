@@ -8,7 +8,7 @@ def set_parameter(function):
     @wraps(function)
     def _set_parameter(self, name, value, **kwargs):
         if name not in self.parameters.index:
-            logger.error("Parameter name %s does not exist, please choose "
+            logger.error("Parameter name {} does not exist, please choose "
                          "from {}".format(name, self.parameters.index))
         else:
             return function(self, name, value, **kwargs)
