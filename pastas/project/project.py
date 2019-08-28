@@ -420,7 +420,6 @@ class Project:
                 else:
                     raise e
 
-
     def get_nearest_stresses(self, oseries=None, stresses=None, kind=None,
                              n=1):
         """Method to obtain the nearest (n) stresses of a specific kind.
