@@ -364,15 +364,23 @@ class Project:
             ml.oseries_calib = None
 
     def solve_models(self, mls=None, report=False, ignore_solve_errors=False,
-                     verbose=False, **kwargs):
+                     verbose=False, tmin=None, tmax=None, **kwargs):
         """Solves the models in mls
-        
+
         mls: list of str, optional
             list of model names, if None all models in the project are solved.
         report: boolean, optional
             determines if a report is printed when the model is solved.
         ignore_solve_errors: boolean, optional
-            if True ValueErrors emerging from the solve method are ignored.
+            if True errors emerging from the solve method are ignored.
+        tmin: str, datetime or pandas.Series, optional
+            if str or datetime, apply tmin to all models. If pandas.Series
+            is provided, index must contain model names, values must be
+            str or datetimes.
+        tmax: str, datetime or pandas.Series, optional
+            if str or datetime, apply tmax to all models. If pandas.Series
+            is provided, index must contain model names, values must be
+            str or datetimes.
         **kwargs:
             arguments are passed to the solve method.
 
@@ -387,14 +395,31 @@ class Project:
                 print('solving model -> {}'.format(ml_name))
 
             ml = self.models[ml_name]
+
+            # get tmin/tmax if provided
+            if isinstance(tmin, pd.Series):
+                m_tmin = pd.Timestamp(tmin.loc[ml_name])
+            elif tmin is None:
+                m_tmin = None
+            else:
+                m_tmin = pd.Timestamp(tmin)
+
+            if isinstance(tmax, pd.Series):
+                m_tmax = pd.Timestamp(tmax.loc[ml_name])
+            elif tmax is None:
+                m_tmax = None
+            else:
+                m_tmax = pd.Timestamp(tmax)
+
             try:
-                ml.solve(report=report, **kwargs)
+                ml.solve(tmin=m_tmin, tmax=m_tmax, report=report, **kwargs)
             except Exception as e:
                 if ignore_solve_errors:
                     warning = "solve error ignored for -> {}".format(ml.name)
                     logger.warning(warning)
                 else:
                     raise e
+
 
     def get_nearest_stresses(self, oseries=None, stresses=None, kind=None,
                              n=1):
