@@ -38,6 +38,7 @@ install:
     - pip install --upgrade pip
     - pip install codecov
     - pip install pytest-cov
+    - pip install codacy-coverage
 
 # command to run tests
 script:
@@ -45,3 +46,6 @@ script:
 
 after_success:
    - codecov
+   - coverage xml
+   - python-codacy-coverage -r coverage.xml
+
