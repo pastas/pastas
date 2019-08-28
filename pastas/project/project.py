@@ -215,7 +215,8 @@ class Project:
 
         return ml
 
-    def add_models(self, oseries='all', model_name_prefix='', **kwargs):
+    def add_models(self, oseries='all', model_name_prefix='',
+                   model_name_suffix='', **kwargs):
         """Method to add multiple Pastas Model instances based on one
         or more of the oseries.
 
@@ -226,6 +227,8 @@ class Project:
             are used
         model_name_prefix: str, optional
             prefix to use for model names
+        model_name_suffix: str, optional
+            suffix to use for model names
         kwargs: dict
             any arguments that are taken by the Pastas Model instance can be
             provided.
@@ -247,7 +250,7 @@ class Project:
 
         mls = []
         for oseries_name in oseries_list:
-            model_name = model_name_prefix + oseries_name
+            model_name = model_name_prefix + oseries_name + model_name_suffix
 
             # Add new model
             ml = self.add_model(oseries_name, model_name, **kwargs)
@@ -286,10 +289,11 @@ class Project:
 
         for mlname in mls:
             ml = self.models[mlname]
-            prec_name = self.get_nearest_stresses(mlname, kind="prec").iloc[0][
+            oseries = ml.oseries.name
+            prec_name = self.get_nearest_stresses(oseries, kind="prec").iloc[0][
                 0]
             prec = self.stresses.loc[prec_name, "series"]
-            evap_name = self.get_nearest_stresses(mlname, kind="evap").iloc[0][
+            evap_name = self.get_nearest_stresses(oseries, kind="evap").iloc[0][
                 0]
             evap = self.stresses.loc[evap_name, "series"]
 
@@ -396,23 +400,19 @@ class Project:
 
             ml = self.models[ml_name]
 
-            # get tmin/tmax if provided
-            if isinstance(tmin, pd.Series):
-                m_tmin = pd.Timestamp(tmin.loc[ml_name])
-            elif tmin is None:
-                m_tmin = None
-            else:
-                m_tmin = pd.Timestamp(tmin)
-
-            if isinstance(tmax, pd.Series):
-                m_tmax = pd.Timestamp(tmax.loc[ml_name])
-            elif tmax is None:
-                m_tmax = None
-            else:
-                m_tmax = pd.Timestamp(tmax)
+            m_kwargs = {}
+            for key, value in kwargs.items():
+                if isinstance(value, pd.Series):
+                    m_kwargs[key] = value.loc[ml_name]
+                else:
+                    m_kwargs[key] = value
+            # Convert timestamps
+            for tstamp in ['tmin', 'tmax']:
+                if tstamp in m_kwargs:
+                    m_kwargs[tstamp] = pd.Timestamp(m_kwargs[tstamp])
 
             try:
-                ml.solve(tmin=m_tmin, tmax=m_tmax, report=report, **kwargs)
+                ml.solve(report=report, **m_kwargs)
             except Exception as e:
                 if ignore_solve_errors:
                     warning = "solve error ignored for -> {}".format(ml.name)
