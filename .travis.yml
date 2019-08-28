@@ -36,7 +36,6 @@ install:
     - pip install -r requirements.travis.txt
     - pip install -e .
     - pip install --upgrade pip
-    - pip install codecov
     - pip install pytest-cov
     - pip install codacy-coverage
 
@@ -45,7 +44,5 @@ script:
    - py.test ./tests --cov=pastas --cov-report=xml
 
 after_success:
-   - codecov
-   - coverage xml
    - python-codacy-coverage -r coverage.xml
 
