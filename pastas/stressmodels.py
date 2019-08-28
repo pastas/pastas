@@ -184,7 +184,7 @@ class StressModelBase:
         data = []
 
         for stress in self.stress:
-            data.append(stress.dump(series=series))
+            data.append(stress.to_dict(series=series))
 
         return data
 
@@ -203,7 +203,7 @@ class StressModelBase:
         """
         return self.stress[0].series
 
-    def dump(self, series=True):
+    def to_dict(self, series=True):
         """Method to export the StressModel object.
 
         Returns
@@ -319,7 +319,7 @@ class StressModel(StressModelBase):
                       index=stress.index, name=self.name, fastpath=True)
         return h
 
-    def dump(self, series=True):
+    def to_dict(self, series=True):
         """Method to export the StressModel object.
 
         Returns
@@ -467,7 +467,7 @@ class StressModel2(StressModelBase):
         else:
             return p[-1] * self.stress[1].series
 
-    def dump(self, series=True):
+    def to_dict(self, series=True):
         """Method to export the StressModel object.
 
         Returns
@@ -539,7 +539,7 @@ class StepModel(StressModelBase):
                       index=h.index, name=self.name, fastpath=True)
         return h
 
-    def dump(self, series=True):
+    def to_dict(self, series=True):
         data = {
             "stressmodel": self._name,
             'tstart': self.tstart,
@@ -604,7 +604,7 @@ class LinearTrend(StressModelBase):
         trend = trend.cumsum() * p[0]
         return trend
 
-    def dump(self, series=None):
+    def to_dict(self, series=None):
         data = {
             "stressmodel": self._name,
             'start': self.start,
@@ -784,7 +784,7 @@ class WellModel(StressModelBase):
             p_with_r = np.r_[p, distances]
         return p_with_r
 
-    def dump(self, series=True):
+    def to_dict(self, series=True):
         """Method to export the WellModel object.
 
         Returns
@@ -848,7 +848,7 @@ class FactorModel(StressModelBase):
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
         return self.stress[0].series * p[0]
 
-    def dump(self, series=True):
+    def to_dict(self, series=True):
         """Method to export the StressModel object.
 
         Returns
@@ -1080,15 +1080,15 @@ class RechargeModel(StressModelBase):
         else:
             return self.temp.series
 
-    def dump(self, series=True):
+    def to_dict(self, series=True):
         data = {
             "stressmodel": self._name,
-            "prec": self.prec.dump(),
-            "evap": self.evap.dump(),
+            "prec": self.prec.to_dict(),
+            "evap": self.evap.to_dict(),
             "rfunc": self.rfunc._name,
             "name": self.name,
             "recharge": self.recharge._name,
             "cutoff": self.rfunc.cutoff,
-            "temp": self.temp.dump() if self.temp else None
+            "temp": self.temp.to_dict() if self.temp else None
         }
         return data

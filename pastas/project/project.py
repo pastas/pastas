@@ -708,6 +708,6 @@ class Project:
 
         for name in series.keys():
             ts = series[name]["series"]
-            series[name]["series"] = ts.dump(series=True)
+            series[name]["series"] = ts.to_dict(series=True)
 
         return series

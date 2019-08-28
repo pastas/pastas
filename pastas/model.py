@@ -1491,12 +1491,12 @@ class Model:
         # Create a dictionary to store all data
         data = dict()
         data["name"] = self.name
-        data["oseries"] = self.oseries.dump(series=series)
+        data["oseries"] = self.oseries.to_dict(series=series)
 
         # Stressmodels
         data["stressmodels"] = dict()
         for name, sm in self.stressmodels.items():
-            data["stressmodels"][name] = sm.dump(series=series)
+            data["stressmodels"][name] = sm.to_dict(series=series)
 
         # Constant
         if self.constant:
@@ -1504,11 +1504,11 @@ class Model:
 
         # Transform
         if self.transform:
-            data["transform"] = self.transform.dump()
+            data["transform"] = self.transform.to_dict()
 
         # Noisemodel
         if self.noisemodel:
-            data["noisemodel"] = self.noisemodel.dump()
+            data["noisemodel"] = self.noisemodel.to_dict()
 
         # Parameters
         data["parameters"] = self.parameters

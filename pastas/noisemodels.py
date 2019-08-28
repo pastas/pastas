@@ -12,7 +12,6 @@ import numpy as np
 import pandas as pd
 
 from .decorators import set_parameter
-from .utils import get_dt
 
 logger = getLogger(__name__)
 
@@ -83,8 +82,8 @@ class NoiseModelBase(ABC):
         """
         self.parameters.loc[name, 'vary'] = value
 
-    def dump(self):
-        data = dict()
+    def to_dict(self):
+        data = {}
         data["type"] = self._name
         return data
 
