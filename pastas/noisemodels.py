@@ -89,8 +89,7 @@ class NoiseModelBase(ABC):
 
 
 class NoiseModel(NoiseModelBase):
-    _name = "NoiseModel"
-    __doc__ = """Noise model with exponential decay of the residual and 
+    """Noise model with exponential decay of the residual and
     weighting with the time step between observations.
 
     Notes
@@ -117,6 +116,7 @@ class NoiseModel(NoiseModelBase):
     .. [1] von Asmuth, J. R., and M. F. P. Bierkens (2005), Modeling irregularly spaced residual series as a continuous stochastic process, Water Resour. Res., 41, W12404, doi:10.1029/2004WR003726.
 
     """
+    _name = "NoiseModel"
 
     def __init__(self):
         NoiseModelBase.__init__(self)

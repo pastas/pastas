@@ -247,8 +247,9 @@ def gvg(series, tmin=None, tmax=None, fill_method='linear', limit=8,
                    min_n_meas=min_n_meas, min_n_years=min_n_years,
                    year_offset=year_offset)
 
+
 def gg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
-        output='mean', min_n_meas=16, min_n_years=8, year_offset='a-mar'):
+       output='mean', min_n_meas=16, min_n_years=8, year_offset='a-mar'):
     """Calculate the 'Gemiddelde Grondwaterstand' (Average Groundwater Level)
     
     Classic method resampling the series to every 14th and 28th of
@@ -295,6 +296,7 @@ def gg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
                    fill_method=fill_method, limit=limit, output=output,
                    min_n_meas=min_n_meas, min_n_years=min_n_years,
                    year_offset=year_offset)
+
 
 # Helper functions
 
@@ -464,7 +466,7 @@ def __gxg__(series, year_agg, tmin, tmax, fill_method, limit, output,
             return yearly.mean()
     else:
         msg = '{} is not a valid output option'.format(output)
-        raise(ValueError(msg))
+        raise (ValueError(msg))
 
 
 def __q_gxg__(series, q, tmin=None, tmax=None, by_year=True):

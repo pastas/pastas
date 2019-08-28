@@ -508,7 +508,7 @@ class Plotting:
 
         """
         if ax is None:
-            fig, ax = plt.subplots(figsize=figsize, **kwargs)
+            _, ax = plt.subplots(figsize=figsize, **kwargs)
 
         frac = []
         for name in self.ml.stressmodels.keys():
@@ -612,13 +612,13 @@ class TrackSolve:
 
         # calculate RMSE residuals
         res = self._residuals(self.ml.parameters.initial.values)
-        r_rmse = np.sqrt(np.sum(res**2))
+        r_rmse = np.sqrt(np.sum(res ** 2))
         self.rmse_res = np.array([r_rmse])
 
         # calculate RMSE noise
         if self.ml.noisemodel is not None:
             noise = self._noise(self.ml.parameters.initial.values)
-            n_rmse = np.sqrt(np.sum(noise**2))
+            n_rmse = np.sqrt(np.sum(noise ** 2))
             self.rmse_noise = np.array([n_rmse])
 
         # get observations
@@ -646,11 +646,12 @@ class TrackSolve:
 
         # calculate new RMSE values
         r_res = self._residuals(params)
-        self.rmse_res = np.r_[self.rmse_res, np.sqrt(np.sum(r_res**2))]
+        self.rmse_res = np.r_[self.rmse_res, np.sqrt(np.sum(r_res ** 2))]
 
         if self.ml.noisemodel is not None:
             n_res = self._noise(params)
-            self.rmse_noise = np.r_[self.rmse_noise, np.sqrt(np.sum(n_res**2))]
+            self.rmse_noise = np.r_[
+                self.rmse_noise, np.sqrt(np.sum(n_res ** 2))]
 
         # recalculate EVP
         self.evp = self._calc_evp(r_res.values, self.obs.values)
@@ -760,25 +761,26 @@ class TrackSolve:
         sim = self._simulate()
         self.simplot, = self.ax0.plot(sim.index, sim, label="model")
         self.ax0.set_ylabel("oseries/model")
-        self.ax0.set_title("Iteration: {0} (EVP: {1:.2%})".format(self.itercount,
-                                                                  self.evp))
+        self.ax0.set_title(
+            "Iteration: {0} (EVP: {1:.2%})".format(self.itercount,
+                                                   self.evp))
         self.ax0.legend(loc="lower right")
 
         # plot RMSE (residuals and/or residuals)
         legend_handles = []
         self.r_rmse_plot_line, = self.ax1.plot(
-            range(self.itercount+1), self.rmse_res, c="k", ls="solid",
+            range(self.itercount + 1), self.rmse_res, c="k", ls="solid",
             label="Residuals")
         self.r_rmse_plot_dot, = self.ax1.plot(
             self.itercount, self.rmse_res[-1], c="k", marker="o", ls="none")
         legend_handles.append(self.r_rmse_plot_line)
         self.ax1.set_xlim(0, self.viewlim)
-        self.ax1.set_ylim(0, 1.05*self.rmse_res[-1])
+        self.ax1.set_ylim(0, 1.05 * self.rmse_res[-1])
         self.ax1.set_ylabel("RMSE")
 
         if self.ml.noisemodel is not None:
             self.n_rmse_plot_line, = self.ax1.plot(
-                range(self.itercount+1), self.rmse_noise, c="C0", ls="solid",
+                range(self.itercount + 1), self.rmse_noise, c="C0", ls="solid",
                 label="Noise")
             self.n_rmse_plot_dot, = self.ax1.plot(
                 self.itercount, self.rmse_res[-1], c="C0", marker="o",
@@ -794,9 +796,9 @@ class TrackSolve:
         legend_handles = []
         for pname, row in self.ml.parameters.iterrows():
             pa, = self.ax2.plot(
-                range(self.itercount+1), np.abs(row.initial), marker=".",
+                range(self.itercount + 1), np.abs(row.initial), marker=".",
                 ls="none", label=pname)
-            pb, = self.ax2.plot(range(self.itercount+1),
+            pb, = self.ax2.plot(range(self.itercount + 1),
                                 np.abs(row.initial), ls="solid",
                                 c=pa.get_color())
             self.param_plot_handles.append((pa, pb))
@@ -853,12 +855,12 @@ class TrackSolve:
 
         # update rmse residuals
         self.r_rmse_plot_line.set_data(
-            range(self.itercount+1), np.array(self.rmse_res))
+            range(self.itercount + 1), np.array(self.rmse_res))
         self.r_rmse_plot_dot.set_data(
             np.array([self.itercount]), np.array(self.rmse_res[-1]))
         # update rmse noise
         self.n_rmse_plot_line.set_data(
-            range(self.itercount+1), np.array(self.rmse_noise))
+            range(self.itercount + 1), np.array(self.rmse_noise))
         self.n_rmse_plot_dot.set_data(
             np.array([self.itercount]), np.array(self.rmse_noise[-1]))
 
@@ -866,7 +868,7 @@ class TrackSolve:
         for j, (p1, p2) in enumerate(self.param_plot_handles):
             p1.set_data(np.array([self.itercount]),
                         np.abs(self.parameters.iloc[-1, j]))
-            p2.set_data(range(self.itercount+1),
+            p2.set_data(range(self.itercount + 1),
                         self.parameters.iloc[:, j].abs().values)
 
         # update title

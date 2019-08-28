@@ -28,7 +28,7 @@ Examples
 from numpy import sqrt, log, nan
 from pandas import DataFrame
 
-from .decorators import model_tmin_tmax, PastasDeprecationWarning
+from .decorators import model_tmin_tmax
 
 
 class Statistics:
