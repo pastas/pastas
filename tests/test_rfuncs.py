@@ -1,6 +1,7 @@
-from pandas import read_csv
-import pastas as ps
 import pytest
+from pandas import read_csv
+
+import pastas as ps
 
 
 @pytest.mark.parametrize("rfunc_name", ps.rfunc.__all__)
