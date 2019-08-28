@@ -1,21 +1,21 @@
+from pandas import read_csv
 import pastas as ps
 
 
 def test_model():
-    # Import and check the observed groundwater time series
-    obs = ps.read_dino('tests/data/dino_gwl_data.csv')
+    obs = read_csv("tests/data/obs.csv", index_col=0, parse_dates=True,
+                   squeeze=True)
+    rain = read_csv("tests/data/rain.csv", index_col=0, parse_dates=True,
+                    squeeze=True)
+    evap = read_csv("tests/data/evap.csv", index_col=0, parse_dates=True,
+                    squeeze=True)
 
     # Create the time series model
     ml = ps.Model(obs, name="Test_Model")
 
-    # read weather data
-    rain = ps.read_knmi('tests/data/knmi_rain_data.txt',
-                        variables='RD')
-    evap = ps.read_knmi('tests/data/knmi_evap_data.txt', variables='EV24')
-
     ## Create stress
-    sm = ps.StressModel2(stress=[rain, evap], rfunc=ps.Exponential,
-                         name='recharge')
+    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential,
+                          name='recharge')
     ml.add_stressmodel(sm)
 
     # Solve the time series model
@@ -28,4 +28,3 @@ def test_least_squares():
     ml = test_model()
     ml.solve(solver=ps.LeastSquares)
     return True
-

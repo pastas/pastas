@@ -1294,6 +1294,9 @@ class Model:
         ----------
         name: str
             String with the name of the stressmodel.
+        istress: int, optional
+            When multiple stresses are present in a stressmodel, this keyword
+            can be used to obtain the contribution of an individual stress.
 
         Returns
         -------
