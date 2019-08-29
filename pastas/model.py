@@ -26,6 +26,7 @@ from .plots import Plotting
 from .solver import LeastSquares
 from .stressmodels import Constant
 from .timeseries import TimeSeries
+from .uncertainty import Uncertainty
 from .utils import get_dt, get_time_offset, get_sample, \
     frequency_is_supported, validate_name
 from .version import __version__
@@ -119,6 +120,7 @@ class Model:
 
         # Load other modules
         self.stats = Statistics(self)
+        self.uncertainty = Uncertainty(self)
         self.plots = Plotting(self)
         self.plot = self.plots.plot  # because we are lazy
 
