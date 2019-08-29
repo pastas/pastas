@@ -120,7 +120,3 @@ def test_project_update_model_series():
     pr = test_project_solve_models()
     pr.update_model_series()
     return
-
-
-if __name__ == "__main__":
-    pr = test_project_load_from_file()
