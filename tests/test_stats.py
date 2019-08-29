@@ -21,3 +21,14 @@ def test_acf_rectangle():
 def test_acf_gaussian():
     acf, acf_true = acf_func(bin_method="rectangle")
     assert abs((acf - acf_true)).max() < 0.05
+
+
+def test_runs_test():
+    """
+    http://www.itl.nist.gov/div898/handbook/eda/section3/eda35d.htm
+    True Z-statistic = 2.69
+    Read NIST test data
+    """
+    data = pd.read_csv("tests/data/nist.csv")
+    _, test, _ = ps.stats.runs_test(data)
+    assert test[0] - 2.69 < 0.02
