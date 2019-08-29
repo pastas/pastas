@@ -357,8 +357,9 @@ class Project:
 
         """
         for name, ml in self.models.items():
+            oname = ml.oseries.name
             ml.oseries.series_original = self.oseries.loc[
-                name, 'series'].series_original
+                oname, 'series'].series_original
             for sm in ml.stressmodels:
                 for st in ml.stressmodels[sm].stress:
                     st.series_original = self.stresses.loc[
