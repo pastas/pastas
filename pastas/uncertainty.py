@@ -11,19 +11,41 @@ class Uncertainty:
         # Save a reference to the model.
         self.ml = ml
 
-    def simulation(self, n=1000, alpha=0.05, **kwargs):
+    def prediction_interval(self, n=None, alpha=0.05, **kwargs):
+        """Method to calculate the prediction interval for the simulation.
+
+        Returns
+        -------
+
+        """
+        pass
+
+    def confidence_interval(self, n=None, alpha=0.05, **kwargs):
+        """Method to calculate the confidence interval for the simulation.
+
+        Returns
+        -------
+
+        Notes
+        -----
+        The confidence interval shows the uncertainty in the simulation due
+        to parameter uncertainty. In other words, there is a 95% probability
+        that the true best-fit line for the observed data lies within the
+        95% confidence interval.
+
+        """
         return self.get_realizations(func=self.ml.simulate,
                                      n=n, alpha=alpha, **kwargs)
 
-    def block_response(self, name, n=1000, alpha=0.05, **kwargs):
+    def block_response(self, name, n=None, alpha=0.05, **kwargs):
         return self.get_realizations(func=self.ml.get_block_response, n=n,
                                      alpha=alpha, name=name, **kwargs)
 
-    def step_response(self, name, n=1000, alpha=0.05, **kwargs):
+    def step_response(self, name, n=None, alpha=0.05, **kwargs):
         return self.get_realizations(func=self.ml.get_step_response, n=n,
                                      alpha=alpha, name=name, **kwargs)
 
-    def contribution(self, name, n=1000, alpha=0.05, **kwargs):
+    def contribution(self, name, n=None, alpha=0.05, **kwargs):
         return self.get_realizations(func=self.ml.get_contribution, n=n,
                                      alpha=alpha, name=name, **kwargs)
 
@@ -40,7 +62,7 @@ class Uncertainty:
         q = [alpha / 2, 1 - alpha / 2]
         return pd.DataFrame(data).quantile(q=q, axis=1).transpose()
 
-    def get_parameter_sample(self, name=None, n=1000):
+    def get_parameter_sample(self, name=None, n=None):
         """Method to obtain a set of parameters values based on the optimal
         values and
 
@@ -52,8 +74,6 @@ class Uncertainty:
         name: str, optional
             Name of the stressmodel or model component to obtain the
             parameters for.
-        parameters:, list of str, optional
-            List with the names of the parameters as strings.
 
         Returns
         -------
@@ -63,6 +83,9 @@ class Uncertainty:
         """
         par = self.ml.get_parameters(name=name)
         pcov = self.get_covariance_matrix(name=name)
+
+        if n is None:
+            n = 10 ** par.size
 
         return np.random.multivariate_normal(par, pcov, n)
 
