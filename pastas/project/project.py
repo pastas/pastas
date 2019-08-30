@@ -368,7 +368,7 @@ class Project:
             ml.oseries_calib = None
 
     def solve_models(self, mls=None, report=False, ignore_solve_errors=False,
-                     verbose=False, tmin=None, tmax=None, **kwargs):
+                     verbose=False, **kwargs):
         """Solves the models in mls
 
         mls: list of str, optional
