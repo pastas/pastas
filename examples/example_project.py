@@ -4,27 +4,28 @@ R.A. Collenteur - Artesia Water 2017
 
 """
 
+import pandas as pd
+
 import pastas as ps
 
 # Create a simple model taken from example.py
-obs = ps.read_dino('data/B58C0698001_1.csv')
-rain = ps.read_knmi('data/neerslaggeg_HEIBLOEM-L_967-2.txt', variables='RD')
-evap = ps.read_knmi('data/etmgeg_380.txt', variables='EV24')
+obs = pd.read_csv("data/head_nb1.csv", index_col=0, parse_dates=True,
+                  squeeze=True)
+rain = pd.read_csv("data/rain_nb1.csv", index_col=0, parse_dates=True,
+                   squeeze=True)
+evap = pd.read_csv("data/evap_nb1.csv", index_col=0, parse_dates=True,
+                   squeeze=True)
 
 # Create a Pastas Project
 mls = ps.Project(name="test_project")
 
-mls.add_series(obs, "GWL", kind="oseries", metadata=dict())
-mls.add_series(rain, name="Prec", kind="prec", metadata=dict())
-mls.add_series(evap, name="Evap", kind="evap", metadata=dict())
+mls.add_oseries(obs, "GWL", metadata={})
+mls.add_stress(rain, name="Prec", kind="prec")
+mls.add_stress(evap, name="Evap", kind="evap")
 
 ml = mls.add_model(oseries="GWL")
-sm = ps.StressModel2([mls.stresses.loc["Prec", "series"],
-                      mls.stresses.loc["Evap", "series"]],
-                     ps.Exponential, name='recharge')
-ml.add_stressmodel(sm)
-n = ps.NoiseModel()
-ml.add_noisemodel(n)
-ml.solve(freq="D", warmup=1000, report=False)
+
+mls.add_recharge(ml)
+mls.solve_models()
 
 mls.to_file("test_project.pas")

@@ -6,12 +6,12 @@ Author: R.A. Collenteur, University of Graz.
 
 """
 import pandas as pd
+
 import pastas as ps
 
 # read observations
 head = pd.read_csv("notebooks/data_notebook_7/head_wellex.csv",
-                   index_col="Date",
-                   parse_dates=True)
+                   index_col="Date", parse_dates=True)
 
 # Create the time series model
 ml = ps.Model(head, name="groundwater head")
@@ -24,7 +24,7 @@ evap = pd.read_csv("notebooks/data_notebook_7/evap_wellex.csv",
 
 # Create stress
 rm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential,
-                      recharge="Linear", name='recharge', cutoff=0.99)
+                      recharge="Linear", name='recharge')
 ml.add_stressmodel(rm)
 
 well = pd.read_csv("notebooks/data_notebook_7/well_wellex.csv",

@@ -3,23 +3,30 @@ This test file is meant for developing purposes. Providing an easy method to
 test the functioning of PASTA during development.
 
 """
+import pandas as pd
+
 import pastas as ps
 
-# read observations
-obs = ps.read_dino('data/B58C0698001_1.csv')
+ps.set_log_level("ERROR")
+
+# read observations and create the time series model
+obs = pd.read_csv("data/head_nb1.csv", index_col=0, parse_dates=True,
+                  squeeze=True)
 
 # Create the time series model
-ml = ps.Model(obs)
+ml = ps.Model(obs, name="head")
 
 # read weather data
-rain = ps.read_knmi('data/neerslaggeg_HEIBLOEM-L_967-2.txt', variables='RD')
-evap = ps.read_knmi('data/etmgeg_380.txt', variables='EV24')
+rain = pd.read_csv("data/rain_nb1.csv", index_col=0, parse_dates=True,
+                   squeeze=True)
+evap = pd.read_csv("data/evap_nb1.csv", index_col=0, parse_dates=True,
+                   squeeze=True)
 
 # Create stress
-sm = ps.StressModel2(stress=[rain, evap], rfunc=ps.Exponential,
-                     name='recharge')
+sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential,
+                      recharge="Linear", name='recharge')
 ml.add_stressmodel(sm)
 
-## Solve
+# Solve
 ml.solve()
 ml.plot()
