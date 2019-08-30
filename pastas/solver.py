@@ -246,7 +246,7 @@ class LmfitSolve(BaseSolver):
         """
         try:
             global lmfit
-            import lmfit as lmfit # Import Lmfit here, so it is no dependency
+            import lmfit as lmfit  # Import Lmfit here, so it is no dependency
         except ImportError:
             msg = "lmfit not installed. Please install lmfit first."
             raise ImportError(msg)

@@ -21,9 +21,8 @@ TODO
 
 """
 
-from logging import getLogger
-
 from importlib import import_module
+from logging import getLogger
 
 import numpy as np
 import pandas as pd

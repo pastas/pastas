@@ -1,9 +1,10 @@
+import logging
+from logging import handlers
+
 import numpy as np
 from pandas import Series, to_datetime, Timedelta, Timestamp, to_timedelta
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
-import logging
-from logging import handlers
 
 logger = logging.getLogger(__name__)
 

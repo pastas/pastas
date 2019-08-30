@@ -3,9 +3,10 @@
 
 """
 
+import warnings
+
 import numpy as np
 import pandas as pd
-import warnings
 
 from ..timeseries import TimeSeries
 
@@ -196,13 +197,13 @@ class KnmiStation:
             end = pd.to_datetime(end)
 
         if not isinstance(vars, list):
-            if isinstance(vars,np.ndarray):
+            if isinstance(vars, np.ndarray):
                 vars = list(vars)
             else:
                 vars = [vars]
 
         if not isinstance(stns, list):
-            if isinstance(stns,np.ndarray):
+            if isinstance(stns, np.ndarray):
                 stns = list(stns)
             else:
                 stns = [stns]
