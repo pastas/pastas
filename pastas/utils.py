@@ -1,9 +1,10 @@
+import logging
+from logging import handlers
+
 import numpy as np
 from pandas import Series, to_datetime, Timedelta, Timestamp, to_timedelta
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
-import logging
-from logging import handlers
 
 logger = logging.getLogger(__name__)
 
@@ -196,14 +197,14 @@ def timestep_weighted_resample(series, tindex):
     """
 
     # determine some arrays for the input-series
-    t0e = series.index.get_values()
+    t0e = np.array(series.index)
     dt0 = np.diff(t0e)
     dt0 = np.hstack((dt0[0], dt0))
     t0s = t0e - dt0
     v0 = series.values
 
     # determine some arrays for the output-series
-    t1e = tindex.get_values()
+    t1e = np.array(tindex)
     dt1 = np.diff(t1e)
     dt1 = np.hstack((dt1[0], dt1))
     t1s = t1e - dt1
@@ -392,3 +393,32 @@ def remove_file_handlers(logger=None):
     for handler in logger.handlers:
         if isinstance(handler, handlers.RotatingFileHandler):
             logger.removeHandler(handler)
+
+
+def validate_name(name):
+    """Method to check user-provided names and log a warning if wrong.
+
+    Parameters
+    ----------
+    name: str
+        String with the name to check for 'illegal' characters.
+
+    Returns
+    -------
+    name: str
+        Unchanged name string
+
+    Notes
+    -----
+    Forbidden characters are: "/", "\", " ".
+
+    """
+    name = str(name)  # Make sure it is a string
+
+    for char in ["\\", "/", " "]:
+        if char in name:
+            msg = "User-provided name '{}' contains illegal character " \
+                  "{}".format(name, char)
+            logger.warning(msg)
+
+    return name

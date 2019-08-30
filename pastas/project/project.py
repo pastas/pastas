@@ -17,15 +17,16 @@ from os import getlogin
 
 import numpy as np
 import pandas as pd
-from ..rfunc import Gamma
-from ..timeseries import TimeSeries
-from ..io.base import dump
-from ..model import Model
-from ..version import __version__
-from ..stressmodels import StressModel2
 
 from .maps import Map
 from .plots import Plot
+from ..decorators import PastasDeprecationWarning
+from ..io.base import dump
+from ..model import Model
+from ..rfunc import Gamma
+from ..stressmodels import StressModel2
+from ..timeseries import TimeSeries
+from ..version import __version__
 
 logger = getLogger(__name__)
 
@@ -49,24 +50,21 @@ class Project:
         """
         self.models = {}
         self.name = name
-        # Store the data in Pandas dataframes
-        self.data = pd.DataFrame()
 
         # DataFrames to store the data of the oseries and stresses
-        self.stresses = pd.DataFrame(columns=["name", "series", "kind", "x",
-                                              "y", "z"])
-        self.oseries = pd.DataFrame(columns=["name", "series", "kind", "x",
-                                             "y", "z"])
-        self.oseries.index.astype(str)
+        columns = ["name", "series", "kind", "x", "y", "z"]
+        self.stresses = pd.DataFrame(columns=columns)
+        self.oseries = pd.DataFrame(columns=columns)
 
         # Project metadata and file information
         self.metadata = self.get_metadata(metadata)
-        self.file_info = self._get_file_info()
+        self.file_info = self.get_file_info()
 
         # Load other modules
         self.plots = Plot(self)
         self.maps = Map(self)
 
+    @PastasDeprecationWarning
     def add_series(self, series, name=None, kind=None, metadata=None,
                    settings=None, **kwargs):
         """Method to add series to the oseries or stresses database.
@@ -88,9 +86,6 @@ class Project:
             Dictionary with any settings that will be passed to the
             TimeSeries object that is created internally.
 
-        Returns
-        -------
-
         """
         if name is None:
             name = series.name
@@ -103,7 +98,7 @@ class Project:
         if kind == "oseries":
             data = self.oseries
             if settings is None:
-                settings = 'oseries'
+                settings = "oseries"
         else:
             data = self.stresses
 
@@ -126,44 +121,57 @@ class Project:
         # Transfer the metadata (x, y and z) to dataframe as well to increase speed.
         for i in ts.metadata.keys():
             value = ts.metadata[i]
-            data.at[name, i] = value
+            data.loc[name, i] = value
 
-    def del_oseries(self, name):
-        """Method that savely removes oseries from the project. It validates
-        that the oseries is not used in any model.
+    def add_oseries(self, series, name=None, metadata=None, settings="oseries",
+                    **kwargs):
+        """Convenience method to add oseries to project
 
         Parameters
         ----------
+        series: pandas.Series / pastas.TimeSeries
+            Series object.
         name: str
-            string with a single oseries name.
+            String with the name of the series that will be maintained in
+            the database.
+        metadata: dict
+            Dictionary with any metadata that will be passed to the
+            TimeSeries object that is created internally.
+        settings: dict or str
+            Dictionary with any settings that will be passed to the
+            TimeSeries object that is created internally.
+
+        Returns
+        -------
 
         """
-        if name not in self.oseries.index:
-            error = ("Time series with name {} is not present in the database."
-                     " Please provide a different name.").format(name)
-            logger.error(error)
-        else:
-            self.oseries.drop(name, inplace=True)
-            logger.info(
-                "Oseries with name {} deleted from the database.".format(name))
+        self.add_series(series, name=name, metadata=metadata,
+                        settings=settings, kind="oseries", **kwargs)
 
-    def del_stress(self, name):
-        """Method that removes oseries from the project.
+    def add_stress(self, series, name=None, kind=None, metadata=None,
+                   settings=None, **kwargs):
+        """Convenience method to add stress series to project
 
         Parameters
         ----------
-        name: list or str
-            list with multiple or string with a single stress name.
+        series: pandas.Series / pastas.TimeSeries
+            Series object.
+        name: str
+            String with the name of the series that will be maintained in
+            the database.
+        kind: str
+            The kind of series that is added. When oseries are added it is
+            necessary to state "oseries" here.
+        metadata: dict
+            Dictionary with any metadata that will be passed to the
+            TimeSeries object that is created internally.
+        settings: dict or str
+            Dictionary with any settings that will be passed to the
+            TimeSeries object that is created internally.
 
         """
-        if name not in self.stresses.index:
-            error = ("Stress with name {} is not present in the database."
-                     " Please provide a different name.").format(name)
-            logger.error(error)
-        else:
-            self.stresses.drop(name, inplace=True)
-            logger.info(
-                "Stress with name {} deleted from the database.".format(name))
+        self.add_series(series, name=name, metadata=metadata,
+                        settings=settings, kind=kind, **kwargs)
 
     def add_model(self, oseries, model_name=None, **kwargs):
         """Method to add a Pastas Model instance based on one of the oseries.
@@ -206,6 +214,129 @@ class Project:
 
         return ml
 
+    def add_models(self, oseries="all", model_name_prefix="",
+                   model_name_suffix="", **kwargs):
+        """Method to add multiple Pastas Model instances based on one
+        or more of the oseries.
+
+        Parameters
+        ----------
+        oseries: str or list, optional
+            names of the oseries, if oseries is "all" all series in self.series
+            are used
+        model_name_prefix: str, optional
+            prefix to use for model names
+        model_name_suffix: str, optional
+            suffix to use for model names
+        kwargs: dict
+            any arguments that are taken by the Pastas Model instance can be
+            provided.
+
+        Returns
+        -------
+        mls: list of str
+            list of modelnames corresponding to the keys in the self.models
+            dictionary
+
+        """
+
+        if oseries == "all":
+            oseries_list = self.oseries.index
+        elif isinstance(oseries, str):
+            oseries_list = [oseries]
+        elif isinstance(oseries, list):
+            oseries_list = oseries
+
+        mls = []
+        for oseries_name in oseries_list:
+            model_name = model_name_prefix + oseries_name + model_name_suffix
+
+            # Add new model
+            ml = self.add_model(oseries_name, model_name, **kwargs)
+            mls.append(ml.name)
+
+        return mls
+
+    def add_recharge(self, mls=None, rfunc=Gamma, name="recharge", **kwargs):
+        """Add a StressModel2 to the time series models. The
+        selection of the precipitation and evaporation time series is based
+        on the shortest distance to the a stresses in the stresses list.
+
+        Parameters
+        ----------
+        mls: list of str, optional
+            list of model names, if None all models in project are
+            used.
+        rfunc: pastas.rfunc, optional
+            response function, default is the Gamma function.
+        name: str, optional
+            name of the stress, default is "recharge".
+        **kwargs:
+            arguments are pass to the StressModel2 function
+
+        Notes
+        -----
+        The behaviour of this method will change in the future to add a
+        RechargeModel instead of StressModel2.
+
+
+        """
+        if mls is None:
+            mls = self.models.keys()
+        elif isinstance(mls, Model):
+            mls = [mls.name]
+
+        for mlname in mls:
+            ml = self.models[mlname]
+            oseries = ml.oseries.name
+            prec_name = \
+                self.get_nearest_stresses(oseries, kind="prec").iloc[0][0]
+            prec = self.stresses.loc[prec_name, "series"]
+            evap_name = \
+                self.get_nearest_stresses(oseries, kind="evap").iloc[0][0]
+            evap = self.stresses.loc[evap_name, "series"]
+
+            recharge = StressModel2([prec, evap], rfunc, name=name, **kwargs)
+
+            ml.add_stressmodel(recharge)
+
+    def del_oseries(self, name):
+        """Method that safely removes oseries from the project. It validates
+        that the oseries is not used in any model.
+
+        Parameters
+        ----------
+        name: str
+            string with a single oseries name.
+
+        """
+        if name not in self.oseries.index:
+            error = ("Time series with name {} is not present in the database."
+                     " Please provide a different name.").format(name)
+            logger.error(error)
+        else:
+            self.oseries.drop(name, inplace=True)
+            logger.info(
+                "Oseries with name {} deleted from the database.".format(name))
+
+    def del_stress(self, name):
+        """Method that removes oseries from the project.
+
+        Parameters
+        ----------
+        name: list or str
+            list with multiple or string with a single stress name.
+
+        """
+        if name not in self.stresses.index:
+            error = ("Stress with name {} is not present in the database."
+                     " Please provide a different name.").format(name)
+            logger.error(error)
+        else:
+            self.stresses.drop(name, inplace=True)
+            logger.info(
+                "Stress with name {} deleted from the database.".format(name))
+
     def del_model(self, ml_name):
         """Method to safe-delete a model from the project.
 
@@ -222,44 +353,64 @@ class Project:
     def update_model_series(self):
         """Update all the Model series by their originals in self.oseries and
         self.stresses. This can for example be useful when new data is
-        added to any of the series in pr.oseries and pr.stresses
+        added to any of the series in mls.oseries and mls.stresses
 
         """
-        for name in self.models:
-            ml = self.models[name]
+        for name, ml in self.models.items():
+            oname = ml.oseries.name
             ml.oseries.series_original = self.oseries.loc[
-                name, 'series'].series_original
+                oname, "series"].series_original
             for sm in ml.stressmodels:
                 for st in ml.stressmodels[sm].stress:
                     st.series_original = self.stresses.loc[
-                        st.name, 'series'].series_original
+                        st.name, "series"].series_original
             # set oseries_calib empty, so it is determined again the next time
             ml.oseries_calib = None
 
-    def add_recharge(self, ml, rfunc=Gamma, name="recharge", **kwargs):
-        """Adds a recharge element to the time series model. The
-        selection of the precipitation and evaporation time series is based
-        on the shortest distance to the a stresses in the stresseslist.
+    def solve_models(self, mls=None, report=False, ignore_solve_errors=False,
+                     verbose=False, **kwargs):
+        """Solves the models in mls
 
-        Returns
-        -------
+        mls: list of str, optional
+            list of model names, if None all models in the project are solved.
+        report: boolean, optional
+            determines if a report is printed when the model is solved.
+        ignore_solve_errors: boolean, optional
+            if True errors emerging from the solve method are ignored.
+        **kwargs:
+            arguments are passed to the solve method.
 
         """
-        key = str(ml.oseries.name)
-        if 'prec' not in self.stresses['kind'].values:
-            logger.error('No precipitation-series (kind="prec") in project')
-            return
-        prec_name = self.get_nearest_stresses(key, kind="prec").iloc[0][0]
-        prec = self.stresses.loc[prec_name, "series"]
-        if 'evap' not in self.stresses['kind'].values:
-            logger.error('No evaporation-series (kind="evap") in project')
-            return
-        evap_name = self.get_nearest_stresses(key, kind="evap").iloc[0][0]
-        evap = self.stresses.loc[evap_name, "series"]
+        if mls is None:
+            mls = self.models.keys()
+        elif isinstance(mls, Model):
+            mls = [mls.name]
 
-        recharge = StressModel2([prec, evap], rfunc, name=name, **kwargs)
+        for ml_name in mls:
+            if verbose:
+                print("solving model -> {}".format(ml_name))
 
-        ml.add_stressmodel(recharge)
+            ml = self.models[ml_name]
+
+            m_kwargs = {}
+            for key, value in kwargs.items():
+                if isinstance(value, pd.Series):
+                    m_kwargs[key] = value.loc[ml_name]
+                else:
+                    m_kwargs[key] = value
+            # Convert timestamps
+            for tstamp in ["tmin", "tmax"]:
+                if tstamp in m_kwargs:
+                    m_kwargs[tstamp] = pd.Timestamp(m_kwargs[tstamp])
+
+            try:
+                ml.solve(report=report, **m_kwargs)
+            except Exception as e:
+                if ignore_solve_errors:
+                    warning = "solve error ignored for -> {}".format(ml.name)
+                    logger.warning(warning)
+                else:
+                    raise e
 
     def get_nearest_stresses(self, oseries=None, stresses=None, kind=None,
                              n=1):
@@ -269,6 +420,8 @@ class Project:
         ----------
         oseries: str
             String with the name of the oseries
+        stresses: str or list of str
+            String with the name of the stresses
         kind:
             String with the name of the stresses
         n: int
@@ -292,7 +445,7 @@ class Project:
 
         return data
 
-    def get_distances(self, oseries=None, stresses=None, kind=None, ):
+    def get_distances(self, oseries=None, stresses=None, kind=None):
         """Method to obtain the distances in meters between the stresses and
         oseries.
 
@@ -474,7 +627,7 @@ class Project:
 
         return metadata
 
-    def _get_file_info(self):
+    def get_file_info(self):
         file_info = dict()
         file_info["date_created"] = pd.Timestamp.now()
         file_info["date_modified"] = pd.Timestamp.now()
@@ -485,30 +638,33 @@ class Project:
             file_info["owner"] = "Unknown"
         return file_info
 
-    def dump(self, fname=None, **kwargs):
+    @PastasDeprecationWarning
+    def dump(self, fname, **kwargs):
+        return self.to_file(fname, **kwargs)
+
+    def to_file(self, fname, **kwargs):
         """Method to write a Pastas project to a file.
 
         Parameters
         ----------
-        fname
+        fname: str
+
 
         Returns
         -------
 
         """
-        data = self.dump_data(**kwargs)
+        data = self.to_dict(**kwargs)
         return dump(fname, data)
 
-    def dump_data(self, series=False, sim_series=False):
-        """Method to export a Pastas Project and return a dictionary with
-        the data to be exported.
+    def to_dict(self, series=False, sim_series=False):
+        """Internal method to export a Pastas Project as a dictionary.
 
         Parameters
         ----------
         series: bool
             export model input-series when True. Only export the name of
-            the model input_series when False
-
+            the model input_series when Fals
         sim_series: bool
             export model output-series when True
 
@@ -526,23 +682,24 @@ class Project:
         )
 
         # Series DataFrame
-        data["oseries"] = self._series_to_dict(self.oseries)
-        data["stresses"] = self._series_to_dict(self.stresses)
+        data["oseries"] = self.series_to_dict(self.oseries)
+        data["stresses"] = self.series_to_dict(self.stresses)
 
         # Models
         data["models"] = dict()
         for name, ml in self.models.items():
-            data["models"][name] = ml.dump_data(series=series,
-                                                sim_series=sim_series,
-                                                file_info=False)
+            data["models"][name] = ml.to_dict(series=series,
+                                              sim_series=sim_series,
+                                              file_info=False)
 
         return data
 
-    def _series_to_dict(self, series):
+    def series_to_dict(self, series):
+        """Internal method used to export the time series."""
         series = series.to_dict(orient="index")
 
         for name in series.keys():
             ts = series[name]["series"]
-            series[name]["series"] = ts.dump(series=True)
+            series[name]["series"] = ts.to_dict(series=True)
 
         return series

@@ -93,15 +93,21 @@ def q_gvg(series, tmin=None, tmax=None, by_year=True):
 
 def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
         output='mean', min_n_meas=16, min_n_years=8, year_offset='a-mar'):
-    """Classic method resampling the series to every 14th and 28th of
+    """Calculate the 'Gemiddelde Hoogste Grondwaterstand' (Average High 
+    Groundwater Level)
+    
+    Classic method resampling the series to every 14th and 28th of
     the month. Taking the mean of the mean of three highest values per
     year.
 
     Parameters
     ----------
+    series: pandas.Series with a DatetimeIndex
+        The pandas Series of which the statistic is determined
     tmin: pandas.Timestamp, optional
+        The lowest index to take into account
     tmax: pandas.Timestamp, optional
-    series
+        The highest index to take into account
     fill_method : str
         see .. :mod: pastas.stats.__gxg__
     limit : int or None, optional
@@ -144,14 +150,20 @@ def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
 
 def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
         output='mean', min_n_meas=16, min_n_years=8, year_offset='a-mar'):
-    """Classic method resampling the series to every 14th and 28th of
+    """Calculate the 'Gemiddelde Laagste Grondwaterstand' (Average Low 
+    Groundwater Level)
+    
+    Classic method resampling the series to every 14th and 28th of
     the month. Taking the mean of the mean of three lowest values per year.
 
     Parameters
     ----------
+    series: pandas.Series with a DatetimeIndex
+        The pandas Series of which the statistic is determined
     tmin: pandas.Timestamp, optional
+        The lowest index to take into account
     tmax: pandas.Timestamp, optional
-    series
+        The highest index to take into account
     fill_method : str, optional
         see .. :mod: pastas.stats.__gxg__
     limit : int or None, optional
@@ -194,15 +206,21 @@ def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
 
 def gvg(series, tmin=None, tmax=None, fill_method='linear', limit=8,
         output='mean', min_n_meas=2, min_n_years=8, year_offset='a'):
-    """Classic method resampling the series to every 14th and 28th of
+    """Calculate the 'Gemiddelde Voorjaars Grondwaterstand' (Average Spring 
+    Groundwater Level)
+    
+    Classic method resampling the series to every 14th and 28th of
     the month. Taking the mean of the values on March 14, March 28 and
     April 14.
 
     Parameters
     ----------
+    series: pandas.Series with a DatetimeIndex
+        The pandas Series of which the statistic is determined
     tmin: pandas.Timestamp, optional
+        The lowest index to take into account
     tmax: pandas.Timestamp, optional
-    series
+        The highest index to take into account
     fill_method : str, optional
         see .. :mod: pastas.stats.__gxg__
     limit : int or None, optional
@@ -225,6 +243,56 @@ def gvg(series, tmin=None, tmax=None, fill_method='linear', limit=8,
 
     """
     return __gxg__(series, __mean_spring__, tmin=tmin, tmax=tmax,
+                   fill_method=fill_method, limit=limit, output=output,
+                   min_n_meas=min_n_meas, min_n_years=min_n_years,
+                   year_offset=year_offset)
+
+
+def gg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
+       output='mean', min_n_meas=16, min_n_years=8, year_offset='a-mar'):
+    """Calculate the 'Gemiddelde Grondwaterstand' (Average Groundwater Level)
+    
+    Classic method resampling the series to every 14th and 28th of
+    the month. Taking the mean of the mean of three lowest values per year.
+
+    Parameters
+    ----------
+    series: pandas.Series with a DatetimeIndex
+        The pandas Series of which the statistic is determined
+    tmin: pandas.Timestamp, optional
+        The lowest index to take into account
+    tmax: pandas.Timestamp, optional
+        The highest index to take into account
+    fill_method : str, optional
+        see .. :mod: pastas.stats.__gxg__
+    limit : int or None, optional
+        Maximum number of days to fill using fill method, use None to
+        fill nothing.
+    output : str, optional
+        output type 'yearly' for series of yearly values, 'mean' for
+        mean of yearly values
+    min_n_meas: int, optional
+        Minimum number of measurements per year (at maximum 24)
+    min_n_years: int, optional
+        Minimum number of years
+    year_offset: resampling offset. Use 'a' for calendar years
+        (jan 1 to dec 31) and 'a-mar' for hydrological years (apr 1 to mar 31)
+
+    Returns
+    -------
+    pd.Series or scalar
+        Series of yearly values or mean of yearly values
+
+    """
+
+    # mean_low = lambda s: s.nsmallest(3).mean()
+    def mean_all(s, min_n_meas):
+        if len(s) < min_n_meas:
+            return nan
+        else:
+            return s.mean()
+
+    return __gxg__(series, mean_all, tmin=tmin, tmax=tmax,
                    fill_method=fill_method, limit=limit, output=output,
                    min_n_meas=min_n_meas, min_n_years=min_n_years,
                    year_offset=year_offset)
@@ -282,10 +350,14 @@ def __gxg__(series, year_agg, tmin, tmax, fill_method, limit, output,
 
     Parameters
     ----------
+    series: pandas.Series with a DatetimeIndex
+        The pandas Series of which the statistic is determined
     year_agg : function series -> scalar
         Aggregator function to one value per year
     tmin: pandas.Timestamp, optional
+        The lowest index to take into account
     tmax: pandas.Timestamp, optional
+        The highest index to take into account
     fill_method : str
         see notes below
     limit : int or None, optional
@@ -393,8 +465,8 @@ def __gxg__(series, year_agg, tmin, tmax, fill_method, limit, output,
         else:
             return yearly.mean()
     else:
-        ValueError('{output:} is not a valid output option'.format(
-            output=output))
+        msg = '{} is not a valid output option'.format(output)
+        raise (ValueError(msg))
 
 
 def __q_gxg__(series, q, tmin=None, tmax=None, by_year=True):

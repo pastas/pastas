@@ -12,7 +12,7 @@ from ..timeseries import TimeSeries
 
 
 def read_waterbase(fname, locations=None, variable="NUMERIEKEWAARDE",
-                   kind="waterlevel", freq="10min", units="cm"):
+                   kind="waterlevel", freq="10min"):
     """Method to import waterlevel ts from waterbase.
 
     Parameters
@@ -22,6 +22,8 @@ def read_waterbase(fname, locations=None, variable="NUMERIEKEWAARDE",
     variable: str
         name of the variable to collect the time series from. Only one
         variable name is allowed.
+    kind: str
+    freq: str
 
     Returns
     -------

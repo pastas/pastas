@@ -12,7 +12,6 @@ import numpy as np
 import pandas as pd
 
 from .decorators import set_parameter
-from .utils import get_dt
 
 logger = getLogger(__name__)
 
@@ -83,15 +82,15 @@ class NoiseModelBase(ABC):
         """
         self.parameters.loc[name, 'vary'] = value
 
-    def dump(self):
-        data = dict()
+    def to_dict(self):
+        data = {}
         data["type"] = self._name
         return data
 
 
 class NoiseModel(NoiseModelBase):
-    _name = "NoiseModel"
-    __doc__ = """Noise model with exponential decay of the residual .
+    """Noise model with exponential decay of the residual and
+    weighting with the time step between observations.
 
     Notes
     -----
@@ -101,7 +100,7 @@ class NoiseModel(NoiseModelBase):
         v(t1) = r(t1) - r(t0) * exp(- (t1 - t0) / alpha)
     
     Note that in the referenced paper, alpha is defined as the inverse of 
-    alpha used in Pastas.
+    alpha used in Pastas. The unit of the alpha parameter is always in days.
     
     Examples
     --------
@@ -117,16 +116,22 @@ class NoiseModel(NoiseModelBase):
     .. [1] von Asmuth, J. R., and M. F. P. Bierkens (2005), Modeling irregularly spaced residual series as a continuous stochastic process, Water Resour. Res., 41, W12404, doi:10.1029/2004WR003726.
 
     """
+    _name = "NoiseModel"
 
     def __init__(self):
         NoiseModelBase.__init__(self)
         self.nparam = 1
         self.set_init_parameters()
 
-    def set_init_parameters(self):
-        self.parameters.loc['noise_alpha'] = (14.0, 0, 5000, 1, 'noise')
+    def set_init_parameters(self, oseries=None):
+        if oseries is not None:
+            pinit = oseries.index.to_series().diff() / pd.Timedelta(1, 'd')
+            pinit = pinit.median()
+        else:
+            pinit = 14.0
+        self.parameters.loc['noise_alpha'] = (pinit, 0, 5000, True, 'noise')
 
-    def simulate(self, res, parameters, freq):
+    def simulate(self, res, parameters):
         """
 
         Parameters
@@ -142,16 +147,14 @@ class NoiseModel(NoiseModelBase):
             Series of the noise.
 
         """
-        odelt = res.index.to_series().diff() / pd.Timedelta(1, 'd')
-        odelt = odelt.iloc[1:]
-        noise = pd.Series(data=res)
         alpha = parameters[0]
+        odelt = (res.index[1:] - res.index[:-1]).values / pd.Timedelta("1d")
         # res.values is needed else it gets messed up with the dates
-        noise.iloc[1:] -= np.exp(-odelt / alpha) * res.values[:-1]
-        weights = self.weights(alpha, odelt)
-        noise = noise.multiply(weights, fill_value=0.0)
-        noise.name = "Noise"
-        return noise
+        v = res.values[1:] - np.exp(-odelt / alpha) * res.values[:-1]
+        res.iloc[1:] = v * self.weights(alpha, odelt)
+        res.iloc[0] = 0
+        res.name = "Noise"
+        return res
 
     def weights(self, alpha, odelt):
         """Method to calculate the weights for the noise based on the
@@ -184,6 +187,8 @@ class NoiseModel2(NoiseModelBase):
     .. math::
         v(t1) = r(t1) - r(t0) * exp(- (t1 - t0) / alpha)
 
+    The unit of the alpha parameter is always in days.
+
     Examples
     --------
     It can happen that the noisemodel is used during model calibration
@@ -201,10 +206,15 @@ class NoiseModel2(NoiseModelBase):
         self.nparam = 1
         self.set_init_parameters()
 
-    def set_init_parameters(self):
-        self.parameters.loc['noise_alpha'] = (14.0, 0, 5000, 1, 'noise')
+    def set_init_parameters(self, oseries=None):
+        if oseries is not None:
+            pinit = oseries.index.to_series().diff() / pd.Timedelta(1, 'd')
+            pinit = pinit.median()
+        else:
+            pinit = 14.0
+        self.parameters.loc['noise_alpha'] = (pinit, 0, 5000, True, 'noise')
 
-    def simulate(self, res, parameters, freq):
+    def simulate(self, res, parameters):
         """
 
         Parameters

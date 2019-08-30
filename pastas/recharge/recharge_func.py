@@ -65,6 +65,7 @@ class Linear(RechargeBase):
     R = P - f * E
 
     """
+    _name = "Linear"
 
     def __init__(self):
         RechargeBase.__init__(self)
@@ -73,7 +74,7 @@ class Linear(RechargeBase):
     def get_init_parameters(self, name="recharge"):
         parameters = pd.DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        parameters.loc[name + '_f'] = (-1.0, -2.0, 0.0, 1, name)
+        parameters.loc[name + '_f'] = (-1.0, -2.0, 0.0, True, name)
         return parameters
 
     def simulate(self, prec, evap, p, **kwargs):

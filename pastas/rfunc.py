@@ -23,12 +23,12 @@ TODO
 
 import numpy as np
 from pandas import DataFrame
+from scipy.integrate import quad
 from scipy.special import gammainc, gammaincinv, k0, exp1, erfc, lambertw, \
     erfcinv
-from scipy.integrate import quad
 
 __all__ = ["Gamma", "Exponential", "Hantush", "Polder", "FourParam",
-           "DoubleExponential", "One", "Edelman"]
+           "DoubleExponential", "One", "Edelman", "HantushWellModel"]
 
 
 class RfuncBase:
@@ -125,9 +125,9 @@ class Gamma(RfuncBase):
 
     Parameters
     ----------
-    up: bool, optional
+    up: bool or None, optional
         indicates whether a positive stress will cause the head to go up
-        (True, default) or down (False)
+        (True, default) or down (False), if None the head can go both ways.
     meanstress: float
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
@@ -143,7 +143,7 @@ class Gamma(RfuncBase):
     """
     _name = "Gamma"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.99):
+    def __init__(self, up=True, meanstress=1, cutoff=0.999):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 3
 
@@ -152,13 +152,18 @@ class Gamma(RfuncBase):
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
             parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
-                                           100 / self.meanstress, 1, name)
-        else:
+                                           100 / self.meanstress, True, name)
+        elif self.up is False:
             parameters.loc[name + '_A'] = (-1 / self.meanstress,
-                                           -100 / self.meanstress, 0, 1, name)
+                                           -100 / self.meanstress, 0, True,
+                                           name)
+        else:
+            parameters.loc[name + '_A'] = (1 / self.meanstress,
+                                           np.nan, np.nan, True, name)
+
         # if n is too small, the length of the response function is close to zero
-        parameters.loc[name + '_n'] = (1, 0.1, 10, 1, name)
-        parameters.loc[name + '_a'] = (10, 0.01, 5000, 1, name)
+        parameters.loc[name + '_n'] = (1, 0.1, 10, True, name)
+        parameters.loc[name + '_a'] = (10, 0.01, 5000, True, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):
@@ -185,9 +190,9 @@ class Exponential(RfuncBase):
 
     Parameters
     ----------
-    up: bool, optional
+    up: bool or None, optional
         indicates whether a positive stress will cause the head to go up
-        (True, default) or down (False)
+        (True, default) or down (False), if None the head can go both ways.
     meanstress: float
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
@@ -202,7 +207,7 @@ class Exponential(RfuncBase):
     """
     _name = "Exponential"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.99):
+    def __init__(self, up=True, meanstress=1, cutoff=0.999):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 2
 
@@ -210,12 +215,17 @@ class Exponential(RfuncBase):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
-            parameters.loc[name + '_A'] = (
-                1 / self.meanstress, 0, 100 / self.meanstress, 1, name)
+            parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
+                                           100 / self.meanstress, True, name)
+        elif self.up is False:
+            parameters.loc[name + '_A'] = (-1 / self.meanstress,
+                                           -100 / self.meanstress, 0, True,
+                                           name)
         else:
-            parameters.loc[name + '_A'] = (
-                -1 / self.meanstress, -100 / self.meanstress, 0, 1, name)
-        parameters.loc[name + '_a'] = (10, 0.01, 5000, 1, name)
+            parameters.loc[name + '_A'] = (1 / self.meanstress,
+                                           np.nan, np.nan, True, name)
+
+        parameters.loc[name + '_a'] = (10, 0.01, 5000, True, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):
@@ -241,9 +251,9 @@ class Hantush(RfuncBase):
 
     Parameters
     ----------
-    up: bool, optional
+    up: bool or None, optional
         indicates whether a positive stress will cause the head to go up
-        (True, default) or down (False)
+        (True, default) or down (False), if None the head can go both ways.
     meanstress: float
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
@@ -252,7 +262,7 @@ class Hantush(RfuncBase):
 
     Notes
     -----
-    The Hantush well function is emplained in [1]_, [2]_ and [3]_.
+    The Hantush well function is explained in [1]_, [2]_ and [3]_.
     It's parameters are:
 
     .. math:: p[0] = A = \\frac{1}{4 \\pi kD}
@@ -277,7 +287,7 @@ class Hantush(RfuncBase):
     """
     _name = "Hantush"
 
-    def __init__(self, up=False, meanstress=1, cutoff=0.99):
+    def __init__(self, up=False, meanstress=1, cutoff=0.999):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 3
 
@@ -285,13 +295,18 @@ class Hantush(RfuncBase):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
-            parameters.loc[name + '_A'] = (
-                1 / self.meanstress, 0, 100 / self.meanstress, 1, name)
+            parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
+                                           100 / self.meanstress, True, name)
+        elif self.up is False:
+            parameters.loc[name + '_A'] = (-1 / self.meanstress,
+                                           -100 / self.meanstress, 0, True,
+                                           name)
         else:
-            parameters.loc[name + '_A'] = (
-                -1 / self.meanstress, -100 / self.meanstress, 0, 1, name)
-        parameters.loc[name + '_rho'] = (1, 1e-4, 10, 1, name)
-        parameters.loc[name + '_cS'] = (100, 1e-3, 1e4, 1, name)
+            parameters.loc[name + '_A'] = (1 / self.meanstress,
+                                           np.nan, np.nan, True, name)
+
+        parameters.loc[name + '_rho'] = (1, 1e-4, 10, True, name)
+        parameters.loc[name + '_cS'] = (100, 1e-3, 1e4, True, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):
@@ -327,6 +342,114 @@ class Hantush(RfuncBase):
         return p[0] * F / (2 * k0rho)
 
 
+class HantushWellModel(RfuncBase):
+    """ A special implementation of the Hantush well function for
+    multiple wells.
+
+    Note: The parameter r (distance from the well to the observation point)
+    is passed as a known value, and is used to scale the response function.
+    The optimized parameters are slightly different from the original
+    Hantush implementation:
+    - A: To get the same A as the original Hantush:
+        A_orig = A * 2 * k0(r / lambda) or use the gain() method
+    - lab: lambda, the r parameter is passed separately to calculate
+        rho = r / lambda internally
+    - cS: stays the same
+    - r: distance, used to calculate rho, see lab.
+
+    Parameters
+    ----------
+    up: bool, optional
+        indicates whether a positive stress will cause the head to go up
+        (True, default) or down (False)
+    meanstress: float
+        mean value of the stress, used to set the initial value such that
+        the final step times the mean stress equals 1
+    cutoff: float
+        percentage after which the step function is cut off. default=0.99.
+
+    Notes
+    -----
+    The HantushWellModel well function is explained in [1]_, [2]_ and [3]_.
+    It's parameters are (note the addition of the r parameter in this
+    implementation):
+
+    .. math:: p[0] = A = \\frac{1}{4 \\pi kD} \\cdot 2 k_0 \\left( \\frac{r}{\\lambda} \\right)
+    .. math:: p[1] = lab = \\lambda
+    .. math:: p[2] = cS
+    .. math:: p[3] = r \\text{(not optimized)}
+
+    where :math:`\\lambda = \\sqrt{\\frac{kD}{c}}`
+
+    References
+    ----------
+    .. [1] Hantush, M. S., & Jacob, C. E. (1955). Non‐steady radial flow in an
+      infinite leaky aquifer. Eos, Transactions American Geophysical Union,
+      36(1), 95-100.
+
+    .. [2] Veling, E. J. M., & Maas, C. (2010). Hantush well function
+      revisited. Journal of hydrology, 393(3), 381-388.
+
+    .. [3] Von Asmuth, J. R., Maas, K., Bakker, M., & Petersen, J. (2008).
+      Modeling time series of ground water head fluctuations subjected to
+      multiple stresses. Ground Water, 46(1), 30-40.
+
+    """
+    _name = "HantushWellModel"
+
+    def __init__(self, up=False, meanstress=1, cutoff=0.999):
+        RfuncBase.__init__(self, up, meanstress, cutoff)
+        self.nparam = 3
+
+    def get_init_parameters(self, name):
+        parameters = DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        if self.up:
+            parameters.loc[name + '_A'] = (
+                1 / self.meanstress, 0, 100 / self.meanstress, True, name)
+        else:
+            parameters.loc[name + '_A'] = (
+                -1 / self.meanstress, -100 / self.meanstress, 0, True, name)
+        parameters.loc[name + '_lab'] = (1000, 1, 1e6, True, name)
+        parameters.loc[name + '_cS'] = (100, 1e-3, 1e4, True, name)
+        return parameters
+
+    def get_tmax(self, p, cutoff=None):
+        r = 1 if len(p) == 3 else p[3]
+        # approximate formula for tmax
+        if cutoff is None:
+            cutoff = self.cutoff
+        rho = r / p[1]
+        cS = p[2]
+        k0rho = k0(rho)
+        return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
+
+    def gain(self, p):
+        r = 1 if len(p) == 3 else p[3]
+        return p[0] * 2 * k0(r / p[1])
+
+    def step(self, p, dt=1, cutoff=None):
+        r = 1 if len(p) == 3 else p[3]
+        rho = r / p[1]
+        cS = p[2]
+        k0rho = k0(rho)
+        if isinstance(dt, np.ndarray):
+            t = dt
+        else:
+            self.tmax = max(self.get_tmax(p, cutoff), 10 * dt)
+            t = np.arange(dt, self.tmax, dt)
+        tau = t / cS
+        tau1 = tau[tau < rho / 2]
+        tau2 = tau[tau >= rho / 2]
+        w = (exp1(rho) - k0rho) / (exp1(rho) - exp1(rho / 2))
+        F = np.zeros_like(tau)
+        F[tau < rho / 2] = w * exp1(rho ** 2 / (4 * tau1)) - (w - 1) * exp1(
+            tau1 + rho ** 2 / (4 * tau1))
+        F[tau >= rho / 2] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(
+            tau2 + rho ** 2 / (4 * tau2))
+        return p[0] * F
+
+
 class Polder(RfuncBase):
     """The Polder function, for a river in a confined aquifer,
     overlain by an aquitard with aquiferous ditches.
@@ -347,7 +470,7 @@ class Polder(RfuncBase):
     """
     _name = "Polder"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.99):
+    def __init__(self, up=True, meanstress=1, cutoff=0.999):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 2
 
@@ -356,8 +479,8 @@ class Polder(RfuncBase):
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         a_init = 1
         b_init = 0.1
-        parameters.loc[name + '_a'] = (a_init, 0, 100, 1, name)
-        parameters.loc[name + '_b'] = (b_init, 0, 10, 1, name)
+        parameters.loc[name + '_a'] = (a_init, 0, 100, True, name)
+        parameters.loc[name + '_b'] = (b_init, 0, 10, True, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):
@@ -398,7 +521,7 @@ class One(RfuncBase):
     """
     _name = "One"
 
-    def __init__(self, up, meanstress, cutoff):
+    def __init__(self, up=None, meanstress=1, cutoff=0.999):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 1
 
@@ -406,9 +529,14 @@ class One(RfuncBase):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
-            parameters.loc[name + '_d'] = (1, 0, 100, 1, name)
+            parameters.loc[name + '_d'] = (
+                self.meanstress, 0, np.nan, True, name)
+        elif self.up is False:
+            parameters.loc[name + '_d'] = (
+                self.meanstress, np.nan, 0, True, name)
         else:
-            parameters.loc[name + '_d'] = (-1, -100, 0, 1, name)
+            parameters.loc[name + '_d'] = (
+                self.meanstress, np.nan, np.nan, True, name)
         return parameters
 
     def gain(self, p):
@@ -429,9 +557,9 @@ class FourParam(RfuncBase):
 
     Parameters
     ----------
-    up: bool, optional
+    up: bool or None, optional
         indicates whether a positive stress will cause the head to go up
-        (True, default) or down (False)
+        (True, default) or down (False), if None the head can go both ways.
     meanstress: float
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
@@ -448,7 +576,7 @@ class FourParam(RfuncBase):
     """
     _name = "FourParam"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.99):
+    def __init__(self, up=True, meanstress=1, cutoff=0.999):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 4
         self.quad = False
@@ -458,13 +586,18 @@ class FourParam(RfuncBase):
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
             parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
-                                           100 / self.meanstress, 1, name)
-        else:
+                                           100 / self.meanstress, True, name)
+        elif self.up is False:
             parameters.loc[name + '_A'] = (-1 / self.meanstress,
-                                           -100 / self.meanstress, 0, 1, name)
-        parameters.loc[name + '_n'] = (1, -10, 10, 1, name)
-        parameters.loc[name + '_a'] = (10, 0.01, 5000, 1, name)
-        parameters.loc[name + '_b'] = (10, 0.01, 5000, 1, name)
+                                           -100 / self.meanstress, 0, True,
+                                           name)
+        else:
+            parameters.loc[name + '_A'] = (1 / self.meanstress,
+                                           np.nan, np.nan, True, name)
+
+        parameters.loc[name + '_n'] = (1, -10, 10, True, name)
+        parameters.loc[name + '_a'] = (10, 0.01, 5000, True, name)
+        parameters.loc[name + '_b'] = (10, 0.01, 5000, True, name)
         return parameters
 
     def function(self, t, p):
@@ -581,9 +714,9 @@ class FourParamQuad(FourParam):
 
     Parameters
     ----------
-    up: bool, optional
+    up: bool or None, optional
         indicates whether a positive stress will cause the head to go up
-        (True, default) or down (False)
+        (True, default) or down (False), if None the head can go both ways.
     meanstress: float
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
@@ -603,7 +736,7 @@ class FourParamQuad(FourParam):
     """
     _name = "FourParamQuad"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.99):
+    def __init__(self, up=True, meanstress=1, cutoff=0.999):
         FourParam.__init__(self, up, meanstress, cutoff)
         self.nparam = 4
         self.quad = True
@@ -614,9 +747,9 @@ class DoubleExponential(RfuncBase):
 
     Parameters
     ----------
-    up: bool, optional
+    up: bool or None, optional
         indicates whether a positive stress will cause the head to go up
-        (True, default) or down (False)
+        (True, default) or down (False), if None the head can go both ways.
     meanstress: float
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
@@ -633,7 +766,7 @@ class DoubleExponential(RfuncBase):
     """
     _name = "DoubleExponential"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.99):
+    def __init__(self, up=True, meanstress=1, cutoff=0.999):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 4
 
@@ -642,14 +775,18 @@ class DoubleExponential(RfuncBase):
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
             parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
-                                           100 / self.meanstress, 1, name)
-        else:
+                                           100 / self.meanstress, True, name)
+        elif self.up is False:
             parameters.loc[name + '_A'] = (-1 / self.meanstress,
-                                           -100 / self.meanstress, 0, 1, name)
+                                           -100 / self.meanstress, 0, True,
+                                           name)
+        else:
+            parameters.loc[name + '_A'] = (1 / self.meanstress,
+                                           np.nan, np.nan, True, name)
 
-        parameters.loc[name + '_alpha'] = (0.1, 0.01, 0.99, 1, name)
-        parameters.loc[name + '_a1'] = (10, 0.01, 5000, 1, name)
-        parameters.loc[name + '_a2'] = (10, 0.01, 5000, 1, name)
+        parameters.loc[name + '_alpha'] = (0.1, 0.01, 0.99, True, name)
+        parameters.loc[name + '_a1'] = (10, 0.01, 5000, True, name)
+        parameters.loc[name + '_a2'] = (10, 0.01, 5000, True, name)
         return parameters
 
     def calc_tmax(self, p, cutoff=None):
@@ -681,9 +818,9 @@ class Edelman(RfuncBase):
 
     Parameters
     ----------
-    up: bool, optional
+    up: bool or None, optional
         indicates whether a positive stress will cause the head to go up
-        (True, default) or down (False)
+        (True, default) or down (False), if None the head can go both ways.
     meanstress: float
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
@@ -703,7 +840,7 @@ class Edelman(RfuncBase):
     """
     _name = "Edelman"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.99):
+    def __init__(self, up=True, meanstress=1, cutoff=0.999):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 1
 
@@ -711,7 +848,7 @@ class Edelman(RfuncBase):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         beta_init = 1.0
-        parameters.loc[name + '_beta'] = (beta_init, 0, 1000, 1, name)
+        parameters.loc[name + '_beta'] = (beta_init, 0, 1000, True, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):

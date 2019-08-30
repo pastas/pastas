@@ -6,6 +6,7 @@ Created on Mon Jun  3 12:10:05 2019
 """
 import os
 import shutil
+
 import pytest
 
 pathname = os.path.join('examples', 'notebooks')

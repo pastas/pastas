@@ -87,15 +87,15 @@ class MenyData:
             data = [data]
 
         if 'IN' in data:
-            self.IN = dict()
+            self.IN = {}
             self.read_in(mat)
 
         if 'H' in data:
-            self.H = dict()
+            self.H = {}
             self.read_h(mat)
 
         if 'M' in data:
-            self.M = dict()
+            self.M = {}
             self.read_m(mat)
 
         del mat  # Delete the mat file from memory again
@@ -125,14 +125,13 @@ class MenyData:
 
         # Read all the time series models
         for i, IN in enumerate(mat['IN']):
-            data = dict()
+            data = {}
 
             for name in IN._fieldnames:
                 if name != 'values':
                     data[name] = getattr(IN, name)
                 else:
-                    tindex = [matlab2datetime(tval) for tval in
-                              IN.values[:, 0]]
+                    tindex = map(matlab2datetime, IN.values[:, 0])
                     series = Series(IN.values[:, 1], index=tindex)
 
                     # round on seconds, to get rid of conversion milliseconds
@@ -172,7 +171,7 @@ class MenyData:
 
         # Read all the time series models
         for i, H in enumerate(mat['H']):
-            data = dict()
+            data = {}
 
             for name in H._fieldnames:
                 if name != 'values':
@@ -182,8 +181,7 @@ class MenyData:
                         # when diver-files are used, values will be empty
                         series = Series()
                     else:
-                        tindex = [matlab2datetime(tval) for tval in
-                                  H.values[:, 0]]
+                        tindex = map(matlab2datetime, H.values[:, 0])
                         # measurement is used as is
                         series = Series(H.values[:, 1], index=tindex)
                         # round on seconds, to get rid of conversion milliseconds
@@ -210,14 +208,13 @@ class MenyData:
 
         # Read all the time series models
         for i, M in enumerate(mat['M']):
-            data = dict()
+            data = {}
 
             for name in M._fieldnames:
                 if name != 'values':
                     data[name] = getattr(M, name)
                 else:
-                    tindex = [matlab2datetime(tval) for tval in
-                              M.values[:, 0]]
+                    tindex = map(matlab2datetime, M.values[:, 0])
                     # measurement is used as is
                     series = Series(M.values[:, 1], index=tindex)
                     # round on seconds, to get rid of conversion milliseconds

@@ -3,14 +3,15 @@ from .noisemodels import NoiseModel, NoiseModel2
 from .project import Project
 from .read import read_meny, read_dino, read_knmi, read_waterbase
 from .rfunc import Gamma, Exponential, Hantush, Polder, One, FourParam, \
-    DoubleExponential
-from .solver import LmfitSolve, LeastSquares, DESolve, MarkSolver
+    DoubleExponential, HantushWellModel
+from .solver import LmfitSolve, LeastSquares
 from .stressmodels import StressModel, StressModel2, Constant, FactorModel, \
     RechargeModel
 from .timeseries import TimeSeries
 from .transform import ThresholdTransform
 from .version import __version__
 from .utils import initialize_logger, set_log_level
+from .plots import TrackSolve
 
 import logging
 
