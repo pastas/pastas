@@ -35,7 +35,8 @@ def pastas_hook(obj):
                     obj[key] = TimeSeries(**value)
                 except:
                     obj[key] = value
-            obj[key].index = obj[key].index.tz_localize(None)
+            if isinstance(obj[key], Series):
+                obj[key].index = obj[key].index.tz_localize(None)
         elif key in ["time_offset", "warmup"]:
             obj[key] = Timedelta(value)
         elif key == "parameters":

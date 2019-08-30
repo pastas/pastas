@@ -12,7 +12,6 @@ import numpy as np
 import pandas as pd
 
 from .decorators import set_parameter
-from .utils import get_dt
 
 logger = getLogger(__name__)
 
@@ -83,15 +82,14 @@ class NoiseModelBase(ABC):
         """
         self.parameters.loc[name, 'vary'] = value
 
-    def dump(self):
-        data = dict()
+    def to_dict(self):
+        data = {}
         data["type"] = self._name
         return data
 
 
 class NoiseModel(NoiseModelBase):
-    _name = "NoiseModel"
-    __doc__ = """Noise model with exponential decay of the residual and 
+    """Noise model with exponential decay of the residual and
     weighting with the time step between observations.
 
     Notes
@@ -118,6 +116,7 @@ class NoiseModel(NoiseModelBase):
     .. [1] von Asmuth, J. R., and M. F. P. Bierkens (2005), Modeling irregularly spaced residual series as a continuous stochastic process, Water Resour. Res., 41, W12404, doi:10.1029/2004WR003726.
 
     """
+    _name = "NoiseModel"
 
     def __init__(self):
         NoiseModelBase.__init__(self)
@@ -148,16 +147,14 @@ class NoiseModel(NoiseModelBase):
             Series of the noise.
 
         """
-        odelt = res.index.to_series().diff() / pd.Timedelta(1, 'd')
-        odelt = odelt.iloc[1:]
-        noise = pd.Series(data=res)
         alpha = parameters[0]
+        odelt = (res.index[1:] - res.index[:-1]).values / pd.Timedelta("1d")
         # res.values is needed else it gets messed up with the dates
-        noise.iloc[1:] -= np.exp(-odelt / alpha) * res.values[:-1]
-        weights = self.weights(alpha, odelt)
-        noise = noise.multiply(weights, fill_value=0.0)
-        noise.name = "Noise"
-        return noise
+        v = res.values[1:] - np.exp(-odelt / alpha) * res.values[:-1]
+        res.iloc[1:] = v * self.weights(alpha, odelt)
+        res.iloc[0] = 0
+        res.name = "Noise"
+        return res
 
     def weights(self, alpha, odelt):
         """Method to calculate the weights for the noise based on the

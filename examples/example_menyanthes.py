@@ -22,11 +22,11 @@ IN2.name = 'Evaporation'
 sm = ps.StressModel2([IN, IN2], ps.Gamma, 'Recharge')
 ml.add_stressmodel(sm)
 
-# Add well extraction 1
-IN = meny.IN['Extraction 1']
-well = ps.TimeSeries(IN["values"], freq_original="M", settings="well")
-# extraction amount counts for the previous month
-sm = ps.StressModel(well, ps.Hantush, 'Extraction_1', up=False)
+#Add well extraction 1
+# IN = meny.IN['Extraction 1']
+# well = ps.TimeSeries(IN["values"], freq_original="M", settings="well")
+# # extraction amount counts for the previous month
+# sm = ps.StressModel(well, ps.Hantush, 'Extraction_1', up=False)
 
 # Add well extraction 2
 IN = meny.IN['Extraction 2']
@@ -44,7 +44,6 @@ sm2 = ps.StressModel(well, ps.Hantush, 'Extraction_3', up=False)
 ml.add_stressmodel(sm, sm1, sm2)
 
 # Solve
-ml.solve()
+ml.solve(tmax="1995")
 
-# make a decomposition-plot
 ax = ml.plots.decomposition(ytick_base=1.)

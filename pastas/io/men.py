@@ -15,8 +15,8 @@ from ..utils import datetime2matlab
 
 
 def load(fname):
-    raise (NotImplementedError(
-        'This is not implemented yet. See the reads-section for a Menyanthes-read'))
+    raise NotImplementedError("This is not implemented yet. See the "
+                              "reads-section for a Menyanthes-read")
 
 
 def dump(fname, data, version=3):
@@ -26,7 +26,7 @@ def dump(fname, data, version=3):
     elif version == 2:
         version = '2.x.g.t (beta)'
     # load an empty menyanthes file
-    io_dir, this_script_name = path.split(__file__)
+    io_dir, _ = path.split(__file__)
     base_fname = path.join(io_dir, 'men', version + '.men')
 
     if not path.exists(base_fname):

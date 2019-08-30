@@ -107,8 +107,8 @@ class TimeSeries:
                 if len(series.columns) is 1:
                     series = series.iloc[:, 0]
             elif not isinstance(series, pd.Series):
-                error = "Expected a Pandas Series, got %s" % type(series)
-                raise (TypeError(error))
+                msg = "Expected a Pandas Series, got {}".format(type(series))
+                raise TypeError(msg)
 
             validate = True
             update = True
@@ -169,6 +169,17 @@ class TimeSeries:
         if update:
             self.update_series(force_update=True, **self.settings)
 
+    def __repr__(self):
+        """Prints a simple string representation of the time series.
+        """
+        template = ('{cls}(name={name}, freq={freq}, tmin={tmin}, '
+                    'tmax={tmax})')
+        return template.format(cls=self.__class__.__name__,
+                               name=self.name,
+                               freq=self.settings["freq"],
+                               tmin=self.settings["tmin"],
+                               tmax=self.settings["tmax"])
+
     @property
     def series_original(self):
         return self._series_original
@@ -177,8 +188,8 @@ class TimeSeries:
     def series_original(self, series):
         """Sets a new freq_original for the TimeSeries"""
         if not isinstance(series, pd.Series):
-            raise (
-                TypeError("Expected a Pandas Series, got %s" % type(series)))
+            raise TypeError("Expected a Pandas Series, got {}".format(
+                type(series)))
         else:
             self._series_original = series
             # make sure that tmin and tmax and freq_original are set in validate_series
@@ -198,9 +209,9 @@ class TimeSeries:
 
     @series.setter
     def series(self, value):
-        raise(AttributeError('You cannot set series by yourself, as it is '
-                             'calculated from series_original. Please set '
-                             'series_original to update the series.'))
+        raise AttributeError("You cannot set series by yourself, as it is "
+                             "calculated from series_original. Please set "
+                             "series_original to update the series.")
 
     @property
     def series_validated(self):
@@ -208,21 +219,9 @@ class TimeSeries:
 
     @series_validated.setter
     def series_validated(self, value):
-        raise(AttributeError(
-            'You cannot set series_validated by yourself, as it is '
-            'calculated from series_original. Please set '
-            'series_original to update the series.'))
-
-    def __repr__(self):
-        """Prints a simple string representation of the time series.
-        """
-        template = ('{cls}(name={name}, freq={freq}, tmin={tmin}, '
-                    'tmax={tmax})')
-        return template.format(cls=self.__class__.__name__,
-                               name=self.name,
-                               freq=self.settings["freq"],
-                               tmin=self.settings["tmin"],
-                               tmax=self.settings["tmax"])
+        raise AttributeError("You cannot set series_validated by yourself,as"
+                             "it is calculated from series_original. Please "
+                             "set series_original to update the series.")
 
     def validate_series(self, series):
         """ This method performs some PASTAS specific tests for the TimeSeries.
@@ -264,24 +263,28 @@ class TimeSeries:
             pass
         elif pd.infer_freq(series.index):
             self.freq_original = pd.infer_freq(series.index)
-            logger.info("Inferred frequency from time series %s: freq=%s " % (
-                self.name, self.freq_original))
+            msg = "Inferred frequency from time series {}: freq={} " \
+                .format(self.name, self.freq_original)
+            logger.info(msg)
         else:
             self.freq_original = self.settings["freq"]
             if self.freq_original is None:
-                logger.info(
-                    "Cannot determine frequency of series %s" % self.name)
+                msg = "Cannot determine frequency of series " \
+                      "{}".format(self.name)
+                logger.info(msg)
             elif self.settings["fill_nan"] and self.settings["fill_nan"] != \
                     "drop":
-                logger.warning("User-provided frequency is applied when "
-                               "validating the Time Series %s. Make sure the "
-                               "provided frequency is close to the real "
-                               "frequency of the original series." % self.name)
+                msg = "User-provided frequency is applied when validating " \
+                      "the Time Series {}. Make sure the  provided frequency" \
+                      " is close to the real  frequency of the original " \
+                      "series.".format(self.name)
+                logger.warning(msg)
 
         # 5. Handle duplicate indices
         if not series.index.is_unique:
-            logger.warning("duplicate time-indexes were found in the Time "
-                           "Series %s. Values were averaged." % self.name)
+            msg = "duplicate time-indexes were found in the Time  Series {}." \
+                  "Values were averaged.".format(self.name)
+            logger.warning(msg)
             grouped = series.groupby(level=0)
             series = grouped.mean()
 
@@ -419,14 +422,14 @@ class TimeSeries:
                 dt = dt.fillna(1)
                 if not (dt == 1.0).all():
                     series = series / dt
-                    logger.info(
-                        "Time Series %s: values of stress were transformed to "
-                        "daily values (frequency not altered) with: %s" % (
-                            self.name, method))
+                    msg = "Time Series {}: values of stress were transformed" \
+                          "to daily values (frequency not altered) with: {}" \
+                        .format(self.name, method)
+                    logger.info(msg)
             else:
-                logger.warning(
-                    "Time Series %s: User-defined option for to_daily_unit %s "
-                    "is not supported" % (self.name, method))
+                msg = "Time Series {}: User-defined option for to_daily_unit" \
+                      "{} is not supported".format(self.name, method)
+                logger.warning(msg)
         return series
 
     def sample_up(self, series):
@@ -438,7 +441,7 @@ class TimeSeries:
         freq = self.settings["freq"]
 
         # adjust the first timestep, so that the output will have the
-        # correct frequncy
+        # correct frequency
         t0_new = series.index[0].ceil(freq)
         if t0_new > series.index[0]:
             series.index.set_value(series.index, series.index[0], t0_new)
@@ -464,13 +467,13 @@ class TimeSeries:
                 series = series.asfreq(freq)
                 series.fillna(method, inplace=True)
             else:
-                logger.warning(
-                    "Time Series %s: User-defined option for sample_up %s is not "
-                    "supported" % (self.name, method))
+                msg = "Time Series {}: User-defined option for sample_up {} " \
+                      "is not supported".format(self.name, method)
+                logger.warning(msg)
         if n > 0:
-            logger.info(
-                "Time Series %s: %i nan-value(s) was/were found and filled with: %s"
-                % (self.name, n, method))
+            msg = "Time Series {}: {} nan-value(s) was/were found and filled" \
+                  " with: {}".format(self.name, n, method)
+            logger.info(msg)
 
         return series
 
@@ -510,12 +513,12 @@ class TimeSeries:
         elif method == "max":
             series = series.resample(freq, **kwargs).max()
         else:
-            logger.warning(
-                "Time Series %s: User-defined option for sample_down %s is not "
-                "supported" % (self.name, method))
+            msg = "Time Series {}: User-defined option for sample_down {} is" \
+                  "not supported".format(self.name, method)
+            logger.warning(msg)
 
-        logger.info("Time Series %s was sampled down to freq %s with method "
-                    "%s" % (self.name, freq, method))
+        logger.info("Time Series {} was sampled down to freq {} with method "
+                    "{}".format(self.name, freq, method))
 
         return series
 
@@ -524,8 +527,9 @@ class TimeSeries:
         tindex = pd.date_range(series.index[0].ceil(freq), series.index[-1],
                                freq=freq)
         series = timestep_weighted_resample(series, tindex)
-        logger.info("Time Series %s was sampled down to freq %s with method "
-                    "%s" % (self.name, freq, 'timestep_weighted_resample'))
+        msg = "Time Series {} was sampled down to freq {} with method " \
+              "{}".format(self.name, freq, "timestep_weighted_resample")
+        logger.info(msg)
         return series
 
     def fill_nan(self, series):
@@ -549,17 +553,17 @@ class TimeSeries:
             elif isinstance(method, float):
                 series.fillna(method, inplace=True)
             else:
-                logger.warning(
-                    "Time Series %s: User-defined option for fill_nan %s is not "
-                    "supported" % (self.name, method))
+                msg = "Time Series {}: User-defined option for fill_nan {} " \
+                      "is not supported".format(self.name, method)
+                logger.warning(msg)
+
         else:
             method = "drop"
             n = series.isnull().values.sum()
             series.dropna(inplace=True)
         if n > 0:
-            logger.info(
-                "Time Series %s: %i nan-value(s) was/were found and filled with: %s"
-                % (self.name, n, method))
+            logger.info("Time Series {}: {} nan-value(s) was/were found and "
+                        "filled with: {}".format(self.name, n, method))
 
         return series
 
@@ -594,9 +598,9 @@ class TimeSeries:
             elif isinstance(method, float):
                 series.fillna(method, inplace=True)
             else:
-                logger.warning(
-                    "Time Series %s: User-defined option for fill_before %s is not "
-                    "supported" % (self.name, method))
+                msg = "Time Series {}: User-defined option for fill_before " \
+                      "{} is not supported".format(self.name, method)
+                logger.warning(msg)
 
         return series
 
@@ -629,9 +633,9 @@ class TimeSeries:
             elif isinstance(method, float):
                 series.fillna(method, inplace=True)
             else:
-                logger.warning(
-                    "Time Series %s: User-defined option for fill_after %s is not "
-                    "supported" % (self.name, method))
+                msg = "Time Series {}: User-defined option for fill_after {}" \
+                      " is not supported".format(self.name, method)
+                logger.warning(msg)
 
         return series
 
@@ -656,9 +660,9 @@ class TimeSeries:
         elif isinstance(method, float):
             series = series.subtract(method)
         else:
-            logger.info(
-                "Time Series %s: Selected method %s to normalize the time series is "
-                "not supported" % (self.name, method))
+            msg = "Time Series {}: Selected method {} to normalize the time " \
+                  "series is  not supported".format(self.name, method)
+            logger.info(msg)
 
         return series
 
@@ -667,7 +671,7 @@ class TimeSeries:
         self._series_original = self.series_original.multiply(other)
         self.update_series(force_update=True)
 
-    def dump(self, series=True):
+    def to_dict(self, series=True):
         """Method to export the Time Series to a json format.
 
         Parameters

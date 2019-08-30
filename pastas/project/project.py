@@ -17,17 +17,16 @@ from os import getlogin
 
 import numpy as np
 import pandas as pd
-from ..rfunc import Gamma
-from ..timeseries import TimeSeries
-from ..io.base import dump
-from ..model import Model
-from ..version import __version__
-from ..stressmodels import StressModel2
 
 from .maps import Map
 from .plots import Plot
-
 from ..decorators import PastasDeprecationWarning
+from ..io.base import dump
+from ..model import Model
+from ..rfunc import Gamma
+from ..stressmodels import StressModel2
+from ..timeseries import TimeSeries
+from ..version import __version__
 
 logger = getLogger(__name__)
 
@@ -243,9 +242,9 @@ class Project:
 
         if oseries == 'all':
             oseries_list = self.oseries.index
-        elif type(oseries) == str:
+        elif isinstance(oseries, str):
             oseries_list = [oseries]
-        elif type(oseries) == list:
+        elif isinstance(oseries, list):
             oseries_list = oseries
 
         mls = []
@@ -358,8 +357,9 @@ class Project:
 
         """
         for name, ml in self.models.items():
+            oname = ml.oseries.name
             ml.oseries.series_original = self.oseries.loc[
-                name, 'series'].series_original
+                oname, 'series'].series_original
             for sm in ml.stressmodels:
                 for st in ml.stressmodels[sm].stress:
                     st.series_original = self.stresses.loc[
@@ -708,6 +708,6 @@ class Project:
 
         for name in series.keys():
             ts = series[name]["series"]
-            series[name]["series"] = ts.dump(series=True)
+            series[name]["series"] = ts.to_dict(series=True)
 
         return series

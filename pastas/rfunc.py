@@ -23,9 +23,9 @@ TODO
 
 import numpy as np
 from pandas import DataFrame
+from scipy.integrate import quad
 from scipy.special import gammainc, gammaincinv, k0, exp1, erfc, lambertw, \
     erfcinv
-from scipy.integrate import quad
 
 __all__ = ["Gamma", "Exponential", "Hantush", "Polder", "FourParam",
            "DoubleExponential", "One", "Edelman", "HantushWellModel"]
@@ -521,7 +521,7 @@ class One(RfuncBase):
     """
     _name = "One"
 
-    def __init__(self, up, meanstress, cutoff):
+    def __init__(self, up=None, meanstress=1, cutoff=0.999):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 1
 
@@ -530,14 +530,13 @@ class One(RfuncBase):
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
             parameters.loc[name + '_d'] = (
-            self.meanstress, 0, np.nan, True, name)
+                self.meanstress, 0, np.nan, True, name)
         elif self.up is False:
             parameters.loc[name + '_d'] = (
-            self.meanstress, np.nan, 0, True, name)
+                self.meanstress, np.nan, 0, True, name)
         else:
             parameters.loc[name + '_d'] = (
-            self.meanstress, np.nan, np.nan, True,
-            name)
+                self.meanstress, np.nan, np.nan, True, name)
         return parameters
 
     def gain(self, p):

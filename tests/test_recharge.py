@@ -1,16 +1,21 @@
+from pandas import read_csv
+
 import pastas as ps
 
 
 def test_create_rechargemodel():
-    rain = ps.read_knmi('tests/data/knmi_rain_data.txt', variables='RD')
-    evap = ps.read_knmi('tests/data/knmi_evap_data.txt', variables='EV24')
+    rain = read_csv("tests/data/rain.csv", index_col=0, parse_dates=True,
+                    squeeze=True)
+    evap = read_csv("tests/data/evap.csv", index_col=0, parse_dates=True,
+                    squeeze=True)
     rm = ps.RechargeModel(prec=rain, evap=evap, name='recharge',
                           recharge="Linear")
     return rm
 
 
 def test_create_model():
-    obs = ps.read_dino('tests/data/dino_gwl_data.csv')
+    obs = read_csv("tests/data/obs.csv", index_col=0, parse_dates=True,
+                   squeeze=True)
     ml = ps.Model(obs, name="Test_Model")
     sm = test_create_rechargemodel()
     ml.add_stressmodel(sm)

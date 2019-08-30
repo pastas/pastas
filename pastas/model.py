@@ -12,6 +12,7 @@ Examples
 from collections import OrderedDict
 from copy import copy
 from inspect import isclass
+from logging import getLogger
 from os import getlogin
 
 import numpy as np
@@ -19,16 +20,15 @@ import pandas as pd
 
 from .decorators import get_stressmodel
 from .io.base import dump, load_model
+from .modelstats import Statistics
 from .noisemodels import NoiseModel
 from .plots import Plotting
 from .solver import LeastSquares
-from .modelstats import Statistics
 from .stressmodels import Constant
 from .timeseries import TimeSeries
 from .utils import get_dt, get_time_offset, get_sample, \
     frequency_is_supported, validate_name
 from .version import __version__
-from logging import getLogger
 
 
 class Model:
@@ -356,7 +356,7 @@ class Model:
         for sm in self.stressmodels.values():
             contrib = sm.simulate(parameters[istart: istart + sm.nparam],
                                   sim_index.min(), sim_index.max(), freq, dt)
-            sim = sim + contrib
+            sim = sim.add(contrib)
             istart += sm.nparam
         if self.constant:
             sim = sim + self.constant.simulate(parameters[istart])
@@ -432,13 +432,12 @@ class Model:
                                  'simulation timesteps. Linear interpolation '
                                  'between simulated values is used.')
         if self.interpolate_simulation:
-            # interpolate simulation to measurement-times
-            # TODO RC: Somehow switch to pandas methods with maximum gap (gap_limit?)
+            # interpolate simulation to times of observations
             sim_interpolated = np.interp(oseries_calib.index.asi8,
-                                         sim.index.asi8, sim)
+                                         sim.index.asi8, sim.values)
         else:
             # all of the observation indexes are in the simulation
-            sim_interpolated = sim.loc[oseries_calib.index]
+            sim_interpolated = sim.reindex(oseries_calib.index)
 
         # Calculate the actual residuals here
         res = oseries_calib.subtract(sim_interpolated)
@@ -1294,6 +1293,9 @@ class Model:
         ----------
         name: str
             String with the name of the stressmodel.
+        istress: int, optional
+            When multiple stresses are present in a stressmodel, this keyword
+            can be used to obtain the contribution of an individual stress.
 
         Returns
         -------
@@ -1491,12 +1493,12 @@ class Model:
         # Create a dictionary to store all data
         data = dict()
         data["name"] = self.name
-        data["oseries"] = self.oseries.dump(series=series)
+        data["oseries"] = self.oseries.to_dict(series=series)
 
         # Stressmodels
         data["stressmodels"] = dict()
         for name, sm in self.stressmodels.items():
-            data["stressmodels"][name] = sm.dump(series=series)
+            data["stressmodels"][name] = sm.to_dict(series=series)
 
         # Constant
         if self.constant:
@@ -1504,11 +1506,11 @@ class Model:
 
         # Transform
         if self.transform:
-            data["transform"] = self.transform.dump()
+            data["transform"] = self.transform.to_dict()
 
         # Noisemodel
         if self.noisemodel:
-            data["noisemodel"] = self.noisemodel.dump()
+            data["noisemodel"] = self.noisemodel.to_dict()
 
         # Parameters
         data["parameters"] = self.parameters
