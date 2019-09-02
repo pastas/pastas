@@ -27,6 +27,14 @@ class NoiseModelBase(ABC):
         self.parameters = pd.DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
 
+    def set_init_parameters(self, oseries=None):
+        if oseries is not None:
+            pinit = oseries.index.to_series().diff() / pd.Timedelta(1, 'd')
+            pinit = pinit.median()
+        else:
+            pinit = 14.0
+        self.parameters.loc['noise_alpha'] = (pinit, 0, 5000, True, 'noise')
+
     @set_parameter
     def set_initial(self, name, value):
         """Internal method to set the initial parameter value
@@ -123,14 +131,6 @@ class NoiseModel(NoiseModelBase):
         self.nparam = 1
         self.set_init_parameters()
 
-    def set_init_parameters(self, oseries=None):
-        if oseries is not None:
-            pinit = oseries.index.to_series().diff() / pd.Timedelta(1, 'd')
-            pinit = pinit.median()
-        else:
-            pinit = 14.0
-        self.parameters.loc['noise_alpha'] = (pinit, 0, 5000, True, 'noise')
-
     def simulate(self, res, parameters):
         """
 
@@ -206,14 +206,6 @@ class NoiseModel2(NoiseModelBase):
         self.nparam = 1
         self.set_init_parameters()
 
-    def set_init_parameters(self, oseries=None):
-        if oseries is not None:
-            pinit = oseries.index.to_series().diff() / pd.Timedelta(1, 'd')
-            pinit = pinit.median()
-        else:
-            pinit = 14.0
-        self.parameters.loc['noise_alpha'] = (pinit, 0, 5000, True, 'noise')
-
     def simulate(self, res, parameters):
         """
 
@@ -230,11 +222,11 @@ class NoiseModel2(NoiseModelBase):
             Series of the noise.
 
         """
-        odelt = res.index.to_series().diff() / pd.Timedelta(1, 'd')
-        odelt = odelt.iloc[1:]
-        noise = pd.Series(res)
         alpha = parameters[0]
+        odelt = (res.index[1:] - res.index[:-1]).values / pd.Timedelta("1d")
         # res.values is needed else it gets messed up with the dates
-        noise.iloc[1:] -= np.exp(-odelt / alpha) * res.values[:-1]
-        noise.name = "Noise"
-        return noise
+        v = res.values[1:] - np.exp(-odelt / alpha) * res.values[:-1]
+        res.iloc[1:] = v
+        res.iloc[0] = 0
+        res.name = "Noise"
+        return res
