@@ -1030,11 +1030,10 @@ class RechargeModel(StressModelBase):
         if p is None:
             p = self.parameters.initial.values
         b = self.rfunc.block(p[:-self.recharge.nparam], dt)
-        stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq)
-        h = pd.Series(data=fftconvolve(stress.values, b, 'full')[:stress.size],
-                      index=self.prec.series.index, name=self.name,
-                      fastpath=True)
-        return h
+        stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq).values
+        return pd.Series(data=fftconvolve(stress, b, 'full')[:stress.size],
+                         index=self.prec.series.index, name=self.name,
+                         fastpath=True)
 
     def get_stress(self, p=None, istress=None, tmin=None, tmax=None,
                    freq=None, **kwargs):
