@@ -270,7 +270,7 @@ class StressModel(StressModelBase):
     """
     _name = "StressModel"
 
-    def __init__(self, stress, rfunc, name, up=True, cutoff=0.99,
+    def __init__(self, stress, rfunc, name, up=True, cutoff=0.999,
                  settings=None, metadata=None, meanstress=None):
         if isinstance(stress, list):
             stress = stress[0]  # Temporary fix Raoul, 2017-10-24
@@ -385,7 +385,7 @@ class StressModel2(StressModelBase):
     """
     _name = "StressModel2"
 
-    def __init__(self, stress, rfunc, name, up=True, cutoff=0.99,
+    def __init__(self, stress, rfunc, name, up=True, cutoff=0.999,
                  settings=("prec", "evap"), metadata=(None, None),
                  meanstress=None):
         # First check the series, then determine tmin and tmax
@@ -673,7 +673,7 @@ class WellModel(StressModelBase):
     """
     _name = "WellModel"
 
-    def __init__(self, stress, rfunc, name, distances, up=False, cutoff=0.99,
+    def __init__(self, stress, rfunc, name, distances, up=False, cutoff=0.999,
                  settings="well", sort_wells=True):
         if not issubclass(rfunc, HantushWellModel):
             raise NotImplementedError("WellModel only supports rfunc "
@@ -833,7 +833,7 @@ class FactorModel(StressModelBase):
         tmin = stress.series_original.index.min()
         tmax = stress.series_original.index.max()
         StressModelBase.__init__(self, One, name, tmin=tmin, tmax=tmax,
-                                 up=True, meanstress=1, cutoff=0.99)
+                                 up=True, meanstress=1, cutoff=0.999)
         self.value = 1  # Initial value
         stress = TimeSeries(stress, settings=settings, metadata=metadata)
         self.stress = [stress]
@@ -920,7 +920,7 @@ class RechargeModel(StressModelBase):
     _name = "RechargeModel"
 
     def __init__(self, prec, evap, rfunc=Exponential, name="recharge",
-                 recharge="Linear", temp=None, cutoff=0.99,
+                 recharge="Linear", temp=None, cutoff=0.999,
                  settings=("prec", "evap", "evap"),
                  metadata=(None, None, None)):
         # Store the precipitation and evaporation time series
@@ -967,7 +967,8 @@ class RechargeModel(StressModelBase):
             raise Exception(msg)
 
         # Calculate initial recharge estimation for initial rfunc parameters
-        meanstress = self.get_stress(tmin=index.min(), tmax=index.max(),
+        p = self.recharge.get_init_parameters().initial.values
+        meanstress = self.get_stress(p=p, tmin=index.min(), tmax=index.max(),
                                      freq=self.prec.settings["freq"]).std()
 
         StressModelBase.__init__(self, rfunc=rfunc, name=name,
@@ -1075,7 +1076,7 @@ class RechargeModel(StressModelBase):
             else:
                 temp = None
             if p is None:
-                p = self.recharge.get_init_parameters().initial.values
+                p = self.parameters.initial.values
 
             stress = self.recharge.simulate(prec=prec, evap=evap, temp=temp,
                                             p=p[-self.recharge.nparam:])

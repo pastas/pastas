@@ -801,7 +801,7 @@ class DoubleExponential(RfuncBase):
     def gain(self, p):
         return p[0]
 
-    def step(self, p, dt=1, cutoff=0.99):
+    def step(self, p, dt=1, cutoff=0.999):
         if isinstance(dt, np.ndarray):
             t = dt
         else:
