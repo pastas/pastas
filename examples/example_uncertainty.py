@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import pandas as pd
 
 import pastas as ps
@@ -22,15 +21,19 @@ ml.add_stressmodel(sm)
 # Solve
 ml.solve()
 
-df = ml.uncertainty.block_response("recharge", n=1000)
-ax = ml.get_block_response("recharge").plot(color="C1")
-df.plot(color="k", linestyle="--", ax=ax)
-df = ml.uncertainty.block_response("recharge", n=1000, alpha=0.01)
-df.plot(color="gray", linestyle="--", ax=ax)
+# Plot some results
+axes = ml.plots.results()
 
+df = ml.uncertainty.prediction_interval()
+axes[0].fill_between(df.index, df.iloc[:, 0], df.iloc[:, 1], color="gray",
+                     zorder=-1, alpha=0.5, label="95% Prediction interval")
+axes[0].legend()
+df = ml.uncertainty.contribution("recharge")
+axes[3].fill_between(df.index, df.iloc[:, 0], df.iloc[:, 1], color="gray",
+                     zorder=-1, alpha=0.5, label="95% confidence")
 
-df = ml.uncertainty.step_response("recharge", n=1000)
-ax = ml.get_step_response("recharge").plot(color="C1")
-df.plot(color="k", linestyle="--", ax=ax)
-df = ml.uncertainty.step_response("recharge", n=1000, alpha=0.01)
-df.plot(color="gray", linestyle="--", ax=ax)
+df = ml.uncertainty.step_response("recharge", alpha=0.05, n=1000)
+axes[4].fill_between(df.index, df.iloc[:, 0], df.iloc[:, 1], color="gray",
+                     zorder=-1, alpha=0.5, label="95% confidence")
+
+axes[0].set_xlim(["2010", "2015"])

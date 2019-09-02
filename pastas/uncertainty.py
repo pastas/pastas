@@ -16,9 +16,22 @@ class Uncertainty:
 
         Returns
         -------
+        data: Pandas.DataFrame
+
+        Notes
+        -----
+        Now calculates a "naive" prediction interval based on the residuals.
+        This should probably be changed to something that recognizes the
+        autocorrelation in the residuals (e.g. block bootstrapping).
 
         """
-        pass
+        res = self.ml.residuals()
+        sim = self.ml.simulate()
+        q = [alpha / 2, 1 - alpha / 2]
+
+        data = pd.DataFrame({str(q[0]): sim.add(res.quantile(q[0])),
+                             str(q[1]): sim.add(res.quantile(q[1]))})
+        return data
 
     def confidence_interval(self, n=None, alpha=0.05, **kwargs):
         """Method to calculate the confidence interval for the simulation.
@@ -56,15 +69,14 @@ class Uncertainty:
         params = self.get_parameter_sample(n=n, name=name)
         data = {}
 
-        for i in range(n):
-            data[i] = func(parameters=params[i], **kwargs)
+        for i, param in enumerate(params):
+            data[i] = func(parameters=param, **kwargs)
 
         q = [alpha / 2, 1 - alpha / 2]
         return pd.DataFrame(data).quantile(q=q, axis=1).transpose()
 
     def get_parameter_sample(self, name=None, n=None):
-        """Method to obtain a set of parameters values based on the optimal
-        values and
+        """Method to obtain a parameter sets used in monte carlo simulation.
 
         Parameters
         ----------
@@ -77,8 +89,8 @@ class Uncertainty:
 
         Returns
         -------
-        pcov: pandas.DataFrame
-            Pandas DataFrame with the parameter samples
+        ndarray
+            Numpy array with N parameter samples.
 
         """
         par = self.ml.get_parameters(name=name)
@@ -90,8 +102,13 @@ class Uncertainty:
         return np.random.multivariate_normal(par, pcov, n)
 
     def get_covariance_matrix(self, name=None):
-        """Internal method to obtain the covariance matrix from the model
-        for a specific set of parameters.
+        """Internal method to obtain the covariance matrix from the model.
+
+        Parameters
+        ----------
+        name: str, optional
+            Name of the stressmodel or model component to obtain the
+            parameters for.
 
         Returns
         -------
