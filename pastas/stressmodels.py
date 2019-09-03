@@ -1036,8 +1036,8 @@ class RechargeModel(StressModelBase):
                          index=self.prec.series.index, name=self.name,
                          fastpath=True)
 
-    def get_stress(self, p=None, istress=None, tmin=None, tmax=None,
-                   freq=None, **kwargs):
+    def get_stress(self, p=None, tmin=None, tmax=None, freq=None,
+                   istress=None,  **kwargs):
         """Method to obtain the recharge stress calculated by the recharge
         model.
 

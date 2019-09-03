@@ -25,15 +25,15 @@ class NoiseModelBase(ABC):
         self.nparam = 0
         self.name = "noise"
         self.parameters = pd.DataFrame(
-            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+            columns=["initial", "pmin", "pmax", "vary", "name"])
 
     def set_init_parameters(self, oseries=None):
         if oseries is not None:
-            pinit = oseries.index.to_series().diff() / pd.Timedelta(1, 'd')
+            pinit = oseries.index.to_series().diff() / pd.Timedelta(1, "d")
             pinit = pinit.median()
         else:
             pinit = 14.0
-        self.parameters.loc['noise_alpha'] = (pinit, 0, 5000, True, 'noise')
+        self.parameters.loc["noise_alpha"] = (pinit, 0, 5000, True, "noise")
 
     @set_parameter
     def set_initial(self, name, value):
@@ -45,9 +45,9 @@ class NoiseModelBase(ABC):
 
         """
         if name in self.parameters.index:
-            self.parameters.loc[name, 'initial'] = value
+            self.parameters.loc[name, "initial"] = value
         else:
-            print('Warning:', name, 'does not exist')
+            print("Warning:", name, "does not exist")
 
     @set_parameter
     def set_min(self, name, value):
@@ -60,9 +60,9 @@ class NoiseModelBase(ABC):
 
         """
         if name in self.parameters.index:
-            self.parameters.loc[name, 'pmin'] = value
+            self.parameters.loc[name, "pmin"] = value
         else:
-            print('Warning:', name, 'does not exist')
+            print("Warning:", name, "does not exist")
 
     @set_parameter
     def set_max(self, name, value):
@@ -74,9 +74,9 @@ class NoiseModelBase(ABC):
 
         """
         if name in self.parameters.index:
-            self.parameters.loc[name, 'pmax'] = value
+            self.parameters.loc[name, "pmax"] = value
         else:
-            print('Warning:', name, 'does not exist')
+            print("Warning:", name, "does not exist")
 
     @set_parameter
     def set_vary(self, name, value):
@@ -88,12 +88,10 @@ class NoiseModelBase(ABC):
         The preferred method for parameter setting is through the model.
 
         """
-        self.parameters.loc[name, 'vary'] = value
+        self.parameters.loc[name, "vary"] = value
 
     def to_dict(self):
-        data = {}
-        data["type"] = self._name
-        return data
+        return {"type": self._name}
 
 
 class NoiseModel(NoiseModelBase):

@@ -618,7 +618,7 @@ class Model:
 
         # Prepare model if not fitting the constant as a parameter
         if not self.settings["fit_constant"]:
-            self.parameters.loc["constant_d", "vary"] = 0
+            self.parameters.loc["constant_d", "vary"] = False
             self.parameters.loc["constant_d", "initial"] = 0.0
             self.normalize_residuals = True
 
@@ -779,10 +779,9 @@ class Model:
 
         """
         if name not in self.parameters.index:
-            msg = "parameters with name {} is not present in the " \
-                  "model".format(name)
+            msg = "parameter {} is not present in the model".format(name)
             self.logger.error(msg)
-            raise Exception(msg)
+            raise KeyError(msg)
 
         cat = self.parameters.loc[name, "name"]
 
@@ -1286,7 +1285,9 @@ class Model:
         return s
 
     @get_stressmodel
-    def get_stress(self, name, istress=None):
+    def get_stress(self, name, tmin=None, tmax=None, freq=None,
+                   warmup=None, istress=None, return_warmup=False,
+                   parameters=None):
         """Method to obtain the stress(es) from the stressmodel.
 
         Parameters
@@ -1304,8 +1305,34 @@ class Model:
             are present, a list of pandas Series is returned.
 
         """
-        p = self.get_parameters(name)
-        stress = self.stressmodels[name].get_stress(p=p, istress=istress)
+        if parameters is None:
+            parameters = self.get_parameters(name)
+
+        if tmin is None:
+            tmin = self.settings['tmin']
+        if tmax is None:
+            tmax = self.settings['tmax']
+        if freq is None:
+            freq = self.settings["freq"]
+        if warmup is None:
+            warmup = self.settings["warmup"]
+        else:
+            warmup = pd.Timedelta(days=warmup)
+
+        # use warmup
+        if tmin:
+            tmin_warm = pd.Timestamp(tmin) - warmup
+        else:
+            tmin_warm = None
+
+        kwargs = dict(tmin=tmin_warm, tmax=tmax, freq=freq)
+        if istress is not None:
+            kwargs['istress'] = istress
+
+        stress = self.stressmodels[name].get_stress(p=parameters, **kwargs)
+        if not return_warmup:
+            stress = stress.loc[tmin:tmax]
+
         return stress
 
     def get_file_info(self):
