@@ -30,5 +30,5 @@ sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential,
 ml.add_stressmodel(sm)
 
 # Solve
-ml.solve()
-ml.plot()
+ml.solve(noise=False)
+ml.plots.results()
