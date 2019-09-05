@@ -145,15 +145,13 @@ class LeastSquares(BaseSolver):
         BaseSolver.__init__(self, model=model)
 
     def solve(self, noise=True, weights=None, callback=None, **kwargs):
-        self.modelparameters = self.model.parameters
-        self.vary = self.modelparameters.vary.values.astype(bool)
-        self.initial = self.modelparameters.initial.values.copy()
-        parameters = self.modelparameters.loc[self.vary]
+        self.vary = self.model.parameters.vary.values.astype(bool)
+        self.initial = self.model.parameters.initial.values.copy()
+        parameters = self.model.parameters.loc[self.vary]
 
         # Set the boundaries
-        pmin = np.where(parameters.pmin.isnull(), -np.inf, parameters.pmin)
-        pmax = np.where(parameters.pmax.isnull(), np.inf, parameters.pmax)
-        bounds = (pmin, pmax)
+        bounds = (np.where(parameters.pmin.isnull(), -np.inf, parameters.pmin),
+                  np.where(parameters.pmax.isnull(), np.inf, parameters.pmax))
 
         self.result = least_squares(self.objfunction, bounds=bounds,
                                     x0=parameters.initial.values,
@@ -266,28 +264,28 @@ class LmfitSolve(BaseSolver):
         if not kwargs:
             kwargs = {"ftol": 1e-3, "epsfcn": 1e-4}
 
-        self.fit = lmfit.minimize(fcn=self.objfunction, params=parameters,
-                                  args=(noise, weights, callback), **kwargs)
+        self.result = lmfit.minimize(fcn=self.objfunction, params=parameters,
+                                     args=(noise, weights, callback), **kwargs)
 
         # Set all parameter attributes
-        if hasattr(self.fit, "covar"):
-            if self.fit.covar is not None:
-                pcov = self.fit.covar
+        if hasattr(self.result, "covar"):
+            if self.result.covar is not None:
+                pcov = self.result.covar
                 pcor = self.get_correlations(pcov)
             else:
                 pcov = None
                 pcor = None
 
-        names = self.fit.var_names
+        names = self.result.var_names
         self.pcov = DataFrame(pcov, index=names, columns=names)
         self.pcor = DataFrame(pcor, index=names, columns=names)
 
         # Set all optimization attributes
-        self.nfev = self.fit.nfev
+        self.nfev = self.result.nfev
 
-        success = self.fit.success
-        optimal = np.array([p.value for p in self.fit.params.values()])
-        stderr = np.array([p.stderr for p in self.fit.params.values()])
+        success = self.result.success
+        optimal = np.array([p.value for p in self.result.params.values()])
+        stderr = np.array([p.stderr for p in self.result.params.values()])
 
         return success, optimal, stderr
 
