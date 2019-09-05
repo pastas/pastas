@@ -20,7 +20,6 @@ import pandas as pd
 
 from .maps import Map
 from .plots import Plot
-from ..decorators import PastasDeprecationWarning
 from ..io.base import dump
 from ..model import Model
 from ..rfunc import Gamma
@@ -64,10 +63,9 @@ class Project:
         self.plots = Plot(self)
         self.maps = Map(self)
 
-    @PastasDeprecationWarning
     def add_series(self, series, name=None, kind=None, metadata=None,
                    settings=None, **kwargs):
-        """Method to add series to the oseries or stresses database.
+        """Internal method to add series to the oseries or stresses database.
 
         Parameters
         ----------
@@ -637,10 +635,6 @@ class Project:
         except:
             file_info["owner"] = "Unknown"
         return file_info
-
-    @PastasDeprecationWarning
-    def dump(self, fname, **kwargs):
-        return self.to_file(fname, **kwargs)
 
     def to_file(self, fname, **kwargs):
         """Method to write a Pastas project to a file.

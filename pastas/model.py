@@ -1579,8 +1579,14 @@ class Model:
         # Write the dicts to a file
         return dump(fname, data, **kwargs)
 
-    def copy(self):
+    def copy(self, name=None):
         """Method to copy a model
+
+        Parameters
+        ----------
+        name: str, optional
+            String with the name of the model. The old name plus is appended
+            with '_copy' if no name is provided.
 
         Returns
         -------
@@ -1588,6 +1594,8 @@ class Model:
             Copy of the original model with no references to the old model.
 
         """
-        data = self.to_dict()
-        ml = load_model(data)
+        if name is None:
+            name = self.name + "_copy"
+        ml = load_model(self.to_dict())
+        ml.name = name
         return ml
