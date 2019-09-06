@@ -21,9 +21,8 @@ TODO
 
 """
 
-from logging import getLogger
-
 from importlib import import_module
+from logging import getLogger
 
 import numpy as np
 import pandas as pd
@@ -271,7 +270,7 @@ class StressModel(StressModelBase):
     """
     _name = "StressModel"
 
-    def __init__(self, stress, rfunc, name, up=True, cutoff=0.99,
+    def __init__(self, stress, rfunc, name, up=True, cutoff=0.999,
                  settings=None, metadata=None, meanstress=None):
         if isinstance(stress, list):
             stress = stress[0]  # Temporary fix Raoul, 2017-10-24
@@ -386,7 +385,7 @@ class StressModel2(StressModelBase):
     """
     _name = "StressModel2"
 
-    def __init__(self, stress, rfunc, name, up=True, cutoff=0.99,
+    def __init__(self, stress, rfunc, name, up=True, cutoff=0.999,
                  settings=("prec", "evap"), metadata=(None, None),
                  meanstress=None):
         # First check the series, then determine tmin and tmax
@@ -674,7 +673,7 @@ class WellModel(StressModelBase):
     """
     _name = "WellModel"
 
-    def __init__(self, stress, rfunc, name, distances, up=False, cutoff=0.99,
+    def __init__(self, stress, rfunc, name, distances, up=False, cutoff=0.999,
                  settings="well", sort_wells=True):
         if not issubclass(rfunc, HantushWellModel):
             raise NotImplementedError("WellModel only supports rfunc "
@@ -834,7 +833,7 @@ class FactorModel(StressModelBase):
         tmin = stress.series_original.index.min()
         tmax = stress.series_original.index.max()
         StressModelBase.__init__(self, One, name, tmin=tmin, tmax=tmax,
-                                 up=True, meanstress=1, cutoff=0.99)
+                                 up=True, meanstress=1, cutoff=0.999)
         self.value = 1  # Initial value
         stress = TimeSeries(stress, settings=settings, metadata=metadata)
         self.stress = [stress]
@@ -921,7 +920,7 @@ class RechargeModel(StressModelBase):
     _name = "RechargeModel"
 
     def __init__(self, prec, evap, rfunc=Exponential, name="recharge",
-                 recharge="Linear", temp=None, cutoff=0.99,
+                 recharge="Linear", temp=None, cutoff=0.999,
                  settings=("prec", "evap", "evap"),
                  metadata=(None, None, None)):
         # Store the precipitation and evaporation time series
@@ -967,11 +966,10 @@ class RechargeModel(StressModelBase):
             logger.error(msg)
             raise Exception(msg)
 
-        # Update all stresses to an equal tmin and tmax
-        self.update_stress(tmin=index.min(), tmax=index.max())
-
         # Calculate initial recharge estimation for initial rfunc parameters
-        meanstress = self.get_stress().std()
+        p = self.recharge.get_init_parameters().initial.values
+        meanstress = self.get_stress(p=p, tmin=index.min(), tmax=index.max(),
+                                     freq=self.prec.settings["freq"]).std()
 
         StressModelBase.__init__(self, rfunc=rfunc, name=name,
                                  tmin=index.min(), tmax=index.max(),
@@ -1013,7 +1011,7 @@ class RechargeModel(StressModelBase):
         if "freq" in kwargs:
             self.freq = kwargs["freq"]
 
-    def simulate(self, p, tmin=None, tmax=None, freq=None, dt=1):
+    def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1):
         """Method to simulate the contribution of the groundwater
         recharge to the head.
 
@@ -1022,7 +1020,7 @@ class RechargeModel(StressModelBase):
         p: array of floats
         tmin: string, optional
         tmax: string, optional
-        freq: dtring, optional
+        freq: string, optional
         dt: float, optional
             Time step to use in the recharge calculation.
 
@@ -1030,15 +1028,16 @@ class RechargeModel(StressModelBase):
         -------
 
         """
-        self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
+        if p is None:
+            p = self.parameters.initial.values
         b = self.rfunc.block(p[:-self.recharge.nparam], dt)
-        stress = self.get_stress(p)
-        npoints = stress.index.size
-        h = pd.Series(data=fftconvolve(stress, b, 'full')[:npoints],
-                      index=stress.index, name=self.name, fastpath=True)
-        return h
+        stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq).values
+        return pd.Series(data=fftconvolve(stress, b, 'full')[:stress.size],
+                         index=self.prec.series.index, name=self.name,
+                         fastpath=True)
 
-    def get_stress(self, p=None, istress=None, **kwargs):
+    def get_stress(self, p=None, tmin=None, tmax=None, freq=None,
+                   istress=None,  **kwargs):
         """Method to obtain the recharge stress calculated by the recharge
         model.
 
@@ -1049,6 +1048,9 @@ class RechargeModel(StressModelBase):
         istress: int, optional
             Return one of the stresses used for the recharge calculation.
             0 for precipitation, 1 for evaporation and 2 for temperature.
+        tmin: string, optional
+        tmax: string, optional
+        freq: string, optional
         kwargs
 
         Returns
@@ -1059,20 +1061,28 @@ class RechargeModel(StressModelBase):
             "simulate" method.
 
         """
+        if tmin is None:
+            tmin = self.tmin
+        if tmax is None:
+            tmax = self.tmax
+
+        self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
+
         if istress is None:
-            prec = self.prec.series
-            evap = self.evap.series
+            prec = self.prec.series.values
+            evap = self.evap.series.values
             if self.temp is not None:
-                temp = self.temp.series
+                temp = self.temp.series.values
             else:
                 temp = None
             if p is None:
-                p = self.recharge.get_init_parameters().initial.values
+                p = self.parameters.initial.values
+
             stress = self.recharge.simulate(prec=prec, evap=evap, temp=temp,
                                             p=p[-self.recharge.nparam:])
 
-            stress = pd.Series(data=stress, index=prec.index, name="recharge")
-            return stress
+            return pd.Series(data=stress, index=self.prec.series.index,
+                             name="recharge", fastpath=True)
         elif istress == 0:
             return self.prec.series
         elif istress == 1:

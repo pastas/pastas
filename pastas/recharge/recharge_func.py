@@ -24,6 +24,7 @@ simulate(self, evap, prec, p=None)
 
 """
 
+import numpy as np
 import pandas as pd
 
 
@@ -94,5 +95,4 @@ class Linear(RechargeBase):
             array with the recharge series.
 
         """
-        recharge = prec + p * evap
-        return recharge
+        return np.add(prec, np.multiply(evap, p))

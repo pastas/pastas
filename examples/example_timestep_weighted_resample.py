@@ -1,5 +1,6 @@
-import pandas as pd
 import matplotlib.pyplot as plt
+import pandas as pd
+
 from pastas.utils import timestep_weighted_resample
 
 # make a daily series from monthly (mostly) values, without specifying the

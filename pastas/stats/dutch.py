@@ -93,7 +93,7 @@ def q_gvg(series, tmin=None, tmax=None, by_year=True):
 
 def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
         output='mean', min_n_meas=16, min_n_years=8, year_offset='a-mar'):
-    """Calculate the 'Gemiddelde Hoogste Grondwaterstand' (Average High 
+    """Calculate the 'Gemiddelde Hoogste Grondwaterstand' (Average High
     Groundwater Level)
     
     Classic method resampling the series to every 14th and 28th of

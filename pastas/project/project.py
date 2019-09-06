@@ -20,7 +20,6 @@ import pandas as pd
 
 from .maps import Map
 from .plots import Plot
-from ..decorators import PastasDeprecationWarning
 from ..io.base import dump
 from ..model import Model
 from ..rfunc import Gamma
@@ -64,10 +63,9 @@ class Project:
         self.plots = Plot(self)
         self.maps = Map(self)
 
-    @PastasDeprecationWarning
     def add_series(self, series, name=None, kind=None, metadata=None,
                    settings=None, **kwargs):
-        """Method to add series to the oseries or stresses database.
+        """Internal method to add series to the oseries or stresses database.
 
         Parameters
         ----------
@@ -98,7 +96,7 @@ class Project:
         if kind == "oseries":
             data = self.oseries
             if settings is None:
-                settings = 'oseries'
+                settings = "oseries"
         else:
             data = self.stresses
 
@@ -214,15 +212,15 @@ class Project:
 
         return ml
 
-    def add_models(self, oseries='all', model_name_prefix='',
-                   model_name_suffix='', **kwargs):
+    def add_models(self, oseries="all", model_name_prefix="",
+                   model_name_suffix="", **kwargs):
         """Method to add multiple Pastas Model instances based on one
         or more of the oseries.
 
         Parameters
         ----------
         oseries: str or list, optional
-            names of the oseries, if oseries is 'all' all series in self.series
+            names of the oseries, if oseries is "all" all series in self.series
             are used
         model_name_prefix: str, optional
             prefix to use for model names
@@ -240,7 +238,7 @@ class Project:
 
         """
 
-        if oseries == 'all':
+        if oseries == "all":
             oseries_list = self.oseries.index
         elif isinstance(oseries, str):
             oseries_list = [oseries]
@@ -270,7 +268,7 @@ class Project:
         rfunc: pastas.rfunc, optional
             response function, default is the Gamma function.
         name: str, optional
-            name of the stress, default is 'recharge'.
+            name of the stress, default is "recharge".
         **kwargs:
             arguments are pass to the StressModel2 function
 
@@ -289,11 +287,11 @@ class Project:
         for mlname in mls:
             ml = self.models[mlname]
             oseries = ml.oseries.name
-            prec_name = self.get_nearest_stresses(oseries, kind="prec").iloc[0][
-                0]
+            prec_name = \
+                self.get_nearest_stresses(oseries, kind="prec").iloc[0][0]
             prec = self.stresses.loc[prec_name, "series"]
-            evap_name = self.get_nearest_stresses(oseries, kind="evap").iloc[0][
-                0]
+            evap_name = \
+                self.get_nearest_stresses(oseries, kind="evap").iloc[0][0]
             evap = self.stresses.loc[evap_name, "series"]
 
             recharge = StressModel2([prec, evap], rfunc, name=name, **kwargs)
@@ -301,7 +299,7 @@ class Project:
             ml.add_stressmodel(recharge)
 
     def del_oseries(self, name):
-        """Method that savely removes oseries from the project. It validates
+        """Method that safely removes oseries from the project. It validates
         that the oseries is not used in any model.
 
         Parameters
@@ -357,17 +355,18 @@ class Project:
 
         """
         for name, ml in self.models.items():
+            oname = ml.oseries.name
             ml.oseries.series_original = self.oseries.loc[
-                name, 'series'].series_original
+                oname, "series"].series_original
             for sm in ml.stressmodels:
                 for st in ml.stressmodels[sm].stress:
                     st.series_original = self.stresses.loc[
-                        st.name, 'series'].series_original
+                        st.name, "series"].series_original
             # set oseries_calib empty, so it is determined again the next time
             ml.oseries_calib = None
 
     def solve_models(self, mls=None, report=False, ignore_solve_errors=False,
-                     verbose=False, tmin=None, tmax=None, **kwargs):
+                     verbose=False, **kwargs):
         """Solves the models in mls
 
         mls: list of str, optional
@@ -376,14 +375,6 @@ class Project:
             determines if a report is printed when the model is solved.
         ignore_solve_errors: boolean, optional
             if True errors emerging from the solve method are ignored.
-        tmin: str, datetime or pandas.Series, optional
-            if str or datetime, apply tmin to all models. If pandas.Series
-            is provided, index must contain model names, values must be
-            str or datetimes.
-        tmax: str, datetime or pandas.Series, optional
-            if str or datetime, apply tmax to all models. If pandas.Series
-            is provided, index must contain model names, values must be
-            str or datetimes.
         **kwargs:
             arguments are passed to the solve method.
 
@@ -395,7 +386,7 @@ class Project:
 
         for ml_name in mls:
             if verbose:
-                print('solving model -> {}'.format(ml_name))
+                print("solving model -> {}".format(ml_name))
 
             ml = self.models[ml_name]
 
@@ -406,7 +397,7 @@ class Project:
                 else:
                     m_kwargs[key] = value
             # Convert timestamps
-            for tstamp in ['tmin', 'tmax']:
+            for tstamp in ["tmin", "tmax"]:
                 if tstamp in m_kwargs:
                     m_kwargs[tstamp] = pd.Timestamp(m_kwargs[tstamp])
 
@@ -644,10 +635,6 @@ class Project:
         except:
             file_info["owner"] = "Unknown"
         return file_info
-
-    @PastasDeprecationWarning
-    def dump(self, fname, **kwargs):
-        return self.to_file(fname, **kwargs)
 
     def to_file(self, fname, **kwargs):
         """Method to write a Pastas project to a file.

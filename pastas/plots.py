@@ -7,16 +7,16 @@ Examples
 
 """
 
+import logging
+
 import matplotlib.pyplot as plt
 import numpy as np
-from pandas import DataFrame, Timestamp
 from matplotlib.ticker import MultipleLocator
+from pandas import DataFrame, Timestamp
 from scipy.stats import probplot
 
 from .decorators import model_tmin_tmax
 from .stats import acf
-
-import logging
 
 logger = logging.getLogger(__name__)
 

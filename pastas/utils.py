@@ -1,9 +1,10 @@
+import logging
+from logging import handlers
+
 import numpy as np
 from pandas import Series, to_datetime, Timedelta, Timestamp, to_timedelta
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
-import logging
-from logging import handlers
 
 logger = logging.getLogger(__name__)
 
@@ -123,8 +124,7 @@ def get_dt(freq):
 
 
 def get_time_offset(t, freq):
-    """ method to calculate the time offset between a TimeStamp t and a
-    default Series with a frequency of freq
+    """Internal method to calculate the time offset of a TimeStamp.
 
     Parameters
     ----------
@@ -179,7 +179,7 @@ def timestep_weighted_resample(series, tindex):
     the timestep-edges of the new tindex do not have to overlap with the
     original series it is assumed the series consists of measurements that
     describe an intensity at the end of the period for which they hold
-    therefore when upsampling, the values are uniformally spread over the
+    therefore when upsampling, the values are uniformly spread over the
     new timestep (like bfill) this method unfortunately is slower than the
     pandas-reample methods.
 
