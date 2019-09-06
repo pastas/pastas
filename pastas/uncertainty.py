@@ -11,7 +11,7 @@ class Uncertainty:
         # Save a reference to the model.
         self.ml = ml
 
-    def prediction_interval(self, n=None, alpha=0.05, **kwargs):
+    def prediction_interval(self, n=1000, alpha=0.05, **kwargs):
         """Method to calculate the prediction interval for the simulation.
 
         Returns
@@ -25,12 +25,20 @@ class Uncertainty:
         autocorrelation in the residuals (e.g. block bootstrapping).
 
         """
-        res = self.ml.residuals()
+        params = self.get_parameter_sample(n=n)
+        res = {}
+
+        for i, param in enumerate(params):
+            res[i] = self.ml.residuals(parameters=param, **kwargs)
+        res = pd.DataFrame(res)
+
+        #res = self.ml.residuals()
         sim = self.ml.simulate()
         q = [alpha / 2, 1 - alpha / 2]
 
-        data = pd.DataFrame({str(q[0]): sim.add(res.quantile(q[0])),
-                             str(q[1]): sim.add(res.quantile(q[1]))})
+        data = pd.DataFrame(
+            {str(q[0]): sim.add(res.quantile(q[0]).quantile(q[0])),
+             str(q[1]): sim.add(res.quantile(q[1]).quantile(q[1]))})
         return data
 
     def confidence_interval(self, n=None, alpha=0.05, **kwargs):

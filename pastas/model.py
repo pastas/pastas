@@ -1221,7 +1221,6 @@ class Model:
         sim_org = ml.simulate(tmin=tmin, tmax=tmax)
         return sim - sim_org
 
-    @get_stressmodel
     def get_response(self, rfunc, name, parameters=None, dt=None, **kwargs):
         """Internal method to compute the block and step response."""
         if not hasattr(self.stressmodels[name], "rfunc"):
