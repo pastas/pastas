@@ -51,18 +51,21 @@ class Uncertainty:
                                      n=n, alpha=alpha, **kwargs)
 
     def block_response(self, name, n=None, alpha=0.05, **kwargs):
+        dt = self.ml.get_block_response(name=name).index.values
         return self.get_realizations(func=self.ml.get_block_response, n=n,
-                                     alpha=alpha, name=name, **kwargs)
+                                     alpha=alpha, name=name, dt=dt, **kwargs)
 
     def step_response(self, name, n=None, alpha=0.05, **kwargs):
+        dt = self.ml.get_block_response(name=name).index.values
         return self.get_realizations(func=self.ml.get_step_response, n=n,
-                                     alpha=alpha, name=name, **kwargs)
+                                     alpha=alpha, name=name, dt=dt, **kwargs)
 
     def contribution(self, name, n=None, alpha=0.05, **kwargs):
         return self.get_realizations(func=self.ml.get_contribution, n=n,
                                      alpha=alpha, name=name, **kwargs)
 
     def get_realizations(self, func, n=None, alpha=0.05, name=None, **kwargs):
+        """Internal method """
         if name:
             kwargs["name"] = name
 
