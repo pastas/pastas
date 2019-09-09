@@ -50,3 +50,12 @@ def PastasDeprecationWarning(function):
         return function(*args, **kwargs)
 
     return _function
+
+
+def njit(function):
+    try:
+        from numba import jit
+        return jit(function)
+    except ImportError:
+        logger.warning("")
+        return function

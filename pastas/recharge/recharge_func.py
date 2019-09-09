@@ -23,10 +23,10 @@ simulate(self, evap, prec, p=None)
     A function that returns an array of the simulated recharge series.
 
 """
-
-import numba
 import numpy as np
 import pandas as pd
+
+from ..decorators import njit
 
 
 class RechargeBase:
@@ -191,8 +191,8 @@ class Combination:
         return rf + rs
 
 
-@numba.jit(nopython=True)
-def perc(prec, evap, srmax=0.1, kp=0.05, gamma=2.0, imax=0.001, dt=1.0):
+@njit
+def perc(prec, evap, srmax, kp, gamma, imax, dt):
     n = prec.size
     # Create an empty array to store the soil state in
     S = np.zeros(n, dtype=np.float64)
@@ -227,7 +227,7 @@ def perc(prec, evap, srmax=0.1, kp=0.05, gamma=2.0, imax=0.001, dt=1.0):
     return R, S, Ea, Ei
 
 
-@numba.jit()
+@njit
 def pref(prec, evap, srmax=0.1, beta=2.0, imax=0.001, dt=1.0):
     """
     In this section the preferential flow model is defined.
@@ -268,7 +268,7 @@ def pref(prec, evap, srmax=0.1, beta=2.0, imax=0.001, dt=1.0):
     return R, S, Ea, Ei
 
 
-@numba.jit()
+@njit
 def comb(prec, evap, srmax=0.05, kp=0.05, beta=2.0, gamma=2.0, imax=0.001,
          dt=1.0):
     n = prec.size
