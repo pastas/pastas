@@ -126,8 +126,45 @@ class Percolation:
         return parameters
 
     def simulate(self, prec, evap, p=None, **kwargs):
-        recharge = perc(prec, evap, p[0], p[1], p[2], p[3], self.dt)[0]
+        recharge = self.recharge(prec, evap, p[0], p[1], p[2], p[3], self.dt)[0]
         return recharge
+
+    @staticmethod
+    @njit
+    def recharge(prec, evap, srmax, kp, gamma, imax, dt):
+        n = prec.size
+        # Create an empty array to store the soil state in
+        S = np.zeros(n, dtype=np.float64)
+        S[0] = 0.5 * srmax  # Set the initial system state
+        Si = np.zeros(n, dtype=np.float64)
+        Pe = np.zeros(n, dtype=np.float64)
+        Ei = np.zeros(n, dtype=np.float64)
+        Epu = np.zeros(n, dtype=np.float64)
+        Ea = np.zeros(n, dtype=np.float64)
+
+        for t in range(1, n):
+            Si[t] = Si[t - 1] + prec[
+                t]  # Fill interception bucket with new rain
+            Pe[t] = max(0.0, Si[t] - imax)  # Calculate effective precipitation
+            Si[t] = Si[t] - Pe[t]
+            Ei[t] = min(Si[t], evap[t])  # Evaporation from interception
+            Si[t] = Si[t] - Ei[t]  # Update interception state
+            Epu[t] = evap[t] - Ei[t]  # Update potential evapotranspiration
+
+            # Use explicit Euler scheme
+            S[t] = S[t - 1] + dt * (
+                    Pe[t - 1] - kp * (S[t - 1] / srmax) ** gamma - Epu[
+                t - 1] * min(1.0, S[t - 1] / (0.5 * srmax)))
+
+            # Make sure the solution is larger then 0.0 and smaller than srmax
+            S[t] = min(srmax, max(0.0, S[t]))
+            Ea[t] = Epu[t] * min(1.0, (S[t] / (0.5 * srmax)))
+
+        R = np.zeros(n, dtype=np.float64)
+        R[1:] = kp * dt * 0.5 * \
+                (S[:-1] ** gamma + S[1:] ** gamma) / srmax ** gamma
+
+        return R, S, Ea, Ei
 
 
 class Preferential:
@@ -155,8 +192,50 @@ class Preferential:
         return parameters
 
     def simulate(self, prec, evap, p=None, **kwargs):
-        recharge = pref(prec, evap, p[0], p[1], p[2], self.dt)[0]
+        recharge = self.recharge(prec, evap, p[0], p[1], p[2], self.dt)[0]
         return recharge
+
+    @staticmethod
+    @njit
+    def recharge(prec, evap, srmax=0.1, beta=2.0, imax=0.001, dt=1.0):
+        """
+        In this section the preferential flow model is defined.
+        dS/ Dt = Pe[t] * (1 - (Sr[t] / Srmax)**Beta)- Epu * min(1, Sr/0.5Srmax)
+        """
+        n = prec.size
+
+        # Create an empty array to store the soil state in
+        S = np.zeros(n, dtype=np.float64)
+        S[0] = 1 * srmax  # Set the initial system state
+        Si = np.zeros(n, dtype=np.float64)
+        Pe = np.zeros(n, dtype=np.float64)
+        Ei = np.zeros(n, dtype=np.float64)
+        Epu = np.zeros(n, dtype=np.float64)
+        Ea = np.zeros(n, dtype=np.float64)
+        R = np.zeros(n, dtype=np.float64)
+
+        for t in range(1, n):
+            Si[t] = Si[t - 1] + prec[
+                t]  # Fill interception bucket with new rain
+            Pe[t] = max(0.0, Si[t] - imax)  # Calculate effective precipitation
+            Si[t] = Si[t] - Pe[t]
+            Ei[t] = min(Si[t], evap[t])  # Evaporation from interception
+            Si[t] = Si[t] - Ei[t]  # Update interception state
+            Epu[t] = evap[t] - Ei[t]  # Update potential evapotranspiration
+
+            # Use explicit Euler scheme
+            S[t] = S[t - 1] + dt * (
+                    Pe[t - 1] * (1 - (S[t - 1] / srmax) ** beta) - Epu[t - 1]
+                    * min(1.0, S[t - 1] / (0.5 * srmax)))
+
+            # Make sure the solution is larger then 0.0 and smaller than Srmax
+            S[t] = min(srmax, max(0.0, S[t]))
+            Ea[t] = Epu[t] * min(1.0, S[t] / (0.5 * srmax))
+
+        R[1:] = Pe[1:] * dt * 0.5 * (
+                (S[:-1] ** beta + S[1:] ** beta) / srmax ** beta)
+
+        return R, S, Ea, Ei
 
 
 class Combination:
@@ -187,128 +266,118 @@ class Combination:
         return parameters
 
     def simulate(self, prec, evap, p=None, **kwargs):
-        rf, rs = comb(prec, evap, p[0], p[1], p[2], p[3], p[4], self.dt)[0:2]
+        rf, rs = self.recharge(prec, evap, p[0], p[1], p[2], p[3], p[4], self.dt)[
+                 0:2]
         return rf + rs
 
+    @staticmethod
+    @njit
+    def recharge(prec, evap, srmax=0.05, kp=0.05, beta=2.0, gamma=2.0, imax=0.001,
+                 dt=1.0):
+        n = prec.size
 
-@njit
-def perc(prec, evap, srmax, kp, gamma, imax, dt):
-    n = prec.size
-    # Create an empty array to store the soil state in
-    S = np.zeros(n, dtype=np.float64)
-    S[0] = 0.5 * srmax  # Set the initial system state
-    Si = np.zeros(n, dtype=np.float64)
-    Pe = np.zeros(n, dtype=np.float64)
-    Ei = np.zeros(n, dtype=np.float64)
-    Epu = np.zeros(n, dtype=np.float64)
-    Ea = np.zeros(n, dtype=np.float64)
+        # Create an empty array to store the soil state in
+        S = np.zeros(n, dtype=np.float64)
+        S[0] = 0.5 * srmax  # Set the initial system state
+        Si = np.zeros(n, dtype=np.float64)
+        Pe = np.zeros(n, dtype=np.float64)
+        Ei = np.zeros(n, dtype=np.float64)
+        Epu = np.zeros(n, dtype=np.float64)
+        Ea = np.zeros(n, dtype=np.float64)
 
-    for t in range(1, n):
-        Si[t] = Si[t - 1] + prec[t]  # Fill interception bucket with new rain
-        Pe[t] = max(0.0, Si[t] - imax)  # Calculate effective precipitation
-        Si[t] = Si[t] - Pe[t]
-        Ei[t] = min(Si[t], evap[t])  # Evaporation from interception
-        Si[t] = Si[t] - Ei[t]  # Update interception state
-        Epu[t] = evap[t] - Ei[t]  # Update potential evapotranspiration
+        for t in range(1, n):
+            Si[t] = Si[t - 1] + prec[
+                t]  # Fill interception bucket with new rain
+            Pe[t] = max(0.0, Si[t] - imax)  # Calculate effective precipitation
+            Si[t] = Si[t] - Pe[t]
+            Ei[t] = min(Si[t], evap[t])  # Evaporation from interception
+            Si[t] = Si[t] - Ei[t]  # Update interception state
+            Epu[t] = evap[t] - Ei[t]  # Update potential evapotranspiration
 
-        # Use explicit Euler scheme
-        S[t] = max(0.0, S[t - 1] + dt * (
-                Pe[t - 1] - kp * (S[t - 1] / srmax) ** gamma - Epu[
-            t - 1] * min(1.0, S[t - 1] / (0.5 * srmax))))
-
-        # Make sure the solution is larger then 0.0 and smaller than srmax
-        S[t] = min(srmax, max(0.0, S[t]))
-        Ea[t] = Epu[t] * min(1.0, (S[t] / (0.5 * srmax)))
-
-    R = np.zeros(n, dtype=np.float64)
-    R[1:] = kp * dt * 0.5 * \
-            (S[:-1] ** gamma + S[1:] ** gamma) / srmax ** gamma
-
-    return R, S, Ea, Ei
-
-
-@njit
-def pref(prec, evap, srmax=0.1, beta=2.0, imax=0.001, dt=1.0):
-    """
-    In this section the preferential flow model is defined.
-    dS/ Dt = Pe[t] * (1 - (Sr[t] / Srmax)**Beta)- Epu * min(1, Sr/0.5Srmax)
-    """
-    n = prec.size
-
-    # Create an empty array to store the soil state in
-    S = np.zeros(n, dtype=np.float64)
-    S[0] = 1 * srmax  # Set the initial system state
-    Si = np.zeros(n, dtype=np.float64)
-    Pe = np.zeros(n, dtype=np.float64)
-    Ei = np.zeros(n, dtype=np.float64)
-    Epu = np.zeros(n, dtype=np.float64)
-    Ea = np.zeros(n, dtype=np.float64)
-    R = np.zeros(n, dtype=np.float64)
-
-    for t in range(1, n):
-        Si[t] = Si[t - 1] + prec[t]  # Fill interception bucket with new rain
-        Pe[t] = max(0.0, Si[t] - imax)  # Calculate effective precipitation
-        Si[t] = Si[t] - Pe[t]
-        Ei[t] = min(Si[t], evap[t])  # Evaporation from interception
-        Si[t] = Si[t] - Ei[t]  # Update interception state
-        Epu[t] = evap[t] - Ei[t]  # Update potential evapotranspiration
-
-        # Use explicit Euler scheme 
-        S[t] = S[t - 1] + dt * (
-                Pe[t - 1] * (1 - (S[t - 1] / srmax) ** beta) - Epu[t - 1]
-                * min(1.0, S[t - 1] / (0.5 * srmax)))
-
-        # Make sure the solution is larger then 0.0 and smaller than Srmax
-        S[t] = min(srmax, max(0.0, S[t]))
-        Ea[t] = Epu[t] * min(1.0, S[t] / (0.5 * srmax))
-
-    R[1:] = Pe[1:] * dt * 0.5 * (
-            (S[:-1] ** beta + S[1:] ** beta) / srmax ** beta)
-
-    return R, S, Ea, Ei
-
-
-@njit
-def comb(prec, evap, srmax=0.05, kp=0.05, beta=2.0, gamma=2.0, imax=0.001,
-         dt=1.0):
-    n = prec.size
-
-    # Create an empty array to store the soil state in
-    S = np.zeros(n, dtype=np.float64)
-    S[0] = 0.5 * srmax  # Set the initial system state
-    Si = np.zeros(n, dtype=np.float64)
-    Pe = np.zeros(n, dtype=np.float64)
-    Ei = np.zeros(n, dtype=np.float64)
-    Epu = np.zeros(n, dtype=np.float64)
-    Ea = np.zeros(n, dtype=np.float64)
-
-    for t in range(1, n):
-        Si[t] = Si[t - 1] + prec[t]  # Fill interception bucket with new rain
-        Pe[t] = max(0.0, Si[t] - imax)  # Calculate effective precipitation
-        Si[t] = Si[t] - Pe[t]
-        Ei[t] = min(Si[t], evap[t])  # Evaporation from interception
-        Si[t] = Si[t] - Ei[t]  # Update interception state
-        Epu[t] = evap[t] - Ei[t]  # Update potential evapotranspiration
-
-        # Use explicit Euler scheme 
-        S[t] = max(0.0,
-                   S[t - 1] + dt * (Pe[t - 1] *
+            # Use explicit Euler scheme
+            S[t] = S[t - 1] + dt * (Pe[t - 1] *
                                     (1 - (S[t - 1] / srmax) ** beta) - kp *
                                     (S[t - 1] / srmax) ** gamma - Epu[t - 1]
-                                    * min(1.0, S[t - 1] / (0.5 * srmax))))
+                                    * min(1.0, S[t - 1] / (0.5 * srmax)))
 
-        # Make sure the solution is larger then 0.0 and smaller than Srmax
-        S[t] = min(srmax, max(0.0, S[t]))
-        Ea[t] = Epu[t] * min(1.0, S[t] / (0.5 * srmax))
+            # Make sure the solution is larger then 0.0 and smaller than Srmax
+            S[t] = min(srmax, max(0.0, S[t]))
+            Ea[t] = Epu[t] * min(1.0, S[t] / (0.5 * srmax))
 
-    # Percolation
-    Rs = np.zeros(n, dtype=np.float64)
-    Rs[1:] = kp * dt * 0.5 * \
-             ((S[:-1] ** gamma + S[1:] ** gamma) / srmax ** gamma)
+        # Percolation
+        Rs = np.zeros(n, dtype=np.float64)
+        Rs[1:] = kp * dt * 0.5 * \
+                 ((S[:-1] ** gamma + S[1:] ** gamma) / srmax ** gamma)
 
-    # Preferential
-    Rf = np.zeros(n, dtype=np.float64)
-    Rf[1:] = Pe[1:] * dt * 0.5 * \
-             ((S[:-1] ** beta + S[1:] ** beta) / srmax ** beta)
+        # Preferential
+        Rf = np.zeros(n, dtype=np.float64)
+        Rf[1:] = Pe[1:] * dt * 0.5 * \
+                 ((S[:-1] ** beta + S[1:] ** beta) / srmax ** beta)
 
-    return Rs, Rf, S, Ea, Ei
+        return Rs, Rf, S, Ea, Ei
+
+
+class Berendrecht:
+    """
+    Percolation and preferential flow recharge model
+
+    Other water balance for the root zone s calculated as:
+
+    dS/dt = Pe - Kp * (Sr / Srmax)**Gamma - Epu * min(1, Sr / (0.5 * Srmax))
+
+    References
+    ----------
+
+
+    """
+    _name = "Berendrecht"
+
+    def __init__(self):
+        self.nparam = 7
+        self.dt = 1
+        self.solver = 0
+        self.temp = False
+
+    def get_init_parameters(self, name="recharge"):
+        parameters = pd.DataFrame(
+            columns=["initial", "pmin", "pmax", "vary", "name"])
+        parameters.loc[name + "_fi"] = (1.0, 0.7, 1.0, False, name)
+        parameters.loc[name + "_fc"] = (1.0, 0.0, 2.0, False, name)
+        parameters.loc[name + "_sr"] = (0.25, 0.0, np.nan, True, name)
+        parameters.loc[name + "_de"] = (0.25, 0.0, np.nan, True, name)
+        parameters.loc[name + "_l"] = (-2, -4, 0, True, name)
+        parameters.loc[name + "_m"] = (0.5, 0.0, 1, True, name)
+        parameters.loc[name + "_ks"] = (0.05, 0.0, np.nan, True, name)
+        return parameters
+
+    def simulate(self, prec, evap, p=None, **kwargs):
+        r = self.recharge(prec, evap, p[0], p[1], p[2], p[3], p[4], p[5], p[6],
+                          self.dt)
+        return r
+
+    @staticmethod
+    @njit
+    def recharge(prec, evap, fi=1, fc=1, sr=0.25, de=0.25, l=-2, m=.5, ks=0.05,
+                 dt=1):
+        n = prec.size
+        pe = fi * prec
+        ep = fc * evap
+
+        s = np.zeros(n, dtype=np.float64)
+        s[0] = 0.5  # Set the initial system state
+        rp = np.zeros(n, dtype=np.float64)
+        ea = np.zeros(n, dtype=np.float64)
+
+        # Use explicit Euler scheme
+        for t in range(1, n):
+            if s[t - 1] < 0.05:
+                s[t - 1] = 0.05 * np.exp(20 * s[t - 1] - 1)
+            elif s[t - 1] > 0.95:
+                s[t - 1] = 1 - (0.05 * np.exp(19 - 20 * s[t - 1]))
+
+            ea[t - 1] = (1 - np.exp(-3 * s[t - 1] / sr)) * ep[t - 1]
+            rp[t - 1] = ks * s[t - 1] ** l * (
+                    1 - (1 - s[t - 1] ** (1 / m)) ** m) ** 2
+            s[t] = s[t - 1] + dt / de * (pe[t - 1] - ea[t - 1] - rp[t - 1])
+
+        return rp
