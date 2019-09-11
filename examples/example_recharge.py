@@ -8,6 +8,7 @@ Author: R.A. Collenteur, University of Graz.
 import pandas as pd
 
 import pastas as ps
+from pastas.recharge import FlexModel, Berendrecht
 
 ps.set_log_level("ERROR")
 
@@ -24,9 +25,11 @@ rain = pd.read_csv("data/rain_nb1.csv", index_col=0, parse_dates=True,
 evap = pd.read_csv("data/evap_nb1.csv", index_col=0, parse_dates=True,
                    squeeze=True)
 
-# Create stress
+# Initialize recharge model and create stressmodel
+rch = FlexModel(preferential=False)
+rch = Berendrecht()
 sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential,
-                      recharge="Percolation", name='recharge')
+                      recharge=rch, name='recharge')
 ml.add_stressmodel(sm)
 
 # Solve

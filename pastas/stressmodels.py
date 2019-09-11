@@ -29,6 +29,7 @@ import pandas as pd
 from scipy.signal import fftconvolve
 
 from .decorators import set_parameter
+from .recharge import Linear
 from .rfunc import One, Exponential, HantushWellModel
 from .timeseries import TimeSeries
 from .utils import validate_name
@@ -877,12 +878,12 @@ class RechargeModel(StressModelBase):
     evap: pandas.Series or pastas.TimeSeries
         pandas.Series or pastas.TimeSeries objects containing the
         evaporation series.
-    rfunc: pastas.rfunc instance, optional
+    rfunc: pastas.rfunc class, optional
         Response function used in the convolution with the stress. Default
         is Exponential.
     name: str, optional
         Name of the stress. Default is "recharge".
-    recharge: string, optional
+    recharge: pastas.recharge instance, optional
         String with the name of the recharge model. Options are: "Linear" (
         default).
     temp: pandas.Series or pastas.TimeSeries, optional
@@ -892,7 +893,7 @@ class RechargeModel(StressModelBase):
     cutoff: float, optional
         float between 0 and 1 to determine how long the response is (default
         is 99% of the actual response time). Used to reduce computation times.
-    settings: list of dicts or strs, optional
+    settings: list of dicts or str, optional
         The settings of the precipitation and evaporation time series,
         in this order. This can be a string referring to a predefined
         settings dict, or a dict with the settings to apply. Refer to the
@@ -920,7 +921,7 @@ class RechargeModel(StressModelBase):
     _name = "RechargeModel"
 
     def __init__(self, prec, evap, rfunc=Exponential, name="recharge",
-                 recharge="Linear", temp=None, cutoff=0.999,
+                 recharge=Linear(), temp=None, cutoff=0.999,
                  settings=("prec", "evap", "evap"),
                  metadata=(None, None, None)):
         # Store the precipitation and evaporation time series
@@ -942,14 +943,18 @@ class RechargeModel(StressModelBase):
             raise IndexError(msg)
 
         # Dynamically load the required recharge model from string
-        recharge_mod = getattr(import_module("pastas.recharge"), recharge)
-        self.recharge = recharge_mod()
+        if isinstance(recharge, str):
+            logger.warning("DeprecationWarning: Support for providing a "
+                           "recharge model as a string will be dropped in "
+                           "Pastas version 0.14.0")
+            recharge = getattr(import_module("pastas.recharge"), recharge)()
+        self.recharge = recharge
 
         # Store a temperature time series if needed or set to None
         if self.recharge.temp is True:
             if temp is None:
-                msg = "Recharge module {} requires a temperature series. " \
-                      "No temperature series were provided".format(recharge)
+                msg = "Recharge module requires a temperature series. " \
+                      "No temperature series were provided"
                 raise TypeError(msg)
             else:
                 self.temp = TimeSeries(temp, settings=settings[2],
@@ -960,9 +965,9 @@ class RechargeModel(StressModelBase):
         # Select indices from validated stress where both series are available.
         index = self.prec.series.index.intersection(self.evap.series.index)
         if index.empty:
-            msg = ('The stresses that were provided have no overlapping '
-                   'time indices. Please make sure the indices of the time '
-                   'series overlap.')
+            msg = ("The stresses that were provided have no overlapping"
+                   "time indices. Please make sure the indices of the time"
+                   "series overlap.")
             logger.error(msg)
             raise Exception(msg)
 
@@ -1037,7 +1042,7 @@ class RechargeModel(StressModelBase):
                          fastpath=True)
 
     def get_stress(self, p=None, tmin=None, tmax=None, freq=None,
-                   istress=None,  **kwargs):
+                   istress=None, **kwargs):
         """Method to obtain the recharge stress calculated by the recharge
         model.
 

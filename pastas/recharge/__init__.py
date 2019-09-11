@@ -1,2 +1,1 @@
-from .recharge_func import Linear, Percolation, Preferential, Combination, \
-    Berendrecht
+from .recharge_func import Linear, FlexModel, Berendrecht

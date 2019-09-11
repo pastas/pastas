@@ -57,5 +57,6 @@ def njit(function):
         from numba import jit
         return jit(function)
     except ImportError:
-        logger.warning("")
+        logger.warning("Numba is not installed. Installing Numba is "
+                       "recommended for significant speed-ups.")
         return function
