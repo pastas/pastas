@@ -1,5 +1,5 @@
+import numpy as np
 import pandas as pd
-
 import pastas as ps
 
 ps.set_log_level("ERROR")
@@ -20,20 +20,32 @@ ml.add_stressmodel(sm)
 
 # Solve
 ml.solve()
-
-# Plot some results
-axes = ml.plots.results()
-
+# 
 df = ml.uncertainty.prediction_interval()
-axes[0].fill_between(df.index, df.iloc[:, 0], df.iloc[:, 1], color="gray",
-                     zorder=-1, alpha=0.5, label="95% Prediction interval")
-axes[0].legend()
-df = ml.uncertainty.contribution("recharge")
-axes[3].fill_between(df.index, df.iloc[:, 0], df.iloc[:, 1], color="gray",
-                     zorder=-1, alpha=0.5, label="95% confidence")
+inside = (obs > df.loc[obs.index, '0.025']) & (obs < df.loc[obs.index, '0.975'])
+print('results of prediction_interval')
+print('percentage inside:', np.count_nonzero(inside) / len(inside) * 100)
+#
+df2 = ml.uncertainty.prediction_interval2()
+inside = (obs > df2.loc[obs.index, 0.025]) & (obs < df2.loc[obs.index, 0.975])
+print('results of prediction_interval2')
+print('percentage inside:', np.count_nonzero(inside) / len(inside) * 100)
 
-df = ml.uncertainty.step_response("recharge", alpha=0.05, n=1000)
-axes[4].fill_between(df.index, df.iloc[:, 0], df.iloc[:, 1], color="gray",
-                     zorder=-1, alpha=0.5, label="95% confidence")
 
-axes[0].set_xlim(["2010", "2015"])
+# # Plot some results
+# axes = ml.plots.results()
+# axes[0].fill_between(df.index, df.iloc[:, 0], df.iloc[:, 1], color="gray",
+#                       zorder=-1, alpha=0.5, label="95% Prediction interval")
+# axes[0].legend()
+# df = ml.uncertainty.contribution("recharge")
+# axes[3].fill_between(df.index, df.iloc[:, 0], df.iloc[:, 1], color="gray",
+#                      zorder=-1, alpha=0.5, label="95% confidence")
+# 
+# df = ml.uncertainty.step_response("recharge", alpha=0.05, n=1000)
+# axes[4].fill_between(df.index, df.iloc[:, 0], df.iloc[:, 1], color="gray",
+#                      zorder=-1, alpha=0.5, label="95% confidence")
+# 
+# axes[0].set_xlim(["2010", "2015"])
+# 
+# import matplotlib.pyplot as plt
+# plt.show()

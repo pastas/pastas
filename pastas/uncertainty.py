@@ -40,6 +40,36 @@ class Uncertainty:
             {str(q[0]): sim.add(res.quantile(q[0]).quantile(q[0])),
              str(q[1]): sim.add(res.quantile(q[1]).quantile(q[1]))})
         return data
+    
+    def prediction_interval2(self, n=1000, alpha=0.05, **kwargs):
+        """Method to calculate the prediction interval for the simulation.
+
+        Returns
+        -------
+        data: Pandas.DataFrame of length number of observations and two columns
+        labeled 0.025 and 0.975 (numerical values) containing the 2.5% and 97.5%
+        prediction interval (for alpha=0.05)
+
+        Notes
+        -----
+        Add residuals assuming a Normal distribution with standard deviation equal
+        to the stanard deviation of the residuals
+
+        """
+    
+        sim = self.ml.simulate(**kwargs)
+        ndata = len(sim)
+        sigr = self.ml.residuals().std()
+        
+        params = self.get_parameter_sample(n=n)
+        sim = {}
+        for i, param in enumerate(params):
+            sim[i] = self.ml.simulate(parameters=param, **kwargs) + \
+                     sigr * np.random.randn(ndata)
+        sim = pd.DataFrame(sim)
+        q = [alpha / 2, 1 - alpha / 2]
+        rv = sim.quantile(q, axis=1).transpose()
+        return rv
 
     def confidence_interval(self, n=None, alpha=0.05, **kwargs):
         """Method to calculate the confidence interval for the simulation.
