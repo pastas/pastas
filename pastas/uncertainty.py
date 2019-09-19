@@ -16,44 +16,14 @@ class Uncertainty:
 
         Returns
         -------
-        data: Pandas.DataFrame
-
-        Notes
-        -----
-        Now calculates a "naive" prediction interval based on the residuals.
-        This should probably be changed to something that recognizes the
-        autocorrelation in the residuals (e.g. block bootstrapping).
-
-        """
-        params = self.get_parameter_sample(n=n)
-        res = {}
-
-        for i, param in enumerate(params):
-            res[i] = self.ml.residuals(parameters=param, **kwargs)
-        res = pd.DataFrame(res)
-
-        #res = self.ml.residuals()
-        sim = self.ml.simulate()
-        q = [alpha / 2, 1 - alpha / 2]
-
-        data = pd.DataFrame(
-            {str(q[0]): sim.add(res.quantile(q[0]).quantile(q[0])),
-             str(q[1]): sim.add(res.quantile(q[1]).quantile(q[1]))})
-        return data
-    
-    def prediction_interval2(self, n=1000, alpha=0.05, **kwargs):
-        """Method to calculate the prediction interval for the simulation.
-
-        Returns
-        -------
         data: Pandas.DataFrame of length number of observations and two columns
-        labeled 0.025 and 0.975 (numerical values) containing the 2.5% and 97.5%
-        prediction interval (for alpha=0.05)
+        labeled 0.025 and 0.975 (numerical values) containing the 2.5% and
+        97.5% prediction interval (for alpha=0.05)
 
         Notes
         -----
-        Add residuals assuming a Normal distribution with standard deviation equal
-        to the stanard deviation of the residuals
+        Add residuals assuming a Normal distribution with standard deviation
+        equal to the standard deviation of the residuals.
 
         """
     
@@ -140,7 +110,8 @@ class Uncertainty:
         if n is None:
             n = 10 ** par.size
 
-        return np.random.multivariate_normal(par, pcov, n)
+        return np.random.multivariate_normal(par, pcov, n,
+                                             check_valid="ignore")
 
     def get_covariance_matrix(self, name=None):
         """Internal method to obtain the covariance matrix from the model.
