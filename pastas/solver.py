@@ -48,8 +48,8 @@ class BaseSolver:
     \b
     """
 
-    def __init__(self, model):
-        self.model = model
+    def __init__(self, ml):
+        self.ml = ml
         self.pcor = None  # Correlation between parameters
         self.pcov = None  # Covariances of the parameters
         self.nfev = None  # number of function evaluations
@@ -80,9 +80,9 @@ class BaseSolver:
         """
         # Get the residuals or the noise
         if noise:
-            rv = self.model.noise(parameters)
+            rv = self.ml.noise(parameters)
         else:
-            rv = self.model.residuals(parameters)
+            rv = self.ml.residuals(parameters)
 
         # Determine if weights need to be applied
         if weights is not None:
@@ -95,7 +95,139 @@ class BaseSolver:
 
         return rv.values
 
-    @classmethod
+    def prediction_interval(self, n=1000, alpha=0.05, **kwargs):
+        """Method to calculate the prediction interval for the simulation.
+
+        Returns
+        -------
+        data: Pandas.DataFrame of length number of observations and two columns
+        labeled 0.025 and 0.975 (numerical values) containing the 2.5% and
+        97.5% prediction interval (for alpha=0.05)
+
+        Notes
+        -----
+        Add residuals assuming a Normal distribution with standard deviation
+        equal to the standard deviation of the residuals.
+
+        """
+
+        sigr = self.ml.residuals().std()
+
+        data = self.get_realizations(func=self.ml.simulate, n=n, name=None,
+                                     **kwargs)
+        data = data + sigr * np.random.randn(data.shape[0], data.shape[1])
+
+        q = [alpha / 2, 1 - alpha / 2]
+        rv = data.quantile(q, axis=1).transpose()
+        return rv
+
+    def ci_simulation(self, n=None, alpha=0.05, **kwargs):
+        """Method to calculate the confidence interval for the simulation.
+
+        Returns
+        -------
+
+        Notes
+        -----
+        The confidence interval shows the uncertainty in the simulation due
+        to parameter uncertainty. In other words, there is a 95% probability
+        that the true best-fit line for the observed data lies within the
+        95% confidence interval.
+
+        """
+        return self.get_confidence_interval(func=self.ml.simulate, n=n,
+                                            alpha=alpha, **kwargs)
+
+    def ci_block_response(self, name, n=None, alpha=0.05, **kwargs):
+        dt = self.ml.get_block_response(name=name).index.values
+        return self.get_confidence_interval(func=self.ml.get_block_response,
+                                            n=n, alpha=alpha, name=name, dt=dt,
+                                            **kwargs)
+
+    def ci_step_response(self, name, n=None, alpha=0.05, **kwargs):
+        dt = self.ml.get_block_response(name=name).index.values
+        return self.get_confidence_interval(func=self.ml.get_step_response,
+                                            n=n,
+                                            alpha=alpha, name=name, dt=dt,
+                                            **kwargs)
+
+    def ci_contribution(self, name, n=None, alpha=0.05, **kwargs):
+        return self.get_confidence_interval(func=self.ml.get_contribution, n=n,
+                                            alpha=alpha, name=name, **kwargs)
+
+    def get_realizations(self, func, n=None, name=None, **kwargs):
+        """Internal method to obtain  n number of realizations."""
+        if name:
+            kwargs["name"] = name
+
+        params = self.get_parameter_sample(n=n, name=name)
+        data = {}
+
+        for i, param in enumerate(params):
+            data[i] = func(parameters=param, **kwargs)
+
+        return DataFrame.from_dict(data, orient="columns")
+
+    def get_confidence_interval(self, func, n=None, name=None, alpha=0.05,
+                                **kwargs):
+        """Internal method to obtain a confidence interval."""
+        q = [alpha / 2, 1 - alpha / 2]
+        data = self.get_realizations(func=func, n=n, name=name, **kwargs)
+
+        return data.quantile(q=q, axis=1).transpose()
+
+    def get_parameter_sample(self, name=None, n=None):
+        """Internal method to obtain a parameter sets.
+
+        Parameters
+        ----------
+        n: int, optional
+            Number of random samples drawn from the bivariate normal
+            distribution.
+        name: str, optional
+            Name of the stressmodel or model component to obtain the
+            parameters for.
+
+        Returns
+        -------
+        ndarray
+            Numpy array with N parameter samples.
+
+        """
+        par = self.ml.get_parameters(name=name)
+        pcov = self.get_covariance_matrix(name=name)
+
+        if n is None:
+            n = 10 ** par.size
+
+        return np.random.multivariate_normal(par, pcov, n,
+                                             check_valid="ignore")
+
+    def get_covariance_matrix(self, name=None):
+        """Internal method to obtain the covariance matrix from the model.
+
+        Parameters
+        ----------
+        name: str, optional
+            Name of the stressmodel or model component to obtain the
+            parameters for.
+
+        Returns
+        -------
+        pcov: pandas.DataFrame
+            Pandas DataFrame with the covariances for the parameters.
+
+        """
+        if name:
+            params = self.ml.parameters.loc[self.ml.parameters.loc[:,
+                                            "name"] == name].index
+        else:
+            params = self.ml.parameters.index
+
+        pcov = self.pcov.loc[params, params].fillna(0)
+
+        return pcov
+
     def get_correlations(self, pcov):
         """Method to obtain the parameter correlations from the covariance
         matrix.
@@ -122,7 +254,7 @@ class BaseSolver:
 class LeastSquares(BaseSolver):
     _name = "LeastSquares"
 
-    def __init__(self, model):
+    def __init__(self, ml):
         """Solver based on Scipy's least_squares method [1]_.
 
         Notes
@@ -142,12 +274,12 @@ class LeastSquares(BaseSolver):
         .. [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
 
         """
-        BaseSolver.__init__(self, model=model)
+        BaseSolver.__init__(self, ml=ml)
 
     def solve(self, noise=True, weights=None, callback=None, **kwargs):
-        self.vary = self.model.parameters.vary.values.astype(bool)
-        self.initial = self.model.parameters.initial.values.copy()
-        parameters = self.model.parameters.loc[self.vary]
+        self.vary = self.ml.parameters.vary.values.astype(bool)
+        self.initial = self.ml.parameters.initial.values.copy()
+        parameters = self.ml.parameters.loc[self.vary]
 
         # Set the boundaries
         bounds = (np.where(parameters.pmin.isnull(), -np.inf, parameters.pmin),
@@ -207,7 +339,7 @@ class LeastSquares(BaseSolver):
         s = s[s > threshold]
         VT = VT[:s.size]
         pcov = np.dot(VT.T / s ** 2, VT)
-        n_param = self.model.parameters.index.size
+        n_param = self.ml.parameters.index.size
         warn_cov = False
         if pcov is None:
             # indeterminate covariance
@@ -215,8 +347,8 @@ class LeastSquares(BaseSolver):
             pcov.fill(np.inf)
             warn_cov = True
         elif not absolute_sigma:
-            if self.model.oseries.series.index.size > n_param:
-                s_sq = cost / (self.model.oseries.series.index.size - n_param)
+            if self.ml.oseries.series.index.size > n_param:
+                s_sq = cost / (self.ml.oseries.series.index.size - n_param)
                 pcov = pcov * s_sq
             else:
                 pcov.fill(np.inf)
@@ -232,7 +364,7 @@ class LeastSquares(BaseSolver):
 class LmfitSolve(BaseSolver):
     _name = "LmfitSolve"
 
-    def __init__(self, model):
+    def __init__(self, ml):
         """Solving the model using the LmFit solver [LM]_.
 
          This is basically a wrapper around the scipy solvers, adding some
@@ -248,13 +380,13 @@ class LmfitSolve(BaseSolver):
         except ImportError:
             msg = "lmfit not installed. Please install lmfit first."
             raise ImportError(msg)
-        BaseSolver.__init__(self, model=model)
+        BaseSolver.__init__(self, ml=ml)
 
     def solve(self, noise=True, weights=None, callback=None, **kwargs):
 
         # Deal with the parameters
         parameters = lmfit.Parameters()
-        p = self.model.parameters[['initial', 'pmin', 'pmax', 'vary']]
+        p = self.ml.parameters[['initial', 'pmin', 'pmax', 'vary']]
         for k in p.index:
             pp = np.where(p.loc[k].isnull(), None, p.loc[k])
             parameters.add(k, value=pp[0], min=pp[1], max=pp[2], vary=pp[3])

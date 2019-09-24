@@ -120,7 +120,6 @@ class Model:
 
         # Load other modules
         self.stats = Statistics(self)
-        self.uncertainty = Uncertainty(self)
         self.plots = Plotting(self)
         self.plot = self.plots.plot  # because we are lazy
 
@@ -689,9 +688,9 @@ class Model:
         # Store the solve instance
         if solver is None:
             if self.fit is None:
-                self.fit = LeastSquares(model=self)
+                self.fit = LeastSquares(ml=self)
         elif not issubclass(solver, self.fit.__class__):
-            self.fit = solver(model=self)
+            self.fit = solver(ml=self)
 
         self.settings["solver"] = self.fit._name
 

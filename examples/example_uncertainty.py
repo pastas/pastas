@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+
 import pastas as ps
 
 ps.set_log_level("ERROR")
@@ -21,7 +22,7 @@ ml.add_stressmodel(sm)
 # Solve
 ml.solve()
 #
-df = ml.uncertainty.prediction_interval(tmin="2010", tmax="2015")
+df = ml.fit.prediction_interval()
 inside = (obs > df.loc[obs.index, 0.025]) & (obs < df.loc[obs.index, 0.975])
 print('results of prediction_interval2')
 print('percentage inside:', np.count_nonzero(inside) / len(inside) * 100)
@@ -30,18 +31,15 @@ print('percentage inside:', np.count_nonzero(inside) / len(inside) * 100)
 axes = ml.plots.results(tmin="2010", tmax="2015", figsize=(10, 6))
 axes[0].figure.savefig("result1.png", dpi=150, bbox_inches="tight")
 axes[0].fill_between(df.index, df.iloc[:, 0], df.iloc[:, 1], color="gray",
-                      zorder=-1, alpha=0.5, label="95% Prediction interval")
+                     zorder=-1, alpha=0.5, label="95% Prediction interval")
 axes[0].legend(ncol=3)
-df = ml.uncertainty.contribution("recharge", tmin="2010", tmax="2015")
+df = ml.fit.ci_contribution("recharge", tmin="2010", tmax="2015")
 axes[3].fill_between(df.index, df.iloc[:, 0], df.iloc[:, 1], color="gray",
                      zorder=-1, alpha=0.5, label="95% confidence")
 
-df = ml.uncertainty.step_response("recharge", alpha=0.05, n=1000)
+df = ml.fit.ci_step_response("recharge", alpha=0.05, n=1000)
 axes[4].fill_between(df.index, df.iloc[:, 0], df.iloc[:, 1], color="gray",
                      zorder=-1, alpha=0.5, label="95% confidence")
 
-#axes[0].set_xlim(["2010", "2015"])
+# axes[0].set_xlim(["2010", "2015"])
 axes[0].figure.savefig("result2.png", dpi=150, bbox_inches="tight")
-
-import matplotlib.pyplot as plt
-plt.show()
