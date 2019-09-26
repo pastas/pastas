@@ -547,10 +547,10 @@ class One(RfuncBase):
         if isinstance(dt, np.ndarray):
             return p[0] * np.ones(len(dt))
         else:
-            return np.ones(p[0])
+            return p[0] * np.ones(1)
 
     def block(self, p, dt=1, cutoff=None):
-        return np.ones(p[0])
+        return p[0] * np.ones(1)
 
 
 class FourParam(RfuncBase):
