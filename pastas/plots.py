@@ -52,7 +52,7 @@ class Plotting:
 
         """
         if ax is None:
-            fig, ax = plt.subplots(figsize=figsize, **kwargs)
+            _, ax = plt.subplots(figsize=figsize, **kwargs)
 
         ax.set_title("Results of {}".format(self.ml.name))
 
@@ -376,7 +376,7 @@ class Plotting:
 
         """
         if ax is None:
-            fig, ax = plt.subplots(figsize=figsize, **kwargs)
+            _, ax = plt.subplots(figsize=figsize, **kwargs)
 
         if not stressmodels:
             stressmodels = self.ml.stressmodels.keys()
