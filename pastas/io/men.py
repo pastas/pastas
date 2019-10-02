@@ -20,7 +20,7 @@ def load(fname):
                               "reads-section for a Menyanthes-read")
 
 
-def dump(fname, data, version=3):
+def dump(fname, data, version=3, verbose=True):
     # version can also be a specific version, like '2.x.g.t (beta)', or an integer (see below)
     if version == 3:
         version = '3.x.b.c (gamma)'
@@ -191,4 +191,5 @@ def dump(fname, data, version=3):
     if not fname.endswith('.men'):
         fname = fname + '.men'
     savemat(fname, men, appendmat=False)
-    return print("%s file succesfully exported" % fname)
+    if verbose:
+        return print("%s file succesfully exported" % fname)
