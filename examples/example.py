@@ -1,6 +1,6 @@
 """
 This test file is meant for developing purposes. Providing an easy method to
-test the functioning of PASTA during development.
+test the functioning of PASTAS during development.
 
 """
 import pandas as pd
