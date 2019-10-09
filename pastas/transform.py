@@ -71,7 +71,7 @@ class ThresholdTransform:
             raise ValueError('Not yet implemented yet')
         return h
 
-    def dump(self):
+    def to_dict(self):
         data = dict()
         data["transform"] = self._name
         data["value"] = self.value
