@@ -68,12 +68,12 @@ class RfuncBase:
         p:  numpy.array
             numpy array with the parameters.
         cutoff: float, optional
-            float between 0 and 1. Default is 0.99.
+            float between 0 and 1.
 
         Returns
         -------
         tmax: float
-            Number of days when 99% of the response has passen, when the
+            Number of days when 99% of the response has effectuated, when the
             cutoff is chosen at 0.99.
 
         """
@@ -89,7 +89,7 @@ class RfuncBase:
         dt: float
             timestep as a multiple of of day.
         cutoff: float, optional
-            float between 0 and 1. Default is 0.99.
+            float between 0 and 1.
 
         Returns
         -------
@@ -108,7 +108,7 @@ class RfuncBase:
         dt: float
             timestep as a multiple of of day.
         cutoff: float, optional
-            float between 0 and 1. Default is 0.99.
+            float between 0 and 1.
 
         Returns
         -------
@@ -118,9 +118,25 @@ class RfuncBase:
         s = self.step(p, dt, cutoff)
         return np.append(s[0], np.subtract(s[1:], s[:-1]))
 
-    def _get_t(self, p, dt, cutoff):
-        """Internal method to detemine the times from t=0 at which to evaluate
-        the step-response"""
+    def get_t(self, p, dt, cutoff):
+        """Internal method to detemine the times at which to evaluate the step-
+        response, from t=0
+        
+        Parameters
+        ----------
+        p: numpy.array
+            numpy array with the parameters.
+        dt: float
+            timestep as a multiple of of day.
+        cutoff: float, optional
+            float between 0 and 1.
+
+        Returns
+        -------
+        t: numpy.array
+            Array with the times
+        
+        """
         if isinstance(dt, np.ndarray):
             return dt
         else:
@@ -139,7 +155,7 @@ class Gamma(RfuncBase):
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
     cutoff: float
-        percentage after which the step function is cut off. default=0.99.
+        proportion after which the step function is cut off. default is 0.999.
 
     Notes
     -----
@@ -182,7 +198,7 @@ class Gamma(RfuncBase):
         return p[0]
 
     def step(self, p, dt=1, cutoff=None):
-        t = self._get_t(p, dt, cutoff)
+        t = self.get_t(p, dt, cutoff)
         s = p[0] * gammainc(p[1], t / p[2])
         return s
 
@@ -199,7 +215,7 @@ class Exponential(RfuncBase):
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
     cutoff: float
-        percentage after which the step function is cut off. default=0.99.
+        proportion after which the step function is cut off. default is 0.999.
 
     Notes
     -----
@@ -239,7 +255,7 @@ class Exponential(RfuncBase):
         return p[0]
 
     def step(self, p, dt=1, cutoff=None):
-        t = self._get_t(p, dt, cutoff)
+        t = self.get_t(p, dt, cutoff)
         s = p[0] * (1.0 - np.exp(-t / p[1]))
         return s
 
@@ -256,7 +272,7 @@ class Hantush(RfuncBase):
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
     cutoff: float
-        percentage after which the step function is cut off. default=0.99.
+        proportion after which the step function is cut off. default is 0.999.
 
     Notes
     -----
@@ -323,7 +339,7 @@ class Hantush(RfuncBase):
         rho = p[1]
         cS = p[2]
         k0rho = k0(rho)
-        t = self._get_t(p, dt, cutoff)
+        t = self.get_t(p, dt, cutoff)
         tau = t / cS
         tau1 = tau[tau < rho / 2]
         tau2 = tau[tau >= rho / 2]
@@ -360,7 +376,7 @@ class HantushWellModel(RfuncBase):
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
     cutoff: float
-        percentage after which the step function is cut off. default=0.99.
+        proportion after which the step function is cut off. default is 0.999.
 
     Notes
     -----
@@ -427,7 +443,7 @@ class HantushWellModel(RfuncBase):
         rho = r / p[1]
         cS = p[2]
         k0rho = k0(rho)
-        t = self._get_t(p, dt, cutoff)
+        t = self.get_t(p, dt, cutoff)
         tau = t / cS
         tau1 = tau[tau < rho / 2]
         tau2 = tau[tau >= rho / 2]
@@ -488,7 +504,7 @@ class Polder(RfuncBase):
         return g
 
     def step(self, p, dt=1, cutoff=None):
-        t = self._get_t(p, dt, cutoff)
+        t = self.get_t(p, dt, cutoff)
         s = self.polder_function(p[0], p[1] * np.sqrt(t))
         if not self.up:
             s = -s
@@ -550,7 +566,7 @@ class FourParam(RfuncBase):
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
     cutoff: float
-        percentage after which the step function is cut off. default=0.99.
+        proportion after which the step function is cut off. default is 0.999.
 
     Notes
     -----
@@ -629,7 +645,7 @@ class FourParam(RfuncBase):
     def step(self, p, dt=1, cutoff=None):
 
         if self.quad:
-            t = self._get_t(p, dt, cutoff)
+            t = self.get_t(p, dt, cutoff)
             s = np.zeros_like(t)
             s[0] = quad(self.function, 0, dt, args=p)[0]
             for i in range(1, len(t)):
@@ -668,7 +684,7 @@ class FourParam(RfuncBase):
                 s = s * (p[0] / quad(self.function, 0, np.inf, args=p)[0])
                 return s[int(dt / step - 1)::int(dt / step)]
             else:
-                t = self._get_t(p, dt, cutoff)
+                t = self.get_t(p, dt, cutoff)
                 s = np.zeros_like(t)
 
                 # for interval [0,dt] Gaussian quadrate:
@@ -699,7 +715,7 @@ class FourParamQuad(FourParam):
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
     cutoff: float
-        percentage after which the step function is cut off. default=0.99.
+        proportion after which the step function is cut off. default is 0.999.
 
     Notes
     -----
@@ -732,7 +748,7 @@ class DoubleExponential(RfuncBase):
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
     cutoff: float
-        percentage after which the step function is cut off. default=0.99.
+        proportion after which the step function is cut off. default is 0.999.
 
     Notes
     -----
@@ -779,7 +795,7 @@ class DoubleExponential(RfuncBase):
         return p[0]
 
     def step(self, p, dt=1, cutoff=0.999):
-        t = self._get_t(p, dt, cutoff)
+        t = self.get_t(p, dt, cutoff)
         s = p[0] * (1 - ((1 - p[1]) * np.exp(-t / p[2]) +
                          p[1] * np.exp(-t / p[3])))
         return s
@@ -798,7 +814,7 @@ class Edelman(RfuncBase):
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
     cutoff: float
-        percentage after which the step function is cut off. default=0.99.
+        proportion after which the step function is cut off. default is 0.999.
 
     Notes
     -----
@@ -833,6 +849,6 @@ class Edelman(RfuncBase):
         return 1.
 
     def step(self, p, dt=1, cutoff=None):
-        t = self._get_t(p, dt, cutoff)
+        t = self.get_t(p, dt, cutoff)
         s = erfc(1 / (p[0] * np.sqrt(t)))
         return s
