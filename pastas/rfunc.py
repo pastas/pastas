@@ -478,13 +478,15 @@ class Polder(RfuncBase):
 
     def __init__(self, up=True, meanstress=1, cutoff=0.999):
         RfuncBase.__init__(self, up, meanstress, cutoff)
-        self.nparam = 2
+        self.nparam = 3
 
     def get_init_parameters(self, name):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        A_init = 1
         a_init = 1
         b_init = 0.1
+        parameters.loc[name + '_A'] = (A_init, 0, 2, True, name)
         parameters.loc[name + '_a'] = (a_init, 0, 100, True, name)
         parameters.loc[name + '_b'] = (b_init, 0, 10, True, name)
         return parameters
@@ -492,30 +494,31 @@ class Polder(RfuncBase):
     def get_tmax(self, p, cutoff=None):
         if cutoff is None:
             cutoff = self.cutoff
-
-        # TODO: find tmax from cutoff, below is just an approximation
-        return 4 * p[0] / p[1] ** 2
+        a = p[1]
+        b = erfcinv(2 * cutoff)
+        c = -p[1] / p[2]
+        sqrttmax = (-b + np.sqrt(b**2 - 4 * a * c) / (2 * a))
+        return sqrttmax**2
 
     def gain(self, p):
         # the steady state solution of Mazure
-        g = np.exp(-2 * p[0])
+        g = p[0] * np.exp(-2 * p[1])
         if not self.up:
             g = -g
         return g
 
     def step(self, p, dt=1, cutoff=None):
         t = self.get_t(p, dt, cutoff)
-        s = self.polder_function(p[0], p[1] * np.sqrt(t))
+        s = p[0] * self.polder_function(p[1], p[2] * np.sqrt(t))
         if not self.up:
             s = -s
         return s
 
     @staticmethod
     def polder_function(x, y):
-        s = .5 * np.exp(2 * x) * erfc(x / y + y) + \
-            .5 * np.exp(-2 * x) * erfc(x / y - y)
+        s = 0.5 * np.exp(2 * x) * erfc(x / y + y) + \
+            0.5 * np.exp(-2 * x) * erfc(x / y - y)
         return s
-
 
 class One(RfuncBase):
     """Dummy class for Constant. Returns 1
