@@ -456,7 +456,7 @@ class StressModel2(StressModelBase):
         # h -= self.rfunc.gain(p) * stress.mean()
         return h
 
-    def get_stress(self, p=None, istress=None):
+    def get_stress(self, p=None, istress=None, **kwargs):
         if istress is None:
             if p is None:
                 p = self.parameters.initial.values
