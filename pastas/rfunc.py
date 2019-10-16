@@ -485,8 +485,8 @@ class Polder(RfuncBase):
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         A_init = 1
         a_init = 1
-        b_init = 0.1
-        parameters.loc[name + '_A'] = (A_init, 0, 2, True, name)
+        b_init = 1
+        parameters.loc[name + '_A'] = (A_init, 0, 2, False, name)
         parameters.loc[name + '_a'] = (a_init, 0, 100, True, name)
         parameters.loc[name + '_b'] = (b_init, 0, 10, True, name)
         return parameters
