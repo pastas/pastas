@@ -488,17 +488,21 @@ class Plotting:
 
     @model_tmin_tmax
     def contributions_pie(self, tmin=None, tmax=None, ax=None,
-                          figsize=None, **kwargs):
+                          figsize=None, split=True, **kwargs):
         """Make a pie chart of the contributions. This plot is based on the
         TNO Groundwatertoolbox.
 
         Parameters
         ----------
-        tmin
-        tmax
+        tmin: str or pandas.Timestamp, optional.
+        tmax: str or pandas.Timestamp, optional.
         ax: matplotlib.axes, optional
             Axes to plot the pie chart on. A new figure and axes will be
             created of not providided.
+        figsize: tuple, optional
+            tuple of size 2 to determine the figure size in inches.
+        split: bool, optional
+            Split the stresses in multiple stresses when possible.
         kwargs: dict, optional
             The keyword arguments are passed on to plt.pie.
 
@@ -508,22 +512,39 @@ class Plotting:
 
         """
         if ax is None:
-            _, ax = plt.subplots(figsize=figsize, **kwargs)
+            _, ax = plt.subplots(figsize=figsize)
 
         frac = []
+        labels = []
         for name in self.ml.stressmodels.keys():
-            frac.append(np.abs(self.ml.get_contribution(name, tmin=tmin,
-                                                        tmax=tmax)).sum())
+            nsplit = self.ml.stressmodels[name].get_nsplit()
+            if split and nsplit > 1:
+                for istress in range(nsplit):
+                    cont = self.ml.get_contribution(name, tmin=tmin, tmax=tmax,
+                                                    istress=istress)
+                    frac.append(np.abs(cont).sum())
+                    labels.append(cont.name)
+            else:
+                cont = self.ml.get_contribution(name, tmin=tmin, tmax=tmax)
+                frac.append(np.abs(cont).sum())
+                labels.append(cont.name)
 
         evp = self.ml.stats.evp(tmin=tmin) / 100
         frac = np.array(frac) / sum(frac) * evp
         frac = frac.tolist()
         frac.append(1 - evp)
         frac = np.array(frac)
-        labels = list(self.ml.stressmodels.keys())
         labels.append("Unexplained")
-        ax.pie(frac, labels=labels, autopct='%1.1f%%', startangle=90,
-               wedgeprops=dict(width=1, edgecolor='w'))
+        if 'labels' not in kwargs:
+            kwargs['labels'] = labels
+        if 'wedgeprops' not in kwargs:
+            kwargs['wedgeprops'] = dict(width=1, edgecolor='w')
+        if 'startangle' not in kwargs:
+            kwargs['startangle'] = 90
+        if 'autopct' not in kwargs:
+            kwargs['autopct'] = '%1.1f%%'
+            
+        ax.pie(frac, **kwargs)
         ax.axis('equal')
         return ax
 
