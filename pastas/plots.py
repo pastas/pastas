@@ -538,7 +538,7 @@ class Plotting:
         if 'labels' not in kwargs:
             kwargs['labels'] = labels
         if 'wedgeprops' not in kwargs:
-            kwargs['wedgeprops'] = dict(width=1, edgecolor='w')
+            kwargs['wedgeprops'] = dict(edgecolor='w')
         if 'startangle' not in kwargs:
             kwargs['startangle'] = 90
         if 'autopct' not in kwargs:
