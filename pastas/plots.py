@@ -590,11 +590,17 @@ class Plotting:
             contributions = []
             sml = self.ml.stressmodels[sm]
             if (len(sml.stress) > 0) and (sml._name != "StressModel2"):
-                for istress in range(len(sml.stress)):
-                    h = self.ml.get_contribution(sm, istress=istress)
-                    name = sml.stress[istress].name
-                    if name is None:
-                        name = sm
+                nsplit = sml.get_nsplit()
+                if nsplit>1:
+                    for istress in range(len(sml.stress)):
+                        h = self.ml.get_contribution(sm, istress=istress)
+                        name = sml.stress[istress].name
+                        if name is None:
+                            name = sm
+                        contributions.append((name, h))
+                else:
+                    h = self.ml.get_contribution(sm)
+                    name = sm
                     contributions.append((name, h))
                 contributions.sort(key=custom_sort)
 

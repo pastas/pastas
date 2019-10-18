@@ -13,6 +13,10 @@ def test_results():
     ml = test_add_stressmodel()
     ml.plots.results()
     
+def test_stacked_results():
+    ml = test_add_stressmodel()
+    ml.plots.stacked_results()
+    
 def test_block_response():
     ml = test_add_stressmodel()
     ml.plots.block_response()
