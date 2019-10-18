@@ -227,9 +227,10 @@ class Plotting:
         names = ['']
 
         # determine the influence of the different stresses
-        series = self.ml.get_contributions(split=split, tmin=tmin, tmax=tmax,
-                                           return_warmup=return_warmup)
-        names = [s.name for s in series]
+        contribs = self.ml.get_contributions(split=split, tmin=tmin, tmax=tmax,
+                                             return_warmup=return_warmup)
+        series.extend(contribs)
+        names.extend([s.name for s in contribs])
 
         if self.ml.transform:
             series.append(
