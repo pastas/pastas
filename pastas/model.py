@@ -1216,7 +1216,7 @@ class Model:
 
         """
         contribs=[]
-        for name in self.stressmodels.keys():
+        for name in self.stressmodels:
             nsplit = self.stressmodels[name].get_nsplit()
             if split and nsplit > 1:
                 for istress in range(nsplit):

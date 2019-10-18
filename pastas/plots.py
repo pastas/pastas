@@ -130,7 +130,7 @@ class Plotting:
         # Add a row for each stressmodel
         i=0
         for sm_name in self.ml.stressmodels:
-            # plt the step-reponse
+            # get the step-response
             step = self.ml.get_step_response(sm_name)
             if i == 0:
                 sharex = None
@@ -138,8 +138,7 @@ class Plotting:
             else:
                 sharex = axb
                 rmax = max(rmax,step.index.max())
-            axb = plt.subplot2grid((rows, 3), (i+3, 2), sharex=sharex)
-            step.plot(ax=axb)
+            step_row = i+3
             
             # plot the contribution
             sm = self.ml.stressmodels[sm_name]
@@ -161,6 +160,10 @@ class Plotting:
                 ax.legend(loc=(0, 1), ncol=3, frameon=False)
                 ax.minorticks_off()
                 i = i+1
+            
+            # plot the step-reponse
+            axb = plt.subplot2grid((rows, 3), (step_row, 2), sharex=sharex)
+            step.plot(ax=axb)
         
         ax1.set_xlim(tmin, tmax)
         axb.set_xlim(0, rmax)
