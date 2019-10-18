@@ -1199,6 +1199,34 @@ class Model:
             contrib = contrib.loc[tmin:tmax]
 
         return contrib
+    
+    def get_contributions(self, split=True, **kwargs):
+        """Method to get contributions of all stressmodels.
+
+        Parameters
+        ----------
+        split: bool, optional
+            Split the stresses in multiple stresses when possible.
+        kwargs: any other arguments are passed to get_contribution
+
+        Returns
+        -------
+        contribs: list
+            a list of Pandas Series of the contributions.
+
+        """
+        contribs=[]
+        for name in self.stressmodels.keys():
+            nsplit = self.stressmodels[name].get_nsplit()
+            if split and nsplit > 1:
+                for istress in range(nsplit):
+                    contrib = self.get_contribution(name, istress=istress,
+                                                       **kwargs)
+                    contribs.append(contrib)
+            else:
+                contrib = self.get_contribution(name, **kwargs)
+                contribs.append(contrib)
+        return contribs
 
     def get_transform_contribution(self, tmin=None, tmax=None):
         """Method to get the contribution of a transform.

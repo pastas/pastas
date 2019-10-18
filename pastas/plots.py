@@ -76,7 +76,8 @@ class Plotting:
         return ax
 
     @model_tmin_tmax
-    def results(self, tmin=None, tmax=None, figsize=(10, 8), **kwargs):
+    def results(self, tmin=None, tmax=None, figsize=(10, 8), split=False,
+                **kwargs):
         """Plot different results in one window to get a quick overview.
 
         Parameters
@@ -92,7 +93,8 @@ class Plotting:
 
         """
         # Number of rows to make the figure with
-        rows = 3 + len(self.ml.stressmodels)
+        contribs = self.ml.get_contributions(split=split, tmin=tmin, tmax=tmax)
+        rows = 3 + len(contribs)
         fig = plt.figure(figsize=figsize, **kwargs)
         # Main frame
         ax1 = plt.subplot2grid((rows, 3), (0, 0), colspan=2, rowspan=2)
@@ -126,24 +128,42 @@ class Plotting:
         ax3.set_title('Model Information', loc='left')
 
         # Add a row for each stressmodel
-        for i, sm in enumerate(self.ml.stressmodels.keys(), start=3):
-            ax = plt.subplot2grid((rows, 3), (i, 0), colspan=2, sharex=ax1)
-            contrib = self.ml.get_contribution(sm, tmin=tmin, tmax=tmax)
-            contrib.plot(ax=ax, sharex=ax1, x_compat=True)
-            title = [stress.name for stress in self.ml.stressmodels[sm].stress]
-            if len(title) > 3:
-                title = title[:3] + ["..."]
-            plt.title("Stresses:%s" % title, loc="right")
-            ax.legend(loc=(0, 1), ncol=3, frameon=False)
-            if i == 3:
+        i=0
+        for sm_name in self.ml.stressmodels:
+            # plt the step-reponse
+            step = self.ml.get_step_response(sm_name)
+            if i == 0:
                 sharex = None
+                rmax = step.index.max()
             else:
                 sharex = axb
-            axb = plt.subplot2grid((rows, 3), (i, 2), sharex=sharex)
-            self.ml.get_step_response(sm).plot(ax=axb)
-            ax.minorticks_off()
-
+                rmax = max(rmax,step.index.max())
+            axb = plt.subplot2grid((rows, 3), (i+3, 2), sharex=sharex)
+            step.plot(ax=axb)
+            
+            # plot the contribution
+            sm = self.ml.stressmodels[sm_name]
+            nsplit = sm.get_nsplit()
+            if split and nsplit > 1:
+                for isplit in range(nsplit):
+                    ax = plt.subplot2grid((rows, 3), (i+3, 0), colspan=2, sharex=ax1)
+                    contribs[i].plot(ax=ax, sharex=ax1, x_compat=True)
+                    ax.legend(loc=(0, 1), ncol=3, frameon=False)
+                    ax.minorticks_off()
+                    i = i+1
+            else:
+                ax = plt.subplot2grid((rows, 3), (i+3, 0), colspan=2, sharex=ax1)
+                contribs[i].plot(ax=ax, sharex=ax1, x_compat=True)
+                title = [stress.name for stress in sm.stress]
+                if len(title) > 3:
+                    title = title[:3] + ["..."]
+                plt.title("Stresses: %s" % title, loc="right")
+                ax.legend(loc=(0, 1), ncol=3, frameon=False)
+                ax.minorticks_off()
+                i = i+1
+        
         ax1.set_xlim(tmin, tmax)
+        axb.set_xlim(0, rmax)
 
         plt.tight_layout(pad=0.0)
 
@@ -204,23 +224,9 @@ class Plotting:
         names = ['']
 
         # determine the influence of the different stresses
-        for name in self.ml.stressmodels.keys():
-            nsplit = self.ml.stressmodels[name].get_nsplit()
-            if split and nsplit > 1:
-                for istress in range(nsplit):
-                    contrib = self.ml.get_contribution(
-                        name, tmin=tmin, tmax=tmax, istress=istress,
-                        return_warmup=return_warmup)
-                    series.append(contrib)
-                    names.append(contrib.name)
-
-            else:
-                contrib = self.ml.get_contribution(
-                    name, tmin=tmin, tmax=tmax, return_warmup=return_warmup
-                )
-
-                series.append(contrib)
-                names.append(contrib.name)
+        series = self.ml.get_contributions(split=split, tmin=tmin, tmax=tmax,
+                                           return_warmup=return_warmup)
+        names = [s.name for s in series]
 
         if self.ml.transform:
             series.append(
@@ -488,7 +494,9 @@ class Plotting:
 
     @model_tmin_tmax
     def contributions_pie(self, tmin=None, tmax=None, ax=None,
-                          figsize=None, split=True, **kwargs):
+                          figsize=None, split=True, partition='std', 
+                          wedgeprops=dict(edgecolor='w'), startangle=90,
+                          autopct='%1.1f%%', **kwargs):
         """Make a pie chart of the contributions. This plot is based on the
         TNO Groundwatertoolbox.
 
@@ -514,37 +522,29 @@ class Plotting:
         if ax is None:
             _, ax = plt.subplots(figsize=figsize)
 
-        frac = []
-        labels = []
-        for name in self.ml.stressmodels.keys():
-            nsplit = self.ml.stressmodels[name].get_nsplit()
-            if split and nsplit > 1:
-                for istress in range(nsplit):
-                    cont = self.ml.get_contribution(name, tmin=tmin, tmax=tmax,
-                                                    istress=istress)
-                    frac.append(np.abs(cont).sum())
-                    labels.append(cont.name)
-            else:
-                cont = self.ml.get_contribution(name, tmin=tmin, tmax=tmax)
-                frac.append(np.abs(cont).sum())
-                labels.append(cont.name)
-
-        evp = self.ml.stats.evp(tmin=tmin) / 100
+        contribs = self.ml.get_contributions(split=split, tmin=tmin, tmax=tmax)
+        if partition == 'sum':
+            # the part of each pie is determined by the sum of the contribution
+            frac = [np.abs(contrib).sum() for contrib in contribs]
+        elif partition == 'std':
+            # the part of each pie is determined by the std of the contribution
+            frac = [contrib.std() for contrib in contribs]
+        else:
+            msg = 'Unknown value for partition: {}'.format(partition)
+            raise(Exception(msg))
+        
+        # make sure the unexplained part is 100 - evp %
+        evp = self.ml.stats.evp(tmin=tmin, tmax=tmax) / 100
         frac = np.array(frac) / sum(frac) * evp
-        frac = frac.tolist()
-        frac.append(1 - evp)
-        frac = np.array(frac)
-        labels.append("Unexplained")
+        frac = np.append(frac, 1 - evp)
+        
         if 'labels' not in kwargs:
+            labels = [contrib.name for contrib in contribs]
+            labels.append("Unexplained")
             kwargs['labels'] = labels
-        if 'wedgeprops' not in kwargs:
-            kwargs['wedgeprops'] = dict(edgecolor='w')
-        if 'startangle' not in kwargs:
-            kwargs['startangle'] = 90
-        if 'autopct' not in kwargs:
-            kwargs['autopct'] = '%1.1f%%'
             
-        ax.pie(frac, **kwargs)
+        ax.pie(frac, wedgeprops=wedgeprops, startangle=startangle,
+               autopct=autopct, **kwargs)
         ax.axis('equal')
         return ax
 
