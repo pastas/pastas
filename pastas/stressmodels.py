@@ -228,7 +228,11 @@ class StressModelBase:
         
     def get_block(self, p, dt, tmin, tmax):
         """Internal method to get the block-response from the respnse function"""
-        maxtmax = (tmax-tmin)/pd.to_timedelta(1,'d')
+        if tmin is not None and tmax is not None:
+            day = pd.to_timedelta(1,'d')
+            maxtmax = (pd.Timestamp(tmax) - pd.Timestamp(tmin)) / day
+        else:
+            maxtmax = None
         b = self.rfunc.block(p, dt, maxtmax=maxtmax)
         return b
 
