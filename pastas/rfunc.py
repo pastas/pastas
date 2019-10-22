@@ -132,7 +132,8 @@ class RfuncBase:
             float between 0 and 1, that determines which part of the step-
             response is taken into account.
         maxtmax: float, optional
-            The maximum 
+            The maximum time of the response, usually set to the simulation
+            length.
 
         Returns
         -------

@@ -225,7 +225,7 @@ class StressModelBase:
             return self.nsplit
         else:
             return len(self.stress)
-        
+
     def get_block(self, p, dt, tmin, tmax):
         """Internal method to get the block-response from the respnse function"""
         if tmin is not None and tmax is not None:
