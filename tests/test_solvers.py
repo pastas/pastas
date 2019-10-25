@@ -20,7 +20,7 @@ def create_model():
 def test_least_squares():
     ml = create_model()
     ml.solve(solver=ps.LeastSquares)
-    return True
+    return ml
 
 
 def test_fit_constant():
@@ -31,3 +31,29 @@ def test_fit_constant():
 def test_no_noise():
     ml = create_model()
     ml.solve(noise=False)
+
+
+# test the uncertainty method here
+def test_pred_interval():
+    ml = test_least_squares()
+    ml.fit.prediction_interval(n=10)
+
+
+def test_ci_simulation():
+    ml = test_least_squares()
+    ml.fit.ci_simulation(n=10)
+
+
+def test_ci_block_response():
+    ml = test_least_squares()
+    ml.fit.ci_block_response(name="recharge", n=10)
+
+
+def test_ci_step_response():
+    ml = test_least_squares()
+    ml.fit.ci_step_response(name="recharge", n=10)
+
+
+def test_ci_contribution():
+    ml = test_least_squares()
+    ml.fit.ci_contribution(name="recharge", n=10)

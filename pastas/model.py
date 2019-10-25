@@ -26,7 +26,6 @@ from .plots import Plotting
 from .solver import LeastSquares
 from .stressmodels import Constant
 from .timeseries import TimeSeries
-from .uncertainty import Uncertainty
 from .utils import get_dt, get_time_offset, get_sample, \
     frequency_is_supported, validate_name
 from .version import __version__
