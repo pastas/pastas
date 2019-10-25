@@ -60,22 +60,20 @@ class RfuncBase:
         """
         pass
 
-    def get_tmax(self, p, dt=1, cutoff=None):
+    def get_tmax(self, p, cutoff=None):
         """Method to get the response time for a certain cutoff
 
         Parameters
         ----------
         p:  numpy.array
             numpy array with the parameters.
-        dt: float
-            timestep as a multiple of of day.
         cutoff: float, optional
-            float between 0 and 1. Default is 0.99.
+            float between 0 and 1.
 
         Returns
         -------
         tmax: float
-            Number of days when 99% of the response has passen, when the
+            Number of days when 99% of the response has effectuated, when the
             cutoff is chosen at 0.99.
 
         """
@@ -91,7 +89,7 @@ class RfuncBase:
         dt: float
             timestep as a multiple of of day.
         cutoff: float, optional
-            float between 0 and 1. Default is 0.99.
+            float between 0 and 1.
 
         Returns
         -------
@@ -110,7 +108,7 @@ class RfuncBase:
         dt: float
             timestep as a multiple of of day.
         cutoff: float, optional
-            float between 0 and 1. Default is 0.99.
+            float between 0 and 1.
 
         Returns
         -------
@@ -120,6 +118,30 @@ class RfuncBase:
         s = self.step(p, dt, cutoff)
         return np.append(s[0], np.subtract(s[1:], s[:-1]))
 
+    def get_t(self, p, dt, cutoff):
+        """Internal method to detemine the times at which to evaluate the step-
+        response, from t=0
+        
+        Parameters
+        ----------
+        p: numpy.array
+            numpy array with the parameters.
+        dt: float
+            timestep as a multiple of of day.
+        cutoff: float, optional
+            float between 0 and 1.
+
+        Returns
+        -------
+        t: numpy.array
+            Array with the times
+        
+        """
+        if isinstance(dt, np.ndarray):
+            return dt
+        else:
+            tmax = max(self.get_tmax(p, cutoff), 3 * dt)
+            return np.arange(dt, tmax, dt)
 
 class Gamma(RfuncBase):
     """Gamma response function with 3 parameters A, a, and n.
@@ -133,7 +155,7 @@ class Gamma(RfuncBase):
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
     cutoff: float
-        percentage after which the step function is cut off. default=0.99.
+        proportion after which the step function is cut off. default is 0.999.
 
     Notes
     -----
@@ -167,21 +189,16 @@ class Gamma(RfuncBase):
         parameters.loc[name + '_a'] = (10, 0.01, 5000, True, name)
         return parameters
 
-    def get_tmax(self, p, dt=1, cutoff=None):
+    def get_tmax(self, p, cutoff=None):
         if cutoff is None:
             cutoff = self.cutoff
-        return max(gammaincinv(p[1], cutoff) * p[2], 10 * dt)
+        return gammaincinv(p[1], cutoff) * p[2]
 
     def gain(self, p):
         return p[0]
 
     def step(self, p, dt=1, cutoff=None):
-        if isinstance(dt, np.ndarray):
-            t = dt
-        else:
-            tmax = self.get_tmax(p, dt, cutoff)
-            t = np.arange(dt, tmax, dt)
-
+        t = self.get_t(p, dt, cutoff)
         s = p[0] * gammainc(p[1], t / p[2])
         return s
 
@@ -198,7 +215,7 @@ class Exponential(RfuncBase):
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
     cutoff: float
-        percentage after which the step function is cut off. default=0.99.
+        proportion after which the step function is cut off. default is 0.999.
 
     Notes
     -----
@@ -229,20 +246,16 @@ class Exponential(RfuncBase):
         parameters.loc[name + '_a'] = (10, 0.01, 5000, True, name)
         return parameters
 
-    def get_tmax(self, p, dt=1, cutoff=None):
+    def get_tmax(self, p, cutoff=None):
         if cutoff is None:
             cutoff = self.cutoff
-        return max(-p[1] * np.log(1 - cutoff), 10 * dt)
+        return -p[1] * np.log(1 - cutoff)
 
     def gain(self, p):
         return p[0]
 
     def step(self, p, dt=1, cutoff=None):
-        if isinstance(dt, np.ndarray):
-            t = dt
-        else:
-            tmax = self.get_tmax(p, dt, cutoff)
-            t = np.arange(dt, tmax, dt)
+        t = self.get_t(p, dt, cutoff)
         s = p[0] * (1.0 - np.exp(-t / p[1]))
         return s
 
@@ -259,7 +272,7 @@ class Hantush(RfuncBase):
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
     cutoff: float
-        percentage after which the step function is cut off. default=0.99.
+        proportion after which the step function is cut off. default is 0.999.
 
     Notes
     -----
@@ -310,14 +323,14 @@ class Hantush(RfuncBase):
         parameters.loc[name + '_cS'] = (100, 1e-3, 1e4, True, name)
         return parameters
 
-    def get_tmax(self, p, dt=1, cutoff=None):
+    def get_tmax(self, p, cutoff=None):
         # approximate formula for tmax
         if cutoff is None:
             cutoff = self.cutoff
         rho = p[1]
         cS = p[2]
         k0rho = k0(rho)
-        return max(lambertw(1 / ((1 - cutoff) * k0rho)).real * cS, 10 * dt)
+        return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
 
     def gain(self, p):
         return p[0]
@@ -326,11 +339,7 @@ class Hantush(RfuncBase):
         rho = p[1]
         cS = p[2]
         k0rho = k0(rho)
-        if isinstance(dt, np.ndarray):
-            t = dt
-        else:
-            tmax = self.get_tmax(p, dt, cutoff)
-            t = np.arange(dt, tmax, dt)
+        t = self.get_t(p, dt, cutoff)
         tau = t / cS
         tau1 = tau[tau < rho / 2]
         tau2 = tau[tau >= rho / 2]
@@ -367,7 +376,7 @@ class HantushWellModel(RfuncBase):
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
     cutoff: float
-        percentage after which the step function is cut off. default=0.99.
+        proportion after which the step function is cut off. default is 0.999.
 
     Notes
     -----
@@ -415,7 +424,7 @@ class HantushWellModel(RfuncBase):
         parameters.loc[name + '_cS'] = (100, 1e-3, 1e4, True, name)
         return parameters
 
-    def get_tmax(self, p, dt=1, cutoff=None):
+    def get_tmax(self, p, cutoff=None):
         r = 1 if len(p) == 3 else p[3]
         # approximate formula for tmax
         if cutoff is None:
@@ -423,7 +432,7 @@ class HantushWellModel(RfuncBase):
         rho = r / p[1]
         cS = p[2]
         k0rho = k0(rho)
-        return max(lambertw(1 / ((1 - cutoff) * k0rho)).real * cS, 10 * dt)
+        return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
 
     def gain(self, p):
         r = 1 if len(p) == 3 else p[3]
@@ -434,11 +443,7 @@ class HantushWellModel(RfuncBase):
         rho = r / p[1]
         cS = p[2]
         k0rho = k0(rho)
-        if isinstance(dt, np.ndarray):
-            t = dt
-        else:
-            tmax = self.get_tmax(p, dt, cutoff)
-            t = np.arange(dt, tmax, dt)
+        t = self.get_t(p, dt, cutoff)
         tau = t / cS
         tau1 = tau[tau < rho / 2]
         tau2 = tau[tau >= rho / 2]
@@ -473,48 +478,47 @@ class Polder(RfuncBase):
 
     def __init__(self, up=True, meanstress=1, cutoff=0.999):
         RfuncBase.__init__(self, up, meanstress, cutoff)
-        self.nparam = 2
+        self.nparam = 3
 
     def get_init_parameters(self, name):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        A_init = 1
         a_init = 1
-        b_init = 0.1
+        b_init = 1
+        parameters.loc[name + '_A'] = (A_init, 0, 2, False, name)
         parameters.loc[name + '_a'] = (a_init, 0, 100, True, name)
         parameters.loc[name + '_b'] = (b_init, 0, 10, True, name)
         return parameters
 
-    def get_tmax(self, p, dt=1, cutoff=None):
+    def get_tmax(self, p, cutoff=None):
         if cutoff is None:
             cutoff = self.cutoff
-
-        # TODO: find tmax from cutoff, below is just an approximation
-        return max(4 * p[0] / p[1] ** 2, 10 * dt)
+        a = p[1]
+        b = erfcinv(2 * cutoff)
+        c = -p[1] / p[2]
+        sqrttmax = (-b + np.sqrt(b**2 - 4 * a * c) / (2 * a))
+        return sqrttmax**2
 
     def gain(self, p):
         # the steady state solution of Mazure
-        g = np.exp(-2 * p[0])
+        g = p[0] * np.exp(-2 * p[1])
         if not self.up:
             g = -g
         return g
 
     def step(self, p, dt=1, cutoff=None):
-        if isinstance(dt, np.ndarray):
-            t = dt
-        else:
-            tmax = self.get_tmax(p, dt, cutoff)
-            t = np.arange(dt, tmax, dt)
-        s = self.polder_function(p[0], p[1] * np.sqrt(t))
+        t = self.get_t(p, dt, cutoff)
+        s = p[0] * self.polder_function(p[1], p[2] * np.sqrt(t))
         if not self.up:
             s = -s
         return s
 
     @staticmethod
     def polder_function(x, y):
-        s = .5 * np.exp(2 * x) * erfc(x / y + y) + \
-            .5 * np.exp(-2 * x) * erfc(x / y - y)
+        s = 0.5 * np.exp(2 * x) * erfc(x / y + y) + \
+            0.5 * np.exp(-2 * x) * erfc(x / y - y)
         return s
-
 
 class One(RfuncBase):
     """Dummy class for Constant. Returns 1
@@ -547,10 +551,10 @@ class One(RfuncBase):
         if isinstance(dt, np.ndarray):
             return p[0] * np.ones(len(dt))
         else:
-            return np.ones(p[0])
+            return p[0] * np.ones(1)
 
     def block(self, p, dt=1, cutoff=None):
-        return np.ones(p[0])
+        return p[0] * np.ones(1)
 
 
 class FourParam(RfuncBase):
@@ -565,7 +569,7 @@ class FourParam(RfuncBase):
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
     cutoff: float
-        percentage after which the step function is cut off. default=0.99.
+        proportion after which the step function is cut off. default is 0.999.
 
     Notes
     -----
@@ -604,7 +608,7 @@ class FourParam(RfuncBase):
     def function(self, t, p):
         return (t ** (p[1] - 1)) * np.exp(-t / p[2] - p[3] / t)
 
-    def get_tmax(self, p, dt=1, cutoff=None):
+    def get_tmax(self, p, cutoff=None):
         if cutoff is None:
             cutoff = self.cutoff
 
@@ -636,7 +640,7 @@ class FourParam(RfuncBase):
             y[1:] = y[0] + np.cumsum(1 / 6 *
                                      (func[:-1] + 4 * func_half + func[1:]))
             y = y / quad(self.function, 0, np.inf, args=p)[0]
-            return max(np.searchsorted(y, cutoff), 10 * dt)
+            return np.searchsorted(y, cutoff)
 
     def gain(self, p):
         return p[0]
@@ -644,11 +648,7 @@ class FourParam(RfuncBase):
     def step(self, p, dt=1, cutoff=None):
 
         if self.quad:
-            if isinstance(dt, np.ndarray):
-                t = dt
-            else:
-                tmax = self.get_tmax(p, dt, cutoff)
-                t = np.arange(dt, tmax, dt)
+            t = self.get_t(p, dt, cutoff)
             s = np.zeros_like(t)
             s[0] = quad(self.function, 0, dt, args=p)[0]
             for i in range(1, len(t)):
@@ -668,7 +668,7 @@ class FourParam(RfuncBase):
 
             if dt > 0.1:
                 step = 0.1  # step size for numerical integration
-                tmax = self.get_tmax(p, dt, cutoff)
+                tmax = max(self.get_tmax(p, cutoff), 3 * dt)
                 t = np.arange(step, tmax, step)
                 s = np.zeros_like(t)
 
@@ -687,11 +687,7 @@ class FourParam(RfuncBase):
                 s = s * (p[0] / quad(self.function, 0, np.inf, args=p)[0])
                 return s[int(dt / step - 1)::int(dt / step)]
             else:
-                if isinstance(dt, np.ndarray):
-                    t = dt
-                else:
-                    tmax = self.get_tmax(p, dt, cutoff)
-                    t = np.arange(dt, tmax, dt)
+                t = self.get_t(p, dt, cutoff)
                 s = np.zeros_like(t)
 
                 # for interval [0,dt] Gaussian quadrate:
@@ -722,7 +718,7 @@ class FourParamQuad(FourParam):
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
     cutoff: float
-        percentage after which the step function is cut off. default=0.99.
+        proportion after which the step function is cut off. default is 0.999.
 
     Notes
     -----
@@ -755,7 +751,7 @@ class DoubleExponential(RfuncBase):
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
     cutoff: float
-        percentage after which the step function is cut off. default=0.99.
+        proportion after which the step function is cut off. default is 0.999.
 
     Notes
     -----
@@ -790,24 +786,19 @@ class DoubleExponential(RfuncBase):
         parameters.loc[name + '_a2'] = (10, 0.01, 5000, True, name)
         return parameters
 
-    def get_tmax(self, p, dt=1, cutoff=None):
+    def get_tmax(self, p, cutoff=None):
         if cutoff is None:
             cutoff = self.cutoff
         if p[2] > p[3]:  # a1 > a2
-            return max(-p[2] * np.log(1 - cutoff), 10 * dt)
+            return -p[2] * np.log(1 - cutoff)
         else:  # a1 < a2
-            return max(-p[3] * np.log(1 - cutoff), 10 * dt)
+            return -p[3] * np.log(1 - cutoff)
 
     def gain(self, p):
         return p[0]
 
     def step(self, p, dt=1, cutoff=0.999):
-        if isinstance(dt, np.ndarray):
-            t = dt
-        else:
-            tmax = self.get_tmax(p, dt, cutoff)
-            t = np.arange(dt, tmax, dt)
-
+        t = self.get_t(p, dt, cutoff)
         s = p[0] * (1 - ((1 - p[1]) * np.exp(-t / p[2]) +
                          p[1] * np.exp(-t / p[3])))
         return s
@@ -826,7 +817,7 @@ class Edelman(RfuncBase):
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
     cutoff: float
-        percentage after which the step function is cut off. default=0.99.
+        proportion after which the step function is cut off. default is 0.999.
 
     Notes
     -----
@@ -852,19 +843,15 @@ class Edelman(RfuncBase):
         parameters.loc[name + '_beta'] = (beta_init, 0, 1000, True, name)
         return parameters
 
-    def get_tmax(self, p, dt=1, cutoff=None):
+    def get_tmax(self, p, cutoff=None):
         if cutoff is None:
             cutoff = self.cutoff
-        return max(1. / (p[0] * erfcinv(cutoff * erfc(0))) ** 2, 10 * dt)
+        return 1. / (p[0] * erfcinv(cutoff * erfc(0))) ** 2
 
     def gain(self, p):
         return 1.
 
     def step(self, p, dt=1, cutoff=None):
-        if isinstance(dt, np.ndarray):
-            t = dt
-        else:
-            tmax = self.get_tmax(p, dt, cutoff)
-            t = np.arange(dt, tmax, dt)
+        t = self.get_t(p, dt, cutoff)
         s = erfc(1 / (p[0] * np.sqrt(t)))
         return s

@@ -39,7 +39,7 @@ class BaseSolver:
     result: object
         The object returned by the minimization method that is used. It depends
         on the solver what is actually returned.
-    
+
     Methods
     -------
     misfit
@@ -228,7 +228,8 @@ class BaseSolver:
 
         return pcov
 
-    def get_correlations(self, pcov):
+    @staticmethod
+    def get_correlations(pcov):
         """Method to obtain the parameter correlations from the covariance
         matrix.
 

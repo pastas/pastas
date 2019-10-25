@@ -456,7 +456,7 @@ class StressModel2(StressModelBase):
         # h -= self.rfunc.gain(p) * stress.mean()
         return h
 
-    def get_stress(self, p=None, istress=None):
+    def get_stress(self, p=None, istress=None, **kwargs):
         if istress is None:
             if p is None:
                 p = self.parameters.initial.values
@@ -737,7 +737,11 @@ class WellModel(StressModelBase):
             p_with_r = np.concatenate([p, np.asarray([r])])
             b = self.rfunc.block(p_with_r, dt)
             c = fftconvolve(stress, b, 'full')[:npoints]
-            h = h.add(pd.Series(c, index=stress.index), fill_value=0.0)
+            h = h.add(pd.Series(c, index=stress.index,
+                                fastpath=True), fill_value=0.0)
+        if istress is not None:
+            if self.stress[istress].name is not None:
+                h.name = self.stress[istress].name
         return h
 
     def get_stress(self, p=None, istress=None, **kwargs):

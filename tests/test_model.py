@@ -35,7 +35,7 @@ def test_add_constant():
     return
 
 
-def test_add_constant():
+def test_del_constant():
     ml = test_create_model()
     ml.del_constant()
     return
@@ -59,6 +59,17 @@ def test_solve_model():
     return
 
 
+def test_solve_empty_model():
+    ml = test_add_stressmodel()
+    try:
+        ml.solve(tmin="2016")
+    except ValueError as e:
+        if e.args[0].startswith("Calibration series "):
+            return
+        else:
+            raise(e)
+
+
 def test_save_model():
     ml = test_create_model()
     ml.to_file("test.pas")
@@ -67,7 +78,7 @@ def test_save_model():
 
 def test_load_model():
     test_save_model()
-    ml = ps.io.load("test.pas")
+    _ = ps.io.load("test.pas")
     return
 
 

@@ -12,7 +12,7 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import MultipleLocator
-from pandas import DataFrame, Timestamp
+from pandas import DataFrame, Timestamp, concat
 from scipy.stats import probplot
 
 from .decorators import model_tmin_tmax
@@ -52,7 +52,7 @@ class Plotting:
 
         """
         if ax is None:
-            fig, ax = plt.subplots(figsize=figsize, **kwargs)
+            _, ax = plt.subplots(figsize=figsize, **kwargs)
 
         ax.set_title("Results of {}".format(self.ml.name))
 
@@ -76,7 +76,8 @@ class Plotting:
         return ax
 
     @model_tmin_tmax
-    def results(self, tmin=None, tmax=None, figsize=(10, 8), **kwargs):
+    def results(self, tmin=None, tmax=None, figsize=(10, 8), split=False,
+                **kwargs):
         """Plot different results in one window to get a quick overview.
 
         Parameters
@@ -92,7 +93,8 @@ class Plotting:
 
         """
         # Number of rows to make the figure with
-        rows = 3 + len(self.ml.stressmodels)
+        contribs = self.ml.get_contributions(split=split, tmin=tmin, tmax=tmax)
+        rows = 3 + len(contribs)
         fig = plt.figure(figsize=figsize, **kwargs)
         # Main frame
         ax1 = plt.subplot2grid((rows, 3), (0, 0), colspan=2, rowspan=2)
@@ -126,24 +128,45 @@ class Plotting:
         ax3.set_title('Model Information', loc='left')
 
         # Add a row for each stressmodel
-        for i, sm in enumerate(self.ml.stressmodels.keys(), start=3):
-            ax = plt.subplot2grid((rows, 3), (i, 0), colspan=2, sharex=ax1)
-            contrib = self.ml.get_contribution(sm, tmin=tmin, tmax=tmax)
-            contrib.plot(ax=ax, sharex=ax1, x_compat=True)
-            title = [stress.name for stress in self.ml.stressmodels[sm].stress]
-            if len(title) > 3:
-                title = title[:3] + ["..."]
-            plt.title("Stresses:%s" % title, loc="right")
-            ax.legend(loc=(0, 1), ncol=3, frameon=False)
-            if i == 3:
+        i=0
+        for sm_name in self.ml.stressmodels:
+            # get the step-response
+            step = self.ml.get_step_response(sm_name)
+            if i == 0:
                 sharex = None
+                rmax = step.index.max()
             else:
                 sharex = axb
-            axb = plt.subplot2grid((rows, 3), (i, 2), sharex=sharex)
-            self.ml.get_step_response(sm).plot(ax=axb)
-            ax.minorticks_off()
-
+                rmax = max(rmax,step.index.max())
+            step_row = i+3
+            
+            # plot the contribution
+            sm = self.ml.stressmodels[sm_name]
+            nsplit = sm.get_nsplit()
+            if split and nsplit > 1:
+                for isplit in range(nsplit):
+                    ax = plt.subplot2grid((rows, 3), (i+3, 0), colspan=2, sharex=ax1)
+                    contribs[i].plot(ax=ax, sharex=ax1, x_compat=True)
+                    ax.legend(loc=(0, 1), ncol=3, frameon=False)
+                    ax.minorticks_off()
+                    i = i+1
+            else:
+                ax = plt.subplot2grid((rows, 3), (i+3, 0), colspan=2, sharex=ax1)
+                contribs[i].plot(ax=ax, sharex=ax1, x_compat=True)
+                title = [stress.name for stress in sm.stress]
+                if len(title) > 3:
+                    title = title[:3] + ["..."]
+                plt.title("Stresses: %s" % title, loc="right")
+                ax.legend(loc=(0, 1), ncol=3, frameon=False)
+                ax.minorticks_off()
+                i = i+1
+            
+            # plot the step-reponse
+            axb = plt.subplot2grid((rows, 3), (step_row, 2), sharex=sharex)
+            step.plot(ax=axb)
+        
         ax1.set_xlim(tmin, tmax)
+        axb.set_xlim(0, rmax)
 
         plt.tight_layout(pad=0.0)
 
@@ -204,23 +227,10 @@ class Plotting:
         names = ['']
 
         # determine the influence of the different stresses
-        for name in self.ml.stressmodels.keys():
-            nsplit = self.ml.stressmodels[name].get_nsplit()
-            if split and nsplit > 1:
-                for istress in range(nsplit):
-                    contrib = self.ml.get_contribution(
-                        name, tmin=tmin, tmax=tmax, istress=istress,
-                        return_warmup=return_warmup)
-                    series.append(contrib)
-                    names.append(contrib.name)
-
-            else:
-                contrib = self.ml.get_contribution(
-                    name, tmin=tmin, tmax=tmax, return_warmup=return_warmup
-                )
-
-                series.append(contrib)
-                names.append(contrib.name)
+        contribs = self.ml.get_contributions(split=split, tmin=tmin, tmax=tmax,
+                                             return_warmup=return_warmup)
+        series.extend(contribs)
+        names.extend([s.name for s in contribs])
 
         if self.ml.transform:
             series.append(
@@ -376,7 +386,7 @@ class Plotting:
 
         """
         if ax is None:
-            fig, ax = plt.subplots(figsize=figsize, **kwargs)
+            _, ax = plt.subplots(figsize=figsize, **kwargs)
 
         if not stressmodels:
             stressmodels = self.ml.stressmodels.keys()
@@ -488,17 +498,23 @@ class Plotting:
 
     @model_tmin_tmax
     def contributions_pie(self, tmin=None, tmax=None, ax=None,
-                          figsize=None, **kwargs):
+                          figsize=None, split=True, partition='std', 
+                          wedgeprops=dict(edgecolor='w'), startangle=90,
+                          autopct='%1.1f%%', **kwargs):
         """Make a pie chart of the contributions. This plot is based on the
         TNO Groundwatertoolbox.
 
         Parameters
         ----------
-        tmin
-        tmax
+        tmin: str or pandas.Timestamp, optional.
+        tmax: str or pandas.Timestamp, optional.
         ax: matplotlib.axes, optional
             Axes to plot the pie chart on. A new figure and axes will be
             created of not providided.
+        figsize: tuple, optional
+            tuple of size 2 to determine the figure size in inches.
+        split: bool, optional
+            Split the stresses in multiple stresses when possible.
         kwargs: dict, optional
             The keyword arguments are passed on to plt.pie.
 
@@ -508,24 +524,97 @@ class Plotting:
 
         """
         if ax is None:
-            _, ax = plt.subplots(figsize=figsize, **kwargs)
+            _, ax = plt.subplots(figsize=figsize)
 
-        frac = []
-        for name in self.ml.stressmodels.keys():
-            frac.append(np.abs(self.ml.get_contribution(name, tmin=tmin,
-                                                        tmax=tmax)).sum())
-
-        evp = self.ml.stats.evp(tmin=tmin) / 100
+        contribs = self.ml.get_contributions(split=split, tmin=tmin, tmax=tmax)
+        if partition == 'sum':
+            # the part of each pie is determined by the sum of the contribution
+            frac = [np.abs(contrib).sum() for contrib in contribs]
+        elif partition == 'std':
+            # the part of each pie is determined by the std of the contribution
+            frac = [contrib.std() for contrib in contribs]
+        else:
+            msg = 'Unknown value for partition: {}'.format(partition)
+            raise(Exception(msg))
+        
+        # make sure the unexplained part is 100 - evp %
+        evp = self.ml.stats.evp(tmin=tmin, tmax=tmax) / 100
         frac = np.array(frac) / sum(frac) * evp
-        frac = frac.tolist()
-        frac.append(1 - evp)
-        frac = np.array(frac)
-        labels = list(self.ml.stressmodels.keys())
-        labels.append("Unexplained")
-        ax.pie(frac, labels=labels, autopct='%1.1f%%', startangle=90,
-               wedgeprops=dict(width=1, edgecolor='w'))
+        frac = np.append(frac, 1 - evp)
+        
+        if 'labels' not in kwargs:
+            labels = [contrib.name for contrib in contribs]
+            labels.append("Unexplained")
+            kwargs['labels'] = labels
+            
+        ax.pie(frac, wedgeprops=wedgeprops, startangle=startangle,
+               autopct=autopct, **kwargs)
         ax.axis('equal')
         return ax
+
+    @model_tmin_tmax
+    def stacked_results(self, tmin=None, tmax=None, figsize=(10, 8), **kwargs):
+        """Create a results plot, similar to `ml.plots.results()`, in which
+        the individual contributions of stresses (in stressmodels with multiple
+        stresses) are stacked.
+
+        Note: does not plot the individual contributions of StressModel2
+
+        Parameters
+        ----------
+        tmin : str or pandas.Timestamp, optional
+        tmax : str or pandas.Timestamp, optional
+        figsize : tuple, optional
+
+        Returns
+        -------
+        axes: list of axes objects
+
+        """
+        # %% Contribution per stress on model results plot
+        def custom_sort(t):
+            """Sort by mean contribution"""
+            return t[1].mean()
+
+        # Create standard results plot
+        axes = self.ml.plots.results(figsize=figsize, **kwargs)
+
+        nsm = len(self.ml.stressmodels)
+
+        # loop over axes showing stressmodel contributions
+        for i, sm in zip(range(3, 3+2*nsm, 2),
+                         self.ml.stressmodels.keys()):
+
+            # Get the contributions for StressModels with multiple
+            # stresses
+            contributions = []
+            sml = self.ml.stressmodels[sm]
+            if (len(sml.stress) > 0) and (sml._name != "StressModel2"):
+                nsplit = sml.get_nsplit()
+                if nsplit>1:
+                    for istress in range(len(sml.stress)):
+                        h = self.ml.get_contribution(sm, istress=istress)
+                        name = sml.stress[istress].name
+                        if name is None:
+                            name = sm
+                        contributions.append((name, h))
+                else:
+                    h = self.ml.get_contribution(sm)
+                    name = sm
+                    contributions.append((name, h))
+                contributions.sort(key=custom_sort)
+
+                # add stacked plot to correct axes
+                ax = axes[i]
+                del ax.lines[0]  # delete existing line
+
+                contrib = [c[1] for c in contributions]  # get timeseries
+                vstack = concat(contrib, axis=1)
+                names = [c[0] for c in contributions]  # get names
+                ax.stackplot(vstack.index, vstack.values.T, labels=names)
+                ax.legend(loc="best", ncol=5, fontsize=8)
+
+        return axes
 
 
 class TrackSolve:
@@ -583,14 +672,18 @@ class TrackSolve:
 
     """
 
-    def __init__(self, ml, tmin=None, tmax=None, update_iter=1):
+    def __init__(self, ml, tmin=None, tmax=None, update_iter=None):
         logger.warning("TrackSolve feature under development. If you find any "
-                       "bugs please comment on the issue on GitHub: "
-                       "https://github.com/pastas/pastas/issues/137")
+                       "bugs please post an issue on GitHub: "
+                       "https://github.com/pastas/pastas/issues")
 
         self.ml = ml
         self.viewlim = 75  # no of iterations on axes by default
-        self.update_iter = update_iter  # update plot every update_iter
+        if update_iter is None:
+            self.update_iter = \
+                len(self.ml.parameters.loc[self.ml.parameters.vary].index)
+        else:
+            self.update_iter = update_iter  # update plot every update_iter
 
         # get tmin/tmax
         if tmin is None:

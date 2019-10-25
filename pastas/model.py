@@ -364,7 +364,7 @@ class Model:
             istart += 1
         if self.transform:
             sim = self.transform.simulate(sim, parameters[
-                                               istart:istart + self.transform.nparam])
+                istart:istart + self.transform.nparam])
 
         # Respect provided tmin/tmax at this point, since warmup matters for
         # simulation but should not be returned, unless return_warmup=True.
@@ -506,7 +506,8 @@ class Model:
                                          parameters[-self.noisemodel.nparam:])
         return noise
 
-    def observations(self, tmin=None, tmax=None, freq=None):
+    def observations(self, tmin=None, tmax=None, freq=None,
+                     update_observations=False):
         """Method that returns the observations series used for calibration.
 
         Parameters
@@ -521,6 +522,9 @@ class Model:
             String with the frequency the stressmodels are simulated. Must
             be one of the following: (D, h, m, s, ms, us, ns) or a multiple of
             that e.g. "7D".
+        update_observations : bool, optional
+            if True, force recalculation of the observations series, default
+            is False
 
         Returns
         -------
@@ -548,7 +552,6 @@ class Model:
         if freq is None:
             freq = self.settings["freq"]
 
-        update_observations = False
         for key, setting in zip([tmin, tmax, freq], ["tmin", "tmax", "freq"]):
             if key != self.settings[setting]:
                 update_observations = True
@@ -564,11 +567,6 @@ class Model:
             if not oseries_calib.empty:
                 index = get_sample(oseries_calib.index, sim_index)
                 oseries_calib = oseries_calib.loc[index]
-
-            if not update_observations:
-                # tmin, tmax and freq are equal to the settings
-                # so we can set self.oseries_calib to improve speed of next run
-                self.oseries_calib = oseries_calib
         else:
             oseries_calib = self.oseries_calib
         return oseries_calib
@@ -610,8 +608,15 @@ class Model:
             self.settings["fit_constant"] = fit_constant
 
         # make sure calibration data is renewed
-        self.sim_index = None
-        self.oseries_calib = None
+        self.sim_index = self.get_sim_index(self.settings["tmin"],
+                                            self.settings["tmax"],
+                                            self.settings["freq"],
+                                            self.settings["warmup"],
+                                            update_sim_index=True)
+        self.oseries_calib = self.observations(tmin=self.settings["tmin"],
+                                               tmax=self.settings["tmax"],
+                                               freq=self.settings["freq"],
+                                               update_observations=True)
         self.interpolate_simulation = None
 
         # Initialize parameters
@@ -684,6 +689,10 @@ class Model:
         # Initialize the model
         self.initialize(tmin, tmax, freq, warmup, noise, weights, initial,
                         fit_constant)
+
+        if self.oseries_calib.empty:
+            raise ValueError("Calibration series 'oseries_calib' is empty! "
+                             "Check 'tmin' or 'tmax'.")
 
         # Store the solve instance
         if solver is None:
@@ -866,7 +875,7 @@ class Model:
         """Returns list of stressmodel names"""
         return list(self.stressmodels.keys())
 
-    def get_sim_index(self, tmin, tmax, freq, warmup):
+    def get_sim_index(self, tmin, tmax, freq, warmup, update_sim_index=False):
         """Internal method to get the simulation index, including the warmup.
 
         Parameters
@@ -883,6 +892,8 @@ class Model:
             that e.g. "7D".
         warmup: float/int
             Warmup period (in Days).
+        update_sim_index : bool, optional
+            if True, force recalculation of sim_index, default is False
 
         Returns
         -------
@@ -892,7 +903,6 @@ class Model:
 
         """
         # Check if any of the settings are updated
-        update_sim_index = False
         for key, setting in zip([tmin, tmax, freq, warmup],
                                 ["tmin", "tmax", "freq", "warmup"]):
             if key != self.settings[setting]:
@@ -901,9 +911,6 @@ class Model:
         if self.sim_index is None or update_sim_index:
             tmin = (tmin - warmup).floor(freq) + self.settings["time_offset"]
             sim_index = pd.date_range(tmin, tmax, freq=freq)
-            if not update_sim_index:
-                # Improve speed of next run if args are equal to ml.settings.
-                self.sim_index = sim_index
         else:
             sim_index = self.sim_index
         return sim_index
@@ -1193,6 +1200,34 @@ class Model:
             contrib = contrib.loc[tmin:tmax]
 
         return contrib
+    
+    def get_contributions(self, split=True, **kwargs):
+        """Method to get contributions of all stressmodels.
+
+        Parameters
+        ----------
+        split: bool, optional
+            Split the stresses in multiple stresses when possible.
+        kwargs: any other arguments are passed to get_contribution
+
+        Returns
+        -------
+        contribs: list
+            a list of Pandas Series of the contributions.
+
+        """
+        contribs=[]
+        for name in self.stressmodels:
+            nsplit = self.stressmodels[name].get_nsplit()
+            if split and nsplit > 1:
+                for istress in range(nsplit):
+                    contrib = self.get_contribution(name, istress=istress,
+                                                       **kwargs)
+                    contribs.append(contrib)
+            else:
+                contrib = self.get_contribution(name, **kwargs)
+                contribs.append(contrib)
+        return contribs
 
     def get_transform_contribution(self, tmin=None, tmax=None):
         """Method to get the contribution of a transform.
@@ -1422,8 +1457,8 @@ class Model:
                                              "initial", "vary"]]
         parameters.loc[:, "stderr"] = \
             (parameters.loc[:, "stderr"] / parameters.loc[:, "optimal"]) \
-                .abs() \
-                .apply("\u00B1{:.2%}".format)
+            .abs() \
+            .apply("\u00B1{:.2%}".format)
 
         # Determine the width of the fit_report based on the parameters
         width = len(parameters.__str__().split("\n")[1])
@@ -1433,10 +1468,10 @@ class Model:
         w = max(width - 44, 0)
         header = "Model Results {name:<16}{string}Fit Statistics\n" \
                  "{line}\n".format(
-            name=self.name[:14],
-            string=string.format("", fill=' ', align='>', width=w),
-            line=string.format("", fill='=', align='>', width=width)
-        )
+                     name=self.name[:14],
+                     string=string.format("", fill=' ', align='>', width=w),
+                     line=string.format("", fill='=', align='>', width=width)
+                 )
 
         basic = str()
         for item, item2 in zip(model.items(), fit.items()):
@@ -1450,9 +1485,10 @@ class Model:
         # Create the parameters block
         parameters = "\nParameters ({n_param} were optimized)\n{line}\n" \
                      "{parameters}".format(
-            n_param=parameters.vary.sum(),
-            line=string.format("", fill='=', align='>', width=width),
-            parameters=parameters)
+                         n_param=parameters.vary.sum(),
+                         line=string.format(
+                             "", fill='=', align='>', width=width),
+                         parameters=parameters)
 
         if output == "full":
             cor = dict()
@@ -1467,8 +1503,9 @@ class Model:
                                columns=["rho"])
             correlations = "\n\nParameter correlations |rho| > 0.5\n{" \
                            "line}\n{correlation}".format(
-                line=string.format("", fill='=', align='>', width=width),
-                correlation=cor.to_string(header=False))
+                               line=string.format(
+                                   "", fill='=', align='>', width=width),
+                               correlation=cor.to_string(header=False))
 
         report = "{header}{basic}{parameters}{correlations}".format(
             header=header, basic=basic, parameters=parameters,
