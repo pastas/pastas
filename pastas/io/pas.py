@@ -38,7 +38,10 @@ def pastas_hook(obj):
             if isinstance(obj[key], Series):
                 obj[key].index = obj[key].index.tz_localize(None)
         elif key in ["time_offset", "warmup"]:
-            obj[key] = Timedelta(value)
+            if isinstance(value,int) or isinstance(value,float):
+                obj[key] = Timedelta(value, 'd')
+            else:
+                obj[key] = Timedelta(value)
         elif key == "parameters":
             # Necessary to maintain order when using the JSON format!
             value = json.loads(value, object_pairs_hook=OrderedDict)
@@ -52,10 +55,10 @@ def pastas_hook(obj):
     return obj
 
 
-def dump(fname, data):
+def dump(fname, data, verbose=True):
     json.dump(data, open(fname, 'w'), indent=4, cls=PastasEncoder)
-    return print("%s file succesfully exported" % fname)
-
+    if verbose:
+        return print("%s file succesfully exported" % fname)
 
 class PastasEncoder(json.JSONEncoder):
     """Enhanced encoder to deal with the pandas formats used
