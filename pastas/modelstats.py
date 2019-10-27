@@ -315,7 +315,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         -------
 
         """
-        if not stats:
+        if stats is None:
             stats = ['evp', 'rmse', 'rmsi', 'rsq']
 
         data = DataFrame(index=[0], columns=stats)

@@ -363,7 +363,7 @@ class Model:
             istart += 1
         if self.transform:
             sim = self.transform.simulate(sim, parameters[
-                istart:istart + self.transform.nparam])
+                                               istart:istart + self.transform.nparam])
 
         # Respect provided tmin/tmax at this point, since warmup matters for
         # simulation but should not be returned, unless return_warmup=True.
@@ -485,9 +485,10 @@ class Model:
         model.
 
         """
-        if self.noisemodel is None:
-            self.logger.error("Noise cannot be calculated if there is "
-                              "no noisemodel.")
+        if (self.noisemodel is None) or (self.settings["noise"] is False):
+            self.logger.error("Noise cannot be calculated if there is no "
+                              "noisemodel present or used during  parameter "
+                              "estimation.")
             return None
 
         if freq is None:
@@ -1199,7 +1200,7 @@ class Model:
             contrib = contrib.loc[tmin:tmax]
 
         return contrib
-    
+
     def get_contributions(self, split=True, **kwargs):
         """Method to get contributions of all stressmodels.
 
@@ -1215,13 +1216,13 @@ class Model:
             a list of Pandas Series of the contributions.
 
         """
-        contribs=[]
+        contribs = []
         for name in self.stressmodels:
             nsplit = self.stressmodels[name].get_nsplit()
             if split and nsplit > 1:
                 for istress in range(nsplit):
                     contrib = self.get_contribution(name, istress=istress,
-                                                       **kwargs)
+                                                    **kwargs)
                     contribs.append(contrib)
             else:
                 contrib = self.get_contribution(name, **kwargs)
@@ -1451,8 +1452,8 @@ class Model:
                                              "initial", "vary"]]
         parameters.loc[:, "stderr"] = \
             (parameters.loc[:, "stderr"] / parameters.loc[:, "optimal"]) \
-            .abs() \
-            .apply("\u00B1{:.2%}".format)
+                .abs() \
+                .apply("\u00B1{:.2%}".format)
 
         # Determine the width of the fit_report based on the parameters
         width = len(parameters.__str__().split("\n")[1])
@@ -1462,10 +1463,10 @@ class Model:
         w = max(width - 44, 0)
         header = "Model Results {name:<16}{string}Fit Statistics\n" \
                  "{line}\n".format(
-                     name=self.name[:14],
-                     string=string.format("", fill=' ', align='>', width=w),
-                     line=string.format("", fill='=', align='>', width=width)
-                 )
+            name=self.name[:14],
+            string=string.format("", fill=' ', align='>', width=w),
+            line=string.format("", fill='=', align='>', width=width)
+        )
 
         basic = str()
         for item, item2 in zip(model.items(), fit.items()):
@@ -1479,10 +1480,10 @@ class Model:
         # Create the parameters block
         parameters = "\nParameters ({n_param} were optimized)\n{line}\n" \
                      "{parameters}".format(
-                         n_param=parameters.vary.sum(),
-                         line=string.format(
-                             "", fill='=', align='>', width=width),
-                         parameters=parameters)
+            n_param=parameters.vary.sum(),
+            line=string.format(
+                "", fill='=', align='>', width=width),
+            parameters=parameters)
 
         if output == "full":
             cor = dict()
@@ -1497,9 +1498,9 @@ class Model:
                                columns=["rho"])
             correlations = "\n\nParameter correlations |rho| > 0.5\n{" \
                            "line}\n{correlation}".format(
-                               line=string.format(
-                                   "", fill='=', align='>', width=width),
-                               correlation=cor.to_string(header=False))
+                line=string.format(
+                    "", fill='=', align='>', width=width),
+                correlation=cor.to_string(header=False))
 
         report = "{header}{basic}{parameters}{correlations}".format(
             header=header, basic=basic, parameters=parameters,
