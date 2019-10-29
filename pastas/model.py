@@ -363,7 +363,7 @@ class Model:
             istart += 1
         if self.transform:
             sim = self.transform.simulate(sim, parameters[
-                istart:istart + self.transform.nparam])
+                                               istart:istart + self.transform.nparam])
 
         # Respect provided tmin/tmax at this point, since warmup matters for
         # simulation but should not be returned, unless return_warmup=True.
@@ -1199,7 +1199,7 @@ class Model:
             contrib = contrib.loc[tmin:tmax]
 
         return contrib
-    
+
     def get_contributions(self, split=True, **kwargs):
         """Method to get contributions of all stressmodels.
 
@@ -1215,13 +1215,13 @@ class Model:
             a list of Pandas Series of the contributions.
 
         """
-        contribs=[]
+        contribs = []
         for name in self.stressmodels:
             nsplit = self.stressmodels[name].get_nsplit()
             if split and nsplit > 1:
                 for istress in range(nsplit):
                     contrib = self.get_contribution(name, istress=istress,
-                                                       **kwargs)
+                                                    **kwargs)
                     contribs.append(contrib)
             else:
                 contrib = self.get_contribution(name, **kwargs)
@@ -1253,19 +1253,38 @@ class Model:
         sim_org = ml.simulate(tmin=tmin, tmax=tmax)
         return sim - sim_org
 
-    def get_response(self, rfunc, name, parameters=None, dt=None, **kwargs):
-        """Internal method to compute the block and step response."""
+    def get_response(self, block_or_step, name, parameters=None, dt=None,
+                     **kwargs):
+        """Internal method to compute the block and step response.
+
+        Parameters
+        ----------
+        block_or_step: str
+            String with "step" or "block"
+        name: str
+            string with the name of the stressmodel
+        parameters, ndarray, optional
+            array with the parameters
+        dt: float, optional
+            timestep for the response function.
+        kwargs
+
+        Returns
+        -------
+
+        """
         if not hasattr(self.stressmodels[name], "rfunc"):
             raise TypeError("Stressmodel {} has no rfunc".format(name))
         else:
-            rfunc = getattr(self.stressmodels[name].rfunc, rfunc)
+            block_or_step = getattr(self.stressmodels[name].rfunc,
+                                    block_or_step)
 
         if parameters is None:
             parameters = self.get_parameters(name)
 
         if dt is None:
             dt = get_dt(self.settings["freq"])
-        response = rfunc(parameters, dt, **kwargs)
+        response = block_or_step(parameters, dt, **kwargs)
 
         if isinstance(dt, np.ndarray):
             t = dt
@@ -1297,7 +1316,7 @@ class Model:
             frequency that is present in the model.settings.
 
         """
-        return self.get_response(rfunc="block", name=name, dt=dt,
+        return self.get_response(block_or_step="block", name=name, dt=dt,
                                  parameters=parameters, **kwargs)
 
     @get_stressmodel
@@ -1321,7 +1340,7 @@ class Model:
             frequency that is present in the model.settings.
 
         """
-        return self.get_response(rfunc="step", name=name, dt=dt,
+        return self.get_response(block_or_step="step", name=name, dt=dt,
                                  parameters=parameters, **kwargs)
 
     @get_stressmodel
@@ -1456,8 +1475,8 @@ class Model:
                                              "initial", "vary"]]
         parameters.loc[:, "stderr"] = \
             (parameters.loc[:, "stderr"] / parameters.loc[:, "optimal"]) \
-            .abs() \
-            .apply("\u00B1{:.2%}".format)
+                .abs() \
+                .apply("\u00B1{:.2%}".format)
 
         # Determine the width of the fit_report based on the parameters
         width = len(parameters.__str__().split("\n")[1])
@@ -1467,10 +1486,10 @@ class Model:
         w = max(width - 44, 0)
         header = "Model Results {name:<16}{string}Fit Statistics\n" \
                  "{line}\n".format(
-                     name=self.name[:14],
-                     string=string.format("", fill=' ', align='>', width=w),
-                     line=string.format("", fill='=', align='>', width=width)
-                 )
+            name=self.name[:14],
+            string=string.format("", fill=' ', align='>', width=w),
+            line=string.format("", fill='=', align='>', width=width)
+        )
 
         basic = str()
         for item, item2 in zip(model.items(), fit.items()):
@@ -1484,10 +1503,10 @@ class Model:
         # Create the parameters block
         parameters = "\nParameters ({n_param} were optimized)\n{line}\n" \
                      "{parameters}".format(
-                         n_param=parameters.vary.sum(),
-                         line=string.format(
-                             "", fill='=', align='>', width=width),
-                         parameters=parameters)
+            n_param=parameters.vary.sum(),
+            line=string.format(
+                "", fill='=', align='>', width=width),
+            parameters=parameters)
 
         if output == "full":
             cor = dict()
@@ -1502,9 +1521,9 @@ class Model:
                                columns=["rho"])
             correlations = "\n\nParameter correlations |rho| > 0.5\n{" \
                            "line}\n{correlation}".format(
-                               line=string.format(
-                                   "", fill='=', align='>', width=width),
-                               correlation=cor.to_string(header=False))
+                line=string.format(
+                    "", fill='=', align='>', width=width),
+                correlation=cor.to_string(header=False))
 
         report = "{header}{basic}{parameters}{correlations}".format(
             header=header, basic=basic, parameters=parameters,

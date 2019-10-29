@@ -24,7 +24,6 @@ ml.solve()
 #
 df = ml.fit.prediction_interval()
 inside = (obs > df.loc[obs.index, 0.025]) & (obs < df.loc[obs.index, 0.975])
-print('results of prediction_interval2')
 print('percentage inside:', np.count_nonzero(inside) / len(inside) * 100)
 
 # # Plot some results
