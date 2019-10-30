@@ -150,7 +150,6 @@ class NoiseModel(NoiseModelBase):
         # res.values is needed else it gets messed up with the dates
         v = res.values[1:] - np.exp(-odelt / alpha) * res.values[:-1]
         res.iloc[1:] = v * self.weights(alpha, odelt)
-        res.iloc[0] = 0
         res.name = "Noise"
         return res
 
