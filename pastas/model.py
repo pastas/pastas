@@ -235,6 +235,12 @@ class Model:
         self.noisemodel.set_init_parameters(oseries=self.oseries.series)
         self.parameters = self.get_init_parameters(initial=False)
 
+        # check whether noise_alpha is not smaller than ml.settings["freq"]
+        freq_in_days = get_dt(self.settings["freq"])
+        noise_alpha = self.noisemodel.parameters.initial.iloc[0]
+        if freq_in_days > noise_alpha:
+            self.set_initial("noise_alpha", freq_in_days)
+
     @get_stressmodel
     def del_stressmodel(self, name):
         """ Safely delete a stressmodel from the stressmodels dict.
