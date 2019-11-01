@@ -2,7 +2,8 @@ import logging
 from logging import handlers
 
 import numpy as np
-from pandas import Series, to_datetime, Timedelta, Timestamp, to_timedelta
+from pandas import (Series, to_datetime, Timedelta, Timestamp, to_timedelta,
+                    date_range)
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
 
@@ -173,34 +174,42 @@ def get_sample(tindex, ref_tindex):
         return tindex[ind]
 
 
-def timestep_weighted_resample(series, tindex):
-    """resample a timeseries to a new tindex, using an overlapping-timestep
-    weighted average the new tindex does not have to be equidistant also,
+def timestep_weighted_resample(series0, tindex):
+    """Resample a timeseries to a new tindex, using an overlapping period
+    weighted average.
+    
+    The original series and the new tindex do not have to be equidistant. Also,
     the timestep-edges of the new tindex do not have to overlap with the
-    original series it is assumed the series consists of measurements that
-    describe an intensity at the end of the period for which they hold
-    therefore when upsampling, the values are uniformly spread over the
-    new timestep (like bfill) this method unfortunately is slower than the
-    pandas-reample methods.
+    original series. 
+    
+    It is assumed the series consists of measurements that describe an
+    intensity at the end of the period for which they apply. Therefore, when
+    upsampling, the values are uniformly spread over the new timestep (like
+    bfill).
+    
+    Compared to the reample methods in Pandas, this method is more accurate for
+    non-equidistanct series. It is much slower however.
 
     Parameters
     ----------
-    series
-    tindex
+    series0 : pandas.Series
+        The original series to be resampled
+    tindex : pandas.index
+        The index to which to resample the series
 
     Returns
     -------
-
-    TODO Make faster, document and test.
+    series : pandas.Series
+        The resampled series
 
     """
 
     # determine some arrays for the input-series
-    t0e = np.array(series.index)
+    t0e = np.array(series0.index)
     dt0 = np.diff(t0e)
     dt0 = np.hstack((dt0[0], dt0))
     t0s = t0e - dt0
-    v0 = series.values
+    v0 = series0.values
 
     # determine some arrays for the output-series
     t1e = np.array(tindex)
@@ -223,6 +232,60 @@ def timestep_weighted_resample(series, tindex):
             v1.append(np.sum(dt * v0[mask]) / np.sum(dt))
     # replace all values in the series
     series = Series(v1, index=tindex)
+    return series
+
+def timestep_weighted_resample_fast(series0, freq):
+    """Resample a time series to a new frequency, using an overlapping period
+    weighted average.
+    
+    The original series does not have to be equidistant.
+    
+    It is assumed the series consists of measurements that describe an
+    intensity at the end of the period for which they apply. Therefore, when
+    upsampling, the values are uniformly spread over the new timestep (like
+    bfill).
+    
+    Compared to the reample methods in Pandas, this method is more accurate for
+    non-equidistanct series. It is slower however (but faster then the original
+    timestep_weighted_resample).
+
+    Parameters
+    ----------
+    series0 : pandas.Series
+        The original series to be resampled
+    freq : str
+        A Pandas frequency string
+
+    Returns
+    -------
+    series : pandas.Series
+        The resampled series
+
+    """
+    series = series0.copy()
+    
+    # first mutiply by the timestep in the unit of freq
+    dt = np.diff(series0.index) / to_timedelta(1,freq)
+    series[1:] = series[1:] * dt
+    
+    # get a new index
+    index = date_range(series.index[0].floor(freq),series.index[-1],freq=freq)
+    
+    # calculate the cumulative sum
+    series = series.cumsum()
+    
+    # add NaNs at none-existing values in series at index
+    series = series.combine_first(Series(np.NaN, index=index))
+    
+    # interpolate these NaN's, only keep values at index
+    series = series.interpolate('time')[index]
+    
+    # calculate the diff again (inverse of cumsum)
+    series[1:] = series.diff()[1:]
+    
+    # drop nan's at the beginning
+    series = series[series.first_valid_index():]
+
     return series
 
 
