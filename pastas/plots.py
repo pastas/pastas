@@ -141,6 +141,8 @@ class Plotting:
             o_nu.plot(ax=ax1, linestyle='', marker='.', color='0.5', label='',
                       x_compat=True)
         o.plot(ax=ax1, linestyle='', marker='.', color='k', x_compat=True)
+        # add evp to sinulation
+        sim.name = '{} (evp={:0.1f}%)'.format(sim.name,self.ml.stats.evp())
         sim.plot(ax=ax1, x_compat=True)
         ax1.legend(loc=(0, 1), ncol=3, frameon=False)
         ax1.set_ylim(ylims[0])
