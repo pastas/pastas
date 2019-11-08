@@ -77,7 +77,7 @@ class Plotting:
 
     @model_tmin_tmax
     def results(self, tmin=None, tmax=None, figsize=(10, 8), split=False,
-                **kwargs):
+                adjust_height=False, **kwargs):
         """Plot different results in one window to get a quick overview.
 
         Parameters
@@ -86,6 +86,13 @@ class Plotting:
         tmax: str or pandas.Timestamp, optional
         figsize: tuple, optional
             tuple of size 2 to determine the figure size in inches.
+        split: bool, optional
+            Split the stresses in multiple stresses when possible. Default is
+            True.
+        asjust_height: bool, optional
+            Adjust the height of the graphs, so that the vertical scale of all
+            the graphs on the left is equal
+            
 
         Returns
         -------
@@ -93,82 +100,120 @@ class Plotting:
 
         """
         # Number of rows to make the figure with
-        contribs = self.ml.get_contributions(split=split, tmin=tmin, tmax=tmax)
-        rows = 3 + len(contribs)
-        fig = plt.figure(figsize=figsize, **kwargs)
-        # Main frame
-        ax1 = plt.subplot2grid((rows, 3), (0, 0), colspan=2, rowspan=2)
         o = self.ml.observations()
+        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        plot_noise = self.ml.settings["noise"] and self.ml.noisemodel
+        if plot_noise:
+            noise = self.ml.noise(tmin=tmin, tmax=tmax)
+        contribs = self.ml.get_contributions(split=split, tmin=tmin, tmax=tmax)
+        fig = plt.figure(figsize=figsize, **kwargs)
+        ylims = [(min([sim.min(), o[tmin:tmax].min()]),
+                  max([sim.max(), o[tmin:tmax].max()]))]
+        if adjust_height:
+            if plot_noise:
+                ylims.append((min([res.min(), noise.min()]),
+                              max([res.max(), noise.max()])))
+            else:
+                ylims.append((res.min(), res.max()))
+            for contrib in contribs:
+                hs = contrib[tmin:tmax]
+                if hs.empty:
+                    if contrib.empty:
+                        ylims.append((0.0, 0.0))
+                    else:
+                        ylims.append((contrib.min(), hs.max()))
+                else:
+                    ylims.append((hs.min(), hs.max()))
+            hrs = get_height_ratios(ylims)
+        else:
+            hrs = [2]+[1]*(len(contribs)+1)
+
+        nrows = len(contribs) + 2
+        gs = fig.add_gridspec(ncols=2, nrows=nrows, width_ratios=[2,1],
+                              height_ratios=hrs)
+
+        # Main frame
+        ax1 = fig.add_subplot(gs[0,0])
         o_nu = self.ml.oseries.series.drop(o.index)
         if not o_nu.empty:
             # plot parts of the oseries that are not used in grey
             o_nu.plot(ax=ax1, linestyle='', marker='.', color='0.5', label='',
                       x_compat=True)
         o.plot(ax=ax1, linestyle='', marker='.', color='k', x_compat=True)
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
         sim.plot(ax=ax1, x_compat=True)
         ax1.legend(loc=(0, 1), ncol=3, frameon=False)
-        ax1.set_ylim(min(o.min(), sim.loc[tmin:tmax].min()),
-                     max(o.max(), sim.loc[tmin:tmax].max()))
-        ax1.minorticks_off()
+        ax1.set_ylim(ylims[0])
+        if adjust_height:
+            ax1.set_ylim(ylims[0])
+            ax1.grid(True)
 
         # Residuals and noise
-        ax2 = plt.subplot2grid((rows, 3), (2, 0), colspan=2, sharex=ax1)
-        res = self.ml.residuals(tmin=tmin, tmax=tmax)
-        res.plot(ax=ax2, sharex=ax1, color='k', x_compat=True)
-        if self.ml.settings["noise"] and self.ml.noisemodel:
-            noise = self.ml.noise(tmin=tmin, tmax=tmax)
-            noise.plot(ax=ax2, sharex=ax1, x_compat=True)
+        ax2 = fig.add_subplot(gs[1,0], sharex=ax1)
+        res.plot(ax=ax2, color='k', x_compat=True)
+        if plot_noise:
+            noise.plot(ax=ax2, x_compat=True)
         ax2.axhline(0.0, color='k', linestyle='--', zorder=0)
         ax2.legend(loc=(0, 1), ncol=3, frameon=False)
-        ax2.minorticks_off()
+        if adjust_height:
+            ax2.grid(True)
 
         # Stats frame
-        ax3 = plt.subplot2grid((rows, 3), (0, 2), rowspan=3)
+        ax3 = fig.add_subplot(gs[0:2,1])
         ax3.set_title('Model Information', loc='left')
 
         # Add a row for each stressmodel
         i=0
         for sm_name in self.ml.stressmodels:
             # get the step-response
-            step = self.ml.get_step_response(sm_name)
+            step = self.ml.get_step_response(sm_name, add_0=True)
             if i == 0:
                 sharex = None
                 rmax = step.index.max()
             else:
                 sharex = axb
                 rmax = max(rmax,step.index.max())
-            step_row = i+3
+            step_row = i+2
             
             # plot the contribution
             sm = self.ml.stressmodels[sm_name]
             nsplit = sm.get_nsplit()
             if split and nsplit > 1:
                 for isplit in range(nsplit):
-                    ax = plt.subplot2grid((rows, 3), (i+3, 0), colspan=2, sharex=ax1)
-                    contribs[i].plot(ax=ax, sharex=ax1, x_compat=True)
+                    ax = fig.add_subplot(gs[i+2,0], sharex=ax1)
+                    contribs[i].plot(ax=ax, x_compat=True)
                     ax.legend(loc=(0, 1), ncol=3, frameon=False)
-                    ax.minorticks_off()
+                    if adjust_height:
+                        ax.set_ylim(ylims[2+i])
+                        ax.grid(True)
                     i = i+1
+                    
             else:
-                ax = plt.subplot2grid((rows, 3), (i+3, 0), colspan=2, sharex=ax1)
-                contribs[i].plot(ax=ax, sharex=ax1, x_compat=True)
+                ax = fig.add_subplot(gs[i+2,0], sharex=ax1)
+                contribs[i].plot(ax=ax, x_compat=True)
                 title = [stress.name for stress in sm.stress]
                 if len(title) > 3:
                     title = title[:3] + ["..."]
                 plt.title("Stresses: %s" % title, loc="right")
                 ax.legend(loc=(0, 1), ncol=3, frameon=False)
-                ax.minorticks_off()
+                if adjust_height:
+                    ax.set_ylim(ylims[2+i])
+                    ax.grid(True)
                 i = i+1
             
             # plot the step-reponse
-            axb = plt.subplot2grid((rows, 3), (step_row, 2), sharex=sharex)
+            axb = fig.add_subplot(gs[step_row, 1])
             step.plot(ax=axb)
+            if adjust_height:
+                axb.grid(True)
+        
+        # xlim sets minorticks back after plots:
+        ax1.minorticks_off()
         
         ax1.set_xlim(tmin, tmax)
         axb.set_xlim(0, rmax)
 
-        plt.tight_layout(pad=0.0)
+        fig.tight_layout(pad=0.0)
 
         # Draw parameters table
         parameters = self.ml.parameters.copy()
@@ -201,7 +246,8 @@ class Plotting:
             Make the ytick-base constant if True, set this base to float if
             float.
         split: bool, optional
-            Split the stresses in multiple stresses when possible.
+            Split the stresses in multiple stresses when possible. Default is
+            True.
         axes: matplotlib.Axes instance, optional
             Matplotlib Axes instance to plot the figure on to.
         figsize: tuple, optional
@@ -223,25 +269,21 @@ class Plotting:
                                return_warmup=return_warmup)
         if name is not None:
             sim.name = name
-        series = [sim]
-        names = ['']
 
         # determine the influence of the different stresses
         contribs = self.ml.get_contributions(split=split, tmin=tmin, tmax=tmax,
                                              return_warmup=return_warmup)
-        series.extend(contribs)
-        names.extend([s.name for s in contribs])
+        names = [s.name for s in contribs]
 
         if self.ml.transform:
-            series.append(
-                self.ml.get_transform_contribution(tmin=tmin, tmax=tmax))
+            contrib = self.ml.get_transform_contribution(tmin=tmin, tmax=tmax)
+            contribs.append(contrib)
             names.append(self.ml.transform.name)
 
         # determine ylim for every graph, to scale the height
-        ylims = [
-            (min([sim[tmin:tmax].min(), o[tmin:tmax].min()]),
-             max([sim[tmin:tmax].max(), o[tmin:tmax].max()]))]
-        for contrib in series[1:]:
+        ylims = [(min([sim.min(), o[tmin:tmax].min()]),
+                  max([sim.max(), o[tmin:tmax].max()]))]
+        for contrib in contribs:
             hs = contrib[tmin:tmax]
             if hs.empty:
                 if contrib.empty:
@@ -255,20 +297,20 @@ class Plotting:
                 if np.diff(ylim) < min_ylim_diff:
                     ylims[i] = (np.mean(ylim) - min_ylim_diff / 2,
                                 np.mean(ylim) + min_ylim_diff / 2)
-        height_ratios = [
-            0.0 if np.isnan(ylim[1] - ylim[0]) else ylim[1] - ylim[0] for ylim
-            in ylims]
-
+        # determine height ratios
+        height_ratios = get_height_ratios(ylims)
+        
+        nrows = len(contribs)+1
         if axes is None:
             # open a new figure
             gridspec_kw = {'height_ratios': height_ratios}
-            fig, axes = plt.subplots(len(series), sharex=True, figsize=figsize,
+            fig, axes = plt.subplots(nrows, sharex=True, figsize=figsize,
                                      gridspec_kw=gridspec_kw, **kwargs)
             axes = np.atleast_1d(axes)
             o_label = o.name
             set_axes_properties = True
         else:
-            if len(axes) != len(series):
+            if len(axes) != nrows:
                 msg = 'Makes sure the number of axes equals the number of ' \
                       'series'
                 raise Exception(msg)
@@ -288,7 +330,7 @@ class Plotting:
         if set_axes_properties:
             axes[0].set_title('observations vs. simulation')
             axes[0].set_ylim(ylims[0])
-        axes[0].grid(which='both')
+        axes[0].grid(True)
         axes[0].legend(ncol=3, frameon=False)
 
         if ytick_base and set_axes_properties:
@@ -303,18 +345,18 @@ class Plotting:
                 MultipleLocator(base=ytick_base))
 
         # plot the influence of the stresses
-        for i, contrib in enumerate(series[1:], start=1):
-            contrib.plot(ax=axes[i], x_compat=True)
+        for i, contrib in enumerate(contribs):
+            ax = axes[i+1]
+            contrib.plot(ax=ax, x_compat=True)
             if set_axes_properties:
                 if ytick_base:
                     # set the ytick-spacing equal to the top graph
-                    axes[i].yaxis.set_major_locator(
-                        MultipleLocator(base=ytick_base))
-
-                axes[i].set_title(names[i])
-                axes[i].set_ylim(ylims[i])
-            axes[i].grid(which='both')
-            axes[i].minorticks_off()
+                    locator = MultipleLocator(base=ytick_base)
+                    ax.yaxis.set_major_locator(locator)
+                ax.set_title(names[i])
+                ax.set_ylim(ylims[i+1])
+            ax.grid(True)
+            ax.minorticks_off()
         if set_axes_properties:
             axes[0].set_xlim(tmin, tmax)
         fig.tight_layout(pad=0.0)
@@ -969,3 +1011,12 @@ class TrackSolve:
             "Iteration: {0} (EVP: {1:.2%})".format(self.itercount,
                                                    self.evp))
         self.fig.canvas.draw()
+        
+def get_height_ratios(ylims):
+    height_ratios = []
+    for ylim in ylims:
+        hr = ylim[1] - ylim[0]
+        if np.isnan(hr):
+            hr = 0.0
+        height_ratios.append(hr)
+    return height_ratios
