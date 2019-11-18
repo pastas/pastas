@@ -1261,7 +1261,7 @@ class Model:
         return sim - sim_org
 
     def get_response(self, block_or_step, name, parameters=None, dt=None,
-                     **kwargs):
+                     add_0=False, **kwargs):
         """Internal method to compute the block and step response.
 
         Parameters
@@ -1293,6 +1293,9 @@ class Model:
             dt = get_dt(self.settings["freq"])
         response = block_or_step(parameters, dt, **kwargs)
 
+        if add_0:
+            response = np.insert(response, 0, 0.0)
+
         if isinstance(dt, np.ndarray):
             t = dt
         else:
@@ -1303,7 +1306,8 @@ class Model:
         return response
 
     @get_stressmodel
-    def get_block_response(self, name, parameters=None, add_0=False, **kwargs):
+    def get_block_response(self, name, parameters=None, add_0=False, dt=None,
+                           **kwargs):
         """Method to obtain the block response for a stressmodel.
 
         The optimal parameters are used when available, initial otherwise.
@@ -1325,24 +1329,12 @@ class Model:
             frequency that is present in the model.settings.
 
         """
-        if self.stressmodels[name].rfunc is None:
-            raise TypeError("Stressmodel {} has no rfunc".format(name))
-
-        if parameters is None:
-            parameters = self.get_parameters(name)
-        dt = get_dt(self.settings["freq"])
-        b = self.stressmodels[name].rfunc.block(parameters, dt, **kwargs)
-        if add_0:
-            b = np.insert(b, 0, 0.0)
-            t = np.linspace(0, b.size * dt, b.size)
-        else:
-            t = np.linspace(dt, b.size * dt, b.size)
-        b = pd.Series(b, index=t, name=name)
-        b.index.name = "Time [days]"
-        return b
+        return self.get_response(block_or_step="block", name=name, dt=dt,
+                                 parameters=parameters, add_0=add_0, **kwargs)
 
     @get_stressmodel
-    def get_step_response(self, name, parameters=None, add_0=False, **kwargs):
+    def get_step_response(self, name, parameters=None, add_0=False, dt=None,
+                          **kwargs):
         """Method to obtain the step response for a stressmodel.
 
         The optimal parameters are used when available, initial otherwise.
@@ -1364,26 +1356,12 @@ class Model:
             frequency that is present in the model.settings.
 
         """
-        if self.stressmodels[name].rfunc is None:
-            raise TypeError("Stressmodel {} has no rfunc".format(name))
-
-        if parameters is None:
-            parameters = self.get_parameters(name)
-        dt = get_dt(self.settings["freq"])
-        s = self.stressmodels[name].rfunc.step(parameters, dt, **kwargs)
-        if add_0:
-            s = np.insert(s, 0, 0.0)
-            t = np.linspace(0, s.size * dt, s.size)
-        else:
-            t = np.linspace(dt, s.size * dt, s.size)
-        s = pd.Series(s, index=t, name=name)
-        s.index.name = "Time [days]"
-        return s
+        return self.get_response(block_or_step="block", name=name, dt=dt,
+                                 parameters=parameters, add_0=add_0, **kwargs)
 
     @get_stressmodel
-    def get_stress(self, name, tmin=None, tmax=None, freq=None,
-                   warmup=None, istress=None, return_warmup=False,
-                   parameters=None):
+    def get_stress(self, name, tmin=None, tmax=None, freq=None, warmup=None,
+                   istress=None, return_warmup=False, parameters=None):
         """Method to obtain the stress(es) from the stressmodel.
 
         Parameters
