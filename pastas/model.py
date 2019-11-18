@@ -235,6 +235,12 @@ class Model:
         self.noisemodel.set_init_parameters(oseries=self.oseries.series)
         self.parameters = self.get_init_parameters(initial=False)
 
+        # check whether noise_alpha is not smaller than ml.settings["freq"]
+        freq_in_days = get_dt(self.settings["freq"])
+        noise_alpha = self.noisemodel.parameters.initial.iloc[0]
+        if freq_in_days > noise_alpha:
+            self.set_initial("noise_alpha", freq_in_days)
+
     @get_stressmodel
     def del_stressmodel(self, name):
         """ Safely delete a stressmodel from the stressmodels dict.
@@ -485,9 +491,10 @@ class Model:
         model.
 
         """
-        if self.noisemodel is None:
-            self.logger.error("Noise cannot be calculated if there is "
-                              "no noisemodel.")
+        if (self.noisemodel is None) or (self.settings["noise"] is False):
+            self.logger.error("Noise cannot be calculated if there is no "
+                              "noisemodel present or used during  parameter "
+                              "estimation.")
             return None
 
         if freq is None:
@@ -1296,7 +1303,7 @@ class Model:
         return response
 
     @get_stressmodel
-    def get_block_response(self, name, parameters=None, dt=None, **kwargs):
+    def get_block_response(self, name, parameters=None, add_0=False, **kwargs):
         """Method to obtain the block response for a stressmodel.
 
         The optimal parameters are used when available, initial otherwise.
@@ -1308,6 +1315,8 @@ class Model:
         parameters: list or numpy.ndarray
             iterable with the parameters. If none, the optimal parameters are
             used when available, initial otherwise.
+        add_0: bool, optional
+            Adds 0 at t=0 at the start of the response, defaults to False.
 
         Returns
         -------
@@ -1316,11 +1325,24 @@ class Model:
             frequency that is present in the model.settings.
 
         """
-        return self.get_response(block_or_step="block", name=name, dt=dt,
-                                 parameters=parameters, **kwargs)
+        if self.stressmodels[name].rfunc is None:
+            raise TypeError("Stressmodel {} has no rfunc".format(name))
+
+        if parameters is None:
+            parameters = self.get_parameters(name)
+        dt = get_dt(self.settings["freq"])
+        b = self.stressmodels[name].rfunc.block(parameters, dt, **kwargs)
+        if add_0:
+            b = np.insert(b, 0, 0.0)
+            t = np.linspace(0, b.size * dt, b.size)
+        else:
+            t = np.linspace(dt, b.size * dt, b.size)
+        b = pd.Series(b, index=t, name=name)
+        b.index.name = "Time [days]"
+        return b
 
     @get_stressmodel
-    def get_step_response(self, name, parameters=None, dt=None, **kwargs):
+    def get_step_response(self, name, parameters=None, add_0=False, **kwargs):
         """Method to obtain the step response for a stressmodel.
 
         The optimal parameters are used when available, initial otherwise.
@@ -1332,6 +1354,8 @@ class Model:
         parameters: list or numpy.ndarray
             iterable with the parameters. If none, the optimal parameters are
             used when available, initial otherwise.
+        add_0: bool, optional
+            Adds 0 at t=0 at the start of the response, defaults to False.
 
         Returns
         -------
@@ -1340,8 +1364,21 @@ class Model:
             frequency that is present in the model.settings.
 
         """
-        return self.get_response(block_or_step="step", name=name, dt=dt,
-                                 parameters=parameters, **kwargs)
+        if self.stressmodels[name].rfunc is None:
+            raise TypeError("Stressmodel {} has no rfunc".format(name))
+
+        if parameters is None:
+            parameters = self.get_parameters(name)
+        dt = get_dt(self.settings["freq"])
+        s = self.stressmodels[name].rfunc.step(parameters, dt, **kwargs)
+        if add_0:
+            s = np.insert(s, 0, 0.0)
+            t = np.linspace(0, s.size * dt, s.size)
+        else:
+            t = np.linspace(dt, s.size * dt, s.size)
+        s = pd.Series(s, index=t, name=name)
+        s.index.name = "Time [days]"
+        return s
 
     @get_stressmodel
     def get_stress(self, name, tmin=None, tmax=None, freq=None,

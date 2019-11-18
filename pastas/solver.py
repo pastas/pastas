@@ -401,13 +401,13 @@ class LmfitSolve(BaseSolver):
                                      args=(noise, weights, callback), **kwargs)
 
         # Set all parameter attributes
+        pcov = None
+        pcor = None
+
         if hasattr(self.result, "covar"):
             if self.result.covar is not None:
                 pcov = self.result.covar
                 pcor = self.get_correlations(pcov)
-            else:
-                pcov = None
-                pcor = None
 
         names = self.result.var_names
         self.pcov = DataFrame(pcov, index=names, columns=names)
