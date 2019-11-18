@@ -45,14 +45,16 @@ class BaseSolver:
     misfit
     get_correlations
 
-    \b
     """
 
-    def __init__(self, ml):
+    def __init__(self, ml, pcov=None, nfev=None, **kwargs):
         self.ml = ml
-        self.pcor = None  # Correlation between parameters
-        self.pcov = None  # Covariances of the parameters
-        self.nfev = None  # number of function evaluations
+        self.pcov = pcov  # Covariances of the parameters
+        if pcov is None:
+            self.pcor = None  # Correlation between parameters
+        else:
+            self.pcor = self.get_correlations(pcov)
+        self.nfev = nfev  # number of function evaluations
         self.result = None  # Object returned by the optimization method
 
     def misfit(self, parameters, noise, weights=None, callback=None):
@@ -147,9 +149,8 @@ class BaseSolver:
     def ci_step_response(self, name, n=None, alpha=0.05, **kwargs):
         dt = self.ml.get_block_response(name=name).index.values
         return self.get_confidence_interval(func=self.ml.get_step_response,
-                                            n=n,
-                                            alpha=alpha, name=name, dt=dt,
-                                            **kwargs)
+                                            n=n, alpha=alpha, name=name,
+                                            dt=dt, **kwargs)
 
     def ci_contribution(self, name, n=None, alpha=0.05, **kwargs):
         return self.get_confidence_interval(func=self.ml.get_contribution, n=n,
@@ -235,27 +236,36 @@ class BaseSolver:
 
         Parameters
         ----------
-        pcov: np.ndarray
-            n x n numpy array with the covariances.
+        pcov: pandas.DataFrame
+            n x n Pandas DataFrame with the covariances.
 
         Returns
         -------
-        pcor: np.ndarray
-            Numpy array with the correlations
+        pcor: pandas.DataFrame
+            n x n Pandas DataFrame with the correlations.
 
         """
-        pcor = np.zeros_like(pcov)
+        pcor = pcov.loc[pcov.index, pcov.index].copy()
 
-        for i in range(pcov.shape[0]):
-            for j in range(pcov.shape[1]):
-                pcor[i, j] = pcov[i, j] / np.sqrt(pcov[i, i] * pcov[j, j])
+        for i in pcor.index:
+            for j in pcor.columns:
+                pcor.loc[i, j] = pcov.loc[i, j] / \
+                                 np.sqrt(pcov.loc[i, i] * pcov.loc[j, j])
         return pcor
+
+    def to_dict(self):
+        data = {
+            "name": self._name,
+            "pcov": self.pcov,
+            "nfev": self.nfev
+        }
+        return data
 
 
 class LeastSquares(BaseSolver):
     _name = "LeastSquares"
 
-    def __init__(self, ml):
+    def __init__(self, ml, pcov=None, nfev=None, **kwargs):
         """Solver based on Scipy's least_squares method [1]_.
 
         Notes
@@ -275,7 +285,7 @@ class LeastSquares(BaseSolver):
         .. [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
 
         """
-        BaseSolver.__init__(self, ml=ml)
+        BaseSolver.__init__(self, ml=ml, pcov=pcov, nfev=nfev, **kwargs)
 
     def solve(self, noise=True, weights=None, callback=None, **kwargs):
         self.vary = self.ml.parameters.vary.values.astype(bool)
@@ -290,20 +300,17 @@ class LeastSquares(BaseSolver):
                                     x0=parameters.initial.values,
                                     args=(noise, weights, callback), **kwargs)
 
-        pcov = self.get_covariances(self.result.jac, self.result.cost)
-        pcor = self.get_correlations(pcov)
-
-        self.pcov = DataFrame(pcov, index=parameters.index,
-                              columns=parameters.index)
-        self.pcor = DataFrame(pcor, index=parameters.index,
-                              columns=parameters.index)
+        self.pcov = DataFrame(self.get_covariances(self.result.jac,
+                                                   self.result.cost),
+                              index=parameters.index, columns=parameters.index)
+        self.pcor = self.get_correlations(self.pcov)
         self.nfev = self.result.nfev
 
         # Prepare return values
         success = self.result.success
         optimal = self.initial
         optimal[self.vary] = self.result.x
-        stderr = np.zeros(len(optimal))
+        stderr = np.zeros(len(optimal)) * np.nan
         stderr[self.vary] = np.sqrt(np.diag(self.pcov))
 
         return success, optimal, stderr
@@ -319,7 +326,10 @@ class LeastSquares(BaseSolver):
 
         Parameters
         ----------
-        jacobian
+        jacobian: np.ndarray
+        cost: float
+        absolute_sigma: bool
+            Default is False
 
         Returns
         -------
@@ -365,7 +375,7 @@ class LeastSquares(BaseSolver):
 class LmfitSolve(BaseSolver):
     _name = "LmfitSolve"
 
-    def __init__(self, ml):
+    def __init__(self, ml, pcov=None, nfev=None, **kwargs):
         """Solving the model using the LmFit solver [LM]_.
 
          This is basically a wrapper around the scipy solvers, adding some
@@ -381,7 +391,7 @@ class LmfitSolve(BaseSolver):
         except ImportError:
             msg = "lmfit not installed. Please install lmfit first."
             raise ImportError(msg)
-        BaseSolver.__init__(self, ml=ml)
+        BaseSolver.__init__(self, ml=ml, pcov=pcov, nfev=nfev, **kwargs)
 
     def solve(self, noise=True, weights=None, callback=None, **kwargs):
 
@@ -402,16 +412,13 @@ class LmfitSolve(BaseSolver):
 
         # Set all parameter attributes
         pcov = None
-        pcor = None
-
         if hasattr(self.result, "covar"):
             if self.result.covar is not None:
                 pcov = self.result.covar
-                pcor = self.get_correlations(pcov)
 
         names = self.result.var_names
         self.pcov = DataFrame(pcov, index=names, columns=names)
-        self.pcor = DataFrame(pcor, index=names, columns=names)
+        self.pcor = self.get_correlations(self.pcov)
 
         # Set all optimization attributes
         self.nfev = self.result.nfev

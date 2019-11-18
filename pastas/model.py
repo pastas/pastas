@@ -1356,7 +1356,7 @@ class Model:
             frequency that is present in the model.settings.
 
         """
-        return self.get_response(block_or_step="block", name=name, dt=dt,
+        return self.get_response(block_or_step="step", name=name, dt=dt,
                                  parameters=parameters, add_0=add_0, **kwargs)
 
     @get_stressmodel
@@ -1614,6 +1614,10 @@ class Model:
         # Noisemodel
         if self.noisemodel:
             data["noisemodel"] = self.noisemodel.to_dict()
+
+        # Solver object
+        if self.fit:
+            data["fit"] = self.fit.to_dict()
 
         # Parameters
         data["parameters"] = self.parameters
