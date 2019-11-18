@@ -1459,12 +1459,9 @@ class Model:
         if output != "full":
             raise NotImplementedError
 
-        if self.fit is None:
-            return 'Model is not optimized or read from file. Solve first.'
-
         model = {
             "nfev": self.fit.nfev,
-            "nobs": self.oseries_calib.index.size,
+            "nobs": self.observations().index.size,
             "noise": str(self.settings["noise"]),
             "tmin": str(self.settings["tmin"]),
             "tmax": str(self.settings["tmax"]),
@@ -1507,20 +1504,17 @@ class Model:
         )
 
         basic = str()
-        for item, item2 in zip(model.items(), fit.items()):
-            val1, val2 = item
-            val3, val4 = item2
+        for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
             w = max(width - 38, 0)
             val4 = string.format(val4, fill=' ', align='>', width=w)
-            basic = basic + (
-                "{:<8} {:<22} {:<5} {}\n".format(val1, val2, val3, val4))
+            basic = basic + "{:<8} {:<22} {:<5} {}\n".format(val1, val2,
+                                                             val3, val4)
 
         # Create the parameters block
         parameters = "\nParameters ({n_param} were optimized)\n{line}\n" \
                      "{parameters}".format(
             n_param=parameters.vary.sum(),
-            line=string.format(
-                "", fill='=', align='>', width=width),
+            line=string.format("", fill='=', align='>', width=width),
             parameters=parameters)
 
         if output == "full":
@@ -1534,11 +1528,10 @@ class Model:
 
             cor = pd.DataFrame(data=cor.values(), index=cor.keys(),
                                columns=["rho"])
-            correlations = "\n\nParameter correlations |rho| > 0.5\n{" \
-                           "line}\n{correlation}".format(
-                line=string.format(
-                    "", fill='=', align='>', width=width),
-                correlation=cor.to_string(header=False))
+            correlations = "\n\nParameter correlations |rho| > 0.5\n{}" \
+                           "\n{}".format(string.format("", fill='=', align='>',
+                                                       width=width),
+                                         cor.to_string(header=False))
 
         report = "{header}{basic}{parameters}{correlations}".format(
             header=header, basic=basic, parameters=parameters,
