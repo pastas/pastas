@@ -703,9 +703,9 @@ class Model:
         # Store the solve instance
         if solver is None:
             if self.fit is None:
-                self.fit = LeastSquares(model=self)
+                self.fit = LeastSquares(ml=self)
         elif not issubclass(solver, self.fit.__class__):
-            self.fit = solver(model=self)
+            self.fit = solver(ml=self)
 
         self.settings["solver"] = self.fit._name
 
@@ -1260,8 +1260,54 @@ class Model:
         sim_org = ml.simulate(tmin=tmin, tmax=tmax)
         return sim - sim_org
 
+    def get_response(self, block_or_step, name, parameters=None, dt=None,
+                     add_0=False, **kwargs):
+        """Internal method to compute the block and step response.
+
+        Parameters
+        ----------
+        block_or_step: str
+            String with "step" or "block"
+        name: str
+            string with the name of the stressmodel
+        parameters, ndarray, optional
+            array with the parameters
+        dt: float, optional
+            timestep for the response function.
+        kwargs
+
+        Returns
+        -------
+
+        """
+        if not hasattr(self.stressmodels[name], "rfunc"):
+            raise TypeError("Stressmodel {} has no rfunc".format(name))
+        else:
+            block_or_step = getattr(self.stressmodels[name].rfunc,
+                                    block_or_step)
+
+        if parameters is None:
+            parameters = self.get_parameters(name)
+
+        if dt is None:
+            dt = get_dt(self.settings["freq"])
+        response = block_or_step(parameters, dt, **kwargs)
+
+        if add_0:
+            response = np.insert(response, 0, 0.0)
+
+        if isinstance(dt, np.ndarray):
+            t = dt
+        else:
+            t = np.linspace(dt, response.size * dt, response.size)
+        response = pd.Series(response, index=t, name=name)
+        response.index.name = "Time [days]"
+
+        return response
+
     @get_stressmodel
-    def get_block_response(self, name, parameters=None, add_0=False, **kwargs):
+    def get_block_response(self, name, parameters=None, add_0=False, dt=None,
+                           **kwargs):
         """Method to obtain the block response for a stressmodel.
 
         The optimal parameters are used when available, initial otherwise.
@@ -1283,24 +1329,12 @@ class Model:
             frequency that is present in the model.settings.
 
         """
-        if self.stressmodels[name].rfunc is None:
-            raise TypeError("Stressmodel {} has no rfunc".format(name))
-
-        if parameters is None:
-            parameters = self.get_parameters(name)
-        dt = get_dt(self.settings["freq"])
-        b = self.stressmodels[name].rfunc.block(parameters, dt, **kwargs)
-        if add_0:
-            b = np.insert(b, 0, 0.0)
-            t = np.linspace(0, b.size * dt, b.size)
-        else:
-            t = np.linspace(dt, b.size * dt, b.size)
-        b = pd.Series(b, index=t, name=name)
-        b.index.name = "Time [days]"
-        return b
+        return self.get_response(block_or_step="block", name=name, dt=dt,
+                                 parameters=parameters, add_0=add_0, **kwargs)
 
     @get_stressmodel
-    def get_step_response(self, name, parameters=None, add_0=False, **kwargs):
+    def get_step_response(self, name, parameters=None, add_0=False, dt=None,
+                          **kwargs):
         """Method to obtain the step response for a stressmodel.
 
         The optimal parameters are used when available, initial otherwise.
@@ -1322,26 +1356,12 @@ class Model:
             frequency that is present in the model.settings.
 
         """
-        if self.stressmodels[name].rfunc is None:
-            raise TypeError("Stressmodel {} has no rfunc".format(name))
-
-        if parameters is None:
-            parameters = self.get_parameters(name)
-        dt = get_dt(self.settings["freq"])
-        s = self.stressmodels[name].rfunc.step(parameters, dt, **kwargs)
-        if add_0:
-            s = np.insert(s, 0, 0.0)
-            t = np.linspace(0, s.size * dt, s.size)
-        else:
-            t = np.linspace(dt, s.size * dt, s.size)
-        s = pd.Series(s, index=t, name=name)
-        s.index.name = "Time [days]"
-        return s
+        return self.get_response(block_or_step="step", name=name, dt=dt,
+                                 parameters=parameters, add_0=add_0, **kwargs)
 
     @get_stressmodel
-    def get_stress(self, name, tmin=None, tmax=None, freq=None,
-                   warmup=None, istress=None, return_warmup=False,
-                   parameters=None):
+    def get_stress(self, name, tmin=None, tmax=None, freq=None, warmup=None,
+                   istress=None, return_warmup=False, parameters=None):
         """Method to obtain the stress(es) from the stressmodel.
 
         Parameters
@@ -1439,12 +1459,9 @@ class Model:
         if output != "full":
             raise NotImplementedError
 
-        if self.fit is None:
-            return 'Model is not optimized or read from file. Solve first.'
-
         model = {
             "nfev": self.fit.nfev,
-            "nobs": self.oseries_calib.index.size,
+            "nobs": self.observations().index.size,
             "noise": str(self.settings["noise"]),
             "tmin": str(self.settings["tmin"]),
             "tmax": str(self.settings["tmax"]),
@@ -1487,20 +1504,17 @@ class Model:
         )
 
         basic = str()
-        for item, item2 in zip(model.items(), fit.items()):
-            val1, val2 = item
-            val3, val4 = item2
+        for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
             w = max(width - 38, 0)
             val4 = string.format(val4, fill=' ', align='>', width=w)
-            basic = basic + (
-                "{:<8} {:<22} {:<5} {}\n".format(val1, val2, val3, val4))
+            basic = basic + "{:<8} {:<22} {:<5} {}\n".format(val1, val2,
+                                                             val3, val4)
 
         # Create the parameters block
         parameters = "\nParameters ({n_param} were optimized)\n{line}\n" \
                      "{parameters}".format(
             n_param=parameters.vary.sum(),
-            line=string.format(
-                "", fill='=', align='>', width=width),
+            line=string.format("", fill='=', align='>', width=width),
             parameters=parameters)
 
         if output == "full":
@@ -1514,11 +1528,10 @@ class Model:
 
             cor = pd.DataFrame(data=cor.values(), index=cor.keys(),
                                columns=["rho"])
-            correlations = "\n\nParameter correlations |rho| > 0.5\n{" \
-                           "line}\n{correlation}".format(
-                line=string.format(
-                    "", fill='=', align='>', width=width),
-                correlation=cor.to_string(header=False))
+            correlations = "\n\nParameter correlations |rho| > 0.5\n{}" \
+                           "\n{}".format(string.format("", fill='=', align='>',
+                                                       width=width),
+                                         cor.to_string(header=False))
 
         report = "{header}{basic}{parameters}{correlations}".format(
             header=header, basic=basic, parameters=parameters,
@@ -1594,6 +1607,10 @@ class Model:
         # Noisemodel
         if self.noisemodel:
             data["noisemodel"] = self.noisemodel.to_dict()
+
+        # Solver object
+        if self.fit:
+            data["fit"] = self.fit.to_dict()
 
         # Parameters
         data["parameters"] = self.parameters

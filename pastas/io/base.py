@@ -49,7 +49,7 @@ def load(fname, **kwargs):
         ml = load_model(data)
         kind = "Model"
 
-    logger.info("Pastas {} from file {} succesfully loaded. This file was "
+    logger.info("Pastas {} from file {} successfully loaded. This file was "
                 "created with was Pastas{}. Your current version of Pastas "
                 "is: {}".format(kind, fname,
                                 data["file_info"]["pastas_version"],
@@ -174,6 +174,12 @@ def load_model(data):
     if "noisemodel" in data.keys():
         n = getattr(ps.noisemodels, data["noisemodel"]["type"])()
         ml.add_noisemodel(n)
+
+    # Add fit object to the model
+    if "fit" in data.keys():
+        fit = getattr(ps.solver, data["fit"]["name"])
+        data["fit"].pop("name")
+        ml.fit = fit(ml=ml, **data["fit"])
 
     # Add parameters, use update to maintain correct order
     ml.parameters = ml.get_init_parameters(noise=ml.settings["noise"])
