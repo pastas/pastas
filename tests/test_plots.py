@@ -1,4 +1,4 @@
-from .test_model import test_add_stressmodel
+from test_model import test_add_stressmodel
 from pastas.plots import TrackSolve
 
 def test_plot():
