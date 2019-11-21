@@ -104,10 +104,10 @@ class NoiseModel(NoiseModelBase):
 
     .. math::
         v(t1) = r(t1) - r(t0) * exp(- (t1 - t0) / alpha)
-    
-    Note that in the referenced paper, alpha is defined as the inverse of 
+
+    Note that in the referenced paper, alpha is defined as the inverse of
     alpha used in Pastas. The unit of the alpha parameter is always in days.
-    
+
     Examples
     --------
     It can happen that the noisemodel is used during model calibration

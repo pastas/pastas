@@ -227,6 +227,16 @@ class StressModelBase:
         else:
             return len(self.stress)
 
+    def get_block(self, p, dt, tmin, tmax):
+        """Internal method to get the block-response from the respnse function"""
+        if tmin is not None and tmax is not None:
+            day = pd.to_timedelta(1, 'd')
+            maxtmax = (pd.Timestamp(tmax) - pd.Timestamp(tmin)) / day
+        else:
+            maxtmax = None
+        b = self.rfunc.block(p, dt, maxtmax=maxtmax)
+        return b
+
 
 class StressModel(StressModelBase):
     """Time series model consisting of the convolution of one stress with one
@@ -261,7 +271,8 @@ class StressModel(StressModelBase):
     --------
     >>> import pastas as ps
     >>> import pandas as pd
-    >>> sm = ps.StressModel(stress=pd.Series(), rfunc=ps.Gamma, name="Prec",settings="prec")
+    >>> sm = ps.StressModel(stress=pd.Series(), rfunc=ps.Gamma, name="Prec", \
+                            settings="prec")
 
     See Also
     --------
@@ -304,6 +315,7 @@ class StressModel(StressModelBase):
         tmin: str, optional
         tmax: str, optional
         freq: str, optional
+        dt: int, optional
 
         Returns
         -------
@@ -312,7 +324,7 @@ class StressModel(StressModelBase):
 
         """
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
-        b = self.rfunc.block(p, dt)
+        b = self.get_block(p, dt, tmin, tmax)
         stress = self.stress[0].series
         npoints = stress.index.size
         h = pd.Series(data=fftconvolve(stress, b, 'full')[:npoints],
@@ -437,6 +449,8 @@ class StressModel2(StressModelBase):
         tmin: str, optional
         tmax: str, optional
         freq: str, optional
+        dt: int, optional
+        istress: int, optional
 
         Returns
         -------
@@ -445,7 +459,7 @@ class StressModel2(StressModelBase):
 
         """
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
-        b = self.rfunc.block(p[:-1], dt)
+        b = self.get_block(p[:-1], dt, tmin, tmax)
         stress = self.get_stress(p=p, istress=istress)
         npoints = stress.index.size
         h = pd.Series(data=fftconvolve(stress, b, 'full')[:npoints],
@@ -533,7 +547,7 @@ class StepModel(StressModelBase):
         h = pd.Series(0, tindex, name=self.name)
         h.loc[h.index > tstart] = 1
 
-        b = self.rfunc.block(p[:-1], dt)
+        b = self.get_block(p[:-1], dt, tmin, tmax)
         npoints = h.index.size
         h = pd.Series(data=fftconvolve(h, b, 'full')[:npoints],
                       index=h.index, name=self.name, fastpath=True)
@@ -736,7 +750,7 @@ class WellModel(StressModelBase):
         for stress, r in zip(stresses, distances):
             npoints = stress.index.size
             p_with_r = np.concatenate([p, np.asarray([r])])
-            b = self.rfunc.block(p_with_r, dt)
+            b = self.get_block(p_with_r, dt, tmin, tmax)
             c = fftconvolve(stress, b, 'full')[:npoints]
             h = h.add(pd.Series(c, index=stress.index,
                                 fastpath=True), fill_value=0.0)
@@ -1039,7 +1053,7 @@ class RechargeModel(StressModelBase):
         """
         if p is None:
             p = self.parameters.initial.values
-        b = self.rfunc.block(p[:-self.recharge.nparam], dt)
+        b = self.get_block(p[:-self.recharge.nparam], dt, tmin, tmax)
         stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq).values
         return pd.Series(data=fftconvolve(stress, b, 'full')[:stress.size],
                          index=self.prec.series.index, name=self.name,

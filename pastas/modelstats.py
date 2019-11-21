@@ -35,7 +35,7 @@ class Statistics:
     # Save all statistics that can be calculated.
     ops = {'evp': 'Explained variance percentage',
            'rmse': 'Root mean squared error',
-           'rmsi': 'Root mean squared noise',
+           'rmsn': 'Root mean squared noise',
            'sse': 'Sum of squares of the error',
            'avg_dev': 'Average Deviation',
            'rsq': 'Pearson R^2',
@@ -91,7 +91,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         Notes
         -----
-        .. math:: rmsi = \\sqrt{\\frac{\\sum(noise^2)}{N}}
+        .. math:: rmsn = \\sqrt{\\frac{\\sum(noise^2)}{N}}
 
         where N is the number of noise.
 
@@ -315,8 +315,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
         -------
 
         """
-        if not stats:
-            stats = ['evp', 'rmse', 'rmsi', 'rsq']
+        if stats is None:
+            stats = ['evp', 'rmse', 'rmsn', 'rsq']
 
         data = DataFrame(index=[0], columns=stats)
         for k in stats:

@@ -49,7 +49,7 @@ class Plot:
             kwargs["figsize"] = [cols / 2 * norm_size[0],
                                  rows / 5 * norm_size[1]]
 
-        fig, ax = plt.subplots(rows, cols, **kwargs)
+        _, ax = plt.subplots(rows, cols, **kwargs)
 
         if hasattr(ax, "flatten"):
             ax = ax.flatten()

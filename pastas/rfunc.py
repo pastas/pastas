@@ -79,7 +79,7 @@ class RfuncBase:
         """
         pass
 
-    def step(self, p, dt=1, cutoff=None):
+    def step(self, p, dt=1, cutoff=None, maxtmax=None):
         """Method to return the step function.
 
         Parameters
@@ -90,6 +90,8 @@ class RfuncBase:
             timestep as a multiple of of day.
         cutoff: float, optional
             float between 0 and 1.
+        maxtmax: int, optional
+            Maximum timestep to compute the block response for.
 
         Returns
         -------
@@ -98,7 +100,7 @@ class RfuncBase:
         """
         pass
 
-    def block(self, p, dt=1, cutoff=None):
+    def block(self, p, dt=1, cutoff=None, maxtmax=None):
         """Method to return the block funtion.
 
         Parameters
@@ -109,16 +111,18 @@ class RfuncBase:
             timestep as a multiple of of day.
         cutoff: float, optional
             float between 0 and 1.
+        maxtmax: int, optional
+            Maximum timestep to compute the block response for.
 
         Returns
         -------
         s: numpy.array
             Array with the block response.
         """
-        s = self.step(p, dt, cutoff)
+        s = self.step(p, dt, cutoff, maxtmax)
         return np.append(s[0], np.subtract(s[1:], s[:-1]))
 
-    def get_t(self, p, dt, cutoff):
+    def get_t(self, p, dt, cutoff, maxtmax=None):
         """Internal method to detemine the times at which to evaluate the step-
         response, from t=0
         
@@ -128,8 +132,12 @@ class RfuncBase:
             numpy array with the parameters.
         dt: float
             timestep as a multiple of of day.
-        cutoff: float, optional
-            float between 0 and 1.
+        cutoff: float
+            float between 0 and 1, that determines which part of the step-
+            response is taken into account.
+        maxtmax: float, optional
+            The maximum time of the response, usually set to the simulation
+            length.
 
         Returns
         -------
@@ -140,8 +148,12 @@ class RfuncBase:
         if isinstance(dt, np.ndarray):
             return dt
         else:
-            tmax = max(self.get_tmax(p, cutoff), 3 * dt)
+            tmax = self.get_tmax(p, cutoff)
+            if maxtmax is not None:
+                tmax = min(tmax, maxtmax)
+            tmax = max(tmax, 3 * dt)
             return np.arange(dt, tmax, dt)
+
 
 class Gamma(RfuncBase):
     """Gamma response function with 3 parameters A, a, and n.
@@ -197,8 +209,8 @@ class Gamma(RfuncBase):
     def gain(self, p):
         return p[0]
 
-    def step(self, p, dt=1, cutoff=None):
-        t = self.get_t(p, dt, cutoff)
+    def step(self, p, dt=1, cutoff=None, maxtmax=None):
+        t = self.get_t(p, dt, cutoff, maxtmax)
         s = p[0] * gammainc(p[1], t / p[2])
         return s
 
@@ -254,8 +266,8 @@ class Exponential(RfuncBase):
     def gain(self, p):
         return p[0]
 
-    def step(self, p, dt=1, cutoff=None):
-        t = self.get_t(p, dt, cutoff)
+    def step(self, p, dt=1, cutoff=None, maxtmax=None):
+        t = self.get_t(p, dt, cutoff, maxtmax)
         s = p[0] * (1.0 - np.exp(-t / p[1]))
         return s
 
@@ -335,11 +347,11 @@ class Hantush(RfuncBase):
     def gain(self, p):
         return p[0]
 
-    def step(self, p, dt=1, cutoff=None):
+    def step(self, p, dt=1, cutoff=None, maxtmax=None):
         rho = p[1]
         cS = p[2]
         k0rho = k0(rho)
-        t = self.get_t(p, dt, cutoff)
+        t = self.get_t(p, dt, cutoff, maxtmax)
         tau = t / cS
         tau1 = tau[tau < rho / 2]
         tau2 = tau[tau >= rho / 2]
@@ -438,12 +450,12 @@ class HantushWellModel(RfuncBase):
         r = 1 if len(p) == 3 else p[3]
         return p[0] * 2 * k0(r / p[1])
 
-    def step(self, p, dt=1, cutoff=None):
+    def step(self, p, dt=1, cutoff=None, maxtmax=None):
         r = 1 if len(p) == 3 else p[3]
         rho = r / p[1]
         cS = p[2]
         k0rho = k0(rho)
-        t = self.get_t(p, dt, cutoff)
+        t = self.get_t(p, dt, cutoff, maxtmax)
         tau = t / cS
         tau1 = tau[tau < rho / 2]
         tau2 = tau[tau >= rho / 2]
@@ -497,8 +509,8 @@ class Polder(RfuncBase):
         a = p[1]
         b = erfcinv(2 * cutoff)
         c = -p[1] / p[2]
-        sqrttmax = (-b + np.sqrt(b**2 - 4 * a * c) / (2 * a))
-        return sqrttmax**2
+        sqrttmax = (-b + np.sqrt(b ** 2 - 4 * a * c) / (2 * a))
+        return sqrttmax ** 2
 
     def gain(self, p):
         # the steady state solution of Mazure
@@ -507,8 +519,8 @@ class Polder(RfuncBase):
             g = -g
         return g
 
-    def step(self, p, dt=1, cutoff=None):
-        t = self.get_t(p, dt, cutoff)
+    def step(self, p, dt=1, cutoff=None, maxtmax=None):
+        t = self.get_t(p, dt, cutoff, maxtmax)
         s = p[0] * self.polder_function(p[1], p[2] * np.sqrt(t))
         if not self.up:
             s = -s
@@ -519,6 +531,7 @@ class Polder(RfuncBase):
         s = 0.5 * np.exp(2 * x) * erfc(x / y + y) + \
             0.5 * np.exp(-2 * x) * erfc(x / y - y)
         return s
+
 
 class One(RfuncBase):
     """Dummy class for Constant. Returns 1
@@ -645,10 +658,10 @@ class FourParam(RfuncBase):
     def gain(self, p):
         return p[0]
 
-    def step(self, p, dt=1, cutoff=None):
+    def step(self, p, dt=1, cutoff=None, maxtmax=None):
 
         if self.quad:
-            t = self.get_t(p, dt, cutoff)
+            t = self.get_t(p, dt, cutoff, maxtmax)
             s = np.zeros_like(t)
             s[0] = quad(self.function, 0, dt, args=p)[0]
             for i in range(1, len(t)):
@@ -687,7 +700,7 @@ class FourParam(RfuncBase):
                 s = s * (p[0] / quad(self.function, 0, np.inf, args=p)[0])
                 return s[int(dt / step - 1)::int(dt / step)]
             else:
-                t = self.get_t(p, dt, cutoff)
+                t = self.get_t(p, dt, cutoff, maxtmax)
                 s = np.zeros_like(t)
 
                 # for interval [0,dt] Gaussian quadrate:
@@ -797,8 +810,8 @@ class DoubleExponential(RfuncBase):
     def gain(self, p):
         return p[0]
 
-    def step(self, p, dt=1, cutoff=0.999):
-        t = self.get_t(p, dt, cutoff)
+    def step(self, p, dt=1, cutoff=None, maxtmax=None):
+        t = self.get_t(p, dt, cutoff, maxtmax)
         s = p[0] * (1 - ((1 - p[1]) * np.exp(-t / p[2]) +
                          p[1] * np.exp(-t / p[3])))
         return s
@@ -851,7 +864,7 @@ class Edelman(RfuncBase):
     def gain(self, p):
         return 1.
 
-    def step(self, p, dt=1, cutoff=None):
-        t = self.get_t(p, dt, cutoff)
+    def step(self, p, dt=1, cutoff=None, maxtmax=None):
+        t = self.get_t(p, dt, cutoff, maxtmax)
         s = erfc(1 / (p[0] * np.sqrt(t)))
         return s
