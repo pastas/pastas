@@ -150,7 +150,7 @@ def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
 
 def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
         output='mean', min_n_meas=16, min_n_years=8, year_offset='a-mar'):
-    """Calculate the 'Gemiddelde Laagste Grondwaterstand' (Average Low 
+    """Calculate the 'Gemiddelde Laagste Grondwaterstand' (Average Low
     Groundwater Level)
     
     Classic method resampling the series to every 14th and 28th of
@@ -206,7 +206,7 @@ def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
 
 def gvg(series, tmin=None, tmax=None, fill_method='linear', limit=8,
         output='mean', min_n_meas=2, min_n_years=8, year_offset='a'):
-    """Calculate the 'Gemiddelde Voorjaars Grondwaterstand' (Average Spring 
+    """Calculate the 'Gemiddelde Voorjaars Grondwaterstand' (Average Spring
     Groundwater Level)
     
     Classic method resampling the series to every 14th and 28th of
