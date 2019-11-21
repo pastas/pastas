@@ -18,6 +18,8 @@ def read_dino(fname, variable='Stand_cm_tov_NAP', factor=0.01):
 
     Parameters
     ----------
+    variable
+    factor
     fname: str
         Filename and path to a Dino file.
 

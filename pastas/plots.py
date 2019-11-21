@@ -43,6 +43,12 @@ class Plotting:
             True to plot the observed time series.
         simulation: bool, optional
             True to plot the simulated time series.
+        ax: Matplotlib.axes instance, optional
+            Axes to add the plot to.
+        figsize: tuple, optional
+            Tuple with the height and width of the figure in inches.
+        legend: bool, optional
+            Boolean to determine to show the legend (True) or not (False).
 
         Returns
         -------
@@ -89,10 +95,9 @@ class Plotting:
         split: bool, optional
             Split the stresses in multiple stresses when possible. Default is
             True.
-        asjust_height: bool, optional
+        adjust_height: bool, optional
             Adjust the height of the graphs, so that the vertical scale of all
             the graphs on the left is equal
-
 
         Returns
         -------
@@ -141,7 +146,7 @@ class Plotting:
             o_nu.plot(ax=ax1, linestyle='', marker='.', color='0.5', label='',
                       x_compat=True)
         o.plot(ax=ax1, linestyle='', marker='.', color='k', x_compat=True)
-        # add evp to sinulation
+        # add evp to simulation
         sim.name = '{} ($R^2$ = {:0.1f}%)'.format(
             sim.name, self.ml.stats.evp(tmin=tmin, tmax=tmax))
         sim.plot(ax=ax1, x_compat=True)
@@ -171,10 +176,8 @@ class Plotting:
             # get the step-response
             step = self.ml.get_step_response(sm_name, add_0=True)
             if i == 0:
-                sharex = None
                 rmax = step.index.max()
             else:
-                sharex = axb
                 rmax = max(rmax, step.index.max())
             step_row = i + 2
 
@@ -257,6 +260,10 @@ class Plotting:
             tuple of size 2 to determine the figure size in inches.
         name: str, optional
             Name to give the simulated time series in the legend.
+        return_warmup: bool, optional
+            Include the warmup period or not.
+        min_ylim_diff: float, optional
+            Float with the difference in the ylimits.
         **kwargs: dict, optional
             Optional arguments, passed on to the plt.subplots method.
 
@@ -374,6 +381,8 @@ class Plotting:
         ----------
         tmin
         tmax
+        figsize: tuple, optional
+            Tuple with the height and width of the figure in inches.
 
         Returns
         -------
@@ -409,7 +418,7 @@ class Plotting:
         ax3 = plt.subplot2grid(shape, (1, 2), colspan=1, rowspan=1)
         probplot(res, plot=ax3, dist="norm", rvalue=True)
 
-        c = ax.get_lines()[0]._color
+        c = ax.get_lines()[0].get_color()
         ax3.get_lines()[0].set_color(c)
 
         fig.tight_layout(pad=0.0)
@@ -423,6 +432,10 @@ class Plotting:
         ----------
         stressmodels: list, optional
             List with the stressmodels to plot the block response for.
+        ax: Matplotlib.axes instance, optional
+            Axes to add the plot to.
+        figsize: tuple, optional
+            Tuple with the height and width of the figure in inches.
 
         Returns
         -------
@@ -499,6 +512,12 @@ class Plotting:
         tmax
         cols: int
             number of columns used for plotting.
+        split: bool, optional
+            Split the stress
+        sharex: bool, optional
+            Sharex the x-axis.
+        figsize: tuple, optional
+            Tuple with the height and width of the figure in inches.
 
         Returns
         -------
@@ -544,7 +563,7 @@ class Plotting:
     @model_tmin_tmax
     def contributions_pie(self, tmin=None, tmax=None, ax=None,
                           figsize=None, split=True, partition='std',
-                          wedgeprops=dict(edgecolor='w'), startangle=90,
+                          wedgeprops={'edgecolor': 'w'}, startangle=90,
                           autopct='%1.1f%%', **kwargs):
         """Make a pie chart of the contributions. This plot is based on the
         TNO Groundwatertoolbox.
@@ -560,6 +579,10 @@ class Plotting:
             tuple of size 2 to determine the figure size in inches.
         split: bool, optional
             Split the stresses in multiple stresses when possible.
+        partition
+        wedgeprops
+        startangle
+        autopct
         kwargs: dict, optional
             The keyword arguments are passed on to plt.pie.
 
@@ -580,7 +603,7 @@ class Plotting:
             frac = [contrib.std() for contrib in contribs]
         else:
             msg = 'Unknown value for partition: {}'.format(partition)
-            raise(Exception(msg))
+            raise (Exception(msg))
 
         # make sure the unexplained part is 100 - evp %
         evp = self.ml.stats.evp(tmin=tmin, tmax=tmax) / 100
@@ -616,13 +639,15 @@ class Plotting:
         axes: list of axes objects
 
         """
+
         # %% Contribution per stress on model results plot
         def custom_sort(t):
             """Sort by mean contribution"""
             return t[1].mean()
 
         # Create standard results plot
-        axes = self.ml.plots.results(figsize=figsize, **kwargs)
+        axes = self.ml.plots.results(tmin=tmin, tmax=tmax, figsize=figsize,
+                                     **kwargs)
 
         nsm = len(self.ml.stressmodels)
 
@@ -814,8 +839,7 @@ class TrackSolve:
         if obs.var() == 0.0:
             evp = 1.
         else:
-            evp = max(0.0, (1 - (res.var(ddof=0) /
-                                 obs.var(ddof=0))))
+            evp = max(0.0, (1 - (res.var(ddof=0) / obs.var(ddof=0))))
         return evp
 
     def _noise(self, params):
@@ -832,8 +856,7 @@ class TrackSolve:
             array containing noise
 
         """
-        noise = self.ml.noise(parameters=params,
-                              tmin=self.tmin,
+        noise = self.ml.noise(parameters=params, tmin=self.tmin,
                               tmax=self.tmax)
         return noise
 
@@ -851,8 +874,7 @@ class TrackSolve:
             array containing residuals
 
         """
-        res = self.ml.residuals(parameters=params,
-                                tmin=self.tmin,
+        res = self.ml.residuals(parameters=params, tmin=self.tmin,
                                 tmax=self.tmax)
         return res
 
@@ -866,8 +888,7 @@ class TrackSolve:
 
         """
         sim = self.ml.simulate(parameters=self.parameters.iloc[-1, :].values,
-                               tmin=self.tmin,
-                               tmax=self.tmax,
+                               tmin=self.tmin, tmax=self.tmax,
                                freq=self.ml.settings["freq"])
         return sim
 

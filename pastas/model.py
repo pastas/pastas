@@ -211,7 +211,7 @@ class Model:
 
         """
         if isclass(transform):
-            # keep this line for backwards compatibilty for now
+            # keep this line for backwards compatibility for now
             transform = transform()
         transform.set_model(self)
         self.transform = transform
@@ -1195,7 +1195,7 @@ class Model:
 
         dt = get_dt(freq)
 
-        kwargs = dict(tmin=tmin_warm, tmax=tmax, freq=freq, dt=dt)
+        kwargs = {'tmin': tmin_warm, 'tmax': tmax, 'freq': freq, 'dt': dt}
         if istress is not None:
             kwargs['istress'] = istress
         contrib = self.stressmodels[name].simulate(parameters, **kwargs)
@@ -1270,10 +1270,12 @@ class Model:
             String with "step" or "block"
         name: str
             string with the name of the stressmodel
-        parameters, ndarray, optional
+        parameters: ndarray, optional
             array with the parameters
         dt: float, optional
             timestep for the response function.
+        add_0: bool, optional
+            Add a zero at t=0.
         kwargs
 
         Returns
@@ -1321,6 +1323,8 @@ class Model:
             used when available, initial otherwise.
         add_0: bool, optional
             Adds 0 at t=0 at the start of the response, defaults to False.
+        dt: float, optional
+            timestep for the response function.
 
         Returns
         -------
@@ -1348,6 +1352,8 @@ class Model:
             used when available, initial otherwise.
         add_0: bool, optional
             Adds 0 at t=0 at the start of the response, defaults to False.
+        dt: float, optional
+            timestep for the response function.
 
         Returns
         -------
@@ -1399,7 +1405,7 @@ class Model:
         else:
             tmin_warm = None
 
-        kwargs = dict(tmin=tmin_warm, tmax=tmax, freq=freq)
+        kwargs = {'tmin': tmin_warm, 'tmax': tmax, 'freq': freq}
         if istress is not None:
             kwargs['istress'] = istress
 
@@ -1422,8 +1428,7 @@ class Model:
         if hasattr(self, "file_info"):
             file_info = self.file_info
         else:
-            file_info = dict()
-            file_info["date_created"] = pd.Timestamp.now()
+            file_info = {"date_created": pd.Timestamp.now()}
 
         file_info["date_modified"] = pd.Timestamp.now()
         file_info["pastas_version"] = __version__
@@ -1456,9 +1461,6 @@ class Model:
         >>> print(ml.fit_report)
 
         """
-        if output != "full":
-            raise NotImplementedError
-
         model = {
             "nfev": self.fit.nfev,
             "nobs": self.observations().index.size,
@@ -1518,7 +1520,7 @@ class Model:
             parameters=parameters)
 
         if output == "full":
-            cor = dict()
+            cor = {}
             pcor = self.fit.pcor
             for idx in pcor:
                 for col in pcor:
@@ -1532,6 +1534,9 @@ class Model:
                            "\n{}".format(string.format("", fill='=', align='>',
                                                        width=width),
                                          cor.to_string(header=False))
+
+        else:
+            correlations = ""
 
         report = "{header}{basic}{parameters}{correlations}".format(
             header=header, basic=basic, parameters=parameters,
@@ -1587,9 +1592,10 @@ class Model:
         """
 
         # Create a dictionary to store all data
-        data = dict()
-        data["name"] = self.name
-        data["oseries"] = self.oseries.to_dict(series=series)
+        data = {
+            "name": self.name,
+            "oseries": self.oseries.to_dict(series=series)
+        }
 
         # Stressmodels
         data["stressmodels"] = dict()

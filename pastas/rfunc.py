@@ -90,6 +90,8 @@ class RfuncBase:
             timestep as a multiple of of day.
         cutoff: float, optional
             float between 0 and 1.
+        maxtmax: int, optional
+            Maximum timestep to compute the block response for.
 
         Returns
         -------
@@ -109,6 +111,8 @@ class RfuncBase:
             timestep as a multiple of of day.
         cutoff: float, optional
             float between 0 and 1.
+        maxtmax: int, optional
+            Maximum timestep to compute the block response for.
 
         Returns
         -------
@@ -149,6 +153,7 @@ class RfuncBase:
                 tmax = min(tmax, maxtmax)
             tmax = max(tmax, 3 * dt)
             return np.arange(dt, tmax, dt)
+
 
 class Gamma(RfuncBase):
     """Gamma response function with 3 parameters A, a, and n.
@@ -504,8 +509,8 @@ class Polder(RfuncBase):
         a = p[1]
         b = erfcinv(2 * cutoff)
         c = -p[1] / p[2]
-        sqrttmax = (-b + np.sqrt(b**2 - 4 * a * c) / (2 * a))
-        return sqrttmax**2
+        sqrttmax = (-b + np.sqrt(b ** 2 - 4 * a * c) / (2 * a))
+        return sqrttmax ** 2
 
     def gain(self, p):
         # the steady state solution of Mazure
@@ -526,6 +531,7 @@ class Polder(RfuncBase):
         s = 0.5 * np.exp(2 * x) * erfc(x / y + y) + \
             0.5 * np.exp(-2 * x) * erfc(x / y - y)
         return s
+
 
 class One(RfuncBase):
     """Dummy class for Constant. Returns 1

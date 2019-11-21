@@ -234,6 +234,7 @@ def timestep_weighted_resample(series0, tindex):
     series = Series(v1, index=tindex)
     return series
 
+
 def timestep_weighted_resample_fast(series0, freq):
     """Resample a time series to a new frequency, using an overlapping period
     weighted average.
@@ -263,26 +264,27 @@ def timestep_weighted_resample_fast(series0, freq):
 
     """
     series = series0.copy()
-    
+
     # first mutiply by the timestep in the unit of freq
-    dt = np.diff(series0.index) / to_timedelta(1,freq)
+    dt = np.diff(series0.index) / to_timedelta(1, freq)
     series[1:] = series[1:] * dt
-    
+
     # get a new index
-    index = date_range(series.index[0].floor(freq),series.index[-1],freq=freq)
-    
+    index = date_range(series.index[0].floor(freq), series.index[-1],
+                       freq=freq)
+
     # calculate the cumulative sum
     series = series.cumsum()
-    
+
     # add NaNs at none-existing values in series at index
     series = series.combine_first(Series(np.NaN, index=index))
-    
+
     # interpolate these NaN's, only keep values at index
     series = series.interpolate('time')[index]
-    
+
     # calculate the diff again (inverse of cumsum)
     series[1:] = series.diff()[1:]
-    
+
     # drop nan's at the beginning
     series = series[series.first_valid_index():]
 

@@ -423,11 +423,11 @@ class TimeSeries:
                 if not (dt == 1.0).all():
                     series = series / dt
                     msg = ("Time Series {}: values of stress were transformed "
-                          "to daily values (frequency not altered) with: {}")
+                           "to daily values (frequency not altered) with: {}")
                     logger.info(msg.format(self.name, method))
             else:
                 msg = ("Time Series {}: User-defined option for to_daily_unit "
-                      "{} is not supported")
+                       "{} is not supported")
                 logger.warning(msg.format(self.name, method))
         return series
 
@@ -686,7 +686,7 @@ class TimeSeries:
             TimeSeries object completely.
 
         """
-        data = dict()
+        data = {}
 
         if series is True or series == "original":
             data["series"] = self.series_original

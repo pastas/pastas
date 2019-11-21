@@ -571,12 +571,14 @@ class Project:
         return data
 
     def get_oseries_metadata(self, oseries, metadata):
-        """
+        """Method to get the metadata for all oseries.
 
         Parameters
         ----------
-        oseries
-        metadata
+        oseries: list
+            list with the oseries.
+        metadata: list
+            list with the metadata keywords to obtain.
 
         Returns
         -------
@@ -617,19 +619,18 @@ class Project:
         return data
 
     def get_metadata(self, meta=None):
-        metadata = dict(
-            projection=None
-        )
+        metadata = {"projection": None}
         if meta:
             metadata.update(meta)
 
         return metadata
 
     def get_file_info(self):
-        file_info = dict()
-        file_info["date_created"] = pd.Timestamp.now()
-        file_info["date_modified"] = pd.Timestamp.now()
-        file_info["pastas_version"] = __version__
+        file_info = {
+            "date_created": pd.Timestamp.now(),
+            "date_modified": pd.Timestamp.now(),
+            "pastas_version": __version__,
+        }
         try:
             file_info["owner"] = getlogin()
         except:
@@ -643,10 +644,6 @@ class Project:
         ----------
         fname: str
 
-
-        Returns
-        -------
-
         """
         data = self.to_dict(**kwargs)
         return dump(fname, data)
@@ -656,10 +653,10 @@ class Project:
 
         Parameters
         ----------
-        series: bool
+        series: bool, optional
             export model input-series when True. Only export the name of
-            the model input_series when Fals
-        sim_series: bool
+            the model input_series when False
+        sim_series: bool, optional
             export model output-series when True
 
         Returns
@@ -668,23 +665,19 @@ class Project:
             A dictionary with all the project data
 
         """
-        data = dict(
-            name=self.name,
-            models=dict(),
-            metadata=self.metadata,
-            file_info=self.file_info
-        )
+        data = {
+            "name": self.name,
+            "metadata": self.metadata,
+            "file_info": self.file_info,
+            "oseries": self.series_to_dict(self.oseries),
+            "stresses": self.series_to_dict(self.stresses),
+            "models": {}
+        }
 
-        # Series DataFrame
-        data["oseries"] = self.series_to_dict(self.oseries)
-        data["stresses"] = self.series_to_dict(self.stresses)
-
-        # Models
-        data["models"] = dict()
+        # Add Models
         for name, ml in self.models.items():
-            data["models"][name] = ml.to_dict(series=series,
-                                              sim_series=sim_series,
-                                              file_info=False)
+            data["models"][name] = ml.to_dict(series=series, file_info=False,
+                                              sim_series=sim_series)
 
         return data
 

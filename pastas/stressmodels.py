@@ -229,7 +229,7 @@ class StressModelBase:
     def get_block(self, p, dt, tmin, tmax):
         """Internal method to get the block-response from the respnse function"""
         if tmin is not None and tmax is not None:
-            day = pd.to_timedelta(1,'d')
+            day = pd.to_timedelta(1, 'd')
             maxtmax = (pd.Timestamp(tmax) - pd.Timestamp(tmin)) / day
         else:
             maxtmax = None
@@ -270,7 +270,8 @@ class StressModel(StressModelBase):
     --------
     >>> import pastas as ps
     >>> import pandas as pd
-    >>> sm = ps.StressModel(stress=pd.Series(), rfunc=ps.Gamma, name="Prec",settings="prec")
+    >>> sm = ps.StressModel(stress=pd.Series(), rfunc=ps.Gamma, name="Prec", \
+                            settings="prec")
 
     See Also
     --------
@@ -313,6 +314,7 @@ class StressModel(StressModelBase):
         tmin: str, optional
         tmax: str, optional
         freq: str, optional
+        dt: int, optional
 
         Returns
         -------
@@ -446,6 +448,8 @@ class StressModel2(StressModelBase):
         tmin: str, optional
         tmax: str, optional
         freq: str, optional
+        dt: int, optional
+        istress: int, optional
 
         Returns
         -------
@@ -1051,7 +1055,7 @@ class RechargeModel(StressModelBase):
                          fastpath=True)
 
     def get_stress(self, p=None, tmin=None, tmax=None, freq=None,
-                   istress=None,  **kwargs):
+                   istress=None, **kwargs):
         """Method to obtain the recharge stress calculated by the recharge
         model.
 
