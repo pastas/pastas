@@ -1,5 +1,6 @@
 import logging
 
+import pastas.recharge as rch
 from .model import Model
 from .noisemodels import NoiseModel, NoiseModel2
 from .plots import TrackSolve
@@ -13,9 +14,7 @@ from .stressmodels import StressModel, StressModel2, Constant, FactorModel, \
 from .timeseries import TimeSeries
 from .transform import ThresholdTransform
 from .utils import initialize_logger, set_log_level
-
 from .version import __version__
-
 
 logger = logging.getLogger(__name__)
 initialize_logger(logger)

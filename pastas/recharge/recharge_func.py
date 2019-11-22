@@ -23,6 +23,7 @@ simulate(self, evap, prec, p=None)
     A function that returns an array of the simulated recharge series.
 
 """
+
 import numpy as np
 import pandas as pd
 
@@ -124,13 +125,15 @@ class FlexModel:
     def get_init_parameters(self, name="rch"):
         parameters = pd.DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "name"])
-        parameters.loc[name + "_srmax"] = (0.25, 0.0, np.nan, True, name)
+        parameters.loc[name + "_srmax"] = (0.25, 0.0, 1.0, True, name)
         parameters.loc[name + "_imax"] = (0.001, 0.0, 0.01, False, name)
+
         if self.perc:
-            parameters.loc[name + "_kp"] = (0.05, 0.0, 1.0, True, name)
+            parameters.loc[name + "_ks"] = (0.1, 0.0, 1.0, True, name)
             parameters.loc[name + "_gamma"] = (1.0, 1.0, np.nan, True, name)
+
         if self.pref:
-            parameters.loc[name + "_beta"] = (1.0, 1.0, np.nan, True, name)
+            parameters.loc[name + "_beta"] = (2.0, 0.0, np.nan, True, name)
 
         return parameters
 
@@ -138,7 +141,7 @@ class FlexModel:
         params = {
             "srmax": p[0],
             "imax": p[1],
-            "kp": p[2] if self.perc else np.nan,
+            "ks": p[2] if self.perc else np.nan,
             "gamma": p[3] if self.perc else np.nan,
             "beta": p[-1] if self.pref else np.nan
         }
@@ -155,9 +158,8 @@ class FlexModel:
 
     @staticmethod
     @njit
-    def get_recharge(p, e, srmax, imax, kp, gamma, beta, dt=1.0):
+    def get_recharge(p, e, srmax, imax, ks, gamma, beta, dt=1.0):
         n = p.size
-
         # Create an empty array to store the soil state in
         s = np.zeros(n, dtype=np.float64)
         s[0] = 0.2 * srmax  # Set the initial system state
@@ -182,11 +184,12 @@ class FlexModel:
             elif s[t] < 0.0:
                 s[t] = 0.0
 
-            ea[t] = ep[t] * min(1.0, (s[t] / (0.5 * srmax)))
+            #ea[t] = ep[t] * min(1.0, (s[t] / (0.5 * srmax)))
+            ea[t] = (1 - np.exp(-3 * s[t] / (0.2 * srmax))) * ep[t]
             if not np.isnan(beta):
                 rf[t] = pe[t] * (s[t] / srmax) ** beta
             if not np.isnan(gamma):
-                rs[t] = kp * (s[t] / srmax) ** gamma
+                rs[t] = ks * (s[t] / srmax) ** gamma
 
             # Soil Reservoir
             s[t + 1] = s[t] + dt * (pe[t] - rf[t] - rs[t] - ea[t])
@@ -217,12 +220,12 @@ class Berendrecht:
     def get_init_parameters(self, name="recharge"):
         parameters = pd.DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "name"])
-        parameters.loc[name + "_fi"] = (1.0, 0.7, 1.0, False, name)
-        parameters.loc[name + "_fc"] = (1.0, 0.0, 2.0, False, name)
-        parameters.loc[name + "_sr"] = (0.25, 0.0, np.nan, True, name)
+        parameters.loc[name + "_fi"] = (0.9, 0.7, 2.0, False, name)
+        parameters.loc[name + "_fc"] = (1.0, 0.7, 2.0, False, name)
+        parameters.loc[name + "_sr"] = (0.5, 0.0, 1.0, True, name)
         parameters.loc[name + "_de"] = (0.25, 0.0, np.nan, True, name)
-        parameters.loc[name + "_l"] = (-2, -4, 0, True, name)
-        parameters.loc[name + "_m"] = (0.5, 0.0, 1, True, name)
+        parameters.loc[name + "_l"] = (2, -4, np.nan, True, name)
+        parameters.loc[name + "_m"] = (0.4, 0.0, 0.5, True, name)
         parameters.loc[name + "_ks"] = (0.05, 0.0, np.nan, True, name)
         return parameters
 
@@ -233,12 +236,11 @@ class Berendrecht:
 
     @staticmethod
     @njit
-    def recharge(prec, evap, fi=1, fc=1, sr=0.25, de=0.25, l=-2, m=.5, ks=0.05,
-                 dt=1):
+    def recharge(prec, evap, fi=1.0, fc=1.0, sr=0.25, de=0.25, l=-2.0, m=.5,
+                 ks=0.05, dt=1):
         n = prec.size
         pe = fi * prec
         ep = fc * evap
-
         s = np.zeros(n, dtype=np.float64)
         s[0] = 0.5  # Set the initial system state
         r = np.zeros(n, dtype=np.float64)
