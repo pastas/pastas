@@ -50,7 +50,7 @@ class NoiseModelBase(ABC):
             print("Warning:", name, "does not exist")
 
     @set_parameter
-    def set_min(self, name, value):
+    def set_pmin(self, name, value):
         """Internal method to set the minimum value of the noisemodel.
 
         Notes
@@ -65,7 +65,7 @@ class NoiseModelBase(ABC):
             print("Warning:", name, "does not exist")
 
     @set_parameter
-    def set_max(self, name, value):
+    def set_pmax(self, name, value):
         """Internal method to set the maximum parameter values.
 
         Notes

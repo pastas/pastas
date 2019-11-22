@@ -14,7 +14,7 @@ head = pd.read_csv("notebooks/data_notebook_7/head_wellex.csv",
                    index_col="Date", parse_dates=True)
 
 # Create the time series model
-ml = ps.Model(head, name="groundwater head")
+ml = ps.Model(head, name="head")
 
 # read weather data
 rain = pd.read_csv("notebooks/data_notebook_7/prec_wellex.csv",
@@ -24,14 +24,17 @@ evap = pd.read_csv("notebooks/data_notebook_7/evap_wellex.csv",
 
 # Create stress
 rm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential,
-                      recharge="Linear", name='recharge')
+                      recharge=ps.rch.FlexModel(preferential=False),
+                      name='recharge')
 ml.add_stressmodel(rm)
 
 well = pd.read_csv("notebooks/data_notebook_7/well_wellex.csv",
-                   index_col="Date", parse_dates=True)
-sm = ps.StressModel(well, rfunc=ps.Gamma, name="well", up=False)
+                   index_col="Date", parse_dates=True)/1e6
+sm = ps.StressModel(well, rfunc=ps.Exponential, name="well", up=False)
 ml.add_stressmodel(sm)
 
 # Solve
-ml.solve(noise=True, tmax="2010")
+ml.solve(noise=True)
 ml.plots.results()
+
+df = ml.fit.prediction_interval()
