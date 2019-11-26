@@ -852,7 +852,7 @@ class FactorModel(StressModelBase):
         tmax = stress.series_original.index.max()
         StressModelBase.__init__(self, One, name, tmin=tmin, tmax=tmax,
                                  up=True, meanstress=1, cutoff=0.999)
-        self.value = 1  # Initial value
+        self.value = 1.  # Initial value
         stress = TimeSeries(stress, settings=settings, metadata=metadata)
         self.stress = [stress]
         self.set_init_parameters()
