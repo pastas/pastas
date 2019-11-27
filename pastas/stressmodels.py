@@ -647,7 +647,8 @@ class Constant(StressModelBase):
     def set_init_parameters(self):
         self.parameters = self.rfunc.get_init_parameters(self.name)
 
-    def simulate(self, p=None):
+    @staticmethod
+    def simulate(p=None):
         return p
 
 

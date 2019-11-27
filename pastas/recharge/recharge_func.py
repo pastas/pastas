@@ -37,7 +37,8 @@ class RechargeBase:
         self.temp = False
         self.nparam = 0
 
-    def get_init_parameters(self, name="recharge"):
+    @staticmethod
+    def get_init_parameters(name="recharge"):
         """
 
         Parameters

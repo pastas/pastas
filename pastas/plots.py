@@ -833,7 +833,8 @@ class TrackSolve:
         self.tmax = self.ml.settings["tmax"]
         self.freq = self.ml.settings["freq"]
 
-    def _calc_evp(self, res, obs):
+    @staticmethod
+    def _calc_evp(res, obs):
         """ calculate evp
         """
         if obs.var() == 0.0:

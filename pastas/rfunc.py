@@ -125,7 +125,7 @@ class RfuncBase:
     def get_t(self, p, dt, cutoff, maxtmax=None):
         """Internal method to detemine the times at which to evaluate the step-
         response, from t=0
-        
+
         Parameters
         ----------
         p: numpy.array
@@ -143,7 +143,7 @@ class RfuncBase:
         -------
         t: numpy.array
             Array with the times
-        
+
         """
         if isinstance(dt, np.ndarray):
             return dt
@@ -618,7 +618,8 @@ class FourParam(RfuncBase):
         parameters.loc[name + '_b'] = (10, 0.01, 5000, True, name)
         return parameters
 
-    def function(self, t, p):
+    @staticmethod
+    def function(t, p):
         return (t ** (p[1] - 1)) * np.exp(-t / p[2] - p[3] / t)
 
     def get_tmax(self, p, cutoff=None):
@@ -655,7 +656,8 @@ class FourParam(RfuncBase):
             y = y / quad(self.function, 0, np.inf, args=p)[0]
             return np.searchsorted(y, cutoff)
 
-    def gain(self, p):
+    @staticmethod
+    def gain(p):
         return p[0]
 
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
@@ -861,7 +863,8 @@ class Edelman(RfuncBase):
             cutoff = self.cutoff
         return 1. / (p[0] * erfcinv(cutoff * erfc(0))) ** 2
 
-    def gain(self, p):
+    @staticmethod
+    def gain(p):
         return 1.
 
     def step(self, p, dt=1, cutoff=None, maxtmax=None):

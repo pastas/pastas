@@ -154,7 +154,8 @@ class NoiseModel(NoiseModelBase):
         res.name = "Noise"
         return res
 
-    def weights(self, alpha, odelt):
+    @staticmethod
+    def weights(alpha, odelt):
         """Method to calculate the weights for the noise based on the
         sum of weighted squared noise (SWSI) method.
 
@@ -204,7 +205,8 @@ class NoiseModel2(NoiseModelBase):
         self.nparam = 1
         self.set_init_parameters()
 
-    def simulate(self, res, parameters):
+    @staticmethod
+    def simulate(res, parameters):
         """
 
         Parameters

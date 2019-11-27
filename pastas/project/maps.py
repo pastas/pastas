@@ -188,7 +188,8 @@ class Map:
 
         return sc
 
-    def _normalize(self, series, s=30):
+    @staticmethod
+    def _normalize(series, s=30):
         """Internal method to normalize the series for the size op the scatterplot.
 
         """
