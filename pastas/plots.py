@@ -185,7 +185,7 @@ class Plotting:
             sm = self.ml.stressmodels[sm_name]
             nsplit = sm.get_nsplit()
             if split and nsplit > 1:
-                for isplit in range(nsplit):
+                for _ in range(nsplit):
                     ax = fig.add_subplot(gs[i + 2, 0], sharex=ax1)
                     contribs[i].plot(ax=ax, x_compat=True)
                     ax.legend(loc=(0, 1), ncol=3, frameon=False)
