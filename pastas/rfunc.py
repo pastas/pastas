@@ -566,7 +566,7 @@ class One(RfuncBase):
         else:
             return p[0] * np.ones(1)
 
-    def block(self, p, dt=1, cutoff=None):
+    def block(self, p, dt=1, cutoff=None, maxtmax=None):
         return p[0] * np.ones(1)
 
 
