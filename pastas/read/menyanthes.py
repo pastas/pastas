@@ -20,7 +20,7 @@ from pandas import Series, offsets
 from scipy.io import loadmat
 
 from ..timeseries import TimeSeries
-from ..utils import matlab2datetime
+from ..utils import matlab2datetime, datenum_to_datetime
 
 
 def read_meny(fname, locations=None, datatype='H'):
@@ -132,7 +132,7 @@ class MenyData:
                 if name != 'values':
                     data[name] = getattr(IN, name)
                 else:
-                    tindex = map(matlab2datetime, IN.values[:, 0])
+                    tindex = map(datenum_to_datetime, IN.values[:, 0])
                     series = Series(IN.values[:, 1], index=tindex)
 
                     # round on seconds, to get rid of conversion milliseconds
@@ -182,7 +182,7 @@ class MenyData:
                         # when diver-files are used, values will be empty
                         series = Series()
                     else:
-                        tindex = map(matlab2datetime, H.values[:, 0])
+                        tindex = map(datenum_to_datetime, H.values[:, 0])
                         # measurement is used as is
                         series = Series(H.values[:, 1], index=tindex)
                         # round on seconds, to get rid of conversion milliseconds
@@ -215,7 +215,7 @@ class MenyData:
                 if name != 'values':
                     data[name] = getattr(M, name)
                 else:
-                    tindex = map(matlab2datetime, M.values[:, 0])
+                    tindex = map(datenum_to_datetime, M.values[:, 0])
                     # measurement is used as is
                     series = Series(M.values[:, 1], index=tindex)
                     # round on seconds, to get rid of conversion milliseconds

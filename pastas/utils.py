@@ -2,6 +2,7 @@ import logging
 from logging import handlers
 
 import numpy as np
+from datetime import datetime, timedelta
 from pandas import (Series, to_datetime, Timedelta, Timestamp, to_timedelta,
                     date_range)
 from pandas.tseries.frequencies import to_offset
@@ -309,13 +310,23 @@ def excel2datetime(tindex, freq="D"):
     return datetimes
 
 
-def matlab2datetime(tindex):
-    """ Transform a matlab time to a datetime, rounded to seconds
-
+def datenum_to_datetime(datenum):
     """
-    day = Timestamp.fromordinal(int(tindex))
-    dayfrac = Timedelta(days=float(tindex) % 1) - Timedelta(days=366)
-    return day + dayfrac
+    Convert Matlab datenum into Python datetime.
+    Parameters
+    ----------
+    datenum: float
+        date in datenum format
+
+    Returns
+    -------
+    datetime :
+        Datetime object corresponding to datenum.
+    """
+    days = datenum % 1.
+    return datetime.fromordinal(int(datenum)) \
+        + timedelta(days=days) \
+        - timedelta(days=366)
 
 
 def datetime2matlab(tindex):
