@@ -177,16 +177,16 @@ def get_sample(tindex, ref_tindex):
 def timestep_weighted_resample(series0, tindex):
     """Resample a timeseries to a new tindex, using an overlapping period
     weighted average.
-    
+
     The original series and the new tindex do not have to be equidistant. Also,
     the timestep-edges of the new tindex do not have to overlap with the
-    original series. 
-    
+    original series.
+
     It is assumed the series consists of measurements that describe an
     intensity at the end of the period for which they apply. Therefore, when
     upsampling, the values are uniformly spread over the new timestep (like
     bfill).
-    
+
     Compared to the reample methods in Pandas, this method is more accurate for
     non-equidistanct series. It is much slower however.
 
@@ -238,29 +238,29 @@ def timestep_weighted_resample(series0, tindex):
 def timestep_weighted_resample_fast(series0, freq):
     """Resample a time series to a new frequency, using an overlapping period
     weighted average.
-    
+
     The original series does not have to be equidistant.
-    
+
     It is assumed the series consists of measurements that describe an
     intensity at the end of the period for which they apply. Therefore, when
     upsampling, the values are uniformly spread over the new timestep (like
     bfill).
-    
-    Compared to the reample methods in Pandas, this method is more accurate for
-    non-equidistanct series. It is slower however (but faster then the original
-    timestep_weighted_resample).
+
+    Compared to the resample methods in Pandas, this method is more accurate
+    for non-equidistant series. It is slower than Pandas (but faster then the
+    original timestep_weighted_resample).
 
     Parameters
     ----------
     series0 : pandas.Series
-        The original series to be resampled
+        original series to be resampled
     freq : str
-        A Pandas frequency string
+        a Pandas frequency string
 
     Returns
     -------
     series : pandas.Series
-        The resampled series
+        resampled series
 
     """
     series = series0.copy()
