@@ -11,7 +11,8 @@ with open("pastas/version.py") as fp:
 setup(
     name='pastas',
     version=version['__version__'],
-    description='Python Applied System TimeSeries Analysis Software',
+    description='Python package to perform time series analysis of '
+                'hydrological time series.',
     long_description=long_description,
     long_description_content_type="text/x-rst",
     url='https://github.com/pastas/pastas',
@@ -39,5 +40,4 @@ setup(
     install_requires=['numpy>=1.15', 'matplotlib>=2.0', 'pandas>=0.23',
                       'scipy>=1.1'],
     packages=find_packages(exclude=[]),
-    package_data={"pastas": ["log_config.json"], },
 )

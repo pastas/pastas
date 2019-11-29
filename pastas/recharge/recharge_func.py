@@ -24,6 +24,7 @@ simulate(self, evap, prec, p=None)
 
 """
 
+import numpy as np
 import pandas as pd
 
 
@@ -36,7 +37,8 @@ class RechargeBase:
         self.temp = False
         self.nparam = 0
 
-    def get_init_parameters(self, name="recharge"):
+    @staticmethod
+    def get_init_parameters(name="recharge"):
         """
 
         Parameters
@@ -94,5 +96,4 @@ class Linear(RechargeBase):
             array with the recharge series.
 
         """
-        recharge = prec + p * evap
-        return recharge
+        return np.add(prec, np.multiply(evap, p))

@@ -1,6 +1,6 @@
 """The transforms module contains all the transforms that can be added to the
  simulation of a model. These transforms are applied after the simulation,
- to incorporate nonlineair effects.
+ to incorporate nonlinear effects.
 
 """
 import numpy as np
@@ -11,7 +11,7 @@ class ThresholdTransform:
     """ThresholdTransform lowers the simulation when it exceeds a certain value
 
     In geohydrology this transform can for example be used in a situation where
-    the groundwater level reaches the surface level and forms a lake. Beacuase
+    the groundwater level reaches the surface level and forms a lake. Because
     of the larger storage of the lake, the (groundwater) level then rises
     slower when it rains.
 
@@ -71,12 +71,13 @@ class ThresholdTransform:
             raise ValueError('Not yet implemented yet')
         return h
 
-    def dump(self):
-        data = dict()
-        data["transform"] = self._name
-        data["value"] = self.value
-        data["vmin"] = self.vmin
-        data["vmax"] = self.vmax
-        data["name"] = self.name
-        data['nparam'] = self.nparam
+    def to_dict(self):
+        data = {
+            "transform": self._name,
+            "value": self.value,
+            "vmin": self.vmin,
+            "vmax": self.vmax,
+            "name": self.name,
+            'nparam': self.nparam
+        }
         return data

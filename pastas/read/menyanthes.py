@@ -23,16 +23,16 @@ from ..timeseries import TimeSeries
 from ..utils import matlab2datetime
 
 
-def read_meny(fname, locations=None, type='H'):
-    meny = MenyData(fname, data=type)
-    if type == 'H':
+def read_meny(fname, locations=None, datatype='H'):
+    meny = MenyData(fname, data=datatype)
+    if datatype == 'H':
         data = meny.H
-    elif type == 'IN':
+    elif datatype == 'IN':
         data = meny.IN
-    elif type == 'M':
+    elif datatype == 'M':
         data = meny.M
     else:
-        raise NotImplementedError('type ' + type + ' not supported (yet)')
+        raise NotImplementedError('type ' + datatype + ' not supported (yet)')
     if locations is None:
         locations = data.keys()
 
@@ -44,7 +44,7 @@ def read_meny(fname, locations=None, type='H'):
         metadata['z'] = np.mean(
             (data[location]['upfiltlev'], data[location]['lowfiltlev']))
         metadata['projection'] = 'epsg:28992'
-        if type == 'H':
+        if datatype == 'H':
             kind = 'oseries'
         else:
             if data[location]['Type'] == 'prec':
@@ -57,7 +57,7 @@ def read_meny(fname, locations=None, type='H'):
                 kind = 'waterlevel'
             else:
                 kind = None
-        if type == 'M':
+        if datatype == 'M':
             kind = None
         ts.append(TimeSeries(data[location]['values'], name=location,
                              metadata=metadata, settings=kind))
@@ -100,7 +100,8 @@ class MenyData:
 
         del mat  # Delete the mat file from memory again
 
-    def read_file(self, fname):
+    @staticmethod
+    def read_file(fname):
         """This method is used to read the file.
 
         """

@@ -211,7 +211,7 @@ class Model:
 
         """
         if isclass(transform):
-            # keep this line for backwards compatibilty for now
+            # keep this line for backwards compatibility for now
             transform = transform()
         transform.set_model(self)
         self.transform = transform
@@ -234,6 +234,12 @@ class Model:
         self.noisemodel = noisemodel
         self.noisemodel.set_init_parameters(oseries=self.oseries.series)
         self.parameters = self.get_init_parameters(initial=False)
+
+        # check whether noise_alpha is not smaller than ml.settings["freq"]
+        freq_in_days = get_dt(self.settings["freq"])
+        noise_alpha = self.noisemodel.parameters.initial.iloc[0]
+        if freq_in_days > noise_alpha:
+            self.set_initial("noise_alpha", freq_in_days)
 
     @get_stressmodel
     def del_stressmodel(self, name):
@@ -485,9 +491,10 @@ class Model:
         model.
 
         """
-        if self.noisemodel is None:
-            self.logger.error("Noise cannot be calculated if there is "
-                              "no noisemodel.")
+        if (self.noisemodel is None) or (self.settings["noise"] is False):
+            self.logger.error("Noise cannot be calculated if there is no "
+                              "noisemodel present or is not used during "
+                              "parameter estimation.")
             return None
 
         if freq is None:
@@ -505,7 +512,8 @@ class Model:
                                          parameters[-self.noisemodel.nparam:])
         return noise
 
-    def observations(self, tmin=None, tmax=None, freq=None):
+    def observations(self, tmin=None, tmax=None, freq=None,
+                     update_observations=False):
         """Method that returns the observations series used for calibration.
 
         Parameters
@@ -520,6 +528,9 @@ class Model:
             String with the frequency the stressmodels are simulated. Must
             be one of the following: (D, h, m, s, ms, us, ns) or a multiple of
             that e.g. "7D".
+        update_observations : bool, optional
+            if True, force recalculation of the observations series, default
+            is False
 
         Returns
         -------
@@ -547,7 +558,6 @@ class Model:
         if freq is None:
             freq = self.settings["freq"]
 
-        update_observations = False
         for key, setting in zip([tmin, tmax, freq], ["tmin", "tmax", "freq"]):
             if key != self.settings[setting]:
                 update_observations = True
@@ -563,11 +573,6 @@ class Model:
             if not oseries_calib.empty:
                 index = get_sample(oseries_calib.index, sim_index)
                 oseries_calib = oseries_calib.loc[index]
-
-            if not update_observations:
-                # tmin, tmax and freq are equal to the settings
-                # so we can set self.oseries_calib to improve speed of next run
-                self.oseries_calib = oseries_calib
         else:
             oseries_calib = self.oseries_calib
         return oseries_calib
@@ -609,8 +614,15 @@ class Model:
             self.settings["fit_constant"] = fit_constant
 
         # make sure calibration data is renewed
-        self.sim_index = None
-        self.oseries_calib = None
+        self.sim_index = self.get_sim_index(self.settings["tmin"],
+                                            self.settings["tmax"],
+                                            self.settings["freq"],
+                                            self.settings["warmup"],
+                                            update_sim_index=True)
+        self.oseries_calib = self.observations(tmin=self.settings["tmin"],
+                                               tmax=self.settings["tmax"],
+                                               freq=self.settings["freq"],
+                                               update_observations=True)
         self.interpolate_simulation = None
 
         # Initialize parameters
@@ -618,7 +630,7 @@ class Model:
 
         # Prepare model if not fitting the constant as a parameter
         if not self.settings["fit_constant"]:
-            self.parameters.loc["constant_d", "vary"] = 0
+            self.parameters.loc["constant_d", "vary"] = False
             self.parameters.loc["constant_d", "initial"] = 0.0
             self.normalize_residuals = True
 
@@ -684,12 +696,16 @@ class Model:
         self.initialize(tmin, tmax, freq, warmup, noise, weights, initial,
                         fit_constant)
 
+        if self.oseries_calib.empty:
+            raise ValueError("Calibration series 'oseries_calib' is empty! "
+                             "Check 'tmin' or 'tmax'.")
+
         # Store the solve instance
         if solver is None:
             if self.fit is None:
-                self.fit = LeastSquares(model=self)
+                self.fit = LeastSquares(ml=self)
         elif not issubclass(solver, self.fit.__class__):
-            self.fit = solver(model=self)
+            self.fit = solver(ml=self)
 
         self.settings["solver"] = self.fit._name
 
@@ -779,10 +795,9 @@ class Model:
 
         """
         if name not in self.parameters.index:
-            msg = "parameters with name {} is not present in the " \
-                  "model".format(name)
+            msg = "parameter {} is not present in the model".format(name)
             self.logger.error(msg)
-            raise Exception(msg)
+            raise KeyError(msg)
 
         cat = self.parameters.loc[name, "name"]
 
@@ -866,7 +881,7 @@ class Model:
         """Returns list of stressmodel names"""
         return list(self.stressmodels.keys())
 
-    def get_sim_index(self, tmin, tmax, freq, warmup):
+    def get_sim_index(self, tmin, tmax, freq, warmup, update_sim_index=False):
         """Internal method to get the simulation index, including the warmup.
 
         Parameters
@@ -883,6 +898,8 @@ class Model:
             that e.g. "7D".
         warmup: float/int
             Warmup period (in Days).
+        update_sim_index : bool, optional
+            if True, force recalculation of sim_index, default is False
 
         Returns
         -------
@@ -892,7 +909,6 @@ class Model:
 
         """
         # Check if any of the settings are updated
-        update_sim_index = False
         for key, setting in zip([tmin, tmax, freq, warmup],
                                 ["tmin", "tmax", "freq", "warmup"]):
             if key != self.settings[setting]:
@@ -901,9 +917,6 @@ class Model:
         if self.sim_index is None or update_sim_index:
             tmin = (tmin - warmup).floor(freq) + self.settings["time_offset"]
             sim_index = pd.date_range(tmin, tmax, freq=freq)
-            if not update_sim_index:
-                # Improve speed of next run if args are equal to ml.settings.
-                self.sim_index = sim_index
         else:
             sim_index = self.sim_index
         return sim_index
@@ -1182,7 +1195,7 @@ class Model:
 
         dt = get_dt(freq)
 
-        kwargs = dict(tmin=tmin_warm, tmax=tmax, freq=freq, dt=dt)
+        kwargs = {'tmin': tmin_warm, 'tmax': tmax, 'freq': freq, 'dt': dt}
         if istress is not None:
             kwargs['istress'] = istress
         contrib = self.stressmodels[name].simulate(parameters, **kwargs)
@@ -1193,6 +1206,34 @@ class Model:
             contrib = contrib.loc[tmin:tmax]
 
         return contrib
+
+    def get_contributions(self, split=True, **kwargs):
+        """Method to get contributions of all stressmodels.
+
+        Parameters
+        ----------
+        split: bool, optional
+            Split the stresses in multiple stresses when possible.
+        kwargs: any other arguments are passed to get_contribution
+
+        Returns
+        -------
+        contribs: list
+            a list of Pandas Series of the contributions.
+
+        """
+        contribs = []
+        for name in self.stressmodels:
+            nsplit = self.stressmodels[name].get_nsplit()
+            if split and nsplit > 1:
+                for istress in range(nsplit):
+                    contrib = self.get_contribution(name, istress=istress,
+                                                    **kwargs)
+                    contribs.append(contrib)
+            else:
+                contrib = self.get_contribution(name, **kwargs)
+                contribs.append(contrib)
+        return contribs
 
     def get_transform_contribution(self, tmin=None, tmax=None):
         """Method to get the contribution of a transform.
@@ -1219,8 +1260,56 @@ class Model:
         sim_org = ml.simulate(tmin=tmin, tmax=tmax)
         return sim - sim_org
 
+    def get_response(self, block_or_step, name, parameters=None, dt=None,
+                     add_0=False, **kwargs):
+        """Internal method to compute the block and step response.
+
+        Parameters
+        ----------
+        block_or_step: str
+            String with "step" or "block"
+        name: str
+            string with the name of the stressmodel
+        parameters: ndarray, optional
+            array with the parameters
+        dt: float, optional
+            timestep for the response function.
+        add_0: bool, optional
+            Add a zero at t=0.
+        kwargs
+
+        Returns
+        -------
+
+        """
+        if not hasattr(self.stressmodels[name], "rfunc"):
+            raise TypeError("Stressmodel {} has no rfunc".format(name))
+        else:
+            block_or_step = getattr(self.stressmodels[name].rfunc,
+                                    block_or_step)
+
+        if parameters is None:
+            parameters = self.get_parameters(name)
+
+        if dt is None:
+            dt = get_dt(self.settings["freq"])
+        response = block_or_step(parameters, dt, **kwargs)
+
+        if add_0:
+            response = np.insert(response, 0, 0.0)
+
+        if isinstance(dt, np.ndarray):
+            t = dt
+        else:
+            t = np.linspace(dt, response.size * dt, response.size)
+        response = pd.Series(response, index=t, name=name)
+        response.index.name = "Time [days]"
+
+        return response
+
     @get_stressmodel
-    def get_block_response(self, name, parameters=None, **kwargs):
+    def get_block_response(self, name, parameters=None, add_0=False, dt=None,
+                           **kwargs):
         """Method to obtain the block response for a stressmodel.
 
         The optimal parameters are used when available, initial otherwise.
@@ -1232,6 +1321,10 @@ class Model:
         parameters: list or numpy.ndarray
             iterable with the parameters. If none, the optimal parameters are
             used when available, initial otherwise.
+        add_0: bool, optional
+            Adds 0 at t=0 at the start of the response, defaults to False.
+        dt: float, optional
+            timestep for the response function.
 
         Returns
         -------
@@ -1240,20 +1333,12 @@ class Model:
             frequency that is present in the model.settings.
 
         """
-        if self.stressmodels[name].rfunc is None:
-            raise TypeError("Stressmodel {} has no rfunc".format(name))
-
-        if parameters is None:
-            parameters = self.get_parameters(name)
-        dt = get_dt(self.settings["freq"])
-        b = self.stressmodels[name].rfunc.block(parameters, dt, **kwargs)
-        t = np.linspace(dt, b.size * dt, b.size)
-        b = pd.Series(b, index=t, name=name)
-        b.index.name = "Time [days]"
-        return b
+        return self.get_response(block_or_step="block", name=name, dt=dt,
+                                 parameters=parameters, add_0=add_0, **kwargs)
 
     @get_stressmodel
-    def get_step_response(self, name, parameters=None, **kwargs):
+    def get_step_response(self, name, parameters=None, add_0=False, dt=None,
+                          **kwargs):
         """Method to obtain the step response for a stressmodel.
 
         The optimal parameters are used when available, initial otherwise.
@@ -1265,6 +1350,10 @@ class Model:
         parameters: list or numpy.ndarray
             iterable with the parameters. If none, the optimal parameters are
             used when available, initial otherwise.
+        add_0: bool, optional
+            Adds 0 at t=0 at the start of the response, defaults to False.
+        dt: float, optional
+            timestep for the response function.
 
         Returns
         -------
@@ -1273,20 +1362,12 @@ class Model:
             frequency that is present in the model.settings.
 
         """
-        if self.stressmodels[name].rfunc is None:
-            raise TypeError("Stressmodel {} has no rfunc".format(name))
-
-        if parameters is None:
-            parameters = self.get_parameters(name)
-        dt = get_dt(self.settings["freq"])
-        s = self.stressmodels[name].rfunc.step(parameters, dt, **kwargs)
-        t = np.linspace(dt, s.size * dt, s.size)
-        s = pd.Series(s, index=t, name=name)
-        s.index.name = "Time [days]"
-        return s
+        return self.get_response(block_or_step="step", name=name, dt=dt,
+                                 parameters=parameters, add_0=add_0, **kwargs)
 
     @get_stressmodel
-    def get_stress(self, name, istress=None):
+    def get_stress(self, name, tmin=None, tmax=None, freq=None, warmup=None,
+                   istress=None, return_warmup=False, parameters=None):
         """Method to obtain the stress(es) from the stressmodel.
 
         Parameters
@@ -1304,8 +1385,34 @@ class Model:
             are present, a list of pandas Series is returned.
 
         """
-        p = self.get_parameters(name)
-        stress = self.stressmodels[name].get_stress(p=p, istress=istress)
+        if parameters is None:
+            parameters = self.get_parameters(name)
+
+        if tmin is None:
+            tmin = self.settings['tmin']
+        if tmax is None:
+            tmax = self.settings['tmax']
+        if freq is None:
+            freq = self.settings["freq"]
+        if warmup is None:
+            warmup = self.settings["warmup"]
+        else:
+            warmup = pd.Timedelta(days=warmup)
+
+        # use warmup
+        if tmin:
+            tmin_warm = pd.Timestamp(tmin) - warmup
+        else:
+            tmin_warm = None
+
+        kwargs = {'tmin': tmin_warm, 'tmax': tmax, 'freq': freq}
+        if istress is not None:
+            kwargs['istress'] = istress
+
+        stress = self.stressmodels[name].get_stress(p=parameters, **kwargs)
+        if not return_warmup:
+            stress = stress.loc[tmin:tmax]
+
         return stress
 
     def get_file_info(self):
@@ -1321,8 +1428,7 @@ class Model:
         if hasattr(self, "file_info"):
             file_info = self.file_info
         else:
-            file_info = dict()
-            file_info["date_created"] = pd.Timestamp.now()
+            file_info = {"date_created": pd.Timestamp.now()}
 
         file_info["date_modified"] = pd.Timestamp.now()
         file_info["pastas_version"] = __version__
@@ -1355,15 +1461,9 @@ class Model:
         >>> print(ml.fit_report)
 
         """
-        if output != "full":
-            raise NotImplementedError
-
-        if self.fit is None:
-            return 'Model is not optimized or read from file. Solve first.'
-
         model = {
             "nfev": self.fit.nfev,
-            "nobs": self.oseries_calib.index.size,
+            "nobs": self.observations().index.size,
             "noise": str(self.settings["noise"]),
             "tmin": str(self.settings["tmin"]),
             "tmax": str(self.settings["tmax"]),
@@ -1406,13 +1506,11 @@ class Model:
         )
 
         basic = str()
-        for item, item2 in zip(model.items(), fit.items()):
-            val1, val2 = item
-            val3, val4 = item2
+        for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
             w = max(width - 38, 0)
             val4 = string.format(val4, fill=' ', align='>', width=w)
-            basic = basic + (
-                "{:<8} {:<22} {:<5} {}\n".format(val1, val2, val3, val4))
+            basic = basic + "{:<8} {:<22} {:<5} {}\n".format(val1, val2,
+                                                             val3, val4)
 
         # Create the parameters block
         parameters = "\nParameters ({n_param} were optimized)\n{line}\n" \
@@ -1422,7 +1520,7 @@ class Model:
             parameters=parameters)
 
         if output == "full":
-            cor = dict()
+            cor = {}
             pcor = self.fit.pcor
             for idx in pcor:
                 for col in pcor:
@@ -1432,10 +1530,13 @@ class Model:
 
             cor = pd.DataFrame(data=cor.values(), index=cor.keys(),
                                columns=["rho"])
-            correlations = "\n\nParameter correlations |rho| > 0.5\n{" \
-                           "line}\n{correlation}".format(
-                line=string.format("", fill='=', align='>', width=width),
-                correlation=cor.to_string(header=False))
+            correlations = "\n\nParameter correlations |rho| > 0.5\n{}" \
+                           "\n{}".format(string.format("", fill='=', align='>',
+                                                       width=width),
+                                         cor.to_string(header=False))
+
+        else:
+            correlations = ""
 
         report = "{header}{basic}{parameters}{correlations}".format(
             header=header, basic=basic, parameters=parameters,
@@ -1491,9 +1592,10 @@ class Model:
         """
 
         # Create a dictionary to store all data
-        data = dict()
-        data["name"] = self.name
-        data["oseries"] = self.oseries.to_dict(series=series)
+        data = {
+            "name": self.name,
+            "oseries": self.oseries.to_dict(series=series)
+        }
 
         # Stressmodels
         data["stressmodels"] = dict()
@@ -1511,6 +1613,10 @@ class Model:
         # Noisemodel
         if self.noisemodel:
             data["noisemodel"] = self.noisemodel.to_dict()
+
+        # Solver object
+        if self.fit:
+            data["fit"] = self.fit.to_dict()
 
         # Parameters
         data["parameters"] = self.parameters
@@ -1552,8 +1658,14 @@ class Model:
         # Write the dicts to a file
         return dump(fname, data, **kwargs)
 
-    def copy(self):
+    def copy(self, name=None):
         """Method to copy a model
+
+        Parameters
+        ----------
+        name: str, optional
+            String with the name of the model. The old name plus is appended
+            with '_copy' if no name is provided.
 
         Returns
         -------
@@ -1561,6 +1673,8 @@ class Model:
             Copy of the original model with no references to the old model.
 
         """
-        data = self.to_dict()
-        ml = load_model(data)
+        if name is None:
+            name = self.name + "_copy"
+        ml = load_model(self.to_dict())
+        ml.name = name
         return ml

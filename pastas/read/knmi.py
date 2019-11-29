@@ -323,21 +323,12 @@ class KnmiStation:
         if line not in ["\n", "\r\n", "# \n", '# \r\n']:
             # sometimes there is no empty line between the header and the data
             f.seek(pos)
-        # Process the datablock
-        if False:
-            # older method, is much slower
-            string2datetime = lambda x: pd.to_datetime(x, format='%Y%m%d')
 
-            data = pd.read_csv(f, header=None, names=header,
-                               parse_dates=['YYYYMMDD'], index_col='YYYYMMDD',
-                               na_values='     ',
-                               converters={1: string2datetime})
-        else:
-            # newer method, calculating the date afterwards is much faster
-            data = pd.read_csv(f, header=None, names=header, na_values='     ')
-            data.set_index(pd.to_datetime(data.YYYYMMDD, format='%Y%m%d'),
-                           inplace=True)
-            data = data.drop('YYYYMMDD', axis=1)
+        # Process the datablock
+        data = pd.read_csv(f, header=None, names=header, na_values='     ')
+        data.set_index(pd.to_datetime(data.YYYYMMDD, format='%Y%m%d'),
+                       inplace=True)
+        data = data.drop('YYYYMMDD', axis=1)
 
         # convert the hours if provided
         if 'HH' in data.keys():

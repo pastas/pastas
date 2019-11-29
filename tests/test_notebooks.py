@@ -24,8 +24,7 @@ def test_notebook(file):
     cwd = os.getcwd()
 
     os.chdir(pathname)
-    # TODO: make 10_pastas_project.ipynb run in tests as well
-    if file not in ['10_pastas_project.ipynb']:
+    if file not in []:
         try:
             # run autotest on each notebook
             cmd = 'jupyter ' + 'nbconvert ' + \
