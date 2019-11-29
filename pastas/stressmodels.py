@@ -187,7 +187,8 @@ class StressModelBase:
 
         return data
 
-    def get_stress(self, p=None, **kwargs):
+    def get_stress(self, p=None, tmin=None, tmax=None, freq=None,
+                   istress=None, **kwargs):
         """Returns the stress or stresses of the time series object as a pandas
         DataFrame.
 
