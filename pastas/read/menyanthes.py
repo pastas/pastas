@@ -20,7 +20,7 @@ from pandas import Series, offsets
 from scipy.io import loadmat
 
 from ..timeseries import TimeSeries
-from ..utils import matlab2datetime, datenum_to_datetime
+from ..utils import datenum_to_datetime
 
 
 def read_meny(fname, locations=None, datatype='H'):
