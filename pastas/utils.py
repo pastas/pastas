@@ -2,6 +2,7 @@ import logging
 from logging import handlers
 
 import numpy as np
+from datetime import datetime, timedelta
 from pandas import (Series, to_datetime, Timedelta, Timestamp, to_timedelta,
                     date_range)
 from pandas.tseries.frequencies import to_offset
@@ -177,16 +178,16 @@ def get_sample(tindex, ref_tindex):
 def timestep_weighted_resample(series0, tindex):
     """Resample a timeseries to a new tindex, using an overlapping period
     weighted average.
-    
+
     The original series and the new tindex do not have to be equidistant. Also,
     the timestep-edges of the new tindex do not have to overlap with the
-    original series. 
-    
+    original series.
+
     It is assumed the series consists of measurements that describe an
     intensity at the end of the period for which they apply. Therefore, when
     upsampling, the values are uniformly spread over the new timestep (like
     bfill).
-    
+
     Compared to the reample methods in Pandas, this method is more accurate for
     non-equidistanct series. It is much slower however.
 
@@ -238,29 +239,29 @@ def timestep_weighted_resample(series0, tindex):
 def timestep_weighted_resample_fast(series0, freq):
     """Resample a time series to a new frequency, using an overlapping period
     weighted average.
-    
+
     The original series does not have to be equidistant.
-    
+
     It is assumed the series consists of measurements that describe an
     intensity at the end of the period for which they apply. Therefore, when
     upsampling, the values are uniformly spread over the new timestep (like
     bfill).
-    
-    Compared to the reample methods in Pandas, this method is more accurate for
-    non-equidistanct series. It is slower however (but faster then the original
-    timestep_weighted_resample).
+
+    Compared to the resample methods in Pandas, this method is more accurate
+    for non-equidistant series. It is slower than Pandas (but faster then the
+    original timestep_weighted_resample).
 
     Parameters
     ----------
     series0 : pandas.Series
-        The original series to be resampled
+        original series to be resampled
     freq : str
-        A Pandas frequency string
+        a Pandas frequency string
 
     Returns
     -------
     series : pandas.Series
-        The resampled series
+        resampled series
 
     """
     series = series0.copy()
@@ -309,13 +310,23 @@ def excel2datetime(tindex, freq="D"):
     return datetimes
 
 
-def matlab2datetime(tindex):
-    """ Transform a matlab time to a datetime, rounded to seconds
-
+def datenum_to_datetime(datenum):
     """
-    day = Timestamp.fromordinal(int(tindex))
-    dayfrac = Timedelta(days=float(tindex) % 1) - Timedelta(days=366)
-    return day + dayfrac
+    Convert Matlab datenum into Python datetime.
+    Parameters
+    ----------
+    datenum: float
+        date in datenum format
+
+    Returns
+    -------
+    datetime :
+        Datetime object corresponding to datenum.
+    """
+    days = datenum % 1.
+    return datetime.fromordinal(int(datenum)) \
+        + timedelta(days=days) \
+        - timedelta(days=366)
 
 
 def datetime2matlab(tindex):

@@ -354,7 +354,7 @@ class Project:
         added to any of the series in mls.oseries and mls.stresses
 
         """
-        for name, ml in self.models.items():
+        for ml in self.models.values():
             oname = ml.oseries.name
             ml.oseries.series_original = self.oseries.loc[
                 oname, "series"].series_original
@@ -618,14 +618,16 @@ class Project:
 
         return data
 
-    def get_metadata(self, meta=None):
+    @staticmethod
+    def get_metadata(meta=None):
         metadata = {"projection": None}
         if meta:
             metadata.update(meta)
 
         return metadata
 
-    def get_file_info(self):
+    @staticmethod
+    def get_file_info():
         file_info = {
             "date_created": pd.Timestamp.now(),
             "date_modified": pd.Timestamp.now(),
@@ -681,7 +683,8 @@ class Project:
 
         return data
 
-    def series_to_dict(self, series):
+    @staticmethod
+    def series_to_dict(series):
         """Internal method used to export the time series."""
         series = series.to_dict(orient="index")
 

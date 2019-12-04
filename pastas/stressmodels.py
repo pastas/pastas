@@ -188,7 +188,8 @@ class StressModelBase:
 
         return data
 
-    def get_stress(self, p=None, **kwargs):
+    def get_stress(self, p=None, tmin=None, tmax=None, freq=None,
+                   istress=None, **kwargs):
         """Returns the stress or stresses of the time series object as a pandas
         DataFrame.
 
@@ -648,7 +649,8 @@ class Constant(StressModelBase):
     def set_init_parameters(self):
         self.parameters = self.rfunc.get_init_parameters(self.name)
 
-    def simulate(self, p=None):
+    @staticmethod
+    def simulate(p=None):
         return p
 
 
@@ -853,7 +855,7 @@ class FactorModel(StressModelBase):
         tmax = stress.series_original.index.max()
         StressModelBase.__init__(self, One, name, tmin=tmin, tmax=tmax,
                                  up=True, meanstress=1, cutoff=0.999)
-        self.value = 1  # Initial value
+        self.value = 1.  # Initial value
         stress = TimeSeries(stress, settings=settings, metadata=metadata)
         self.stress = [stress]
         self.set_init_parameters()

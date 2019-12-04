@@ -185,7 +185,7 @@ class Plotting:
             sm = self.ml.stressmodels[sm_name]
             nsplit = sm.get_nsplit()
             if split and nsplit > 1:
-                for isplit in range(nsplit):
+                for _ in range(nsplit):
                     ax = fig.add_subplot(gs[i + 2, 0], sharex=ax1)
                     contribs[i].plot(ax=ax, x_compat=True)
                     ax.legend(loc=(0, 1), ncol=3, frameon=False)
@@ -563,7 +563,7 @@ class Plotting:
     @model_tmin_tmax
     def contributions_pie(self, tmin=None, tmax=None, ax=None,
                           figsize=None, split=True, partition='std',
-                          wedgeprops={'edgecolor': 'w'}, startangle=90,
+                          wedgeprops=None, startangle=90,
                           autopct='%1.1f%%', **kwargs):
         """Make a pie chart of the contributions. This plot is based on the
         TNO Groundwatertoolbox.
@@ -579,10 +579,16 @@ class Plotting:
             tuple of size 2 to determine the figure size in inches.
         split: bool, optional
             Split the stresses in multiple stresses when possible.
-        partition
-        wedgeprops
-        startangle
-        autopct
+        partition : str
+            statistic to use to determine contribution of stress, either
+            'sum' or 'std' (default).
+        wedgeprops: dict, optional, default None
+            dict containing pie chart wedge properties, default is None,
+            which sets edgecolor to white.
+        startangle: float
+            at which angle to start drawing wedges
+        autopct: str
+            format string to add percentages to pie chart
         kwargs: dict, optional
             The keyword arguments are passed on to plt.pie.
 
@@ -614,6 +620,9 @@ class Plotting:
             labels = [contrib.name for contrib in contribs]
             labels.append("Unexplained")
             kwargs['labels'] = labels
+
+        if wedgeprops is None:
+            wedgeprops = {'edgecolor': 'w'}
 
         ax.pie(frac, wedgeprops=wedgeprops, startangle=startangle,
                autopct=autopct, **kwargs)
@@ -833,7 +842,8 @@ class TrackSolve:
         self.tmax = self.ml.settings["tmax"]
         self.freq = self.ml.settings["freq"]
 
-    def _calc_evp(self, res, obs):
+    @staticmethod
+    def _calc_evp(res, obs):
         """ calculate evp
         """
         if obs.var() == 0.0:

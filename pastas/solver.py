@@ -423,7 +423,10 @@ class LmfitSolve(BaseSolver):
         # Set all optimization attributes
         self.nfev = self.result.nfev
 
-        success = self.result.success
+        if hasattr(self.result, "success"):
+            success = self.result.success
+        else:
+            success = True
         optimal = np.array([p.value for p in self.result.params.values()])
         stderr = np.array([p.stderr for p in self.result.params.values()])
 

@@ -493,8 +493,8 @@ class Model:
         """
         if (self.noisemodel is None) or (self.settings["noise"] is False):
             self.logger.error("Noise cannot be calculated if there is no "
-                              "noisemodel present or used during  parameter "
-                              "estimation.")
+                              "noisemodel present or is not used during "
+                              "parameter estimation.")
             return None
 
         if freq is None:
