@@ -708,8 +708,8 @@ class WellModel(StressModelBase):
         # get largest std for meanstress
         meanstress = np.max([s.series.std() for s in stress])
 
-        tmin = pd.Timestamp.max
-        tmax = pd.Timestamp.min
+        tmin = pd.Timestamp.min
+        tmax = pd.Timestamp.max
 
         StressModelBase.__init__(self, rfunc, name, tmin, tmax,
                                  up, meanstress, cutoff)
