@@ -393,7 +393,8 @@ class LmfitSolve(BaseSolver):
             raise ImportError(msg)
         BaseSolver.__init__(self, ml=ml, pcov=pcov, nfev=nfev, **kwargs)
 
-    def solve(self, noise=True, weights=None, callback=None, **kwargs):
+    def solve(self, noise=True, weights=None, callback=None, method="leastsq",
+              **kwargs):
 
         # Deal with the parameters
         parameters = lmfit.Parameters()
@@ -402,13 +403,11 @@ class LmfitSolve(BaseSolver):
             pp = np.where(p.loc[k].isnull(), None, p.loc[k])
             parameters.add(k, value=pp[0], min=pp[1], max=pp[2], vary=pp[3])
 
-        # set ftol and epsfcn if no options for lmfit are provided. Only
-        # work with Lmfit's least squares solver method.
-        if not kwargs:
-            kwargs = {"ftol": 1e-3, "epsfcn": 1e-4}
-
-        self.result = lmfit.minimize(fcn=self.objfunction, params=parameters,
-                                     args=(noise, weights, callback), **kwargs)
+        # Create the Minimizer object and minimize
+        self.mini = lmfit.Minimizer(userfcn=self.objfunction, calc_covar=True,
+                                    fcn_args=(noise, weights, callback),
+                                    params=parameters, **kwargs)
+        self.result = self.mini.minimize(method=method)
 
         # Set all parameter attributes
         pcov = None
@@ -430,7 +429,12 @@ class LmfitSolve(BaseSolver):
         optimal = np.array([p.value for p in self.result.params.values()])
         stderr = np.array([p.stderr for p in self.result.params.values()])
 
-        return success, optimal, stderr
+        idx = None
+        if "is_weighted" in kwargs:
+            if not kwargs["is_weighted"]:
+                idx = -1
+
+        return success, optimal[:idx], stderr[:idx]
 
     def objfunction(self, parameters, noise, weights, callback):
         param = np.array([p.value for p in parameters.values()])
