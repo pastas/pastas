@@ -33,7 +33,7 @@ class NoiseModelBase(ABC):
             pinit = pinit.median()
         else:
             pinit = 14.0
-        self.parameters.loc["noise_alpha"] = (pinit, 0, 5000, True, "noise")
+        self.parameters.loc["noise_alpha"] = (pinit, 1e-5, 5000, True, "noise")
 
     @set_parameter
     def set_initial(self, name, value):
