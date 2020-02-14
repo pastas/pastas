@@ -121,7 +121,7 @@ class FlexModel:
     def get_init_parameters(self, name="rch"):
         parameters = pd.DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "name"])
-        parameters.loc[name + "_sr"] = (250.0, 1e-5, 1e3, False, name)
+        parameters.loc[name + "_sr"] = (250.0, 1e-5, 1e3, True, name)
         parameters.loc[name + "_lp"] = (0.5, 1e-5, 1, False, name)
         parameters.loc[name + "_ks"] = (50.0, 1, 1e3, True, name)
         parameters.loc[name + "_gamma"] = (4.0, 1e-5, 50.0, True, name)
