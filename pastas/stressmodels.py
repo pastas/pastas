@@ -30,6 +30,7 @@ from scipy.signal import fftconvolve
 
 from .decorators import set_parameter
 from .rfunc import One, Exponential, HantushWellModel
+from .recharge import Linear
 from .timeseries import TimeSeries
 from .utils import validate_name
 
@@ -940,7 +941,7 @@ class RechargeModel(StressModelBase):
     _name = "RechargeModel"
 
     def __init__(self, prec, evap, rfunc=Exponential, name="recharge",
-                 recharge="Linear", temp=None, cutoff=0.999,
+                 recharge=Linear(), temp=None, cutoff=0.999,
                  settings=("prec", "evap", "evap"),
                  metadata=(None, None, None)):
         # Store the precipitation and evaporation time series
@@ -961,9 +962,8 @@ class RechargeModel(StressModelBase):
                   "time step."
             raise IndexError(msg)
 
-        # Dynamically load the required recharge model from string
-        recharge_mod = getattr(import_module("pastas.recharge"), recharge)
-        self.recharge = recharge_mod()
+        # Store recharge object
+        self.recharge = recharge
 
         # Store a temperature time series if needed or set to None
         if self.recharge.temp is True:
