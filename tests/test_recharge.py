@@ -8,8 +8,7 @@ def test_create_rechargemodel():
                     squeeze=True)
     evap = read_csv("tests/data/evap.csv", index_col=0, parse_dates=True,
                     squeeze=True)
-    rm = ps.RechargeModel(prec=rain, evap=evap, name='recharge',
-                          recharge="Linear")
+    rm = ps.RechargeModel(prec=rain, evap=evap, name='recharge')
     return rm
 
 
