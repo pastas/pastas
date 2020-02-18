@@ -233,13 +233,14 @@ class Model:
         """
         self.noisemodel = noisemodel
         self.noisemodel.set_init_parameters(oseries=self.oseries.series)
-        self.parameters = self.get_init_parameters(initial=False)
 
         # check whether noise_alpha is not smaller than ml.settings["freq"]
         freq_in_days = get_dt(self.settings["freq"])
         noise_alpha = self.noisemodel.parameters.initial.iloc[0]
         if freq_in_days > noise_alpha:
-            self.set_initial("noise_alpha", freq_in_days)
+            self.noisemodel.set_initial("noise_alpha", freq_in_days)
+
+        self.parameters = self.get_init_parameters(initial=False)
 
     @get_stressmodel
     def del_stressmodel(self, name):
@@ -369,7 +370,7 @@ class Model:
             istart += 1
         if self.transform:
             sim = self.transform.simulate(sim, parameters[
-                                               istart:istart + self.transform.nparam])
+                istart:istart + self.transform.nparam])
 
         # Respect provided tmin/tmax at this point, since warmup matters for
         # simulation but should not be returned, unless return_warmup=True.
@@ -1489,8 +1490,8 @@ class Model:
                                              "initial", "vary"]]
         parameters.loc[:, "stderr"] = \
             (parameters.loc[:, "stderr"] / parameters.loc[:, "optimal"]) \
-                .abs() \
-                .apply("\u00B1{:.2%}".format)
+            .abs() \
+            .apply("\u00B1{:.2%}".format)
 
         # Determine the width of the fit_report based on the parameters
         width = len(parameters.__str__().split("\n")[1])
@@ -1500,10 +1501,10 @@ class Model:
         w = max(width - 44, 0)
         header = "Model Results {name:<16}{string}Fit Statistics\n" \
                  "{line}\n".format(
-            name=self.name[:14],
-            string=string.format("", fill=' ', align='>', width=w),
-            line=string.format("", fill='=', align='>', width=width)
-        )
+                     name=self.name[:14],
+                     string=string.format("", fill=' ', align='>', width=w),
+                     line=string.format("", fill='=', align='>', width=width)
+                 )
 
         basic = str()
         for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
@@ -1515,9 +1516,10 @@ class Model:
         # Create the parameters block
         parameters = "\nParameters ({n_param} were optimized)\n{line}\n" \
                      "{parameters}".format(
-            n_param=parameters.vary.sum(),
-            line=string.format("", fill='=', align='>', width=width),
-            parameters=parameters)
+                         n_param=parameters.vary.sum(),
+                         line=string.format(
+                             "", fill='=', align='>', width=width),
+                         parameters=parameters)
 
         if output == "full":
             cor = {}

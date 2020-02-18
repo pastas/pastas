@@ -102,9 +102,10 @@ class BaseSolver:
 
         Returns
         -------
-        data: Pandas.DataFrame of length number of observations and two columns
-        labeled 0.025 and 0.975 (numerical values) containing the 2.5% and
-        97.5% prediction interval (for alpha=0.05)
+        data : Pandas.DataFrame
+            DataFrame of length number of observations and two columns labeled
+            0.025 and 0.975 (numerical values) containing the 2.5% and 97.5%
+            prediction interval (for alpha=0.05)
 
         Notes
         -----

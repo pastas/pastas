@@ -759,6 +759,10 @@ class WellModel(StressModelBase):
         if istress is not None:
             if self.stress[istress].name is not None:
                 h.name = self.stress[istress].name
+            else:
+                h.name = self.name + "_" + str(istress)
+        else:
+            h.name = self.name
         return h
 
     def get_stress(self, p=None, istress=None, **kwargs):
