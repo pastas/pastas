@@ -113,7 +113,7 @@ class FlexModel:
     _name = "FlexModel"
 
     def __init__(self):
-        self.nparam = 4
+        self.nparam = 5
         self.dt = 1.0
         self.solver = 0
         self.temp = False
@@ -121,15 +121,16 @@ class FlexModel:
     def get_init_parameters(self, name="rch"):
         parameters = pd.DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "name"])
-        parameters.loc[name + "_sr"] = (250.0, 1e-5, 1e3, True, name)
+        parameters.loc[name + "_sr"] = (150.0, 1e-5, 1e3, True, name)
         parameters.loc[name + "_lp"] = (0.5, 1e-5, 1, False, name)
         parameters.loc[name + "_ks"] = (50.0, 1, 1e3, True, name)
         parameters.loc[name + "_gamma"] = (4.0, 1e-5, 50.0, True, name)
+        parameters.loc[name + "_si"] = (1.0, 1e-5, 10.0, False, name)
         return parameters
 
     def simulate(self, prec, evap, p=None, **kwargs):
         r = self.get_recharge(prec, evap, sr=p[0], lp=p[1], ks=p[2],
-                              gamma=p[3], dt=self.dt)[0]
+                              gamma=p[3], si=p[4], dt=self.dt)[0]
         # self.check_waterbalance(s, fluxes=[-r, -ea, pe])
         return r
 
@@ -140,16 +141,27 @@ class FlexModel:
 
     @staticmethod
     @njit
-    def get_recharge(p, e, sr=200.0, lp=0.5, ks=50.0, gamma=4.0, dt=1.0):
+    def get_recharge(p, e, sr=250.0, lp=0.5, ks=50.0, gamma=4.0, si=2.0,
+                     dt=1.0):
         n = p.size
         # Create an empty array to store the soil state in
         s = np.zeros(n, dtype=np.float64)
         s[0] = 0.5 * sr  # Set the initial system state
         ea = np.zeros(n, dtype=np.float64)
         r = np.zeros(n, dtype=np.float64)
+        i = np.zeros(n, dtype=np.float64)
+        pe = np.zeros(n, dtype=np.float64)
+        ei = np.zeros(n, dtype=np.float64)
+        ep = np.zeros(n, dtype=np.float64)
         lp = lp * sr  # Do this here outside the for-loop for efficiency
 
         for t in range(n - 1):
+            # Interception bucket.
+            pe[t] = max(p[t] - si + i[t], 0.0)
+            ei[t] = min(e[t], i[t])
+            ep[t] = e[t] - ei[t]
+            i[t + 1] = i[t] + dt * (p[t] - pe[t] - ei[t])
+
             # Make sure the solution is larger then 0.0 and smaller than sr
             if s[t] > sr:
                 s[t] = sr
@@ -158,13 +170,13 @@ class FlexModel:
 
             # Calculate actual ET
             if s[t] / lp < 1.0:
-                ea[t] = e[t] * s[t] / lp
+                ea[t] = ep[t] * s[t] / lp
             else:
-                ea[t] = e[t]
+                ea[t] = ep[t]
 
             r[t] = ks * (s[t] / sr) ** gamma
             # Make sure the solution is larger then 0.0 and smaller than sr
-            s[t + 1] = s[t] + dt * (p[t] - r[t] - ea[t])
+            s[t + 1] = s[t] + dt * (pe[t] - r[t] - ea[t])
 
         return r, s, ea, p
 
