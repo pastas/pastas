@@ -30,6 +30,7 @@ rch = FlexModel(preferential=False)
 rch = Berendrecht()
 sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential,
                       recharge=rch, name='recharge')
+
 ml.add_stressmodel(sm)
 
 # Solve

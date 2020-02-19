@@ -251,15 +251,15 @@ class KnmiStation:
         self.readdata(f)
 
     def readdata(self, f):
-        stations = pd.DataFrame()
-        variables = dict()
+        self.stations = pd.DataFrame()
+        self.variables = dict()
 
         isLocations = False
         line = f.readline()
         isMeteo = line.startswith('# ')
 
         # Process the header information (Everything < 'STN,')
-        while 'STN,' not in line:
+        while 'STN,' not in line and line != "":
             # Pre-format the line
             line = line.strip('\n')
             line = line.lstrip('# ')
@@ -276,14 +276,14 @@ class KnmiStation:
                 titels = [x.replace(r')', '') for x in titels]
 
                 # Create pd.DataFrame for station data
-                stations = pd.DataFrame(columns=titels)
-                stations.set_index(['STN'], inplace=True)
+                self.stations = pd.DataFrame(columns=titels)
+                self.stations.set_index(['STN'], inplace=True)
 
             # If line contains variables
             elif ' = ' in line:
                 isLocations = False
                 varDes = line.split(' = ')
-                variables[varDes[0].strip()] = varDes[1].strip()
+                self.variables[varDes[0].strip()] = varDes[1].strip()
             # If location data is recognized in the previous line
             elif isLocations:
                 # Format line. Ensure delimiter is two spaces to read the
@@ -308,7 +308,7 @@ class KnmiStation:
                         return s
 
                 line = [maybe_float(v) for v in line[1:]]
-                stations.loc[stn] = line
+                self.stations.loc[stn] = line
 
             # Read in a new line and start over
             line = f.readline()
@@ -326,6 +326,15 @@ class KnmiStation:
 
         # Process the datablock
         data = pd.read_csv(f, header=None, names=header, na_values='     ')
+        
+        # Close file
+        f.close()
+        
+        if data.empty:
+            warnings.warn('No KNMI data found')
+            self.data = data
+            return
+        
         data.set_index(pd.to_datetime(data.YYYYMMDD, format='%Y%m%d'),
                        inplace=True)
         data = data.drop('YYYYMMDD', axis=1)
@@ -354,13 +363,13 @@ class KnmiStation:
             data.drop('', axis=1, inplace=True)
 
         # Adjust the unit of the measurements
-        for key, value in variables.items():
+        for key, value in self.variables.items():
             # test if key existst in data
             if key not in data.keys():
                 if key == 'YYYYMMDD' or key == 'HH':
                     pass
                 elif key == 'T10N':
-                    variables.pop(key)
+                    self.variables.pop(key)
                     key = 'T10'
                 else:
                     raise NameError(key + ' does not exist in data')
@@ -395,11 +404,6 @@ class KnmiStation:
                 # do not adjust (yet)
                 pass
             # Store new variable
-            variables[key] = value
+            self.variables[key] = value
 
-        # Close file
-        f.close()
-
-        self.stations = stations
-        self.variables = variables
         self.data = data

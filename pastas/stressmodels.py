@@ -31,6 +31,7 @@ from scipy.signal import fftconvolve
 from .decorators import set_parameter
 from .recharge import Linear
 from .rfunc import One, Exponential, HantushWellModel
+from .recharge import Linear
 from .timeseries import TimeSeries
 from .utils import validate_name
 
@@ -709,8 +710,8 @@ class WellModel(StressModelBase):
         # get largest std for meanstress
         meanstress = np.max([s.series.std() for s in stress])
 
-        tmin = pd.Timestamp.max
-        tmax = pd.Timestamp.min
+        tmin = pd.Timestamp.min
+        tmax = pd.Timestamp.max
 
         StressModelBase.__init__(self, rfunc, name, tmin, tmax,
                                  up, meanstress, cutoff)
@@ -759,6 +760,10 @@ class WellModel(StressModelBase):
         if istress is not None:
             if self.stress[istress].name is not None:
                 h.name = self.stress[istress].name
+            else:
+                h.name = self.name + "_" + str(istress)
+        else:
+            h.name = self.name
         return h
 
     def get_stress(self, p=None, istress=None, **kwargs):
@@ -962,12 +967,7 @@ class RechargeModel(StressModelBase):
                   "time step."
             raise IndexError(msg)
 
-        # Dynamically load the required recharge model from string
-        if isinstance(recharge, str):
-            logger.warning("DeprecationWarning: Support for providing a "
-                           "recharge model as a string will be dropped in "
-                           "Pastas version 0.14.0")
-            recharge = getattr(import_module("pastas.recharge"), recharge)()
+        # Store recharge object
         self.recharge = recharge
 
         # Store a temperature time series if needed or set to None

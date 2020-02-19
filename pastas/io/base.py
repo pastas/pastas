@@ -151,6 +151,8 @@ def load_model(data):
         ts.pop("stressmodel")
         if "rfunc" in ts.keys():
             ts["rfunc"] = getattr(ps.rfunc, ts["rfunc"])
+        if "recharge" in ts.keys():
+            ts["recharge"] = getattr(ps.recharge, ts["recharge"])()
         if "stress" in ts.keys():
             for i, stress in enumerate(ts["stress"]):
                 ts["stress"][i] = ps.TimeSeries(**stress)
