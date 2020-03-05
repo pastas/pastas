@@ -231,6 +231,8 @@ class Plotting:
             stderr_perc = np.abs(np.divide(vals.stderr, vals.optimal) * 100)
             parameters.loc[name, "stderr"] = '{:.1f}{}'.format(stderr_perc,
                                                                "\u0025")
+        if not self.ml.settings["noise"]:
+            parameters["stderr"] = "-"
         ax3.axis('off')
         # loc='upper center'
         ax3.table(bbox=(0., 0., 1.0, 1.0), cellText=parameters.values,

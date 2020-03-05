@@ -1496,6 +1496,8 @@ class Model:
             (parameters.loc[:, "stderr"] / parameters.loc[:, "optimal"]) \
             .abs() \
             .apply("\u00B1{:.2%}".format)
+        if not self.settings["noise"]:
+            parameters["stderr"] = '-'
 
         # Determine the width of the fit_report based on the parameters
         width = len(parameters.__str__().split("\n")[1])
