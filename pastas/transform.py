@@ -5,6 +5,7 @@
 """
 import numpy as np
 from pandas import DataFrame
+from .decorators import set_parameter
 
 
 class ThresholdTransform:
@@ -55,9 +56,54 @@ class ThresholdTransform:
 
     def set_init_parameters(self):
         self.parameters.loc[self.name + '_1'] = (
-            self.value, self.vmin, self.vmax, 1, self.name)
+            self.value, self.vmin, self.vmax, True, self.name)
         if self.nparam == 2:
-            self.parameters.loc[self.name + '_2'] = (0.5, 0., 1., 1, self.name)
+            self.parameters.loc[self.name + '_2'] = (0.5, 0., 1., True, self.name)
+            
+    @set_parameter
+    def set_initial(self, name, value):
+        """Internal method to set the initial parameter value.
+
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
+
+        """
+        self.parameters.loc[name, 'initial'] = value
+
+    @set_parameter
+    def set_pmin(self, name, value):
+        """Internal method to set the lower bound of the parameter value.
+
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
+
+        """
+        self.parameters.loc[name, 'pmin'] = value
+
+    @set_parameter
+    def set_pmax(self, name, value):
+        """Internal method to set the upper bound of the parameter value.
+
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
+
+        """
+        self.parameters.loc[name, 'pmax'] = value
+
+    @set_parameter
+    def set_vary(self, name, value):
+        """Internal method to set if the parameter is varied during
+        optimization.
+
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
+
+        """
+        self.parameters.loc[name, 'vary'] = bool(value)
 
     def simulate(self, h, p):
         if self.nparam == 1:

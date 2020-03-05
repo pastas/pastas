@@ -805,6 +805,7 @@ class Model:
         # Because either of the following is not necessarily present
         noisemodel = self.noisemodel.name if self.noisemodel else "NotPresent"
         constant = self.constant.name if self.constant else "NotPresent"
+        transform = self.transform.name if self.transform else "NotPresent"
 
         if cat in self.stressmodels.keys():
             self.stressmodels[cat].__getattribute__("set_" + kind)(name, value)
@@ -814,6 +815,9 @@ class Model:
             self.parameters.loc[name, kind] = value
         elif cat == constant:
             self.constant.__getattribute__("set_" + kind)(name, value)
+            self.parameters.loc[name, kind] = value
+        elif cat == transform:
+            self.transform.__getattribute__("set_" + kind)(name, value)
             self.parameters.loc[name, kind] = value
 
     def _set_freq(self):
