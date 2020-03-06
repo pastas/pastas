@@ -21,18 +21,18 @@ ml = ps.Model(obs, name="head")
 
 # read weather data
 rain = pd.read_csv("data/rain_nb1.csv", index_col=0, parse_dates=True,
-                   squeeze=True)
+                   squeeze=True) * 1e3
 evap = pd.read_csv("data/evap_nb1.csv", index_col=0, parse_dates=True,
-                   squeeze=True)
+                   squeeze=True) * 1e3
 
 # Initialize recharge model and create stressmodel
-rch = FlexModel(preferential=False)
-rch = Berendrecht()
-sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential,
+rch = FlexModel()
+#rch = Berendrecht()
+sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma,
                       recharge=rch, name='recharge')
 
 ml.add_stressmodel(sm)
 
 # Solve
-ml.solve(noise=False)
+ml.solve(noise=True)
 ml.plots.results()
