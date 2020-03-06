@@ -61,7 +61,7 @@ class Linear(RechargeBase):
     -----
     The precipitation excess is calculated as:
 
-    ..math::
+    .. math::
 
         R = P - f * E
 
@@ -113,13 +113,13 @@ class FlexModel(RechargeBase):
 
     The waterbalance for the unsaturated zone reservoir is written as:
 
-    ..math::
+    .. math::
 
         \\frac{dS}{dt} = P_e - E_a - R
 
     where the recharge is calculated as:
 
-    ..math::
+    .. math::
 
         R = K_s \\left( \\frac{S}{S_u}\\right) ^\\gamma
 
@@ -234,13 +234,13 @@ class Berendrecht(RechargeBase):
     Note that the preferred unit of the precipitation and evapotranspiration
     is mm/d. The waterbalance for the unsaturated zone reservoir is written as:
 
-    ..math::
+    .. math::
 
         \\frac{dS_e}{dt} = \\frac{1}{D_e}(f_iP - E_a - R)
 
     where the recharge is calculated as:
 
-    ..math::
+    .. math::
 
         R(S_e) = K_sS_e^\\lambda(1-(1-S_e^{1/m})^m)^2
 
