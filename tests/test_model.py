@@ -67,7 +67,7 @@ def test_solve_empty_model():
         if e.args[0].startswith("Calibration series "):
             return
         else:
-            raise(e)
+            raise e
 
 
 def test_save_model():

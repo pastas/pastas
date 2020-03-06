@@ -9,7 +9,7 @@ from abc import ABC
 from logging import getLogger
 
 import numpy as np
-import pandas as pd
+from pandas import Timedelta, DataFrame
 
 from .decorators import set_parameter
 
@@ -24,12 +24,12 @@ class NoiseModelBase(ABC):
     def __init__(self):
         self.nparam = 0
         self.name = "noise"
-        self.parameters = pd.DataFrame(
+        self.parameters = DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "name"])
 
     def set_init_parameters(self, oseries=None):
         if oseries is not None:
-            pinit = oseries.index.to_series().diff() / pd.Timedelta(1, "d")
+            pinit = oseries.index.to_series().diff() / Timedelta(1, "d")
             pinit = pinit.median()
         else:
             pinit = 14.0
@@ -103,7 +103,8 @@ class NoiseModel(NoiseModelBase):
     Calculates the noise [1]_ according to:
 
     .. math::
-        v(t1) = r(t1) - r(t0) * exp(- (t1 - t0) / alpha)
+
+        v(t1) = r(t1) - r(t0) * exp(- (\\frac{\\Delta t}{\\alpha})
 
     Note that in the referenced paper, alpha is defined as the inverse of
     alpha used in Pastas. The unit of the alpha parameter is always in days.
@@ -136,7 +137,7 @@ class NoiseModel(NoiseModelBase):
         ----------
         res : pandas.Series
             The residual series.
-        parameters : array-like, optional
+        parameters : array-like
             Alpha parameters used by the noisemodel.
 
         Returns
@@ -146,7 +147,7 @@ class NoiseModel(NoiseModelBase):
 
         """
         alpha = parameters[0]
-        odelt = (res.index[1:] - res.index[:-1]).values / pd.Timedelta("1d")
+        odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
         # res.values is needed else it gets messed up with the dates
         v = res.values[1:] - np.exp(-odelt / alpha) * res.values[:-1]
         res.iloc[1:] = v * self.weights(alpha, odelt)
@@ -184,7 +185,8 @@ class NoiseModel2(NoiseModelBase):
     Calculates the noise according to:
 
     .. math::
-        v(t1) = r(t1) - r(t0) * exp(- (t1 - t0) / alpha)
+
+        v(t1) = r(t1) - r(t0) * exp(- (\\frac{\\Delta t}{\\alpha})
 
     The unit of the alpha parameter is always in days.
 
@@ -213,7 +215,7 @@ class NoiseModel2(NoiseModelBase):
         ----------
         res : pandas.Series
             The residual series.
-        parameters : array_like, optional
+        parameters : array_like
             Alpha parameters used by the noisemodel.
 
         Returns
@@ -223,7 +225,7 @@ class NoiseModel2(NoiseModelBase):
 
         """
         alpha = parameters[0]
-        odelt = (res.index[1:] - res.index[:-1]).values / pd.Timedelta("1d")
+        odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
         # res.values is needed else it gets messed up with the dates
         v = res.values[1:] - np.exp(-odelt / alpha) * res.values[:-1]
         res.iloc[1:] = v

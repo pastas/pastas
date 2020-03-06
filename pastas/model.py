@@ -16,7 +16,7 @@ from logging import getLogger
 from os import getlogin
 
 import numpy as np
-import pandas as pd
+from pandas import date_range, Series, Timedelta, DataFrame, Timestamp
 
 from .decorators import get_stressmodel
 from .io.base import dump, load_model
@@ -78,7 +78,7 @@ class Model:
                 name = 'Observations'
         self.name = validate_name(name)
 
-        self.parameters = pd.DataFrame(
+        self.parameters = DataFrame(
             columns=["initial", "name", "optimal", "pmin", "pmax", "vary",
                      "stderr"])
 
@@ -93,8 +93,8 @@ class Model:
             "tmin": None,
             "tmax": None,
             "freq": "D",
-            "warmup": pd.Timedelta(days=3650),
-            "time_offset": pd.Timedelta(0),
+            "warmup": Timedelta(days=3650),
+            "time_offset": Timedelta(0),
             "noise": noisemodel,
             "solver": None,
             "fit_constant": True,
@@ -134,7 +134,7 @@ class Model:
                                noise=not self.noisemodel is None)
 
     def add_stressmodel(self, stressmodel, *args, replace=False):
-        """Adds a stressmodel to the main model.
+        """Add a stressmodel to the main model.
 
         Parameters
         ----------
@@ -180,7 +180,7 @@ class Model:
                                     "overlap with ml.oseries.")
 
     def add_constant(self, constant):
-        """Adds a Constant to the time series Model.
+        """Add a Constant to the time series Model.
 
         Parameters
         ----------
@@ -197,7 +197,7 @@ class Model:
         self.parameters = self.get_init_parameters(initial=False)
 
     def add_transform(self, transform):
-        """Adds a Transform to the time series Model.
+        """Add a Transform to the time series Model.
 
         Parameters
         ----------
@@ -310,7 +310,7 @@ class Model:
             String with the frequency the stressmodels are simulated. Must
             be one of the following: (D, h, m, s, ms, us, ns) or a multiple of
             that e.g. "7D".
-        warmup: float/int, optional
+        warmup: float or int, optional
             Warmup period (in Days).
         return_warmup: bool, optional
             Return the simulation including the the warmup period or not,
@@ -345,8 +345,8 @@ class Model:
             freq = self.settings["freq"]
         if warmup is None:
             warmup = self.settings["warmup"]
-        elif not isinstance(warmup, pd.Timedelta):
-            warmup = pd.Timedelta(days=warmup)
+        elif not isinstance(warmup, Timedelta):
+            warmup = Timedelta(warmup, "D")
 
         # Get the simulation index and the time step
         sim_index = self.get_sim_index(tmin, tmax, freq, warmup)
@@ -356,8 +356,8 @@ class Model:
         if parameters is None:
             parameters = self.get_parameters()
 
-        sim = pd.Series(data=np.zeros(sim_index.size, dtype=float),
-                        index=sim_index, fastpath=True)
+        sim = Series(data=np.zeros(sim_index.size, dtype=float),
+                     index=sim_index, fastpath=True)
 
         istart = 0  # Track parameters index to pass to stressmodel object
         for sm in self.stressmodels.values():
@@ -370,7 +370,7 @@ class Model:
             istart += 1
         if self.transform:
             sim = self.transform.simulate(sim, parameters[
-                istart:istart + self.transform.nparam])
+                                               istart:istart + self.transform.nparam])
 
         # Respect provided tmin/tmax at this point, since warmup matters for
         # simulation but should not be returned, unless return_warmup=True.
@@ -403,7 +403,7 @@ class Model:
             String with the frequency the stressmodels are simulated. Must
             be one of the following: (D, h, m, s, ms, us, ns) or a multiple of
             that e.g. "7D".
-        warmup: float/int, optional
+        warmup: float or int, optional
             Warmup period (in Days).
 
         Returns
@@ -422,7 +422,7 @@ class Model:
         if warmup is None:
             warmup = self.settings["warmup"]
         else:
-            warmup = pd.Timedelta(days=warmup)
+            warmup = Timedelta(warmup, "D")
 
         # simulate model
         sim = self.simulate(parameters, tmin, tmax, freq, warmup,
@@ -454,7 +454,7 @@ class Model:
             self.logger.warning('Nan-values were removed from the residuals.')
 
         if self.normalize_residuals:
-            res = res - res.values.mean()
+            res = res.subtract(res.values.mean())
 
         res.name = "Residuals"
         return res
@@ -478,7 +478,7 @@ class Model:
             String with the frequency the stressmodels are simulated. Must
             be one of the following: (D, h, m, s, ms, us, ns) or a multiple of
             that e.g. "7D".
-        warmup: float/int, optional
+        warmup: float or int, optional
             Warmup period (in Days).
 
         Returns
@@ -529,7 +529,7 @@ class Model:
             String with the frequency the stressmodels are simulated. Must
             be one of the following: (D, h, m, s, ms, us, ns) or a multiple of
             that e.g. "7D".
-        update_observations : bool, optional
+        update_observations: bool, optional
             if True, force recalculation of the observations series, default
             is False
 
@@ -589,8 +589,8 @@ class Model:
         if noise is None and self.noisemodel:
             noise = True
         elif noise is True and self.noisemodel is None:
-            self.logger.warning("""Warning, solving with noisemodel while no
-                              noisemodel is defined. No noisemodel is used.""")
+            self.logger.warning("Warning, solving with noise=True while no "
+                                "noisemodel is present. noise set to False")
             noise = False
 
         self.settings["noise"] = noise
@@ -601,7 +601,7 @@ class Model:
             self.settings["freq"] = frequency_is_supported(freq)
 
         if warmup is not None:
-            self.settings["warmup"] = pd.Timedelta(days=warmup)
+            self.settings["warmup"] = Timedelta(days=warmup)
 
         # Set the time offset from the frequency (this does not work as expected yet)
         # self._set_time_offset()
@@ -652,7 +652,7 @@ class Model:
             String with the frequency the stressmodels are simulated. Must
             be one of the following: (D, h, m, s, ms, us, ns) or a multiple of
             that e.g. "7D".
-        warmup: float/int, optional
+        warmup: float or int, optional
             Warmup period (in Days) for which the simulation is calculated,
             but not used for the calibration period.
         noise: bool, optional
@@ -787,7 +787,6 @@ class Model:
         value: float
             maximum value for the parameter.
 
-
         """
         self.set_parameter(name, value, "pmax")
 
@@ -838,14 +837,15 @@ class Model:
                             # first check the frequency, and use this
                             freqs.add(stress.settings['freq'])
                         elif stress.freq_original:
-                            # if this is not available, and the original frequency is, take the original frequency
+                            # if this is not available, and the original
+                            # frequency is, take the original frequency
                             freqs.add(stress.freq_original)
 
         if len(freqs) == 1:
             # if there is only one frequency, use this frequency
             self.settings["freq"] = next(iter(freqs))
         elif len(freqs) > 1:
-            # if there are more frequencies, take the highest frequency (lowest dt)
+            # if there are more frequencies, take the highest (lowest dt)
             freqs = list(freqs)
             dt = np.array([get_dt(f) for f in freqs])
             self.settings["freq"] = freqs[np.argmin(dt)]
@@ -859,7 +859,8 @@ class Model:
 
         Notes
         -----
-        Method to check if the StressModel timestamps match (e.g. similar hours)
+        Method to check if the StressModel timestamps match
+        (e.g. similar hours)
 
         """
         time_offsets = set()
@@ -880,7 +881,7 @@ class Model:
         if len(time_offsets) == 1:
             self.settings["time_offset"] = next(iter(time_offsets))
         else:
-            self.settings["time_offset"] = pd.Timedelta(0)
+            self.settings["time_offset"] = Timedelta(0)
 
     def get_stressmodel_names(self):
         """Returns list of stressmodel names"""
@@ -891,17 +892,17 @@ class Model:
 
         Parameters
         ----------
-        tmin: str
+        tmin: pandas.Timestamp
             String with a start date for the simulation period (E.g. '1980').
             If none is provided, the tmin from the oseries is used.
-        tmax: str
+        tmax: pandas.Timestamp
             String with an end date for the simulation period (E.g. '2010').
             If none is provided, the tmax from the oseries is used.
         freq: str
             String with the frequency the stressmodels are simulated. Must
             be one of the following: (D, h, m, s, ms, us, ns) or a multiple of
             that e.g. "7D".
-        warmup: float/int
+        warmup: pandas.Timedelta
             Warmup period (in Days).
         update_sim_index : bool, optional
             if True, force recalculation of sim_index, default is False
@@ -918,10 +919,11 @@ class Model:
                                 ["tmin", "tmax", "freq", "warmup"]):
             if key != self.settings[setting]:
                 update_sim_index = True
+                break
 
         if self.sim_index is None or update_sim_index:
             tmin = (tmin - warmup).floor(freq) + self.settings["time_offset"]
-            sim_index = pd.date_range(tmin, tmax, freq=freq)
+            sim_index = date_range(tmin, tmax, freq=freq)
         else:
             sim_index = self.sim_index
         return sim_index
@@ -973,19 +975,19 @@ class Model:
             ts_tmin = self.oseries.series.index.min()
         # Get tmin from the stressmodels
         elif use_stresses:
-            ts_tmin = pd.Timestamp.max
+            ts_tmin = Timestamp.max
             for stressmodel in self.stressmodels.values():
                 if stressmodel.tmin < ts_tmin:
                     ts_tmin = stressmodel.tmin
         # Get tmin and tmax from user provided values
         else:
-            ts_tmin = pd.Timestamp(tmin)
+            ts_tmin = Timestamp(tmin)
 
         # Set tmin properly
         if tmin is not None and use_oseries:
-            tmin = max(pd.Timestamp(tmin), ts_tmin)
+            tmin = max(Timestamp(tmin), ts_tmin)
         elif tmin is not None:
-            tmin = pd.Timestamp(tmin)
+            tmin = Timestamp(tmin)
         else:
             tmin = ts_tmin
 
@@ -1045,19 +1047,19 @@ class Model:
             ts_tmax = self.oseries.series.index.max()
         # Get tmax from the stressmodels
         elif use_stresses:
-            ts_tmax = pd.Timestamp.min
+            ts_tmax = Timestamp.min
             for stressmodel in self.stressmodels.values():
                 if stressmodel.tmax > ts_tmax:
                     ts_tmax = stressmodel.tmax
         # Get tmax from user provided values
         else:
-            ts_tmax = pd.Timestamp(tmax)
+            ts_tmax = Timestamp(tmax)
 
         # Set tmax properly
         if tmax is not None and use_oseries:
-            tmax = min(pd.Timestamp(tmax), ts_tmax)
+            tmax = min(Timestamp(tmax), ts_tmax)
         elif tmax is not None:
-            tmax = pd.Timestamp(tmax)
+            tmax = Timestamp(tmax)
         else:
             tmax = ts_tmax
 
@@ -1088,8 +1090,7 @@ class Model:
         if noise is None:
             noise = self.settings['noise']
 
-        parameters = pd.DataFrame(columns=["initial", "name", "optimal",
-                                           "pmin", "pmax", "vary", "stderr"])
+        parameters = DataFrame(columns=self.parameters.columns)
         for sm in self.stressmodels.values():
             parameters = parameters.append(sm.parameters, sort=False)
         if self.constant:
@@ -1161,7 +1162,7 @@ class Model:
             String with the frequency the stressmodels are simulated. Must
             be one of the following: (D, h, m, s, ms, us, ns) or a multiple of
             that e.g. "7D".
-        warmup: float/int, optional
+        warmup: float or int, optional
             Warmup period (in Days).
         istress: int, optional
             When multiple stresses are present in a stressmodel, this keyword
@@ -1190,11 +1191,11 @@ class Model:
         if warmup is None:
             warmup = self.settings["warmup"]
         else:
-            warmup = pd.Timedelta(days=warmup)
+            warmup = Timedelta(warmup, "D")
 
         # use warmup
         if tmin:
-            tmin_warm = pd.Timestamp(tmin) - warmup
+            tmin_warm = Timestamp(tmin) - warmup
         else:
             tmin_warm = None
 
@@ -1307,7 +1308,7 @@ class Model:
             t = dt
         else:
             t = np.linspace(dt, response.size * dt, response.size)
-        response = pd.Series(response, index=t, name=name)
+        response = Series(response, index=t, name=name)
         response.index.name = "Time [days]"
 
         return response
@@ -1385,7 +1386,7 @@ class Model:
 
         Returns
         -------
-        stress: pandas.Series/list
+        stress: pandas.Series or list
             If one stress is present, a pandas Series is returned. If more
             are present, a list of pandas Series is returned.
 
@@ -1402,17 +1403,17 @@ class Model:
         if warmup is None:
             warmup = self.settings["warmup"]
         else:
-            warmup = pd.Timedelta(days=warmup)
+            warmup = Timedelta(warmup, "D")
 
         # use warmup
         if tmin:
-            tmin_warm = pd.Timestamp(tmin) - warmup
+            tmin_warm = Timestamp(tmin) - warmup
         else:
             tmin_warm = None
 
-        kwargs = {'tmin': tmin_warm, 'tmax': tmax, 'freq': freq}
+        kwargs = {"tmin": tmin_warm, "tmax": tmax, "freq": freq}
         if istress is not None:
-            kwargs['istress'] = istress
+            kwargs["istress"] = istress
 
         stress = self.stressmodels[name].get_stress(p=parameters, **kwargs)
         if not return_warmup:
@@ -1433,9 +1434,9 @@ class Model:
         if hasattr(self, "file_info"):
             file_info = self.file_info
         else:
-            file_info = {"date_created": pd.Timestamp.now()}
+            file_info = {"date_created": Timestamp.now()}
 
-        file_info["date_modified"] = pd.Timestamp.now()
+        file_info["date_modified"] = Timestamp.now()
         file_info["pastas_version"] = __version__
 
         try:
@@ -1450,8 +1451,9 @@ class Model:
 
         Parameters
         ----------
-        output: str
-            NotImplementedYet
+        output: str, optional
+            If any other value than "full" is provided, the parameter
+            correlations will be removed from the output.
 
         Returns
         -------
@@ -1485,17 +1487,13 @@ class Model:
                                    self.settings["noise"] else np.nan),
             "BIC": "{:.2f}".format(self.stats.bic() if
                                    self.settings["noise"] else np.nan),
-            "___": "",
-            "___ ": "",
-            "___  ": ""
+            "___": "", "___ ": "", "___  ": ""  # Make columns equal
         }
 
         parameters = self.parameters.loc[:, ["optimal", "stderr",
                                              "initial", "vary"]]
-        parameters.loc[:, "stderr"] = \
-            (parameters.loc[:, "stderr"] / parameters.loc[:, "optimal"]) \
-            .abs() \
-            .apply("\u00B1{:.2%}".format)
+        stderr = parameters.loc[:, "stderr"] / parameters.loc[:, "optimal"]
+        parameters.loc[:, "stderr"] = stderr.abs().apply("\u00B1{:.2%}".format)
 
         # Determine the width of the fit_report based on the parameters
         width = len(parameters.__str__().split("\n")[1])
@@ -1505,12 +1503,12 @@ class Model:
         w = max(width - 44, 0)
         header = "Model Results {name:<16}{string}Fit Statistics\n" \
                  "{line}\n".format(
-                     name=self.name[:14],
-                     string=string.format("", fill=' ', align='>', width=w),
-                     line=string.format("", fill='=', align='>', width=width)
-                 )
+            name=self.name[:14],
+            string=string.format("", fill=' ', align='>', width=w),
+            line=string.format("", fill='=', align='>', width=width)
+        )
 
-        basic = str()
+        basic = ""
         for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
             w = max(width - 38, 0)
             val4 = string.format(val4, fill=' ', align='>', width=w)
@@ -1520,10 +1518,10 @@ class Model:
         # Create the parameters block
         parameters = "\nParameters ({n_param} were optimized)\n{line}\n" \
                      "{parameters}".format(
-                         n_param=parameters.vary.sum(),
-                         line=string.format(
-                             "", fill='=', align='>', width=width),
-                         parameters=parameters)
+            n_param=parameters.vary.sum(),
+            line=string.format(
+                "", fill='=', align='>', width=width),
+            parameters=parameters)
 
         if output == "full":
             cor = {}
@@ -1534,13 +1532,12 @@ class Model:
                             and ((col, idx) not in cor.keys()):
                         cor[(idx, col)] = pcor.loc[idx, col].round(2)
 
-            cor = pd.DataFrame(data=cor.values(), index=cor.keys(),
-                               columns=["rho"])
+            cor = DataFrame(data=cor.values(), index=cor.keys(),
+                            columns=["rho"])
             correlations = "\n\nParameter correlations |rho| > 0.5\n{}" \
                            "\n{}".format(string.format("", fill='=', align='>',
                                                        width=width),
                                          cor.to_string(header=False))
-
         else:
             correlations = ""
 
@@ -1553,6 +1550,13 @@ class Model:
     def check_parameters_bounds(self, alpha=0.01):
         """Check if the optimal parameters are close to pmin or pmax.
 
+        Parameters
+        ----------
+        alpha: float, optional
+            value between 0 and 1 to determine if the parameters is close to
+            the maximum or minimum is determined as the percentage of the
+            parameter range.
+
         Returns
         -------
         pmin: pandas.Series
@@ -1562,11 +1566,6 @@ class Model:
             pandas series with boolean values of the parameters that are
             close to the maximum values.
 
-        Notes
-        -----
-        The criteria to determine if the parameters is close to the maximum or
-        minimum is determined as the percentage of the parameter range.
-
         """
         prange = self.parameters.pmax - self.parameters.pmin
         pnorm = (self.parameters.optimal - self.parameters.pmin) / prange
@@ -1574,7 +1573,7 @@ class Model:
         pmin = pnorm < alpha
         return pmin, pmax
 
-    def to_dict(self, series=True, sim_series=False, file_info=True):
+    def to_dict(self, series=True, file_info=True):
         """Internal method to export a model to a dictionary.
 
         Helper function for the self.export method.
@@ -1593,18 +1592,17 @@ class Model:
         - parameters
         - metadata
         - settings
-        - ..... future attributes?
 
         """
 
         # Create a dictionary to store all data
-        data = {
-            "name": self.name,
-            "oseries": self.oseries.to_dict(series=series)
-        }
+        data = {"name": self.name,
+                "oseries": self.oseries.to_dict(series=series),
+                "parameters": self.parameters,
+                "settings": self.settings,
+                "stressmodels": dict()}
 
         # Stressmodels
-        data["stressmodels"] = dict()
         for name, sm in self.stressmodels.items():
             data["stressmodels"][name] = sm.to_dict(series=series)
 
@@ -1624,20 +1622,9 @@ class Model:
         if self.fit:
             data["fit"] = self.fit.to_dict()
 
-        # Parameters
-        data["parameters"] = self.parameters
-
-        # Simulation Settings
-        data["settings"] = self.settings
-
         # Update and save file information
         if file_info:
             data["file_info"] = self.get_file_info()
-
-        # Export simulated series if necessary
-        if sim_series:
-            # TODO to_file the simulation, residuals and noise series.
-            NotImplementedError()
 
         return data
 
@@ -1659,7 +1646,7 @@ class Model:
         """
 
         # Get dicts for all data sources
-        data = self.to_dict(series)
+        data = self.to_dict(series=series)
 
         # Write the dicts to a file
         return dump(fname, data, **kwargs)
