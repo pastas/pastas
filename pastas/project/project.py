@@ -650,7 +650,7 @@ class Project:
         data = self.to_dict(**kwargs)
         return dump(fname, data)
 
-    def to_dict(self, series=False, sim_series=False):
+    def to_dict(self, series=False):
         """Internal method to export a Pastas Project as a dictionary.
 
         Parameters
@@ -658,8 +658,6 @@ class Project:
         series: bool, optional
             export model input-series when True. Only export the name of
             the model input_series when False
-        sim_series: bool, optional
-            export model output-series when True
 
         Returns
         -------
@@ -678,8 +676,7 @@ class Project:
 
         # Add Models
         for name, ml in self.models.items():
-            data["models"][name] = ml.to_dict(series=series, file_info=False,
-                                              sim_series=sim_series)
+            data["models"][name] = ml.to_dict(series=series, file_info=False)
 
         return data
 
