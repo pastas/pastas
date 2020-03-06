@@ -61,12 +61,13 @@ class Linear(RechargeBase):
     -----
     The precipitation excess is calculated as:
 
-    ..math
+    ..math::
+
         R = P - f * E
 
     References
     ----------
-    ..[1] von Asmuth, J., Bierkens, M., and Maas, K. (2002) Transfer function-noise modeling in continuous time using predefined impulse response functions, Water Resources Research, 38, 23–1–23–12.
+    .. [1] von Asmuth, J., Bierkens, M., and Maas, K. (2002) Transfer function-noise modeling in continuous time using predefined impulse response functions, Water Resources Research, 38, 23–1–23–12.
 
     """
     _name = "Linear"
@@ -112,18 +113,22 @@ class FlexModel(RechargeBase):
 
     The waterbalance for the unsaturated zone reservoir is written as:
 
-    ..math: \\frac{dS}{dt} = P_e - E_a - R
+    ..math::
+
+        \\frac{dS}{dt} = P_e - E_a - R
 
     where the recharge is calculated as:
 
-    ..math: R = K_s \\left( \\frac{S}{S_u}\\right) ^\\gamma
+    ..math::
+
+        R = K_s \\left( \\frac{S}{S_u}\\right) ^\\gamma
 
     For a detailed description of the recharge model and parameters we refer
     to the following publication [2]_.
 
     References
     ----------
-    ..[2] Collenteur, R.A., Bakker, M., Birk, S. (in Prep.) Estimating groundwater recharge using non-linear transfer function noise models.
+    .. [2] Collenteur, R.A., Bakker, M., Birk, S. (in Prep.) Estimating groundwater recharge using non-linear transfer function noise models.
 
     """
     _name = "FlexModel"
@@ -229,11 +234,15 @@ class Berendrecht(RechargeBase):
     Note that the preferred unit of the precipitation and evapotranspiration
     is mm/d. The waterbalance for the unsaturated zone reservoir is written as:
 
-    ..math: \\frac{dS_e}{dt} = \\frac{1}{D_e}(f_iP - E_a - R)
+    ..math::
+
+        \\frac{dS_e}{dt} = \\frac{1}{D_e}(f_iP - E_a - R)
 
     where the recharge is calculated as:
 
-    ..math: R(S_e) = K_sS_e^\\lambda(1-(1-S_e^{1/m})^m)^2
+    ..math::
+
+        R(S_e) = K_sS_e^\\lambda(1-(1-S_e^{1/m})^m)^2
 
     For a detailed description of the recharge model and parameters we refer
     to the publications [3]_ and [2]_.
