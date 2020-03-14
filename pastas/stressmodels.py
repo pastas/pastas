@@ -286,9 +286,9 @@ class StressModel(StressModelBase):
 
         # Deprecate metadata as of version 0.14.0 and remove in 0.15.0
         if metadata is not None:
-            logger.warning("The metadata argument is deprecated and "
-                           "will be removed in version 0.15.0.",
-                           DeprecationWarning)
+            self.logger.warning("The metadata argument is deprecated and "
+                                "will be removed in version 0.15.0.",
+                                DeprecationWarning)
 
         stress = TimeSeries(stress, settings=settings)
 
@@ -403,9 +403,9 @@ class StressModel2(StressModelBase):
                  settings=("prec", "evap"), metadata=None, meanstress=None):
         # Deprecate metadata as of version 0.14.0 and remove in 0.15.0
         if metadata is not None:
-            logger.warning("The metadata argument is deprecated and "
-                           "will be removed in version 0.15.0.",
-                           DeprecationWarning)
+            self.logger.warning("The metadata argument is deprecated and "
+                                "will be removed in version 0.15.0.",
+                                DeprecationWarning)
 
         # First check the series, then determine tmin and tmax
         stress0 = TimeSeries(stress[0], settings=settings[0])
@@ -862,9 +862,9 @@ class FactorModel(StressModelBase):
 
         # Deprecate metadata as of version 0.14.0 and remove in 0.15.0
         if metadata is not None:
-            logger.warning("The metadata argument is deprecated and "
-                           "will be removed in version 0.15.0.",
-                           DeprecationWarning)
+            self.logger.warning("The metadata argument is deprecated and "
+                                "will be removed in version 0.15.0.",
+                                DeprecationWarning)
 
         tmin = stress.series_original.index.min()
         tmax = stress.series_original.index.max()
@@ -958,9 +958,9 @@ class RechargeModel(StressModelBase):
                  settings=("prec", "evap", "evap"), metadata=None):
         # Deprecate metadata as of version 0.14.0 and remove in 0.15.0
         if metadata is not None:
-            logger.warning("The metadata argument is deprecated and "
-                           "will be removed in version 0.15.0.",
-                           DeprecationWarning)
+            self.logger.warning("The metadata argument is deprecated and "
+                                "will be removed in version 0.15.0.",
+                                DeprecationWarning)
 
         # Store the precipitation and evaporation time series
         self.prec = TimeSeries(prec, settings=settings[0])
