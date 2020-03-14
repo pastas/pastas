@@ -45,8 +45,8 @@ def model_tmin_tmax(function):
 def PastasDeprecationWarning(function):
     @wraps(function)
     def _function(*args, **kwargs):
-        logger.warning("Deprecation warning: method will be deprecated "
-                       "in version 0.15.0.")
+        logger.warning("Deprecation warning: method is deprecated and will "
+                       "be removed in version 0.15.0.", DeprecationWarning)
         return function(*args, **kwargs)
 
     return _function

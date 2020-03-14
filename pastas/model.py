@@ -46,10 +46,6 @@ class Model:
         added later in the modelling process as well.
     name: str, optional
         String with the name of the model, used in plotting and saving.
-    metadata: dict, optional
-        Dictionary containing metadata of the oseries, passed on the to
-        oseries when creating a pastas TimeSeries object. hence,
-        ml.oseries.metadata will give you the metadata.
 
     Returns
     -------
@@ -68,9 +64,14 @@ class Model:
 
         self.logger = getLogger(__name__)
 
+        # Deprecate metadata as of version 0.14.0 and remove in 0.15.0
+        if metadata is not None:
+            self.logger.warning("The metadata argument is deprecated and "
+                                "will be removed in version 0.15.0.",
+                                DeprecationWarning)
+
         # Construct the different model components
-        self.oseries = TimeSeries(oseries, settings="oseries",
-                                  metadata=metadata)
+        self.oseries = TimeSeries(oseries, settings="oseries")
 
         if name is None:
             name = self.oseries.name
@@ -1590,7 +1591,6 @@ class Model:
         - noisemodel
         - constant
         - parameters
-        - metadata
         - settings
 
         """
