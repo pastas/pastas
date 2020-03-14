@@ -2,7 +2,7 @@
 Import model
 """
 
-import gc
+from gc import collect
 from importlib import import_module
 from logging import getLogger
 from os import path
@@ -15,14 +15,14 @@ logger = getLogger(__name__)
 
 
 def load(fname, **kwargs):
-    """Method to load models from file supported by the pastas library.
+    """Method to load a Pastas Model from file.
 
     Parameters
     ----------
     fname: str
         string with the name of the file to be imported including the file
         extension.
-    kwargs: extension specific
+    kwargs: extension specific keyword arguments
 
     Returns
     -------
@@ -43,28 +43,29 @@ def load(fname, **kwargs):
 
     # Determine whether it is a Pastas Project or a Pastas Model
     if "models" in data.keys():
-        ml = load_project(data)
-        kind = "Project"
+        logger.warning("Deprecation Warning: the possibility to load a Pastas "
+                       "project with this method will be deprecated in v0.15. "
+                       "Please use ps.io.load_project.")
+        return load_project(fname=fname)
     else:
         ml = load_model(data)
-        kind = "Model"
 
-    logger.info("Pastas {} from file {} successfully loaded. This file was "
-                "created with was Pastas{}. Your current version of Pastas "
-                "is: {}".format(kind, fname,
-                                data["file_info"]["pastas_version"],
+        logger.info("Pastas Model successfully loaded. This file  was created "
+                    "with was Pastas {}. Your current version of Pastas is: "
+                    "{}".format(fname, data["file_info"]["pastas_version"],
                                 ps.__version__))
+        return ml
 
-    return ml
 
-
-def load_project(data):
+def load_project(fname, **kwargs):
     """Method to load a Pastas project.
 
     Parameters
     ----------
-    data: dict
-        Dictionary containing all information to construct the project.
+    fname: str
+        string with the name of the file to be imported including the file
+        extension.
+    kwargs: extension specific keyword arguments.
 
     Returns
     -------
@@ -72,6 +73,12 @@ def load_project(data):
         Pastas Project class object
 
     """
+    # Dynamic import of the export module
+    ext = path.splitext(fname)[1]
+    load_mod = import_module("pastas.io" + ext)
+
+    # Get dicts for all data sources
+    data = load_mod.load(fname, **kwargs)
 
     mls = ps.Project(name=data["name"])
 
@@ -110,6 +117,13 @@ def load_project(data):
             except:
                 pass
             print("model", ml_name, "could not be added")
+
+    logger.info("Pastas project from file {} successfully loaded. This file "
+                "was created with was Pastas{}. Your current version of "
+                "Pastas is: {}".format(fname,
+                                       data["file_info"]["pastas_version"],
+                                       ps.__version__))
+
     return mls
 
 
@@ -192,7 +206,7 @@ def load_model(data):
     for param, value in ml.parameters.loc[:, "initial"].iteritems():
         ml.set_initial(name=param, value=value)
 
-    gc.collect()
+    collect()
 
     return ml
 
