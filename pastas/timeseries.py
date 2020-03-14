@@ -35,6 +35,8 @@ class TimeSeries:
         through ps.TimeSeries._predefined_settings.) or a dictionary with the
         settings to be applied. This does not have to include all the
         settings arguments.
+    metadata: dict, optional
+        Dictionary with metadata of the time series.
     freq_original str, optional
     **kwargs: optional
         Any keyword arguments that are provided but are not listed will be
@@ -84,12 +86,6 @@ class TimeSeries:
 
     def __init__(self, series, name=None, settings=None, metadata=None,
                  freq_original=None, **kwargs):
-        # Deprecate metadata as of version 0.14.0 and remove in 0.15.0
-        if metadata is not None:
-            self.logger.warning("The metadata argument is deprecated and "
-                                "will be removed in version 0.15.0.",
-                                DeprecationWarning)
-
         if isinstance(series, TimeSeries):
             # Copy all the series
             self._series_original = series.series_original.copy()
@@ -98,6 +94,7 @@ class TimeSeries:
             # Copy all the properties
             self.freq_original = series.freq_original
             self.settings = series.settings.copy()
+            self.metadata = series.metadata.copy()
 
             validate = False
             update = False
@@ -132,12 +129,21 @@ class TimeSeries:
                 "norm": None,
                 "time_offset": pd.Timedelta(0)
             }
+            self.metadata = {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "projection": None
+            }
 
         # Use user provided name or set from series
         if name is None:
             name = series.name
         self.name = name
         self._series_original.name = name
+
+        if metadata is not None:
+            self.metadata.update(metadata)
 
         # Update the settings with user-provided values, if any.
         if settings:
@@ -689,6 +695,7 @@ class TimeSeries:
 
         data["name"] = self.name
         data["settings"] = self.settings
+        data["metadata"] = self.metadata
         data["freq_original"] = self.freq_original
 
         return data

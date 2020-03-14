@@ -260,6 +260,9 @@ class StressModel(StressModelBase):
         The settings of the stress. This can be a string referring to a
         predefined settings dict, or a dict with the settings to apply.
         Refer to the docstring of pastas.Timeseries for further information.
+    metadata: dict, optional
+        dictionary containing metadata about the stress. This is passed onto
+        the TimeSeries object.
     meanstress: float, optional
         The mean stress determines the initial parameters of rfunc. The initial
         parameters are chosen in such a way that the gain of meanstress is 1.
@@ -284,13 +287,7 @@ class StressModel(StressModelBase):
         if isinstance(stress, list):
             stress = stress[0]  # TODO Temporary fix Raoul, 2017-10-24
 
-        # Deprecate metadata as of version 0.14.0 and remove in 0.15.0
-        if metadata is not None:
-            self.logger.warning("The metadata argument is deprecated and "
-                                "will be removed in version 0.15.0.",
-                                DeprecationWarning)
-
-        stress = TimeSeries(stress, settings=settings)
+        stress = TimeSeries(stress, settings=settings, metadata=metadata)
 
         if meanstress is None:
             meanstress = stress.series.std()
@@ -383,13 +380,16 @@ class StressModel2(StressModelBase):
         predefined settings dict, or a dict with the settings to apply.
         Refer to the docstring of pastas.Timeseries for further information.
         Default is ("prec", "evap").
+    metadata: list of dicts, optional
+        dictionary containing metadata about the stress. This is passed onto
+        the TimeSeries object.
 
     Notes
     -----
-    The order in which the stresses are provided is the order the settings
-    dictionary or string is passed onto the TimeSerie objects. By default,
-    the precipitation stress is the first and the evaporation stress the
-    second stress.
+    The order in which the stresses are provided is the order the metadata
+    and settings dictionaries or string are passed onto the TimeSeries
+    objects. By default, the precipitation stress is the first and the
+    evaporation stress the second stress.
 
     See Also
     --------
@@ -400,16 +400,13 @@ class StressModel2(StressModelBase):
     _name = "StressModel2"
 
     def __init__(self, stress, rfunc, name, up=True, cutoff=0.999,
-                 settings=("prec", "evap"), metadata=None, meanstress=None):
-        # Deprecate metadata as of version 0.14.0 and remove in 0.15.0
-        if metadata is not None:
-            self.logger.warning("The metadata argument is deprecated and "
-                                "will be removed in version 0.15.0.",
-                                DeprecationWarning)
-
+                 settings=("prec", "evap"), metadata=(None, None),
+                 meanstress=None):
         # First check the series, then determine tmin and tmax
-        stress0 = TimeSeries(stress[0], settings=settings[0])
-        stress1 = TimeSeries(stress[1], settings=settings[1])
+        stress0 = TimeSeries(stress[0], settings=settings[0],
+                             metadata=metadata[0])
+        stress1 = TimeSeries(stress[1], settings=settings[1],
+                             metadata=metadata[1])
 
         # Select indices from validated stress where both series are available.
         index = stress0.series.index.intersection(stress1.series.index)
@@ -852,6 +849,9 @@ class FactorModel(StressModelBase):
     settings: dict or str
         Dict or String that is forwarded to the TimeSeries object created
         from the stress.
+    metadata: dict
+        Dictionary with metadata, forwarded to the TimeSeries object created
+        from the stress.
 
     """
     _name = "FactorModel"
@@ -859,19 +859,12 @@ class FactorModel(StressModelBase):
     def __init__(self, stress, name="factor", settings=None, metadata=None):
         if isinstance(stress, list):
             stress = stress[0]  # Temporary fix Raoul, 2017-10-24
-
-        # Deprecate metadata as of version 0.14.0 and remove in 0.15.0
-        if metadata is not None:
-            self.logger.warning("The metadata argument is deprecated and "
-                                "will be removed in version 0.15.0.",
-                                DeprecationWarning)
-
         tmin = stress.series_original.index.min()
         tmax = stress.series_original.index.max()
         StressModelBase.__init__(self, One, name, tmin=tmin, tmax=tmax,
                                  up=True, meanstress=1, cutoff=0.999)
         self.value = 1.  # Initial value
-        stress = TimeSeries(stress, settings=settings)
+        stress = TimeSeries(stress, settings=settings, metadata=metadata)
         self.stress = [stress]
         self.set_init_parameters()
 
@@ -935,6 +928,9 @@ class RechargeModel(StressModelBase):
         settings dict, or a dict with the settings to apply. Refer to the
         docstring of pastas.Timeseries for further information. Default is (
         "prec", "evap").
+    metadata: list of dicts, optional
+        dictionary containing metadata about the stress. This is passed onto
+        the TimeSeries object.
 
     See Also
     --------
@@ -955,16 +951,13 @@ class RechargeModel(StressModelBase):
 
     def __init__(self, prec, evap, rfunc=Exponential, name="recharge",
                  recharge=Linear(), temp=None, cutoff=0.999,
-                 settings=("prec", "evap", "evap"), metadata=None):
-        # Deprecate metadata as of version 0.14.0 and remove in 0.15.0
-        if metadata is not None:
-            self.logger.warning("The metadata argument is deprecated and "
-                                "will be removed in version 0.15.0.",
-                                DeprecationWarning)
-
+                 settings=("prec", "evap", "evap"),
+                 metadata=(None, None, None)):
         # Store the precipitation and evaporation time series
-        self.prec = TimeSeries(prec, settings=settings[0])
-        self.evap = TimeSeries(evap, settings=settings[1])
+        self.prec = TimeSeries(prec, settings=settings[0],
+                               metadata=metadata[0])
+        self.evap = TimeSeries(evap, settings=settings[1],
+                               metadata=metadata[1])
 
         # Check if both series have a regular time step
         if self.prec.freq_original is None:
@@ -988,7 +981,8 @@ class RechargeModel(StressModelBase):
                       "No temperature series were provided".format(recharge)
                 raise TypeError(msg)
             else:
-                self.temp = TimeSeries(temp, settings=settings[2])
+                self.temp = TimeSeries(temp, settings=settings[2],
+                                       metadata=metadata[2])
         else:
             self.temp = None
 

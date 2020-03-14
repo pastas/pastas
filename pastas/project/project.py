@@ -15,8 +15,8 @@ Usage
 from logging import getLogger
 from os import getlogin
 
-from numpy import sqrt, arange, meshgrid
-from pandas import Series, DataFrame, Timestamp, to_numeric
+import numpy as np
+import pandas as pd
 
 from .maps import Map
 from .plots import Plot
@@ -52,8 +52,8 @@ class Project:
 
         # DataFrames to store the data of the oseries and stresses
         columns = ["name", "series", "kind", "x", "y", "z"]
-        self.stresses = DataFrame(columns=columns)
-        self.oseries = DataFrame(columns=columns)
+        self.stresses = pd.DataFrame(columns=columns)
+        self.oseries = pd.DataFrame(columns=columns)
 
         # Project metadata and file information
         self.metadata = self.get_metadata(metadata)
@@ -78,7 +78,8 @@ class Project:
             The kind of series that is added. When oseries are added it is
             necessary to state "oseries" here.
         metadata: dict
-            Dictionary with any metadata that will be stored with the series.
+            Dictionary with any metadata that will be passed to the
+            TimeSeries object that is created internally.
         settings: dict or str
             Dictionary with any settings that will be passed to the
             TimeSeries object that is created internally.
@@ -101,12 +102,11 @@ class Project:
 
         if name in data.index:
             warning = ("Time series with name {} is already present in the "
-                       "database. Existing series is overwritten.").format(
-                name)
+                       "database. Existing series is overwitten.").format(name)
             logger.warning(warning)
         try:
             ts = TimeSeries(series=series, name=name, settings=settings,
-                            **kwargs)
+                            metadata=metadata, **kwargs)
         except:
             logger.error("An error occurred. Time series {} is omitted "
                          "from the database.".format(name))
@@ -116,9 +116,10 @@ class Project:
         data.at[name, "series"] = ts  # Do not add as first!
         data.at[name, "kind"] = kind
 
-        # Store the metadata in the data DataFrame
-        if metadata:
-            data.loc[name, metadata.keys()] = metadata.values()
+        # Transfer the metadata (x, y and z) to dataframe as well to increase speed.
+        for i in ts.metadata.keys():
+            value = ts.metadata[i]
+            data.loc[name, i] = value
 
     def add_oseries(self, series, name=None, metadata=None, settings="oseries",
                     **kwargs):
@@ -132,8 +133,8 @@ class Project:
             String with the name of the series that will be maintained in
             the database.
         metadata: dict
-            Dictionary with any metadata that will be stored with the
-            oseries (mls.oseries).
+            Dictionary with any metadata that will be passed to the
+            TimeSeries object that is created internally.
         settings: dict or str
             Dictionary with any settings that will be passed to the
             TimeSeries object that is created internally.
@@ -160,8 +161,8 @@ class Project:
             The kind of series that is added. When oseries are added it is
             necessary to state "oseries" here.
         metadata: dict
-            Dictionary with any metadata that will be stored in the stresses
-            DataFrame (mls.stresses).
+            Dictionary with any metadata that will be passed to the
+            TimeSeries object that is created internally.
         settings: dict or str
             Dictionary with any settings that will be passed to the
             TimeSeries object that is created internally.
@@ -391,14 +392,14 @@ class Project:
 
             m_kwargs = {}
             for key, value in kwargs.items():
-                if isinstance(value, Series):
+                if isinstance(value, pd.Series):
                     m_kwargs[key] = value.loc[ml_name]
                 else:
                     m_kwargs[key] = value
             # Convert timestamps
             for tstamp in ["tmin", "tmax"]:
                 if tstamp in m_kwargs:
-                    m_kwargs[tstamp] = Timestamp(m_kwargs[tstamp])
+                    m_kwargs[tstamp] = pd.Timestamp(m_kwargs[tstamp])
 
             try:
                 ml.solve(report=report, **m_kwargs)
@@ -433,11 +434,11 @@ class Project:
 
         distances = self.get_distances(oseries, stresses, kind)
 
-        data = DataFrame(columns=arange(n))
+        data = pd.DataFrame(columns=np.arange(n))
 
         for series in distances.index:
-            series = Series(distances.loc[series].sort_values().index[:n],
-                            name=series)
+            series = pd.Series(distances.loc[series].sort_values().index[:n],
+                               name=series)
             data = data.append(series)
 
         return data
@@ -472,16 +473,16 @@ class Project:
             mask = self.stresses.kind == kind
             stresses = self.stresses.loc[stresses].loc[mask].index
 
-        xo = to_numeric(self.oseries.loc[oseries, "x"])
-        xt = to_numeric(self.stresses.loc[stresses, "x"])
-        yo = to_numeric(self.oseries.loc[oseries, "y"])
-        yt = to_numeric(self.stresses.loc[stresses, "y"])
+        xo = pd.to_numeric(self.oseries.loc[oseries, "x"])
+        xt = pd.to_numeric(self.stresses.loc[stresses, "x"])
+        yo = pd.to_numeric(self.oseries.loc[oseries, "y"])
+        yt = pd.to_numeric(self.stresses.loc[stresses, "y"])
 
-        xh, xi = meshgrid(xt, xo)
-        yh, yi = meshgrid(yt, yo)
+        xh, xi = np.meshgrid(xt, xo)
+        yh, yi = np.meshgrid(yt, yo)
 
-        distances = DataFrame(sqrt((xh - xi) ** 2 + (yh - yi) ** 2),
-                              index=oseries, columns=stresses)
+        distances = pd.DataFrame(np.sqrt((xh - xi) ** 2 + (yh - yi) ** 2),
+                                 index=oseries, columns=stresses)
 
         return distances
 
@@ -512,7 +513,7 @@ class Project:
         if models is None:
             models = self.models.keys()
 
-        data = DataFrame(index=models, columns=parameters)
+        data = pd.DataFrame(index=models, columns=parameters)
 
         for ml_name in models:
             ml = self.models[ml_name]
@@ -543,7 +544,7 @@ class Project:
         if models is None:
             models = self.models.keys()
 
-        data = DataFrame(index=models, columns=statistics)
+        data = pd.DataFrame(index=models, columns=statistics)
 
         for ml_name in models:
             ml = self.models[ml_name]
@@ -561,7 +562,7 @@ class Project:
         if models is None:
             models = self.models.keys()
 
-        data = DataFrame(index=models)
+        data = pd.DataFrame(index=models)
 
         data = data.join(self.oseries.loc[models, ["x", "y", "z"]])
         data["geometry"] = [Point(xy[0], xy[1]) for xy in
@@ -584,17 +585,22 @@ class Project:
         data: pandas.DataFrame
 
         """
+        data = pd.DataFrame(data=None, index=oseries, columns=metadata)
 
-        return self.oseries.loc[oseries, metadata]
+        for oseries in data.index:
+            meta = self.oseries.loc[oseries, "series"].metadata
+            for key in metadata:
+                data.loc[oseries, key] = meta[key]
+
+        return data
 
     def get_oseries_settings(self, oseries, settings):
         """Method to obtain the settings from each oseries TimeSeries object.
 
         Parameters
         ----------
-        oseries: list
-            list with the oseries.
-        settings:
+        oseries
+        settings
 
         Returns
         -------
@@ -603,7 +609,7 @@ class Project:
             and the values as data.
 
         """
-        data = DataFrame(data=None, index=oseries, columns=settings)
+        data = pd.DataFrame(data=None, index=oseries, columns=settings)
 
         for oseries in data.index:
             sets = self.oseries.loc[oseries, "series"].settings
@@ -623,8 +629,8 @@ class Project:
     @staticmethod
     def get_file_info():
         file_info = {
-            "date_created": Timestamp.now(),
-            "date_modified": Timestamp.now(),
+            "date_created": pd.Timestamp.now(),
+            "date_modified": pd.Timestamp.now(),
             "pastas_version": __version__,
         }
         try:
