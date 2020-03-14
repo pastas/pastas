@@ -319,8 +319,7 @@ class LeastSquares(BaseSolver):
     def objfunction(self, parameters, noise, weights, callback):
         p = self.initial
         p[self.vary] = parameters
-        res = self.misfit(p, noise, weights, callback)
-        return res
+        return self.misfit(p, noise, weights, callback)
 
     def get_covariances(self, jacobian, cost, absolute_sigma=False):
         """Method to get the covariance matrix from the jacobian.
@@ -399,7 +398,7 @@ class LmfitSolve(BaseSolver):
 
         # Deal with the parameters
         parameters = lmfit.Parameters()
-        p = self.ml.parameters[['initial', 'pmin', 'pmax', 'vary']]
+        p = self.ml.parameters.loc[:, ['initial', 'pmin', 'pmax', 'vary']]
         for k in p.index:
             pp = np.where(p.loc[k].isnull(), None, p.loc[k])
             parameters.add(k, value=pp[0], min=pp[1], max=pp[2], vary=pp[3])
@@ -439,5 +438,4 @@ class LmfitSolve(BaseSolver):
 
     def objfunction(self, parameters, noise, weights, callback):
         param = np.array([p.value for p in parameters.values()])
-        res = self.misfit(param, noise, weights, callback)
-        return res
+        return self.misfit(param, noise, weights, callback)

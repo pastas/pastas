@@ -136,7 +136,7 @@ html_theme_options = {
     'github_count': True,
     'description': "Pastas is an open-source framework for the analysis of "
                    "hydrological time series.",
-    'codecov_button': True,
+    'codecov_button': False,
 }
 
 html_sidebars = {

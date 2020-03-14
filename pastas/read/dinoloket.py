@@ -7,7 +7,7 @@ TODO: Get rid of filternummer en opmerking in self.series
 """
 
 import numpy as np
-import pandas as pd
+from pandas import Series, read_csv
 
 from ..timeseries import TimeSeries
 
@@ -134,11 +134,11 @@ class DinoGrondwaterstand:
 
                 usecols = range(0, len(titel))
                 # # usecols.remove(2)
-                measurements = pd.read_csv(f, header=None, names=titel,
-                                           parse_dates=['Peildatum'],
-                                           index_col='Peildatum',
-                                           dayfirst=True,
-                                           usecols=usecols)
+                measurements = read_csv(f, header=None, names=titel,
+                                        parse_dates=['Peildatum'],
+                                        index_col='Peildatum',
+                                        dayfirst=True,
+                                        usecols=usecols)
                 ts = measurements['Stand_cm_tov_NAP']
                 #
                 # measurements = np.genfromtxt(f, delimiter=',',
@@ -170,7 +170,7 @@ class DinoGrondwaterstand:
                 #     ts = pd.Series(values, datum)
             else:
                 measurements = None
-                ts = pd.Series()
+                ts = Series()
 
             # %% kies welke invoer opgeslagen wordt
             self.meta = metaList

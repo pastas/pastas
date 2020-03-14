@@ -96,7 +96,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         where N is the number of noise.
 
         """
-        if not self.ml.noisemodel:
+        if not self.ml.settings["noise"]:
             return nan
         else:
             res = self.ml.noise(tmin=tmin, tmax=tmax).values
@@ -218,7 +218,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         Where nparam  is the number of free parameters
 
         """
-        if self.ml.noisemodel:
+        if self.ml.settings["noise"]:
             noise = self.ml.noise(tmin=tmin, tmax=tmax).values
         else:
             noise = self.ml.residuals(tmin=tmin, tmax=tmax).values
@@ -242,7 +242,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         * L = likelihood function for the model.
 
         """
-        if self.ml.noisemodel:
+        if self.ml.settings["noise"]:
             noise = self.ml.noise(tmin=tmin, tmax=tmax).values
         else:
             noise = self.ml.residuals(tmin=tmin, tmax=tmax).values

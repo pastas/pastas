@@ -27,9 +27,9 @@ def acf(x, lags=None, bin_method='gaussian', bin_width=None, max_gap=np.inf,
         are not used for calculating the average timestep. This can be
         helpful when there is a large gap in the data that influences the
         average timestep.
-    min_obs: int
+    min_obs: int, optional
         Minimum number of observations in a bin to determine the correlation.
-    output: str
+    output: str, optional
         If output is "full", also estimated uncertainties are returned.
 
     Returns
@@ -87,9 +87,9 @@ def ccf(x, y, lags=None, bin_method='gaussian', bin_width=None,
         are not used for calculating the average timestep. This can be
         helpfull when there is a large gap in the data that influences the
         average timestep.
-    min_obs: int
+    min_obs: int, optional
         Minimum number of observations in a bin to determine the correlation.
-    output: str
+    output: str, optional
         If output is "full", also estimated uncertainties are returned.
 
     Returns

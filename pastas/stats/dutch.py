@@ -6,7 +6,7 @@ Authors: R. Calje, T. van Steijn and R. Collenteur
 """
 
 from numpy import nan
-from pandas import date_range, Series, to_timedelta
+from pandas import date_range, Series, Timedelta
 
 from ..utils import get_sample
 
@@ -425,7 +425,7 @@ def __gxg__(series, year_agg, tmin, tmax, fill_method, limit, output,
             # only keep days with measurements
             series = series.dropna()
             # generate an index at the 14th and 28th of every month
-            buf = to_timedelta(8, 'd')
+            buf = Timedelta(8, 'd')
             ref_index = date_range(series.index.min() - buf,
                                    series.index.max() + buf)
             mask = [(x.day == 14) or (x.day == 28) for x in ref_index]
