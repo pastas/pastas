@@ -86,9 +86,9 @@ class TimeSeries:
                  freq_original=None, **kwargs):
         # Deprecate metadata as of version 0.14.0 and remove in 0.15.0
         if metadata is not None:
-            self.logger.warning("The metadata argument is deprecated and "
-                                "will be removed in version 0.15.0.",
-                                DeprecationWarning)
+            logger.warning("The metadata argument is deprecated and "
+                           "will be removed in version 0.15.0.",
+                           DeprecationWarning)
 
         if isinstance(series, TimeSeries):
             # Copy all the series

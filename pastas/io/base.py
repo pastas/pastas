@@ -42,7 +42,7 @@ def load(fname, **kwargs):
     if "models" in data.keys():
         logger.warning("Deprecation Warning: the possibility to load a Pastas "
                        "project with this method will be deprecated in v0.15. "
-                       "Please use ps.io.load_project.")
+                       "Please use ps.io.load_project.", DeprecationWarning)
         return load_project(fname=fname)
     else:
         ml = load_model(data)
@@ -130,11 +130,6 @@ def load_model(data):
     else:
         constant = False
 
-    if "metadata" in data.keys():
-        metadata = data["metadata"]
-    else:
-        metadata = None
-
     if "name" in data.keys():
         name = data["name"]
     else:
@@ -145,8 +140,7 @@ def load_model(data):
     else:
         noise = False
 
-    ml = ps.Model(oseries, constant=constant, noisemodel=noise, name=name,
-                  metadata=metadata)
+    ml = ps.Model(oseries, constant=constant, noisemodel=noise, name=name)
 
     if "settings" in data.keys():
         ml.settings.update(data["settings"])
