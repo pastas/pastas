@@ -37,7 +37,7 @@ def test_model_copy():
 
 def test_flexmodel():
     ml = ps.Model(obs, name="rch_model")
-    rm = ps.RechargeModel(prec=rain, evap=evap, recharge=ps.rch.FlexModel)
+    rm = ps.RechargeModel(prec=rain, evap=evap, recharge=ps.rch.FlexModel())
     ml.add_stressmodel(rm)
     ml.solve()
     return
@@ -45,7 +45,7 @@ def test_flexmodel():
 
 def test_berendrecht():
     ml = ps.Model(obs, name="rch_model")
-    rm = ps.RechargeModel(prec=rain, evap=evap, recharge=ps.rch.Berendrecht)
+    rm = ps.RechargeModel(prec=rain, evap=evap, recharge=ps.rch.Berendrecht())
     ml.add_stressmodel(rm)
     ml.solve()
     return
@@ -53,7 +53,7 @@ def test_berendrecht():
 
 def test_linear():
     ml = ps.Model(obs, name="rch_model")
-    rm = ps.RechargeModel(prec=rain, evap=evap, recharge=ps.rch.Linear)
+    rm = ps.RechargeModel(prec=rain, evap=evap, recharge=ps.rch.Linear())
     ml.add_stressmodel(rm)
     ml.solve()
     return
