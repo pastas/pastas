@@ -813,7 +813,7 @@ class WellModel(StressModelBase):
         return p_with_r
 
     def to_dict(self, series=True):
-        """Method to export the WellModel object.
+        """Internal method to export the WellModel object.
 
         Returns
         -------
@@ -836,7 +836,7 @@ class WellModel(StressModelBase):
 
 
 class FactorModel(StressModelBase):
-    """Model that multiplies a stress by a single value. The indepedent series
+    """Model that multiplies a stress by a single value. The independent series
     do not have to be equidistant and are allowed to have gaps.
 
     Parameters
@@ -912,8 +912,9 @@ class RechargeModel(StressModelBase):
     name: str, optional
         Name of the stress. Default is "recharge".
     recharge: pastas.recharge instance, optional
-        String with the name of the recharge model. Options are: "Linear" (
-        default).
+        String with the name of the recharge model. Options are: Linear (
+        default), FlexModel and Berendrecht. These can be accessed through
+        ps.rch.
     temp: pandas.Series or pastas.TimeSeries, optional
         pandas.Series or pastas.TimeSeries objects containing the
         temperature series. It depends on the recharge model is this
@@ -945,6 +946,11 @@ class RechargeModel(StressModelBase):
     computed by a method determined by the recharge input argument. In the
     second step this recharge flux is convoluted with a response function to
     obtain the contribution of recharge to the groundwater levels.
+
+    Examples
+    --------
+    >>> rm = ps.RechargeModel(rain, evap, rfunc=ps.Exponential,
+    >>>                       recharge=ps.rch.FlexModel)
 
     """
     _name = "RechargeModel"
@@ -1055,6 +1061,7 @@ class RechargeModel(StressModelBase):
 
         Returns
         -------
+        pandas.Series
 
         """
         if p is None:

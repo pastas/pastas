@@ -32,7 +32,7 @@ class RechargeBase:
         self.nparam = 0
 
     @staticmethod
-    def get_init_parameters(name="recharge"):
+    def get_init_parameters(name="rch"):
         """
 
         Parameters
