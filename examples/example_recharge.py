@@ -8,7 +8,6 @@ Author: R.A. Collenteur, University of Graz.
 import pandas as pd
 
 import pastas as ps
-from pastas.recharge import FlexModel, Berendrecht
 
 ps.set_log_level("ERROR")
 
@@ -19,20 +18,21 @@ obs = pd.read_csv("data/head_nb1.csv", index_col=0, parse_dates=True,
 # Create the time series model
 ml = ps.Model(obs, name="head")
 
-# read weather data
+# read weather data and make mm/d !!!
 rain = pd.read_csv("data/rain_nb1.csv", index_col=0, parse_dates=True,
                    squeeze=True) * 1e3
 evap = pd.read_csv("data/evap_nb1.csv", index_col=0, parse_dates=True,
                    squeeze=True) * 1e3
 
 # Initialize recharge model and create stressmodel
-rch = FlexModel()
-#rch = Berendrecht()
-sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma,
-                      recharge=rch, name='recharge')
+rch = ps.rch.FlexModel()
+# rch = ps.rch.Berendrecht()
+sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, recharge=rch)
 
 ml.add_stressmodel(sm)
 
 # Solve
-ml.solve(noise=True)
+ml.solve(noise=False, report=False)  # This usually helps
+ml.solve(noise=True, initial=False)
+
 ml.plots.results()

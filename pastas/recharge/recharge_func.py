@@ -16,7 +16,7 @@ Recharge Models
 
 """
 
-from numpy import add, sum, float64, multiply, exp, zeros, nan_to_num
+from numpy import add, float64, multiply, exp, zeros, nan_to_num
 from pandas import DataFrame
 
 from ..decorators import njit
@@ -50,7 +50,7 @@ class RechargeBase:
             columns=["initial", "pmin", "pmax", "vary", "name"])
         return parameters
 
-    def simulate(self, prec, evap, p, temp=None):
+    def simulate(self, prec, evap, p, **kwargs):
         pass
 
 
@@ -172,11 +172,6 @@ class FlexModel(RechargeBase):
                               gamma=p[3], si=p[4], dt=dt)[0]
         return r
 
-    def check_waterbalance(self, s, fluxes):
-        wb = sum(fluxes, axis=0)
-        ds = s[1:] - s[0:-1]
-        # print(np.sum(wb[0:-1] - ds))
-
     @staticmethod
     @njit
     def get_recharge(prec, evap, su=250.0, lp=0.5, ks=50.0, gamma=4.0, si=2.0,
@@ -226,8 +221,7 @@ class FlexModel(RechargeBase):
 
 
 class Berendrecht(RechargeBase):
-    """
-    Recharge to the groundwater calculated according to [3]_ and [2]_.
+    """Recharge to the groundwater calculated according to [3]_ and [2]_.
 
     Notes
     -----

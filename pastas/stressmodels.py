@@ -955,7 +955,7 @@ class RechargeModel(StressModelBase):
     """
     _name = "RechargeModel"
 
-    def __init__(self, prec, evap, rfunc=Exponential, name="recharge",
+    def __init__(self, prec, evap, rfunc=Exponential, name="rch",
                  recharge=Linear(), temp=None, cutoff=0.999,
                  settings=("prec", "evap", "evap"),
                  metadata=(None, None, None)):
