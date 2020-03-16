@@ -134,7 +134,7 @@ html_context = {
     "github_user": "pastas",
     "github_repo": "pastas",
     "github_version": "master",
-    "doc_path": "./doc",
+    "doc_path": "doc",
 }
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
