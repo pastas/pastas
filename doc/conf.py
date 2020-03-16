@@ -124,11 +124,11 @@ html_static_path = ['_static']
 
 html_theme_options = {
     "github_url": "https://github.com/pastas/pastas",
-    "use_edit_page_button": True
+    "use_edit_page_button": False
 }
 
 autosummary_generate = True
-numpydoc_show_class_members=False
+numpydoc_show_class_members = False
 
 html_context = {
     "github_user": "pastas",
