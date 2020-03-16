@@ -1,9 +1,9 @@
 Add StressModel classes
 =======================
 In this section it is described how a new tseries object can be added to
-|Project|. The classes are defined in `tseries.py`, but this is not strictly
+Pastas. The classes are defined in `tseries.py`, but this is not strictly
 necessary for your own project. All that is necessary is to write a class that
-can be imported and used by |Project|. Before you start, it is a good idea to
+can be imported and used by Pastas. Before you start, it is a good idea to
 study the StressModel and the StressModelBase classes in `tseries.py` to get a good idea of
 the general form of a tseries class.
 

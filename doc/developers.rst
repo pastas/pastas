@@ -1,59 +1,80 @@
-==========
-Developers
-==========
-Since |Project| is an open-source framework, it depends on the Open
-Source Community for continuous development of the software. Any help in
-maintaining the code, writing or updating documentation is more than
-welcome.
+Development
+===========
 
-Developers guide
-----------------
-On this page resources for developers working on |Project| are provided. One
-of the main goals of |Project| is to boost research in the use of Time Series
-Analysis methods in hydrology. The software is designed as an Object Oriented
-Program (OOP) with maximum flexibility in mind to quickly implement new ideas.
-Under **Resources** you will find guides to how to write different classes
-that add functionality to |Project|.
+As an open source project, Pastas depends on the open source community for
+maintaining and developing the software. Any help in maintaining the code,
+writing or updating documentation is more than welcome. This section serves
+to help you in contributing code to the Pastas software.
 
-Before you start
-----------------
-Fork the project from the `projects' Github page <http://github
-.com/pastas/pastas>`_ and create a local copy of |Project|. Work on your new
-function or class and test it by writing your own test suite. Providing
-a working example of a bug fix, improved or new functionality is highly
-appreciated. When submitting a new function, method or class, special care
-needs to be taken on providing documentation of the code. Please read the
-`writing documentation` section below.
-
-Creating a pull request
------------------------
-Once you have tested your code and want to make it available for other
-|Project| users, you can submit a pull request on the development branch
-(dev) of the repository. Pull requests can only be submitted to the
-dev-branch and need to be reviewed by one of the core developers.
-
-Bug reports
------------
-If you think you have found a bug in |Project|, or if you would like to suggest an
-improvement or enhancement, please submit a new Issue through the Github Issue
-tracker toward the upper-right corner of the Github repository. Pull requests will
-only be accepted on the development branch (dev) of the repository.
-
-Writing documentation
----------------------
-When submitting a new function, method or class, docstrings are required
-before the new code will be pulled into the dev branch. Documentation is
-created using `Sphinxdoc <http://www.sphinx-doc.org>`_. Docstrings within
-the method or class need to be written in `NumPy docformat
-<https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt>`_ to
-enable automatic documentation on this website. A Jupyter Notebook explaining the
-use of your new code can be added the to examples folder. This Notebook will also
-be automatically converted and placed on the Examples page on this website.
-
-Resources
----------
 .. toctree::
   :maxdepth: 1
   :glob:
+  :hidden:
 
-  developers/*
+  developers/getting_started.rst
+  developers/code_style.rst
+  developers/writing_docs.rst
+  developers/code_testing.rst
+  developers/pull_requests.rst
+  developers/add_stressmodel.rst
+  developers/add_rfunc.rst
+  developers/add_recharge.rst
+  developers/add_read.rst
+
+
+Bug reports / Feature requests
+------------------------------
+
+If you have found a bug in Pastas, or if you would like to suggest
+an improvement or enhancement, please `submit a new Issue <https://github
+.com/pastas/pastas/issues>`_ through the Github Issue tracker.
+
+
+Core Development Team
+---------------------
+
+The following people are part of the core development team of Pastas and can
+merge pull requests on the Pastas GitHub.
+
+
+.. figure:: https://avatars2.githubusercontent.com/u/12051167?s=460&u=ad0baaa3520ab942c93af44ea8e296b44ea459ac&v=4
+   :figwidth: 150px
+   :target: https://github.com/raoulcollenteur
+
+   Raoul Collenteur.
+   `Uni Graz <https://www.uni-graz.at>`_
+
+
+.. figure:: https://avatars3.githubusercontent.com/u/1363400?s=460&u=8d34d0824bd0f43a63f29c0b71fbfae435a15565&v=4
+   :figwidth: 150px
+   :target: https://github.com/mbakker7
+
+   Mark Bakker.
+   `TU Delft <https://www.tudelft.nl>`_
+
+
+.. figure:: https://avatars3.githubusercontent.com/u/18527362?s=460&u=3e1faab416c86e141ff0860017a5a02133830b08&v=4
+   :figwidth: 150px
+   :target: https://github.com/rubencalje
+
+   Ruben Caljé.
+   `Artesia. <http://www.artesia-water.nl>`_
+
+
+.. figure:: https://avatars1.githubusercontent.com/u/6552225?s=460&u=ba73dc4a63fe3d5707a2da9276143d16672ad413&v=4
+   :figwidth: 150px
+   :target: https://github.com/dbrakenhoff
+
+   Davíd Brakenhoff.
+   `Artesia <http://www.artesia-water.nl>`_.
+
+Contributors
+------------
+The following people have contributed code to the Pastas project. Please
+notify us when contributors are missing from this list.
+
+- `Onno Ebbens <https://github.com/OnnoEbbens>`_
+- `Stijn Klop <https://github.com/saklop>`_
+- `Tom van Steijn <https://github.com/tomvansteijn>`_
+- `Hugo van de Berg <https://github.com/Hugovdberg>`_
+

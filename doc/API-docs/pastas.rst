@@ -27,7 +27,6 @@ Submodules
    pastas.stressmodels
    pastas.timeseries
    pastas.transform
-   pastas.uncertainty
    pastas.utils
    pastas.version
 

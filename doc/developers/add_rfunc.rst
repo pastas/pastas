@@ -2,7 +2,7 @@ Add Response functions
 ======================
 This section explains how a new response function can be implemented. All
 response functions are defined as classes in the `rfunc.py` file. These classes
-are imported in the __init__.py file in the |Project| folder to make them
+are imported in the __init__.py file in the Pastas folder to make them
 available in the program. Adding a new response is as simple as:
 
 1. Writing a new class in the rfunc.py file
@@ -25,7 +25,7 @@ List of methods:
 - block: calculate the block response (typically by using the step response).
 - step: caluclate the step response .
 
-Frequently asked questions
+FAQ
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Q: Why does every class have both a step and a block response function?**

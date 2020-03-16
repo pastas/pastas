@@ -18,7 +18,6 @@
 import os
 import sys
 
-import alabaster
 import matplotlib
 
 matplotlib.use('agg')
@@ -107,7 +106,7 @@ exclude_patterns = ['_build', '**.ipynb_checkpoints']
 # show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+# pygments_style = 'sphinx'
 
 # A list of ignored prefixes for module index sorting.
 # modindex_common_prefix = []
@@ -120,42 +119,30 @@ todo_include_todos = True
 
 # -- Options for HTML output ----------------------------------------------
 
-html_theme = 'alabaster'
-html_theme_path = [alabaster.get_path()]
+html_theme = 'pandas_sphinx_theme'
+html_logo = "_static/logo.png"
 html_static_path = ['_static']
 
-html_theme_options = {
-    'logo': 'logo.png',
-    'travis_button': True,
-    'logo_name': False,
-    'github_user': 'pastas',
-    'github_repo': 'pastas',
-    'github_banner': True,
-    'github_button': True,
-    'github_type': 'watch',
-    'github_count': True,
-    'description': "Pastas is an open-source framework for the analysis of "
-                   "hydrological time series.",
-    'codecov_button': False,
+html_theme_options: {
+    "github_url": "https://github.com/pastas/pastas",
+    "external_links": [
+        {"Source Code": "Go to GitHub",
+         "url": "https://github.com/pastas/pastas"},
+    ]
 }
 
-html_sidebars = {
-    '**': [
-        'about.html',
-        'navigation.html',
-        'relations.html',
-        'searchbox.html',
-        # located at _templates/
-        'sidebar.html',
-    ]
+autosummary_generate = True
+
+html_context = {
+    "github_user": "pastas",
+    "github_repo": "pastas",
+    "github_version": "master",
+    "doc_path": "./doc",
 }
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 html_short_title = "Pastas"
-# The name of an image file (within the static path) to use as favicon of the
-# docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
-# pixels large.
-html_favicon = "favo.ico"
+html_favicon = "_static/favo.ico"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -207,7 +194,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'PASTAS.tex', u'PASTAS Documentation',
-     u'M. Bakker, R.A. Collenteur, R. Calje, F. Schaars', 'manual'),
+     u'R.A. Collenteur, M. Bakker, R. Calje, F. Schaars', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -269,7 +256,10 @@ texinfo_documents = [
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'https://docs.python.org/3': None,
-                       'http://pandas.pydata.org/pandas-docs/stable/': None,
-                       'https://docs.scipy.org/doc/scipy/reference/': None,
-                       'https://docs.scipy.org/doc/numpy/': None}
+intersphinx_mapping = {
+        "matplotlib": ("https://matplotlib.org/", None),
+        "numpy": ("https://docs.scipy.org/doc/numpy/", None),
+        "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
+        "python": ("https://docs.python.org/3/", None),
+        "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
+    }

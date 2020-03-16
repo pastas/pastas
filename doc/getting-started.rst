@@ -1,13 +1,13 @@
 ===============
 Getting Started
 ===============
-On this page you will find all the information to get started with |Project|.
+On this page you will find all the information to get started with Pastas.
 A basic knowledge of programming in Python is assumed, but nothing more than
 that.
 
 Getting Python
 --------------
-To install |Project|, a working version of Python 3.4 or higher has to be
+To install Pastas, a working version of Python 3.4 or higher has to be
 installed on your computer. We recommend using the `Anaconda Distribution <https://www.continuum.io/downloads>`_
 of Python. This Python distribution includes most of the python package
 dependencies and the Jupyter Notebook software to run the notebooks. Moreover,
@@ -16,16 +16,16 @@ Python. However, you are free to install any Python distribution you want.
 
 Getting PASTAS
 --------------
-To get |Project|, there are several options available. The easiest is to use
+To get Pastas, there are several options available. The easiest is to use
 the Python Package Index (`PyPI <https://pypi.python.org/pypi>`_), where
 many official python packages are gathered. To get the latest version of
-|Project|, open the Anaconda Prompt, a Windows Command Prompt (also called
+Pastas, open the Anaconda Prompt, a Windows Command Prompt (also called
 command window) or a Mac terminal and type::
 
   pip install pastas
 
-|Project| will now be installed on your computer, including the packages
-necessary for |Project| to work properly (called dependencies in Python
+Pastas will now be installed on your computer, including the packages
+necessary for Pastas to work properly (called dependencies in Python
 language).
 
 It sometimes occurs that the automatic installation of the
@@ -42,7 +42,7 @@ for some example-code.
   
 Updating PASTAS
 ---------------
-If you have already installed |Project|, it is possible to update |Project|
+If you have already installed Pastas, it is possible to update Pastas
 easily. To update, open a Windows command screen or a Mac terminal and type::
 
   pip install pastas --upgrade
@@ -52,7 +52,7 @@ Dependencies
 Pastas depends on a number of Python packages, of which all of the necessary are
 automatically installed when using the pip install manager. To summarize, the
 following packages are necessary for a minimal function installation of
-|Project|:
+Pastas:
 
 * numpy>=1.15
 * matplotlib>=2.0
