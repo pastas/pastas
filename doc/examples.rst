@@ -8,6 +8,7 @@ Below is a list of Jupyter Notebooks with code, comments and figures:
 
 .. toctree::
   :maxdepth: 1
+  :numbered:
   :glob:
 
   examples/*

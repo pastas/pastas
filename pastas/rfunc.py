@@ -1,22 +1,23 @@
 # coding=utf-8
 """This module contains all the response functions available in Pastas.
 
-More information on how to write a response class can be found
-`here <http://pastas.readthedocs.io/en/latest/developers.html>`_.
+Supported Response Functions
+----------------------------
+.. autosummary::
+    :nosignatures:
+    :toctree: generated/
 
-Routines in Module
-------------------
-Fully supported and tested routines in this module are:
+    Gamma
+    Exponential
+    Hantush
+    HantushWellModel
+    FourParam
+    One
 
-- .. class:: Gamma
-- .. class:: Exponential
-- .. class:: Hantush
-- .. class:: One
 
 TODO
 ----
 - Test Polder response function
-- Test FourParam response function
 - Test DoubleExponential response function
 
 """
@@ -273,7 +274,8 @@ class Exponential(RfuncBase):
 
 
 class Hantush(RfuncBase):
-    """ The Hantush well function.
+    """
+    The Hantush well function.
 
     Parameters
     ----------
@@ -365,19 +367,9 @@ class Hantush(RfuncBase):
 
 
 class HantushWellModel(RfuncBase):
-    """ A special implementation of the Hantush well function for
+    """
+    A special implementation of the Hantush well function for
     multiple wells.
-
-    Note: The parameter r (distance from the well to the observation point)
-    is passed as a known value, and is used to scale the response function.
-    The optimized parameters are slightly different from the original
-    Hantush implementation:
-    - A: To get the same A as the original Hantush:
-        A_orig = A * 2 * k0(r / lambda) or use the gain() method
-    - lab: lambda, the r parameter is passed separately to calculate
-        rho = r / lambda internally
-    - cS: stays the same
-    - r: distance, used to calculate rho, see lab.
 
     Parameters
     ----------
@@ -392,7 +384,7 @@ class HantushWellModel(RfuncBase):
 
     Notes
     -----
-    The HantushWellModel well function is explained in [1]_, [2]_ and [3]_.
+    The HantushWellModel well function is explained in [1]_, [2]_ and [6]_.
     It's parameters are (note the addition of the r parameter in this
     implementation):
 
@@ -403,16 +395,23 @@ class HantushWellModel(RfuncBase):
 
     where :math:`\\lambda = \\sqrt{\\frac{kD}{c}}`
 
+    Notes
+    -----
+    The parameter r (distance from the well to the observation point)
+    is passed as a known value, and is used to scale the response function.
+    The optimized parameters are slightly different from the original
+    Hantush implementation:
+
+    - A: To get the same A as the original Hantush:
+        A_orig = A * 2 * k0(r / lambda) or use the gain() method
+    - lab: lambda, the r parameter is passed separately to calculate
+        rho = r / lambda internally
+    - cS: stays the same
+    - r: distance, used to calculate rho, see lab.
+
     References
     ----------
-    .. [1] Hantush, M. S., & Jacob, C. E. (1955). Non‐steady radial flow in an
-      infinite leaky aquifer. Eos, Transactions American Geophysical Union,
-      36(1), 95-100.
-
-    .. [2] Veling, E. J. M., & Maas, C. (2010). Hantush well function
-      revisited. Journal of hydrology, 393(3), 381-388.
-
-    .. [3] Von Asmuth, J. R., Maas, K., Bakker, M., & Petersen, J. (2008).
+    .. [6] Von Asmuth, J. R., Maas, K., Bakker, M., & Petersen, J. (2008).
       Modeling time series of ground water head fluctuations subjected to
       multiple stresses. Ground Water, 46(1), 30-40.
 

@@ -1,0 +1,5 @@
+Visualization
+=============
+
+.. automodule:: pastas.plots
+

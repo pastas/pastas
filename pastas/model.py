@@ -667,7 +667,7 @@ class Model:
             can also be manually triggered after optimization by calling
             print(ml.fit_report()) on the Pastas model instance.
         initial: bool, optional
-            Reset initial parameters from the individual stressmodels.
+            Reset initial parameters from the individual stress models.
             Default is True. If False, the optimal values from an earlier
             optimization are used.
         weights: pandas.Series, optional

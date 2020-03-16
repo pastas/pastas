@@ -10,7 +10,7 @@ optimization, visualisation, and statistical analysis tools.
 .. image:: _static\\example_menyanthes.png
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 4
     :hidden:
 
     About <about>

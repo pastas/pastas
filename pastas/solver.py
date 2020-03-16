@@ -5,6 +5,16 @@ All solvers inherit from the BaseSolver class, which contains general method
 for selecting the correct time series to misfit and options to weight the
 residuals or noise series.
 
+Supported Solvers
+-----------------
+.. autosummary::
+    :nosignatures:
+    :toctree: generated/
+
+    LeastSquares
+    LmfitSolve
+
+
 Examples
 --------
 To solve a model the following syntax can be used:

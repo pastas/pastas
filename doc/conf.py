@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# PASTAS documentation build configuration file, created by
+# Pastas documentation build configuration file, created by
 # sphinx-quickstart on Wed May 11 12:38:06 2016.
 
 # Repository setup is according to:
@@ -19,8 +19,8 @@ import os
 import sys
 
 import matplotlib
-
 matplotlib.use('agg')
+
 from pastas.version import __version__
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -31,7 +31,6 @@ sys.path.insert(0, os.path.abspath('.'))
 # -- General configuration ------------------------------------------------
 
 extensions = [
-    'alabaster',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.napoleon',
@@ -106,7 +105,7 @@ exclude_patterns = ['_build', '**.ipynb_checkpoints']
 # show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-# pygments_style = 'sphinx'
+pygments_style = 'sphinx'
 
 # A list of ignored prefixes for module index sorting.
 # modindex_common_prefix = []
@@ -123,15 +122,13 @@ html_theme = 'pandas_sphinx_theme'
 html_logo = "_static/logo.png"
 html_static_path = ['_static']
 
-html_theme_options: {
+html_theme_options = {
     "github_url": "https://github.com/pastas/pastas",
-    "external_links": [
-        {"Source Code": "Go to GitHub",
-         "url": "https://github.com/pastas/pastas"},
-    ]
+    "use_edit_page_button": True
 }
 
 autosummary_generate = True
+numpydoc_show_class_members=False
 
 html_context = {
     "github_user": "pastas",
@@ -171,7 +168,7 @@ html_show_sphinx = True
 html_show_copyright = True
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'PASTASdoc'
+htmlhelp_basename = 'Pastasdoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -193,7 +190,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'PASTAS.tex', u'PASTAS Documentation',
+    (master_doc, 'Pastas.tex', u'Pastas Documentation',
      u'R.A. Collenteur, M. Bakker, R. Calje, F. Schaars', 'manual'),
 ]
 
@@ -223,7 +220,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'pastas', u'PASTAS Documentation',
+    (master_doc, 'pastas', u'Pastas Documentation',
      [author], 1)
 ]
 
@@ -237,23 +234,10 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'PASTAS', u'PASTAS Documentation',
-     author, 'PASTAS', 'One line description of project.',
+    (master_doc, 'Pastas', u'Pastas Documentation',
+     author, 'Pastas', 'One line description of project.',
      'Miscellaneous'),
 ]
-
-# Documents to append as an appendix to all manuals.
-# texinfo_appendices = []
-
-# If false, no module index is generated.
-# texinfo_domain_indices = True
-
-# How to display URL addresses: 'footnote', 'no', or 'inline'.
-# texinfo_show_urls = 'footnote'
-
-# If true, do not generate a @detailmenu in the "Top" node's menu.
-# texinfo_no_detailmenu = False
-
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {

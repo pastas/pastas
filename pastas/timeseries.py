@@ -4,8 +4,6 @@ to "manage" the time series within PASTAS. It has methods to change a time
 series in frequency and extend the time series, without losing the original
 data.
 
-August 2017, R.A. Collenteur
-
 """
 
 from logging import getLogger

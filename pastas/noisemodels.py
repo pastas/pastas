@@ -1,7 +1,14 @@
 """The noisemodels module contains all noisemodels available in Pastas.
 
+Supported Noise Models
+----------------------
 
-Author: R.A. Collenteur, 2017
+.. autosummary::
+    :nosignatures:
+    :toctree: generated/
+
+    NoiseModel
+    NoiseModel2
 
 """
 

@@ -1,6 +1,5 @@
-===============
-Getting Started
-===============
+Getting Started with Pastas
+===========================
 On this page you will find all the information to get started with Pastas.
 A basic knowledge of programming in Python is assumed, but nothing more than
 that.
@@ -56,7 +55,6 @@ Pastas:
 
 .. include:: ../requirements.travis.txt
    :literal:
-
 
 Other optional dependencies include:
 

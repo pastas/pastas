@@ -1,0 +1,4 @@
+Stressmodels
+============
+
+.. automodule:: pastas.stressmodels

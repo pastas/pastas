@@ -1,9 +1,23 @@
 """
 This file contains the plotting functionalities that are available for Pastas.
 
+.. autosummary::
+    :nosignatures:
+    :toctree: generated/
+
+    Plotting.plot
+    Plotting.results
+    Plotting.decomposition
+    Plotting.diagnostics
+    Plotting.block_response
+    Plotting.step_response
+    Plotting.stresses
+    TrackSolve
+
+
 Examples
 --------
-    ml.plot.decomposition()
+    >>> ml.plot.decomposition()
 
 """
 
