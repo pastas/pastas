@@ -1,7 +1,5 @@
 nbsphinx
-
 nbsphinx_link
-
 Ipython
-
 ipykernel
+https://github.com/pandas-dev/pandas-sphinx-theme.git@master

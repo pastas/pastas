@@ -54,10 +54,9 @@ automatically installed when using the pip install manager. To summarize, the
 following packages are necessary for a minimal function installation of
 Pastas:
 
-* numpy>=1.15
-* matplotlib>=2.0
-* pandas>=0.23
-* scipy>=1.1
+.. include:: ../requirements.travis.txt
+   :literal:
+
 
 Other optional dependencies include:
 

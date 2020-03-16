@@ -22,5 +22,3 @@ python:
   install:
     - requirements: requirements.rtd.txt
     - requirements: requirements.travis.txt
-    - method: pip
-      path: git+https://github.com/pandas-dev/pandas-sphinx-theme.git@master
