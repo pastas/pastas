@@ -1286,6 +1286,7 @@ class Model:
 
         Returns
         -------
+        response: pandas.Series
 
         """
         if not hasattr(self.stressmodels[name], "rfunc"):
@@ -1335,7 +1336,7 @@ class Model:
         Returns
         -------
         b: pandas.Series
-            Pandas Series with the block response. The index is based on the
+            Pandas.Series with the block response. The index is based on the
             frequency that is present in the model.settings.
 
         """
@@ -1364,7 +1365,7 @@ class Model:
         Returns
         -------
         s: pandas.Series
-            Pandas Series with the step response. The index is based on the
+            Pandas.Series with the step response. The index is based on the
             frequency that is present in the model.settings.
 
         """
@@ -1386,7 +1387,7 @@ class Model:
 
         Returns
         -------
-        stress: pandas.Series or list
+        stress: pandas.Series or list of pandas.Series
             If one stress is present, a pandas Series is returned. If more
             are present, a list of pandas Series is returned.
 

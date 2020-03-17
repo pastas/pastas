@@ -2,4 +2,13 @@ TimeSeries
 ==========
 
 .. automodule:: pastas.timeseries
-    :members: TimeSeries
+
+.. include:: ./generated/pastas.timeseries.TimeSeries.rst
+
+.. currentmodule:: pastas.timeseries
+
+.. autosummary::
+   :nosignatures:
+   :toctree: ./generated
+
+   TimeSeries
