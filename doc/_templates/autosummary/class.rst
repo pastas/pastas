@@ -19,10 +19,11 @@
    {% if methods %}
    .. rubric:: Methods
    .. autosummary::
+      :nosignatures:
       :toctree:
 
    {% for item in methods %}
-      {{ name }}.{{ item }}
+      ~{{ name }}.{{ item }}
    {%- endfor %}
    {% endif %}
    {% endblock %}

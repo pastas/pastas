@@ -20,7 +20,7 @@ Short Example
 Below is an example of a short script to simulate groundwater levels (the
 csv-files with the data can be found in the examples-directory on GitHub)::
 
-   import pandas as p
+   import pandas as pd
    import pastas as ps
    oseries = pd.read_csv('data/head_nb1.csv', parse_dates=['date'],
                          index_col='date', squeeze=True)

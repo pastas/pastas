@@ -2,5 +2,13 @@ Model Class
 ===========
 
 .. automodule:: pastas.model
-    :members: Model
+
+.. currentmodule:: pastas.model
+
+.. autoclass:: Model
+   :members:
+
+   .. autosummary::
+      :nosignatures:
+      :toctree: ./generated
 

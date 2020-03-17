@@ -137,6 +137,10 @@ html_context = {
     "doc_path": "doc",
 }
 
+html_css_files = [
+    'css/custom.css',
+]
+
 # A shorter title for the navigation bar.  Default is the same as html_title.
 html_short_title = "Pastas"
 html_favicon = "_static/favo.ico"

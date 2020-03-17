@@ -1,23 +1,30 @@
 """
-This file contains the plotting functionalities that are available for Pastas.
+Pastas models come with a number of predefined plotting methods to quickly
+visualize a Model. All of these methods are contained in the `plot`
+attribute of a model. For example, if we stored a
+:class:`pastas.model.Model` instance in the variable `ml`, the plot methods
+are available as follows::
+
+    ml.plot.decomposition()
+
+Available Model Plots
+---------------------
+The following table lists all the plot methods that are available and
+supported.
+
+.. currentmodule:: pastas.plots.Plotting
 
 .. autosummary::
     :nosignatures:
-    :toctree: generated/
+    :toctree: ./generated
 
-    Plotting.plot
-    Plotting.results
-    Plotting.decomposition
-    Plotting.diagnostics
-    Plotting.block_response
-    Plotting.step_response
-    Plotting.stresses
-    TrackSolve
-
-
-Examples
---------
-    >>> ml.plot.decomposition()
+    plot
+    results
+    decomposition
+    diagnostics
+    block_response
+    step_response
+    stresses
 
 """
 
@@ -480,7 +487,7 @@ class Plotting:
 
     def step_response(self, stressmodels=None, ax=None, figsize=None,
                       **kwargs):
-        """Plot the block response for a specific stressmodels.
+        """Plot the step response for a specific stressmodels.
 
         Parameters
         ----------

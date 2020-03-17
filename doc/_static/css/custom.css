@@ -1,0 +1,33 @@
+tbody tr:nth-child(odd) {
+    background: #f5f5f5;
+}
+
+.table td, .table th {
+    padding: 5px;
+    vertical-align: middle;
+    border-top: 1px solid #dee2e6;
+}
+
+.table p {
+    padding: 0px;
+    margin: 5px;
+
+}
+
+.figure img {
+    margin: 0;
+    border: 1px solid #dee2e6;
+    padding: 3px;
+}
+
+.figure-img {
+    margin-bottom: 0.0em;
+    line-height: 1;
+    border: 1px solid #dee2e6;
+    padding: 3px;
+}
+
+.figure .caption p {
+    padding-bottom: 0;
+}
+

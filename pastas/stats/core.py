@@ -1,3 +1,17 @@
+"""
+This module contains core statistical methods.
+
+.. currentmodule:: pastas.stats.core
+
+.. autosummary::
+   :nosignatures:
+   :toctree: generated/
+
+   acf
+   ccf
+
+"""
+
 import numpy as np
 from pandas import Series, Timedelta, DataFrame
 

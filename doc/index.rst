@@ -18,4 +18,4 @@ optimization, visualisation, and statistical analysis tools.
 	User Guide <concepts>
 	Examples <examples>
     Development <developers>
-    API Docs <modules>
+    API Docs <api_docs>

@@ -10,7 +10,7 @@ The following stressmodels are currently supported and tested:
 
 .. autosummary::
     :nosignatures:
-    :toctree: generated/
+    :toctree: ./generated
 
     RechargeModel
     StressModel

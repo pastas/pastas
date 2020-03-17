@@ -14,11 +14,9 @@ Supported Response Functions
     FourParam
     One
 
-
-TODO
-----
-- Test Polder response function
-- Test DoubleExponential response function
+.. warning::
+    The above list contains the supported response function. All other
+    methods are for research purposes only and may change without notice.
 
 """
 
@@ -290,8 +288,8 @@ class Hantush(RfuncBase):
 
     Notes
     -----
-    The Hantush well function is explained in [1]_, [2]_ and [3]_.
-    It's parameters are:
+    The Hantush well function is explained in [hantush_1955]_, [veling_2010]_
+    and [asmuth_2008]_. It's parameters are:
 
     .. math:: p[0] = A = \\frac{1}{4 \\pi kD}
     .. math:: p[1] = rho = \\frac{r}{\\lambda}
@@ -301,16 +299,16 @@ class Hantush(RfuncBase):
 
     References
     ----------
-    .. [1] Hantush, M. S., & Jacob, C. E. (1955). Non‐steady radial flow in an
-      infinite leaky aquifer. Eos, Transactions American Geophysical Union,
-      36(1), 95-100.
+    .. [hantush_1955] Hantush, M. S., & Jacob, C. E. (1955). Non‐steady
+       radial flow in an infinite leaky aquifer. Eos, Transactions American
+       Geophysical Union, 36(1), 95-100.
 
-    .. [2] Veling, E. J. M., & Maas, C. (2010). Hantush well function
-      revisited. Journal of hydrology, 393(3), 381-388.
+    .. [veling_2010] Veling, E. J. M., & Maas, C. (2010). Hantush well function
+       revisited. Journal of hydrology, 393(3), 381-388.
 
-    .. [3] Von Asmuth, J. R., Maas, K., Bakker, M., & Petersen, J. (2008).
-      Modeling time series of ground water head fluctuations subjected to
-      multiple stresses. Ground Water, 46(1), 30-40.
+    .. [asmuth_2008] Von Asmuth, J. R., Maas, K., Bakker, M., & Petersen,
+       J. (2008). Modeling time series of ground water head fluctuations
+       subjected to multiple stresses. Ground Water, 46(1), 30-40.
 
     """
     _name = "Hantush"
@@ -384,9 +382,9 @@ class HantushWellModel(RfuncBase):
 
     Notes
     -----
-    The HantushWellModel well function is explained in [1]_, [2]_ and [6]_.
-    It's parameters are (note the addition of the r parameter in this
-    implementation):
+    The HantushWellModel well function is explained in [hantush_1955]_,
+    [veling_2010]_ and [asmuth_2008]_. It's parameters are (note the
+    addition of the r parameter in this implementation):
 
     .. math:: p[0] = A = \\frac{1}{4 \\pi kD} \\cdot 2 k_0 \\left( \\frac{r}{\\lambda} \\right)
     .. math:: p[1] = lab = \\lambda
@@ -408,12 +406,6 @@ class HantushWellModel(RfuncBase):
         rho = r / lambda internally
     - cS: stays the same
     - r: distance, used to calculate rho, see lab.
-
-    References
-    ----------
-    .. [6] Von Asmuth, J. R., Maas, K., Bakker, M., & Petersen, J. (2008).
-      Modeling time series of ground water head fluctuations subjected to
-      multiple stresses. Ground Water, 46(1), 30-40.
 
     """
     _name = "HantushWellModel"
@@ -473,7 +465,7 @@ class Polder(RfuncBase):
 
     Notes
     -----
-    The Polder function is explained in [4]_. It's parameters are:
+    The Polder function is explained in [polder]_. It's parameters are:
 
     .. math:: p[0] = \\frac{x}{2\\lambda}
     .. math:: p[1] = \\sqrt{\\frac{1}{cS}}
@@ -482,7 +474,8 @@ class Polder(RfuncBase):
 
     References
     ----------
-    .. [4] http://grondwaterformules.nl/index.php/formules/waterloop/deklaag-met-sloten
+    .. [polder] http://grondwaterformules.nl/index.php/formules/waterloop
+    /deklaag-met-sloten
 
     """
     _name = "Polder"

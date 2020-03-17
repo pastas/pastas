@@ -28,8 +28,13 @@ def load(fname, **kwargs):
 
     Returns
     -------
-    ml: pastas.Model
+    ml: pastas.model.Model
         Pastas Model instance.
+
+    Examples
+    --------
+    >>> import pastas as ps
+    >>> ml = ps.io.load("model.pas")
 
     """
     if not path.exists(fname):
@@ -69,12 +74,22 @@ def load_project(fname, **kwargs):
         string with the name of the file to be imported including the file
         extension.
     kwargs:
-    extension specific keyword arguments.
+        extension specific keyword arguments.
 
     Returns
     -------
-    mls: pastas.Project
+    mls: pastas.project.Project
         Pastas Project class object
+
+    Examples
+    --------
+    >>> import pastas as ps
+    >>> mls = ps.io.load_project("project.pas")
+
+    Warnings
+    --------
+    All classes and methods dealing with Pastas projects will be moved to a
+    separate Python package in the near future (mid-2020).
 
     """
     # Dynamic import of the export module

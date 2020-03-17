@@ -11,11 +11,9 @@ to help you in contributing code to the Pastas software.
   :glob:
   :hidden:
 
-  developers/getting_started.rst
+  developers/contributing.rst
   developers/code_style.rst
-  developers/writing_docs.rst
-  developers/code_testing.rst
-  developers/pull_requests.rst
+  developers/roadmap.rst
   developers/add_stressmodel.rst
   developers/add_rfunc.rst
   developers/add_recharge.rst
@@ -43,24 +41,18 @@ merge pull requests on the Pastas GitHub.
 
    Raoul Collenteur.
    `Uni Graz <https://www.uni-graz.at>`_
-
-
 .. figure:: https://avatars3.githubusercontent.com/u/1363400?s=460&u=8d34d0824bd0f43a63f29c0b71fbfae435a15565&v=4
    :figwidth: 150px
    :target: https://github.com/mbakker7
 
    Mark Bakker.
    `TU Delft <https://www.tudelft.nl>`_
-
-
 .. figure:: https://avatars3.githubusercontent.com/u/18527362?s=460&u=3e1faab416c86e141ff0860017a5a02133830b08&v=4
    :figwidth: 150px
    :target: https://github.com/rubencalje
 
    Ruben Caljé.
    `Artesia. <http://www.artesia-water.nl>`_
-
-
 .. figure:: https://avatars1.githubusercontent.com/u/6552225?s=460&u=ba73dc4a63fe3d5707a2da9276143d16672ad413&v=4
    :figwidth: 150px
    :target: https://github.com/dbrakenhoff

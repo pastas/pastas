@@ -277,7 +277,7 @@ class LeastSquares(BaseSolver):
     _name = "LeastSquares"
 
     def __init__(self, ml, pcov=None, nfev=None, **kwargs):
-        """Solver based on Scipy's least_squares method [1]_.
+        """Solver based on Scipy's least_squares method [scipy_ref]_.
 
         Notes
         -----
@@ -293,7 +293,7 @@ class LeastSquares(BaseSolver):
 
         References
         ----------
-        .. [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
+        .. [scipy_ref] https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
 
         """
         BaseSolver.__init__(self, ml=ml, pcov=pcov, nfev=nfev, **kwargs)
@@ -336,7 +336,7 @@ class LeastSquares(BaseSolver):
 
         Parameters
         ----------
-        jacobian: np.ndarray
+        jacobian: numpy.ndarray
         cost: float
         absolute_sigma: bool
             Default is False
@@ -348,7 +348,7 @@ class LeastSquares(BaseSolver):
 
         Notes
         -----
-        This method os copied from Scipy, please refer to:
+        This method is copied from Scipy, please refer to:
         https://github.com/scipy/scipy/blob/v1.0.0/scipy/optimize/optimize.py
 
         """

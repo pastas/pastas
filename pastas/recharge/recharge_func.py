@@ -1,26 +1,17 @@
-"""recharge_func module
+"""Contains the classes for the different models that are available to
+calculate the recharge from precipitation and evaporation data.
 
-Author: R.A. Collenteur, University of Graz
+.. codeauthor:: R.A. Collenteur, University of Graz
 
-Contains the classes for the different models that are available to calculate
-the recharge from precipitation and evaporation data.
+Supported Recharge models
+-------------------------
+The following recharge models are currently supported and tested:
 
-Each Recharge class contains at least the following:
+.. autosummary::
+    :nosignatures:
+    :toctree: ./generated
 
-Attributes
-----------
-nparam: int
-    Number of parameters needed for this model.
-
-Functions
----------
-get_init_parameters(self, name)
-    A function that returns a Pandas DataFrame of the parameters of the
-    recharge function. Columns of the dataframe need to be ['value', 'pmin',
-    'pmax', 'vary']. Rows of the DataFrame have names of the parameters. Input
-    name is used as a prefix. This function is called by a stressmodel object.
-simulate(self, evap, prec, p=None)
-    A function that returns an array of the simulated recharge series.
+    Linear
 
 """
 

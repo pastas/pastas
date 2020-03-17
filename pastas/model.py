@@ -53,13 +53,8 @@ class Model:
 
     Returns
     -------
-    ml: pastas.Model
+    ml: pastas.model.Model
         Pastas Model instance, the base object in Pastas.
-
-    Examples
-    --------
-    >>> oseries = pd.Series([1,2,1], index=pd.to_datetime(range(3), unit="D"))
-    >>> ml = Model(oseries)
 
     """
 
@@ -650,7 +645,7 @@ class Model:
             If none is provided, the tmax from the oseries is used.
         freq: str, optional
             String with the frequency the stressmodels are simulated. Must
-            be one of the following: (D, h, m, s, ms, us, ns) or a multiple of
+            be one of the following (D, h, m, s, ms, us, ns) or a multiple of
             that e.g. "7D".
         warmup: float or int, optional
             Warmup period (in Days) for which the simulation is calculated,
@@ -684,12 +679,17 @@ class Model:
 
         Notes
         -----
-        - The solver object including some results are stored as ml.fit. From
-        here one can access the covariance (ml.fit.pcov) and correlation
-        matrix (ml.fit.pcor).
+        - The solver object including some results are stored as ml.fit.
+          From here one can access the covariance (ml.fit.pcov) and
+          correlation matrix (ml.fit.pcor).
         - Each solver return a number of results after optimization. These
-        solver specific results are stored in ml.fit.result and can be
-        accessed from there.
+          solver specific results are stored in ml.fit.result and can be
+          accessed from there.
+
+        See Also
+        --------
+        pastas.solver
+            Different solver objects are available to estimate parameters.
 
         """
 
@@ -1353,7 +1353,7 @@ class Model:
         ----------
         name: str
             String with the name of the stressmodel.
-        parameters: list or numpy.ndarray
+        parameters: list or numpy.ndarray, optional
             iterable with the parameters. If none, the optimal parameters are
             used when available, initial otherwise.
         add_0: bool, optional
@@ -1460,10 +1460,10 @@ class Model:
         report: str
             String with the report.
 
-        Usage
-        -----
+        Examples
+        --------
         This method is called by the solve method if report=True, but can
-        also be called on its own:
+        also be called on its own::
 
         >>> print(ml.fit_report)
 
