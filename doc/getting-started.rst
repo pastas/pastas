@@ -2,24 +2,25 @@ Getting Started with Pastas
 ===========================
 On this page you will find all the information to get started with Pastas.
 A basic knowledge of programming in Python is assumed, but nothing more than
-that.
+that. See the :ref:`Examples`-section for some example-code.
 
-Getting Python
---------------
+Installing Python
+-----------------
 To install Pastas, a working version of Python 3.4 or higher has to be
-installed on your computer. We recommend using the `Anaconda Distribution <https://www.continuum.io/downloads>`_
-of Python. This Python distribution includes most of the python package
-dependencies and the Jupyter Notebook software to run the notebooks. Moreover,
-it includes the Graphical User Interface (GUI) Spyder to start scripting in
-Python. However, you are free to install any Python distribution you want.
+installed on your computer. We recommend using the `Anaconda Distribution
+<https://www.continuum.io/downloads>`_ of Python. This Python distribution
+includes most of the python package dependencies and the Jupyter Notebook
+software to run the notebooks. Moreover, it includes the Graphical User
+Interface (GUI) Spyder to start scripting in Python. However, you are free
+to install any Python distribution you want.
 
-Getting PASTAS
---------------
+Installing Pastas
+-----------------
 To get Pastas, there are several options available. The easiest is to use
 the Python Package Index (`PyPI <https://pypi.python.org/pypi>`_), where
 many official python packages are gathered. To get the latest version of
 Pastas, open the Anaconda Prompt, a Windows Command Prompt (also called
-command window) or a Mac terminal and type::
+command window) or a Mac/Linux terminal and type::
 
   pip install pastas
 
@@ -33,13 +34,7 @@ using Anaconda is to install a package with the follow command line::
 
   conda install package
 
-Using PASTAS
-------------
-To start using PASTAS, open your python GUI (Spyder, PyCharm or any other) to edit
-and run a script, or start typing in the IPython console (bottom right in Spyder). See the :ref:`Examples`-section
-for some example-code.
-  
-Updating PASTAS
+Updating Pastas
 ---------------
 If you have already installed Pastas, it is possible to update Pastas
 easily. To update, open a Windows command screen or a Mac terminal and type::
@@ -56,7 +51,8 @@ Pastas:
 .. include:: ../requirements.travis.txt
    :literal:
 
-Other optional dependencies include:
+Other optional dependencies include::
 
-* requests (For downloading KNMI data from the web)
-
+    numba (large speed-up, highly recommended)
+    lmfit (alternative solver)
+    requests (downloading data from the web)

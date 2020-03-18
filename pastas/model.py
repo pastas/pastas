@@ -1,5 +1,11 @@
 """The Model class is the main object for creating model in Pastas.
 
+.. autosummary::
+   :nosignatures:
+   :toctree: ./generated
+
+    Model
+
 Examples
 --------
 
