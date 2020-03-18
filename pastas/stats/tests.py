@@ -1,14 +1,17 @@
 """This module contains methods for diagnosing the time series models for
 its statistic assumptions.
 
+.. codeauthor:: R.A Collenteur
 
-Autocorrelation:
-    - durbin_watson
-    - ljung_box
-    - runs_test
-    - breusch_godfrey
+.. currentmodule:: pastas.stats.tests
 
+.. autosummary::
+   :nosignatures:
+   :toctree: generated/
 
+    durbin_watson
+    ljung_box
+    runs_test
 
 """
 

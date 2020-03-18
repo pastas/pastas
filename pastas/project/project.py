@@ -1,12 +1,24 @@
 """This files contains the Project class that deals with multiple models at
 once.
 
+Warning
+-------
+This class will soon be deprecated and replaced by a separate Python package
+Pastastore that deals with large number of Pastas models. It is strongly
+recommended to switch to `Pastastore <https://github.com/pastas/pastastore>`_
+
 Notes
 -----
 This module is created at Artesia Water by Raoul Collenteur.
 
-Usage
------
+.. autosummary::
+    :nosignatures:
+    :toctree: ./generated
+
+    Project
+
+Example
+-------
 
 >>> mls = Project()
 

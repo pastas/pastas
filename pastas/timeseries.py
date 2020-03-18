@@ -1,10 +1,53 @@
 """
 This file contains a class that holds the TimeSeries class. This class is used
-to "manage" the time series within PASTAS. It has methods to change a time
+to "manage" the time series within Pastas. It has methods to change a time
 series in frequency and extend the time series, without losing the original
 data.
 
-August 2017, R.A. Collenteur
+
+.. currentmodule:: pastas.timeseries
+
+.. autoclass:: TimeSeries
+
+.. currentmodule:: pastas.timeseries.TimeSeries
+
+
+.. rubric:: Attributes
+
+.. autosummary::
+
+  series
+  series_original
+  series_validated
+
+Public Methods
+--------------
+.. autosummary::
+  :nosignatures:
+  :toctree: ./generated
+
+  update_series
+  multiply
+  to_dict
+  plot
+
+Internal Methods
+----------------
+.. autosummary::
+  :nosignatures:
+  :toctree: ./generated
+
+  change_frequency
+  fill_after
+  fill_before
+  fill_nan
+  normalize
+  sample_down
+  sample_up
+  sample_weighted
+  to_daily_unit
+  update_settings
+  validate_series
 
 """
 
@@ -20,7 +63,7 @@ logger = getLogger(__name__)
 
 
 class TimeSeries:
-    """Class that deals with all user-provided Time Series.
+    """Class that deals with all user-provided time series.
 
     Parameters
     ----------
@@ -37,10 +80,15 @@ class TimeSeries:
         settings arguments.
     metadata: dict, optional
         Dictionary with metadata of the time series.
-    freq_original str, optional
+    freq_original: str, optional
     **kwargs: optional
         Any keyword arguments that are provided but are not listed will be
         passed as additional settings.
+
+    Returns
+    -------
+    series: pastas.TimeSeries
+        Returns a pastas.TimeSeries object.
 
     Notes
     -----
@@ -52,12 +100,7 @@ class TimeSeries:
 
     See Also
     --------
-    ps.timeseries.TimeSeries.update_series
-
-    Returns
-    -------
-    series: pastas.TimeSeries
-        Returns a pastas.TimeSeries object.
+    pastas.timeseries.TimeSeries.update_series
 
     """
     _predefined_settings = {
@@ -224,12 +267,12 @@ class TimeSeries:
                              "set series_original to update the series.")
 
     def validate_series(self, series):
-        """ This method performs some PASTAS specific tests for the TimeSeries.
+        """ Validate user provided time series.
 
         Parameters
         ----------
-        series: pd.Series
-            Pandas series object containing the series time series.
+        series: pandas.Series
+            Pandas.series object containing the series time series.
 
         Returns
         -------
@@ -243,7 +286,8 @@ class TimeSeries:
         1. Series is an actual pandas Series;
         2. Nan-values from begin and end are removed;
         3. Nan-values between observations are removed;
-        4. Indices are in Timestamps (standard throughout PASTAS), making the index a pandas DateTimeIndex.
+        4. Indices are in Timestamps (standard throughout Pastas), making
+           the index a pandas DateTimeIndex.
         5. Duplicate indices are removed (by averaging).
 
         """
@@ -302,7 +346,10 @@ class TimeSeries:
     def update_settings(self, **kwargs):
         """Internal method that check if an update is actually necessary.
 
-        TODO still some bug in here when comparing timestamps. causing uneccesary updates..
+        Returns
+        -------
+        update: bool
+            True if settings are changed and series need to be updated.
 
         """
         update = False
@@ -318,8 +365,7 @@ class TimeSeries:
         return update
 
     def update_series(self, force_update=False, **kwargs):
-        """Method to update the series with new options, but most likely
-        only a change in the frequency before solving a PASTAS model.
+        """Method to update the series with new options.
 
         Parameters
         ----------
@@ -345,13 +391,13 @@ class TimeSeries:
         fill_before: str or float, optional
             Method used to extend a time series before any measurements are
             available. possible values are: "mean" or a float value.
-        fill_after: str ir float, optional
-            Method used to extens a time series after any measurements are
+        fill_after: str or float, optional
+            Method used to extend a time series after any measurements are
             available. Possible values are: "mean" or a float value.
         tmin: str or pandas.TimeStamp, optional
             String that can be converted to, or a Pandas TimeStamp with the
             minimum time of the series.
-        tmax; str or pandas.TimeStamp, optional
+        tmax: str or pandas.TimeStamp, optional
             String that can be converted to, or a Pandas TimeStamp with the
             maximum time of the series.
         norm: str or float, optional
@@ -418,8 +464,8 @@ class TimeSeries:
         method = self.settings["to_daily_unit"]
         if method is not None:
             if method is True or method == "divide":
-                dt = series.index.to_series().diff() / pd.Timedelta(1, 'd')
-                dt = dt.fillna(1)
+                dt = series.index.to_series().diff() / pd.Timedelta(1, 'D')
+                dt = dt.fillna(1.0)
                 if not (dt == 1.0).all():
                     series = series / dt
                     msg = ("Time Series {}: values of stress were transformed "
@@ -641,8 +687,6 @@ class TimeSeries:
     def normalize(self, series):
         """Method to normalize the time series.
 
-        TODO: can we also choose to normalize by the fill_before-value?
-
         """
         method = self.settings["norm"]
 
@@ -675,7 +719,7 @@ class TimeSeries:
 
         Parameters
         ----------
-        series: Boolean
+        series: bool, optional
             True to export the original time series, False to only export
             the TimeSeries object"s name.
 
@@ -706,12 +750,12 @@ class TimeSeries:
 
         Parameters
         ----------
-        original: bool
+        original: bool, optional
             Also plot the original series.
-        kwargs
 
         Returns
         -------
+        matplotlib.Axes
 
         """
 

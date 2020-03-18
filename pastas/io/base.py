@@ -15,17 +15,27 @@ logger = getLogger(__name__)
 
 
 def load(fname, **kwargs):
-    """Method to load a Pastas Model from file.
+    """
+    Method to load a Pastas Model from file.
+
     Parameters
     ----------
     fname: str
         string with the name of the file to be imported including the file
         extension.
-    kwargs: extension specific keyword arguments
+    kwargs:
+        extension specific keyword arguments
+
     Returns
     -------
-    ml: pastas.Model
+    ml: pastas.model.Model
         Pastas Model instance.
+
+    Examples
+    --------
+    >>> import pastas as ps
+    >>> ml = ps.io.load("model.pas")
+
     """
     if not path.exists(fname):
         msg = "File not found: {}".format(fname)
@@ -55,17 +65,32 @@ def load(fname, **kwargs):
 
 
 def load_project(fname, **kwargs):
-    """Method to load a Pastas project.
+    """
+    Method to load a Pastas project.
+
     Parameters
     ----------
     fname: str
         string with the name of the file to be imported including the file
         extension.
-    kwargs: extension specific keyword arguments.
+    kwargs:
+        extension specific keyword arguments.
+
     Returns
     -------
-    mls: Pastas.Project class
+    mls: pastas.project.Project
         Pastas Project class object
+
+    Examples
+    --------
+    >>> import pastas as ps
+    >>> mls = ps.io.load_project("project.pas")
+
+    Warnings
+    --------
+    All classes and methods dealing with Pastas projects will be moved to a
+    separate Python package in the near future (mid-2020).
+
     """
     # Dynamic import of the export module
     ext = path.splitext(fname)[1]
@@ -206,8 +231,9 @@ def load_model(data):
 
 
 def dump(fname, data, **kwargs):
-    """Method to save a pastas-model to a file. The specific dump-module is
-    automatically chosen based on the provided file extension.
+    """
+    Method to save a pastas-model to a file.
+
     Parameters
     ----------
     fname: str
@@ -215,11 +241,19 @@ def dump(fname, data, **kwargs):
         file-extension. Currently supported extension are: .pas.
     data: dict
         dictionary with the information to store.
-    kwargs: extension specific keyword arguments can be provided using kwargs.
+    kwargs:
+        extension specific keyword arguments can be provided using kwargs.
+
     Returns
     -------
     message:
         Message if the file-saving was successful.
+
+    Notes
+    -----
+    The specific dump-module is automatically chosen based on the provided
+    file extension.
+
     """
     ext = path.splitext(fname)[1]
     dump_mod = import_module("pastas.io" + ext)
