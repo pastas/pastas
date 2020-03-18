@@ -15,9 +15,9 @@ GitHub repository `here <https://help.github
 .com/en/github/getting-started-with-github/fork-a-repo>`_.
 
 .. note::
-   Make sure to make changes in the make changes in your local Development
-   branch (Dev) or start an entirely new branch that branches of the
-   Dev-branch.
+    Make sure to make changes in the make changes in your local Development
+    branch (Dev) or start an entirely new branch that branches of the
+    Dev-branch.
 
 2. Write Code
 -------------
@@ -57,10 +57,10 @@ run automatic code tests to ensure that the code works, is documented and
 has a good code style.
 
 .. figure:: checklist.png
-   :figwidth: 300px
+    :figwidth: 300px
 
 .. figure:: automated_tests.png
-   :figwidth: 400px
+    :figwidth: 400px
 
 After you have create a Pull Request the :ref:`Core Development Team` will
 review your code and discuss potential improvements on GitHub before merging

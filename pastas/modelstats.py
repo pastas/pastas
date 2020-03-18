@@ -187,8 +187,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
         References
         ----------
         .. [nash_1970] Nash, J. E., & Sutcliffe, J. V. (1970). River flow
-        forecasting through conceptual models part I-A discussion of
-        principles. Journal of hydrology, 10(3), 282-290.
+           forecasting through conceptual models part I-A discussion of
+           principles. Journal of hydrology, 10(3), 282-290.
 
         """
         res = self.ml.residuals(tmin=tmin, tmax=tmax).values

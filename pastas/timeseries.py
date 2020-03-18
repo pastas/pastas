@@ -11,6 +11,7 @@ data.
 
 .. currentmodule:: pastas.timeseries.TimeSeries
 
+
 .. rubric:: Attributes
 
 .. autosummary::
@@ -19,7 +20,8 @@ data.
   series_original
   series_validated
 
-.. rubric:: Public Methods
+Public Methods
+--------------
 .. autosummary::
   :nosignatures:
   :toctree: ./generated
@@ -29,7 +31,8 @@ data.
   to_dict
   plot
 
-.. rubric:: Internal Methods
+Internal Methods
+----------------
 .. autosummary::
   :nosignatures:
   :toctree: ./generated

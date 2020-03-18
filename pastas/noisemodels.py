@@ -5,10 +5,26 @@ Supported Noise Models
 
 .. autosummary::
     :nosignatures:
-    :toctree: generated/
+    :toctree: ./generated
 
     NoiseModel
     NoiseModel2
+
+Examples
+--------
+By default, a noise model is added to Pastas. It is possible to replace the
+default model with different models as follows:
+
+>>> n = ps.NoiseModel()
+>>> ml.add_noisemodel(n)
+
+or
+
+>>> ml.add_noisemodel(ps.NoiseModel())
+
+See Also
+--------
+pastas.model.Model.add_noisemodel
 
 """
 
@@ -36,7 +52,7 @@ class NoiseModelBase(ABC):
 
     def set_init_parameters(self, oseries=None):
         if oseries is not None:
-            pinit = oseries.index.to_series().diff() / Timedelta(1, "d")
+            pinit = oseries.index.to_series().diff() / Timedelta(1, "D")
             pinit = pinit.median()
         else:
             pinit = 14.0
@@ -127,7 +143,9 @@ class NoiseModel(NoiseModelBase):
 
     References
     ----------
-    .. [1] von Asmuth, J. R., and M. F. P. Bierkens (2005), Modeling irregularly spaced residual series as a continuous stochastic process, Water Resour. Res., 41, W12404, doi:10.1029/2004WR003726.
+    .. [1] von Asmuth, J. R., and M. F. P. Bierkens (2005), Modeling
+           irregularly spaced residual series as a continuous stochastic
+           process, Water Resour. Res., 41, W12404, doi:10.1029/2004WR003726.
 
     """
     _name = "NoiseModel"
@@ -138,13 +156,13 @@ class NoiseModel(NoiseModelBase):
         self.set_init_parameters()
 
     def simulate(self, res, parameters):
-        """
+        """Simulate noise from the residuals.
 
         Parameters
         ----------
-        res : pandas.Series
+        res: pandas.Series
             The residual series.
-        parameters : array-like
+        parameters: array-like
             Alpha parameters used by the noisemodel.
 
         Returns
@@ -169,11 +187,13 @@ class NoiseModel(NoiseModelBase):
 
         Parameters
         ----------
-        alpha
-        odelt:
+        alpha: float
+        odelt: numpy.ndarray
 
         Returns
         -------
+        w: numpy.ndarray
+            Array with the weights.
 
         """
         # divide power by 2 as nu / sigma is returned

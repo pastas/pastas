@@ -7,13 +7,13 @@ writing or updating documentation is more than welcome. This section serves
 to help you in contributing code to the Pastas software.
 
 .. toctree::
-  :maxdepth: 1
-  :glob:
-  :hidden:
+    :maxdepth: 1
+    :glob:
+    :hidden:
 
-  developers/contributing.rst
-  developers/code_style.rst
-  developers/roadmap.rst
+    ./contributing.rst
+    ./code_style.rst
+    ./roadmap.rst
 
 Bug reports / Feature requests
 ------------------------------
@@ -30,35 +30,37 @@ approximately scheduled at the `GitHub Milestones page <https://github
 
 Core Development Team
 ---------------------
-
 The following people are part of the core development team of Pastas and can
 merge pull requests on the Pastas GitHub.
 
 
 .. figure:: https://avatars2.githubusercontent.com/u/12051167?s=460&u=ad0baaa3520ab942c93af44ea8e296b44ea459ac&v=4
-   :figwidth: 150px
-   :target: https://github.com/raoulcollenteur
+    :figwidth: 150px
+    :target: https://github.com/raoulcollenteur
 
-   Raoul Collenteur.
-   `Uni Graz <https://www.uni-graz.at>`_
+    Raoul Collenteur.
+    `Uni Graz <https://www.uni-graz.at>`_
+
 .. figure:: https://avatars3.githubusercontent.com/u/1363400?s=460&u=8d34d0824bd0f43a63f29c0b71fbfae435a15565&v=4
-   :figwidth: 150px
-   :target: https://github.com/mbakker7
+    :figwidth: 150px
+    :target: https://github.com/mbakker7
 
-   Mark Bakker.
-   `TU Delft <https://www.tudelft.nl>`_
+    Mark Bakker.
+    `TU Delft <https://www.tudelft.nl>`_
+
 .. figure:: https://avatars3.githubusercontent.com/u/18527362?s=460&u=3e1faab416c86e141ff0860017a5a02133830b08&v=4
-   :figwidth: 150px
-   :target: https://github.com/rubencalje
+    :figwidth: 150px
+    :target: https://github.com/rubencalje
 
-   Ruben Caljé.
-   `Artesia. <http://www.artesia-water.nl>`_
+    Ruben Caljé.
+    `Artesia. <http://www.artesia-water.nl>`_
+
 .. figure:: https://avatars1.githubusercontent.com/u/6552225?s=460&u=ba73dc4a63fe3d5707a2da9276143d16672ad413&v=4
-   :figwidth: 150px
-   :target: https://github.com/dbrakenhoff
+    :figwidth: 150px
+    :target: https://github.com/dbrakenhoff
 
-   Davíd Brakenhoff.
-   `Artesia <http://www.artesia-water.nl>`_.
+    Davíd Brakenhoff.
+    `Artesia <http://www.artesia-water.nl>`_.
 
 Contributors
 ------------
@@ -69,4 +71,3 @@ notify us when contributors are missing from this list.
 - `Stijn Klop <https://github.com/saklop>`_
 - `Tom van Steijn <https://github.com/tomvansteijn>`_
 - `Hugo van de Berg <https://github.com/Hugovdberg>`_
-

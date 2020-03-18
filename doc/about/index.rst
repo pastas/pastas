@@ -12,7 +12,7 @@ to contribute to the project? Check out the :ref:`Development` section.
     :hidden:
     :glob:
 
-    about/*
+    ./*
 
 History
 -------
@@ -25,14 +25,14 @@ water boards, and engineering companies. The project is currently actively
 being developed by the TU Delft, Artesia, and the University of Graz
 (Austria).
 
-.. figure:: _static/logo_graz.png
-   :figwidth: 200px
-   :target: https://erdwissenschaften.uni-graz.at/en/
+.. figure:: ./../_static/logo_graz.png
+    :figwidth: 200px
+    :target: https://erdwissenschaften.uni-graz.at/en/
 
-.. figure:: _static/TUD_logo.png
-   :figwidth: 200px
-   :target: https://www.tudelft.nl
+.. figure:: ./../_static/TUD_logo.png
+    :figwidth: 200px
+    :target: https://www.tudelft.nl
 
-.. figure:: _static/Art_logo.jpg
-   :figwidth: 200px
-   :target: http://www.artesia-water.nl
+.. figure:: ./../_static/Art_logo.jpg
+    :figwidth: 200px
+    :target: http://www.artesia-water.nl

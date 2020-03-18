@@ -6,22 +6,31 @@ Supported Stress models
 -----------------------
 The following stressmodels are currently supported and tested:
 
-.. currentmodule:: pastas.stressmodels
-
 .. autosummary::
     :nosignatures:
     :toctree: ./generated
 
-    RechargeModel
     StressModel
     StressModel2
+    RechargeModel
     FactorModel
     StepModel
     WellModel
 
-.. warning::
-    All other stressmodels are for research purposes only and are not (yet)
-    fully supported and tested.
+Examples
+--------
+
+>>> sm = ps.StressModel(stress, rfunc=ps.Gamma, name="sm1")
+>>> ml.add_stressmodel(stressmodel=sm)
+
+See Also
+--------
+pastas.model.Model.add_stressmodel
+
+Warnings
+--------
+All other stressmodels are for research purposes only and are not (yet)
+fully supported and tested.
 
 """
 
@@ -171,7 +180,7 @@ class StressModelBase:
 
         Parameters
         ----------
-        series: Boolean, optional
+        series: bool, optional
             True if time series are to be exported, False if only the name
             of the time series are needed. Settings are always exported.
 
@@ -251,7 +260,7 @@ class StressModel(StressModelBase):
         Response function used in the convolution with the stress.
     name: str
         Name of the stress.
-    up: Boolean or None, optional
+    up: bool or None, optional
         True if response function is positive (default), False if negative.
         None if you don't want to define if response is positive or negative.
     cutoff: float, optional
@@ -272,7 +281,8 @@ class StressModel(StressModelBase):
     --------
     >>> import pastas as ps
     >>> import pandas as pd
-    >>> sm = ps.StressModel(stress=pd.Series(), rfunc=ps.Gamma, name="Prec", settings="prec")
+    >>> sm = ps.StressModel(stress=pd.Series(), rfunc=ps.Gamma, name="Prec",
+    >>>                     settings="prec")
 
     See Also
     --------
@@ -367,7 +377,7 @@ class StressModel2(StressModelBase):
         Response function used in the convolution with the stress.
     name: str
         Name of the stress
-    up: Boolean or None, optional
+    up: bool or None, optional
         True if response function is positive (default), False if negative.
         None if you don't want to define if response is positive or negative.
     cutoff: float, optional
@@ -517,7 +527,7 @@ class StepModel(StressModelBase):
     rfunc: pastas.rfunc.RfuncBase, optional
         Pastas response function used to simulate the effect of the step.
         Default is rfunc.One(), an instant effect.
-    up: Boolean, optional
+    up: bool, optional
         Force a direction of the step.
 
     Notes
@@ -570,14 +580,14 @@ class StepModel(StressModelBase):
 class LinearTrend(StressModelBase):
     """Stressmodel that simulates a linear trend.
 
-    name: str
-        String with the name of the stressmodel
     start: str
         String with a date to start the trend, will be transformed to an
         ordinal number internally. E.g. "2018-01-01"
     end: str
         String with a date to end the trend, will be transformed to an ordinal
         number internally. E.g. "2018-01-01"
+    name: str, optional
+        String with the name of the stressmodel
 
     """
     _name = "LinearTrend"
@@ -664,24 +674,24 @@ class WellModel(StressModelBase):
 
     Parameters
     ----------
-    stress : list
+    stress: list
         list containing the stresses timeseries.
-    rfunc : pastas.rfunc
-        this model only works with Hantush!
-    name : str
+    rfunc: pastas.rfunc
+        this model only works with the HantushWellModel response function.
+    name: str
         Name of the stressmodel.
-    distances : list or list-like
+    distances: list or list-like
         list of distances to oseries, must be ordered the same as the
         stresses.
-    up : bool, optional
+    up: bool, optional
         whether a positive stress has an increasing or decreasing effect on
         the model, by default False, in which case positive stress lowers
         e.g., the groundwater level.
-    cutoff : float, optional
-        percentage at which to cutoff the step response, by default 0.99.
-    settings : str, list of dict, optional
+    cutoff: float, optional
+        percentage at which to cutoff the step response, by default 0.999.
+    settings: str, list of dict, optional
         settings of the timeseries, by default "well".
-    sort_wells : bool, optional
+    sort_wells: bool, optional
         sort wells from closest to furthest, by default True.
 
     Notes
@@ -690,6 +700,10 @@ class WellModel(StressModelBase):
     response function. This can be applied when dealing with multiple
     wells in a time series model. The distance from an influence to the
     location of the oseries has to be provided for each stress.
+
+    Warnings
+    --------
+    This model only works with the HantushWellModel response function.
 
     """
     _name = "WellModel"
@@ -836,20 +850,19 @@ class WellModel(StressModelBase):
 
 
 class FactorModel(StressModelBase):
-    """Model that multiplies a stress by a single value. The independent series
-    do not have to be equidistant and are allowed to have gaps.
+    """Model that multiplies a stress by a single value.
 
     Parameters
     ----------
     stress: pandas.Series or pastas.timeseries
         Stress which will be multiplied by a factor. The stress does not
         have to be equidistant.
-    name: str
+    name: str, optional
         String with the name of the stressmodel.
-    settings: dict or str
+    settings: dict or str, optional
         Dict or String that is forwarded to the TimeSeries object created
         from the stress.
-    metadata: dict
+    metadata: dict, optional
         Dictionary with metadata, forwarded to the TimeSeries object created
         from the stress.
 

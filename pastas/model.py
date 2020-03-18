@@ -1,80 +1,86 @@
-"""The Model class is the main object for creating model in Pastas.
+"""The Model class is the main object to create a model in Pastas.
 
 .. currentmodule:: pastas.model
 
 .. autoclass:: Model
 
-.. currentmodule:: pastas.model.Model
-
-.. rubric:: General Methods
-.. autosummary::
-  :nosignatures:
-  :toctree: ./generated
-
-  observations
-  residuals
-  noise
-  simulate
-  initialize
-  solve
-  fit_report
-  to_dict
-  to_file
-  copy
-  check_parameters_bounds
-
-.. rubric:: Add and Delete Methods
-.. autosummary::
-  :nosignatures:
-  :toctree: ./generated
-
-  add_constant
-  add_noisemodel
-  add_stressmodel
-  add_transform
-  del_constant
-  del_noisemodel
-  del_stressmodel
-  del_transform
-
-.. rubric:: Get Methods
-.. autosummary::
-  :nosignatures:
-  :toctree: ./generated
-
-  get_block_response
-  get_contribution
-  get_contributions
-  get_file_info
-  get_init_parameters
-  get_parameters
-  get_response
-  get_sim_index
-  get_step_response
-  get_stress
-  get_stressmodel_names
-  get_tmax
-  get_tmin
-  get_transform_contribution
-
-.. rubric:: Set Methods
-.. autosummary::
-  :nosignatures:
-  :toctree: ./generated
-
-  set_initial
-  set_pmax
-  set_pmin
-  set_vary
-  set_parameter
-
-
 Examples
 --------
+A minimal working example of the Model class is shown below:
 
 >>> oseries = pd.Series([1,2,1], index=pd.to_datetime(range(3), unit="D"))
 >>> ml = Model(oseries)
 
+.. currentmodule:: pastas.model.Model
+
+General Methods
+---------------
+.. autosummary::
+    :nosignatures:
+    :toctree: ./generated
+
+    observations
+    residuals
+    noise
+    simulate
+    initialize
+    solve
+    fit_report
+    to_dict
+    to_file
+    copy
+    check_parameters_bounds
+
+Add and Delete Methods
+----------------------
+The following methods can be used to add model components.
+
+.. autosummary::
+    :nosignatures:
+    :toctree: ./generated
+
+    add_constant
+    add_noisemodel
+    add_stressmodel
+    add_transform
+    del_constant
+    del_noisemodel
+    del_stressmodel
+    del_transform
+
+.. seealso::
+    :mod:`pastas.stressmodels`, :mod:`pastas.noisemodels`,
+    :mod:`pastas.transform`
+
+Get Methods
+-----------
+.. autosummary::
+    :nosignatures:
+    :toctree: ./generated
+
+    get_block_response
+    get_step_response
+    get_contribution
+    get_contributions
+    get_transform_contribution
+    get_stress
+    get_stressmodel_names
+    get_init_parameters
+    get_parameters
+    get_tmax
+    get_tmin
+    get_file_info
+
+Set Methods
+-----------
+.. autosummary::
+    :nosignatures:
+    :toctree: ./generated
+
+    set_initial
+    set_pmax
+    set_pmin
+    set_vary
 
 """
 
@@ -202,11 +208,11 @@ class Model:
 
         Parameters
         ----------
-        stressmodel: pastas.stressmodel.stressmodelBase
-            instance of a pastas.stressmodel object. Multiple stress models
+        stressmodel: pastas.stressmodel
+            instance of a pastas.stressmodel class. Multiple stress models
             can be provided (e.g., ml.add_stressmodel(sm1, sm2) in one call.
         replace: bool, optional
-            replace the stressmodel if a stressmodel with the same name
+            force replace the stressmodel if a stressmodel with the same name
             already exists. Not recommended but useful at times. Default is
             False.
 
@@ -220,6 +226,10 @@ class Model:
         --------
         >>> sm = ps.StressModel(stress, rfunc=ps.Gamma, name="stress")
         >>> ml.add_stressmodel(sm)
+
+        See Also
+        --------
+        pastas.stressmodels
 
         """
         # Method can take multiple stressmodels at once through args
@@ -273,6 +283,10 @@ class Model:
         >>> tt = ps.ThresholdTransform()
         >>> ml.add_transform(tt)
 
+        See Also
+        --------
+        pastas.transform
+
         """
         if isclass(transform):
             # keep this line for backwards compatibility for now
@@ -308,7 +322,7 @@ class Model:
 
     @get_stressmodel
     def del_stressmodel(self, name):
-        """ Safely delete a stressmodel from the stressmodels dict.
+        """Method to safely delete a stress model from the Model.
 
         Parameters
         ----------
@@ -326,7 +340,7 @@ class Model:
         self.parameters = self.get_init_parameters(initial=False)
 
     def del_constant(self):
-        """ Safely delete the constant from the Model.
+        """Method to safely delete the Constant from the Model.
 
         """
         if self.constant is None:
@@ -336,7 +350,7 @@ class Model:
             self.parameters = self.get_init_parameters(initial=False)
 
     def del_transform(self):
-        """Safely delete the transform from the Model.
+        """Method to safely delete the transform from the Model.
 
         """
         if self.transform is None:
@@ -346,7 +360,7 @@ class Model:
             self.parameters = self.get_init_parameters(initial=False)
 
     def del_noisemodel(self):
-        """Safely delete the noisemodel from the Model.
+        """Method to safely delete the noise model from the Model.
 
         """
         if self.noisemodel is None:
@@ -554,6 +568,13 @@ class Model:
         -----
         The noise are the time series that result when applying a noise
         model.
+
+        .. Note::
+            The noise is sometimes also referred to as the innovations.
+
+        Warnings
+        --------
+        This method returns None is no noise model is added to the model.
 
         """
         if (self.noisemodel is None) or (self.settings["noise"] is False):
@@ -810,6 +831,10 @@ class Model:
         move_bounds: bool, optional
             Reset pmin/pmax based on new initial value.
 
+        Examples
+        --------
+        >>> ml.set_initial("constant_d", 10)
+
         """
         if move_bounds:
             factor = value / self.parameters.loc[name, 'initial']
@@ -830,6 +855,10 @@ class Model:
         value: bool
             boolean to vary a parameter (True) or not (False).
 
+        Examples
+        --------
+        >>> ml.set_vary("constant_d", False)
+
         """
         self.set_parameter(name, bool(value), "vary")
 
@@ -843,6 +872,10 @@ class Model:
         value: float
             minimum value for the parameter.
 
+        Examples
+        --------
+        >>> ml.set_pmin("constant_d", -10)
+
         """
         self.set_parameter(name, value, "pmin")
 
@@ -855,6 +888,10 @@ class Model:
             name of the parameter to update.
         value: float
             maximum value for the parameter.
+
+        Examples
+        --------
+        >>> ml.set_pmax("constant_d", 10)
 
         """
         self.set_parameter(name, value, "pmax")
@@ -1026,17 +1063,16 @@ class Model:
         tmax are checked and returned according to the following rules:
 
         A. If no value for tmin is provided:
-            1. If use_oseries is True, tmin is based on the oseries.
+
+            1. If use_oseries is True, tmin is based on the oseries
             2. If use_stresses is True, tmin is based on the stressmodels.
 
         B. If a values for tmin is provided:
+
             1. A pandas timestamp is made from the string
             2. if use_oseries is True, tmin is checked against oseries.
 
         C. In all cases an offset for the tmin is added.
-
-        A detailed description of dealing with tmin and timesteps in general
-        can be found in the developers section of the docs.
 
         """
         # Get tmin from the oseries
@@ -1069,7 +1105,7 @@ class Model:
 
     def get_tmax(self, tmax=None, freq=None, use_oseries=True,
                  use_stresses=False):
-        """Method that checks and returns valid values for tmin and tmax.
+        """Method that checks and returns valid values for tmax.
 
         Parameters
         ----------
@@ -1096,13 +1132,13 @@ class Model:
         tmax are checked and returned according to the following rules:
 
         A. If no value for tmax is provided:
-            1. If use_oseries is True, tmax is based on the
-            oseries.
-            2. If use_stresses is True, tmax is based on the
-            stressmodels.
+
+            1. If use_oseries is True, tmax is based on the oseries.
+            2. If use_stresses is True, tmax is based on the stressmodels.
 
         B. If a values for tmax is provided:
-            1. A pandas timestamp is made from the string
+
+            1. A pandas timestamp is made from the string.
             2. if use_oseries is True, tmax is checked against oseries.
 
         C. In all cases an offset for the tmax is added.
@@ -1181,7 +1217,7 @@ class Model:
         return parameters
 
     def get_parameters(self, name=None):
-        """Internal method to obtain the parameters needed for calculation.
+        """Method to obtain the parameters needed for calculation.
 
         This method is used by the simulation, residuals and the noise
         methods as well as other methods that need parameters values as arrays.
@@ -1644,24 +1680,20 @@ class Model:
         return pmin, pmax
 
     def to_dict(self, series=True, file_info=True):
-        """Internal method to export a model to a dictionary.
+        """Method to export a model to a dictionary.
 
-        Helper function for the self.export method.
+        Parameters
+        ----------
+        series: bool, optional
+            True to export the time series (default), False to not export them.
+        file_info: bool, optional
+            Export file_info or not. See method Model.get_file_info
 
         Notes
         -----
-        To increase backward compatibility most attributes are stored in
-        dictionaries that can be updated when a model is created.
-
-        The following attributes are exported:
-
-        - oseries
-        - stressmodeldict
-        - noisemodel
-        - constant
-        - parameters
-        - metadata
-        - settings
+        Helper function for the self.to_file method. To increase backward
+        compatibility most attributes are stored in dictionaries that can be
+        updated when a model is created.
 
         """
 
@@ -1711,7 +1743,12 @@ class Model:
             original series are exported, if series is "modified",
             the series are exported after being changed with the timeseries
             settings. Default is True.
-        kwargs: any argument that is passed to the Model.dump_data() method.
+        **kwargs:
+            any argument that is passed to :mod:`pastas.io.dump`.
+
+        See Also
+        --------
+        :mod:`pastas.io.dump`
 
         """
 
@@ -1722,7 +1759,7 @@ class Model:
         return dump(fname, data, **kwargs)
 
     def copy(self, name=None):
-        """Method to copy a model
+        """Method to copy a model.
 
         Parameters
         ----------
@@ -1732,8 +1769,12 @@ class Model:
 
         Returns
         -------
-        ml: pastas.Model instance
+        ml: pastas.model.Model instance
             Copy of the original model with no references to the old model.
+
+        Examples
+        --------
+        >>> ml_copy = ml.copy(name="new_name")
 
         """
         if name is None:
