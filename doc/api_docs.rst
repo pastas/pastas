@@ -7,9 +7,8 @@ created from the documentation strings in original Python code. In the
 left-hand menu you will find the different categories of the API documentation.
 
 .. toctree::
-  :maxdepth: 1
+  :maxdepth: 0
   :hidden:
-  :glob:
 
   api/model.rst
   api/stressmodels.rst

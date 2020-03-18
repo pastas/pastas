@@ -1,10 +1,73 @@
 """The Model class is the main object for creating model in Pastas.
 
-.. autosummary::
-   :nosignatures:
-   :toctree: ./generated
+.. currentmodule:: pastas.model
 
-    Model
+.. autoclass:: Model
+
+.. currentmodule:: pastas.model.Model
+
+.. rubric:: General Methods
+.. autosummary::
+  :nosignatures:
+  :toctree: ./generated
+
+  observations
+  residuals
+  noise
+  simulate
+  initialize
+  solve
+  fit_report
+  to_dict
+  to_file
+  copy
+  check_parameters_bounds
+
+.. rubric:: Add and Delete Methods
+.. autosummary::
+  :nosignatures:
+  :toctree: ./generated
+
+  add_constant
+  add_noisemodel
+  add_stressmodel
+  add_transform
+  del_constant
+  del_noisemodel
+  del_stressmodel
+  del_transform
+
+.. rubric:: Get Methods
+.. autosummary::
+  :nosignatures:
+  :toctree: ./generated
+
+  get_block_response
+  get_contribution
+  get_contributions
+  get_file_info
+  get_init_parameters
+  get_parameters
+  get_response
+  get_sim_index
+  get_step_response
+  get_stress
+  get_stressmodel_names
+  get_tmax
+  get_tmin
+  get_transform_contribution
+
+.. rubric:: Set Methods
+.. autosummary::
+  :nosignatures:
+  :toctree: ./generated
+
+  set_initial
+  set_pmax
+  set_pmin
+  set_vary
+  set_parameter
+
 
 Examples
 --------
@@ -1636,7 +1699,7 @@ class Model:
         return data
 
     def to_file(self, fname, series=True, **kwargs):
-        """Method to to_file the Pastas model to a file.
+        """Method to save the Pastas model to a file.
 
         Parameters
         ----------

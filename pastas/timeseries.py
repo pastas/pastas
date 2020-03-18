@@ -4,6 +4,48 @@ to "manage" the time series within Pastas. It has methods to change a time
 series in frequency and extend the time series, without losing the original
 data.
 
+
+.. currentmodule:: pastas.timeseries
+
+.. autoclass:: TimeSeries
+
+.. currentmodule:: pastas.timeseries.TimeSeries
+
+.. rubric:: Attributes
+
+.. autosummary::
+
+  series
+  series_original
+  series_validated
+
+.. rubric:: Public Methods
+.. autosummary::
+  :nosignatures:
+  :toctree: ./generated
+
+  update_series
+  multiply
+  to_dict
+  plot
+
+.. rubric:: Internal Methods
+.. autosummary::
+  :nosignatures:
+  :toctree: ./generated
+
+  change_frequency
+  fill_after
+  fill_before
+  fill_nan
+  normalize
+  sample_down
+  sample_up
+  sample_weighted
+  to_daily_unit
+  update_settings
+  validate_series
+
 """
 
 from logging import getLogger
