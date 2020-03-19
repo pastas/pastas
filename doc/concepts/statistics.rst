@@ -1,7 +1,6 @@
-==========
 Statistics
 ==========
-|Project| has a dedicated module for the statistics that can be calculated
+Pastas has a dedicated module for the statistics that can be calculated
 for the time series model, the :mod:`Stats module <pastas.stats>`. All these
 statistical methods are contained in::
 

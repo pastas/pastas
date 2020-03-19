@@ -1,27 +1,40 @@
 """Statistics for the Pastas Model class.
 
-Statistics can be calculated for the following time series:
-- Observation series
-- Simulated series
-- Residual series
-- Noise series
-Each of these series can be obtained through their individual (private) get
-method for a specific time frame.
-two different types of statistics are provided: model statistics and
-descriptive statistics for each series.
-
 Examples
 --------
 
     >>> ml.stats.summary()
                                          Value
     Statistic
-    Pearson R^2                       0.874113
-    Root mean squared error           0.432442
-    Bayesian Information Criterion  113.809120
-    Average Deviation                 0.335966
-    Explained variance percentage    72.701968
-    Akaike InformationCriterion      25.327385
+    Pearson R^2                       0.87
+    Root mean squared error           0.43
+    Bayesian Information Criterion    113.
+    Average Deviation                 0.33
+    Explained variance percentage     72.7
+    Akaike InformationCriterion       25.3
+
+Available statistics
+--------------------
+
+.. currentmodule:: pastas.modelstats.Statistics
+
+.. autosummary::
+   :nosignatures:
+   :toctree: ./generated
+
+   rmse
+   rmsn
+   sse
+   avg_dev
+   nse
+   evp
+   rsq
+   rsq_adj
+   bic
+   aic
+   summary
+   many
+   all
 
 """
 
@@ -45,14 +58,19 @@ class Statistics:
            'nse': 'Nash-Sutcliffe Efficiency'}
 
     def __init__(self, ml):
-        """
-        To obtain a list of all statistics that are
-        included type:
+        """This class provides statistics to to pastas Model class.
+
+        Parameters
+        ----------
+        ml: Pastas.model.Model
+            ml is a time series Model that is calibrated.
+
+        Notes
+        -----
+        To obtain a list of all statistics that are included type:
 
         >>> print(ml.stats.ops)
 
-        ml: Pastas Model
-            ml is a time series Model that is calibrated.
         """
         # Save a reference to the model.
         self.ml = ml
@@ -69,6 +87,11 @@ included in Pastas. To obtain a list of all statistics that are included type:
     def rmse(self, tmin=None, tmax=None):
         """Root mean squared error of the residuals.
 
+        Parameters
+        ----------
+        tmin: str or pandas.Timestamp, optional
+        tmax: str or pandas.Timestamp, optional
+
         Notes
         -----
         .. math:: rmse = \\sqrt{\\frac{\\sum{residuals^2}}{N}}
@@ -83,6 +106,11 @@ included in Pastas. To obtain a list of all statistics that are included type:
     @model_tmin_tmax
     def rmsn(self, tmin=None, tmax=None):
         """Root mean squared error of the noise.
+
+        Parameters
+        ----------
+        tmin: str or pandas.Timestamp, optional
+        tmax: str or pandas.Timestamp, optional
 
         Returns
         -------
@@ -107,6 +135,11 @@ included in Pastas. To obtain a list of all statistics that are included type:
     def sse(self, tmin=None, tmax=None):
         """Sum of the squares of the error (SSE)
 
+        Parameters
+        ----------
+        tmin: str or pandas.Timestamp, optional
+        tmax: str or pandas.Timestamp, optional
+
         Notes
         -----
         The SSE is calculated as follows:
@@ -123,6 +156,11 @@ included in Pastas. To obtain a list of all statistics that are included type:
     def avg_dev(self, tmin=None, tmax=None):
         """Average deviation of the residuals.
 
+        Parameters
+        ----------
+        tmin: str or pandas.Timestamp, optional
+        tmax: str or pandas.Timestamp, optional
+
         Notes
         -----
         .. math:: avg_dev = \\frac{\\sum(E)}{N}
@@ -135,13 +173,22 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
     @model_tmin_tmax
     def nse(self, tmin=None, tmax=None):
-        """Nash-Sutcliffe coefficient [1]_ for model fit (same as rsq).
+        """Nash-Sutcliffe coefficient for model fit .
+
+        Parameters
+        ----------
+        tmin: str or pandas.Timestamp, optional
+        tmax: str or pandas.Timestamp, optional
+
+        Notes
+        -----
+        Based on [nash_1970]_. (same as rsq)
 
         References
         ----------
-        .. [1] Nash, J. E., & Sutcliffe, J. V. (1970). River flow forecasting
-          through conceptual models part I-A discussion of principles. Journal
-          of hydrology, 10(3), 282-290.
+        .. [nash_1970] Nash, J. E., & Sutcliffe, J. V. (1970). River flow
+           forecasting through conceptual models part I-A discussion of
+           principles. Journal of hydrology, 10(3), 282-290.
 
         """
         res = self.ml.residuals(tmin=tmin, tmax=tmax).values
@@ -152,6 +199,11 @@ included in Pastas. To obtain a list of all statistics that are included type:
     @model_tmin_tmax
     def evp(self, tmin=None, tmax=None):
         """Explained variance percentage.
+
+        Parameters
+        ----------
+        tmin: str or pandas.Timestamp, optional
+        tmax: str or pandas.Timestamp, optional
 
         Notes
         -----
@@ -183,6 +235,11 @@ included in Pastas. To obtain a list of all statistics that are included type:
     def rsq_adj(self, tmin=None, tmax=None):
         """R-squared Adjusted for the number of free parameters.
 
+        Parameters
+        ----------
+        tmin: str or pandas.Timestamp, optional
+        tmax: str or pandas.Timestamp, optional
+
         Notes
         -----
         .. math:: R_{corrected} = 1-  \\frac{n-1}{n-N_{param}}*\\frac{RSS}{TSS}
@@ -206,8 +263,12 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
     @model_tmin_tmax
     def bic(self, tmin=None, tmax=None):
-        """Bayesian Information Criterium. The noise is used if a noisemodel is
-         present, otherwise the residuals are used.
+        """Bayesian Information Criterium (BIC).
+
+        Parameters
+        ----------
+        tmin: str or pandas.Timestamp, optional
+        tmax: str or pandas.Timestamp, optional
 
         Notes
         -----
@@ -216,6 +277,11 @@ included in Pastas. To obtain a list of all statistics that are included type:
         .. math:: BIC = -2 log(L) + nparam * log(N)
 
         Where nparam  is the number of free parameters
+
+        Warning
+        -------
+        The noise is used if a noisemodel is present, otherwise the
+        residuals are used.
 
         """
         if self.ml.settings["noise"]:
@@ -229,8 +295,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
     @model_tmin_tmax
     def aic(self, tmin=None, tmax=None):
-        """Akaike Information Criterium (AIC). The noise is used if a
-        noisemodel is present, otherwise the residuals are used.
+        """Akaike Information Criterium (AIC).
 
         Notes
         -----
@@ -240,6 +305,11 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         * nparam = Number of free parameters
         * L = likelihood function for the model.
+
+        Warning
+        -------
+        The noise is used if a noisemodel is present, otherwise the
+        residuals are used.
 
         """
         if self.ml.settings["noise"]:
@@ -252,14 +322,12 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
     @model_tmin_tmax
     def summary(self, tmin=None, tmax=None, stats='basic'):
-        """Prints a summary table of the model statistics. The set of
-        statistics that are printed are stats by a dictionary of the desired
-        statistics.
+        """Prints a summary table of the model statistics.
 
         Parameters
         ----------
-        tmin
-        tmax
+        tmin: str or pandas.Timestamp, optional
+        tmax: str or pandas.Timestamp, optional
         stats : str or dict
             dictionary of the desired statistics or a string with one of the
             predefined sets. Supported options are: 'basic', 'all', and 'dutch'
@@ -268,6 +336,11 @@ included in Pastas. To obtain a list of all statistics that are included type:
         -------
         stats : Pandas.DataFrame
             single-column DataFrame with calculated statistics
+
+        Notes
+        -----
+        The set of statistics that are printed are stats by a dictionary of
+        the desired statistics.
 
         """
         output = {
@@ -306,13 +379,14 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         Parameters
         ----------
-        tmin
-        tmax
-        stats: list
+        tmin: str or pandas.Timestamp, optional
+        tmax: str or pandas.Timestamp, optional
+        stats: list, optional
             list of statistics that need to be calculated.
 
         Returns
         -------
+        data: pandas.DataFrame
 
         """
         if stats is None:
@@ -330,8 +404,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         Parameters
         ----------
-        tmin: str
-        tmax: str
+        tmin: str or pandas.Timestamp, optional
+        tmax: str or pandas.Timestamp, optional
 
         Returns
         -------

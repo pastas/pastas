@@ -24,6 +24,18 @@ from ..utils import datenum_to_datetime
 
 
 def read_meny(fname, locations=None, datatype='H'):
+    """Method to read a Menyanthes file (.men).
+
+    Parameters
+    ----------
+    fname:
+    locations
+    datatype
+
+    Returns
+    -------
+
+    """
     meny = MenyData(fname, data=datatype)
     if datatype == 'H':
         data = meny.H

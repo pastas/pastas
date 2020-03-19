@@ -1,4 +1,5 @@
-"""Author: R.A. Collenteur, University of Graz
+"""Contains the classes for the different models that are available to
+calculate the recharge from precipitation and evaporation data.
 
 This module contains the different classes that can be used to simulate the
 effect of precipitation and evapotranspiration on groundwater levels.
@@ -11,8 +12,17 @@ The classes defined here are designed to be used in conjunction with the
 stressmodel "RechargeModel", which requires an instance of one of the
 classes defined here.
 
-Recharge Models
-===============
+.. codeauthor:: R.A. Collenteur, University of Graz
+
+Supported Recharge models
+-------------------------
+The following recharge models are currently supported and tested:
+
+.. autosummary::
+    :nosignatures:
+    :toctree: ./generated
+
+    Linear
 
 """
 

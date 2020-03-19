@@ -1,23 +1,22 @@
 # coding=utf-8
 """This module contains all the response functions available in Pastas.
 
-More information on how to write a response class can be found
-`here <http://pastas.readthedocs.io/en/latest/developers.html>`_.
+Supported Response Functions
+----------------------------
+.. autosummary::
+    :nosignatures:
+    :toctree: generated/
 
-Routines in Module
-------------------
-Fully supported and tested routines in this module are:
+    Gamma
+    Exponential
+    Hantush
+    HantushWellModel
+    FourParam
+    One
 
-- .. class:: Gamma
-- .. class:: Exponential
-- .. class:: Hantush
-- .. class:: One
-
-TODO
-----
-- Test Polder response function
-- Test FourParam response function
-- Test DoubleExponential response function
+.. warning::
+    The above list contains the supported response function. All other
+    methods are for research purposes only and may change without notice.
 
 """
 
@@ -273,7 +272,8 @@ class Exponential(RfuncBase):
 
 
 class Hantush(RfuncBase):
-    """ The Hantush well function.
+    """
+    The Hantush well function.
 
     Parameters
     ----------
@@ -288,8 +288,8 @@ class Hantush(RfuncBase):
 
     Notes
     -----
-    The Hantush well function is explained in [1]_, [2]_ and [3]_.
-    It's parameters are:
+    The Hantush well function is explained in [hantush_1955]_, [veling_2010]_
+    and [asmuth_2008]_. It's parameters are:
 
     .. math:: p[0] = A = \\frac{1}{4 \\pi kD}
     .. math:: p[1] = rho = \\frac{r}{\\lambda}
@@ -299,16 +299,16 @@ class Hantush(RfuncBase):
 
     References
     ----------
-    .. [1] Hantush, M. S., & Jacob, C. E. (1955). Non‐steady radial flow in an
-      infinite leaky aquifer. Eos, Transactions American Geophysical Union,
-      36(1), 95-100.
+    .. [hantush_1955] Hantush, M. S., & Jacob, C. E. (1955). Non‐steady
+       radial flow in an infinite leaky aquifer. Eos, Transactions American
+       Geophysical Union, 36(1), 95-100.
 
-    .. [2] Veling, E. J. M., & Maas, C. (2010). Hantush well function
-      revisited. Journal of hydrology, 393(3), 381-388.
+    .. [veling_2010] Veling, E. J. M., & Maas, C. (2010). Hantush well function
+       revisited. Journal of hydrology, 393(3), 381-388.
 
-    .. [3] Von Asmuth, J. R., Maas, K., Bakker, M., & Petersen, J. (2008).
-      Modeling time series of ground water head fluctuations subjected to
-      multiple stresses. Ground Water, 46(1), 30-40.
+    .. [asmuth_2008] Von Asmuth, J. R., Maas, K., Bakker, M., & Petersen,
+       J. (2008). Modeling time series of ground water head fluctuations
+       subjected to multiple stresses. Ground Water, 46(1), 30-40.
 
     """
     _name = "Hantush"
@@ -365,19 +365,9 @@ class Hantush(RfuncBase):
 
 
 class HantushWellModel(RfuncBase):
-    """ A special implementation of the Hantush well function for
+    """
+    A special implementation of the Hantush well function for
     multiple wells.
-
-    Note: The parameter r (distance from the well to the observation point)
-    is passed as a known value, and is used to scale the response function.
-    The optimized parameters are slightly different from the original
-    Hantush implementation:
-    - A: To get the same A as the original Hantush:
-        A_orig = A * 2 * k0(r / lambda) or use the gain() method
-    - lab: lambda, the r parameter is passed separately to calculate
-        rho = r / lambda internally
-    - cS: stays the same
-    - r: distance, used to calculate rho, see lab.
 
     Parameters
     ----------
@@ -392,9 +382,9 @@ class HantushWellModel(RfuncBase):
 
     Notes
     -----
-    The HantushWellModel well function is explained in [1]_, [2]_ and [3]_.
-    It's parameters are (note the addition of the r parameter in this
-    implementation):
+    The HantushWellModel well function is explained in [hantush_1955]_,
+    [veling_2010]_ and [asmuth_2008]_. It's parameters are (note the
+    addition of the r parameter in this implementation):
 
     .. math:: p[0] = A = \\frac{1}{4 \\pi kD} \\cdot 2 k_0 \\left( \\frac{r}{\\lambda} \\right)
     .. math:: p[1] = lab = \\lambda
@@ -403,18 +393,19 @@ class HantushWellModel(RfuncBase):
 
     where :math:`\\lambda = \\sqrt{\\frac{kD}{c}}`
 
-    References
-    ----------
-    .. [1] Hantush, M. S., & Jacob, C. E. (1955). Non‐steady radial flow in an
-      infinite leaky aquifer. Eos, Transactions American Geophysical Union,
-      36(1), 95-100.
+    Notes
+    -----
+    The parameter r (distance from the well to the observation point)
+    is passed as a known value, and is used to scale the response function.
+    The optimized parameters are slightly different from the original
+    Hantush implementation:
 
-    .. [2] Veling, E. J. M., & Maas, C. (2010). Hantush well function
-      revisited. Journal of hydrology, 393(3), 381-388.
-
-    .. [3] Von Asmuth, J. R., Maas, K., Bakker, M., & Petersen, J. (2008).
-      Modeling time series of ground water head fluctuations subjected to
-      multiple stresses. Ground Water, 46(1), 30-40.
+    - A: To get the same A as the original Hantush:
+        A_orig = A * 2 * k0(r / lambda) or use the gain() method
+    - lab: lambda, the r parameter is passed separately to calculate
+        rho = r / lambda internally
+    - cS: stays the same
+    - r: distance, used to calculate rho, see lab.
 
     """
     _name = "HantushWellModel"
@@ -474,7 +465,7 @@ class Polder(RfuncBase):
 
     Notes
     -----
-    The Polder function is explained in [4]_. It's parameters are:
+    The Polder function is explained in [polder]_. It's parameters are:
 
     .. math:: p[0] = \\frac{x}{2\\lambda}
     .. math:: p[1] = \\sqrt{\\frac{1}{cS}}
@@ -483,7 +474,8 @@ class Polder(RfuncBase):
 
     References
     ----------
-    .. [4] http://grondwaterformules.nl/index.php/formules/waterloop/deklaag-met-sloten
+    .. [polder] http://grondwaterformules.nl/index.php/formules/waterloop
+    /deklaag-met-sloten
 
     """
     _name = "Polder"
