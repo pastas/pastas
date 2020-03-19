@@ -1,5 +1,5 @@
 from test_model import test_add_stressmodel
-from pastas.plots import TrackSolve
+from pastas.plots import TrackSolve, compare
 
 def test_plot():
     ml = test_add_stressmodel()
@@ -41,8 +41,8 @@ def test_compare():
     ml = test_add_stressmodel()
     ml2 = ml.copy()
     ml2.name = "Test_Model2"
-    models = [ml2]
-    ml.plots.compare(models=models)
+    models = [ml, ml2]
+    compare(models)
 
 def test_tracksolve():
     ml = test_add_stressmodel()
