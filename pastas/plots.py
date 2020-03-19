@@ -716,129 +716,125 @@ class Plotting:
 
         return axes
 
-    @model_tmin_tmax
-    def compare(self, tmin=None, tmax=None, models=None, figsize=(10, 8),
-                adjust_height=False):
-        """Visual comparison of multiple models in one figure.
 
-        Note
-        ----
-        The models must have the same stressmodel names, otherwise the
-        contributions will not be plotted, and parameters table will not
-        display nicely.
+def compare(models, tmin=None, tmax=None, figsize=(10, 8),
+            adjust_height=False):
+    """Visual comparison of multiple models in one figure.
 
-        Parameters
-        ----------
-        models: list
-            list of pastas Models, works for N models, but certain
-            things might not display nicely if the list gets too long.
-        tmin: str or pandas.Timestamp, optional
-        tmax: str or pandas.Timestamp, optional
-        figsize: tuple, optional
-            tuple of size 2 to determine the figure size in inches.
-        adjust_height: bool, optional
-            Adjust the height of the graphs, so that the vertical scale of all
-            the graphs on the left is equal
+    Note
+    ----
+    The models must have the same stressmodel names, otherwise the
+    contributions will not be plotted, and parameters table will not
+    display nicely.
 
-        Returns
-        -------
-        matplotlib.axes
+    Parameters
+    ----------
+    models: list
+        list of pastas Models, works for N models, but certain
+        things might not display nicely if the list gets too long.
+    tmin: str or pandas.Timestamp, optional
+    tmax: str or pandas.Timestamp, optional
+    figsize: tuple, optional
+        tuple of size 2 to determine the figure size in inches.
+    adjust_height: bool, optional
+        Adjust the height of the graphs, so that the vertical scale of all
+        the graphs on the left is equal
 
-        """
-        # set models
-        if models is None:
-            raise TypeError("Pass a list of models!")
-        models = [self.ml] + models
-        # sort models by descending order of N stressmodels
-        models.sort(key=lambda ml: len(ml.stressmodels), reverse=True)
-        # get first model (w most stressmodels) and plot results
-        ml = models[0]
-        axes = ml.plots.results(tmin=tmin, tmax=tmax, split=False,
-                                figsize=figsize, adjust_height=adjust_height)
-        # get the axes
-        ax_ml = axes[0]  # model result
-        ax_res = axes[1]  # model residuals
-        ax_table = axes[2]  # parameters table
-        axes_sm = axes[3:]  # stressmodels
+    Returns
+    -------
+    matplotlib.axes
 
-        # get second model
-        for j, iml in enumerate(models[1:], start=2):
-            sim = iml.simulate(tmin=tmin, tmax=tmax)
-            sim.name = '{} ($R^2$ = {:0.1f}%)'.format(
-                sim.name, iml.stats.evp(tmin=tmin, tmax=tmax))
-            p, = ax_ml.plot(sim.index, sim, label=sim.name)
-            color = p.get_color()
+    """
+    # sort models by descending order of N stressmodels
+    models.sort(key=lambda ml: len(ml.stressmodels), reverse=True)
+    # get first model (w most stressmodels) and plot results
+    ml = models[0]
+    axes = ml.plots.results(tmin=tmin, tmax=tmax, split=False,
+                            figsize=figsize, adjust_height=adjust_height)
+    # get the axes
+    ax_ml = axes[0]  # model result
+    ax_res = axes[1]  # model residuals
+    ax_table = axes[2]  # parameters table
+    axes_sm = axes[3:]  # stressmodels
 
-            # Residuals and noise
-            res = iml.residuals(tmin=tmin, tmax=tmax)
+    # get second model
+    for j, iml in enumerate(models[1:], start=2):
+        sim = iml.simulate(tmin=tmin, tmax=tmax)
+        sim.name = '{} ($R^2$ = {:0.1f}%)'.format(
+            sim.name, iml.stats.evp(tmin=tmin, tmax=tmax))
+        p, = ax_ml.plot(sim.index, sim, label=sim.name)
+        color = p.get_color()
 
-            ax_res.plot(res.index, res, label="Residuals" + str(j), c=color)
-            if iml.settings["noise"]:
-                noise = iml.noise(tmin=tmin, tmax=tmax)
-                ax_res.plot(noise.index, noise, label="Noise" + str(j), c=color,
-                            alpha=0.5)
-            ax_res.legend(loc=(0, 1), ncol=4, frameon=False)
+        # Residuals and noise
+        res = iml.residuals(tmin=tmin, tmax=tmax)
 
-            # Loop through original stressmodels and check which are in
-            # the second model
-            i = 0
-            for sm_name in ml.stressmodels:
-                if sm_name in iml.stressmodels.keys():
-                    ax_contrib = axes_sm[2 * i]
-                    ax_resp = axes_sm[2 * i + 1]
-                    # get the step-response
-                    step = iml.get_step_response(sm_name, add_0=True)
-                    # plot the contribution
-                    contrib = iml.get_contribution(sm_name, tmin=tmin,
-                                                   tmax=tmax)
-                    ax_contrib.plot(contrib.index, contrib,
-                                    label="{}".format(iml.name),
-                                    c=color)
-                    # plot the step-reponse
-                    ax_resp.plot(step.index, step, c=color)
-                    handles, _ = ax_contrib.get_legend_handles_labels()
-                    ax_contrib.legend(handles, ["1", str(j)], loc=(
-                        0, 1), ncol=2, frameon=False)
-                    plt.sca(ax_contrib)
-                    plt.title("")
-                i += 1
+        ax_res.plot(res.index, res, label="Residuals" + str(j), c=color)
+        if iml.settings["noise"]:
+            noise = iml.noise(tmin=tmin, tmax=tmax)
+            ax_res.plot(noise.index, noise, label="Noise" + str(j), c=color,
+                        alpha=0.5)
+        ax_res.legend(loc=(0, 1), ncol=4, frameon=False)
 
-        # set legend for simulation axes
-        handles, labels = ax_ml.get_legend_handles_labels()
-        labels = [ilbl.replace("Simulation", "Sim" + str(i))
-                  for i, ilbl in enumerate(labels)]
-        ax_ml.legend(handles, labels, loc=(0, 1), ncol=4, frameon=False)
+        # Loop through original stressmodels and check which are in
+        # the second model
+        i = 0
+        for sm_name in ml.stressmodels:
+            if sm_name in iml.stressmodels.keys():
+                ax_contrib = axes_sm[2 * i]
+                ax_resp = axes_sm[2 * i + 1]
+                # get the step-response
+                step = iml.get_step_response(sm_name, add_0=True)
+                # plot the contribution
+                contrib = iml.get_contribution(sm_name, tmin=tmin,
+                                               tmax=tmax)
+                ax_contrib.plot(contrib.index, contrib,
+                                label="{}".format(iml.name),
+                                c=color)
+                # plot the step-reponse
+                ax_resp.plot(step.index, step, c=color)
+                handles, _ = ax_contrib.get_legend_handles_labels()
+                ax_contrib.legend(handles, ["1", str(j)], loc=(
+                    0, 1), ncol=2, frameon=False)
+                plt.sca(ax_contrib)
+                plt.title("")
+            i += 1
 
-        # Draw parameters table
-        parameters = concat(
-            [iml.parameters.optimal for iml in models], axis=1, sort=False)
-        colnams = ["{}".format(iml.name) for iml in models]
-        parameters.columns = colnams
-        parameters['name'] = parameters.index
-        # reorder columns
-        parameters = parameters.loc[:, ["name"] + colnams]
-        for name, vals in parameters.iterrows():
-            parameters.loc[name, colnams] = [
-                '{:.2f}'.format(v) for v in vals.iloc[1:]]
+    # set legend for simulation axes
+    handles, labels = ax_ml.get_legend_handles_labels()
+    labels = [ilbl.replace("Simulation", "Sim" + str(i))
+              for i, ilbl in enumerate(labels)]
+    ax_ml.legend(handles, labels, loc=(0, 1), ncol=4, frameon=False)
 
-        # clear existing table
-        ax_table.cla()
-        # loc='upper center'
-        cols = []
-        for icol in parameters.columns:
-            if len(icol) > 8:
-                new_col = "\n".join([icol[i:i + 8]
-                                     for i in range(0, len(icol), 8)])
-                cols.append(new_col)
-            else:
-                cols.append(icol)
-        ax_table.table(bbox=(0., 0., 1.0, 1.0),
-                       cellText=parameters.values,
-                       colWidths=[0.5] + [0.25] * len(models),
-                       colLabels=cols)
-        ax_table.axis("off")
+    # Draw parameters table
+    parameters = concat(
+        [iml.parameters.optimal for iml in models], axis=1, sort=False)
+    colnams = ["{}".format(iml.name) for iml in models]
+    parameters.columns = colnams
+    parameters['name'] = parameters.index
+    # reorder columns
+    parameters = parameters.loc[:, ["name"] + colnams]
+    for name, vals in parameters.iterrows():
+        parameters.loc[name, colnams] = [
+            '{:.2f}'.format(v) for v in vals.iloc[1:]]
 
-        return axes
+    # clear existing table
+    ax_table.cla()
+    # loc='upper center'
+    cols = []
+    for icol in parameters.columns:
+        if len(icol) > 8:
+            new_col = "\n".join([icol[i:i + 8]
+                                 for i in range(0, len(icol), 8)])
+            cols.append(new_col)
+        else:
+            cols.append(icol)
+    ax_table.table(bbox=(0., 0., 1.0, 1.0),
+                   cellText=parameters.values,
+                   colWidths=[0.5] + [0.25] * len(models),
+                   colLabels=cols)
+    ax_table.axis("off")
+
+    return axes
 
 
 class TrackSolve:
