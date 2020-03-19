@@ -806,7 +806,7 @@ class Plotting:
         # set legend for simulation axes
         handles, labels = ax_ml.get_legend_handles_labels()
         labels = [ilbl.replace("Simulation", "Sim" + str(i))
-                    for i, ilbl in enumerate(labels)]
+                  for i, ilbl in enumerate(labels)]
         ax_ml.legend(handles, labels, loc=(0, 1), ncol=4, frameon=False)
 
         # Draw parameters table
@@ -846,15 +846,15 @@ class TrackSolve:
 
     Parameters
     ----------
-    ml: pastas.Model
+    ml : pastas.Model
         pastas Model to set up tracking for
-    tmin: str or pandas.Timestamp, optional
+    tmin : str or pandas.Timestamp, optional
         start time for simulation, by default None which
         defaults to first index in ml.oseries.series
-    tmax: str or pandas.Timestamp, optional
+    tmax : str or pandas.Timestamp, optional
         end time for simulation, by default None which
         defaults to last index in ml.oseries.series
-    update_iter: int, optional
+    update_iter : int, optional
         update plot every update_iter iterations,
         by default 1
 
@@ -877,22 +877,21 @@ class TrackSolve:
     - TODO: check if animation can be sped up somehow.
     - TODO: check what the relationship is between no. of iterations
       and the LeastSquares nfev and njev values. Model fit is only updated
-      every few iterations(=nparams?). Perhaps only update figure when
-      fit and parameter values actually change?
+      every few iterations( = nparams).
 
     Examples
     --------
     Create a TrackSolve object for your model:
 
-    >> > track = TrackSolve(ml)
+    >>> track = TrackSolve(ml)
 
     Initialize figure:
 
-    >> > fig = track.initialize_figure()
+    >>> fig = track.initialize_figure()
 
     Solve model and pass track.update_figure as callback function:
 
-    >> > ml.solve(callback=track.update_figure)
+    >>> ml.solve(callback=track.update_figure)
 
     """
 
@@ -950,7 +949,7 @@ class TrackSolve:
 
         Parameters
         ----------
-        params: np.array
+        params : np.array
             array containing parameters
 
         """
@@ -989,7 +988,7 @@ class TrackSolve:
 
     @staticmethod
     def _calc_evp(res, obs):
-        """ calculate evp
+        """calculate evp
         """
         if obs.var() == 0.0:
             evp = 1.
@@ -1052,14 +1051,14 @@ class TrackSolve:
 
         Parameters
         ----------
-        figsize: tuple, optional
-            figure size, passed to plt.subplots(), by default(10, 8)
-        dpi: int, optional
+        figsize : tuple, optional
+            figure size, passed to plt.subplots(), by default (10, 8)
+        dpi : int, optional
             dpi of the figure passed to plt.subplots(), by default 100
 
         Returns
         -------
-        fig: matplotlib.pyplot.Figure
+        fig : matplotlib.pyplot.Figure
             handle to the figure
 
         """
@@ -1137,13 +1136,13 @@ class TrackSolve:
         """Method to update figure while model is being solved. Pass this
         method to ml.solve(), e.g.:
 
-        >> > track = TrackSolve(ml)
-        >> > fig = track.initialize_figure()
-        >> > ml.solve(callback=track.update_figure)
+        >>> track = TrackSolve(ml)
+        >>> fig = track.initialize_figure()
+        >>> ml.solve(callback=track.update_figure)
 
         Parameters
         ----------
-        params: np.array
+        params : np.array
             array containing parameters
 
         """

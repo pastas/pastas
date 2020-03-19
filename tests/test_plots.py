@@ -49,6 +49,3 @@ def test_tracksolve():
     track = TrackSolve(ml)
     track.initialize_figure()
     ml.solve(callback=track.update_figure)
-
-if __name__ == "__main__":
-    test_compare()
