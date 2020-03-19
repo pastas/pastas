@@ -721,6 +721,12 @@ class Plotting:
                 adjust_height=False):
         """Visual comparison of multiple models in one figure.
 
+        Note
+        ----
+        The models must have the same stressmodel names, otherwise the
+        contributions will not be plotted, and parameters table will not
+        display nicely.
+
         Parameters
         ----------
         models: list
@@ -766,10 +772,10 @@ class Plotting:
             # Residuals and noise
             res = iml.residuals(tmin=tmin, tmax=tmax)
 
-            ax_res.plot(res.index, res, label=f"Residuals{j}", c=color)
+            ax_res.plot(res.index, res, label="Residuals" + str(j), c=color)
             if iml.settings["noise"]:
                 noise = iml.noise(tmin=tmin, tmax=tmax)
-                ax_res.plot(noise.index, noise, label=f"Noise{j}", c=color,
+                ax_res.plot(noise.index, noise, label="Noise" + str(j), c=color,
                             alpha=0.5)
             ax_res.legend(loc=(0, 1), ncol=4, frameon=False)
 
@@ -786,12 +792,12 @@ class Plotting:
                     contrib = iml.get_contribution(sm_name, tmin=tmin,
                                                    tmax=tmax)
                     ax_contrib.plot(contrib.index, contrib,
-                                    label=f"{iml.name}",
+                                    label="{}".format(iml.name),
                                     c=color)
                     # plot the step-reponse
                     ax_resp.plot(step.index, step, c=color)
                     handles, _ = ax_contrib.get_legend_handles_labels()
-                    ax_contrib.legend(handles, ["1", "2"], loc=(
+                    ax_contrib.legend(handles, ["1", str(j)], loc=(
                         0, 1), ncol=2, frameon=False)
                     plt.sca(ax_contrib)
                     plt.title("")
@@ -799,14 +805,14 @@ class Plotting:
 
         # set legend for simulation axes
         handles, labels = ax_ml.get_legend_handles_labels()
-        labels = [ilbl.replace("Simulation", f"Sim{i}")
+        labels = [ilbl.replace("Simulation", "Sim" + str(i))
                     for i, ilbl in enumerate(labels)]
         ax_ml.legend(handles, labels, loc=(0, 1), ncol=4, frameon=False)
 
         # Draw parameters table
         parameters = concat(
             [iml.parameters.optimal for iml in models], axis=1, sort=False)
-        colnams = [f"{iml.name}" for iml in models]
+        colnams = ["{}".format(iml.name) for iml in models]
         parameters.columns = colnams
         parameters['name'] = parameters.index
         # reorder columns
