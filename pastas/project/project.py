@@ -39,6 +39,8 @@ from ..stressmodels import StressModel2
 from ..timeseries import TimeSeries
 from ..version import __version__
 
+from warnings import warn
+
 logger = getLogger(__name__)
 
 
@@ -59,6 +61,10 @@ class Project:
             Dictionary with any metadata information on the project.
 
         """
+        warn("The Project class will be deprecated in a future verion of "
+             "Pastas! Consider switching to pastastore: "
+             "https://github.com/pastas/pastastore.",
+             DeprecationWarning, stacklevel=2)
         self.models = {}
         self.name = name
 
