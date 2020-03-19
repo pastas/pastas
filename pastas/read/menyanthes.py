@@ -20,19 +20,31 @@ from pandas import Series, offsets
 from scipy.io import loadmat
 
 from ..timeseries import TimeSeries
-from ..utils import matlab2datetime
+from ..utils import datenum_to_datetime
 
 
-def read_meny(fname, locations=None, type='H'):
-    meny = MenyData(fname, data=type)
-    if type == 'H':
+def read_meny(fname, locations=None, datatype='H'):
+    """Method to read a Menyanthes file (.men).
+
+    Parameters
+    ----------
+    fname:
+    locations
+    datatype
+
+    Returns
+    -------
+
+    """
+    meny = MenyData(fname, data=datatype)
+    if datatype == 'H':
         data = meny.H
-    elif type == 'IN':
+    elif datatype == 'IN':
         data = meny.IN
-    elif type == 'M':
+    elif datatype == 'M':
         data = meny.M
     else:
-        raise NotImplementedError('type ' + type + ' not supported (yet)')
+        raise NotImplementedError('type ' + datatype + ' not supported (yet)')
     if locations is None:
         locations = data.keys()
 
@@ -44,7 +56,7 @@ def read_meny(fname, locations=None, type='H'):
         metadata['z'] = np.mean(
             (data[location]['upfiltlev'], data[location]['lowfiltlev']))
         metadata['projection'] = 'epsg:28992'
-        if type == 'H':
+        if datatype == 'H':
             kind = 'oseries'
         else:
             if data[location]['Type'] == 'prec':
@@ -57,7 +69,7 @@ def read_meny(fname, locations=None, type='H'):
                 kind = 'waterlevel'
             else:
                 kind = None
-        if type == 'M':
+        if datatype == 'M':
             kind = None
         ts.append(TimeSeries(data[location]['values'], name=location,
                              metadata=metadata, settings=kind))
@@ -100,7 +112,8 @@ class MenyData:
 
         del mat  # Delete the mat file from memory again
 
-    def read_file(self, fname):
+    @staticmethod
+    def read_file(fname):
         """This method is used to read the file.
 
         """
@@ -131,7 +144,7 @@ class MenyData:
                 if name != 'values':
                     data[name] = getattr(IN, name)
                 else:
-                    tindex = map(matlab2datetime, IN.values[:, 0])
+                    tindex = map(datenum_to_datetime, IN.values[:, 0])
                     series = Series(IN.values[:, 1], index=tindex)
 
                     # round on seconds, to get rid of conversion milliseconds
@@ -181,7 +194,7 @@ class MenyData:
                         # when diver-files are used, values will be empty
                         series = Series()
                     else:
-                        tindex = map(matlab2datetime, H.values[:, 0])
+                        tindex = map(datenum_to_datetime, H.values[:, 0])
                         # measurement is used as is
                         series = Series(H.values[:, 1], index=tindex)
                         # round on seconds, to get rid of conversion milliseconds
@@ -214,7 +227,7 @@ class MenyData:
                 if name != 'values':
                     data[name] = getattr(M, name)
                 else:
-                    tindex = map(matlab2datetime, M.values[:, 0])
+                    tindex = map(datenum_to_datetime, M.values[:, 0])
                     # measurement is used as is
                     series = Series(M.values[:, 1], index=tindex)
                     # round on seconds, to get rid of conversion milliseconds

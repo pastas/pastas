@@ -1,7 +1,30 @@
 """The noisemodels module contains all noisemodels available in Pastas.
 
+Supported Noise Models
+----------------------
 
-Author: R.A. Collenteur, 2017
+.. autosummary::
+    :nosignatures:
+    :toctree: ./generated
+
+    NoiseModel
+    NoiseModel2
+
+Examples
+--------
+By default, a noise model is added to Pastas. It is possible to replace the
+default model with different models as follows:
+
+>>> n = ps.NoiseModel()
+>>> ml.add_noisemodel(n)
+
+or
+
+>>> ml.add_noisemodel(ps.NoiseModel())
+
+See Also
+--------
+pastas.model.Model.add_noisemodel
 
 """
 
@@ -9,7 +32,7 @@ from abc import ABC
 from logging import getLogger
 
 import numpy as np
-import pandas as pd
+from pandas import Timedelta, DataFrame
 
 from .decorators import set_parameter
 
@@ -24,8 +47,16 @@ class NoiseModelBase(ABC):
     def __init__(self):
         self.nparam = 0
         self.name = "noise"
-        self.parameters = pd.DataFrame(
-            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        self.parameters = DataFrame(
+            columns=["initial", "pmin", "pmax", "vary", "name"])
+
+    def set_init_parameters(self, oseries=None):
+        if oseries is not None:
+            pinit = oseries.index.to_series().diff() / Timedelta(1, "D")
+            pinit = pinit.median()
+        else:
+            pinit = 14.0
+        self.parameters.loc["noise_alpha"] = (pinit, 0, 5000, True, "noise")
 
     @set_parameter
     def set_initial(self, name, value):
@@ -37,12 +68,12 @@ class NoiseModelBase(ABC):
 
         """
         if name in self.parameters.index:
-            self.parameters.loc[name, 'initial'] = value
+            self.parameters.loc[name, "initial"] = value
         else:
-            print('Warning:', name, 'does not exist')
+            print("Warning:", name, "does not exist")
 
     @set_parameter
-    def set_min(self, name, value):
+    def set_pmin(self, name, value):
         """Internal method to set the minimum value of the noisemodel.
 
         Notes
@@ -52,12 +83,12 @@ class NoiseModelBase(ABC):
 
         """
         if name in self.parameters.index:
-            self.parameters.loc[name, 'pmin'] = value
+            self.parameters.loc[name, "pmin"] = value
         else:
-            print('Warning:', name, 'does not exist')
+            print("Warning:", name, "does not exist")
 
     @set_parameter
-    def set_max(self, name, value):
+    def set_pmax(self, name, value):
         """Internal method to set the maximum parameter values.
 
         Notes
@@ -66,9 +97,9 @@ class NoiseModelBase(ABC):
 
         """
         if name in self.parameters.index:
-            self.parameters.loc[name, 'pmax'] = value
+            self.parameters.loc[name, "pmax"] = value
         else:
-            print('Warning:', name, 'does not exist')
+            print("Warning:", name, "does not exist")
 
     @set_parameter
     def set_vary(self, name, value):
@@ -80,12 +111,10 @@ class NoiseModelBase(ABC):
         The preferred method for parameter setting is through the model.
 
         """
-        self.parameters.loc[name, 'vary'] = value
+        self.parameters.loc[name, "vary"] = value
 
     def to_dict(self):
-        data = {}
-        data["type"] = self._name
-        return data
+        return {"type": self._name}
 
 
 class NoiseModel(NoiseModelBase):
@@ -97,11 +126,12 @@ class NoiseModel(NoiseModelBase):
     Calculates the noise [1]_ according to:
 
     .. math::
-        v(t1) = r(t1) - r(t0) * exp(- (t1 - t0) / alpha)
-    
-    Note that in the referenced paper, alpha is defined as the inverse of 
+
+        v(t1) = r(t1) - r(t0) * exp(- (\\frac{\\Delta t}{\\alpha})
+
+    Note that in the referenced paper, alpha is defined as the inverse of
     alpha used in Pastas. The unit of the alpha parameter is always in days.
-    
+
     Examples
     --------
     It can happen that the noisemodel is used during model calibration
@@ -113,7 +143,9 @@ class NoiseModel(NoiseModelBase):
 
     References
     ----------
-    .. [1] von Asmuth, J. R., and M. F. P. Bierkens (2005), Modeling irregularly spaced residual series as a continuous stochastic process, Water Resour. Res., 41, W12404, doi:10.1029/2004WR003726.
+    .. [1] von Asmuth, J. R., and M. F. P. Bierkens (2005), Modeling
+           irregularly spaced residual series as a continuous stochastic
+           process, Water Resour. Res., 41, W12404, doi:10.1029/2004WR003726.
 
     """
     _name = "NoiseModel"
@@ -123,22 +155,14 @@ class NoiseModel(NoiseModelBase):
         self.nparam = 1
         self.set_init_parameters()
 
-    def set_init_parameters(self, oseries=None):
-        if oseries is not None:
-            pinit = oseries.index.to_series().diff() / pd.Timedelta(1, 'd')
-            pinit = pinit.median()
-        else:
-            pinit = 14.0
-        self.parameters.loc['noise_alpha'] = (pinit, 0, 5000, True, 'noise')
-
     def simulate(self, res, parameters):
-        """
+        """Simulate noise from the residuals.
 
         Parameters
         ----------
-        res : pandas.Series
+        res: pandas.Series
             The residual series.
-        parameters : array-like, optional
+        parameters: array-like
             Alpha parameters used by the noisemodel.
 
         Returns
@@ -148,7 +172,7 @@ class NoiseModel(NoiseModelBase):
 
         """
         alpha = parameters[0]
-        odelt = (res.index[1:] - res.index[:-1]).values / pd.Timedelta("1d")
+        odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
         # res.values is needed else it gets messed up with the dates
         v = res.values[1:] - np.exp(-odelt / alpha) * res.values[:-1]
         res.iloc[1:] = v * self.weights(alpha, odelt)
@@ -156,17 +180,20 @@ class NoiseModel(NoiseModelBase):
         res.name = "Noise"
         return res
 
-    def weights(self, alpha, odelt):
+    @staticmethod
+    def weights(alpha, odelt):
         """Method to calculate the weights for the noise based on the
         sum of weighted squared noise (SWSI) method.
 
         Parameters
         ----------
-        alpha
-        odelt:
+        alpha: float
+        odelt: numpy.ndarray
 
         Returns
         -------
+        w: numpy.ndarray
+            Array with the weights.
 
         """
         # divide power by 2 as nu / sigma is returned
@@ -185,7 +212,8 @@ class NoiseModel2(NoiseModelBase):
     Calculates the noise according to:
 
     .. math::
-        v(t1) = r(t1) - r(t0) * exp(- (t1 - t0) / alpha)
+
+        v(t1) = r(t1) - r(t0) * exp(- (\\frac{\\Delta t}{\\alpha})
 
     The unit of the alpha parameter is always in days.
 
@@ -206,22 +234,15 @@ class NoiseModel2(NoiseModelBase):
         self.nparam = 1
         self.set_init_parameters()
 
-    def set_init_parameters(self, oseries=None):
-        if oseries is not None:
-            pinit = oseries.index.to_series().diff() / pd.Timedelta(1, 'd')
-            pinit = pinit.median()
-        else:
-            pinit = 14.0
-        self.parameters.loc['noise_alpha'] = (pinit, 0, 5000, True, 'noise')
-
-    def simulate(self, res, parameters):
+    @staticmethod
+    def simulate(res, parameters):
         """
 
         Parameters
         ----------
         res : pandas.Series
             The residual series.
-        parameters : array_like, optional
+        parameters : array_like
             Alpha parameters used by the noisemodel.
 
         Returns
@@ -230,11 +251,11 @@ class NoiseModel2(NoiseModelBase):
             Series of the noise.
 
         """
-        odelt = res.index.to_series().diff() / pd.Timedelta(1, 'd')
-        odelt = odelt.iloc[1:]
-        noise = pd.Series(res)
         alpha = parameters[0]
+        odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
         # res.values is needed else it gets messed up with the dates
-        noise.iloc[1:] -= np.exp(-odelt / alpha) * res.values[:-1]
-        noise.name = "Noise"
-        return noise
+        v = res.values[1:] - np.exp(-odelt / alpha) * res.values[:-1]
+        res.iloc[1:] = v
+        res.iloc[0] = 0
+        res.name = "Noise"
+        return res

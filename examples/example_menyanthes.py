@@ -22,12 +22,6 @@ IN2.name = 'Evaporation'
 sm = ps.StressModel2([IN, IN2], ps.Gamma, 'Recharge')
 ml.add_stressmodel(sm)
 
-#Add well extraction 1
-# IN = meny.IN['Extraction 1']
-# well = ps.TimeSeries(IN["values"], freq_original="M", settings="well")
-# # extraction amount counts for the previous month
-# sm = ps.StressModel(well, ps.Hantush, 'Extraction_1', up=False)
-
 # Add well extraction 2
 IN = meny.IN['Extraction 2']
 well = ps.TimeSeries(IN["values"], freq_original="M", settings="well")
@@ -41,7 +35,7 @@ well = ps.TimeSeries(IN["values"], freq_original="M", settings="well")
 sm2 = ps.StressModel(well, ps.Hantush, 'Extraction_3', up=False)
 
 # add_stressmodels also allows addings multiple stressmodels at once
-ml.add_stressmodel(sm, sm1, sm2)
+ml.add_stressmodel(sm1, sm2)
 
 # Solve
 ml.solve(tmax="1995")

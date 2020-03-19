@@ -92,7 +92,7 @@ def test_project_dump_to_file():
 
 
 def test_project_load_from_file():
-    pr = ps.io.load("testproject.pas")
+    pr = ps.io.load_project("testproject.pas")
     return pr
 
 

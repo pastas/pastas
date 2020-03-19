@@ -1,8 +1,9 @@
+===================
 Adding read methods
 ===================
 In this section it is described what steps need to be taken to add a "read"
-method to |Project|. The way this subpackage is structured allows for the
-easy implementation of your own read methods. The |Project| read subpackage
+method to Pastas. The way this subpackage is structured allows for the
+easy implementation of your own read methods. The Pastas read subpackage
 is meant for importing timeseries from files or download.
 
 Steps to be taken:

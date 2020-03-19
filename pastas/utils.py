@@ -1,16 +1,29 @@
+import logging
+from datetime import datetime, timedelta
+from logging import handlers
+
 import numpy as np
-from pandas import Series, to_datetime, Timedelta, Timestamp, to_timedelta
+from pandas import Series, to_datetime, Timedelta, Timestamp, date_range
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
-import logging
-from logging import handlers
 
 logger = logging.getLogger(__name__)
 
 
 def frequency_is_supported(freq):
-    # TODO: Rename to get_frequency_string and change Returns-documentation
     """Method to determine if a frequency is supported for a  pastas-model.
+
+    Parameters
+    ----------
+    freq: str
+
+    Returns
+    -------
+    freq
+        String with the simulation frequency
+
+    Notes
+    -----
     Possible frequency-offsets are listed in:
     http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
     The frequency can be a multiple of these offsets, like '7D'. Because of the
@@ -26,21 +39,14 @@ def frequency_is_supported(freq):
     U, us	microseconds
     N	nanoseconds
 
-    Parameters
-    ----------
-    freq: str
+    TODO: Rename to get_frequency_string and change Returns-documentation
 
-    Returns
-    -------
-    boolean
-        True when frequency can be used as a simulation frequency
     """
-
     offset = to_offset(freq)
     if not hasattr(offset, 'delta'):
         logger.error("Frequency %s not supported." % freq)
     else:
-        if offset.n == 1:
+        if offset.n is 1:
             freq = offset.name
         else:
             freq = str(offset.n) + offset.name
@@ -48,9 +54,7 @@ def frequency_is_supported(freq):
 
 
 def get_stress_dt(freq):
-    """Internal method to obtain a timestep in days from a frequency string
-    derived by Pandas Infer method or supplied by the user as a TimeSeries
-    settings.
+    """Internal method to obtain a timestep in days from a frequency string.
 
     Parameters
     ----------
@@ -123,8 +127,7 @@ def get_dt(freq):
 
 
 def get_time_offset(t, freq):
-    """ method to calculate the time offset between a TimeStamp t and a
-    default Series with a frequency of freq
+    """Internal method to calculate the time offset of a TimeStamp.
 
     Parameters
     ----------
@@ -173,34 +176,42 @@ def get_sample(tindex, ref_tindex):
         return tindex[ind]
 
 
-def timestep_weighted_resample(series, tindex):
-    """resample a timeseries to a new tindex, using an overlapping-timestep
-    weighted average the new tindex does not have to be equidistant also,
+def timestep_weighted_resample(series0, tindex):
+    """Resample a timeseries to a new tindex, using an overlapping period
+    weighted average.
+
+    The original series and the new tindex do not have to be equidistant. Also,
     the timestep-edges of the new tindex do not have to overlap with the
-    original series it is assumed the series consists of measurements that
-    describe an intensity at the end of the period for which they hold
-    therefore when upsampling, the values are uniformally spread over the
-    new timestep (like bfill) this method unfortunately is slower than the
-    pandas-reample methods.
+    original series.
+
+    It is assumed the series consists of measurements that describe an
+    intensity at the end of the period for which they apply. Therefore, when
+    upsampling, the values are uniformly spread over the new timestep (like
+    bfill).
+
+    Compared to the reample methods in Pandas, this method is more accurate for
+    non-equidistanct series. It is much slower however.
 
     Parameters
     ----------
-    series
-    tindex
+    series0 : pandas.Series
+        The original series to be resampled
+    tindex : pandas.index
+        The index to which to resample the series
 
     Returns
     -------
-
-    TODO Make faster, document and test.
+    series : pandas.Series
+        The resampled series
 
     """
 
     # determine some arrays for the input-series
-    t0e = np.array(series.index)
+    t0e = np.array(series0.index)
     dt0 = np.diff(t0e)
     dt0 = np.hstack((dt0[0], dt0))
     t0s = t0e - dt0
-    v0 = series.values
+    v0 = series0.values
 
     # determine some arrays for the output-series
     t1e = np.array(tindex)
@@ -226,6 +237,62 @@ def timestep_weighted_resample(series, tindex):
     return series
 
 
+def timestep_weighted_resample_fast(series0, freq):
+    """Resample a time series to a new frequency, using an overlapping period
+    weighted average.
+
+    The original series does not have to be equidistant.
+
+    It is assumed the series consists of measurements that describe an
+    intensity at the end of the period for which they apply. Therefore, when
+    upsampling, the values are uniformly spread over the new timestep (like
+    bfill).
+
+    Compared to the resample methods in Pandas, this method is more accurate
+    for non-equidistant series. It is slower than Pandas (but faster then the
+    original timestep_weighted_resample).
+
+    Parameters
+    ----------
+    series0 : pandas.Series
+        original series to be resampled
+    freq : str
+        a Pandas frequency string
+
+    Returns
+    -------
+    series : pandas.Series
+        resampled series
+
+    """
+    series = series0.copy()
+
+    # first mutiply by the timestep in the unit of freq
+    dt = np.diff(series0.index) / Timedelta(1, freq)
+    series[1:] = series[1:] * dt
+
+    # get a new index
+    index = date_range(series.index[0].floor(freq), series.index[-1],
+                       freq=freq)
+
+    # calculate the cumulative sum
+    series = series.cumsum()
+
+    # add NaNs at none-existing values in series at index
+    series = series.combine_first(Series(np.NaN, index=index))
+
+    # interpolate these NaN's, only keep values at index
+    series = series.interpolate('time')[index]
+
+    # calculate the diff again (inverse of cumsum)
+    series[1:] = series.diff()[1:]
+
+    # drop nan's at the beginning
+    series = series[series.first_valid_index():]
+
+    return series
+
+
 def excel2datetime(tindex, freq="D"):
     """Method to convert excel datetime to pandas timetime objects.
 
@@ -240,17 +307,26 @@ def excel2datetime(tindex, freq="D"):
     datetimes: pandas.datetimeindex
 
     """
-    datetimes = to_datetime('1899-12-30') + to_timedelta(tindex, freq)
+    datetimes = to_datetime('1899-12-30') + Timedelta(tindex, freq)
     return datetimes
 
 
-def matlab2datetime(tindex):
-    """ Transform a matlab time to a datetime, rounded to seconds
-
+def datenum_to_datetime(datenum):
     """
-    day = Timestamp.fromordinal(int(tindex))
-    dayfrac = Timedelta(days=float(tindex) % 1) - Timedelta(days=366)
-    return day + dayfrac
+    Convert Matlab datenum into Python datetime.
+    Parameters
+    ----------
+    datenum: float
+        date in datenum format
+
+    Returns
+    -------
+    datetime :
+        Datetime object corresponding to datenum.
+    """
+    days = datenum % 1.
+    return datetime.fromordinal(int(datenum)) \
+           + timedelta(days=days) - timedelta(days=366)
 
 
 def datetime2matlab(tindex):

@@ -1,17 +1,29 @@
+"""
+This module contains core statistical methods.
+
+.. currentmodule:: pastas.stats.core
+
+.. autosummary::
+   :nosignatures:
+   :toctree: generated/
+
+   acf
+   ccf
+
+"""
+
 import numpy as np
 from pandas import Series, Timedelta, DataFrame
 
 
 def acf(x, lags=None, bin_method='gaussian', bin_width=None, max_gap=np.inf,
         min_obs=10, output="acf"):
-    """Method to calculate the autocorrelation function for irregular
-    timesteps based on the slotting technique. Different methods (kernels)
-    to bin the data are available.
+    """Calculate the autocorrelation function for irregular timesteps.
 
     Parameters
     ----------
     x: pandas.Series
-        Pandas Series containig the values to calculate the
+        Pandas Series containing the values to calculate the
         cross-correlation for. The index has to be a Pandas.DatetimeIndex
     lags: numpy.array, optional
         numpy array containing the lags in days for which the
@@ -22,13 +34,17 @@ def acf(x, lags=None, bin_method='gaussian', bin_width=None, max_gap=np.inf,
         sinc and rectangle.
     bin_width: float, optional
         number of days used as the width for the bin to calculate the
-        correlation. By default these values are chosed based on the
+        correlation. By default these values are chosen based on the
         bin_method.
     max_gap: float, optional
         Maximum timestep gap in the data. All timesteps above this gap value
         are not used for calculating the average timestep. This can be
-        helpfull when there is a large gap in the data that influences the
+        helpful when there is a large gap in the data that influences the
         average timestep.
+    min_obs: int, optional
+        Minimum number of observations in a bin to determine the correlation.
+    output: str, optional
+        If output is "full", also estimated uncertainties are returned.
 
     Returns
     -------
@@ -41,15 +57,21 @@ def acf(x, lags=None, bin_method='gaussian', bin_width=None, max_gap=np.inf,
     of correlation analysis techniques for irregularly sampled time series.
     Nonlinear Processes in Geophysics. 18. 389-404. 10.5194 pg-18-389-2011.
 
+    Notes
+    -----
+    Calculate the autocorrelation function for irregular timesteps based on
+    the slotting technique. Different methods (kernels) to bin the data are
+    available.
+
     Examples
     --------
     acf = ps.stats.ccf(x, y, bin_method="gaussian")
 
     """
-    C = ccf(x=x, y=x, lags=lags, bin_method=bin_method, bin_width=bin_width,
+    c = ccf(x=x, y=x, lags=lags, bin_method=bin_method, bin_width=bin_width,
             max_gap=max_gap, min_obs=min_obs, output=output)
-    C.name = "ACF"  # TODO Rename
-    return C
+    c.name = "ACF"
+    return c
 
 
 def ccf(x, y, lags=None, bin_method='gaussian', bin_width=None,
@@ -61,7 +83,7 @@ def ccf(x, y, lags=None, bin_method='gaussian', bin_width=None,
     Parameters
     ----------
     x, y: pandas.Series
-        Pandas Series containig the values to calculate the
+        Pandas Series containing the values to calculate the
         cross-correlation for. The index has to be a Pandas.DatetimeIndex
     lags: numpy.array, optional
         numpy array containing the lags in days for which the
@@ -79,6 +101,10 @@ def ccf(x, y, lags=None, bin_method='gaussian', bin_width=None,
         are not used for calculating the average timestep. This can be
         helpfull when there is a large gap in the data that influences the
         average timestep.
+    min_obs: int, optional
+        Minimum number of observations in a bin to determine the correlation.
+    output: str, optional
+        If output is "full", also estimated uncertainties are returned.
 
     Returns
     -------

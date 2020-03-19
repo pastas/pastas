@@ -1,12 +1,24 @@
 """This files contains the Project class that deals with multiple models at
 once.
 
+Warning
+-------
+This class will soon be deprecated and replaced by a separate Python package
+Pastastore that deals with large number of Pastas models. It is strongly
+recommended to switch to `Pastastore <https://github.com/pastas/pastastore>`_
+
 Notes
 -----
 This module is created at Artesia Water by Raoul Collenteur.
 
-Usage
------
+.. autosummary::
+    :nosignatures:
+    :toctree: ./generated
+
+    Project
+
+Example
+-------
 
 >>> mls = Project()
 
@@ -20,7 +32,6 @@ import pandas as pd
 
 from .maps import Map
 from .plots import Plot
-from ..decorators import PastasDeprecationWarning
 from ..io.base import dump
 from ..model import Model
 from ..rfunc import Gamma
@@ -64,10 +75,9 @@ class Project:
         self.plots = Plot(self)
         self.maps = Map(self)
 
-    @PastasDeprecationWarning
     def add_series(self, series, name=None, kind=None, metadata=None,
                    settings=None, **kwargs):
-        """Method to add series to the oseries or stresses database.
+        """Internal method to add series to the oseries or stresses database.
 
         Parameters
         ----------
@@ -98,7 +108,7 @@ class Project:
         if kind == "oseries":
             data = self.oseries
             if settings is None:
-                settings = 'oseries'
+                settings = "oseries"
         else:
             data = self.stresses
 
@@ -214,15 +224,15 @@ class Project:
 
         return ml
 
-    def add_models(self, oseries='all', model_name_prefix='',
-                   model_name_suffix='', **kwargs):
+    def add_models(self, oseries="all", model_name_prefix="",
+                   model_name_suffix="", **kwargs):
         """Method to add multiple Pastas Model instances based on one
         or more of the oseries.
 
         Parameters
         ----------
         oseries: str or list, optional
-            names of the oseries, if oseries is 'all' all series in self.series
+            names of the oseries, if oseries is "all" all series in self.series
             are used
         model_name_prefix: str, optional
             prefix to use for model names
@@ -240,7 +250,7 @@ class Project:
 
         """
 
-        if oseries == 'all':
+        if oseries == "all":
             oseries_list = self.oseries.index
         elif isinstance(oseries, str):
             oseries_list = [oseries]
@@ -270,7 +280,7 @@ class Project:
         rfunc: pastas.rfunc, optional
             response function, default is the Gamma function.
         name: str, optional
-            name of the stress, default is 'recharge'.
+            name of the stress, default is "recharge".
         **kwargs:
             arguments are pass to the StressModel2 function
 
@@ -289,11 +299,11 @@ class Project:
         for mlname in mls:
             ml = self.models[mlname]
             oseries = ml.oseries.name
-            prec_name = self.get_nearest_stresses(oseries, kind="prec").iloc[0][
-                0]
+            prec_name = \
+                self.get_nearest_stresses(oseries, kind="prec").iloc[0][0]
             prec = self.stresses.loc[prec_name, "series"]
-            evap_name = self.get_nearest_stresses(oseries, kind="evap").iloc[0][
-                0]
+            evap_name = \
+                self.get_nearest_stresses(oseries, kind="evap").iloc[0][0]
             evap = self.stresses.loc[evap_name, "series"]
 
             recharge = StressModel2([prec, evap], rfunc, name=name, **kwargs)
@@ -301,7 +311,7 @@ class Project:
             ml.add_stressmodel(recharge)
 
     def del_oseries(self, name):
-        """Method that savely removes oseries from the project. It validates
+        """Method that safely removes oseries from the project. It validates
         that the oseries is not used in any model.
 
         Parameters
@@ -356,14 +366,14 @@ class Project:
         added to any of the series in mls.oseries and mls.stresses
 
         """
-        for name, ml in self.models.items():
+        for ml in self.models.values():
             oname = ml.oseries.name
             ml.oseries.series_original = self.oseries.loc[
-                oname, 'series'].series_original
+                oname, "series"].series_original
             for sm in ml.stressmodels:
                 for st in ml.stressmodels[sm].stress:
                     st.series_original = self.stresses.loc[
-                        st.name, 'series'].series_original
+                        st.name, "series"].series_original
             # set oseries_calib empty, so it is determined again the next time
             ml.oseries_calib = None
 
@@ -377,14 +387,6 @@ class Project:
             determines if a report is printed when the model is solved.
         ignore_solve_errors: boolean, optional
             if True errors emerging from the solve method are ignored.
-        tmin: str, datetime or pandas.Series, optional
-            if str or datetime, apply tmin to all models. If pandas.Series
-            is provided, index must contain model names, values must be
-            str or datetimes.
-        tmax: str, datetime or pandas.Series, optional
-            if str or datetime, apply tmax to all models. If pandas.Series
-            is provided, index must contain model names, values must be
-            str or datetimes.
         **kwargs:
             arguments are passed to the solve method.
 
@@ -396,7 +398,7 @@ class Project:
 
         for ml_name in mls:
             if verbose:
-                print('solving model -> {}'.format(ml_name))
+                print("solving model -> {}".format(ml_name))
 
             ml = self.models[ml_name]
 
@@ -407,7 +409,7 @@ class Project:
                 else:
                     m_kwargs[key] = value
             # Convert timestamps
-            for tstamp in ['tmin', 'tmax']:
+            for tstamp in ["tmin", "tmax"]:
                 if tstamp in m_kwargs:
                     m_kwargs[tstamp] = pd.Timestamp(m_kwargs[tstamp])
 
@@ -581,12 +583,14 @@ class Project:
         return data
 
     def get_oseries_metadata(self, oseries, metadata):
-        """
+        """Method to get the metadata for all oseries.
 
         Parameters
         ----------
-        oseries
-        metadata
+        oseries: list
+            list with the oseries.
+        metadata: list
+            list with the metadata keywords to obtain.
 
         Returns
         -------
@@ -626,29 +630,26 @@ class Project:
 
         return data
 
-    def get_metadata(self, meta=None):
-        metadata = dict(
-            projection=None
-        )
+    @staticmethod
+    def get_metadata(meta=None):
+        metadata = {"projection": None}
         if meta:
             metadata.update(meta)
 
         return metadata
 
-    def get_file_info(self):
-        file_info = dict()
-        file_info["date_created"] = pd.Timestamp.now()
-        file_info["date_modified"] = pd.Timestamp.now()
-        file_info["pastas_version"] = __version__
+    @staticmethod
+    def get_file_info():
+        file_info = {
+            "date_created": pd.Timestamp.now(),
+            "date_modified": pd.Timestamp.now(),
+            "pastas_version": __version__,
+        }
         try:
             file_info["owner"] = getlogin()
         except:
             file_info["owner"] = "Unknown"
         return file_info
-
-    @PastasDeprecationWarning
-    def dump(self, fname, **kwargs):
-        return self.to_file(fname, **kwargs)
 
     def to_file(self, fname, **kwargs):
         """Method to write a Pastas project to a file.
@@ -657,24 +658,18 @@ class Project:
         ----------
         fname: str
 
-
-        Returns
-        -------
-
         """
         data = self.to_dict(**kwargs)
         return dump(fname, data)
 
-    def to_dict(self, series=False, sim_series=False):
+    def to_dict(self, series=False):
         """Internal method to export a Pastas Project as a dictionary.
 
         Parameters
         ----------
-        series: bool
+        series: bool, optional
             export model input-series when True. Only export the name of
-            the model input_series when Fals
-        sim_series: bool
-            export model output-series when True
+            the model input_series when False
 
         Returns
         -------
@@ -682,27 +677,23 @@ class Project:
             A dictionary with all the project data
 
         """
-        data = dict(
-            name=self.name,
-            models=dict(),
-            metadata=self.metadata,
-            file_info=self.file_info
-        )
+        data = {
+            "name": self.name,
+            "metadata": self.metadata,
+            "file_info": self.file_info,
+            "oseries": self.series_to_dict(self.oseries),
+            "stresses": self.series_to_dict(self.stresses),
+            "models": {}
+        }
 
-        # Series DataFrame
-        data["oseries"] = self.series_to_dict(self.oseries)
-        data["stresses"] = self.series_to_dict(self.stresses)
-
-        # Models
-        data["models"] = dict()
+        # Add Models
         for name, ml in self.models.items():
-            data["models"][name] = ml.to_dict(series=series,
-                                              sim_series=sim_series,
-                                              file_info=False)
+            data["models"][name] = ml.to_dict(series=series, file_info=False)
 
         return data
 
-    def series_to_dict(self, series):
+    @staticmethod
+    def series_to_dict(series):
         """Internal method used to export the time series."""
         series = series.to_dict(orient="index")
 

@@ -3,9 +3,11 @@
 
 """
 
-import numpy as np
-import pandas as pd
-import warnings
+from warnings import warn
+
+from numpy import ndarray
+from pandas import read_csv, to_datetime, DataFrame, Timestamp, infer_freq, \
+    Timedelta
 
 from ..timeseries import TimeSeries
 
@@ -17,7 +19,7 @@ def read_knmi(fname, variables='RD'):
     ----------
     fname: str
         Filename and path to a Dino file.
-    variables: str
+    variables: str, optional
         String with the variable name to extract.
 
     Returns
@@ -44,7 +46,7 @@ def read_knmi(fname, variables='RD'):
 
             series = knmi.data.loc[knmi.data['STN'] == code, variable]
             # get rid of the hours when data is daily
-            if pd.infer_freq(series.index) == 'D':
+            if infer_freq(series.index) == 'D':
                 series.index = series.index.normalize()
 
             metadata = {}
@@ -106,14 +108,12 @@ class KnmiStation:
     """
 
     def __init__(self, *args, **kwargs):
-        self.stations = pd.DataFrame()
+        self.stations = DataFrame()
         self.variables = dict()
-        self.data = pd.DataFrame()
+        self.data = DataFrame()
         if len(args) > 0 or len(kwargs) > 0:
-            warnings.warn("In the future use KnmiStation.download(**kwargs) "
-                          "instead "
-                          "of KnmiStation(**kwargs)",
-                          FutureWarning)
+            warn("In the future use KnmiStation.download(**kwargs) "
+                 "instead of KnmiStation(**kwargs)", FutureWarning)
             self._download(*args, **kwargs)
             # diable download method, as old code will call this again
             self.download = lambda *args, **kwargs: None
@@ -187,22 +187,22 @@ class KnmiStation:
         from io import StringIO
 
         if start is None:
-            start = pd.Timestamp(pd.Timestamp.today().year, 1, 1)
+            start = Timestamp(Timestamp.today().year, 1, 1)
         else:
-            start = pd.to_datetime(start)
+            start = to_datetime(start)
         if end is None:
-            end = pd.Timestamp.today()
+            end = Timestamp.today()
         else:
-            end = pd.to_datetime(end)
+            end = to_datetime(end)
 
         if not isinstance(vars, list):
-            if isinstance(vars,np.ndarray):
+            if isinstance(vars, ndarray):
                 vars = list(vars)
             else:
                 vars = [vars]
 
         if not isinstance(stns, list):
-            if isinstance(stns,np.ndarray):
+            if isinstance(stns, ndarray):
                 stns = list(stns)
             else:
                 stns = [stns]
@@ -250,15 +250,15 @@ class KnmiStation:
         self.readdata(f)
 
     def readdata(self, f):
-        stations = pd.DataFrame()
-        variables = dict()
+        self.stations = DataFrame()
+        self.variables = dict()
 
         isLocations = False
         line = f.readline()
         isMeteo = line.startswith('# ')
 
         # Process the header information (Everything < 'STN,')
-        while 'STN,' not in line:
+        while 'STN,' not in line and line != "":
             # Pre-format the line
             line = line.strip('\n')
             line = line.lstrip('# ')
@@ -275,14 +275,14 @@ class KnmiStation:
                 titels = [x.replace(r')', '') for x in titels]
 
                 # Create pd.DataFrame for station data
-                stations = pd.DataFrame(columns=titels)
-                stations.set_index(['STN'], inplace=True)
+                self.stations = DataFrame(columns=titels)
+                self.stations.set_index(['STN'], inplace=True)
 
             # If line contains variables
             elif ' = ' in line:
                 isLocations = False
                 varDes = line.split(' = ')
-                variables[varDes[0].strip()] = varDes[1].strip()
+                self.variables[varDes[0].strip()] = varDes[1].strip()
             # If location data is recognized in the previous line
             elif isLocations:
                 # Format line. Ensure delimiter is two spaces to read the
@@ -307,7 +307,7 @@ class KnmiStation:
                         return s
 
                 line = [maybe_float(v) for v in line[1:]]
-                stations.loc[stn] = line
+                self.stations.loc[stn] = line
 
             # Read in a new line and start over
             line = f.readline()
@@ -322,53 +322,53 @@ class KnmiStation:
         if line not in ["\n", "\r\n", "# \n", '# \r\n']:
             # sometimes there is no empty line between the header and the data
             f.seek(pos)
-        # Process the datablock
-        if False:
-            # older method, is much slower
-            string2datetime = lambda x: pd.to_datetime(x, format='%Y%m%d')
 
-            data = pd.read_csv(f, header=None, names=header,
-                               parse_dates=['YYYYMMDD'], index_col='YYYYMMDD',
-                               na_values='     ',
-                               converters={1: string2datetime})
-        else:
-            # newer method, calculating the date afterwards is much faster
-            data = pd.read_csv(f, header=None, names=header, na_values='     ')
-            data.set_index(pd.to_datetime(data.YYYYMMDD, format='%Y%m%d'),
-                           inplace=True)
-            data = data.drop('YYYYMMDD', axis=1)
+        # Process the datablock
+        data = read_csv(f, header=None, names=header, na_values='     ')
+
+        # Close file
+        f.close()
+
+        if data.empty:
+            warn('No KNMI data found')
+            self.data = data
+            return
+
+        data.set_index(to_datetime(data.YYYYMMDD, format='%Y%m%d'),
+                       inplace=True)
+        data = data.drop('YYYYMMDD', axis=1)
 
         # convert the hours if provided
         if 'HH' in data.keys():
             # hourly data, Hourly division 05 runs from 04.00 UT to 5.00 UT
-            data.index = data.index + pd.to_timedelta(data['HH'], unit='h')
+            data.index = data.index + Timedelta(data['HH'], unit='h')
             data.pop('HH')
         else:
             # daily data
             if 'RD' in data.keys():
                 # daily precipitation amount in 0.1 mm over the period 08.00
                 # preceding day - 08.00 UTC present day
-                data.index = data.index + pd.to_timedelta(8, unit='h')
+                data.index = data.index + Timedelta(8, unit='h')
             else:
                 # add a full day for meteorological data, so that the
                 # timestamp is at the end of the period in the data
-                data.index = data.index + pd.to_timedelta(1, unit='d')
+                data.index = data.index + Timedelta(1, unit='d')
 
         # from UT to UT+1 (standard-time in the Netherlands)
-        data.index = data.index + pd.to_timedelta(1, unit='h')
+        data.index = data.index + Timedelta(1, unit='h')
 
         # Delete empty columns
         if '' in data.columns:
             data.drop('', axis=1, inplace=True)
 
         # Adjust the unit of the measurements
-        for key, value in variables.items():
+        for key, value in self.variables.items():
             # test if key existst in data
             if key not in data.keys():
                 if key == 'YYYYMMDD' or key == 'HH':
                     pass
                 elif key == 'T10N':
-                    variables.pop(key)
+                    self.variables.pop(key)
                     key = 'T10'
                 else:
                     raise NameError(key + ' does not exist in data')
@@ -403,11 +403,6 @@ class KnmiStation:
                 # do not adjust (yet)
                 pass
             # Store new variable
-            variables[key] = value
+            self.variables[key] = value
 
-        # Close file
-        f.close()
-
-        self.stations = stations
-        self.variables = variables
         self.data = data

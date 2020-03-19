@@ -17,8 +17,8 @@ evap = pd.read_csv('data/evap_nb1.csv', parse_dates=['date'], index_col='date',
                    squeeze=True)
 
 ml = ps.Model(oseries)
-sm = ps.StressModel2([rain, evap], ps.Gamma, name='recharge')
+sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential,
+                      name='recharge')
 ml.add_stressmodel(sm)
 ml.solve()
 ml.plots.decomposition()
-
