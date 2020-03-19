@@ -57,9 +57,10 @@ def load(fname, **kwargs):
     else:
         ml = load_model(data)
 
-        logger.info("Pastas Model successfully loaded. This file  was created "
-                    "with was Pastas {}. Your current version of Pastas is: "
-                    "{}".format(fname, data["file_info"]["pastas_version"],
+        logger.info("Pastas Model from file {} successfully loaded. This file "
+                    "was created with was Pastas {}. Your current version of "
+                    "Pastas is: {}".format(fname,
+                                data["file_info"]["pastas_version"],
                                 ps.__version__))
         return ml
 
