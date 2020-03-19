@@ -1,5 +1,6 @@
 import logging
 
+import pastas.recharge as rch
 from .model import Model
 from .noisemodels import NoiseModel, NoiseModel2
 from .plots import TrackSolve

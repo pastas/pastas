@@ -827,7 +827,7 @@ class WellModel(StressModelBase):
         return p_with_r
 
     def to_dict(self, series=True):
-        """Method to export the WellModel object.
+        """Internal method to export the WellModel object.
 
         Returns
         -------
@@ -919,20 +919,21 @@ class RechargeModel(StressModelBase):
     evap: pandas.Series or pastas.timeseries
         pandas.Series or pastas.timeseries objects containing the
         evaporation series.
-    rfunc: pastas.rfunc instance, optional
+    rfunc: pastas.rfunc class, optional
         Response function used in the convolution with the stress. Default
         is Exponential.
     name: str, optional
         Name of the stress. Default is "recharge".
-    recharge: string, optional
-        String with the name of the recharge model. Options are: "Linear" (
-        default).
-    temp: pandas.Series or pastas.timeseries, optional
-        pandas.Series or pastas.timeseries objects containing the
+    recharge: pastas.recharge instance, optional
+        String with the name of the recharge model. Options are: Linear (
+        default), FlexModel and Berendrecht. These can be accessed through
+        ps.rch.
+    temp: pandas.Series or pastas.TimeSeries, optional
+        pandas.Series or pastas.TimeSeries objects containing the
         temperature series. It depends on the recharge model is this
         argument is required or not.
     cutoff: float, optional
-        float between 0 and 1 to determine how long the response is (default
+        float between 0 and 1 to determine how long the response is (default)
         is 99.9% of the actual response time). Used to reduce computation
         times.
     settings: list of dicts or str, optional
@@ -959,10 +960,15 @@ class RechargeModel(StressModelBase):
     second step this recharge flux is convoluted with a response function to
     obtain the contribution of recharge to the groundwater levels.
 
+    Examples
+    --------
+    >>> rm = ps.RechargeModel(rain, evap, rfunc=ps.Exponential,
+    >>>                       recharge=ps.rch.FlexModel)
+
     """
     _name = "RechargeModel"
 
-    def __init__(self, prec, evap, rfunc=Exponential, name="recharge",
+    def __init__(self, prec, evap, rfunc=Exponential, name="rch",
                  recharge=Linear(), temp=None, cutoff=0.999,
                  settings=("prec", "evap", "evap"),
                  metadata=(None, None, None)):
@@ -990,8 +996,8 @@ class RechargeModel(StressModelBase):
         # Store a temperature time series if needed or set to None
         if self.recharge.temp is True:
             if temp is None:
-                msg = "Recharge module {} requires a temperature series. " \
-                      "No temperature series were provided".format(recharge)
+                msg = "Recharge module requires a temperature series. " \
+                      "No temperature series were provided"
                 raise TypeError(msg)
             else:
                 self.temp = TimeSeries(temp, settings=settings[2],
@@ -1002,9 +1008,9 @@ class RechargeModel(StressModelBase):
         # Select indices from validated stress where both series are available.
         index = self.prec.series.index.intersection(self.evap.series.index)
         if index.empty:
-            msg = ('The stresses that were provided have no overlapping '
-                   'time indices. Please make sure the indices of the time '
-                   'series overlap.')
+            msg = ("The stresses that were provided have no overlapping"
+                   "time indices. Please make sure the indices of the time"
+                   "series overlap.")
             logger.error(msg)
             raise Exception(msg)
 
@@ -1068,6 +1074,7 @@ class RechargeModel(StressModelBase):
 
         Returns
         -------
+        pandas.Series
 
         """
         if p is None:
