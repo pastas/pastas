@@ -23,6 +23,26 @@ The following recharge models are currently supported and tested:
     :toctree: ./generated
 
     Linear
+    FlexModel
+    Berendrecht
+
+
+See Also
+--------
+pastas.stressmodels.RechargeModel
+    The recharge models listed above are provided to a RechargeModel
+
+Examples
+--------
+Using the recharge models is as follows:
+
+>>> rch = ps.rch.FlexModel()
+>>> rm = ps.RechargeModel(prec, evap, recharge=rch, rfunc=ps.Gamma, name="rch")
+>>> ml.add_stressmodel(rch)
+
+After solving a model, the simulated recharge flux can be obtained:
+
+>>> rch_sim = ml.get_stress("rch")
 
 """
 
