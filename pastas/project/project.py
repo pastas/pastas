@@ -59,6 +59,10 @@ class Project:
             Dictionary with any metadata information on the project.
 
         """
+        logger.warning("DeprecationWarning: The Project class will be "
+                       "deprecated in a future version of Pastas (end of "
+                       "2020)! Consider switching to pastastore: "
+                       "https://github.com/pastas/pastastore.")
         self.models = {}
         self.name = name
 
