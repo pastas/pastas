@@ -31,8 +31,9 @@ sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, recharge=rch)
 
 ml.add_stressmodel(sm)
 
-# Solve
-ml.solve(noise=False, report=False)  # This usually helps
+# Solve the model, first we solve without a noise model to get better initial
+# estimates of the parameters, and then with a noise model.
+ml.solve(noise=False, report=False)
 ml.solve(noise=True, initial=False)
 
 ml.plots.results()
