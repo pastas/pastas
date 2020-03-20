@@ -429,7 +429,7 @@ class Plotting:
 
         ax1.axhline(conf, linestyle='--', color="dimgray")
         ax1.axhline(-conf, linestyle='--', color="dimgray")
-        ax1.stem(r.index, r.values, basefmt="gray", use_line_collection=True)
+        ax1.stem(r.index, r.values, basefmt="gray")
         ax1.set_xlim(r.index.min(), r.index.max())
         ax1.set_xlabel("Lag (Days)")
 

@@ -2,24 +2,29 @@ from pandas import read_csv
 
 import pastas as ps
 
+rain = read_csv("tests/data/rain.csv", index_col=0, parse_dates=True,
+                squeeze=True)
+evap = read_csv("tests/data/evap.csv", index_col=0, parse_dates=True,
+                squeeze=True)
+obs = read_csv("tests/data/obs.csv", index_col=0, parse_dates=True,
+               squeeze=True)
 
 def test_create_model():
-    obs = read_csv("tests/data/obs.csv", index_col=0, parse_dates=True,
-                   squeeze=True)
     ml = ps.Model(obs, name="Test_Model")
     return ml
 
 
 def test_add_stressmodel():
     ml = test_create_model()
-
-    rain = read_csv("tests/data/rain.csv", index_col=0, parse_dates=True,
-                    squeeze=True)
-    evap = read_csv("tests/data/evap.csv", index_col=0, parse_dates=True,
-                    squeeze=True)
-    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential,
-                          name='recharge')
+    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, name='rch')
     ml.add_stressmodel(sm)
+    return ml
+
+def test_add_stressmodels():
+    ml = test_create_model()
+    sm1 = ps.StressModel(rain, rfunc=ps.Exponential, name='prec')
+    sm2 = ps.StressModel(evap, rfunc=ps.Exponential, name='evap')
+    ml.add_stressmodel([sm1, sm2])
     return ml
 
 
