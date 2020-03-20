@@ -99,7 +99,7 @@ from .modelstats import Statistics
 from .noisemodels import NoiseModel
 from .plots import Plotting
 from .solver import LeastSquares
-from .stressmodels import Constant
+from .stressmodels import Constant, RechargeTarsoModel
 from .timeseries import TimeSeries
 from .utils import get_dt, get_time_offset, get_sample, \
     frequency_is_supported, validate_name
@@ -252,6 +252,7 @@ class Model:
                     (stressmodel.tmax < self.oseries.series.index.min()):
                 self.logger.warning("The stress of the stressmodel has no "
                                     "overlap with ml.oseries.")
+        self.check_stressmodel_compatibility()
 
     def add_constant(self, constant):
         """Add a Constant to the time series Model.
@@ -269,6 +270,7 @@ class Model:
         """
         self.constant = constant
         self.parameters = self.get_init_parameters(initial=False)
+        self.check_stressmodel_compatibility()
 
     def add_transform(self, transform):
         """Add a Transform to the time series Model.
@@ -294,6 +296,7 @@ class Model:
         transform.set_model(self)
         self.transform = transform
         self.parameters = self.get_init_parameters(initial=False)
+        self.check_stressmodel_compatibility()
 
     def add_noisemodel(self, noisemodel):
         """Adds a noisemodel to the time series Model.
@@ -1782,3 +1785,24 @@ class Model:
         ml = load_model(self.to_dict())
         ml.name = name
         return ml
+
+    def check_stressmodel_compatibility(self):
+        """Method to check if the stressmodels in a model are compatible with
+        eachother or other components of the model (constant and transform)."""
+        for sm in self.stressmodels.values():
+            if isinstance(sm, RechargeTarsoModel):
+                if len(self.stressmodels)>1:
+                    msg = ('A RechargeTarsoModel cannot be combined with other'
+                           ' stressmodels. Either remove the RechargeTarsoModel'
+                           ' or the other stressmodels.')
+                    self.logger.warning(msg)
+                if self.constant is not None:
+                    msg = ('A RechargeTarsoModel cannot be combined with a'
+                           ' constant. Either remove the RechargeTarsoModel or'
+                           ' the constant.')
+                    self.logger.warning(msg)
+                if self.transform is not None:
+                    msg = ('A RechargeTarsoModel cannot be combined with a'
+                           ' transform. Either remove the RechargeTarsoModel'
+                           ' or the transform.')
+                    self.logger.warning(msg)

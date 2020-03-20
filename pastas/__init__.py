@@ -9,7 +9,7 @@ from .rfunc import Gamma, Exponential, Hantush, Polder, One, FourParam, \
     DoubleExponential, HantushWellModel
 from .solver import LmfitSolve, LeastSquares
 from .stressmodels import StressModel, StressModel2, Constant, FactorModel, \
-    RechargeModel
+    RechargeModel, RechargeTarsoModel
 from .timeseries import TimeSeries
 from .transform import ThresholdTransform
 from .utils import initialize_logger, set_log_level
