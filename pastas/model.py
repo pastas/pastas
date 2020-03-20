@@ -163,7 +163,7 @@ class Model:
             "tmin": None,
             "tmax": None,
             "freq": "D",
-            "warmup": Timedelta(days=3650),
+            "warmup": Timedelta(3650, "D"),
             "time_offset": Timedelta(0),
             "noise": noisemodel,
             "solver": None,
@@ -203,12 +203,12 @@ class Model:
                                const=not self.constant is None,
                                noise=not self.noisemodel is None)
 
-    def add_stressmodel(self, stressmodel, *args, replace=False):
+    def add_stressmodel(self, stressmodel, replace=False):
         """Add a stressmodel to the main model.
 
         Parameters
         ----------
-        stressmodel: pastas.stressmodel
+        stressmodel: pastas.stressmodel or list of pastas.stressmodel
             instance of a pastas.stressmodel class. Multiple stress models
             can be provided (e.g., ml.add_stressmodel(sm1, sm2) in one call.
         replace: bool, optional
@@ -227,16 +227,22 @@ class Model:
         >>> sm = ps.StressModel(stress, rfunc=ps.Gamma, name="stress")
         >>> ml.add_stressmodel(sm)
 
+        To add multiple stress models at once you can do the following:
+
+        >>> sm1 = ps.StressModel(stress, rfunc=ps.Gamma, name="stress1")
+        >>> sm1 = ps.StressModel(stress, rfunc=ps.Gamma, name="stress2")
+        >>> ml.add_stressmodel([sm1, sm2])
+
         See Also
         --------
         pastas.stressmodels
 
         """
         # Method can take multiple stressmodels at once through args
-        if args:
-            for arg in args:
-                self.add_stressmodel(arg)
-        if (stressmodel.name in self.stressmodels.keys()) and not replace:
+        if isinstance(stressmodel, list):
+            for sm in stressmodel:
+                self.add_stressmodel(sm)
+        elif (stressmodel.name in self.stressmodels.keys()) and not replace:
             self.logger.error("The name for the stressmodel you are trying "
                               "to add already exists for this model. Select "
                               "another name.")
@@ -689,7 +695,7 @@ class Model:
             self.settings["freq"] = frequency_is_supported(freq)
 
         if warmup is not None:
-            self.settings["warmup"] = Timedelta(days=warmup)
+            self.settings["warmup"] = Timedelta(warmup, "D")
 
         # Set the time offset from the frequency (this does not work as expected yet)
         # self._set_time_offset()

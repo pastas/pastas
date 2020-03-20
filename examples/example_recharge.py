@@ -18,17 +18,22 @@ obs = pd.read_csv("data/head_nb1.csv", index_col=0, parse_dates=True,
 # Create the time series model
 ml = ps.Model(obs, name="head")
 
-# read weather data
+# read weather data and make mm/d !!!
 rain = pd.read_csv("data/rain_nb1.csv", index_col=0, parse_dates=True,
-                   squeeze=True)
+                   squeeze=True) * 1e3
 evap = pd.read_csv("data/evap_nb1.csv", index_col=0, parse_dates=True,
-                   squeeze=True)
+                   squeeze=True) * 1e3
 
-# Create stress
-sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential,
-                      name='recharge')
+# Initialize recharge model and create stressmodel
+rch = ps.rch.FlexModel()
+# rch = ps.rch.Berendrecht()
+sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, recharge=rch)
+
 ml.add_stressmodel(sm)
 
-# Solve
-ml.solve()
-ml.plot()
+# Solve the model, first we solve without a noise model to get better initial
+# estimates of the parameters, and then with a noise model.
+ml.solve(noise=False, report=False)
+ml.solve(noise=True, initial=False)
+
+ml.plots.results()

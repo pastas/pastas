@@ -35,4 +35,3 @@ ml.add_stressmodel(sm)
 # Solve
 ml.solve(noise=True)
 ml.plots.results()
-
