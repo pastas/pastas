@@ -72,8 +72,8 @@ class RfuncBase:
         Returns
         -------
         tmax: float
-            Number of days when 99% of the response has effectuated, when the
-            cutoff is chosen at 0.99.
+            Number of days when 99.9% of the response has effectuated, when the
+            cutoff is chosen at 0.999.
 
         """
         pass

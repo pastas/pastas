@@ -10,11 +10,17 @@ from .rfunc import Gamma, Exponential, Hantush, Polder, One, FourParam, \
     DoubleExponential, HantushWellModel
 from .solver import LmfitSolve, LeastSquares
 from .stressmodels import StressModel, StressModel2, Constant, FactorModel, \
-    RechargeModel
+    RechargeModel, WellModel, StepModel, LinearTrend
 from .timeseries import TimeSeries
 from .transform import ThresholdTransform
-from .utils import initialize_logger, set_log_level
+from .utils import initialize_logger, set_log_level, show_versions
 from .version import __version__
 
 logger = logging.getLogger(__name__)
 initialize_logger(logger)
+
+# Register matplotlib converters when using Pastas
+# https://github.com/pastas/pastas/issues/92
+from pandas.plotting import register_matplotlib_converters
+register_matplotlib_converters()
+
