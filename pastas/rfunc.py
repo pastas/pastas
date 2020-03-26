@@ -185,19 +185,19 @@ class Gamma(RfuncBase):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
-            parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
+            parameters.loc[name + '_A'] = (1 / self.meanstress, 1e-5,
                                            100 / self.meanstress, True, name)
         elif self.up is False:
             parameters.loc[name + '_A'] = (-1 / self.meanstress,
-                                           -100 / self.meanstress, 0, True,
-                                           name)
+                                           -100 / self.meanstress,
+                                           -1e-5, True, name)
         else:
             parameters.loc[name + '_A'] = (1 / self.meanstress,
                                            np.nan, np.nan, True, name)
 
         # if n is too small, the length of response function is close to zero
         parameters.loc[name + '_n'] = (1, 0.1, 10, True, name)
-        parameters.loc[name + '_a'] = (10, 0.01, 5000, True, name)
+        parameters.loc[name + '_a'] = (10, 0.01, 1000, True, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):
@@ -244,17 +244,17 @@ class Exponential(RfuncBase):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
-            parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
+            parameters.loc[name + '_A'] = (1 / self.meanstress, 1e-5,
                                            100 / self.meanstress, True, name)
         elif self.up is False:
             parameters.loc[name + '_A'] = (-1 / self.meanstress,
-                                           -100 / self.meanstress, 0, True,
-                                           name)
+                                           -100 / self.meanstress,
+                                           -1e-5, True, name)
         else:
             parameters.loc[name + '_A'] = (1 / self.meanstress,
                                            np.nan, np.nan, True, name)
 
-        parameters.loc[name + '_a'] = (10, 0.01, 5000, True, name)
+        parameters.loc[name + '_a'] = (10, 0.01, 1000, True, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):
