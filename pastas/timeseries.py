@@ -67,7 +67,7 @@ class TimeSeries:
 
     Parameters
     ----------
-    series: pandas.Series or pastas.TimeSeries
+    series: pandas.Series or pastas.timeseries.TimeSeries
         Pandas Series with time indices and values or a Pastas.TimeSeries
         instance. If the latter is provided, a new TimeSeries.
     name: str, optional
@@ -87,20 +87,20 @@ class TimeSeries:
 
     Returns
     -------
-    series: pastas.TimeSeries
+    series: pastas.timeseries.TimeSeries
         Returns a pastas.TimeSeries object.
 
-    Notes
-    -----
-    For the individual options for the different settings please refer to
-    the docstring from the TimeSeries.update_series() method.
-
+    Examples
+    --------
     To obtain the predefined TimeSeries settings, you can run the following
-    line of code: 'ps.TimeSeries._predefined_settings'
+    line of code:
+
+    >>> ps.TimeSeries._predefined_settings
 
     See Also
     --------
     pastas.timeseries.TimeSeries.update_series
+        For the individual options for the different settings.
 
     """
     _predefined_settings = {

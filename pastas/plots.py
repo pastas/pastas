@@ -478,13 +478,10 @@ class Plotting:
         ax1.set_ylabel('Autocorrelation')
         ax1.grid()
 
-        # Plot the histogram for normality
+        # Plot the histogram for normality and add a 'best fit' line
         # weights = np.ones(res.index.size) / res.index.size
-        n, bins, _ = ax2.hist(res.values, bins=bins, density=True)
-        mu = res.mean()
-        sigma = res.std()
-        # add a 'best fit' line
-        y = norm.pdf(bins, mu, sigma)
+        _, bins, _ = ax2.hist(res.values, bins=bins, density=True)
+        y = norm.pdf(bins, res.mean(), res.std())
         ax2.plot(bins, y, 'k--')
         ax2.set_ylabel("Probability density")
 
@@ -514,7 +511,7 @@ class Plotting:
 
         Returns
         -------
-        matplotlib.axes
+        matplotlib.axes.Axes
             matplotlib axes instance.
 
         """
@@ -550,7 +547,7 @@ class Plotting:
 
         Returns
         -------
-        matplotlib.axes
+        matplotlib.axes.Axes
             matplotlib axes instance.
 
         """

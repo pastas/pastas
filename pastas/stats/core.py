@@ -20,7 +20,7 @@ from ..decorators import njit
 
 def acf(x, lags=None, bin_method='rectangle', bin_width=None, max_gap=inf,
         min_obs=10, output="acf", **kwargs):
-    """Calculate the autocorrelation function for irregular timesteps.
+    """Calculate the autocorrelation function for irregular time steps.
 
     Parameters
     ----------
@@ -33,17 +33,17 @@ def acf(x, lags=None, bin_method='rectangle', bin_width=None, max_gap=inf,
         13, 14, 30, 61, 90, 120, 150, 180, 210, 240, 270, 300, 330, 365]
     bin_method: str, optional
         method to determine the type of bin. Options are "rectangle" (default),
-         and  "gaussian".
+        and  "gaussian".
     bin_width: float, optional
         number of days used as the width for the bin to calculate the
         correlation. By default these values are chosen based on the
         bin_method and the average time step (dt_mu). That is 0.5dt_mu when
         bin_method="rectangle" and 0.25dt_mu when bin_method="gaussian".
     max_gap: float, optional
-        Maximum timestep gap in the data. All timesteps above this gap value
-        are not used for calculating the average timestep. This can be
+        Maximum time step gap in the data. All time steps above this gap value
+        are not used for calculating the average time step. This can be
         helpful when there is a large gap in the data that influences the
-        average timestep.
+        average time step.
     min_obs: int, optional
         Minimum number of observations in a bin to determine the correlation.
     output: str, optional
@@ -52,7 +52,7 @@ def acf(x, lags=None, bin_method='rectangle', bin_width=None, max_gap=inf,
     Returns
     -------
     c: pandas.Series or pandas.DataFrame
-        The Cross-correlation function for the provided lags.
+        The autocorrelation function for the provided lags.
 
     Notes
     -----
@@ -73,11 +73,15 @@ def acf(x, lags=None, bin_method='rectangle', bin_width=None, max_gap=inf,
 
     Examples
     --------
-    >>> acf = ps.stats.ccf(x, y, bin_method="gaussian")
+    For example, to estimate the autocorrelation for every second lag up to
+    lags of one year:
+
+    >>> acf = ps.stats.acf(x, lags=np.arange(1.0, 366.0, 2.0))
 
     See Also
     --------
     pastas.stats.ccf
+    statsmodels.api.tsa.acf
 
     """
     c = ccf(x=x, y=x, lags=lags, bin_method=bin_method, bin_width=bin_width,
@@ -106,7 +110,7 @@ def ccf(x, y, lags=None, bin_method='rectangle', bin_width=None,
         13, 14, 30, 61, 90, 120, 150, 180, 210, 240, 270, 300, 330, 365]
     bin_method: str, optional
         method to determine the type of bin. Options are "rectangle" (default),
-         and  "gaussian".
+        and  "gaussian".
     bin_width: float, optional
         number of days used as the width for the bin to calculate the
         correlation. By default these values are chosen based on the
@@ -124,7 +128,7 @@ def ccf(x, y, lags=None, bin_method='rectangle', bin_width=None,
 
     Returns
     -------
-    c: pandas.Series
+    c: pandas.Series or pandas.DataFrame
         The Cross-correlation function.
 
     References

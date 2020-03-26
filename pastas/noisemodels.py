@@ -60,7 +60,8 @@ class NoiseModelBase(ABC):
 
     @set_parameter
     def set_initial(self, name, value):
-        """Internal method to set the initial parameter value
+        """
+        Internal method to set the initial parameter value.
 
         Notes
         -----
@@ -74,7 +75,8 @@ class NoiseModelBase(ABC):
 
     @set_parameter
     def set_pmin(self, name, value):
-        """Internal method to set the minimum value of the noisemodel.
+        """
+        Internal method to set the minimum value of the noisemodel.
 
         Notes
         -----
@@ -89,7 +91,8 @@ class NoiseModelBase(ABC):
 
     @set_parameter
     def set_pmax(self, name, value):
-        """Internal method to set the maximum parameter values.
+        """
+        Internal method to set the maximum parameter values.
 
         Notes
         -----
@@ -103,8 +106,8 @@ class NoiseModelBase(ABC):
 
     @set_parameter
     def set_vary(self, name, value):
-        """Internal method to set if the parameter is varied during
-        optimization.
+        """
+        Internal method to set if the parameter is varied.
 
         Notes
         -----
@@ -118,8 +121,8 @@ class NoiseModelBase(ABC):
 
 
 class NoiseModel(NoiseModelBase):
-    """Noise model with exponential decay of the residual and
-    weighting with the time step between observations.
+    """
+    Noise model with exponential decay of the residual and weighting.
 
     Notes
     -----
@@ -156,7 +159,8 @@ class NoiseModel(NoiseModelBase):
         self.set_init_parameters()
 
     def simulate(self, res, parameters):
-        """Simulate noise from the residuals.
+        """
+        Simulate noise from the residuals.
 
         Parameters
         ----------
@@ -182,8 +186,10 @@ class NoiseModel(NoiseModelBase):
 
     @staticmethod
     def weights(alpha, odelt):
-        """Method to calculate the weights for the noise based on the
-        sum of weighted squared noise (SWSI) method.
+        """
+        Method to calculate the weights for the noise.
+
+        Based on the sum of weighted squared noise (SWSI) method.
 
         Parameters
         ----------
