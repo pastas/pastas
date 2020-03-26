@@ -146,35 +146,6 @@ class StressModelBase:
         if "freq" in kwargs:
             self.freq = kwargs["freq"]
 
-    def handle_stress(self, stress, settings):
-        """Internal method to handle user provided stress in init.
-
-        Parameters
-        ----------
-        stress: pandas.Series or pastas.timeseries or iterable
-        settings: dict or iterable
-
-        Returns
-        -------
-        stress: dict
-            dictionary with strings
-
-        """
-        data = []
-
-        if isinstance(stress, Series):
-            data.append(TimeSeries(stress, settings))
-        elif isinstance(stress, dict):
-            for i, value in enumerate(stress.values()):
-                data.append(TimeSeries(value, settings=settings[i]))
-        elif isinstance(stress, list):
-            for i, value in enumerate(stress):
-                data.append(TimeSeries(value, settings=settings[i]))
-        else:
-            logger.warning("provided stress format is unknown. Provide a"
-                           "Series, dict or list.")
-        return data
-
     def dump_stress(self, series=True):
         """Method to dump all stresses in the stresses list.
 
@@ -711,8 +682,8 @@ class WellModel(StressModelBase):
     def __init__(self, stress, rfunc, name, distances, up=False, cutoff=0.999,
                  settings="well", sort_wells=True):
         if not issubclass(rfunc, HantushWellModel):
-            raise NotImplementedError("WellModel only supports rfunc "
-                                      "HantushWellModel!")
+            raise NotImplementedError("WellModel only supports the rfunc "
+                                      "HantushWellModel fow now!")
 
         # sort wells by distance
         self.sort_wells = sort_wells
@@ -740,7 +711,7 @@ class WellModel(StressModelBase):
 
         # Check if number of stresses and distances match
         if len(self.stress) != len(distances):
-            msg = "The number of stresses applied does not match the  number" \
+            msg = "The number of stresses applied does not match the number" \
                   "of distances provided."
             logger.error(msg)
             raise ValueError(msg)
@@ -782,6 +753,35 @@ class WellModel(StressModelBase):
             h.name = self.name
         return h
 
+    def handle_stress(self, stress, settings):
+        """Internal method to handle user provided stress in init.
+
+        Parameters
+        ----------
+        stress: pandas.Series or pastas.timeseries or list
+        settings: dict or iterable
+
+        Returns
+        -------
+        stress: list
+            return a list with the stresses transformed to pastas TimeSeries.
+
+        """
+        data = []
+
+        if isinstance(stress, Series):
+            data.append(TimeSeries(stress, settings))
+        elif isinstance(stress, dict):
+            for i, value in enumerate(stress.values()):
+                data.append(TimeSeries(value, settings=settings[i]))
+        elif isinstance(stress, list):
+            for i, value in enumerate(stress):
+                data.append(TimeSeries(value, settings=settings[i]))
+        else:
+            logger.warning("provided stress format is unknown. Provide a"
+                           "Series, dict or list.")
+        return data
+
     def get_stress(self, p=None, istress=None, **kwargs):
         if istress is None:
             return [s.series for s in self.stress]
@@ -818,8 +818,8 @@ class WellModel(StressModelBase):
             p = model.get_parameters(self.name)
 
         distances = np.array(self.get_distances(istress=istress))
-        if len(distances) > 1:
-            p_with_r = np.concatenate([np.tile(p, (len(distances), 1)),
+        if distances.size > 1:
+            p_with_r = np.concatenate([np.tile(p, (distances.size, 1)),
                                        distances[:, np.newaxis]], axis=1)
         else:
             p_with_r = np.r_[p, distances]
@@ -839,7 +839,7 @@ class WellModel(StressModelBase):
             "stressmodel": self._name,
             "rfunc": self.rfunc._name,
             "name": self.name,
-            "up": True if self.rfunc.up is 1 else False,
+            "up": True if self.rfunc.up else False,
             "distances": self.distances,
             "cutoff": self.rfunc.cutoff,
             "stress": self.dump_stress(series),
@@ -853,7 +853,7 @@ class FactorModel(StressModelBase):
 
     Parameters
     ----------
-    stress: pandas.Series or pastas.timeseries
+    stress: pandas.Series or pastas.timeseries.TimeSeries
         Stress which will be multiplied by a factor. The stress does not
         have to be equidistant.
     name: str, optional
@@ -871,12 +871,14 @@ class FactorModel(StressModelBase):
     def __init__(self, stress, name="factor", settings=None, metadata=None):
         if isinstance(stress, list):
             stress = stress[0]  # Temporary fix Raoul, 2017-10-24
+
+        stress = TimeSeries(stress, settings=settings, metadata=metadata)
+
         tmin = stress.series_original.index.min()
         tmax = stress.series_original.index.max()
         StressModelBase.__init__(self, One, name, tmin=tmin, tmax=tmax,
                                  up=True, meanstress=1, cutoff=0.999)
         self.value = 1.  # Initial value
-        stress = TimeSeries(stress, settings=settings, metadata=metadata)
         self.stress = [stress]
         self.set_init_parameters()
 
