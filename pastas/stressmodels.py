@@ -1197,8 +1197,8 @@ class TarsoModel(RechargeModel):
     
     References
     ----------
-    .. [1] Knotters, M. & De Gooijer, Jan G.. (1999). TARSO modeling of water table depths. Water Resources Research. 35. 10.1029/1998WR900049. 
-
+    .. [1] Knotters, M. & De Gooijer, Jan G.. (1999). TARSO modeling of water table depths. Water Resources Research. 35. 10.1029/1998WR900049.
+    
     """
     _name = "TarsoModel"
     def __init__(self, prec, evap, oseries=None, dmin=None, dmax=None,
@@ -1253,8 +1253,9 @@ class TarsoModel(RechargeModel):
         data['dmin'] = self.dmin
         data['dmax'] = self.dmax
         return data
-
-    def check_stressmodel_compatibility(self, ml):
+    
+    @staticmethod
+    def check_stressmodel_compatibility(ml):
         """Internal method to check if no other stressmodels, a constants or a
         transform is used."""
         if len(ml.stressmodels)>1:
@@ -1301,7 +1302,6 @@ class TarsoModel(RechargeModel):
                     S, a, c, d = S0, a0, c0, d0
             else:
                 h0 = h[i-1]
-            
             exp_a = np.exp(-dt / a)
             h[i] = (h0 - d) * exp_a + r[i] * c * (1-exp_a) + d
             newhigh = h[i] > d1
