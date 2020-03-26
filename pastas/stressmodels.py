@@ -1227,7 +1227,7 @@ class TarsoModel(RechargeModel):
         pd0 = one.get_init_parameters(self.name).squeeze()
         p0.loc['{}_d'.format(self.name)] = pd0
         p0.index = ['{}0'.format(x) for x in p0.index]
-        
+
         # parameters for the second drainage level
         p1 = self.rfunc.get_init_parameters(self.name)
         initial = self.dmin + 0.75 * (self.dmax - self.dmin)
@@ -1235,10 +1235,10 @@ class TarsoModel(RechargeModel):
                       'vary':True, 'name':self.name})
         p1.loc['{}_d'.format(self.name)] = pd1
         p1.index = ['{}1'.format(x) for x in p1.index]
-        
+
         # parameters for the recharge-method
         pr = self.recharge.get_init_parameters(self.name)
-        
+
         # combine all parameters
         self.parameters = concat([p0, p1, pr])
 
@@ -1253,7 +1253,7 @@ class TarsoModel(RechargeModel):
         data['dmin'] = self.dmin
         data['dmax'] = self.dmax
         return data
-    
+
     @staticmethod
     def check_stressmodel_compatibility(ml):
         """Internal method to check if no other stressmodels, a constants or a
@@ -1277,20 +1277,19 @@ class TarsoModel(RechargeModel):
         """Calculates the head based on exponential decay of the previous
         timestep and recharge, using two thresholds."""
         A0, a0, d0, A1, a1, d1 = p
-        
+
         # calculate physical meaning of these parameters
         S0 = a0 / A0
         c0 = A0
-        
+
         S1 = a1 / A1
         c1 = A1
-        
+
         # calculate effective parameters for the top level
         c_e = 1 / ((1/c0) + (1/c1))
         d_e = (c1 / (c0+c1)) * d0 + (c0 / (c0+c1)) *d1
         a_e = S1 * c_e
-        
-        #h = pd.Series(np.NaN, r.index)
+
         h = np.full(len(r), np.NaN)
         for i in range(len(r)):
             if i==0:
