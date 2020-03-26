@@ -12,7 +12,7 @@ sm = ml.stressmodels['Recharge']
 prec = sm.stress[0]
 evap = sm.stress[1]
 
-# delete all the stressmodels, the constant and the transform
+# delete all the stressmodels and the constant
 ml.del_stressmodel('Recharge')
 ml.del_stressmodel('Extraction')
 ml.del_constant()
