@@ -1194,7 +1194,7 @@ class TarsoModel(RechargeModel):
     transform.
     TarsoModel inherits from RechargeModel. Only parameters specific to the
     child class are named above.
-    
+
     References
     ----------
     .. [1] Knotters, M. & De Gooijer, Jan G.. (1999). TARSO modeling of water table depths. Water Resources Research. 35. 10.1029/1998WR900049.
