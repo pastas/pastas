@@ -497,3 +497,17 @@ def validate_name(name):
             logger.warning(msg)
 
     return name
+
+def show_versions():
+    from pastas import __version__ as ps_version
+    from pandas import __version__ as pd_version
+    from numpy import __version__ as np_version
+    from scipy import __version__ as sc_version
+    from sys import version as os_version
+    print("Python version: {}".format(os_version))
+    print("Numpy version: {}".format(np_version))
+    print("Scipy version: {}".format(sc_version))
+    print("Pandas version: {}".format(pd_version))
+    print("Pastas version: {}".format(ps_version))
+
+

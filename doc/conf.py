@@ -107,7 +107,7 @@ todo_include_todos = False
 
 # -- Options for HTML output ----------------------------------------------
 
-html_theme = 'pandas_sphinx_theme'
+html_theme = "pydata_sphinx_theme"
 html_logo = "_static/logo.png"
 html_static_path = ['_static']
 

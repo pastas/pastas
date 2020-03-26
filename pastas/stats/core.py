@@ -12,30 +12,110 @@ This module contains core statistical methods.
 
 """
 
-import numpy as np
-from pandas import Series, Timedelta, DataFrame
+from numpy import inf, array, unique, exp, sqrt, pi, empty_like
+from pandas import Series, Timedelta, DataFrame, TimedeltaIndex
+
+from ..decorators import njit
 
 
-def acf(x, lags=None, bin_method='gaussian', bin_width=None, max_gap=np.inf,
-        min_obs=10, output="acf"):
-    """Calculate the autocorrelation function for irregular timesteps.
+def acf(x, lags=None, bin_method='rectangle', bin_width=None, max_gap=inf,
+        min_obs=10, output="acf", **kwargs):
+    """Calculate the autocorrelation function for irregular time steps.
 
     Parameters
     ----------
     x: pandas.Series
         Pandas Series containing the values to calculate the
         cross-correlation for. The index has to be a Pandas.DatetimeIndex
-    lags: numpy.array, optional
+    lags: array_like, optional
         numpy array containing the lags in days for which the
-        cross-correlation if calculated. [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-        12, 13, 14, 30, 61, 90, 120, 150, 180, 210, 240, 270, 300, 330, 365]
+        cross-correlation if calculated. [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12,
+        13, 14, 30, 61, 90, 120, 150, 180, 210, 240, 270, 300, 330, 365]
     bin_method: str, optional
-        method to determine the type of bin. Options are "gaussian" (default),
-        sinc and rectangle.
+        method to determine the type of bin. Options are "rectangle" (default),
+        and  "gaussian".
     bin_width: float, optional
         number of days used as the width for the bin to calculate the
         correlation. By default these values are chosen based on the
-        bin_method.
+        bin_method and the average time step (dt_mu). That is 0.5dt_mu when
+        bin_method="rectangle" and 0.25dt_mu when bin_method="gaussian".
+    max_gap: float, optional
+        Maximum time step gap in the data. All time steps above this gap value
+        are not used for calculating the average time step. This can be
+        helpful when there is a large gap in the data that influences the
+        average time step.
+    min_obs: int, optional
+        Minimum number of observations in a bin to determine the correlation.
+    output: str, optional
+        If output is "full", also estimated uncertainties are returned.
+
+    Returns
+    -------
+    c: pandas.Series or pandas.DataFrame
+        The autocorrelation function for the provided lags.
+
+    Notes
+    -----
+    Calculate the autocorrelation function for irregular timesteps based on
+    the slotting technique. Different methods (kernels) to bin the data are
+    available.
+
+    References
+    ----------
+    Rehfeld, K., Marwan, N., Heitzig, J., Kurths, J. (2011). Comparison
+    of correlation analysis techniques for irregularly sampled time series.
+    Nonlinear Processes in Geophysics. 18. 389-404. 10.5194 pg-18-389-2011.
+
+    Tip
+    ---
+    If the time series have regular time step we recommend to use the acf
+    method from the Statsmodels package.
+
+    Examples
+    --------
+    For example, to estimate the autocorrelation for every second lag up to
+    lags of one year:
+
+    >>> acf = ps.stats.acf(x, lags=np.arange(1.0, 366.0, 2.0))
+
+    See Also
+    --------
+    pastas.stats.ccf
+    statsmodels.api.tsa.acf
+
+    """
+    c = ccf(x=x, y=x, lags=lags, bin_method=bin_method, bin_width=bin_width,
+            max_gap=max_gap, min_obs=min_obs, output=output, **kwargs)
+    c.name = "ACF"
+    if output == "full":
+        return c.rename(columns={"ccf": "acf"})
+    else:
+        return c
+
+
+def ccf(x, y, lags=None, bin_method='rectangle', bin_width=None,
+        max_gap=inf, min_obs=10, output=None, **kwargs):
+    """Method to calculate the cross-correlation function for irregular
+    timesteps based on the slotting technique. Different methods (kernels)
+    to bin the data are available.
+
+    Parameters
+    ----------
+    x: pandas.Series
+        Pandas Series containing the values to calculate the
+        cross-correlation for. The index has to be a Pandas.DatetimeIndex
+    lags: array_like, optional
+        numpy array containing the lags in days for which the
+        cross-correlation if calculated. [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12,
+        13, 14, 30, 61, 90, 120, 150, 180, 210, 240, 270, 300, 330, 365]
+    bin_method: str, optional
+        method to determine the type of bin. Options are "rectangle" (default),
+        and  "gaussian".
+    bin_width: float, optional
+        number of days used as the width for the bin to calculate the
+        correlation. By default these values are chosen based on the
+        bin_method and the average time step (dt_mu). That is 0.5dt_mu when
+        bin_method="rectangle" and 0.25dt_mu when bin_method="gaussian".
     max_gap: float, optional
         Maximum timestep gap in the data. All timesteps above this gap value
         are not used for calculating the average timestep. This can be
@@ -48,67 +128,7 @@ def acf(x, lags=None, bin_method='gaussian', bin_width=None, max_gap=np.inf,
 
     Returns
     -------
-    CCF: pandas.Series
-        The Cross-correlation function.
-
-    References
-    ----------
-    Rehfeld, K., Marwan, N., Heitzig, J., Kurths, J. (2011). Comparison
-    of correlation analysis techniques for irregularly sampled time series.
-    Nonlinear Processes in Geophysics. 18. 389-404. 10.5194 pg-18-389-2011.
-
-    Notes
-    -----
-    Calculate the autocorrelation function for irregular timesteps based on
-    the slotting technique. Different methods (kernels) to bin the data are
-    available.
-
-    Examples
-    --------
-    acf = ps.stats.ccf(x, y, bin_method="gaussian")
-
-    """
-    c = ccf(x=x, y=x, lags=lags, bin_method=bin_method, bin_width=bin_width,
-            max_gap=max_gap, min_obs=min_obs, output=output)
-    c.name = "ACF"
-    return c
-
-
-def ccf(x, y, lags=None, bin_method='gaussian', bin_width=None,
-        max_gap=np.inf, min_obs=10, output="ccf"):
-    """Method to calculate the cross-correlation function for irregular
-    timesteps based on the slotting technique. Different methods (kernels)
-    to bin the data are available.
-
-    Parameters
-    ----------
-    x, y: pandas.Series
-        Pandas Series containing the values to calculate the
-        cross-correlation for. The index has to be a Pandas.DatetimeIndex
-    lags: numpy.array, optional
-        numpy array containing the lags in days for which the
-        cross-correlation if calculated. [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-        12, 13, 14, 30, 61, 90, 120, 150, 180, 210, 240, 270, 300, 330, 365]
-    bin_method: str, optional
-        method to determine the type of bin. Options are "gaussian" (default),
-        sinc and rectangle.
-    bin_width: float, optional
-        number of days used as the width for the bin to calculate the
-        correlation. By default these values are chosed based on the
-        bin_method.
-    max_gap: float, optional
-        Maximum timestep gap in the data. All timesteps above this gap value
-        are not used for calculating the average timestep. This can be
-        helpfull when there is a large gap in the data that influences the
-        average timestep.
-    min_obs: int, optional
-        Minimum number of observations in a bin to determine the correlation.
-    output: str, optional
-        If output is "full", also estimated uncertainties are returned.
-
-    Returns
-    -------
-    CCF: pandas.Series
+    c: pandas.Series or pandas.DataFrame
         The Cross-correlation function.
 
     References
@@ -119,104 +139,114 @@ def ccf(x, y, lags=None, bin_method='gaussian', bin_width=None,
 
     Examples
     --------
-    acf = ps.stats.ccf(x, y, bin_method="gaussian")
+    >>> ccf = ps.stats.ccf(x, y, bin_method="gaussian")
 
     """
     # prepare the time indices for x and y
-    dt_x = x.index.to_series().diff().values / Timedelta(1, "D")
-    dt_x[0] = 0.0
-    dt_x_mu = dt_x[dt_x < max_gap].mean()  # Deal with big gaps if present
-    t_x = np.cumsum(dt_x)
-
-    dt_y = y.index.to_series().diff().values / Timedelta(1, "D")
-    dt_y[0] = 0.0
-    dt_y_mu = dt_y[dt_y < max_gap].mean()
-    t_y = np.cumsum(dt_y)
+    x, t_x, dt_x_min, dt_x_mu = _preprocess(x, max_gap=max_gap,
+                                            min_obs=min_obs)
+    y, t_y, dt_y_min, dt_y_mu = _preprocess(y, max_gap=max_gap,
+                                            min_obs=min_obs)
 
     dt_mu = max(dt_x_mu, dt_y_mu)
+    dt_min = min(dt_x_min, dt_y_min)
 
-    # Create matrix with time differences
-    t1, t2 = np.meshgrid(t_x, t_y)
+    # Default lags in Days, log-scale between 0 and 365.
+    if lags is None:
+        lags = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 30, 61,
+                90, 120, 150, 180, 210, 240, 270, 300, 330, 365]
 
-    # Do not take absolute value (previous behavior) and set values to nan
-    # where t < 0. This means only positive lags can be calculated!
-    t = np.subtract(t1, t2)
-    t[t < 0] = np.nan
+    # Remove lags that cannot be determined because lag < dt_min
+    lags = array([float(lag) for lag in lags if lag >= dt_min])
+
+    if bin_method == "rectangle":
+        if bin_width is None:
+            bin_width = 0.5 * dt_mu
+        c, b = _compute_ccf_rectangle(lags, t_x, x, t_y, y, bin_width)
+    elif bin_method == "gaussian":
+        if bin_width is None:
+            bin_width = 0.25 * dt_mu
+        c, b = _compute_ccf_gaussian(lags, t_x, x, t_y, y, bin_width)
+    else:
+        raise NotImplementedError
+
+    lags = TimedeltaIndex(lags, unit="D", name="Lags")
+    dcf = Series(data=c / b, index=lags, name="ccf")
+
+    if output == "full":
+        std = 1.96 / sqrt(b - lags.days)
+        # std = sqrt((c.cumsum() - dcf.cumsum()) ** 2) / (b - 1)
+        dcf = DataFrame(data={"ccf": dcf.values, "stderr": std, "n": b},
+                        index=lags, )
+    return dcf
+
+
+def _preprocess(x, max_gap, min_obs):
+    """Internal method to preprocess the time series.
+
+    """
+    dt = x.index.to_series().diff().values / Timedelta(1, "D")
+    dt[0] = 0.0
+    dt_mu = dt[dt < max_gap].mean()  # Deal with big gaps if present
+    t = dt.cumsum()
 
     # Normalize the values and create numpy arrays
     x = (x.values - x.values.mean()) / x.values.std()
-    y = (y.values - y.values.mean()) / y.values.std()
 
-    # Create matrix for covariances
-    xy = np.outer(y, x)
+    u, i = unique(dt, return_counts=True)
+    dt_min = u[Series(i, u).cumsum() >= min_obs][0]
 
-    if lags is None:  # Default lags in Days, log-scale between 0 and 365.
-        lags = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 30, 61, 90, 120,
-                150, 180, 210, 240, 270, 300, 330, 365]
+    return x, t, dt_min, dt_mu
 
-    # Remove lags that cannot be determined because lag < dt_min
-    u, i = np.unique(dt_x, return_counts=True)
-    dt_x_min = u[Series(i, u).cumsum() >= min_obs][0]
-    u, i = np.unique(dt_y, return_counts=True)
-    dt_y_min = u[Series(i, u).cumsum() >= min_obs][0]
 
-    dt_min = min(dt_x_min, dt_y_min)
-    # dt_min = min(dt_x[1:].min(), dt_y[1:].min())
+@njit
+def _compute_ccf_rectangle(lags, t_x, x, t_y, y, bin_width=0.5):
+    """Internal numba-optimized method to compute the ccf.
 
-    lags = np.array([float(lag) for lag in lags if lag >= dt_min or lag == 0])
+    """
+    c = empty_like(lags)
+    b = empty_like(lags)
+    l = len(lags)
+    n = len(t_x)
 
-    # Delete to free memory
-    del (x, y, dt_x, dt_y, t1, t2, t_x, t_y)
+    for k in range(l):
+        cl = 0.
+        b_sum = 0.
+        for i in range(n):
+            for j in range(n):
+                d = abs(t_x[i] - t_y[j]) - lags[k]
+                if abs(d) <= bin_width:
+                    cl += x[i] * y[j]
+                    b_sum += 1
+        c[k] = cl
+        b[k] = b_sum
+    return c, b
 
-    # Select appropriate bin_width, default depend on bin_method
-    if bin_width is None:
-        options = {"rectangle": 0.5, "sinc": 1, "gaussian": 0.25}
-        bin_width = np.ones_like(lags) * options[bin_method] * dt_mu
-    elif isinstance(bin_width, float):
-        bin_width = np.ones_like(lags)
-    else:
-        bin_width = [0.5, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 5, 5, 5, 5,
-                     2, 2, 2, 2, 2, 2, 2, 2]
 
-    # Select the binning method to calculate the cross-correlation
-    if bin_method == "rectangle":
-        a = np.zeros_like(t, dtype=float)
-        kernel_func = lambda d, h: np.less_equal(np.abs(d, out=a), h,
-                                                 out=a).astype(int)
-    elif bin_method == "gaussian":
-        a = np.zeros_like(t, dtype=float)
+@njit
+def _compute_ccf_gaussian(lags, t_x, x, t_y, y, bin_width=0.5):
+    """Internal numba-optimized method to compute the ccf.
 
-        def kernel_func(d, h):
-            den1 = -2 * h ** 2  # denominator 1
-            den2 = np.sqrt(2 * np.pi * h)  # denominator 2
-            return np.exp(np.square(d, out=a) / den1, out=a) / den2
-    elif bin_method == "sinc":
-        kernel_func = lambda d, h: np.sin(np.pi * h * d) / (np.pi * h * d)
-    else:
-        raise NotImplementedError("bin_method %s is not implemented." %
-                                  bin_method)
+    """
+    c = empty_like(lags)
+    b = empty_like(lags)
+    l = len(lags)
+    n = len(t_x)
 
-    # Pre-allocate an array to speed up all numpy methods
-    UDCF = np.zeros_like(lags, dtype=float)
-    M = np.zeros_like(lags, dtype=float)
-    d = np.zeros_like(t, dtype=float)
+    den1 = -2 * bin_width ** 2  # denominator 1
+    den2 = sqrt(2 * pi * bin_width)  # denominator 2
 
-    for i, k in enumerate(lags):
-        # Construct the kernel for the lag
-        np.subtract(t, k, out=d)
-        h = bin_width[i]
-        b = kernel_func(d, h)
-        c = np.multiply(xy, b, out=d)  # Element-wise multiplication
-        # Use nansum to avoid the NaNs that are now in these matrices
-        UDCF[i] = np.nansum(c)
-        M[i] = np.nansum(b)
+    for k in range(l):
+        cl = 0.
+        b_sum = 0.
 
-    DCF = UDCF / M
-    CCF = Series(data=DCF, index=lags, name="CCF")
+        for i in range(n):
+            for j in range(n):
+                d = t_x[i] - t_y[j] - lags[k]
+                d = exp(d ** 2 / den1) / den2
+                cl += x[i] * y[j] * d
+                b_sum += d
+        c[k] = cl
+        b[k] = b_sum
 
-    if output == "full":
-        CCFstd = np.sqrt((np.cumsum(UDCF) - M * DCF) ** 2) / (M - 1)
-        CCF = DataFrame(data={"CCF": CCF.values, "stderr": CCFstd}, index=lags)
-
-    CCF.index.name = "Lags (Days)"
-    return CCF
+    return c, b

@@ -51,7 +51,7 @@ from .decorators import njit
 logger = getLogger(__name__)
 
 __all__ = ["StressModel", "StressModel2", "Constant", "StepModel",
-           "LinearTrend", "FactorModel", "RechargeModel"]
+           "LinearTrend", "FactorModel", "RechargeModel", "WellModel"]
 
 
 class StressModelBase:
@@ -543,7 +543,7 @@ class StepModel(StressModelBase):
 
     def __init__(self, tstart, name, rfunc=One, up=None):
         StressModelBase.__init__(self, rfunc, name, Timestamp.min,
-                                 Timestamp.max, up, 1.0, 0.99)
+                                 Timestamp.max, up, 1.0, 0.999)
         self.tstart = Timestamp(tstart)
         self.set_init_parameters()
 
