@@ -1198,7 +1198,7 @@ class TarsoModel(RechargeModel):
     References
     ----------
     .. [1] Knotters, M. & De Gooijer, Jan G.. (1999). TARSO modeling of water table depths. Water Resources Research. 35. 10.1029/1998WR900049.
-    
+
     """
     _name = "TarsoModel"
     def __init__(self, prec, evap, oseries=None, dmin=None, dmax=None,
