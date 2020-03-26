@@ -99,7 +99,7 @@ from .modelstats import Statistics
 from .noisemodels import NoiseModel
 from .plots import Plotting
 from .solver import LeastSquares
-from .stressmodels import Constant, RechargeTarsoModel
+from .stressmodels import Constant
 from .timeseries import TimeSeries
 from .utils import get_dt, get_time_offset, get_sample, \
     frequency_is_supported, validate_name
@@ -1793,22 +1793,8 @@ class Model:
         return ml
 
     def check_stressmodel_compatibility(self):
-        """Method to check if the stressmodels in a model are compatible with
-        eachother or other components of the model (constant and transform)."""
+        """Internal method to check if the stressmodels are compatible with the
+        model."""
         for sm in self.stressmodels.values():
-            if isinstance(sm, RechargeTarsoModel):
-                if len(self.stressmodels)>1:
-                    msg = ('A RechargeTarsoModel cannot be combined with other'
-                           ' stressmodels. Either remove the RechargeTarsoModel'
-                           ' or the other stressmodels.')
-                    self.logger.warning(msg)
-                if self.constant is not None:
-                    msg = ('A RechargeTarsoModel cannot be combined with a'
-                           ' constant. Either remove the RechargeTarsoModel or'
-                           ' the constant.')
-                    self.logger.warning(msg)
-                if self.transform is not None:
-                    msg = ('A RechargeTarsoModel cannot be combined with a'
-                           ' transform. Either remove the RechargeTarsoModel'
-                           ' or the transform.')
-                    self.logger.warning(msg)
+            if hasattr(sm, 'check_stressmodel_compatibility'):
+                sm.check_stressmodel_compatibility(self)

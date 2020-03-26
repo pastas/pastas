@@ -17,8 +17,8 @@ ml.del_stressmodel('Recharge')
 ml.del_stressmodel('Extraction')
 ml.del_constant()
 
-# then add a RechargeTarsoModel
-sm = pt.RechargeTarsoModel(prec, evap, ml.oseries)
+# then add a TarsoModel
+sm = pt.TarsoModel(prec, evap, ml.oseries)
 ml.add_stressmodel(sm)
 
 # and solve and plot again
