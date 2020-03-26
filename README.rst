@@ -17,8 +17,8 @@ PASTAS: HYDROLOGICAL TIME SERIES ANALYSIS
                     :target: https://github.com/pastas/pastas/releases        
 .. image:: https://api.codacy.com/project/badge/Grade/952f41c453854064ba0ee1fa0a0b4434    
                     :target: https://www.codacy.com/gh/pastas/pastas?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=pastas/pastas&amp;utm_campaign=Badge_Grade                
-.. image:: https://api.codacy.com/project/badge/Coverage/911e51dab0dc4d4f8298e676c40d50ff
-                    :target: https://app.codacy.com/project/raoulcollenteur/pastas/dashboard
+.. image:: https://api.codacy.com/project/badge/Coverage/952f41c453854064ba0ee1fa0a0b4434
+                    :target: https://www.codacy.com/gh/pastas/pastas?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=pastas/pastas&amp;utm_campaign=Badge_Coverage
 .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1465866.svg
                     :target: https://doi.org/10.5281/zenodo.1465866
 .. image:: https://mybinder.org/badge_logo.svg
