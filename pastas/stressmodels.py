@@ -54,6 +54,7 @@ __all__ = ["StressModel", "StressModel2", "Constant", "StepModel",
 
 class StressModelBase:
     """StressModel Base class called by each StressModel object.
+
     Attributes
     ----------
     name: str
@@ -80,7 +81,6 @@ class StressModelBase:
 
     def set_init_parameters(self):
         """Set the initial parameters (back) to their default values."""
-        pass
 
     @set_parameter
     def set_initial(self, name, value):
@@ -137,7 +137,7 @@ class StressModelBase:
 
         See Also
         --------
-        ps.TimeSeries.update_series
+        ps.timeseries.TimeSeries.update_series
 
         """
         for stress in self.stress:
@@ -763,8 +763,7 @@ class WellModel(StressModelBase):
     def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1,
                  istress=None):
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
-        h = Series(data=0, index=self.stress[0].series.index,
-                   name=self.name)
+        h = Series(data=0, index=self.stress[0].series.index, name=self.name)
         stresses = self.get_stress(istress=istress)
         distances = self.get_distances(istress=istress)
         for stress, r in zip(stresses, distances):
@@ -772,8 +771,8 @@ class WellModel(StressModelBase):
             p_with_r = np.concatenate([p, np.asarray([r])])
             b = self.get_block(p_with_r, dt, tmin, tmax)
             c = fftconvolve(stress, b, 'full')[:npoints]
-            h = h.add(Series(c, index=stress.index,
-                             fastpath=True), fill_value=0.0)
+            h = h.add(Series(c, index=stress.index, fastpath=True),
+                      fill_value=0.0)
         if istress is not None:
             if self.stress[istress].name is not None:
                 h.name = self.stress[istress].name
@@ -913,11 +912,11 @@ class RechargeModel(StressModelBase):
 
     Parameters
     ----------
-    prec: pandas.Series or pastas.timeseries
-        pandas.Series or pastas.timeseries objects containing the
+    prec: pandas.Series or pastas.timeseries.TimeSeries
+        pandas.Series or pastas.timeseries object containing the
         precipitation series.
-    evap: pandas.Series or pastas.timeseries
-        pandas.Series or pastas.timeseries objects containing the
+    evap: pandas.Series or pastas.timeseries.TimeSeries
+        pandas.Series or pastas.timeseries object containing the
         evaporation series.
     rfunc: pastas.rfunc class, optional
         Response function used in the convolution with the stress. Default
@@ -929,7 +928,7 @@ class RechargeModel(StressModelBase):
         default), FlexModel and Berendrecht. These can be accessed through
         ps.rch.
     temp: pandas.Series or pastas.TimeSeries, optional
-        pandas.Series or pastas.TimeSeries objects containing the
+        pandas.Series or pastas.TimeSeries object containing the
         temperature series. It depends on the recharge model is this
         argument is required or not.
     cutoff: float, optional
@@ -950,20 +949,20 @@ class RechargeModel(StressModelBase):
     --------
     pastas.rfunc
     pastas.timeseries
-    pastas.recharge
+    pastas.rch
 
     Notes
     -----
     This stress model computes the contribution of precipitation and
     potential evaporation in two steps. In the first step a recharge flux is
-    computed by a method determined by the recharge input argument. In the
+    computed by a model determined by the input argument `recharge`. In the
     second step this recharge flux is convoluted with a response function to
     obtain the contribution of recharge to the groundwater levels.
 
     Examples
     --------
     >>> rm = ps.RechargeModel(rain, evap, rfunc=ps.Exponential,
-    >>>                       recharge=ps.rch.FlexModel)
+    >>>                       recharge=ps.rch.FlexModel())
 
     """
     _name = "RechargeModel"
@@ -1033,6 +1032,7 @@ class RechargeModel(StressModelBase):
         self.nsplit = 1
 
     def set_init_parameters(self):
+        """Internal method to set the initial parameters."""
         self.parameters = concat(
             [self.rfunc.get_init_parameters(self.name),
              self.recharge.get_init_parameters(self.name)
@@ -1048,7 +1048,7 @@ class RechargeModel(StressModelBase):
 
         See Also
         --------
-        ps.TimeSeries.update_series
+        ps.timeseries.TimeSeries.update_series
 
         """
         self.prec.update_series(**kwargs)
@@ -1060,12 +1060,12 @@ class RechargeModel(StressModelBase):
             self.freq = kwargs["freq"]
 
     def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1.0):
-        """Method to simulate the contribution of the groundwater
-        recharge to the head.
+        """Method to simulate the contribution of recharge to the head.
 
         Parameters
         ----------
-        p: numpy.ndarray
+        p: numpy.ndarray, optional
+            parameter used for the simulation
         tmin: string, optional
         tmax: string, optional
         freq: string, optional

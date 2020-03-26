@@ -18,7 +18,7 @@ default model with different models as follows:
 >>> n = ps.NoiseModel()
 >>> ml.add_noisemodel(n)
 
-or
+or shorter
 
 >>> ml.add_noisemodel(ps.NoiseModel())
 
@@ -28,24 +28,19 @@ pastas.model.Model.add_noisemodel
 
 """
 
-from abc import ABC
-from logging import getLogger
-
 import numpy as np
 from pandas import Timedelta, DataFrame
 
 from .decorators import set_parameter
 
-logger = getLogger(__name__)
-
 __all__ = ["NoiseModel", "NoiseModel2"]
 
 
-class NoiseModelBase(ABC):
+class NoiseModelBase:
     _name = "NoiseModelBase"
 
     def __init__(self):
-        self.nparam = 0
+        self.nparam = 1
         self.name = "noise"
         self.parameters = DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "name"])
@@ -68,10 +63,7 @@ class NoiseModelBase(ABC):
         The preferred method for parameter setting is through the model.
 
         """
-        if name in self.parameters.index:
-            self.parameters.loc[name, "initial"] = value
-        else:
-            print("Warning:", name, "does not exist")
+        self.parameters.loc[name, "initial"] = value
 
     @set_parameter
     def set_pmin(self, name, value):
@@ -82,12 +74,8 @@ class NoiseModelBase(ABC):
         -----
         The preferred method for parameter setting is through the model.
 
-
         """
-        if name in self.parameters.index:
-            self.parameters.loc[name, "pmin"] = value
-        else:
-            print("Warning:", name, "does not exist")
+        self.parameters.loc[name, "pmin"] = value
 
     @set_parameter
     def set_pmax(self, name, value):
@@ -99,10 +87,7 @@ class NoiseModelBase(ABC):
         The preferred method for parameter setting is through the model.
 
         """
-        if name in self.parameters.index:
-            self.parameters.loc[name, "pmax"] = value
-        else:
-            print("Warning:", name, "does not exist")
+        self.parameters.loc[name, "pmax"] = value
 
     @set_parameter
     def set_vary(self, name, value):
@@ -243,6 +228,7 @@ class NoiseModel2(NoiseModelBase):
     @staticmethod
     def simulate(res, parameters):
         """
+        Simulate noise from the residuals.
 
         Parameters
         ----------
