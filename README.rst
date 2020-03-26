@@ -5,8 +5,8 @@ PASTAS: HYDROLOGICAL TIME SERIES ANALYSIS
    :width: 200px
    :align: left
 
-.. image:: https://travis-ci.org/pastas/pastas.svg?branch=master
-                    :target: https://travis-ci.org/pastas/pastas
+.. image:: https://travis-ci.com/pastas/pastas.svg?branch=master
+                    :target: https://travis-ci.com/pastas/pastas
 .. image:: https://img.shields.io/pypi/v/pastas.svg
                     :target: https://pypi.python.org/pypi/pastas
 .. image:: https://img.shields.io/pypi/l/pastas.svg
@@ -14,9 +14,9 @@ PASTAS: HYDROLOGICAL TIME SERIES ANALYSIS
 .. image:: https://img.shields.io/pypi/pyversions/pastas
                     :target: https://pypi.python.org/pypi/pastas
 .. image:: https://img.shields.io/github/release/pastas/pastas.svg
-                    :target: https://github.com/pastas/pastas/releases
-.. image:: https://api.codacy.com/project/badge/Grade/0e0fad469a3c42a4a5c5d1c5fddd6bee
-                    :target: https://app.codacy.com/app/raoulcollenteur/pastas?utm_source=github.com&utm_medium=referral&utm_content=pastas/pastas&utm_campaign=Badge_Grade_Dashboard
+                    :target: https://github.com/pastas/pastas/releases        
+.. image:: https://api.codacy.com/project/badge/Grade/952f41c453854064ba0ee1fa0a0b4434    
+                    :target: https://www.codacy.com/gh/pastas/pastas?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=pastas/pastas&amp;utm_campaign=Badge_Grade                
 .. image:: https://api.codacy.com/project/badge/Coverage/911e51dab0dc4d4f8298e676c40d50ff
                     :target: https://app.codacy.com/project/raoulcollenteur/pastas/dashboard
 .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1465866.svg
@@ -94,7 +94,7 @@ To cite a specific version of Python, you can use the DOI provided for each offi
 
 License (MIT License)
 ~~~~~~~~~~~~~~~~~~~~~
-Copyright (c) 2016-2018 R.A. Collenteur, M. Bakker, R. Calje, F. Schaars
+Copyright (c) 2016-2020 R.A. Collenteur, M. Bakker, R. Calje, F. Schaars
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
