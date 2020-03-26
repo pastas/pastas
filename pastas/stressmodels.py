@@ -1153,7 +1153,7 @@ class RechargeModel(StressModelBase):
             "temp": self.temp.to_dict() if self.temp else None
         }
         return data
-    
+
 class TarsoModel(RechargeModel):
     """
     Stressmodel simulating the effect of recharge using the Tarso method.
