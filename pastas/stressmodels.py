@@ -16,6 +16,7 @@ The following stressmodels are currently supported and tested:
     FactorModel
     StepModel
     WellModel
+    TarsoModel
 
 Examples
 --------
@@ -40,13 +41,11 @@ import numpy as np
 from pandas import date_range, Series, Timedelta, DataFrame, concat, Timestamp
 from scipy.signal import fftconvolve
 
-from .decorators import set_parameter
+from .decorators import set_parameter, njit
 from .recharge import Linear
 from .rfunc import One, Exponential, HantushWellModel
 from .timeseries import TimeSeries
 from .utils import validate_name
-
-from .decorators import njit
 
 logger = getLogger(__name__)
 
@@ -1153,7 +1152,8 @@ class RechargeModel(StressModelBase):
             "temp": self.temp.to_dict() if self.temp else None
         }
         return data
-    
+
+
 class TarsoModel(RechargeModel):
     """
     Stressmodel simulating the effect of recharge using the Tarso method.
@@ -1182,37 +1182,39 @@ class TarsoModel(RechargeModel):
 
     Notes
     -----
-    The Threshold autoregressive self-exciting open-loop (Tarso) model [1]_ is
-    nonlinear in structure because it incorporates two regimes which are
-    separated by a threshold. This model method can be used to simulate a
-    groundwater system where the groundwater head reaches the surface or
-    drainage level in wet conditions.
-    TarsoModel uses two drainage levels, with two exponential response
-    functions. When the simulation reaches the second drainage level, the
-    second response function becomes active. Because ofits structure,
-    TarsoModel cannot be combined with other stressmodels, a constant or a
-    transform.
+    The Threshold autoregressive self-exciting open-loop (Tarso) model
+    [knotters_1999]_ is nonlinear in structure because it incorporates two
+    regimes which are separated by a threshold. This model method can be
+    used to simulate a groundwater system where the groundwater head reaches
+    the surface or drainage level in wet conditions. TarsoModel uses two
+    drainage levels, with two exponential response functions. When the
+    simulation reaches the second drainage level, the second response
+    function becomes active. Because of its structure, TarsoModel cannot be
+    combined with other stress models, a constant or a transform.
     TarsoModel inherits from RechargeModel. Only parameters specific to the
     child class are named above.
 
     References
     ----------
-    .. [1] Knotters, M. & De Gooijer, Jan G.. (1999). TARSO modeling of water table depths. Water Resources Research. 35. 10.1029/1998WR900049.
+    .. [knotters_1999] Knotters, M. & De Gooijer, Jan G.. (1999). TARSO
+       modeling of water table depths. Water Resources Research. 35.
+       10.1029/1998WR900049.
 
     """
     _name = "TarsoModel"
+
     def __init__(self, prec, evap, oseries=None, dmin=None, dmax=None,
                  rfunc=Exponential, **kwargs):
         if oseries is not None:
             if dmin is not None or dmax is not None:
                 msg = 'Please specify either oseries or dmin and dmax'
-                raise(Exception(msg))
+                raise (Exception(msg))
             o = TimeSeries(oseries).series
             dmin = o.min()
             dmax = o.max()
         elif dmin is None or dmax is None:
             msg = 'Please specify either oseries or dmin and dmax'
-            raise(Exception(msg))
+            raise (Exception(msg))
         if not issubclass(rfunc, Exponential):
             raise NotImplementedError("TarsoModel only supports rfunc "
                                       "Exponential!")
@@ -1223,7 +1225,7 @@ class TarsoModel(RechargeModel):
     def set_init_parameters(self):
         # parameters for the first drainage level
         p0 = self.rfunc.get_init_parameters(self.name)
-        one = One(meanstress = self.dmin + 0.5 * (self.dmax - self.dmin))
+        one = One(meanstress=self.dmin + 0.5 * (self.dmax - self.dmin))
         pd0 = one.get_init_parameters(self.name).squeeze()
         p0.loc['{}_d'.format(self.name)] = pd0
         p0.index = ['{}0'.format(x) for x in p0.index]
@@ -1231,8 +1233,8 @@ class TarsoModel(RechargeModel):
         # parameters for the second drainage level
         p1 = self.rfunc.get_init_parameters(self.name)
         initial = self.dmin + 0.75 * (self.dmax - self.dmin)
-        pd1 = Series({'initial':initial, 'pmin':self.dmin, 'pmax':self.dmax,
-                      'vary':True, 'name':self.name})
+        pd1 = Series({'initial': initial, 'pmin': self.dmin, 'pmax': self.dmax,
+                      'vary': True, 'name': self.name})
         p1.loc['{}_d'.format(self.name)] = pd1
         p1.index = ['{}1'.format(x) for x in p1.index]
 
@@ -1258,18 +1260,14 @@ class TarsoModel(RechargeModel):
     def check_stressmodel_compatibility(ml):
         """Internal method to check if no other stressmodels, a constants or a
         transform is used."""
-        if len(ml.stressmodels)>1:
-            msg = ('A TarsoModel cannot be combined with other stressmodels. '
-                   'Either remove the TarsoModel or the other stressmodels.')
-            logger.warning(msg)
+        msg = "A TarsoModel cannot be combined with {}. Either remove the" \
+              " TarsoModel or the {}."
+        if len(ml.stressmodels) > 1:
+            logger.warning(msg.format("other stressmodels", "stressmodels"))
         if ml.constant is not None:
-            msg = ('A TarsoModel cannot be combined with a constant. '
-                   'Either remove the TarsoModel or the constant.')
-            logger.warning(msg)
+            logger.warning(msg.format("a constant", "constant"))
         if ml.transform is not None:
-            msg = ('A TarsoModel cannot be combined with a transform. '
-                   'Either remove the TarsoModel or the transform.')
-            logger.warning(msg)
+            logger.warning(msg.format("a transform", "transform"))
 
     @staticmethod
     @njit
@@ -1286,29 +1284,30 @@ class TarsoModel(RechargeModel):
         c1 = A1
 
         # calculate effective parameters for the top level
-        c_e = 1 / ((1/c0) + (1/c1))
-        d_e = (c1 / (c0+c1)) * d0 + (c0 / (c0+c1)) *d1
+        c_e = 1 / ((1 / c0) + (1 / c1))
+        d_e = (c1 / (c0 + c1)) * d0 + (c0 / (c0 + c1)) * d1
         a_e = S1 * c_e
 
         h = np.full(len(r), np.NaN)
         for i in range(len(r)):
-            if i==0:
-                h0 = (d0+d1)/2
+            if i == 0:
+                h0 = (d0 + d1) / 2
                 high = h0 > d1
                 if high:
                     S, a, c, d = S1, a_e, c_e, d_e
                 else:
                     S, a, c, d = S0, a0, c0, d0
             else:
-                h0 = h[i-1]
+                h0 = h[i - 1]
             exp_a = np.exp(-dt / a)
-            h[i] = (h0 - d) * exp_a + r[i] * c * (1-exp_a) + d
+            h[i] = (h0 - d) * exp_a + r[i] * c * (1 - exp_a) + d
             newhigh = h[i] > d1
             if high != newhigh:
                 # calculate time until d1 is reached
-                dtdr = - S * c *np.log((d1-d-r[i]*c) / (h0-d-r[i]*c))
+                dtdr = - S * c * np.log(
+                    (d1 - d - r[i] * c) / (h0 - d - r[i] * c))
                 if dtdr > dt:
-                    raise(Exception())
+                    raise (Exception())
                 # change paraemeters
                 high = newhigh
                 if high:
@@ -1316,6 +1315,6 @@ class TarsoModel(RechargeModel):
                 else:
                     S, a, c, d = S0, a0, c0, d0
                 # calculate new level after reaching d1
-                exp_a = np.exp(-(dt-dtdr) / a)
-                h[i] = (d1 - d) * exp_a + r[i] * c * (1-exp_a) + d
+                exp_a = np.exp(-(dt - dtdr) / a)
+                h[i] = (d1 - d) * exp_a + r[i] * c * (1 - exp_a) + d
         return h
