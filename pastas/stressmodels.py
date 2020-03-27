@@ -698,26 +698,11 @@ class WellModel(StressModelBase):
         if settings is None or isinstance(settings, str):
             settings = len(stress) * [None]
 
-        # get largest std for meanstress
-        def timeseries_std(series):
-            if isinstance(series, Series):
-                return series.std()
-            elif isinstance(series, TimeSeries):
-                return series.series.std()
-            else:
-                raise TypeError("Stresses must be pastas.TimeSeries or"
-                                " pandas.Series!")
-        meanstress = np.max([timeseries_std(s) for s in stress])
+        # convert stresses to TimeSeries if necessary
+        stress = self.handle_stress(stress, settings)
 
-        tmin = Timestamp.min
-        tmax = Timestamp.max
-
-        StressModelBase.__init__(self, rfunc, name, tmin, tmax,
-                                 up, meanstress, cutoff)
-
-        self.stress = self.handle_stress(stress, settings)
         # Check if number of stresses and distances match
-        if len(self.stress) != len(distances):
+        if len(stress) != len(distances):
             msg = "The number of stresses does not match the number" \
                   "of distances provided."
             logger.error(msg)
@@ -725,6 +710,15 @@ class WellModel(StressModelBase):
         else:
             self.distances = distances
 
+        meanstress = np.max([s.series.std() for s in stress])
+
+        tmin = Timestamp.min
+        tmax = Timestamp.max
+
+        StressModelBase.__init__(self, rfunc, name, tmin, tmax,
+                                 up, meanstress, cutoff)
+
+        self.stress = stress
         self.freq = self.stress[0].settings["freq"]
         self.set_init_parameters()
 
