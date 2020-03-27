@@ -85,8 +85,6 @@ Set Methods
 """
 
 from collections import OrderedDict
-from copy import copy
-from inspect import isclass
 from logging import getLogger
 from os import getlogin
 
@@ -210,7 +208,7 @@ class Model:
         ----------
         stressmodel: pastas.stressmodel or list of pastas.stressmodel
             instance of a pastas.stressmodel class. Multiple stress models
-            can be provided (e.g., ml.add_stressmodel(sm1, sm2) in one call.
+            can be provided (e.g., ml.add_stressmodel([sm1, sm2]) in one call.
         replace: bool, optional
             force replace the stressmodel if a stressmodel with the same name
             already exists. Not recommended but useful at times. Default is
@@ -220,7 +218,7 @@ class Model:
         -----
         To obtain a list of the stressmodel names, type:
 
-        >>> ml.stressmodels.keys()
+        >>> ml.get_stressmodel_names()
 
         Examples
         --------
@@ -294,9 +292,13 @@ class Model:
         pastas.transform
 
         """
+        from inspect import isclass
         if isclass(transform):
-            # keep this line for backwards compatibility for now
-            transform = transform()
+            raise DeprecationWarning("Adding a transform as a class is "
+                                     "deprecated in v0.14 and will be "
+                                     "removed in v0.15. Please provide an "
+                                     "instance of the class.")
+        transform = transform
         transform.set_model(self)
         self.transform = transform
         self.parameters = self.get_init_parameters(initial=False)
@@ -339,7 +341,7 @@ class Model:
         -----
         To obtain a list of the stressmodel names type:
 
-        >>> ml.stressmodels.keys()
+        >>> ml.get_stressmodel_names()
 
         """
         self.stressmodels.pop(name, None)
@@ -622,7 +624,7 @@ class Model:
             that e.g. "7D".
         update_observations: bool, optional
             if True, force recalculation of the observations series, default
-            is False
+            is False.
 
         Returns
         -------
@@ -670,7 +672,7 @@ class Model:
         return oseries_calib
 
     def initialize(self, tmin=None, tmax=None, freq=None, warmup=None,
-                   noise=None, weights=None, initial=True, fit_constant=None):
+                   noise=None, weights=None, initial=True, fit_constant=True):
         """Method to initialize the model.
 
         This method is called by the solve-method, but can also be triggered
@@ -686,6 +688,7 @@ class Model:
 
         self.settings["noise"] = noise
         self.settings["weights"] = weights
+        self.settings["fit_constant"] = fit_constant
 
         # Set the frequency & warmup
         if freq:
@@ -694,16 +697,12 @@ class Model:
         if warmup is not None:
             self.settings["warmup"] = Timedelta(warmup, "D")
 
-        # Set the time offset from the frequency (this does not work as expected yet)
+        # Set time offset from the frequency (does not work as expected yet)
         # self._set_time_offset()
 
         # Set tmin and tmax
         self.settings["tmin"] = self.get_tmin(tmin)
         self.settings["tmax"] = self.get_tmax(tmax)
-
-        # set fit_constant
-        if fit_constant is not None:
-            self.settings["fit_constant"] = fit_constant
 
         # make sure calibration data is renewed
         self.sim_index = self.get_sim_index(self.settings["tmin"],
@@ -721,7 +720,7 @@ class Model:
         self.parameters = self.get_init_parameters(noise, initial)
 
         # Prepare model if not fitting the constant as a parameter
-        if not self.settings["fit_constant"]:
+        if self.settings["fit_constant"] is False:
             self.parameters.loc["constant_d", "vary"] = False
             self.parameters.loc["constant_d", "initial"] = 0.0
             self.normalize_residuals = True
@@ -763,7 +762,7 @@ class Model:
             optimization are used.
         weights: pandas.Series, optional
             Pandas Series with values by which the residuals are multiplied,
-            index-based.
+            index-based. Must have the same indices as the oseries.
         fit_constant: bool, optional
             Argument that determines if the constant is fitted as a parameter.
             If it is set to False, the constant is set equal to the mean of
@@ -813,7 +812,7 @@ class Model:
             self.logger.warning("Model parameters could not be estimated "
                                 "well.")
 
-        if not self.settings['fit_constant']:
+        if self.settings['fit_constant'] is False:
             # Determine the residuals and set the constant to their mean
             self.normalize_residuals = False
             res = self.residuals(optimal).mean()
@@ -1338,6 +1337,12 @@ class Model:
         contribs: list
             a list of Pandas Series of the contributions.
 
+        See Also
+        --------
+        pastas.model.Model.get_contribution
+            This method is called to get the individual contributions,
+            kwargs are passed on to this method.
+
         """
         contribs = []
         for name in self.stressmodels:
@@ -1372,7 +1377,7 @@ class Model:
         """
         sim = self.simulate(tmin=tmin, tmax=tmax)
         # calculate what the simulation without the transform is
-        ml = copy(self)
+        ml = self.copy()
         ml.del_transform()
         sim_org = ml.simulate(tmin=tmin, tmax=tmax)
         return sim - sim_org
