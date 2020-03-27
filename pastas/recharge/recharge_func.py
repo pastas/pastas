@@ -26,7 +26,6 @@ The following recharge models are currently supported and tested:
     FlexModel
     Berendrecht
 
-
 See Also
 --------
 pastas.stressmodels.RechargeModel
@@ -37,8 +36,8 @@ Examples
 Using the recharge models is as follows:
 
 >>> rch = ps.rch.FlexModel()
->>> rm = ps.RechargeModel(prec, evap, recharge=rch, rfunc=ps.Gamma, name="rch")
->>> ml.add_stressmodel(rch)
+>>> sm = ps.RechargeModel(prec, evap, recharge=rch, rfunc=ps.Gamma, name="rch")
+>>> ml.add_stressmodel(sm)
 
 After solving a model, the simulated recharge flux can be obtained:
 
@@ -62,7 +61,7 @@ class RechargeBase:
         self.nparam = 0
 
     @staticmethod
-    def get_init_parameters(name="rch"):
+    def get_init_parameters(name="recharge"):
         """
 
         Parameters
@@ -85,7 +84,8 @@ class RechargeBase:
 
 
 class Linear(RechargeBase):
-    """Linear model for precipitation excess according to [1]_.
+    """
+    Linear model for precipitation excess according to [1]_.
 
     Notes
     -----
@@ -97,7 +97,10 @@ class Linear(RechargeBase):
 
     References
     ----------
-    .. [1] von Asmuth, J., Bierkens, M., and Maas, K. (2002) Transfer function-noise modeling in continuous time using predefined impulse response functions, Water Resources Research, 38, 23–1–23–12.
+    .. [1] von Asmuth, J., Bierkens, M., and Maas, K. (2002) Transfer
+           function-noise modeling in continuous time using predefined
+           impulse response functions, Water Resources Research, 38,
+           23–1–23–12.
 
     """
     _name = "Linear"
@@ -106,7 +109,7 @@ class Linear(RechargeBase):
         RechargeBase.__init__(self)
         self.nparam = 1
 
-    def get_init_parameters(self, name="rch"):
+    def get_init_parameters(self, name="recharge"):
         parameters = DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "name"])
         parameters.loc[name + "_f"] = (-1.0, -2.0, 0.0, True, name)
@@ -154,11 +157,13 @@ class FlexModel(RechargeBase):
         R = K_s \\left( \\frac{S}{S_u}\\right) ^\\gamma
 
     For a detailed description of the recharge model and parameters we refer
-    to the following publication [2]_.
+    to the following publication [2]_ (NOT AVAILABLE YET - March/2020).
 
     References
     ----------
-    .. [2] Collenteur, R.A., Bakker, M., Birk, S. (in Prep.) Estimating groundwater recharge using non-linear transfer function noise models.
+    .. [2] Collenteur, R.A., Bakker, M., Birk, S. (in Prep.) Estimating
+           groundwater recharge using non-linear transfer function noise
+           models.
 
     """
     _name = "FlexModel"
@@ -167,7 +172,7 @@ class FlexModel(RechargeBase):
         RechargeBase.__init__(self)
         self.nparam = 5
 
-    def get_init_parameters(self, name="rch"):
+    def get_init_parameters(self, name="recharge"):
         parameters = DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "name"])
         parameters.loc[name + "_su"] = (150.0, 1e-5, 1e3, True, name)
@@ -251,7 +256,8 @@ class FlexModel(RechargeBase):
 
 
 class Berendrecht(RechargeBase):
-    """Recharge to the groundwater calculated according to [3]_ and [2]_.
+    """
+    Recharge to the groundwater calculated according to [3]_ and [2]_.
 
     Notes
     -----
@@ -273,7 +279,9 @@ class Berendrecht(RechargeBase):
 
     References
     ----------
-    .. [3] Berendrecht, W. L., Heemink, A. W., van Geer, F. C., and Gehrels, J. C. (2006) A non-linear state space approach to model groundwater fluctuations, Advances in Water Resources, 29, 959–973.
+    .. [3] Berendrecht, W. L., Heemink, A. W., van Geer, F. C., and Gehrels,
+           J. C. (2006) A non-linear state space approach to model
+           groundwater fluctuations, Advances in Water Resources, 29, 959–973.
 
     """
     _name = "Berendrecht"

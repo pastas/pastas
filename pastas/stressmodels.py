@@ -489,7 +489,7 @@ class StepModel(StressModelBase):
 
     Parameters
     ----------
-    tstart: str
+    tstart: str or Timestamp
         String with the start date of the step, e.g. '2018-01-01'. This
         value is fixed by default. Use ml.set_vary("step_tstart", 1) to vary
         the start time of the step trend.
@@ -499,7 +499,7 @@ class StepModel(StressModelBase):
         Pastas response function used to simulate the effect of the step.
         Default is rfunc.One(), an instant effect.
     up: bool, optional
-        Force a direction of the step.
+        Force a direction of the step. Default is None.
 
     Notes
     -----
@@ -963,13 +963,20 @@ class RechargeModel(StressModelBase):
 
     Examples
     --------
-    >>> rm = ps.RechargeModel(rain, evap, rfunc=ps.Exponential,
-    >>>                       recharge=ps.rch.FlexModel())
+    >>> sm = ps.RechargeModel(rain, evap, rfunc=ps.Exponential,
+    >>>                       recharge=ps.rch.FlexModel(), name="rch")
+    >>> ml.add_stressmodel(sm)
+
+    Warning
+    -------
+    We recommend not to store a RechargeModel is a variable named `rm`. This
+    name is already reserved in IPython to remove files and will cause
+    problems later.
 
     """
     _name = "RechargeModel"
 
-    def __init__(self, prec, evap, rfunc=Exponential, name="rch",
+    def __init__(self, prec, evap, rfunc=Exponential, name="recharge",
                  recharge=Linear(), temp=None, cutoff=0.999,
                  settings=("prec", "evap", "evap"),
                  metadata=(None, None, None)):
