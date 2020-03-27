@@ -695,8 +695,19 @@ class WellModel(StressModelBase):
                                                  key=lambda pair: pair[0])]
             distances.sort()
 
+        if settings is None or isinstance(settings, str):
+            settings = len(stress) * [None]
+
         # get largest std for meanstress
-        meanstress = np.max([s.series.std() for s in stress])
+        def timeseries_std(series):
+            if isinstance(series, Series):
+                return series.std()
+            elif isinstance(series, TimeSeries):
+                return series.series.std()
+            else:
+                raise TypeError("Stresses must be pastas.TimeSeries or"
+                                " pandas.Series!")
+        meanstress = np.max([timeseries_std(s) for s in stress])
 
         tmin = Timestamp.min
         tmax = Timestamp.max
@@ -704,14 +715,10 @@ class WellModel(StressModelBase):
         StressModelBase.__init__(self, rfunc, name, tmin, tmax,
                                  up, meanstress, cutoff)
 
-        if settings is None or isinstance(settings, str):
-            settings = len(stress) * [None]
-
         self.stress = self.handle_stress(stress, settings)
-
         # Check if number of stresses and distances match
         if len(self.stress) != len(distances):
-            msg = "The number of stresses applied does not match the number" \
+            msg = "The number of stresses does not match the number" \
                   "of distances provided."
             logger.error(msg)
             raise ValueError(msg)
@@ -758,8 +765,10 @@ class WellModel(StressModelBase):
 
         Parameters
         ----------
-        stress: pandas.Series or pastas.timeseries or list
+        stress: pandas.Series, pastas.TimeSeries, list or dict
+            stress or collection of stresses
         settings: dict or iterable
+            settings dictionary
 
         Returns
         -------
@@ -778,8 +787,8 @@ class WellModel(StressModelBase):
             for i, value in enumerate(stress):
                 data.append(TimeSeries(value, settings=settings[i]))
         else:
-            logger.warning("provided stress format is unknown. Provide a"
-                           "Series, dict or list.")
+            logger.error("Stress format is unknown. Provide a"
+                         "Series, dict or list.")
         return data
 
     def get_stress(self, p=None, istress=None, **kwargs):
