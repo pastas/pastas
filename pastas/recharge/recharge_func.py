@@ -45,7 +45,7 @@ After solving a model, the simulated recharge flux can be obtained:
 
 """
 
-from numpy import add, float64, multiply, exp, zeros, nan_to_num
+from numpy import add, float64, multiply, exp, zeros, nan_to_num, vstack
 from pandas import DataFrame
 
 from ..decorators import njit
@@ -134,6 +134,13 @@ class Linear(RechargeBase):
         """
         return add(prec, multiply(evap, p))
 
+    def get_water_balance(self, prec, evap, p, **kwargs):
+        ea = multiply(evap, p)
+        r = add(prec, multiply(evap, p))
+        data = DataFrame(data=vstack((prec, ea, -r)).T,
+                         columns=["P", "Ea", "R"])
+        return data
+
 
 class FlexModel(RechargeBase):
     """
@@ -217,42 +224,52 @@ class FlexModel(RechargeBase):
 
         """
         n = prec.size
-        # Create an empty arrays to store the fluxes and states
-        s = zeros(n, dtype=float64)
-        s[0] = 0.5 * su  # Set the initial system state to half-full
-        ea = zeros(n, dtype=float64)
-        r = zeros(n, dtype=float64)
-        i = zeros(n, dtype=float64)
-        pe = zeros(n, dtype=float64)
-        ei = zeros(n, dtype=float64)
-        ep = zeros(n, dtype=float64)
+        # Create empty arrays to store the fluxes and states
+        s_u = zeros(n, dtype=float64)  # Root Zone Storage State
+        s_u[0] = 0.5 * su  # Set the initial system state to half-full
+        ea = zeros(n, dtype=float64)  # Actual evaporation Flux
+        r = zeros(n, dtype=float64)  # Recharge Flux
+        s_i = zeros(n, dtype=float64)  # Interception Storage State
+        pe = zeros(n, dtype=float64)  # Effective precipitation Flux
+        ei = zeros(n, dtype=float64)  # Interception evaporation Flux
+        ep = zeros(n, dtype=float64)  # Updated evaporation Flux
         lp = lp * su  # Do this here outside the for-loop for efficiency
 
         for t in range(n - 1):
             # Interception bucket
-            pe[t] = max(prec[t] - si + i[t], 0.0)  # Effective precipitation
-            ei[t] = min(evap[t], i[t])  # Interception evaporation
-            ep[t] = evap[t] - ei[t]  # Leftover potential evapotranspiration
-            i[t + 1] = i[t] + dt * (prec[t] - pe[t] - ei[t])
+            pe[t] = max(prec[t] - si + s_i[t], 0.0)
+            ei[t] = min(evap[t], s_i[t])
+            ep[t] = evap[t] - ei[t]
+            s_i[t + 1] = s_i[t] + dt * (prec[t] - pe[t] - ei[t])
 
             # Make sure the solution is larger then 0.0 and smaller than su
-            if s[t] > su:
-                s[t] = su
-            elif s[t] < 0.0:
-                s[t] = 0.0
+            if s_u[t] > su:
+                s_u[t] = su
+            elif s_u[t] < 0.0:
+                s_u[t] = 0.0
 
             # Calculate actual evapotranspiration
-            if s[t] / lp < 1.0:
-                ea[t] = ep[t] * s[t] / lp
+            if s_u[t] / lp < 1.0:
+                ea[t] = ep[t] * s_u[t] / lp
             else:
                 ea[t] = ep[t]
 
             # Calculate the recharge flux
-            r[t] = ks * (s[t] / su) ** gamma
-            # Make sure the solution is larger then 0.0 and smaller than sr
-            s[t + 1] = s[t] + dt * (pe[t] - r[t] - ea[t])
+            r[t] = ks * (s_u[t] / su) ** gamma
+            # Calculate state of the root zone storage
+            s_u[t + 1] = s_u[t] + dt * (pe[t] - r[t] - ea[t])
 
-        return r, s, ea, ei, prec
+        return r, ea, ei, pe, s_u, s_i
+
+    def get_water_balance(self, prec, evap, p, dt=1.0, **kwargs):
+        r, ea, ei, pe, s_u, s_i = self.get_recharge(prec, evap, su=p[0],
+                                                    lp=p[1], ks=p[2],
+                                                    gamma=p[3], si=p[4],
+                                                    dt=dt)
+
+        data = DataFrame(data=vstack((s_i, -ei, s_u, pe, -ea, -r)).T,
+                         columns=["Si", "Ei", "Su", "Pe", "Ea", "R"])
+        return data
 
 
 class Berendrecht(RechargeBase):
@@ -338,12 +355,12 @@ class Berendrecht(RechargeBase):
         """
         n = prec.size
         # Create an empty arrays to store the fluxes and states
-        pe = fi * prec
-        ep = fc * evap
-        s = zeros(n, dtype=float64)
+        pe = fi * prec  # Effective precipitation flux
+        ep = fc * evap  # Potential evaporation flux
+        s = zeros(n, dtype=float64)  # Root zone storage state
         s[0] = 0.5  # Set the initial system state
-        r = zeros(n, dtype=float64)
-        ea = zeros(n, dtype=float64)
+        r = zeros(n, dtype=float64)  # Recharge flux
+        ea = zeros(n, dtype=float64)  # Actual evaporation flux
 
         for t in range(n - 1):
             # Make sure the reservoir is not too full or empty.
@@ -361,3 +378,12 @@ class Berendrecht(RechargeBase):
             # Calculate the
             s[t + 1] = s[t] + dt / de * (pe[t] - ea[t] - r[t])
         return r, s, ea, pe
+
+    def get_water_balance(self, prec, evap, p, dt=1.0, **kwargs):
+        r, s, ea, pe = self.get_recharge(prec, evap, fi=p[0], fc=p[1],
+                                         sr=p[2], de=p[3], l=p[4], m=p[5],
+                                         ks=p[6], dt=dt)
+        s = s * p[3]  # Because S is computed dimensionless in this model
+        data = DataFrame(data=vstack((s, pe, -ea, -r)).T,
+                         columns=["S", "Pe", "Ea", "R"])
+        return data

@@ -11,29 +11,25 @@ import pastas as ps
 
 ps.set_log_level("ERROR")
 
-# read observations and create the time series model
-obs = pd.read_csv("data/head_nb1.csv", index_col=0, parse_dates=True,
-                  squeeze=True)
+# read observations and create the time series model and make meters
+obs = pd.read_csv("data/B32C0639001.csv", parse_dates=['date'],
+                  index_col='date', squeeze=True)
 
 # Create the time series model
 ml = ps.Model(obs, name="head")
 
-# read weather data and make mm/d !!!
-rain = pd.read_csv("data/rain_nb1.csv", index_col=0, parse_dates=True,
-                   squeeze=True) * 1e3
-evap = pd.read_csv("data/evap_nb1.csv", index_col=0, parse_dates=True,
-                   squeeze=True) * 1e3
+# read weather data and make mm/d !
+evap = ps.read_knmi("data/etmgeg_260.txt", variables="EV24").series * 1e3
+rain = ps.read_knmi("data/etmgeg_260.txt", variables="RH").series * 1e3
 
 # Initialize recharge model and create stressmodel
 rch = ps.rch.FlexModel()
 # rch = ps.rch.Berendrecht()
+# rch = ps.rch.Linear()
 sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, recharge=rch)
 
 ml.add_stressmodel(sm)
 
-# Solve the model, first we solve without a noise model to get better initial
-# estimates of the parameters, and then with a noise model.
-ml.solve(noise=False, report=False)
-ml.solve(noise=True, initial=False)
+ml.solve(noise=True, tmin="1990")
 
 ml.plots.results()

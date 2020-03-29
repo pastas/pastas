@@ -1151,6 +1151,58 @@ class RechargeModel(StressModelBase):
         else:
             return self.temp.series
 
+    def get_water_balance(self, p=None, tmin=None, tmax=None, freq=None):
+        """
+        Internal method to obtain the water balance components.
+
+        Parameters
+        ----------
+        p: array, optional
+            array with the parameters values.
+        tmin: string, optional
+        tmax: string, optional
+        freq: string, optional
+
+        Returns
+        -------
+        wb: pandas.DataFrame
+            Dataframe with the water balance components, both fluxes and
+            states.
+
+        Notes
+        -----
+        This method return a data frame with all water balance components,
+        fluxes and states. All ingoing fluxes have a positive sign (e.g.,
+        precipitation) and all outgoing fluxes have negative sign (e.g.,
+        recharge).
+
+        Warning
+        -------
+        This is an experimental method and may change in the future.
+
+        Examples
+        --------
+        >>> sm = ps.RechargeModel(prec, evap, ps.Gamma, ps.rch.FlexModel(),
+        >>>                       name="rch")
+        >>> ml.add_stressmodel(sm)
+        >>> ml.solve()
+        >>> wb = sm.get_water_balance(ml.get_parameters("rch"))
+        >>> wb.plot(subplots=True)
+
+        """
+        if p is None:
+            p = self.parameters.initial.values
+
+        prec = self.get_stress(tmin=tmin, tmax=tmax, freq=freq,
+                               istress=0).values
+        evap = self.get_stress(tmin=tmin, tmax=tmax, freq=freq,
+                               istress=1).values
+
+        df = self.recharge.get_water_balance(prec=prec, evap=evap, temp=None,
+                                             p=p[-self.recharge.nparam:])
+        df.index = self.prec.series.index
+        return df
+
     def to_dict(self, series=True):
         data = {
             "stressmodel": self._name,
