@@ -256,6 +256,7 @@ class Model:
                     (stressmodel.tmax < self.oseries.series.index.min()):
                 self.logger.warning("The stress of the stressmodel has no "
                                     "overlap with ml.oseries.")
+        self.check_stressmodel_compatibility()
 
     def add_constant(self, constant):
         """Add a Constant to the time series Model.
@@ -273,6 +274,7 @@ class Model:
         """
         self.constant = constant
         self.parameters = self.get_init_parameters(initial=False)
+        self.check_stressmodel_compatibility()
 
     def add_transform(self, transform):
         """Add a Transform to the time series Model.
@@ -302,6 +304,7 @@ class Model:
         transform.set_model(self)
         self.transform = transform
         self.parameters = self.get_init_parameters(initial=False)
+        self.check_stressmodel_compatibility()
 
     def add_noisemodel(self, noisemodel):
         """Adds a noisemodel to the time series Model.
@@ -1793,3 +1796,10 @@ class Model:
         ml = load_model(self.to_dict())
         ml.name = name
         return ml
+
+    def check_stressmodel_compatibility(self):
+        """Internal method to check if the stressmodels are compatible with the
+        model."""
+        for sm in self.stressmodels.values():
+            if hasattr(sm, 'check_stressmodel_compatibility'):
+                sm.check_stressmodel_compatibility(self)
