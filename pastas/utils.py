@@ -498,6 +498,7 @@ def validate_name(name):
 
     return name
 
+
 def show_versions():
     from pastas import __version__ as ps_version
     from pandas import __version__ as pd_version
@@ -509,5 +510,3 @@ def show_versions():
     print("Scipy version: {}".format(sc_version))
     print("Pandas version: {}".format(pd_version))
     print("Pastas version: {}".format(ps_version))
-
-

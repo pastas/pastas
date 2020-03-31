@@ -79,7 +79,7 @@ class RechargeBase:
             columns=["initial", "pmin", "pmax", "vary", "name"])
         return parameters
 
-    def simulate(self, prec, evap, p, **kwargs):
+    def simulate(self, prec, evap, p, dt=1.0, **kwargs):
         pass
 
 
