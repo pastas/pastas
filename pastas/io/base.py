@@ -50,19 +50,18 @@ def load(fname, **kwargs):
 
     # Determine whether it is a Pastas Project or a Pastas Model
     if "models" in data.keys():
-        logger.warning("Deprecation Warning: the possibility to load a Pastas "
-                       "project with this method will be deprecated in v0.15. "
-                       "Please use ps.io.load_project.")
-        return load_project(fname=fname)
-    else:
-        ml = load_model(data)
+        msg = "Deprecation Warning: the possibility to load a Pastas project" \
+              "with this method is deprecated. Please use ps.io.load_project."
+        logger.error(msg)
+        raise DeprecationWarning(msg)
 
-        logger.info("Pastas Model from file {} successfully loaded. This file "
-                    "was created with was Pastas {}. Your current version of "
-                    "Pastas is: {}".format(fname,
-                                data["file_info"]["pastas_version"],
+    ml = load_model(data)
+
+    logger.info("Pastas Model from file {} successfully loaded. This file "
+                "was created with Pastas {}. Your current version of Pastas "
+                "is: {}".format(fname, data["file_info"]["pastas_version"],
                                 ps.__version__))
-        return ml
+    return ml
 
 
 def load_project(fname, **kwargs):
@@ -139,10 +138,9 @@ def load_project(fname, **kwargs):
             print("model", ml_name, "could not be added")
 
     logger.info("Pastas project from file {} successfully loaded. This file "
-                "was created with was Pastas{}. Your current version of "
-                "Pastas is: {}".format(fname,
-                                       data["file_info"]["pastas_version"],
-                                       ps.__version__))
+                "was created with Pastas {}. Your current version of Pastas "
+                "is: {}".format(fname, data["file_info"]["pastas_version"],
+                                ps.__version__))
 
     return mls
 

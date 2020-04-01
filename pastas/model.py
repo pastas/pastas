@@ -294,13 +294,6 @@ class Model:
         pastas.transform
 
         """
-        from inspect import isclass
-        if isclass(transform):
-            raise DeprecationWarning("Adding a transform as a class is "
-                                     "deprecated in v0.14 and will be "
-                                     "removed in v0.15. Please provide an "
-                                     "instance of the class.")
-        transform = transform
         transform.set_model(self)
         self.transform = transform
         self.parameters = self.get_init_parameters(initial=False)

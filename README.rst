@@ -42,8 +42,7 @@ Documentation & Examples
 Get in Touch
 ~~~~~~~~~~~~
 - Questions on Pastas can be asked and answered on `StackOverFlow <https://stackoverflow.com/questions/tagged/pastas>`_.
-- Bugs, feature requests and other improvements can be posted as the `Github
- Issues <https://github.com/pastas/pastas/issues>`_.
+- Bugs, feature requests and other improvements can be posted as the `Github Issues <https://github.com/pastas/pastas/issues>`_.
 - Pull requests will only be accepted on the development branch (dev) of this repository. Please take a look at the `developers section <http://pastas.readthedocs.io/>`_ on the documentation website for more information on how to develop Pastas.
 
 Quick installation guide
@@ -77,7 +76,7 @@ Dependencies
 ~~~~~~~~~~~~
 Pastas depends on a number of Python packages, of which all of the necessary are 
 automatically installed when using the pip install manager. To summarize, the 
-following pacakges are necessary for a minimal function installation of Pastas:
+following packages are necessary for a minimal function installation of Pastas:
 
 - numpy>=1.15
 - matplotlib>=2.0
