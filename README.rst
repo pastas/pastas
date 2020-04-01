@@ -5,8 +5,8 @@ PASTAS: HYDROLOGICAL TIME SERIES ANALYSIS
    :width: 200px
    :align: left
 
-.. image:: https://travis-ci.org/pastas/pastas.svg?branch=master
-                    :target: https://travis-ci.org/pastas/pastas
+.. image:: https://travis-ci.com/pastas/pastas.svg?branch=master
+                    :target: https://travis-ci.com/pastas/pastas
 .. image:: https://img.shields.io/pypi/v/pastas.svg
                     :target: https://pypi.python.org/pypi/pastas
 .. image:: https://img.shields.io/pypi/l/pastas.svg
@@ -14,11 +14,11 @@ PASTAS: HYDROLOGICAL TIME SERIES ANALYSIS
 .. image:: https://img.shields.io/pypi/pyversions/pastas
                     :target: https://pypi.python.org/pypi/pastas
 .. image:: https://img.shields.io/github/release/pastas/pastas.svg
-                    :target: https://github.com/pastas/pastas/releases
-.. image:: https://api.codacy.com/project/badge/Grade/0e0fad469a3c42a4a5c5d1c5fddd6bee
-                    :target: https://app.codacy.com/app/raoulcollenteur/pastas?utm_source=github.com&utm_medium=referral&utm_content=pastas/pastas&utm_campaign=Badge_Grade_Dashboard
-.. image:: https://api.codacy.com/project/badge/Coverage/911e51dab0dc4d4f8298e676c40d50ff
-                    :target: https://app.codacy.com/project/raoulcollenteur/pastas/dashboard
+                    :target: https://github.com/pastas/pastas/releases        
+.. image:: https://api.codacy.com/project/badge/Grade/952f41c453854064ba0ee1fa0a0b4434    
+                    :target: https://www.codacy.com/gh/pastas/pastas
+.. image:: https://api.codacy.com/project/badge/Coverage/952f41c453854064ba0ee1fa0a0b4434
+                    :target: https://www.codacy.com/gh/pastas/pastas
 .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1465866.svg
                     :target: https://doi.org/10.5281/zenodo.1465866
 .. image:: https://mybinder.org/badge_logo.svg
@@ -27,10 +27,10 @@ PASTAS: HYDROLOGICAL TIME SERIES ANALYSIS
 Pastas: what is it?
 ~~~~~~~~~~~~~~~~~~~
 Pastas is an open source python package for processing, simulating and analyzing 
-hydrological time series (models). The object oriented stucture allows for the 
-quick implementation of new model components. Time series models can be created,
-calibrated, and analysed with just a few lines of python code with the built-in 
-optimization, visualisation, and statistical analysis tools.
+hydrological time series (models). The object oriented structure allows for
+the quick implementation of new model components. Time series models can be
+created, calibrated, and analysed with just a few lines of python code with
+the built-in optimization, visualisation, and statistical analysis tools.
 
 Documentation & Examples
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -42,16 +42,18 @@ Documentation & Examples
 Get in Touch
 ~~~~~~~~~~~~
 - Questions on Pastas can be asked and answered on `StackOverFlow <https://stackoverflow.com/questions/tagged/pastas>`_.
-- Bugs, feature requests and other improvements can be posten as the `Github Issues <https://github.com/pastas/pastas/issues>`_.
+- Bugs, feature requests and other improvements can be posted as the `Github
+ Issues <https://github.com/pastas/pastas/issues>`_.
 - Pull requests will only be accepted on the development branch (dev) of this repository. Please take a look at the `developers section <http://pastas.readthedocs.io/>`_ on the documentation website for more information on how to develop Pastas.
 
 Quick installation guide
 ~~~~~~~~~~~~~~~~~~~~~~~~
-To install Pastas, a working version of Python 3.5, 3.6, or 3.7 has to be installed on 
-your computer. We recommend using the `Anaconda Distribution <https://www.continuum.io/downloads>`_
-with Python 3.7 as it includes most of the python package dependencies and the Jupyter
-Notebook software to run the notebooks. However, you are free to install any
-Python distribution you want.
+To install Pastas, a working version of Python 3.6, 3.7 or 3.8 has to be
+installed on your computer. We recommend using the `Anaconda Distribution
+<https://www.continuum.io/downloads>`_ with Python 3.7 as it includes most
+of the python package dependencies and the Jupyter Notebook software to run
+the notebooks. However, you are free to install any Python distribution you
+want.
 
 Stable version
 --------------
@@ -79,7 +81,7 @@ following pacakges are necessary for a minimal function installation of Pastas:
 
 - numpy>=1.15
 - matplotlib>=2.0
-- pandas>=0.23
+- pandas>=0.25
 - scipy>=1.1
 
 How to Cite Pastas?
@@ -94,7 +96,7 @@ To cite a specific version of Python, you can use the DOI provided for each offi
 
 License (MIT License)
 ~~~~~~~~~~~~~~~~~~~~~
-Copyright (c) 2016-2018 R.A. Collenteur, M. Bakker, R. Calje, F. Schaars
+Copyright (c) 2016-2020 R.A. Collenteur, M. Bakker, R. Calje, F. Schaars
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

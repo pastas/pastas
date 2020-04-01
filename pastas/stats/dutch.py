@@ -1,12 +1,26 @@
 """This module contains a set of Dutch Statistics which are commonly used in
 groundwater statistics.
 
-Authors: R. Calje, T. van Steijn and R. Collenteur
+.. codeauthor:: R. Calje, T. van Steijn and R. Collenteur
+
+.. currentmodule:: pastas.stats.dutch
+
+.. autosummary::
+   :nosignatures:
+   :toctree: generated/
+
+   q_ghg
+   q_glg
+   q_gvg
+   ghg
+   glg
+   gvg
+   gg
 
 """
 
 from numpy import nan
-from pandas import date_range, Series, to_timedelta
+from pandas import date_range, Series, Timedelta
 
 from ..utils import get_sample
 
@@ -14,10 +28,7 @@ from ..utils import get_sample
 # %% Some Dutch statistics
 def q_ghg(series, tmin=None, tmax=None, q=0.94, by_year=True):
     """Gemiddeld Hoogste Grondwaterstand (GHG) also called MHGL (Mean High
-    Groundwater Level). Approximated by taking quantiles of the
-    timeseries values per year and calculating the mean of the quantiles.
-
-    The series is first resampled to daily values.
+    Groundwater Level).
 
     Parameters
     ----------
@@ -29,16 +40,20 @@ def q_ghg(series, tmin=None, tmax=None, q=0.94, by_year=True):
         quantile fraction of exceedance (default 0.94)
     by_year: bool, optional
         Take average over quantiles per year (default True)
+
+    Notes
+    -----
+    Approximated by taking quantiles of the timeseries values per year and
+    calculating the mean of the quantiles. The series is first resampled to
+    daily values.
+
     """
     return __q_gxg__(series, q, tmin=tmin, tmax=tmax, by_year=by_year)
 
 
 def q_glg(series, tmin=None, tmax=None, q=0.06, by_year=True):
     """Gemiddeld Laagste Grondwaterstand (GLG) also called MLGL (Mean Low
-    Groundwater Level). Approximated by taking quantiles of the
-    timeseries values per year and calculating the mean of the quantiles.
-
-    The series is first resampled to daily values.
+    Groundwater Level).
 
     Parameters
     ----------
@@ -50,17 +65,20 @@ def q_glg(series, tmin=None, tmax=None, q=0.06, by_year=True):
         quantile, fraction of exceedance (default 0.06)
     by_year: bool, optional
         Take average over quantiles per year (default True)
+
+    Notes
+    -----
+    Approximated by taking quantiles of the timeseries values per year and
+    calculating the mean of the quantiles. The series is first resampled to
+    daily values.
+
     """
     return __q_gxg__(series, q, tmin=tmin, tmax=tmax, by_year=by_year)
 
 
 def q_gvg(series, tmin=None, tmax=None, by_year=True):
     """Gemiddeld Voorjaarsgrondwaterstand (GVG) also called MSGL (Mean
-    Spring Groundwater Level) approximated by taking the median of the
-    values in the period between 14 March and 15 April (after resampling to
-    daily values).
-
-    This function does not care about series length!
+    Spring Groundwater Level).
 
     Parameters
     ----------
@@ -70,6 +88,13 @@ def q_gvg(series, tmin=None, tmax=None, by_year=True):
     tmax: pandas.Timestamp, optional
     by_year: bool, optional
         Take average over quantiles per year (default True)
+
+    Notes
+    -----
+    Approximated by taking the median of the values in the period between 14
+    March and 15 April (after resampling to daily values). This function
+    does not care about series length!
+
     """
     if tmin is not None:
         series = series.loc[tmin:]
@@ -95,10 +120,6 @@ def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
         output='mean', min_n_meas=16, min_n_years=8, year_offset='a-mar'):
     """Calculate the 'Gemiddelde Hoogste Grondwaterstand' (Average High
     Groundwater Level)
-    
-    Classic method resampling the series to every 14th and 28th of
-    the month. Taking the mean of the mean of three highest values per
-    year.
 
     Parameters
     ----------
@@ -128,6 +149,11 @@ def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
     pd.Series or scalar
         Series of yearly values or mean of yearly values
 
+    Notes
+    -----
+    Classic method resampling the series to every 14th and 28th of the
+    month. Taking the mean of the mean of three highest values per year.
+
     """
 
     # mean_high = lambda s: s.nlargest(3).mean()
@@ -151,10 +177,7 @@ def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
 def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
         output='mean', min_n_meas=16, min_n_years=8, year_offset='a-mar'):
     """Calculate the 'Gemiddelde Laagste Grondwaterstand' (Average Low
-    Groundwater Level)
-    
-    Classic method resampling the series to every 14th and 28th of
-    the month. Taking the mean of the mean of three lowest values per year.
+    Groundwater Level).
 
     Parameters
     ----------
@@ -184,6 +207,11 @@ def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
     pd.Series or scalar
         Series of yearly values or mean of yearly values
 
+    Notes
+    -----
+    Classic method resampling the series to every 14th and 28th of
+    the month. Taking the mean of the mean of three lowest values per year.
+
     """
 
     # mean_low = lambda s: s.nsmallest(3).mean()
@@ -207,11 +235,7 @@ def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
 def gvg(series, tmin=None, tmax=None, fill_method='linear', limit=8,
         output='mean', min_n_meas=2, min_n_years=8, year_offset='a'):
     """Calculate the 'Gemiddelde Voorjaars Grondwaterstand' (Average Spring
-    Groundwater Level)
-    
-    Classic method resampling the series to every 14th and 28th of
-    the month. Taking the mean of the values on March 14, March 28 and
-    April 14.
+    Groundwater Level).
 
     Parameters
     ----------
@@ -241,6 +265,11 @@ def gvg(series, tmin=None, tmax=None, fill_method='linear', limit=8,
     pandas.Series or scalar
         Series of yearly values or mean of yearly values
 
+    Notes
+    -----
+    Classic method resampling the series to every 14th and 28th of the
+    month. Taking the mean of the values on March 14, March 28 and April 14.
+
     """
     return __gxg__(series, __mean_spring__, tmin=tmin, tmax=tmax,
                    fill_method=fill_method, limit=limit, output=output,
@@ -251,9 +280,6 @@ def gvg(series, tmin=None, tmax=None, fill_method='linear', limit=8,
 def gg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
        output='mean', min_n_meas=16, min_n_years=8, year_offset='a-mar'):
     """Calculate the 'Gemiddelde Grondwaterstand' (Average Groundwater Level)
-    
-    Classic method resampling the series to every 14th and 28th of
-    the month. Taking the mean of the mean of three lowest values per year.
 
     Parameters
     ----------
@@ -282,6 +308,11 @@ def gg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
     -------
     pd.Series or scalar
         Series of yearly values or mean of yearly values
+
+    Notes
+    -----
+    Classic method resampling the series to every 14th and 28th of
+    the month. Taking the mean of the mean of three lowest values per year.
 
     """
 
@@ -425,7 +456,7 @@ def __gxg__(series, year_agg, tmin, tmax, fill_method, limit, output,
             # only keep days with measurements
             series = series.dropna()
             # generate an index at the 14th and 28th of every month
-            buf = to_timedelta(8, 'd')
+            buf = Timedelta(8, 'd')
             ref_index = date_range(series.index.min() - buf,
                                    series.index.max() + buf)
             mask = [(x.day == 14) or (x.day == 28) for x in ref_index]

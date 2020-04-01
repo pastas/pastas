@@ -1,15 +1,5 @@
 nbsphinx
-
 nbsphinx_link
-
 Ipython
-
 ipykernel
-
-numpy>=1.15
-
-matplotlib>=2.0
-
-pandas>=0.23
-
-scipy>=1.1
+git+https://github.com/pandas-dev/pydata-sphinx-theme.git@master

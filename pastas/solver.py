@@ -5,6 +5,16 @@ All solvers inherit from the BaseSolver class, which contains general method
 for selecting the correct time series to misfit and options to weight the
 residuals or noise series.
 
+Supported Solvers
+-----------------
+.. autosummary::
+    :nosignatures:
+    :toctree: generated/
+
+    LeastSquares
+    LmfitSolve
+
+
 Examples
 --------
 To solve a model the following syntax can be used:
@@ -102,9 +112,10 @@ class BaseSolver:
 
         Returns
         -------
-        data: Pandas.DataFrame of length number of observations and two columns
-        labeled 0.025 and 0.975 (numerical values) containing the 2.5% and
-        97.5% prediction interval (for alpha=0.05)
+        data : Pandas.DataFrame
+            DataFrame of length number of observations and two columns labeled
+            0.025 and 0.975 (numerical values) containing the 2.5% and 97.5%
+            prediction interval (for alpha=0.05)
 
         Notes
         -----
@@ -266,7 +277,7 @@ class LeastSquares(BaseSolver):
     _name = "LeastSquares"
 
     def __init__(self, ml, pcov=None, nfev=None, **kwargs):
-        """Solver based on Scipy's least_squares method [1]_.
+        """Solver based on Scipy's least_squares method [scipy_ref]_.
 
         Notes
         -----
@@ -282,7 +293,7 @@ class LeastSquares(BaseSolver):
 
         References
         ----------
-        .. [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
+        .. [scipy_ref] https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
 
         """
         BaseSolver.__init__(self, ml=ml, pcov=pcov, nfev=nfev, **kwargs)
@@ -318,15 +329,14 @@ class LeastSquares(BaseSolver):
     def objfunction(self, parameters, noise, weights, callback):
         p = self.initial
         p[self.vary] = parameters
-        res = self.misfit(p, noise, weights, callback)
-        return res
+        return self.misfit(p, noise, weights, callback)
 
     def get_covariances(self, jacobian, cost, absolute_sigma=False):
         """Method to get the covariance matrix from the jacobian.
 
         Parameters
         ----------
-        jacobian: np.ndarray
+        jacobian: numpy.ndarray
         cost: float
         absolute_sigma: bool
             Default is False
@@ -338,7 +348,7 @@ class LeastSquares(BaseSolver):
 
         Notes
         -----
-        This method os copied from Scipy, please refer to:
+        This method is copied from Scipy, please refer to:
         https://github.com/scipy/scipy/blob/v1.0.0/scipy/optimize/optimize.py
 
         """
@@ -393,22 +403,21 @@ class LmfitSolve(BaseSolver):
             raise ImportError(msg)
         BaseSolver.__init__(self, ml=ml, pcov=pcov, nfev=nfev, **kwargs)
 
-    def solve(self, noise=True, weights=None, callback=None, **kwargs):
+    def solve(self, noise=True, weights=None, callback=None, method="leastsq",
+              **kwargs):
 
         # Deal with the parameters
         parameters = lmfit.Parameters()
-        p = self.ml.parameters[['initial', 'pmin', 'pmax', 'vary']]
+        p = self.ml.parameters.loc[:, ['initial', 'pmin', 'pmax', 'vary']]
         for k in p.index:
             pp = np.where(p.loc[k].isnull(), None, p.loc[k])
             parameters.add(k, value=pp[0], min=pp[1], max=pp[2], vary=pp[3])
 
-        # set ftol and epsfcn if no options for lmfit are provided. Only
-        # work with Lmfit's least squares solver method.
-        if not kwargs:
-            kwargs = {"ftol": 1e-3, "epsfcn": 1e-4}
-
-        self.result = lmfit.minimize(fcn=self.objfunction, params=parameters,
-                                     args=(noise, weights, callback), **kwargs)
+        # Create the Minimizer object and minimize
+        self.mini = lmfit.Minimizer(userfcn=self.objfunction, calc_covar=True,
+                                    fcn_args=(noise, weights, callback),
+                                    params=parameters, **kwargs)
+        self.result = self.mini.minimize(method=method)
 
         # Set all parameter attributes
         pcov = None
@@ -430,9 +439,13 @@ class LmfitSolve(BaseSolver):
         optimal = np.array([p.value for p in self.result.params.values()])
         stderr = np.array([p.stderr for p in self.result.params.values()])
 
-        return success, optimal, stderr
+        idx = None
+        if "is_weighted" in kwargs:
+            if not kwargs["is_weighted"]:
+                idx = -1
+
+        return success, optimal[:idx], stderr[:idx]
 
     def objfunction(self, parameters, noise, weights, callback):
         param = np.array([p.value for p in parameters.values()])
-        res = self.misfit(param, noise, weights, callback)
-        return res
+        return self.misfit(param, noise, weights, callback)

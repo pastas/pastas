@@ -45,8 +45,18 @@ def model_tmin_tmax(function):
 def PastasDeprecationWarning(function):
     @wraps(function)
     def _function(*args, **kwargs):
-        logger.warning("Deprecation warning: method will be deprecated "
-                       "in version 0.14.0.")
+        logger.warning("Deprecation warning: method is deprecated and will "
+                       "be removed in version 0.15.0.")
         return function(*args, **kwargs)
 
     return _function
+
+
+def njit(function):
+    try:
+        from numba import njit as jit
+        return jit(function)
+    except ImportError:
+        logger.warning("Numba is not installed. Installing Numba is "
+                       "recommended for significant speed-ups.")
+        return function

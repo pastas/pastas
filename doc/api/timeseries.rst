@@ -1,0 +1,4 @@
+TimeSeries
+==========
+
+.. automodule:: pastas.timeseries

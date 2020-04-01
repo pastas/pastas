@@ -1,9 +1,9 @@
 import logging
+from datetime import datetime, timedelta
 from logging import handlers
 
 import numpy as np
-from pandas import (Series, to_datetime, Timedelta, Timestamp, to_timedelta,
-                    date_range)
+from pandas import Series, to_datetime, Timedelta, Timestamp, date_range
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
 
@@ -11,8 +11,19 @@ logger = logging.getLogger(__name__)
 
 
 def frequency_is_supported(freq):
-    # TODO: Rename to get_frequency_string and change Returns-documentation
     """Method to determine if a frequency is supported for a  pastas-model.
+
+    Parameters
+    ----------
+    freq: str
+
+    Returns
+    -------
+    freq
+        String with the simulation frequency
+
+    Notes
+    -----
     Possible frequency-offsets are listed in:
     http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
     The frequency can be a multiple of these offsets, like '7D'. Because of the
@@ -28,21 +39,14 @@ def frequency_is_supported(freq):
     U, us	microseconds
     N	nanoseconds
 
-    Parameters
-    ----------
-    freq: str
+    TODO: Rename to get_frequency_string and change Returns-documentation
 
-    Returns
-    -------
-    boolean
-        True when frequency can be used as a simulation frequency
     """
-
     offset = to_offset(freq)
     if not hasattr(offset, 'delta'):
         logger.error("Frequency %s not supported." % freq)
     else:
-        if offset.n == 1:
+        if offset.n is 1:
             freq = offset.name
         else:
             freq = str(offset.n) + offset.name
@@ -50,9 +54,7 @@ def frequency_is_supported(freq):
 
 
 def get_stress_dt(freq):
-    """Internal method to obtain a timestep in days from a frequency string
-    derived by Pandas Infer method or supplied by the user as a TimeSeries
-    settings.
+    """Internal method to obtain a timestep in days from a frequency string.
 
     Parameters
     ----------
@@ -266,7 +268,7 @@ def timestep_weighted_resample_fast(series0, freq):
     series = series0.copy()
 
     # first mutiply by the timestep in the unit of freq
-    dt = np.diff(series0.index) / to_timedelta(1, freq)
+    dt = np.diff(series0.index) / Timedelta(1, freq)
     series[1:] = series[1:] * dt
 
     # get a new index
@@ -305,17 +307,26 @@ def excel2datetime(tindex, freq="D"):
     datetimes: pandas.datetimeindex
 
     """
-    datetimes = to_datetime('1899-12-30') + to_timedelta(tindex, freq)
+    datetimes = to_datetime('1899-12-30') + Timedelta(tindex, freq)
     return datetimes
 
 
-def matlab2datetime(tindex):
-    """ Transform a matlab time to a datetime, rounded to seconds
-
+def datenum_to_datetime(datenum):
     """
-    day = Timestamp.fromordinal(int(tindex))
-    dayfrac = Timedelta(days=float(tindex) % 1) - Timedelta(days=366)
-    return day + dayfrac
+    Convert Matlab datenum into Python datetime.
+    Parameters
+    ----------
+    datenum: float
+        date in datenum format
+
+    Returns
+    -------
+    datetime :
+        Datetime object corresponding to datenum.
+    """
+    days = datenum % 1.
+    return datetime.fromordinal(int(datenum)) \
+           + timedelta(days=days) - timedelta(days=366)
 
 
 def datetime2matlab(tindex):
@@ -486,3 +497,16 @@ def validate_name(name):
             logger.warning(msg)
 
     return name
+
+
+def show_versions():
+    from pastas import __version__ as ps_version
+    from pandas import __version__ as pd_version
+    from numpy import __version__ as np_version
+    from scipy import __version__ as sc_version
+    from sys import version as os_version
+    print("Python version: {}".format(os_version))
+    print("Numpy version: {}".format(np_version))
+    print("Scipy version: {}".format(sc_version))
+    print("Pandas version: {}".format(pd_version))
+    print("Pastas version: {}".format(ps_version))

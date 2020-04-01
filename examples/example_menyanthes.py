@@ -35,7 +35,7 @@ well = ps.TimeSeries(IN["values"], freq_original="M", settings="well")
 sm2 = ps.StressModel(well, ps.Hantush, 'Extraction_3', up=False)
 
 # add_stressmodels also allows addings multiple stressmodels at once
-ml.add_stressmodel(sm1, sm2)
+ml.add_stressmodel([sm1, sm2])
 
 # Solve
 ml.solve(tmax="1995")

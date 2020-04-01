@@ -1,12 +1,24 @@
 """This files contains the Project class that deals with multiple models at
 once.
 
+Warning
+-------
+This class will soon be deprecated and replaced by a separate Python package
+Pastastore that deals with large number of Pastas models. It is strongly
+recommended to switch to `Pastastore <https://github.com/pastas/pastastore>`_
+
 Notes
 -----
 This module is created at Artesia Water by Raoul Collenteur.
 
-Usage
------
+.. autosummary::
+    :nosignatures:
+    :toctree: ./generated
+
+    Project
+
+Example
+-------
 
 >>> mls = Project()
 
@@ -47,6 +59,10 @@ class Project:
             Dictionary with any metadata information on the project.
 
         """
+        logger.warning("DeprecationWarning: The Project class will be "
+                       "deprecated in a future version of Pastas (end of "
+                       "2020)! Consider switching to pastastore: "
+                       "https://github.com/pastas/pastastore.")
         self.models = {}
         self.name = name
 
@@ -650,7 +666,7 @@ class Project:
         data = self.to_dict(**kwargs)
         return dump(fname, data)
 
-    def to_dict(self, series=False, sim_series=False):
+    def to_dict(self, series=False):
         """Internal method to export a Pastas Project as a dictionary.
 
         Parameters
@@ -658,8 +674,6 @@ class Project:
         series: bool, optional
             export model input-series when True. Only export the name of
             the model input_series when False
-        sim_series: bool, optional
-            export model output-series when True
 
         Returns
         -------
@@ -678,8 +692,7 @@ class Project:
 
         # Add Models
         for name, ml in self.models.items():
-            data["models"][name] = ml.to_dict(series=series, file_info=False,
-                                              sim_series=sim_series)
+            data["models"][name] = ml.to_dict(series=series, file_info=False)
 
         return data
 
