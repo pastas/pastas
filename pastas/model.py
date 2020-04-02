@@ -837,14 +837,7 @@ class Model:
         >>> ml.set_initial("constant_d", 10)
 
         """
-        if move_bounds:
-            factor = value / self.parameters.loc[name, 'initial']
-            min_new = self.parameters.loc[name, 'pmin'] * factor
-            self.set_parameter(name, min_new, 'pmin')
-            max_new = self.parameters.loc[name, 'pmax'] * factor
-            self.set_parameter(name, max_new, 'pmax')
-
-        self.set_parameter(name, initial=value)
+        self.set_parameter(name, initial=value, move_bounds=move_bounds)
 
     def set_vary(self, name, value):
         """Method to set if the parameter is allowed to vary.
@@ -898,7 +891,7 @@ class Model:
         self.set_parameter(name, pmax=value)
 
     def set_parameter(self, name, initial=None, vary=None, pmin=None,
-                      pmax=None):
+                      pmax=None, move_bounds=False):
         """
         Method to change the parameter properties.
 
@@ -906,14 +899,17 @@ class Model:
         ----------
         name: str
             name of the parameter to update. This has to be a single variable.
-        initial: float
+        initial: float, optional
             parameters value to use as initial estimate.
-        vary: bool
+        vary: bool, optional
             boolean to vary a parameter (True) or not (False).
-        pmin: float
-            minimum value for the parameter. To set
-        pmax: float
+        pmin: float, optional
+            minimum value for the parameter.
+        pmax: float, optional
             maximum value for the parameter.
+        move_bounds: bool, optional
+            Reset pmin/pmax based on new initial value. Of move_bounds=True,
+            pmin and pmax must be None.
 
         Examples
         --------
@@ -948,6 +944,15 @@ class Model:
             obj = self.constant
         elif cat == transform:
             obj = self.transform
+
+        # Move pmin and pmax based on the initial
+        if move_bounds and initial:
+            if pmin or pmax:
+                raise KeyError("Either pmin/pmax or move_bounds must "
+                               "be provided, but not both.")
+            factor = initial / self.parameters.loc[name, 'initial']
+            pmin = self.parameters.loc[name, 'pmin'] * factor
+            pmax = self.parameters.loc[name, 'pmax'] * factor
 
         # Set the parameter properties
         if initial is not None:
