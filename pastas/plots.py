@@ -201,6 +201,7 @@ class Plotting:
 
         # Add a row for each stressmodel
         i = 0
+        axb = None
         for sm_name in self.ml.stressmodels:
             # get the step-response
             step = self.ml.get_step_response(sm_name, add_0=True)
@@ -246,7 +247,8 @@ class Plotting:
         ax1.minorticks_off()
 
         ax1.set_xlim(tmin, tmax)
-        axb.set_xlim(0, rmax)
+        if axb is not None:
+            axb.set_xlim(0, rmax)
 
         fig.tight_layout(pad=0.0)
 
