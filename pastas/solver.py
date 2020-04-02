@@ -134,7 +134,7 @@ class BaseSolver:
         rv = data.quantile(q, axis=1).transpose()
         return rv
 
-    def ci_simulation(self, n=None, alpha=0.05, **kwargs):
+    def ci_simulation(self, n=1000, alpha=0.05, **kwargs):
         """Method to calculate the confidence interval for the simulation.
 
         Returns
@@ -151,19 +151,19 @@ class BaseSolver:
         return self.get_confidence_interval(func=self.ml.simulate, n=n,
                                             alpha=alpha, **kwargs)
 
-    def ci_block_response(self, name, n=None, alpha=0.05, **kwargs):
+    def ci_block_response(self, name, n=1000, alpha=0.05, **kwargs):
         dt = self.ml.get_block_response(name=name).index.values
         return self.get_confidence_interval(func=self.ml.get_block_response,
                                             n=n, alpha=alpha, name=name, dt=dt,
                                             **kwargs)
 
-    def ci_step_response(self, name, n=None, alpha=0.05, **kwargs):
+    def ci_step_response(self, name, n=1000, alpha=0.05, **kwargs):
         dt = self.ml.get_block_response(name=name).index.values
         return self.get_confidence_interval(func=self.ml.get_step_response,
                                             n=n, alpha=alpha, name=name,
                                             dt=dt, **kwargs)
 
-    def ci_contribution(self, name, n=None, alpha=0.05, **kwargs):
+    def ci_contribution(self, name, n=1000, alpha=0.05, **kwargs):
         return self.get_confidence_interval(func=self.ml.get_contribution, n=n,
                                             alpha=alpha, name=name, **kwargs)
 
@@ -209,12 +209,16 @@ class BaseSolver:
         par = self.ml.get_parameters(name=name)
         pcov = self.get_covariance_matrix(name=name)
 
-        p = self.ml.parameters.loc[self.ml.parameters.name == name]
+        if name is None:
+            p = self.ml.parameters
+        else:
+            p = self.ml.parameters.loc[self.ml.parameters.name == name]
+
         pmin = p.pmin.fillna(-np.inf).values
         pmax = p.pmax.fillna(np.inf).values
 
         if n is None:
-            n = 10 ** par.size
+            n = 10 ** p.vary.sum()  # only use parameters that are varied.
 
         samples = np.zeros((0, par.size))
 
