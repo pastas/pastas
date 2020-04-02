@@ -517,7 +517,7 @@ class StepModel(StressModelBase):
     """
     _name = "StepModel"
 
-    def __init__(self, tstart, name, rfunc=One, up=None, cutoff=None):
+    def __init__(self, tstart, name, rfunc=One, up=True, cutoff=0.999):
         rfunc = rfunc(up=up, cutoff=cutoff, meanstress=1.0)
 
         StressModelBase.__init__(self, name=name, tmin=Timestamp.min,
