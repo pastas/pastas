@@ -844,7 +844,7 @@ class Model:
             max_new = self.parameters.loc[name, 'pmax'] * factor
             self.set_parameter(name, max_new, 'pmax')
 
-        self.set_parameter(name, value, "initial")
+        self.set_parameter(name, initial=value)
 
     def set_vary(self, name, value):
         """Method to set if the parameter is allowed to vary.
@@ -861,7 +861,7 @@ class Model:
         >>> ml.set_vary("constant_d", False)
 
         """
-        self.set_parameter(name, bool(value), "vary")
+        self.set_parameter(name, vary=bool(value))
 
     def set_pmin(self, name, value):
         """Method to set the minimum value of a parameter.
@@ -878,7 +878,7 @@ class Model:
         >>> ml.set_pmin("constant_d", -10)
 
         """
-        self.set_parameter(name, value, "pmin")
+        self.set_parameter(name, pmin=value)
 
     def set_pmax(self, name, value):
         """Method to set the maximum values of a parameter.
@@ -895,10 +895,36 @@ class Model:
         >>> ml.set_pmax("constant_d", 10)
 
         """
-        self.set_parameter(name, value, "pmax")
+        self.set_parameter(name, pmax=value)
 
-    def set_parameter(self, name, value, kind):
-        """Internal method to set the parameter value for some kind.
+    def set_parameter(self, name, initial=None, vary=None, pmin=None,
+                      pmax=None):
+        """
+        Method to change the parameter properties.
+
+        Parameters
+        ----------
+        name: str
+            name of the parameter to update. This has to be a single variable.
+        initial: float
+            parameters value to use as initial estimate.
+        vary: bool
+            boolean to vary a parameter (True) or not (False).
+        pmin: float
+            minimum value for the parameter. To set
+        pmax: float
+            maximum value for the parameter.
+
+        Examples
+        --------
+        ml.set_parameter(name="constant_d", initial=10, vary=True, pmin=-10,
+                         pmax=20)
+
+        Note
+        ----
+        It is highly recommended to use this method to set parameter
+        properties. Changing the parameter properties directly in the
+        parameter `DataFrame` may not work as expected.
 
         """
         if name not in self.parameters.index:
@@ -906,25 +932,36 @@ class Model:
             self.logger.error(msg)
             raise KeyError(msg)
 
-        cat = self.parameters.loc[name, "name"]
-
         # Because either of the following is not necessarily present
         noisemodel = self.noisemodel.name if self.noisemodel else "NotPresent"
         constant = self.constant.name if self.constant else "NotPresent"
         transform = self.transform.name if self.transform else "NotPresent"
 
+        # Get the model component for the parameter
+        cat = self.parameters.loc[name, "name"]
+
         if cat in self.stressmodels.keys():
-            self.stressmodels[cat].__getattribute__("set_" + kind)(name, value)
-            self.parameters.loc[name, kind] = value
+            obj = self.stressmodels[cat]
         elif cat == noisemodel:
-            self.noisemodel.__getattribute__("set_" + kind)(name, value)
-            self.parameters.loc[name, kind] = value
+            obj = self.noisemodel
         elif cat == constant:
-            self.constant.__getattribute__("set_" + kind)(name, value)
-            self.parameters.loc[name, kind] = value
+            obj = self.constant
         elif cat == transform:
-            self.transform.__getattribute__("set_" + kind)(name, value)
-            self.parameters.loc[name, kind] = value
+            obj = self.transform
+
+        # Set the parameter properties
+        if initial is not None:
+            obj.set_initial(name, initial)
+            self.parameters.loc[name, "initial"] = initial
+        if vary is not None:
+            obj.set_vary(name, vary)
+            self.parameters.loc[name, "vary"] = bool(vary)
+        if pmin is not None:
+            obj.set_pmin(name, pmin)
+            self.parameters.loc[name, "pmin"] = pmin
+        if pmax is not None:
+            obj.set_pmax(name, pmax)
+            self.parameters.loc[name, "pmax"] = pmax
 
     def _set_freq(self):
         """Internal method to set the frequency in the settings. This is
