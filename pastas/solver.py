@@ -202,18 +202,38 @@ class BaseSolver:
 
         Returns
         -------
-        ndarray
+        numpy.ndarray
             Numpy array with N parameter samples.
 
         """
         par = self.ml.get_parameters(name=name)
         pcov = self.get_covariance_matrix(name=name)
 
+        p = self.ml.parameters.loc[self.ml.parameters.name == name]
+        pmin = p.pmin.fillna(-np.inf).values
+        pmax = p.pmax.fillna(np.inf).values
+
         if n is None:
             n = 10 ** par.size
 
-        return np.random.multivariate_normal(par, pcov, n,
-                                             check_valid="ignore")
+        samples = np.zeros((0, par.size))
+
+        # Start truncated multivariate sampling
+        it = 0
+        while samples.shape[0] < n:
+            s = np.random.multivariate_normal(par, pcov, size=(n,),
+                                              check_valid="ignore")
+            accept = s[(np.min(s - pmin, axis=1) >= 0) &
+                       (np.max(s - pmax, axis=1) <= 0)]
+            samples = np.concatenate((samples, accept), axis=0)
+
+            # Make sure there's no endless while loop
+            if it > 10:
+                break
+            else:
+                it += 1
+
+        return samples[:n, :]
 
     def get_covariance_matrix(self, name=None):
         """Internal method to obtain the covariance matrix from the model.
@@ -236,7 +256,7 @@ class BaseSolver:
         else:
             params = self.ml.parameters.index
 
-        pcov = self.pcov.loc[params, params].fillna(0)
+        pcov = self.pcov.reindex(index=params, columns=params).fillna(0)
 
         return pcov
 
