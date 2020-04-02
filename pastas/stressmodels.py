@@ -66,14 +66,16 @@ class StressModelBase:
     """
     _name = "StressModelBase"
 
-    def __init__(self, rfunc, name, tmin, tmax, up, meanstress, cutoff):
-        self.rfunc = rfunc(up, meanstress, cutoff)
-        self.parameters = DataFrame(
-            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+    def __init__(self, name, tmin, tmax, rfunc=None):
         self.name = validate_name(name)
         self.tmin = tmin
         self.tmax = tmax
         self.freq = None
+
+        self.rfunc = rfunc
+        self.parameters = DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+
         self.stress = []
 
     @property
@@ -274,9 +276,11 @@ class StressModel(StressModelBase):
         if meanstress is None:
             meanstress = stress.series.std()
 
-        StressModelBase.__init__(self, rfunc, name, stress.series.index.min(),
-                                 stress.series.index.max(), up, meanstress,
-                                 cutoff)
+        rfunc = rfunc(up=up, cutoff=cutoff, meanstress=meanstress)
+
+        StressModelBase.__init__(self, name=name,
+                                 tmin=stress.series.index.min(),
+                                 tmax=stress.series.index.max(), rfunc=rfunc)
         self.freq = stress.settings["freq"]
         self.stress = [stress]
         self.set_init_parameters()
@@ -406,8 +410,10 @@ class StressModel2(StressModelBase):
         if meanstress is None:
             meanstress = (stress0.series - stress1.series).std()
 
-        StressModelBase.__init__(self, rfunc, name, index.min(), index.max(),
-                                 up, meanstress, cutoff)
+        rfunc = rfunc(up=up, cutoff=cutoff, meanstress=meanstress)
+
+        StressModelBase.__init__(self, name=name, tmin=index.min(),
+                                 tmax=index.max(), rfunc=rfunc)
         self.stress.append(stress0)
         self.stress.append(stress1)
 
@@ -498,7 +504,7 @@ class StepModel(StressModelBase):
         String with the name of the stressmodel.
     rfunc: pastas.rfunc.RfuncBase, optional
         Pastas response function used to simulate the effect of the step.
-        Default is rfunc.One(), an instant effect.
+        Default is rfunc.One, an instant effect.
     up: bool, optional
         Force a direction of the step. Default is None.
 
@@ -511,9 +517,11 @@ class StepModel(StressModelBase):
     """
     _name = "StepModel"
 
-    def __init__(self, tstart, name, rfunc=One, up=None):
-        StressModelBase.__init__(self, rfunc, name, Timestamp.min,
-                                 Timestamp.max, up, 1.0, 0.999)
+    def __init__(self, tstart, name, rfunc=One, up=None, cutoff=None):
+        rfunc = rfunc(up=up, cutoff=cutoff, meanstress=1.0)
+
+        StressModelBase.__init__(self, name=name, tmin=Timestamp.min,
+                                 tmax=Timestamp.max, rfunc=rfunc)
         self.tstart = Timestamp(tstart)
         self.set_init_parameters()
 
@@ -565,8 +573,8 @@ class LinearTrend(StressModelBase):
     _name = "LinearTrend"
 
     def __init__(self, start, end, name="linear_trend"):
-        StressModelBase.__init__(self, One, name, Timestamp.min,
-                                 Timestamp.max, 1, 0, 0)
+        StressModelBase.__init__(self, name=name, tmin=Timestamp.min,
+                                 tmax=Timestamp.max)
         self.start = start
         self.end = end
         self.set_init_parameters()
@@ -628,12 +636,14 @@ class Constant(StressModelBase):
     _name = "Constant"
 
     def __init__(self, name="constant", initial=0.0):
-        StressModelBase.__init__(self, One, name, Timestamp.min,
-                                 Timestamp.max, None, initial, 0)
+        StressModelBase.__init__(self, name=name, tmin=Timestamp.min,
+                                 tmax=Timestamp.max)
+        self.initial = initial
         self.set_init_parameters()
 
     def set_init_parameters(self):
-        self.parameters = self.rfunc.get_init_parameters(self.name)
+        self.parameters.loc[self.name + '_d'] = (
+            self.initial, np.nan, np.nan, True, self.name)
 
     @staticmethod
     def simulate(p=None):
@@ -712,12 +722,10 @@ class WellModel(StressModelBase):
             self.distances = distances
 
         meanstress = np.max([s.series.std() for s in stress])
+        rfunc = rfunc(up=up, cutoff=cutoff, meanstress=meanstress)
 
-        tmin = Timestamp.min
-        tmax = Timestamp.max
-
-        StressModelBase.__init__(self, rfunc, name, tmin, tmax,
-                                 up, meanstress, cutoff)
+        StressModelBase.__init__(self, name=name, tmin=Timestamp.min,
+                                 tmax=Timestamp.max, rfunc=rfunc)
 
         self.stress = stress
         self.freq = self.stress[0].settings["freq"]
@@ -880,8 +888,8 @@ class FactorModel(StressModelBase):
 
         tmin = stress.series_original.index.min()
         tmax = stress.series_original.index.max()
-        StressModelBase.__init__(self, One, name, tmin=tmin, tmax=tmax,
-                                 up=True, meanstress=1, cutoff=0.999)
+
+        StressModelBase.__init__(self, name=name, tmin=tmin, tmax=tmax)
         self.value = 1.  # Initial value
         self.stress = [stress]
         self.set_init_parameters()
@@ -1031,10 +1039,10 @@ class RechargeModel(StressModelBase):
         meanstress = self.get_stress(p=p, tmin=index.min(), tmax=index.max(),
                                      freq=self.prec.settings["freq"]).std()
 
-        StressModelBase.__init__(self, rfunc=rfunc, name=name,
-                                 tmin=index.min(), tmax=index.max(),
-                                 meanstress=meanstress, cutoff=cutoff,
-                                 up=True)
+        rfunc = rfunc(up=True, cutoff=cutoff, meanstress=meanstress)
+
+        StressModelBase.__init__(self, name=name, tmin=index.min(),
+                                 tmax=index.max(), rfunc=rfunc)
 
         self.stress = [self.prec, self.evap]
         if self.temp:
@@ -1284,7 +1292,7 @@ class TarsoModel(RechargeModel):
                                       "Exponential!")
         self.dmin = dmin
         self.dmax = dmax
-        super().__init__(prec, evap, rfunc=rfunc, **kwargs)
+        super().__init__(prec=prec, evap=evap, rfunc=rfunc, **kwargs)
 
     def set_init_parameters(self):
         # parameters for the first drainage level
