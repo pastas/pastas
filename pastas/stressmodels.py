@@ -444,14 +444,14 @@ class StressModel2(StressModelBase):
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
         b = self.get_block(p[:-1], dt, tmin, tmax)
         stress = self.get_stress(p=p, istress=istress)
+        if istress == 1:
+            stress = p[-1] * stress
         npoints = stress.index.size
         h = Series(data=fftconvolve(stress, b, 'full')[:npoints],
                    index=stress.index, name=self.name, fastpath=True)
         if istress is not None:
             if self.stress[istress].name is not None:
                 h.name = h.name + ' (' + self.stress[istress].name + ')'
-        # see whether it makes a difference to subtract gain * mean_stress
-        # h -= self.rfunc.gain(p) * stress.mean()
         return h
 
     def get_stress(self, p=None, istress=None, **kwargs):
@@ -462,7 +462,7 @@ class StressModel2(StressModelBase):
         elif istress == 0:
             return self.stress[0].series
         else:
-            return p[-1] * self.stress[1].series
+            return self.stress[1].series
 
     def to_dict(self, series=True):
         """Method to export the StressModel object.
@@ -1041,8 +1041,10 @@ class RechargeModel(StressModelBase):
             self.stress.append(self.temp)
         self.freq = self.prec.settings["freq"]
         self.set_init_parameters()
-
-        self.nsplit = 1
+        if isinstance(self.recharge, Linear):
+            self.nsplit = 2
+        else:
+            self.nsplit = 1
 
     def set_init_parameters(self):
         """Internal method to set the initial parameters."""
@@ -1072,7 +1074,8 @@ class RechargeModel(StressModelBase):
         if "freq" in kwargs:
             self.freq = kwargs["freq"]
 
-    def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1.0):
+    def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1.0,
+                 istress=None):
         """Method to simulate the contribution of recharge to the head.
 
         Parameters
@@ -1093,11 +1096,22 @@ class RechargeModel(StressModelBase):
         if p is None:
             p = self.parameters.initial.values
         b = self.get_block(p[:-self.recharge.nparam], dt, tmin, tmax)
-        stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq).values
-        return Series(data=fftconvolve(stress, b, 'full')[:stress.size],
+        stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq,
+                                 istress=istress).values
+        if istress == 1:
+            # this can only happen when Linear is used as the recharge model
+            stress = stress * p[-1]
+
+        h = Series(data=fftconvolve(stress, b, 'full')[:stress.size],
                       index=self.prec.series.index, name=self.name,
                       fastpath=True)
 
+        if istress is not None:
+            if self.stress[istress].name is not None:
+                h.name = h.name + ' (' + self.stress[istress].name + ')'
+
+        return h
+    
     def get_stress(self, p=None, tmin=None, tmax=None, freq=None,
                    istress=None, **kwargs):
         """Method to obtain the recharge stress calculated by the recharge
