@@ -1087,6 +1087,8 @@ class RechargeModel(StressModelBase):
         freq: string, optional
         dt: float, optional
             Time step to use in the recharge calculation.
+        istress: int, optional
+            This only works for the Linear model!
 
         Returns
         -------
@@ -1098,20 +1100,18 @@ class RechargeModel(StressModelBase):
         b = self.get_block(p[:-self.recharge.nparam], dt, tmin, tmax)
         stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq,
                                  istress=istress).values
-        if istress == 1:
-            # this can only happen when Linear is used as the recharge model
-            stress = stress * p[-1]
-
-        h = Series(data=fftconvolve(stress, b, 'full')[:stress.size],
-                      index=self.prec.series.index, name=self.name,
-                      fastpath=True)
+        name = self.name
 
         if istress is not None:
+            if istress is 1 and self.nsplit > 1:
+                # only happen when Linear is used as the recharge model
+                stress = stress * p[-1]
             if self.stress[istress].name is not None:
-                h.name = h.name + ' (' + self.stress[istress].name + ')'
+                name = "{} ({})".format(self.name, self.stress[istress].name)
 
-        return h
-    
+        return Series(data=fftconvolve(stress, b, 'full')[:stress.size],
+                      index=self.prec.series.index, name=name, fastpath=True)
+
     def get_stress(self, p=None, tmin=None, tmax=None, freq=None,
                    istress=None, **kwargs):
         """Method to obtain the recharge stress calculated by the recharge
@@ -1121,12 +1121,12 @@ class RechargeModel(StressModelBase):
         ----------
         p: array, optional
             array with the parameters values. Must be the length self.nparam.
-        istress: int, optional
-            Return one of the stresses used for the recharge calculation.
-            0 for precipitation, 1 for evaporation and 2 for temperature.
         tmin: string, optional
         tmax: string, optional
         freq: string, optional
+        istress: int, optional
+            Return one of the stresses used for the recharge calculation.
+            0 for precipitation, 1 for evaporation and 2 for temperature.
         kwargs
 
         Returns
