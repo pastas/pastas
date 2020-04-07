@@ -57,7 +57,7 @@ class BaseSolver:
 
     """
 
-    def __init__(self, ml, pcov=None, nfev=None, **kwargs):
+    def __init__(self, ml, pcov=None, nfev=None, obj_func=None, **kwargs):
         self.ml = ml
         self.pcov = pcov  # Covariances of the parameters
         if pcov is None:
@@ -65,6 +65,7 @@ class BaseSolver:
         else:
             self.pcor = self.get_correlations(pcov)
         self.nfev = nfev  # number of function evaluations
+        self.obj_func = obj_func
         self.result = None  # Object returned by the optimization method
 
     def misfit(self, parameters, noise, weights=None, callback=None):
@@ -218,7 +219,7 @@ class BaseSolver:
         pmax = p.pmax.fillna(np.inf).values
 
         if n is None:
-            n = 10 ** p.vary.sum()  # only use parameters that are varied.
+            n = int(10 ** p.vary.sum()) # only use parameters that are varied.
 
         samples = np.zeros((0, par.size))
 
@@ -292,7 +293,8 @@ class BaseSolver:
         data = {
             "name": self._name,
             "pcov": self.pcov,
-            "nfev": self.nfev
+            "nfev": self.nfev,
+            "obj_func": self.obj_func
         }
         return data
 
@@ -340,6 +342,7 @@ class LeastSquares(BaseSolver):
                               index=parameters.index, columns=parameters.index)
         self.pcor = self.get_correlations(self.pcov)
         self.nfev = self.result.nfev
+        self.obj_func = self.result.cost
 
         # Prepare return values
         success = self.result.success
@@ -455,6 +458,7 @@ class LmfitSolve(BaseSolver):
 
         # Set all optimization attributes
         self.nfev = self.result.nfev
+        self.obj_func = self.result.chisqr
 
         if hasattr(self.result, "success"):
             success = self.result.success

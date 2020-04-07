@@ -1642,7 +1642,8 @@ class Model:
                                    self.settings["noise"] else np.nan),
             "BIC": "{:.2f}".format(self.stats.bic() if
                                    self.settings["noise"] else np.nan),
-            "___": "", "___ ": "", "___  ": ""  # Make columns equal
+            "Obj": "{:.2f}".format(self.fit.obj_func),
+            "___": "", "___ ": "",  # Make columns equal
         }
 
         parameters = self.parameters.loc[:, ["optimal", "stderr",
