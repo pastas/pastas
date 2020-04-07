@@ -1443,7 +1443,7 @@ class Model:
         response: pandas.Series
 
         """
-        if not hasattr(self.stressmodels[name], "rfunc"):
+        if self.stressmodels[name].rfunc is None:
             raise TypeError("Stressmodel {} has no rfunc".format(name))
         else:
             block_or_step = getattr(self.stressmodels[name].rfunc,
