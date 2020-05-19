@@ -24,7 +24,7 @@ import numpy as np
 from pandas import DataFrame
 from scipy.integrate import quad
 from scipy.special import gammainc, gammaincinv, k0, exp1, erfc, lambertw, \
-    erfcinv
+    erfcinv, expi
 
 __all__ = ["Gamma", "Exponential", "Hantush", "Polder", "FourParam",
            "DoubleExponential", "One", "Edelman", "HantushWellModel"]
@@ -862,4 +862,43 @@ class Edelman(RfuncBase):
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
         t = self.get_t(p, dt, cutoff, maxtmax)
         s = erfc(1 / (p[0] * np.sqrt(t)))
+        return s
+
+
+class FerrisKnowles(RfuncBase):
+    """Well response according to Ferris and Knowles.
+
+        Notes
+    -----
+    The Edelman function is emplained in [6]_. It's parameters are:
+
+    .. math:: theta(t, \alpha, \beta) = \frac{\alpha}{t} \exp(\frac{-\beta}{t})
+
+    References
+    ----------
+    .. [6] Shapoori, V., Peterson, T.J., Western, A.W. et al. Top-down
+    groundwater hydrograph time-series modeling for climate-pumping
+    decomposition. Hydrogeol J 23, 819–836 (2015).
+
+    """
+    _name = "FerrisKnowles"
+
+    def __init__(self, up=True, meanstress=1, cutoff=0.999):
+        RfuncBase.__init__(self, up, meanstress, cutoff)
+        self.nparam = 2
+
+    def get_init_parameters(self, name):
+        parameters = DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        if self.up:
+            parameters.loc[name + '_alpha'] = (0.1, 0, 1000, True, name)
+            parameters.loc[name + '_beta'] = (0.001, 0, 1000, True, name)
+        elif self.up is False:
+            parameters.loc[name + '_alpha'] = (-0.1, -1000, 0, True, name)
+            parameters.loc[name + '_beta'] = (-0.001, -1000, 0, True, name)
+        return parameters
+
+    def step(self, p, dt=1, cutoff=None, maxtmax=None):
+        t = np.arange(1, 10000)  # Can't determine tmax for indefinite integral
+        s = -p[0] * expi(-p[1] / t)
         return s
