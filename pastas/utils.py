@@ -499,14 +499,21 @@ def validate_name(name):
     return name
 
 
-def show_versions():
+def show_versions(lmfit=False, numba=False):
     from pastas import __version__ as ps_version
     from pandas import __version__ as pd_version
     from numpy import __version__ as np_version
     from scipy import __version__ as sc_version
     from sys import version as os_version
+
     print("Python version: {}".format(os_version))
     print("Numpy version: {}".format(np_version))
     print("Scipy version: {}".format(sc_version))
     print("Pandas version: {}".format(pd_version))
     print("Pastas version: {}".format(ps_version))
+    if lmfit:
+        from lmfit import __version__ as lm_version
+        print("lmfit version: ", lm_version)
+    if numba:
+        from numba import __version__ as nb_version
+        print("numba version: ", nb_version)
