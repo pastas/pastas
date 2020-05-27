@@ -29,11 +29,11 @@ pastas.model.Model.add_noisemodel
 """
 
 import numpy as np
-from pandas import Timedelta, DataFrame
+from pandas import Timedelta, DataFrame, Series
 
-from .decorators import set_parameter
+from .decorators import set_parameter, njit
 
-__all__ = ["NoiseModel", "NoiseModel2"]
+__all__ = ["NoiseModel", "NoiseModel2", "ArmaModel"]
 
 
 class NoiseModelBase:
@@ -251,3 +251,57 @@ class NoiseModel2(NoiseModelBase):
         res.iloc[0] = 0
         res.name = "Noise"
         return res
+
+
+class ArmaModel(NoiseModelBase):
+    """
+    ARMA(1,1) Noise model to simulate the noise.
+
+    Notes
+    -----
+    Calculates the noise according to:
+
+    .. math::
+
+        \\upsilon_t = r_t - r_{t-1} e^{-\\Delta t/\\alpha} - \\upsilon_{t-1}
+        e^{-\\Delta t/\\theta}
+
+    The unit of the alpha parameter is always in days.
+
+    Warnings
+    --------
+    This model has only been tested on regular time steps.
+
+    """
+    _name = "ArmaModel"
+
+    def __init__(self):
+        NoiseModelBase.__init__(self)
+        self.nparam = 2
+        self.set_init_parameters()
+
+    def set_init_parameters(self, oseries=None):
+        self.parameters.loc["noise_alpha"] = (0.5, 1e-5, np.inf, True, "noise")
+        self.parameters.loc["noise_theta"] = (0.5, 1e-5, np.inf, True, "noise")
+
+    def simulate(self, res, parameters):
+        alpha = parameters[0]
+        theta = parameters[1]
+
+        # Calculate the time steps
+        odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
+        a = self.calculate_noise(res.values, odelt, alpha, theta)
+
+        return Series(index=res.index, data=a, name="Noise")
+
+    @staticmethod
+    @njit
+    def calculate_noise(res, odelt, alpha, theta):
+        # Create an array to store the noise
+        a = np.zeros_like(res)
+
+        # We have to loop through each value
+        for i in range(1, res.size):
+            a[i] = res[i] - res[i - 1] * np.exp(-odelt[i - 1] / alpha) - \
+                   a[i - 1] * np.exp(-odelt[i - 1] / theta)
+        return a
