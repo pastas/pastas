@@ -185,6 +185,13 @@ class StressModelBase:
             Pandas dataframe of the stress(es)
 
         """
+        if tmin is None:
+            tmin = self.tmin
+        if tmax is None:
+            tmax = self.tmax
+
+        self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
+
         return self.stress[0].series
 
     def to_dict(self, series=True):
@@ -447,9 +454,9 @@ class StressModel2(StressModelBase):
             The simulated head contribution.
 
         """
-        self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
         b = self.get_block(p[:-1], dt, tmin, tmax)
-        stress = self.get_stress(p=p, istress=istress)
+        stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq,
+                                 istress=istress)
         if istress == 1:
             stress = p[-1] * stress
         npoints = stress.index.size
@@ -460,7 +467,15 @@ class StressModel2(StressModelBase):
                 h.name = h.name + ' (' + self.stress[istress].name + ')'
         return h
 
-    def get_stress(self, p=None, istress=None, **kwargs):
+    def get_stress(self, p=None, tmin=None, tmax=None, freq=None,
+                   istress=None, **kwargs):
+        if tmin is None:
+            tmin = self.tmin
+        if tmax is None:
+            tmax = self.tmax
+
+        self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
+
         if istress is None:
             if p is None:
                 p = self.parameters.initial.values
@@ -743,10 +758,10 @@ class WellModel(StressModelBase):
 
     def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1,
                  istress=None):
-        self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
-        h = Series(data=0, index=self.stress[0].series.index, name=self.name)
-        stresses = self.get_stress(istress=istress)
+        stresses = self.get_stress(tmin=tmin, tmax=tmax, freq=freq,
+                                   istress=istress)
         distances = self.get_distances(istress=istress)
+        h = Series(data=0, index=self.stress[0].series.index, name=self.name)
         for stress, r in zip(stresses, distances):
             npoints = stress.index.size
             p_with_r = np.concatenate([p, np.asarray([r])])
@@ -794,7 +809,15 @@ class WellModel(StressModelBase):
                          "Series, dict or list.")
         return data
 
-    def get_stress(self, p=None, istress=None, **kwargs):
+    def get_stress(self, p=None, tmin=None, tmax=None, freq=None,
+                   istress=None, **kwargs):
+        if tmin is None:
+            tmin = self.tmin
+        if tmax is None:
+            tmax = self.tmax
+
+        self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
+
         if istress is None:
             return [s.series for s in self.stress]
         else:
