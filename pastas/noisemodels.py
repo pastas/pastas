@@ -193,7 +193,6 @@ class NoiseModel(NoiseModelBase):
         w = np.exp(power * np.sum(np.log(1.0 - exp))) / np.sqrt(1.0 - exp)
         return w
 
-
 class NoiseModel2(NoiseModelBase):
     """
     Noise model with exponential decay of the residual.
@@ -251,6 +250,88 @@ class NoiseModel2(NoiseModelBase):
         res.iloc[0] = 0
         res.name = "Noise"
         return res
+    
+class NoiseModel3(NoiseModelBase):
+    """
+    Noise model with exponential decay of the residual and weighting.
+    Differences compared to NoiseModel:
+    1. First value is residual
+    2. First weight is 1 / sig_residuals (i.e., delt = infty)
+    3. Sum of all weights is always 1
+
+    Notes
+    -----
+    Calculates the noise [1]_ according to:
+
+    .. math::
+
+        v(t1) = r(t1) - r(t0) * exp(- (\\frac{\\Delta t}{\\alpha})
+
+    
+    The unit of the alpha parameter is always in days.
+
+
+    """
+    _name = "NoiseModel3"
+
+    def __init__(self):
+        NoiseModelBase.__init__(self)
+        self.nparam = 1
+        self.set_init_parameters()
+
+    def simulate(self, res, parameters):
+        """
+        Simulate noise from the residuals.
+
+        Parameters
+        ----------
+        res: pandas.Series
+            The residual series.
+        parameters: array-like
+            Alpha parameters used by the noisemodel.
+
+        Returns
+        -------
+        noise: pandas.Series
+            Series of the noise.
+
+        """
+        alpha = parameters[0]
+        odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
+        # res.values is needed else it gets messed up with the dates
+        v = res.values[1:] - np.exp(-odelt / alpha) * res.values[:-1]
+        w = np.ones(len(res))
+        w[1:] = 1 / np.sqrt((1 - np.exp(-2.0 / alpha * odelt)))
+        w /= np.sum(w)  # make sure the sum up to 1
+        # res.iloc[0] is already the residual
+        res.iloc[1:] = v
+        res *= w
+        res.name = "Noise"
+        return res
+
+    @staticmethod
+    def weights(alpha, odelt):
+        """
+        Method to calculate the weights for the noise.
+
+        Based on the sum of weighted squared noise (SWSI) method.
+
+        Parameters
+        ----------
+        alpha: float
+        odelt: numpy.ndarray
+
+        Returns
+        -------
+        w: numpy.ndarray
+            Array with the weights.
+
+        """
+        # divide power by 2 as nu / sigma is returned
+        power = 1.0 / (2.0 * odelt.size)
+        exp = np.exp(-2.0 / alpha * odelt)  # Twice as fast as 2*odelt/alpha
+        w = np.exp(power * np.sum(np.log(1.0 - exp))) / np.sqrt(1.0 - exp)
+        return w
 
 
 class ArmaModel(NoiseModelBase):
