@@ -148,10 +148,9 @@ class FlexModel(RechargeBase):
 
     Notes
     -----
-    Note that the preferred unit of the precipitation and
-    evapotranspiration is mm/d.
+    Note that the preferred unit of the precipitation and evaporation is mm/d.
 
-    The waterbalance for the unsaturated zone reservoir is written as:
+    The water balance for the unsaturated zone reservoir is written as:
 
     .. math::
 
@@ -168,9 +167,9 @@ class FlexModel(RechargeBase):
 
     References
     ----------
-    .. [2] Collenteur, R.A., Bakker, M., Birk, S. (in Prep.) Estimating
-           groundwater recharge using non-linear transfer function noise
-           models.
+    .. [2] Collenteur, R.A., Bakker, M., Klammler, G., Birk, S. (in Prep.)
+           Estimating groundwater recharge using non-linear transfer
+           function noise models.
 
     """
     _name = "FlexModel"
@@ -182,9 +181,9 @@ class FlexModel(RechargeBase):
     def get_init_parameters(self, name="recharge"):
         parameters = DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "name"])
-        parameters.loc[name + "_su"] = (150.0, 1e-5, 1e3, True, name)
+        parameters.loc[name + "_su"] = (250.0, 1e-5, 1e3, True, name)
         parameters.loc[name + "_lp"] = (0.25, 1e-5, 1, False, name)
-        parameters.loc[name + "_ks"] = (50.0, 1, 1e3, True, name)
+        parameters.loc[name + "_ks"] = (100.0, 1, 1e4, True, name)
         parameters.loc[name + "_gamma"] = (4.0, 1e-5, 50.0, True, name)
         parameters.loc[name + "_si"] = (2.0, 1e-5, 10.0, False, name)
         return parameters
@@ -313,10 +312,10 @@ class Berendrecht(RechargeBase):
         parameters.loc[name + "_fi"] = (0.9, 0.7, 1.3, False, name)
         parameters.loc[name + "_fc"] = (1.0, 0.7, 1.3, False, name)
         parameters.loc[name + "_sr"] = (0.25, 1e-5, 1.0, False, name)
-        parameters.loc[name + "_de"] = (250, 20, 1e3, True, name)
-        parameters.loc[name + "_l"] = (2, -4, 50, True, name)
+        parameters.loc[name + "_de"] = (250.0, 20, 1e3, True, name)
+        parameters.loc[name + "_l"] = (2.0, -4, 50, True, name)
         parameters.loc[name + "_m"] = (0.5, 1e-5, 0.5, False, name)
-        parameters.loc[name + "_ks"] = (50, 1, 1e3, True, name)
+        parameters.loc[name + "_ks"] = (100.0, 1, 1e4, True, name)
         return parameters
 
     def simulate(self, prec, evap, p, dt=1.0, **kwargs):
