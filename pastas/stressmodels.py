@@ -1013,8 +1013,7 @@ class RechargeModel(StressModelBase):
 
     def __init__(self, prec, evap, rfunc=Exponential, name="recharge",
                  recharge=Linear(), temp=None, cutoff=0.999,
-                 settings=("prec", "evap", "evap"),
-                 metadata=(None, None, None)):
+                 settings=("prec", "evap"), metadata=(None, None)):
         # Store the precipitation and evaporation time series
         self.prec = TimeSeries(prec, settings=settings[0],
                                metadata=metadata[0])
@@ -1041,6 +1040,10 @@ class RechargeModel(StressModelBase):
             if temp is None:
                 msg = "Recharge module requires a temperature series. " \
                       "No temperature series were provided"
+                raise TypeError(msg)
+            elif len(settings) < 3 or len(metadata) < 3:
+                msg = "Number of values for the settings and/or metadata is " \
+                      "incorrect."
                 raise TypeError(msg)
             else:
                 self.temp = TimeSeries(temp, settings=settings[2],

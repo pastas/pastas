@@ -176,7 +176,7 @@ class FlexModel(RechargeBase):
 
     def __init__(self):
         RechargeBase.__init__(self)
-        self.nparam = 5
+        self.nparam = 6
 
     def get_init_parameters(self, name="recharge"):
         parameters = DataFrame(
@@ -186,6 +186,7 @@ class FlexModel(RechargeBase):
         parameters.loc[name + "_ks"] = (100.0, 1, 1e4, True, name)
         parameters.loc[name + "_gamma"] = (4.0, 1e-5, 50.0, True, name)
         parameters.loc[name + "_si"] = (2.0, 1e-5, 10.0, False, name)
+        parameters.loc[name + "_f"] = (1.0, 0.5, 2.0, False, name)
         return parameters
 
     def simulate(self, prec, evap, p, dt=1.0, **kwargs):
@@ -196,7 +197,7 @@ class FlexModel(RechargeBase):
         prec: numpy.array
             Precipitation flux in mm/d. Has to have the same length as evap.
         evap: numpy.array
-            Potential evapotranspiration flux in mm/d.
+            Potential evaporation flux in mm/d.
         p: numpy.array
             numpy array with the parameter values.
         dt: float, optional
@@ -210,19 +211,20 @@ class FlexModel(RechargeBase):
 
         """
         r = self.get_recharge(prec, evap, su=p[0], lp=p[1], ks=p[2],
-                              gamma=p[3], si=p[4], dt=dt)[0]
+                              gamma=p[3], si=p[4], f=p[5], dt=dt)[0]
         return r
 
     @staticmethod
     @njit
-    def get_recharge(prec, evap, su=250.0, lp=0.5, ks=50.0, gamma=4.0, si=2.0,
-                     dt=1.0):
+    def get_recharge(prec, evap, su=250.0, lp=0.25, ks=100.0, gamma=4.0,
+                     si=2.0, f=1.0, dt=1.0):
         """
         Internal method used for the recharge calculation. If Numba is
         available, this method is significantly faster.
 
         """
         n = prec.size
+        evap = evap * f  # Multiply by crop factor
         # Create empty arrays to store the fluxes and states
         s_u = zeros(n, dtype=float64)  # Root Zone Storage State
         s_u[0] = 0.5 * su  # Set the initial system state to half-full
@@ -264,7 +266,7 @@ class FlexModel(RechargeBase):
         r, ea, ei, pe, s_u, s_i = self.get_recharge(prec, evap, su=p[0],
                                                     lp=p[1], ks=p[2],
                                                     gamma=p[3], si=p[4],
-                                                    dt=dt)
+                                                    f=p[5], dt=dt)
 
         data = DataFrame(data=vstack((s_i, -ei, s_u, pe, -ea, -r)).T,
                          columns=["Si", "Ei", "Su", "Pe", "Ea", "R"])
