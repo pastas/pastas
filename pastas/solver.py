@@ -93,7 +93,8 @@ class BaseSolver:
         """
         # Get the residuals or the noise
         if noise:
-            rv = self.ml.noise(parameters)
+            rv = self.ml.noise(parameters, weights=False) * \
+                 self.ml.noise_weights(parameters)
         else:
             rv = self.ml.residuals(parameters)
 
@@ -219,7 +220,7 @@ class BaseSolver:
         pmax = p.pmax.fillna(np.inf).values
 
         if n is None:
-            n = int(10 ** p.vary.sum()) # only use parameters that are varied.
+            n = int(10 ** p.vary.sum())  # only use parameters that are varied.
 
         samples = np.zeros((0, par.size))
 

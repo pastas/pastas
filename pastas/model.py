@@ -542,7 +542,7 @@ class Model:
         return res
 
     def noise(self, parameters=None, tmin=None, tmax=None, freq=None,
-              warmup=None):
+              warmup=None, weights=True):
         """Method to simulate the noise when a noisemodel is present.
 
         Parameters
@@ -587,9 +587,29 @@ class Model:
                               "parameter estimation.")
             return None
 
-        if freq is None:
-            freq = self.settings["freq"]
+        # Get parameters if none are provided
+        if parameters is None:
+            parameters = self.get_parameters()
 
+        # Calculate the residuals
+        res = self.residuals(parameters, tmin, tmax, freq, warmup)
+        p = parameters[-self.noisemodel.nparam:]
+
+        # Calculate the noise
+        noise = self.noisemodel.simulate(res, p)
+        # Calculate the weights
+        if weights:
+            self.logger.warning("The default argument for weights will be "
+                                "changed to weights=False in a future "
+                                "version of Pastas.")
+            weights = self.noisemodel.weights(res, p)
+            noise = noise * weights
+
+        return noise
+
+    def noise_weights(self, parameters=None, tmin=None, tmax=None, freq=None,
+                      warmup=None):
+        """ Internal method to calculate the noise weights."""
         # Get parameters if none are provided
         if parameters is None:
             parameters = self.get_parameters()
@@ -597,10 +617,11 @@ class Model:
         # Calculate the residuals
         res = self.residuals(parameters, tmin, tmax, freq, warmup)
 
-        # Calculate the noise
-        noise = self.noisemodel.simulate(res,
-                                         parameters[-self.noisemodel.nparam:])
-        return noise
+        # Calculate the weights
+        weights = self.noisemodel.weights(res,
+                                          parameters[-self.noisemodel.nparam:])
+
+        return weights
 
     def observations(self, tmin=None, tmax=None, freq=None,
                      update_observations=False):

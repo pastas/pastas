@@ -104,6 +104,10 @@ class NoiseModelBase:
     def to_dict(self):
         return {"type": self._name}
 
+    @staticmethod
+    def weights(res, parameters):
+        return 1
+
 
 class NoiseModel(NoiseModelBase):
     """
@@ -163,14 +167,12 @@ class NoiseModel(NoiseModelBase):
         alpha = parameters[0]
         odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
         # res.values is needed else it gets messed up with the dates
-        v = res.values[1:] - np.exp(-odelt / alpha) * res.values[:-1]
-        res.iloc[1:] = v * self.weights(alpha, odelt)
-        res.iloc[0] = 0
+        res.iloc[1:] -= np.exp(-odelt / alpha) * res.values[:-1]
         res.name = "Noise"
         return res
 
     @staticmethod
-    def weights(alpha, odelt):
+    def weights(res, parameters):
         """
         Method to calculate the weights for the noise.
 
@@ -178,8 +180,10 @@ class NoiseModel(NoiseModelBase):
 
         Parameters
         ----------
-        alpha: float
-        odelt: numpy.ndarray
+        res: pandas.Series
+            The residual series.
+        parameters: array-like
+            Alpha parameters used by the noisemodel.
 
         Returns
         -------
@@ -187,11 +191,16 @@ class NoiseModel(NoiseModelBase):
             Array with the weights.
 
         """
+        alpha = parameters[0]
+        odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
         # divide power by 2 as nu / sigma is returned
         power = 1.0 / (2.0 * odelt.size)
         exp = np.exp(-2.0 / alpha * odelt)  # Twice as fast as 2*odelt/alpha
         w = np.exp(power * np.sum(np.log(1.0 - exp))) / np.sqrt(1.0 - exp)
+        w = np.insert(w, 0, 0)  # Set first weight to zero
+        w = Series(w, res.index)
         return w
+
 
 class NoiseModel2(NoiseModelBase):
     """
@@ -245,12 +254,12 @@ class NoiseModel2(NoiseModelBase):
         alpha = parameters[0]
         odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
         # res.values is needed else it gets messed up with the dates
-        v = res.values[1:] - np.exp(-odelt / alpha) * res.values[:-1]
-        res.iloc[1:] = v
+        res.iloc[1:] -= np.exp(-odelt / alpha) * res.values[:-1]
         res.iloc[0] = 0
         res.name = "Noise"
         return res
-    
+
+
 class NoiseModel3(NoiseModelBase):
     """
     Noise model with exponential decay of the residual and weighting.
@@ -310,7 +319,7 @@ class NoiseModel3(NoiseModelBase):
         return res
 
     @staticmethod
-    def weights(alpha, odelt):
+    def weights(res, parameters):
         """
         Method to calculate the weights for the noise.
 
@@ -323,14 +332,18 @@ class NoiseModel3(NoiseModelBase):
 
         Returns
         -------
-        w: numpy.ndarray
-            Array with the weights.
+        w: pandas.Series
+            Series of the weights.
 
         """
+        alpha = parameters[0]
+        odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
         # divide power by 2 as nu / sigma is returned
         power = 1.0 / (2.0 * odelt.size)
         exp = np.exp(-2.0 / alpha * odelt)  # Twice as fast as 2*odelt/alpha
         w = np.exp(power * np.sum(np.log(1.0 - exp))) / np.sqrt(1.0 - exp)
+        w = np.insert(w, 0, 1)  # Set first weight to one
+        w = Series(w, res.index)
         return w
 
 
@@ -373,7 +386,6 @@ class ArmaModel(NoiseModelBase):
         # Calculate the time steps
         odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
         a = self.calculate_noise(res.values, odelt, alpha, beta)
-
         return Series(index=res.index, data=a, name="Noise")
 
     @staticmethod
