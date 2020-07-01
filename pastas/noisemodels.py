@@ -282,8 +282,8 @@ class ArmaModel(NoiseModelBase):
         self.set_init_parameters()
 
     def set_init_parameters(self, oseries=None):
-        self.parameters.loc["noise_alpha"] = (0.5, 1e-9, np.inf, True, "noise")
-        self.parameters.loc["noise_beta"] = (0.5, 1e-9, np.inf, True, "noise")
+        self.parameters.loc["noise_alpha"] = (10, 1e-9, np.inf, True, "noise")
+        self.parameters.loc["noise_beta"] = (10, 1e-9, np.inf, True, "noise")
 
     def simulate(self, res, parameters):
         alpha = parameters[0]
@@ -300,7 +300,7 @@ class ArmaModel(NoiseModelBase):
     def calculate_noise(res, odelt, alpha, beta):
         # Create an array to store the noise
         a = np.zeros_like(res)
-
+        a[0] = res[0]
         # We have to loop through each value
         for i in range(1, res.size):
             a[i] = res[i] - res[i - 1] * np.exp(-odelt[i - 1] / alpha) - \
