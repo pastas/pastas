@@ -17,7 +17,8 @@ its statistic assumptions.
 
 from numpy import sqrt, cumsum
 from pandas import DataFrame, concat
-from scipy.stats import chi2, norm
+from scipy.stats import chi2, norm, shapiro, normaltest
+
 
 from .core import acf as get_acf
 
@@ -276,3 +277,59 @@ def lilliefors(series, alpha=0.05, **kwargs):
         that the data is not normally distributed.
     """
     return NotImplementedError("Method not implemented yet.")
+
+
+def portmanteau(series, alpha=0.05, **kwargs):
+    """Ljung—Box—Pierce portmanteau statistic with missing data.
+
+    Parameters
+    ----------
+    series
+    alpha
+    kwargs
+
+    Returns
+    -------
+
+
+    References
+    ----------
+    .. [Stoffer_1992] Stoffer, D. S., & Toloi, C. M. (1992). A note on the
+      Ljung—Box—Pierce portmanteau statistic with missing data. Statistics &
+      probability letters, 13(5), 391-396.
+
+    """
+
+
+    return h, Q, p
+
+def diagnostics(series, alpha=0.05, stats=[]):
+    """
+
+    Parameters
+    ----------
+    series
+    alpha
+    stats
+
+    Returns
+    -------
+    df: Pandas.DataFrame
+
+    """
+    cols = ["Checks", "Result", "P-value"]
+    df = DataFrame(index=stats, columns=cols)
+
+    stat, p = shapiro(series)
+    df.loc["Shapiroo", cols] = "Normality", stat, p
+
+    stat, p = normaltest(series)
+    df.loc["D'Agostino", cols] = "Normality", stat, p
+
+    _, stat, p = runs_test(series)
+    df.loc["Runs", cols] = "Autocorrelation", stat, p
+
+
+
+
+    return df
