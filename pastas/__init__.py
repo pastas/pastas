@@ -2,7 +2,7 @@ import logging
 
 import pastas.recharge as rch
 from .model import Model
-from .noisemodels import NoiseModel, NoiseModel2, ArmaModel
+from .noisemodels import NoiseModel, NoiseModel2, ArmaModel, NoiseModel3
 from .plots import TrackSolve
 from .project import Project
 from .read import read_meny, read_dino, read_knmi, read_waterbase
