@@ -16,9 +16,8 @@ its statistic assumptions.
 """
 
 from numpy import sqrt, cumsum
-from pandas import DataFrame, concat
+from pandas import DataFrame
 from scipy.stats import chi2, norm, shapiro, normaltest
-
 
 from .core import acf as get_acf
 
@@ -85,7 +84,7 @@ def durbin_watson(series=None, acf=None, alpha=0.05, **kwargs):
     return DW
 
 
-def ljung_box(series=None, acf=None, alpha=0.05, **kwargs):
+def ljung_box(series=None, acf=None, nobs=None, alpha=0.05, **kwargs):
     """Ljung-box test for autocorrelation. Either a "series" or "acf" has to be
     provided.
 
@@ -96,7 +95,11 @@ def ljung_box(series=None, acf=None, alpha=0.05, **kwargs):
         Ljung-Box test.
     acf: pandas.Series, optional
         The autocorrelation function used in the Ljung-Box test. Using a
-        pre-calculated acf will be faster.
+        pre-calculated acf will be faster. If providing the acf, nobs also
+        has to be provided.
+    nobs: int, optional
+        Number of observations of the original time series. Has no effect
+        when a series is provided.
     alpha: float, optional
         Significance level to test against. Float values between 0 and 1.
         Default is alpha=0.05.
@@ -142,32 +145,36 @@ def ljung_box(series=None, acf=None, alpha=0.05, **kwargs):
 
     Examples
     --------
-    v = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"), data=np.random.rand(1000))
+    v = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
+        data=np.random.rand(1000))
     ps.stats.acf(v)
 
     """
     if acf is None:
         acf = get_acf(series, **kwargs)
+        nobs = series.index.size
+    elif nobs is None:
+        Warning("If providing an acf, nobs also has to be provided.")
 
-    # Drop zero-lag from the acf and drop nan-values
+    # Drop zero-lag from the acf and drop nan-values as k > 0
     acf = acf.drop(0, errors="ignore").dropna()
 
-    lags = acf.index.values
-    nobs = acf.index.size
-    df = (nobs - lags)
-    df[df == 0] = 1
-    Qtest = nobs * (nobs + 2) * cumsum(acf.values ** 2 / df)
+    lags = acf.index.days.to_numpy()
+
+    nk = nobs - lags
+    # nk[nk == 0] = 1
+    Qtest = nobs * (nobs + 2) * cumsum(acf.values ** 2 / nk)
 
     # TODO decrease lags by number of parameters?
-    pval = chi2.sf(Qtest, lags)
+    dof = lags  # Degrees of Freedom for Chi-Squares Dist.
+    pval = chi2.sf(Qtest, df=dof)
 
     result = DataFrame(index=lags, data={"LBtest": Qtest, "P-value": pval})
     result.index.name = "Lags (Days)"
     name = "Accept Ha (alpha={})".format(alpha)
     result[name] = pval < alpha
-    h = result[name].any()
 
-    return h, result
+    return result
 
 
 def runs_test(series, alpha=0.05, cutoff="mean"):
@@ -241,19 +248,6 @@ def runs_test(series, alpha=0.05, cutoff="mean"):
     return h, Z, pval
 
 
-def acf_test(series=None, acf=None, alpha=0.05, **kwargs):
-    if acf is None:
-        acf = get_acf(series, **kwargs)
-
-    h, LB = ljung_box(acf=acf, alpha=alpha)
-    DW = durbin_watson(acf=acf, alpha=alpha)
-    h, _, _ = runs_test(series, alpha=alpha)
-
-    report = concat([DW, LB], axis=1)
-
-    return h, report
-
-
 def breusch_godfrey(series=None, acf=None, alpha=0.05, **kwargs):
     return NotImplementedError("Method not implemented yet.")
     # result = DataFrame()
@@ -279,29 +273,29 @@ def lilliefors(series, alpha=0.05, **kwargs):
     return NotImplementedError("Method not implemented yet.")
 
 
-def portmanteau(series, alpha=0.05, **kwargs):
-    """Ljung—Box—Pierce portmanteau statistic with missing data.
-
-    Parameters
-    ----------
-    series
-    alpha
-    kwargs
-
-    Returns
-    -------
-
-
-    References
-    ----------
-    .. [Stoffer_1992] Stoffer, D. S., & Toloi, C. M. (1992). A note on the
-      Ljung—Box—Pierce portmanteau statistic with missing data. Statistics &
-      probability letters, 13(5), 391-396.
-
-    """
-
-
-    return h, Q, p
+# def portmanteau(series, alpha=0.05, **kwargs):
+#     """Ljung—Box—Pierce portmanteau statistic adapted to handle missing data.
+#
+#     Parameters
+#     ----------
+#     series
+#     alpha
+#     kwargs
+#
+#     Returns
+#     -------
+#
+#
+#     References
+#     ----------
+#     .. [Stoffer_1992] Stoffer, D. S., & Toloi, C. M. (1992). A note on the
+#       Ljung—Box—Pierce portmanteau statistic with missing data. Statistics &
+#       probability letters, 13(5), 391-396.
+#
+#     """
+#
+#
+#     return h, Q, p
 
 def diagnostics(series, alpha=0.05, stats=[]):
     """
@@ -328,8 +322,5 @@ def diagnostics(series, alpha=0.05, stats=[]):
 
     _, stat, p = runs_test(series)
     df.loc["Runs", cols] = "Autocorrelation", stat, p
-
-
-
 
     return df
