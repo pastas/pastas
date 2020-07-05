@@ -266,7 +266,7 @@ class NoiseModel3(NoiseModelBase):
     Differences compared to NoiseModel:
     1. First value is residual
     2. First weight is 1 / sig_residuals (i.e., delt = infty)
-    3. Sum of all weights is always 1
+    3. Sum of all weights is always len(res)
 
     Notes
     -----
@@ -275,20 +275,30 @@ class NoiseModel3(NoiseModelBase):
     .. math::
 
         v(t1) = r(t1) - r(t0) * exp(- (\\frac{\\Delta t}{\\alpha})
+        
+    Calculates the weights as
+    
+    .. math::
+        
+        w = 1 / sqrt((1 - exp(-2 \\Delta t / \\alpha)))
+        
+    and then normalizes the weights so that they sum to number of residuals
 
     
-    The unit of the alpha parameter is always in days.
+    The units of the alpha parameter is always in days.
 
 
     """
     _name = "NoiseModel3"
 
-    def __init__(self):
+    def __init__(self, fac=1):
         NoiseModelBase.__init__(self)
+        self.fac = fac
         self.nparam = 1
         self.set_init_parameters()
 
-    def simulate(self, res, parameters):
+    @staticmethod
+    def simulate(res, parameters):
         """
         Simulate noise from the residuals.
 
@@ -308,22 +318,24 @@ class NoiseModel3(NoiseModelBase):
         alpha = parameters[0]
         odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
         # res.values is needed else it gets messed up with the dates
-        v = res.values[1:] - np.exp(-odelt / alpha) * res.values[:-1]
-        w = np.ones(len(res))
-        w[1:] = 1 / np.sqrt((1 - np.exp(-2.0 / alpha * odelt)))
-        w /= np.sum(w)  # make sure the sum up to 1
-        # res.iloc[0] is already the residual
-        res.iloc[1:] = v
-        res *= w
+        # v = res.values[1:] - np.exp(-odelt / alpha) * res.values[:-1]
+        # v[0] = res.iloc[0] is already the residual
+        # res.iloc[1:] = v
+        res.iloc[1:] -= np.exp(-odelt / alpha) * res.values[:-1]
         res.name = "Noise"
         return res
 
-    @staticmethod
-    def weights(res, parameters):
+    #@staticmethod
+    def weights(self, res, parameters):
         """
         Method to calculate the weights for the noise.
+        Weights are
 
-        Based on the sum of weighted squared noise (SWSI) method.
+        .. math::
+        
+        w = 1 / sqrt((1 - exp(-2 \\Delta t / \\alpha)))
+        
+        which are then normalized so that sum(w) = len(res)
 
         Parameters
         ----------
@@ -338,11 +350,11 @@ class NoiseModel3(NoiseModelBase):
         """
         alpha = parameters[0]
         odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
-        # divide power by 2 as nu / sigma is returned
-        power = 1.0 / (2.0 * odelt.size)
-        exp = np.exp(-2.0 / alpha * odelt)  # Twice as fast as 2*odelt/alpha
-        w = np.exp(power * np.sum(np.log(1.0 - exp))) / np.sqrt(1.0 - exp)
-        w = np.insert(w, 0, 1)  # Set first weight to one
+        w = np.ones(len(res))
+        w[1:] = 1 / np.sqrt((1 - np.exp(-2.0 / alpha * odelt)))
+        #w = w / np.sum(w) * len(res)  # make sure they sum up to len(res)
+        #w = w / np.sqrt(np.sum(w ** 2))  # make sure they sum up to len(res)
+        w = w * self.fac
         w = Series(w, res.index)
         return w
 

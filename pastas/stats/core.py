@@ -106,8 +106,8 @@ def ccf(x, y, lags=None, bin_method='rectangle', bin_width=None,
         cross-correlation for. The index has to be a Pandas.DatetimeIndex
     lags: array_like, optional
         numpy array containing the lags in days for which the
-        cross-correlation if calculated. [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12,
-        13, 14, 30, 61, 90, 120, 150, 180, 210, 240, 270, 300, 330, 365]
+        cross-correlation is calculated. Default [1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+        12, 13, 14, 30, 61, 90, 120, 150, 180, 210, 240, 270, 300, 330, 365]
     bin_method: str, optional
         method to determine the type of bin. Options are "rectangle" (default),
         and  "gaussian".
