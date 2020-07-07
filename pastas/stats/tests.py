@@ -131,26 +131,26 @@ def ljung_box(series=None, acf=None, nobs=None, alpha=0.05, return_h=False,
 
     .. math::
 
-        Q(k) = nobs * (n + 2) * \\sum(\\frac{\\rho^2(k)}{n - k}
+        Q(k) = n * (n + 2) * \\sum(\\frac{\\rho^2(k)}{n - k}
 
-    where `k` are the lags to calculate the autocorrelation for,
-    nobs is the number of observations and `acf(k)` is the autocorrelation for
-    lag `k`. The Q-statististic can be compared to the value of a
+    where $k$ are the lags to calculate the autocorrelation for,
+    $n$ is the number of observations and $\\rho(k)$ is the autocorrelation for
+    lag $k$. The Q-statistic can be compared to the value of a
     Chi-squared distribution to check if the Null hypothesis (no
     autocorrelation) is rejected or not. The hypothesis is rejected when:
 
     .. math::
 
-        Q(k) > Chi^2(\\alpha, h)
+        Q(k) > \\chi^2_{\\alpha, h}
 
-    Where :math:`\\alpha` is the significance level and `h` is the degree of
-    freedom defined by `h = nobs - p` where `p` is the number of parameters
+    Where $\\alpha$ is the significance level and $h$ is the degree of
+    freedom defined by $h = n - p$ where $p$ is the number of parameters
     in the model.
 
     References
     ----------
-    .. [3] Ljung, G. and Box, G. (1978). On a Measure of Lack of Fit in Time
-      Series Models, Biometrika, 65, 297-303.
+    .. [3](Ljung, G. and Box, G. (1978). On a Measure of Lack of Fit in Time
+      Series Models, Biometrika, 65, 297-303.)
 
     Examples
     --------
@@ -179,6 +179,7 @@ def ljung_box(series=None, acf=None, nobs=None, alpha=0.05, return_h=False,
     pval = chi2.sf(q_stat, df=dof)
 
     if len(lags) == 1:
+
         if return_h:
             h = pval < alpha
             return q_stat, pval, h
@@ -280,7 +281,7 @@ def runs_test(series, alpha=0.05, cutoff="mean", return_h=False):
         return z_stat, pval
 
 
-def diagnostics(series, alpha=0.05, stats=()):
+def diagnostics(series, alpha=0.05, stats=(), float_fmt="{0:.2f}"):
     """Methods to compute various diagnostics checks for a time series.
 
     Parameters
@@ -290,6 +291,8 @@ def diagnostics(series, alpha=0.05, stats=()):
         significance level to use for the hypothesis testing.
     stats: list, optional
         List with the diagnostic checks to perform. Not implemented yet.
+    float_fmt: str
+        String to use for formatting the floats in the returned DataFrame.
 
     Returns
     -------
@@ -297,8 +300,9 @@ def diagnostics(series, alpha=0.05, stats=()):
         DataFrame with the information for the diagnostics checks.
 
     """
-    cols = ["Checks", "Test. Stat.", "P-value"]
+    cols = ["Checks", "Statistic", "P-value"]
     df = DataFrame(index=stats, columns=cols)
+    df.style.format("{:.2f}")
 
     # Shapiroo-Wilk test for Normality
     stat, p = shapiro(series)
@@ -310,17 +314,19 @@ def diagnostics(series, alpha=0.05, stats=()):
 
     # Runs test for autocorrelation
     stat, p = runs_test(series)
-    df.loc["Runs test", cols] = "Autocorrelation", stat, p
+    df.loc["Runs test", cols] = "Autocorr.", stat, p
 
     # Durbin-Watson test for autocorrelation
     stat, p = durbin_watson(series, alpha=alpha)
-    df.loc["Durbin-Watson", cols] = "Autocorrelation", stat, p
+    df.loc["Durbin-Watson", cols] = "Autocorr.", stat, p
 
     # Ljung-Box test for autocorrelation
     stat, p = ljung_box(series, alpha=alpha, lags=[365])
-    df.loc["Ljung-Box", cols] = "Autocorrelation", stat, p
+    df.loc["Ljung-Box", cols] = "Autocorr.", stat[0], p[0]
 
-    df["Reject H0 (alpha=0.05)"] = df.loc[:, "P-value"] < alpha
+    df["Reject H0"] = df.loc[:, "P-value"] < alpha
+    df[["Statistic", "P-value"]] = \
+        df[["Statistic", "P-value"]].applymap(float_fmt.format)
 
     return df
 
@@ -332,7 +338,7 @@ def plot_acf(series, alpha=0.95, acf_options=None, ax=None, figsize=(5, 2)):
     # Plot the autocorrelation
     if acf_options is None:
         acf_options = {}
-    r = get_acf(series, output="full", **acf_options)
+    r = get_acf(series, output="full", alpha=alpha, **acf_options)
     conf = r.loc[:, "stderr"].values
 
     ax.fill_between(r.index.days, conf, -conf, alpha=0.3)
