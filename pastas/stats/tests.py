@@ -12,6 +12,9 @@ its statistic assumptions.
     durbin_watson
     ljung_box
     runs_test
+    diagnostics
+    plot_acf
+    plot_diagnostics
 
 """
 
@@ -47,9 +50,10 @@ def durbin_watson(series=None, acf=None, alpha=0.05, **kwargs):
 
     Notes
     -----
-    The Durban Watson statistic [1]_ [2]_ can be used to make a statement on
-    the correlation between the values. The formula to calculate the Durbin
-    Watson statistic (DW) is:
+    The Durban Watson statistic [durbin_1951]_(Durbin & Watson, 1951)
+    [Fahidy_2004](Fahidy, 2004) can be used to make a statement on the
+    correlation between the values. The formula to calculate the
+    Durbin-Watson statistic (DW) is:
 
     .. math::
 
@@ -62,10 +66,11 @@ def durbin_watson(series=None, acf=None, alpha=0.05, **kwargs):
 
     References
     ----------
-    .. [1] Durbin, J., & Watson, G. S. (1951). Testing for serial correlation
-      in least squares regression. II. Biometrika, 38(1/2), 159-177.
+    .. [durbin_1951] Durbin, J., & Watson, G. S. (1951). Testing for serial
+      correlation in least squares regression. II. Biometrika, 38(1/2),
+      159-177.
 
-    .. [2] Fahidy, T. Z. (2004). On the Application of Durbin-Watson
+    .. [Fahidy_2004] Fahidy, T. Z. (2004). On the Application of Durbin-Watson
       Statistics to Time-Series-Based Regression Models. CHEMICAL ENGINEERING
       EDUCATION, 38(1), 22-25.
 
@@ -149,8 +154,8 @@ def ljung_box(series=None, acf=None, nobs=None, alpha=0.05, return_h=False,
 
     References
     ----------
-    .. [3](Ljung, G. and Box, G. (1978). On a Measure of Lack of Fit in Time
-      Series Models, Biometrika, 65, 297-303.)
+    .. [3] Ljung, G. and Box, G. (1978). On a Measure of Lack of Fit in Time
+      Series Models, Biometrika, 65, 297-303.
 
     Examples
     --------
@@ -332,6 +337,34 @@ def diagnostics(series, alpha=0.05, stats=(), float_fmt="{0:.2f}"):
 
 
 def plot_acf(series, alpha=0.95, acf_options=None, ax=None, figsize=(5, 2)):
+    """Method to plot the autocorrelation function.
+
+    Parameters
+    ----------
+    series: pandas.Series
+        Residual series to plot the autocorrelation function for.
+    alpha: float, optional
+        Significance level to calculate the (1-alpha)-confidence intervals.
+    acf_options: dict, optional
+        Dictionary with keyword arguments passed on to pastas.stats.acf.
+    ax: matplotlib.axes.Axes, optional
+        Matplotlib Axes instance to plot the ACF on. A new Figure and Axes
+        is created when no value for ax is provided.
+    figsize: Tuple, optional
+        2-D Tuple to determine the size of the figure created. Ignored if ax
+        is also provided.
+
+    Returns
+    -------
+    ax: matplotlib.axes.Axes
+
+    Examples
+    --------
+    >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
+    >>>                 data=np.random.rand(1000))
+    >>> ps.stats.plot_acf(res)
+
+    """
     if ax is None:
         fig, ax = plt.subplots(1, 1, figsize=figsize)
 
@@ -371,11 +404,13 @@ def plot_diagnostics(series, figsize=(10, 6), bins=50, acf_options=None,
 
     Returns
     -------
-    axes: list of matplotlib.axes.Axes
+    axes: matplotlib.axes.Axes
 
     Examples
     --------
-    >>> axes = ml.plots.diagnostics()
+    >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
+    >>>                 data=np.random.rand(1000))
+    >>> ps.stats.plot_diagnostics(res)
 
     Note
     ----
