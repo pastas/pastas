@@ -19,7 +19,7 @@ from ..decorators import njit
 
 
 def acf(x, lags=None, bin_method='rectangle', bin_width=None, max_gap=inf,
-        min_obs=10, output="acf", **kwargs):
+        min_obs=10, output="acf", alpha=0.05, **kwargs):
     """Calculate the autocorrelation function for irregular time steps.
 
     Parameters

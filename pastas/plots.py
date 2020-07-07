@@ -34,10 +34,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import MultipleLocator
 from pandas import DataFrame, Timestamp, concat
-from scipy.stats import probplot, norm
 
 from .decorators import model_tmin_tmax
-from .stats import acf
+from .stats import plot_diagnostics
 
 logger = logging.getLogger(__name__)
 
@@ -451,52 +450,8 @@ class Plotting:
         else:
             res = self.ml.residuals(tmin=tmin, tmax=tmax)
 
-        # Create the figure and axes
-        fig = plt.figure(figsize=figsize, **kwargs)
-        shape = (2, 3)
-        ax = plt.subplot2grid(shape, (0, 0), colspan=2, rowspan=1)
-        ax1 = plt.subplot2grid(shape, (1, 0), colspan=2, rowspan=1)
-        ax2 = plt.subplot2grid(shape, (0, 2), colspan=1, rowspan=1)
-        ax3 = plt.subplot2grid(shape, (1, 2), colspan=1, rowspan=1)
-
-        # Plot the residuals or noise series
-        ax.axhline(0, c="k")
-        res.plot(ax=ax)
-        ax.set_ylabel(res.name)
-        ax.set_xlim(res.index.min(), res.index.max())
-        ax.grid()
-
-        # Plot the autocorrelation
-        if acf_options is None:
-            acf_options = {}
-        r = acf(res, output="full", **acf_options)
-        conf = r.loc[:, "stderr"].values
-
-        ax1.fill_between(r.index.days, conf, -conf, alpha=0.3)
-        ax1.vlines(r.index.days, [0], r.loc[:, "acf"].values)
-
-        ax1.set_xlabel("Lag (Days)")
-        ax1.set_xlim(0, r.index.days.max())
-        ax1.set_ylabel('Autocorrelation')
-        ax1.grid()
-
-        # Plot the histogram for normality and add a 'best fit' line
-        # weights = np.ones(res.index.size) / res.index.size
-        _, bins, _ = ax2.hist(res.values, bins=bins, density=True)
-        y = norm.pdf(bins, res.mean(), res.std())
-        ax2.plot(bins, y, 'k--')
-        ax2.set_ylabel("Probability density")
-
-        # Plot the probability plot
-        probplot(res, plot=ax3, dist="norm", rvalue=True)
-        c = ax.get_lines()[1].get_color()
-        ax3.get_lines()[0].set_color(c)
-        ax3.get_lines()[1].set_color("k")
-
-        plt.tight_layout()
-        ax.set_xticklabels(ax.get_xticklabels(), rotation=0, ha="center")
-
-        return fig.axes
+        return plot_diagnostics(series=res, figsize=figsize, bins=bins,
+                                acf_options=acf_options, **kwargs)
 
     def block_response(self, stressmodels=None, ax=None, figsize=None,
                        **kwargs):
