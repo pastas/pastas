@@ -1,5 +1,5 @@
-"""This module contains methods for diagnosing the time series models for
-its statistic assumptions.
+"""The following methods may be used for the diagnostic checking of the a
+calibrated time series model.
 
 .. codeauthor:: R.A Collenteur
 
@@ -50,13 +50,11 @@ def durbin_watson(series=None, acf=None, alpha=0.05, **kwargs):
 
     Notes
     -----
-    The Durban Watson statistic [durbin_1951]_(Durbin & Watson, 1951)
-    [Fahidy_2004](Fahidy, 2004) can be used to make a statement on the
-    correlation between the values. The formula to calculate the
-    Durbin-Watson statistic (DW) is:
+    The Durban Watson statistic ([durbin_1951]_, [Fahidy_2004]_) can be used
+    to make a statement on the correlation between the values. The formula
+    to calculate the Durbin-Watson statistic (DW) is:
 
     .. math::
-
         DW = 2 * (1 - \\rho)
 
     where acf is the autocorrelation of the series for lag s. By
@@ -130,32 +128,30 @@ def ljung_box(series=None, acf=None, nobs=None, alpha=0.05, return_h=False,
 
     Notes
     -----
-    The Ljung-Box test [3]_ can be used to test autocorrelation in the
+    The Ljung-Box test [Ljung_1978]_ can be used to test autocorrelation in the
     residuals series which are used during optimization of a model. The
     Ljung-Box Q-test statistic is calculated as :
 
     .. math::
-
         Q(k) = n * (n + 2) * \\sum(\\frac{\\rho^2(k)}{n - k}
 
     where $k$ are the lags to calculate the autocorrelation for,
-    $n$ is the number of observations and $\\rho(k)$ is the autocorrelation for
-    lag $k$. The Q-statistic can be compared to the value of a
-    Chi-squared distribution to check if the Null hypothesis (no
+    $n$ is the number of observations and :math:`\\rho(k)` is the
+    autocorrelation for lag $k$. The Q-statistic can be compared to the
+    value of a Chi-squared distribution to check if the Null hypothesis (no
     autocorrelation) is rejected or not. The hypothesis is rejected when:
 
     .. math::
-
         Q(k) > \\chi^2_{\\alpha, h}
 
-    Where $\\alpha$ is the significance level and $h$ is the degree of
+    Where :math:`\\alpha` is the significance level and $h$ is the degree of
     freedom defined by $h = n - p$ where $p$ is the number of parameters
     in the model.
 
     References
     ----------
-    .. [3] Ljung, G. and Box, G. (1978). On a Measure of Lack of Fit in Time
-      Series Models, Biometrika, 65, 297-303.
+    .. [Ljung_1978] Ljung, G. and Box, G. (1978). On a Measure of Lack of Fit
+      in Time Series Models, Biometrika, 65, 297-303.
 
     Examples
     --------
@@ -212,7 +208,7 @@ def runs_test(series, alpha=0.05, cutoff="mean", return_h=False):
     cutoff: str or float, optional
         String set to "mean" or "median" or a float to use as the cutoff.
     return_h: bool, optional
-        Return the result of the test as a boolen (True) or not (False).
+        Return the result of the test as a boolean (True) or not (False).
 
     Returns
     -------
@@ -228,11 +224,11 @@ def runs_test(series, alpha=0.05, cutoff="mean", return_h=False):
     Notes
     -----
     Distribution free test to check if a time series exhibits significant
-    autocorrelation. If :math:`|Z| \\geq Z_{1-\\frac{\\alpha}{2}}` then the
-    null hypothesis (Ho) is rejected.
+    autocorrelation [bradley_1968]_. If :math:`|Z| \\geq Z_{1-\\frac{\\alpha}{
+    2}}` then the null hypothesis (Ho) is rejected.
 
-    Ho: The series is a result of a random process
-    Ha: The series is not the result of a random process
+    - Ho: The series is a result of a random process
+    - Ha: The series is not the result of a random process
 
     References
     ----------
@@ -303,6 +299,12 @@ def diagnostics(series, alpha=0.05, stats=(), float_fmt="{0:.2f}"):
     -------
     df: Pandas.DataFrame
         DataFrame with the information for the diagnostics checks.
+
+    Examples
+    --------
+    >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
+    >>>                 data=np.random.rand(1000))
+    >>> ps.stats.diagnostics(res)
 
     """
     cols = ["Checks", "Statistic", "P-value"]

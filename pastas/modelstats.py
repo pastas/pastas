@@ -1,20 +1,5 @@
-"""Statistics for the Pastas Model class.
-
-Examples
---------
-
-    >>> ml.stats.summary()
-                                         Value
-    Statistic
-    Pearson R^2                       0.87
-    Root mean squared error           0.43
-    Bayesian Information Criterion    113.
-    Average Deviation                 0.33
-    Explained variance percentage     72.7
-    Akaike InformationCriterion       25.3
-
-Available statistics
---------------------
+"""The following methods may be used to describe the fit between the model
+simulation and the observations.
 
 .. currentmodule:: pastas.modelstats.Statistics
 
@@ -35,6 +20,19 @@ Available statistics
    summary
    many
    all
+
+Examples
+--------
+
+    >>> ml.stats.summary()
+                                         Value
+    Statistic
+    Pearson R^2                       0.87
+    Root mean squared error           0.43
+    Bayesian Information Criterion    113.
+    Average Deviation                 0.33
+    Explained variance percentage     72.7
+    Akaike InformationCriterion       25.3
 
 """
 

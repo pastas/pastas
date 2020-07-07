@@ -1,5 +1,7 @@
-"""
-This module contains core statistical methods.
+"""The following methods may be used to calculate the crosscorrelation and
+autocorrelation for a time series. These methods are 'special' in the sense
+that they are able to deal with irregular time steps often observed in
+hydrological time series.
 
 .. currentmodule:: pastas.stats.core
 
@@ -95,9 +97,7 @@ def acf(x, lags=None, bin_method='rectangle', bin_width=None, max_gap=inf,
 
 def ccf(x, y, lags=None, bin_method='rectangle', bin_width=None,
         max_gap=inf, min_obs=10, output=None, **kwargs):
-    """Method to calculate the cross-correlation function for irregular
-    timesteps based on the slotting technique. Different methods (kernels)
-    to bin the data are available.
+    """Method to compute the cross-correlation for irregular timesteps.
 
     Parameters
     ----------
@@ -136,6 +136,11 @@ def ccf(x, y, lags=None, bin_method='rectangle', bin_width=None,
     Rehfeld, K., Marwan, N., Heitzig, J., Kurths, J. (2011). Comparison
     of correlation analysis techniques for irregularly sampled time series.
     Nonlinear Processes in Geophysics. 18. 389-404. 10.5194 pg-18-389-2011.
+
+    Tip
+    ---
+    This method will be significantly faster when Numba is installed. Check
+    out the Numba project here: `https://numba.pydata.org`_.
 
     Examples
     --------
