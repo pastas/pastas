@@ -6,23 +6,23 @@ PASTAS: HYDROLOGICAL TIME SERIES ANALYSIS
    :align: left
 
 .. image:: https://travis-ci.com/pastas/pastas.svg?branch=master
-                    :target: https://travis-ci.com/pastas/pastas
+   :target: https://travis-ci.com/pastas/pastas
 .. image:: https://img.shields.io/pypi/v/pastas.svg
-                    :target: https://pypi.python.org/pypi/pastas
+   :target: https://pypi.python.org/pypi/pastas
 .. image:: https://img.shields.io/pypi/l/pastas.svg
-                    :target: https://mit-license.org/
+   :target: https://mit-license.org/
 .. image:: https://img.shields.io/pypi/pyversions/pastas
-                    :target: https://pypi.python.org/pypi/pastas
-.. image:: https://img.shields.io/github/release/pastas/pastas.svg
-                    :target: https://github.com/pastas/pastas/releases        
+   :target: https://pypi.python.org/pypi/pastas      
 .. image:: https://api.codacy.com/project/badge/Grade/952f41c453854064ba0ee1fa0a0b4434    
-                    :target: https://www.codacy.com/gh/pastas/pastas
+   :target: https://www.codacy.com/gh/pastas/pastas
 .. image:: https://api.codacy.com/project/badge/Coverage/952f41c453854064ba0ee1fa0a0b4434
-                    :target: https://www.codacy.com/gh/pastas/pastas
+   :target: https://www.codacy.com/gh/pastas/pastas
 .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1465866.svg
-                    :target: https://doi.org/10.5281/zenodo.1465866
+   :target: https://doi.org/10.5281/zenodo.1465866
 .. image:: https://mybinder.org/badge_logo.svg
- :target: https://mybinder.org/v2/gh/pastas/pastas/master?filepath=examples%2Fnotebooks%2F1_basic_model.ipynb
+   :target: https://mybinder.org/v2/gh/pastas/pastas/master?filepath=examples%2Fnotebooks%2F1_basic_model.ipynb
+.. image:: https://readthedocs.org/projects/pastas/badge/?version=latest
+   :target: https://pastas.readthedocs.io/en/latest/?badge=latest
 
 Pastas: what is it?
 ~~~~~~~~~~~~~~~~~~~
