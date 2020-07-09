@@ -292,7 +292,7 @@ class Hantush(RfuncBase):
     and [asmuth_2008]_. It's parameters are:
 
     .. math:: p[0] = A = \\frac{1}{4 \\pi kD}
-    .. math:: p[1] = rho = \\frac{r}{\\lambda}
+    .. math:: p[1] = \\rho = \\frac{r}{\\lambda}
     .. math:: p[2] = cS
 
     where :math:`\\lambda = \\sqrt{kDc}`
@@ -633,24 +633,24 @@ class Polder2(RfuncBase):
 
     Notes
     -----
-    The Polder function is explained in [polder]_. It's parameters are:
-
-    .. math:: p[0] = A
-    .. math:: p[0] = a = \\sqrt{\\frac{1}{cS}}
-    .. math:: p[1] =  p[2] = b = x^2 cS / (4 \\lambda^2)
+    The Polder function is explained in [polder]_. 
+    The impulse response function may be written as
     
-    .. math:: p[0] = \\frac{x}{2\\lambda}
-    .. math:: p[1] = \\sqrt{\\frac{1}{cS}}
+    .. math:: \\theta(t) = \\frac{A}{t^{-3/2}} \\exp(-t/a -b/t)
+
+    .. math:: p[0] = A = \\exp(-x/\\lambda)
+    .. math:: p[1] = a = \\sqrt{\\frac{1}{cS}}
+    .. math:: p[2] = b = x^2 cS / (4 \\lambda^2)
 
     where :math:`\\lambda = \\sqrt{kDc}`
 
     References
     ----------
-    .. [polder] http://grondwaterformules.nl/index.php/formules/waterloop
-    /deklaag-met-sloten
+    .. [polder] [1] G.A. Bruggeman (1999). Analytical solutions of 
+    geohydrological problems. Elsevier Science. Amsterdam, Eq. 123.32
 
     """
-    _name = "Polder"
+    _name = "Polder2"
 
     def __init__(self, up=True, meanstress=1, cutoff=0.999):
         RfuncBase.__init__(self, up, meanstress, cutoff)
@@ -660,21 +660,12 @@ class Polder2(RfuncBase):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         A_init = 1
-        a_init = 1
+        a_init = 10
         b_init = 1
-        parameters.loc[name + '_A'] = (A_init, 0, 2, False, name)
-        parameters.loc[name + '_a'] = (a_init, 0, 100, True, name)
-        parameters.loc[name + '_b'] = (b_init, 0, 10, True, name)
+        parameters.loc[name + '_A'] = (A_init, 0, 2, True, name)
+        parameters.loc[name + '_a'] = (a_init, 0.01, 1000, True, name)
+        parameters.loc[name + '_b'] = (b_init, 1e-4, 1e4, True, name)
         return parameters
-
-#     def get_tmax(self, p, cutoff=None):
-#         if cutoff is None:
-#             cutoff = self.cutoff
-#         a = p[1]
-#         b = erfcinv(2 * cutoff)
-#         c = -p[1] / p[2]
-#         sqrttmax = (-b + np.sqrt(b ** 2 - 4 * a * c) / (2 * a))
-#         return sqrttmax ** 2
     
     def get_tmax(self, p, cutoff=None):
         if cutoff is None:
@@ -688,7 +679,7 @@ class Polder2(RfuncBase):
 
     def gain(self, p):
         # the steady state solution of Mazure
-        g = p[0] * np.exp(-2 * p[1])
+        g = p[0]
         if not self.up:
             g = -g
         return g
