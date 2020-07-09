@@ -495,14 +495,24 @@ class Polder(RfuncBase):
         parameters.loc[name + '_b'] = (b_init, 0, 10, True, name)
         return parameters
 
+#     def get_tmax(self, p, cutoff=None):
+#         if cutoff is None:
+#             cutoff = self.cutoff
+#         a = p[1]
+#         b = erfcinv(2 * cutoff)
+#         c = -p[1] / p[2]
+#         sqrttmax = (-b + np.sqrt(b ** 2 - 4 * a * c) / (2 * a))
+#         return sqrttmax ** 2
+    
     def get_tmax(self, p, cutoff=None):
         if cutoff is None:
             cutoff = self.cutoff
-        a = p[1]
-        b = erfcinv(2 * cutoff)
-        c = -p[1] / p[2]
-        sqrttmax = (-b + np.sqrt(b ** 2 - 4 * a * c) / (2 * a))
-        return sqrttmax ** 2
+        A, p0, sqrtp1 = p
+        p1 = sqrtp1 ** 2
+        inverfc = erfcinv(2 * cutoff) 
+        y = ((-inverfc + np.sqrt(inverfc ** 2 + 4 * p0)) / 2)
+        tmax = (y / np.sqrt(p1)) ** 2
+        return tmax
 
     def gain(self, p):
         # the steady state solution of Mazure
