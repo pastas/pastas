@@ -295,7 +295,7 @@ class Hantush(RfuncBase):
     .. math:: p[1] = rho = \\frac{r}{\\lambda}
     .. math:: p[2] = cS
 
-    where :math:`\\lambda = \\sqrt{\\frac{kD}{c}}`
+    where :math:`\\lambda = \\sqrt{kDc}`
 
     References
     ----------
@@ -480,11 +480,11 @@ class Hantush2(RfuncBase):
     
     .. math:: \\theta(t) = \\frac{A}{t} \\exp(-t/a -b/t)
 
-    .. math:: p[0] = A = \\frac{1}{4 \\pi kD} ## check
+    .. math:: p[0] = A # check \\frac{1}{4 \\pi kD}
     .. math:: p[1] = a = cS
     .. math:: p[2] = b = r^2 cS / (4 \\lambda^2)
 
-    where :math:`\\lambda = \\sqrt{\\frac{kD}{c}}`
+    where :math:`\\lambda = \\sqrt{kDc}`
 
     References
     ----------
@@ -500,7 +500,7 @@ class Hantush2(RfuncBase):
        subjected to multiple stresses. Ground Water, 46(1), 30-40.
 
     """
-    _name = "Hantush"
+    _name = "Hantush2"
 
     def __init__(self, up=False, meanstress=1, cutoff=0.999):
         RfuncBase.__init__(self, up, meanstress, cutoff)
@@ -627,6 +627,87 @@ class Polder(RfuncBase):
             0.5 * np.exp(-2 * x) * erfc(x / y - y)
         return s
 
+    
+class Polder2(RfuncBase):
+    """The Polder function, using the standard A, a, b parameters
+
+    Notes
+    -----
+    The Polder function is explained in [polder]_. It's parameters are:
+
+    .. math:: p[0] = A
+    .. math:: p[0] = a = \\sqrt{\\frac{1}{cS}}
+    .. math:: p[1] =  p[2] = b = x^2 cS / (4 \\lambda^2)
+    
+    .. math:: p[0] = \\frac{x}{2\\lambda}
+    .. math:: p[1] = \\sqrt{\\frac{1}{cS}}
+
+    where :math:`\\lambda = \\sqrt{kDc}`
+
+    References
+    ----------
+    .. [polder] http://grondwaterformules.nl/index.php/formules/waterloop
+    /deklaag-met-sloten
+
+    """
+    _name = "Polder"
+
+    def __init__(self, up=True, meanstress=1, cutoff=0.999):
+        RfuncBase.__init__(self, up, meanstress, cutoff)
+        self.nparam = 3
+
+    def get_init_parameters(self, name):
+        parameters = DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        A_init = 1
+        a_init = 1
+        b_init = 1
+        parameters.loc[name + '_A'] = (A_init, 0, 2, False, name)
+        parameters.loc[name + '_a'] = (a_init, 0, 100, True, name)
+        parameters.loc[name + '_b'] = (b_init, 0, 10, True, name)
+        return parameters
+
+#     def get_tmax(self, p, cutoff=None):
+#         if cutoff is None:
+#             cutoff = self.cutoff
+#         a = p[1]
+#         b = erfcinv(2 * cutoff)
+#         c = -p[1] / p[2]
+#         sqrttmax = (-b + np.sqrt(b ** 2 - 4 * a * c) / (2 * a))
+#         return sqrttmax ** 2
+    
+    def get_tmax(self, p, cutoff=None):
+        if cutoff is None:
+            cutoff = self.cutoff
+        A, a, b = p
+        x = np.sqrt(b / a)
+        inverfc = erfcinv(2 * cutoff) 
+        y = (-inverfc + np.sqrt(inverfc ** 2 + 4 * x)) / 2
+        tmax = a * y ** 2
+        return tmax
+
+    def gain(self, p):
+        # the steady state solution of Mazure
+        g = p[0] * np.exp(-2 * p[1])
+        if not self.up:
+            g = -g
+        return g
+
+    def step(self, p, dt=1, cutoff=None, maxtmax=None):
+        t = self.get_t(p, dt, cutoff, maxtmax)
+        A, a, b = p
+        s = p[0] * self.polder_function(np.sqrt(b / a), np.sqrt(t / a)) / \
+            np.exp(-2 * np.sqrt(b / a))
+        if not self.up:
+            s = -s
+        return s
+
+    @staticmethod
+    def polder_function(x, y):
+        s = 0.5 * np.exp(2 * x) * erfc(x / y + y) + \
+            0.5 * np.exp(-2 * x) * erfc(x / y - y)
+        return s
+    
 
 class One(RfuncBase):
     """Dummy class for Constant. Returns 1
