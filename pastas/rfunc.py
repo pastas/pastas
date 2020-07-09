@@ -457,6 +457,99 @@ class HantushWellModel(RfuncBase):
         F[tau >= rho / 2] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(
             tau2 + rho ** 2 / (4 * tau2))
         return p[0] * F
+    
+class Hantush2(RfuncBase):
+    """
+    The Hantush well function, using the standard A, a, b parameters
+
+    Parameters
+    ----------
+    up: bool or None, optional
+        indicates whether a positive stress will cause the head to go up
+        (True, default) or down (False), if None the head can go both ways.
+    meanstress: float
+        mean value of the stress, used to set the initial value such that
+        the final step times the mean stress equals 1
+    cutoff: float
+        proportion after which the step function is cut off. default is 0.999.
+
+    Notes
+    -----
+    The Hantush well function is explained in [hantush_1955]_, [veling_2010]_
+    and [asmuth_2008]_. The impulse response function may be written as
+    
+    .. math:: \\theta(t) = \\frac{A}{t} \\exp(-t/a -b/t)
+
+    .. math:: p[0] = A = \\frac{1}{4 \\pi kD} ## check
+    .. math:: p[1] = a = cS
+    .. math:: p[2] = b = r^2 cS / (4 \\lambda^2)
+
+    where :math:`\\lambda = \\sqrt{\\frac{kD}{c}}`
+
+    References
+    ----------
+    .. [hantush_1955] Hantush, M. S., & Jacob, C. E. (1955). Non‐steady
+       radial flow in an infinite leaky aquifer. Eos, Transactions American
+       Geophysical Union, 36(1), 95-100.
+
+    .. [veling_2010] Veling, E. J. M., & Maas, C. (2010). Hantush well function
+       revisited. Journal of hydrology, 393(3), 381-388.
+
+    .. [asmuth_2008] Von Asmuth, J. R., Maas, K., Bakker, M., & Petersen,
+       J. (2008). Modeling time series of ground water head fluctuations
+       subjected to multiple stresses. Ground Water, 46(1), 30-40.
+
+    """
+    _name = "Hantush"
+
+    def __init__(self, up=False, meanstress=1, cutoff=0.999):
+        RfuncBase.__init__(self, up, meanstress, cutoff)
+        self.nparam = 3
+
+    def get_init_parameters(self, name):
+        parameters = DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        if self.up:
+            parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
+                                           100 / self.meanstress, True, name)
+        elif self.up is False:
+            parameters.loc[name + '_A'] = (-1 / self.meanstress,
+                                           -100 / self.meanstress, 0, True,
+                                           name)
+        else:
+            parameters.loc[name + '_A'] = (1 / self.meanstress,
+                                           np.nan, np.nan, True, name)
+        parameters.loc[name + '_a'] = (100, 1e-3, 1e4, True, name)
+        parameters.loc[name + '_b'] = (1, 1e-4, 1e4, True, name)
+        return parameters
+
+    def get_tmax(self, p, cutoff=None):
+        # approximate formula for tmax
+        if cutoff is None:
+            cutoff = self.cutoff
+        cS = p[1]
+        rho = np.sqrt(4 * p[2] / p[1])
+        k0rho = k0(rho)
+        return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
+
+    def gain(self, p):
+        return p[0]
+
+    def step(self, p, dt=1, cutoff=None, maxtmax=None):
+        cS = p[1]
+        rho = np.sqrt(4 * p[2] / p[1])
+        k0rho = k0(rho)
+        t = self.get_t(p, dt, cutoff, maxtmax)
+        tau = t / cS
+        tau1 = tau[tau < rho / 2]
+        tau2 = tau[tau >= rho / 2]
+        w = (exp1(rho) - k0rho) / (exp1(rho) - exp1(rho / 2))
+        F = np.zeros_like(tau)
+        F[tau < rho / 2] = w * exp1(rho ** 2 / (4 * tau1)) - (w - 1) * exp1(
+            tau1 + rho ** 2 / (4 * tau1))
+        F[tau >= rho / 2] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(
+            tau2 + rho ** 2 / (4 * tau2))
+        return p[0] * F / (2 * k0rho)
 
 
 class Polder(RfuncBase):
