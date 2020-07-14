@@ -15,10 +15,14 @@ simulation and the observations.
    aic
 
 Examples
---------
+========
 These methods may be used as follows:
 
 >>> ps.stats.rmse(sim, obs)
+
+or
+
+>>> ml.stats.rmse()
 
 """
 
@@ -44,9 +48,9 @@ def rmse(sim=None, obs=None, res=None, missing="drop"):
 
     Notes
     -----
-    .. math:: rmse = \\sqrt{\\frac{\\sum{residuals^2}}{N}}
+    .. math:: rmse = \\sqrt{\\frac{\\sum{r^2}}{n}}
 
-    where N is the number of residuals.
+    where :math:`n` is the number of residuals :math:`r`.
 
     """
     if res is None:
@@ -60,7 +64,7 @@ def rmse(sim=None, obs=None, res=None, missing="drop"):
 
 
 def sse(sim, obs, missing="drop"):
-    """Sum of the squares of the error (SSE)
+    """Sum of the squares of the error (SSE).
 
     Parameters
     ----------
@@ -76,9 +80,9 @@ def sse(sim, obs, missing="drop"):
     -----
     The SSE is calculated as follows:
 
-    .. math:: SSE = \\sum(E^2)
+    .. math:: sse = \\sum(r^2)
 
-    Where E is an array of the residual series.
+    Where :math:`r` are the residuals.
 
     """
     res = (sim - obs)
@@ -104,9 +108,9 @@ def avg_dev(sim, obs, missing="drop"):
 
     Notes
     -----
-    .. math:: avg_dev = \\frac{\\sum(E)}{N}
+    .. math:: avg_{dev} = \\frac{\\sum(r)}{N}
 
-    Where N is the number of the residuals.
+    where :math:`n` is the number of residuals :math:`r`.
 
     """
     res = (sim - obs)
@@ -118,7 +122,7 @@ def avg_dev(sim, obs, missing="drop"):
 
 
 def nse(sim, obs, missing="drop"):
-    """Nash-Sutcliffe coefficient for model fit as defined in [nash_1970].
+    """Nash-Sutcliffe coefficient for model fit as defined in [nash_1970]_.
 
     Parameters
     ----------
@@ -132,7 +136,7 @@ def nse(sim, obs, missing="drop"):
 
     Notes
     -----
-
+    .. math:: nse = 1 - \frac{\\sum(h_s-h_o)^2}{\\sum(h_o-\\mu_{h,o})}
 
     References
     ----------
@@ -151,7 +155,7 @@ def nse(sim, obs, missing="drop"):
 
 
 def evp(sim, obs, missing="drop"):
-    """Explained variance percentage.
+    """Explained variance percentage according to [asmuth_2012]_.
 
     Parameters
     ----------
@@ -165,7 +169,8 @@ def evp(sim, obs, missing="drop"):
 
     Notes
     -----
-    Commonly used goodness-of-fit metric groundwater level models.
+    Commonly used goodness-of-fit metric groundwater level models as
+    computed in [asmuth_2012]_.
 
     .. math:: evp = \\frac{\\sigma_h^2 - \\sigma_r^2}{\\sigma_h^2} * 100
 
@@ -235,7 +240,7 @@ def rsq(sim, obs, nparam=None, missing="drop"):
 
 
 def bic(sim, obs, nparam, missing="drop"):
-    """Bayesian Information Criterium (BIC) according to [akaike_1979].
+    """Bayesian Information Criterium (BIC) according to [akaike_1979]_.
 
     Parameters
     ----------
@@ -273,7 +278,7 @@ def bic(sim, obs, nparam, missing="drop"):
 
 
 def aic(sim, obs, nparam, missing="drop"):
-    """Akaike Information Criterium (AIC) according to [akaike_1974].
+    """Akaike Information Criterium (AIC) according to [akaike_1974]_.
 
     Parameters
     ----------

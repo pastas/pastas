@@ -13,8 +13,8 @@ Cross- and Autocorrelations
 .. automodule:: pastas.stats.core
 
 
-Model fit
----------
+Model fit metrics
+-----------------
 
 .. automodule:: pastas.stats.metrics
 .. automodule:: pastas.modelstats

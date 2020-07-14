@@ -7,22 +7,12 @@ simulation and the observations.
    :nosignatures:
    :toctree: ./generated
 
-   rmse
-   rmsn
-   sse
-   avg_dev
-   nse
-   evp
-   rsq
-   rsq_adj
-   bic
-   aic
    summary
    many
    all
 
 Examples
---------
+========
 These methods may be used as follows.
 
 
