@@ -108,7 +108,7 @@ def avg_dev(sim, obs, missing="drop"):
 
     Notes
     -----
-    .. math:: avg_{dev} = \\frac{\\sum(r)}{N}
+    .. math:: avg_{dev} = \\frac{\\sum(r)}{n}
 
     where :math:`n` is the number of residuals :math:`r`.
 
@@ -136,7 +136,7 @@ def nse(sim, obs, missing="drop"):
 
     Notes
     -----
-    .. math:: nse = 1 - \frac{\\sum(h_s-h_o)^2}{\\sum(h_o-\\mu_{h,o})}
+    .. math:: nse = 1 - \\frac{\\sum(h_s-h_o)^2}{\\sum(h_o-\\mu_{h,o})}
 
     References
     ----------
