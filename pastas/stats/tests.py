@@ -1,5 +1,5 @@
-"""The following methods may be used for the diagnostic checking of the a
-calibrated time series model.
+"""The following methods may be used for the diagnostic checking of the
+residual time series of a calibrated (Pastas) model.
 
 .. codeauthor:: R.A Collenteur
 
@@ -25,8 +25,8 @@ from scipy.stats import chi2, norm, shapiro, normaltest, probplot
 
 from .core import acf as get_acf
 
-__all__ = ["ljung_box", "runs_test", "durbin_watson", "plot_acf",
-           "plot_diagnostics"]
+__all__ = ["durbin_watson", "ljung_box", "runs_test", "diagnostics",
+           "plot_acf", "plot_diagnostics"]
 
 
 def durbin_watson(series=None, acf=None, alpha=0.05, **kwargs):
@@ -213,7 +213,7 @@ def runs_test(series, alpha=0.05, cutoff="mean", return_h=False):
     Returns
     -------
     z_stat: float
-        Runs test statistic
+        Runs test statistic.
     pval: float
         p-value for the test statistic, based on a normal distribution.
     h: bool, optional
@@ -411,8 +411,15 @@ def plot_diagnostics(series, figsize=(10, 6), bins=50, acf_options=None,
     Examples
     --------
     >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
-    >>>                 data=np.random.rand(1000))
-    >>> ps.stats.plot_diagnostics(res)
+    >>>                 data=np.random.normal(0, 1, 1000))
+    ps.stats.diagnostics(res)
+    Out[59]:
+                      Checks Statistic P-value  Reject H0
+    Shapiroo       Normality      1.00    0.86      False
+    D'Agostino     Normality      1.18    0.56      False
+    Runs test      Autocorr.     -0.76    0.45      False
+    Durbin-Watson  Autocorr.      2.02     nan      False
+    Ljung-Box      Autocorr.      5.67    1.00      False
 
     Note
     ----

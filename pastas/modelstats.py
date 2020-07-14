@@ -23,6 +23,8 @@ simulation and the observations.
 
 Examples
 --------
+These methods may be used as follows.
+
 
     >>> ml.stats.summary()
                                          Value
@@ -36,10 +38,11 @@ Examples
 
 """
 
-from numpy import sqrt, log, nan
+from numpy import nan
 from pandas import DataFrame
 
 from .decorators import model_tmin_tmax
+from .stats import metrics
 
 
 class Statistics:
@@ -80,7 +83,6 @@ included in Pastas. To obtain a list of all statistics that are included type:
     >>> print(ml.stats.ops)"""
         return msg
 
-    # The statistical functions
     @model_tmin_tmax
     def rmse(self, tmin=None, tmax=None):
         """Root mean squared error of the residuals.
@@ -90,16 +92,14 @@ included in Pastas. To obtain a list of all statistics that are included type:
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
 
-        Notes
-        -----
-        .. math:: rmse = \\sqrt{\\frac{\\sum{residuals^2}}{N}}
-
-        where N is the number of residuals.
+        See Also
+        --------
+        pastas.stats.rmse
 
         """
-        res = self.ml.residuals(tmin=tmin, tmax=tmax).values
-        N = res.size
-        return sqrt((res ** 2).sum() / N)
+        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        return metrics.rmse(sim=sim, obs=obs)
 
     @model_tmin_tmax
     def rmsn(self, tmin=None, tmax=None):
@@ -115,19 +115,16 @@ included in Pastas. To obtain a list of all statistics that are included type:
         float or nan
             Return a float if noisemodel is present, nan if not.
 
-        Notes
-        -----
-        .. math:: rmsn = \\sqrt{\\frac{\\sum(noise^2)}{N}}
-
-        where N is the number of noise.
+        See Also
+        --------
+        pastas.stats.rmse
 
         """
         if not self.ml.settings["noise"]:
             return nan
         else:
-            res = self.ml.noise(tmin=tmin, tmax=tmax).values
-            N = res.size
-            return sqrt((res ** 2).sum() / N)
+            res = self.ml.noise(tmin=tmin, tmax=tmax)
+            return metrics.rmse(res=res)
 
     @model_tmin_tmax
     def sse(self, tmin=None, tmax=None):
@@ -138,17 +135,14 @@ included in Pastas. To obtain a list of all statistics that are included type:
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
 
-        Notes
-        -----
-        The SSE is calculated as follows:
-
-        .. math:: SSE = \\sum(E^2)
-
-        Where E is an array of the residual series.
+        See Also
+        --------
+        pastas.stats.sse
 
         """
-        res = self.ml.residuals(tmin=tmin, tmax=tmax).values
-        return (res ** 2).sum()
+        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        return metrics.sse(sim=sim, obs=obs)
 
     @model_tmin_tmax
     def avg_dev(self, tmin=None, tmax=None):
@@ -159,15 +153,14 @@ included in Pastas. To obtain a list of all statistics that are included type:
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
 
-        Notes
-        -----
-        .. math:: avg_dev = \\frac{\\sum(E)}{N}
-
-        Where N is the number of the residuals.
+        See Also
+        --------
+        pastas.stats.avg_dev
 
         """
-        res = self.ml.residuals(tmin=tmin, tmax=tmax).values
-        return res.mean()
+        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        return metrics.avg_dev(sim=sim, obs=obs)
 
     @model_tmin_tmax
     def nse(self, tmin=None, tmax=None):
@@ -178,21 +171,14 @@ included in Pastas. To obtain a list of all statistics that are included type:
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
 
-        Notes
-        -----
-        Based on [nash_1970]_. (same as rsq)
-
-        References
-        ----------
-        .. [nash_1970] Nash, J. E., & Sutcliffe, J. V. (1970). River flow
-           forecasting through conceptual models part I-A discussion of
-           principles. Journal of hydrology, 10(3), 282-290.
+        See Also
+        --------
+        pastas.stats.nse
 
         """
-        res = self.ml.residuals(tmin=tmin, tmax=tmax).values
-        obs = self.ml.observations(tmin=tmin, tmax=tmax).values
-        E = 1 - (res ** 2).sum() / ((obs - obs.mean()) ** 2).sum()
-        return E
+        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        return metrics.nse(sim=sim, obs=obs)
 
     @model_tmin_tmax
     def evp(self, tmin=None, tmax=None):
@@ -203,31 +189,32 @@ included in Pastas. To obtain a list of all statistics that are included type:
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
 
-        Notes
-        -----
-        Commonly used statistic in time series models of groundwater levels.
-
-        .. math:: evp = \\frac{var(h) - var(res)}{var(h)} * 100
+        See Also
+        --------
+        pastas.stats.evp
 
         """
-        res = self.ml.residuals(tmin=tmin, tmax=tmax).values
-        obs = self.ml.observations(tmin=tmin, tmax=tmax).values
-        if obs.var() == 0.0:
-            return 100.
-        else:
-            evp = max(0.0, 100 * (1 - (res.var(ddof=0) / obs.var(ddof=0))))
-        return evp
+        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        return metrics.evp(sim=sim, obs=obs)
 
     @model_tmin_tmax
     def rsq(self, tmin=None, tmax=None):
-        """Correlation between observed and simulated series.
+        """R-squared.
+
+        Parameters
+        ----------
+        tmin: str or pandas.Timestamp, optional
+        tmax: str or pandas.Timestamp, optional
+
+        See Also
+        --------
+        pastas.stats.rsq
 
         """
-        obs = self.ml.observations(tmin=tmin, tmax=tmax).values
-        res = self.ml.residuals(tmin=tmin, tmax=tmax).values
-        RSS = (res ** 2.0).sum()
-        TSS = ((obs - obs.mean()) ** 2.0).sum()
-        return 1.0 - RSS / TSS
+        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        return metrics.rsq(sim=sim, obs=obs)
 
     @model_tmin_tmax
     def rsq_adj(self, tmin=None, tmax=None):
@@ -238,85 +225,54 @@ included in Pastas. To obtain a list of all statistics that are included type:
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
 
-        Notes
-        -----
-        .. math:: R_{corrected} = 1-  \\frac{n-1}{n-N_{param}}*\\frac{RSS}{TSS}
-
-        Where:
-
-        * n = Number of observations
-        * :math:`N_{param}` = Number of free parameters
-        * RSS = sum of the squared residuals
-        * TSS = total sum of squared residuals
+        See Also
+        --------
+        pastas.stats.rsq
 
         """
-
-        obs = self.ml.observations(tmin=tmin, tmax=tmax).values
-        res = self.ml.residuals(tmin=tmin, tmax=tmax).values
-        N = obs.size
-        RSS = (res ** 2.0).sum()
-        TSS = ((obs - obs.mean()) ** 2.0).sum()
         nparam = self.ml.parameters.index.size
-        return 1.0 - (N - 1.0) / (N - nparam) * RSS / TSS
+        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        return metrics.rsq(sim=sim, obs=obs, nparam=nparam)
 
     @model_tmin_tmax
     def bic(self, tmin=None, tmax=None):
         """Bayesian Information Criterium (BIC).
 
         Parameters
+        Parameters
         ----------
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
 
-        Notes
-        -----
-        The Bayesian Information Criterium is calculated as follows:
-
-        .. math:: BIC = -2 log(L) + nparam * log(N)
-
-        Where nparam  is the number of free parameters
-
-        Warning
-        -------
-        The noise is used if a noisemodel is present, otherwise the
-        residuals are used.
+        See Also
+        --------
+        pastas.stats.bic
 
         """
-        if self.ml.settings["noise"]:
-            noise = self.ml.noise(tmin=tmin, tmax=tmax).values
-        else:
-            noise = self.ml.residuals(tmin=tmin, tmax=tmax).values
-        n = noise.size
-        nparam = self.ml.parameters[self.ml.parameters.vary == True].index.size
-        bic = -2.0 * log((noise ** 2.0).sum()) + nparam * log(n)
-        return bic
+        nparam = self.ml.parameters.index.size
+        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        return metrics.bic(sim=sim, obs=obs, nparam=nparam)
 
     @model_tmin_tmax
     def aic(self, tmin=None, tmax=None):
         """Akaike Information Criterium (AIC).
 
-        Notes
-        -----
-        .. math:: AIC = -2 log(L) + 2 nparam
+        Parameters
+        ----------
+        tmin: str or pandas.Timestamp, optional
+        tmax: str or pandas.Timestamp, optional
 
-        Where
-
-        * nparam = Number of free parameters
-        * L = likelihood function for the model.
-
-        Warning
-        -------
-        The noise is used if a noisemodel is present, otherwise the
-        residuals are used.
+        See Also
+        --------
+        pastas.stats.rsq
 
         """
-        if self.ml.settings["noise"]:
-            noise = self.ml.noise(tmin=tmin, tmax=tmax).values
-        else:
-            noise = self.ml.residuals(tmin=tmin, tmax=tmax).values
-        nparam = self.ml.parameters[self.ml.parameters.vary == True].index.size
-        aic = -2.0 * log((noise ** 2.0).sum()) + 2.0 * nparam
-        return aic
+        nparam = self.ml.parameters.index.size
+        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        return metrics.aic(sim=sim, obs=obs, nparam=nparam)
 
     @model_tmin_tmax
     def summary(self, tmin=None, tmax=None, stats='basic'):

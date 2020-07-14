@@ -7,8 +7,8 @@ Statistical tests
 .. automodule:: pastas.stats.tests
 
 
-Cross- and Autocorrelation
---------------------------
+Cross- and Autocorrelations
+---------------------------
 
 .. automodule:: pastas.stats.core
 
@@ -16,8 +16,8 @@ Cross- and Autocorrelation
 Model fit
 ---------
 
+.. automodule:: pastas.stats.metrics
 .. automodule:: pastas.modelstats
-
 
 Dutch stats
 -----------

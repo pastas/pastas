@@ -1,8 +1,6 @@
 """The following methods may be used to describe the fit between the model
 simulation and the observations.
 
-.. currentmodule:: pastas.modelstats.Statistics
-
 .. autosummary::
    :nosignatures:
    :toctree: ./generated
@@ -16,6 +14,12 @@ simulation and the observations.
    bic
    aic
 
+Examples
+--------
+These methods may be used as follows:
+
+>>> ps.stats.rmse(sim, obs)
+
 """
 
 from numpy import sqrt, log
@@ -23,7 +27,7 @@ from numpy import sqrt, log
 __all__ = ["rmse", "sse", "avg_dev", "nse", "evp", "rsq", "bic", "aic"]
 
 
-def rmse(sim, obs):
+def rmse(sim=None, obs=None, res=None, missing="drop"):
     """Root mean squared error.
 
     Parameters
@@ -32,6 +36,11 @@ def rmse(sim, obs):
         Series with the simulated values.
     obs: pandas.Series
         Series with the observed values.
+    res: pandas.Series
+        Series with the residual values.
+    missing: str, optional
+        string with the rule to deal with missing values. Only "drop" is
+        supported now.
 
     Notes
     -----
@@ -40,12 +49,17 @@ def rmse(sim, obs):
     where N is the number of residuals.
 
     """
-    res = (sim - obs).to_numpy()
+    if res is None:
+        res = (sim - obs)
+
+    if missing == "drop":
+        res = res.dropna()
+
     n = res.size
     return sqrt((res ** 2).sum() / n)
 
 
-def sse(sim, obs):
+def sse(sim, obs, missing="drop"):
     """Sum of the squares of the error (SSE)
 
     Parameters
@@ -54,6 +68,9 @@ def sse(sim, obs):
         Series with the simulated values.
     obs: pandas.Series
         Series with the observed values.
+    missing: str, optional
+        string with the rule to deal with missing values. Only "drop" is
+        supported now.
 
     Notes
     -----
@@ -64,11 +81,15 @@ def sse(sim, obs):
     Where E is an array of the residual series.
 
     """
-    res = (sim - obs).to_numpy()
+    res = (sim - obs)
+
+    if missing == "drop":
+        res = res.dropna()
+
     return (res ** 2).sum()
 
 
-def avg_dev(sim, obs):
+def avg_dev(sim, obs, missing="drop"):
     """Average deviation of the residuals.
 
     Parameters
@@ -77,6 +98,9 @@ def avg_dev(sim, obs):
         Series with the simulated values.
     obs: pandas.Series
         Series with the observed values.
+    missing: str, optional
+        string with the rule to deal with missing values. Only "drop" is
+        supported now.
 
     Notes
     -----
@@ -85,11 +109,15 @@ def avg_dev(sim, obs):
     Where N is the number of the residuals.
 
     """
-    res = (sim - obs).to_numpy()
+    res = (sim - obs)
+
+    if missing == "drop":
+        res = res.dropna()
+
     return res.mean()
 
 
-def nse(sim, obs):
+def nse(sim, obs, missing="drop"):
     """Nash-Sutcliffe coefficient for model fit as defined in [nash_1970].
 
     Parameters
@@ -98,6 +126,9 @@ def nse(sim, obs):
         Series with the simulated values.
     obs: pandas.Series
         Series with the observed values.
+    missing: str, optional
+        string with the rule to deal with missing values. Only "drop" is
+        supported now.
 
     Notes
     -----
@@ -110,13 +141,16 @@ def nse(sim, obs):
        principles. Journal of hydrology, 10(3), 282-290.
 
     """
-    res = (sim - obs).to_numpy()
-    obs = obs.to_numpy()
+    res = (sim - obs)
+
+    if missing == "drop":
+        res = res.dropna()
+
     ns = 1 - (res ** 2).sum() / ((obs - obs.mean()) ** 2).sum()
     return ns
 
 
-def evp(sim, obs):
+def evp(sim, obs, missing="drop"):
     """Explained variance percentage.
 
     Parameters
@@ -125,6 +159,9 @@ def evp(sim, obs):
         Series with the simulated values.
     obs: pandas.Series
         Series with the observed values.
+    missing: str, optional
+        string with the rule to deal with missing values. Only "drop" is
+        supported now.
 
     Notes
     -----
@@ -145,8 +182,11 @@ def evp(sim, obs):
        Software 38: 178–190.
 
     """
-    res = (sim - obs).to_numpy()
-    obs = obs.to_numpy()
+    res = (sim - obs)
+
+    if missing == "drop":
+        res = res.dropna()
+
     if obs.var() == 0.0:
         return 100.
     else:
@@ -154,7 +194,7 @@ def evp(sim, obs):
     return ev
 
 
-def rsq(sim, obs, nparam=None):
+def rsq(sim, obs, nparam=None, missing="drop"):
     """R-squared, possibly adjusted for the number of free parameters.
 
     Parameters
@@ -165,6 +205,9 @@ def rsq(sim, obs, nparam=None):
         Series with the observed values.
     nparam: int, optional
         number of calibrated parameters.
+    missing: str, optional
+        string with the rule to deal with missing values. Only "drop" is
+        supported now.
 
     Notes
     -----
@@ -178,8 +221,11 @@ def rsq(sim, obs, nparam=None):
     adjusted for the number of calibration parameters.
 
     """
-    res = (sim - obs).to_numpy()
-    obs = obs.to_numpy()
+    res = (sim - obs)
+
+    if missing == "drop":
+        res = res.dropna()
+
     rss = (res ** 2.0).sum()
     tss = ((obs - obs.mean()) ** 2.0).sum()
     if nparam:
@@ -188,7 +234,7 @@ def rsq(sim, obs, nparam=None):
         return 1.0 - rss / tss
 
 
-def bic(sim, obs, nparam):
+def bic(sim, obs, nparam, missing="drop"):
     """Bayesian Information Criterium (BIC) according to [akaike_1979].
 
     Parameters
@@ -199,6 +245,9 @@ def bic(sim, obs, nparam):
         Series with the observed values.
     nparam: int, optional
         number of calibrated parameters.
+    missing: str, optional
+        string with the rule to deal with missing values. Only "drop" is
+        supported now.
 
     Notes
     -----
@@ -215,11 +264,15 @@ def bic(sim, obs, nparam):
        237-242.
 
     """
-    res = (sim - obs).to_numpy()
+    res = (sim - obs)
+
+    if missing == "drop":
+        res = res.dropna()
+
     return -2.0 * log((res ** 2.0).sum()) + nparam * log(res.size)
 
 
-def aic(sim, obs, nparam):
+def aic(sim, obs, nparam, missing="drop"):
     """Akaike Information Criterium (AIC) according to [akaike_1974].
 
     Parameters
@@ -230,6 +283,9 @@ def aic(sim, obs, nparam):
         Series with the observed values.
     nparam: int, optional
         number of calibrated parameters.
+    missing: str, optional
+        string with the rule to deal with missing values. Only "drop" is
+        supported now.
 
     Notes
     -----
@@ -244,5 +300,9 @@ def aic(sim, obs, nparam):
        identification. IEEE transactions on automatic control, 19(6), 716-723.
 
     """
-    res = (sim - obs).to_numpy()
+    res = (sim - obs)
+
+    if missing == "drop":
+        res = res.dropna()
+
     return -2.0 * log((res ** 2.0).sum()) + 2.0 * nparam
