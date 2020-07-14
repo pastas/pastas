@@ -604,7 +604,7 @@ class Model:
                                 "version of Pastas.")
             weights = self.noisemodel.weights(res, p)
             noise = noise * weights
-            noise.name = "Weigthed Noise"
+            noise.name = "Weighted Noise"
             
         return noise
 

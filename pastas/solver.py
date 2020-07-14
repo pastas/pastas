@@ -71,7 +71,7 @@ class BaseSolver:
     def misfit(self, parameters, noise, weights=None, callback=None):
         """This method is called by all solvers to obtain a series that are
         minimized in the optimization proces. It handles the application of
-        the weigths, a noisemodel and other optimization options.
+        the weights, a noisemodel and other optimization options.
 
         Parameters
         ----------
