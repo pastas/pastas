@@ -30,5 +30,5 @@ def test_runs_test():
     Read NIST test data
     """
     data = pd.read_csv("tests/data/nist.csv")
-    _, test, _ = ps.stats.runs_test(data)
+    test, _ = ps.stats.runs_test(data)
     assert test[0] - 2.69 < 0.02
