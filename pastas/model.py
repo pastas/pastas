@@ -1475,7 +1475,8 @@ class Model:
 
         """
         if self.stressmodels[name].rfunc is None:
-            raise TypeError("Stressmodel {} has no rfunc".format(name))
+            self.logger.warning("Stressmodel {} has no rfunc".format(name))
+            return None
         else:
             block_or_step = getattr(self.stressmodels[name].rfunc,
                                     block_or_step)
