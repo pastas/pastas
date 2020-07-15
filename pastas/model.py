@@ -60,6 +60,7 @@ Get Methods
 
     get_block_response
     get_step_response
+    get_response_tmax
     get_contribution
     get_contributions
     get_transform_contribution
@@ -69,6 +70,7 @@ Get Methods
     get_parameters
     get_tmax
     get_tmin
+
 
 Set Methods
 -----------
@@ -601,7 +603,7 @@ class Model:
             weights = self.noisemodel.weights(res, p)
             noise = noise * weights
             noise.name = "Weighted Noise"
-            
+
         return noise
 
     def noise_weights(self, parameters=None, tmin=None, tmax=None, freq=None,
@@ -1556,6 +1558,43 @@ class Model:
         """
         return self._get_response(block_or_step="step", name=name, dt=dt,
                                   parameters=parameters, add_0=add_0, **kwargs)
+
+    def get_response_tmax(self, name, parameters=None, cutoff=0.999):
+        """Method to get the tmax used for the response function.
+
+        Parameters
+        ----------
+        name: str
+            String with the name of the stressmodel.
+        parameters: list or numpy.ndarray, optional
+            iterable with the parameters. If none, the optimal parameters are
+            used when available, initial otherwise.
+        cutoff: float, optional
+            float between 0 and 1. Default is 0.999 or 99.9% of the response.
+
+        Returns
+        -------
+        tmax: float
+            Float with the number of days.
+
+        Example
+        -------
+        >>> ml.get_response_tmax("recharge", cutoff=0.99)
+        >>> 703
+
+        This means that after 1053 days, 99% of the response of the
+        groundwater levels to a recharge pulse has taken place.
+
+        """
+        if self.stressmodels[name].rfunc is None:
+            self.logger.warning("Stressmodel {} has no rfunc".format(name))
+            return None
+        else:
+            if parameters is None:
+                parameters = self.get_parameters(name)
+            tmax = self.stressmodels[name].rfunc.get_tmax(p=parameters,
+                                                          cutoff=cutoff)
+            return tmax
 
     @get_stressmodel
     def get_stress(self, name, tmin=None, tmax=None, freq=None, warmup=None,
