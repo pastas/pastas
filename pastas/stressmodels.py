@@ -1369,7 +1369,7 @@ class TarsoModel(RechargeModel):
         return data
 
     @staticmethod
-    def check_stressmodel_compatibility(ml):
+    def _check_stressmodel_compatibility(ml):
         """Internal method to check if no other stressmodels, a constants or a
         transform is used."""
         msg = "A TarsoModel cannot be combined with {}. Either remove the" \

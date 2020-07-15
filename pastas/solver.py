@@ -50,11 +50,6 @@ class BaseSolver:
         The object returned by the minimization method that is used. It depends
         on the solver what is actually returned.
 
-    Methods
-    -------
-    misfit
-    get_correlations
-
     """
 
     def __init__(self, ml, pcov=None, nfev=None, obj_func=None, **kwargs):
@@ -63,7 +58,7 @@ class BaseSolver:
         if pcov is None:
             self.pcor = None  # Correlation between parameters
         else:
-            self.pcor = self.get_correlations(pcov)
+            self.pcor = self._get_correlations(pcov)
         self.nfev = nfev  # number of function evaluations
         self.obj_func = obj_func
         self.result = None  # Object returned by the optimization method
@@ -128,8 +123,8 @@ class BaseSolver:
 
         sigr = self.ml.residuals().std()
 
-        data = self.get_realizations(func=self.ml.simulate, n=n, name=None,
-                                     **kwargs)
+        data = self._get_realizations(func=self.ml.simulate, n=n, name=None,
+                                      **kwargs)
         data = data + sigr * np.random.randn(data.shape[0], data.shape[1])
 
         q = [alpha / 2, 1 - alpha / 2]
@@ -150,31 +145,31 @@ class BaseSolver:
         95% confidence interval.
 
         """
-        return self.get_confidence_interval(func=self.ml.simulate, n=n,
-                                            alpha=alpha, **kwargs)
+        return self._get_confidence_interval(func=self.ml.simulate, n=n,
+                                             alpha=alpha, **kwargs)
 
     def ci_block_response(self, name, n=1000, alpha=0.05, **kwargs):
         dt = self.ml.get_block_response(name=name).index.values
-        return self.get_confidence_interval(func=self.ml.get_block_response,
-                                            n=n, alpha=alpha, name=name, dt=dt,
-                                            **kwargs)
+        return self._get_confidence_interval(func=self.ml.get_block_response,
+                                             n=n, alpha=alpha, name=name, dt=dt,
+                                             **kwargs)
 
     def ci_step_response(self, name, n=1000, alpha=0.05, **kwargs):
         dt = self.ml.get_block_response(name=name).index.values
-        return self.get_confidence_interval(func=self.ml.get_step_response,
-                                            n=n, alpha=alpha, name=name,
-                                            dt=dt, **kwargs)
+        return self._get_confidence_interval(func=self.ml.get_step_response,
+                                             n=n, alpha=alpha, name=name,
+                                             dt=dt, **kwargs)
 
     def ci_contribution(self, name, n=1000, alpha=0.05, **kwargs):
-        return self.get_confidence_interval(func=self.ml.get_contribution, n=n,
-                                            alpha=alpha, name=name, **kwargs)
+        return self._get_confidence_interval(func=self.ml.get_contribution, n=n,
+                                             alpha=alpha, name=name, **kwargs)
 
-    def get_realizations(self, func, n=None, name=None, **kwargs):
+    def _get_realizations(self, func, n=None, name=None, **kwargs):
         """Internal method to obtain  n number of realizations."""
         if name:
             kwargs["name"] = name
 
-        params = self.get_parameter_sample(n=n, name=name)
+        params = self._get_parameter_sample(n=n, name=name)
         data = {}
 
         for i, param in enumerate(params):
@@ -182,15 +177,15 @@ class BaseSolver:
 
         return DataFrame.from_dict(data, orient="columns")
 
-    def get_confidence_interval(self, func, n=None, name=None, alpha=0.05,
-                                **kwargs):
+    def _get_confidence_interval(self, func, n=None, name=None, alpha=0.05,
+                                 **kwargs):
         """Internal method to obtain a confidence interval."""
         q = [alpha / 2, 1 - alpha / 2]
-        data = self.get_realizations(func=func, n=n, name=name, **kwargs)
+        data = self._get_realizations(func=func, n=n, name=name, **kwargs)
 
         return data.quantile(q=q, axis=1).transpose()
 
-    def get_parameter_sample(self, name=None, n=None):
+    def _get_parameter_sample(self, name=None, n=None):
         """Internal method to obtain a parameter sets.
 
         Parameters
@@ -209,7 +204,7 @@ class BaseSolver:
 
         """
         par = self.ml.get_parameters(name=name)
-        pcov = self.get_covariance_matrix(name=name)
+        pcov = self._get_covariance_matrix(name=name)
 
         if name is None:
             p = self.ml.parameters
@@ -241,7 +236,7 @@ class BaseSolver:
 
         return samples[:n, :]
 
-    def get_covariance_matrix(self, name=None):
+    def _get_covariance_matrix(self, name=None):
         """Internal method to obtain the covariance matrix from the model.
 
         Parameters
@@ -267,9 +262,9 @@ class BaseSolver:
         return pcov
 
     @staticmethod
-    def get_correlations(pcov):
-        """Method to obtain the parameter correlations from the covariance
-        matrix.
+    def _get_correlations(pcov):
+        """Internal method to obtain the parameter correlations from the
+        covariance matrix.
 
         Parameters
         ----------
@@ -338,10 +333,10 @@ class LeastSquares(BaseSolver):
                                     x0=parameters.initial.values,
                                     args=(noise, weights, callback), **kwargs)
 
-        self.pcov = DataFrame(self.get_covariances(self.result.jac,
-                                                   self.result.cost),
+        self.pcov = DataFrame(self._get_covariances(self.result.jac,
+                                                    self.result.cost),
                               index=parameters.index, columns=parameters.index)
-        self.pcor = self.get_correlations(self.pcov)
+        self.pcor = self._get_correlations(self.pcov)
         self.nfev = self.result.nfev
         self.obj_func = self.result.cost
 
@@ -359,8 +354,8 @@ class LeastSquares(BaseSolver):
         p[self.vary] = parameters
         return self.misfit(p, noise, weights, callback)
 
-    def get_covariances(self, jacobian, cost, absolute_sigma=False):
-        """Method to get the covariance matrix from the jacobian.
+    def _get_covariances(self, jacobian, cost, absolute_sigma=False):
+        """Internal method to get the covariance matrix from the jacobian.
 
         Parameters
         ----------
@@ -455,7 +450,7 @@ class LmfitSolve(BaseSolver):
 
         names = self.result.var_names
         self.pcov = DataFrame(pcov, index=names, columns=names)
-        self.pcor = self.get_correlations(self.pcov)
+        self.pcor = self._get_correlations(self.pcov)
 
         # Set all optimization attributes
         self.nfev = self.result.nfev

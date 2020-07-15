@@ -159,7 +159,7 @@ class Plotting:
                         ylims.append((contrib.min(), hs.max()))
                 else:
                     ylims.append((hs.min(), hs.max()))
-            hrs = get_height_ratios(ylims)
+            hrs = _get_height_ratios(ylims)
         else:
             hrs = [2] + [1] * (len(contribs) + 1)
 
@@ -328,7 +328,7 @@ class Plotting:
                     ylims[i] = (np.mean(ylim) - min_ylim_diff / 2,
                                 np.mean(ylim) + min_ylim_diff / 2)
         # determine height ratios
-        height_ratios = get_height_ratios(ylims)
+        height_ratios = _get_height_ratios(ylims)
 
         nrows = len(contribs) + 1
         if axes is None:
@@ -1229,7 +1229,7 @@ class TrackSolve:
         self.fig.canvas.draw()
 
 
-def get_height_ratios(ylims):
+def _get_height_ratios(ylims):
     height_ratios = []
     for ylim in ylims:
         hr = ylim[1] - ylim[0]

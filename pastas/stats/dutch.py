@@ -48,7 +48,7 @@ def q_ghg(series, tmin=None, tmax=None, q=0.94, by_year=True):
     daily values.
 
     """
-    return __q_gxg__(series, q, tmin=tmin, tmax=tmax, by_year=by_year)
+    return _q_gxg(series, q, tmin=tmin, tmax=tmax, by_year=by_year)
 
 
 def q_glg(series, tmin=None, tmax=None, q=0.06, by_year=True):
@@ -73,7 +73,7 @@ def q_glg(series, tmin=None, tmax=None, q=0.06, by_year=True):
     daily values.
 
     """
-    return __q_gxg__(series, q, tmin=tmin, tmax=tmax, by_year=by_year)
+    return _q_gxg(series, q, tmin=tmin, tmax=tmax, by_year=by_year)
 
 
 def q_gvg(series, tmin=None, tmax=None, by_year=True):
@@ -101,7 +101,7 @@ def q_gvg(series, tmin=None, tmax=None, by_year=True):
     if tmax is not None:
         series = series.loc[:tmax]
     series = series.resample('d').median()
-    inspring = __in_spring__(series)
+    inspring = _in_spring(series)
     if any(inspring):
         if by_year:
             return (series
@@ -168,10 +168,10 @@ def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
             else:
                 return s.nlargest(1).mean()
 
-    return __gxg__(series, mean_high, tmin=tmin, tmax=tmax,
-                   fill_method=fill_method, limit=limit, output=output,
-                   min_n_meas=min_n_meas, min_n_years=min_n_years,
-                   year_offset=year_offset)
+    return _gxg(series, mean_high, tmin=tmin, tmax=tmax,
+                fill_method=fill_method, limit=limit, output=output,
+                min_n_meas=min_n_meas, min_n_years=min_n_years,
+                year_offset=year_offset)
 
 
 def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
@@ -226,10 +226,10 @@ def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
             else:
                 return s.nsmallest(1).mean()
 
-    return __gxg__(series, mean_low, tmin=tmin, tmax=tmax,
-                   fill_method=fill_method, limit=limit, output=output,
-                   min_n_meas=min_n_meas, min_n_years=min_n_years,
-                   year_offset=year_offset)
+    return _gxg(series, mean_low, tmin=tmin, tmax=tmax,
+                fill_method=fill_method, limit=limit, output=output,
+                min_n_meas=min_n_meas, min_n_years=min_n_years,
+                year_offset=year_offset)
 
 
 def gvg(series, tmin=None, tmax=None, fill_method='linear', limit=8,
@@ -271,10 +271,10 @@ def gvg(series, tmin=None, tmax=None, fill_method='linear', limit=8,
     month. Taking the mean of the values on March 14, March 28 and April 14.
 
     """
-    return __gxg__(series, __mean_spring__, tmin=tmin, tmax=tmax,
-                   fill_method=fill_method, limit=limit, output=output,
-                   min_n_meas=min_n_meas, min_n_years=min_n_years,
-                   year_offset=year_offset)
+    return _gxg(series, _mean_spring, tmin=tmin, tmax=tmax,
+                fill_method=fill_method, limit=limit, output=output,
+                min_n_meas=min_n_meas, min_n_years=min_n_years,
+                year_offset=year_offset)
 
 
 def gg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
@@ -323,15 +323,15 @@ def gg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
         else:
             return s.mean()
 
-    return __gxg__(series, mean_all, tmin=tmin, tmax=tmax,
-                   fill_method=fill_method, limit=limit, output=output,
-                   min_n_meas=min_n_meas, min_n_years=min_n_years,
-                   year_offset=year_offset)
+    return _gxg(series, mean_all, tmin=tmin, tmax=tmax,
+                fill_method=fill_method, limit=limit, output=output,
+                min_n_meas=min_n_meas, min_n_years=min_n_years,
+                year_offset=year_offset)
 
 
 # Helper functions
 
-def __mean_spring__(series, min_n_meas):
+def _mean_spring(series, min_n_meas):
     """Internal method to determine mean of timeseries values in spring.
 
     Year aggregator function for gvg method.
@@ -347,14 +347,14 @@ def __mean_spring__(series, min_n_meas):
         Mean of series, or NaN if no values in spring
 
     """
-    inspring = __in_spring__(series)
+    inspring = _in_spring(series)
     if inspring.sum() < min_n_meas:
         return nan
     else:
         return series.loc[inspring].mean()
 
 
-def __in_spring__(series):
+def _in_spring(series):
     """Internal method to test if timeseries index is between 14 March and 15
     April.
 
@@ -373,8 +373,8 @@ def __in_spring__(series):
     return Series(series.index.map(isinspring), index=series.index)
 
 
-def __gxg__(series, year_agg, tmin, tmax, fill_method, limit, output,
-            min_n_meas, min_n_years, year_offset):
+def _gxg(series, year_agg, tmin, tmax, fill_method, limit, output,
+         min_n_meas, min_n_years, year_offset):
     """Internal method for classic GXG statistics. Resampling the series to
     every 14th and 28th of the month. Taking the mean of aggregated
     values per year.
@@ -500,7 +500,7 @@ def __gxg__(series, year_agg, tmin, tmax, fill_method, limit, output,
         raise (ValueError(msg))
 
 
-def __q_gxg__(series, q, tmin=None, tmax=None, by_year=True):
+def _q_gxg(series, q, tmin=None, tmax=None, by_year=True):
     """Dutch groundwater statistics GHG and GLG approximated
     by taking quantiles of the timeseries values per year
     and taking the mean of the quantiles.

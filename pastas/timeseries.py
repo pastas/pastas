@@ -11,7 +11,6 @@ data.
 
 .. currentmodule:: pastas.timeseries.TimeSeries
 
-
 .. rubric:: Attributes
 
 .. autosummary::
@@ -31,24 +30,6 @@ Public Methods
   to_dict
   plot
 
-Internal Methods
-----------------
-.. autosummary::
-  :nosignatures:
-  :toctree: ./generated
-
-  change_frequency
-  fill_after
-  fill_before
-  fill_nan
-  normalize
-  sample_down
-  sample_up
-  sample_weighted
-  to_daily_unit
-  update_settings
-  validate_series
-
 """
 
 from logging import getLogger
@@ -56,7 +37,7 @@ from logging import getLogger
 import pandas as pd
 from pandas.tseries.frequencies import to_offset
 
-from .utils import get_stress_dt, get_dt, get_time_offset, \
+from .utils import _get_stress_dt, _get_dt, _get_time_offset, \
     timestep_weighted_resample
 
 logger = getLogger(__name__)
@@ -199,15 +180,15 @@ class TimeSeries:
                             "from {}".format(settings,
                                              self._predefined_settings.keys())
                     raise KeyError(error)
-            if self.update_settings(**settings):
+            if self._update_settings(**settings):
                 update = True
         if kwargs:
-            if self.update_settings(**kwargs):
+            if self._update_settings(**kwargs):
                 update = True
 
         # Create a validated series for computations and update
         if validate:
-            self._series_validated = self.validate_series(
+            self._series_validated = self._validate_series(
                 self._series_original)
         if update:
             self.update_series(force_update=True, **self.settings)
@@ -240,7 +221,7 @@ class TimeSeries:
             self.settings["tmax"] = None
             freq_original = self.freq_original  # remember what it was
             self.freq_original = None
-            self._series_validated = self.validate_series(
+            self._series_validated = self._validate_series(
                 self._series_original)
             if self.freq_original is None:
                 self.freq_original = freq_original
@@ -266,7 +247,81 @@ class TimeSeries:
                              "it is calculated from series_original. Please "
                              "set series_original to update the series.")
 
-    def validate_series(self, series):
+    def update_series(self, force_update=False, **kwargs):
+        """Method to update the series with new options.
+
+        Parameters
+        ----------
+        force_update: bool, optional
+            argument that is used to force an update, even when no changes
+            are found. Internally used by the __init__ method. Default is
+            False.
+        freq: str, optional
+            String representing the desired frequency of the time series. Must
+            be one of the following: (D, h, m, s, ms, us, ns) or a multiple of
+            that e.g. "7D".
+        sample_up: str or float, optional
+            String with the method to use when the frequency is increased (
+            e.g. Weekly to daily). Possible values are: "backfill", "bfill",
+            "pad", "ffill", "mean", "interpolate", "divide" or a float value
+            to fill the gaps.
+        sample_down: str, optional
+            String with the method to use when the frequency decreases
+            (e.g. from daily to weekly values). Possible values are: "mean",
+            "drop", "sum", "min", "max".
+        fill_nan: str or float, optional
+            Method to use when there ar nan-values in the time series.
+            Possible values are: "mean", "drop", "interpolate" (default) or a
+            float value.
+        fill_before: str or float, optional
+            Method used to extend a time series before any measurements are
+            available. possible values are: "mean" or a float value.
+        fill_after: str or float, optional
+            Method used to extend a time series after any measurements are
+            available. Possible values are: "mean" or a float value.
+        tmin: str or pandas.TimeStamp, optional
+            String that can be converted to, or a Pandas TimeStamp with the
+            minimum time of the series.
+        tmax: str or pandas.TimeStamp, optional
+            String that can be converted to, or a Pandas TimeStamp with the
+            maximum time of the series.
+        norm: str or float, optional
+            String with the method to normalize the time series with.
+            Possible values are: "mean" or "median", "min", "max" or a float
+            value.
+
+        Notes
+        -----
+        The method will validate if any of the settings is changed to
+        determine if the series need to be updated.
+
+        """
+        if self._update_settings(**kwargs) or force_update:
+            # Get the validated series to start with
+            series = self.series_validated.copy(deep=True)
+
+            # Update the series with the new settings
+            series = self._to_daily_unit(series)
+            series = self._change_frequency(series)
+            series = self._fill_before(series)
+            series = self._fill_after(series)
+            series = self._normalize(series)
+
+            self._series = series
+
+    def multiply(self, other):
+        """Method to multiply the original time series.
+
+        Parameters
+        ----------
+        other: float or pandas.Series
+
+        """
+        self._series = self.series.multiply(other)
+        self._series_original = self.series_original.multiply(other)
+        self.update_series(force_update=True)
+
+    def _validate_series(self, series):
         """ Validate user provided time series.
 
         Parameters
@@ -334,7 +389,7 @@ class TimeSeries:
 
         # 6. drop nan-values
         if series.hasnans:
-            series = self.fill_nan(series)
+            series = self._fill_nan(series)
 
         if self.settings["tmin"] is None:
             self.settings["tmin"] = series.index.min()
@@ -343,7 +398,7 @@ class TimeSeries:
 
         return series
 
-    def update_settings(self, **kwargs):
+    def _update_settings(self, **kwargs):
         """Internal method that check if an update is actually necessary.
 
         Returns
@@ -364,67 +419,7 @@ class TimeSeries:
                 update = True
         return update
 
-    def update_series(self, force_update=False, **kwargs):
-        """Method to update the series with new options.
-
-        Parameters
-        ----------
-        force_update: bool, optional
-            argument that is used to force an update, even when no changes
-            are found. Internally used by the __init__ method. Default is
-            False.
-        freq: str, optional
-            String representing the desired frequency of the time series.
-        sample_up: str or float, optional
-            String with the method to use when the frequency is increased (
-            e.g. Weekly to daily). Possible values are: "backfill", "bfill",
-            "pad", "ffill", "mean", "interpolate", "divide" or a float value
-            to fill the gaps.
-        sample_down: str, optional
-            String with the method to use when the frequency decreases
-            (e.g. from daily to weekly values). Possible values are: "mean",
-            "drop", "sum", "min", "max".
-        fill_nan: str or float, optional
-            Method to use when there ar nan-values in the time series.
-            Possible values are: "mean", "drop", "interpolate" (default) or a
-            float value.
-        fill_before: str or float, optional
-            Method used to extend a time series before any measurements are
-            available. possible values are: "mean" or a float value.
-        fill_after: str or float, optional
-            Method used to extend a time series after any measurements are
-            available. Possible values are: "mean" or a float value.
-        tmin: str or pandas.TimeStamp, optional
-            String that can be converted to, or a Pandas TimeStamp with the
-            minimum time of the series.
-        tmax: str or pandas.TimeStamp, optional
-            String that can be converted to, or a Pandas TimeStamp with the
-            maximum time of the series.
-        norm: str or float, optional
-            String with the method to normalize the time series with.
-            Possible values are: "mean" or "median", "min", "max" or a float
-            value.
-
-        Notes
-        -----
-        The method will validate if any of the settings is changed to
-        determine if the series need to be updated.
-
-        """
-        if self.update_settings(**kwargs) or force_update:
-            # Get the validated series to start with
-            series = self.series_validated.copy(deep=True)
-
-            # Update the series with the new settings
-            series = self.to_daily_unit(series)
-            series = self.change_frequency(series)
-            series = self.fill_before(series)
-            series = self.fill_after(series)
-            series = self.normalize(series)
-
-            self._series = series
-
-    def change_frequency(self, series):
+    def _change_frequency(self, series):
         """Method to change the frequency of the time series.
 
         """
@@ -435,24 +430,24 @@ class TimeSeries:
             return series
         # 2. If original frequency could not be determined
         elif not self.freq_original:
-            series = self.sample_weighted(series)
+            series = self._sample_weighted(series)
         else:
-            dt_new = get_dt(freq)
-            dt_org = get_stress_dt(self.freq_original)
+            dt_new = _get_dt(freq)
+            dt_org = _get_stress_dt(self.freq_original)
             # 3. If new and original frequency are not a multiple of each other
             eps = 1e-10
             if not ((dt_new % dt_org) < eps or (dt_org % dt_new) < eps):
-                series = self.sample_weighted(series)
+                series = self._sample_weighted(series)
             # 4. If new frequency is lower than its original
             elif dt_new < dt_org:
-                series = self.sample_up(series)
+                series = self._sample_up(series)
             # 5. If new frequency is higher than its original
             elif dt_new > dt_org:
-                series = self.sample_down(series)
+                series = self._sample_down(series)
             # 6. If new frequency is equal to its original
             elif dt_new == dt_org:
                 # shouldn't we do this before changing frequency?
-                series = self.fill_nan(series)
+                series = self._fill_nan(series)
 
         # Drop nan-values at the beginning and end of the time series
         series = series.loc[
@@ -460,7 +455,7 @@ class TimeSeries:
 
         return series
 
-    def to_daily_unit(self, series):
+    def _to_daily_unit(self, series):
         method = self.settings["to_daily_unit"]
         if method is not None:
             if method is True or method == "divide":
@@ -477,7 +472,7 @@ class TimeSeries:
                 logger.warning(msg.format(self.name, method))
         return series
 
-    def sample_up(self, series):
+    def _sample_up(self, series):
         """Resample the time series when the frequency increases (e.g. from
         weekly to daily values).
 
@@ -522,7 +517,7 @@ class TimeSeries:
 
         return series
 
-    def sample_down(self, series):
+    def _sample_down(self, series):
         """Resample the time series when the frequency decreases (e.g. from
         daily to weekly values).
 
@@ -567,7 +562,7 @@ class TimeSeries:
 
         return series
 
-    def sample_weighted(self, series):
+    def _sample_weighted(self, series):
         freq = self.settings["freq"]
         tindex = pd.date_range(series.index[0].ceil(freq), series.index[-1],
                                freq=freq)
@@ -577,7 +572,7 @@ class TimeSeries:
         logger.info(msg)
         return series
 
-    def fill_nan(self, series):
+    def _fill_nan(self, series):
         """Fill up the nan-values when present and a constant frequency is
         required.
 
@@ -612,7 +607,7 @@ class TimeSeries:
 
         return series
 
-    def fill_before(self, series):
+    def _fill_before(self, series):
         """Method to add a period in front of the available time series.
 
         """
@@ -630,7 +625,7 @@ class TimeSeries:
         else:
             tmin = pd.Timestamp(tmin)
             # When time offsets are not equal
-            time_offset = get_time_offset(tmin, freq)
+            time_offset = _get_time_offset(tmin, freq)
             tmin = tmin - time_offset
 
             index_extend = pd.date_range(start=tmin, end=series.index.min(),
@@ -649,7 +644,7 @@ class TimeSeries:
 
         return series
 
-    def fill_after(self, series):
+    def _fill_after(self, series):
         """Method to add a period in front of the available time series.
 
         """
@@ -666,7 +661,7 @@ class TimeSeries:
             series = series.loc[:pd.Timestamp(tmax)]
         else:
             # When time offsets are not equal
-            time_offset = get_time_offset(tmax, freq)
+            time_offset = _get_time_offset(tmax, freq)
             tmax = tmax - time_offset
             index_extend = pd.date_range(start=series.index.max(), end=tmax,
                                          freq=freq)
@@ -684,7 +679,7 @@ class TimeSeries:
 
         return series
 
-    def normalize(self, series):
+    def _normalize(self, series):
         """Method to normalize the time series.
 
         """
@@ -708,11 +703,6 @@ class TimeSeries:
             logger.info(msg)
 
         return series
-
-    def multiply(self, other):
-        self._series = self.series.multiply(other)
-        self._series_original = self.series_original.multiply(other)
-        self.update_series(force_update=True)
 
     def to_dict(self, series=True):
         """Method to export the Time Series to a json format.

@@ -55,7 +55,7 @@ def load(fname, **kwargs):
         logger.error(msg)
         raise DeprecationWarning(msg)
 
-    ml = load_model(data)
+    ml = _load_model(data)
 
     logger.info("Pastas Model from file {} successfully loaded. This file "
                 "was created with Pastas {}. Your current version of Pastas "
@@ -128,7 +128,7 @@ def load_project(fname, **kwargs):
                         stress["series"] = mls.stresses.loc[
                             stress_name, "series"]
         try:
-            ml = load_model(ml)
+            ml = _load_model(ml)
             mls.models[ml_name] = ml
         except:
             try:
@@ -145,7 +145,8 @@ def load_project(fname, **kwargs):
     return mls
 
 
-def load_model(data):
+def _load_model(data):
+    """Internal method to create a model from a dictionary."""
     # Create model
     oseries = ps.TimeSeries(**data["oseries"])
 
@@ -222,7 +223,7 @@ def load_model(data):
 
     # When initial values changed
     for param, value in ml.parameters.loc[:, "initial"].iteritems():
-        ml.set_initial(name=param, value=value)
+        ml.set_parameter(name=param, initial=value)
 
     collect()
 

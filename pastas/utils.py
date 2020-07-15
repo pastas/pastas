@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 def frequency_is_supported(freq):
-    """Method to determine if a frequency is supported for a  pastas-model.
+    """Method to determine if a frequency is supported for a Pastas model.
 
     Parameters
     ----------
@@ -44,7 +44,9 @@ def frequency_is_supported(freq):
     """
     offset = to_offset(freq)
     if not hasattr(offset, 'delta'):
-        logger.error("Frequency %s not supported." % freq)
+        msg = "Frequency %s not supported.".format(freq)
+        logger.error(msg)
+        raise KeyError(msg)
     else:
         if offset.n is 1:
             freq = offset.name
@@ -53,7 +55,7 @@ def frequency_is_supported(freq):
     return freq
 
 
-def get_stress_dt(freq):
+def _get_stress_dt(freq):
     """Internal method to obtain a timestep in days from a frequency string.
 
     Parameters
@@ -108,8 +110,8 @@ def get_stress_dt(freq):
     return dt
 
 
-def get_dt(freq):
-    """Method to obtain a timestep in DAYS from a frequency string.
+def _get_dt(freq):
+    """Internal method to obtain a timestep in DAYS from a frequency string.
 
     Parameters
     ----------
@@ -126,7 +128,7 @@ def get_dt(freq):
     return dt
 
 
-def get_time_offset(t, freq):
+def _get_time_offset(t, freq):
     """Internal method to calculate the time offset of a TimeStamp.
 
     Parameters
