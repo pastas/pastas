@@ -77,10 +77,7 @@ Set Methods
     :nosignatures:
     :toctree: ./generated
 
-    set_initial
-    set_pmax
-    set_pmin
-    set_vary
+    set_parameter
 
 """
 
@@ -859,6 +856,9 @@ class Model:
         >>> ml.set_initial("constant_d", 10)
 
         """
+        msg = "Deprecation warning: method is deprecated and will be removed" \
+              " in version 0.16.0. Use ml.set_parameter instead."
+        self.logger.warning(msg)
         self.set_parameter(name, initial=value, move_bounds=move_bounds)
 
     def set_vary(self, name, value):
@@ -876,6 +876,9 @@ class Model:
         >>> ml.set_vary("constant_d", False)
 
         """
+        msg = "Deprecation warning: method is deprecated and will be removed" \
+              " in version 0.16.0. Use ml.set_parameter instead."
+        self.logger.warning(msg)
         self.set_parameter(name, vary=bool(value))
 
     def set_pmin(self, name, value):
@@ -893,6 +896,9 @@ class Model:
         >>> ml.set_pmin("constant_d", -10)
 
         """
+        msg = "Deprecation warning: method is deprecated and will be removed" \
+              " in version 0.16.0. Use ml.set_parameter instead."
+        self.logger.warning(msg)
         self.set_parameter(name, pmin=value)
 
     def set_pmax(self, name, value):
@@ -910,6 +916,9 @@ class Model:
         >>> ml.set_pmax("constant_d", 10)
 
         """
+        msg = "Deprecation warning: method is deprecated and will be removed" \
+              " in version 0.16.0. Use ml.set_parameter instead."
+        self.logger.warning(msg)
         self.set_parameter(name, pmax=value)
 
     def set_parameter(self, name, initial=None, vary=None, pmin=None,
