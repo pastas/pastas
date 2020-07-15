@@ -47,7 +47,7 @@ def read_knmi(fname, variables='RD'):
             series = knmi.data.loc[knmi.data['STN'] == code, variable]
             # get rid of the hours when data is daily
             if infer_freq(series.index) == 'D':
-                series.index = series.index._normalize()
+                series.index = series.index.normalize()
 
             metadata = {}
             if knmi.stations is not None and not knmi.stations.empty:
