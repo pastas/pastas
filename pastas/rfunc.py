@@ -271,7 +271,7 @@ class Exponential(RfuncBase):
         return s
 
 
-class Hantush(RfuncBase):
+class HantushOld(RfuncBase):
     """
     The Hantush well function.
 
@@ -458,7 +458,7 @@ class HantushWellModel(RfuncBase):
             tau2 + rho ** 2 / (4 * tau2))
         return p[0] * F
     
-class Hantush2(RfuncBase):
+class Hantush(RfuncBase):
     """
     The Hantush well function, using the standard A, a, b parameters
 
@@ -552,7 +552,7 @@ class Hantush2(RfuncBase):
         return p[0] * F / (2 * k0rho)
 
 
-class Polder(RfuncBase):
+class PolderOld(RfuncBase):
     """The Polder function, for a river in a confined aquifer,
     overlain by an aquitard with aquiferous ditches.
 
@@ -587,15 +587,6 @@ class Polder(RfuncBase):
         parameters.loc[name + '_a'] = (a_init, 0, 100, True, name)
         parameters.loc[name + '_b'] = (b_init, 0, 10, True, name)
         return parameters
-
-#     def get_tmax(self, p, cutoff=None):
-#         if cutoff is None:
-#             cutoff = self.cutoff
-#         a = p[1]
-#         b = erfcinv(2 * cutoff)
-#         c = -p[1] / p[2]
-#         sqrttmax = (-b + np.sqrt(b ** 2 - 4 * a * c) / (2 * a))
-#         return sqrttmax ** 2
     
     def get_tmax(self, p, cutoff=None):
         if cutoff is None:
@@ -628,7 +619,7 @@ class Polder(RfuncBase):
         return s
 
     
-class Polder2(RfuncBase):
+class Polder(RfuncBase):
     """The Polder function, using the standard A, a, b parameters
 
     Notes
