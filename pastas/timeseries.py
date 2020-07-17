@@ -128,7 +128,7 @@ class TimeSeries:
         else:
             # Make sure we have a Pandas Series and not a 1D-DataFrame
             if isinstance(series, pd.DataFrame):
-                if len(series.columns) is 1:
+                if len(series.columns) == 1:
                     series = series.iloc[:, 0]
             elif not isinstance(series, pd.Series):
                 msg = "Expected a Pandas Series, got {}".format(type(series))
@@ -298,7 +298,7 @@ class TimeSeries:
         """
         if self._update_settings(**kwargs) or force_update:
             # Get the validated series to start with
-            series = self.series_validated.copy(deep=True)
+            series = self._series_validated.copy(deep=True)
 
             # Update the series with the new settings
             series = self._to_daily_unit(series)
@@ -306,7 +306,8 @@ class TimeSeries:
             series = self._fill_before(series)
             series = self._fill_after(series)
             series = self._normalize(series)
-
+            series.name = self._series_original.name
+            
             self._series = series
 
     def multiply(self, other):
