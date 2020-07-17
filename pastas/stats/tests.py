@@ -129,7 +129,7 @@ def ljung_box(series=None, max_lag=365, nparam=0, alpha=0.05, acf=None,
     q_stat: float
         The computed Q test statistic.
     pval: float
-        The probability of the computed Q test staistic.
+        The probability of the computed Q test statistic.
 
     Notes
     -----
@@ -183,7 +183,8 @@ def ljung_box(series=None, max_lag=365, nparam=0, alpha=0.05, acf=None,
     lags = acf.index.days.to_numpy()
 
     q_stat = nobs * (nobs + 2) * cumsum(acf.values ** 2 / (nobs - lags))
-    pval = chi2.sf(q_stat, df=lags - nparam)
+    dof = max(max_lag - nparam, 1)
+    pval = chi2.sf(q_stat, df=dof)
 
     if return_full:
         result = DataFrame(data={"Q Stat": q_stat, "P-value": pval},
@@ -350,10 +351,11 @@ def stoffer_toloi(series, max_lag=365, alpha=0.05, nparam=0, freq="D"):
 
     dof = max(max_lag - nparam, 1)
     pval = chi2.sf(qm, df=dof)
+
     return qm, pval
 
 
-def diagnostics(series, alpha=0.05, stats=(), float_fmt="{0:.2f}"):
+def diagnostics(series, alpha=0.05, nparam=0, stats=(), float_fmt="{0:.2f}"):
     """Methods to compute various diagnostics checks for a time series.
 
     Parameters
@@ -399,11 +401,11 @@ def diagnostics(series, alpha=0.05, stats=(), float_fmt="{0:.2f}"):
     df.loc["Durbin-Watson", cols] = "Autocorr.", stat, p
 
     # Ljung-Box test for autocorrelation
-    stat, p = ljung_box(series, alpha=alpha, max_lag=365)
+    stat, p = ljung_box(series, alpha=alpha, nparam=nparam, max_lag=365)
     df.loc["Ljung-Box", cols] = "Autocorr.", stat, p
 
     # Stoffer-Toloi for autocorrelation
-    #stat, p = stoffer_toloi(series)
+    stat, p = stoffer_toloi(series, alpha=alpha, nparam=nparam, max_lag=365)
     df.loc["Stoffer-Toloi", cols] = "Autocorr.", stat, p
 
     df["Reject H0"] = df.loc[:, "P-value"] < alpha
