@@ -63,7 +63,8 @@ class BaseSolver:
         self.obj_func = obj_func
         self.result = None  # Object returned by the optimization method
 
-    def misfit(self, parameters, noise, weights=None, callback=None):
+    def misfit(self, parameters, noise, weights=None, callback=None, 
+               returnseparate=False):
         """This method is called by all solvers to obtain a series that are
         minimized in the optimization proces. It handles the application of
         the weights, a noisemodel and other optimization options.
@@ -79,6 +80,7 @@ class BaseSolver:
         callback: ufunc, optional
             function that is called after each iteration. the parameters are
             provided to the func. E.g. "callback(parameters)"
+        returnseparate: return residuals, noise, noiseweights
 
         Returns
         -------
@@ -101,6 +103,11 @@ class BaseSolver:
 
         if callback:
             callback(parameters)
+            
+        if returnseparate:
+            return self.ml.residuals(parameters).values, \
+                   self.ml.noise(parameters, weights=False).values, \
+                   self.ml.noise_weights(parameters).values
 
         return rv.values
 
@@ -473,3 +480,79 @@ class LmfitSolve(BaseSolver):
     def objfunction(self, parameters, noise, weights, callback):
         param = np.array([p.value for p in parameters.values()])
         return self.misfit(param, noise, weights, callback)
+    
+    
+class LmfitSolveNew(BaseSolver):
+    _name = "LmfitSolve"
+
+    def __init__(self, ml, pcov=None, nfev=None, **kwargs):
+        """Solving the model using the LmFit solver [LM]_.
+
+         This is basically a wrapper around the scipy solvers, adding some
+         cool functionality for boundary conditions.
+
+        References
+        ----------
+        .. [LM] https://github.com/lmfit/lmfit-py/
+        """
+        try:
+            global lmfit
+            import lmfit as lmfit  # Import Lmfit here, so it is no dependency
+        except ImportError:
+            msg = "lmfit not installed. Please install lmfit first."
+            raise ImportError(msg)
+        BaseSolver.__init__(self, ml=ml, pcov=pcov, nfev=nfev, **kwargs)
+
+    def solve(self, noise=True, weights=None, callback=None, method="leastsq",
+              **kwargs):
+
+        # Deal with the parameters
+        parameters = lmfit.Parameters()
+        p = self.ml.parameters.loc[:, ['initial', 'pmin', 'pmax', 'vary']]
+        for k in p.index:
+            pp = np.where(p.loc[k].isnull(), None, p.loc[k])
+            parameters.add(k, value=pp[0], min=pp[1], max=pp[2], vary=pp[3])
+
+        # Create the Minimizer object and minimize
+        self.mini = lmfit.Minimizer(userfcn=self.objfunction, calc_covar=True,
+                                    fcn_args=(noise, weights, callback),
+                                    params=parameters, **kwargs)
+        self.result = self.mini.minimize(method=method)
+
+        # Set all parameter attributes
+        pcov = None
+        if hasattr(self.result, "covar"):
+            if self.result.covar is not None:
+                pcov = self.result.covar
+
+        names = self.result.var_names
+        self.pcov = DataFrame(pcov, index=names, columns=names)
+        self.pcor = self._get_correlations(self.pcov)
+
+        # Set all optimization attributes
+        self.nfev = self.result.nfev
+        self.obj_func = self.result.chisqr
+
+        if hasattr(self.result, "success"):
+            success = self.result.success
+        else:
+            success = True
+        optimal = np.array([p.value for p in self.result.params.values()])
+        stderr = np.array([p.stderr for p in self.result.params.values()])
+
+        idx = None
+        if "is_weighted" in kwargs:
+            if not kwargs["is_weighted"]:
+                idx = -1
+
+        return success, optimal[:idx], stderr[:idx]
+
+    def objfunction(self, parameters, noise, weights, callback):
+        param = np.array([p.value for p in parameters.values()])
+        res, noise, weights = self.misfit(param, noise, weights, callback,
+                                          returnseparate=True)
+        var_res = np.var(res, ddof=1)
+        weighted_noise = noise * weights 
+        extraterm = np.sum(np.log(var_res / weights ** 2))
+        rv = np.sum(weighted_noise ** 2) / var_res + extraterm
+        return rv
