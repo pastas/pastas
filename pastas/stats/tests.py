@@ -282,6 +282,95 @@ def runs_test(series, alpha=0.05, cutoff="mean", return_h=False):
         return z_stat, pval
 
 
+def portmanteau(x, maxlag=None, alpha=0.05, noise=None):
+    """
+    Portmanteau test for no autocorrelation
+
+    Parameters
+    ----------
+    x : array_like, 1d
+        data series, regression innovations when used as diagnostic test
+        equidistant
+    maxlag : None, int
+        If maxlag is None, then the default maxlag is 'min(nobs-1, 15)'
+    alpha : alpha : float, optional
+        A confidence level of test
+    freq: str, optional
+        String with the frequency of the model. Must
+        be one of the following: (D,h) or a multiple of
+        that e.g. "7D" or "8h"
+    noise: { True, False}
+        With or without a PASTAS noise model
+
+    Returns
+    -------
+    qm : float
+        test statistic
+    auto : {True, False}
+        autocorrelation
+    t2 : float
+        critical value
+    M : int
+        number of degrees of freedom of the test
+
+    Notes
+    -----
+    Portmanteau test can handle missing data (nan's)
+
+    Reference
+    ---------
+    port92.pdf, A note on the Ljung-Box-Pierce Portmanteau
+    statistisc with missing data
+    Wikipedia
+    """
+    # n = size(residuen,1);
+	# maak equidistant
+    # x, freq = resample_D(x, freq='D')
+    n = x.shape[0]
+    if maxlag is None:
+        maxlag = min(n-1, 15)
+    # only for the simple noisemodel of PASTAS {0,1}
+	# bepaal het aantal vrijheidsgraden
+    nvr = abs(noise)   # noise is hier 0 of 1, p+q van ARMA-model
+    # number of not nan
+    nk = ~np.isnan(x)
+    # number of not nan
+    m = nk.sum()
+    z = x-x[nk].mean()
+    z[~nk] = 0
+    y = np.array([z])
+    DZ = y*y
+    yn = np.array([nk])
+    DA = yn*yn
+    Dz0 = DZ.sum()/n
+    Da0 = DA.sum()/n
+    De0 = Dz0/Da0
+    # initialize
+    Dz = np.zeros((maxlag, 1))
+    Da = np.zeros((maxlag, 1))
+    De = np.zeros((maxlag, 1))
+    for i in range(0, maxlag):
+        hh = y[0, :-i-1]*y[0, i+1:]
+        Dz[i] = hh.sum()/n
+        hh = yn[0, :-i-1]*yn[0, i+1:]
+        Da[i] = hh.sum()/(n-i-1)
+        if abs(Da[i]) > np.finfo(float).eps:
+            De[i] = Dz[i]/Da[i]
+#    if Ce.sum() != De.sum():
+#        raise Exception('Test: not equal values Ce and DE in Portmanteau')
+    rho = Dz/Dz0
+    re = De/De0
+    k = np.transpose([np.arange(1, maxlag+1)])
+    if (n > m):
+        qm = n*n*sum(Da*re*re/(n-k))
+    else:
+        qm = n*(n+2)*sum(rho*rho/(n-k))
+    M = max(maxlag-nvr, 1)
+    t2 = chi2.ppf(1-alpha, df=M)
+    auto = qm >= t2
+    return qm, auto, t2, M
+
+      
 def diagnostics(series, alpha=0.05, stats=(), float_fmt="{0:.2f}"):
     """Methods to compute various diagnostics checks for a time series.
 
