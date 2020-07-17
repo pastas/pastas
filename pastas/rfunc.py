@@ -311,7 +311,7 @@ class HantushOld(RfuncBase):
        subjected to multiple stresses. Ground Water, 46(1), 30-40.
 
     """
-    _name = "Hantush"
+    _name = "HantushOld"
 
     def __init__(self, up=False, meanstress=1, cutoff=0.999):
         RfuncBase.__init__(self, up, meanstress, cutoff)
