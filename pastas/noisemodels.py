@@ -266,7 +266,13 @@ class NoiseModel3(NoiseModelBase):
     Differences compared to NoiseModel:
     1. First value is residual
     2. First weight is 1 / sig_residuals (i.e., delt = infty)
-    3. Weights as in Von Asmuth and Bierkens, 2005
+    3. Normalization of weights as in Von Asmuth and Bierkens (2005), optional
+    
+    Parameters
+    ----------
+    norm: boolean
+        Boolean to indicate whether weights are normalized according to
+        the Von Asmuth and Bierkens (2005) paper
     
     Notes
     -----
@@ -289,9 +295,9 @@ class NoiseModel3(NoiseModelBase):
     """
     _name = "NoiseModel3"
 
-    def __init__(self, fac=1):
+    def __init__(self, norm=True):
         NoiseModelBase.__init__(self)
-        self.fac = fac
+        self.norm = norm
         self.nparam = 1
         self.set_init_parameters()
 
@@ -351,8 +357,9 @@ class NoiseModel3(NoiseModelBase):
         # weights of noise, not noise^2
         w = Series(data=1 / np.sqrt(1.0 - exp), 
                    index=res.index, dtype="float64", name="noise_weights")
-        w = w.multiply(np.exp(1.0 / (2.0 * odelt.size) * 
-                              np.sum(np.log(1.0 - exp))))
+        if self.norm:
+            w = w.multiply(np.exp(1.0 / (2.0 * odelt.size) * 
+                                  np.sum(np.log(1.0 - exp))))
         return w
     
 

@@ -8,7 +8,7 @@ from .project import Project
 from .read import read_meny, read_dino, read_knmi, read_waterbase
 from .rfunc import Gamma, Exponential, Hantush, Polder, One, FourParam, \
     DoubleExponential, HantushWellModel, HantushOld, PolderOld
-from .solver import LmfitSolve, LeastSquares
+from .solver import LmfitSolve, LeastSquares, LmfitSolveNew
 from .stressmodels import StressModel, StressModel2, Constant, FactorModel, \
     RechargeModel, WellModel, StepModel, LinearTrend, TarsoModel
 from .timeseries import TimeSeries
