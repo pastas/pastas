@@ -12,7 +12,7 @@ residual time series of a calibrated (Pastas) model.
     durbin_watson
     ljung_box
     runs_test
-    portmanteau
+    stoffer_toloi
     diagnostics
     plot_acf
     plot_diagnostics
@@ -26,7 +26,7 @@ from scipy.stats import chi2, norm, shapiro, normaltest, probplot
 
 from .core import acf as get_acf
 
-__all__ = ["durbin_watson", "ljung_box", "runs_test", "portmanteau",
+__all__ = ["durbin_watson", "ljung_box", "runs_test", "stoffer_toloi",
            "diagnostics", "plot_acf", "plot_diagnostics"]
 
 
@@ -283,7 +283,7 @@ def runs_test(series, alpha=0.05, cutoff="mean", return_h=False):
         return z_stat, pval
 
 
-def portmanteau(series, max_lag=365, alpha=0.05, nparam=0, freq="D"):
+def stoffer_toloi(series, max_lag=365, alpha=0.05, nparam=0, freq="D"):
     """Adapted Ljung-Box test to deal with missing data [stoffer_1992]_.
 
     Parameters
@@ -311,14 +311,14 @@ def portmanteau(series, max_lag=365, alpha=0.05, nparam=0, freq="D"):
     Reference
     ---------
     .. [stoffer_1992] Stoffer, D. S., & Toloi, C. M. (1992). A note on the
-       Ljung—Box—Pierce portmanteau statistic with missing data. Statistics &
+       Ljung—Box—Pierce stoffer_toloi statistic with missing data. Statistics &
        probability letters, 13(5), 391-396.
 
     Examples
     --------
     >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
     >>>                data=np.random.rand(1000))
-    >>>result = ps.stats.portmanteau(res)
+    >>>result = ps.stats.stoffer_toloi(res)
 
     """
     series = series.asfreq(freq=freq)  # Make time series equidistant
