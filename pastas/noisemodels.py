@@ -258,106 +258,7 @@ class NoiseModel2(NoiseModelBase):
         res.iloc[0] = 0
         res.name = "Noise"
         return res
-
-class NoiseModel3_old(NoiseModelBase):
-    """
-    Noise model with exponential decay of the residual and weighting.
-    Differences compared to NoiseModel:
-    1. First value is residual
-    2. First weight is 1 / sig_residuals (i.e., delt = infty)
-    3. Sum of all weights is always len(res)
-
-    Notes
-    -----
-    Calculates the noise [1]_ according to:
-
-    .. math::
-
-        v(t1) = r(t1) - r(t0) * exp(- (\\frac{\\Delta t}{\\alpha})
-        
-    Calculates the weights as
     
-    .. math::
-        
-        w = 1 / sqrt((1 - exp(-2 \\Delta t / \\alpha)))
-        
-    and then normalizes the weights so that they sum to number of residuals
-
-    
-    The units of the alpha parameter is always in days.
-
-
-    """
-    _name = "NoiseModel3"
-
-    def __init__(self, fac=1):
-        NoiseModelBase.__init__(self)
-        self.fac = fac
-        self.nparam = 1
-        self.set_init_parameters()
-
-    @staticmethod
-    def simulate(res, parameters):
-        """
-        Simulate noise from the residuals.
-
-        Parameters
-        ----------
-        res: pandas.Series
-            The residual series.
-        parameters: array-like
-            Alpha parameters used by the noisemodel.
-
-        Returns
-        -------
-        noise: pandas.Series
-            Series of the noise.
-
-        """
-        alpha = parameters[0]
-        odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
-        # res.values is needed else it gets messed up with the dates
-        # v = res.values[1:] - np.exp(-odelt / alpha) * res.values[:-1]
-        # v[0] = res.iloc[0] is already the residual
-        # res.iloc[1:] = v
-        res.iloc[1:] -= np.exp(-odelt / alpha) * res.values[:-1]
-        res.name = "Noise"
-        return res
-
-    #@staticmethod
-    def weights(self, res, parameters):
-        """
-        Method to calculate the weights for the noise.
-        Weights are
-
-        .. math::
-        
-        w = 1 / sqrt((1 - exp(-2 \\Delta t / \\alpha)))
-        
-        which are then normalized so that sum(w) = len(res)
-
-        Parameters
-        ----------
-        alpha: float
-        odelt: numpy.ndarray
-
-        Returns
-        -------
-        w: pandas.Series
-            Series of the weights.
-
-        """
-        alpha = parameters[0]
-        odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
-        sigr = res.std()
-        w = np.ones(len(res))
-        w[1:] = 1 / np.sqrt((1 - np.exp(-2.0 / alpha * odelt)))
-        w = w / sigr
-        #w = w / np.sum(w) * len(res)  # make sure they sum up to len(res)
-        #w = w / np.sqrt(np.sum(w ** 2))  # make sure they sum up to len(res)
-        w = w * self.fac
-        w = Series(w, res.index)
-        return w
 
 class NoiseModel3(NoiseModelBase):
     """
@@ -365,8 +266,14 @@ class NoiseModel3(NoiseModelBase):
     Differences compared to NoiseModel:
     1. First value is residual
     2. First weight is 1 / sig_residuals (i.e., delt = infty)
-    3. Sum of all weights is always len(res)
-
+    3. Normalization of weights as in Von Asmuth and Bierkens (2005), optional
+    
+    Parameters
+    ----------
+    norm: boolean
+        Boolean to indicate whether weights are normalized according to
+        the Von Asmuth and Bierkens (2005) paper
+    
     Notes
     -----
     Calculates the noise [1]_ according to:
@@ -380,8 +287,6 @@ class NoiseModel3(NoiseModelBase):
     .. math::
         
         w = 1 / sqrt((1 - exp(-2 \\Delta t / \\alpha)))
-        
-    and then normalizes the weights so that they sum to number of residuals
 
     
     The units of the alpha parameter is always in days.
@@ -390,8 +295,9 @@ class NoiseModel3(NoiseModelBase):
     """
     _name = "NoiseModel3"
 
-    def __init__(self):
+    def __init__(self, norm=True):
         NoiseModelBase.__init__(self)
+        self.norm = norm
         self.nparam = 1
         self.set_init_parameters()
 
@@ -415,15 +321,10 @@ class NoiseModel3(NoiseModelBase):
         """
         alpha = parameters[0]
         odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
-        # res.values is needed else it gets messed up with the dates
-        # v = res.values[1:] - np.exp(-odelt / alpha) * res.values[:-1]
-        # v[0] = res.iloc[0] is already the residual
-        # res.iloc[1:] = v
-        res.iloc[1:] -= np.exp(-odelt / alpha) * res.values[:-1]
-        # cheat and use last res for ln(sigr) term
-        res.iloc[-1] = 1
-        res.name = "Noise"
-        return res
+        v = Series(index=res.index, dtype="float64", name="Noise")
+        v.iloc[0] = res.values[0]
+        v.iloc[1:] = res.values[1:] - np.exp(-odelt / alpha) * res.values[:-1]
+        return v
 
     #@staticmethod
     def weights(self, res, parameters):
@@ -449,19 +350,18 @@ class NoiseModel3(NoiseModelBase):
 
         """
         alpha = parameters[0]
-        odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
-        sigr = res.std()
-        w = np.ones(len(res))
-        w[1:] = 1 / np.sqrt((1 - np.exp(-2.0 / alpha * odelt)))
-        w = w / sigr
-        # cheat by using last term for sum(ln(sigr))
-        print('sigr', sigr)
-        print('sum(log(1/w))', np.sum(np.log(1/w[:-1])))
-        print('term', np.sum(np.log(sigr / w[:-1])))
-        w[-1] = np.sqrt(np.sum(np.log(sigr / w[:-1])))
-
-        w = Series(w, res.index)
+        odelt = np.empty(res.size)
+        odelt[0] = 1e12 # large for first measurement
+        odelt[1:] = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
+        exp = np.exp(-2.0 / alpha * odelt)  # Twice as fast as 2*odelt/alpha
+        # weights of noise, not noise^2
+        w = Series(data=1 / np.sqrt(1.0 - exp), 
+                   index=res.index, dtype="float64", name="noise_weights")
+        if self.norm:
+            w = w.multiply(np.exp(1.0 / (2.0 * odelt.size) * 
+                                  np.sum(np.log(1.0 - exp))))
         return w
+    
 
 
 class ArmaModel(NoiseModelBase):
