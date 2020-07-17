@@ -95,8 +95,8 @@ def durbin_watson(series=None, acf=None, alpha=0.05, **kwargs):
     return dw_stat, p
 
 
-def ljung_box(series=None, acf=None, nobs=None, alpha=0.05, return_h=False,
-              **kwargs):
+def ljung_box(series=None, max_lag=365, nparam=0, alpha=0.05, acf=None,
+              nobs=None, return_full=False, **kwargs):
     """Ljung-box test for autocorrelation.
 
     Parameters
@@ -104,6 +104,13 @@ def ljung_box(series=None, acf=None, nobs=None, alpha=0.05, return_h=False,
     series: pandas.Series, optional
         series to calculate the autocorrelation for that is used in the
         Ljung-Box test.
+    max_lag: int, optional
+        The maximum lag to compute the Ljung-Box test statistic for.
+    nparam: int, optional
+        NUmber of calibrated parameters in the model.
+    alpha: float, optional
+        Significance level to test against. Float values between 0 and 1.
+        Default is alpha=0.05.
     acf: pandas.Series, optional
         The autocorrelation function used in the Ljung-Box test. Using a
         pre-calculated acf will be faster. If providing the acf, nobs also
@@ -111,21 +118,18 @@ def ljung_box(series=None, acf=None, nobs=None, alpha=0.05, return_h=False,
     nobs: int, optional
         Number of observations of the original time series. Has no effect
         when a series is provided.
-    alpha: float, optional
-        Significance level to test against. Float values between 0 and 1.
-        Default is alpha=0.05.
-    return_h: bool, optional
+    return_full: bool, optional
         Return the result of the test as a boolen (True) or not (False).
     kwargs:
         The keyword arguments provided to this method will be passed on the
-        the ps.stats.acf method.
+        the pastas.stats.acf method.
 
     Returns
     -------
-    h: bool
-        True if series has significant autocorrelation for any of the lags.
-    Pandas.DataFrame
-        DataFrame containing the Q test statistic and the p-value.
+    q_stat: float
+        The computed Q test statistic.
+    pval: float
+        The probability of the computed Q test staistic.
 
     Notes
     -----
@@ -157,47 +161,43 @@ def ljung_box(series=None, acf=None, nobs=None, alpha=0.05, return_h=False,
     Examples
     --------
     >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
-    >>>                data=np.random.rand(1000))
-    >>>result = ps.stats.ljung_box(res)
+    >>>                 data=np.random.rand(1000))
+    >>> q_stat, pval = ps.stats.ljung_box(res)
+
+    See Also
+    --------
+    pastas.stats.acf
+        This method is called to compute the autocorrelation function.
 
     """
+    lags = arange(1.0, max_lag + 1)
+
     if acf is None:
-        acf = get_acf(series, **kwargs)
+        acf = get_acf(series, lags=lags, **kwargs)
         nobs = series.index.size
     elif nobs is None:
         Warning("If providing an acf, nobs also has to be provided.")
 
     # Drop zero-lag from the acf and drop nan-values as k > 0
     acf = acf.drop(0, errors="ignore").dropna()
-
     lags = acf.index.days.to_numpy()
 
-    nk = nobs - lags
-    # nk[nk == 0] = 1
-    q_stat = nobs * (nobs + 2) * cumsum(acf.values ** 2 / nk)
+    q_stat = nobs * (nobs + 2) * cumsum(acf.values ** 2 / (nobs - lags))
+    pval = chi2.sf(q_stat, df=lags - nparam)
 
-    # TODO decrease lags by number of parameters?
-    dof = lags  # Degrees of Freedom for Chi-Squares Dist.
-    pval = chi2.sf(q_stat, df=dof)
-
-    if len(lags) == 1:
-
-        if return_h:
-            h = pval < alpha
-            return q_stat, pval, h
-        else:
-            return q_stat, pval
-    else:
+    if return_full:
         result = DataFrame(data={"Q Stat": q_stat, "P-value": pval},
                            index=lags)
         result.index.name = "Lags (Days)"
-        if return_h:
-            name = "Reject H0 (alpha={})".format(alpha)
-            result[name] = pval < alpha
+
+        name = "Reject H0 (alpha={})".format(alpha)
+        result[name] = pval < alpha
         return result
+    else:
+        return q_stat[-1], pval[-1]
 
 
-def runs_test(series, alpha=0.05, cutoff="mean", return_h=False):
+def runs_test(series, alpha=0.05, cutoff="mean"):
     """Runs test for autocorrelation.
 
     Parameters
@@ -276,11 +276,7 @@ def runs_test(series, alpha=0.05, cutoff="mean", return_h=False):
     z_stat = (n_runs - n_runs_exp) / sqrt(n_runs_std)
     pval = 2 * norm.sf(abs(z_stat))
 
-    if return_h:
-        h = pval < alpha
-        return z_stat, pval, h
-    else:
-        return z_stat, pval
+    return z_stat, pval
 
 
 def stoffer_toloi(series, max_lag=365, alpha=0.05, nparam=0, freq="D"):
@@ -403,8 +399,12 @@ def diagnostics(series, alpha=0.05, stats=(), float_fmt="{0:.2f}"):
     df.loc["Durbin-Watson", cols] = "Autocorr.", stat, p
 
     # Ljung-Box test for autocorrelation
-    stat, p = ljung_box(series, alpha=alpha, lags=[365])
-    df.loc["Ljung-Box", cols] = "Autocorr.", stat[0], p[0]
+    stat, p = ljung_box(series, alpha=alpha, max_lag=365)
+    df.loc["Ljung-Box", cols] = "Autocorr.", stat, p
+
+    # Stoffer-Toloi for autocorrelation
+    #stat, p = stoffer_toloi(series)
+    df.loc["Stoffer-Toloi", cols] = "Autocorr.", stat, p
 
     df["Reject H0"] = df.loc[:, "P-value"] < alpha
     df[["Statistic", "P-value"]] = \
