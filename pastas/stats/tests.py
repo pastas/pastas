@@ -12,6 +12,7 @@ residual time series of a calibrated (Pastas) model.
     durbin_watson
     ljung_box
     runs_test
+    portmanteau
     diagnostics
     plot_acf
     plot_diagnostics
@@ -19,15 +20,14 @@ residual time series of a calibrated (Pastas) model.
 """
 
 import matplotlib.pyplot as plt
-from numpy import sqrt, cumsum, nan, isnan, zeros, transpose, arange, array, \
-    finfo
+from numpy import sqrt, cumsum, nan, zeros, arange, finfo
 from pandas import DataFrame
 from scipy.stats import chi2, norm, shapiro, normaltest, probplot
 
 from .core import acf as get_acf
 
-__all__ = ["durbin_watson", "ljung_box", "runs_test", "diagnostics",
-           "plot_acf", "plot_diagnostics"]
+__all__ = ["durbin_watson", "ljung_box", "runs_test", "portmanteau",
+           "diagnostics", "plot_acf", "plot_diagnostics"]
 
 
 def durbin_watson(series=None, acf=None, alpha=0.05, **kwargs):
@@ -283,7 +283,7 @@ def runs_test(series, alpha=0.05, cutoff="mean", return_h=False):
         return z_stat, pval
 
 
-def portmanteau(series, max_lag=365, alpha=0.05, nparam=0):
+def portmanteau(series, max_lag=365, alpha=0.05, nparam=0, freq="D"):
     """Adapted Ljung-Box test to deal with missing data [stoffer_1992]_.
 
     Parameters
@@ -314,43 +314,43 @@ def portmanteau(series, max_lag=365, alpha=0.05, nparam=0):
        Ljung—Box—Pierce portmanteau statistic with missing data. Statistics &
        probability letters, 13(5), 391-396.
 
+    Examples
+    --------
+    >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
+    >>>                data=np.random.rand(1000))
+    >>>result = ps.stats.portmanteau(res)
+
     """
-    # maak equidistant
-    # x, freq = resample_D(x, freq='D')
+    series = series.asfreq(freq=freq)  # Make time series equidistant
     nobs = series.size
-    nk = ~isnan(series)  # number of not nan
-    z = series - series[nk].mean()
-    z[~nk] = 0
-    y = array([z])
-    yn = array([nk])
+    z = (series - series.mean()).fillna(0.0)
+    y = z.to_numpy()
+    yn = series.notna().to_numpy()
+
     dz0 = (y ** 2).sum() / nobs
     da0 = (yn ** 2).sum() / nobs
     de0 = dz0 / da0
 
     # initialize
-    dz = zeros((max_lag, 1))
-    da = zeros((max_lag, 1))
-    de = zeros((max_lag, 1))
+    dz = zeros(max_lag)
+    da = zeros(max_lag)
+    de = zeros(max_lag)
 
     for i in range(0, max_lag):
-        hh = y[0, :-i - 1] * y[0, i + 1:]
+        hh = y[:-i - 1] * y[i + 1:]
         dz[i] = hh.sum() / nobs
-        hh = yn[0, :-i - 1] * yn[0, i + 1:]
+        hh = yn[:-i - 1] * yn[i + 1:]
         da[i] = hh.sum() / (nobs - i - 1)
         if abs(da[i]) > finfo(float).eps:
             de[i] = dz[i] / da[i]
 
     #    if Ce.sum() != De.sum():
     #        raise Exception('Test: not equal values Ce and DE in Portmanteau')
-    rho = dz / dz0
-    re = de / de0
-    k = transpose([arange(1, max_lag + 1)])
 
+    re = de / de0
+    k = arange(1, max_lag + 1)
     # Compute the Q-statistic
-    if nobs > nk.sum():
-        qm = nobs * nobs * sum(da * re ** 2 / (nobs - k))
-    else:
-        qm = nobs * (nobs + 2) * sum(rho ** 2 / (nobs - k))
+    qm = nobs ** 2 * sum(da * re ** 2 / (nobs - k))
 
     dof = max(max_lag - nparam, 1)
     pval = chi2.sf(qm, df=dof)
