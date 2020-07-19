@@ -480,9 +480,9 @@ class Hantush(RfuncBase):
     
     .. math:: \\theta(t) = \\frac{A}{t} \\exp(-t/a -b/t)
 
-    .. math:: p[0] = A # check \\frac{1}{4 \\pi kD}
+    .. math:: p[0] = A # TBD \\frac{1}{4 \\pi kD}
     .. math:: p[1] = a = cS
-    .. math:: p[2] = b = r^2 cS / (4 \\lambda^2)
+    .. math:: p[2] = b = r^2 / (4 \\lambda^2)
 
     where :math:`\\lambda = \\sqrt{kDc}`
 
@@ -520,7 +520,7 @@ class Hantush(RfuncBase):
             parameters.loc[name + '_A'] = (1 / self.meanstress,
                                            np.nan, np.nan, True, name)
         parameters.loc[name + '_a'] = (100, 1e-3, 1e4, True, name)
-        parameters.loc[name + '_b'] = (1, 1e-4, 1e4, True, name)
+        parameters.loc[name + '_b'] = (1, 1e-4, 25, True, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):
@@ -528,7 +528,7 @@ class Hantush(RfuncBase):
         if cutoff is None:
             cutoff = self.cutoff
         cS = p[1]
-        rho = np.sqrt(4 * p[2] / p[1])
+        rho = np.sqrt(4 * p[2])
         k0rho = k0(rho)
         return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
 
@@ -537,7 +537,7 @@ class Hantush(RfuncBase):
 
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
         cS = p[1]
-        rho = np.sqrt(4 * p[2] / p[1])
+        rho = np.sqrt(4 * p[2])
         k0rho = k0(rho)
         t = self.get_t(p, dt, cutoff, maxtmax)
         tau = t / cS
