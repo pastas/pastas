@@ -478,9 +478,9 @@ class Hantush(RfuncBase):
     The Hantush well function is explained in [hantush_1955]_, [veling_2010]_
     and [asmuth_2008]_. The impulse response function may be written as
     
-    .. math:: \\theta(t) = \\frac{A}{t} \\exp(-t/a -b/t)
+    .. math:: \\theta(t) = \\frac{A}{t} \\exp(-t/a - ab/t)
 
-    .. math:: p[0] = A # TBD \\frac{1}{4 \\pi kD}
+    .. math:: p[0] = A # \\frac{1}{4 \\pi kD}
     .. math:: p[1] = a = cS
     .. math:: p[2] = b = r^2 / (4 \\lambda^2)
 
@@ -549,7 +549,7 @@ class Hantush(RfuncBase):
             tau1 + rho ** 2 / (4 * tau1))
         F[tau >= rho / 2] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(
             tau2 + rho ** 2 / (4 * tau2))
-        return p[0] * F / (2 * k0rho)
+        return p[0] * F
 
 
 class PolderOld(RfuncBase):
