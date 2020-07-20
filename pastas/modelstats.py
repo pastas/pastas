@@ -32,7 +32,7 @@ from numpy import nan
 from pandas import DataFrame
 
 from .decorators import model_tmin_tmax
-from .stats import metrics
+from .stats import metrics, diagnostics
 
 
 class Statistics:
@@ -362,3 +362,16 @@ included in Pastas. To obtain a list of all statistics that are included type:
             stats.loc[k] = (getattr(self, k)(tmin=tmin, tmax=tmax))
 
         return stats
+
+    @model_tmin_tmax
+    def diagnostics(self, tmin=None, tmax=None, alpha=0.05, stats=(),
+                    float_fmt="{0:.2f}"):
+        if self.ml.noisemodel and self.ml.settings["noise"]:
+            series = self.ml.noise(tmin=tmin, tmax=tmax)
+            nparam = self.ml.noisemodel.nparam
+        else:
+            series = self.ml.residuals(tmin=tmin, tmax=tmax)
+            nparam = 0
+
+        return diagnostics(series=series, alpha=alpha, nparam=nparam,
+                           stats=stats, float_fmt=float_fmt)

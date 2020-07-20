@@ -19,6 +19,8 @@ residual time series of a calibrated (Pastas) model.
 
 """
 
+from logging import getLogger
+
 import matplotlib.pyplot as plt
 from numpy import sqrt, cumsum, nan, zeros, arange, finfo
 from pandas import DataFrame
@@ -26,23 +28,18 @@ from scipy.stats import chi2, norm, shapiro, normaltest, probplot
 
 from .core import acf as get_acf
 
+logger = getLogger(__name__)
 __all__ = ["durbin_watson", "ljung_box", "runs_test", "stoffer_toloi",
            "diagnostics", "plot_acf", "plot_diagnostics"]
 
 
-def durbin_watson(series=None, acf=None, alpha=0.05, **kwargs):
+def durbin_watson(series=None):
     """Durbin-Watson test for autocorrelation.
 
     Parameters
     ----------
     series: pandas.Series, optional
         residuals series
-    acf: pandas.Series, optional
-        the autocorrelation function.
-    alpha: float
-        default alpha=0.05
-    kwargs:
-        all keyword arguments are passed on to the acf function.
 
     Returns
     -------
@@ -85,18 +82,18 @@ def durbin_watson(series=None, acf=None, alpha=0.05, **kwargs):
     >>>result = ps.stats.durbin_watson(res)
 
     """
-    if acf is None:
-        acf = get_acf(series, **kwargs)
+    if not series.index.inferred_freq:
+        logger.warning("Caution: The Durbin-Watson test should only be used "
+                       "for time series with equidistant time steps.")
 
-    rho = acf.iloc[0]  # Take the first value of the ACF
+    rho = series.autocorr(lag=1)  # Take the first value of the ACF
 
     dw_stat = 2 * (1 - rho)
     p = nan  # NotImplementedYet
     return dw_stat, p
 
 
-def ljung_box(series=None, max_lag=365, nparam=0, alpha=0.05, acf=None,
-              nobs=None, return_full=False, **kwargs):
+def ljung_box(series=None, max_lag=365, nparam=0, return_full=False):
     """Ljung-box test for autocorrelation.
 
     Parameters
@@ -108,21 +105,8 @@ def ljung_box(series=None, max_lag=365, nparam=0, alpha=0.05, acf=None,
         The maximum lag to compute the Ljung-Box test statistic for.
     nparam: int, optional
         NUmber of calibrated parameters in the model.
-    alpha: float, optional
-        Significance level to test against. Float values between 0 and 1.
-        Default is alpha=0.05.
-    acf: pandas.Series, optional
-        The autocorrelation function used in the Ljung-Box test. Using a
-        pre-calculated acf will be faster. If providing the acf, nobs also
-        has to be provided.
-    nobs: int, optional
-        Number of observations of the original time series. Has no effect
-        when a series is provided.
     return_full: bool, optional
-        Return the result of the test as a boolen (True) or not (False).
-    kwargs:
-        The keyword arguments provided to this method will be passed on the
-        the pastas.stats.acf method.
+        Return the result of the test as a boolean (True) or not (False).
 
     Returns
     -------
@@ -170,13 +154,15 @@ def ljung_box(series=None, max_lag=365, nparam=0, alpha=0.05, acf=None,
         This method is called to compute the autocorrelation function.
 
     """
+    if not series.index.inferred_freq:
+        logger.warning("Caution: The Ljung-Box test should only be used "
+                       "for time series with equidistant time steps. "
+                       "Consider using ps.stats.stoffer_toloi instead.")
+
     lags = arange(1.0, max_lag + 1)
 
-    if acf is None:
-        acf = get_acf(series, lags=lags, **kwargs)
-        nobs = series.index.size
-    elif nobs is None:
-        Warning("If providing an acf, nobs also has to be provided.")
+    acf = get_acf(series, lags=lags)
+    nobs = series.index.size
 
     # Drop zero-lag from the acf and drop nan-values as k > 0
     acf = acf.drop(0, errors="ignore").dropna()
@@ -190,27 +176,20 @@ def ljung_box(series=None, max_lag=365, nparam=0, alpha=0.05, acf=None,
         result = DataFrame(data={"Q Stat": q_stat, "P-value": pval},
                            index=lags)
         result.index.name = "Lags (Days)"
-
-        name = "Reject H0 (alpha={})".format(alpha)
-        result[name] = pval < alpha
         return result
     else:
         return q_stat[-1], pval[-1]
 
 
-def runs_test(series, alpha=0.05, cutoff="mean"):
+def runs_test(series, cutoff="mean"):
     """Runs test for autocorrelation.
 
     Parameters
     ----------
     series: pandas.Series
         Time series to test for autocorrelation.
-    alpha: float, optional
-        Significance level to use in the test.
     cutoff: str or float, optional
         String set to "mean" or "median" or a float to use as the cutoff.
-    return_h: bool, optional
-        Return the result of the test as a boolean (True) or not (False).
 
     Returns
     -------
@@ -218,10 +197,6 @@ def runs_test(series, alpha=0.05, cutoff="mean"):
         Runs test statistic.
     pval: float
         p-value for the test statistic, based on a normal distribution.
-    h: bool, optional
-        Boolean that tells if the Null hypothesis is rejected (h=True)
-        or if the fails to reject the Null (False) at significance
-        level alpha. Only returned if return_h=True.
 
     Notes
     -----
@@ -280,7 +255,7 @@ def runs_test(series, alpha=0.05, cutoff="mean"):
     return z_stat, pval
 
 
-def stoffer_toloi(series, max_lag=365, alpha=0.05, nparam=0, freq="D"):
+def stoffer_toloi(series, max_lag=365, nparam=0, freq="D"):
     """Adapted Ljung-Box test to deal with missing data [stoffer_1992]_.
 
     Parameters
@@ -289,10 +264,10 @@ def stoffer_toloi(series, max_lag=365, alpha=0.05, nparam=0, freq="D"):
         Time series to compute the adapted Ljung-Box statistic for.
     max_lag: int, optional
         If max_lag is None, then the default maxlag is 365.
-    alpha: float, optional
-        A confidence level of test
     nparam: int, optional
         Number of parameters of the noisemodel.
+    freq: str, optional
+        String with the frequency to resample the time series to.
 
     Returns
     -------
@@ -399,17 +374,19 @@ def diagnostics(series, alpha=0.05, nparam=0, stats=(), float_fmt="{0:.2f}"):
     stat, p = runs_test(series)
     df.loc["Runs test", cols] = "Autocorr.", stat, p
 
-    # Durbin-Watson test for autocorrelation
-    stat, p = durbin_watson(series, alpha=alpha)
-    df.loc["Durbin-Watson", cols] = "Autocorr.", stat, p
+    # Do different tests depending on time step
+    if series.index.inferred_freq:
+        # Ljung-Box test for autocorrelation
+        stat, p = ljung_box(series, nparam=nparam, max_lag=365)
+        df.loc["Ljung-Box", cols] = "Autocorr.", stat, p
 
-    # Ljung-Box test for autocorrelation
-    stat, p = ljung_box(series, alpha=alpha, nparam=nparam, max_lag=365)
-    df.loc["Ljung-Box", cols] = "Autocorr.", stat, p
-
-    # Stoffer-Toloi for autocorrelation
-    stat, p = stoffer_toloi(series, alpha=alpha, nparam=nparam, max_lag=365)
-    df.loc["Stoffer-Toloi", cols] = "Autocorr.", stat, p
+        # Durbin-Watson test for autocorrelation
+        stat, p = durbin_watson(series)
+        df.loc["Durbin-Watson", cols] = "Autocorr.", stat, p
+    else:
+        # Stoffer-Toloi for autocorrelation
+        stat, p = stoffer_toloi(series, nparam=nparam, max_lag=365)
+        df.loc["Stoffer-Toloi", cols] = "Autocorr.", stat, p
 
     df["Reject H0"] = df.loc[:, "P-value"] < alpha
     df[["Statistic", "P-value"]] = \
@@ -418,7 +395,7 @@ def diagnostics(series, alpha=0.05, nparam=0, stats=(), float_fmt="{0:.2f}"):
     return df
 
 
-def plot_acf(series, alpha=0.95, acf_options=None, ax=None, figsize=(5, 2)):
+def plot_acf(series, alpha=0.05, acf_options=None, ax=None, figsize=(5, 2)):
     """Method to plot the autocorrelation function.
 
     Parameters
@@ -427,6 +404,7 @@ def plot_acf(series, alpha=0.95, acf_options=None, ax=None, figsize=(5, 2)):
         Residual series to plot the autocorrelation function for.
     alpha: float, optional
         Significance level to calculate the (1-alpha)-confidence intervals.
+        For 95% confidence intervals, alpha should be 0.05.
     acf_options: dict, optional
         Dictionary with keyword arguments passed on to pastas.stats.acf.
     ax: matplotlib.axes.Axes, optional
@@ -462,25 +440,28 @@ def plot_acf(series, alpha=0.95, acf_options=None, ax=None, figsize=(5, 2)):
     ax.set_xlabel("Lag (Days)")
     ax.set_xlim(0, r.index.days.max())
     ax.set_ylabel('Autocorrelation')
+    ax.set_title("Autocorrelation plot")
+
     ax.grid()
     return ax
 
 
-def plot_diagnostics(series, figsize=(10, 6), bins=50, acf_options=None,
-                     alpha=0.05, **kwargs):
+def plot_diagnostics(series, alpha=0.05, bins=50, acf_options=None,
+                     figsize=(10, 6), **kwargs):
     """Plot a window that helps in diagnosing basic model assumptions.
 
     Parameters
     ----------
-    series:
-    figsize: tuple, optional
-        Tuple with the height and width of the figure in inches.
+    series: pandas.Series
+        Pandas Series with the residual time series to diagnose.
+    alpha: float, optional
+        Significance level to calculate the (1-alpha)-confidence intervals.
     bins: int optional
         Number of bins used for the histogram. 50 is default.
     acf_options: dict, optional
         Dictionary with keyword arguments passed on to pastas.stats.acf.
-    alpha: float, optional
-        Significance level to calculate the (1-alpha)-confidence intervals.
+    figsize: tuple, optional
+        Tuple with the height and width of the figure in inches.
     **kwargs: dict, optional
         Optional keyword arguments, passed on to plt.figure.
 
@@ -534,7 +515,6 @@ def plot_diagnostics(series, figsize=(10, 6), bins=50, acf_options=None,
 
     # Plot the autocorrelation
     plot_acf(series, alpha=alpha, acf_options=acf_options, ax=ax1)
-    ax1.set_title("Autocorrelation plot")
 
     # Plot the histogram for normality and add a 'best fit' line
     _, bins, _ = ax2.hist(series.values, bins=bins, density=True)
