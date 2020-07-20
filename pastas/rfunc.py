@@ -662,6 +662,7 @@ class Polder(RfuncBase):
         if cutoff is None:
             cutoff = self.cutoff
         A, a, b = p
+        b = a * b
         x = np.sqrt(b / a)
         inverfc = erfcinv(2 * cutoff) 
         y = (-inverfc + np.sqrt(inverfc ** 2 + 4 * x)) / 2
@@ -678,6 +679,7 @@ class Polder(RfuncBase):
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
         t = self.get_t(p, dt, cutoff, maxtmax)
         A, a, b = p
+        b = a * b
         s = p[0] * self.polder_function(np.sqrt(b / a), np.sqrt(t / a)) / \
             np.exp(-2 * np.sqrt(b / a))
         if not self.up:
@@ -778,7 +780,7 @@ class FourParam(RfuncBase):
 
     @staticmethod
     def function(t, p):
-        return (t ** (p[1] - 1)) * np.exp(-t / p[2] - p[3] / t)
+        return (t ** (p[1] - 1)) * np.exp(-t / p[2] - p[2] * p[3] / t)
 
     def get_tmax(self, p, cutoff=None):
         if cutoff is None:
