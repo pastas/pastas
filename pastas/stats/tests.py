@@ -361,8 +361,11 @@ def diagnostics(series, alpha=0.05, nparam=0, stats=(), float_fmt="{0:.2f}"):
     Parameters
     ----------
     series: pandas.Series
+        Time series to compute the diagnostics for.
     alpha: float, optional
         significance level to use for the hypothesis testing.
+    nparam: int, optional
+        Number of parameters of the noisemodel.
     stats: list, optional
         List with the diagnostic checks to perform. Not implemented yet.
     float_fmt: str
@@ -524,16 +527,21 @@ def plot_diagnostics(series, figsize=(10, 6), bins=50, acf_options=None,
     series.plot(ax=ax)
     ax.set_ylabel(series.name)
     ax.set_xlim(series.index.min(), series.index.max())
+    ax.set_title("{} (n={:.0f}, $\\mu$={:.2f})".format(series.name,
+                                                       series.size,
+                                                       series.mean()))
     ax.grid()
 
     # Plot the autocorrelation
     plot_acf(series, alpha=alpha, acf_options=acf_options, ax=ax1)
+    ax1.set_title("Autocorrelation plot")
 
     # Plot the histogram for normality and add a 'best fit' line
     _, bins, _ = ax2.hist(series.values, bins=bins, density=True)
     y = norm.pdf(bins, series.mean(), series.std())
     ax2.plot(bins, y, 'k--')
     ax2.set_ylabel("Probability density")
+    ax2.set_title("Histogram")
 
     # Plot the probability plot
     probplot(series, plot=ax3, dist="norm", rvalue=True)
