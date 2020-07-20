@@ -500,7 +500,7 @@ class Hantush(RfuncBase):
        subjected to multiple stresses. Ground Water, 46(1), 30-40.
 
     """
-    _name = "Hantush2"
+    _name = "Hantush"
 
     def __init__(self, up=False, meanstress=1, cutoff=0.999):
         RfuncBase.__init__(self, up, meanstress, cutoff)
@@ -571,7 +571,7 @@ class PolderOld(RfuncBase):
     /deklaag-met-sloten
 
     """
-    _name = "Polder"
+    _name = "PolderOld"
 
     def __init__(self, up=True, meanstress=1, cutoff=0.999):
         RfuncBase.__init__(self, up, meanstress, cutoff)
@@ -641,7 +641,7 @@ class Polder(RfuncBase):
     geohydrological problems. Elsevier Science. Amsterdam, Eq. 123.32
 
     """
-    _name = "Polder2"
+    _name = "Polder"
 
     def __init__(self, up=True, meanstress=1, cutoff=0.999):
         RfuncBase.__init__(self, up, meanstress, cutoff)
