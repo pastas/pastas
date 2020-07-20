@@ -378,23 +378,21 @@ class HantushWellModel(RfuncBase):
         mean value of the stress, used to set the initial value such that
         the final step times the mean stress equals 1
     cutoff: float
-        proportion after which the step function is cut off. default is 0.999.
+        proportion after which the step function is cut off. Default is 0.999.
 
     Notes
     -----
-    The HantushWellModel well function is explained in [hantush_1955]_,
-    [veling_2010]_ and [asmuth_2008]_. It's parameters are (note the
-    addition of the r parameter in this implementation):
+    The Hantush well function is explained in [hantush_1955]_,
+    [veling_2010]_ and [asmuth_2008]_:
 
-    .. math:: p[0] = A = \\frac{1}{4 \\pi kD} \\cdot 2 k_0 \\left( \\frac{r}{\\lambda} \\right)
-    .. math:: p[1] = lab = \\lambda
-    .. math:: p[2] = cS
+    .. math:: \\theta(t) = \\frac{A}{t} \\exp(-t/a -b/t)
+
+    .. math:: p[0] = A # TBD \\frac{1}{4 \\pi kD}
+    .. math:: p[1] = a = cS
+    .. math:: p[2] = b = 1^2 / (4 \\lambda^2)
     .. math:: p[3] = r \\text{(not optimized)}
+    where :math:`\\lambda = \\sqrt{kDc}`
 
-    where :math:`\\lambda = \\sqrt{\\frac{kD}{c}}`
-
-    Notes
-    -----
     The parameter r (distance from the well to the observation point)
     is passed as a known value, and is used to scale the response function.
     The optimized parameters are slightly different from the original
@@ -402,10 +400,22 @@ class HantushWellModel(RfuncBase):
 
     - A: To get the same A as the original Hantush:
         A_orig = A * 2 * k0(r / lambda) or use the gain() method
-    - lab: lambda, the r parameter is passed separately to calculate
-        rho = r / lambda internally
-    - cS: stays the same
-    - r: distance, used to calculate rho, see lab.
+    - a = cS: stays the same
+    - b = 1 / (4 * lambda): r is used internally to scale with distance
+    - r: distance, not optimized but used to scale A and b
+
+    References
+    ----------
+    .. [hantush_1955] Hantush, M. S., & Jacob, C. E. (1955). Non‐steady
+       radial flow in an infinite leaky aquifer. Eos, Transactions American
+       Geophysical Union, 36(1), 95-100.
+
+    .. [veling_2010] Veling, E. J. M., & Maas, C. (2010). Hantush well function
+       revisited. Journal of hydrology, 393(3), 381-388.
+
+    .. [asmuth_2008] Von Asmuth, J. R., Maas, K., Bakker, M., & Petersen,
+       J. (2008). Modeling time series of ground water head fluctuations
+       subjected to multiple stresses. Ground Water, 46(1), 30-40.
 
     """
     _name = "HantushWellModel"
@@ -418,33 +428,39 @@ class HantushWellModel(RfuncBase):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
-            parameters.loc[name + '_A'] = (
-                1 / self.meanstress, 0, 100 / self.meanstress, True, name)
+            parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
+                                           100 / self.meanstress, True, name)
+        elif self.up is False:
+            parameters.loc[name + '_A'] = (-1 / self.meanstress,
+                                           -100 / self.meanstress, 0, True,
+                                           name)
         else:
-            parameters.loc[name + '_A'] = (
-                -1 / self.meanstress, -100 / self.meanstress, 0, True, name)
-        parameters.loc[name + '_lab'] = (1000, 1, 1e6, True, name)
-        parameters.loc[name + '_cS'] = (100, 1e-3, 1e4, True, name)
+            parameters.loc[name + '_A'] = (1 / self.meanstress,
+                                           np.nan, np.nan, True, name)
+        parameters.loc[name + '_a'] = (100, 1e-3, 1e4, True, name)
+        parameters.loc[name + '_b'] = (1, 1e-4, 25, True, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):
-        r = 1 if len(p) == 3 else p[3]
+        r = 1.0 if len(p) == 3 else p[3]
         # approximate formula for tmax
         if cutoff is None:
             cutoff = self.cutoff
-        rho = r / p[1]
-        cS = p[2]
+        cS = p[1]
+        rho = np.sqrt(4 * r**2 * p[2])
         k0rho = k0(rho)
         return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
 
-    def gain(self, p):
-        r = 1 if len(p) == 3 else p[3]
-        return p[0] * 2 * k0(r / p[1])
+    @staticmethod
+    def gain(p):
+        r = 1.0 if len(p) == 3 else p[3]
+        rho = np.sqrt(4 * r**2 * p[2])
+        return p[0] * 2 * k0(rho)
 
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
-        r = 1 if len(p) == 3 else p[3]
-        rho = r / p[1]
-        cS = p[2]
+        r = 1.0 if len(p) == 3 else p[3]
+        cS = p[1]
+        rho = np.sqrt(4 * r**2 * p[2])
         k0rho = k0(rho)
         t = self.get_t(p, dt, cutoff, maxtmax)
         tau = t / cS
@@ -457,7 +473,8 @@ class HantushWellModel(RfuncBase):
         F[tau >= rho / 2] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(
             tau2 + rho ** 2 / (4 * tau2))
         return p[0] * F
-    
+
+
 class Hantush(RfuncBase):
     """
     The Hantush well function, using the standard A, a, b parameters
@@ -477,7 +494,7 @@ class Hantush(RfuncBase):
     -----
     The Hantush well function is explained in [hantush_1955]_, [veling_2010]_
     and [asmuth_2008]_. The impulse response function may be written as
-    
+
     .. math:: \\theta(t) = \\frac{A}{t} \\exp(-t/a -b/t)
 
     .. math:: p[0] = A # TBD \\frac{1}{4 \\pi kD}
@@ -587,13 +604,13 @@ class PolderOld(RfuncBase):
         parameters.loc[name + '_a'] = (a_init, 0, 100, True, name)
         parameters.loc[name + '_b'] = (b_init, 0, 10, True, name)
         return parameters
-    
+
     def get_tmax(self, p, cutoff=None):
         if cutoff is None:
             cutoff = self.cutoff
         A, p0, sqrtp1 = p
         p1 = sqrtp1 ** 2
-        inverfc = erfcinv(2 * cutoff) 
+        inverfc = erfcinv(2 * cutoff)
         y = ((-inverfc + np.sqrt(inverfc ** 2 + 4 * p0)) / 2)
         tmax = (y / np.sqrt(p1)) ** 2
         return tmax
@@ -618,7 +635,7 @@ class PolderOld(RfuncBase):
             0.5 * np.exp(-2 * x) * erfc(x / y - y)
         return s
 
-    
+
 class Polder(RfuncBase):
     """The Polder function, using the standard A, a, b parameters
 
@@ -626,7 +643,7 @@ class Polder(RfuncBase):
     -----
     The Polder function is explained in [polder]_. 
     The impulse response function may be written as
-    
+
     .. math:: \\theta(t) = \\frac{A}{t^{-3/2}} \\exp(-t/a -b/t)
 
     .. math:: p[0] = A = \\exp(-x/\\lambda)
@@ -657,14 +674,14 @@ class Polder(RfuncBase):
         parameters.loc[name + '_a'] = (a_init, 0.01, 1000, True, name)
         parameters.loc[name + '_b'] = (b_init, 1e-4, 1e4, True, name)
         return parameters
-    
+
     def get_tmax(self, p, cutoff=None):
         if cutoff is None:
             cutoff = self.cutoff
         A, a, b = p
         b = a * b
         x = np.sqrt(b / a)
-        inverfc = erfcinv(2 * cutoff) 
+        inverfc = erfcinv(2 * cutoff)
         y = (-inverfc + np.sqrt(inverfc ** 2 + 4 * x)) / 2
         tmax = a * y ** 2
         return tmax
@@ -691,7 +708,7 @@ class Polder(RfuncBase):
         s = 0.5 * np.exp(2 * x) * erfc(x / y + y) + \
             0.5 * np.exp(-2 * x) * erfc(x / y - y)
         return s
-    
+
 
 class One(RfuncBase):
     """Dummy class for Constant. Returns 1
@@ -858,7 +875,7 @@ class FourParam(RfuncBase):
                 func_half = self.function(t[:-1] + step / 2, p)
                 s[1:] = s[0] + np.cumsum(step / 6 *
                                          (func[:-1] + 4 * func_half + func[
-                                                                      1:]))
+                                             1:]))
                 s = s * (p[0] / quad(self.function, 0, np.inf, args=p)[0])
                 return s[int(dt / step - 1)::int(dt / step)]
             else:
@@ -876,7 +893,7 @@ class FourParam(RfuncBase):
                 func_half = self.function(t[:-1] + dt / 2, p)
                 s[1:] = s[0] + np.cumsum(dt / 6 *
                                          (func[:-1] + 4 * func_half + func[
-                                                                      1:]))
+                                             1:]))
                 s = s * (p[0] / quad(self.function, 0, np.inf, args=p)[0])
                 return s
 
