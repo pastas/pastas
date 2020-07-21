@@ -711,7 +711,7 @@ class WellModel(StressModelBase):
             raise NotImplementedError("WellModel only supports the rfunc "
                                       "HantushWellModel fow now!")
 
-        logger.warn("It is recommended to use LmFitSolve as the solver "
+        logger.warn("It is recommended to use LmfitSolve as the solver "
                     "when implementing WellModel. See "
                     "https://github.com/pastas/pastas/issues/177.")
 
