@@ -655,7 +655,7 @@ class Polder(RfuncBase):
         b_init = 1
         parameters.loc[name + '_A'] = (A_init, 0, 2, True, name)
         parameters.loc[name + '_a'] = (a_init, 0.01, 1000, True, name)
-        parameters.loc[name + '_b'] = (b_init, 1e-4, 1e4, True, name)
+        parameters.loc[name + '_b'] = (b_init, 1e-4, 25, True, name)
         return parameters
     
     def get_tmax(self, p, cutoff=None):
