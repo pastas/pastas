@@ -478,9 +478,9 @@ class Hantush(RfuncBase):
     The Hantush well function is explained in [hantush_1955]_, [veling_2010]_
     and [asmuth_2008]_. The impulse response function may be written as
     
-    .. math:: \\theta(t) = \\frac{A}{t} \\exp(-t/a - ab/t)
-
-    .. math:: p[0] = A # \\frac{1}{4 \\pi kD}
+    .. math:: \\theta(t) = K_0(\\sqrt(4b)) \\frac{A}{t} \\exp(-t/a - ab/t)
+    
+    .. math:: p[0] = A # \\frac{1}{2 \\pi kD}
     .. math:: p[1] = a = cS
     .. math:: p[2] = b = r^2 / (4 \\lambda^2)
 
@@ -533,7 +533,7 @@ class Hantush(RfuncBase):
         return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
 
     def gain(self, p):
-        return p[0]
+        return p[0] * k0(np.sqrt(4 * p[2]))
 
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
         cS = p[1]
@@ -549,7 +549,7 @@ class Hantush(RfuncBase):
             tau1 + rho ** 2 / (4 * tau1))
         F[tau >= rho / 2] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(
             tau2 + rho ** 2 / (4 * tau2))
-        return p[0] * F
+        return p[0] * F / 2
 
 
 class PolderOld(RfuncBase):
@@ -627,11 +627,11 @@ class Polder(RfuncBase):
     The Polder function is explained in [polder]_. 
     The impulse response function may be written as
     
-    .. math:: \\theta(t) = \\frac{A}{t^{-3/2}} \\exp(-t/a -b/t)
+    .. math:: \\theta(t) = \\exp(-\\sqrt(4b)) \\frac{A}{t^{-3/2}} \\exp(-t/a -b/t)
 
     .. math:: p[0] = A = \\exp(-x/\\lambda)
     .. math:: p[1] = a = \\sqrt{\\frac{1}{cS}}
-    .. math:: p[2] = b = x^2 cS / (4 \\lambda^2)
+    .. math:: p[2] = b = x^2 / (4 \\lambda^2)
 
     where :math:`\\lambda = \\sqrt{kDc}`
 
@@ -671,7 +671,7 @@ class Polder(RfuncBase):
 
     def gain(self, p):
         # the steady state solution of Mazure
-        g = p[0]
+        g = p[0] * np.exp(-np.sqrt(4 * p[2]))
         if not self.up:
             g = -g
         return g
@@ -679,9 +679,8 @@ class Polder(RfuncBase):
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
         t = self.get_t(p, dt, cutoff, maxtmax)
         A, a, b = p
-        b = a * b
-        s = p[0] * self.polder_function(np.sqrt(b / a), np.sqrt(t / a)) / \
-            np.exp(-2 * np.sqrt(b / a))
+        s = p[0] * self.polder_function(np.sqrt(b), np.sqrt(t / a))
+        # / np.exp(-2 * np.sqrt(b))
         if not self.up:
             s = -s
         return s
