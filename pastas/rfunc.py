@@ -455,7 +455,7 @@ class HantushWellModel(RfuncBase):
     def gain(p):
         r = 1.0 if len(p) == 3 else p[3]
         rho = np.sqrt(4 * r**2 * p[2])
-        return p[0] * 2 * k0(rho)
+        return p[0] * k0(rho)
 
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
         r = 1.0 if len(p) == 3 else p[3]
@@ -472,7 +472,7 @@ class HantushWellModel(RfuncBase):
             tau1 + rho ** 2 / (4 * tau1))
         F[tau >= rho / 2] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(
             tau2 + rho ** 2 / (4 * tau2))
-        return p[0] * F
+        return p[0] * F / 2
 
 
 class Hantush(RfuncBase):
