@@ -398,8 +398,8 @@ class HantushWellModel(RfuncBase):
     The optimized parameters are slightly different from the original
     Hantush implementation:
 
-    - A: To get the same A as the original Hantush:
-        A_orig = A * 2 * k0(r / lambda) or use the gain() method
+    - A: the parameter is the same as the original Hantush, except that
+    the distance (r) is set to 1.0
     - a = cS: stays the same
     - b = 1 / (4 * lambda): r is used internally to scale with distance
     - r: distance, not optimized but used to scale A and b
