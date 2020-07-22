@@ -107,9 +107,112 @@ class NoiseModelBase:
     @staticmethod
     def weights(res, parameters):
         return 1
-
+    
 
 class NoiseModel(NoiseModelBase):
+    """
+    Noise model with exponential decay of the residuals and weighting.
+    Differences compared to NoiseModelOld:
+    1. First value is residual
+    2. First weight is 1 / sig_residuals (i.e., delt = infty)
+    3. Normalization of weights as in Von Asmuth and Bierkens (2005), optional
+    
+    Parameters
+    ----------
+    norm: boolean
+        Boolean to indicate whether weights are normalized according to
+        the Von Asmuth and Bierkens (2005) paper
+    
+    Notes
+    -----
+    Calculates the noise [1]_ according to:
+
+    .. math::
+
+        v(t1) = r(t1) - r(t0) * exp(- (\\frac{\\Delta t}{\\alpha})
+        
+    Calculates the weights as
+    
+    .. math::
+        
+        w = 1 / sqrt((1 - exp(-2 \\Delta t / \\alpha)))
+
+    
+    The units of the alpha parameter is always in days.
+
+
+    """
+    _name = "NoiseModel"
+
+    def __init__(self, norm=True):
+        NoiseModelBase.__init__(self)
+        self.norm = norm
+        self.nparam = 1
+        self.set_init_parameters()
+
+    @staticmethod
+    def simulate(res, parameters):
+        """
+        Simulate noise from the residuals.
+
+        Parameters
+        ----------
+        res: pandas.Series
+            The residual series.
+        parameters: array-like
+            Alpha parameters used by the noisemodel.
+
+        Returns
+        -------
+        noise: pandas.Series
+            Series of the noise.
+
+        """
+        alpha = parameters[0]
+        odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
+        v = Series(index=res.index, dtype="float64", name="Noise")
+        v.iloc[0] = res.values[0]
+        v.iloc[1:] = res.values[1:] - np.exp(-odelt / alpha) * res.values[:-1]
+        return v
+
+    #@staticmethod
+    def weights(self, res, parameters):
+        """
+        Method to calculate the weights for the noise.
+        Weights are
+
+        .. math::
+        
+        w = 1 / sqrt((1 - exp(-2 \\Delta t / \\alpha)))
+        
+        which are then normalized so that sum(w) = len(res)
+
+        Parameters
+        ----------
+        alpha: float
+        odelt: numpy.ndarray
+
+        Returns
+        -------
+        w: pandas.Series
+            Series of the weights.
+
+        """
+        alpha = parameters[0]
+        odelt = np.empty(res.size)
+        odelt[0] = 1e12 # large for first measurement
+        odelt[1:] = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
+        exp = np.exp(-2.0 / alpha * odelt)  # Twice as fast as 2*odelt/alpha
+        # weights of noise, not noise^2
+        w = Series(data=1 / np.sqrt(1.0 - exp), 
+                   index=res.index, dtype="float64", name="noise_weights")
+        if self.norm:
+            w = w.multiply(np.exp(1.0 / (2.0 * odelt.size) * 
+                                  np.sum(np.log(1.0 - exp))))
+        return w
+
+
+class NoiseModelOld(NoiseModelBase):
     """
     Noise model with exponential decay of the residual and weighting.
 
@@ -123,15 +226,6 @@ class NoiseModel(NoiseModelBase):
 
     Note that in the referenced paper, alpha is defined as the inverse of
     alpha used in Pastas. The unit of the alpha parameter is always in days.
-
-    Examples
-    --------
-    It can happen that the noisemodel is used during model calibration
-    to explain most of the variation in the data. A recommended solution is to
-    scale the initial parameter with the model timestep, E.g.::
-
-    >>> n = NoiseModel()
-    >>> n.set_initial("noise_alpha", 1.0 * ml.get_dt(ml.freq))
 
     References
     ----------
@@ -260,107 +354,7 @@ class NoiseModel2(NoiseModelBase):
         return res
     
 
-class NoiseModel3(NoiseModelBase):
-    """
-    Noise model with exponential decay of the residual and weighting.
-    Differences compared to NoiseModel:
-    1. First value is residual
-    2. First weight is 1 / sig_residuals (i.e., delt = infty)
-    3. Normalization of weights as in Von Asmuth and Bierkens (2005), optional
-    
-    Parameters
-    ----------
-    norm: boolean
-        Boolean to indicate whether weights are normalized according to
-        the Von Asmuth and Bierkens (2005) paper
-    
-    Notes
-    -----
-    Calculates the noise [1]_ according to:
 
-    .. math::
-
-        v(t1) = r(t1) - r(t0) * exp(- (\\frac{\\Delta t}{\\alpha})
-        
-    Calculates the weights as
-    
-    .. math::
-        
-        w = 1 / sqrt((1 - exp(-2 \\Delta t / \\alpha)))
-
-    
-    The units of the alpha parameter is always in days.
-
-
-    """
-    _name = "NoiseModel3"
-
-    def __init__(self, norm=True):
-        NoiseModelBase.__init__(self)
-        self.norm = norm
-        self.nparam = 1
-        self.set_init_parameters()
-
-    @staticmethod
-    def simulate(res, parameters):
-        """
-        Simulate noise from the residuals.
-
-        Parameters
-        ----------
-        res: pandas.Series
-            The residual series.
-        parameters: array-like
-            Alpha parameters used by the noisemodel.
-
-        Returns
-        -------
-        noise: pandas.Series
-            Series of the noise.
-
-        """
-        alpha = parameters[0]
-        odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
-        v = Series(index=res.index, dtype="float64", name="Noise")
-        v.iloc[0] = res.values[0]
-        v.iloc[1:] = res.values[1:] - np.exp(-odelt / alpha) * res.values[:-1]
-        return v
-
-    #@staticmethod
-    def weights(self, res, parameters):
-        """
-        Method to calculate the weights for the noise.
-        Weights are
-
-        .. math::
-        
-        w = 1 / sqrt((1 - exp(-2 \\Delta t / \\alpha)))
-        
-        which are then normalized so that sum(w) = len(res)
-
-        Parameters
-        ----------
-        alpha: float
-        odelt: numpy.ndarray
-
-        Returns
-        -------
-        w: pandas.Series
-            Series of the weights.
-
-        """
-        alpha = parameters[0]
-        odelt = np.empty(res.size)
-        odelt[0] = 1e12 # large for first measurement
-        odelt[1:] = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
-        exp = np.exp(-2.0 / alpha * odelt)  # Twice as fast as 2*odelt/alpha
-        # weights of noise, not noise^2
-        w = Series(data=1 / np.sqrt(1.0 - exp), 
-                   index=res.index, dtype="float64", name="noise_weights")
-        if self.norm:
-            w = w.multiply(np.exp(1.0 / (2.0 * odelt.size) * 
-                                  np.sum(np.log(1.0 - exp))))
-        return w
     
 
 
