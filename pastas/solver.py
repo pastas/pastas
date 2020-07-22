@@ -90,7 +90,7 @@ class BaseSolver:
         """
         # Get the residuals or the noise
         if noise:
-            rv = self.ml.noise(parameters, weights=False) * \
+            rv = self.ml.noise(parameters) * \
                  self.ml.noise_weights(parameters)
         else:
             rv = self.ml.residuals(parameters)
@@ -106,7 +106,7 @@ class BaseSolver:
             
         if returnseparate:
             return self.ml.residuals(parameters).values, \
-                   self.ml.noise(parameters, weights=False).values, \
+                   self.ml.noise(parameters).values, \
                    self.ml.noise_weights(parameters).values
 
         return rv.values
@@ -158,8 +158,8 @@ class BaseSolver:
     def ci_block_response(self, name, n=1000, alpha=0.05, **kwargs):
         dt = self.ml.get_block_response(name=name).index.values
         return self._get_confidence_interval(func=self.ml.get_block_response,
-                                             n=n, alpha=alpha, name=name, dt=dt,
-                                             **kwargs)
+                                             n=n, alpha=alpha, name=name,
+                                             dt=dt, **kwargs)
 
     def ci_step_response(self, name, n=1000, alpha=0.05, **kwargs):
         dt = self.ml.get_block_response(name=name).index.values

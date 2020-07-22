@@ -30,5 +30,12 @@ def test_runs_test():
     Read NIST test data
     """
     data = pd.read_csv("tests/data/nist.csv")
-    _, test, _ = ps.stats.runs_test(data)
+    test, _ = ps.stats.runs_test(data)
     assert test[0] - 2.69 < 0.02
+
+
+def test_stoffer_toloi():
+    res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
+                    data=np.random.rand(1000))
+    _, pval = ps.stats.stoffer_toloi(res)
+    assert pval > 1e-10

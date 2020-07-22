@@ -9,3 +9,5 @@ scipy>=1.1
 jupyter>=1.0.0
 
 numba
+
+lmfit>=1.0.0

@@ -1,5 +1,5 @@
-"""This module contains a set of Dutch Statistics which are commonly used in
-groundwater statistics.
+"""The following methods are descriptive statistics commonly used to
+describe groundwater time series in the Netherlands.
 
 .. codeauthor:: R. Calje, T. van Steijn and R. Collenteur
 
@@ -25,7 +25,6 @@ from pandas import date_range, Series, Timedelta
 from ..utils import get_sample
 
 
-# %% Some Dutch statistics
 def q_ghg(series, tmin=None, tmax=None, q=0.94, by_year=True):
     """Gemiddeld Hoogste Grondwaterstand (GHG) also called MHGL (Mean High
     Groundwater Level).

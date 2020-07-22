@@ -499,10 +499,6 @@ class Model:
             tmax = self.settings['tmax']
         if freq is None:
             freq = self.settings["freq"]
-        if warmup is None:
-            warmup = self.settings["warmup"]
-        else:
-            warmup = Timedelta(warmup, "D")
 
         # simulate model
         sim = self.simulate(parameters, tmin, tmax, freq, warmup,
@@ -540,7 +536,7 @@ class Model:
         return res
 
     def noise(self, parameters=None, tmin=None, tmax=None, freq=None,
-              warmup=None, weights=True):
+              warmup=None):
         """Method to simulate the noise when a noisemodel is present.
 
         Parameters
@@ -595,15 +591,6 @@ class Model:
 
         # Calculate the noise
         noise = self.noisemodel.simulate(res, p)
-        # Calculate the weights
-        if weights:
-            self.logger.warning("The default argument for weights will be "
-                                "changed to weights=False in a future "
-                                "version of Pastas.")
-            weights = self.noisemodel.weights(res, p)
-            noise = noise * weights
-            noise.name = "Weighted Noise"
-
         return noise
 
     def noise_weights(self, parameters=None, tmin=None, tmax=None, freq=None,
@@ -822,8 +809,8 @@ class Model:
         self.settings["solver"] = self.fit._name
 
         # Solve model
-        success, optimal, stderr = self.fit.solve(noise=noise, weights=weights,
-                                                  **kwargs)
+        success, optimal, stderr = self.fit.solve(noise=self.settings["noise"],
+                                                  weights=weights, **kwargs)
         if not success:
             self.logger.warning("Model parameters could not be estimated "
                                 "well.")
