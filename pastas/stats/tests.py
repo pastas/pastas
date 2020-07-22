@@ -278,7 +278,8 @@ def stoffer_toloi(series, max_lag=365, nparam=0, freq="D"):
 
     Notes
     -----
-    Portmanteau test can handle missing data (nan's) in the input time series.
+    stoffer-toloi test can handle missing data (nan's) in the input time
+    series.
 
     Reference
     ---------
@@ -290,7 +291,7 @@ def stoffer_toloi(series, max_lag=365, nparam=0, freq="D"):
     --------
     >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
     >>>                data=np.random.rand(1000))
-    >>>result = ps.stats.stoffer_toloi(res)
+    >>> result = ps.stats.stoffer_toloi(res)
 
     """
     series = series.asfreq(freq=freq)  # Make time series equidistant
@@ -356,6 +357,13 @@ def diagnostics(series, alpha=0.05, nparam=0, stats=(), float_fmt="{0:.2f}"):
     >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
     >>>                 data=np.random.rand(1000))
     >>> ps.stats.diagnostics(res)
+    Out[0]:
+                      Checks Statistic P-value  Reject H0
+    Shapiroo       Normality      1.00    0.86      False
+    D'Agostino     Normality      1.18    0.56      False
+    Runs test      Autocorr.     -0.76    0.45      False
+    Durbin-Watson  Autocorr.      2.02     nan      False
+    Ljung-Box      Autocorr.      5.67    1.00      False
 
     """
     cols = ["Checks", "Statistic", "P-value"]
@@ -437,9 +445,9 @@ def plot_acf(series, alpha=0.05, acf_options=None, ax=None, figsize=(5, 2)):
     ax.fill_between(r.index.days, conf, -conf, alpha=0.3)
     ax.vlines(r.index.days, [0], r.loc[:, "acf"].values)
 
-    ax.set_xlabel("Lag (Days)")
+    ax.set_xlabel("Lag [Days]")
     ax.set_xlim(0, r.index.days.max())
-    ax.set_ylabel('Autocorrelation')
+    ax.set_ylabel('Autocorrelation [-]')
     ax.set_title("Autocorrelation plot")
 
     ax.grid()
@@ -473,19 +481,12 @@ def plot_diagnostics(series, alpha=0.05, bins=50, acf_options=None,
     --------
     >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
     >>>                 data=np.random.normal(0, 1, 1000))
-    ps.stats.diagnostics(res)
-    Out[59]:
-                      Checks Statistic P-value  Reject H0
-    Shapiroo       Normality      1.00    0.86      False
-    D'Agostino     Normality      1.18    0.56      False
-    Runs test      Autocorr.     -0.76    0.45      False
-    Durbin-Watson  Autocorr.      2.02     nan      False
-    Ljung-Box      Autocorr.      5.67    1.00      False
+    >>> ps.stats.plot_diagnostics(res)
 
     Note
     ----
-    This plot assumed that the noise or residuals follow a Normal
-    distribution.
+    The two right-hand side plots assume that the noise or residuals follow a
+    Normal distribution.
 
     See Also
     --------
