@@ -435,7 +435,7 @@ class Plotting:
 
         """
         if self.ml.settings["noise"]:
-            res = self.ml.noise(tmin=tmin, tmax=tmax, weights=False)
+            res = self.ml.noise(tmin=tmin, tmax=tmax)
         else:
             res = self.ml.residuals(tmin=tmin, tmax=tmax)
 
