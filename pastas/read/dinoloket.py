@@ -5,7 +5,6 @@ data from dinoloket.nl.
 TODO: Get rid of filternummer en opmerking in self.series
 
 """
-import os
 import numpy as np
 from pandas import Series, read_csv
 
