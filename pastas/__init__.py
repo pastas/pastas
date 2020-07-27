@@ -5,7 +5,7 @@ from .model import Model
 from .noisemodels import NoiseModel, NoiseModelOld, ArmaModel
 from .plots import TrackSolve
 from .project import Project
-from .read import read_meny, read_dino, read_knmi, read_waterbase
+from .read import read_meny, read_dino, read_dino_level_gauge, read_knmi, read_waterbase
 from .rfunc import Gamma, Exponential, Hantush, Polder, One, FourParam, \
     DoubleExponential, HantushWellModel, HantushOld, PolderOld
 from .solver import LmfitSolve, LeastSquares, LmfitSolveNew
