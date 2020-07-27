@@ -1,10 +1,9 @@
-"""
-This file contains the classes that can be used to import groundwater level
+"""This file contains the classes that can be used to import groundwater level
 data from dinoloket.nl.
 
 TODO: Get rid of filternummer en opmerking in self.series
-
 """
+
 import numpy as np
 from pandas import Series, read_csv
 
@@ -13,7 +12,7 @@ from ..timeseries import TimeSeries
 
 def read_dino(fname, variable='Stand_cm_tov_NAP', factor=0.01):
     """This method can be used to import files from Dinoloket that contain
-     groundwater level measurements (https://www.dinoloket.nl/)
+    groundwater level measurements (https://www.dinoloket.nl/)
 
     Parameters
     ----------
@@ -26,7 +25,6 @@ def read_dino(fname, variable='Stand_cm_tov_NAP', factor=0.01):
     -------
     ts: pastas.TimeSeries
         returns a Pastas TimeSeries object or a list of objects.
-
     """
 
     # Read the file
@@ -59,20 +57,22 @@ def read_dino(fname, variable='Stand_cm_tov_NAP', factor=0.01):
 
 def read_dino_level_gauge(fname, variable='Stand_cm_tov_NAP', factor=0.01):
     """This method can be used to import files from Dinoloket that contain
-     groundwater level measurements (https://www.dinoloket.nl/)
+    surface water level measurements (https://www.dinoloket.nl/)
 
     Parameters
     ----------
-    variable
-    factor
     fname: str
-        Filename and path to a Dino file.
+        filename and path to a Dino file.
+    variable : str, optional
+        name of the variable to read, default is 'Stand_cm_tov_NAP'
+    factor : float, optional
+        multiply values by factor (usually for conversion to m),
+        default is 0.01
 
     Returns
     -------
     ts: pastas.TimeSeries
         returns a Pastas TimeSeries object or a list of objects.
-
     """
 
     # Read the file
@@ -97,7 +97,8 @@ def read_dino_level_gauge(fname, variable='Stand_cm_tov_NAP', factor=0.01):
 
     ts.append(TimeSeries(series,
                          name=dino.locatie,
-                         metadata=metadata, settings='oseries'))
+                         metadata=metadata,
+                         settings='oseries'))
     if len(ts) == 1:
         ts = ts[0]
     return ts
@@ -117,7 +118,7 @@ class DinoGrondwaterstand:
                 val = propval[1]
                 if propval[2] != '':
                     val = val + ' ' + propval[2].replace(':', '') + ' ' + \
-                          propval[3]
+                        propval[3]
                 header[prop] = val
                 line = f.readline()
 
@@ -185,34 +186,6 @@ class DinoGrondwaterstand:
                                         dayfirst=True,
                                         usecols=usecols)
                 ts = measurements['Stand_cm_tov_NAP']
-                #
-                # measurements = np.genfromtxt(f, delimiter=',',
-                #                              dtype=None,
-                #                              usecols=range(0, len(titel)),
-                #                              names=titel,
-                #                              missing_values=[''])
-                # values = measurements['Stand_cm_tov_NAP'] / float(100)
-                # values[values == -0.01] = np.NAN
-
-                # measurements = np.genfromtxt(fname, delimiter=',', dtype=dtype,
-                #                              names=titel, usecols=usecols)
-                # values = measurements['Stand_cm_tov_NAP'] / 100
-
-                # %% zet de ingelezen data om in een reeks
-                # if measurements['Stand_cm_tov_NAP'].dtype == np.dtype('bool'):
-                #     # wanneer bleek dat het allemaal lege waarden waren
-                #     if values.size == 1:
-                #         values = np.NAN
-                #     else:
-                #         values[:] = np.NAN
-
-                # if measurements['Peildatum'].size == 1:
-                #     datum = pd.to_datetime(
-                #         measurements['Peildatum'].item(), dayfirst=True)
-                #     ts = pd.Series([values], [datum])
-                # else:
-                #     datum = pd.to_datetime(measurements['Peildatum'])
-                #     ts = pd.Series(values, datum)
             else:
                 measurements = None
                 ts = Series()
@@ -276,7 +249,7 @@ class DinoPeilschaal:
                 val = propval[1]
                 if (len(propval) > 2) and (propval[2] != ''):
                     val = val + ' ' + propval[2].replace(':', '') + ' ' + \
-                          propval[3]
+                        propval[3]
                 header[prop] = val
                 line = f.readline()
 
