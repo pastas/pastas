@@ -248,7 +248,7 @@ class Plotting:
         p.loc[:, 'name'] = p.index
         p.loc[:, "stderr"] = np.abs(np.divide(p.loc[:, "stderr"],
                                               p.loc[:, "optimal"]) * 100)
-        p.loc[:, "stderr"] = p.loc[:, "stderr"].apply("{:.2f}".format)
+        p.loc[:, "stderr"] = p.loc[:, "stderr"].apply("{:.2f}%".format)
         p.loc[:, "optimal"] = p.loc[:, "optimal"].apply("{:.2f}".format)
 
         ax3.axis('off')

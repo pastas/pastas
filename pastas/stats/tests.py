@@ -93,7 +93,7 @@ def durbin_watson(series=None):
     return dw_stat, p
 
 
-def ljung_box(series=None, max_lag=365, nparam=0, return_full=False):
+def ljung_box(series=None, lags=365, nparam=0, full_output=False):
     """Ljung-box test for autocorrelation.
 
     Parameters
@@ -101,11 +101,11 @@ def ljung_box(series=None, max_lag=365, nparam=0, return_full=False):
     series: pandas.Series, optional
         series to calculate the autocorrelation for that is used in the
         Ljung-Box test.
-    max_lag: int, optional
+    lags: int, optional
         The maximum lag to compute the Ljung-Box test statistic for.
     nparam: int, optional
         NUmber of calibrated parameters in the model.
-    return_full: bool, optional
+    full_output: bool, optional
         Return the result of the test as a boolean (True) or not (False).
 
     Returns
@@ -159,23 +159,20 @@ def ljung_box(series=None, max_lag=365, nparam=0, return_full=False):
                        "for time series with equidistant time steps. "
                        "Consider using ps.stats.stoffer_toloi instead.")
 
-    lags = arange(1.0, max_lag + 1)
-
-    acf = get_acf(series, lags=lags)
+    acf = get_acf(series, lags=lags, bin_method="regular")
     nobs = series.index.size
 
     # Drop zero-lag from the acf and drop nan-values as k > 0
     acf = acf.drop(0, errors="ignore").dropna()
-    lags = acf.index.days.to_numpy()
+    lags = arange(1, len(acf) + 1)
 
     q_stat = nobs * (nobs + 2) * cumsum(acf.values ** 2 / (nobs - lags))
-    dof = max(max_lag - nparam, 1)
+    dof = max(lags[-1] - nparam, 1)
     pval = chi2.sf(q_stat, df=dof)
 
-    if return_full:
+    if full_output:
         result = DataFrame(data={"Q Stat": q_stat, "P-value": pval},
-                           index=lags)
-        result.index.name = "Lags (Days)"
+                           index=acf.index)
         return result
     else:
         return q_stat[-1], pval[-1]
@@ -255,15 +252,16 @@ def runs_test(series, cutoff="mean"):
     return z_stat, pval
 
 
-def stoffer_toloi(series, max_lag=365, nparam=0, freq="D"):
+def stoffer_toloi(series, lags=365, nparam=0, freq="D"):
     """Adapted Ljung-Box test to deal with missing data [stoffer_1992]_.
 
     Parameters
     ----------
     series: pandas.Series
         Time series to compute the adapted Ljung-Box statistic for.
-    max_lag: int, optional
-        If max_lag is None, then the default maxlag is 365.
+    lags: int, optional
+        If lags is None, then the default maximum lag is 365. The units of
+        this variable depend on the frequency chosen with the freq keyword.
     nparam: int, optional
         Number of parameters of the noisemodel.
     freq: str, optional
@@ -295,6 +293,10 @@ def stoffer_toloi(series, max_lag=365, nparam=0, freq="D"):
 
     """
     series = series.asfreq(freq=freq)  # Make time series equidistant
+
+    # TODO: Check if minimum frequency of the is (much) higher than freq and
+    #  raise a warning. See also #https://github.com/pastas/pastas/issues/228
+
     nobs = series.size
     z = (series - series.mean()).fillna(0.0)
     y = z.to_numpy()
@@ -305,11 +307,11 @@ def stoffer_toloi(series, max_lag=365, nparam=0, freq="D"):
     de0 = dz0 / da0
 
     # initialize
-    dz = zeros(max_lag)
-    da = zeros(max_lag)
-    de = zeros(max_lag)
+    dz = zeros(lags)
+    da = zeros(lags)
+    de = zeros(lags)
 
-    for i in range(0, max_lag):
+    for i in range(0, lags):
         hh = y[:-i - 1] * y[i + 1:]
         dz[i] = hh.sum() / nobs
         hh = yn[:-i - 1] * yn[i + 1:]
@@ -317,21 +319,19 @@ def stoffer_toloi(series, max_lag=365, nparam=0, freq="D"):
         if abs(da[i]) > finfo(float).eps:
             de[i] = dz[i] / da[i]
 
-    #    if Ce.sum() != De.sum():
-    #        raise Exception('Test: not equal values Ce and DE in Portmanteau')
-
     re = de / de0
-    k = arange(1, max_lag + 1)
+    k = arange(1, lags + 1)
     # Compute the Q-statistic
     qm = nobs ** 2 * sum(da * re ** 2 / (nobs - k))
 
-    dof = max(max_lag - nparam, 1)
+    dof = max(lags - nparam, 1)
     pval = chi2.sf(qm, df=dof)
 
     return qm, pval
 
 
-def diagnostics(series, alpha=0.05, nparam=0, stats=(), float_fmt="{0:.2f}"):
+def diagnostics(series, alpha=0.05, nparam=0, lags=365, stats=(),
+                float_fmt="{0:.2f}"):
     """Methods to compute various diagnostics checks for a time series.
 
     Parameters
@@ -342,6 +342,9 @@ def diagnostics(series, alpha=0.05, nparam=0, stats=(), float_fmt="{0:.2f}"):
         significance level to use for the hypothesis testing.
     nparam: int, optional
         Number of parameters of the noisemodel.
+    lags: int, optional
+        Maximum number of lags (in days) to compute the autocorrelation
+        tests for.
     stats: list, optional
         List with the diagnostic checks to perform. Not implemented yet.
     float_fmt: str
@@ -351,6 +354,12 @@ def diagnostics(series, alpha=0.05, nparam=0, stats=(), float_fmt="{0:.2f}"):
     -------
     df: Pandas.DataFrame
         DataFrame with the information for the diagnostics checks.
+
+    Notes
+    -----
+    Different tests are computed depending on the regularity of the time
+    step of the provided time series. series.index.inferred_freq is used to
+    determined whether or not the time steps are regular.
 
     Examples
     --------
@@ -368,7 +377,6 @@ def diagnostics(series, alpha=0.05, nparam=0, stats=(), float_fmt="{0:.2f}"):
     """
     cols = ["Checks", "Statistic", "P-value"]
     df = DataFrame(index=stats, columns=cols)
-    df.style.format("{:.2f}")
 
     # Shapiroo-Wilk test for Normality
     stat, p = shapiro(series)
@@ -385,7 +393,7 @@ def diagnostics(series, alpha=0.05, nparam=0, stats=(), float_fmt="{0:.2f}"):
     # Do different tests depending on time step
     if series.index.inferred_freq:
         # Ljung-Box test for autocorrelation
-        stat, p = ljung_box(series, nparam=nparam, max_lag=365)
+        stat, p = ljung_box(series, nparam=nparam, lags=lags)
         df.loc["Ljung-Box", cols] = "Autocorr.", stat, p
 
         # Durbin-Watson test for autocorrelation
@@ -393,7 +401,7 @@ def diagnostics(series, alpha=0.05, nparam=0, stats=(), float_fmt="{0:.2f}"):
         df.loc["Durbin-Watson", cols] = "Autocorr.", stat, p
     else:
         # Stoffer-Toloi for autocorrelation
-        stat, p = stoffer_toloi(series, nparam=nparam, max_lag=365)
+        stat, p = stoffer_toloi(series, nparam=nparam, lags=lags)
         df.loc["Stoffer-Toloi", cols] = "Autocorr.", stat, p
 
     df["Reject H0"] = df.loc[:, "P-value"] < alpha
@@ -403,7 +411,8 @@ def diagnostics(series, alpha=0.05, nparam=0, stats=(), float_fmt="{0:.2f}"):
     return df
 
 
-def plot_acf(series, alpha=0.05, acf_options=None, ax=None, figsize=(5, 2)):
+def plot_acf(series, alpha=0.05, lags=365, acf_options=None, smooth_conf=True,
+             ax=None, figsize=(5, 2)):
     """Method to plot the autocorrelation function.
 
     Parameters
@@ -413,8 +422,12 @@ def plot_acf(series, alpha=0.05, acf_options=None, ax=None, figsize=(5, 2)):
     alpha: float, optional
         Significance level to calculate the (1-alpha)-confidence intervals.
         For 95% confidence intervals, alpha should be 0.05.
+    lags: int, optional
+        Maximum number of lags (in days) to compute the autocorrelation for.
     acf_options: dict, optional
         Dictionary with keyword arguments passed on to pastas.stats.acf.
+    smooth_conf: bool, optional
+        For irregular time series the confidence interval may be
     ax: matplotlib.axes.Axes, optional
         Matplotlib Axes instance to plot the ACF on. A new Figure and Axes
         is created when no value for ax is provided.
@@ -439,8 +452,13 @@ def plot_acf(series, alpha=0.05, acf_options=None, ax=None, figsize=(5, 2)):
     # Plot the autocorrelation
     if acf_options is None:
         acf_options = {}
-    r = get_acf(series, output="full", alpha=alpha, **acf_options)
-    conf = r.loc[:, "stderr"].values
+    r = get_acf(series, full_output=True, alpha=alpha, lags=lags,
+                **acf_options)
+
+    if smooth_conf:
+        conf = r.stderr.rolling(10, min_periods=1).mean().values
+    else:
+        conf = r.stderr.values
 
     ax.fill_between(r.index.days, conf, -conf, alpha=0.3)
     ax.vlines(r.index.days, [0], r.loc[:, "acf"].values)
