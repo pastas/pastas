@@ -27,7 +27,7 @@ def test_step_response():
 
 def test_diagnostics():
     ml = test_add_stressmodel()
-    ml.plots.diagnostics()
+    ml.plots.diagnostics(acf_options=dict(min_obs=10))
 
 def test_stresses():
     ml = test_add_stressmodel()

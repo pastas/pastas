@@ -9,7 +9,7 @@ def acf_func(**kwargs):
     data = np.sin(np.linspace(0, 10 * np.pi, 100))
     r = pd.Series(data=data, index=index)
     acf_true = np.cos(np.linspace(0.0, np.pi, 11))[1:]
-    acf = ps.stats.acf(r, lags=np.arange(1.0, 11), **kwargs).values
+    acf = ps.stats.acf(r, lags=np.arange(1.0, 11.), min_obs=1, **kwargs).values
     return acf, acf_true
 
 
