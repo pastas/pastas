@@ -41,9 +41,12 @@ Documentation & Examples
 
 Get in Touch
 ~~~~~~~~~~~~
-- Questions on Pastas can be asked and answered on `StackOverFlow <https://stackoverflow.com/questions/tagged/pastas>`_.
+- Questions on Pastas can be asked and answered on `Github Discussions <https://github.com/pastas/pastas/discussions>`_.
 - Bugs, feature requests and other improvements can be posted as `Github Issues <https://github.com/pastas/pastas/issues>`_.
-- Pull requests will only be accepted on the development branch (dev) of this repository. Please take a look at the `developers section <http://pastas.readthedocs.io/>`_ on the documentation website for more information on how to develop Pastas.
+- Pull requests will only be accepted on the development branch (dev) of
+this repository. Please take a look at the `developers section
+<http://pastas.readthedocs.io/>`_ on the documentation website for more
+information on how to contribute to Pastas.
 
 Quick installation guide
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -92,26 +95,3 @@ If you use Pastas in one of your studies, please cite the Pastas article in Grou
 To cite a specific version of Python, you can use the DOI provided for each official release (>0.9.7) through Zenodo. Click on the link to get a specific version and DOI, depending on the Pastas version.
 
 - Collenteur, R., Bakker, M., Caljé, R. & Schaars, F. (XXXX). Pastas: open-source software for time series analysis in hydrology (Version X.X.X). Zenodo. http://doi.org/10.5281/zenodo.1465866
-
-License (MIT License)
-~~~~~~~~~~~~~~~~~~~~~
-Copyright (c) 2016-2020 R.A. Collenteur, M. Bakker, R. Calje, F. Schaars
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
