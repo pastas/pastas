@@ -447,7 +447,7 @@ def plot_acf(series, alpha=0.05, lags=365, acf_options=None, smooth_conf=True,
 
     """
     if ax is None:
-        fig, ax = plt.subplots(1, 1, figsize=figsize)
+        _, ax = plt.subplots(1, 1, figsize=figsize)
 
     # Plot the autocorrelation
     if acf_options is None:

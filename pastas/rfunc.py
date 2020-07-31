@@ -345,8 +345,8 @@ class HantushWellModel(RfuncBase):
                                            -100 / self.meanstress, 0, True,
                                            name)
         else:
-            parameters.loc[name + '_A'] = (1 / self.meanstress,
-                                           np.nan, np.nan, True, name)
+            parameters.loc[name + '_A'] = (1 / self.meanstress, np.nan,
+                                           np.nan, True, name)
         parameters.loc[name + '_a'] = (100, 1e-3, 1e4, True, name)
         parameters.loc[name + '_b'] = (1, 1e-4, 25, True, name)
         return parameters
@@ -403,10 +403,9 @@ class Hantush(RfuncBase):
     Notes
     -----
     The Hantush well function is explained in [hantush_1955]_, [veling_2010]_
-    and [asmuth_2008]_. The impulse response function may be written as
-    
+    and [asmuth_2008]_. The impulse response function may be written as:
+
     .. math:: \\theta(t) = K_0(\\sqrt(4b)) \\frac{A}{t} \\exp(-t/a - ab/t)
-    
     .. math:: p[0] = A # \\frac{1}{2 \\pi kD}
     .. math:: p[1] = a = cS
     .. math:: p[2] = b = r^2 / (4 \\lambda^2)
@@ -444,8 +443,8 @@ class Hantush(RfuncBase):
                                            -100 / self.meanstress, 0, True,
                                            name)
         else:
-            parameters.loc[name + '_A'] = (1 / self.meanstress,
-                                           np.nan, np.nan, True, name)
+            parameters.loc[name + '_A'] = (1 / self.meanstress, np.nan,
+                                           np.nan, True, name)
         parameters.loc[name + '_a'] = (100, 1e-3, 1e4, True, name)
         parameters.loc[name + '_b'] = (1, 1e-6, 25, True, name)
         return parameters
@@ -510,18 +509,15 @@ class Polder(RfuncBase):
     def get_init_parameters(self, name):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        A_init = 1
-        a_init = 10
-        b_init = 1
-        parameters.loc[name + '_A'] = (A_init, 0, 2, True, name)
-        parameters.loc[name + '_a'] = (a_init, 0.01, 1000, True, name)
-        parameters.loc[name + '_b'] = (b_init, 1e-6, 25, True, name)
+        parameters.loc[name + '_A'] = (1, 0, 2, True, name)
+        parameters.loc[name + '_a'] = (10, 0.01, 1000, True, name)
+        parameters.loc[name + '_b'] = (1, 1e-6, 25, True, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):
         if cutoff is None:
             cutoff = self.cutoff
-        A, a, b = p
+        _, a, b = p
         b = a * b
         x = np.sqrt(b / a)
         inverfc = erfcinv(2 * cutoff)
@@ -539,7 +535,7 @@ class Polder(RfuncBase):
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
         t = self.get_t(p, dt, cutoff, maxtmax)
         A, a, b = p
-        s = p[0] * self.polder_function(np.sqrt(b), np.sqrt(t / a))
+        s = A * self.polder_function(np.sqrt(b), np.sqrt(t / a))
         # / np.exp(-2 * np.sqrt(b))
         if not self.up:
             s = -s
@@ -579,7 +575,7 @@ class One(RfuncBase):
     def gain(self, p):
         return p[0]
 
-    def step(self, p, dt=1, cutoff=None):
+    def step(self, p, dt=1, cutoff=None, maxtmax=None):
         if isinstance(dt, np.ndarray):
             return p[0] * np.ones(len(dt))
         else:

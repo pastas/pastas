@@ -44,7 +44,7 @@ def frequency_is_supported(freq):
     """
     offset = to_offset(freq)
     if not hasattr(offset, 'delta'):
-        msg = "Frequency %s not supported.".format(freq)
+        msg = "Frequency {} not supported.".format(freq)
         logger.error(msg)
         raise KeyError(msg)
     else:

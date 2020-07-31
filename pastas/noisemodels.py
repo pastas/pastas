@@ -119,13 +119,13 @@ class NoiseModel(NoiseModelBase):
     1. First value is residual
     2. First weight is 1 / sig_residuals (i.e., delt = infty)
     3. Normalization of weights as in Von Asmuth and Bierkens (2005), optional
-    
+
     Parameters
     ----------
     norm: boolean
         Boolean to indicate whether weights are normalized according to
         the Von Asmuth and Bierkens (2005) paper.
-    
+
     Notes
     -----
     Calculates the noise [1]_ according to:
@@ -133,11 +133,11 @@ class NoiseModel(NoiseModelBase):
     .. math::
 
         v(t_1) = r(t_1) - r(t_0) * \\exp(- \\Delta t / \\alpha)
-        
+
     Calculates the weights as
-    
+
     .. math::
-        
+
         w = 1 / \\sqrt{(1 - \\exp(-2 \\Delta t / \\alpha))}
 
     The units of the alpha parameter is always in days.
