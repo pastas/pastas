@@ -50,7 +50,8 @@ from .utils import validate_name
 logger = getLogger(__name__)
 
 __all__ = ["StressModel", "StressModel2", "Constant", "StepModel",
-           "LinearTrend", "FactorModel", "RechargeModel", "WellModel"]
+           "LinearTrend", "FactorModel", "RechargeModel", "WellModel",
+           "TarsoModel"]
 
 
 class StressModelBase:
@@ -754,12 +755,12 @@ class WellModel(StressModelBase):
         self.parameters = self.rfunc.get_init_parameters(self.name)
         # ensure lambda can't get too small or too large
         self.parameters.loc[self.name + "_b", "pmax"] /= \
-            np.max(self.distances)**2
+            np.max(self.distances) ** 2
         self.parameters.loc[self.name + "_b", "pmin"] /= \
-            np.max(self.distances)**2
+            np.max(self.distances) ** 2
         # set initial value with mean distance
         self.parameters.loc[self.name + "_b", "initial"] /= \
-            np.mean(self.distances)**2
+            np.mean(self.distances) ** 2
 
     def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1,
                  istress=None):

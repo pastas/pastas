@@ -118,7 +118,7 @@ class DinoGrondwaterstand:
                 val = propval[1]
                 if propval[2] != '':
                     val = val + ' ' + propval[2].replace(':', '') + ' ' + \
-                        propval[3]
+                          propval[3]
                 header[prop] = val
                 line = f.readline()
 
@@ -249,7 +249,7 @@ class DinoPeilschaal:
                 val = propval[1]
                 if (len(propval) > 2) and (propval[2] != ''):
                     val = val + ' ' + propval[2].replace(':', '') + ' ' + \
-                        propval[3]
+                          propval[3]
                 header[prop] = val
                 line = f.readline()
 

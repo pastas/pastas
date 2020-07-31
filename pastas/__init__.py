@@ -5,9 +5,10 @@ from .model import Model
 from .noisemodels import NoiseModel, NoiseModelOld, ArmaModel
 from .plots import TrackSolve
 from .project import Project
-from .read import read_meny, read_dino, read_dino_level_gauge, read_knmi, read_waterbase
+from .read import read_meny, read_dino, read_dino_level_gauge, read_knmi, \
+    read_waterbase
 from .rfunc import Gamma, Exponential, Hantush, Polder, One, FourParam, \
-    DoubleExponential, HantushWellModel, HantushOld, PolderOld
+    DoubleExponential, HantushWellModel
 from .solver import LmfitSolve, LeastSquares, LmfitSolveNew
 from .stressmodels import StressModel, StressModel2, Constant, FactorModel, \
     RechargeModel, WellModel, StepModel, LinearTrend, TarsoModel
@@ -22,5 +23,5 @@ initialize_logger(logger)
 # Register matplotlib converters when using Pastas
 # https://github.com/pastas/pastas/issues/92
 from pandas.plotting import register_matplotlib_converters
-register_matplotlib_converters()
 
+register_matplotlib_converters()

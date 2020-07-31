@@ -63,7 +63,7 @@ class BaseSolver:
         self.obj_func = obj_func
         self.result = None  # Object returned by the optimization method
 
-    def misfit(self, parameters, noise, weights=None, callback=None, 
+    def misfit(self, parameters, noise, weights=None, callback=None,
                returnseparate=False):
         """This method is called by all solvers to obtain a series that are
         minimized in the optimization proces. It handles the application of
@@ -103,7 +103,7 @@ class BaseSolver:
 
         if callback:
             callback(parameters)
-            
+
         if returnseparate:
             return self.ml.residuals(parameters).values, \
                    self.ml.noise(parameters).values, \
@@ -168,8 +168,9 @@ class BaseSolver:
                                              dt=dt, **kwargs)
 
     def ci_contribution(self, name, n=1000, alpha=0.05, **kwargs):
-        return self._get_confidence_interval(func=self.ml.get_contribution, n=n,
-                                             alpha=alpha, name=name, **kwargs)
+        return self._get_confidence_interval(func=self.ml.get_contribution,
+                                             n=n, alpha=alpha, name=name,
+                                             **kwargs)
 
     def _get_realizations(self, func, n=None, name=None, **kwargs):
         """Internal method to obtain  n number of realizations."""
@@ -480,8 +481,8 @@ class LmfitSolve(BaseSolver):
     def objfunction(self, parameters, noise, weights, callback):
         param = np.array([p.value for p in parameters.values()])
         return self.misfit(param, noise, weights, callback)
-    
-    
+
+
 class LmfitSolveNew(BaseSolver):
     _name = "LmfitSolve"
 
@@ -552,7 +553,7 @@ class LmfitSolveNew(BaseSolver):
         res, noise, weights = self.misfit(param, noise, weights, callback,
                                           returnseparate=True)
         var_res = np.var(res, ddof=1)
-        weighted_noise = noise * weights 
+        weighted_noise = noise * weights
         extraterm = np.sum(np.log(var_res / weights ** 2))
         rv = np.sum(weighted_noise ** 2) / var_res + extraterm
         return rv

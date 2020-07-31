@@ -63,7 +63,7 @@ class ThresholdTransform:
             self.value, self.vmin, self.vmax, True, self.name)
         if self.nparam == 2:
             self.parameters.loc[self.name + '_2'] = (
-            0.5, 0., 1., True, self.name)
+                0.5, 0., 1., True, self.name)
 
     @set_parameter
     def set_initial(self, name, value):

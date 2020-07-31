@@ -502,6 +502,15 @@ def validate_name(name):
 
 
 def show_versions(lmfit=False, numba=False):
+    """Method to print the version of dependencies.
+
+    Parameters
+    ----------
+    lmfit: bool, optional
+        Print the version of lmfit. Needs to be installed.
+    numba: bool, optional
+
+    """
     from pastas import __version__ as ps_version
     from pandas import __version__ as pd_version
     from numpy import __version__ as np_version

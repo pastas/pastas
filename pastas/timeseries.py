@@ -307,7 +307,7 @@ class TimeSeries:
             series = self._fill_after(series)
             series = self._normalize(series)
             series.name = self._series_original.name
-            
+
             self._series = series
 
     def multiply(self, other):
