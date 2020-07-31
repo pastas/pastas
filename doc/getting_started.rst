@@ -22,7 +22,7 @@ many official python packages are gathered. To get the latest version of
 Pastas, open the Anaconda Prompt, a Windows Command Prompt (also called
 command window) or a Mac/Linux terminal and type::
 
-    pip install pastas
+>>> pip install pastas
 
 Pastas will now be installed on your computer, including the packages
 necessary for Pastas to work properly (called dependencies in Python
@@ -32,14 +32,14 @@ It sometimes occurs that the automatic installation of the
 dependencies does not work. A safe method to update another package if you are
 using Anaconda is to install a package with the follow command line::
 
-    conda install package
+>>> conda install package
 
 Updating Pastas
 ---------------
 If you have already installed Pastas, it is possible to update Pastas
 easily. To update, open a Windows command screen or a Mac terminal and type::
 
-    pip install pastas --upgrade
+>>> pip install pastas --upgrade
 
 Dependencies
 ------------
@@ -53,11 +53,11 @@ Pastas:
 
 Other optional dependencies include::
 
-    numba (large speed-up, highly recommended)
-    lmfit (alternative solver)
-    requests (downloading data from the web)
+    numba  #(large speed-up, highly recommended)
+    lmfit  #(alternative solver)
+    requests  #(downloading data from the web)
 
 .. tip::
     Installing Numba is highly recommended when using Pastas. Not only this
-    package, but also pandas makes use of Numba. Since Pastas has a large
-    dependency on Pandas, installing Numba will also speed up Pastas.
+    package, but also pandas makes use of Numba. Since Pastas partly
+    depends on Pandas, installing Numba will also speed up Pastas.

@@ -163,13 +163,14 @@ class FlexModel(RechargeBase):
         R = K_s \\left( \\frac{S}{S_u}\\right) ^\\gamma
 
     For a detailed description of the recharge model and parameters we refer
-    to the following publication [2]_ (NOT AVAILABLE YET - March/2020).
+    to the following publication [2]_ (NOT AVAILABLE YET - July/2020).
 
     References
     ----------
     .. [2] Collenteur, R.A., Bakker, M., Klammler, G., Birk, S. (in Prep.)
-           Estimating groundwater recharge using non-linear transfer
-           function noise models.
+           Estimating groundwater recharge from groundwater levels using
+           non-linear transfer function noise models and comparison to
+           lysimeter data.
 
     """
     _name = "FlexModel"
@@ -181,12 +182,12 @@ class FlexModel(RechargeBase):
     def get_init_parameters(self, name="recharge"):
         parameters = DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "name"])
-        parameters.loc[name + "_su"] = (250.0, 1e-5, 1e3, True, name)
+        parameters.loc[name + "_srmax"] = (250.0, 1e-5, 1e3, True, name)
         parameters.loc[name + "_lp"] = (0.25, 1e-5, 1, False, name)
         parameters.loc[name + "_ks"] = (100.0, 1, 1e4, True, name)
         parameters.loc[name + "_gamma"] = (4.0, 1e-5, 50.0, True, name)
-        parameters.loc[name + "_si"] = (2.0, 1e-5, 10.0, False, name)
-        parameters.loc[name + "_f"] = (1.0, 0.5, 2.0, False, name)
+        parameters.loc[name + "_simax"] = (2.0, 1e-5, 10.0, False, name)
+        parameters.loc[name + "_kv"] = (1.0, 0.5, 2.0, False, name)
         return parameters
 
     def simulate(self, prec, evap, p, dt=1.0, **kwargs):
@@ -210,66 +211,66 @@ class FlexModel(RechargeBase):
             Recharge flux calculated by the model.
 
         """
-        r = self.get_recharge(prec, evap, su=p[0], lp=p[1], ks=p[2],
-                              gamma=p[3], si=p[4], f=p[5], dt=dt)[0]
+        r = self.get_recharge(prec, evap, srmax=p[0], lp=p[1], ks=p[2],
+                              gamma=p[3], simax=p[4], kv=p[5], dt=dt)[0]
         return r
 
     @staticmethod
     @njit
-    def get_recharge(prec, evap, su=250.0, lp=0.25, ks=100.0, gamma=4.0,
-                     si=2.0, f=1.0, dt=1.0):
+    def get_recharge(prec, evap, srmax=250.0, lp=0.25, ks=100.0, gamma=4.0,
+                     simax=2.0, kv=1.0, dt=1.0):
         """
         Internal method used for the recharge calculation. If Numba is
         available, this method is significantly faster.
 
         """
         n = prec.size
-        evap = evap * f  # Multiply by crop factor
+        evap = evap * kv  # Multiply by crop factor
         # Create empty arrays to store the fluxes and states
-        s_u = zeros(n, dtype=float64)  # Root Zone Storage State
-        s_u[0] = 0.5 * su  # Set the initial system state to half-full
+        su = zeros(n, dtype=float64)  # Root Zone Storage State
+        su[0] = 0.5 * srmax  # Set the initial system state to half-full
         ea = zeros(n, dtype=float64)  # Actual evaporation Flux
         r = zeros(n, dtype=float64)  # Recharge Flux
-        s_i = zeros(n, dtype=float64)  # Interception Storage State
+        si = zeros(n, dtype=float64)  # Interception Storage State
         pe = zeros(n, dtype=float64)  # Effective precipitation Flux
         ei = zeros(n, dtype=float64)  # Interception evaporation Flux
         ep = zeros(n, dtype=float64)  # Updated evaporation Flux
-        lp = lp * su  # Do this here outside the for-loop for efficiency
+        lp = lp * srmax  # Do this here outside the for-loop for efficiency
 
         for t in range(n - 1):
             # Interception bucket
-            pe[t] = max(prec[t] - si + s_i[t], 0.0)
-            ei[t] = min(evap[t], s_i[t])
+            pe[t] = max(prec[t] - simax + si[t], 0.0)
+            ei[t] = min(evap[t], si[t])
             ep[t] = evap[t] - ei[t]
-            s_i[t + 1] = s_i[t] + dt * (prec[t] - pe[t] - ei[t])
+            si[t + 1] = si[t] + dt * (prec[t] - pe[t] - ei[t])
 
             # Make sure the solution is larger then 0.0 and smaller than su
-            if s_u[t] > su:
-                s_u[t] = su
-            elif s_u[t] < 0.0:
-                s_u[t] = 0.0
+            if su[t] > srmax:
+                su[t] = srmax
+            elif su[t] < 0.0:
+                su[t] = 0.0
 
             # Calculate actual evapotranspiration
-            if s_u[t] / lp < 1.0:
-                ea[t] = ep[t] * s_u[t] / lp
+            if su[t] / lp < 1.0:
+                ea[t] = ep[t] * su[t] / lp
             else:
                 ea[t] = ep[t]
 
             # Calculate the recharge flux
-            r[t] = ks * (s_u[t] / su) ** gamma
+            r[t] = ks * (su[t] / srmax) ** gamma
             # Calculate state of the root zone storage
-            s_u[t + 1] = s_u[t] + dt * (pe[t] - r[t] - ea[t])
+            su[t + 1] = su[t] + dt * (pe[t] - r[t] - ea[t])
 
-        return r, ea, ei, pe, s_u, s_i
+        return r, ea, ei, pe, su, si
 
     def get_water_balance(self, prec, evap, p, dt=1.0, **kwargs):
-        r, ea, ei, pe, s_u, s_i = self.get_recharge(prec, evap, su=p[0],
-                                                    lp=p[1], ks=p[2],
-                                                    gamma=p[3], si=p[4],
-                                                    f=p[5], dt=dt)
+        r, ea, ei, pe, sr, si = self.get_recharge(prec, evap, srmax=p[0],
+                                                  lp=p[1], ks=p[2],
+                                                  gamma=p[3], simax=p[4],
+                                                  kv=p[5], dt=dt)
 
-        data = DataFrame(data=vstack((s_i, -ei, s_u, pe, -ea, -r)).T,
-                         columns=["Si", "Ei", "Su", "Pe", "Ea", "R"])
+        data = DataFrame(data=vstack((si, -ei, sr, pe, -ea, -r)).T,
+                         columns=["Si", "Ei", "Sr", "Pe", "Ea", "R"])
         return data
 
 
