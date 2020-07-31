@@ -7,7 +7,8 @@ at the `GitHub Release page <https://github.com/pastas/pastas/releases>`_.
 For full details of all changes check the commit log.
 
 Version 0.15 (31st of July 2020)
-----------------------------------------
+--------------------------------
+
 .. note::
     This release will introduce backward incompatible changes to Pastas, most
     notably due to the weighting of the first value of the noise. This will
