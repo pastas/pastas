@@ -6,7 +6,7 @@ the quick implementation of new model components. Time series models can be
 created, calibrated, and analysed with just a few lines of python code with
 the built-in optimization, visualisation, and statistical analysis tools.
 
-.. figure:: _static/example_menyanthes.png
+.. figure:: _static/example_output.png
     :figwidth: 500px
 
 .. toctree::
@@ -14,8 +14,9 @@ the built-in optimization, visualisation, and statistical analysis tools.
     :hidden:
 
     About <about/index>
-    Getting Started <getting-started>
+    Getting Started <getting_started>
     User Guide <concepts/index>
     Examples <examples/index>
     Development <developers/index>
     API Docs <api/index>
+    Release Notes <release_notes>

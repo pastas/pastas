@@ -7,12 +7,15 @@ Supported Response Functions
     :nosignatures:
     :toctree: generated/
 
+    FourParam
     Gamma
     Exponential
     Hantush
-    HantushWellModel
-    FourParam
+    Polder
+    Edelman
     One
+    HantushWellModel
+    DoubleExponential
 
 .. warning::
     The above list contains the supported response function. All other
@@ -271,9 +274,120 @@ class Exponential(RfuncBase):
         return s
 
 
+class HantushWellModel(RfuncBase):
+    """
+    A special implementation of the Hantush well function for
+    multiple wells.
+
+    Parameters
+    ----------
+    up: bool, optional
+        indicates whether a positive stress will cause the head to go up
+        (True, default) or down (False)
+    meanstress: float
+        mean value of the stress, used to set the initial value such that
+        the final step times the mean stress equals 1
+    cutoff: float
+        proportion after which the step function is cut off. Default is 0.999.
+
+    Notes
+    -----
+    The Hantush well function is explained in [hantush_1955]_,
+    [veling_2010]_ and [asmuth_2008]_:
+
+    .. math:: \\theta(t) = \\frac{A}{t} \\exp(-t/a -b/t)
+
+    .. math:: p[0] = A # TBD \\frac{1}{4 \\pi kD}
+    .. math:: p[1] = a = cS
+    .. math:: p[2] = b = 1^2 / (4 \\lambda^2)
+    .. math:: p[3] = r \\text{(not optimized)}
+    where :math:`\\lambda = \\sqrt{kDc}`
+
+    The parameter r (distance from the well to the observation point)
+    is passed as a known value, and is used to scale the response function.
+    The optimized parameters are slightly different from the original
+    Hantush implementation:
+
+    - A: the parameter is the same as the original Hantush, except that
+    the distance (r) is set to 1.0
+    - a = cS: stays the same
+    - b = 1 / (4 * lambda): r is used internally to scale with distance
+    - r: distance, not optimized but used to scale A and b
+
+    References
+    ----------
+    .. [hantush_1955] Hantush, M. S., & Jacob, C. E. (1955). Non‐steady
+       radial flow in an infinite leaky aquifer. Eos, Transactions American
+       Geophysical Union, 36(1), 95-100.
+
+    .. [veling_2010] Veling, E. J. M., & Maas, C. (2010). Hantush well function
+       revisited. Journal of hydrology, 393(3), 381-388.
+
+    .. [asmuth_2008] Von Asmuth, J. R., Maas, K., Bakker, M., & Petersen,
+       J. (2008). Modeling time series of ground water head fluctuations
+       subjected to multiple stresses. Ground Water, 46(1), 30-40.
+
+    """
+    _name = "HantushWellModel"
+
+    def __init__(self, up=False, meanstress=1, cutoff=0.999):
+        RfuncBase.__init__(self, up, meanstress, cutoff)
+        self.nparam = 3
+
+    def get_init_parameters(self, name):
+        parameters = DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        if self.up:
+            parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
+                                           100 / self.meanstress, True, name)
+        elif self.up is False:
+            parameters.loc[name + '_A'] = (-1 / self.meanstress,
+                                           -100 / self.meanstress, 0, True,
+                                           name)
+        else:
+            parameters.loc[name + '_A'] = (1 / self.meanstress, np.nan,
+                                           np.nan, True, name)
+        parameters.loc[name + '_a'] = (100, 1e-3, 1e4, True, name)
+        parameters.loc[name + '_b'] = (1, 1e-4, 25, True, name)
+        return parameters
+
+    def get_tmax(self, p, cutoff=None):
+        r = 1.0 if len(p) == 3 else p[3]
+        # approximate formula for tmax
+        if cutoff is None:
+            cutoff = self.cutoff
+        cS = p[1]
+        rho = np.sqrt(4 * r ** 2 * p[2])
+        k0rho = k0(rho)
+        return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
+
+    @staticmethod
+    def gain(p):
+        r = 1.0 if len(p) == 3 else p[3]
+        rho = np.sqrt(4 * r ** 2 * p[2])
+        return p[0] * k0(rho)
+
+    def step(self, p, dt=1, cutoff=None, maxtmax=None):
+        r = 1.0 if len(p) == 3 else p[3]
+        cS = p[1]
+        rho = np.sqrt(4 * r ** 2 * p[2])
+        k0rho = k0(rho)
+        t = self.get_t(p, dt, cutoff, maxtmax)
+        tau = t / cS
+        tau1 = tau[tau < rho / 2]
+        tau2 = tau[tau >= rho / 2]
+        w = (exp1(rho) - k0rho) / (exp1(rho) - exp1(rho / 2))
+        F = np.zeros_like(tau)
+        F[tau < rho / 2] = w * exp1(rho ** 2 / (4 * tau1)) - (w - 1) * exp1(
+            tau1 + rho ** 2 / (4 * tau1))
+        F[tau >= rho / 2] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(
+            tau2 + rho ** 2 / (4 * tau2))
+        return p[0] * F / 2
+
+
 class Hantush(RfuncBase):
     """
-    The Hantush well function.
+    The Hantush well function, using the standard A, a, b parameters
 
     Parameters
     ----------
@@ -289,13 +403,14 @@ class Hantush(RfuncBase):
     Notes
     -----
     The Hantush well function is explained in [hantush_1955]_, [veling_2010]_
-    and [asmuth_2008]_. It's parameters are:
+    and [asmuth_2008]_. The impulse response function may be written as:
 
-    .. math:: p[0] = A = \\frac{1}{4 \\pi kD}
-    .. math:: p[1] = rho = \\frac{r}{\\lambda}
-    .. math:: p[2] = cS
+    .. math:: \\theta(t) = K_0(\\sqrt(4b)) \\frac{A}{t} \\exp(-t/a - ab/t)
+    .. math:: p[0] = A # \\frac{1}{2 \\pi kD}
+    .. math:: p[1] = a = cS
+    .. math:: p[2] = b = r^2 / (4 \\lambda^2)
 
-    where :math:`\\lambda = \\sqrt{\\frac{kD}{c}}`
+    where :math:`\\lambda = \\sqrt{kDc}`
 
     References
     ----------
@@ -328,28 +443,27 @@ class Hantush(RfuncBase):
                                            -100 / self.meanstress, 0, True,
                                            name)
         else:
-            parameters.loc[name + '_A'] = (1 / self.meanstress,
-                                           np.nan, np.nan, True, name)
-
-        parameters.loc[name + '_rho'] = (1, 1e-4, 10, True, name)
-        parameters.loc[name + '_cS'] = (100, 1e-3, 1e4, True, name)
+            parameters.loc[name + '_A'] = (1 / self.meanstress, np.nan,
+                                           np.nan, True, name)
+        parameters.loc[name + '_a'] = (100, 1e-3, 1e4, True, name)
+        parameters.loc[name + '_b'] = (1, 1e-6, 25, True, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):
         # approximate formula for tmax
         if cutoff is None:
             cutoff = self.cutoff
-        rho = p[1]
-        cS = p[2]
+        cS = p[1]
+        rho = np.sqrt(4 * p[2])
         k0rho = k0(rho)
         return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
 
     def gain(self, p):
-        return p[0]
+        return p[0] * k0(np.sqrt(4 * p[2]))
 
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
-        rho = p[1]
-        cS = p[2]
+        cS = p[1]
+        rho = np.sqrt(4 * p[2])
         k0rho = k0(rho)
         t = self.get_t(p, dt, cutoff, maxtmax)
         tau = t / cS
@@ -361,121 +475,29 @@ class Hantush(RfuncBase):
             tau1 + rho ** 2 / (4 * tau1))
         F[tau >= rho / 2] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(
             tau2 + rho ** 2 / (4 * tau2))
-        return p[0] * F / (2 * k0rho)
-
-
-class HantushWellModel(RfuncBase):
-    """
-    A special implementation of the Hantush well function for
-    multiple wells.
-
-    Parameters
-    ----------
-    up: bool, optional
-        indicates whether a positive stress will cause the head to go up
-        (True, default) or down (False)
-    meanstress: float
-        mean value of the stress, used to set the initial value such that
-        the final step times the mean stress equals 1
-    cutoff: float
-        proportion after which the step function is cut off. default is 0.999.
-
-    Notes
-    -----
-    The HantushWellModel well function is explained in [hantush_1955]_,
-    [veling_2010]_ and [asmuth_2008]_. It's parameters are (note the
-    addition of the r parameter in this implementation):
-
-    .. math:: p[0] = A = \\frac{1}{4 \\pi kD} \\cdot 2 k_0 \\left( \\frac{r}{\\lambda} \\right)
-    .. math:: p[1] = lab = \\lambda
-    .. math:: p[2] = cS
-    .. math:: p[3] = r \\text{(not optimized)}
-
-    where :math:`\\lambda = \\sqrt{\\frac{kD}{c}}`
-
-    Notes
-    -----
-    The parameter r (distance from the well to the observation point)
-    is passed as a known value, and is used to scale the response function.
-    The optimized parameters are slightly different from the original
-    Hantush implementation:
-
-    - A: To get the same A as the original Hantush:
-        A_orig = A * 2 * k0(r / lambda) or use the gain() method
-    - lab: lambda, the r parameter is passed separately to calculate
-        rho = r / lambda internally
-    - cS: stays the same
-    - r: distance, used to calculate rho, see lab.
-
-    """
-    _name = "HantushWellModel"
-
-    def __init__(self, up=False, meanstress=1, cutoff=0.999):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
-        self.nparam = 3
-
-    def get_init_parameters(self, name):
-        parameters = DataFrame(
-            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        if self.up:
-            parameters.loc[name + '_A'] = (
-                1 / self.meanstress, 0, 100 / self.meanstress, True, name)
-        else:
-            parameters.loc[name + '_A'] = (
-                -1 / self.meanstress, -100 / self.meanstress, 0, True, name)
-        parameters.loc[name + '_lab'] = (1000, 1, 1e6, True, name)
-        parameters.loc[name + '_cS'] = (100, 1e-3, 1e4, True, name)
-        return parameters
-
-    def get_tmax(self, p, cutoff=None):
-        r = 1 if len(p) == 3 else p[3]
-        # approximate formula for tmax
-        if cutoff is None:
-            cutoff = self.cutoff
-        rho = r / p[1]
-        cS = p[2]
-        k0rho = k0(rho)
-        return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
-
-    def gain(self, p):
-        r = 1 if len(p) == 3 else p[3]
-        return p[0] * 2 * k0(r / p[1])
-
-    def step(self, p, dt=1, cutoff=None, maxtmax=None):
-        r = 1 if len(p) == 3 else p[3]
-        rho = r / p[1]
-        cS = p[2]
-        k0rho = k0(rho)
-        t = self.get_t(p, dt, cutoff, maxtmax)
-        tau = t / cS
-        tau1 = tau[tau < rho / 2]
-        tau2 = tau[tau >= rho / 2]
-        w = (exp1(rho) - k0rho) / (exp1(rho) - exp1(rho / 2))
-        F = np.zeros_like(tau)
-        F[tau < rho / 2] = w * exp1(rho ** 2 / (4 * tau1)) - (w - 1) * exp1(
-            tau1 + rho ** 2 / (4 * tau1))
-        F[tau >= rho / 2] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(
-            tau2 + rho ** 2 / (4 * tau2))
-        return p[0] * F
+        return p[0] * F / 2
 
 
 class Polder(RfuncBase):
-    """The Polder function, for a river in a confined aquifer,
-    overlain by an aquitard with aquiferous ditches.
+    """The Polder function, using the standard A, a, b parameters
 
     Notes
     -----
-    The Polder function is explained in [polder]_. It's parameters are:
+    The Polder function is explained in [polder]_. 
+    The impulse response function may be written as
+    
+    .. math:: \\theta(t) = \\exp(-\\sqrt(4b)) \\frac{A}{t^{-3/2}} \\exp(-t/a -b/t)
 
-    .. math:: p[0] = \\frac{x}{2\\lambda}
-    .. math:: p[1] = \\sqrt{\\frac{1}{cS}}
+    .. math:: p[0] = A = \\exp(-x/\\lambda)
+    .. math:: p[1] = a = \\sqrt{\\frac{1}{cS}}
+    .. math:: p[2] = b = x^2 / (4 \\lambda^2)
 
-    where :math:`\\lambda = \\sqrt{\\frac{kD}{c}}`
+    where :math:`\\lambda = \\sqrt{kDc}`
 
     References
     ----------
-    .. [polder] http://grondwaterformules.nl/index.php/formules/waterloop
-    /deklaag-met-sloten
+    .. [polder] [1] G.A. Bruggeman (1999). Analytical solutions of 
+    geohydrological problems. Elsevier Science. Amsterdam, Eq. 123.32
 
     """
     _name = "Polder"
@@ -487,33 +509,34 @@ class Polder(RfuncBase):
     def get_init_parameters(self, name):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
-        A_init = 1
-        a_init = 1
-        b_init = 1
-        parameters.loc[name + '_A'] = (A_init, 0, 2, False, name)
-        parameters.loc[name + '_a'] = (a_init, 0, 100, True, name)
-        parameters.loc[name + '_b'] = (b_init, 0, 10, True, name)
+        parameters.loc[name + '_A'] = (1, 0, 2, True, name)
+        parameters.loc[name + '_a'] = (10, 0.01, 1000, True, name)
+        parameters.loc[name + '_b'] = (1, 1e-6, 25, True, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):
         if cutoff is None:
             cutoff = self.cutoff
-        a = p[1]
-        b = erfcinv(2 * cutoff)
-        c = -p[1] / p[2]
-        sqrttmax = (-b + np.sqrt(b ** 2 - 4 * a * c) / (2 * a))
-        return sqrttmax ** 2
+        _, a, b = p
+        b = a * b
+        x = np.sqrt(b / a)
+        inverfc = erfcinv(2 * cutoff)
+        y = (-inverfc + np.sqrt(inverfc ** 2 + 4 * x)) / 2
+        tmax = a * y ** 2
+        return tmax
 
     def gain(self, p):
         # the steady state solution of Mazure
-        g = p[0] * np.exp(-2 * p[1])
+        g = p[0] * np.exp(-np.sqrt(4 * p[2]))
         if not self.up:
             g = -g
         return g
 
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
         t = self.get_t(p, dt, cutoff, maxtmax)
-        s = p[0] * self.polder_function(p[1], p[2] * np.sqrt(t))
+        A, a, b = p
+        s = A * self.polder_function(np.sqrt(b), np.sqrt(t / a))
+        # / np.exp(-2 * np.sqrt(b))
         if not self.up:
             s = -s
         return s
@@ -552,7 +575,7 @@ class One(RfuncBase):
     def gain(self, p):
         return p[0]
 
-    def step(self, p, dt=1, cutoff=None):
+    def step(self, p, dt=1, cutoff=None, maxtmax=None):
         if isinstance(dt, np.ndarray):
             return p[0] * np.ones(len(dt))
         else:
@@ -607,12 +630,12 @@ class FourParam(RfuncBase):
 
         parameters.loc[name + '_n'] = (1, -10, 10, True, name)
         parameters.loc[name + '_a'] = (10, 0.01, 5000, True, name)
-        parameters.loc[name + '_b'] = (10, 0.01, 5000, True, name)
+        parameters.loc[name + '_b'] = (10, 1e-6, 25, True, name)
         return parameters
 
     @staticmethod
     def function(t, p):
-        return (t ** (p[1] - 1)) * np.exp(-t / p[2] - p[3] / t)
+        return (t ** (p[1] - 1)) * np.exp(-t / p[2] - p[2] * p[3] / t)
 
     def get_tmax(self, p, cutoff=None):
         if cutoff is None:

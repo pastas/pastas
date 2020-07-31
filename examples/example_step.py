@@ -11,7 +11,7 @@ import pastas as ps
 obs = pd.read_csv("data/head_nb1.csv", index_col=0, parse_dates=True,
                   squeeze=True)
 # add 10 cm to the series from 2007
-obs["2007":] = obs["2007":] + 0.1
+obs["2007":] = obs["2007":] + 1.5
 
 # Create the time series model
 ml = ps.Model(obs)
@@ -28,7 +28,7 @@ sm = ps.StressModel2(stress=[rain, evap], rfunc=ps.Exponential,
 ml.add_stressmodel(sm)
 
 # add a stepmodel with an exponential response
-sm = ps.stressmodels.StepModel("2007", "Step", rfunc=ps.Exponential)
+sm = ps.stressmodels.StepModel("2007", "Step", rfunc=ps.One)
 ml.add_stressmodel(sm)
 
 # solve

@@ -46,7 +46,7 @@ def PastasDeprecationWarning(function):
     @wraps(function)
     def _function(*args, **kwargs):
         logger.warning("Deprecation warning: method is deprecated and will "
-                       "be removed in version 0.15.0.")
+                       "be removed in version 0.16.0.")
         return function(*args, **kwargs)
 
     return _function

@@ -50,19 +50,18 @@ def load(fname, **kwargs):
 
     # Determine whether it is a Pastas Project or a Pastas Model
     if "models" in data.keys():
-        logger.warning("Deprecation Warning: the possibility to load a Pastas "
-                       "project with this method will be deprecated in v0.15. "
-                       "Please use ps.io.load_project.")
-        return load_project(fname=fname)
-    else:
-        ml = load_model(data)
+        msg = "Deprecation Warning: the possibility to load a Pastas project" \
+              "with this method is deprecated. Please use ps.io.load_project."
+        logger.error(msg)
+        raise DeprecationWarning(msg)
 
-        logger.info("Pastas Model from file {} successfully loaded. This file "
-                    "was created with was Pastas {}. Your current version of "
-                    "Pastas is: {}".format(fname,
-                                data["file_info"]["pastas_version"],
+    ml = _load_model(data)
+
+    logger.info("Pastas Model from file {} successfully loaded. This file "
+                "was created with Pastas {}. Your current version of Pastas "
+                "is: {}".format(fname, data["file_info"]["pastas_version"],
                                 ps.__version__))
-        return ml
+    return ml
 
 
 def load_project(fname, **kwargs):
@@ -129,7 +128,7 @@ def load_project(fname, **kwargs):
                         stress["series"] = mls.stresses.loc[
                             stress_name, "series"]
         try:
-            ml = load_model(ml)
+            ml = _load_model(ml)
             mls.models[ml_name] = ml
         except:
             try:
@@ -139,15 +138,15 @@ def load_project(fname, **kwargs):
             print("model", ml_name, "could not be added")
 
     logger.info("Pastas project from file {} successfully loaded. This file "
-                "was created with was Pastas{}. Your current version of "
-                "Pastas is: {}".format(fname,
-                                       data["file_info"]["pastas_version"],
-                                       ps.__version__))
+                "was created with Pastas {}. Your current version of Pastas "
+                "is: {}".format(fname, data["file_info"]["pastas_version"],
+                                ps.__version__))
 
     return mls
 
 
-def load_model(data):
+def _load_model(data):
+    """Internal method to create a model from a dictionary."""
     # Create model
     oseries = ps.TimeSeries(**data["oseries"])
 
@@ -224,7 +223,7 @@ def load_model(data):
 
     # When initial values changed
     for param, value in ml.parameters.loc[:, "initial"].iteritems():
-        ml.set_initial(name=param, value=value)
+        ml.set_parameter(name=param, initial=value)
 
     collect()
 

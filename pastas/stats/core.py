@@ -1,5 +1,7 @@
-"""
-This module contains core statistical methods.
+"""The following methods may be used to calculate the crosscorrelation and
+autocorrelation for a time series. These methods are 'special' in the sense
+that they are able to deal with irregular time steps often observed in
+hydrological time series.
 
 .. currentmodule:: pastas.stats.core
 
@@ -12,14 +14,15 @@ This module contains core statistical methods.
 
 """
 
-from numpy import inf, array, unique, exp, sqrt, pi, empty_like
-from pandas import Series, Timedelta, DataFrame, TimedeltaIndex
+from numpy import inf, exp, sqrt, pi, empty_like, corrcoef, arange, nan
+from pandas import Timedelta, DataFrame, TimedeltaIndex
+from scipy.stats import norm
 
 from ..decorators import njit
 
 
-def acf(x, lags=None, bin_method='rectangle', bin_width=None, max_gap=inf,
-        min_obs=10, output="acf", **kwargs):
+def acf(x, lags=365, bin_method='rectangle', bin_width=0.5, max_gap=inf,
+        min_obs=100, full_output=False, alpha=0.05):
     """Calculate the autocorrelation function for irregular time steps.
 
     Parameters
@@ -46,8 +49,10 @@ def acf(x, lags=None, bin_method='rectangle', bin_width=None, max_gap=inf,
         average time step.
     min_obs: int, optional
         Minimum number of observations in a bin to determine the correlation.
-    output: str, optional
-        If output is "full", also estimated uncertainties are returned.
+    full_output: bool, optional
+        If True, also estimated uncertainties are returned. Default is False.
+    alpha: float
+        alpha level to compute the confidence interval (e.g., 1-alpha).
 
     Returns
     -------
@@ -85,29 +90,28 @@ def acf(x, lags=None, bin_method='rectangle', bin_width=None, max_gap=inf,
 
     """
     c = ccf(x=x, y=x, lags=lags, bin_method=bin_method, bin_width=bin_width,
-            max_gap=max_gap, min_obs=min_obs, output=output, **kwargs)
+            max_gap=max_gap, min_obs=min_obs, full_output=full_output,
+            alpha=alpha)
     c.name = "ACF"
-    if output == "full":
+    if full_output:
         return c.rename(columns={"ccf": "acf"})
     else:
         return c
 
 
-def ccf(x, y, lags=None, bin_method='rectangle', bin_width=None,
-        max_gap=inf, min_obs=10, output=None, **kwargs):
-    """Method to calculate the cross-correlation function for irregular
-    timesteps based on the slotting technique. Different methods (kernels)
-    to bin the data are available.
+def ccf(x, y, lags=365, bin_method='rectangle', bin_width=0.5,
+        max_gap=inf, min_obs=100, full_output=False, alpha=0.05):
+    """Method to compute the cross-correlation for irregular time series.
 
     Parameters
     ----------
-    x: pandas.Series
+    x,y: pandas.Series
         Pandas Series containing the values to calculate the
         cross-correlation for. The index has to be a Pandas.DatetimeIndex
     lags: array_like, optional
         numpy array containing the lags in days for which the
-        cross-correlation if calculated. [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12,
-        13, 14, 30, 61, 90, 120, 150, 180, 210, 240, 270, 300, 330, 365]
+        cross-correlation is calculated. Default [1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+        12, 13, 14, 30, 61, 90, 120, 150, 180, 210, 240, 270, 300, 330, 365]
     bin_method: str, optional
         method to determine the type of bin. Options are "rectangle" (default),
         and  "gaussian".
@@ -123,8 +127,10 @@ def ccf(x, y, lags=None, bin_method='rectangle', bin_width=None,
         average timestep.
     min_obs: int, optional
         Minimum number of observations in a bin to determine the correlation.
-    output: str, optional
-        If output is "full", also estimated uncertainties are returned.
+    full_output: bool, optional
+        If True, also estimated uncertainties are returned. Default is False.
+    alpha: float
+        alpha level to compute the confidence interval (e.g., 1-alpha).
 
     Returns
     -------
@@ -137,27 +143,31 @@ def ccf(x, y, lags=None, bin_method='rectangle', bin_width=None,
     of correlation analysis techniques for irregularly sampled time series.
     Nonlinear Processes in Geophysics. 18. 389-404. 10.5194 pg-18-389-2011.
 
+    Tip
+    ---
+    This method will be significantly faster when Numba is installed. Check
+    out the Numba project here: `https://numba.pydata.org`_.
+
     Examples
     --------
     >>> ccf = ps.stats.ccf(x, y, bin_method="gaussian")
 
     """
     # prepare the time indices for x and y
-    x, t_x, dt_x_min, dt_x_mu = _preprocess(x, max_gap=max_gap,
-                                            min_obs=min_obs)
-    y, t_y, dt_y_min, dt_y_mu = _preprocess(y, max_gap=max_gap,
-                                            min_obs=min_obs)
+    if x.index.inferred_freq and y.index.inferred_freq:
+        bin_method = "regular"
+    elif bin_method == "regular":
+        raise Warning("time series does not have regular time steps, "
+                      "choose different bin_method")
 
-    dt_mu = max(dt_x_mu, dt_y_mu)
-    dt_min = min(dt_x_min, dt_y_min)
+    x, t_x, dt_x_mu = _preprocess(x, max_gap=max_gap)
+    y, t_y, dt_y_mu = _preprocess(y, max_gap=max_gap)
+    dt_mu = max(dt_x_mu, dt_y_mu)  # Mean time step from both series
 
-    # Default lags in Days, log-scale between 0 and 365.
-    if lags is None:
-        lags = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 30, 61,
-                90, 120, 150, 180, 210, 240, 270, 300, 330, 365]
-
-    # Remove lags that cannot be determined because lag < dt_min
-    lags = array([float(lag) for lag in lags if lag >= dt_min])
+    if isinstance(lags, int) and bin_method == "regular":
+        lags = arange(int(dt_mu), lags + 1, int(dt_mu))
+    elif isinstance(lags, int):
+        lags = arange(1.0, lags + 1)
 
     if bin_method == "rectangle":
         if bin_width is None:
@@ -167,36 +177,35 @@ def ccf(x, y, lags=None, bin_method='rectangle', bin_width=None,
         if bin_width is None:
             bin_width = 0.25 * dt_mu
         c, b = _compute_ccf_gaussian(lags, t_x, x, t_y, y, bin_width)
+    elif bin_method == "regular":
+        c, b = _compute_ccf_regular(arange(1.0, len(lags) + 1), x, y)
     else:
         raise NotImplementedError
 
-    lags = TimedeltaIndex(lags, unit="D", name="Lags")
-    dcf = Series(data=c / b, index=lags, name="ccf")
+    std = norm.ppf(1 - alpha / 2.) / sqrt(b)
+    result = DataFrame(data={"ccf": c, "stderr": std, "n": b},
+                       index=TimedeltaIndex(lags, unit="D", name="Lags"))
 
-    if output == "full":
-        std = 1.96 / sqrt(b - lags.days)
-        # std = sqrt((c.cumsum() - dcf.cumsum()) ** 2) / (b - 1)
-        dcf = DataFrame(data={"ccf": dcf.values, "stderr": std, "n": b},
-                        index=lags, )
-    return dcf
+    result = result.where(result.n > min_obs).dropna()
+
+    if full_output:
+        return result
+    else:
+        return result.ccf
 
 
-def _preprocess(x, max_gap, min_obs):
+def _preprocess(x, max_gap):
     """Internal method to preprocess the time series.
 
     """
-    dt = x.index.to_series().diff().values / Timedelta(1, "D")
-    dt[0] = 0.0
+    dt = x.index.to_series().diff().dropna().values / Timedelta(1, "D")
     dt_mu = dt[dt < max_gap].mean()  # Deal with big gaps if present
     t = dt.cumsum()
 
     # Normalize the values and create numpy arrays
     x = (x.values - x.values.mean()) / x.values.std()
 
-    u, i = unique(dt, return_counts=True)
-    dt_min = u[Series(i, u).cumsum() >= min_obs][0]
-
-    return x, t, dt_min, dt_mu
+    return x, t, dt_mu
 
 
 @njit
@@ -218,8 +227,12 @@ def _compute_ccf_rectangle(lags, t_x, x, t_y, y, bin_width=0.5):
                 if abs(d) <= bin_width:
                     cl += x[i] * y[j]
                     b_sum += 1
-        c[k] = cl
-        b[k] = b_sum
+        if b_sum is 0.:
+            c[k] = nan
+            b[k] = 0.01  # Prevent division by zero error
+        else:
+            c[k] = cl / b_sum
+            b[k] = b_sum / 2  # divide by 2 because we over count in for-loop
     return c, b
 
 
@@ -246,7 +259,18 @@ def _compute_ccf_gaussian(lags, t_x, x, t_y, y, bin_width=0.5):
                 d = exp(d ** 2 / den1) / den2
                 cl += x[i] * y[j] * d
                 b_sum += d
-        c[k] = cl
-        b[k] = b_sum
+        if b_sum is 0.:
+            c[k] = nan
+            b[k] = 0.01  # Prevent division by zero error
+        else:
+            c[k] = cl / b_sum
+            b[k] = b_sum / 2  # divide by 2 because we over count in for-loop
+    return c, b
 
+
+def _compute_ccf_regular(lags, x, y):
+    c = empty_like(lags)
+    for i, lag in enumerate(lags):
+        c[i] = corrcoef(x[:-int(lag)], y[int(lag):])[0, 1]
+    b = len(x) - lags
     return c, b

@@ -71,3 +71,5 @@ notify us when contributors are missing from this list.
 - `Stijn Klop <https://github.com/saklop>`_
 - `Tom van Steijn <https://github.com/tomvansteijn>`_
 - `Hugo van de Berg <https://github.com/Hugovdberg>`_
+- `Eit van der Meulen <https://github.com/EitvanderMeulen>`_
+- `Pytrik Graafstra <https://github.com/pgraafstra>`_

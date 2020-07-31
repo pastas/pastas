@@ -9,6 +9,7 @@ evap = read_csv("tests/data/evap.csv", index_col=0, parse_dates=True,
 obs = read_csv("tests/data/obs.csv", index_col=0, parse_dates=True,
                squeeze=True)
 
+
 def test_create_model():
     ml = ps.Model(obs, name="Test_Model")
     return ml
@@ -19,6 +20,7 @@ def test_add_stressmodel():
     sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, name='rch')
     ml.add_stressmodel(sm)
     return ml
+
 
 def test_add_stressmodels():
     ml = test_create_model()
@@ -49,6 +51,13 @@ def test_del_constant():
 def test_add_noisemodel():
     ml = test_create_model()
     ml.add_noisemodel(ps.NoiseModel())
+    return
+
+
+def test_armamodel():
+    ml = test_create_model()
+    ml.add_noisemodel(ps.ArmaModel())
+    ml.solve()
     return
 
 
