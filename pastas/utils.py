@@ -515,16 +515,23 @@ def show_versions(lmfit=False, numba=False):
     from pandas import __version__ as pd_version
     from numpy import __version__ as np_version
     from scipy import __version__ as sc_version
+    from matplotlib import __version__ as mpl_version
     from sys import version as os_version
 
-    print("Python version: {}".format(os_version))
-    print("Numpy version: {}".format(np_version))
-    print("Scipy version: {}".format(sc_version))
-    print("Pandas version: {}".format(pd_version))
-    print("Pastas version: {}".format(ps_version))
+    msg = (
+        f"Python version: {os_version}\n"
+        f"Numpy version: {np_version}\n"
+        f"Scipy version: {sc_version}\n"
+        f"Pandas version: {pd_version}\n"
+        f"Pastas version: {ps_version}\n"
+        f"Matplotlib version: {mpl_version}\n"
+    )
+
     if lmfit:
         from lmfit import __version__ as lm_version
-        print("lmfit version: ", lm_version)
+        msg = msg + f"lmfit version: {lm_version}\n"
     if numba:
         from numba import __version__ as nb_version
-        print("numba version: ", nb_version)
+        msg = msg + f"numba version: {nb_version}"
+
+    return print(msg)
