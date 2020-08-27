@@ -163,14 +163,14 @@ class FlexModel(RechargeBase):
         R = K_s \\left( \\frac{S}{S_u}\\right) ^\\gamma
 
     For a detailed description of the recharge model and parameters we refer
-    to the following publication [2]_ (NOT AVAILABLE YET - July/2020).
+    to Collenteur et al. (in review) [2]_.
 
     References
     ----------
-    .. [2] Collenteur, R.A., Bakker, M., Klammler, G., Birk, S. (in Prep.)
+    .. [2] Collenteur, R.A., Bakker, M., Klammler, G., & Birk, S. (in Review)
            Estimating groundwater recharge from groundwater levels using
            non-linear transfer function noise models and comparison to
-           lysimeter data.
+           lysimeter data. https://doi.org/10.5194/hess-2020-392
 
     """
     _name = "FlexModel"
