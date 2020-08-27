@@ -509,6 +509,7 @@ def show_versions(lmfit=False, numba=False):
     lmfit: bool, optional
         Print the version of lmfit. Needs to be installed.
     numba: bool, optional
+        Print the version of numba. Needs to be installed.
 
     """
     from pastas import __version__ as ps_version
@@ -524,14 +525,14 @@ def show_versions(lmfit=False, numba=False):
         f"Scipy version: {sc_version}\n"
         f"Pandas version: {pd_version}\n"
         f"Pastas version: {ps_version}\n"
-        f"Matplotlib version: {mpl_version}\n"
+        f"Matplotlib version: {mpl_version}"
     )
 
     if lmfit:
         from lmfit import __version__ as lm_version
-        msg = msg + f"lmfit version: {lm_version}\n"
+        msg = msg + f"\nlmfit version: {lm_version}"
     if numba:
         from numba import __version__ as nb_version
-        msg = msg + f"numba version: {nb_version}"
+        msg = msg + f"\nnumba version: {nb_version}"
 
     return print(msg)

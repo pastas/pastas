@@ -481,12 +481,6 @@ class TimeSeries:
         method = self.settings["sample_up"]
         freq = self.settings["freq"]
 
-        # adjust the first timestep, so that the output will have the
-        # correct frequency
-        t0_new = series.index[0].ceil(freq)
-        if t0_new > series.index[0]:
-            series.index.set_value(series.index, series.index[0], t0_new)
-
         n = series.isnull().values.sum()
 
         if method in ["backfill", "bfill", "pad", "ffill"]:
