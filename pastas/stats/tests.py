@@ -48,17 +48,27 @@ def durbin_watson(series=None):
 
     Notes
     -----
-    The Durban Watson statistic ([durbin_1951]_, [Fahidy_2004]_) can be used
-    to make a statement on the correlation between the values. The formula
-    to calculate the Durbin-Watson statistic (DW) is:
+    The Durban Watson statistic ([durbin_1951]_, [Fahidy_2004]_) tests the
+    null-hypothesis that the correlation between the noise values at lag one
+    equals zero. The formula to calculate the Durbin-Watson statistic (DW) is:
 
     .. math::
-        DW = 2 * (1 - \\rho)
+        DW = \\frac{\\sum_{t=2}^{n}(\\upsilon_t-\\upsilon_{t-1}^2)}
+        {\\sum_{t=1}^{n}\\upsilon_t^2}
 
-    where acf is the autocorrelation of the series for lag s. By
-    definition, the value of DW is between 0 and 4. A value of zero
-    means complete negative correlation and 4 indicates complete
-    positive autocorrelation. A value of zero means no autocorrelation.
+    where $n$ is the number of values in the noise series. The test-statistic
+    has a range :math:`0 \\geq DW \\leq 4`, where values of $DW < 2$ indicate a
+    positive correlation and values of $DW > 2$ indicates negative
+    autocorrelation. The Durbin-Watson test requires a constant time interval
+    of the noise series and tests for autocorrelation at a lag of 1 time step.
+
+    **Considerations for this test:**
+
+    - The time series should have equidistant time steps.
+    - The Durbin-Watson test tests for autocorrelation at lag 1 but not for
+      larger time lags.
+    - The test statistic for this test is difficult to compute and is usually
+      obtained from pre-calculated tables.
 
     References
     ----------
@@ -77,9 +87,9 @@ def durbin_watson(series=None):
 
     Examples
     --------
-    >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
+    >>> data = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
     >>>                data=np.random.rand(1000))
-    >>>result = ps.stats.durbin_watson(res)
+    >>> result = ps.stats.durbin_watson(data)
 
     """
     if not series.index.inferred_freq:
@@ -104,7 +114,7 @@ def ljung_box(series=None, lags=365, nparam=0, full_output=False):
     lags: int, optional
         The maximum lag to compute the Ljung-Box test statistic for.
     nparam: int, optional
-        NUmber of calibrated parameters in the model.
+        Number of calibrated parameters in the model.
     full_output: bool, optional
         Return the result of the test as a boolean (True) or not (False).
 
@@ -117,25 +127,30 @@ def ljung_box(series=None, lags=365, nparam=0, full_output=False):
 
     Notes
     -----
-    The Ljung-Box test [Ljung_1978]_ can be used to test autocorrelation in the
-    residuals series which are used during optimization of a model. The
-    Ljung-Box Q-test statistic is calculated as :
+    The Ljung-Box test [Ljung_1978]_ tests the null-hypothesis that a time
+    series are independently distributed up to a desired time lag $k$ and is
+    computed as follows:
 
     .. math::
-        Q(k) = n * (n + 2) * \\sum(\\frac{\\rho^2(k)}{n - k}
+        Q(k) = n (n + 2) \\sum_{k=1}^{h} \\frac{\\rho^2(k)}{n - k}
 
-    where $k$ are the lags to calculate the autocorrelation for,
-    $n$ is the number of observations and :math:`\\rho(k)` is the
-    autocorrelation for lag $k$. The Q-statistic can be compared to the
-    value of a Chi-squared distribution to check if the Null hypothesis (no
-    autocorrelation) is rejected or not. The hypothesis is rejected when:
+    where :math:`\\rho_k` is the autocorrelation at lag $k$, $h$ is the
+    maximum lag used for calculation, and $n$ is the number of values in the
+    noise series. The computed $Q$-statistic is then compared to a critical
+    value computed from a :math:`\\chi^2_{\\alpha, h-p}` distribution with a
+    significance level :math:`\\alpha` and $h-p$ degrees of freedom, where $h$
+    is the number of lags and $p$ the number of the noise model parameters.
 
-    .. math::
-        Q(k) > \\chi^2_{\\alpha, h}
+    **Considerations for this test:**
 
-    Where :math:`\\alpha` is the significance level and $h$ is the degree of
-    freedom defined by $h = n - p$ where $p$ is the number of parameters
-    in the model.
+    - The time series should have equidistant time steps. An adapted version
+      of the Ljung-Box test is available through ps.stats.stoffer_toloi.
+    - A potential problem of the Ljung-Box test is the low power of the test
+      when testing for a large number of lags using a small sample size $n$.
+      It has been suggested that suggested that :math:`k \\leq n/4` but also
+      as low as :math:`k \\leq n/20`. If we are using daily groundwater levels
+      observations, and we want to test for autocorrelation for lags up to one
+      year (365 days) this means that we need between 4 and ten years of data.
 
     References
     ----------
@@ -146,12 +161,19 @@ def ljung_box(series=None, lags=365, nparam=0, full_output=False):
     --------
     >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
     >>>                 data=np.random.rand(1000))
-    >>> q_stat, pval = ps.stats.ljung_box(res)
+    >>> stat, p = ps.stats.ljung_box(res, lags=365)
+    >>> if p > alpha:
+    >>>    print("Failed to reject the Null-hypothesis, no significant"
+    >>>          "autocorrelation. p =", p.round(2))
+    >>> else:
+    >>>    print("Reject the Null-hypothesis. p =", p.round(2))
 
     See Also
     --------
     pastas.stats.acf
         This method is called to compute the autocorrelation function.
+    pastas.stats.stoffer_toloi
+        Similar method but adapted for time series with missing data.
 
     """
     if not series.index.inferred_freq:
@@ -197,23 +219,42 @@ def runs_test(series, cutoff="mean"):
 
     Notes
     -----
-    Distribution free test to check if a time series exhibits significant
-    autocorrelation [bradley_1968]_. If :math:`|Z| \\geq Z_{1-\\frac{\\alpha}{
-    2}}` then the null hypothesis (Ho) is rejected.
+    Wald and Wolfowitz developed [wald_1943]_ developed a distribution free
+    test (i.e., no normal distribution is assumed) to test for
+    autocorrelation. This test is also appropriate for non-equidistant
+    time steps in the residuals time series. The Null-hypothesis is that the
+    residual time series is a random sequence of positive and negative values.
+    The alternative hypothesis is that they are non-random. The test statistic
+    is computed as follows:
 
-    - Ho: The series is a result of a random process
-    - Ha: The series is not the result of a random process
+    .. math::
+        Z = \\frac{R-\\bar{R}}{\\sigma_R}
+
+    where $R$ is the number of runs, :math:`\\bar{R}` the expected number of
+    runs and :math:`\\sigma_R` the standard deviation of the number of runs.
+    A run is defined as the number of sequences of exclusively postitive and
+    negative values in the time series.
+
+    **Considerations for this test:**
+
+    - Test is also applicable to time series with non-equidistant time steps.
 
     References
     ----------
-    .. [bradley_1968] Bradley, J. V. (1968). Distribution-free statistical
-      tests.
+    .. [wald_1943] Wald, A., & Wolfowitz, J. (1943). An exact test for
+       randomness in the non-parametric case based on serial correlation.
+       The Annals of Mathematical Statistics, 14(4), 378-388.
 
     Examples
     --------
     >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
     >>>                 data=np.random.rand(1000))
     >>> stat, pval = ps.stats.runs_test(res)
+    >>> if p > alpha:
+    >>>     print("Failed to reject the Null-hypothesis, no significant"
+    >>>           "autocorrelation. p =", p.round(2))
+    >>> else:
+    >>>     print("Reject the Null-hypothesis")
 
     """
     # Make dichotomous sequence
@@ -276,8 +317,27 @@ def stoffer_toloi(series, lags=365, nparam=0, freq="D"):
 
     Notes
     -----
-    stoffer-toloi test can handle missing data (nan's) in the input time
-    series.
+    Stoffer and Toloi [stoffer_1992]_ extended the Ljung-Box test to also work
+    with missing data. The test statistic is computed as follows:
+
+    .. math ::
+        Q_k = n^2 \\sum_{k=1}^{h} \\frac{\\hat{\\rho}_k^2}{n-k}
+
+    where :math:`\\hat{\\rho}_k` is the autocorrelation for lag $k$. When the
+    residual time series have non-equidistant time steps it is recommended to
+    use this test over the original Ljung-Box test.
+
+    The Stoffer-Toloi test is strictly an adapted version of the Ljung-Box
+    test to deal with missing data in a time series and not a time series with
+     non-equidistant time steps. This means that the time series is updated
+     to an equidistant time series by filling nan-values.
+
+    **Considerations for this test:**
+
+    - Test is also applicable to irregular time series.
+    - The time step has to be chosen (e.g., Days). This should not be smaller
+      than the smallest time step or the test will most likely fail to
+      reject $H_0$ anyway.
 
     Reference
     ---------
@@ -287,9 +347,14 @@ def stoffer_toloi(series, lags=365, nparam=0, freq="D"):
 
     Examples
     --------
-    >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
+    >>> data= pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
     >>>                data=np.random.rand(1000))
-    >>> result = ps.stats.stoffer_toloi(res)
+    >>> stat, p = ps.stats.stoffer_toloi(noise, lags=365, freq="D")
+    >>> if p > alpha:
+    >>>    print("Failed to reject the Null-hypothesis, no significant"
+    >>>          "autocorrelation. p =", p.round(2))
+    >>> else:
+    >>>    print("Reject the Null-hypothesis")
 
     """
     series = series.asfreq(freq=freq)  # Make time series equidistant
@@ -353,7 +418,10 @@ def diagnostics(series, alpha=0.05, nparam=0, lags=365, stats=(),
     Returns
     -------
     df: Pandas.DataFrame
-        DataFrame with the information for the diagnostics checks.
+        DataFrame with the information for the diagnostics checks. The final
+        column in this DataFrame report whether or not the Null-Hypothesis
+        is rejected. If H0 is not rejected (=False) the data is in agreement
+        with one of the properties of white noise (e.g., normally distributed).
 
     Notes
     -----
@@ -363,9 +431,9 @@ def diagnostics(series, alpha=0.05, nparam=0, lags=365, stats=(),
 
     Examples
     --------
-    >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
+    >>> data = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
     >>>                 data=np.random.rand(1000))
-    >>> ps.stats.diagnostics(res)
+    >>> ps.stats.diagnostics(data)
     Out[0]:
                       Checks Statistic P-value  Reject H0
     Shapiroo       Normality      1.00    0.86      False
@@ -373,6 +441,9 @@ def diagnostics(series, alpha=0.05, nparam=0, lags=365, stats=(),
     Runs test      Autocorr.     -0.76    0.45      False
     Durbin-Watson  Autocorr.      2.02     nan      False
     Ljung-Box      Autocorr.      5.67    1.00      False
+
+    In this example, the Null-hypothesis is not rejected and the data may be
+    assumed to be white noise.
 
     """
     cols = ["Checks", "Statistic", "P-value"]
