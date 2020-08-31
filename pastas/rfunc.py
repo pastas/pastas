@@ -169,6 +169,8 @@ class Gamma(RfuncBase):
 
     Notes
     -----
+    The impulse response function may be written as:
+
     .. math:: \\theta(t) = At^{n-1} e^{-t/a}
 
     """
@@ -227,6 +229,8 @@ class Exponential(RfuncBase):
 
     Notes
     -----
+    The impulse response function may be written as:
+
     .. math:: \\theta(t) = A e^{-t/a}
 
     """
@@ -285,7 +289,8 @@ class HantushWellModel(RfuncBase):
     Notes
     -----
     The Hantush well function is explained in [hantush_1955]_,
-    [veling_2010]_ and [asmuth_2008]_:
+    [veling_2010]_ and [asmuth_2008]_. The impulse response function may be
+    written as:
 
     .. math:: \\theta(t) = \\frac{A}{t} \\exp(-t/a -b/t)
     .. math:: p[0] = A # TBD \\frac{1}{4 \\pi kD}
@@ -461,8 +466,8 @@ class Polder(RfuncBase):
 
     Notes
     -----
-    The Polder function is explained in [polder]_. 
-    The impulse response function may be written as
+    The Polder function is explained in [polder]_. The impulse response
+    function may be written as:
     
     .. math:: \\theta(t) = \\exp(-\\sqrt(4b)) \\frac{A}{t^{-3/2}}
        \\exp(-t/a -b/t)
@@ -579,6 +584,7 @@ class FourParam(RfuncBase):
 
     Notes
     -----
+    The impulse response function may be written as:
 
     .. math:: \\theta(t) = At^{n-1} e^{-t/a -ab/t}
 
@@ -732,8 +738,9 @@ class DoubleExponential(RfuncBase):
 
     Notes
     -----
+    The impulse response function may be written as:
 
-    .. math:: \\theta(t) = A (1 - \alpha) e^{-t/a_1} + A \alpha e^{-t/a_2}
+    .. math:: \\theta(t) = A (1 - \\alpha) e^{-t/a_1} + A \\alpha e^{-t/a_2}
 
     """
     _name = "DoubleExponential"
@@ -796,9 +803,13 @@ class Edelman(RfuncBase):
 
     Notes
     -----
-    The Edelman function is emplained in [5]_. It's parameters are:
+    The Edelman function is emplained in [5]_. The impulse response function
+    may be written as:
 
-    .. math:: \text{unknown}
+    .. math:: \\text{unknown}
+
+    It's parameters are:
+
     .. math:: p[0] = \\beta = \\frac{\\sqrt{\\frac{4kD}{S}}}{x}
 
     References
