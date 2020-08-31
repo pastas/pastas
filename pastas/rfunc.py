@@ -17,10 +17,6 @@ Supported Response Functions
     HantushWellModel
     DoubleExponential
 
-.. warning::
-    The above list contains the supported response function. All other
-    methods are for research purposes only and may change without notice.
-
 """
 
 import numpy as np
@@ -173,9 +169,7 @@ class Gamma(RfuncBase):
 
     Notes
     -----
-
-    .. math::
-        step(t) = A * Gammainc(n, t / a)
+    .. math:: \\theta(t) = At^{n-1} e^{-t/a}
 
     """
     _name = "Gamma"
@@ -233,8 +227,7 @@ class Exponential(RfuncBase):
 
     Notes
     -----
-    .. math::
-        step(t) = A * (1 - e^{-\\frac{t}{a}})
+    .. math:: \\theta(t) = A e^{-t/a}
 
     """
     _name = "Exponential"
@@ -587,9 +580,7 @@ class FourParam(RfuncBase):
     Notes
     -----
 
-    .. math::
-        step(t) = \\frac{A}{quad(t^n*e^{-\\frac{t}{a} - \\frac{b}{t}},0,inf)} *
-                            quad(t^n*e^{-\\frac{t}{a} - \\frac{b}{t}},0,t)
+    .. math:: \\theta(t) = At^{n-1} e^{-t/a -ab/t}
 
     If Fourparam.quad is set to True, this response function uses np.quad to
     integrate the Four Parameter response function, which requires more
@@ -742,9 +733,7 @@ class DoubleExponential(RfuncBase):
     Notes
     -----
 
-    .. math::
-        step(t) = A * (1 - ( (1 - \\alpha)* e^{-\\frac{t}{a1}} +
-                                  \\alpha * e^{-\\frac{t}{a2}}))
+    .. math:: \\theta(t) = A (1 - \alpha) e^{-t/a_1} + A \alpha e^{-t/a_2}
 
     """
     _name = "DoubleExponential"
@@ -809,6 +798,7 @@ class Edelman(RfuncBase):
     -----
     The Edelman function is emplained in [5]_. It's parameters are:
 
+    .. math:: \text{unknown}
     .. math:: p[0] = \\beta = \\frac{\\sqrt{\\frac{4kD}{S}}}{x}
 
     References
