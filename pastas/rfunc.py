@@ -591,6 +591,10 @@ class FourParam(RfuncBase):
         step(t) = \\frac{A}{quad(t^n*e^{-\\frac{t}{a} - \\frac{b}{t}},0,inf)} *
                             quad(t^n*e^{-\\frac{t}{a} - \\frac{b}{t}},0,t)
 
+    If Fourparam.quad is set to True, this response function uses np.quad to
+    integrate the Four Parameter response function, which requires more
+    calculation time.
+
     """
     _name = "FourParam"
 
@@ -719,39 +723,6 @@ class FourParam(RfuncBase):
                                                                       1:]))
                 s = s * (p[0] / quad(self.function, 0, np.inf, args=p)[0])
                 return s
-
-
-class FourParamQuad(FourParam):
-    """"Four Parameter response function with 4 parameters A, a, b, and n.
-
-    Parameters
-    ----------
-    up: bool or None, optional
-        indicates whether a positive stress will cause the head to go up
-        (True, default) or down (False), if None the head can go both ways.
-    meanstress: float
-        mean value of the stress, used to set the initial value such that
-        the final step times the mean stress equals 1
-    cutoff: float
-        proportion after which the step function is cut off. default is 0.999.
-
-    Notes
-    -----
-    This response function uses np.quad to integrate the Four Parameter
-    response function, which requires more calculation time. This response
-    function can be used for testing purposes.
-
-    .. math::
-        step(t) = \\frac{A}{quad(t^n*e^{-\\frac{t}{a} - \\frac{b}{t}},0,inf)} *
-                            quad(t^n*e^{-\\frac{t}{a} - \\frac{b}{t}},0,t)
-
-    """
-    _name = "FourParamQuad"
-
-    def __init__(self, up=True, meanstress=1, cutoff=0.999):
-        FourParam.__init__(self, up, meanstress, cutoff)
-        self.nparam = 4
-        self.quad = True
 
 
 class DoubleExponential(RfuncBase):
