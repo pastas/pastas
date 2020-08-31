@@ -329,8 +329,8 @@ def stoffer_toloi(series, lags=365, nparam=0, freq="D"):
 
     The Stoffer-Toloi test is strictly an adapted version of the Ljung-Box
     test to deal with missing data in a time series and not a time series with
-     non-equidistant time steps. This means that the time series is updated
-     to an equidistant time series by filling nan-values.
+    non-equidistant time steps. This means that the time series is updated
+    to an equidistant time series by filling nan-values.
 
     **Considerations for this test:**
 
@@ -339,8 +339,8 @@ def stoffer_toloi(series, lags=365, nparam=0, freq="D"):
       than the smallest time step or the test will most likely fail to
       reject $H_0$ anyway.
 
-    Reference
-    ---------
+    References
+    ----------
     .. [stoffer_1992] Stoffer, D. S., & Toloi, C. M. (1992). A note on the
        Ljung—Box—Pierce stoffer_toloi statistic with missing data. Statistics &
        probability letters, 13(5), 391-396.
@@ -348,7 +348,7 @@ def stoffer_toloi(series, lags=365, nparam=0, freq="D"):
     Examples
     --------
     >>> data= pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
-    >>>                data=np.random.rand(1000))
+    >>>                 data=np.random.rand(1000))
     >>> stat, p = ps.stats.stoffer_toloi(noise, lags=365, freq="D")
     >>> if p > alpha:
     >>>    print("Failed to reject the Null-hypothesis, no significant"

@@ -146,7 +146,7 @@ def ccf(x, y, lags=365, bin_method='rectangle', bin_width=0.5,
     Tip
     ---
     This method will be significantly faster when Numba is installed. Check
-    out the Numba project here: `https://numba.pydata.org`_.
+    out the [Numba project here](https://numba.pydata.org)
 
     Examples
     --------

@@ -29,7 +29,6 @@ General Methods
     to_dict
     to_file
     copy
-    check_parameters_bounds
 
 Add and Delete Methods
 ----------------------

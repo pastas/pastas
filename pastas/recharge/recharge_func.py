@@ -62,7 +62,7 @@ class RechargeBase:
 
     @staticmethod
     def get_init_parameters(name="recharge"):
-        """
+        """Method to obtain the initial parameters.
 
         Parameters
         ----------
@@ -85,22 +85,20 @@ class RechargeBase:
 
 class Linear(RechargeBase):
     """
-    Linear model for precipitation excess according to [1]_.
+    Linear model for precipitation excess according to [asmuth_2002]_.
 
     Notes
     -----
     The precipitation excess is calculated as:
 
     .. math::
-
         R = P - f * E
 
     References
     ----------
-    .. [1] von Asmuth, J., Bierkens, M., and Maas, K. (2002) Transfer
-           function-noise modeling in continuous time using predefined
-           impulse response functions, Water Resources Research, 38,
-           23–1–23–12.
+    .. [asmuth_2002] von Asmuth, J., Bierkens, M., and Maas, K. (2002) Transfer
+       function-noise modeling in continuous time using predefined impulse
+       response functions, Water Resources Research, 38, 23–1–23–12.
 
     """
     _name = "Linear"
@@ -144,7 +142,7 @@ class Linear(RechargeBase):
 
 class FlexModel(RechargeBase):
     """
-    Recharge to the groundwater calculate according to [2]_.
+    Recharge to the groundwater calculate according to [collenteur_2020]_.
 
     Notes
     -----
@@ -163,14 +161,14 @@ class FlexModel(RechargeBase):
         R = K_s \\left( \\frac{S}{S_u}\\right) ^\\gamma
 
     For a detailed description of the recharge model and parameters we refer
-    to Collenteur et al. (in review) [2]_.
+    to Collenteur et al. (in review).
 
     References
     ----------
-    .. [2] Collenteur, R.A., Bakker, M., Klammler, G., & Birk, S. (in Review)
-           Estimating groundwater recharge from groundwater levels using
-           non-linear transfer function noise models and comparison to
-           lysimeter data. https://doi.org/10.5194/hess-2020-392
+    .. [collenteur_2020] Collenteur, R.A., Bakker, M., Klammler, G., & Birk,
+       S. (in Review) Estimating groundwater recharge from groundwater
+       levels using non-linear transfer function noise models and comparison to
+       lysimeter data. https://doi.org/10.5194/hess-2020-392
 
     """
     _name = "FlexModel"
@@ -276,31 +274,29 @@ class FlexModel(RechargeBase):
 
 class Berendrecht(RechargeBase):
     """
-    Recharge to the groundwater calculated according to [3]_ and [2]_.
+    Recharge to the groundwater calculated according to [berendrecht_2006]_.
 
     Notes
     -----
-    Note that the preferred unit of the precipitation and evapotranspiration
-    is mm/d. The waterbalance for the unsaturated zone reservoir is written as:
+    Note that the preferred unit of the precipitation and evaporation is
+    mm/d. The waterbalance for the unsaturated zone reservoir is written as:
 
     .. math::
-
         \\frac{dS_e}{dt} = \\frac{1}{D_e}(f_iP - E_a - R)
 
     where the recharge is calculated as:
 
     .. math::
-
         R(S_e) = K_sS_e^\\lambda(1-(1-S_e^{1/m})^m)^2
 
     For a detailed description of the recharge model and parameters we refer
-    to the publications [3]_ and [2]_.
+    to the original publication.
 
     References
     ----------
-    .. [3] Berendrecht, W. L., Heemink, A. W., van Geer, F. C., and Gehrels,
-           J. C. (2006) A non-linear state space approach to model
-           groundwater fluctuations, Advances in Water Resources, 29, 959–973.
+    .. [berendrecht_2006] Berendrecht, W. L., Heemink, A. W., van Geer, F. C.,
+       and Gehrels, J. C. (2006) A non-linear state space approach to model
+       groundwater fluctuations, Advances in Water Resources, 29, 959–973.
 
     """
     _name = "Berendrecht"

@@ -276,8 +276,7 @@ class Exponential(RfuncBase):
 
 class HantushWellModel(RfuncBase):
     """
-    A special implementation of the Hantush well function for
-    multiple wells.
+    A special implementation of the Hantush well function for multiple wells.
 
     Parameters
     ----------
@@ -296,7 +295,6 @@ class HantushWellModel(RfuncBase):
     [veling_2010]_ and [asmuth_2008]_:
 
     .. math:: \\theta(t) = \\frac{A}{t} \\exp(-t/a -b/t)
-
     .. math:: p[0] = A # TBD \\frac{1}{4 \\pi kD}
     .. math:: p[1] = a = cS
     .. math:: p[2] = b = 1^2 / (4 \\lambda^2)
@@ -309,23 +307,10 @@ class HantushWellModel(RfuncBase):
     Hantush implementation:
 
     - A: the parameter is the same as the original Hantush, except that
-    the distance (r) is set to 1.0
+      the distance (r) is set to 1.0
     - a = cS: stays the same
     - b = 1 / (4 * lambda): r is used internally to scale with distance
     - r: distance, not optimized but used to scale A and b
-
-    References
-    ----------
-    .. [hantush_1955] Hantush, M. S., & Jacob, C. E. (1955). Non‐steady
-       radial flow in an infinite leaky aquifer. Eos, Transactions American
-       Geophysical Union, 36(1), 95-100.
-
-    .. [veling_2010] Veling, E. J. M., & Maas, C. (2010). Hantush well function
-       revisited. Journal of hydrology, 393(3), 381-388.
-
-    .. [asmuth_2008] Von Asmuth, J. R., Maas, K., Bakker, M., & Petersen,
-       J. (2008). Modeling time series of ground water head fluctuations
-       subjected to multiple stresses. Ground Water, 46(1), 30-40.
 
     """
     _name = "HantushWellModel"
@@ -406,7 +391,7 @@ class Hantush(RfuncBase):
     and [asmuth_2008]_. The impulse response function may be written as:
 
     .. math:: \\theta(t) = K_0(\\sqrt(4b)) \\frac{A}{t} \\exp(-t/a - ab/t)
-    .. math:: p[0] = A # \\frac{1}{2 \\pi kD}
+    .. math:: p[0] = A = \\frac{1}{2 \\pi kD}
     .. math:: p[1] = a = cS
     .. math:: p[2] = b = r^2 / (4 \\lambda^2)
 
@@ -486,8 +471,8 @@ class Polder(RfuncBase):
     The Polder function is explained in [polder]_. 
     The impulse response function may be written as
     
-    .. math:: \\theta(t) = \\exp(-\\sqrt(4b)) \\frac{A}{t^{-3/2}} \\exp(-t/a -b/t)
-
+    .. math:: \\theta(t) = \\exp(-\\sqrt(4b)) \\frac{A}{t^{-3/2}}
+       \\exp(-t/a -b/t)
     .. math:: p[0] = A = \\exp(-x/\\lambda)
     .. math:: p[1] = a = \\sqrt{\\frac{1}{cS}}
     .. math:: p[2] = b = x^2 / (4 \\lambda^2)
@@ -496,8 +481,8 @@ class Polder(RfuncBase):
 
     References
     ----------
-    .. [polder] [1] G.A. Bruggeman (1999). Analytical solutions of 
-    geohydrological problems. Elsevier Science. Amsterdam, Eq. 123.32
+    .. [polder] G.A. Bruggeman (1999). Analytical solutions of
+       geohydrological problems. Elsevier Science. Amsterdam, Eq. 123.32
 
     """
     _name = "Polder"

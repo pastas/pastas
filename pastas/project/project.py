@@ -385,6 +385,8 @@ class Project:
                      verbose=False, **kwargs):
         """Solves the models in mls
 
+        Parameters
+        ----------
         mls: list of str, optional
             list of model names, if None all models in the project are solved.
         report: boolean, optional
