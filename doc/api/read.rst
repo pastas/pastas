@@ -30,6 +30,7 @@ Read Methods
    read_meny
    read_knmi
    read_waterbase
+   read_dino_level_gauge
 
 Using Pandas
 ------------
