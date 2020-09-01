@@ -35,7 +35,7 @@ the built-in optimization, visualisation, and statistical analysis tools.
 Documentation & Examples
 ~~~~~~~~~~~~~~~~~~~~~~~~
 - Documentation is provided on a dedicated website: http://pastas.readthedocs.io/
-- Examples can be found on the `examples directory on the documentation website <http://pastas.readthedocs.io/en/dev/examples.html>`_.
+- Examples can be found on the `examples directory on the documentation website <https://pastas.readthedocs.io/en/dev/examples/index.html>`_.
 - View and edit a working example notebook of a Pastas model in `MyBinder <https://mybinder.org/v2/gh/pastas/pastas/master?filepath=examples%2Fnotebooks%2F1_basic_model.ipynb>`_
 - A list of Publications that used Pastas is available in a `dedicated GitHub repo <https://github.com/pastas/pastas_research>`_
 
@@ -83,7 +83,7 @@ following packages are necessary for a minimal function installation of Pastas:
 
 - numpy>=1.15
 - matplotlib>=2.0
-- pandas>=0.25
+- pandas>=1.0
 - scipy>=1.1
 
 How to Cite Pastas?
