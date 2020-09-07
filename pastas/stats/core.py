@@ -227,7 +227,7 @@ def _compute_ccf_rectangle(lags, t_x, x, t_y, y, bin_width=0.5):
                 if abs(d) <= bin_width:
                     cl += x[i] * y[j]
                     b_sum += 1
-        if b_sum is 0.:
+        if b_sum == 0.:
             c[k] = nan
             b[k] = 0.01  # Prevent division by zero error
         else:
@@ -259,7 +259,7 @@ def _compute_ccf_gaussian(lags, t_x, x, t_y, y, bin_width=0.5):
                 d = exp(d ** 2 / den1) / den2
                 cl += x[i] * y[j] * d
                 b_sum += d
-        if b_sum is 0.:
+        if b_sum == 0.:
             c[k] = nan
             b[k] = 0.01  # Prevent division by zero error
         else:
