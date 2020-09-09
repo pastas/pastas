@@ -1143,7 +1143,7 @@ class RechargeModel(StressModelBase):
         name = self.name
 
         if istress is not None:
-            if istress is 1 and self.nsplit > 1:
+            if istress == 1 and self.nsplit > 1:
                 # only happen when Linear is used as the recharge model
                 stress = stress * p[-1]
             if self.stress[istress].name is not None:
