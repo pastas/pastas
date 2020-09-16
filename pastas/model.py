@@ -508,7 +508,7 @@ class Model:
 
         # Get simulation at the correct indices
         if self.interpolate_simulation is None:
-            if oseries_calib.index.difference(sim.index).size is not 0:
+            if oseries_calib.index.difference(sim.index).size != 0:
                 self.interpolate_simulation = True
                 self.logger.info('There are observations between the '
                                  'simulation timesteps. Linear interpolation '

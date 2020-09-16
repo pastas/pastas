@@ -48,7 +48,7 @@ def frequency_is_supported(freq):
         logger.error(msg)
         raise KeyError(msg)
     else:
-        if offset.n is 1:
+        if offset.n == 1:
             freq = offset.name
         else:
             freq = str(offset.n) + offset.name
