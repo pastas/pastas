@@ -12,9 +12,20 @@ hydrological time series.
    acf
    ccf
 
+Weighted Descriptive Statistics
+-------------------------------
+
+.. autosummary::
+   :nosignatures:
+   :toctree: generated/
+
+   mean
+   var
+   std
+
 """
 
-from numpy import inf, exp, sqrt, pi, empty_like, corrcoef, arange, nan
+from numpy import inf, exp, sqrt, pi, empty_like, corrcoef, arange, nan, ones
 from pandas import Timedelta, DataFrame, TimedeltaIndex
 from scipy.stats import norm
 
@@ -274,3 +285,88 @@ def _compute_ccf_regular(lags, x, y):
         c[i] = corrcoef(x[:-int(lag)], y[int(lag):])[0, 1]
     b = len(x) - lags
     return c, b
+
+
+def mean(x, weighted=True):
+    """Method to compute the (weighted) mean of a time series.
+
+    Parameters
+    ----------
+    x: pandas.Series
+        Series with the values and a DatetimeIndex as an index.
+    weighted: bool, optional
+        Weight the values by the normalized time step to account for
+        irregular time series. Default is True.
+
+    Notes
+    -----
+    The (weighted) mean for a time series x is computed as:
+
+    .. math:: \\bar{x} = \\sum_{i=1}^{N} w_i x_i
+
+    where :math:`w_i` are the weights, taken as the time step between
+    observations, normalized by the sum of all time steps.
+
+    """
+    if weighted:
+        w = (x.index[1:] - x.index[0:-1]).to_numpy() / Timedelta("1D")
+    else:
+        w = ones(x.index.size - 1)
+
+    w /= w.sum()
+
+    mu = (x.iloc[1:] * w).sum() / w.sum()
+    return mu
+
+
+def var(x, weighted=True):
+    """Method to compute the (weighted) variance of a time series.
+
+    Parameters
+    ----------
+    x: pandas.Series
+        Series with the values and a DatetimeIndex as an index.
+    weighted: bool, optional
+        Weight the values by the normalized time step to account for
+        irregular time series. Default is True.
+
+    Notes
+    -----
+    The (weighted) variance for a time series x is computed as:
+
+    .. math:: \\sigma_x^2 = \\sum_{i=1}^{N} w_i (x_i - \\bar{x})^2
+
+    where :math:`w_i` are the weights, taken as the time step between
+    observations, normalized by the sum of all time steps. Note how
+    weighted mean (:math:`\\bar{x}`) is used in this formula.
+
+    """
+    if weighted:
+        w = (x.index[1:] - x.index[0:-1]).to_numpy() / Timedelta("1D")
+    else:
+        w = ones(x.index.size - 1)
+
+    w /= w.sum()
+
+    sigma = (w * (x.iloc[1:] - mean(x, weighted=weighted)) ** 2).sum()
+
+    return sigma
+
+
+def std(x, weighted=True):
+    """Method to compute the (weighted) variance of a time series.
+
+    Parameters
+    ----------
+    x: pandas.Series
+        Series with the values and a DatetimeIndex as an index.
+    weighted: bool, optional
+        Weight the values by the normalized time step to account for
+        irregular time series. Default is True.
+
+    See Also
+    --------
+    ps.stats.mean, ps.stats.var
+
+    """
+    return sqrt(var(x, weighted=weighted))
