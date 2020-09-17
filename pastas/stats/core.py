@@ -15,6 +15,9 @@ hydrological time series.
 Weighted Descriptive Statistics
 -------------------------------
 
+The following methods may be used to compute time step weighted versions
+of basic descriptive statistics.
+
 .. autosummary::
    :nosignatures:
    :toctree: generated/

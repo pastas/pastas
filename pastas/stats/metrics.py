@@ -5,14 +5,19 @@ simulation and the observations.
    :nosignatures:
    :toctree: ./generated
 
+   mae
    rmse
    sse
-   avg_dev
+
+   pearsonr
    nse
    evp
+
    rsq
    bic
    aic
+
+   kge_2012
 
 Examples
 ========
@@ -26,13 +31,19 @@ or
 
 """
 
-from numpy import sqrt, log
+from numpy import sqrt, log, ones
+from pandas import Timedelta
 
-__all__ = ["rmse", "sse", "avg_dev", "nse", "evp", "rsq", "bic", "aic"]
+from .core import mean, var, std
+
+__all__ = ["rmse", "sse", "mae", "nse", "evp", "rsq", "bic", "aic",
+           "pearsonr", "kge_2012"]
 
 
-def rmse(sim=None, obs=None, res=None, missing="drop"):
-    """Root mean squared error.
+# Absolute Error Metrics
+
+def mae(sim=None, obs=None, res=None, missing="drop", weighted=False):
+    """Compute the (weighted) Mean Absolute Error (MAE).
 
     Parameters
     ----------
@@ -41,16 +52,106 @@ def rmse(sim=None, obs=None, res=None, missing="drop"):
     obs: pandas.Series
         Series with the observed values.
     res: pandas.Series
-        Series with the residual values.
+        Series with the residual values. If time series for the residuals
+        are provided, the sim and obs arguments are ignored.
+    missing: str, optional
+        string with the rule to deal with missing values. Only "drop" is
+        supported now.
+    weighted: bool, optional
+        Weight the values by the normalized time step to account for
+        irregular time series. Default is True.
+
+    Notes
+    -----
+    The Mean Absolute Error (MAE) between two time series x and y is
+    computed as follows:
+
+    .. math:: \\text{MAE} = \\sum_{i=1}^{N} w_i |x_i - y_i|
+
+    where :math:`N` is the number of observations in the observed time series.
+
+    """
+    if res is None:
+        res = sim - obs
+
+    if missing == "drop":
+        res = res.dropna()
+
+    if weighted:
+        w = (obs.index[1:] - obs.index[:-1]).to_numpy() / Timedelta("1D")
+    else:
+        w = ones(obs.index.size - 1)
+    w /= w.sum()
+
+    return (w * res[1:].abs()).sum()
+
+
+def rmse(sim=None, obs=None, res=None, missing="drop", weighted=False):
+    """Compute the (weighted) Root Mean Squared Error (RMSE).
+
+    Parameters
+    ----------
+    sim: pandas.Series
+        Series with the simulated values.
+    obs: pandas.Series
+        Series with the observed values.
+    res: pandas.Series
+        Series with the residual values. If time series for the residuals
+        are provided, the sim and obs arguments are ignored.
+    missing: str, optional
+        string with the rule to deal with missing values. Only "drop" is
+        supported now.
+    weighted: bool, optional
+        Weight the values by the normalized time step to account for
+        irregular time series. Default is True.
+
+    Notes
+    -----
+    Computes the Root Mean Squared Error (RMSE) as follows:
+
+    .. math:: \\text{RMSE} = \\sqrt{\\sum_{i=1}^{N} w_i(n_i- \\bar{n})^2}
+
+    where :math:`N` is the number of residuals :math:`n`.
+
+    """
+    if res is None:
+        res = sim - obs
+
+    if missing == "drop":
+        res = res.dropna()
+
+    if weighted:
+        w = (res.index[1:] - res.index[:-1]).to_numpy() / Timedelta("1D")
+    else:
+        w = ones(res.index.size - 1)
+    w /= w.sum()
+
+    return sqrt((res[1:] ** 2 * w).sum())
+
+
+def sse(sim=None, obs=None, res=None, missing="drop"):
+    """Compute the Sum of the Squared Errors (SSE).
+
+    Parameters
+    ----------
+    sim: pandas.Series
+        Series with the simulated values.
+    obs: pandas.Series
+        Series with the observed values.
+    res: pandas.Series
+        Series with the residual values. If time series for the residuals
+        are provided, the sim and obs arguments are ignored.
     missing: str, optional
         string with the rule to deal with missing values. Only "drop" is
         supported now.
 
     Notes
     -----
-    .. math:: rmse = \\sqrt{\\frac{\\sum{r^2}}{n}}
+    The Sum of the Squared Errors (SSE) is calculated as follows:
 
-    where :math:`n` is the number of residuals :math:`r`.
+    .. math:: \\text{SSE} = \\sum(r^2)
+
+    Where :math:`r` are the residuals.
 
     """
     if res is None:
@@ -59,40 +160,10 @@ def rmse(sim=None, obs=None, res=None, missing="drop"):
     if missing == "drop":
         res = res.dropna()
 
-    n = res.size
-    return sqrt((res ** 2).sum() / n)
-
-
-def sse(sim, obs, missing="drop"):
-    """Sum of the squares of the error (SSE).
-
-    Parameters
-    ----------
-    sim: pandas.Series
-        Series with the simulated values.
-    obs: pandas.Series
-        Series with the observed values.
-    missing: str, optional
-        string with the rule to deal with missing values. Only "drop" is
-        supported now.
-
-    Notes
-    -----
-    The SSE is calculated as follows:
-
-    .. math:: sse = \\sum(r^2)
-
-    Where :math:`r` are the residuals.
-
-    """
-    res = (sim - obs)
-
-    if missing == "drop":
-        res = res.dropna()
-
     return (res ** 2).sum()
 
 
+@DeprecationWarning
 def avg_dev(sim, obs, missing="drop"):
     """Average deviation of the residuals.
 
@@ -121,8 +192,10 @@ def avg_dev(sim, obs, missing="drop"):
     return res.mean()
 
 
-def nse(sim, obs, missing="drop"):
-    """Nash-Sutcliffe coefficient for model fit as defined in [nash_1970]_.
+# Percentage Error Metrics
+
+def pearsonr(sim, obs, missing="drop", weighted=False):
+    """Compute the (weighted) Pearson correlation (r).
 
     Parameters
     ----------
@@ -131,31 +204,48 @@ def nse(sim, obs, missing="drop"):
     obs: pandas.Series
         Series with the observed values.
     missing: str, optional
-        string with the rule to deal with missing values. Only "drop" is
-        supported now.
+        string with the rule to deal with missing values in the
+        observed series. Only "drop" is supported now.
+    weighted: bool, optional
+        Weight the values by the normalized time step to account for
+        irregular time series. Default is True.
 
     Notes
     -----
-    .. math:: nse = 1 - \\frac{\\sum(h_s-h_o)^2}{\\sum(h_o-\\mu_{h,o})}
+    The Pearson correlation (r) is computed as follows:
 
-    References
-    ----------
-    .. [nash_1970] Nash, J. E., & Sutcliffe, J. V. (1970). River flow
-       forecasting through conceptual models part I-A discussion of
-       principles. Journal of hydrology, 10(3), 282-290.
+    .. math:: r = \\frac{\\sum_{i=1}^{N}w_i (x_i - \\bar{x})(y_i - \\bar{y})}
+        {\\sqrt{\\sum_{i=1}^{N} w_i(x_i-\\bar{x})^2 \\sum_{i=1}^{N}
+        w_i(y_i-\\bar{y})^2}}
+
+    Where :math:`x` is is observed time series, :math:`y` the simulated
+    time series, and :math:`N` the number of observations in the observed
+    time series.
 
     """
-    res = (sim - obs)
-
     if missing == "drop":
-        res = res.dropna()
+        obs = obs.dropna()
 
-    ns = 1 - (res ** 2).sum() / ((obs - obs.mean()) ** 2).sum()
-    return ns
+    if weighted:
+        w = (obs.index[1:] - obs.index[:-1]).to_numpy() / Timedelta("1D")
+    else:
+        w = ones(obs.index.size - 1)
+
+    w /= w.sum()
+
+    sim = sim.reindex(obs.index).dropna()
+
+    sim = sim[1:] - mean(sim, weighted=weighted)
+    obs = obs[1:] - mean(obs, weighted=weighted)
+
+    r = (w * sim * obs).sum() / \
+        sqrt((w * sim ** 2).sum() * (w * obs ** 2).sum())
+
+    return r
 
 
-def evp(sim, obs, missing="drop"):
-    """Explained variance percentage according to [asmuth_2012]_.
+def evp(sim, obs, missing="drop", weighted=False):
+    """Compute the (weighted) Explained Variance Percentage (EVP).
 
     Parameters
     ----------
@@ -166,13 +256,17 @@ def evp(sim, obs, missing="drop"):
     missing: str, optional
         string with the rule to deal with missing values. Only "drop" is
         supported now.
+    weighted: bool, optional
+        If weighted is True, the variances are computed using the time
+        step between observations as weights. Default is True.
 
     Notes
     -----
     Commonly used goodness-of-fit metric groundwater level models as
     computed in [asmuth_2012]_.
 
-    .. math:: evp = \\frac{\\sigma_h^2 - \\sigma_r^2}{\\sigma_h^2} * 100
+    .. math:: \\text{EVP} = \\frac{\\sigma_h^2 - \\sigma_r^2}{\\sigma_h^2}
+        * 100
 
     where :math:`\\sigma_h^2` is the variance of the observations and
     :math:`\\sigma_r^2` is the variance of the residuals. The returned value
@@ -195,12 +289,53 @@ def evp(sim, obs, missing="drop"):
     if obs.var() == 0.0:
         return 100.
     else:
-        ev = max(0.0, 100 * (1 - (res.var(ddof=0) / obs.var(ddof=0))))
-    return ev
+        evp = max(0.0, 100 * (1 - var(res, weighted=weighted) /
+                              var(obs, weighted=weighted)))
+        return evp
+
+
+def nse(sim, obs, missing="drop", weighted=False):
+    """Compute the (weighted) Nash-Sutcliffe Efficiency (NSE).
+
+    Parameters
+    ----------
+    sim: pandas.Series
+        Series with the simulated values.
+    obs: pandas.Series
+        Series with the observed values.
+    missing: str, optional
+        string with the rule to deal with missing values. Only "drop" is
+        supported now.
+    weighted: bool, optional
+        If weighted is True, the variances are computed using the time
+        step between observations as weights. Default is True. Note
+        implemented for this metrics yet!
+
+    Notes
+    -----
+    .. math:: \\text{NSE} = 1 - \\frac{\\sum(h_s-h_o)^2}{\\sum(h_o-\\mu_{h,o})}
+
+    References
+    ----------
+    .. [nash_1970] Nash, J. E., & Sutcliffe, J. V. (1970). River flow
+       forecasting through conceptual models part I-A discussion of
+       principles. Journal of hydrology, 10(3), 282-290.
+
+    """
+    if weighted:
+        raise NotImplementedError
+
+    res = (sim - obs)
+
+    if missing == "drop":
+        res = res.dropna()
+
+    ns = 1 - (res ** 2).sum() / ((obs - obs.mean()) ** 2).sum()
+    return ns
 
 
 def rsq(sim, obs, nparam=None, missing="drop"):
-    """R-squared, possibly adjusted for the number of free parameters.
+    """Compute R-squared, possibly adjusted for the number of free parameters.
 
     Parameters
     ----------
@@ -233,6 +368,7 @@ def rsq(sim, obs, nparam=None, missing="drop"):
 
     rss = (res ** 2.0).sum()
     tss = ((obs - obs.mean()) ** 2.0).sum()
+
     if nparam:
         return 1.0 - (obs.size - 1.0) / (obs.size - nparam) * rss / tss
     else:
@@ -240,7 +376,7 @@ def rsq(sim, obs, nparam=None, missing="drop"):
 
 
 def bic(sim, obs, nparam, missing="drop"):
-    """Bayesian Information Criterium (BIC) according to [akaike_1979]_.
+    """Compute the Bayesian Information Criterium (BIC).
 
     Parameters
     ----------
@@ -256,9 +392,10 @@ def bic(sim, obs, nparam, missing="drop"):
 
     Notes
     -----
-    The Bayesian Information Criterium (BIC) is calculated as follows:
+    The Bayesian Information Criterium (BIC) [akaike_1979]_ is computed as
+    follows:
 
-    .. math:: BIC = -2 log(L) + n_{param} * log(N)
+    .. math:: \\text{BIC} = -2 log(L) + n_{param} * log(N)
 
     where :math:`n_{param}` is the number of calibration parameters.
 
@@ -278,7 +415,7 @@ def bic(sim, obs, nparam, missing="drop"):
 
 
 def aic(sim, obs, nparam, missing="drop"):
-    """Akaike Information Criterium (AIC) according to [akaike_1974]_.
+    """Compute the Akaike Information Criterium (AIC).
 
     Parameters
     ----------
@@ -294,7 +431,10 @@ def aic(sim, obs, nparam, missing="drop"):
 
     Notes
     -----
-    .. math:: AIC = -2 log(L) + 2 nparam
+    The Akaike Information Criterium (AIC) [akaike_1974]_ is computed as
+    follows:
+
+    .. math:: \\text{AIC} = -2 log(L) + 2 nparam
 
     where :math:`n_{param}` is the number of calibration parameters and L is
     the likelihood function for the model.
@@ -311,3 +451,57 @@ def aic(sim, obs, nparam, missing="drop"):
         res = res.dropna()
 
     return -2.0 * log((res ** 2.0).sum()) + 2.0 * nparam
+
+
+# Forecast Error Metrics
+
+def kge_2012(sim, obs, missing="drop", weighted=False):
+    """Compute the (weighted) Kling-Gupta Efficiency (KGE).
+
+    Parameters
+    ----------
+    sim: pandas.Series
+        Series with the simulated values.
+    obs: pandas.Series
+        Series with the observed values.
+    missing: str, optional
+        string with the rule to deal with missing values. Only "drop" is
+        supported now.
+    weighted: bool, optional
+        Weight the values by the normalized time step to account for
+        irregular time series. Default is True.
+
+    Notes
+    -----
+    The (weighted) Kling-Gupta Efficiency [kling_2012]_ is computed as follows:
+
+    .. math:: \\text{KGE} = 1 - \\sqrt{(r-1)^2 + (\\beta-1)^2 - (\\gamma-1)^2}
+
+    where :math:`\\beta = \\bar{x} / \\bar{y}` and :math:`\\gamma =
+    \\frac{\\bar{\\sigma}_x / \\bar{x}}{\\bar{\\sigma}_y / \\bar{y}}`. If
+    weighted equals True, the weighted mean, variance and pearson
+    correlation are used.
+
+    References
+    ----------
+    .. [kling_2012] Kling, H., Fuchs, M., and Paulin, M. (2012). Runoff
+      conditions in the upper Danube basin under an ensemble of climate
+      change scenarios. Journal of Hydrology, 424-425:264 - 277.
+
+    """
+    if missing == "drop":
+        obs = obs.dropna()
+
+    sim = sim.reindex(obs.index).dropna()
+
+    r = pearsonr(sim, obs, weighted=weighted)
+
+    mu_sim = mean(sim, weighted=weighted)
+    mu_obs = mean(obs, weighted=weighted)
+
+    beta = mu_sim / mu_obs
+    gamma = (std(sim, weighted=weighted) / mu_sim) / \
+            (std(obs, weighted=weighted) / mu_obs)
+
+    kge = 1 - sqrt((r - 1) ** 2 + (beta - 1) ** 2 + (gamma - 1) ** 2)
+    return kge

@@ -6,20 +6,18 @@ Statistical tests
 
 .. automodule:: pastas.stats.tests
 
-
 Cross- and Autocorrelations
 ---------------------------
 
 .. automodule:: pastas.stats.core
 
-
-Model fit metrics
------------------
+Goodness-of-fit metrics
+-----------------------
 
 .. automodule:: pastas.stats.metrics
 .. automodule:: pastas.modelstats
 
-Dutch stats
------------
+Dutch statsistics
+-----------------
 
 .. automodule:: pastas.stats.dutch
