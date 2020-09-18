@@ -31,13 +31,16 @@ or
 
 """
 
-from numpy import sqrt, log, ones
+from logging import getLogger
+
+from numpy import sqrt, log, ones, nan
 from pandas import Timedelta
 
 from .core import mean, var, std
 
 __all__ = ["rmse", "sse", "mae", "nse", "evp", "rsq", "bic", "aic",
            "pearsonr", "kge_2012"]
+logger = getLogger(__name__)
 
 
 # Absolute Error Metrics
@@ -76,6 +79,11 @@ def mae(sim=None, obs=None, res=None, missing="drop", weighted=False):
 
     if missing == "drop":
         res = res.dropna()
+
+    # Return nan if the time indices of the sim and obs don't match
+    if (res.index.size is 0) or (obs.index.size is 0):
+        logger.warning("Time indices of the sim and obs don't match.")
+        return nan
 
     if weighted:
         w = (obs.index[1:] - obs.index[:-1]).to_numpy() / Timedelta("1D")
@@ -120,6 +128,11 @@ def rmse(sim=None, obs=None, res=None, missing="drop", weighted=False):
     if missing == "drop":
         res = res.dropna()
 
+    # Return nan if the time indices of the sim and obs don't match
+    if (res.index.size is 0) or (obs.index.size is 0):
+        logger.warning("Time indices of the sim and obs don't match.")
+        return nan
+
     if weighted:
         w = (res.index[1:] - res.index[:-1]).to_numpy() / Timedelta("1D")
     else:
@@ -160,6 +173,11 @@ def sse(sim=None, obs=None, res=None, missing="drop"):
     if missing == "drop":
         res = res.dropna()
 
+    # Return nan if the time indices of the sim and obs don't match
+    if res.index.size is 0:
+        logger.warning("Time indices of the sim and obs don't match.")
+        return nan
+
     return (res ** 2).sum()
 
 
@@ -188,6 +206,11 @@ def avg_dev(sim, obs, missing="drop"):
 
     if missing == "drop":
         res = res.dropna()
+
+    # Return nan if the time indices of the sim and obs don't match
+    if res.index.size is 0:
+        logger.warning("Time indices of the sim and obs don't match.")
+        return nan
 
     return res.mean()
 
@@ -234,6 +257,11 @@ def pearsonr(sim, obs, missing="drop", weighted=False):
     w /= w.sum()
 
     sim = sim.reindex(obs.index).dropna()
+
+    # Return nan if the time indices of the sim and obs don't match
+    if sim.index.size is 0:
+        logger.warning("Time indices of the sim and obs don't match.")
+        return nan
 
     sim = sim[1:] - mean(sim, weighted=weighted)
     obs = obs[1:] - mean(obs, weighted=weighted)
@@ -286,6 +314,11 @@ def evp(sim, obs, missing="drop", weighted=False):
     if missing == "drop":
         res = res.dropna()
 
+    # Return nan if the time indices of the sim and obs don't match
+    if (res.index.size is 0) or (obs.index.size is 0):
+        logger.warning("Time indices of the sim and obs don't match.")
+        return nan
+
     if obs.var() == 0.0:
         return 100.
     else:
@@ -330,11 +363,16 @@ def nse(sim, obs, missing="drop", weighted=False):
     if missing == "drop":
         res = res.dropna()
 
+    # Return nan if the time indices of the sim and obs don't match
+    if (res.index.size is 0) or (obs.index.size is 0):
+        logger.warning("Time indices of the sim and obs don't match.")
+        return nan
+
     ns = 1 - (res ** 2).sum() / ((obs - obs.mean()) ** 2).sum()
     return ns
 
 
-def rsq(sim, obs, nparam=None, missing="drop"):
+def rsq(sim, obs, missing="drop", nparam=None):
     """Compute R-squared, possibly adjusted for the number of free parameters.
 
     Parameters
@@ -365,6 +403,11 @@ def rsq(sim, obs, nparam=None, missing="drop"):
 
     if missing == "drop":
         res = res.dropna()
+
+    # Return nan if the time indices of the sim and obs don't match
+    if (res.index.size is 0) or (obs.index.size is 0):
+        logger.warning("Time indices of the sim and obs don't match.")
+        return nan
 
     rss = (res ** 2.0).sum()
     tss = ((obs - obs.mean()) ** 2.0).sum()
@@ -411,6 +454,11 @@ def bic(sim, obs, nparam, missing="drop"):
     if missing == "drop":
         res = res.dropna()
 
+    # Return nan if the time indices of the sim and obs don't match
+    if (res.index.size is 0) or (obs.index.size is 0):
+        logger.warning("Time indices of the sim and obs don't match.")
+        return nan
+
     return -2.0 * log((res ** 2.0).sum()) + nparam * log(res.size)
 
 
@@ -449,6 +497,11 @@ def aic(sim, obs, nparam, missing="drop"):
 
     if missing == "drop":
         res = res.dropna()
+
+    # Return nan if the time indices of the sim and obs don't match
+    if (res.index.size is 0) or (obs.index.size is 0):
+        logger.warning("Time indices of the sim and obs don't match.")
+        return nan
 
     return -2.0 * log((res ** 2.0).sum()) + 2.0 * nparam
 

@@ -41,7 +41,7 @@ class Statistics:
            'rmse': 'Root mean squared error',
            'rmsn': 'Root mean squared noise',
            'sse': 'Sum of squares of the error',
-           'avg_dev': 'Average Deviation',
+           'mae': 'Mean Absolute Error',
            'rsq': 'Pearson R^2',
            'rsq_adj': 'Adjusted Pearson R^2',
            'bic': 'Bayesian Information Criterion',
@@ -135,8 +135,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return metrics.sse(sim=sim, obs=obs)
 
     @model_tmin_tmax
-    def avg_dev(self, tmin=None, tmax=None):
-        """Average deviation of the residuals.
+    def mae(self, tmin=None, tmax=None):
+        """Mean Absolute Error (MAE) of the residuals.
 
         Parameters
         ----------
@@ -145,12 +145,12 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         See Also
         --------
-        pastas.stats.avg_dev
+        pastas.stats.mae
 
         """
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return metrics.avg_dev(sim=sim, obs=obs)
+        return metrics.mae(sim=sim, obs=obs)
 
     @model_tmin_tmax
     def nse(self, tmin=None, tmax=None):
@@ -291,7 +291,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
             'basic': {
                 'evp': 'Explained variance percentage',
                 'rmse': 'Root mean squared error',
-                'avg_dev': 'Average Deviation',
+                'mae': 'Mean Absolute Error',
                 'rsq': 'Pearson R^2',
                 'bic': 'Bayesian Information Criterion',
                 'aic': 'Akaike Information Criterion'},
