@@ -36,6 +36,7 @@ from logging import getLogger
 from numpy import sqrt, log, ones, nan
 from pandas import Timedelta
 
+from pastas.decorators import PastasDeprecationWarning
 from .core import mean, var, std
 
 __all__ = ["rmse", "sse", "mae", "nse", "evp", "rsq", "bic", "aic",
@@ -81,7 +82,7 @@ def mae(sim=None, obs=None, res=None, missing="drop", weighted=False):
         res = res.dropna()
 
     # Return nan if the time indices of the sim and obs don't match
-    if (res.index.size is 0) or (obs.index.size is 0):
+    if res.index.size is 0:
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
@@ -129,7 +130,7 @@ def rmse(sim=None, obs=None, res=None, missing="drop", weighted=False):
         res = res.dropna()
 
     # Return nan if the time indices of the sim and obs don't match
-    if (res.index.size is 0) or (obs.index.size is 0):
+    if res.index.size is 0:
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
@@ -181,7 +182,7 @@ def sse(sim=None, obs=None, res=None, missing="drop"):
     return (res ** 2).sum()
 
 
-@DeprecationWarning
+@PastasDeprecationWarning
 def avg_dev(sim, obs, missing="drop"):
     """Average deviation of the residuals.
 
@@ -315,7 +316,7 @@ def evp(sim, obs, missing="drop", weighted=False):
         res = res.dropna()
 
     # Return nan if the time indices of the sim and obs don't match
-    if (res.index.size is 0) or (obs.index.size is 0):
+    if res.index.size is 0:
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
@@ -364,7 +365,7 @@ def nse(sim, obs, missing="drop", weighted=False):
         res = res.dropna()
 
     # Return nan if the time indices of the sim and obs don't match
-    if (res.index.size is 0) or (obs.index.size is 0):
+    if res.index.size is 0:
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
@@ -405,7 +406,7 @@ def rsq(sim, obs, missing="drop", nparam=None):
         res = res.dropna()
 
     # Return nan if the time indices of the sim and obs don't match
-    if (res.index.size is 0) or (obs.index.size is 0):
+    if res.index.size is 0:
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
@@ -455,7 +456,7 @@ def bic(sim, obs, nparam, missing="drop"):
         res = res.dropna()
 
     # Return nan if the time indices of the sim and obs don't match
-    if (res.index.size is 0) or (obs.index.size is 0):
+    if res.index.size is 0:
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
@@ -499,7 +500,7 @@ def aic(sim, obs, nparam, missing="drop"):
         res = res.dropna()
 
     # Return nan if the time indices of the sim and obs don't match
-    if (res.index.size is 0) or (obs.index.size is 0):
+    if res.index.size is 0:
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
@@ -546,6 +547,11 @@ def kge_2012(sim, obs, missing="drop", weighted=False):
         obs = obs.dropna()
 
     sim = sim.reindex(obs.index).dropna()
+
+    # Return nan if the time indices of the sim and obs don't match
+    if sim.index.size is 0:
+        logger.warning("Time indices of the sim and obs don't match.")
+        return nan
 
     r = pearsonr(sim, obs, weighted=weighted)
 

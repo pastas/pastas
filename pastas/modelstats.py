@@ -8,45 +8,34 @@ simulation and the observations.
    :toctree: ./generated
 
    summary
-   many
-   all
 
 Examples
 ========
 These methods may be used as follows.
 
 
-    >>> ml.stats.summary()
-                                         Value
+    >>> ml.stats.summary(stats=["rmse", "mae", "nse"])
+                  Value
     Statistic
-    Pearson R^2                       0.87
-    Root mean squared error           0.43
-    Bayesian Information Criterion    113.
-    Average Deviation                 0.33
-    Explained variance percentage     72.7
-    Akaike InformationCriterion       25.3
+    rmse       0.114364
+    mae        0.089956
+    nse        0.929136
 
 """
 
 from numpy import nan
 from pandas import DataFrame
 
-from .decorators import model_tmin_tmax
+from .decorators import model_tmin_tmax, PastasDeprecationWarning
 from .stats import metrics, diagnostics
 
 
+# from .stats.metrics import __all__ as ops
+
 class Statistics:
     # Save all statistics that can be calculated.
-    ops = {'evp': 'Explained variance percentage',
-           'rmse': 'Root mean squared error',
-           'rmsn': 'Root mean squared noise',
-           'sse': 'Sum of squares of the error',
-           'mae': 'Mean Absolute Error',
-           'rsq': 'Pearson R^2',
-           'rsq_adj': 'Adjusted Pearson R^2',
-           'bic': 'Bayesian Information Criterion',
-           'aic': 'Akaike Information Criterion',
-           'nse': 'Nash-Sutcliffe Efficiency'}
+    ops = ["rmse", "rmsn", "sse", "mae", "nse", "evp", "rsq", "rsq_adj",
+           "bic", "aic", ]
 
     def __init__(self, ml):
         """This class provides statistics to to pastas Model class.
@@ -265,58 +254,46 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return metrics.aic(sim=sim, obs=obs, nparam=nparam)
 
     @model_tmin_tmax
-    def summary(self, tmin=None, tmax=None, stats='basic'):
-        """Prints a summary table of the model statistics.
+    def summary(self, tmin=None, tmax=None, stats=None):
+        """Returns a Pandas DataFrame with goodness-of-fit metrics.
 
         Parameters
         ----------
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
-        stats : str or dict
-            dictionary of the desired statistics or a string with one of the
-            predefined sets. Supported options are: 'basic', 'all', and 'dutch'
+        stats: list, optional
+            list of statistics that need to be calculated. If nothing is
+            provided, all statistics are returned.
 
         Returns
         -------
         stats : Pandas.DataFrame
             single-column DataFrame with calculated statistics
 
-        Notes
-        -----
-        The set of statistics that are printed are stats by a dictionary of
-        the desired statistics.
+        Examples
+        --------
+
+        >>> ml.stats.summary()
+
+        or
+
+        >>> ml.stats.summary(stats=["mae", "rmse"])
 
         """
-        output = {
-            'basic': {
-                'evp': 'Explained variance percentage',
-                'rmse': 'Root mean squared error',
-                'mae': 'Mean Absolute Error',
-                'rsq': 'Pearson R^2',
-                'bic': 'Bayesian Information Criterion',
-                'aic': 'Akaike Information Criterion'},
-        }
-
-        # get labels and method names for stats output
-        if stats == 'all':
-            # sort by key, label, method name
-            selected_output = sorted([(k, l, f) for k, d in output.items()
-                                      for f, l in d.items()])
+        if stats is None:
+            stats_to_compute = self.ops
         else:
-            # sort by name, method name
-            selected_output = sorted([(0, l, f) for f, l in
-                                      output[stats].items()])
+            stats_to_compute = stats
 
-        # compute statistics
-        labels_and_values = [(l, getattr(self, f)(tmin=tmin, tmax=tmax))
-                             for _, l, f in selected_output]
-        labels, values = zip(*labels_and_values)
+        stats = DataFrame(columns=['Value'])
 
-        stats = DataFrame(index=list(labels), data=list(values),
-                          columns=['Value'])
+        for k in stats_to_compute:
+            stats.loc[k] = (getattr(self, k)(tmin=tmin, tmax=tmax))
+
         stats.index.name = 'Statistic'
         return stats
 
+    @PastasDeprecationWarning
     @model_tmin_tmax
     def many(self, tmin=None, tmax=None, stats=None):
         """This method returns the values for a provided list of statistics.
@@ -342,6 +319,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         return data
 
+    @PastasDeprecationWarning
     @model_tmin_tmax
     def all(self, tmin=None, tmax=None):
         """Returns a dictionary with all the statistics.
@@ -358,7 +336,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         """
         stats = DataFrame(columns=['Value'])
-        for k in self.ops.keys():
+        for k in self.ops:
             stats.loc[k] = (getattr(self, k)(tmin=tmin, tmax=tmax))
 
         return stats
