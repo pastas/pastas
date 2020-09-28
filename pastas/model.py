@@ -1678,6 +1678,11 @@ class Model:
 
         >>> print(ml.fit_report)
 
+        Notes
+        -----
+        The reported values for the fit use the residuals time series where
+        possible. If interpolation is used,
+
         """
         model = {
             "nfev": self.fit.nfev,
@@ -1699,7 +1704,7 @@ class Model:
             "BIC": "{:.2f}".format(self.stats.bic() if
                                    self.settings["noise"] else np.nan),
             "Obj": "{:.2f}".format(self.fit.obj_func),
-            "___": "", "___ ": "",  # Make columns equal
+            "___": "", "Interpolated": str(self.interpolate_simulation),
         }
 
         parameters = self.parameters.loc[:, ["optimal", "stderr",
@@ -1713,26 +1718,24 @@ class Model:
 
         # Create the first header with model information and stats
         w = max(width - 44, 0)
-        header = "Model Results {name:<16}{string}Fit Statistics\n" \
+        header = "Fit report {name:<16}{string}Fit Statistics\n" \
                  "{line}\n".format(
             name=self.name[:14],
             string=string.format("", fill=' ', align='>', width=w),
-            line=string.format("", fill='=', align='>', width=width)
-        )
+            line=string.format("", fill='=', align='>', width=width))
 
         basic = ""
         for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
-            w = max(width - 38, 0)
+            w = max(width - 45, 0)
             val4 = string.format(val4, fill=' ', align='>', width=w)
-            basic = basic + "{:<8} {:<22} {:<5} {}\n".format(val1, val2,
-                                                             val3, val4)
+            basic = basic + "{:<8} {:<22} {:<12} {:}\n".format(val1, val2,
+                                                               val3, val4)
 
         # Create the parameters block
         parameters = "\nParameters ({n_param} were optimized)\n{line}\n" \
                      "{parameters}".format(
             n_param=parameters.vary.sum(),
-            line=string.format(
-                "", fill='=', align='>', width=width),
+            line=string.format("", fill='=', align='>', width=width),
             parameters=parameters)
 
         if output == "full":

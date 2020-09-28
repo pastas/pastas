@@ -30,12 +30,9 @@ from .decorators import model_tmin_tmax, PastasDeprecationWarning
 from .stats import metrics, diagnostics
 
 
-# from .stats.metrics import __all__ as ops
-
 class Statistics:
     # Save all statistics that can be calculated.
-    ops = ["rmse", "rmsn", "sse", "mae", "nse", "evp", "rsq", "rsq_adj",
-           "bic", "aic", ]
+    ops = ["rmse", "rmsn", "sse", "mae", "nse", "evp", "rsq", "bic", "aic", ]
 
     def __init__(self, ml):
         """This class provides statistics to to pastas Model class.
@@ -63,7 +60,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return msg
 
     @model_tmin_tmax
-    def rmse(self, tmin=None, tmax=None):
+    def rmse(self, tmin=None, tmax=None, weighted=False):
         """Root mean squared error of the residuals.
 
         Parameters
@@ -76,12 +73,11 @@ included in Pastas. To obtain a list of all statistics that are included type:
         pastas.stats.rmse
 
         """
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
-        obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return metrics.rmse(sim=sim, obs=obs)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        return metrics.rmse(res=res, weighted=weighted)
 
     @model_tmin_tmax
-    def rmsn(self, tmin=None, tmax=None):
+    def rmsn(self, tmin=None, tmax=None, weighted=False):
         """Root mean squared error of the noise.
 
         Parameters
@@ -103,7 +99,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
             return nan
         else:
             res = self.ml.noise(tmin=tmin, tmax=tmax)
-            return metrics.rmse(res=res)
+            return metrics.rmse(res=res, weighted=weighted)
 
     @model_tmin_tmax
     def sse(self, tmin=None, tmax=None):
@@ -119,12 +115,11 @@ included in Pastas. To obtain a list of all statistics that are included type:
         pastas.stats.sse
 
         """
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
-        obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return metrics.sse(sim=sim, obs=obs)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        return metrics.sse(res=res)
 
     @model_tmin_tmax
-    def mae(self, tmin=None, tmax=None):
+    def mae(self, tmin=None, tmax=None, weighted=False):
         """Mean Absolute Error (MAE) of the residuals.
 
         Parameters
@@ -137,12 +132,11 @@ included in Pastas. To obtain a list of all statistics that are included type:
         pastas.stats.mae
 
         """
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
-        obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return metrics.mae(sim=sim, obs=obs)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        return metrics.mae(res=res, weighted=weighted)
 
     @model_tmin_tmax
-    def nse(self, tmin=None, tmax=None):
+    def nse(self, tmin=None, tmax=None, weighted=False):
         """Nash-Sutcliffe coefficient for model fit .
 
         Parameters
@@ -155,12 +149,12 @@ included in Pastas. To obtain a list of all statistics that are included type:
         pastas.stats.nse
 
         """
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return metrics.nse(sim=sim, obs=obs)
+        return metrics.nse(obs=obs, res=res, weighted=weighted)
 
     @model_tmin_tmax
-    def evp(self, tmin=None, tmax=None):
+    def evp(self, tmin=None, tmax=None, weighted=False):
         """Explained variance percentage.
 
         Parameters
@@ -173,9 +167,9 @@ included in Pastas. To obtain a list of all statistics that are included type:
         pastas.stats.evp
 
         """
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return metrics.evp(sim=sim, obs=obs)
+        return metrics.evp(obs=obs, res=res, weighted=weighted)
 
     @model_tmin_tmax
     def rsq(self, tmin=None, tmax=None):
@@ -191,28 +185,9 @@ included in Pastas. To obtain a list of all statistics that are included type:
         pastas.stats.rsq
 
         """
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return metrics.rsq(sim=sim, obs=obs)
-
-    @model_tmin_tmax
-    def rsq_adj(self, tmin=None, tmax=None):
-        """R-squared Adjusted for the number of free parameters.
-
-        Parameters
-        ----------
-        tmin: str or pandas.Timestamp, optional
-        tmax: str or pandas.Timestamp, optional
-
-        See Also
-        --------
-        pastas.stats.rsq
-
-        """
-        nparam = self.ml.parameters.index.size
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
-        obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return metrics.rsq(sim=sim, obs=obs, nparam=nparam)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        return metrics.rsq(obs=obs, res=res)
 
     @model_tmin_tmax
     def bic(self, tmin=None, tmax=None):
@@ -230,9 +205,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         """
         nparam = self.ml.parameters.index.size
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
-        obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return metrics.bic(sim=sim, obs=obs, nparam=nparam)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        return metrics.bic(res=res, nparam=nparam)
 
     @model_tmin_tmax
     def aic(self, tmin=None, tmax=None):
@@ -249,9 +223,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         """
         nparam = self.ml.parameters.index.size
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
-        obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return metrics.aic(sim=sim, obs=obs, nparam=nparam)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        return metrics.aic(res=res, nparam=nparam)
 
     @model_tmin_tmax
     def summary(self, tmin=None, tmax=None, stats=None):

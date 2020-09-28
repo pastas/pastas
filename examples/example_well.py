@@ -28,7 +28,7 @@ rm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential,
 ml.add_stressmodel(rm)
 
 well = pd.read_csv("notebooks/data_notebook_7/well_wellex.csv",
-                   index_col="Date", parse_dates=True)
+                   index_col="Date", parse_dates=True) / 1e6
 sm = ps.StressModel(well, rfunc=ps.Exponential, name="well", up=False)
 ml.add_stressmodel(sm)
 

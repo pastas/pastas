@@ -46,7 +46,7 @@ logger = getLogger(__name__)
 
 # Absolute Error Metrics
 
-def mae(sim=None, obs=None, res=None, missing="drop", weighted=False):
+def mae(obs=None, sim=None, res=None, missing="drop", weighted=False):
     """Compute the (weighted) Mean Absolute Error (MAE).
 
     Parameters
@@ -87,15 +87,15 @@ def mae(sim=None, obs=None, res=None, missing="drop", weighted=False):
         return nan
 
     if weighted:
-        w = (obs.index[1:] - obs.index[:-1]).to_numpy() / Timedelta("1D")
+        w = (res.index[1:] - res.index[:-1]).to_numpy() / Timedelta("1D")
     else:
-        w = ones(obs.index.size - 1)
+        w = ones(res.index.size - 1)
     w /= w.sum()
 
     return (w * res[1:].abs()).sum()
 
 
-def rmse(sim=None, obs=None, res=None, missing="drop", weighted=False):
+def rmse(obs=None, sim=None, res=None, missing="drop", weighted=False):
     """Compute the (weighted) Root Mean Squared Error (RMSE).
 
     Parameters
@@ -143,7 +143,7 @@ def rmse(sim=None, obs=None, res=None, missing="drop", weighted=False):
     return sqrt((res[1:] ** 2 * w).sum())
 
 
-def sse(sim=None, obs=None, res=None, missing="drop"):
+def sse(obs=None, sim=None, res=None, missing="drop"):
     """Compute the Sum of the Squared Errors (SSE).
 
     Parameters
@@ -273,15 +273,18 @@ def pearsonr(sim, obs, missing="drop", weighted=False):
     return r
 
 
-def evp(sim, obs, missing="drop", weighted=False):
+def evp(obs, sim=None, res=None, missing="drop", weighted=False):
     """Compute the (weighted) Explained Variance Percentage (EVP).
 
     Parameters
     ----------
-    sim: pandas.Series
-        Series with the simulated values.
     obs: pandas.Series
         Series with the observed values.
+    sim: pandas.Series
+        Series with the simulated values.
+    res: pandas.Series
+        Series with the residual values. If time series for the residuals
+        are provided, the sim and obs arguments are ignored.
     missing: str, optional
         string with the rule to deal with missing values. Only "drop" is
         supported now.
@@ -310,7 +313,8 @@ def evp(sim, obs, missing="drop", weighted=False):
        Software 38: 178–190.
 
     """
-    res = (sim - obs)
+    if res is None:
+        res = sim - obs
 
     if missing == "drop":
         res = res.dropna()
@@ -328,15 +332,18 @@ def evp(sim, obs, missing="drop", weighted=False):
         return evp
 
 
-def nse(sim, obs, missing="drop", weighted=False):
+def nse(obs, sim=None, res=None, missing="drop", weighted=False):
     """Compute the (weighted) Nash-Sutcliffe Efficiency (NSE).
 
     Parameters
     ----------
-    sim: pandas.Series
-        Series with the simulated values.
     obs: pandas.Series
         Series with the observed values.
+    sim: pandas.Series
+        Series with the simulated values.
+    res: pandas.Series
+        Series with the residual values. If time series for the residuals
+        are provided, the sim and obs arguments are ignored.
     missing: str, optional
         string with the rule to deal with missing values. Only "drop" is
         supported now.
@@ -359,7 +366,8 @@ def nse(sim, obs, missing="drop", weighted=False):
     if weighted:
         raise NotImplementedError
 
-    res = (sim - obs)
+    if res is None:
+        res = sim - obs
 
     if missing == "drop":
         res = res.dropna()
@@ -373,15 +381,18 @@ def nse(sim, obs, missing="drop", weighted=False):
     return ns
 
 
-def rsq(sim, obs, missing="drop", nparam=None):
+def rsq(obs, sim=None, res=None, missing="drop", nparam=None):
     """Compute R-squared, possibly adjusted for the number of free parameters.
 
     Parameters
     ----------
-    sim: pandas.Series
-        Series with the simulated values.
     obs: pandas.Series
         Series with the observed values.
+    sim: pandas.Series
+        Series with the simulated values.
+    res: pandas.Series
+        Series with the residual values. If time series for the residuals
+        are provided, the sim and obs arguments are ignored.
     nparam: int, optional
         number of calibrated parameters.
     missing: str, optional
@@ -400,7 +411,8 @@ def rsq(sim, obs, missing="drop", nparam=None):
     adjusted for the number of calibration parameters.
 
     """
-    res = (sim - obs)
+    if res is None:
+        res = sim - obs
 
     if missing == "drop":
         res = res.dropna()
@@ -419,15 +431,18 @@ def rsq(sim, obs, missing="drop", nparam=None):
         return 1.0 - rss / tss
 
 
-def bic(sim, obs, nparam, missing="drop"):
+def bic(obs=None, sim=None, res=None, missing="drop", nparam=1):
     """Compute the Bayesian Information Criterium (BIC).
 
     Parameters
     ----------
-    sim: pandas.Series
-        Series with the simulated values.
     obs: pandas.Series
         Series with the observed values.
+    sim: pandas.Series
+        Series with the simulated values.
+    res: pandas.Series
+        Series with the residual values. If time series for the residuals
+        are provided, the sim and obs arguments are ignored.
     nparam: int, optional
         number of calibrated parameters.
     missing: str, optional
@@ -450,7 +465,8 @@ def bic(sim, obs, nparam, missing="drop"):
        237-242.
 
     """
-    res = (sim - obs)
+    if res is None:
+        res = sim - obs
 
     if missing == "drop":
         res = res.dropna()
@@ -463,15 +479,18 @@ def bic(sim, obs, nparam, missing="drop"):
     return -2.0 * log((res ** 2.0).sum()) + nparam * log(res.size)
 
 
-def aic(sim, obs, nparam, missing="drop"):
+def aic(obs=None, sim=None, res=None, missing="drop", nparam=1):
     """Compute the Akaike Information Criterium (AIC).
 
     Parameters
     ----------
-    sim: pandas.Series
-        Series with the simulated values.
     obs: pandas.Series
         Series with the observed values.
+    sim: pandas.Series
+        Series with the simulated values.
+    res: pandas.Series
+        Series with the residual values. If time series for the residuals
+        are provided, the sim and obs arguments are ignored.
     nparam: int, optional
         number of calibrated parameters.
     missing: str, optional
@@ -494,7 +513,8 @@ def aic(sim, obs, nparam, missing="drop"):
        identification. IEEE transactions on automatic control, 19(6), 716-723.
 
     """
-    res = (sim - obs)
+    if res is None:
+        res = sim - obs
 
     if missing == "drop":
         res = res.dropna()
@@ -509,7 +529,7 @@ def aic(sim, obs, nparam, missing="drop"):
 
 # Forecast Error Metrics
 
-def kge_2012(sim, obs, missing="drop", weighted=False):
+def kge_2012(obs, sim, missing="drop", weighted=False):
     """Compute the (weighted) Kling-Gupta Efficiency (KGE).
 
     Parameters
