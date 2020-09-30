@@ -114,17 +114,12 @@ class NoiseModelBase:
 class NoiseModel(NoiseModelBase):
     """
     Noise model with exponential decay of the residuals and weighting.
-    Differences compared to NoiseModelOld:
-
-    1. First value is residual
-    2. First weight is 1 / sig_residuals (i.e., delt = infty)
-    3. Normalization of weights as in Von Asmuth and Bierkens (2005), optional
 
     Parameters
     ----------
-    norm: boolean
+    norm: boolean, optional
         Boolean to indicate whether weights are normalized according to
-        the Von Asmuth and Bierkens (2005) paper.
+        the Von Asmuth and Bierkens (2005) paper. Default is True.
 
     Notes
     -----
@@ -140,7 +135,16 @@ class NoiseModel(NoiseModelBase):
 
         w = 1 / \\sqrt{(1 - \\exp(-2 \\Delta t / \\alpha))}
 
-    The units of the alpha parameter is always in days.
+    The units of the alpha parameter is always in days. The first value of
+    the noise is the residual ($v(t=0=r(t=0)$). First weight is
+    1 / sig_residuals (i.e., delt = infty). Normalization of weights as in
+    Von Asmuth and Bierkens (2005), optional.
+
+    Differences compared to NoiseModelOld:
+
+    1. First value is residual
+    2. First weight is 1 / sig_residuals (i.e., delt = infty)
+    3. Normalization of weights as in Von Asmuth and Bierkens (2005), optional
 
     References
     ----------
@@ -203,9 +207,7 @@ class NoiseModel(NoiseModelBase):
         -----
         Weights are
 
-        .. math::
-
-        w = 1 / sqrt((1 - exp(-2 \\Delta t / \\alpha)))
+        .. math:: w = 1 / sqrt((1 - exp(-2 \\Delta t / \\alpha)))
 
         which are then normalized so that sum(w) = len(res)
 
@@ -310,23 +312,31 @@ class NoiseModelOld(NoiseModelBase):
 
 class ArmaModel(NoiseModelBase):
     """
-    ARMA(1,1) Noise model to simulate the noise.
+    ARMA(1,1) Noise model to simulate the noise as defined in
+    [collenteur_2020]_.
 
     Notes
     -----
     Calculates the noise according to:
 
     .. math::
-
         \\upsilon_t = r_t - r_{t-1} e^{-\\Delta t/\\alpha} - \\upsilon_{t-1}
         e^{-\\Delta t/\\beta}
 
-    The unit of the alpha parameter is always in days.
+    The units of the alpha and beta parameters are always in days.
 
     Warnings
     --------
     This model has only been tested on regular time steps and should not be
     used for irregular time steps yet.
+
+    References
+    ----------
+    .. [collenteur_2020] Collenteur, R., Bakker, M., Klammler, G., and Birk,
+       S. (in review, 2020.) Estimating groundwater recharge from
+       groundwater levels using non-linear transfer function noise models
+       and comparison to lysimeter data, Hydrol. Earth Syst. Sci. Discuss.
+       https://doi.org/10.5194/hess-2020-392
 
     """
     _name = "ArmaModel"
@@ -338,7 +348,8 @@ class ArmaModel(NoiseModelBase):
 
     def set_init_parameters(self, oseries=None):
         self.parameters.loc["noise_alpha"] = (10, 1e-9, np.inf, True, "noise")
-        self.parameters.loc["noise_beta"] = (10, 1e-9, np.inf, True, "noise")
+        self.parameters.loc["noise_beta"] = (10, -np.inf, np.inf, True,
+                                             "noise")
 
     def simulate(self, res, parameters):
         alpha = parameters[0]
@@ -355,8 +366,9 @@ class ArmaModel(NoiseModelBase):
         # Create an array to store the noise
         a = np.zeros_like(res)
         a[0] = res[0]
+        pm = beta / np.abs(beta)
         # We have to loop through each value
         for i in range(1, res.size):
             a[i] = res[i] - res[i - 1] * np.exp(-odelt[i - 1] / alpha) - \
-                   a[i - 1] * np.exp(-odelt[i - 1] / beta)
+                   a[i - 1] * pm * np.exp(-odelt[i - 1] / np.abs(beta))
         return a
