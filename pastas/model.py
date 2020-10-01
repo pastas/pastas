@@ -699,8 +699,8 @@ class Model:
         if warmup is not None:
             self.settings["warmup"] = Timedelta(warmup, "D")
 
-        # Set time offset from the frequency (does not work as expected yet)
-        # self._set_time_offset()
+        # Set time offset from the frequency and the series in the stressmodels
+        self._set_time_offset()
 
         # Set tmin and tmax
         self.settings["tmin"] = self.get_tmin(tmin)
@@ -1035,14 +1035,15 @@ class Model:
             for st in stressmodel.stress:
                 if st.freq_original:
                     # calculate the offset from the default frequency
-                    time_offset = _get_time_offset(
-                        st.series_original.index.min(),
-                        self.settings["freq"])
-                    time_offsets.add(time_offset)
+                    t = st.series_original.index
+                    freq = self.settings["freq"]
+                    base = t.min().ceil(freq)
+                    mask = t > base
+                    if np.any(mask):
+                        time_offsets.add(_get_time_offset(t[mask][0], freq))
         if len(time_offsets) > 1:
-            msg = (
-                "The time-differences with the default frequency is not the "
-                "same for all stresses.")
+            msg = ("The time-offset with the frequency is not the same "
+                   "for all stresses.")
             self.logger.error(msg)
             raise (Exception(msg))
         if len(time_offsets) == 1:
@@ -1157,11 +1158,6 @@ class Model:
         else:
             tmin = ts_tmin
 
-        # adjust tmin and tmax so that the time-offset is equal to the stressmodels.
-        if freq is None:
-            freq = self.settings["freq"]
-        tmin = tmin.floor(freq) + self.settings["time_offset"]
-
         return tmin
 
     def get_tmax(self, tmax=None, freq=None, use_oseries=True,
@@ -1228,11 +1224,6 @@ class Model:
             tmax = Timestamp(tmax)
         else:
             tmax = ts_tmax
-
-        # adjust tmax so that the time-offset is equal to the stressmodels.
-        if freq is None:
-            freq = self.settings["freq"]
-        tmax = tmax.floor(freq) + self.settings["time_offset"]
 
         return tmax
 

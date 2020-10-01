@@ -297,6 +297,11 @@ class TimeSeries:
 
         """
         if self._update_settings(**kwargs) or force_update:
+            tmin = self.settings['tmin']
+            freq = self.settings['freq']
+            if tmin is not None and freq is not None:
+                self.settings['time_offset'] = tmin - tmin.floor(freq)
+                
             # Get the validated series to start with
             series = self._series_validated.copy(deep=True)
 
@@ -345,6 +350,7 @@ class TimeSeries:
         4. Indices are in Timestamps (standard throughout Pastas), making
            the index a pandas DateTimeIndex.
         5. Duplicate indices are removed (by averaging).
+        6. NaN-values are removed
 
         """
 
@@ -382,7 +388,7 @@ class TimeSeries:
 
         # 5. Handle duplicate indices
         if not series.index.is_unique:
-            msg = "duplicate time-indexes were found in the Time  Series {}." \
+            msg = "duplicate time-indexes were found in the Time Series {}." \
                   "Values were averaged.".format(self.name)
             logger.warning(msg)
             grouped = series.groupby(level=0)
@@ -445,10 +451,6 @@ class TimeSeries:
             # 5. If new frequency is higher than its original
             elif dt_new > dt_org:
                 series = self._sample_down(series)
-            # 6. If new frequency is equal to its original
-            elif dt_new == dt_org:
-                # shouldn't we do this before changing frequency?
-                series = self._fill_nan(series)
 
         # Drop nan-values at the beginning and end of the time series
         series = series.loc[
@@ -528,14 +530,15 @@ class TimeSeries:
 
         # when a multiple freq is used (like '7D') make sure the first record
         # has a rounded index
-        series = series[series.index[0].ceil(freq):]
+        from_time = series.index[0].ceil(freq) + self.settings["time_offset"]
+        series = series[from_time:]
 
-        # Shift time series by offset, as resample time_offset doesn't do it.
-        series = series.shift(1, freq=self.settings["time_offset"])
+        if self.settings['time_offset'] > pd.Timedelta(0):
+            # Shift time series back by offset, so resample can take it into account
+            series = series.shift(-1, freq=self.settings["time_offset"])
 
         # Provide some standard pandas arguments for all options
-        kwargs = {"label": "right", "closed": "right",
-                  "loffset": self.settings["time_offset"]}
+        kwargs = {"label": "right", "closed": "right"}
 
         if method == "mean":
             series = series.resample(freq, **kwargs).mean()
@@ -551,6 +554,10 @@ class TimeSeries:
             msg = "Time Series {}: User-defined option for sample_down {} is" \
                   "not supported".format(self.name, method)
             logger.warning(msg)
+        
+        if self.settings['time_offset'] > pd.Timedelta(0):
+            # The offset is removed by the resample-method, so we will add it again
+            series.index = series.index + to_offset(self.settings["time_offset"])
 
         logger.info("Time Series {} was sampled down to freq {} with method "
                     "{}".format(self.name, freq, method))
@@ -559,8 +566,9 @@ class TimeSeries:
 
     def _sample_weighted(self, series):
         freq = self.settings["freq"]
-        tindex = pd.date_range(series.index[0].ceil(freq), series.index[-1],
-                               freq=freq)
+        time_offset = self.settings['time_offset']
+        tindex = pd.date_range(series.index[0].ceil(freq) + time_offset,
+                               series.index[-1], freq=freq)
         series = timestep_weighted_resample(series, tindex)
         msg = "Time Series {} was sampled down to freq {} with method " \
               "{}".format(self.name, freq, "timestep_weighted_resample")
