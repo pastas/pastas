@@ -413,13 +413,11 @@ class Model:
         if tmin is None and self.settings['tmin']:
             tmin = self.settings['tmin']
         else:
-            tmin = self.get_tmin(tmin, freq, use_oseries=False,
-                                 use_stresses=True)
+            tmin = self.get_tmin(tmin, use_oseries=False, use_stresses=True)
         if tmax is None and self.settings['tmax']:
             tmax = self.settings['tmax']
         else:
-            tmax = self.get_tmax(tmax, freq, use_oseries=False,
-                                 use_stresses=True)
+            tmax = self.get_tmax(tmax, use_oseries=False, use_stresses=True)
         if freq is None:
             freq = self.settings["freq"]
         if warmup is None:
@@ -644,13 +642,11 @@ class Model:
         if tmin is None and self.settings['tmin']:
             tmin = self.settings['tmin']
         else:
-            tmin = self.get_tmin(tmin, freq, use_oseries=False,
-                                 use_stresses=True)
+            tmin = self.get_tmin(tmin, use_oseries=False, use_stresses=True)
         if tmax is None and self.settings['tmax']:
             tmax = self.settings['tmax']
         else:
-            tmax = self.get_tmax(tmax, freq, use_oseries=False,
-                                 use_stresses=True)
+            tmax = self.get_tmax(tmax, use_oseries=False, use_stresses=True)
         if freq is None:
             freq = self.settings["freq"]
 
@@ -1096,8 +1092,7 @@ class Model:
             sim_index = self.sim_index
         return sim_index
 
-    def get_tmin(self, tmin=None, freq=None, use_oseries=True,
-                 use_stresses=False):
+    def get_tmin(self, tmin=None, use_oseries=True, use_stresses=False):
         """Method that checks and returns valid values for tmin.
 
         Parameters
@@ -1105,8 +1100,6 @@ class Model:
         tmin: str, optional
             string with a year or date that can be turned into a pandas
             Timestamp (e.g. pd.Timestamp(tmin)).
-        freq: str, optional
-            string with the frequency.
         use_oseries: bool, optional
             Obtain the tmin and tmax from the oseries. Default is True.
         use_stresses: bool, optional
@@ -1160,8 +1153,7 @@ class Model:
 
         return tmin
 
-    def get_tmax(self, tmax=None, freq=None, use_oseries=True,
-                 use_stresses=False):
+    def get_tmax(self, tmax=None, use_oseries=True, use_stresses=False):
         """Method that checks and returns valid values for tmax.
 
         Parameters
@@ -1169,8 +1161,6 @@ class Model:
         tmax: str, optional
             string with a year or date that can be turned into a pandas
             Timestamp (e.g. pd.Timestamp(tmax)).
-        freq: str, optional
-            string with the frequency.
         use_oseries: bool, optional
             Obtain the tmin and tmax from the oseries. Default is True.
         use_stresses: bool, optional
