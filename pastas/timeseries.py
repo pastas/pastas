@@ -301,7 +301,7 @@ class TimeSeries:
             freq = self.settings['freq']
             if tmin is not None and freq is not None:
                 self.settings['time_offset'] = tmin - tmin.floor(freq)
-                
+
             # Get the validated series to start with
             series = self._series_validated.copy(deep=True)
 
