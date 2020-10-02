@@ -22,7 +22,7 @@ residual time series of a calibrated (Pastas) model.
 from logging import getLogger
 
 import matplotlib.pyplot as plt
-from numpy import sqrt, cumsum, nan, zeros, arange, finfo
+from numpy import sqrt, cumsum, nan, zeros, arange, finfo, median
 from pandas import DataFrame
 from scipy.stats import chi2, norm, shapiro, normaltest, probplot
 
@@ -200,7 +200,7 @@ def ljung_box(series=None, lags=365, nparam=0, full_output=False):
         return q_stat[-1], pval[-1]
 
 
-def runs_test(series, cutoff="mean"):
+def runs_test(series, cutoff="median"):
     """Runs test for autocorrelation.
 
     Parameters
@@ -208,7 +208,7 @@ def runs_test(series, cutoff="mean"):
     series: pandas.Series
         Time series to test for autocorrelation.
     cutoff: str or float, optional
-        String set to "mean" or "median" or a float to use as the cutoff.
+        String set to "mean", "median", or a float value to use as the cutoff.
 
     Returns
     -------
@@ -258,11 +258,11 @@ def runs_test(series, cutoff="mean"):
 
     """
     # Make dichotomous sequence
-    r = series.values.copy()
+    r = series.to_numpy()
     if cutoff == "mean":
         cutoff = r.mean()
     elif cutoff == "median":
-        cutoff = r.median()
+        cutoff = median(r)
     elif isinstance(cutoff, float):
         pass
     else:

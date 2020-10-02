@@ -1681,7 +1681,8 @@ class Model:
         Notes
         -----
         The reported values for the fit use the residuals time series where
-        possible. If interpolation is used,
+        possible. If interpolation is used this means that the result may
+        slightly differ compared to using ml.simulate() and ml.observations().
 
         """
         model = {
@@ -1725,11 +1726,10 @@ class Model:
             line=string.format("", fill='=', align='>', width=width))
 
         basic = ""
+        w = max(width - 45, 0)
         for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
-            w = max(width - 45, 0)
             val4 = string.format(val4, fill=' ', align='>', width=w)
-            basic = basic + "{:<8} {:<22} {:<12} {:}\n".format(val1, val2,
-                                                               val3, val4)
+            basic += "{:<8} {:<22} {:<12} {:}\n".format(val1, val2, val3, val4)
 
         # Create the parameters block
         parameters = "\nParameters ({n_param} were optimized)\n{line}\n" \

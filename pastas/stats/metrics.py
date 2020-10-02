@@ -218,7 +218,7 @@ def avg_dev(sim, obs, missing="drop"):
 
 # Percentage Error Metrics
 
-def pearsonr(sim, obs, missing="drop", weighted=False):
+def pearsonr(obs, sim, missing="drop", weighted=False):
     """Compute the (weighted) Pearson correlation (r).
 
     Parameters
