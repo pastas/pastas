@@ -454,7 +454,7 @@ class TimeSeries:
 
         # Drop nan-values at the beginning and end of the time series
         series = series.loc[
-                 series.first_valid_index():series.last_valid_index()]
+            series.first_valid_index():series.last_valid_index()]
 
         return series
 
@@ -554,10 +554,11 @@ class TimeSeries:
             msg = "Time Series {}: User-defined option for sample_down {} is" \
                   "not supported".format(self.name, method)
             logger.warning(msg)
-        
+
         if self.settings['time_offset'] > pd.Timedelta(0):
             # The offset is removed by the resample-method, so we will add it again
-            series.index = series.index + to_offset(self.settings["time_offset"])
+            series.index = series.index + \
+                to_offset(self.settings["time_offset"])
 
         logger.info("Time Series {} was sampled down to freq {} with method "
                     "{}".format(self.name, freq, method))
