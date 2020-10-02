@@ -1127,8 +1127,6 @@ class Model:
             1. A pandas timestamp is made from the string
             2. if use_oseries is True, tmin is checked against oseries.
 
-        C. In all cases an offset for the tmin is added.
-
         """
         # Get tmin from the oseries
         if use_oseries:
@@ -1187,8 +1185,6 @@ class Model:
 
             1. A pandas timestamp is made from the string.
             2. if use_oseries is True, tmax is checked against oseries.
-
-        C. In all cases an offset for the tmax is added.
 
         A detailed description of dealing with tmax and timesteps
         in general can be found in the developers section of the docs.
