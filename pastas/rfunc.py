@@ -549,7 +549,7 @@ class One(RfuncBase):
                 self.meanstress, 0, np.nan, True, name)
         elif self.up is False:
             parameters.loc[name + '_d'] = (
-                self.meanstress, np.nan, 0, True, name)
+                -self.meanstress, np.nan, 0, True, name)
         else:
             parameters.loc[name + '_d'] = (
                 self.meanstress, np.nan, np.nan, True, name)
