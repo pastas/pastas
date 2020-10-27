@@ -46,7 +46,8 @@ logger = getLogger(__name__)
 
 # Absolute Error Metrics
 
-def mae(obs=None, sim=None, res=None, missing="drop", weighted=False):
+def mae(obs=None, sim=None, res=None, missing="drop", weighted=False,
+        max_gap=90):
     """Compute the (weighted) Mean Absolute Error (MAE).
 
     Parameters
@@ -64,6 +65,10 @@ def mae(obs=None, sim=None, res=None, missing="drop", weighted=False):
     weighted: bool, optional
         Weight the values by the normalized time step to account for
         irregular time series. Default is True.
+    max_gap: int, optional
+        maximum allowed gap period in days to use for the computation of the
+        weights. All time steps larger than max_gap are replace with the
+        mean weight. Default value is 90 days.
 
     Notes
     -----
@@ -88,6 +93,7 @@ def mae(obs=None, sim=None, res=None, missing="drop", weighted=False):
 
     if weighted:
         w = (res.index[1:] - res.index[:-1]).to_numpy() / Timedelta("1D")
+        w[w > max_gap] = w[w <= max_gap].mean()
     else:
         w = ones(res.index.size - 1)
     w /= w.sum()
@@ -95,7 +101,8 @@ def mae(obs=None, sim=None, res=None, missing="drop", weighted=False):
     return (w * res[1:].abs()).sum()
 
 
-def rmse(obs=None, sim=None, res=None, missing="drop", weighted=False):
+def rmse(obs=None, sim=None, res=None, missing="drop", weighted=False,
+         max_gap=90):
     """Compute the (weighted) Root Mean Squared Error (RMSE).
 
     Parameters
@@ -113,6 +120,10 @@ def rmse(obs=None, sim=None, res=None, missing="drop", weighted=False):
     weighted: bool, optional
         Weight the values by the normalized time step to account for
         irregular time series. Default is True.
+    max_gap: int, optional
+        maximum allowed gap period in days to use for the computation of the
+        weights. All time steps larger than max_gap are replace with the
+        mean weight. Default value is 90 days.
 
     Notes
     -----
@@ -136,6 +147,7 @@ def rmse(obs=None, sim=None, res=None, missing="drop", weighted=False):
 
     if weighted:
         w = (res.index[1:] - res.index[:-1]).to_numpy() / Timedelta("1D")
+        w[w > max_gap] = w[w <= max_gap].mean()
     else:
         w = ones(res.index.size - 1)
     w /= w.sum()
@@ -218,7 +230,7 @@ def avg_dev(sim, obs, missing="drop"):
 
 # Percentage Error Metrics
 
-def pearsonr(obs, sim, missing="drop", weighted=False):
+def pearsonr(obs, sim, missing="drop", weighted=False, max_gap=90):
     """Compute the (weighted) Pearson correlation (r).
 
     Parameters
@@ -233,6 +245,10 @@ def pearsonr(obs, sim, missing="drop", weighted=False):
     weighted: bool, optional
         Weight the values by the normalized time step to account for
         irregular time series. Default is True.
+    max_gap: int, optional
+        maximum allowed gap period in days to use for the computation of the
+        weights. All time steps larger than max_gap are replace with the
+        mean weight. Default value is 90 days.
 
     Notes
     -----
@@ -252,6 +268,7 @@ def pearsonr(obs, sim, missing="drop", weighted=False):
 
     if weighted:
         w = (obs.index[1:] - obs.index[:-1]).to_numpy() / Timedelta("1D")
+        w[w > max_gap] = w[w <= max_gap].mean()
     else:
         w = ones(obs.index.size - 1)
 
@@ -264,8 +281,8 @@ def pearsonr(obs, sim, missing="drop", weighted=False):
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
-    sim = sim[1:] - mean(sim, weighted=weighted)
-    obs = obs[1:] - mean(obs, weighted=weighted)
+    sim = sim[1:] - mean(sim, weighted=weighted, max_gap=max_gap)
+    obs = obs[1:] - mean(obs, weighted=weighted, max_gap=max_gap)
 
     r = (w * sim * obs).sum() / \
         sqrt((w * sim ** 2).sum() * (w * obs ** 2).sum())
@@ -273,7 +290,7 @@ def pearsonr(obs, sim, missing="drop", weighted=False):
     return r
 
 
-def evp(obs, sim=None, res=None, missing="drop", weighted=False):
+def evp(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=90):
     """Compute the (weighted) Explained Variance Percentage (EVP).
 
     Parameters
@@ -291,6 +308,10 @@ def evp(obs, sim=None, res=None, missing="drop", weighted=False):
     weighted: bool, optional
         If weighted is True, the variances are computed using the time
         step between observations as weights. Default is True.
+    max_gap: int, optional
+        maximum allowed gap period in days to use for the computation of the
+        weights. All time steps larger than max_gap are replace with the
+        mean weight. Default value is 90 days.
 
     Notes
     -----
@@ -327,12 +348,11 @@ def evp(obs, sim=None, res=None, missing="drop", weighted=False):
     if obs.var() == 0.0:
         return 100.
     else:
-        evp = max(0.0, 100 * (1 - var(res, weighted=weighted) /
-                              var(obs, weighted=weighted)))
-        return evp
+        return max(0.0, (1 - var(res, weighted=weighted, max_gap=max_gap) /
+                         var(obs, weighted=weighted, max_gap=max_gap))) * 100
 
 
-def nse(obs, sim=None, res=None, missing="drop", weighted=False):
+def nse(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=90):
     """Compute the (weighted) Nash-Sutcliffe Efficiency (NSE).
 
     Parameters
@@ -349,8 +369,11 @@ def nse(obs, sim=None, res=None, missing="drop", weighted=False):
         supported now.
     weighted: bool, optional
         If weighted is True, the variances are computed using the time
-        step between observations as weights. Default is True. Note
-        implemented for this metrics yet!
+        step between observations as weights. Default is False.
+    max_gap: int, optional
+        maximum allowed gap period in days to use for the computation of the
+        weights. All time steps larger than max_gap are replace with the
+        mean weight. Default value is 90 days.
 
     Notes
     -----
@@ -363,9 +386,6 @@ def nse(obs, sim=None, res=None, missing="drop", weighted=False):
        principles. Journal of hydrology, 10(3), 282-290.
 
     """
-    if weighted:
-        raise NotImplementedError
-
     if res is None:
         res = sim - obs
 
@@ -377,8 +397,16 @@ def nse(obs, sim=None, res=None, missing="drop", weighted=False):
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
-    ns = 1 - (res ** 2).sum() / ((obs - obs.mean()) ** 2).sum()
-    return ns
+    if weighted:
+        w = (obs.index[1:] - obs.index[:-1]).to_numpy() / Timedelta("1D")
+        w[w > max_gap] = w[w <= max_gap].mean()
+    else:
+        w = ones(obs.index.size - 1)
+
+    w /= w.sum()
+    mu = mean(obs, weighted=weighted, max_gap=max_gap)
+
+    return 1 - (w * res[1:] ** 2).sum() / (w * (obs[1:] - mu) ** 2).sum()
 
 
 def rsq(obs, sim=None, res=None, missing="drop", nparam=None):
@@ -529,7 +557,7 @@ def aic(obs=None, sim=None, res=None, missing="drop", nparam=1):
 
 # Forecast Error Metrics
 
-def kge_2012(obs, sim, missing="drop", weighted=False):
+def kge_2012(obs, sim, missing="drop", weighted=False, max_gap=90):
     """Compute the (weighted) Kling-Gupta Efficiency (KGE).
 
     Parameters
@@ -573,14 +601,14 @@ def kge_2012(obs, sim, missing="drop", weighted=False):
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
-    r = pearsonr(sim, obs, weighted=weighted)
+    r = pearsonr(obs=obs, sim=sim, weighted=weighted, max_gap=max_gap)
 
-    mu_sim = mean(sim, weighted=weighted)
-    mu_obs = mean(obs, weighted=weighted)
+    mu_sim = mean(sim, weighted=weighted, max_gap=max_gap)
+    mu_obs = mean(obs, weighted=weighted, max_gap=max_gap)
 
     beta = mu_sim / mu_obs
-    gamma = (std(sim, weighted=weighted) / mu_sim) / \
-            (std(obs, weighted=weighted) / mu_obs)
+    gamma = (std(sim, weighted=weighted, max_gap=max_gap) / mu_sim) / \
+            (std(obs, weighted=weighted, max_gap=max_gap) / mu_obs)
 
     kge = 1 - sqrt((r - 1) ** 2 + (beta - 1) ** 2 + (gamma - 1) ** 2)
     return kge

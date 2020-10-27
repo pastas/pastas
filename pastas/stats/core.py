@@ -290,7 +290,7 @@ def _compute_ccf_regular(lags, x, y):
     return c, b
 
 
-def mean(x, weighted=True):
+def mean(x, weighted=True, max_gap=90):
     """Method to compute the (weighted) mean of a time series.
 
     Parameters
@@ -300,6 +300,10 @@ def mean(x, weighted=True):
     weighted: bool, optional
         Weight the values by the normalized time step to account for
         irregular time series. Default is True.
+    max_gap: int, optional
+        maximum allowed gap period in days to use for the computation of the
+        weights. All time steps larger than max_gap are replace with the
+        mean weight. Default value is 90 days.
 
     Notes
     -----
@@ -313,6 +317,7 @@ def mean(x, weighted=True):
     """
     if weighted:
         w = (x.index[1:] - x.index[0:-1]).to_numpy() / Timedelta("1D")
+        w[w > max_gap] = w[w <= max_gap].mean()
     else:
         w = ones(x.index.size - 1)
 
@@ -322,7 +327,7 @@ def mean(x, weighted=True):
     return mu
 
 
-def var(x, weighted=True):
+def var(x, weighted=True, max_gap=90):
     """Method to compute the (weighted) variance of a time series.
 
     Parameters
@@ -332,6 +337,10 @@ def var(x, weighted=True):
     weighted: bool, optional
         Weight the values by the normalized time step to account for
         irregular time series. Default is True.
+    max_gap: int, optional
+        maximum allowed gap period in days to use for the computation of the
+        weights. All time steps larger than max_gap are replace with the
+        mean weight. Default value is 90 days.
 
     Notes
     -----
@@ -346,17 +355,18 @@ def var(x, weighted=True):
     """
     if weighted:
         w = (x.index[1:] - x.index[0:-1]).to_numpy() / Timedelta("1D")
+        w[w > max_gap] = w[w <= max_gap].mean()
     else:
         w = ones(x.index.size - 1)
 
     w /= w.sum()
-
-    sigma = (w * (x.iloc[1:] - mean(x, weighted=weighted)) ** 2).sum()
+    mu = mean(x, weighted=weighted, max_gap=max_gap)
+    sigma = (w.size / (w.size - 1) * w * (x.iloc[1:] - mu) ** 2).sum()
 
     return sigma
 
 
-def std(x, weighted=True):
+def std(x, weighted=True, max_gap=90):
     """Method to compute the (weighted) variance of a time series.
 
     Parameters
@@ -366,10 +376,14 @@ def std(x, weighted=True):
     weighted: bool, optional
         Weight the values by the normalized time step to account for
         irregular time series. Default is True.
+    max_gap: int, optional
+        maximum allowed gap period in days to use for the computation of the
+        weights. All time steps larger than max_gap are replace with the
+        mean weight. Default value is 90 days.
 
     See Also
     --------
     ps.stats.mean, ps.stats.var
 
     """
-    return sqrt(var(x, weighted=weighted))
+    return sqrt(var(x, weighted=weighted, max_gap=max_gap))
