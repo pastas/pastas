@@ -776,7 +776,9 @@ class WellModel(StressModelBase):
             h = h.add(Series(c, index=stress.index, fastpath=True),
                       fill_value=0.0)
         if istress is not None:
-            if self.stress[istress].name is not None:
+            if isinstance(istress, list):
+                h.name = self.name + "_" + "+".join(str(i) for i in istress)
+            elif self.stress[istress].name is not None:
                 h.name = self.stress[istress].name
             else:
                 h.name = self.name + "_" + str(istress)
