@@ -763,12 +763,12 @@ class WellModel(StressModelBase):
             np.mean(self.distances) ** 2
 
     def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1,
-                 istress=None):
-        stresses = self.get_stress(tmin=tmin, tmax=tmax, freq=freq,
-                                   istress=istress)
+                 istress=None, **kwargs):
         distances = self.get_distances(istress=istress)
         h = Series(data=0, index=self.stress[0].series.index, name=self.name)
-        for stress, r in zip(stresses, distances):
+        for i, r in enumerate(distances):
+            stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq,
+                                     istress=i)
             npoints = stress.index.size
             p_with_r = np.concatenate([p, np.asarray([r])])
             b = self.get_block(p_with_r, dt, tmin, tmax)
@@ -784,7 +784,8 @@ class WellModel(StressModelBase):
             h.name = self.name
         return h
 
-    def handle_stress(self, stress, settings):
+    @staticmethod
+    def handle_stress(stress, settings):
         """Internal method to handle user provided stress in init.
 
         Parameters
@@ -815,7 +816,7 @@ class WellModel(StressModelBase):
                          "Series, dict or list.")
         return data
 
-    def get_stress(self, p=None, tmin=None, tmax=None, freq=None,
+    def get_stress(self, p=None, tmin=None, tmax=None, freq=None, dt=1,
                    istress=None, **kwargs):
         if tmin is None:
             tmin = self.tmin
@@ -824,14 +825,17 @@ class WellModel(StressModelBase):
 
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
 
-        if istress is None:
-            return [s.series for s in self.stress]
+        if istress is None or isinstance(istress, list):
+            return self.simulate(p=p, tmin=tmin, tmax=tmax, freq=self.freq,
+                                 istress=istress, dt=dt, **kwargs)
         else:
-            return [self.stress[istress].series]
+            return self.stress[istress].series
 
     def get_distances(self, istress=None):
         if istress is None:
             return self.distances
+        elif isinstance(istress, list):
+            return [self.distances[i] for i in istress]
         else:
             return [self.distances[istress]]
 
