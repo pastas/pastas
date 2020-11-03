@@ -34,6 +34,7 @@ Public Methods
 
 from logging import getLogger
 
+import numpy as np
 import pandas as pd
 from pandas.tseries.frequencies import to_offset
 
@@ -459,12 +460,20 @@ class TimeSeries:
         return series
 
     def _to_daily_unit(self, series):
+        """Recalculate a timeseries of a stress with a non-daily unit (e/g.
+        m3/month) to a daily unit (e.g. m3/day). This method just changes the
+        values of the timeseries, and does not alter the frequency.
+
+        """
         method = self.settings["to_daily_unit"]
         if method is not None:
             if method is True or method == "divide":
                 dt = series.index.to_series().diff() / pd.Timedelta(1, 'D')
-                dt = dt.fillna(1.0)
-                if not (dt == 1.0).all():
+                if self.settings["sample_up"] in ["pad", "ffill"]:
+                    dt[:-1] = dt[1:]
+                    dt[-1] = np.NaN
+
+                if not ((dt == 1.0) | dt.isna()).all():
                     series = series / dt
                     msg = ("Time Series {}: values of stress were transformed "
                            "to daily values (frequency not altered) with: {}")
