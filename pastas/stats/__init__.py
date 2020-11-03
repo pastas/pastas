@@ -4,3 +4,4 @@ from .metrics import mae, evp, nse, rmse, sse, rsq, aic, bic, pearsonr, \
     kge_2012
 from .tests import runs_test, ljung_box, durbin_watson, stoffer_toloi, \
     diagnostics, plot_acf, plot_diagnostics
+from .sgi import sgi
