@@ -572,6 +572,10 @@ def kge_2012(obs, sim, missing="drop", weighted=False, max_gap=90):
     weighted: bool, optional
         Weight the values by the normalized time step to account for
         irregular time series. Default is True.
+    max_gap: int, optional
+        maximum allowed gap period in days to use for the computation of the
+        weights. All time steps larger than max_gap are replace with the
+        mean weight. Default value is 90 days.
 
     Notes
     -----

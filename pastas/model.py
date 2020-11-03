@@ -820,7 +820,11 @@ class Model:
         self.parameters.stderr = stderr
 
         if report:
-            print(self.fit_report())
+            if isinstance(report, str):
+                output = report
+            else:
+                output = "full"
+            print(self.fit_report(output=output))
 
     def set_initial(self, name, value, move_bounds=False):
         """Method to set the initial value of any parameter.
@@ -1682,7 +1686,8 @@ class Model:
             "BIC": "{:.2f}".format(self.stats.bic() if
                                    self.settings["noise"] else np.nan),
             "Obj": "{:.2f}".format(self.fit.obj_func),
-            "___": "", "Interpolated": str(self.interpolate_simulation),
+            "___": "", "Interpolated": "Yes" if self.interpolate_simulation
+                  else "No",
         }
 
         parameters = self.parameters.loc[:, ["optimal", "stderr",

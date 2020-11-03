@@ -35,7 +35,7 @@ from pandas import Timedelta, DataFrame, Series
 
 from .decorators import set_parameter, njit
 
-__all__ = ["NoiseModel", "NoiseModelOld", "ArmaModel"]
+__all__ = ["NoiseModel", "ArmaModel"]
 
 
 class NoiseModelBase:
@@ -223,90 +223,6 @@ class NoiseModel(NoiseModelBase):
         if self.norm:
             w = w.multiply(np.exp(1.0 / (2.0 * odelt.size) *
                                   np.sum(np.log(1.0 - exp))))
-        return w
-
-
-class NoiseModelOld(NoiseModelBase):
-    """
-    Noise model with exponential decay of the residual and weighting.
-
-    Notes
-    -----
-    Calculates the noise [1]_ according to:
-
-    .. math::
-
-        v(t1) = r(t1) - r(t0) * exp(- (\\frac{\\Delta t}{\\alpha})
-
-    Note that in the referenced paper, alpha is defined as the inverse of
-    alpha used in Pastas. The unit of the alpha parameter is always in days.
-
-    References
-    ----------
-    .. [1] von Asmuth, J. R., and M. F. P. Bierkens (2005), Modeling
-           irregularly spaced residual series as a continuous stochastic
-           process, Water Resour. Res., 41, W12404, doi:10.1029/2004WR003726.
-
-    """
-    _name = "NoiseModel"
-
-    def __init__(self):
-        NoiseModelBase.__init__(self)
-        self.nparam = 1
-        self.set_init_parameters()
-
-    def simulate(self, res, parameters):
-        """
-        Simulate noise from the residuals.
-
-        Parameters
-        ----------
-        res: pandas.Series
-            The residual series.
-        parameters: array-like
-            Alpha parameters used by the noisemodel.
-
-        Returns
-        -------
-        noise: pandas.Series
-            Series of the noise.
-
-        """
-        alpha = parameters[0]
-        odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
-        # res.values is needed else it gets messed up with the dates
-        res.iloc[1:] -= np.exp(-odelt / alpha) * res.values[:-1]
-        res.name = "Noise"
-        return res
-
-    @staticmethod
-    def weights(res, parameters):
-        """
-        Method to calculate the weights for the noise.
-
-        Based on the sum of weighted squared noise (SWSI) method.
-
-        Parameters
-        ----------
-        res: pandas.Series
-            The residual series.
-        parameters: array-like
-            Alpha parameters used by the noisemodel.
-
-        Returns
-        -------
-        w: numpy.ndarray
-            Array with the weights.
-
-        """
-        alpha = parameters[0]
-        odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
-        # divide power by 2 as nu / sigma is returned
-        power = 1.0 / (2.0 * odelt.size)
-        exp = np.exp(-2.0 / alpha * odelt)  # Twice as fast as 2*odelt/alpha
-        w = np.exp(power * np.sum(np.log(1.0 - exp))) / np.sqrt(1.0 - exp)
-        w = np.insert(w, 0, 0)  # Set first weight to zero
-        w = Series(w, res.index)
         return w
 
 
