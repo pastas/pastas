@@ -244,9 +244,9 @@ class TimeSeries:
 
     @series_validated.setter
     def series_validated(self, value):
-        raise AttributeError("You cannot set series_validated by yourself,as"
-                             "it is calculated from series_original. Please "
-                             "set series_original to update the series.")
+        raise AttributeError("You cannot set series_validated by yourself, as"
+                             " it is calculated from series_original. Please"
+                             " set series_original to update the series.")
 
     def update_series(self, force_update=False, **kwargs):
         """Method to update the series with new options.
@@ -374,18 +374,10 @@ class TimeSeries:
                 .format(self.name, self.freq_original)
             logger.info(msg)
         else:
-            self.freq_original = self.settings["freq"]
-            if self.freq_original is None:
-                msg = "Cannot determine frequency of series " \
-                      "{}".format(self.name)
-                logger.info(msg)
-            elif self.settings["fill_nan"] and self.settings["fill_nan"] != \
-                    "drop":
-                msg = "User-provided frequency is applied when validating " \
-                      "the Time Series {}. Make sure the  provided frequency" \
-                      " is close to the real  frequency of the original " \
-                      "series.".format(self.name)
-                logger.warning(msg)
+            if self.settings["fill_nan"] != "drop":
+                msg = "Cannot determine frequency of series {}. Resample-set" \
+                    "tings are ignored and timestep_weighted_resample is used"
+                logger.info(msg.format(self.name))
 
         # 5. Handle duplicate indices
         if not series.index.is_unique:
