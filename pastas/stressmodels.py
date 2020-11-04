@@ -518,7 +518,7 @@ class StepModel(StressModelBase):
         the start time of the step trend.
     name: str
         String with the name of the stressmodel.
-    rfunc: pastas.rfunc.RfuncBase, optional
+    rfunc: pastas.rfunc.RfuncBase class, optional
         Pastas response function used to simulate the effect of the step.
         Default is rfunc.One, an instant effect.
     up: bool, optional
@@ -602,7 +602,7 @@ class LinearTrend(StressModelBase):
         tmax = Timestamp.max.toordinal()
 
         self.parameters.loc[self.name + "_a"] = (
-            0, -np.inf, np.inf, True, self.name)
+            0.0, -np.inf, np.inf, True, self.name)
         self.parameters.loc[self.name + "_tstart"] = (
             start, tmin, tmax, True, self.name)
         self.parameters.loc[self.name + "_tend"] = (
@@ -625,7 +625,7 @@ class LinearTrend(StressModelBase):
         trend.loc[:tmin] = 0
         trend.loc[tmax:] = 0
         trend = trend.cumsum() * p[0]
-        return trend
+        return trend.rename(self.name)
 
     def to_dict(self, series=None):
         data = {
