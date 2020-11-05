@@ -6,19 +6,39 @@ reported here. The release notes for previous releases up to 0.14 can be found
 at the `GitHub Release page <https://github.com/pastas/pastas/releases>`_.
 For full details of all changes check the commit log.
 
-Version 0.16 (Expected 31st of September 2020)
-----------------------------------------------
+Version 0.16 (Expected 6th of November 2020)
+--------------------------------------------
 
 
 New Features / Enhancements
 ***************************
 
+- A new stress model (`ps.LinearTrend`) to simulate linear trends is added to
+  the list of stable stress models.
+- New method to compute the Standardized Groundwater Index. See
+  (:meth:`ps.stats.sgi`) for more details.
+- Most of the goodness-of-fit metrics now allow providing a "weighted"
+  argument. This may result in more realistic values for time series with
+  irregular time steps.
+
 Deprecations
 ************
+
+- The following methods to set parameter properties are now deprecated
+  and replaced by the single method `ml.set_parameter`: `ml.set_vary`,
+  `ml.set_pmin`, `ml.set_pmax`, `ml.set_initial`.
+-
+
 
 Backwards incompatible API changes
 **********************************
 
+
+New Example (Notebooks)
+***********************
+
+- New notebook on computing Standardized Groundwater Index using Pastas.
+- New Notebook on simulated step and linear trend.
 
 Version 0.15 (31st of July 2020)
 --------------------------------

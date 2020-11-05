@@ -15,6 +15,7 @@ The following stressmodels are currently supported and tested:
     RechargeModel
     FactorModel
     StepModel
+    LinearTrend
     WellModel
     TarsoModel
 
@@ -577,18 +578,24 @@ class LinearTrend(StressModelBase):
     """Stressmodel that simulates a linear trend.
 
     start: str
-        String with a date to start the trend, will be transformed to an
-        ordinal number internally. E.g. "2018-01-01"
+        String with a date to start the trend (e.g., "2018-01-01"), will be
+        transformed to an ordinal number internally.
     end: str
-        String with a date to end the trend, will be transformed to an ordinal
-        number internally. E.g. "2018-01-01"
+        String with a date to end the trend (e.g., "2018-01-01"), will be
+        transformed to an ordinal number internally.
     name: str, optional
-        String with the name of the stressmodel
+        String with the name of the stress model.
+
+    Notes
+    -----
+    While possible, it is not recommended to vary the parameters for the
+    start and end time of the linear trend. These parameters are usually
+    hard to impossible to estimate from the data.
 
     """
     _name = "LinearTrend"
 
-    def __init__(self, start, end, name="linear_trend"):
+    def __init__(self, start, end, name="trend"):
         StressModelBase.__init__(self, name=name, tmin=Timestamp.min,
                                  tmax=Timestamp.max)
         self.start = start
@@ -596,19 +603,21 @@ class LinearTrend(StressModelBase):
         self.set_init_parameters()
 
     def set_init_parameters(self):
+        """Set the initial parameters for the stress model."""
         start = Timestamp(self.start).toordinal()
         end = Timestamp(self.end).toordinal()
         tmin = Timestamp.min.toordinal()
         tmax = Timestamp.max.toordinal()
 
-        self.parameters.loc[self.name + "_a"] = (
-            0.0, -np.inf, np.inf, True, self.name)
-        self.parameters.loc[self.name + "_tstart"] = (
-            start, tmin, tmax, True, self.name)
-        self.parameters.loc[self.name + "_tend"] = (
-            end, tmin, tmax, True, self.name)
+        self.parameters.loc[self.name + "_a"] = (0.0, -np.inf, np.inf,
+                                                 True, self.name)
+        self.parameters.loc[self.name + "_tstart"] = (start, tmin, tmax,
+                                                      False, self.name)
+        self.parameters.loc[self.name + "_tend"] = (end, tmin, tmax,
+                                                    False, self.name)
 
     def simulate(self, p, tmin=None, tmax=None, freq=None, dt=1):
+        """Simulate the trend."""
         tindex = date_range(tmin, tmax, freq=freq)
 
         if p[1] < tindex[0].toordinal():
