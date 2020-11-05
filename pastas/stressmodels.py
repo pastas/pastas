@@ -739,13 +739,18 @@ class WellModel(StressModelBase):
             logger.error(msg)
             raise ValueError(msg)
         else:
-            self.distances = distances
+            self.distances = Series(index=[s.name for s in stress],
+                                    data=distances,
+                                    name="distances")
 
         meanstress = np.max([s.series.std() for s in stress])
         rfunc = rfunc(up=up, cutoff=cutoff, meanstress=meanstress)
 
-        StressModelBase.__init__(self, name=name, tmin=Timestamp.min,
-                                 tmax=Timestamp.max, rfunc=rfunc)
+        tmin = np.min([s.series.index.min() for s in stress])
+        tmax = np.max([s.series.index.max() for s in stress])
+
+        StressModelBase.__init__(self, name=name, tmin=tmin,
+                                 tmax=tmax, rfunc=rfunc)
 
         self.stress = stress
         self.freq = self.stress[0].settings["freq"]
@@ -763,20 +768,23 @@ class WellModel(StressModelBase):
             np.mean(self.distances) ** 2
 
     def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1,
-                 istress=None):
-        stresses = self.get_stress(tmin=tmin, tmax=tmax, freq=freq,
-                                   istress=istress)
+                 istress=None, **kwargs):
         distances = self.get_distances(istress=istress)
+        stress_df = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq,
+                                    istress=istress)
         h = Series(data=0, index=self.stress[0].series.index, name=self.name)
-        for stress, r in zip(stresses, distances):
+        for name, r in distances.iteritems():
+            stress = stress_df.loc[:, name]
             npoints = stress.index.size
-            p_with_r = np.concatenate([p, np.asarray([r])])
+            p_with_r = np.concatenate([p, np.array([r])])
             b = self.get_block(p_with_r, dt, tmin, tmax)
             c = fftconvolve(stress, b, 'full')[:npoints]
             h = h.add(Series(c, index=stress.index, fastpath=True),
                       fill_value=0.0)
         if istress is not None:
-            if self.stress[istress].name is not None:
+            if isinstance(istress, list):
+                h.name = self.name + "_" + "+".join(str(i) for i in istress)
+            elif self.stress[istress].name is not None:
                 h.name = self.stress[istress].name
             else:
                 h.name = self.name + "_" + str(istress)
@@ -784,7 +792,8 @@ class WellModel(StressModelBase):
             h.name = self.name
         return h
 
-    def handle_stress(self, stress, settings):
+    @staticmethod
+    def handle_stress(stress, settings):
         """Internal method to handle user provided stress in init.
 
         Parameters
@@ -825,15 +834,21 @@ class WellModel(StressModelBase):
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
 
         if istress is None:
-            return [s.series for s in self.stress]
+            return DataFrame.from_dict({s.name: s.series for s in self.stress})
+        elif isinstance(istress, list):
+            return DataFrame.from_dict(
+                {s.name: s.series for s in self.stress}
+            ).iloc[:, istress]
         else:
-            return [self.stress[istress].series]
+            return self.stress[istress].series.to_frame()
 
     def get_distances(self, istress=None):
         if istress is None:
             return self.distances
+        elif isinstance(istress, list):
+            return self.distances.iloc[istress]
         else:
-            return [self.distances[istress]]
+            return self.distances.iloc[istress:istress + 1]
 
     def get_parameters(self, model=None, istress=None):
         """ Get parameters including distance to observation point
@@ -858,7 +873,7 @@ class WellModel(StressModelBase):
         else:
             p = model.get_parameters(self.name)
 
-        distances = np.array(self.get_distances(istress=istress))
+        distances = self.get_distances(istress=istress).values
         if distances.size > 1:
             p_with_r = np.concatenate([np.tile(p, (distances.size, 1)),
                                        distances[:, np.newaxis]], axis=1)
@@ -881,7 +896,7 @@ class WellModel(StressModelBase):
             "rfunc": self.rfunc._name,
             "name": self.name,
             "up": True if self.rfunc.up else False,
-            "distances": self.distances,
+            "distances": self.distances.to_list(),
             "cutoff": self.rfunc.cutoff,
             "stress": self.dump_stress(series),
             "sort_wells": self.sort_wells
