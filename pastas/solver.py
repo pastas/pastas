@@ -63,16 +63,17 @@ class BaseSolver:
         self.obj_func = obj_func
         self.result = None  # Object returned by the optimization method
 
-    def misfit(self, parameters, noise, weights=None, callback=None,
+    def misfit(self, p, noise, weights=None, callback=None,
                returnseparate=False):
         """This method is called by all solvers to obtain a series that are
-        minimized in the optimization proces. It handles the application of
+        minimized in the optimization process. It handles the application of
         the weights, a noisemodel and other optimization options.
 
         Parameters
         ----------
-        parameters: list, numpy.ndarray
-            list with the parameters
+        p: array_like
+            array_like object with the values as floats representing the
+            model parameters.
         noise: Boolean
         weights: pandas.Series, optional
             pandas Series by which the residual or noise series are
@@ -80,7 +81,8 @@ class BaseSolver:
         callback: ufunc, optional
             function that is called after each iteration. the parameters are
             provided to the func. E.g. "callback(parameters)"
-        returnseparate: return residuals, noise, noiseweights
+        returnseparate: bool, optional
+            return residuals, noise, noiseweights
 
         Returns
         -------
@@ -90,10 +92,10 @@ class BaseSolver:
         """
         # Get the residuals or the noise
         if noise:
-            rv = self.ml.noise(parameters) * \
-                 self.ml.noise_weights(parameters)
+            rv = self.ml.noise(p) * \
+                 self.ml.noise_weights(p)
         else:
-            rv = self.ml.residuals(parameters)
+            rv = self.ml.residuals(p)
 
         # Determine if weights need to be applied
         if weights is not None:
@@ -102,12 +104,12 @@ class BaseSolver:
             rv = rv.multiply(weights)
 
         if callback:
-            callback(parameters)
+            callback(p)
 
         if returnseparate:
-            return self.ml.residuals(parameters).values, \
-                   self.ml.noise(parameters).values, \
-                   self.ml.noise_weights(parameters).values
+            return self.ml.residuals(p).values, \
+                   self.ml.noise(p).values, \
+                   self.ml.noise_weights(p).values
 
         return rv.values
 
@@ -173,15 +175,15 @@ class BaseSolver:
                                              **kwargs)
 
     def _get_realizations(self, func, n=None, name=None, **kwargs):
-        """Internal method to obtain  n number of realizations."""
+        """Internal method to obtain n number of parameter realizations."""
         if name:
             kwargs["name"] = name
 
-        params = self._get_parameter_sample(n=n, name=name)
+        parameter_sample = self._get_parameter_sample(n=n, name=name)
         data = {}
 
-        for i, param in enumerate(params):
-            data[i] = func(parameters=param, **kwargs)
+        for i, p in enumerate(parameter_sample):
+            data[i] = func(p=p, **kwargs)
 
         return DataFrame.from_dict(data, orient="columns")
 
@@ -211,26 +213,28 @@ class BaseSolver:
             Numpy array with N parameter samples.
 
         """
-        par = self.ml.get_parameters(name=name)
+        p = self.ml.get_parameters(name=name)
         pcov = self._get_covariance_matrix(name=name)
 
         if name is None:
-            p = self.ml.parameters
+            parameters = self.ml.parameters
         else:
-            p = self.ml.parameters.loc[self.ml.parameters.name == name]
+            parameters = self.ml.parameters.loc[
+                self.ml.parameters.name == name]
 
-        pmin = p.pmin.fillna(-np.inf).values
-        pmax = p.pmax.fillna(np.inf).values
+        pmin = parameters.pmin.fillna(-np.inf).values
+        pmax = parameters.pmax.fillna(np.inf).values
 
         if n is None:
-            n = int(10 ** p.vary.sum())  # only use parameters that are varied.
+            # only use parameters that are varied.
+            n = int(10 ** parameters.vary.sum())
 
-        samples = np.zeros((0, par.size))
+        samples = np.zeros((0, p.size))
 
         # Start truncated multivariate sampling
         it = 0
         while samples.shape[0] < n:
-            s = np.random.multivariate_normal(par, pcov, size=(n,),
+            s = np.random.multivariate_normal(p, pcov, size=(n,),
                                               check_valid="ignore")
             accept = s[(np.min(s - pmin, axis=1) >= 0) &
                        (np.max(s - pmax, axis=1) <= 0)]
@@ -260,12 +264,12 @@ class BaseSolver:
 
         """
         if name:
-            params = self.ml.parameters.loc[self.ml.parameters.loc[:,
-                                            "name"] == name].index
+            index = self.ml.parameters.loc[self.ml.parameters.loc[:,
+                                           "name"] == name].index
         else:
-            params = self.ml.parameters.index
+            index = self.ml.parameters.index
 
-        pcov = self.pcov.reindex(index=params, columns=params).fillna(0)
+        pcov = self.pcov.reindex(index=index, columns=index).fillna(0)
 
         return pcov
 
@@ -357,10 +361,11 @@ class LeastSquares(BaseSolver):
 
         return success, optimal, stderr
 
-    def objfunction(self, parameters, noise, weights, callback):
-        p = self.initial
-        p[self.vary] = parameters
-        return self.misfit(p, noise, weights, callback)
+    def objfunction(self, p, noise, weights, callback):
+        par = self.initial
+        par[self.vary] = p
+        return self.misfit(p=par, noise=noise, weights=weights,
+                           callback=callback)
 
     def _get_covariances(self, jacobian, cost, absolute_sigma=False):
         """Internal method to get the covariance matrix from the jacobian.
@@ -479,8 +484,9 @@ class LmfitSolve(BaseSolver):
         return success, optimal[:idx], stderr[:idx]
 
     def objfunction(self, parameters, noise, weights, callback):
-        param = np.array([p.value for p in parameters.values()])
-        return self.misfit(param, noise, weights, callback)
+        p = np.array([p.value for p in parameters.values()])
+        return self.misfit(p=p, noise=noise, weights=weights,
+                           callback=callback)
 
 
 class LmfitSolveNew(BaseSolver):

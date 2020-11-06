@@ -370,15 +370,16 @@ class Model:
             self.noisemodel = None
             self.parameters = self.get_init_parameters(initial=False)
 
-    def simulate(self, parameters=None, tmin=None, tmax=None, freq=None,
-                 warmup=None, return_warmup=False):
+    def simulate(self, p=None, tmin=None, tmax=None, freq=None, warmup=None,
+                 return_warmup=False):
         """Method to simulate the time series model.
 
         Parameters
         ----------
-        parameters: array-like, optional
-            Array with the parameters used in the time series model. See
-            Model.get_parameters() for more info if parameters is None.
+        p: array_like, optional
+            array_like object with the values as floats representing the
+            model parameters. See Model.get_parameters() for more info if
+            parameters is None.
         tmin: str, optional
             String with a start date for the simulation period (E.g. '1980').
             If none is provided, the tmin from the oseries is used.
@@ -430,23 +431,23 @@ class Model:
         dt = _get_dt(freq)
 
         # Get parameters if none are provided
-        if parameters is None:
-            parameters = self.get_parameters()
+        if p is None:
+            p = self.get_parameters()
 
         sim = Series(data=np.zeros(sim_index.size, dtype=float),
                      index=sim_index, fastpath=True)
 
         istart = 0  # Track parameters index to pass to stressmodel object
         for sm in self.stressmodels.values():
-            contrib = sm.simulate(parameters[istart: istart + sm.nparam],
+            contrib = sm.simulate(p[istart: istart + sm.nparam],
                                   sim_index.min(), sim_index.max(), freq, dt)
             sim = sim.add(contrib)
             istart += sm.nparam
         if self.constant:
-            sim = sim + self.constant.simulate(parameters[istart])
+            sim = sim + self.constant.simulate(p[istart])
             istart += 1
         if self.transform:
-            sim = self.transform.simulate(sim, parameters[
+            sim = self.transform.simulate(sim, p[
                                                istart:istart + self.transform.nparam])
 
         # Respect provided tmin/tmax at this point, since warmup matters for
@@ -461,15 +462,15 @@ class Model:
         sim.name = 'Simulation'
         return sim
 
-    def residuals(self, parameters=None, tmin=None, tmax=None, freq=None,
-                  warmup=None):
+    def residuals(self, p=None, tmin=None, tmax=None, freq=None, warmup=None):
         """Method to calculate the residual series.
 
         Parameters
         ----------
-        parameters: list, optional
-            Array of the parameters used in the time series model. See
-            Model.get_parameters() for more info if parameters is None.
+        p: array_like, optional
+            array_like object with the values as floats representing the
+            model parameters. See Model.get_parameters() for more info if
+            parameters is None.
         tmin: str, optional
             String with a start date for the simulation period (E.g. '1980').
             If none is provided, the tmin from the oseries is used.
@@ -498,7 +499,7 @@ class Model:
             freq = self.settings["freq"]
 
         # simulate model
-        sim = self.simulate(parameters, tmin, tmax, freq, warmup,
+        sim = self.simulate(p, tmin, tmax, freq, warmup,
                             return_warmup=False)
 
         # Get the oseries calibration series
@@ -532,15 +533,15 @@ class Model:
         res.name = "Residuals"
         return res
 
-    def noise(self, parameters=None, tmin=None, tmax=None, freq=None,
-              warmup=None):
+    def noise(self, p=None, tmin=None, tmax=None, freq=None, warmup=None):
         """Method to simulate the noise when a noisemodel is present.
 
         Parameters
         ----------
-        parameters: list, optional
-            Array of the parameters used in the time series model. See
-            Model.get_parameters() for more info if parameters is None.
+        p: array_like, optional
+            array_like object with the values as floats representing the
+            model parameters. See Model.get_parameters() for more info if
+            parameters is None.
         tmin: str, optional
             String with a start date for the simulation period (E.g. '1980').
             If none is provided, the tmin from the oseries is used.
@@ -579,30 +580,30 @@ class Model:
             return None
 
         # Get parameters if none are provided
-        if parameters is None:
-            parameters = self.get_parameters()
+        if p is None:
+            p = self.get_parameters()
 
         # Calculate the residuals
-        res = self.residuals(parameters, tmin, tmax, freq, warmup)
-        p = parameters[-self.noisemodel.nparam:]
+        res = self.residuals(p, tmin, tmax, freq, warmup)
+        p = p[-self.noisemodel.nparam:]
 
         # Calculate the noise
         noise = self.noisemodel.simulate(res, p)
         return noise
 
-    def noise_weights(self, parameters=None, tmin=None, tmax=None, freq=None,
+    def noise_weights(self, p=None, tmin=None, tmax=None, freq=None,
                       warmup=None):
         """ Internal method to calculate the noise weights."""
         # Get parameters if none are provided
-        if parameters is None:
-            parameters = self.get_parameters()
+        if p is None:
+            p = self.get_parameters()
 
         # Calculate the residuals
-        res = self.residuals(parameters, tmin, tmax, freq, warmup)
+        res = self.residuals(p, tmin, tmax, freq, warmup)
 
         # Calculate the weights
         weights = self.noisemodel.weights(res,
-                                          parameters[-self.noisemodel.nparam:])
+                                          p[-self.noisemodel.nparam:])
 
         return weights
 
@@ -1288,7 +1289,7 @@ class Model:
     @get_stressmodel
     def get_contribution(self, name, tmin=None, tmax=None, freq=None,
                          warmup=None, istress=None, return_warmup=False,
-                         parameters=None):
+                         p=None):
         """Method to get the contribution of a stressmodel.
 
         Parameters
@@ -1312,9 +1313,10 @@ class Model:
             can be used to obtain the contribution of an individual stress.
         return_warmup: bool, optional
             Include warmup in contribution calculation or not.
-        parameters: list or numpy.ndarray
-            iterable with the parameters. If none, the optimal parameters are
-            used when available, initial otherwise.
+        p: array_like, optional
+            array_like object with the values as floats representing the
+            model parameters. See Model.get_parameters() for more info if
+            parameters is None.
 
         Returns
         -------
@@ -1322,8 +1324,8 @@ class Model:
             Pandas Series with the contribution.
 
         """
-        if parameters is None:
-            parameters = self.get_parameters(name)
+        if p is None:
+            p = self.get_parameters(name)
 
         if tmin is None:
             tmin = self.settings['tmin']
@@ -1347,7 +1349,7 @@ class Model:
         kwargs = {'tmin': tmin_warm, 'tmax': tmax, 'freq': freq, 'dt': dt}
         if istress is not None:
             kwargs['istress'] = istress
-        contrib = self.stressmodels[name].simulate(parameters, **kwargs)
+        contrib = self.stressmodels[name].simulate(p, **kwargs)
 
         # Respect provided tmin/tmax at this point, since warmup matters for
         # simulation but should not be returned, unless return_warmup=True.
@@ -1415,8 +1417,8 @@ class Model:
         sim_org = ml.simulate(tmin=tmin, tmax=tmax)
         return sim - sim_org
 
-    def _get_response(self, block_or_step, name, parameters=None, dt=None,
-                      add_0=False, **kwargs):
+    def _get_response(self, block_or_step, name, p=None, dt=None, add_0=False,
+                      **kwargs):
         """Internal method to compute the block and step response.
 
         Parameters
@@ -1425,8 +1427,10 @@ class Model:
             String with "step" or "block"
         name: str
             string with the name of the stressmodel
-        parameters: ndarray, optional
-            array with the parameters
+        p: array_like, optional
+            array_like object with the values as floats representing the
+            model parameters. See Model.get_parameters() for more info if
+            parameters is None.
         dt: float, optional
             timestep for the response function.
         add_0: bool, optional
@@ -1445,12 +1449,12 @@ class Model:
             block_or_step = getattr(self.stressmodels[name].rfunc,
                                     block_or_step)
 
-        if parameters is None:
-            parameters = self.get_parameters(name)
+        if p is None:
+            p = self.get_parameters(name)
 
         if dt is None:
             dt = _get_dt(self.settings["freq"])
-        response = block_or_step(parameters, dt, **kwargs)
+        response = block_or_step(p, dt, **kwargs)
 
         if add_0:
             response = np.insert(response, 0, 0.0)
@@ -1465,8 +1469,7 @@ class Model:
         return response
 
     @get_stressmodel
-    def get_block_response(self, name, parameters=None, add_0=False, dt=None,
-                           **kwargs):
+    def get_block_response(self, name, p=None, add_0=False, dt=None, **kwargs):
         """Method to obtain the block response for a stressmodel.
 
         The optimal parameters are used when available, initial otherwise.
@@ -1475,9 +1478,10 @@ class Model:
         ----------
         name: str
             String with the name of the stressmodel.
-        parameters: list or numpy.ndarray
-            iterable with the parameters. If none, the optimal parameters are
-            used when available, initial otherwise.
+        p: array_like, optional
+            array_like object with the values as floats representing the
+            model parameters. See Model.get_parameters() for more info if
+            parameters is None.
         add_0: bool, optional
             Adds 0 at t=0 at the start of the response, defaults to False.
         dt: float, optional
@@ -1491,11 +1495,10 @@ class Model:
 
         """
         return self._get_response(block_or_step="block", name=name, dt=dt,
-                                  parameters=parameters, add_0=add_0, **kwargs)
+                                  p=p, add_0=add_0, **kwargs)
 
     @get_stressmodel
-    def get_step_response(self, name, parameters=None, add_0=False, dt=None,
-                          **kwargs):
+    def get_step_response(self, name, p=None, add_0=False, dt=None, **kwargs):
         """Method to obtain the step response for a stressmodel.
 
         The optimal parameters are used when available, initial otherwise.
@@ -1504,9 +1507,10 @@ class Model:
         ----------
         name: str
             String with the name of the stressmodel.
-        parameters: list or numpy.ndarray, optional
-            iterable with the parameters. If none, the optimal parameters are
-            used when available, initial otherwise.
+        p: array_like, optional
+            array_like object with the values as floats representing the
+            model parameters. See Model.get_parameters() for more info if
+            parameters is None.
         add_0: bool, optional
             Adds 0 at t=0 at the start of the response, defaults to False.
         dt: float, optional
@@ -1520,18 +1524,19 @@ class Model:
 
         """
         return self._get_response(block_or_step="step", name=name, dt=dt,
-                                  parameters=parameters, add_0=add_0, **kwargs)
+                                  p=p, add_0=add_0, **kwargs)
 
-    def get_response_tmax(self, name, parameters=None, cutoff=0.999):
+    def get_response_tmax(self, name, p=None, cutoff=0.999):
         """Method to get the tmax used for the response function.
 
         Parameters
         ----------
         name: str
             String with the name of the stressmodel.
-        parameters: list or numpy.ndarray, optional
-            iterable with the parameters. If none, the optimal parameters are
-            used when available, initial otherwise.
+        p: array_like, optional
+            array_like object with the values as floats representing the
+            model parameters. See Model.get_parameters() for more info if
+            parameters is None.
         cutoff: float, optional
             float between 0 and 1. Default is 0.999 or 99.9% of the response.
 
@@ -1553,24 +1558,42 @@ class Model:
             self.logger.warning("Stressmodel {} has no rfunc".format(name))
             return None
         else:
-            if parameters is None:
-                parameters = self.get_parameters(name)
-            tmax = self.stressmodels[name].rfunc.get_tmax(p=parameters,
+            if p is None:
+                p = self.get_parameters(name)
+            tmax = self.stressmodels[name].rfunc.get_tmax(p=p,
                                                           cutoff=cutoff)
             return tmax
 
     @get_stressmodel
     def get_stress(self, name, tmin=None, tmax=None, freq=None, warmup=None,
-                   istress=None, return_warmup=False, parameters=None):
+                   istress=None, return_warmup=False, p=None):
         """Method to obtain the stress(es) from the stressmodel.
 
         Parameters
         ----------
         name: str
             String with the name of the stressmodel.
+        tmin: str, optional
+            String with a start date for the simulation period (E.g. '1980').
+            If none is provided, the tmin from the oseries is used.
+        tmax: str, optional
+            String with an end date for the simulation period (E.g. '2010').
+            If none is provided, the tmax from the oseries is used.
+        freq: str, optional
+            String with the frequency the stressmodels are simulated. Must
+            be one of the following: (D, h, m, s, ms, us, ns) or a multiple of
+            that e.g. "7D".
+        warmup: float or int, optional
+            Warmup period (in Days).
         istress: int, optional
             When multiple stresses are present in a stressmodel, this keyword
             can be used to obtain the contribution of an individual stress.
+        return_warmup: bool, optional
+            Include warmup in contribution calculation or not.
+        p: array_like, optional
+            array_like object with the values as floats representing the
+            model parameters. See Model.get_parameters() for more info if
+            parameters is None.
 
         Returns
         -------
@@ -1579,8 +1602,8 @@ class Model:
             are present, a list of pandas Series is returned.
 
         """
-        if parameters is None:
-            parameters = self.get_parameters(name)
+        if p is None:
+            p = self.get_parameters(name)
 
         if tmin is None:
             tmin = self.settings['tmin']
@@ -1603,7 +1626,7 @@ class Model:
         if istress is not None:
             kwargs["istress"] = istress
 
-        stress = self.stressmodels[name].get_stress(p=parameters, **kwargs)
+        stress = self.stressmodels[name].get_stress(p=p, **kwargs)
         if not return_warmup:
             stress = stress.loc[tmin:tmax]
 
@@ -1683,7 +1706,7 @@ class Model:
                                    self.settings["noise"] else np.nan),
             "Obj": "{:.2f}".format(self.fit.obj_func),
             "___": "", "Interpolated": "Yes" if self.interpolate_simulation
-                  else "No",
+            else "No",
         }
 
         parameters = self.parameters.loc[:, ["optimal", "stderr",
@@ -1741,7 +1764,7 @@ class Model:
         return report
 
     def _check_parameters_bounds(self, alpha=0.01):
-        """Internal method toCheck if the optimal parameters are close to
+        """Internal method to check if the optimal parameters are close to
         pmin or pmax.
 
         Parameters

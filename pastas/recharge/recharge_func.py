@@ -121,8 +121,9 @@ class Linear(RechargeBase):
         prec, evap: array_like
             array with the precipitation and evapotranspiration values. These
             arrays must be of the same length and at the same time steps.
-        p: float
-            parameter value used in recharge calculation.
+        p: array_like
+            array_like object with the values as floats representing the
+            model parameters.
 
         Returns
         -------
@@ -197,8 +198,9 @@ class FlexModel(RechargeBase):
             Precipitation flux in mm/d. Has to have the same length as evap.
         evap: numpy.array
             Potential evaporation flux in mm/d.
-        p: numpy.array
-            numpy array with the parameter values.
+        p: array_like
+            array_like object with the values as floats representing the
+            model parameters.
         dt: float, optional
             time step for the calculation of the recharge. Only dt=1 is
             possible now.
@@ -326,8 +328,9 @@ class Berendrecht(RechargeBase):
             Precipitation flux in mm/d. Has to have the same length as evap.
         evap: numpy.array
             Potential evapotranspiration flux in mm/d.
-        p: numpy.array
-            numpy array with the parameter values.
+        p: array_like
+            array_like object with the values as floats representing the
+            model parameters.
         dt: float, optional
             time step for the calculation of the recharge. Only dt=1 is
             possible now.

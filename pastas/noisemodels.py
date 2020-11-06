@@ -107,7 +107,7 @@ class NoiseModelBase:
         return {"type": self._name}
 
     @staticmethod
-    def weights(res, parameters):
+    def weights(res, p):
         return 1
 
 
@@ -162,7 +162,7 @@ class NoiseModel(NoiseModelBase):
         self.set_init_parameters()
 
     @staticmethod
-    def simulate(res, parameters):
+    def simulate(res, p):
         """
         Simulate noise from the residuals.
 
@@ -170,8 +170,9 @@ class NoiseModel(NoiseModelBase):
         ----------
         res: pandas.Series
             The residual series.
-        parameters: array-like
-            Alpha parameters used by the noisemodel.
+        p: array_like
+            array_like object with the values as floats representing the
+            model parameters. Here, Alpha parameter used by the noisemodel.
 
         Returns
         -------
@@ -179,14 +180,14 @@ class NoiseModel(NoiseModelBase):
             Series of the noise.
 
         """
-        alpha = parameters[0]
+        alpha = p[0]
         odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
         v = Series(index=res.index, dtype="float64", name="Noise")
         v.iloc[0] = res.values[0]
         v.iloc[1:] = res.values[1:] - np.exp(-odelt / alpha) * res.values[:-1]
         return v
 
-    def weights(self, res, parameters):
+    def weights(self, res, p):
         """
         Method to calculate the weights for the noise.
 
@@ -195,7 +196,7 @@ class NoiseModel(NoiseModelBase):
         res: pandas.Series
             Pandas Series with the residuals to compute the weights for. The
             Series index must be a DatetimeIndex.
-        parameters: numpy.ndarray
+        p: numpy.ndarray
             numpy array with the parameters used in the noise mdoel.
 
         Returns
@@ -212,7 +213,7 @@ class NoiseModel(NoiseModelBase):
         which are then normalized so that sum(w) = len(res)
 
         """
-        alpha = parameters[0]
+        alpha = p[0]
         odelt = np.empty(res.size)
         odelt[0] = 1e12  # large for first measurement
         odelt[1:] = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
@@ -267,9 +268,9 @@ class ArmaModel(NoiseModelBase):
         self.parameters.loc["noise_beta"] = (10, -np.inf, np.inf, True,
                                              "noise")
 
-    def simulate(self, res, parameters):
-        alpha = parameters[0]
-        beta = parameters[1]
+    def simulate(self, res, p):
+        alpha = p[0]
+        beta = p[1]
 
         # Calculate the time steps
         odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")

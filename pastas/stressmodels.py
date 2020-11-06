@@ -305,8 +305,9 @@ class StressModel(StressModelBase):
 
         Parameters
         ----------
-        p: numpy.ndarray
-           Parameters used for simulation.
+        p: array_like
+            array_like object with the values as floats representing the
+            model parameters.
         tmin: str, optional
         tmax: str, optional
         freq: str, optional
@@ -442,8 +443,9 @@ class StressModel2(StressModelBase):
 
         Parameters
         ----------
-        p: numpy.ndarray
-           Parameters used for simulation.
+        p: array_like
+            array_like object with the values as floats representing the
+            model parameters.
         tmin: str, optional
         tmax: str, optional
         freq: str, optional
@@ -1144,8 +1146,9 @@ class RechargeModel(StressModelBase):
 
         Parameters
         ----------
-        p: numpy.ndarray, optional
-            parameter used for the simulation
+        p: array_like, optional
+            array_like object with the values as floats representing the
+            model parameters.
         tmin: string, optional
         tmax: string, optional
         freq: string, optional
@@ -1183,8 +1186,9 @@ class RechargeModel(StressModelBase):
 
         Parameters
         ----------
-        p: array, optional
-            array with the parameters values. Must be the length self.nparam.
+        p: array_like, optional
+            array_like object with the values as floats representing the
+            model parameters.
         tmin: string, optional
         tmax: string, optional
         freq: string, optional
@@ -1236,8 +1240,9 @@ class RechargeModel(StressModelBase):
 
         Parameters
         ----------
-        p: array, optional
-            array with the parameters values.
+        p: array_like, optional
+            array_like object with the values as floats representing the
+            model parameters.
         tmin: string, optional
         tmax: string, optional
         freq: string, optional

@@ -9,6 +9,11 @@ For full details of all changes check the commit log.
 Version 0.16 (Expected 6th of November 2020)
 --------------------------------------------
 
+.. note::
+    This release will introduce backward incompatible changes to Pastas, most
+    notably due to the renaming of the parameter input argument. This change
+    is mostly internally and will only affect users that explicitly pass
+    parameters into a method.
 
 New Features / Enhancements
 ***************************
@@ -27,7 +32,10 @@ Deprecations
 - The following methods to set parameter properties are now deprecated
   and replaced by the single method `ml.set_parameter`: `ml.set_vary`,
   `ml.set_pmin`, `ml.set_pmax`, `ml.set_initial`.
--
+- The name of the input argument for the parameters was made consistent
+  throughout Pastas. If the input argument is named `p` an array-like object
+  is expected, whereas if the input is `parameters` a Pandas DataFrame object
+  is expected.
 
 
 Backwards incompatible API changes

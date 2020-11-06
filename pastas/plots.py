@@ -1003,7 +1003,7 @@ class TrackSolve:
             array containing noise
 
         """
-        noise = self.ml.noise(parameters=params, tmin=self.tmin,
+        noise = self.ml.noise(p=params, tmin=self.tmin,
                               tmax=self.tmax)
         return noise
 
@@ -1021,7 +1021,7 @@ class TrackSolve:
             array containing residuals
 
         """
-        res = self.ml.residuals(parameters=params, tmin=self.tmin,
+        res = self.ml.residuals(p=params, tmin=self.tmin,
                                 tmax=self.tmax)
         return res
 
@@ -1034,7 +1034,7 @@ class TrackSolve:
             series containing model evaluation
 
         """
-        sim = self.ml.simulate(parameters=self.parameters.iloc[-1, :].values,
+        sim = self.ml.simulate(p=self.parameters.iloc[-1, :].values,
                                tmin=self.tmin, tmax=self.tmax,
                                freq=self.ml.settings["freq"])
         return sim

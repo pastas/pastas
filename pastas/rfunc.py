@@ -63,8 +63,9 @@ class RfuncBase:
 
         Parameters
         ----------
-        p:  numpy.array
-            numpy array with the parameters.
+        p: array_like
+            array_like object with the values as floats representing the
+            model parameters.
         cutoff: float, optional
             float between 0 and 1.
 
@@ -82,8 +83,9 @@ class RfuncBase:
 
         Parameters
         ----------
-        p: numpy.array
-            numpy array with the parameters.
+        p: array_like
+            array_like object with the values as floats representing the
+            model parameters.
         dt: float
             timestep as a multiple of of day.
         cutoff: float, optional
@@ -103,8 +105,9 @@ class RfuncBase:
 
         Parameters
         ----------
-        p: numpy.array
-            numpy array with the parameters.
+        p: array_like
+            array_like object with the values as floats representing the
+            model parameters.
         dt: float
             timestep as a multiple of of day.
         cutoff: float, optional
@@ -126,8 +129,9 @@ class RfuncBase:
 
         Parameters
         ----------
-        p: numpy.array
-            numpy array with the parameters.
+        p: array_like
+            array_like object with the values as floats representing the
+            model parameters.
         dt: float
             timestep as a multiple of of day.
         cutoff: float
