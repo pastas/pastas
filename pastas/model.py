@@ -844,9 +844,8 @@ class Model:
 
         """
         msg = "Deprecation warning: method is deprecated and will be removed" \
-              " in version 0.16.0. Use ml.set_parameter instead."
+              " in version 0.17.0. Use ml.set_parameter instead."
         self.logger.warning(msg)
-        self.set_parameter(name, initial=value, move_bounds=move_bounds)
 
     def set_vary(self, name, value):
         """Method to set if the parameter is allowed to vary.
@@ -864,9 +863,8 @@ class Model:
 
         """
         msg = "Deprecation warning: method is deprecated and will be removed" \
-              " in version 0.16.0. Use ml.set_parameter instead."
-        self.logger.warning(msg)
-        self.set_parameter(name, vary=bool(value))
+              " in version 0.17.0. Use ml.set_parameter instead."
+        self.logger.error(msg)
 
     def set_pmin(self, name, value):
         """Method to set the minimum value of a parameter.
@@ -884,9 +882,8 @@ class Model:
 
         """
         msg = "Deprecation warning: method is deprecated and will be removed" \
-              " in version 0.16.0. Use ml.set_parameter instead."
-        self.logger.warning(msg)
-        self.set_parameter(name, pmin=value)
+              " in version 0.17.0. Use ml.set_parameter instead."
+        self.logger.error(msg)
 
     def set_pmax(self, name, value):
         """Method to set the maximum values of a parameter.
@@ -904,9 +901,8 @@ class Model:
 
         """
         msg = "Deprecation warning: method is deprecated and will be removed" \
-              " in version 0.16.0. Use ml.set_parameter instead."
-        self.logger.warning(msg)
-        self.set_parameter(name, pmax=value)
+              " in version 0.17.0. Use ml.set_parameter instead."
+        self.logger.error(msg)
 
     def set_parameter(self, name, initial=None, vary=None, pmin=None,
                       pmax=None, move_bounds=False):

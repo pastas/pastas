@@ -3,9 +3,6 @@
 # Pastas documentation build configuration file, created by
 # sphinx-quickstart on Wed May 11 12:38:06 2016.
 
-# Repository setup is according to:
-# http://gisellezeno.com/tutorials/sphinx-for-python-documentation.html
-#
 # This file is execfile()d with the current directory set to its
 # containing dir.
 #
@@ -45,7 +42,8 @@ extensions = [
     'IPython.sphinxext.ipython_console_highlighting',  # lowercase didn't work
     'sphinx.ext.autosectionlabel',
     'nbsphinx',
-    'nbsphinx_link'
+    'nbsphinx_link',
+    'sphinx_gallery.load_style',
 ]
 
 # Add any paths that contain templates here, relative to this directory.

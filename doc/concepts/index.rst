@@ -9,16 +9,11 @@ number of parameters, which are optimized by the Solver. During optimization
 the noise (or the residuals, the difference between the simulation and the
 observations, when no NoiseModel is used) are minimized.
 
+Below is a list of Jupyter Notebooks with code, comments and figures:
+
 .. toctree::
     :maxdepth: 1
+    :numbered:
+    :glob:
 
-    ./sources.rst
-    ./timesteps.rst
-    ./stressmodels.rst
-    ./solver.rst
-    ./statistics.rst
-    ./visualization.rst
-
-.. warning::
-    This section is unfortunately slightly outdated and needs to be updated.
-    Check the code on GitHub for the current implementations.
+    ./*

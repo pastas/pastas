@@ -15,7 +15,7 @@ the built-in optimization, visualisation, and statistical analysis tools.
 
     About <about/index>
     Getting Started <getting_started>
-    User Guide <concepts/index>
+    Concepts <concepts/index>
     Examples <examples/index>
     Development <developers/index>
     API Docs <api/index>
