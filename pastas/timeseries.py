@@ -410,7 +410,12 @@ class TimeSeries:
                     pass
                 else:
                     value = pd.Timestamp(value)
-            if value != self.settings[key]:
+            # This option will be removed in version 0.17.0 to keep code clean
+            if key == "to_daily_unit":
+                logger.warning("The key 'to_daily_unit' is removed. This "
+                               "file will not work from Pastas 0.17.0. Make "
+                               "sure to save your model again to a .pas-file.")
+            elif value != self.settings[key]:
                 self.settings[key] = value
                 update = True
         return update
