@@ -295,6 +295,23 @@ def timestep_weighted_resample_fast(series0, freq):
     return series
 
 
+def to_daily_unit(series, method=True):
+    """Experimental method, use wth caution!
+
+    Recalculate a timeseries of a stress with a non-daily unit (e/g.
+    m3/month) to a daily unit (e.g. m3/day). This method just changes the
+    values of the timeseries, and does not alter the frequency.
+
+    """
+    if method is True or method == "divide":
+        dt = series.index.to_series().diff() / Timedelta(1, 'D')
+        dt[:-1] = dt[1:]
+        dt[-1] = np.NaN
+        if not ((dt == 1.0) | dt.isna()).all():
+            series = series / dt
+    return series
+
+
 def excel2datetime(tindex, freq="D"):
     """Method to convert excel datetime to pandas timetime objects.
 

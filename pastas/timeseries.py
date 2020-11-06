@@ -34,7 +34,6 @@ Public Methods
 
 from logging import getLogger
 
-import numpy as np
 import pandas as pd
 from pandas.tseries.frequencies import to_offset
 
@@ -93,8 +92,7 @@ class TimeSeries:
                  "fill_before": "mean", "fill_after": "mean",
                  "fill_nan": "interpolate"},
         "well": {"sample_up": "bfill", "sample_down": "mean",
-                 "fill_nan": 0.0, "fill_before": 0.0, "fill_after": 0.0,
-                 "to_daily_unit": "divide"},
+                 "fill_nan": 0.0, "fill_before": 0.0, "fill_after": 0.0},
         "waterlevel": {"sample_up": "interpolate", "sample_down": "mean",
                        "fill_before": "mean", "fill_after": "mean",
                        "fill_nan": "interpolate"},
@@ -142,7 +140,6 @@ class TimeSeries:
 
             self.freq_original = freq_original
             self.settings = {
-                "to_daily_unit": None,
                 "freq": None,
                 "sample_up": None,
                 "sample_down": None,
@@ -307,7 +304,6 @@ class TimeSeries:
             series = self._series_validated.copy(deep=True)
 
             # Update the series with the new settings
-            series = self._to_daily_unit(series)
             series = self._change_frequency(series)
             series = self._fill_before(series)
             series = self._fill_after(series)
@@ -376,7 +372,7 @@ class TimeSeries:
         else:
             if self.settings["fill_nan"] != "drop":
                 msg = "Cannot determine frequency of series {}. Resample-set" \
-                    "tings are ignored and timestep_weighted_resample is used"
+                      "tings are ignored and timestep_weighted_resample is used"
                 logger.info(msg.format(self.name))
 
         # 5. Handle duplicate indices
@@ -447,33 +443,8 @@ class TimeSeries:
 
         # Drop nan-values at the beginning and end of the time series
         series = series.loc[
-            series.first_valid_index():series.last_valid_index()]
+                 series.first_valid_index():series.last_valid_index()]
 
-        return series
-
-    def _to_daily_unit(self, series):
-        """Recalculate a timeseries of a stress with a non-daily unit (e/g.
-        m3/month) to a daily unit (e.g. m3/day). This method just changes the
-        values of the timeseries, and does not alter the frequency.
-
-        """
-        method = self.settings["to_daily_unit"]
-        if method is not None:
-            if method is True or method == "divide":
-                dt = series.index.to_series().diff() / pd.Timedelta(1, 'D')
-                if self.settings["sample_up"] in ["pad", "ffill"]:
-                    dt[:-1] = dt[1:]
-                    dt[-1] = np.NaN
-
-                if not ((dt == 1.0) | dt.isna()).all():
-                    series = series / dt
-                    msg = ("Time Series {}: values of stress were transformed "
-                           "to daily values (frequency not altered) with: {}")
-                    logger.info(msg.format(self.name, method))
-            else:
-                msg = ("Time Series {}: User-defined option for to_daily_unit "
-                       "{} is not supported")
-                logger.warning(msg.format(self.name, method))
         return series
 
     def _sample_up(self, series):
@@ -559,7 +530,7 @@ class TimeSeries:
         if self.settings['time_offset'] > pd.Timedelta(0):
             # The offset is removed by the resample-method, so we will add it again
             series.index = series.index + \
-                to_offset(self.settings["time_offset"])
+                           to_offset(self.settings["time_offset"])
 
         logger.info("Time Series {} was sampled down to freq {} with method "
                     "{}".format(self.name, freq, method))
