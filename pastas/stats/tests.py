@@ -23,7 +23,7 @@ from logging import getLogger
 
 import matplotlib.pyplot as plt
 from numpy import sqrt, cumsum, nan, zeros, arange, finfo, median
-from pandas import DataFrame
+from pandas import DataFrame, infer_freq
 from scipy.stats import chi2, norm, shapiro, normaltest, probplot
 
 from .core import acf as get_acf
@@ -92,7 +92,7 @@ def durbin_watson(series=None):
     >>> result = ps.stats.durbin_watson(data)
 
     """
-    if not series.index.inferred_freq:
+    if not infer_freq(series.index):
         logger.warning("Caution: The Durbin-Watson test should only be used "
                        "for time series with equidistant time steps.")
 
@@ -103,7 +103,7 @@ def durbin_watson(series=None):
     return dw_stat, p
 
 
-def ljung_box(series=None, lags=365, nparam=0, full_output=False):
+def ljung_box(series=None, lags=15, nparam=0, full_output=False):
     """Ljung-box test for autocorrelation.
 
     Parameters
@@ -161,7 +161,7 @@ def ljung_box(series=None, lags=365, nparam=0, full_output=False):
     --------
     >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
     >>>                 data=np.random.rand(1000))
-    >>> stat, p = ps.stats.ljung_box(res, lags=365)
+    >>> stat, p = ps.stats.ljung_box(res, lags=15)
     >>> if p > alpha:
     >>>    print("Failed to reject the Null-hypothesis, no significant"
     >>>          "autocorrelation. p =", p.round(2))
@@ -176,7 +176,7 @@ def ljung_box(series=None, lags=365, nparam=0, full_output=False):
         Similar method but adapted for time series with missing data.
 
     """
-    if not series.index.inferred_freq:
+    if not infer_freq(series.index):
         logger.warning("Caution: The Ljung-Box test should only be used "
                        "for time series with equidistant time steps. "
                        "Consider using ps.stats.stoffer_toloi instead.")
@@ -293,7 +293,7 @@ def runs_test(series, cutoff="median"):
     return z_stat, pval
 
 
-def stoffer_toloi(series, lags=365, nparam=0, freq="D"):
+def stoffer_toloi(series, lags=15, nparam=0, freq="D"):
     """Adapted Ljung-Box test to deal with missing data [stoffer_1992]_.
 
     Parameters
@@ -301,8 +301,8 @@ def stoffer_toloi(series, lags=365, nparam=0, freq="D"):
     series: pandas.Series
         Time series to compute the adapted Ljung-Box statistic for.
     lags: int, optional
-        If lags is None, then the default maximum lag is 365. The units of
-        this variable depend on the frequency chosen with the freq keyword.
+        the number of lags to compute the statistic for. Only lags for which
+        a correlation is computed are used.
     nparam: int, optional
         Number of parameters of the noisemodel.
     freq: str, optional
@@ -349,7 +349,7 @@ def stoffer_toloi(series, lags=365, nparam=0, freq="D"):
     --------
     >>> data= pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
     >>>                 data=np.random.rand(1000))
-    >>> stat, p = ps.stats.stoffer_toloi(noise, lags=365, freq="D")
+    >>> stat, p = ps.stats.stoffer_toloi(noise, lags=15, freq="D")
     >>> if p > alpha:
     >>>    print("Failed to reject the Null-hypothesis, no significant"
     >>>          "autocorrelation. p =", p.round(2))
@@ -358,9 +358,6 @@ def stoffer_toloi(series, lags=365, nparam=0, freq="D"):
 
     """
     series = series.asfreq(freq=freq)  # Make time series equidistant
-
-    # TODO: Check if minimum frequency of the is (much) higher than freq and
-    #  raise a warning. See also #https://github.com/pastas/pastas/issues/228
 
     nobs = series.size
     z = (series - series.mean()).fillna(0.0)
@@ -371,12 +368,13 @@ def stoffer_toloi(series, lags=365, nparam=0, freq="D"):
     da0 = (yn ** 2).sum() / nobs
     de0 = dz0 / da0
 
-    # initialize
-    dz = zeros(lags)
-    da = zeros(lags)
-    de = zeros(lags)
+    # initialize, compute all correlation up to one year.
+    nlags = 365  # Hard-coded for now
+    dz = zeros(nlags)
+    da = zeros(nlags)
+    de = zeros(nlags)
 
-    for i in range(0, lags):
+    for i in range(0, nlags):
         hh = y[:-i - 1] * y[i + 1:]
         dz[i] = hh.sum() / nobs
         hh = yn[:-i - 1] * yn[i + 1:]
@@ -385,17 +383,22 @@ def stoffer_toloi(series, lags=365, nparam=0, freq="D"):
             de[i] = dz[i] / da[i]
 
     re = de / de0
+
+    # remove correlation where no observations are available (de = 0)
+    da = da[re != 0][:lags]
+    re = re[re != 0][:lags]
     k = arange(1, lags + 1)
+
     # Compute the Q-statistic
     qm = nobs ** 2 * sum(da * re ** 2 / (nobs - k))
 
-    dof = max(lags - nparam, 1)
+    dof = max(len(k) - nparam, 1)
     pval = chi2.sf(qm, df=dof)
 
     return qm, pval
 
 
-def diagnostics(series, alpha=0.05, nparam=0, lags=365, stats=(),
+def diagnostics(series, alpha=0.05, nparam=0, lags=15, stats=(),
                 float_fmt="{0:.2f}"):
     """Methods to compute various diagnostics checks for a time series.
 
@@ -426,7 +429,7 @@ def diagnostics(series, alpha=0.05, nparam=0, lags=365, stats=(),
     Notes
     -----
     Different tests are computed depending on the regularity of the time
-    step of the provided time series. series.index.inferred_freq is used to
+    step of the provided time series. pd.infer_freq is used to
     determined whether or not the time steps are regular.
 
     Examples
@@ -462,7 +465,7 @@ def diagnostics(series, alpha=0.05, nparam=0, lags=365, stats=(),
     df.loc["Runs test", cols] = "Autocorr.", stat, p
 
     # Do different tests depending on time step
-    if series.index.inferred_freq:
+    if infer_freq(series.index):
         # Ljung-Box test for autocorrelation
         stat, p = ljung_box(series, nparam=nparam, lags=lags)
         df.loc["Ljung-Box", cols] = "Autocorr.", stat, p
