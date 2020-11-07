@@ -144,6 +144,9 @@ def _get_time_offset(t, freq):
         Timedelta with the offset for the timestamp t.
 
     """
+    if freq is None:
+        raise TypeError("frequency is None")
+    
     return t - t.floor(freq)
 
 
