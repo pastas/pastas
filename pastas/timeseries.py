@@ -62,6 +62,8 @@ class TimeSeries:
     metadata: dict, optional
         Dictionary with metadata of the time series.
     freq_original: str, optional
+        By providing a frequency string here, a frequency can be forced on the
+        time series if it can not be inferred with pd.infer_freq.
     **kwargs: optional
         Any keyword arguments that are provided but are not listed will be
         passed as additional settings.
@@ -489,9 +491,9 @@ class TimeSeries:
         elif method is None:
             pass
         else:
-            if method == "mean":  # when would you ever want this?
+            if method == "mean":
                 series = series.asfreq(freq)
-                series.fillna(series.mean(), inplace=True)  # Default option
+                series.fillna(series.mean(), inplace=True)
             elif method == "interpolate":
                 series = series.asfreq(freq)
                 series.interpolate(method="time", inplace=True)
@@ -506,10 +508,9 @@ class TimeSeries:
                 msg = f"Time Series {self.name}: User-defined option for " \
                       f"sample_up {method} is not supported"
                 logger.warning(msg)
-        if n > 0:
-            msg = f"Time Series {self.name}: {n} nan-value(s) was/were " \
-                  f"found and filled with: {method}"
-            logger.info(msg)
+
+        msg = f"Time Series {self.name} were sampled up using {method}."
+        logger.info(msg)
 
         return series
 
@@ -529,11 +530,11 @@ class TimeSeries:
 
         # when a multiple freq is used (like '7D') make sure the first record
         # has a rounded index
-        from_time = series.index[0].ceil(freq) + self.settings["time_offset"]
-        series = series[from_time:]
+        start_time = series.index[0].ceil(freq) + self.settings["time_offset"]
+        series = series.loc[start_time:]
 
+        # Shift time series back by offset so resample can take it into account
         if self.settings['time_offset'] > pd.Timedelta(0):
-            # Shift time series back by offset, so resample can take it into account
             series = series.shift(-1, freq=self.settings["time_offset"])
 
         # Provide some standard pandas arguments for all options
@@ -541,7 +542,7 @@ class TimeSeries:
 
         if method == "mean":
             series = series.resample(freq, **kwargs).mean()
-        elif method == "drop":  # does this work?
+        elif method == "drop":
             series = series.resample(freq, **kwargs).mean().dropna()
         elif method == "sum":
             series = series.resample(freq, **kwargs).sum()
@@ -587,10 +588,12 @@ class TimeSeries:
         if freq:
             series = series.asfreq(freq)
             n = series.isnull().values.sum()
-            if method == "drop":
+            if n is 0:
+                pass
+            elif method == "drop":
                 series.dropna(inplace=True)
             elif method == "mean":
-                series.fillna(series.mean(), inplace=True)  # Default option
+                series.fillna(series.mean(), inplace=True)
             elif method == "interpolate":
                 series.interpolate(method="time", inplace=True)
             elif isinstance(method, float):
@@ -599,7 +602,6 @@ class TimeSeries:
                 msg = f"Time Series {self.name}: User-defined option for " \
                       f"fill_nan {method} is not supported."
                 logger.warning(msg)
-
         else:
             method = "drop"
             n = series.isnull().values.sum()
@@ -614,22 +616,18 @@ class TimeSeries:
         """Method to add a period in front of the available time series.
 
         """
-
         freq = self.settings["freq"]
         method = self.settings["fill_before"]
         tmin = self.settings["tmin"]
 
-        if tmin is None:
-            pass
-        elif method is None:
+        if tmin is None or method is None:
             pass
         elif pd.Timestamp(tmin) >= series.index.min():
             series = series.loc[pd.Timestamp(tmin):]
         else:
             tmin = pd.Timestamp(tmin)
             # When time offsets are not equal
-            time_offset = _get_time_offset(tmin, freq)
-            tmin = tmin - time_offset
+            tmin = tmin - _get_time_offset(tmin, freq)
 
             index_extend = pd.date_range(start=tmin, end=series.index.min(),
                                          freq=freq)
@@ -638,12 +636,16 @@ class TimeSeries:
 
             if method == "mean":
                 series.fillna(series.mean(), inplace=True)  # Default option
+                msg = f"Time Series {self.name} was extended to {tmin} with " \
+                      f"the mean value of the time series."
             elif isinstance(method, float):
                 series.fillna(method, inplace=True)
+                msg = f"Time Series {self.name} was extended to {tmin} by " \
+                      f"adding {method} values."
             else:
                 msg = f"Time Series {self.name}: User-defined option for " \
                       f"fill_before {method} is not supported."
-                logger.warning(msg)
+            logger.info(msg)
 
         return series
 
@@ -651,21 +653,18 @@ class TimeSeries:
         """Method to add a period in front of the available time series.
 
         """
-
         freq = self.settings["freq"]
         method = self.settings["fill_after"]
         tmax = self.settings["tmax"]
 
-        if tmax is None:
-            pass
-        elif method is None:
+        if tmax is None or method is None:
             pass
         elif pd.Timestamp(tmax) <= series.index.max():
             series = series.loc[:pd.Timestamp(tmax)]
         else:
+            tmax = pd.Timestamp(tmax)
             # When time offsets are not equal
-            time_offset = _get_time_offset(tmax, freq)
-            tmax = tmax - time_offset
+            tmax = tmax - _get_time_offset(tmax, freq)
             index_extend = pd.date_range(start=series.index.max(), end=tmax,
                                          freq=freq)
             index = series.index.union(index_extend)
@@ -673,12 +672,16 @@ class TimeSeries:
 
             if method == "mean":
                 series.fillna(series.mean(), inplace=True)  # Default option
+                msg = f"Time Series {self.name} was extended to {tmax} with " \
+                      f"the mean value of the time series."
             elif isinstance(method, float):
                 series.fillna(method, inplace=True)
+                msg = f"Time Series {self.name} was extended to {tmax} by " \
+                      f"adding {method} values."
             else:
                 msg = f"Time Series {self.name}: User-defined option for " \
                       f"fill_after {method} is not supported"
-                logger.warning(msg)
+            logger.info(msg)
 
         return series
 
@@ -687,9 +690,10 @@ class TimeSeries:
 
         """
         method = self.settings["norm"]
+        msg = f"Time series {self.name} is normalized with the {method}."
 
         if method is None:
-            pass
+            msg = None
         elif method == "mean":
             series = series.subtract(series.mean())
         elif method == "median":
@@ -702,7 +706,8 @@ class TimeSeries:
             series = series.subtract(method)
         else:
             msg = f"Time Series {self.name}: Selected method {method} to " \
-                  f"normalize the time series is  not supported"
+                  f"normalize the time series is not supported"
+        if msg:
             logger.info(msg)
 
         return series
