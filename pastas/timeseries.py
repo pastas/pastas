@@ -196,7 +196,8 @@ class TimeSeries:
         return f"{self.__class__.__name__}" \
                f"(name={self.name}, " \
                f"freq={self.settings['freq']}, " \
-               f"tmin={self.settings['tmin']}," \
+               f"freq_original={self.freq_original}, " \
+               f"tmin={self.settings['tmin']}, " \
                f"tmax={self.settings['tmax']})"
 
     @property
@@ -379,17 +380,18 @@ class TimeSeries:
         # 5. Find the frequency of the time series
         if self.freq_original:
             msg = f"User provided frequency for time series {self.name}: " \
-                  f"{self.freq_original}"
+                  f"freq={self.freq_original}"
         elif pd.infer_freq(series.index):
             self.freq_original = pd.infer_freq(series.index)
-            msg = f"Inferred frequency for time series {self.name}: freq= " \
-                  f"{self.freq_original}"
+            msg = f"Inferred frequency for time series {self.name}: " \
+                  f"freq={self.freq_original}"
         elif self.settings["fill_nan"] != "drop":
-            msg = f"Cannot determine frequency of series {self.name}. " \
-                  f"Resample settings are ignored and " \
+            msg = f"Cannot determine frequency of series {self.name}: " \
+                  f"freq=None. Resample settings are ignored and " \
                   f"timestep_weighted_resample is used."
         else:
-            msg = f"Cannot determine frequency of series {self.name}. "
+            msg = f"Cannot determine frequency of series {self.name}: " \
+                  f"freq=None. The time series is irregular."
 
         logger.info(msg)  # Always report a message for the frequency
 
@@ -401,9 +403,9 @@ class TimeSeries:
             grouped = series.groupby(level=0)
             series = grouped.mean()
 
-        # 7. drop nan-values (info message is provided by _fill_nan method)
-        if series.hasnans:
-            series = self._fill_nan(series)
+        # 7. drop or fill up nan-values (info message is provided by
+        # _fill_nan method)
+        series = self._fill_nan(series)
 
         if self.settings["tmin"] is None:
             self.settings["tmin"] = series.index.min()
