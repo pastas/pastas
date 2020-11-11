@@ -1043,7 +1043,7 @@ class Model:
                     # calculate the offset from the default frequency
                     t = st.series_original.index
                     base = t.min().ceil(freq)
-                    mask = t > base
+                    mask = t >= base
                     if np.any(mask):
                         time_offsets.add(_get_time_offset(t[mask][0], freq))
         if len(time_offsets) > 1:
