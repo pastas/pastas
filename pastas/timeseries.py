@@ -479,8 +479,6 @@ class TimeSeries:
         method = self.settings["sample_up"]
         freq = self.settings["freq"]
 
-        n = series.isnull().values.sum()
-
         if method in ["backfill", "bfill", "pad", "ffill"]:
             series = series.asfreq(freq, method=method)
         elif method is None:
@@ -525,9 +523,11 @@ class TimeSeries:
 
         # when a multiple freq is used (like '7D') make sure the first record
         # has a rounded index
+        # TODO: check if we can replace this with origin with pandas 1.1.0
         start_time = series.index[0].ceil(freq) + self.settings["time_offset"]
         series = series.loc[start_time:]
 
+        # TODO: replace by adding offset to resample method with pandas 1.1.0
         # Shift time series back by offset so resample can take it into account
         if self.settings['time_offset'] > pd.Timedelta(0):
             series = series.shift(-1, freq=self.settings["time_offset"])
@@ -550,10 +550,10 @@ class TimeSeries:
                   f"sample_down {method} is not supported"
             logger.warning(msg)
 
+        # TODO: replace by adding offset to resample method with pandas 1.1.0
         if self.settings['time_offset'] > pd.Timedelta(0):
             # The offset is removed by the resample-method, so we add it again
-            series.index = series.index + \
-                           to_offset(self.settings["time_offset"])
+            series = series.shift(1, freq=self.settings["time_offset"])
 
         logger.info(f"Time Series {self.name} was sampled down to freq "
                     f"{freq} with method {method}.")
