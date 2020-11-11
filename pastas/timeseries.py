@@ -298,7 +298,7 @@ class TimeSeries:
             tmin = self.settings['tmin']
             freq = self.settings['freq']
             if tmin is not None and freq is not None:
-                self.settings['time_offset'] = tmin - tmin.floor(freq)
+                self.settings['time_offset'] = _get_time_offset(tmin, freq)
 
             # Get the validated series to start with
             series = self._series_validated.copy(deep=True)
@@ -434,12 +434,7 @@ class TimeSeries:
                     pass
                 else:
                     value = pd.Timestamp(value)
-            # This option will be removed in version 0.17.0 to keep code clean
-            if key == "to_daily_unit":
-                logger.warning("The key 'to_daily_unit' is removed. This "
-                               "file will not work from Pastas 0.17.0. Make "
-                               "sure to save your model again to a .pas-file.")
-            elif value != self.settings[key]:
+            if value != self.settings[key]:
                 self.settings[key] = value
                 update = True
         return update

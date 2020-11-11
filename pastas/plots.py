@@ -139,7 +139,8 @@ class Plotting:
         plot_noise = self.ml.settings["noise"] and self.ml.noisemodel
         if plot_noise:
             noise = self.ml.noise(tmin=tmin, tmax=tmax)
-        contribs = self.ml.get_contributions(split=split, tmin=tmin, tmax=tmax)
+        contribs = self.ml.get_contributions(split=split, tmin=tmin,
+                                             tmax=tmax, return_warmup=False)
         fig = plt.figure(figsize=figsize, **kwargs)
         ylims = [(min([sim.min(), o[tmin:tmax].min()]),
                   max([sim.max(), o[tmin:tmax].max()]))]
@@ -150,7 +151,7 @@ class Plotting:
             else:
                 ylims.append((res.min(), res.max()))
             for contrib in contribs:
-                hs = contrib[tmin:tmax]
+                hs = contrib.loc[tmin:tmax]
                 if hs.empty:
                     if contrib.empty:
                         ylims.append((0.0, 0.0))

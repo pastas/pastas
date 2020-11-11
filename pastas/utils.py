@@ -146,7 +146,9 @@ def _get_time_offset(t, freq):
     """
     if freq is None:
         raise TypeError("frequency is None")
-    
+
+    # freq = to_offset(freq).name  # Maybe something like this first??
+
     return t - t.floor(freq)
 
 

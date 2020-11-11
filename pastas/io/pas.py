@@ -63,7 +63,7 @@ def dump(fname, data, verbose=True):
 
 class PastasEncoder(json.JSONEncoder):
     """Enhanced encoder to deal with the pandas formats used
-    throughout PASTAS.
+    throughout Pastas.
 
     Notes
     -----
