@@ -440,7 +440,7 @@ class Model:
         istart = 0  # Track parameters index to pass to stressmodel object
         for sm in self.stressmodels.values():
             contrib = sm.simulate(p[istart: istart + sm.nparam],
-                                  sim_index.min(), sim_index.max(), freq, dt)
+                                  sim_index.min(), tmax, freq, dt)
             sim = sim.add(contrib)
             istart += sm.nparam
         if self.constant:
@@ -1348,7 +1348,8 @@ class Model:
 
         # use warmup
         if tmin:
-            tmin_warm = Timestamp(tmin) - warmup
+            tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + \
+                self.settings["time_offset"]
         else:
             tmin_warm = None
 
@@ -1626,7 +1627,8 @@ class Model:
 
         # use warmup
         if tmin:
-            tmin_warm = Timestamp(tmin) - warmup
+            tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + \
+                self.settings["time_offset"]
         else:
             tmin_warm = None
 
