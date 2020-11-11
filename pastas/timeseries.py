@@ -621,9 +621,6 @@ class TimeSeries:
             series = series.loc[pd.Timestamp(tmin):]
         else:
             tmin = pd.Timestamp(tmin)
-            # When time offsets are not equal
-            tmin = tmin - _get_time_offset(series.index.min(), freq)
-
             index_extend = pd.date_range(start=tmin, end=series.index.min(),
                                          freq=freq)
             index = series.index.union(index_extend[:-1])
@@ -658,8 +655,6 @@ class TimeSeries:
             series = series.loc[:pd.Timestamp(tmax)]
         else:
             tmax = pd.Timestamp(tmax)
-            # When time offsets are not equal
-            tmax = tmax - _get_time_offset(tmax, freq)
             index_extend = pd.date_range(start=series.index.max(), end=tmax,
                                          freq=freq)
             index = series.index.union(index_extend)
