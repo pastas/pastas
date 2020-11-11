@@ -620,23 +620,19 @@ class TimeSeries:
         elif pd.Timestamp(tmin) >= series.index.min():
             series = series.loc[pd.Timestamp(tmin):]
         else:
-            tmin = pd.Timestamp(tmin)
-            # When time offsets are not equal
-            tmin = tmin - _get_time_offset(tmin, freq)
-
-            index_extend = pd.date_range(start=tmin, end=series.index.min(),
-                                         freq=freq)
-            index = series.index.union(index_extend[:-1])
-            series = series.reindex(index)
+            index_extend = pd.date_range(start=pd.Timestamp(tmin),
+                                         end=series.index.min(), freq=freq)
+            series = series.reindex(series.index.union(index_extend[:-1]))
 
             if method == "mean":
                 series.fillna(series.mean(), inplace=True)  # Default option
-                msg = f"Time Series {self.name} was extended to {tmin} with " \
-                      f"the mean value of the time series."
+                msg = f"Time Series {self.name} was extended to " \
+                      f"{series.index.min()} with the mean value of the " \
+                      f"time series."
             elif isinstance(method, float):
                 series.fillna(method, inplace=True)
-                msg = f"Time Series {self.name} was extended to {tmin} by " \
-                      f"adding {method} values."
+                msg = f"Time Series {self.name} was extended to" \
+                      f" {series.index.min()} by adding {method} values."
             else:
                 msg = f"Time Series {self.name}: User-defined option for " \
                       f"fill_before {method} is not supported."
@@ -657,22 +653,19 @@ class TimeSeries:
         elif pd.Timestamp(tmax) <= series.index.max():
             series = series.loc[:pd.Timestamp(tmax)]
         else:
-            tmax = pd.Timestamp(tmax)
-            # When time offsets are not equal
-            tmax = tmax - _get_time_offset(tmax, freq)
-            index_extend = pd.date_range(start=series.index.max(), end=tmax,
-                                         freq=freq)
-            index = series.index.union(index_extend)
-            series = series.reindex(index)
+            index_extend = pd.date_range(start=series.index.max(),
+                                         end=pd.Timestamp(tmax), freq=freq)
+            series = series.reindex(series.index.union(index_extend))
 
             if method == "mean":
                 series.fillna(series.mean(), inplace=True)  # Default option
-                msg = f"Time Series {self.name} was extended to {tmax} with " \
-                      f"the mean value of the time series."
+                msg = f"Time Series {self.name} was extended to " \
+                      f"{series.index.max()} with the mean value of the " \
+                      f"time series."
             elif isinstance(method, float):
                 series.fillna(method, inplace=True)
-                msg = f"Time Series {self.name} was extended to {tmax} by " \
-                      f"adding {method} values."
+                msg = f"Time Series {self.name} was extended to " \
+                      f"{series.index.max()} by adding {method} values."
             else:
                 msg = f"Time Series {self.name}: User-defined option for " \
                       f"fill_after {method} is not supported"
