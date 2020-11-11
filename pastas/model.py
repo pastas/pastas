@@ -447,8 +447,8 @@ class Model:
             sim = sim + self.constant.simulate(p[istart])
             istart += 1
         if self.transform:
-            sim = self.transform.simulate(sim, p[
-                                               istart:istart + self.transform.nparam])
+            sim = self.transform.simulate(sim, p[istart:istart +
+                                                        self.transform.nparam])
 
         # Respect provided tmin/tmax at this point, since warmup matters for
         # simulation but should not be returned, unless return_warmup=True.
@@ -697,18 +697,32 @@ class Model:
             self.settings["warmup"] = Timedelta(warmup, "D")
 
         # Set time offset from the frequency and the series in the stressmodels
-        self._set_time_offset()
+        self.settings["time_offset"] = self._get_time_offset()
 
-        # Set tmin and tmax
-        self.settings["tmin"] = self.get_tmin(tmin)
-        self.settings["tmax"] = self.get_tmax(tmax)
+        tmin = self.get_tmin(tmin)
+        tmax = self.get_tmax(tmax)
 
         # make sure calibration data is renewed
-        self.sim_index = self._get_sim_index(self.settings["tmin"],
-                                             self.settings["tmax"],
+        self.sim_index = self._get_sim_index(tmin, tmax,
                                              self.settings["freq"],
                                              self.settings["warmup"],
                                              update_sim_index=True)
+
+        # Set tmin and tmax
+        new_tmin = self.sim_index.min() + self.settings["warmup"]
+
+        if new_tmin != tmin:
+            self.logger.info(f"tmin updated from {tmin} to {new_tmin}")
+            tmin = new_tmin
+
+        if self.sim_index.max() != tmax:
+            self.logger.info(f"tmax updated from {tmax} to "
+                             f"{self.sim_index.max()}")
+            tmax = self.sim_index.max()
+
+        self.settings["tmin"] = tmin
+        self.settings["tmax"] = tmax
+
         self.oseries_calib = self.observations(tmin=self.settings["tmin"],
                                                tmax=self.settings["tmax"],
                                                freq=self.settings["freq"],
@@ -1018,8 +1032,8 @@ class Model:
                              "Frequency is set to daily")
             self.settings["freq"] = "D"
 
-    def _set_time_offset(self):
-        """Internal method to set the time offset for the model class.
+    def _get_time_offset(self):
+        """Internal method to get the time offset from the stressmodels.
 
         Notes
         -----
@@ -1044,9 +1058,9 @@ class Model:
             self.logger.error(msg)
             raise (Exception(msg))
         if len(time_offsets) == 1:
-            self.settings["time_offset"] = next(iter(time_offsets))
+            return next(iter(time_offsets))
         else:
-            self.settings["time_offset"] = Timedelta(0)
+            return Timedelta(0)
 
     def get_stressmodel_names(self):
         """Returns list of stressmodel names"""
@@ -1088,7 +1102,7 @@ class Model:
 
         if self.sim_index is None or update_sim_index:
             tmin = (tmin - warmup).floor(freq) + self.settings["time_offset"]
-            sim_index = date_range(tmin, tmax, freq=freq)
+            sim_index = date_range(tmin, tmax, freq=freq, closed=None)
         else:
             sim_index = self.sim_index
         return sim_index

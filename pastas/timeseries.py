@@ -622,7 +622,7 @@ class TimeSeries:
         else:
             tmin = pd.Timestamp(tmin)
             # When time offsets are not equal
-            tmin = tmin - _get_time_offset(tmin, freq)
+            tmin = tmin - _get_time_offset(series.index.min(), freq)
 
             index_extend = pd.date_range(start=tmin, end=series.index.min(),
                                          freq=freq)
