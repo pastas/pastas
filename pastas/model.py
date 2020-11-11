@@ -697,7 +697,8 @@ class Model:
             self.settings["warmup"] = Timedelta(warmup, "D")
 
         # Set time offset from the frequency and the series in the stressmodels
-        self._set_time_offset()
+        self.settings["time_offset"] = \
+            self._get_time_offset(self.settings["freq"])
 
         # Set tmin and tmax
         self.settings["tmin"] = self.get_tmin(tmin)
@@ -1018,13 +1019,21 @@ class Model:
                              "Frequency is set to daily")
             self.settings["freq"] = "D"
 
-    def _set_time_offset(self):
-        """Internal method to set the time offset for the model class.
+    def _get_time_offset(self, freq):
+        """Internal method to get the time offsets from the stressmodels.
+
+        Parameters
+        ----------
+        freq: str
+            string with the frequency used for simulation.
 
         Notes
         -----
+
         Method to check if the StressModel timestamps match
         (e.g. similar hours)
+
+
 
         """
         time_offsets = set()
@@ -1033,7 +1042,6 @@ class Model:
                 if st.freq_original:
                     # calculate the offset from the default frequency
                     t = st.series_original.index
-                    freq = self.settings["freq"]
                     base = t.min().ceil(freq)
                     mask = t > base
                     if np.any(mask):
@@ -1044,13 +1052,9 @@ class Model:
             self.logger.error(msg)
             raise (Exception(msg))
         if len(time_offsets) == 1:
-            self.settings["time_offset"] = next(iter(time_offsets))
+            return next(iter(time_offsets))
         else:
-            self.settings["time_offset"] = Timedelta(0)
-
-    def get_stressmodel_names(self):
-        """Returns list of stressmodel names"""
-        return list(self.stressmodels.keys())
+            return Timedelta(0)
 
     def _get_sim_index(self, tmin, tmax, freq, warmup, update_sim_index=False):
         """Internal method to get the simulation index, including the warmup.
@@ -1285,6 +1289,10 @@ class Model:
             parameters = p.optimal
 
         return parameters.values
+
+    def get_stressmodel_names(self):
+        """Returns list of stressmodel names"""
+        return list(self.stressmodels.keys())
 
     @get_stressmodel
     def get_contribution(self, name, tmin=None, tmax=None, freq=None,
