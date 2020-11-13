@@ -4,3 +4,4 @@ Ipython
 ipykernel
 pydata-sphinx-theme
 sphinx-gallery
+sphinx>=3.1
