@@ -1,22 +1,12 @@
-"""The solver module contains the different solvers that are available for
-Pastas.
+"""
+
+This module contains the different solvers that are available for Pastas.
 
 All solvers inherit from the BaseSolver class, which contains general method
 for selecting the correct time series to misfit and options to weight the
 residuals or noise series.
 
-Supported Solvers
------------------
-.. autosummary::
-    :nosignatures:
-    :toctree: generated/
 
-    LeastSquares
-    LmfitSolve
-
-
-Examples
---------
 To solve a model the following syntax can be used:
 
 >>> ml.solve(solver=ps.LeastSquares)
@@ -563,3 +553,18 @@ class LmfitSolveNew(BaseSolver):
         extraterm = np.sum(np.log(var_res / weights ** 2))
         rv = np.sum(weighted_noise ** 2) / var_res + extraterm
         return rv
+
+
+class MonteCarlo(BaseSolver):
+    _name = "MonteCarlo"
+
+    def __init__(self, ml, pcov=None, nfev=None, **kwargs):
+        BaseSolver.__init__(self, ml=ml, pcov=pcov, nfev=nfev, **kwargs)
+
+    def solve(self):
+
+        optimal = None
+        stderr = None
+        success = True
+        return success, optimal, stderr
+

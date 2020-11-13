@@ -1,4 +1,0 @@
-Solvers
-=======
-
-.. automodule:: pastas.solver

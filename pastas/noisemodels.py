@@ -2,16 +2,6 @@
 used to transform the residual series into a noise series that better
 represents white noise.
 
-Supported Noise Models
-----------------------
-
-.. autosummary::
-    :nosignatures:
-    :toctree: ./generated
-
-    NoiseModel
-    ArmaModel
-
 Examples
 --------
 By default, a noise model is added to a Pastas model. It is possible to

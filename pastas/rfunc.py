@@ -1,22 +1,6 @@
 # coding=utf-8
 """This module contains all the response functions available in Pastas.
 
-Supported Response Functions
-----------------------------
-.. autosummary::
-    :nosignatures:
-    :toctree: generated/
-
-    FourParam
-    Gamma
-    Exponential
-    Hantush
-    Polder
-    Edelman
-    One
-    HantushWellModel
-    DoubleExponential
-
 """
 
 import numpy as np

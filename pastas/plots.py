@@ -1,30 +1,12 @@
-"""
+"""This module contains all the plotting methods in Pastas.
+
+
 Pastas models come with a number of predefined plotting methods to quickly
 visualize a Model. All of these methods are contained in the `plot`
-attribute of a model. For example, if we stored a
-:class:`pastas.model.Model` instance in the variable `ml`, the plot methods
-are available as follows::
+attribute of a model. For example, if we stored a :class:`pastas.model.Model`
+instance in the variable `ml`, the plot methods are available as follows::
 
     ml.plot.decomposition()
-
-Available Model Plots
----------------------
-The following table lists all the plot methods that are available and
-supported.
-
-.. currentmodule:: pastas.plots.Plotting
-
-.. autosummary::
-    :nosignatures:
-    :toctree: ./generated
-
-    plot
-    results
-    decomposition
-    diagnostics
-    block_response
-    step_response
-    stresses
 
 """
 
@@ -42,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 class Plotting:
+    """Plots available directly form the Model Class"""
     def __init__(self, ml):
         self.ml = ml  # Store a reference to the model class
 

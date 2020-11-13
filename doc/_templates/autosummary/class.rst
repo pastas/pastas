@@ -21,7 +21,7 @@ Methods
 -------
 .. autosummary::
   :nosignatures:
-  :toctree:
+  :toctree: ./generated
 {% for item in methods %}
   ~{{ name }}.{{ item }}
 {%- endfor %}

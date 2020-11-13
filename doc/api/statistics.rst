@@ -1,5 +1,5 @@
-Statistics
-==========
+pastas.stats
+============
 
 Statistical tests
 -----------------

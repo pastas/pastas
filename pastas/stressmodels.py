@@ -1,23 +1,7 @@
-"""This module contains all the stress models that available in
-Pastas. Stress models are used to translate an input time series into a
+"""This module contains all the stress models available in Pastas.
+
+Stress models are used to translate an input time series into a
 contribution that explains (part of) the output series.
-
-Supported Stress models
------------------------
-The following stressmodels are currently supported and tested:
-
-.. autosummary::
-    :nosignatures:
-    :toctree: ./generated
-
-    StressModel
-    StressModel2
-    RechargeModel
-    FactorModel
-    StepModel
-    LinearTrend
-    WellModel
-    TarsoModel
 
 Examples
 --------
@@ -29,10 +13,6 @@ See Also
 --------
 pastas.model.Model.add_stressmodel
 
-Warnings
---------
-All other stressmodels are for research purposes only and are not (yet)
-fully supported and tested.
 
 """
 
@@ -584,6 +564,8 @@ class StepModel(StressModelBase):
 class LinearTrend(StressModelBase):
     """Stressmodel that simulates a linear trend.
 
+    Parameters
+    ----------
     start: str
         String with a date to start the trend (e.g., "2018-01-01"), will be
         transformed to an ordinal number internally.

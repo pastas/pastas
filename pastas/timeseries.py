@@ -1,37 +1,3 @@
-"""
-This file contains a class that holds the TimeSeries class. This class is used
-to "manage" the time series within Pastas. It has methods to change a time
-series in frequency and extend the time series, without losing the original
-data.
-
-
-.. currentmodule:: pastas.timeseries
-
-.. autoclass:: TimeSeries
-
-.. currentmodule:: pastas.timeseries.TimeSeries
-
-.. rubric:: Attributes
-
-.. autosummary::
-
-  series
-  series_original
-  series_validated
-
-Public Methods
---------------
-.. autosummary::
-  :nosignatures:
-  :toctree: ./generated
-
-  update_series
-  multiply
-  to_dict
-  plot
-
-"""
-
 from logging import getLogger
 
 import pandas as pd

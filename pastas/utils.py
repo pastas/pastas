@@ -1,3 +1,7 @@
+"""This module contains utility functions for working with Pastas models.
+
+"""
+
 import logging
 from datetime import datetime, timedelta
 from logging import handlers
@@ -146,8 +150,6 @@ def _get_time_offset(t, freq):
     """
     if freq is None:
         raise TypeError("frequency is None")
-
-    # freq = to_offset(freq).name  # Maybe something like this first??
 
     return t - t.floor(freq)
 
@@ -423,6 +425,18 @@ def set_console_handler(logger=None, level=logging.INFO,
 def set_log_level(level):
     """Set the log-level of the console. This method is just a wrapper around
     set_console_handler.
+
+    Parameters
+    ----------
+    level: str
+        String with the level to log messages to the screen for. Options
+        are: "INFO", "WARNING", and "ERROR".
+
+    Examples
+    --------
+
+    >>> import pandas as ps
+    >>> ps.set_log_level("ERROR")
 
     """
     set_console_handler(level=level)

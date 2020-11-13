@@ -1,5 +1,4 @@
-"""This files contains the Project class that deals with multiple models at
-once.
+"""This module contains the Project class (DEPRECATED).
 
 Warning
 -------
@@ -10,12 +9,6 @@ recommended to switch to `Pastastore <https://github.com/pastas/pastastore>`_
 Notes
 -----
 This module is created at Artesia Water by Raoul Collenteur.
-
-.. autosummary::
-    :nosignatures:
-    :toctree: ./generated
-
-    Project
 
 Example
 -------

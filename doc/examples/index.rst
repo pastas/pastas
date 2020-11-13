@@ -15,7 +15,7 @@ on the `examples directory on GitHub <https://github
     examples folder on GitHub!
 
 .. nbgallery::
-    :caption: This is a thumbnail gallery:
+    :caption: Click on one of the examples below:
     :name: rst-gallery
     :glob:
 

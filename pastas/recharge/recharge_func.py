@@ -4,27 +4,19 @@ calculate the recharge from precipitation and evaporation data.
 This module contains the different classes that can be used to simulate the
 effect of precipitation and evapotranspiration on groundwater levels.
 Depending on the mathematical formulation this effect may be interpreted as:
-1) seepage to the groundwater 2) precipitation excess, 3) groundwater
-recharge. For the implementation of each model we refer to the references
-listed in the documentation of each recharge model.
+
+1. seepage to the groundwater
+2. precipitation excess,
+3. groundwater recharge.
+
+For the implementation of each model we refer to the references listed in
+the documentation of each recharge model.
 
 The classes defined here are designed to be used in conjunction with the
 stressmodel "RechargeModel", which requires an instance of one of the
 classes defined here.
 
 .. codeauthor:: R.A. Collenteur, University of Graz
-
-Supported Recharge models
--------------------------
-The following recharge models are currently supported and tested:
-
-.. autosummary::
-    :nosignatures:
-    :toctree: ./generated
-
-    Linear
-    FlexModel
-    Berendrecht
 
 See Also
 --------
@@ -84,8 +76,7 @@ class RechargeBase:
 
 
 class Linear(RechargeBase):
-    """
-    Linear model for precipitation excess according to [asmuth_2002]_.
+    """Linear model for precipitation excess according to [asmuth_2002]_.
 
     Notes
     -----
@@ -142,8 +133,7 @@ class Linear(RechargeBase):
 
 
 class FlexModel(RechargeBase):
-    """
-    Recharge to the groundwater calculate according to [collenteur_2020]_.
+    """Recharge to the groundwater calculate according to [collenteur_2020]_.
 
     Notes
     -----
@@ -275,8 +265,7 @@ class FlexModel(RechargeBase):
 
 
 class Berendrecht(RechargeBase):
-    """
-    Recharge to the groundwater calculated according to [berendrecht_2006]_.
+    """Recharge to the groundwater calculated according to [berendrecht_2006]_.
 
     Notes
     -----

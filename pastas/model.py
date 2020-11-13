@@ -1,83 +1,4 @@
-"""The Model class is the main object to create a model in Pastas.
-
-.. currentmodule:: pastas.model
-
-.. autoclass:: Model
-
-Examples
---------
-A minimal working example of the Model class is shown below:
-
->>> oseries = pd.Series([1,2,1], index=pd.to_datetime(range(3), unit="D"))
->>> ml = Model(oseries)
-
-.. currentmodule:: pastas.model.Model
-
-General Methods
----------------
-.. autosummary::
-    :nosignatures:
-    :toctree: ./generated
-
-    observations
-    residuals
-    noise
-    simulate
-    initialize
-    solve
-    fit_report
-    to_dict
-    to_file
-    copy
-
-Add and Delete Methods
-----------------------
-The following methods can be used to add model components.
-
-.. autosummary::
-    :nosignatures:
-    :toctree: ./generated
-
-    add_constant
-    add_noisemodel
-    add_stressmodel
-    add_transform
-    del_constant
-    del_noisemodel
-    del_stressmodel
-    del_transform
-
-.. seealso::
-    :mod:`pastas.stressmodels`, :mod:`pastas.noisemodels`,
-    :mod:`pastas.transform`
-
-Get Methods
------------
-.. autosummary::
-    :nosignatures:
-    :toctree: ./generated
-
-    get_block_response
-    get_step_response
-    get_response_tmax
-    get_contribution
-    get_contributions
-    get_transform_contribution
-    get_stress
-    get_stressmodel_names
-    get_init_parameters
-    get_parameters
-    get_tmax
-    get_tmin
-
-
-Set Methods
------------
-.. autosummary::
-    :nosignatures:
-    :toctree: ./generated
-
-    set_parameter
+"""This module contains the Model class in Pastas.
 
 """
 
@@ -125,6 +46,13 @@ class Model:
     -------
     ml: pastas.model.Model
         Pastas Model instance, the base object in Pastas.
+
+    Examples
+    --------
+    A minimal working example of the Model class is shown below:
+
+    >>> oseries = pd.Series([1,2,1], index=pd.to_datetime(range(3), unit="D"))
+    >>> ml = Model(oseries)
 
     """
 
