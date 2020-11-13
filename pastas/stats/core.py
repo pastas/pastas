@@ -28,7 +28,8 @@ of basic descriptive statistics.
 
 """
 
-from numpy import inf, exp, sqrt, pi, empty_like, corrcoef, arange, nan, ones
+from numpy import inf, exp, sqrt, pi, empty_like, corrcoef, arange, nan, \
+    ones, array
 from pandas import Timedelta, DataFrame, TimedeltaIndex
 from scipy.stats import norm
 
@@ -179,9 +180,11 @@ def ccf(x, y, lags=365, bin_method='rectangle', bin_width=0.5,
     dt_mu = max(dt_x_mu, dt_y_mu)  # Mean time step from both series
 
     if isinstance(lags, int) and bin_method == "regular":
-        lags = arange(int(dt_mu), lags + 1, int(dt_mu))
+        lags = arange(int(dt_mu), lags + 1, int(dt_mu), dtype=float)
     elif isinstance(lags, int):
-        lags = arange(1.0, lags + 1)
+        lags = arange(1.0, lags + 1, dtype=float)
+    elif isinstance(lags, list):
+        lags = array(lags, dtype=float)
 
     if bin_method == "rectangle":
         if bin_width is None:
