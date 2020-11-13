@@ -317,7 +317,7 @@ class Model:
         freq_in_days = _get_dt(self.settings["freq"])
         noise_alpha = self.noisemodel.parameters.initial.iloc[0]
         if freq_in_days > noise_alpha:
-            self.noisemodel.set_initial("noise_alpha", freq_in_days)
+            self.noisemodel._set_initial("noise_alpha", freq_in_days)
 
         self.parameters = self.get_init_parameters(initial=False)
 
@@ -447,8 +447,8 @@ class Model:
             sim = sim + self.constant.simulate(p[istart])
             istart += 1
         if self.transform:
-            sim = self.transform.simulate(sim, p[
-                                               istart:istart + self.transform.nparam])
+            sim = self.transform.simulate(sim, p[istart:istart +
+                                                        self.transform.nparam])
 
         # Respect provided tmin/tmax at this point, since warmup matters for
         # simulation but should not be returned, unless return_warmup=True.
@@ -972,16 +972,16 @@ class Model:
 
         # Set the parameter properties
         if initial is not None:
-            obj.set_initial(name, initial)
+            obj._set_initial(name, initial)
             self.parameters.loc[name, "initial"] = initial
         if vary is not None:
-            obj.set_vary(name, vary)
+            obj._set_vary(name, vary)
             self.parameters.loc[name, "vary"] = bool(vary)
         if pmin is not None:
-            obj.set_pmin(name, pmin)
+            obj._set_pmin(name, pmin)
             self.parameters.loc[name, "pmin"] = pmin
         if pmax is not None:
-            obj.set_pmax(name, pmax)
+            obj._set_pmax(name, pmax)
             self.parameters.loc[name, "pmax"] = pmax
 
     def _set_freq(self):
@@ -1349,7 +1349,7 @@ class Model:
         # use warmup
         if tmin:
             tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + \
-                self.settings["time_offset"]
+                        self.settings["time_offset"]
         else:
             tmin_warm = None
 
@@ -1535,6 +1535,7 @@ class Model:
         return self._get_response(block_or_step="step", name=name, dt=dt,
                                   p=p, add_0=add_0, **kwargs)
 
+    @get_stressmodel
     def get_response_tmax(self, name, p=None, cutoff=0.999):
         """Method to get the tmax used for the response function.
 
@@ -1569,8 +1570,7 @@ class Model:
         else:
             if p is None:
                 p = self.get_parameters(name)
-            tmax = self.stressmodels[name].rfunc.get_tmax(p=p,
-                                                          cutoff=cutoff)
+            tmax = self.stressmodels[name].rfunc.get_tmax(p=p, cutoff=cutoff)
             return tmax
 
     @get_stressmodel
@@ -1628,7 +1628,7 @@ class Model:
         # use warmup
         if tmin:
             tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + \
-                self.settings["time_offset"]
+                        self.settings["time_offset"]
         else:
             tmin_warm = None
 

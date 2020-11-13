@@ -200,7 +200,7 @@ class Gamma(RfuncBase):
 
         # if n is too small, the length of response function is close to zero
         parameters.loc[name + '_n'] = (1, 0.1, 100, True, name)
-        parameters.loc[name + '_a'] = (10, 0.01, 1000, True, name)
+        parameters.loc[name + '_a'] = (10, 0.01, 1e4, True, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):
@@ -536,7 +536,18 @@ class Polder(RfuncBase):
 
 
 class One(RfuncBase):
-    """Dummy class for Constant. Returns 1
+    """Instant response with no lag and one parameter d.
+
+    Parameters
+    ----------
+    up: bool or None, optional
+        indicates whether a positive stress will cause the head to go up
+        (True) or down (False), if None (default) the head can go both ways.
+    meanstress: float
+        mean value of the stress, used to set the initial value such that
+        the final step times the mean stress equals 1
+    cutoff: float
+        proportion after which the step function is cut off. default is 0.999.
 
     """
     _name = "One"

@@ -66,7 +66,7 @@ class ThresholdTransform:
                 0.5, 0., 1., True, self.name)
 
     @set_parameter
-    def set_initial(self, name, value):
+    def _set_initial(self, name, value):
         """Internal method to set the initial parameter value.
 
         Notes
@@ -77,7 +77,7 @@ class ThresholdTransform:
         self.parameters.loc[name, 'initial'] = value
 
     @set_parameter
-    def set_pmin(self, name, value):
+    def _set_pmin(self, name, value):
         """Internal method to set the lower bound of the parameter value.
 
         Notes
@@ -88,7 +88,7 @@ class ThresholdTransform:
         self.parameters.loc[name, 'pmin'] = value
 
     @set_parameter
-    def set_pmax(self, name, value):
+    def _set_pmax(self, name, value):
         """Internal method to set the upper bound of the parameter value.
 
         Notes
@@ -99,7 +99,7 @@ class ThresholdTransform:
         self.parameters.loc[name, 'pmax'] = value
 
     @set_parameter
-    def set_vary(self, name, value):
+    def _set_vary(self, name, value):
         """Internal method to set if the parameter is varied during
         optimization.
 

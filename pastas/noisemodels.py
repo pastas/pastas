@@ -56,7 +56,7 @@ class NoiseModelBase:
         self.parameters.loc["noise_alpha"] = (pinit, 1e-5, 5000, True, "noise")
 
     @set_parameter
-    def set_initial(self, name, value):
+    def _set_initial(self, name, value):
         """
         Internal method to set the initial parameter value.
 
@@ -68,7 +68,7 @@ class NoiseModelBase:
         self.parameters.loc[name, "initial"] = value
 
     @set_parameter
-    def set_pmin(self, name, value):
+    def _set_pmin(self, name, value):
         """
         Internal method to set the minimum value of the noisemodel.
 
@@ -80,7 +80,7 @@ class NoiseModelBase:
         self.parameters.loc[name, "pmin"] = value
 
     @set_parameter
-    def set_pmax(self, name, value):
+    def _set_pmax(self, name, value):
         """
         Internal method to set the maximum parameter values.
 
@@ -92,7 +92,7 @@ class NoiseModelBase:
         self.parameters.loc[name, "pmax"] = value
 
     @set_parameter
-    def set_vary(self, name, value):
+    def _set_vary(self, name, value):
         """
         Internal method to set if the parameter is varied.
 
@@ -112,8 +112,7 @@ class NoiseModelBase:
 
 
 class NoiseModel(NoiseModelBase):
-    """
-    Noise model with exponential decay of the residuals and weighting.
+    """Noise model with exponential decay of the residuals and weighting.
 
     Parameters
     ----------
@@ -163,8 +162,7 @@ class NoiseModel(NoiseModelBase):
 
     @staticmethod
     def simulate(res, p):
-        """
-        Simulate noise from the residuals.
+        """Simulate noise from the residuals.
 
         Parameters
         ----------
@@ -188,8 +186,7 @@ class NoiseModel(NoiseModelBase):
         return v
 
     def weights(self, res, p):
-        """
-        Method to calculate the weights for the noise.
+        """Method to calculate the weights for the noise.
 
         Parameters
         ----------
