@@ -11,9 +11,7 @@ to help you in contributing code to the Pastas software.
     :glob:
     :hidden:
 
-    ./contributing.rst
-    ./code_style.rst
-    ./roadmap.rst
+    ./*
 
 Bug reports / Feature requests
 ------------------------------

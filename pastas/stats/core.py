@@ -3,29 +3,6 @@ autocorrelation for a time series. These methods are 'special' in the sense
 that they are able to deal with irregular time steps often observed in
 hydrological time series.
 
-.. currentmodule:: pastas.stats.core
-
-.. autosummary::
-   :nosignatures:
-   :toctree: generated/
-
-   acf
-   ccf
-
-Weighted Descriptive Statistics
--------------------------------
-
-The following methods may be used to compute time step weighted versions
-of basic descriptive statistics.
-
-.. autosummary::
-   :nosignatures:
-   :toctree: generated/
-
-   mean
-   var
-   std
-
 """
 
 from numpy import inf, exp, sqrt, pi, empty_like, corrcoef, arange, nan, \

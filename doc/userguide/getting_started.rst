@@ -48,7 +48,7 @@ automatically installed when using the pip install manager. To summarize, the
 following packages are necessary for a minimal function installation of
 Pastas:
 
-.. include:: ../requirements.travis.txt
+.. include:: ../../requirements.travis.txt
     :literal:
 
 Other optional dependencies include::
@@ -57,7 +57,16 @@ Other optional dependencies include::
     lmfit  #(alternative solver)
     requests  #(downloading data from the web)
 
+
 .. tip::
     Installing Numba is highly recommended when using Pastas. Not only this
     package, but also pandas makes use of Numba. Since Pastas partly
     depends on Pandas, installing Numba will also speed up Pastas.
+
+
+.. toctree::
+    :maxdepth: 4
+    :hidden:
+    :glob:
+
+    ./*

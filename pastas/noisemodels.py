@@ -1,6 +1,7 @@
-"""The following noise models are available in Pastas. A Noise model may be
-used to transform the residual series into a noise series that better
-represents white noise.
+"""This module contains the noise models available in Pastas.
+
+A Noise model may be used to transform the residual series into a noise
+series that better represents white noise.
 
 Examples
 --------

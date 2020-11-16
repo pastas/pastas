@@ -1,21 +1,5 @@
-About
-=====
-Pastas is an open source Python package to analyse hydro(geo)logical time
-series. The objective of Pastas is twofold: to provide a scientific
-framework to develop and test new methods, and to provide a reliable
-ready‐to‐use software tool for groundwater practitioners. All code is
-available from the `Pastas GitHub <https://github.com/pastas/pastas>`_. Want
-to contribute to the project? Check out the :ref:`Development` section.
-
-.. toctree::
-    :maxdepth: 4
-    :hidden:
-    :glob:
-
-    ./*
-
 History
--------
+=======
 The Development of Pastas started in the spring of 2016 at the TU Delft (The
 Netherlands) and Artesia (The Netherlands). The main goal was to create a
 framework that could support future research on time series analysis of

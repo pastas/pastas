@@ -1,5 +1,16 @@
 """The stats sub-package contains statistical methods for Pastas.
 
+.. autosummary::
+   :nosignatures:
+   :toctree: ./generated
+   :noindex:
+
+    pastas.stats.core
+    pastas.stats.metrics
+    pastas.stats.tests
+    pastas.stats.sgi
+    pastas.stats.dutch
+
 """
 
 from .core import ccf, acf, mean, std, var

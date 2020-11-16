@@ -3,26 +3,12 @@ describe groundwater time series in the Netherlands.
 
 .. codeauthor:: R. Calje, T. van Steijn and R. Collenteur
 
-.. currentmodule:: pastas.stats.dutch
-
-.. autosummary::
-   :nosignatures:
-   :toctree: generated/
-
-   q_ghg
-   q_glg
-   q_gvg
-   ghg
-   glg
-   gvg
-   gg
-
 """
 
 from numpy import nan
 from pandas import date_range, Series, Timedelta
 
-from ..utils import get_sample
+from pastas.utils import get_sample
 
 
 def q_ghg(series, tmin=None, tmax=None, q=0.94, by_year=True):

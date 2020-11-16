@@ -3,20 +3,6 @@ residual time series of a calibrated (Pastas) model.
 
 .. codeauthor:: R.A Collenteur
 
-.. currentmodule:: pastas.stats.tests
-
-.. autosummary::
-   :nosignatures:
-   :toctree: generated/
-
-    durbin_watson
-    ljung_box
-    runs_test
-    stoffer_toloi
-    diagnostics
-    plot_acf
-    plot_diagnostics
-
 """
 
 from logging import getLogger
@@ -26,7 +12,7 @@ from numpy import sqrt, cumsum, nan, zeros, arange, finfo, median
 from pandas import DataFrame, infer_freq
 from scipy.stats import chi2, norm, shapiro, normaltest, probplot
 
-from .core import acf as get_acf
+from pastas.stats.core import acf as get_acf
 
 logger = getLogger(__name__)
 __all__ = ["durbin_watson", "ljung_box", "runs_test", "stoffer_toloi",

@@ -1,5 +1,4 @@
-"""Contains the classes for the different models that are available to
-calculate the recharge from precipitation and evaporation data.
+"""This module contains the classes for recharge models.
 
 This module contains the different classes that can be used to simulate the
 effect of precipitation and evapotranspiration on groundwater levels.
@@ -40,7 +39,7 @@ After solving a model, the simulated recharge flux can be obtained:
 from numpy import add, float64, multiply, exp, zeros, nan_to_num, vstack
 from pandas import DataFrame
 
-from ..decorators import njit
+from pastas.decorators import njit
 
 
 class RechargeBase:

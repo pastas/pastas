@@ -23,7 +23,7 @@ from .version import __version__
 
 
 class Model:
-    """Initiates a time series model.
+    """Class that initiates a Pastas time series model.
 
     Parameters
     ----------

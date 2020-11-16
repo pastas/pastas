@@ -1,6 +1,7 @@
-"""The transforms module contains all the transforms that can be added to the
- simulation of a model. These transforms are applied after the simulation,
- to incorporate nonlinear effects.
+"""This module contains all the transforms that can be added to a model.
+
+These transforms are applied after the simulation, to incorporate nonlinear
+effects.
 
 """
 import numpy as np

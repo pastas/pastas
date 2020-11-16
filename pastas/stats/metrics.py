@@ -1,24 +1,6 @@
 """The following methods may be used to describe the fit between the model
 simulation and the observations.
 
-.. autosummary::
-   :nosignatures:
-   :toctree: ./generated
-
-   mae
-   rmse
-   sse
-
-   pearsonr
-   nse
-   evp
-
-   rsq
-   bic
-   aic
-
-   kge_2012
-
 Examples
 ========
 These methods may be used as follows:
@@ -37,7 +19,7 @@ from numpy import sqrt, log, ones, nan
 from pandas import Timedelta
 
 from pastas.decorators import PastasDeprecationWarning
-from .core import mean, var, std
+from pastas.stats.core import mean, var, std
 
 __all__ = ["rmse", "sse", "mae", "nse", "evp", "rsq", "bic", "aic",
            "pearsonr", "kge_2012"]

@@ -26,6 +26,11 @@ matrix:
         sudo: true
         services:
           - xvfb
+      - python: 3.9
+        dist: xenial
+        sudo: true
+        services:
+          - xvfb
 
 # Install dependencies
 install:

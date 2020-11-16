@@ -15,7 +15,7 @@ left-hand menu you will find the different categories of the API documentation.
     model.Model
     timeseries.TimeSeries
     stressmodels
-    recharge.recharge_func
+    recharge
     noisemodels
     transform
     rfunc
@@ -24,7 +24,6 @@ left-hand menu you will find the different categories of the API documentation.
     project.project
     plots
     stats
-
 
 .. toctree::
     :hidden:
