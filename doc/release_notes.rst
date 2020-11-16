@@ -6,7 +6,7 @@ reported here. The release notes for previous releases up to 0.14 can be found
 at the `GitHub Release page <https://github.com/pastas/pastas/releases>`_.
 For full details of all changes check the commit log.
 
-Version 0.16 (Expected 6th of November 2020)
+Version 0.16 (16th of November 2020)
 --------------------------------------------
 
 .. note::
@@ -18,13 +18,16 @@ Version 0.16 (Expected 6th of November 2020)
 New Features / Enhancements
 ***************************
 
-- A new stress model (`ps.LinearTrend`) to simulate linear trends is added to
-  the list of stable stress models.
+- A new stress model (:class:`ps.LinearTrend`) to simulate linear trends is
+  added to the list of stable stress models.
 - New method to compute the Standardized Groundwater Index. See
   (:meth:`ps.stats.sgi`) for more details.
 - Most of the goodness-of-fit metrics now allow providing a "weighted"
   argument. This may result in more realistic values for time series with
   irregular time steps.
+- The documentation website is further improved. We now separate 'Examples'
+  and 'Concepts'. The First are worked-out example notebooks using Pastas to
+  analyse a problem, the second are notebooks showing a underlying methods.
 
 Deprecations
 ************
@@ -36,6 +39,9 @@ Deprecations
   throughout Pastas. If the input argument is named `p` an array-like object
   is expected, whereas if the input is `parameters` a Pandas DataFrame object
   is expected.
+- :class:`ps.FactorModel` is deprecated and will be removed in a future
+  version. Use :class:`ps.StressModel` with `rfunc=ps.One` instead.
+
 
 
 Backwards incompatible API changes
