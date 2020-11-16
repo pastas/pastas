@@ -31,7 +31,8 @@ matrix:
         sudo: true
         services:
           - xvfb
-
+  allow_failures:
+    - python: 3.9
 # Install dependencies
 install:
     - pip install -r requirements.travis.txt
