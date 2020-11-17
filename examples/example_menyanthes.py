@@ -19,18 +19,18 @@ IN.name = 'Precipitation'
 IN2 = meny.IN['Evaporation']['values']
 IN2.index = IN2.index.round("D")
 IN2.name = 'Evaporation'
-sm = ps.StressModel2([IN, IN2], ps.Gamma, 'Recharge')
+sm = ps.RechargeModel(IN, IN2, ps.Gamma, 'Recharge')
 ml.add_stressmodel(sm)
 
 # Add well extraction 2
 IN = meny.IN['Extraction 2']
-well = ps.TimeSeries(IN["values"], freq_original="M", settings="well")
+well = ps.TimeSeries(IN["values"], settings="well")
 # extraction amount counts for the previous month
 sm1 = ps.StressModel(well, ps.Hantush, 'Extraction_2', up=False)
 
 # Add well extraction 3
 IN = meny.IN['Extraction 3']
-well = ps.TimeSeries(IN["values"], freq_original="M", settings="well")
+well = ps.TimeSeries(IN["values"], settings="well")
 # extraction amount counts for the previous month
 sm2 = ps.StressModel(well, ps.Hantush, 'Extraction_3', up=False)
 

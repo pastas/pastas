@@ -1,26 +1,6 @@
 # coding=utf-8
 """This module contains all the response functions available in Pastas.
 
-Supported Response Functions
-----------------------------
-.. autosummary::
-    :nosignatures:
-    :toctree: generated/
-
-    FourParam
-    Gamma
-    Exponential
-    Hantush
-    Polder
-    Edelman
-    One
-    HantushWellModel
-    DoubleExponential
-
-.. warning::
-    The above list contains the supported response function. All other
-    methods are for research purposes only and may change without notice.
-
 """
 
 import numpy as np
@@ -67,8 +47,9 @@ class RfuncBase:
 
         Parameters
         ----------
-        p:  numpy.array
-            numpy array with the parameters.
+        p: array_like
+            array_like object with the values as floats representing the
+            model parameters.
         cutoff: float, optional
             float between 0 and 1.
 
@@ -86,8 +67,9 @@ class RfuncBase:
 
         Parameters
         ----------
-        p: numpy.array
-            numpy array with the parameters.
+        p: array_like
+            array_like object with the values as floats representing the
+            model parameters.
         dt: float
             timestep as a multiple of of day.
         cutoff: float, optional
@@ -107,8 +89,9 @@ class RfuncBase:
 
         Parameters
         ----------
-        p: numpy.array
-            numpy array with the parameters.
+        p: array_like
+            array_like object with the values as floats representing the
+            model parameters.
         dt: float
             timestep as a multiple of of day.
         cutoff: float, optional
@@ -130,8 +113,9 @@ class RfuncBase:
 
         Parameters
         ----------
-        p: numpy.array
-            numpy array with the parameters.
+        p: array_like
+            array_like object with the values as floats representing the
+            model parameters.
         dt: float
             timestep as a multiple of of day.
         cutoff: float
@@ -173,9 +157,9 @@ class Gamma(RfuncBase):
 
     Notes
     -----
+    The impulse response function may be written as:
 
-    .. math::
-        step(t) = A * Gammainc(n, t / a)
+    .. math:: \\theta(t) = At^{n-1} e^{-t/a}
 
     """
     _name = "Gamma"
@@ -199,8 +183,8 @@ class Gamma(RfuncBase):
                                            np.nan, np.nan, True, name)
 
         # if n is too small, the length of response function is close to zero
-        parameters.loc[name + '_n'] = (1, 0.1, 10, True, name)
-        parameters.loc[name + '_a'] = (10, 0.01, 1000, True, name)
+        parameters.loc[name + '_n'] = (1, 0.1, 100, True, name)
+        parameters.loc[name + '_a'] = (10, 0.01, 1e4, True, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):
@@ -233,8 +217,9 @@ class Exponential(RfuncBase):
 
     Notes
     -----
-    .. math::
-        step(t) = A * (1 - e^{-\\frac{t}{a}})
+    The impulse response function may be written as:
+
+    .. math:: \\theta(t) = A e^{-t/a}
 
     """
     _name = "Exponential"
@@ -276,8 +261,7 @@ class Exponential(RfuncBase):
 
 class HantushWellModel(RfuncBase):
     """
-    A special implementation of the Hantush well function for
-    multiple wells.
+    A special implementation of the Hantush well function for multiple wells.
 
     Parameters
     ----------
@@ -293,10 +277,10 @@ class HantushWellModel(RfuncBase):
     Notes
     -----
     The Hantush well function is explained in [hantush_1955]_,
-    [veling_2010]_ and [asmuth_2008]_:
+    [veling_2010]_ and [asmuth_2008]_. The impulse response function may be
+    written as:
 
     .. math:: \\theta(t) = \\frac{A}{t} \\exp(-t/a -b/t)
-
     .. math:: p[0] = A # TBD \\frac{1}{4 \\pi kD}
     .. math:: p[1] = a = cS
     .. math:: p[2] = b = 1^2 / (4 \\lambda^2)
@@ -309,23 +293,10 @@ class HantushWellModel(RfuncBase):
     Hantush implementation:
 
     - A: the parameter is the same as the original Hantush, except that
-    the distance (r) is set to 1.0
+      the distance (r) is set to 1.0
     - a = cS: stays the same
     - b = 1 / (4 * lambda): r is used internally to scale with distance
     - r: distance, not optimized but used to scale A and b
-
-    References
-    ----------
-    .. [hantush_1955] Hantush, M. S., & Jacob, C. E. (1955). Non‐steady
-       radial flow in an infinite leaky aquifer. Eos, Transactions American
-       Geophysical Union, 36(1), 95-100.
-
-    .. [veling_2010] Veling, E. J. M., & Maas, C. (2010). Hantush well function
-       revisited. Journal of hydrology, 393(3), 381-388.
-
-    .. [asmuth_2008] Von Asmuth, J. R., Maas, K., Bakker, M., & Petersen,
-       J. (2008). Modeling time series of ground water head fluctuations
-       subjected to multiple stresses. Ground Water, 46(1), 30-40.
 
     """
     _name = "HantushWellModel"
@@ -406,7 +377,7 @@ class Hantush(RfuncBase):
     and [asmuth_2008]_. The impulse response function may be written as:
 
     .. math:: \\theta(t) = K_0(\\sqrt(4b)) \\frac{A}{t} \\exp(-t/a - ab/t)
-    .. math:: p[0] = A # \\frac{1}{2 \\pi kD}
+    .. math:: p[0] = A = \\frac{1}{2 \\pi kD}
     .. math:: p[1] = a = cS
     .. math:: p[2] = b = r^2 / (4 \\lambda^2)
 
@@ -483,11 +454,11 @@ class Polder(RfuncBase):
 
     Notes
     -----
-    The Polder function is explained in [polder]_. 
-    The impulse response function may be written as
+    The Polder function is explained in [polder]_. The impulse response
+    function may be written as:
     
-    .. math:: \\theta(t) = \\exp(-\\sqrt(4b)) \\frac{A}{t^{-3/2}} \\exp(-t/a -b/t)
-
+    .. math:: \\theta(t) = \\exp(-\\sqrt(4b)) \\frac{A}{t^{-3/2}}
+       \\exp(-t/a -b/t)
     .. math:: p[0] = A = \\exp(-x/\\lambda)
     .. math:: p[1] = a = \\sqrt{\\frac{1}{cS}}
     .. math:: p[2] = b = x^2 / (4 \\lambda^2)
@@ -496,8 +467,8 @@ class Polder(RfuncBase):
 
     References
     ----------
-    .. [polder] [1] G.A. Bruggeman (1999). Analytical solutions of 
-    geohydrological problems. Elsevier Science. Amsterdam, Eq. 123.32
+    .. [polder] G.A. Bruggeman (1999). Analytical solutions of
+       geohydrological problems. Elsevier Science. Amsterdam, Eq. 123.32
 
     """
     _name = "Polder"
@@ -549,7 +520,18 @@ class Polder(RfuncBase):
 
 
 class One(RfuncBase):
-    """Dummy class for Constant. Returns 1
+    """Instant response with no lag and one parameter d.
+
+    Parameters
+    ----------
+    up: bool or None, optional
+        indicates whether a positive stress will cause the head to go up
+        (True) or down (False), if None (default) the head can go both ways.
+    meanstress: float
+        mean value of the stress, used to set the initial value such that
+        the final step times the mean stress equals 1
+    cutoff: float
+        proportion after which the step function is cut off. default is 0.999.
 
     """
     _name = "One"
@@ -566,7 +548,7 @@ class One(RfuncBase):
                 self.meanstress, 0, np.nan, True, name)
         elif self.up is False:
             parameters.loc[name + '_d'] = (
-                self.meanstress, np.nan, 0, True, name)
+                -self.meanstress, np.nan, 0, True, name)
         else:
             parameters.loc[name + '_d'] = (
                 self.meanstress, np.nan, np.nan, True, name)
@@ -601,10 +583,13 @@ class FourParam(RfuncBase):
 
     Notes
     -----
+    The impulse response function may be written as:
 
-    .. math::
-        step(t) = \\frac{A}{quad(t^n*e^{-\\frac{t}{a} - \\frac{b}{t}},0,inf)} *
-                            quad(t^n*e^{-\\frac{t}{a} - \\frac{b}{t}},0,t)
+    .. math:: \\theta(t) = At^{n-1} e^{-t/a -ab/t}
+
+    If Fourparam.quad is set to True, this response function uses np.quad to
+    integrate the Four Parameter response function, which requires more
+    calculation time.
 
     """
     _name = "FourParam"
@@ -736,39 +721,6 @@ class FourParam(RfuncBase):
                 return s
 
 
-class FourParamQuad(FourParam):
-    """"Four Parameter response function with 4 parameters A, a, b, and n.
-
-    Parameters
-    ----------
-    up: bool or None, optional
-        indicates whether a positive stress will cause the head to go up
-        (True, default) or down (False), if None the head can go both ways.
-    meanstress: float
-        mean value of the stress, used to set the initial value such that
-        the final step times the mean stress equals 1
-    cutoff: float
-        proportion after which the step function is cut off. default is 0.999.
-
-    Notes
-    -----
-    This response function uses np.quad to integrate the Four Parameter
-    response function, which requires more calculation time. This response
-    function can be used for testing purposes.
-
-    .. math::
-        step(t) = \\frac{A}{quad(t^n*e^{-\\frac{t}{a} - \\frac{b}{t}},0,inf)} *
-                            quad(t^n*e^{-\\frac{t}{a} - \\frac{b}{t}},0,t)
-
-    """
-    _name = "FourParamQuad"
-
-    def __init__(self, up=True, meanstress=1, cutoff=0.999):
-        FourParam.__init__(self, up, meanstress, cutoff)
-        self.nparam = 4
-        self.quad = True
-
-
 class DoubleExponential(RfuncBase):
     """Gamma response function with 3 parameters A, a, and n.
 
@@ -785,10 +737,9 @@ class DoubleExponential(RfuncBase):
 
     Notes
     -----
+    The impulse response function may be written as:
 
-    .. math::
-        step(t) = A * (1 - ( (1 - \\alpha)* e^{-\\frac{t}{a1}} +
-                                  \\alpha * e^{-\\frac{t}{a2}}))
+    .. math:: \\theta(t) = A (1 - \\alpha) e^{-t/a_1} + A \\alpha e^{-t/a_2}
 
     """
     _name = "DoubleExponential"
@@ -851,7 +802,12 @@ class Edelman(RfuncBase):
 
     Notes
     -----
-    The Edelman function is emplained in [5]_. It's parameters are:
+    The Edelman function is emplained in [5]_. The impulse response function
+    may be written as:
+
+    .. math:: \\text{unknown}
+
+    It's parameters are:
 
     .. math:: p[0] = \\beta = \\frac{\\sqrt{\\frac{4kD}{S}}}{x}
 

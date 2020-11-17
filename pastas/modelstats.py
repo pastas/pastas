@@ -8,45 +8,31 @@ simulation and the observations.
    :toctree: ./generated
 
    summary
-   many
-   all
 
 Examples
 ========
 These methods may be used as follows.
 
 
-    >>> ml.stats.summary()
-                                         Value
+    >>> ml.stats.summary(stats=["rmse", "mae", "nse"])
+                  Value
     Statistic
-    Pearson R^2                       0.87
-    Root mean squared error           0.43
-    Bayesian Information Criterion    113.
-    Average Deviation                 0.33
-    Explained variance percentage     72.7
-    Akaike InformationCriterion       25.3
+    rmse       0.114364
+    mae        0.089956
+    nse        0.929136
 
 """
 
 from numpy import nan
 from pandas import DataFrame
 
-from .decorators import model_tmin_tmax
+from .decorators import model_tmin_tmax, PastasDeprecationWarning
 from .stats import metrics, diagnostics
 
 
 class Statistics:
     # Save all statistics that can be calculated.
-    ops = {'evp': 'Explained variance percentage',
-           'rmse': 'Root mean squared error',
-           'rmsn': 'Root mean squared noise',
-           'sse': 'Sum of squares of the error',
-           'avg_dev': 'Average Deviation',
-           'rsq': 'Pearson R^2',
-           'rsq_adj': 'Adjusted Pearson R^2',
-           'bic': 'Bayesian Information Criterion',
-           'aic': 'Akaike Information Criterion',
-           'nse': 'Nash-Sutcliffe Efficiency'}
+    ops = ["rmse", "rmsn", "sse", "mae", "nse", "evp", "rsq", "bic", "aic", ]
 
     def __init__(self, ml):
         """This class provides statistics to to pastas Model class.
@@ -74,7 +60,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return msg
 
     @model_tmin_tmax
-    def rmse(self, tmin=None, tmax=None):
+    def rmse(self, tmin=None, tmax=None, weighted=False):
         """Root mean squared error of the residuals.
 
         Parameters
@@ -87,12 +73,11 @@ included in Pastas. To obtain a list of all statistics that are included type:
         pastas.stats.rmse
 
         """
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
-        obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return metrics.rmse(sim=sim, obs=obs)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        return metrics.rmse(res=res, weighted=weighted)
 
     @model_tmin_tmax
-    def rmsn(self, tmin=None, tmax=None):
+    def rmsn(self, tmin=None, tmax=None, weighted=False):
         """Root mean squared error of the noise.
 
         Parameters
@@ -114,7 +99,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
             return nan
         else:
             res = self.ml.noise(tmin=tmin, tmax=tmax)
-            return metrics.rmse(res=res)
+            return metrics.rmse(res=res, weighted=weighted)
 
     @model_tmin_tmax
     def sse(self, tmin=None, tmax=None):
@@ -130,13 +115,12 @@ included in Pastas. To obtain a list of all statistics that are included type:
         pastas.stats.sse
 
         """
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
-        obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return metrics.sse(sim=sim, obs=obs)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        return metrics.sse(res=res)
 
     @model_tmin_tmax
-    def avg_dev(self, tmin=None, tmax=None):
-        """Average deviation of the residuals.
+    def mae(self, tmin=None, tmax=None, weighted=False):
+        """Mean Absolute Error (MAE) of the residuals.
 
         Parameters
         ----------
@@ -145,15 +129,14 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         See Also
         --------
-        pastas.stats.avg_dev
+        pastas.stats.mae
 
         """
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
-        obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return metrics.avg_dev(sim=sim, obs=obs)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        return metrics.mae(res=res, weighted=weighted)
 
     @model_tmin_tmax
-    def nse(self, tmin=None, tmax=None):
+    def nse(self, tmin=None, tmax=None, weighted=False):
         """Nash-Sutcliffe coefficient for model fit .
 
         Parameters
@@ -166,12 +149,12 @@ included in Pastas. To obtain a list of all statistics that are included type:
         pastas.stats.nse
 
         """
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return metrics.nse(sim=sim, obs=obs)
+        return metrics.nse(obs=obs, res=res, weighted=weighted)
 
     @model_tmin_tmax
-    def evp(self, tmin=None, tmax=None):
+    def evp(self, tmin=None, tmax=None, weighted=False):
         """Explained variance percentage.
 
         Parameters
@@ -184,9 +167,9 @@ included in Pastas. To obtain a list of all statistics that are included type:
         pastas.stats.evp
 
         """
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return metrics.evp(sim=sim, obs=obs)
+        return metrics.evp(obs=obs, res=res, weighted=weighted)
 
     @model_tmin_tmax
     def rsq(self, tmin=None, tmax=None):
@@ -202,28 +185,9 @@ included in Pastas. To obtain a list of all statistics that are included type:
         pastas.stats.rsq
 
         """
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return metrics.rsq(sim=sim, obs=obs)
-
-    @model_tmin_tmax
-    def rsq_adj(self, tmin=None, tmax=None):
-        """R-squared Adjusted for the number of free parameters.
-
-        Parameters
-        ----------
-        tmin: str or pandas.Timestamp, optional
-        tmax: str or pandas.Timestamp, optional
-
-        See Also
-        --------
-        pastas.stats.rsq
-
-        """
-        nparam = self.ml.parameters.index.size
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
-        obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return metrics.rsq(sim=sim, obs=obs, nparam=nparam)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        return metrics.rsq(obs=obs, res=res)
 
     @model_tmin_tmax
     def bic(self, tmin=None, tmax=None):
@@ -241,9 +205,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         """
         nparam = self.ml.parameters.index.size
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
-        obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return metrics.bic(sim=sim, obs=obs, nparam=nparam)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        return metrics.bic(res=res, nparam=nparam)
 
     @model_tmin_tmax
     def aic(self, tmin=None, tmax=None):
@@ -260,63 +223,50 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         """
         nparam = self.ml.parameters.index.size
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
-        obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return metrics.aic(sim=sim, obs=obs, nparam=nparam)
+        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        return metrics.aic(res=res, nparam=nparam)
 
     @model_tmin_tmax
-    def summary(self, tmin=None, tmax=None, stats='basic'):
-        """Prints a summary table of the model statistics.
+    def summary(self, tmin=None, tmax=None, stats=None):
+        """Returns a Pandas DataFrame with goodness-of-fit metrics.
 
         Parameters
         ----------
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
-        stats : str or dict
-            dictionary of the desired statistics or a string with one of the
-            predefined sets. Supported options are: 'basic', 'all', and 'dutch'
+        stats: list, optional
+            list of statistics that need to be calculated. If nothing is
+            provided, all statistics are returned.
 
         Returns
         -------
         stats : Pandas.DataFrame
             single-column DataFrame with calculated statistics
 
-        Notes
-        -----
-        The set of statistics that are printed are stats by a dictionary of
-        the desired statistics.
+        Examples
+        --------
+
+        >>> ml.stats.summary()
+
+        or
+
+        >>> ml.stats.summary(stats=["mae", "rmse"])
 
         """
-        output = {
-            'basic': {
-                'evp': 'Explained variance percentage',
-                'rmse': 'Root mean squared error',
-                'avg_dev': 'Average Deviation',
-                'rsq': 'Pearson R^2',
-                'bic': 'Bayesian Information Criterion',
-                'aic': 'Akaike Information Criterion'},
-        }
-
-        # get labels and method names for stats output
-        if stats == 'all':
-            # sort by key, label, method name
-            selected_output = sorted([(k, l, f) for k, d in output.items()
-                                      for f, l in d.items()])
+        if stats is None:
+            stats_to_compute = self.ops
         else:
-            # sort by name, method name
-            selected_output = sorted([(0, l, f) for f, l in
-                                      output[stats].items()])
+            stats_to_compute = stats
 
-        # compute statistics
-        labels_and_values = [(l, getattr(self, f)(tmin=tmin, tmax=tmax))
-                             for _, l, f in selected_output]
-        labels, values = zip(*labels_and_values)
+        stats = DataFrame(columns=['Value'])
 
-        stats = DataFrame(index=list(labels), data=list(values),
-                          columns=['Value'])
+        for k in stats_to_compute:
+            stats.loc[k] = (getattr(self, k)(tmin=tmin, tmax=tmax))
+
         stats.index.name = 'Statistic'
         return stats
 
+    @PastasDeprecationWarning
     @model_tmin_tmax
     def many(self, tmin=None, tmax=None, stats=None):
         """This method returns the values for a provided list of statistics.
@@ -342,6 +292,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         return data
 
+    @PastasDeprecationWarning
     @model_tmin_tmax
     def all(self, tmin=None, tmax=None):
         """Returns a dictionary with all the statistics.
@@ -358,7 +309,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         """
         stats = DataFrame(columns=['Value'])
-        for k in self.ops.keys():
+        for k in self.ops:
             stats.loc[k] = (getattr(self, k)(tmin=tmin, tmax=tmax))
 
         return stats

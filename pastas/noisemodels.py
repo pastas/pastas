@@ -1,16 +1,7 @@
-"""The following noise models are available in Pastas. A Noise model may be
-used to transform the residual series into a noise series that better
-represents white noise.
+"""This module contains the noise models available in Pastas.
 
-Supported Noise Models
-----------------------
-
-.. autosummary::
-    :nosignatures:
-    :toctree: ./generated
-
-    NoiseModel
-    ArmaModel
+A Noise model may be used to transform the residual series into a noise
+series that better represents white noise.
 
 Examples
 --------
@@ -35,7 +26,7 @@ from pandas import Timedelta, DataFrame, Series
 
 from .decorators import set_parameter, njit
 
-__all__ = ["NoiseModel", "NoiseModelOld", "ArmaModel"]
+__all__ = ["NoiseModel", "ArmaModel"]
 
 
 class NoiseModelBase:
@@ -56,7 +47,7 @@ class NoiseModelBase:
         self.parameters.loc["noise_alpha"] = (pinit, 1e-5, 5000, True, "noise")
 
     @set_parameter
-    def set_initial(self, name, value):
+    def _set_initial(self, name, value):
         """
         Internal method to set the initial parameter value.
 
@@ -68,7 +59,7 @@ class NoiseModelBase:
         self.parameters.loc[name, "initial"] = value
 
     @set_parameter
-    def set_pmin(self, name, value):
+    def _set_pmin(self, name, value):
         """
         Internal method to set the minimum value of the noisemodel.
 
@@ -80,7 +71,7 @@ class NoiseModelBase:
         self.parameters.loc[name, "pmin"] = value
 
     @set_parameter
-    def set_pmax(self, name, value):
+    def _set_pmax(self, name, value):
         """
         Internal method to set the maximum parameter values.
 
@@ -92,7 +83,7 @@ class NoiseModelBase:
         self.parameters.loc[name, "pmax"] = value
 
     @set_parameter
-    def set_vary(self, name, value):
+    def _set_vary(self, name, value):
         """
         Internal method to set if the parameter is varied.
 
@@ -107,24 +98,18 @@ class NoiseModelBase:
         return {"type": self._name}
 
     @staticmethod
-    def weights(res, parameters):
+    def weights(res, p):
         return 1
 
 
 class NoiseModel(NoiseModelBase):
-    """
-    Noise model with exponential decay of the residuals and weighting.
-    Differences compared to NoiseModelOld:
-
-    1. First value is residual
-    2. First weight is 1 / sig_residuals (i.e., delt = infty)
-    3. Normalization of weights as in Von Asmuth and Bierkens (2005), optional
+    """Noise model with exponential decay of the residuals and weighting.
 
     Parameters
     ----------
-    norm: boolean
+    norm: boolean, optional
         Boolean to indicate whether weights are normalized according to
-        the Von Asmuth and Bierkens (2005) paper.
+        the Von Asmuth and Bierkens (2005) paper. Default is True.
 
     Notes
     -----
@@ -140,7 +125,16 @@ class NoiseModel(NoiseModelBase):
 
         w = 1 / \\sqrt{(1 - \\exp(-2 \\Delta t / \\alpha))}
 
-    The units of the alpha parameter is always in days.
+    The units of the alpha parameter is always in days. The first value of
+    the noise is the residual ($v(t=0=r(t=0)$). First weight is
+    1 / sig_residuals (i.e., delt = infty). Normalization of weights as in
+    Von Asmuth and Bierkens (2005), optional.
+
+    Differences compared to NoiseModelOld:
+
+    1. First value is residual
+    2. First weight is 1 / sig_residuals (i.e., delt = infty)
+    3. Normalization of weights as in Von Asmuth and Bierkens (2005), optional
 
     References
     ----------
@@ -158,16 +152,16 @@ class NoiseModel(NoiseModelBase):
         self.set_init_parameters()
 
     @staticmethod
-    def simulate(res, parameters):
-        """
-        Simulate noise from the residuals.
+    def simulate(res, p):
+        """Simulate noise from the residuals.
 
         Parameters
         ----------
         res: pandas.Series
             The residual series.
-        parameters: array-like
-            Alpha parameters used by the noisemodel.
+        p: array_like
+            array_like object with the values as floats representing the
+            model parameters. Here, Alpha parameter used by the noisemodel.
 
         Returns
         -------
@@ -175,23 +169,22 @@ class NoiseModel(NoiseModelBase):
             Series of the noise.
 
         """
-        alpha = parameters[0]
+        alpha = p[0]
         odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
         v = Series(index=res.index, dtype="float64", name="Noise")
         v.iloc[0] = res.values[0]
         v.iloc[1:] = res.values[1:] - np.exp(-odelt / alpha) * res.values[:-1]
         return v
 
-    def weights(self, res, parameters):
-        """
-        Method to calculate the weights for the noise.
+    def weights(self, res, p):
+        """Method to calculate the weights for the noise.
 
         Parameters
         ----------
         res: pandas.Series
             Pandas Series with the residuals to compute the weights for. The
             Series index must be a DatetimeIndex.
-        parameters: numpy.ndarray
+        p: numpy.ndarray
             numpy array with the parameters used in the noise mdoel.
 
         Returns
@@ -203,14 +196,12 @@ class NoiseModel(NoiseModelBase):
         -----
         Weights are
 
-        .. math::
-
-        w = 1 / sqrt((1 - exp(-2 \\Delta t / \\alpha)))
+        .. math:: w = 1 / sqrt((1 - exp(-2 \\Delta t / \\alpha)))
 
         which are then normalized so that sum(w) = len(res)
 
         """
-        alpha = parameters[0]
+        alpha = p[0]
         odelt = np.empty(res.size)
         odelt[0] = 1e12  # large for first measurement
         odelt[1:] = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
@@ -224,109 +215,33 @@ class NoiseModel(NoiseModelBase):
         return w
 
 
-class NoiseModelOld(NoiseModelBase):
-    """
-    Noise model with exponential decay of the residual and weighting.
-
-    Notes
-    -----
-    Calculates the noise [1]_ according to:
-
-    .. math::
-
-        v(t1) = r(t1) - r(t0) * exp(- (\\frac{\\Delta t}{\\alpha})
-
-    Note that in the referenced paper, alpha is defined as the inverse of
-    alpha used in Pastas. The unit of the alpha parameter is always in days.
-
-    References
-    ----------
-    .. [1] von Asmuth, J. R., and M. F. P. Bierkens (2005), Modeling
-           irregularly spaced residual series as a continuous stochastic
-           process, Water Resour. Res., 41, W12404, doi:10.1029/2004WR003726.
-
-    """
-    _name = "NoiseModel"
-
-    def __init__(self):
-        NoiseModelBase.__init__(self)
-        self.nparam = 1
-        self.set_init_parameters()
-
-    def simulate(self, res, parameters):
-        """
-        Simulate noise from the residuals.
-
-        Parameters
-        ----------
-        res: pandas.Series
-            The residual series.
-        parameters: array-like
-            Alpha parameters used by the noisemodel.
-
-        Returns
-        -------
-        noise: pandas.Series
-            Series of the noise.
-
-        """
-        alpha = parameters[0]
-        odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
-        # res.values is needed else it gets messed up with the dates
-        res.iloc[1:] -= np.exp(-odelt / alpha) * res.values[:-1]
-        res.name = "Noise"
-        return res
-
-    @staticmethod
-    def weights(res, parameters):
-        """
-        Method to calculate the weights for the noise.
-
-        Based on the sum of weighted squared noise (SWSI) method.
-
-        Parameters
-        ----------
-        res: pandas.Series
-            The residual series.
-        parameters: array-like
-            Alpha parameters used by the noisemodel.
-
-        Returns
-        -------
-        w: numpy.ndarray
-            Array with the weights.
-
-        """
-        alpha = parameters[0]
-        odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
-        # divide power by 2 as nu / sigma is returned
-        power = 1.0 / (2.0 * odelt.size)
-        exp = np.exp(-2.0 / alpha * odelt)  # Twice as fast as 2*odelt/alpha
-        w = np.exp(power * np.sum(np.log(1.0 - exp))) / np.sqrt(1.0 - exp)
-        w = np.insert(w, 0, 0)  # Set first weight to zero
-        w = Series(w, res.index)
-        return w
-
-
 class ArmaModel(NoiseModelBase):
     """
-    ARMA(1,1) Noise model to simulate the noise.
+    ARMA(1,1) Noise model to simulate the noise as defined in
+    [collenteur_2020]_.
 
     Notes
     -----
     Calculates the noise according to:
 
     .. math::
-
         \\upsilon_t = r_t - r_{t-1} e^{-\\Delta t/\\alpha} - \\upsilon_{t-1}
         e^{-\\Delta t/\\beta}
 
-    The unit of the alpha parameter is always in days.
+    The units of the alpha and beta parameters are always in days.
 
     Warnings
     --------
     This model has only been tested on regular time steps and should not be
     used for irregular time steps yet.
+
+    References
+    ----------
+    .. [collenteur_2020] Collenteur, R., Bakker, M., Klammler, G., and Birk,
+       S. (in review, 2020.) Estimating groundwater recharge from
+       groundwater levels using non-linear transfer function noise models
+       and comparison to lysimeter data, Hydrol. Earth Syst. Sci. Discuss.
+       https://doi.org/10.5194/hess-2020-392
 
     """
     _name = "ArmaModel"
@@ -338,11 +253,12 @@ class ArmaModel(NoiseModelBase):
 
     def set_init_parameters(self, oseries=None):
         self.parameters.loc["noise_alpha"] = (10, 1e-9, np.inf, True, "noise")
-        self.parameters.loc["noise_beta"] = (10, 1e-9, np.inf, True, "noise")
+        self.parameters.loc["noise_beta"] = (10, -np.inf, np.inf, True,
+                                             "noise")
 
-    def simulate(self, res, parameters):
-        alpha = parameters[0]
-        beta = parameters[1]
+    def simulate(self, res, p):
+        alpha = p[0]
+        beta = p[1]
 
         # Calculate the time steps
         odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
@@ -355,8 +271,9 @@ class ArmaModel(NoiseModelBase):
         # Create an array to store the noise
         a = np.zeros_like(res)
         a[0] = res[0]
+        pm = beta / np.abs(beta)
         # We have to loop through each value
         for i in range(1, res.size):
             a[i] = res[i] - res[i - 1] * np.exp(-odelt[i - 1] / alpha) - \
-                   a[i - 1] * np.exp(-odelt[i - 1] / beta)
+                   a[i - 1] * pm * np.exp(-odelt[i - 1] / np.abs(beta))
         return a

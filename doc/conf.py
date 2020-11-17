@@ -3,9 +3,6 @@
 # Pastas documentation build configuration file, created by
 # sphinx-quickstart on Wed May 11 12:38:06 2016.
 
-# Repository setup is according to:
-# http://gisellezeno.com/tutorials/sphinx-for-python-documentation.html
-#
 # This file is execfile()d with the current directory set to its
 # containing dir.
 #
@@ -45,7 +42,8 @@ extensions = [
     'IPython.sphinxext.ipython_console_highlighting',  # lowercase didn't work
     'sphinx.ext.autosectionlabel',
     'nbsphinx',
-    'nbsphinx_link'
+    'nbsphinx_link',
+    'sphinx_gallery.load_style',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -235,7 +233,7 @@ texinfo_documents = [
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     "matplotlib": ("https://matplotlib.org/", None),
-    "numpy": ("https://docs.scipy.org/doc/numpy/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
     "python": ("https://docs.python.org/3/", None),
     "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),

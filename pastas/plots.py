@@ -1,30 +1,12 @@
-"""
+"""This module contains all the plotting methods in Pastas.
+
+
 Pastas models come with a number of predefined plotting methods to quickly
 visualize a Model. All of these methods are contained in the `plot`
-attribute of a model. For example, if we stored a
-:class:`pastas.model.Model` instance in the variable `ml`, the plot methods
-are available as follows::
+attribute of a model. For example, if we stored a :class:`pastas.model.Model`
+instance in the variable `ml`, the plot methods are available as follows::
 
     ml.plot.decomposition()
-
-Available Model Plots
----------------------
-The following table lists all the plot methods that are available and
-supported.
-
-.. currentmodule:: pastas.plots.Plotting
-
-.. autosummary::
-    :nosignatures:
-    :toctree: ./generated
-
-    plot
-    results
-    decomposition
-    diagnostics
-    block_response
-    step_response
-    stresses
 
 """
 
@@ -42,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 class Plotting:
+    """Plots available directly form the Model Class"""
     def __init__(self, ml):
         self.ml = ml  # Store a reference to the model class
 
@@ -139,7 +122,8 @@ class Plotting:
         plot_noise = self.ml.settings["noise"] and self.ml.noisemodel
         if plot_noise:
             noise = self.ml.noise(tmin=tmin, tmax=tmax)
-        contribs = self.ml.get_contributions(split=split, tmin=tmin, tmax=tmax)
+        contribs = self.ml.get_contributions(split=split, tmin=tmin,
+                                             tmax=tmax, return_warmup=False)
         fig = plt.figure(figsize=figsize, **kwargs)
         ylims = [(min([sim.min(), o[tmin:tmax].min()]),
                   max([sim.max(), o[tmin:tmax].max()]))]
@@ -150,7 +134,7 @@ class Plotting:
             else:
                 ylims.append((res.min(), res.max()))
             for contrib in contribs:
-                hs = contrib[tmin:tmax]
+                hs = contrib.loc[tmin:tmax]
                 if hs.empty:
                     if contrib.empty:
                         ylims.append((0.0, 0.0))
@@ -1003,7 +987,7 @@ class TrackSolve:
             array containing noise
 
         """
-        noise = self.ml.noise(parameters=params, tmin=self.tmin,
+        noise = self.ml.noise(p=params, tmin=self.tmin,
                               tmax=self.tmax)
         return noise
 
@@ -1021,7 +1005,7 @@ class TrackSolve:
             array containing residuals
 
         """
-        res = self.ml.residuals(parameters=params, tmin=self.tmin,
+        res = self.ml.residuals(p=params, tmin=self.tmin,
                                 tmax=self.tmax)
         return res
 
@@ -1034,7 +1018,7 @@ class TrackSolve:
             series containing model evaluation
 
         """
-        sim = self.ml.simulate(parameters=self.parameters.iloc[-1, :].values,
+        sim = self.ml.simulate(p=self.parameters.iloc[-1, :].values,
                                tmin=self.tmin, tmax=self.tmax,
                                freq=self.ml.settings["freq"])
         return sim

@@ -363,7 +363,7 @@ class KnmiStation:
 
         # Adjust the unit of the measurements
         for key, value in self.variables.items():
-            # test if key existst in data
+            # test if key exists in data
             if key not in data.keys():
                 if key == 'YYYYMMDD' or key == 'HH':
                     pass

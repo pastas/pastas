@@ -24,6 +24,18 @@
         },
         "freq_original": null
     },
+    "parameters": "{\"Recharge_A\":{\"initial\":1547.622052197,\"name\":\"Recharge\",\"optimal\":454.3457431311,\"pmin\":0.00001,\"pmax\":25977.2039124601,\"vary\":true,\"stderr\":12.6705687322},\"Recharge_n\":{\"initial\":1.0,\"name\":\"Recharge\",\"optimal\":0.8417712276,\"pmin\":0.1,\"pmax\":10.0,\"vary\":true,\"stderr\":0.0117461192},\"Recharge_a\":{\"initial\":10.0,\"name\":\"Recharge\",\"optimal\":141.526719671,\"pmin\":0.01,\"pmax\":1000.0,\"vary\":true,\"stderr\":6.5904229475},\"Recharge_f\":{\"initial\":-1.0,\"name\":\"Recharge\",\"optimal\":-1.1097087789,\"pmin\":-2.0,\"pmax\":0.0,\"vary\":true,\"stderr\":0.022397677},\"Extraction_A\":{\"initial\":-0.0003833773,\"name\":\"Extraction\",\"optimal\":-0.000000001,\"pmin\":-0.1927133155,\"pmax\":0,\"vary\":true,\"stderr\":0.001088101},\"Extraction_a\":{\"initial\":100.0,\"name\":\"Extraction\",\"optimal\":1960.3677224087,\"pmin\":0.001,\"pmax\":10000.0,\"vary\":true,\"stderr\":52159986.9173044711},\"Extraction_b\":{\"initial\":1.0,\"name\":\"Extraction\",\"optimal\":2.6693216012,\"pmin\":0.000001,\"pmax\":25,\"vary\":true,\"stderr\":50693.3812863954},\"constant_d\":{\"initial\":19.8802458366,\"name\":\"constant\",\"optimal\":19.6780091073,\"pmin\":null,\"pmax\":null,\"vary\":true,\"stderr\":0.0596153975}}",
+    "settings": {
+        "tmin": "2012-06-07T00:00:00",
+        "tmax": "2017-02-01T00:00:00",
+        "freq": "D",
+        "warmup": "315360000000000000 nanoseconds",
+        "time_offset": "0 nanoseconds",
+        "noise": false,
+        "solver": "LeastSquares",
+        "fit_constant": true,
+        "weights": null
+    },
     "stressmodels": {
         "Recharge": {
             "stressmodel": "StressModel2",
@@ -37,13 +49,13 @@
                     "name": "Precipitation",
                     "settings": {
                         "freq": "D",
-                        "sample_up": "divide",
-                        "sample_down": "sum",
+                        "sample_up": "bfill",
+                        "sample_down": "mean",
                         "fill_nan": 0.0,
                         "fill_before": "mean",
                         "fill_after": "mean",
-                        "tmin": "2000-01-02T00:00:00",
-                        "tmax": "2018-03-10T00:00:00",
+                        "tmin": "2002-06-10T00:00:00",
+                        "tmax": "2017-02-01T00:00:00",
                         "norm": null,
                         "time_offset": "0 nanoseconds"
                     },
@@ -60,13 +72,13 @@
                     "name": "Evaporation",
                     "settings": {
                         "freq": "D",
-                        "sample_up": "divide",
-                        "sample_down": "sum",
+                        "sample_up": "bfill",
+                        "sample_down": "mean",
                         "fill_nan": "interpolate",
                         "fill_before": "mean",
                         "fill_after": "mean",
-                        "tmin": "2000-01-02T00:00:00",
-                        "tmax": "2018-03-10T00:00:00",
+                        "tmin": "2002-06-10T00:00:00",
+                        "tmax": "2017-02-01T00:00:00",
                         "norm": null,
                         "time_offset": "0 nanoseconds"
                     },
@@ -97,8 +109,8 @@
                         "fill_nan": "interpolate",
                         "fill_before": null,
                         "fill_after": null,
-                        "tmin": "2000-01-02T00:00:00",
-                        "tmax": "2017-05-01T00:00:00",
+                        "tmin": "2002-06-10T00:00:00",
+                        "tmax": "2017-02-01T00:00:00",
                         "norm": null,
                         "time_offset": "0 nanoseconds"
                     },
@@ -117,21 +129,16 @@
     "noisemodel": {
         "type": "NoiseModel"
     },
-    "parameters": "{\"Recharge_A\":{\"initial\":1547.622052197,\"name\":\"Recharge\",\"optimal\":null,\"pmax\":154762.2052197024,\"pmin\":0,\"stderr\":null,\"vary\":1},\"Recharge_n\":{\"initial\":1.0,\"name\":\"Recharge\",\"optimal\":null,\"pmax\":10.0,\"pmin\":0.1,\"stderr\":null,\"vary\":1},\"Recharge_a\":{\"initial\":10.0,\"name\":\"Recharge\",\"optimal\":null,\"pmax\":5000.0,\"pmin\":0.01,\"stderr\":null,\"vary\":1},\"Recharge_f\":{\"initial\":-1.0,\"name\":\"Recharge\",\"optimal\":null,\"pmax\":2.0,\"pmin\":-2.0,\"stderr\":null,\"vary\":1},\"Extraction_A\":{\"initial\":-0.0003833773,\"name\":\"Extraction\",\"optimal\":null,\"pmax\":0,\"pmin\":-0.0383377346,\"stderr\":null,\"vary\":1},\"Extraction_rho\":{\"initial\":1.0,\"name\":\"Extraction\",\"optimal\":null,\"pmax\":10,\"pmin\":0.0001,\"stderr\":null,\"vary\":1},\"Extraction_cS\":{\"initial\":100.0,\"name\":\"Extraction\",\"optimal\":null,\"pmax\":1000.0,\"pmin\":0.001,\"stderr\":null,\"vary\":1},\"constant_d\":{\"initial\":19.8802458366,\"name\":\"constant\",\"optimal\":null,\"pmax\":null,\"pmin\":null,\"stderr\":null,\"vary\":1},\"noise_alpha\":{\"initial\":14.0,\"name\":\"noise\",\"optimal\":null,\"pmax\":5000,\"pmin\":0,\"stderr\":null,\"vary\":1}}",
-    "settings": {
-        "tmin": null,
-        "tmax": null,
-        "freq": "D",
-        "warmup": 3650,
-        "time_offset": "0 nanoseconds",
-        "noise": true,
-        "solver": null,
-        "fit_constant": true
+    "fit": {
+        "name": "LeastSquares",
+        "pcov": "{\"Recharge_A\":{\"Recharge_A\":160.5433119977,\"Recharge_n\":-0.055313983,\"Recharge_a\":58.1744419826,\"Recharge_f\":0.1475569901,\"Extraction_A\":-0.0050091735,\"Extraction_a\":16812970.1614559069,\"Extraction_b\":-26946.1137266499,\"constant_d\":0.100597744},\"Recharge_n\":{\"Recharge_A\":-0.055313983,\"Recharge_n\":0.0001379713,\"Recharge_a\":-0.0671514455,\"Recharge_f\":0.0000934034,\"Extraction_A\":0.0000003912,\"Extraction_a\":-21269.4331034546,\"Extraction_b\":30.5136869032,\"constant_d\":-0.0000664094},\"Recharge_a\":{\"Recharge_A\":58.1744419826,\"Recharge_n\":-0.0671514455,\"Recharge_a\":43.4336746264,\"Recharge_f\":-0.0227933225,\"Extraction_A\":-0.0013525321,\"Extraction_a\":13104711.7751563564,\"Extraction_b\":-19689.03870842,\"constant_d\":0.0672929914},\"Recharge_f\":{\"Recharge_A\":0.1475569901,\"Recharge_n\":0.0000934034,\"Recharge_a\":-0.0227933225,\"Recharge_f\":0.0005016559,\"Extraction_A\":-0.0000034443,\"Extraction_a\":-36952.6847372609,\"Extraction_b\":32.4569570891,\"constant_d\":-0.0002451458},\"Extraction_A\":{\"Recharge_A\":-0.0050091735,\"Recharge_n\":0.0000003912,\"Recharge_a\":-0.0013525321,\"Recharge_f\":-0.0000034443,\"Extraction_A\":0.000001184,\"Extraction_a\":1564.3932217095,\"Extraction_b\":-0.1475389208,\"constant_d\":-0.0000611902},\"Extraction_a\":{\"Recharge_A\":16812970.1614559069,\"Recharge_n\":-21269.4331034546,\"Recharge_a\":13104711.7751563564,\"Recharge_f\":-36952.6847372609,\"Extraction_A\":1564.3932217095,\"Extraction_a\":2720664235213373.5,\"Extraction_b\":-1092941070851.5843505859,\"constant_d\":-66567.2635017411},\"Extraction_b\":{\"Recharge_A\":-26946.1137266499,\"Recharge_n\":30.5136869032,\"Recharge_a\":-19689.03870842,\"Recharge_f\":32.4569570891,\"Extraction_A\":-0.1475389208,\"Extraction_a\":-1092941070851.5841064453,\"Extraction_b\":2569818906.2478656769,\"constant_d\":-101.7447219071},\"constant_d\":{\"Recharge_A\":0.100597744,\"Recharge_n\":-0.0000664094,\"Recharge_a\":0.0672929914,\"Recharge_f\":-0.0002451458,\"Extraction_A\":-0.0000611902,\"Extraction_a\":-66567.2635017411,\"Extraction_b\":-101.7447219071,\"constant_d\":0.0035539956}}",
+        "nfev": 31,
+        "obj_func": 3.3450532099373635
     },
     "file_info": {
         "date_created": "2018-07-17T17:03:09.379760",
-        "date_modified": "2018-07-17T17:03:09.426393",
-        "pastas_version": "0.9.6b",
-        "owner": "Artesia"
+        "date_modified": "2020-11-06T14:24:30.695413",
+        "pastas_version": "0.16.0b",
+        "owner": "root"
     }
 }

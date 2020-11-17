@@ -29,9 +29,6 @@ sm = ps.StressModel2(stress=[rain, evap], rfunc=ps.Exponential,
                      name='recharge')
 ml.add_stressmodel(sm)
 
-# set the time-offset of the model. This should be done automatically in the future.
-ml._set_time_offset()
-
 ## Solve
-ml.solve(freq='D')
+ml.solve()
 ml.plots.decomposition()

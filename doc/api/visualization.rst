@@ -1,5 +1,0 @@
-Visualization
-=============
-
-.. automodule:: pastas.plots
-

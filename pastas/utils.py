@@ -1,3 +1,7 @@
+"""This module contains utility functions for working with Pastas models.
+
+"""
+
 import logging
 from datetime import datetime, timedelta
 from logging import handlers
@@ -48,7 +52,7 @@ def frequency_is_supported(freq):
         logger.error(msg)
         raise KeyError(msg)
     else:
-        if offset.n is 1:
+        if offset.n == 1:
             freq = offset.name
         else:
             freq = str(offset.n) + offset.name
@@ -144,6 +148,9 @@ def _get_time_offset(t, freq):
         Timedelta with the offset for the timestamp t.
 
     """
+    if freq is None:
+        raise TypeError("frequency is None")
+
     return t - t.floor(freq)
 
 
@@ -295,6 +302,23 @@ def timestep_weighted_resample_fast(series0, freq):
     return series
 
 
+def to_daily_unit(series, method=True):
+    """Experimental method, use wth caution!
+
+    Recalculate a timeseries of a stress with a non-daily unit (e/g.
+    m3/month) to a daily unit (e.g. m3/day). This method just changes the
+    values of the timeseries, and does not alter the frequency.
+
+    """
+    if method is True or method == "divide":
+        dt = series.index.to_series().diff() / Timedelta(1, 'D')
+        dt[:-1] = dt[1:]
+        dt[-1] = np.NaN
+        if not ((dt == 1.0) | dt.isna()).all():
+            series = series / dt
+    return series
+
+
 def excel2datetime(tindex, freq="D"):
     """Method to convert excel datetime to pandas timetime objects.
 
@@ -401,6 +425,18 @@ def set_console_handler(logger=None, level=logging.INFO,
 def set_log_level(level):
     """Set the log-level of the console. This method is just a wrapper around
     set_console_handler.
+
+    Parameters
+    ----------
+    level: str
+        String with the level to log messages to the screen for. Options
+        are: "INFO", "WARNING", and "ERROR".
+
+    Examples
+    --------
+
+    >>> import pandas as ps
+    >>> ps.set_log_level("ERROR")
 
     """
     set_console_handler(level=level)
@@ -509,22 +545,30 @@ def show_versions(lmfit=False, numba=False):
     lmfit: bool, optional
         Print the version of lmfit. Needs to be installed.
     numba: bool, optional
+        Print the version of numba. Needs to be installed.
 
     """
     from pastas import __version__ as ps_version
     from pandas import __version__ as pd_version
     from numpy import __version__ as np_version
     from scipy import __version__ as sc_version
+    from matplotlib import __version__ as mpl_version
     from sys import version as os_version
 
-    print("Python version: {}".format(os_version))
-    print("Numpy version: {}".format(np_version))
-    print("Scipy version: {}".format(sc_version))
-    print("Pandas version: {}".format(pd_version))
-    print("Pastas version: {}".format(ps_version))
+    msg = (
+        f"Python version: {os_version}\n"
+        f"Numpy version: {np_version}\n"
+        f"Scipy version: {sc_version}\n"
+        f"Pandas version: {pd_version}\n"
+        f"Pastas version: {ps_version}\n"
+        f"Matplotlib version: {mpl_version}"
+    )
+
     if lmfit:
         from lmfit import __version__ as lm_version
-        print("lmfit version: ", lm_version)
+        msg = msg + f"\nlmfit version: {lm_version}"
     if numba:
         from numba import __version__ as nb_version
-        print("numba version: ", nb_version)
+        msg = msg + f"\nnumba version: {nb_version}"
+
+    return print(msg)

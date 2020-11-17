@@ -35,7 +35,7 @@ the built-in optimization, visualisation, and statistical analysis tools.
 Documentation & Examples
 ~~~~~~~~~~~~~~~~~~~~~~~~
 - Documentation is provided on a dedicated website: http://pastas.readthedocs.io/
-- Examples can be found on the `examples directory on the documentation website <http://pastas.readthedocs.io/en/dev/examples.html>`_.
+- Examples can be found on the `examples directory on the documentation website <https://pastas.readthedocs.io/en/dev/examples/index.html>`_.
 - View and edit a working example notebook of a Pastas model in `MyBinder <https://mybinder.org/v2/gh/pastas/pastas/master?filepath=examples%2Fnotebooks%2F1_basic_model.ipynb>`_
 - A list of Publications that used Pastas is available in a `dedicated GitHub repo <https://github.com/pastas/pastas_research>`_
 
@@ -44,9 +44,9 @@ Get in Touch
 - Questions on Pastas can be asked and answered on `Github Discussions <https://github.com/pastas/pastas/discussions>`_.
 - Bugs, feature requests and other improvements can be posted as `Github Issues <https://github.com/pastas/pastas/issues>`_.
 - Pull requests will only be accepted on the development branch (dev) of
-this repository. Please take a look at the `developers section
-<http://pastas.readthedocs.io/>`_ on the documentation website for more
-information on how to contribute to Pastas.
+  this repository. Please take a look at the `developers section
+  <http://pastas.readthedocs.io/>`_ on the documentation website for more
+  information on how to contribute to Pastas.
 
 Quick installation guide
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -83,7 +83,7 @@ following packages are necessary for a minimal function installation of Pastas:
 
 - numpy>=1.15
 - matplotlib>=2.0
-- pandas>=0.25
+- pandas>=1.0
 - scipy>=1.1
 
 How to Cite Pastas?
@@ -95,3 +95,4 @@ If you use Pastas in one of your studies, please cite the Pastas article in Grou
 To cite a specific version of Python, you can use the DOI provided for each official release (>0.9.7) through Zenodo. Click on the link to get a specific version and DOI, depending on the Pastas version.
 
 - Collenteur, R., Bakker, M., Caljé, R. & Schaars, F. (XXXX). Pastas: open-source software for time series analysis in hydrology (Version X.X.X). Zenodo. http://doi.org/10.5281/zenodo.1465866
+

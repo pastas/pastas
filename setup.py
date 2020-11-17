@@ -14,7 +14,6 @@ setup(
     description='Python package to perform time series analysis of '
                 'hydrological time series.',
     long_description=long_description,
-    long_description_content_type="text/x-rst",
     url='https://github.com/pastas/pastas',
     author='R.A. Collenteur, M. Bakker, R. Calje, F. Schaars',
     author_email='raoulcollenteur@gmail.com, markbak@gmail.com, '
@@ -39,7 +38,7 @@ setup(
     platforms='Windows, Mac OS-X',
     install_requires=['numpy>=1.15',
                       'matplotlib>=2.0',
-                      'pandas>=0.25',
+                      'pandas>=1.0',
                       'scipy>=1.1'],
     packages=find_packages(exclude=[]),
 )
