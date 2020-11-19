@@ -756,88 +756,9 @@ class Model:
                 output = "full"
             print(self.fit_report(output=output))
 
-    def set_initial(self, name, value, move_bounds=False):
-        """Method to set the initial value of any parameter.
-
-        Parameters
-        ----------
-        name: str
-            name of the parameter to update.
-        value: float
-            parameters value to use as initial estimate.
-        move_bounds: bool, optional
-            Reset pmin/pmax based on new initial value.
-
-        Examples
-        --------
-        >>> ml.set_initial("constant_d", 10)
-
-        """
-        msg = "Deprecation warning: method is deprecated and will be removed" \
-              " in version 0.17.0. Use ml.set_parameter instead."
-        self.logger.warning(msg)
-
-    def set_vary(self, name, value):
-        """Method to set if the parameter is allowed to vary.
-
-        Parameters
-        ----------
-        name: str
-            name of the parameter to update.
-        value: bool
-            boolean to vary a parameter (True) or not (False).
-
-        Examples
-        --------
-        >>> ml.set_vary("constant_d", False)
-
-        """
-        msg = "Deprecation warning: method is deprecated and will be removed" \
-              " in version 0.17.0. Use ml.set_parameter instead."
-        self.logger.error(msg)
-
-    def set_pmin(self, name, value):
-        """Method to set the minimum value of a parameter.
-
-        Parameters
-        ----------
-        name: str
-            name of the parameter to update.
-        value: float
-            minimum value for the parameter.
-
-        Examples
-        --------
-        >>> ml.set_pmin("constant_d", -10)
-
-        """
-        msg = "Deprecation warning: method is deprecated and will be removed" \
-              " in version 0.17.0. Use ml.set_parameter instead."
-        self.logger.error(msg)
-
-    def set_pmax(self, name, value):
-        """Method to set the maximum values of a parameter.
-
-        Parameters
-        ----------
-        name: str
-            name of the parameter to update.
-        value: float
-            maximum value for the parameter.
-
-        Examples
-        --------
-        >>> ml.set_pmax("constant_d", 10)
-
-        """
-        msg = "Deprecation warning: method is deprecated and will be removed" \
-              " in version 0.17.0. Use ml.set_parameter instead."
-        self.logger.error(msg)
-
     def set_parameter(self, name, initial=None, vary=None, pmin=None,
                       pmax=None, move_bounds=False):
-        """
-        Method to change the parameter properties.
+        """Method to change the parameter properties.
 
         Parameters
         ----------
