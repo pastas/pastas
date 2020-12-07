@@ -18,7 +18,6 @@ from logging import getLogger
 from numpy import sqrt, log, ones, nan
 from pandas import Timedelta
 
-from pastas.decorators import PastasDeprecationWarning
 from pastas.stats.core import mean, var, std
 
 __all__ = ["rmse", "sse", "mae", "nse", "evp", "rsq", "bic", "aic",
@@ -174,40 +173,6 @@ def sse(obs=None, sim=None, res=None, missing="drop"):
         return nan
 
     return (res ** 2).sum()
-
-
-@PastasDeprecationWarning
-def avg_dev(sim, obs, missing="drop"):
-    """Average deviation of the residuals.
-
-    Parameters
-    ----------
-    sim: pandas.Series
-        Series with the simulated values.
-    obs: pandas.Series
-        Series with the observed values.
-    missing: str, optional
-        string with the rule to deal with missing values. Only "drop" is
-        supported now.
-
-    Notes
-    -----
-    .. math:: avg_{dev} = \\frac{\\sum(r)}{n}
-
-    where :math:`n` is the number of residuals :math:`r`.
-
-    """
-    res = (sim - obs)
-
-    if missing == "drop":
-        res = res.dropna()
-
-    # Return nan if the time indices of the sim and obs don't match
-    if res.index.size is 0:
-        logger.warning("Time indices of the sim and obs don't match.")
-        return nan
-
-    return res.mean()
 
 
 # Percentage Error Metrics

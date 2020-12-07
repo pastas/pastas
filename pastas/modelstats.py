@@ -26,7 +26,7 @@ These methods may be used as follows.
 from numpy import nan
 from pandas import DataFrame
 
-from .decorators import model_tmin_tmax, PastasDeprecationWarning
+from .decorators import model_tmin_tmax
 from .stats import metrics, diagnostics
 
 
@@ -190,6 +190,24 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return metrics.rsq(obs=obs, res=res)
 
     @model_tmin_tmax
+    def kge_2012(self, tmin=None, tmax=None, **kwargs):
+        """Kling-Gupta Efficiency.
+
+        Parameters
+        ----------
+        tmin: str or pandas.Timestamp, optional
+        tmax: str or pandas.Timestamp, optional
+
+        See Also
+        --------
+        pastas.stats.kge_2012
+
+        """
+        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        return metrics.kge_2012(obs=obs, sim=sim, **kwargs)
+
+    @model_tmin_tmax
     def bic(self, tmin=None, tmax=None):
         """Bayesian Information Criterium (BIC).
 
@@ -264,54 +282,6 @@ included in Pastas. To obtain a list of all statistics that are included type:
             stats.loc[k] = (getattr(self, k)(tmin=tmin, tmax=tmax))
 
         stats.index.name = 'Statistic'
-        return stats
-
-    @PastasDeprecationWarning
-    @model_tmin_tmax
-    def many(self, tmin=None, tmax=None, stats=None):
-        """This method returns the values for a provided list of statistics.
-
-        Parameters
-        ----------
-        tmin: str or pandas.Timestamp, optional
-        tmax: str or pandas.Timestamp, optional
-        stats: list, optional
-            list of statistics that need to be calculated.
-
-        Returns
-        -------
-        data: pandas.DataFrame
-
-        """
-        if stats is None:
-            stats = ['evp', 'rmse', 'rmsn', 'rsq']
-
-        data = DataFrame(index=[0], columns=stats)
-        for k in stats:
-            data.iloc[0][k] = (getattr(self, k)(tmin=tmin, tmax=tmax))
-
-        return data
-
-    @PastasDeprecationWarning
-    @model_tmin_tmax
-    def all(self, tmin=None, tmax=None):
-        """Returns a dictionary with all the statistics.
-
-        Parameters
-        ----------
-        tmin: str or pandas.Timestamp, optional
-        tmax: str or pandas.Timestamp, optional
-
-        Returns
-        -------
-        stats: pd.DataFrame
-            Dataframe with all possible statistics
-
-        """
-        stats = DataFrame(columns=['Value'])
-        for k in self.ops:
-            stats.loc[k] = (getattr(self, k)(tmin=tmin, tmax=tmax))
-
         return stats
 
     @model_tmin_tmax
