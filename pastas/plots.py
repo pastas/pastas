@@ -18,13 +18,14 @@ from matplotlib.ticker import MultipleLocator
 from pandas import DataFrame, Timestamp, concat
 
 from .decorators import model_tmin_tmax
-from .stats import plot_diagnostics
+from .stats import plot_diagnostics, plot_cum_frequency
 
 logger = logging.getLogger(__name__)
 
 
 class Plotting:
     """Plots available directly form the Model Class"""
+
     def __init__(self, ml):
         self.ml = ml  # Store a reference to the model class
 
@@ -425,6 +426,37 @@ class Plotting:
 
         return plot_diagnostics(series=res, figsize=figsize, bins=bins,
                                 acf_options=acf_options, **kwargs)
+
+    @model_tmin_tmax
+    def cum_frequency(self, tmin=None, tmax=None, ax=None, figsize=(5, 2),
+                      **kwargs):
+        """Plot the cumulative frequency for the observations and simulation.
+
+        Parameters
+        ----------
+        Parameters
+        ----------
+        tmin: str or pandas.Timestamp, optional
+        tmax: str or pandas.Timestamp, optional
+        ax: Matplotlib.axes instance, optional
+            Axes to add the plot to.
+        figsize: tuple, optional
+            Tuple with the height and width of the figure in inches.
+        **kwargs:
+            Passed on to plot_cum_frequency
+
+        Returns
+        -------
+        ax: matplotlib.axes.Axes
+
+        See Also
+        --------
+        ps.stats.plot_cum_frequency
+
+        """
+        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        return plot_cum_frequency(obs, sim, ax=ax, figsize=figsize, **kwargs)
 
     def block_response(self, stressmodels=None, ax=None, figsize=None,
                        **kwargs):

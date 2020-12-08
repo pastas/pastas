@@ -612,3 +612,46 @@ def plot_diagnostics(series, alpha=0.05, bins=50, acf_options=None,
     ax.set_xticklabels(ax.get_xticklabels(), rotation=0, ha="center")
 
     return fig.axes
+
+
+def plot_cum_frequency(obs, sim=None, ax=None, figsize=(5, 2)):
+    """Create a plot of the cumulative frequency plot.
+
+    Parameters
+    ----------
+    sim: pandas.Series
+        Series with the simulated values.
+    obs: pandas.Series
+        Series with the observed values.
+    ax: matplotlib.axes.Axes, optional
+        Matplotlib Axes instance to create the plot on. A new Figure and Axes
+        is created when no value for ax is provided.
+    figsize: Tuple, optional
+        2-D Tuple to determine the size of the figure created. Ignored if ax
+        is also provided.
+
+    Returns
+    -------
+    ax: matplotlib.axes.Axes
+
+    Examples
+    --------
+    >>> obs = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
+    >>>                 data=np.random.normal(0, 1, 1000))
+    >>> ps.stats.plot_cum_frequency(obs)
+
+    """
+    if ax is None:
+        _, ax = plt.subplots(1, 1, figsize=figsize)
+
+    ax.plot(obs.sort_values(), arange(0, obs.size) / obs.size * 100,
+            color="k", marker=".", linestyle=" ")
+    if sim is not None:
+        ax.plot(sim.sort_values(), arange(0, sim.size) / sim.size * 100)
+    ax.legend(["Observations", "Simulation"])
+    ax.set_xlabel("Head")
+    ax.set_ylabel("Cum. Frequency [%]")
+    ax.grid()
+    plt.tight_layout()
+
+    return ax
