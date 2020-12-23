@@ -106,7 +106,7 @@ def ccf(x, y, lags=365, bin_method='rectangle', bin_width=0.5,
         12, 13, 14, 30, 61, 90, 120, 150, 180, 210, 240, 270, 300, 330, 365]
     bin_method: str, optional
         method to determine the type of bin. Options are "rectangle" (default),
-        and  "gaussian".
+        "gaussian" and "regular" (for regular timesteps).
     bin_width: float, optional
         number of days used as the width for the bin to calculate the
         correlation. By default these values are chosen based on the
