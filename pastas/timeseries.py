@@ -549,7 +549,7 @@ class TimeSeries:
         if freq:
             series = series.asfreq(freq)
             n = series.isnull().values.sum()
-            if n is 0:
+            if n == 0:
                 pass
             elif method == "drop":
                 series.dropna(inplace=True)
