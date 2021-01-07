@@ -188,7 +188,10 @@ class Plotting:
         # Add a row for each stressmodel
         rmax = 0  # tmax of the step response
         axb = None
-        for i, sm_name in enumerate(self.ml.stressmodels):
+        i = 0
+        for sm_name in self.ml.stressmodels:
+            step_row = i + 2
+            
             # plot the contribution
             sm = self.ml.stressmodels[sm_name]
             nsplit = sm.get_nsplit()
@@ -200,6 +203,7 @@ class Plotting:
                     if adjust_height:
                         ax.set_ylim(ylims[i + 2])
                         ax.grid(True)
+                    i = i + 1
             else:
                 ax = fig.add_subplot(gs[i + 2, 0], sharex=ax1)
                 contribs[i].plot(ax=ax, x_compat=True)
@@ -211,12 +215,13 @@ class Plotting:
                 if adjust_height:
                     ax.set_ylim(ylims[i + 2])
                     ax.grid(True)
+                i = i + 1
 
             # plot the step reponse
             step = self.ml.get_step_response(sm_name, add_0=True)
             if step is not None:
                 rmax = max(rmax, step.index.max())
-                axb = fig.add_subplot(gs[i + 2, 1])
+                axb = fig.add_subplot(gs[step_row, 1])
                 step.plot(ax=axb)
                 if adjust_height:
                     axb.grid(True)
