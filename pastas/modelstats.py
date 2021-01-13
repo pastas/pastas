@@ -222,8 +222,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
         pastas.stats.bic
 
         """
-        nparam = self.ml.parameters.index.size
-        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        nparam = self.ml.parameters["vary"].sum()
+        res = self.ml.noise(tmin=tmin, tmax=tmax)
         return metrics.bic(res=res, nparam=nparam)
 
     @model_tmin_tmax
@@ -240,8 +240,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
         pastas.stats.rsq
 
         """
-        nparam = self.ml.parameters.index.size
-        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        nparam = self.ml.parameters["vary"].sum()
+        res = self.ml.noise(tmin=tmin, tmax=tmax)
         return metrics.aic(res=res, nparam=nparam)
 
     @model_tmin_tmax
