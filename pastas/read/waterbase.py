@@ -45,7 +45,8 @@ def read_waterbase(fname, locations=None, variable="NUMERIEKEWAARDE",
                            "WAARNEMINGTIJD", variable, "EPSG", "X", "Y"],
                   parse_dates={"Date": ["WAARNEMINGDATUM", "WAARNEMINGTIJD"]},
                   infer_datetime_format=True, dayfirst=True,
-                  na_values=[-999999999, 999999999])
+                  na_values=[-999999999, 999999999],
+                  encoding="ISO-8859-1")
 
     if locations is None:
         locations = df.MEETPUNT_IDENTIFICATIE.unique()
