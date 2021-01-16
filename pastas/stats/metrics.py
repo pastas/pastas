@@ -68,7 +68,7 @@ def mae(obs=None, sim=None, res=None, missing="drop", weighted=False,
         res = res.dropna()
 
     # Return nan if the time indices of the sim and obs don't match
-    if res.index.size is 0:
+    if res.index.size == 0:
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
@@ -122,7 +122,7 @@ def rmse(obs=None, sim=None, res=None, missing="drop", weighted=False,
         res = res.dropna()
 
     # Return nan if the time indices of the sim and obs don't match
-    if res.index.size is 0:
+    if res.index.size == 0:
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
@@ -168,7 +168,7 @@ def sse(obs=None, sim=None, res=None, missing="drop"):
         res = res.dropna()
 
     # Return nan if the time indices of the sim and obs don't match
-    if res.index.size is 0:
+    if res.index.size == 0:
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
@@ -224,7 +224,7 @@ def pearsonr(obs, sim, missing="drop", weighted=False, max_gap=90):
     sim = sim.reindex(obs.index).dropna()
 
     # Return nan if the time indices of the sim and obs don't match
-    if sim.index.size is 0:
+    if sim.index.size == 0:
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
@@ -288,7 +288,7 @@ def evp(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=90):
         res = res.dropna()
 
     # Return nan if the time indices of the sim and obs don't match
-    if res.index.size is 0:
+    if res.index.size == 0:
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
@@ -340,7 +340,7 @@ def nse(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=90):
         res = res.dropna()
 
     # Return nan if the time indices of the sim and obs don't match
-    if res.index.size is 0:
+    if res.index.size == 0:
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
@@ -393,7 +393,7 @@ def rsq(obs, sim=None, res=None, missing="drop", nparam=None):
         res = res.dropna()
 
     # Return nan if the time indices of the sim and obs don't match
-    if res.index.size is 0:
+    if res.index.size == 0:
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
@@ -447,7 +447,7 @@ def bic(obs=None, sim=None, res=None, missing="drop", nparam=1):
         res = res.dropna()
 
     # Return nan if the time indices of the sim and obs don't match
-    if res.index.size is 0:
+    if res.index.size == 0:
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
@@ -495,7 +495,7 @@ def aic(obs=None, sim=None, res=None, missing="drop", nparam=1):
         res = res.dropna()
 
     # Return nan if the time indices of the sim and obs don't match
-    if res.index.size is 0:
+    if res.index.size == 0:
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
@@ -548,7 +548,7 @@ def kge_2012(obs, sim, missing="drop", weighted=False, max_gap=90):
     sim = sim.reindex(obs.index).dropna()
 
     # Return nan if the time indices of the sim and obs don't match
-    if sim.index.size is 0:
+    if sim.index.size == 0:
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 

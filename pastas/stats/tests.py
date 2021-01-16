@@ -515,6 +515,10 @@ def plot_acf(series, alpha=0.05, lags=365, acf_options=None, smooth_conf=True,
     r = get_acf(series, full_output=True, alpha=alpha, lags=lags,
                 **acf_options)
 
+    if r.empty:
+        raise ValueError("ACF result is empty. Check input arguments "
+                         "for calculating acf!")
+
     if smooth_conf:
         conf = r.stderr.rolling(10, min_periods=1).mean().values
     else:

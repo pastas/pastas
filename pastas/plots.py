@@ -91,7 +91,7 @@ class Plotting:
         plt.tight_layout()
         return ax
 
-    @model_tmin_tmax
+    @ model_tmin_tmax
     def results(self, tmin=None, tmax=None, figsize=(10, 8), split=False,
                 adjust_height=False, **kwargs):
         """Plot different results in one window to get a quick overview.
@@ -188,7 +188,10 @@ class Plotting:
         # Add a row for each stressmodel
         rmax = 0  # tmax of the step response
         axb = None
-        for i, sm_name in enumerate(self.ml.stressmodels):
+        i = 0
+        for sm_name in self.ml.stressmodels:
+            step_row = i + 2
+            
             # plot the contribution
             sm = self.ml.stressmodels[sm_name]
             nsplit = sm.get_nsplit()
@@ -200,6 +203,7 @@ class Plotting:
                     if adjust_height:
                         ax.set_ylim(ylims[i + 2])
                         ax.grid(True)
+                    i = i + 1
             else:
                 ax = fig.add_subplot(gs[i + 2, 0], sharex=ax1)
                 contribs[i].plot(ax=ax, x_compat=True)
@@ -211,12 +215,13 @@ class Plotting:
                 if adjust_height:
                     ax.set_ylim(ylims[i + 2])
                     ax.grid(True)
+                i = i + 1
 
             # plot the step reponse
             step = self.ml.get_step_response(sm_name, add_0=True)
             if step is not None:
                 rmax = max(rmax, step.index.max())
-                axb = fig.add_subplot(gs[i + 2, 1])
+                axb = fig.add_subplot(gs[step_row, 1])
                 step.plot(ax=axb)
                 if adjust_height:
                     axb.grid(True)
@@ -244,7 +249,7 @@ class Plotting:
 
         return fig.axes
 
-    @model_tmin_tmax
+    @ model_tmin_tmax
     def decomposition(self, tmin=None, tmax=None, ytick_base=True, split=True,
                       figsize=(10, 8), axes=None, name=None,
                       return_warmup=False, min_ylim_diff=None, **kwargs):
@@ -328,7 +333,7 @@ class Plotting:
         else:
             if len(axes) != nrows:
                 msg = 'Makes sure the number of axes equals the number of ' \
-                      'series'
+                    'series'
                 raise Exception(msg)
             fig = axes[0].figure
             o_label = ''
@@ -379,7 +384,7 @@ class Plotting:
 
         return axes
 
-    @model_tmin_tmax
+    @ model_tmin_tmax
     def diagnostics(self, tmin=None, tmax=None, figsize=(10, 6), bins=50,
                     acf_options=None, **kwargs):
         """Plot a window that helps in diagnosing basic model assumptions.
@@ -429,7 +434,7 @@ class Plotting:
         return plot_diagnostics(series=res, figsize=figsize, bins=bins,
                                 acf_options=acf_options, **kwargs)
 
-    @model_tmin_tmax
+    @ model_tmin_tmax
     def cum_frequency(self, tmin=None, tmax=None, ax=None, figsize=(5, 2),
                       **kwargs):
         """Plot the cumulative frequency for the observations and simulation.
@@ -536,7 +541,7 @@ class Plotting:
         plt.legend(legend)
         return ax
 
-    @model_tmin_tmax
+    @ model_tmin_tmax
     def stresses(self, tmin=None, tmax=None, cols=1, split=True, sharex=True,
                  figsize=(10, 8), **kwargs):
         """This method creates a graph with all the stresses used in the
@@ -664,7 +669,7 @@ class Plotting:
         ax.axis('equal')
         return ax
 
-    @model_tmin_tmax
+    @ model_tmin_tmax
     def stacked_results(self, tmin=None, tmax=None, figsize=(10, 8), **kwargs):
         """Create a results plot, similar to `ml.plots.results()`, in which
         the individual contributions of stresses (in stressmodels with multiple
@@ -913,8 +918,8 @@ class TrackSolve:
         self.ml = ml
         self.viewlim = 75  # no of iterations on axes by default
         if update_iter is None:
-            self.update_iter = \
-                len(self.ml.parameters.loc[self.ml.parameters.vary].index)
+            self.update_iter = len(
+                self.ml.parameters.loc[self.ml.parameters.vary].index)
         else:
             self.update_iter = update_iter  # update plot every update_iter
 
@@ -996,7 +1001,7 @@ class TrackSolve:
         self.tmax = self.ml.settings["tmax"]
         self.freq = self.ml.settings["freq"]
 
-    @staticmethod
+    @ staticmethod
     def _calc_evp(res, obs):
         """calculate evp
         """
