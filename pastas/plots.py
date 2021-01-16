@@ -81,11 +81,13 @@ class Plotting:
 
         if simulation:
             sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+            evp = self.ml.stats.evp(tmin=tmin, tmax=tmax).round(1)
+            sim.name = f'{sim.name} ($R^2$ = {evp}%)'
             sim.plot(ax=ax)
-        plt.xlim(tmin, tmax)
-        plt.ylabel("Groundwater levels [meter]")
+        ax.set_xlim(tmin, tmax)
+        ax.set_ylabel("Groundwater levels [meter]")
         if legend:
-            plt.legend()
+            ax.legend(ncol=2)
         plt.tight_layout()
         return ax
 
@@ -595,10 +597,9 @@ class Plotting:
         return axes
 
     @model_tmin_tmax
-    def contributions_pie(self, tmin=None, tmax=None, ax=None,
-                          figsize=None, split=True, partition='std',
-                          wedgeprops=None, startangle=90,
-                          autopct='%1.1f%%', **kwargs):
+    def contributions_pie(self, tmin=None, tmax=None, ax=None, figsize=None,
+                          split=True, partition='std', wedgeprops=None,
+                          startangle=90, autopct='%1.1f%%', **kwargs):
         """Make a pie chart of the contributions. This plot is based on the
         TNO Groundwatertoolbox.
 
