@@ -81,8 +81,8 @@ class Plotting:
 
         if simulation:
             sim = self.ml.simulate(tmin=tmin, tmax=tmax)
-            evp = self.ml.stats.evp(tmin=tmin, tmax=tmax).round(1)
-            sim.name = f'{sim.name} ($R^2$ = {evp}%)'
+            r2 = round(self.ml.stats.rsq(tmin=tmin, tmax=tmax) * 100, 1)
+            sim.name = f'{sim.name} ($R^2$ = {r2}%)'
             sim.plot(ax=ax)
         ax.set_xlim(tmin, tmax)
         ax.set_ylabel("Groundwater levels [meter]")
@@ -91,7 +91,7 @@ class Plotting:
         plt.tight_layout()
         return ax
 
-    @ model_tmin_tmax
+    @model_tmin_tmax
     def results(self, tmin=None, tmax=None, figsize=(10, 8), split=False,
                 adjust_height=False, **kwargs):
         """Plot different results in one window to get a quick overview.
@@ -162,8 +162,8 @@ class Plotting:
                       x_compat=True)
         o.plot(ax=ax1, linestyle='', marker='.', color='k', x_compat=True)
         # add evp to simulation
-        sim.name = '{} ($R^2$ = {:0.1f}%)'.format(
-            sim.name, self.ml.stats.evp(tmin=tmin, tmax=tmax))
+        r2 = round(self.ml.stats.rsq(tmin=tmin, tmax=tmax) * 100, 1)
+        sim.name = f'{sim.name} ($R^2$ = {r2}%)'
         sim.plot(ax=ax1, x_compat=True)
         ax1.legend(loc=(0, 1), ncol=3, frameon=False)
         ax1.set_ylim(ylims[0])
@@ -191,7 +191,7 @@ class Plotting:
         i = 0
         for sm_name in self.ml.stressmodels:
             step_row = i + 2
-            
+
             # plot the contribution
             sm = self.ml.stressmodels[sm_name]
             nsplit = sm.get_nsplit()
@@ -249,7 +249,7 @@ class Plotting:
 
         return fig.axes
 
-    @ model_tmin_tmax
+    @model_tmin_tmax
     def decomposition(self, tmin=None, tmax=None, ytick_base=True, split=True,
                       figsize=(10, 8), axes=None, name=None,
                       return_warmup=False, min_ylim_diff=None, **kwargs):
@@ -333,7 +333,7 @@ class Plotting:
         else:
             if len(axes) != nrows:
                 msg = 'Makes sure the number of axes equals the number of ' \
-                    'series'
+                      'series'
                 raise Exception(msg)
             fig = axes[0].figure
             o_label = ''
@@ -384,7 +384,7 @@ class Plotting:
 
         return axes
 
-    @ model_tmin_tmax
+    @model_tmin_tmax
     def diagnostics(self, tmin=None, tmax=None, figsize=(10, 6), bins=50,
                     acf_options=None, **kwargs):
         """Plot a window that helps in diagnosing basic model assumptions.
@@ -434,7 +434,7 @@ class Plotting:
         return plot_diagnostics(series=res, figsize=figsize, bins=bins,
                                 acf_options=acf_options, **kwargs)
 
-    @ model_tmin_tmax
+    @model_tmin_tmax
     def cum_frequency(self, tmin=None, tmax=None, ax=None, figsize=(5, 2),
                       **kwargs):
         """Plot the cumulative frequency for the observations and simulation.
@@ -541,7 +541,7 @@ class Plotting:
         plt.legend(legend)
         return ax
 
-    @ model_tmin_tmax
+    @model_tmin_tmax
     def stresses(self, tmin=None, tmax=None, cols=1, split=True, sharex=True,
                  figsize=(10, 8), **kwargs):
         """This method creates a graph with all the stresses used in the
@@ -669,7 +669,7 @@ class Plotting:
         ax.axis('equal')
         return ax
 
-    @ model_tmin_tmax
+    @model_tmin_tmax
     def stacked_results(self, tmin=None, tmax=None, figsize=(10, 8), **kwargs):
         """Create a results plot, similar to `ml.plots.results()`, in which
         the individual contributions of stresses (in stressmodels with multiple
@@ -1001,7 +1001,7 @@ class TrackSolve:
         self.tmax = self.ml.settings["tmax"]
         self.freq = self.ml.settings["freq"]
 
-    @ staticmethod
+    @staticmethod
     def _calc_evp(res, obs):
         """calculate evp
         """
