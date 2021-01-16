@@ -154,6 +154,24 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return metrics.nse(obs=obs, res=res, weighted=weighted)
 
     @model_tmin_tmax
+    def pearsonr(self, tmin=None, tmax=None, weighted=False):
+        """Compute the (weighted) Pearson correlation (r).
+
+        Parameters
+        ----------
+        tmin: str or pandas.Timestamp, optional
+        tmax: str or pandas.Timestamp, optional
+
+        See Also
+        --------
+        pastas.stats.pearsonr
+
+        """
+        obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        return metrics.pearsonr(obs=obs, sim=sim, weighted=weighted)
+
+    @model_tmin_tmax
     def evp(self, tmin=None, tmax=None, weighted=False):
         """Explained variance percentage.
 
