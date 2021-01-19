@@ -709,7 +709,7 @@ class Plotting:
             # stresses
             contributions = []
             sml = self.ml.stressmodels[sm]
-            if (len(sml.stress) > 0) and (sml._name != "StressModel2"):
+            if (len(sml.stress) > 0) and (sml._name == "WellModel"):
                 nsplit = sml.get_nsplit()
                 if nsplit > 1:
                     for istress in range(len(sml.stress)):
