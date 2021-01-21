@@ -183,7 +183,8 @@ class Plotting:
 
         # Stats frame
         ax3 = fig.add_subplot(gs[0:2, 1])
-        ax3.set_title('Model Parameters', loc='left')
+        n_free = self.ml.parameters.vary.sum()
+        ax3.set_title(f'Model Parameters ($n_c$={n_free})', loc='left')
 
         # Add a row for each stressmodel
         rmax = 0  # tmax of the step response
@@ -221,7 +222,7 @@ class Plotting:
             step = self.ml.get_step_response(sm_name, add_0=True)
             if step is not None:
                 rmax = max(rmax, step.index.max())
-                axb = fig.add_subplot(gs[step_row, 1])
+                axb = fig.add_subplot(gs[step_row, 1], sharex=axb)
                 step.plot(ax=axb)
                 if adjust_height:
                     axb.grid(True)
