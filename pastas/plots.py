@@ -165,7 +165,7 @@ class Plotting:
         r2 = round(self.ml.stats.rsq(tmin=tmin, tmax=tmax) * 100, 1)
         sim.name = f'{sim.name} ($R^2$ = {r2}%)'
         sim.plot(ax=ax1, x_compat=True)
-        ax1.legend(loc=(0, 1), ncol=3, frameon=False)
+        ax1.legend(loc=(0, 1), ncol=3, frameon=False, numpoints=3)
         ax1.set_ylim(ylims[0])
         if adjust_height:
             ax1.set_ylim(ylims[0])
