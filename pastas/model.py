@@ -376,7 +376,7 @@ class Model:
             istart += 1
         if self.transform:
             sim = self.transform.simulate(sim, p[istart:istart +
-                                                        self.transform.nparam])
+                                                 self.transform.nparam])
 
         # Respect provided tmin/tmax at this point, since warmup matters for
         # simulation but should not be returned, unless return_warmup=True.
@@ -1198,7 +1198,7 @@ class Model:
         # use warmup
         if tmin:
             tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + \
-                        self.settings["time_offset"]
+                self.settings["time_offset"]
         else:
             tmin_warm = None
 
@@ -1477,7 +1477,7 @@ class Model:
         # use warmup
         if tmin:
             tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + \
-                        self.settings["time_offset"]
+                self.settings["time_offset"]
         else:
             tmin_warm = None
 
@@ -1564,8 +1564,8 @@ class Model:
             "BIC": "{:.2f}".format(self.stats.bic() if
                                    self.settings["noise"] else np.nan),
             "Obj": "{:.2f}".format(self.fit.obj_func),
-            "___": "", "Interpolated": "Yes" if self.interpolate_simulation
-            else "No",
+            "___": "",
+            "Interpolated": "Yes" if self.interpolate_simulation else "No",
         }
 
         parameters = self.parameters.loc[:, ["optimal", "stderr",
@@ -1581,22 +1581,24 @@ class Model:
         w = max(width - 44, 0)
         header = "Fit report {name:<16}{string}Fit Statistics\n" \
                  "{line}\n".format(
-            name=self.name[:14],
-            string=string.format("", fill=' ', align='>', width=w),
-            line=string.format("", fill='=', align='>', width=width))
+                     name=self.name[:14],
+                     string=string.format("", fill=' ', align='>', width=w),
+                     line=string.format("", fill='=', align='>', width=width))
 
         basic = ""
         w = max(width - 45, 0)
         for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
             val4 = string.format(val4, fill=' ', align='>', width=w)
-            basic += "{:<8} {:<22} {:<12} {:}\n".format(val1, val2, val3, val4)
+            basic += "{:<8} {:<22} {:<{w3}} {:>{w4}}\n".format(
+                val1, val2, val3, val4, w3=len(val3), w4=17 - len(val3))
 
         # Create the parameters block
         parameters = "\nParameters ({n_param} were optimized)\n{line}\n" \
                      "{parameters}".format(
-            n_param=parameters.vary.sum(),
-            line=string.format("", fill='=', align='>', width=width),
-            parameters=parameters)
+                         n_param=parameters.vary.sum(),
+                         line=string.format(
+                             "", fill='=', align='>', width=width),
+                         parameters=parameters)
 
         if output == "full":
             cor = {}
