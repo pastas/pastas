@@ -525,7 +525,7 @@ def plot_acf(series, alpha=0.05, lags=365, acf_options=None, smooth_conf=True,
         conf = r.stderr.values
 
     ax.fill_between(r.index.days, conf, -conf, alpha=0.3)
-    ax.vlines(r.index.days, [0], r.loc[:, "acf"].values)
+    ax.vlines(r.index.days, [0], r.loc[:, "acf"].values, color="k")
 
     ax.set_xlabel("Lag [Days]")
     ax.set_xlim(0, r.index.days.max())

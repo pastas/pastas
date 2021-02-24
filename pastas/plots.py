@@ -81,17 +81,17 @@ class Plotting:
 
         if simulation:
             sim = self.ml.simulate(tmin=tmin, tmax=tmax)
-            sim.name = '{} ($R^2$ = {:0.1f}%)'.format(
-                sim.name, self.ml.stats.evp(tmin=tmin, tmax=tmax))
+            r2 = round(self.ml.stats.rsq(tmin=tmin, tmax=tmax) * 100, 1)
+            sim.name = f'{sim.name} ($R^2$ = {r2}%)'
             sim.plot(ax=ax)
-        plt.xlim(tmin, tmax)
-        plt.ylabel("Groundwater levels [meter]")
+        ax.set_xlim(tmin, tmax)
+        ax.set_ylabel("Groundwater levels [meter]")
         if legend:
-            plt.legend()
+            ax.legend(ncol=2)
         plt.tight_layout()
         return ax
 
-    @ model_tmin_tmax
+    @model_tmin_tmax
     def results(self, tmin=None, tmax=None, figsize=(10, 8), split=False,
                 adjust_height=False, **kwargs):
         """Plot different results in one window to get a quick overview.
@@ -162,10 +162,10 @@ class Plotting:
                       x_compat=True)
         o.plot(ax=ax1, linestyle='', marker='.', color='k', x_compat=True)
         # add evp to simulation
-        sim.name = '{} ($R^2$ = {:0.1f}%)'.format(
-            sim.name, self.ml.stats.evp(tmin=tmin, tmax=tmax))
+        r2 = round(self.ml.stats.rsq(tmin=tmin, tmax=tmax) * 100, 1)
+        sim.name = f'{sim.name} ($R^2$ = {r2}%)'
         sim.plot(ax=ax1, x_compat=True)
-        ax1.legend(loc=(0, 1), ncol=3, frameon=False)
+        ax1.legend(loc=(0, 1), ncol=3, frameon=False, numpoints=3)
         ax1.set_ylim(ylims[0])
         if adjust_height:
             ax1.set_ylim(ylims[0])
@@ -183,7 +183,8 @@ class Plotting:
 
         # Stats frame
         ax3 = fig.add_subplot(gs[0:2, 1])
-        ax3.set_title('Model Parameters', loc='left')
+        n_free = self.ml.parameters.vary.sum()
+        ax3.set_title(f'Model Parameters ($n_c$={n_free})', loc='left')
 
         # Add a row for each stressmodel
         rmax = 0  # tmax of the step response
@@ -191,7 +192,7 @@ class Plotting:
         i = 0
         for sm_name in self.ml.stressmodels:
             step_row = i + 2
-            
+
             # plot the contribution
             sm = self.ml.stressmodels[sm_name]
             nsplit = sm.get_nsplit()
@@ -221,7 +222,7 @@ class Plotting:
             step = self.ml.get_step_response(sm_name, add_0=True)
             if step is not None:
                 rmax = max(rmax, step.index.max())
-                axb = fig.add_subplot(gs[step_row, 1])
+                axb = fig.add_subplot(gs[step_row, 1], sharex=axb)
                 step.plot(ax=axb)
                 if adjust_height:
                     axb.grid(True)
@@ -249,7 +250,7 @@ class Plotting:
 
         return fig.axes
 
-    @ model_tmin_tmax
+    @model_tmin_tmax
     def decomposition(self, tmin=None, tmax=None, ytick_base=True, split=True,
                       figsize=(10, 8), axes=None, name=None,
                       return_warmup=False, min_ylim_diff=None, **kwargs):
@@ -333,7 +334,7 @@ class Plotting:
         else:
             if len(axes) != nrows:
                 msg = 'Makes sure the number of axes equals the number of ' \
-                    'series'
+                      'series'
                 raise Exception(msg)
             fig = axes[0].figure
             o_label = ''
@@ -384,7 +385,7 @@ class Plotting:
 
         return axes
 
-    @ model_tmin_tmax
+    @model_tmin_tmax
     def diagnostics(self, tmin=None, tmax=None, figsize=(10, 6), bins=50,
                     acf_options=None, **kwargs):
         """Plot a window that helps in diagnosing basic model assumptions.
@@ -434,7 +435,7 @@ class Plotting:
         return plot_diagnostics(series=res, figsize=figsize, bins=bins,
                                 acf_options=acf_options, **kwargs)
 
-    @ model_tmin_tmax
+    @model_tmin_tmax
     def cum_frequency(self, tmin=None, tmax=None, ax=None, figsize=(5, 2),
                       **kwargs):
         """Plot the cumulative frequency for the observations and simulation.
@@ -541,7 +542,7 @@ class Plotting:
         plt.legend(legend)
         return ax
 
-    @ model_tmin_tmax
+    @model_tmin_tmax
     def stresses(self, tmin=None, tmax=None, cols=1, split=True, sharex=True,
                  figsize=(10, 8), **kwargs):
         """This method creates a graph with all the stresses used in the
@@ -601,11 +602,10 @@ class Plotting:
 
         return axes
 
-    @ model_tmin_tmax
-    def contributions_pie(self, tmin=None, tmax=None, ax=None,
-                          figsize=None, split=True, partition='std',
-                          wedgeprops=None, startangle=90,
-                          autopct='%1.1f%%', **kwargs):
+    @model_tmin_tmax
+    def contributions_pie(self, tmin=None, tmax=None, ax=None, figsize=None,
+                          split=True, partition='std', wedgeprops=None,
+                          startangle=90, autopct='%1.1f%%', **kwargs):
         """Make a pie chart of the contributions. This plot is based on the
         TNO Groundwatertoolbox.
 
@@ -670,7 +670,7 @@ class Plotting:
         ax.axis('equal')
         return ax
 
-    @ model_tmin_tmax
+    @model_tmin_tmax
     def stacked_results(self, tmin=None, tmax=None, figsize=(10, 8), **kwargs):
         """Create a results plot, similar to `ml.plots.results()`, in which
         the individual contributions of stresses (in stressmodels with multiple
@@ -709,7 +709,7 @@ class Plotting:
             # stresses
             contributions = []
             sml = self.ml.stressmodels[sm]
-            if (len(sml.stress) > 0) and (sml._name != "StressModel2"):
+            if (len(sml.stress) > 0) and (sml._name == "WellModel"):
                 nsplit = sml.get_nsplit()
                 if nsplit > 1:
                     for istress in range(len(sml.stress)):
@@ -1002,7 +1002,7 @@ class TrackSolve:
         self.tmax = self.ml.settings["tmax"]
         self.freq = self.ml.settings["freq"]
 
-    @ staticmethod
+    @staticmethod
     def _calc_evp(res, obs):
         """calculate evp
         """
