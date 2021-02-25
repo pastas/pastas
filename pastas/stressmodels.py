@@ -1040,7 +1040,8 @@ class RechargeModel(StressModelBase):
 
     def __init__(self, prec, evap, rfunc=Exponential, name="recharge",
                  recharge=Linear(), temp=None, cutoff=0.999,
-                 settings=("prec", "evap"), metadata=(None, None)):
+                 settings=("prec", "evap", "evap"),
+                 metadata=(None, None, None)):
         # Store the precipitation and evaporation time series
         self.prec = TimeSeries(prec, settings=settings[0],
                                metadata=metadata[0])
@@ -1064,6 +1065,7 @@ class RechargeModel(StressModelBase):
 
         # Store a temperature time series if needed or set to None
         if self.recharge.temp is True:
+
             if temp is None:
                 msg = "Recharge module requires a temperature series. " \
                       "No temperature series were provided"
@@ -1216,7 +1218,6 @@ class RechargeModel(StressModelBase):
                 temp = None
             if p is None:
                 p = self.parameters.initial.values
-
             stress = self.recharge.simulate(prec=prec, evap=evap, temp=temp,
                                             p=p[-self.recharge.nparam:])
 
@@ -1275,8 +1276,11 @@ class RechargeModel(StressModelBase):
                                istress=0).values
         evap = self.get_stress(tmin=tmin, tmax=tmax, freq=freq,
                                istress=1).values
-
-        df = self.recharge.get_water_balance(prec=prec, evap=evap, temp=None,
+        if self.temp is not None:
+            temp = self.temp.series.values
+        else:
+            temp = None
+        df = self.recharge.get_water_balance(prec=prec, evap=evap, temp=temp,
                                              p=p[-self.recharge.nparam:])
         df.index = self.prec.series.index
         return df

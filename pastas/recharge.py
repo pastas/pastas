@@ -376,3 +376,161 @@ class Berendrecht(RechargeBase):
         data = DataFrame(data=vstack((s, pe, -ea, -r)).T,
                          columns=["S", "Pe", "Ea", "R"])
         return data
+
+
+class FlexSnowModel(RechargeBase):
+    """Experimental Recharge model that takes snow into account.
+
+    Notes
+    -----
+    Note that the preferred unit of the precipitation and evaporation is
+    mm/d and the temperature is degree celsius.
+
+    The water balance for the unsaturated zone reservoir is written as:
+
+    .. math::
+
+        \\frac{dS}{dt} = P_e - E_a - R
+
+    where the recharge is calculated as:
+
+    .. math::
+
+        R = K_s \\left( \\frac{S}{S_u}\\right) ^\\gamma
+
+    For a detailed description of the recharge model and parameters we refer
+    to Collenteur et al. (in review).
+
+    References
+    ----------
+    .. [collenteur_2020] Collenteur, R.A., Bakker, M., Klammler, G., & Birk,
+       S. (in Review) Estimating groundwater recharge from groundwater
+       levels using non-linear transfer function noise models and comparison to
+       lysimeter data. https://doi.org/10.5194/hess-2020-392
+
+    .. [kavetski_2007] Kavetski, D. and Kuczera, G. (2007).  Model smoothing
+       strategies to remove microscale discontinuities and  spurious
+       secondary optima  in  objective  functions  in  hydrological
+       calibration. Water Resources51Research, 43(3).
+
+    """
+    _name = "FlexSnowModel"
+
+    def __init__(self):
+        RechargeBase.__init__(self)
+        self.nparam = 9
+        self.temp = True
+
+    def get_init_parameters(self, name="recharge"):
+        parameters = DataFrame(
+            columns=["initial", "pmin", "pmax", "vary", "name"])
+        parameters.loc[name + "_srmax"] = (250.0, 1e-5, 1e3, True, name)
+        parameters.loc[name + "_lp"] = (0.25, 1e-5, 1, False, name)
+        parameters.loc[name + "_ks"] = (100.0, 1, 1e4, True, name)
+        parameters.loc[name + "_gamma"] = (4.0, 1e-5, 50.0, True, name)
+        parameters.loc[name + "_simax"] = (2.0, 1e-5, 10.0, False, name)
+        parameters.loc[name + "_kv"] = (1.0, 0.25, 2.0, False, name)
+        parameters.loc[name + "_tp"] = (2.0, -2.0, 2.0, False, name)
+        parameters.loc[name + "_tk"] = (2.0, -2.0, 2.0, False, name)
+        parameters.loc[name + "_k"] = (2.0, 0.0, 10.0, False, name)
+
+        return parameters
+
+    def simulate(self, prec, evap, temp, p, dt=1.0, **kwargs):
+        """Simulate the recharge flux.
+
+        Parameters
+        ----------
+        prec: numpy.array
+            Precipitation flux in mm/d. Has to have the same length as evap.
+        evap: numpy.array
+            Potential evaporation flux in mm/d.
+        p: array_like
+            array_like object with the values as floats representing the
+            model parameters.
+        dt: float, optional
+            time step for the calculation of the recharge. Only dt=1 is
+            possible now.
+
+        Returns
+        -------
+        r: numpy.array
+            Recharge flux calculated by the model.
+
+        """
+        r = self.get_recharge(prec, evap, temp=temp, srmax=p[0], lp=p[1],
+                              ks=p[2], gamma=p[3], simax=p[4], kv=p[5],
+                              tp=p[6], tk=p[7], k=p[8], dt=dt)[0]
+        return r
+
+    @staticmethod
+    @njit
+    def get_recharge(prec, evap, temp, srmax=250.0, lp=0.25, ks=100.0,
+                     gamma=4.0, simax=2.0, kv=1.0, tp=1.0, tk=1.0, k=2.0,
+                     dt=1.0):
+        """
+        Internal method used for the recharge calculation. If Numba is
+        available, this method is significantly faster.
+
+        """
+        n = prec.size
+        evap = evap * kv  # Multiply by crop factor
+        # Create empty arrays to store the fluxes and states
+        ss = zeros(n, dtype=float64)  # Snow Storage
+        pp = zeros(n, dtype=float64)  # Snow Input
+        sm = zeros(n, dtype=float64)  # Snowmelt
+        su = zeros(n, dtype=float64)  # Root Zone Storage State
+        su[0] = 0.5 * srmax  # Set the initial system state to half-full
+        ea = zeros(n, dtype=float64)  # Actual evaporation Flux
+        r = zeros(n, dtype=float64)  # Recharge Flux
+        si = zeros(n, dtype=float64)  # Interception Storage State
+        pe = zeros(n, dtype=float64)  # Effective precipitation Flux
+        ei = zeros(n, dtype=float64)  # Interception evaporation Flux
+        ep = zeros(n, dtype=float64)  # Updated evaporation Flux
+        lp = lp * srmax  # Do this here outside the for-loop for efficiency
+
+        for t in range(n - 1):
+            # Snow bucket
+            if temp[t] <= tp:
+                pp[t] = prec[t]
+                prec[t] = 0.0
+            if temp[t] >= tk:
+                sm[t] = min(k * (temp[t] - tk), ss[t])
+                prec[t] = prec[t] + sm[t]  # Add snow melt to prec flux
+            ss[t + 1] = ss[t] + pp[t] - sm[t]
+
+            # Interception bucket
+            pe[t] = max(prec[t] - simax + si[t], 0.0)
+            ei[t] = min(evap[t], si[t])
+            ep[t] = evap[t] - ei[t]
+            si[t + 1] = si[t] + dt * (prec[t] - pe[t] - ei[t])
+
+            # Make sure the solution is larger then 0.0 and smaller than su
+            if su[t] > srmax:
+                su[t] = srmax
+            elif su[t] < 0.0:
+                su[t] = 0.0
+
+            # Calculate actual evapotranspiration
+            if su[t] / lp < 1.0:
+                ea[t] = ep[t] * su[t] / lp
+            else:
+                ea[t] = ep[t]
+
+            # Calculate the recharge flux
+            r[t] = ks * (su[t] / srmax) ** gamma
+            # Calculate state of the root zone storage
+            su[t + 1] = su[t] + dt * (pe[t] - r[t] - ea[t])
+
+        return r, ea, ei, pe, su, si, ss, sm, pp
+
+    def get_water_balance(self, prec, evap, temp, p, dt=1.0, **kwargs):
+        r, ea, ei, pe, sr, si, ss, sm, pp = \
+            self.get_recharge(prec, evap, temp, srmax=p[0], lp=p[1], ks=p[2],
+                              gamma=p[3], simax=p[4], kv=p[5], tp=p[6],
+                              tk=p[7], k=p[8], dt=dt)
+
+        data = DataFrame(data=vstack((si, -ei, sr, pe, -ea, -r, ss, sm, pp)).T,
+                         columns=["Si", "Ei", "Sr", "Pe", "Ea", "R", "Ss",
+                                  "M", "Ps"])
+        return data
