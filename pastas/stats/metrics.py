@@ -451,7 +451,8 @@ def bic(obs=None, sim=None, res=None, missing="drop", nparam=1):
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
-    return -2.0 * log((res ** 2.0).sum()) + nparam * log(res.size)
+    return (res.index.size * log((res ** 2.0).sum()) +
+            nparam * log(res.index.size))
 
 
 def aic(obs=None, sim=None, res=None, missing="drop", nparam=1):
@@ -499,7 +500,7 @@ def aic(obs=None, sim=None, res=None, missing="drop", nparam=1):
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
-    return -2.0 * log((res ** 2.0).sum()) + 2.0 * nparam
+    return res.index.size * log((res ** 2.0).sum()) + 2.0 * nparam
 
 
 # Forecast Error Metrics
