@@ -1,13 +1,11 @@
 """This module contains all the plotting methods in Pastas.
 
-
 Pastas models come with a number of predefined plotting methods to quickly
 visualize a Model. All of these methods are contained in the `plot`
 attribute of a model. For example, if we stored a :class:`pastas.model.Model`
 instance in the variable `ml`, the plot methods are available as follows::
 
     ml.plot.decomposition()
-
 """
 
 import logging
@@ -24,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class Plotting:
-    """Plots available directly form the Model Class"""
+    """Plots available directly form the Model Class."""
 
     def __init__(self, ml):
         self.ml = ml  # Store a reference to the model class
@@ -63,7 +61,6 @@ class Plotting:
         Examples
         --------
         >>> ml.plot()
-
         """
         if ax is None:
             _, ax = plt.subplots(figsize=figsize, **kwargs)
@@ -116,7 +113,6 @@ class Plotting:
         Examples
         --------
         >>> ml.plots.results()
-
         """
         # Number of rows to make the figure with
         o = self.ml.observations()
@@ -282,7 +278,6 @@ class Plotting:
         Returns
         -------
         axes: list of matplotlib.axes.Axes
-
         """
         o = self.ml.observations()
 
@@ -425,7 +420,6 @@ class Plotting:
             Method that computes the autocorrelation.
         scipy.stats.probplot
             Method use to plot the probability plot.
-
         """
         if self.ml.settings["noise"]:
             res = self.ml.noise(tmin=tmin, tmax=tmax)
@@ -483,7 +477,6 @@ class Plotting:
         -------
         matplotlib.axes.Axes
             matplotlib axes instance.
-
         """
         if ax is None:
             _, ax = plt.subplots(figsize=figsize, **kwargs)
@@ -519,7 +512,6 @@ class Plotting:
         -------
         matplotlib.axes.Axes
             matplotlib axes instance.
-
         """
         if ax is None:
             _, ax = plt.subplots(figsize=figsize, **kwargs)
@@ -545,8 +537,7 @@ class Plotting:
     @model_tmin_tmax
     def stresses(self, tmin=None, tmax=None, cols=1, split=True, sharex=True,
                  figsize=(10, 8), **kwargs):
-        """This method creates a graph with all the stresses used in the
-         model.
+        """This method creates a graph with all the stresses used in the model.
 
         Parameters
         ----------
@@ -565,7 +556,6 @@ class Plotting:
         -------
         axes: matplotlib.axes
             matplotlib axes instance.
-
         """
         stresses = []
 
@@ -603,11 +593,12 @@ class Plotting:
         return axes
 
     @model_tmin_tmax
-    def contributions_pie(self, tmin=None, tmax=None, ax=None, figsize=None,
-                          split=True, partition='std', wedgeprops=None,
-                          startangle=90, autopct='%1.1f%%', **kwargs):
-        """Make a pie chart of the contributions. This plot is based on the
-        TNO Groundwatertoolbox.
+    def contributions_pie(self, tmin=None, tmax=None, ax=None,
+                          figsize=None, split=True, partition='std',
+                          wedgeprops=None, startangle=90,
+                          autopct='%1.1f%%', **kwargs):
+        """Make a pie chart of the contributions. This plot is based on the TNO
+        Groundwatertoolbox.
 
         Parameters
         ----------
@@ -636,7 +627,6 @@ class Plotting:
         Returns
         -------
         ax: matplotlib.axes
-
         """
         if ax is None:
             _, ax = plt.subplots(figsize=figsize)
@@ -672,8 +662,8 @@ class Plotting:
 
     @model_tmin_tmax
     def stacked_results(self, tmin=None, tmax=None, figsize=(10, 8), **kwargs):
-        """Create a results plot, similar to `ml.plots.results()`, in which
-        the individual contributions of stresses (in stressmodels with multiple
+        """Create a results plot, similar to `ml.plots.results()`, in which the
+        individual contributions of stresses (in stressmodels with multiple
         stresses) are stacked.
 
         Note: does not plot the individual contributions of StressModel2
@@ -687,12 +677,11 @@ class Plotting:
         Returns
         -------
         axes: list of axes objects
-
         """
 
         # %% Contribution per stress on model results plot
         def custom_sort(t):
-            """Sort by mean contribution"""
+            """Sort by mean contribution."""
             return t[1].mean()
 
         # Create standard results plot
@@ -763,7 +752,6 @@ def compare(models, tmin=None, tmax=None, figsize=(10, 8),
     Returns
     -------
     matplotlib.axes
-
     """
     # sort models by descending order of N stressmodels
     models.sort(key=lambda ml: len(ml.stressmodels), reverse=True)
@@ -858,12 +846,12 @@ def compare(models, tmin=None, tmax=None, figsize=(10, 8),
 
 
 class TrackSolve:
-    """ Track and visualize optimization progress for pastas models.
+    """Track and/or visualize optimization progress for Pastas models.
 
     Parameters
     ----------
     ml : pastas.Model
-        pastas Model to set up tracking for
+        pastas Model to track
     tmin : str or pandas.Timestamp, optional
         start time for simulation, by default None which
         defaults to first index in ml.oseries.series
@@ -871,29 +859,17 @@ class TrackSolve:
         end time for simulation, by default None which
         defaults to last index in ml.oseries.series
     update_iter : int, optional
-        update plot every update_iter iterations,
-        by default 1
+        if visualizing optimization progress, update plot every update_iter 
+        iterations, by default nparam
 
     Notes
     -----
-    - Requires a matplotlib backend that supports interactive
-      plotting, i.e. mpl.use("TkAgg").
-    - Some possible speedups on the matplotlib side:
+    - Interactive plotting of optimization progress requires a matplotlib backend 
+      that supports interactive plotting, e.g. `mpl.use("TkAgg")` and 
+      `mpl.interactive(True)`. Some possible speedups on the matplotlib side 
+      include:
         - mpl.style.use("fast")
         - mpl.rcParams['path.simplify_threshold'] = 1.0
-    - Since only parameters are passed to callback function in ml.solve,
-      everything else passed to ml.solve must be known beforehand(?). This means
-      if the tmin / tmax are passed in ml.solve() and not to TrackSolve(), the
-      resulting plot will not correctly represent the statistics of the
-      optimization.
-    - TODO: check if more information passed to solve can be picked up
-      from the model object instead of having to pass to TrackSolve.
-    - TODO: check if statistics are calculated correctly as compared to
-      results from ml.solve().
-    - TODO: check if animation can be sped up somehow.
-    - TODO: check what the relationship is between no. of iterations
-      and the LeastSquares nfev and njev values. Model fit is only updated
-      every few iterations( = nparams).
 
     Examples
     --------
@@ -901,14 +877,25 @@ class TrackSolve:
 
     >>> track = TrackSolve(ml)
 
-    Initialize figure:
+    Solve model and store intermediate optimization results:
 
-    >>> fig = track.initialize_figure()
+    >>> ml.solve(callback=track.track_solve)
 
-    Solve model and pass track.update_figure as callback function:
+    Calculated parameters per iteration are stored in a pandas.DataFrame:
 
-    >>> ml.solve(callback=track.update_figure)
+    >>> track.parameters
 
+    Other stored statistics include `track.evp` (explained variance 
+    percentage), `track.rmse_res` (root-mean-squared error of the residuals), 
+    `track.rmse_noise` (root mean squared error of the noise, only if 
+    noise=True).
+
+    To interactively plot model optimiztion progress while solving pass 
+    `track.plot_track_solve` as callback function:
+
+    >>> ml.solve(callback=track.plot_track_solve)
+
+    Access the resulting figure through `track.fig`.
     """
 
     def __init__(self, ml, tmin=None, tmax=None, update_iter=None):
@@ -957,18 +944,21 @@ class TrackSolve:
         self.obs = self.ml.observations(tmin=self.tmin,
                                         tmax=self.tmax)
         # calculate EVP
-        self.evp = self._calc_evp(res.values, self.obs.values)
+        self.evp = np.array([self._calc_evp(res.values, self.obs.values)])
 
-    def _append_params(self, params):
-        """Append parameters to self.parameters DataFrame and
-        update itercount, rmse values and evp.
+    def track_solve(self, params):
+        """Append parameters to self.parameters DataFrame and update itercount,
+        rmse values and evp.
 
         Parameters
         ----------
         params : np.array
             array containing parameters
-
         """
+        # update tmin/tmax and freq once after starting solve
+        if self.itercount == 0:
+            self._update_settings()
+
         # update itercount
         self.itercount += 1
 
@@ -986,13 +976,11 @@ class TrackSolve:
                 self.rmse_noise, np.sqrt(np.sum(n_res ** 2))]
 
         # recalculate EVP
-        self.evp = self._calc_evp(r_res.values, self.obs.values)
+        self.evp = np.r_[self.evp,
+                         self._calc_evp(r_res.values, self.obs.values)]
 
     def _update_axes(self):
-        """extend xlim if no. of iterations exceeds
-        current window.
-
-        """
+        """extend xlim if number of iterations exceeds current window."""
         for iax in self.axes[1:]:
             iax.set_xlim(right=self.viewlim)
             self.fig.canvas.draw()
@@ -1004,8 +992,7 @@ class TrackSolve:
 
     @staticmethod
     def _calc_evp(res, obs):
-        """calculate evp
-        """
+        """calculate evp."""
         if obs.var() == 0.0:
             evp = 1.
         else:
@@ -1013,7 +1000,7 @@ class TrackSolve:
         return evp
 
     def _noise(self, params):
-        """get noise
+        """get noise.
 
         Parameters
         ----------
@@ -1024,14 +1011,13 @@ class TrackSolve:
         -------
         noise: np.array
             array containing noise
-
         """
         noise = self.ml.noise(p=params, tmin=self.tmin,
                               tmax=self.tmax)
         return noise
 
     def _residuals(self, params):
-        """calculate residuals
+        """calculate residuals.
 
         Parameters
         ----------
@@ -1042,20 +1028,18 @@ class TrackSolve:
         -------
         res: np.array
             array containing residuals
-
         """
         res = self.ml.residuals(p=params, tmin=self.tmin,
                                 tmax=self.tmax)
         return res
 
     def _simulate(self):
-        """simulate model with last entry in self.parameters
+        """simulate model with last entry in self.parameters.
 
         Returns
         -------
         sim: pd.Series
             series containing model evaluation
-
         """
         sim = self.ml.simulate(p=self.parameters.iloc[-1, :].values,
                                tmin=self.tmin, tmax=self.tmax,
@@ -1076,10 +1060,9 @@ class TrackSolve:
         -------
         fig : matplotlib.pyplot.Figure
             handle to the figure
-
         """
         # create plot
-        self.fig, self.axes = plt.subplots(3, 1, figsize=(10, 8), dpi=100)
+        self.fig, self.axes = plt.subplots(3, 1, figsize=figsize, dpi=dpi)
         self.ax0, self.ax1, self.ax2 = self.axes
 
         # plot oseries
@@ -1092,7 +1075,7 @@ class TrackSolve:
         self.ax0.set_ylabel("oseries/model")
         self.ax0.set_title(
             "Iteration: {0} (EVP: {1:.2%})".format(self.itercount,
-                                                   self.evp))
+                                                   self.evp[-1]))
         self.ax0.legend(loc="lower right")
 
         # plot RMSE (residuals and/or residuals)
@@ -1148,26 +1131,23 @@ class TrackSolve:
         self.fig.tight_layout()
         return self.fig
 
-    def update_figure(self, params):
-        """Method to update figure while model is being solved. Pass this
-        method to ml.solve(), e.g.:
+    def plot_track_solve(self, params):
+        """Method to plot model simulation while model is being solved. Pass
+        this method to ml.solve(), e.g.:
 
         >>> track = TrackSolve(ml)
-        >>> fig = track.initialize_figure()
-        >>> ml.solve(callback=track.update_figure)
+        >>> ml.solve(callback=track.plot_track_solve)
 
         Parameters
         ----------
         params : np.array
             array containing parameters
-
         """
+        if not hasattr(self, "fig"):
+            self.initialize_figure()
 
         # update parameters
-        self._append_params(params)
-
-        # update settings from ml.settings
-        self._update_settings()
+        self.track_solve(params)
 
         # check if figure should be updated
         if self.itercount % self.update_iter != 0:
@@ -1203,7 +1183,7 @@ class TrackSolve:
         # update title
         self.ax0.set_title(
             "Iteration: {0} (EVP: {1:.2%})".format(self.itercount,
-                                                   self.evp))
+                                                   self.evp[-1]))
         self.fig.canvas.draw()
 
 

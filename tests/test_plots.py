@@ -47,5 +47,4 @@ def test_compare():
 def test_tracksolve():
     ml = test_add_stressmodel()
     track = TrackSolve(ml)
-    track.initialize_figure()
-    ml.solve(callback=track.update_figure)
+    ml.solve(callback=track.plot_track_solve)
