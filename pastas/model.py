@@ -3,6 +3,7 @@
 """
 
 from collections import OrderedDict
+from itertools import combinations
 from logging import getLogger
 from os import getlogin
 
@@ -376,7 +377,7 @@ class Model:
             istart += 1
         if self.transform:
             sim = self.transform.simulate(sim, p[istart:istart +
-                                                 self.transform.nparam])
+                                                        self.transform.nparam])
 
         # Respect provided tmin/tmax at this point, since warmup matters for
         # simulation but should not be returned, unless return_warmup=True.
@@ -530,8 +531,7 @@ class Model:
         res = self.residuals(p, tmin, tmax, freq, warmup)
 
         # Calculate the weights
-        weights = self.noisemodel.weights(res,
-                                          p[-self.noisemodel.nparam:])
+        weights = self.noisemodel.weights(res, p[-self.noisemodel.nparam:])
 
         return weights
 
@@ -1198,7 +1198,7 @@ class Model:
         # use warmup
         if tmin:
             tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + \
-                self.settings["time_offset"]
+                        self.settings["time_offset"]
         else:
             tmin_warm = None
 
@@ -1477,7 +1477,7 @@ class Model:
         # use warmup
         if tmin:
             tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + \
-                self.settings["time_offset"]
+                        self.settings["time_offset"]
         else:
             tmin_warm = None
 
@@ -1516,7 +1516,7 @@ class Model:
 
         return file_info
 
-    def fit_report(self, output="full"):
+    def fit_report(self, output="basic"):
         """Method that reports on the fit after a model is optimized.
 
         Parameters
@@ -1571,7 +1571,7 @@ class Model:
         parameters = self.parameters.loc[:, ["optimal", "stderr",
                                              "initial", "vary"]]
         stderr = parameters.loc[:, "stderr"] / parameters.loc[:, "optimal"]
-        parameters.loc[:, "stderr"] = stderr.abs().apply("\u00B1{:.2%}".format)
+        parameters.loc[:, "stderr"] = stderr.abs().apply("±{:.2%}".format)
 
         # Determine the width of the fit_report based on the parameters
         width = len(parameters.__str__().split("\n")[1])
@@ -1579,48 +1579,36 @@ class Model:
 
         # Create the first header with model information and stats
         w = max(width - 44, 0)
-        header = "Fit report {name:<16}{string}Fit Statistics\n" \
-                 "{line}\n".format(
-                     name=self.name[:14],
-                     string=string.format("", fill=' ', align='>', width=w),
-                     line=string.format("", fill='=', align='>', width=width))
+        header = f"Fit report {self.name:<16}" \
+                 f"{string.format('', fill=' ', align='>', width=w)}" \
+                 f"Fit Statistics\n" \
+                 f"{string.format('', fill='=', align='>', width=width)}\n"
 
         basic = ""
         w = max(width - 45, 0)
         for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
             val4 = string.format(val4, fill=' ', align='>', width=w)
-            basic += "{:<8} {:<22} {:<{w3}} {:>{w4}}\n".format(
-                val1, val2, val3, val4, w3=len(val3), w4=17 - len(val3))
+            basic += f"{val1:<8} {val2:<22} {val3:<{len(val3)}} " \
+                     f"{val4:>{17 - len(val3)}}\n"
 
         # Create the parameters block
-        parameters = "\nParameters ({n_param} were optimized)\n{line}\n" \
-                     "{parameters}".format(
-                         n_param=parameters.vary.sum(),
-                         line=string.format(
-                             "", fill='=', align='>', width=width),
-                         parameters=parameters)
+        params = f"\nParameters ({parameters.vary.sum()} optimized)\n" \
+                 f"{string.format('', fill='=', align='>', width=width)}\n" \
+                 f"{parameters}"
 
         if output == "full":
-            cor = {}
-            pcor = self.fit.pcor
-            for idx in pcor:
-                for col in pcor:
-                    if (np.abs(pcor.loc[idx, col]) > 0.5) and (idx != col) \
-                            and ((col, idx) not in cor.keys()):
-                        cor[(idx, col)] = pcor.loc[idx, col].round(2)
+            cor = DataFrame(columns=["value"])
+            for idx, col in combinations(self.fit.pcor, 2):
+                if np.abs(self.fit.pcor.loc[idx, col]) > 0.5:
+                    cor.loc[f"{idx} {col}"] = self.fit.pcor.loc[idx, col]
 
-            cor = DataFrame(data=cor.values(), index=cor.keys(),
-                            columns=["rho"])
-            correlations = "\n\nParameter correlations |rho| > 0.5\n{}" \
-                           "\n{}".format(string.format("", fill='=', align='>',
-                                                       width=width),
-                                         cor.to_string(header=False))
+            corr = f"\n\nParameter correlations |rho| > 0.5\n" \
+                   f"{string.format('', fill='=', align='>', width=width)}" \
+                   f"\n{cor.to_string(float_format='%.2f', header=False)}"
         else:
-            correlations = ""
+            corr = ""
 
-        report = "{header}{basic}{parameters}{correlations}".format(
-            header=header, basic=basic, parameters=parameters,
-            correlations=correlations)
+        report = f"{header}{basic}{params}{corr}"
 
         return report
 

@@ -687,8 +687,7 @@ class Plotting:
         for i, sm in zip(range(3, 3 + 2 * nsm, 2),
                          self.ml.stressmodels.keys()):
 
-            # Get the contributions for StressModels with multiple
-            # stresses
+            # Get the contributions for StressModels with multiple stresses
             contributions = []
             sml = self.ml.stressmodels[sm]
             if (len(sml.stress) > 0) and (sml._name == "WellModel"):
@@ -707,7 +706,7 @@ class Plotting:
                 contributions.sort(key=custom_sort)
 
                 # add stacked plot to correct axes
-                ax = axes[i]
+                ax = axes[i-1]
                 del ax.lines[0]  # delete existing line
 
                 contrib = [c[1] for c in contributions]  # get timeseries
