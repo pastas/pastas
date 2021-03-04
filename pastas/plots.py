@@ -65,11 +65,10 @@ class Plotting:
         if ax is None:
             _, ax = plt.subplots(figsize=figsize, **kwargs)
 
-        ax.set_title("Results of {}".format(self.ml.name))
-
         if oseries:
-            o = self.ml.observations()
-            o_nu = self.ml.oseries.series.drop(o.index)
+            o = self.ml.observations(tmin=tmin, tmax=tmax)
+            o_nu = self.ml.oseries.series.drop(o.index).loc[
+                   o.index.min():o.index.max()]
             if not o_nu.empty:
                 # plot parts of the oseries that are not used in grey
                 o_nu.plot(linestyle='', marker='.', color='0.5', label='',
@@ -79,18 +78,21 @@ class Plotting:
         if simulation:
             sim = self.ml.simulate(tmin=tmin, tmax=tmax)
             r2 = round(self.ml.stats.rsq(tmin=tmin, tmax=tmax) * 100, 1)
-            sim.name = f'{sim.name} ($R^2$ = {r2}%)'
-            sim.plot(ax=ax)
+            sim.plot(ax=ax, label=f'{sim.name} ($R^2$ = {r2}%)')
+
+        # Dress up the plot
         ax.set_xlim(tmin, tmax)
         ax.set_ylabel("Groundwater levels [meter]")
+        ax.set_title("Results of {}".format(self.ml.name))
+
         if legend:
-            ax.legend(ncol=2)
+            ax.legend(ncol=2, numpoints=3)
         plt.tight_layout()
         return ax
 
     @model_tmin_tmax
     def results(self, tmin=None, tmax=None, figsize=(10, 8), split=False,
-                adjust_height=False, **kwargs):
+                adjust_height=True, **kwargs):
         """Plot different results in one window to get a quick overview.
 
         Parameters
@@ -104,7 +106,7 @@ class Plotting:
             False.
         adjust_height: bool, optional
             Adjust the height of the graphs, so that the vertical scale of all
-            the subplots on the left is equal.
+            the subplots on the left is equal. Default is True.
 
         Returns
         -------
@@ -115,7 +117,8 @@ class Plotting:
         >>> ml.plots.results()
         """
         # Number of rows to make the figure with
-        o = self.ml.observations()
+        o = self.ml.observations(tmin=tmin, tmax=tmax)
+        o_nu = self.ml.oseries.series.drop(o.index).loc[tmin:tmax]
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         plot_noise = self.ml.settings["noise"] and self.ml.noisemodel
@@ -123,7 +126,7 @@ class Plotting:
             noise = self.ml.noise(tmin=tmin, tmax=tmax)
         contribs = self.ml.get_contributions(split=split, tmin=tmin,
                                              tmax=tmax, return_warmup=False)
-        fig = plt.figure(figsize=figsize, **kwargs)
+
         ylims = [(min([sim.min(), o[tmin:tmax].min()]),
                   max([sim.max(), o[tmin:tmax].max()]))]
         if adjust_height:
@@ -145,27 +148,23 @@ class Plotting:
         else:
             hrs = [2] + [1] * (len(contribs) + 1)
 
-        nrows = len(contribs) + 2
-        gs = fig.add_gridspec(ncols=2, nrows=nrows, width_ratios=[2, 1],
-                              height_ratios=hrs)
+        # Make main Figure
+        fig = plt.figure(figsize=figsize, **kwargs, tight_layout=True)
+        gs = fig.add_gridspec(ncols=2, nrows=len(contribs) + 2,
+                              width_ratios=[2, 1], height_ratios=hrs)
 
         # Main frame
         ax1 = fig.add_subplot(gs[0, 0])
-        o_nu = self.ml.oseries.series.drop(o.index)
         if not o_nu.empty:
             # plot parts of the oseries that are not used in grey
             o_nu.plot(ax=ax1, linestyle='', marker='.', color='0.5', label='',
                       x_compat=True)
         o.plot(ax=ax1, linestyle='', marker='.', color='k', x_compat=True)
-        # add evp to simulation
-        r2 = round(self.ml.stats.rsq(tmin=tmin, tmax=tmax) * 100, 1)
-        sim.name = f'{sim.name} ($R^2$ = {r2}%)'
-        sim.plot(ax=ax1, x_compat=True)
+        # add rsq to simulation
+        r2 = self.ml.stats.rsq(tmin=tmin, tmax=tmax) * 100
+        sim.plot(ax=ax1, x_compat=True, label=f'{sim.name} ($R^2$={r2:.2f}%)')
         ax1.legend(loc=(0, 1), ncol=3, frameon=False, numpoints=3)
         ax1.set_ylim(ylims[0])
-        if adjust_height:
-            ax1.set_ylim(ylims[0])
-            ax1.grid(True)
 
         # Residuals and noise
         ax2 = fig.add_subplot(gs[1, 0], sharex=ax1)
@@ -174,32 +173,22 @@ class Plotting:
             noise.plot(ax=ax2, x_compat=True)
         ax2.axhline(0.0, color='k', linestyle='--', zorder=0)
         ax2.legend(loc=(0, 1), ncol=3, frameon=False)
-        if adjust_height:
-            ax2.grid(True)
-
-        # Stats frame
-        ax3 = fig.add_subplot(gs[0:2, 1])
-        n_free = self.ml.parameters.vary.sum()
-        ax3.set_title(f'Model Parameters ($n_c$={n_free})', loc='left')
 
         # Add a row for each stressmodel
         rmax = 0  # tmax of the step response
         axb = None
         i = 0
-        for sm_name in self.ml.stressmodels:
-            step_row = i + 2
-
+        for sm_name, sm in self.ml.stressmodels.items():
             # plot the contribution
-            sm = self.ml.stressmodels[sm_name]
             nsplit = sm.get_nsplit()
             if split and nsplit > 1:
                 for _ in range(nsplit):
                     ax = fig.add_subplot(gs[i + 2, 0], sharex=ax1)
                     contribs[i].plot(ax=ax, x_compat=True)
                     ax.legend(loc=(0, 1), ncol=3, frameon=False)
+
                     if adjust_height:
                         ax.set_ylim(ylims[i + 2])
-                        ax.grid(True)
                     i = i + 1
             else:
                 ax = fig.add_subplot(gs[i + 2, 0], sharex=ax1)
@@ -207,37 +196,41 @@ class Plotting:
                 title = [stress.name for stress in sm.stress]
                 if len(title) > 3:
                     title = title[:3] + ["..."]
-                plt.title("Stresses: %s" % title, loc="right")
+                ax.set_title(f"Stresses: {title}", loc="right",
+                             fontsize=plt.rcParams['legend.fontsize'])
                 ax.legend(loc=(0, 1), ncol=3, frameon=False)
+
                 if adjust_height:
                     ax.set_ylim(ylims[i + 2])
-                    ax.grid(True)
                 i = i + 1
 
-            # plot the step reponse
+            # plot the step response
             step = self.ml.get_step_response(sm_name, add_0=True)
             if step is not None:
                 rmax = max(rmax, step.index.max())
-                axb = fig.add_subplot(gs[step_row, 1], sharex=axb)
+                axb = fig.add_subplot(gs[i + 1, 1], sharex=axb)
                 step.plot(ax=axb)
-                if adjust_height:
-                    axb.grid(True)
+                axb.set_xlim(0, rmax)
 
         # xlim sets minorticks back after plots:
         ax1.minorticks_off()
-
         ax1.set_xlim(tmin, tmax)
-        if axb is not None:
-            axb.set_xlim(0, rmax)
 
-        fig.tight_layout()
+        for ax in fig.axes:
+            ax.grid(True)
+
+        fig.tight_layout()  # Before making the table
 
         # Draw parameters table
+        ax3 = fig.add_subplot(gs[0:2, 1])
+        n_free = self.ml.parameters.vary.sum()
+        ax3.set_title(f'Model Parameters ($n_c$={n_free})', loc='left',
+                      fontsize=plt.rcParams['legend.fontsize'])
         p = self.ml.parameters.copy().loc[:, ["name", "optimal", "stderr"]]
-        p.loc[:, 'name'] = p.index
+        p.loc[:, "name"] = p.index
         p.loc[:, "stderr"] = np.abs(np.divide(p.loc[:, "stderr"],
                                               p.loc[:, "optimal"]) * 100)
-        p.loc[:, "stderr"] = p.loc[:, "stderr"].apply("{:.2f}%".format)
+        p.loc[:, "stderr"] = p.loc[:, "stderr"].apply("{:.2%}".format)
         p.loc[:, "optimal"] = p.loc[:, "optimal"].apply("{:.2f}".format)
 
         ax3.axis('off')
@@ -348,7 +341,7 @@ class Plotting:
             axes[0].set_title('observations vs. simulation')
             axes[0].set_ylim(ylims[0])
         axes[0].grid(True)
-        axes[0].legend(ncol=3, frameon=False)
+        axes[0].legend(ncol=3, frameon=False, numpoints=3)
 
         if ytick_base and set_axes_properties:
             if isinstance(ytick_base, bool):
