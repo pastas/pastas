@@ -907,20 +907,6 @@ class WellModel(StressModelBase):
 class FactorModel(StressModelBase):
     """Model that multiplies a stress by a single value.
 
-    Parameters
-    ----------
-    stress: pandas.Series or pastas.timeseries.TimeSeries
-        Stress which will be multiplied by a factor. The stress does not
-        have to be equidistant.
-    name: str, optional
-        String with the name of the stressmodel.
-    settings: dict or str, optional
-        Dict or String that is forwarded to the TimeSeries object created
-        from the stress.
-    metadata: dict, optional
-        Dictionary with metadata, forwarded to the TimeSeries object created
-        from the stress.
-
     Warnings
     --------
     This stressmodel is deprecated and will be removed in a future version
@@ -928,46 +914,12 @@ class FactorModel(StressModelBase):
     will yield the same result.
 
     """
-    _name = "FactorModel"
 
-    def __init__(self, stress, name="factor", settings=None, metadata=None):
-        if isinstance(stress, list):
-            stress = stress[0]  # Temporary fix Raoul, 2017-10-24
-
-        stress = TimeSeries(stress, settings=settings, metadata=metadata)
-
-        tmin = stress.series_original.index.min()
-        tmax = stress.series_original.index.max()
-
-        StressModelBase.__init__(self, name=name, tmin=tmin, tmax=tmax)
-        self.value = 1.  # Initial value
-        self.stress = [stress]
-        self.set_init_parameters()
-
-    def set_init_parameters(self):
-        self.parameters.loc[self.name + "_f"] = (
-            self.value, -np.inf, np.inf, True, self.name)
-
-    def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1):
-        self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
-        return self.stress[0].series * p[0]
-
-    def to_dict(self, series=True):
-        """Method to export the StressModel object.
-
-        Returns
-        -------
-        data: dict
-            dictionary with all necessary information to reconstruct the
-            StressModel object.
-
-        """
-        data = {
-            "stressmodel": self._name,
-            "name": self.name,
-            "stress": self.dump_stress(series)
-        }
-        return data
+    def __init__(self, **kwargs):
+        raise DeprecationWarning("This stressmodel was deprecated in "
+                                 "0.16.0 and has been removed in 0.17.0."
+                                 "Please use ps.StressModel with rfunc=ps.One "
+                                 "instead. This will yield the same result.")
 
 
 class RechargeModel(StressModelBase):
