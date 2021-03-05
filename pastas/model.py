@@ -753,11 +753,11 @@ class Model:
             if isinstance(report, str):
                 output = report
             else:
-                output = "full"
+                output = None
             print(self.fit_report(output=output))
 
     def set_parameter(self, name, initial=None, vary=None, pmin=None,
-                      pmax=None, move_bounds=False):
+                      pmax=None, optimal=None, move_bounds=False):
         """Method to change the parameter properties.
 
         Parameters
@@ -772,6 +772,8 @@ class Model:
             minimum value for the parameter.
         pmax: float, optional
             maximum value for the parameter.
+        optimal: float, optional
+            optimal value for the parameter.
         move_bounds: bool, optional
             Reset pmin/pmax based on new initial value. Of move_bounds=True,
             pmin and pmax must be None.
@@ -789,7 +791,7 @@ class Model:
 
         """
         if name not in self.parameters.index:
-            msg = "parameter {} is not present in the model".format(name)
+            msg = f"parameter {name} is not present in the model"
             self.logger.error(msg)
             raise KeyError(msg)
 
@@ -832,6 +834,8 @@ class Model:
         if pmax is not None:
             obj._set_pmax(name, pmax)
             self.parameters.loc[name, "pmax"] = pmax
+        if optimal is not None:
+            self.parameters.loc[name, "optimal"] = optimal
 
     def _set_freq(self):
         """Internal method to set the frequency in the settings. This is
@@ -1102,9 +1106,8 @@ class Model:
 
         # Set initial parameters to optimal parameters from model
         if not initial:
-            paramold = self.parameters.optimal
-            parameters.initial.update(paramold)
-            parameters.optimal.update(paramold)
+            parameters.initial.update(self.parameters.optimal)
+            parameters.optimal.update(self.parameters.optimal)
 
         return parameters
 
@@ -1301,7 +1304,7 @@ class Model:
 
         """
         if self.stressmodels[name].rfunc is None:
-            self.logger.warning("Stressmodel {} has no rfunc".format(name))
+            self.logger.warning(f"Stressmodel {name} has no rfunc.")
             return None
         else:
             block_or_step = getattr(self.stressmodels[name].rfunc,
@@ -1414,7 +1417,7 @@ class Model:
 
         """
         if self.stressmodels[name].rfunc is None:
-            self.logger.warning("Stressmodel {} has no rfunc".format(name))
+            self.logger.warning(f"Stressmodel {name} has no rfunc")
             return None
         else:
             if p is None:
@@ -1547,7 +1550,7 @@ class Model:
         model = {
             "nfev": self.fit.nfev,
             "nobs": self.observations().index.size,
-            "noise": str(self.settings["noise"]),
+            "noise": self.settings["noise"],
             "tmin": str(self.settings["tmin"]),
             "tmax": str(self.settings["tmax"]),
             "freq": self.settings["freq"],
@@ -1556,16 +1559,14 @@ class Model:
         }
 
         fit = {
-            "EVP": "{:.2f}".format(self.stats.evp()),
-            "R2": "{:.2f}".format(self.stats.rsq()),
-            "RMSE": "{:.2f}".format(self.stats.rmse()),
-            "AIC": "{:.2f}".format(self.stats.aic() if
-                                   self.settings["noise"] else np.nan),
-            "BIC": "{:.2f}".format(self.stats.bic() if
-                                   self.settings["noise"] else np.nan),
-            "Obj": "{:.2f}".format(self.fit.obj_func),
+            "EVP": f"{self.stats.evp():.2f}",
+            "R2": f"{self.stats.rsq():.2f}",
+            "RMSE": f"{self.stats.rmse():.2f}",
+            "AIC": f"{self.stats.aic():.2f}",
+            "BIC": f"{self.stats.bic():.2f}",
+            "Obj": f"{self.fit.obj_func:.2f}",
             "___": "",
-            "Interpolated": "Yes" if self.interpolate_simulation else "No",
+            "Interp.": "Yes" if self.interpolate_simulation else "No",
         }
 
         parameters = self.parameters.loc[:, ["optimal", "stderr",
@@ -1578,7 +1579,7 @@ class Model:
         string = "{:{fill}{align}{width}}"
 
         # Create the first header with model information and stats
-        w = max(width - 44, 0)
+        w = max(width - 41, 0)
         header = f"Fit report {self.name:<16}" \
                  f"{string.format('', fill=' ', align='>', width=w)}" \
                  f"Fit Statistics\n" \
@@ -1588,8 +1589,8 @@ class Model:
         w = max(width - 45, 0)
         for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
             val4 = string.format(val4, fill=' ', align='>', width=w)
-            basic += f"{val1:<8} {val2:<22} {val3:<{len(val3)}} " \
-                     f"{val4:>{17 - len(val3)}}\n"
+            basic += f"{val1:<7} {val2:<22} {val3:<{len(val3)}} " \
+                     f"{val4:>{18 - len(val3)}}\n"
 
         # Create the parameters block
         params = f"\nParameters ({parameters.vary.sum()} optimized)\n" \
