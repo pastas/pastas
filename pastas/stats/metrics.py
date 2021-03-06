@@ -15,10 +15,9 @@ or
 
 from logging import getLogger
 
-from numpy import sqrt, log, ones, nan
-from pandas import Timedelta
+from numpy import sqrt, log, nan
 
-from pastas.stats.core import mean, var, std
+from pastas.stats.core import mean, var, std, _get_weights
 
 __all__ = ["rmse", "sse", "mae", "nse", "evp", "rsq", "bic", "aic",
            "pearsonr", "kge_2012"]
@@ -28,7 +27,7 @@ logger = getLogger(__name__)
 # Absolute Error Metrics
 
 def mae(obs=None, sim=None, res=None, missing="drop", weighted=False,
-        max_gap=90):
+        max_gap=30):
     """Compute the (weighted) Mean Absolute Error (MAE).
 
     Parameters
@@ -49,7 +48,7 @@ def mae(obs=None, sim=None, res=None, missing="drop", weighted=False,
     max_gap: int, optional
         maximum allowed gap period in days to use for the computation of the
         weights. All time steps larger than max_gap are replace with the
-        mean weight. Default value is 90 days.
+        mean weight. Default value is 30 days.
 
     Notes
     -----
@@ -72,18 +71,12 @@ def mae(obs=None, sim=None, res=None, missing="drop", weighted=False,
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
-    if weighted:
-        w = (res.index[1:] - res.index[:-1]).to_numpy() / Timedelta("1D")
-        w[w > max_gap] = w[w <= max_gap].mean()
-    else:
-        w = ones(res.index.size - 1)
-    w /= w.sum()
-
-    return (w * res[1:].abs()).sum()
+    w = _get_weights(res, weighted=weighted, max_gap=max_gap)
+    return (w * res[1:].abs()).sum() / w.sum()
 
 
 def rmse(obs=None, sim=None, res=None, missing="drop", weighted=False,
-         max_gap=90):
+         max_gap=30):
     """Compute the (weighted) Root Mean Squared Error (RMSE).
 
     Parameters
@@ -104,7 +97,7 @@ def rmse(obs=None, sim=None, res=None, missing="drop", weighted=False,
     max_gap: int, optional
         maximum allowed gap period in days to use for the computation of the
         weights. All time steps larger than max_gap are replace with the
-        mean weight. Default value is 90 days.
+        mean weight. Default value is 30 days.
 
     Notes
     -----
@@ -126,14 +119,8 @@ def rmse(obs=None, sim=None, res=None, missing="drop", weighted=False,
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
-    if weighted:
-        w = (res.index[1:] - res.index[:-1]).to_numpy() / Timedelta("1D")
-        w[w > max_gap] = w[w <= max_gap].mean()
-    else:
-        w = ones(res.index.size - 1)
-    w /= w.sum()
-
-    return sqrt((res[1:] ** 2 * w).sum())
+    w = _get_weights(res, weighted=weighted, max_gap=max_gap)
+    return sqrt((w * res[1:] ** 2).sum() / w.sum())
 
 
 def sse(obs=None, sim=None, res=None, missing="drop"):
@@ -177,7 +164,7 @@ def sse(obs=None, sim=None, res=None, missing="drop"):
 
 # Percentage Error Metrics
 
-def pearsonr(obs, sim, missing="drop", weighted=False, max_gap=90):
+def pearsonr(obs, sim, missing="drop", weighted=False, max_gap=30):
     """Compute the (weighted) Pearson correlation (r).
 
     Parameters
@@ -195,7 +182,7 @@ def pearsonr(obs, sim, missing="drop", weighted=False, max_gap=90):
     max_gap: int, optional
         maximum allowed gap period in days to use for the computation of the
         weights. All time steps larger than max_gap are replace with the
-        mean weight. Default value is 90 days.
+        mean weight. Default value is 30 days.
 
     Notes
     -----
@@ -213,14 +200,7 @@ def pearsonr(obs, sim, missing="drop", weighted=False, max_gap=90):
     if missing == "drop":
         obs = obs.dropna()
 
-    if weighted:
-        w = (obs.index[1:] - obs.index[:-1]).to_numpy() / Timedelta("1D")
-        w[w > max_gap] = w[w <= max_gap].mean()
-    else:
-        w = ones(obs.index.size - 1)
-
-    w /= w.sum()
-
+    w = _get_weights(obs, weighted=weighted, max_gap=max_gap)
     sim = sim.reindex(obs.index).dropna()
 
     # Return nan if the time indices of the sim and obs don't match
@@ -237,7 +217,7 @@ def pearsonr(obs, sim, missing="drop", weighted=False, max_gap=90):
     return r
 
 
-def evp(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=90):
+def evp(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30):
     """Compute the (weighted) Explained Variance Percentage (EVP).
 
     Parameters
@@ -258,7 +238,7 @@ def evp(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=90):
     max_gap: int, optional
         maximum allowed gap period in days to use for the computation of the
         weights. All time steps larger than max_gap are replace with the
-        mean weight. Default value is 90 days.
+        mean weight. Default value is 30 days.
 
     Notes
     -----
@@ -278,7 +258,7 @@ def evp(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=90):
        M. Bakker, T.N. Olsthoorn, D.G. Cirkel, I. Leunk, F. Schaars, and D.C.
        von Asmuth. 2012. Software for hydrogeologic time series analysis,
        interfacing data with physical insight. Environmental Modelling &
-       Software 38: 178–190.
+       Software 38: 178–130.
 
     """
     if res is None:
@@ -299,7 +279,7 @@ def evp(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=90):
                          var(obs, weighted=weighted, max_gap=max_gap))) * 100
 
 
-def nse(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=90):
+def nse(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30):
     """Compute the (weighted) Nash-Sutcliffe Efficiency (NSE).
 
     Parameters
@@ -320,7 +300,7 @@ def nse(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=90):
     max_gap: int, optional
         maximum allowed gap period in days to use for the computation of the
         weights. All time steps larger than max_gap are replace with the
-        mean weight. Default value is 90 days.
+        mean weight. Default value is 30 days.
 
     Notes
     -----
@@ -330,7 +310,7 @@ def nse(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=90):
     ----------
     .. [nash_1970] Nash, J. E., & Sutcliffe, J. V. (1970). River flow
        forecasting through conceptual models part I-A discussion of
-       principles. Journal of hydrology, 10(3), 282-290.
+       principles. Journal of hydrology, 10(3), 282-230.
 
     """
     if res is None:
@@ -344,19 +324,14 @@ def nse(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=90):
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
-    if weighted:
-        w = (obs.index[1:] - obs.index[:-1]).to_numpy() / Timedelta("1D")
-        w[w > max_gap] = w[w <= max_gap].mean()
-    else:
-        w = ones(obs.index.size - 1)
-
-    w /= w.sum()
+    w = _get_weights(res, weighted=weighted, max_gap=max_gap)
     mu = mean(obs, weighted=weighted, max_gap=max_gap)
 
     return 1 - (w * res[1:] ** 2).sum() / (w * (obs[1:] - mu) ** 2).sum()
 
 
-def rsq(obs, sim=None, res=None, missing="drop", nparam=None):
+def rsq(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30,
+        nparam=None):
     """Compute R-squared, possibly adjusted for the number of free parameters.
 
     Parameters
@@ -368,11 +343,18 @@ def rsq(obs, sim=None, res=None, missing="drop", nparam=None):
     res: pandas.Series
         Series with the residual values. If time series for the residuals
         are provided, the sim and obs arguments are ignored.
-    nparam: int, optional
-        number of calibrated parameters.
     missing: str, optional
         string with the rule to deal with missing values. Only "drop" is
         supported now.
+    weighted: bool, optional
+        If weighted is True, the variances are computed using the time
+        step between observations as weights. Default is False.
+    max_gap: int, optional
+        maximum allowed gap period in days to use for the computation of the
+        weights. All time steps larger than max_gap are replace with the
+        mean weight. Default value is 30 days.
+    nparam: int, optional
+        number of calibrated parameters.
 
     Notes
     -----
@@ -397,8 +379,10 @@ def rsq(obs, sim=None, res=None, missing="drop", nparam=None):
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
-    rss = (res ** 2.0).sum()
-    tss = ((obs - obs.mean()) ** 2.0).sum()
+    w = _get_weights(res, weighted=weighted, max_gap=max_gap)
+
+    rss = (w * res[1:] ** 2.0).sum()
+    tss = (w * (obs[1:] - obs.mean()) ** 2.0).sum()
 
     if nparam:
         return 1.0 - (obs.size - 1.0) / (obs.size - nparam) * rss / tss
@@ -505,7 +489,7 @@ def aic(obs=None, sim=None, res=None, missing="drop", nparam=1):
 
 # Forecast Error Metrics
 
-def kge_2012(obs, sim, missing="drop", weighted=False, max_gap=90):
+def kge_2012(obs, sim, missing="drop", weighted=False, max_gap=30):
     """Compute the (weighted) Kling-Gupta Efficiency (KGE).
 
     Parameters
@@ -523,7 +507,7 @@ def kge_2012(obs, sim, missing="drop", weighted=False, max_gap=90):
     max_gap: int, optional
         maximum allowed gap period in days to use for the computation of the
         weights. All time steps larger than max_gap are replace with the
-        mean weight. Default value is 90 days.
+        mean weight. Default value is 30 days.
 
     Notes
     -----
