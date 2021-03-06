@@ -66,10 +66,10 @@ class Model:
         self.oseries = TimeSeries(oseries, settings="oseries",
                                   metadata=metadata)
 
-        if name is None:
+        if name is None and self.oseries.name is not None:
             name = self.oseries.name
-            if name is None:
-                name = 'Observations'
+        else:
+            name = 'Observations'
         self.name = validate_name(name)
 
         self.parameters = DataFrame(
@@ -428,8 +428,7 @@ class Model:
             freq = self.settings["freq"]
 
         # simulate model
-        sim = self.simulate(p, tmin, tmax, freq, warmup,
-                            return_warmup=False)
+        sim = self.simulate(p, tmin, tmax, freq, warmup, return_warmup=False)
 
         # Get the oseries calibration series
         oseries_calib = self.observations(tmin, tmax, freq)
@@ -1145,6 +1144,29 @@ class Model:
     def get_stressmodel_names(self):
         """Returns list of stressmodel names"""
         return list(self.stressmodels.keys())
+
+    @get_stressmodel
+    def get_stressmodel_settings(self, name):
+        """Method to obtain the time series settings for a stress model.
+
+        Parameters
+        ----------
+        name: str, optional
+            string with the name of the pastas.stressmodel object.
+
+        Returns
+        -------
+        dict or None
+            Dictionary with the settings or "None" of no stress are present,
+            e.g., for a step model that uses no stress.
+
+        """
+        sm = self.stressmodels[name]
+        if len(sm.stress) == 0:
+            settings = None
+        else:
+            settings = {stress.name: stress.settings for stress in sm.stress}
+        return settings
 
     @get_stressmodel
     def get_contribution(self, name, tmin=None, tmax=None, freq=None,
