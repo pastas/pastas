@@ -45,7 +45,7 @@ class TimeSeries:
     To obtain the predefined TimeSeries settings, you can run the following
     line of code:
 
-    >>> ps.TimeSeries._predefined_settings
+    >>> ps.rcParams["timeseries"]
 
     See Also
     --------
@@ -156,8 +156,7 @@ class TimeSeries:
     def series_original(self, series):
         """Sets a new freq_original for the TimeSeries"""
         if not isinstance(series, pd.Series):
-            raise TypeError("Expected a Pandas Series, got {}".format(
-                type(series)))
+            raise TypeError(f"Expected a Pandas Series, got {type(series)}")
         else:
             self._series_original = series
             # make sure that tmin and tmax and freq_original are set in validate_series
