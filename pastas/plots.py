@@ -121,20 +121,14 @@ class Plotting:
         o_nu = self.ml.oseries.series.drop(o.index).loc[tmin:tmax]
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
-        plot_noise = self.ml.settings["noise"] and self.ml.noisemodel
-        if plot_noise:
-            noise = self.ml.noise(tmin=tmin, tmax=tmax)
         contribs = self.ml.get_contributions(split=split, tmin=tmin,
                                              tmax=tmax, return_warmup=False)
 
         ylims = [(min([sim.min(), o[tmin:tmax].min()]),
-                  max([sim.max(), o[tmin:tmax].max()]))]
+                  max([sim.max(), o[tmin:tmax].max()])),
+                 (res.min(), res.max())]  # residuals are bigger than noise
+
         if adjust_height:
-            if plot_noise:
-                ylims.append((min([res.min(), noise.min()]),
-                              max([res.max(), noise.max()])))
-            else:
-                ylims.append((res.min(), res.max()))
             for contrib in contribs:
                 hs = contrib.loc[tmin:tmax]
                 if hs.empty:
@@ -149,27 +143,29 @@ class Plotting:
             hrs = [2] + [1] * (len(contribs) + 1)
 
         # Make main Figure
-        fig = plt.figure(figsize=figsize, **kwargs, tight_layout=True)
+        fig = plt.figure(figsize=figsize, **kwargs)
         gs = fig.add_gridspec(ncols=2, nrows=len(contribs) + 2,
                               width_ratios=[2, 1], height_ratios=hrs)
 
         # Main frame
         ax1 = fig.add_subplot(gs[0, 0])
+        o.plot(ax=ax1, linestyle='', marker='.', color='k', x_compat=True)
         if not o_nu.empty:
             # plot parts of the oseries that are not used in grey
             o_nu.plot(ax=ax1, linestyle='', marker='.', color='0.5', label='',
-                      x_compat=True)
-        o.plot(ax=ax1, linestyle='', marker='.', color='k', x_compat=True)
+                      x_compat=True, zorder=-1)
+
         # add rsq to simulation
-        r2 = self.ml.stats.rsq(tmin=tmin, tmax=tmax) * 100
-        sim.plot(ax=ax1, x_compat=True, label=f'{sim.name} ($R^2$={r2:.2f}%)')
+        r2 = self.ml.stats.rsq(tmin=tmin, tmax=tmax)
+        sim.plot(ax=ax1, x_compat=True, label=f'{sim.name} ($R^2$={r2:.2%})')
         ax1.legend(loc=(0, 1), ncol=3, frameon=False, numpoints=3)
         ax1.set_ylim(ylims[0])
 
         # Residuals and noise
         ax2 = fig.add_subplot(gs[1, 0], sharex=ax1)
         res.plot(ax=ax2, color='k', x_compat=True)
-        if plot_noise:
+        if self.ml.settings["noise"] and self.ml.noisemodel:
+            noise = self.ml.noise(tmin=tmin, tmax=tmax)
             noise.plot(ax=ax2, x_compat=True)
         ax2.axhline(0.0, color='k', linestyle='--', zorder=0)
         ax2.legend(loc=(0, 1), ncol=3, frameon=False)
@@ -186,7 +182,6 @@ class Plotting:
                     ax = fig.add_subplot(gs[i + 2, 0], sharex=ax1)
                     contribs[i].plot(ax=ax, x_compat=True)
                     ax.legend(loc=(0, 1), ncol=3, frameon=False)
-
                     if adjust_height:
                         ax.set_ylim(ylims[i + 2])
                     i = i + 1
@@ -199,7 +194,6 @@ class Plotting:
                 ax.set_title(f"Stresses: {title}", loc="right",
                              fontsize=plt.rcParams['legend.fontsize'])
                 ax.legend(loc=(0, 1), ncol=3, frameon=False)
-
                 if adjust_height:
                     ax.set_ylim(ylims[i + 2])
                 i = i + 1
@@ -210,7 +204,9 @@ class Plotting:
                 rmax = max(rmax, step.index.max())
                 axb = fig.add_subplot(gs[i + 1, 1], sharex=axb)
                 step.plot(ax=axb)
-                axb.set_xlim(0, rmax)
+
+        if axb is not None:
+            axb.set_xlim(0.0, rmax)
 
         # xlim sets minorticks back after plots:
         ax1.minorticks_off()
@@ -228,10 +224,9 @@ class Plotting:
                       fontsize=plt.rcParams['legend.fontsize'])
         p = self.ml.parameters.copy().loc[:, ["name", "optimal", "stderr"]]
         p.loc[:, "name"] = p.index
-        p.loc[:, "stderr"] = np.abs(np.divide(p.loc[:, "stderr"],
-                                              p.loc[:, "optimal"]) * 100)
-        p.loc[:, "stderr"] = p.loc[:, "stderr"].apply("{:.2%}".format)
+        stderr = p.loc[:, "stderr"] / p.loc[:, "optimal"]
         p.loc[:, "optimal"] = p.loc[:, "optimal"].apply("{:.2f}".format)
+        p.loc[:, "stderr"] = stderr.abs().apply("{:.2%}".format)
 
         ax3.axis('off')
         ax3.table(bbox=(0., 0., 1.0, 1.0), cellText=p.values,
@@ -272,7 +267,7 @@ class Plotting:
         -------
         axes: list of matplotlib.axes.Axes
         """
-        o = self.ml.observations()
+        o = self.ml.observations(tmin=tmin, tmax=tmax)
 
         # determine the simulation
         sim = self.ml.simulate(tmin=tmin, tmax=tmax,
@@ -706,7 +701,7 @@ class Plotting:
                 contributions.sort(key=custom_sort)
 
                 # add stacked plot to correct axes
-                ax = axes[i-1]
+                ax = axes[i - 1]
                 del ax.lines[0]  # delete existing line
 
                 contrib = [c[1] for c in contributions]  # get timeseries
