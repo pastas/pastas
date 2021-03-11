@@ -86,5 +86,7 @@ class PastasEncoder(json.JSONEncoder):
             return o.to_timedelta64().__str__()
         elif isna(o):
             return None
+        elif isinstance(o, np.integer):
+            return int(o)
         else:
             return super(PastasEncoder, self).default(o)
