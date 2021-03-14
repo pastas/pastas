@@ -22,7 +22,7 @@ setup(
         'Source': 'https://github.com/pastas/pastas',
         'Documentation': 'http://pastas.readthedocs.io/en/latest/',
         'Tracker': 'https://github.com/pastas/pastas/issues',
-        'Help': 'https://stackoverflow.com/questions/tagged/pastas'
+        'Help': 'https://github.com/pastas/pastas/discussions'
     },
     license='MIT',
     classifiers=[
