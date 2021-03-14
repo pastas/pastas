@@ -15,7 +15,8 @@ or
 
 from logging import getLogger
 
-from numpy import sqrt, log, nan
+from numpy import nan, abs, average
+from math import sqrt, log
 
 from pastas.stats.core import mean, var, std, _get_weights
 
@@ -48,7 +49,7 @@ def mae(obs=None, sim=None, res=None, missing="drop", weighted=False,
     max_gap: int, optional
         maximum allowed gap period in days to use for the computation of the
         weights. All time steps larger than max_gap are replace with the
-        mean weight. Default value is 30 days.
+        max_gap value. Default value is 30 days.
 
     Notes
     -----
@@ -72,7 +73,7 @@ def mae(obs=None, sim=None, res=None, missing="drop", weighted=False,
         return nan
 
     w = _get_weights(res, weighted=weighted, max_gap=max_gap)
-    return (w * res[1:].abs()).sum() / w.sum()
+    return (w * abs(res.to_numpy())).sum()
 
 
 def rmse(obs=None, sim=None, res=None, missing="drop", weighted=False,
@@ -93,11 +94,11 @@ def rmse(obs=None, sim=None, res=None, missing="drop", weighted=False,
         supported now.
     weighted: bool, optional
         Weight the values by the normalized time step to account for
-        irregular time series. Default is True.
+        irregular time series. Default is False.
     max_gap: int, optional
         maximum allowed gap period in days to use for the computation of the
         weights. All time steps larger than max_gap are replace with the
-        mean weight. Default value is 30 days.
+        max_gap value. Default value is 30 days.
 
     Notes
     -----
@@ -120,7 +121,7 @@ def rmse(obs=None, sim=None, res=None, missing="drop", weighted=False,
         return nan
 
     w = _get_weights(res, weighted=weighted, max_gap=max_gap)
-    return sqrt((w * res[1:] ** 2).sum() / w.sum())
+    return sqrt((w * res.to_numpy() ** 2).sum())
 
 
 def sse(obs=None, sim=None, res=None, missing="drop"):
@@ -159,7 +160,7 @@ def sse(obs=None, sim=None, res=None, missing="drop"):
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
-    return (res ** 2).sum()
+    return (res.to_numpy() ** 2).sum()
 
 
 # Percentage Error Metrics
@@ -178,11 +179,11 @@ def pearsonr(obs, sim, missing="drop", weighted=False, max_gap=30):
         observed series. Only "drop" is supported now.
     weighted: bool, optional
         Weight the values by the normalized time step to account for
-        irregular time series. Default is True.
+        irregular time series. Default is False.
     max_gap: int, optional
         maximum allowed gap period in days to use for the computation of the
         weights. All time steps larger than max_gap are replace with the
-        mean weight. Default value is 30 days.
+        max_gap value. Default value is 30 days.
 
     Notes
     -----
@@ -201,15 +202,15 @@ def pearsonr(obs, sim, missing="drop", weighted=False, max_gap=30):
         obs = obs.dropna()
 
     w = _get_weights(obs, weighted=weighted, max_gap=max_gap)
-    sim = sim.reindex(obs.index).dropna()
+    sim = sim.reindex(obs.index).dropna().to_numpy()
 
     # Return nan if the time indices of the sim and obs don't match
-    if sim.index.size == 0:
+    if sim.size == 0:
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
-    sim = sim[1:] - mean(sim, weighted=weighted, max_gap=max_gap)
-    obs = obs[1:] - mean(obs, weighted=weighted, max_gap=max_gap)
+    sim = sim - average(sim, weights=w)
+    obs = obs.to_numpy() - average(obs.to_numpy(), weights=w)
 
     r = (w * sim * obs).sum() / \
         sqrt((w * sim ** 2).sum() * (w * obs ** 2).sum())
@@ -234,11 +235,11 @@ def evp(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30):
         supported now.
     weighted: bool, optional
         If weighted is True, the variances are computed using the time
-        step between observations as weights. Default is True.
+        step between observations as weights. Default is False.
     max_gap: int, optional
         maximum allowed gap period in days to use for the computation of the
         weights. All time steps larger than max_gap are replace with the
-        mean weight. Default value is 30 days.
+        max_gap value. Default value is 30 days.
 
     Notes
     -----
@@ -300,7 +301,7 @@ def nse(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30):
     max_gap: int, optional
         maximum allowed gap period in days to use for the computation of the
         weights. All time steps larger than max_gap are replace with the
-        mean weight. Default value is 30 days.
+        max_gap value. Default value is 30 days.
 
     Notes
     -----
@@ -325,9 +326,10 @@ def nse(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30):
         return nan
 
     w = _get_weights(res, weighted=weighted, max_gap=max_gap)
-    mu = mean(obs, weighted=weighted, max_gap=max_gap)
+    mu = average(obs.to_numpy(), weights=w)
 
-    return 1 - (w * res[1:] ** 2).sum() / (w * (obs[1:] - mu) ** 2).sum()
+    return 1 - (w * res.to_numpy() ** 2).sum() / \
+           (w * (obs.to_numpy() - mu) ** 2).sum()
 
 
 def rsq(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30,
@@ -352,7 +354,7 @@ def rsq(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30,
     max_gap: int, optional
         maximum allowed gap period in days to use for the computation of the
         weights. All time steps larger than max_gap are replace with the
-        mean weight. Default value is 30 days.
+        max_gap value. Default value is 30 days.
     nparam: int, optional
         number of calibrated parameters.
 
@@ -380,9 +382,9 @@ def rsq(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30,
         return nan
 
     w = _get_weights(res, weighted=weighted, max_gap=max_gap)
-
-    rss = (w * res[1:] ** 2.0).sum()
-    tss = (w * (obs[1:] - obs.mean()) ** 2.0).sum()
+    mu = average(obs.to_numpy(), weights=w)
+    rss = (w * res.to_numpy() ** 2.0).sum()
+    tss = (w * (obs.to_numpy() - mu) ** 2.0).sum()
 
     if nparam:
         return 1.0 - (obs.size - 1.0) / (obs.size - nparam) * rss / tss
@@ -435,7 +437,7 @@ def bic(obs=None, sim=None, res=None, missing="drop", nparam=1):
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
-    return (res.index.size * log((res ** 2.0).sum()) +
+    return (res.index.size * log((res.to_numpy() ** 2.0).sum()) +
             nparam * log(res.index.size))
 
 
@@ -484,7 +486,7 @@ def aic(obs=None, sim=None, res=None, missing="drop", nparam=1):
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
-    return res.index.size * log((res ** 2.0).sum()) + 2.0 * nparam
+    return res.index.size * log((res.to_numpy() ** 2.0).sum()) + 2.0 * nparam
 
 
 # Forecast Error Metrics
@@ -503,11 +505,11 @@ def kge_2012(obs, sim, missing="drop", weighted=False, max_gap=30):
         supported now.
     weighted: bool, optional
         Weight the values by the normalized time step to account for
-        irregular time series. Default is True.
+        irregular time series. Default is False.
     max_gap: int, optional
         maximum allowed gap period in days to use for the computation of the
         weights. All time steps larger than max_gap are replace with the
-        mean weight. Default value is 30 days.
+        max_gap value. Default value is 30 days.
 
     Notes
     -----
