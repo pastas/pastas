@@ -338,8 +338,8 @@ def excel2datetime(tindex, freq="D"):
 
 
 def datenum_to_datetime(datenum):
-    """
-    Convert Matlab datenum into Python datetime.
+    """Convert Matlab datenum into Python datetime.
+
     Parameters
     ----------
     datenum: float
@@ -349,6 +349,7 @@ def datenum_to_datetime(datenum):
     -------
     datetime :
         Datetime object corresponding to datenum.
+
     """
     days = datenum % 1.
     return datetime.fromordinal(int(datenum)) \
@@ -530,9 +531,8 @@ def validate_name(name):
 
     for char in ["\\", "/", " "]:
         if char in name:
-            msg = "User-provided name '{}' contains illegal character " \
-                  "{}".format(name, char)
-            logger.warning(msg)
+            logger.warning("User-provided name '%s' contains illegal "
+                           "character %s", name, char)
 
     return name
 

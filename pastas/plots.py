@@ -479,8 +479,8 @@ class Plotting:
                 self.ml.get_block_response(name).plot(ax=ax)
                 legend.append(name)
             else:
-                logger.warning("Stressmodel {} not in stressmodels "
-                               "list.".format(name))
+                logger.warning("Stressmodel %s not in stressmodels list.",
+                               name)
 
         plt.xlim(0)
         plt.xlabel("Time [days]")
@@ -514,8 +514,8 @@ class Plotting:
                 self.ml.get_step_response(name).plot(ax=ax)
                 legend.append(name)
             else:
-                logger.warning("Stressmodel {} not in stressmodels "
-                               "list.".format(name))
+                logger.warning("Stressmodel %s not in stressmodels list.",
+                               name)
 
         plt.xlim(0)
         plt.xlabel("Time [days]")

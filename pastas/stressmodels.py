@@ -819,8 +819,8 @@ class WellModel(StressModelBase):
             for i, value in enumerate(stress):
                 data.append(TimeSeries(value, settings=settings[i]))
         else:
-            logger.error("Stress format is unknown. Provide a"
-                         "Series, dict or list.")
+            logger.error("Stress format is unknown. Provide a Series, "
+                         "dict or list.")
         return data
 
     def get_stress(self, p=None, tmin=None, tmax=None, freq=None,
@@ -1121,7 +1121,7 @@ class RechargeModel(StressModelBase):
                 # only happen when Linear is used as the recharge model
                 stress = stress * p[-1]
             if self.stress[istress].name is not None:
-                name = "{} ({})".format(self.name, self.stress[istress].name)
+                name = f"{self.name} ({self.stress[istress].name})"
 
         return Series(data=fftconvolve(stress, b, 'full')[:stress.size],
                       index=self.prec.series.index, name=name, fastpath=True)
@@ -1319,16 +1319,16 @@ class TarsoModel(RechargeModel):
         p0 = self.rfunc.get_init_parameters(self.name)
         one = One(meanstress=self.dmin + 0.5 * (self.dmax - self.dmin))
         pd0 = one.get_init_parameters(self.name).squeeze()
-        p0.loc['{}_d'.format(self.name)] = pd0
-        p0.index = ['{}0'.format(x) for x in p0.index]
+        p0.loc[f'{self.name}_d'] = pd0
+        p0.index = [f'{x}0' for x in p0.index]
 
         # parameters for the second drainage level
         p1 = self.rfunc.get_init_parameters(self.name)
         initial = self.dmin + 0.75 * (self.dmax - self.dmin)
         pd1 = Series({'initial': initial, 'pmin': self.dmin, 'pmax': self.dmax,
                       'vary': True, 'name': self.name})
-        p1.loc['{}_d'.format(self.name)] = pd1
-        p1.index = ['{}1'.format(x) for x in p1.index]
+        p1.loc[f'{self.name}_d'] = pd1
+        p1.index = [f'{x}1' for x in p1.index]
 
         # parameters for the recharge-method
         pr = self.recharge.get_init_parameters(self.name)
@@ -1352,14 +1352,14 @@ class TarsoModel(RechargeModel):
     def _check_stressmodel_compatibility(ml):
         """Internal method to check if no other stressmodels, a constants or a
         transform is used."""
-        msg = "A TarsoModel cannot be combined with {}. Either remove the" \
-              " TarsoModel or the {}."
+        msg = "A TarsoModel cannot be combined with %s. Either remove the" \
+              " TarsoModel or the %s."
         if len(ml.stressmodels) > 1:
-            logger.warning(msg.format("other stressmodels", "stressmodels"))
+            logger.warning(msg, "other stressmodels", "stressmodels")
         if ml.constant is not None:
-            logger.warning(msg.format("a constant", "constant"))
+            logger.warning(msg, "a constant", "constant")
         if ml.transform is not None:
-            logger.warning(msg.format("a transform", "transform"))
+            logger.warning(msg, "a transform", "transform")
 
     @staticmethod
     @njit
@@ -1400,7 +1400,7 @@ class TarsoModel(RechargeModel):
                     (d1 - d - r[i] * c) / (h0 - d - r[i] * c))
                 if dtdr > dt:
                     raise (Exception())
-                # change paraemeters
+                # change parameters
                 high = newhigh
                 if high:
                     S, a, c, d = S1, a_e, c_e, d_e

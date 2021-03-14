@@ -299,54 +299,51 @@ class TimeSeries:
         # 1. Make sure the values are floats
         if not pd.api.types.is_float_dtype(series):
             series = series.astype(float)
-            logger.info(f"Time series {self.name} updated to dtype float.")
+            logger.info("Time series %s updated to dtype float.", self.name)
 
         # 2. Make sure the index is a datetimeindex
         if not pd.api.types.is_datetime64_dtype(series.index):
             series.index = pd.to_datetime(series.index)
-            logger.info(f"Time series index for {self.name} updated to "
-                        f"dtype datetime64.")
+            logger.info("Time series index for %s updated to dtype "
+                        "datetime64.", self.name)
 
         # 3. Make sure the index is increasing (also works for irregular dt)
         if not series.index.is_monotonic_increasing:
             series = series.sort_index()
-            logger.info(f"Time series index for {self.name} sorted to have "
-                        f"time increasing.")
+            logger.info("Time series index for %s sorted to have time "
+                        "increasing.", self.name)
 
         # 4. Drop nan-values at the beginning and end of the time series
         if series.first_valid_index() != series.index[0]:
             series = series.loc[series.first_valid_index():].copy(deep=True)
-            logger.info(f"Nan-values were removed at the start of the "
-                        f"time series {self.name}.")
+            logger.info("Nan-values were removed at the start of the time "
+                        "series %s.", self.name)
 
         if series.last_valid_index() != series.index[-1]:
             series = series.loc[:series.last_valid_index()].copy(deep=True)
-            logger.info(f"Nan-values were removed at the end of the "
-                        f"time series {self.name}.")
+            logger.info("Nan-values were removed at the end of the time "
+                        "series %s.", self.name)
 
-        # 5. Find the frequency of the time series
+        # 5. Find the frequency of the time series, always report a message
         if self.freq_original:
-            msg = f"User provided frequency for time series {self.name}: " \
-                  f"freq={self.freq_original}"
+            logger.info("User provided frequency for time series %s: freq="
+                        "%s", self.name, self.freq_original)
         elif pd.infer_freq(series.index):
             self.freq_original = pd.infer_freq(series.index)
-            msg = f"Inferred frequency for time series {self.name}: " \
-                  f"freq={self.freq_original}"
+            logger.info("Inferred frequency for time series %s: freq=%s",
+                        self.name, self.freq_original)
         elif self.settings["fill_nan"] != "drop":
-            msg = f"Cannot determine frequency of series {self.name}: " \
-                  f"freq=None. Resample settings are ignored and " \
-                  f"timestep_weighted_resample is used."
+            logger.info("Cannot determine frequency of series %s: freq=None. "
+                        "Resample settings are ignored and "
+                        "timestep_weighted_resample is used.", self.name)
         else:
-            msg = f"Cannot determine frequency of series {self.name}: " \
-                  f"freq=None. The time series is irregular."
-
-        logger.info(msg)  # Always report a message for the frequency
+            logger.info("Cannot determine frequency of series %s: freq=None. "
+                        "The time series is irregular.", self.name)
 
         # 6. Handle duplicate indices
         if not series.index.is_unique:
-            msg = f"duplicate time-indexes were found in the Time Series " \
-                  f"{self.name}. Values were averaged."
-            logger.warning(msg)
+            logger.warning("duplicate time-indexes were found in the time "
+                           "series %s. Values were averaged.", self.name)
             grouped = series.groupby(level=0)
             series = grouped.mean()
 
@@ -443,12 +440,12 @@ class TimeSeries:
                 series = series.asfreq(freq)
                 series.fillna(method, inplace=True)
             else:
-                msg = f"Time Series {self.name}: User-defined option for " \
-                      f"sample_up {method} is not supported"
-                logger.warning(msg)
+                logger.warning("Time Series %s: User-defined option for  "
+                               "sample_up %s is not supported", self.name,
+                               method)
 
-        msg = f"Time Series {self.name} were sampled up using {method}."
-        logger.info(msg)
+        logger.info("Time Series %s were sampled up using %s.", self.name,
+                    method)
 
         return series
 
@@ -491,17 +488,16 @@ class TimeSeries:
         elif method == "max":
             series = series.resample(freq, **kwargs).max()
         else:
-            msg = f"Time Series {self.name}: User-defined option for " \
-                  f"sample_down {method} is not supported"
-            logger.warning(msg)
+            logger.warning("Time Series %s: User-defined option for sample "
+                           "down %s is not supported", self.name, method)
 
         # TODO: replace by adding offset to resample method with pandas 1.1.0
         if self.settings['time_offset'] > pd.Timedelta(0):
             # The offset is removed by the resample-method, so we add it again
             series = series.shift(1, freq=self.settings["time_offset"])
 
-        logger.info(f"Time Series {self.name} was sampled down to freq "
-                    f"{freq} with method {method}.")
+        logger.info("Time Series %s was sampled down to freq %s with method "
+                    "%s.", self.name, freq, method)
 
         return series
 
@@ -511,9 +507,8 @@ class TimeSeries:
         tindex = pd.date_range(series.index[0].ceil(freq) + time_offset,
                                series.index[-1], freq=freq)
         series = timestep_weighted_resample(series, tindex)
-        msg = f"Time Series {self.name} was sampled down to freq {freq} " \
-              f"with method timestep_weighted_resample."
-        logger.info(msg)
+        logger.info("Time Series %s was sampled down to freq %s with method "
+                    "timestep_weighted_resample.", self.name, freq)
         return series
 
     def _fill_nan(self, series):
@@ -539,16 +534,16 @@ class TimeSeries:
             elif isinstance(method, float):
                 series.fillna(method, inplace=True)
             else:
-                msg = f"Time Series {self.name}: User-defined option for " \
-                      f"fill_nan {method} is not supported."
-                logger.warning(msg)
+                logger.warning("Time Series %s: User-defined option for "
+                               "fill_nan %s is not supported.", self.name,
+                               method)
         else:
             method = "drop"
             n = series.isnull().values.sum()
             series.dropna(inplace=True)
         if n > 0:
-            logger.info(f"Time Series {self.name}: {n} nan-value(s) was/were "
-                        f"found and filled with: {method}.")
+            logger.info("Time Series %s: {n} nan-value(s) was/were found and"
+                        "filled with: %s.", self.name, method)
 
         return series
 
@@ -571,17 +566,17 @@ class TimeSeries:
 
             if method == "mean":
                 series.fillna(series.mean(), inplace=True)  # Default option
-                msg = f"Time Series {self.name} was extended to " \
-                      f"{series.index.min()} with the mean value of the " \
-                      f"time series."
+                logger.info("Time Series %s was extended to %s with the mean "
+                            "value of the time series.", self.name,
+                            series.index.min())
             elif isinstance(method, float):
                 series.fillna(method, inplace=True)
-                msg = f"Time Series {self.name} was extended to" \
-                      f" {series.index.min()} by adding {method} values."
+                logger.info("Time Series %s was extended to %s by adding %s "
+                            "values.", self.name, series.index.min(), method)
             else:
-                msg = f"Time Series {self.name}: User-defined option for " \
-                      f"fill_before {method} is not supported."
-            logger.info(msg)
+                logger.info("Time Series %s: User-defined option for "
+                            "fill_before %s is not supported.", self.name,
+                            method)
 
         return series
 
@@ -604,17 +599,17 @@ class TimeSeries:
 
             if method == "mean":
                 series.fillna(series.mean(), inplace=True)  # Default option
-                msg = f"Time Series {self.name} was extended to " \
-                      f"{series.index.max()} with the mean value of the " \
-                      f"time series."
+                logger.info("Time Series %s was extended to %s with the mean "
+                            "value of the time series.", self.name,
+                            series.index.max())
             elif isinstance(method, float):
                 series.fillna(method, inplace=True)
-                msg = f"Time Series {self.name} was extended to " \
-                      f"{series.index.max()} by adding {method} values."
+                logger.info("Time Series %s was extended to %s by adding %s "
+                            "values.", self.name, series.index.max(), method)
             else:
-                msg = f"Time Series {self.name}: User-defined option for " \
-                      f"fill_after {method} is not supported"
-            logger.info(msg)
+                logger.info("Time Series %s: User-defined option for "
+                            "fill_after %s is not supported", self.name,
+                            method)
 
         return series
 
@@ -623,10 +618,9 @@ class TimeSeries:
 
         """
         method = self.settings["norm"]
-        msg = f"Time series {self.name} is normalized with the {method}."
 
         if method is None:
-            msg = None
+            pass
         elif method == "mean":
             series = series.subtract(series.mean())
         elif method == "median":
@@ -638,10 +632,12 @@ class TimeSeries:
         elif isinstance(method, float):
             series = series.subtract(method)
         else:
-            msg = f"Time Series {self.name}: Selected method {method} to " \
-                  f"normalize the time series is not supported"
-        if msg:
-            logger.info(msg)
+            logger.warning("Time Series %s: Selected method %s to normalize "
+                           "the time series is not supported", self.name,
+                           method)
+        if method:
+            logger.info("Time series %s is normalized with the %s", self.name,
+                        method)
 
         return series
 

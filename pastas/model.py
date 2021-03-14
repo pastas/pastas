@@ -790,9 +790,9 @@ class Model:
 
         """
         if name not in self.parameters.index:
-            msg = f"parameter {name} is not present in the model"
-            self.logger.error(msg)
-            raise KeyError(msg)
+            msg = "parameter %s is not present in the model"
+            self.logger.error(msg, name)
+            raise KeyError(msg, name)
 
         # Because either of the following is not necessarily present
         noisemodel = self.noisemodel.name if self.noisemodel else "NotPresent"
@@ -899,8 +899,8 @@ class Model:
                     if np.any(mask):
                         time_offsets.add(_get_time_offset(t[mask][0], freq))
         if len(time_offsets) > 1:
-            msg = ("The time-offset with the frequency is not the same "
-                   "for all stresses.")
+            msg = "The time-offset with the frequency is not the same for " \
+                  "all stresses."
             self.logger.error(msg)
             raise (Exception(msg))
         if len(time_offsets) == 1:
@@ -1133,8 +1133,8 @@ class Model:
             p = self.parameters
 
         if p.optimal.hasnans:
-            self.logger.warning(
-                "Model is not optimized yet, initial parameters are used.")
+            self.logger.warning("Model is not optimized yet, initial "
+                                "parameters are used.")
             parameters = p.initial
         else:
             parameters = p.optimal
@@ -1326,7 +1326,7 @@ class Model:
 
         """
         if self.stressmodels[name].rfunc is None:
-            self.logger.warning(f"Stressmodel {name} has no rfunc.")
+            self.logger.warning("Stressmodel %s has no rfunc.", name)
             return None
         else:
             block_or_step = getattr(self.stressmodels[name].rfunc,
@@ -1439,7 +1439,7 @@ class Model:
 
         """
         if self.stressmodels[name].rfunc is None:
-            self.logger.warning(f"Stressmodel {name} has no rfunc")
+            self.logger.warning("Stressmodel %s has no rfunc", name)
             return None
         else:
             if p is None:
