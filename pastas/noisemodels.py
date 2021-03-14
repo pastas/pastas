@@ -171,10 +171,9 @@ class NoiseModel(NoiseModelBase):
         """
         alpha = p[0]
         odelt = np.diff(res.index.to_numpy()) / Timedelta("1D")
-        v = Series(index=res.index, dtype="float64", name="Noise")
-        v.iloc[0] = res.values[0]
-        v.iloc[1:] = res.values[1:] - np.exp(-odelt / alpha) * res.values[:-1]
-        return v
+        v = np.append(res.values[0], res.values[1:] - np.exp(-odelt / alpha)
+                      * res.values[:-1])
+        return Series(data=v, index=res.index, name="Noise")
 
     def weights(self, res, p):
         """Method to calculate the weights for the noise.
@@ -202,17 +201,14 @@ class NoiseModel(NoiseModelBase):
 
         """
         alpha = p[0]
-        odelt = np.empty(res.size)
-        odelt[0] = 1e12  # large for first measurement
-        odelt[1:] = np.diff(res.index.to_numpy()) / Timedelta("1D")
+        # large for first measurement
+        odelt = np.append(1e12, np.diff(res.index.to_numpy()) /
+                          Timedelta("1D"))
         exp = np.exp(-2.0 / alpha * odelt)  # Twice as fast as 2*odelt/alpha
-        # weights of noise, not noise^2
-        w = Series(data=1 / np.sqrt(1.0 - exp), index=res.index,
-                   dtype="float64", name="noise_weights")
+        w = 1 / np.sqrt(1.0 - exp)  # weights of noise, not noise^2
         if self.norm:
-            w = w.multiply(np.exp(1.0 / (2.0 * odelt.size) *
-                                  np.sum(np.log(1.0 - exp))))
-        return w
+            w *= np.exp(1.0 / (2.0 * odelt.size) * np.sum(np.log(1.0 - exp)))
+        return Series(data=w, index=res.index, name="noise_weights")
 
 
 class ArmaModel(NoiseModelBase):
