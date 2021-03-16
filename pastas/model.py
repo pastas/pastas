@@ -68,7 +68,7 @@ class Model:
 
         if name is None and self.oseries.name is not None:
             name = self.oseries.name
-        else:
+        elif name is None and self.oseries.name is None:
             name = 'Observations'
         self.name = validate_name(name)
 
