@@ -749,8 +749,8 @@ def compare(models, tmin=None, tmax=None, figsize=(10, 8),
     # get the axes
     ax_ml = axes[0]  # model result
     ax_res = axes[1]  # model residuals
-    ax_table = axes[2]  # parameters table
-    axes_sm = axes[3:]  # stressmodels
+    ax_table = axes[-1]  # parameters table
+    axes_sm = axes[2:-1]  # stressmodels
 
     # get second model
     for j, iml in enumerate(models[1:], start=2):
