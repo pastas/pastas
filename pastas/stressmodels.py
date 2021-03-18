@@ -1236,8 +1236,8 @@ class RechargeModel(StressModelBase):
     def to_dict(self, series=True):
         data = {
             "stressmodel": self._name,
-            "prec": self.prec.to_dict(),
-            "evap": self.evap.to_dict(),
+            "prec": self.prec.to_dict(series=series),
+            "evap": self.evap.to_dict(series=series),
             "rfunc": self.rfunc._name,
             "name": self.name,
             "recharge": self.recharge._name,
