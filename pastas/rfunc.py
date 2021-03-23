@@ -376,12 +376,12 @@ class Hantush(RfuncBase):
     The Hantush well function is explained in [hantush_1955]_, [veling_2010]_
     and [asmuth_2008]_. The impulse response function may be written as:
 
-    .. math:: \\theta(t) = K_0(\\sqrt(4b)) \\frac{A}{t} \\exp(-t/a - ab/t)
-    .. math:: p[0] = A = \\frac{1}{2 \\pi kD}
+    .. math:: \\theta(t) = \\frac{A}{t} \\exp(-t/a - ab/t)
+    .. math:: p[0] = A = \\frac{1}{2 \\pi T}
     .. math:: p[1] = a = cS
     .. math:: p[2] = b = r^2 / (4 \\lambda^2)
 
-    where :math:`\\lambda = \\sqrt{kDc}`
+    where :math:`\\lambda = \\sqrt{Tc}`
 
     References
     ----------
