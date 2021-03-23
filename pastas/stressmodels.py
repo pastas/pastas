@@ -763,9 +763,14 @@ class WellModel(StressModelBase):
             np.max(self.distances) ** 2
         self.parameters.loc[self.name + "_b", "pmin"] /= \
             np.max(self.distances) ** 2
-        # set initial value with mean distance
+        # set initial value b with mean distance,
+        # filling in mean distance as r will yield 1 as initial value
         self.parameters.loc[self.name + "_b", "initial"] /= \
             np.mean(self.distances) ** 2
+        # set initial value A
+        # divide by k0(2) to get same initial value as ps.Hantush
+        self.parameters.loc[self.name + "_A", "initial"] /= \
+            0.1138938727495334
 
     def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1,
                  istress=None, **kwargs):
