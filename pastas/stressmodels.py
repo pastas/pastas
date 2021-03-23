@@ -817,7 +817,7 @@ class WellModel(StressModelBase):
         data = []
 
         if isinstance(stress, Series):
-            data.append(TimeSeries(stress, settings))
+            data.append(TimeSeries(stress, settings=settings))
         elif isinstance(stress, dict):
             for i, value in enumerate(stress.values()):
                 data.append(TimeSeries(value, settings=settings[i]))
@@ -857,14 +857,16 @@ class WellModel(StressModelBase):
 
     def get_parameters(self, model=None, istress=None):
         """ Get parameters including distance to observation point and
-        return as array (dimensions (nstresses, 4)).
+        return as array (dimensions = (nstresses, 4)).
 
         Parameters
         ----------
         model : pastas.Model, optional
-            if not None (default), use optimal model parameters
+            if provided, return optimal model parameters, else return
+            initial parameters
         istress : int, optional
-            if not None (default), return all parameters
+            if provided, return specific parameter set, else
+            return all parameters
 
         Returns
         -------
