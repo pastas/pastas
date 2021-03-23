@@ -407,15 +407,14 @@ class Hantush(RfuncBase):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
-            parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
-                                           100 / self.meanstress, True, name)
+            parameters.loc[name + '_A'] = (1 / self.meanstress,
+                                           0, np.nan, True, name)
         elif self.up is False:
             parameters.loc[name + '_A'] = (-1 / self.meanstress,
-                                           -100 / self.meanstress, 0, True,
-                                           name)
+                                           np.nan, 0, True, name)
         else:
-            parameters.loc[name + '_A'] = (1 / self.meanstress, np.nan,
-                                           np.nan, True, name)
+            parameters.loc[name + '_A'] = (1 / self.meanstress,
+                                           np.nan, np.nan, True, name)
         parameters.loc[name + '_a'] = (100, 1e-3, 1e4, True, name)
         parameters.loc[name + '_b'] = (1, 1e-6, 25, True, name)
         return parameters
@@ -430,7 +429,7 @@ class Hantush(RfuncBase):
         return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
 
     def gain(self, p):
-        return p[0] * k0(np.sqrt(4 * p[2]))
+        return p[0]
 
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
         cS = p[1]
@@ -446,7 +445,7 @@ class Hantush(RfuncBase):
             tau1 + rho ** 2 / (4 * tau1))
         F[tau >= rho / 2] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(
             tau2 + rho ** 2 / (4 * tau2))
-        return p[0] * F / 2
+        return p[0] * F / (2 * k0rho)
 
 
 class Polder(RfuncBase):
@@ -456,7 +455,7 @@ class Polder(RfuncBase):
     -----
     The Polder function is explained in [polder]_. The impulse response
     function may be written as:
-    
+
     .. math:: \\theta(t) = \\exp(-\\sqrt(4b)) \\frac{A}{t^{-3/2}}
        \\exp(-t/a -b/t)
     .. math:: p[0] = A = \\exp(-x/\\lambda)
@@ -696,9 +695,8 @@ class FourParam(RfuncBase):
                 # for interval [dt,tmax]:
                 func = self.function(t, p)
                 func_half = self.function(t[:-1] + step / 2, p)
-                s[1:] = s[0] + np.cumsum(step / 6 *
-                                         (func[:-1] + 4 * func_half + func[
-                                                                      1:]))
+                s[1:] = s[0] + np.cumsum(
+                    step / 6 * (func[:-1] + 4 * func_half + func[1:]))
                 s = s * (p[0] / quad(self.function, 0, np.inf, args=p)[0])
                 return s[int(dt / step - 1)::int(dt / step)]
             else:
@@ -714,9 +712,8 @@ class FourParam(RfuncBase):
                 # for interval [dt,tmax] Simpson integration:
                 func = self.function(t, p)
                 func_half = self.function(t[:-1] + dt / 2, p)
-                s[1:] = s[0] + np.cumsum(dt / 6 *
-                                         (func[:-1] + 4 * func_half + func[
-                                                                      1:]))
+                s[1:] = s[0] + np.cumsum(
+                    dt / 6 * (func[:-1] + 4 * func_half + func[1:]))
                 s = s * (p[0] / quad(self.function, 0, np.inf, args=p)[0])
                 return s
 
