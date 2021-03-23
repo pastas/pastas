@@ -310,10 +310,10 @@ class HantushWellModel(RfuncBase):
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
             parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
-                                           100 / self.meanstress, True, name)
+                                           np.nan, True, name)
         elif self.up is False:
             parameters.loc[name + '_A'] = (-1 / self.meanstress,
-                                           -100 / self.meanstress, 0, True,
+                                           np.nan, 0, True,
                                            name)
         else:
             parameters.loc[name + '_A'] = (1 / self.meanstress, np.nan,
