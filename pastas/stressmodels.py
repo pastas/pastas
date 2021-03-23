@@ -709,7 +709,7 @@ class WellModel(StressModelBase):
                  settings="well", sort_wells=True):
         if not issubclass(rfunc, HantushWellModel):
             raise NotImplementedError("WellModel only supports the rfunc "
-                                      "HantushWellModel fow now!")
+                                      "HantushWellModel!")
 
         logger.warning("It is recommended to use LmfitSolve as the solver "
                        "when implementing WellModel. See "
