@@ -280,23 +280,23 @@ class HantushWellModel(RfuncBase):
     [veling_2010]_ and [asmuth_2008]_. The impulse response function may be
     written as:
 
-    .. math:: \\theta(t) = \\frac{A}{t} \\exp(-t/a -b/t)
-    .. math:: p[0] = A # TBD \\frac{1}{4 \\pi kD}
+    .. math:: \\theta(t) = \\frac{A}{t} K_0 \\left( \\frac{r^2}{4 \\lambda^2} \\right) \\exp(-t/a - ab/t)
+    .. math:: p[0] = A = \\frac{1}{4 \\pi T}
     .. math:: p[1] = a = cS
     .. math:: p[2] = b = 1^2 / (4 \\lambda^2)
-    .. math:: p[3] = r \\text{(not optimized)}
-    where :math:`\\lambda = \\sqrt{kDc}`
+    .. math:: p[3] = r \, \\text{(not optimized)}
+    where :math:`\\lambda = \\sqrt{Tc}`
 
     The parameter r (distance from the well to the observation point)
     is passed as a known value, and is used to scale the response function.
     The optimized parameters are slightly different from the original
     Hantush implementation:
 
-    - A: the parameter is the same as the original Hantush, except that
-      the distance (r) is set to 1.0
-    - a = cS: stays the same
-    - b = 1 / (4 * lambda): r is used internally to scale with distance
-    - r: distance, not optimized but used to scale A and b
+    - A: in the original Hantush parameter A is the gain. Now the gain is
+      equal to :math:`\\text{gain} = A K_0 ( \\sqrt(4 r^2 b) )`
+    - a: is the same  :math:`a = cS`
+    - b: is the same, but :math:`r` is set to 1 if passed separately,
+      :math:`b = 1^2 / (4 \\lambda^2)`
 
     """
     _name = "HantushWellModel"
