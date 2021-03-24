@@ -819,8 +819,8 @@ class WellModel(StressModelBase):
         if isinstance(stress, Series):
             data.append(TimeSeries(stress, settings=settings))
         elif isinstance(stress, dict):
-            for i, value in enumerate(stress.values()):
-                data.append(TimeSeries(value, settings=settings[i]))
+            for i, (name, value) in enumerate(stress.items()):
+                data.append(TimeSeries(value, name=name, settings=settings[i]))
         elif isinstance(stress, list):
             for i, value in enumerate(stress):
                 data.append(TimeSeries(value, settings=settings[i]))
