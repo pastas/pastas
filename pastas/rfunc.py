@@ -6,8 +6,8 @@
 import numpy as np
 from pandas import DataFrame
 from scipy.integrate import quad
-from scipy.special import gammainc, gammaincinv, k0, exp1, erfc, lambertw, \
-    erfcinv
+from scipy.special import (gammainc, gammaincinv, k0, k1,
+                           exp1, erfc, lambertw, erfcinv)
 
 __all__ = ["Gamma", "Exponential", "Hantush", "Polder", "FourParam",
            "DoubleExponential", "One", "Edelman", "HantushWellModel"]
@@ -354,6 +354,44 @@ class HantushWellModel(RfuncBase):
         F[tau >= rho / 2] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(
             tau2 + rho ** 2 / (4 * tau2))
         return p[0] * F / 2
+
+    @staticmethod
+    def variance_gain(A, b, var_A, var_b, cov_Ab):
+        """Calculate variance of the gain from parameters A and b.
+
+        Variance of the gain is calculated based on propagation of
+        uncertainty using optimal values and the variances of A and b
+        and the covariance between A and b.
+
+        Parameters
+        ----------
+        A : float
+            optimal value of parameter A
+        b : float
+            optimal value of parameter b
+        var_A : float
+            variance of parameter A, can be obtained from the diagonal of
+            the covariance matrix (e.g. ml.fit.pcov)
+        var_b : float
+            variance of parameter A, can be obtained from the diagonal of
+            the covariance matrix (e.g. ml.fit.pcov)
+        cov_Ab : float
+            covariance between A and b, can be obtained from the covariance
+            matrix (e.g. ml.fit.pcov)
+
+        Returns
+        -------
+        var_gain : float
+            variance of the gain calculated based on propagation of
+            uncertainty from parameters A and b.
+        """
+        var_gain = (
+            (k0(2 * np.sqrt(b)))**2 * var_A +
+            (-A * k1(2 * np.sqrt(b)) / np.sqrt(b))**2 * var_b -
+            2 * A * k0(2 * np.sqrt(b)) *
+            k1(2 * np.sqrt(b)) / np.sqrt(b) * cov_Ab
+        )
+        return var_gain
 
 
 class Hantush(RfuncBase):

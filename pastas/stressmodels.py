@@ -889,6 +889,42 @@ class WellModel(StressModelBase):
             p_with_r = np.r_[p, distances]
         return p_with_r
 
+    def variance_gain(self, ml):
+        """Calculate variance of the gain given an optimized model.
+
+        Variance of the gain is calculated based on propagation of
+        uncertainty using optimal values and the variances of A and b
+        and the covariance between A and b.
+
+        Parameters
+        ----------
+        ml : pastas.Model
+            optimized parent model
+
+        Returns
+        -------
+        var_gain : float
+            variance of the gain calculated from model results
+            for parameters A and b
+
+        See Also
+        --------
+        pastas.HantushWellModel.variance_gain
+
+        """
+        if ml.fit is None:
+            raise AttributeError("Model not optimized! Run solve() first!")
+        if self.rfunc._name != "HantushWellModel":
+            raise ValueError("Response function must be HantushWellModel!")
+        # get parameters
+        A = ml.parameters.loc[self.name + "_A", "optimal"]
+        b = ml.parameters.loc[self.name + "_b", "optimal"]
+        var_A = ml.fit.pcov.loc[self.name + "_A", self.name + "_A"]
+        var_b = ml.fit.pcov.loc[self.name + "_b", self.name + "_b"]
+        covar_Ab = ml.fit.pcov.loc[self.name + "_A", self.name + "_b"]
+        
+        return self.rfunc.variance_gain(A, b, var_A, var_b, covar_Ab)
+
     def to_dict(self, series=True):
         """Method to export the WellModel object.
 
