@@ -5,7 +5,8 @@ on:
   # and also on dev branch
   push:
     branches:
-      - githubci
+      - master
+      - dev
   pull_request:
     branches:
       - master
@@ -30,8 +31,6 @@ jobs:
           if [ -f requirements.ci.txt ]; then pip install -r requirements.ci.txt; fi
           pip install codecov
           pip install pytest-cov
-          pip install pytest-dependency
-          pip install pytest-benchmark
           pip install codacy-coverage
           pip install -e .
       - name: Lint with flake8
