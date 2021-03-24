@@ -15,8 +15,7 @@ or
 
 from logging import getLogger
 
-from numpy import nan, abs, average
-from math import sqrt, log
+from numpy import nan, abs, average, log, sqrt
 
 from pastas.stats.core import mean, var, std, _get_weights
 
