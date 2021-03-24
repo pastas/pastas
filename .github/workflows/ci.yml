@@ -29,8 +29,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 pytest
           if [ -f requirements.ci.txt ]; then pip install -r requirements.ci.txt; fi
+          pip install flake8 pytest
           pip install codecov
           pip install pytest-cov
           pip install codacy-coverage
@@ -44,13 +44,14 @@ jobs:
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=80 --statistics
       
       - name: Run tests
+        if: ${{ github.event_name == 'pull_request' }}
         run: |
           py.test ./tests -m "not notebooks"
       
-      - name: Run notebooks
+      - name: Run all tests
         if: ${{ github.event_name == 'push' }}
         run: |
-          py.test ./tests -m "notebooks"
+          py.test ./tests -m
       
       - name: Run codacy-coverage-reporter
         uses: codacy/codacy-coverage-reporter-action@master
