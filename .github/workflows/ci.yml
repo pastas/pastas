@@ -51,7 +51,7 @@ jobs:
       - name: Run all tests
         if: ${{ github.event_name == 'push' }}
         run: |
-          py.test ./tests -m
+          py.test ./tests
       
       - name: Run codacy-coverage-reporter
         uses: codacy/codacy-coverage-reporter-action@master
