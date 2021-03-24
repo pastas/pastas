@@ -48,7 +48,7 @@ jobs:
           py.test ./tests -m "not notebooks"
       
       - name: Run notebooks
-        if: github.event_name == "push"
+        if: ${{github.event_name == "push"}}
         run: |
           py.test ./tests -m "notebooks"
       
