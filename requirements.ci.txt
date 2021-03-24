@@ -8,6 +8,6 @@ scipy>=1.1
 
 jupyter>=1.0.0
 
-numba
+numba=>0.46
 
 lmfit>=1.0.0
