@@ -21,6 +21,7 @@ from logging import getLogger
 import numpy as np
 from pandas import date_range, Series, Timedelta, DataFrame, concat, Timestamp
 from scipy.signal import fftconvolve
+from scipy.special import k0
 
 from .decorators import set_parameter, njit, PastasDeprecationWarning
 from .recharge import Linear
@@ -770,7 +771,7 @@ class WellModel(StressModelBase):
         # set initial value A
         # divide by k0(2) to get same initial value as ps.Hantush
         self.parameters.loc[self.name + "_A", "initial"] /= \
-            0.1138938727495334
+            k0(2)
 
     def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1,
                  istress=None, **kwargs):
