@@ -889,7 +889,7 @@ class WellModel(StressModelBase):
             p_with_r = np.r_[p, distances]
         return p_with_r
 
-    def variance_gain(self, ml):
+    def variance_gain(self, ml, istress=None):
         """Calculate variance of the gain given an optimized model.
 
         Variance of the gain is calculated based on propagation of
@@ -900,6 +900,8 @@ class WellModel(StressModelBase):
         ----------
         ml : pastas.Model
             optimized parent model
+        istress : int or list of int, optional
+            index of stress to calculate variance of gain for
 
         Returns
         -------
@@ -916,14 +918,22 @@ class WellModel(StressModelBase):
             raise AttributeError("Model not optimized! Run solve() first!")
         if self.rfunc._name != "HantushWellModel":
             raise ValueError("Response function must be HantushWellModel!")
-        # get parameters
+        
+        # get parameters and (co)variances
         A = ml.parameters.loc[self.name + "_A", "optimal"]
         b = ml.parameters.loc[self.name + "_b", "optimal"]
         var_A = ml.fit.pcov.loc[self.name + "_A", self.name + "_A"]
         var_b = ml.fit.pcov.loc[self.name + "_b", self.name + "_b"]
-        covar_Ab = ml.fit.pcov.loc[self.name + "_A", self.name + "_b"]
+        cov_Ab = ml.fit.pcov.loc[self.name + "_A", self.name + "_b"]
         
-        return self.rfunc.variance_gain(A, b, var_A, var_b, covar_Ab)
+        if istress is None:
+            r = np.asarray(self.distances)
+        elif isinstance(istress, int) or isinstance(istress, list):
+            r = self.distances[istress]
+        else:
+            raise ValueError("Parameter 'istress' must be None, list or int!")
+
+        return self.rfunc.variance_gain(A, b, var_A, var_b, cov_Ab, r=r)
 
     def to_dict(self, series=True):
         """Method to export the WellModel object.

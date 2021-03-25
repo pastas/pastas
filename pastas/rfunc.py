@@ -356,7 +356,7 @@ class HantushWellModel(RfuncBase):
         return p[0] * F / 2
 
     @staticmethod
-    def variance_gain(A, b, var_A, var_b, cov_Ab):
+    def variance_gain(A, b, var_A, var_b, cov_Ab, r=1.0):
         """Calculate variance of the gain from parameters A and b.
 
         Variance of the gain is calculated based on propagation of
@@ -366,9 +366,9 @@ class HantushWellModel(RfuncBase):
         Parameters
         ----------
         A : float
-            optimal value of parameter A
+            optimal value of parameter A, (e.g. ml.parameters.optimal)
         b : float
-            optimal value of parameter b
+            optimal value of parameter b, (e.g. ml.parameters.optimal)
         var_A : float
             variance of parameter A, can be obtained from the diagonal of
             the covariance matrix (e.g. ml.fit.pcov)
@@ -378,18 +378,21 @@ class HantushWellModel(RfuncBase):
         cov_Ab : float
             covariance between A and b, can be obtained from the covariance
             matrix (e.g. ml.fit.pcov)
+        r : float or np.array, optional
+            distance(s) between observation well and stress(es), 
+            default value is 1.0
 
         Returns
         -------
-        var_gain : float
+        var_gain : float or np.array
             variance of the gain calculated based on propagation of
-            uncertainty from parameters A and b.
+            uncertainty of parameters A and b.
         """
         var_gain = (
-            (k0(2 * np.sqrt(b)))**2 * var_A +
-            (-A * k1(2 * np.sqrt(b)) / np.sqrt(b))**2 * var_b -
-            2 * A * k0(2 * np.sqrt(b)) *
-            k1(2 * np.sqrt(b)) / np.sqrt(b) * cov_Ab
+            (k0(2 * np.sqrt(r**2 * b)))**2 * var_A +
+            (-A * r * k1(2 * np.sqrt(r**2 * b)) / np.sqrt(b))**2 * var_b -
+            2 * A * r * k0(2 * np.sqrt(r**2 * b)) *
+            k1(2 * np.sqrt(r**2 * b)) / np.sqrt(b) * cov_Ab
         )
         return var_gain
 
@@ -466,7 +469,8 @@ class Hantush(RfuncBase):
         k0rho = k0(rho)
         return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
 
-    def gain(self, p):
+    @staticmethod
+    def gain(p):
         return p[0]
 
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
