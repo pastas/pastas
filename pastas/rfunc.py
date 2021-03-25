@@ -379,7 +379,7 @@ class HantushWellModel(RfuncBase):
             covariance between A and b, can be obtained from the covariance
             matrix (e.g. ml.fit.pcov)
         r : float or np.array, optional
-            distance(s) between observation well and stress(es), 
+            distance(s) between observation well and stress(es),
             default value is 1.0
 
         Returns

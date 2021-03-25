@@ -918,14 +918,14 @@ class WellModel(StressModelBase):
             raise AttributeError("Model not optimized! Run solve() first!")
         if self.rfunc._name != "HantushWellModel":
             raise ValueError("Response function must be HantushWellModel!")
-        
+
         # get parameters and (co)variances
         A = ml.parameters.loc[self.name + "_A", "optimal"]
         b = ml.parameters.loc[self.name + "_b", "optimal"]
         var_A = ml.fit.pcov.loc[self.name + "_A", self.name + "_A"]
         var_b = ml.fit.pcov.loc[self.name + "_b", self.name + "_b"]
         cov_Ab = ml.fit.pcov.loc[self.name + "_A", self.name + "_b"]
-        
+
         if istress is None:
             r = np.asarray(self.distances)
         elif isinstance(istress, int) or isinstance(istress, list):
