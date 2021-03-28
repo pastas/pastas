@@ -60,13 +60,16 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return msg
 
     @model_tmin_tmax
-    def rmse(self, tmin=None, tmax=None, weighted=False):
+    def rmse(self, tmin=None, tmax=None, weighted=False, **kwargs):
         """Root mean squared error of the residuals.
 
         Parameters
         ----------
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
+        weighted: bool, optional
+            If weighted is True, the variances are computed using the time
+            step between observations as weights. Default is False.
 
         See Also
         --------
@@ -74,16 +77,19 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         """
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
-        return metrics.rmse(res=res, weighted=weighted)
+        return metrics.rmse(res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
-    def rmsn(self, tmin=None, tmax=None, weighted=False):
+    def rmsn(self, tmin=None, tmax=None, weighted=False, **kwargs):
         """Root mean squared error of the noise.
 
         Parameters
         ----------
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
+        weighted: bool, optional
+            If weighted is True, the variances are computed using the time
+            step between observations as weights. Default is False.
 
         Returns
         -------
@@ -99,7 +105,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
             return nan
         else:
             res = self.ml.noise(tmin=tmin, tmax=tmax)
-            return metrics.rmse(res=res, weighted=weighted)
+            return metrics.rmse(res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
     def sse(self, tmin=None, tmax=None):
@@ -119,13 +125,16 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return metrics.sse(res=res)
 
     @model_tmin_tmax
-    def mae(self, tmin=None, tmax=None, weighted=False):
+    def mae(self, tmin=None, tmax=None, weighted=False, **kwargs):
         """Mean Absolute Error (MAE) of the residuals.
 
         Parameters
         ----------
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
+        weighted: bool, optional
+            If weighted is True, the variances are computed using the time
+            step between observations as weights. Default is False.
 
         See Also
         --------
@@ -133,16 +142,19 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         """
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
-        return metrics.mae(res=res, weighted=weighted)
+        return metrics.mae(res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
-    def nse(self, tmin=None, tmax=None, weighted=False):
+    def nse(self, tmin=None, tmax=None, weighted=False, **kwargs):
         """Nash-Sutcliffe coefficient for model fit .
 
         Parameters
         ----------
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
+        weighted: bool, optional
+            If weighted is True, the variances are computed using the time
+            step between observations as weights. Default is False.
 
         See Also
         --------
@@ -151,16 +163,19 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return metrics.nse(obs=obs, res=res, weighted=weighted)
+        return metrics.nse(obs=obs, res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
-    def pearsonr(self, tmin=None, tmax=None, weighted=False):
+    def pearsonr(self, tmin=None, tmax=None, weighted=False, **kwargs):
         """Compute the (weighted) Pearson correlation (r).
 
         Parameters
         ----------
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
+        weighted: bool, optional
+            If weighted is True, the variances are computed using the time
+            step between observations as weights. Default is False.
 
         See Also
         --------
@@ -169,16 +184,19 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
-        return metrics.pearsonr(obs=obs, sim=sim, weighted=weighted)
+        return metrics.pearsonr(obs=obs, sim=sim, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
-    def evp(self, tmin=None, tmax=None, weighted=False):
+    def evp(self, tmin=None, tmax=None, weighted=False, **kwargs):
         """Explained variance percentage.
 
         Parameters
         ----------
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
+        weighted: bool, optional
+            If weighted is True, the variances are computed using the time
+            step between observations as weights. Default is False.
 
         See Also
         --------
@@ -187,16 +205,19 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return metrics.evp(obs=obs, res=res, weighted=weighted)
+        return metrics.evp(obs=obs, res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
-    def rsq(self, tmin=None, tmax=None):
+    def rsq(self, tmin=None, tmax=None, weighted=False):
         """R-squared.
 
         Parameters
         ----------
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
+        weighted: bool, optional
+            If weighted is True, the variances are computed using the time
+            step between observations as weights. Default is False.
 
         See Also
         --------
@@ -205,16 +226,19 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
-        return metrics.rsq(obs=obs, res=res)
+        return metrics.rsq(obs=obs, res=res, weighted=weighted)
 
     @model_tmin_tmax
-    def kge_2012(self, tmin=None, tmax=None, **kwargs):
+    def kge_2012(self, tmin=None, tmax=None, weighted=False, **kwargs):
         """Kling-Gupta Efficiency.
 
         Parameters
         ----------
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
+        weighted: bool, optional
+            If weighted is True, the variances are computed using the time
+            step between observations as weights. Default is False.
 
         See Also
         --------
@@ -223,7 +247,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return metrics.kge_2012(obs=obs, sim=sim, **kwargs)
+        return metrics.kge_2012(obs=obs, sim=sim, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
     def bic(self, tmin=None, tmax=None):
@@ -240,8 +264,11 @@ included in Pastas. To obtain a list of all statistics that are included type:
         pastas.stats.bic
 
         """
-        nparam = self.ml.parameters.index.size
-        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        nparam = self.ml.parameters["vary"].sum()
+        if self.ml.settings["noise"]:
+            res = self.ml.noise(tmin=tmin, tmax=tmax)
+        else:
+            res = self.ml.residuals(tmin=tmin, tmax=tmax)
         return metrics.bic(res=res, nparam=nparam)
 
     @model_tmin_tmax
@@ -255,11 +282,14 @@ included in Pastas. To obtain a list of all statistics that are included type:
 
         See Also
         --------
-        pastas.stats.rsq
+        pastas.stats.bic
 
         """
-        nparam = self.ml.parameters.index.size
-        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        nparam = self.ml.parameters["vary"].sum()
+        if self.ml.settings["noise"]:
+            res = self.ml.noise(tmin=tmin, tmax=tmax)
+        else:
+            res = self.ml.residuals(tmin=tmin, tmax=tmax)
         return metrics.aic(res=res, nparam=nparam)
 
     @model_tmin_tmax

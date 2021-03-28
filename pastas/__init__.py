@@ -16,6 +16,7 @@ from .timeseries import TimeSeries
 from .transform import ThresholdTransform
 from .utils import initialize_logger, set_log_level, show_versions
 from .version import __version__
+from .rcparams import rcParams
 
 logger = logging.getLogger(__name__)
 initialize_logger(logger)

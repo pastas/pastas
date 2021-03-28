@@ -6,7 +6,7 @@ hydrological time series.
 """
 
 from numpy import inf, exp, sqrt, pi, empty_like, corrcoef, arange, nan, \
-    ones, array
+    ones, array, diff, append, average
 from pandas import Timedelta, DataFrame, TimedeltaIndex
 from scipy.stats import norm
 
@@ -270,7 +270,7 @@ def _compute_ccf_regular(lags, x, y):
     return c, b
 
 
-def mean(x, weighted=True, max_gap=90):
+def mean(x, weighted=True, max_gap=30):
     """Method to compute the (weighted) mean of a time series.
 
     Parameters
@@ -295,19 +295,11 @@ def mean(x, weighted=True, max_gap=90):
     observations, normalized by the sum of all time steps.
 
     """
-    if weighted:
-        w = (x.index[1:] - x.index[0:-1]).to_numpy() / Timedelta("1D")
-        w[w > max_gap] = w[w <= max_gap].mean()
-    else:
-        w = ones(x.index.size - 1)
-
-    w /= w.sum()
-
-    mu = (x.iloc[1:] * w).sum() / w.sum()
-    return mu
+    w = _get_weights(x, weighted=weighted, max_gap=max_gap)
+    return average(x.to_numpy(), weights=w)
 
 
-def var(x, weighted=True, max_gap=90):
+def var(x, weighted=True, max_gap=30):
     """Method to compute the (weighted) variance of a time series.
 
     Parameters
@@ -333,20 +325,13 @@ def var(x, weighted=True, max_gap=90):
     weighted mean (:math:`\\bar{x}`) is used in this formula.
 
     """
-    if weighted:
-        w = (x.index[1:] - x.index[0:-1]).to_numpy() / Timedelta("1D")
-        w[w > max_gap] = w[w <= max_gap].mean()
-    else:
-        w = ones(x.index.size - 1)
-
-    w /= w.sum()
-    mu = mean(x, weighted=weighted, max_gap=max_gap)
-    sigma = (w.size / (w.size - 1) * w * (x.iloc[1:] - mu) ** 2).sum()
-
+    w = _get_weights(x, weighted=weighted, max_gap=max_gap)
+    mu = average(x.to_numpy(), weights=w)
+    sigma = (x.size / (x.size - 1) * w * (x.to_numpy() - mu) ** 2).sum()
     return sigma
 
 
-def std(x, weighted=True, max_gap=90):
+def std(x, weighted=True, max_gap=30):
     """Method to compute the (weighted) variance of a time series.
 
     Parameters
@@ -367,3 +352,29 @@ def std(x, weighted=True, max_gap=90):
 
     """
     return sqrt(var(x, weighted=weighted, max_gap=max_gap))
+
+
+# Helper functions
+
+def _get_weights(x, weighted, max_gap=30):
+    """Helper method to compute the weights as the time step between obs.
+
+    Parameters
+    ----------
+    x: pandas.Series
+        Series with the values and a DatetimeIndex as an index.
+    weighted: bool, optional
+        Weight the values by the normalized time step to account for
+        irregular time series.
+    max_gap: int, optional
+        maximum allowed gap period in days to use for the computation of the
+        weights. All time steps larger than max_gap are replace with the
+        mean weight. Default value is 30 days.
+    """
+    if weighted:
+        w = append(0.0, diff(x.index.to_numpy()) / Timedelta("1D"))
+        w[w > max_gap] = max_gap
+    else:
+        w = ones(x.index.size)
+    w /= w.sum()
+    return w

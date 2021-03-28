@@ -252,8 +252,8 @@ def runs_test(series, cutoff="median"):
     elif isinstance(cutoff, float):
         pass
     else:
-        raise NotImplementedError("Cutoff criterion {} is not "
-                                  "implemented".format(cutoff))
+        raise NotImplementedError(f"Cutoff criterion {cutoff} is not "
+                                  f"implemented.")
 
     r[r > cutoff] = 1
     r[r < cutoff] = 0
@@ -591,10 +591,12 @@ def plot_diagnostics(series, alpha=0.05, bins=50, acf_options=None,
     series.plot(ax=ax)
     ax.set_ylabel(series.name)
     ax.set_xlim(series.index.min(), series.index.max())
-    ax.set_title("{} (n={:.0f}, $\\mu$={:.2f})".format(series.name,
-                                                       series.size,
-                                                       series.mean()))
+    ax.set_title(f"{series.name} (n={series.size :.0f}, $\\mu$"
+                 f"={series.mean() :.2f})")
     ax.grid()
+    ax.tick_params(axis='x', labelrotation=0)
+    for label in ax.get_xticklabels():
+        label.set_horizontalalignment('center')
 
     # Plot the autocorrelation
     plot_acf(series, alpha=alpha, acf_options=acf_options, ax=ax1)
@@ -613,8 +615,6 @@ def plot_diagnostics(series, alpha=0.05, bins=50, acf_options=None,
     ax3.get_lines()[1].set_color("k")
 
     plt.tight_layout()
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=0, ha="center")
-
     return fig.axes
 
 
