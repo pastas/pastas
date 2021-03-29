@@ -755,7 +755,7 @@ def compare(models, tmin=None, tmax=None, figsize=(10, 8),
     # get second model
     for j, iml in enumerate(models[1:], start=2):
         sim = iml.simulate(tmin=tmin, tmax=tmax)
-        sim.name = '{} ($R^2$ = {:0.1f}%)'.format(
+        sim.name = '{} ($R^2$ = {:0.2f}%)'.format(
             sim.name, iml.stats.evp(tmin=tmin, tmax=tmax))
         p, = ax_ml.plot(sim.index, sim, label=sim.name)
         color = p.get_color()
