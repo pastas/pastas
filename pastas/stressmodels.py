@@ -745,7 +745,8 @@ class WellModel(StressModelBase):
                                     name="distances")
 
         meanstress = np.max([s.series.std() for s in stress])
-        rfunc = rfunc(up=up, cutoff=cutoff, meanstress=meanstress)
+        rfunc = rfunc(up=up, cutoff=cutoff, meanstress=meanstress,
+                      distances=self.distances.values)
 
         tmin = np.min([s.series.index.min() for s in stress])
         tmax = np.max([s.series.index.max() for s in stress])
@@ -759,19 +760,6 @@ class WellModel(StressModelBase):
 
     def set_init_parameters(self):
         self.parameters = self.rfunc.get_init_parameters(self.name)
-        # ensure lambda can't get too small or too large
-        self.parameters.loc[self.name + "_b", "pmax"] /= \
-            np.max(self.distances) ** 2
-        self.parameters.loc[self.name + "_b", "pmin"] /= \
-            np.max(self.distances) ** 2
-        # set initial value b with mean distance,
-        # filling in mean distance as r will yield 1 as initial value
-        self.parameters.loc[self.name + "_b", "initial"] /= \
-            np.mean(self.distances) ** 2
-        # set initial value A
-        # divide by k0(2) to get same initial value as ps.Hantush
-        self.parameters.loc[self.name + "_A", "initial"] /= \
-            k0(2)
 
     def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1,
                  istress=None, **kwargs):
@@ -888,52 +876,6 @@ class WellModel(StressModelBase):
         else:
             p_with_r = np.r_[p, distances]
         return p_with_r
-
-    def variance_gain(self, ml, istress=None):
-        """Calculate variance of the gain given an optimized model.
-
-        Variance of the gain is calculated based on propagation of
-        uncertainty using optimal values and the variances of A and b
-        and the covariance between A and b.
-
-        Parameters
-        ----------
-        ml : pastas.Model
-            optimized parent model
-        istress : int or list of int, optional
-            index of stress to calculate variance of gain for
-
-        Returns
-        -------
-        var_gain : float
-            variance of the gain calculated from model results
-            for parameters A and b
-
-        See Also
-        --------
-        pastas.HantushWellModel.variance_gain
-
-        """
-        if ml.fit is None:
-            raise AttributeError("Model not optimized! Run solve() first!")
-        if self.rfunc._name != "HantushWellModel":
-            raise ValueError("Response function must be HantushWellModel!")
-
-        # get parameters and (co)variances
-        A = ml.parameters.loc[self.name + "_A", "optimal"]
-        b = ml.parameters.loc[self.name + "_b", "optimal"]
-        var_A = ml.fit.pcov.loc[self.name + "_A", self.name + "_A"]
-        var_b = ml.fit.pcov.loc[self.name + "_b", self.name + "_b"]
-        cov_Ab = ml.fit.pcov.loc[self.name + "_A", self.name + "_b"]
-
-        if istress is None:
-            r = np.asarray(self.distances)
-        elif isinstance(istress, int) or isinstance(istress, list):
-            r = self.distances[istress]
-        else:
-            raise ValueError("Parameter 'istress' must be None, list or int!")
-
-        return self.rfunc.variance_gain(A, b, var_A, var_b, cov_Ab, r=r)
 
     def to_dict(self, series=True):
         """Method to export the WellModel object.
