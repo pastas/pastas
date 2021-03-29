@@ -301,25 +301,31 @@ class HantushWellModel(RfuncBase):
     """
     _name = "HantushWellModel"
 
-    def __init__(self, up=False, meanstress=1, cutoff=0.999):
+    def __init__(self, up=False, meanstress=1, cutoff=0.999, distances=1.0):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 3
+        self.distances = distances
 
     def get_init_parameters(self, name):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
-            parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
-                                           np.nan, True, name)
+            # divide by k0(2) to get same initial value as ps.Hantush
+            parameters.loc[name + '_A'] = (1 / (self.meanstress * k0(2)),
+                                           0, np.nan, True, name)
         elif self.up is False:
-            parameters.loc[name + '_A'] = (-1 / self.meanstress,
-                                           np.nan, 0, True,
-                                           name)
+            # divide by k0(2) to get same initial value as ps.Hantush
+            parameters.loc[name + '_A'] = (-1 / (self.meanstress * k0(2)),
+                                           np.nan, 0, True, name)
         else:
             parameters.loc[name + '_A'] = (1 / self.meanstress, np.nan,
                                            np.nan, True, name)
         parameters.loc[name + '_a'] = (100, 1e-3, 1e4, True, name)
-        parameters.loc[name + '_b'] = (1, 1e-4, 25, True, name)
+        # set initial and bounds for b taking into account distances
+        binit = 1.0 / np.mean(self.distances)**2
+        bmin = 1e-4 / np.max(self.distances)**2
+        bmax = 25. / np.max(self.distances)**2
+        parameters.loc[name + '_b'] = (binit, bmin, bmax, True, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):
@@ -730,9 +736,9 @@ class FourParam(RfuncBase):
 
                 # for interval [0,dt] :
                 s[0] = (step / 2) * \
-                       (w1 * self.function((step / 2) * t1 + (step / 2), p) +
-                        w2 * self.function((step / 2) * t2 + (step / 2), p) +
-                        w3 * self.function((step / 2) * t3 + (step / 2), p))
+                    (w1 * self.function((step / 2) * t1 + (step / 2), p) +
+                     w2 * self.function((step / 2) * t2 + (step / 2), p) +
+                     w3 * self.function((step / 2) * t3 + (step / 2), p))
 
                 # for interval [dt,tmax]:
                 func = self.function(t, p)
@@ -747,9 +753,9 @@ class FourParam(RfuncBase):
 
                 # for interval [0,dt] Gaussian quadrate:
                 s[0] = (dt / 2) * \
-                       (w1 * self.function((dt / 2) * t1 + (dt / 2), p) +
-                        w2 * self.function((dt / 2) * t2 + (dt / 2), p) +
-                        w3 * self.function((dt / 2) * t3 + (dt / 2), p))
+                    (w1 * self.function((dt / 2) * t1 + (dt / 2), p) +
+                     w2 * self.function((dt / 2) * t2 + (dt / 2), p) +
+                     w3 * self.function((dt / 2) * t3 + (dt / 2), p))
 
                 # for interval [dt,tmax] Simpson integration:
                 func = self.function(t, p)
