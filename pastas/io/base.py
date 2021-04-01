@@ -2,12 +2,11 @@
 Import model
 """
 
-from gc import collect
 from importlib import import_module
 from logging import getLogger
 from os import path
 
-from pandas import DataFrame, to_numeric
+from pandas import to_numeric
 
 import pastas as ps
 
@@ -38,111 +37,31 @@ def load(fname, **kwargs):
 
     """
     if not path.exists(fname):
-        msg = "File not found: {}".format(fname)
-        logger.error(msg)
+        logger.error("File not found: %s", fname)
 
     # Dynamic import of the export module
-    ext = path.splitext(fname)[1]
-    load_mod = import_module("pastas.io" + ext)
+    load_mod = import_module(f"pastas.io{path.splitext(fname)[1]}")
 
     # Get dicts for all data sources
     data = load_mod.load(fname, **kwargs)
 
-    # Determine whether it is a Pastas Project or a Pastas Model
-    if "models" in data.keys():
-        msg = "Deprecation Warning: the possibility to load a Pastas project" \
-              "with this method is deprecated. Please use ps.io.load_project."
-        logger.error(msg)
-        raise DeprecationWarning(msg)
-
     ml = _load_model(data)
 
-    logger.info("Pastas Model from file {} successfully loaded. This file "
-                "was created with Pastas {}. Your current version of Pastas "
-                "is: {}".format(fname, data["file_info"]["pastas_version"],
-                                ps.__version__))
+    logger.info("Pastas Model from file %s successfully loaded. This file "
+                "was created with Pastas %s. Your current version of Pastas "
+                "is: %s", fname, data["file_info"]["pastas_version"],
+                ps.__version__)
     return ml
 
 
 def load_project(fname, **kwargs):
     """
-    Method to load a Pastas project.
-
-    Parameters
-    ----------
-    fname: str
-        string with the name of the file to be imported including the file
-        extension.
-    kwargs:
-        extension specific keyword arguments.
-
-    Returns
-    -------
-    mls: pastas.project.Project
-        Pastas Project class object
-
-    Examples
-    --------
-    >>> import pastas as ps
-    >>> mls = ps.io.load_project("project.pas")
-
-    Warnings
-    --------
-    All classes and methods dealing with Pastas projects will be moved to a
-    separate Python package in the near future (mid-2020).
-
+    Method to load a Pastas project. (Deprecated)
     """
-    # Dynamic import of the export module
-    ext = path.splitext(fname)[1]
-    load_mod = import_module("pastas.io" + ext)
-
-    # Get dicts for all data sources
-    data = load_mod.load(fname, **kwargs)
-
-    mls = ps.Project(name=data["name"])
-
-    mls.metadata = data["metadata"]
-    mls.file_info = data["file_info"]
-
-    oseries = DataFrame(data["oseries"], columns=data["oseries"].keys()).T
-    mls.oseries = mls.oseries.append(oseries, sort=False)
-
-    stresses = DataFrame(data=data["stresses"],
-                         columns=data["stresses"].keys()).T
-    mls.stresses = mls.stresses.append(stresses, sort=False)
-
-    for ml_name, ml in data["models"].items():
-        name = str(ml["oseries"]["name"])
-        ml_name = str(ml_name)
-        ml["oseries"]["series"] = mls.oseries.loc[name, "series"]
-        if ml["stressmodels"]:
-            for ts in ml["stressmodels"].values():
-                for stress in ts["stress"]:
-                    if 'series' not in stress:
-                        # look up the stress-series in mls.stresses
-                        stress_name = stress["name"]
-                        if stress_name not in mls.stresses.index:
-                            raise (ValueError(
-                                '{} not found in stresses'.format(
-                                    stress_name)))
-                        stress["series"] = mls.stresses.loc[
-                            stress_name, "series"]
-        try:
-            ml = _load_model(ml)
-            mls.models[ml_name] = ml
-        except:
-            try:
-                mls.del_model(ml_name)
-            except:
-                pass
-            print("model", ml_name, "could not be added")
-
-    logger.info("Pastas project from file {} successfully loaded. This file "
-                "was created with Pastas {}. Your current version of Pastas "
-                "is: {}".format(fname, data["file_info"]["pastas_version"],
-                                ps.__version__))
-
-    return mls
+    msg = "Deprecation Warning: the possibility to load a Pastas project" \
+          " with this method is deprecated. Please use the Pastastore " \
+          "(https://github.com/pastas/pastastore). "
+    logger.error(msg)
 
 
 def _load_model(data):
@@ -228,8 +147,6 @@ def _load_model(data):
     # When initial values changed
     for param, value in ml.parameters.loc[:, "initial"].iteritems():
         ml.set_parameter(name=param, initial=value)
-
-    collect()
 
     return ml
 

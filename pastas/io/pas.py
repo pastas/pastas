@@ -5,7 +5,7 @@ Import a .pas file (basically a json format)
 R.A. Collenteur - August 2017
 
 """
-
+from logging import getLogger
 import json
 from collections import OrderedDict
 
@@ -13,6 +13,8 @@ from pandas import Series, Timedelta, DataFrame, read_json, Timestamp, \
     to_numeric, isna
 
 from pastas import TimeSeries
+
+logger = getLogger(__name__)
 
 
 def load(fname):
@@ -55,10 +57,9 @@ def pastas_hook(obj):
     return obj
 
 
-def dump(fname, data, verbose=True):
+def dump(fname, data):
     json.dump(data, open(fname, 'w'), indent=4, cls=PastasEncoder)
-    if verbose:
-        return print("%s file successfully exported" % fname)
+    logger.info("%s file successfully exported", fname)
 
 
 class PastasEncoder(json.JSONEncoder):
