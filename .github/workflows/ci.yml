@@ -46,12 +46,12 @@ jobs:
       - name: Run tests
         if: ${{ github.event_name == 'pull_request' }}
         run: |
-          py.test ./tests -m "not notebooks"
+          py.test ./tests
       
       - name: Run all tests
         if: ${{ github.event_name == 'push' }}
         run: |
-          py.test ./tests
+          py.test ./tests -m "not notebooks"
       
       - name: Run codacy-coverage-reporter
         uses: codacy/codacy-coverage-reporter-action@master
