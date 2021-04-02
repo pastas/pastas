@@ -21,7 +21,6 @@ from logging import getLogger
 import numpy as np
 from pandas import date_range, Series, Timedelta, DataFrame, concat, Timestamp
 from scipy.signal import fftconvolve
-from scipy.special import k0
 
 from .decorators import set_parameter, njit, PastasDeprecationWarning
 from .recharge import Linear

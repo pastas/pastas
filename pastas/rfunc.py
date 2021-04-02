@@ -85,7 +85,7 @@ class RfuncBase:
         pass
 
     def block(self, p, dt=1, cutoff=None, maxtmax=None):
-        """Method to return the block funtion.
+        """Method to return the block function.
 
         Parameters
         ----------
@@ -108,8 +108,8 @@ class RfuncBase:
         return np.append(s[0], np.subtract(s[1:], s[:-1]))
 
     def get_t(self, p, dt, cutoff, maxtmax=None):
-        """Internal method to detemine the times at which to evaluate the step-
-        response, from t=0
+        """Internal method to determine the times at which to evaluate the
+        step-response, from t=0
 
         Parameters
         ----------
@@ -322,9 +322,9 @@ class HantushWellModel(RfuncBase):
                                            np.nan, True, name)
         parameters.loc[name + '_a'] = (100, 1e-3, 1e4, True, name)
         # set initial and bounds for b taking into account distances
-        binit = 1.0 / np.mean(self.distances)**2
-        bmin = 1e-4 / np.max(self.distances)**2
-        bmax = 25. / np.max(self.distances)**2
+        binit = 1.0 / np.mean(self.distances) ** 2
+        bmin = 1e-4 / np.max(self.distances) ** 2
+        bmax = 25. / np.max(self.distances) ** 2
         parameters.loc[name + '_b'] = (binit, bmin, bmax, True, name)
         return parameters
 
@@ -395,10 +395,11 @@ class HantushWellModel(RfuncBase):
             uncertainty of parameters A and b.
         """
         var_gain = (
-            (k0(2 * np.sqrt(r**2 * b)))**2 * var_A +
-            (-A * r * k1(2 * np.sqrt(r**2 * b)) / np.sqrt(b))**2 * var_b -
-            2 * A * r * k0(2 * np.sqrt(r**2 * b)) *
-            k1(2 * np.sqrt(r**2 * b)) / np.sqrt(b) * cov_Ab
+                (k0(2 * np.sqrt(r ** 2 * b))) ** 2 * var_A +
+                (-A * r * k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(
+                    b)) ** 2 * var_b -
+                2 * A * r * k0(2 * np.sqrt(r ** 2 * b)) *
+                k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(b) * cov_Ab
         )
         return var_gain
 
@@ -736,9 +737,9 @@ class FourParam(RfuncBase):
 
                 # for interval [0,dt] :
                 s[0] = (step / 2) * \
-                    (w1 * self.function((step / 2) * t1 + (step / 2), p) +
-                     w2 * self.function((step / 2) * t2 + (step / 2), p) +
-                     w3 * self.function((step / 2) * t3 + (step / 2), p))
+                       (w1 * self.function((step / 2) * t1 + (step / 2), p) +
+                        w2 * self.function((step / 2) * t2 + (step / 2), p) +
+                        w3 * self.function((step / 2) * t3 + (step / 2), p))
 
                 # for interval [dt,tmax]:
                 func = self.function(t, p)
@@ -753,9 +754,9 @@ class FourParam(RfuncBase):
 
                 # for interval [0,dt] Gaussian quadrate:
                 s[0] = (dt / 2) * \
-                    (w1 * self.function((dt / 2) * t1 + (dt / 2), p) +
-                     w2 * self.function((dt / 2) * t2 + (dt / 2), p) +
-                     w3 * self.function((dt / 2) * t3 + (dt / 2), p))
+                       (w1 * self.function((dt / 2) * t1 + (dt / 2), p) +
+                        w2 * self.function((dt / 2) * t2 + (dt / 2), p) +
+                        w3 * self.function((dt / 2) * t3 + (dt / 2), p))
 
                 # for interval [dt,tmax] Simpson integration:
                 func = self.function(t, p)

@@ -172,7 +172,7 @@ class DinoGrondwaterstand:
                 titel = validator(titel)
                 dtype = [np.float64] * (len(titel))
                 dtype[0] = "S11"
-                dtype[1] = np.int
+                dtype[1] = np.int32
                 dtype[2] = "S10"
                 dtype[titel.index('Bijzonderheid')] = object
                 dtype[titel.index('Opmerking')] = object
@@ -291,7 +291,7 @@ class DinoPeilschaal:
                 titel = validator(titel)
                 dtype = [np.float64] * (len(titel))
                 dtype[0] = "S11"
-                dtype[1] = np.int
+                dtype[1] = np.int32
                 dtype[2] = "S10"
                 dtype[titel.index('Bijzonderheid')] = object
                 dtype = list(zip(titel, dtype))

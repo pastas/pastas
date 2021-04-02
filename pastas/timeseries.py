@@ -542,8 +542,8 @@ class TimeSeries:
             n = series.isnull().values.sum()
             series.dropna(inplace=True)
         if n > 0:
-            logger.info(f"Time Series %s: {n} nan-value(s) was/were found and "
-                        "filled with: %s.", self.name, method)
+            logger.info("Time Series %s: %s nan-value(s) was/were found and "
+                        "filled with: %s.", self.name, n, method)
 
         return series
 
