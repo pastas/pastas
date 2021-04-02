@@ -22,7 +22,7 @@ setup(
         'Source': 'https://github.com/pastas/pastas',
         'Documentation': 'http://pastas.readthedocs.io/en/latest/',
         'Tracker': 'https://github.com/pastas/pastas/issues',
-        'Help': 'https://stackoverflow.com/questions/tagged/pastas'
+        'Help': 'https://github.com/pastas/pastas/discussions'
     },
     license='MIT',
     classifiers=[
@@ -33,10 +33,11 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Topic :: Scientific/Engineering :: Hydrology',
     ],
     platforms='Windows, Mac OS-X',
-    install_requires=['numpy>=1.15',
+    install_requires=['numpy>=1.16.5',
                       'matplotlib>=2.0',
                       'pandas>=1.0',
                       'scipy>=1.1'],

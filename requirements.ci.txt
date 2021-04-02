@@ -1,4 +1,4 @@
-numpy>=1.15
+numpy>=1.16.5
 
 matplotlib>=2.0
 
@@ -8,6 +8,6 @@ scipy>=1.1
 
 jupyter>=1.0.0
 
-numba
+numba>=0.46
 
 lmfit>=1.0.0

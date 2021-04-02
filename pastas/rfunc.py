@@ -6,8 +6,8 @@
 import numpy as np
 from pandas import DataFrame
 from scipy.integrate import quad
-from scipy.special import gammainc, gammaincinv, k0, exp1, erfc, lambertw, \
-    erfcinv
+from scipy.special import (gammainc, gammaincinv, k0, k1,
+                           exp1, erfc, lambertw, erfcinv)
 
 __all__ = ["Gamma", "Exponential", "Hantush", "Polder", "FourParam",
            "DoubleExponential", "One", "Edelman", "HantushWellModel"]
@@ -85,7 +85,7 @@ class RfuncBase:
         pass
 
     def block(self, p, dt=1, cutoff=None, maxtmax=None):
-        """Method to return the block funtion.
+        """Method to return the block function.
 
         Parameters
         ----------
@@ -108,8 +108,8 @@ class RfuncBase:
         return np.append(s[0], np.subtract(s[1:], s[:-1]))
 
     def get_t(self, p, dt, cutoff, maxtmax=None):
-        """Internal method to detemine the times at which to evaluate the step-
-        response, from t=0
+        """Internal method to determine the times at which to evaluate the
+        step-response, from t=0
 
         Parameters
         ----------
@@ -280,46 +280,52 @@ class HantushWellModel(RfuncBase):
     [veling_2010]_ and [asmuth_2008]_. The impulse response function may be
     written as:
 
-    .. math:: \\theta(t) = \\frac{A}{t} \\exp(-t/a -b/t)
-    .. math:: p[0] = A # TBD \\frac{1}{4 \\pi kD}
+    .. math:: \\theta(t) = \\frac{A}{t} K_0 \\left( \\frac{r^2}{4 \\lambda^2} \\right) \\exp(-t/a - ab/t)
+    .. math:: p[0] = A = \\frac{1}{4 \\pi T}
     .. math:: p[1] = a = cS
     .. math:: p[2] = b = 1^2 / (4 \\lambda^2)
-    .. math:: p[3] = r \\text{(not optimized)}
-    where :math:`\\lambda = \\sqrt{kDc}`
+    .. math:: p[3] = r \, \\text{(not optimized)}
+    where :math:`\\lambda = \\sqrt{Tc}`
 
     The parameter r (distance from the well to the observation point)
     is passed as a known value, and is used to scale the response function.
     The optimized parameters are slightly different from the original
     Hantush implementation:
 
-    - A: the parameter is the same as the original Hantush, except that
-      the distance (r) is set to 1.0
-    - a = cS: stays the same
-    - b = 1 / (4 * lambda): r is used internally to scale with distance
-    - r: distance, not optimized but used to scale A and b
+    - A: in the original Hantush parameter A is the gain. Now the gain is
+      equal to :math:`\\text{gain} = A K_0 ( \\sqrt(4 r^2 b) )`
+    - a: is the same  :math:`a = cS`
+    - b: is the same, but :math:`r` is set to 1 if passed separately,
+      :math:`b = 1^2 / (4 \\lambda^2)`
 
     """
     _name = "HantushWellModel"
 
-    def __init__(self, up=False, meanstress=1, cutoff=0.999):
+    def __init__(self, up=False, meanstress=1, cutoff=0.999, distances=1.0):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 3
+        self.distances = distances
 
     def get_init_parameters(self, name):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
-            parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
-                                           100 / self.meanstress, True, name)
+            # divide by k0(2) to get same initial value as ps.Hantush
+            parameters.loc[name + '_A'] = (1 / (self.meanstress * k0(2)),
+                                           0, np.nan, True, name)
         elif self.up is False:
-            parameters.loc[name + '_A'] = (-1 / self.meanstress,
-                                           -100 / self.meanstress, 0, True,
-                                           name)
+            # divide by k0(2) to get same initial value as ps.Hantush
+            parameters.loc[name + '_A'] = (-1 / (self.meanstress * k0(2)),
+                                           np.nan, 0, True, name)
         else:
             parameters.loc[name + '_A'] = (1 / self.meanstress, np.nan,
                                            np.nan, True, name)
         parameters.loc[name + '_a'] = (100, 1e-3, 1e4, True, name)
-        parameters.loc[name + '_b'] = (1, 1e-4, 25, True, name)
+        # set initial and bounds for b taking into account distances
+        binit = 1.0 / np.mean(self.distances) ** 2
+        bmin = 1e-4 / np.max(self.distances) ** 2
+        bmax = 25. / np.max(self.distances) ** 2
+        parameters.loc[name + '_b'] = (binit, bmin, bmax, True, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):
@@ -355,6 +361,48 @@ class HantushWellModel(RfuncBase):
             tau2 + rho ** 2 / (4 * tau2))
         return p[0] * F / 2
 
+    @staticmethod
+    def variance_gain(A, b, var_A, var_b, cov_Ab, r=1.0):
+        """Calculate variance of the gain from parameters A and b.
+
+        Variance of the gain is calculated based on propagation of
+        uncertainty using optimal values and the variances of A and b
+        and the covariance between A and b.
+
+        Parameters
+        ----------
+        A : float
+            optimal value of parameter A, (e.g. ml.parameters.optimal)
+        b : float
+            optimal value of parameter b, (e.g. ml.parameters.optimal)
+        var_A : float
+            variance of parameter A, can be obtained from the diagonal of
+            the covariance matrix (e.g. ml.fit.pcov)
+        var_b : float
+            variance of parameter A, can be obtained from the diagonal of
+            the covariance matrix (e.g. ml.fit.pcov)
+        cov_Ab : float
+            covariance between A and b, can be obtained from the covariance
+            matrix (e.g. ml.fit.pcov)
+        r : float or np.array, optional
+            distance(s) between observation well and stress(es),
+            default value is 1.0
+
+        Returns
+        -------
+        var_gain : float or np.array
+            variance of the gain calculated based on propagation of
+            uncertainty of parameters A and b.
+        """
+        var_gain = (
+                (k0(2 * np.sqrt(r ** 2 * b))) ** 2 * var_A +
+                (-A * r * k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(
+                    b)) ** 2 * var_b -
+                2 * A * r * k0(2 * np.sqrt(r ** 2 * b)) *
+                k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(b) * cov_Ab
+        )
+        return var_gain
+
 
 class Hantush(RfuncBase):
     """
@@ -376,12 +424,12 @@ class Hantush(RfuncBase):
     The Hantush well function is explained in [hantush_1955]_, [veling_2010]_
     and [asmuth_2008]_. The impulse response function may be written as:
 
-    .. math:: \\theta(t) = K_0(\\sqrt(4b)) \\frac{A}{t} \\exp(-t/a - ab/t)
-    .. math:: p[0] = A = \\frac{1}{2 \\pi kD}
+    .. math:: \\theta(t) = \\frac{A}{t} \\exp(-t/a - ab/t)
+    .. math:: p[0] = A = \\frac{1}{2 \\pi T}
     .. math:: p[1] = a = cS
     .. math:: p[2] = b = r^2 / (4 \\lambda^2)
 
-    where :math:`\\lambda = \\sqrt{kDc}`
+    where :math:`\\lambda = \\sqrt{Tc}`
 
     References
     ----------
@@ -407,15 +455,14 @@ class Hantush(RfuncBase):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
-            parameters.loc[name + '_A'] = (1 / self.meanstress, 0,
-                                           100 / self.meanstress, True, name)
+            parameters.loc[name + '_A'] = (1 / self.meanstress,
+                                           0, np.nan, True, name)
         elif self.up is False:
             parameters.loc[name + '_A'] = (-1 / self.meanstress,
-                                           -100 / self.meanstress, 0, True,
-                                           name)
+                                           np.nan, 0, True, name)
         else:
-            parameters.loc[name + '_A'] = (1 / self.meanstress, np.nan,
-                                           np.nan, True, name)
+            parameters.loc[name + '_A'] = (1 / self.meanstress,
+                                           np.nan, np.nan, True, name)
         parameters.loc[name + '_a'] = (100, 1e-3, 1e4, True, name)
         parameters.loc[name + '_b'] = (1, 1e-6, 25, True, name)
         return parameters
@@ -429,8 +476,9 @@ class Hantush(RfuncBase):
         k0rho = k0(rho)
         return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
 
-    def gain(self, p):
-        return p[0] * k0(np.sqrt(4 * p[2]))
+    @staticmethod
+    def gain(p):
+        return p[0]
 
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
         cS = p[1]
@@ -446,7 +494,7 @@ class Hantush(RfuncBase):
             tau1 + rho ** 2 / (4 * tau1))
         F[tau >= rho / 2] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(
             tau2 + rho ** 2 / (4 * tau2))
-        return p[0] * F / 2
+        return p[0] * F / (2 * k0rho)
 
 
 class Polder(RfuncBase):
@@ -456,7 +504,7 @@ class Polder(RfuncBase):
     -----
     The Polder function is explained in [polder]_. The impulse response
     function may be written as:
-    
+
     .. math:: \\theta(t) = \\exp(-\\sqrt(4b)) \\frac{A}{t^{-3/2}}
        \\exp(-t/a -b/t)
     .. math:: p[0] = A = \\exp(-x/\\lambda)
@@ -696,9 +744,8 @@ class FourParam(RfuncBase):
                 # for interval [dt,tmax]:
                 func = self.function(t, p)
                 func_half = self.function(t[:-1] + step / 2, p)
-                s[1:] = s[0] + np.cumsum(step / 6 *
-                                         (func[:-1] + 4 * func_half + func[
-                                                                      1:]))
+                s[1:] = s[0] + np.cumsum(
+                    step / 6 * (func[:-1] + 4 * func_half + func[1:]))
                 s = s * (p[0] / quad(self.function, 0, np.inf, args=p)[0])
                 return s[int(dt / step - 1)::int(dt / step)]
             else:
@@ -714,9 +761,8 @@ class FourParam(RfuncBase):
                 # for interval [dt,tmax] Simpson integration:
                 func = self.function(t, p)
                 func_half = self.function(t[:-1] + dt / 2, p)
-                s[1:] = s[0] + np.cumsum(dt / 6 *
-                                         (func[:-1] + 4 * func_half + func[
-                                                                      1:]))
+                s[1:] = s[0] + np.cumsum(
+                    dt / 6 * (func[:-1] + 4 * func_half + func[1:]))
                 s = s * (p[0] / quad(self.function, 0, np.inf, args=p)[0])
                 return s
 

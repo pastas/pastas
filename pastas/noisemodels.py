@@ -40,8 +40,8 @@ class NoiseModelBase:
 
     def set_init_parameters(self, oseries=None):
         if oseries is not None:
-            pinit = oseries.index.to_series().diff() / Timedelta(1, "D")
-            pinit = pinit.median()
+            pinit = np.diff(oseries.index.to_numpy()) / Timedelta("1D")
+            pinit = np.median(pinit)
         else:
             pinit = 14.0
         self.parameters.loc["noise_alpha"] = (pinit, 1e-5, 5000, True, "noise")
@@ -170,11 +170,10 @@ class NoiseModel(NoiseModelBase):
 
         """
         alpha = p[0]
-        odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
-        v = Series(index=res.index, dtype="float64", name="Noise")
-        v.iloc[0] = res.values[0]
-        v.iloc[1:] = res.values[1:] - np.exp(-odelt / alpha) * res.values[:-1]
-        return v
+        odelt = np.diff(res.index.to_numpy()) / Timedelta("1D")
+        v = np.append(res.values[0], res.values[1:] - np.exp(-odelt / alpha)
+                      * res.values[:-1])
+        return Series(data=v, index=res.index, name="Noise")
 
     def weights(self, res, p):
         """Method to calculate the weights for the noise.
@@ -185,7 +184,7 @@ class NoiseModel(NoiseModelBase):
             Pandas Series with the residuals to compute the weights for. The
             Series index must be a DatetimeIndex.
         p: numpy.ndarray
-            numpy array with the parameters used in the noise mdoel.
+            numpy array with the parameters used in the noise model.
 
         Returns
         -------
@@ -202,17 +201,14 @@ class NoiseModel(NoiseModelBase):
 
         """
         alpha = p[0]
-        odelt = np.empty(res.size)
-        odelt[0] = 1e12  # large for first measurement
-        odelt[1:] = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
+        # large for first measurement
+        odelt = np.append(1e12, np.diff(res.index.to_numpy()) /
+                          Timedelta("1D"))
         exp = np.exp(-2.0 / alpha * odelt)  # Twice as fast as 2*odelt/alpha
-        # weights of noise, not noise^2
-        w = Series(data=1 / np.sqrt(1.0 - exp), index=res.index,
-                   dtype="float64", name="noise_weights")
+        w = 1 / np.sqrt(1.0 - exp)  # weights of noise, not noise^2
         if self.norm:
-            w = w.multiply(np.exp(1.0 / (2.0 * odelt.size) *
-                                  np.sum(np.log(1.0 - exp))))
-        return w
+            w *= np.exp(1.0 / (2.0 * odelt.size) * np.sum(np.log(1.0 - exp)))
+        return Series(data=w, index=res.index, name="noise_weights")
 
 
 class ArmaModel(NoiseModelBase):
@@ -261,7 +257,7 @@ class ArmaModel(NoiseModelBase):
         beta = p[1]
 
         # Calculate the time steps
-        odelt = (res.index[1:] - res.index[:-1]).values / Timedelta("1d")
+        odelt = np.diff(res.index.to_numpy()) / Timedelta("1D")
         a = self.calculate_noise(res.values, odelt, alpha, beta)
         return Series(index=res.index, data=a, name="Noise")
 

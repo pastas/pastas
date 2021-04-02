@@ -175,7 +175,7 @@ class FlexModel(RechargeBase):
         parameters.loc[name + "_ks"] = (100.0, 1, 1e4, True, name)
         parameters.loc[name + "_gamma"] = (4.0, 1e-5, 50.0, True, name)
         parameters.loc[name + "_simax"] = (2.0, 1e-5, 10.0, False, name)
-        parameters.loc[name + "_kv"] = (1.0, 0.5, 2.0, False, name)
+        parameters.loc[name + "_kv"] = (1.0, 0.25, 2.0, False, name)
         return parameters
 
     def simulate(self, prec, evap, p, dt=1.0, **kwargs):

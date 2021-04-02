@@ -3,6 +3,7 @@
 """
 
 from collections import OrderedDict
+from itertools import combinations
 from logging import getLogger
 from os import getlogin
 
@@ -65,10 +66,10 @@ class Model:
         self.oseries = TimeSeries(oseries, settings="oseries",
                                   metadata=metadata)
 
-        if name is None:
+        if name is None and self.oseries.name is not None:
             name = self.oseries.name
-            if name is None:
-                name = 'Observations'
+        elif name is None and self.oseries.name is None:
+            name = 'Observations'
         self.name = validate_name(name)
 
         self.parameters = DataFrame(
@@ -427,8 +428,7 @@ class Model:
             freq = self.settings["freq"]
 
         # simulate model
-        sim = self.simulate(p, tmin, tmax, freq, warmup,
-                            return_warmup=False)
+        sim = self.simulate(p, tmin, tmax, freq, warmup, return_warmup=False)
 
         # Get the oseries calibration series
         oseries_calib = self.observations(tmin, tmax, freq)
@@ -501,7 +501,7 @@ class Model:
         This method returns None is no noise model is added to the model.
 
         """
-        if (self.noisemodel is None) or (self.settings["noise"] is False):
+        if self.noisemodel is None or self.settings["noise"] is False:
             self.logger.error("Noise cannot be calculated if there is no "
                               "noisemodel present or is not used during "
                               "parameter estimation.")
@@ -530,8 +530,7 @@ class Model:
         res = self.residuals(p, tmin, tmax, freq, warmup)
 
         # Calculate the weights
-        weights = self.noisemodel.weights(res,
-                                          p[-self.noisemodel.nparam:])
+        weights = self.noisemodel.weights(res, p[-self.noisemodel.nparam:])
 
         return weights
 
@@ -753,91 +752,12 @@ class Model:
             if isinstance(report, str):
                 output = report
             else:
-                output = "full"
+                output = None
             print(self.fit_report(output=output))
 
-    def set_initial(self, name, value, move_bounds=False):
-        """Method to set the initial value of any parameter.
-
-        Parameters
-        ----------
-        name: str
-            name of the parameter to update.
-        value: float
-            parameters value to use as initial estimate.
-        move_bounds: bool, optional
-            Reset pmin/pmax based on new initial value.
-
-        Examples
-        --------
-        >>> ml.set_initial("constant_d", 10)
-
-        """
-        msg = "Deprecation warning: method is deprecated and will be removed" \
-              " in version 0.17.0. Use ml.set_parameter instead."
-        self.logger.warning(msg)
-
-    def set_vary(self, name, value):
-        """Method to set if the parameter is allowed to vary.
-
-        Parameters
-        ----------
-        name: str
-            name of the parameter to update.
-        value: bool
-            boolean to vary a parameter (True) or not (False).
-
-        Examples
-        --------
-        >>> ml.set_vary("constant_d", False)
-
-        """
-        msg = "Deprecation warning: method is deprecated and will be removed" \
-              " in version 0.17.0. Use ml.set_parameter instead."
-        self.logger.error(msg)
-
-    def set_pmin(self, name, value):
-        """Method to set the minimum value of a parameter.
-
-        Parameters
-        ----------
-        name: str
-            name of the parameter to update.
-        value: float
-            minimum value for the parameter.
-
-        Examples
-        --------
-        >>> ml.set_pmin("constant_d", -10)
-
-        """
-        msg = "Deprecation warning: method is deprecated and will be removed" \
-              " in version 0.17.0. Use ml.set_parameter instead."
-        self.logger.error(msg)
-
-    def set_pmax(self, name, value):
-        """Method to set the maximum values of a parameter.
-
-        Parameters
-        ----------
-        name: str
-            name of the parameter to update.
-        value: float
-            maximum value for the parameter.
-
-        Examples
-        --------
-        >>> ml.set_pmax("constant_d", 10)
-
-        """
-        msg = "Deprecation warning: method is deprecated and will be removed" \
-              " in version 0.17.0. Use ml.set_parameter instead."
-        self.logger.error(msg)
-
     def set_parameter(self, name, initial=None, vary=None, pmin=None,
-                      pmax=None, move_bounds=False):
-        """
-        Method to change the parameter properties.
+                      pmax=None, optimal=None, move_bounds=False):
+        """Method to change the parameter properties.
 
         Parameters
         ----------
@@ -851,6 +771,8 @@ class Model:
             minimum value for the parameter.
         pmax: float, optional
             maximum value for the parameter.
+        optimal: float, optional
+            optimal value for the parameter.
         move_bounds: bool, optional
             Reset pmin/pmax based on new initial value. Of move_bounds=True,
             pmin and pmax must be None.
@@ -868,9 +790,9 @@ class Model:
 
         """
         if name not in self.parameters.index:
-            msg = "parameter {} is not present in the model".format(name)
-            self.logger.error(msg)
-            raise KeyError(msg)
+            msg = "parameter %s is not present in the model"
+            self.logger.error(msg, name)
+            raise KeyError(msg, name)
 
         # Because either of the following is not necessarily present
         noisemodel = self.noisemodel.name if self.noisemodel else "NotPresent"
@@ -911,6 +833,8 @@ class Model:
         if pmax is not None:
             obj._set_pmax(name, pmax)
             self.parameters.loc[name, "pmax"] = pmax
+        if optimal is not None:
+            self.parameters.loc[name, "optimal"] = optimal
 
     def _set_freq(self):
         """Internal method to set the frequency in the settings. This is
@@ -975,8 +899,8 @@ class Model:
                     if np.any(mask):
                         time_offsets.add(_get_time_offset(t[mask][0], freq))
         if len(time_offsets) > 1:
-            msg = ("The time-offset with the frequency is not the same "
-                   "for all stresses.")
+            msg = "The time-offset with the frequency is not the same for " \
+                  "all stresses."
             self.logger.error(msg)
             raise (Exception(msg))
         if len(time_offsets) == 1:
@@ -1181,9 +1105,8 @@ class Model:
 
         # Set initial parameters to optimal parameters from model
         if not initial:
-            paramold = self.parameters.optimal
-            parameters.initial.update(paramold)
-            parameters.optimal.update(paramold)
+            parameters.initial.update(self.parameters.optimal)
+            parameters.optimal.update(self.parameters.optimal)
 
         return parameters
 
@@ -1210,8 +1133,8 @@ class Model:
             p = self.parameters
 
         if p.optimal.hasnans:
-            self.logger.warning(
-                "Model is not optimized yet, initial parameters are used.")
+            self.logger.warning("Model is not optimized yet, initial "
+                                "parameters are used.")
             parameters = p.initial
         else:
             parameters = p.optimal
@@ -1221,6 +1144,29 @@ class Model:
     def get_stressmodel_names(self):
         """Returns list of stressmodel names"""
         return list(self.stressmodels.keys())
+
+    @get_stressmodel
+    def get_stressmodel_settings(self, name):
+        """Method to obtain the time series settings for a stress model.
+
+        Parameters
+        ----------
+        name: str, optional
+            string with the name of the pastas.stressmodel object.
+
+        Returns
+        -------
+        dict or None
+            Dictionary with the settings or "None" of no stress are present,
+            e.g., for a step model that uses no stress.
+
+        """
+        sm = self.stressmodels[name]
+        if len(sm.stress) == 0:
+            settings = None
+        else:
+            settings = {stress.name: stress.settings for stress in sm.stress}
+        return settings
 
     @get_stressmodel
     def get_contribution(self, name, tmin=None, tmax=None, freq=None,
@@ -1380,7 +1326,7 @@ class Model:
 
         """
         if self.stressmodels[name].rfunc is None:
-            self.logger.warning("Stressmodel {} has no rfunc".format(name))
+            self.logger.warning("Stressmodel %s has no rfunc.", name)
             return None
         else:
             block_or_step = getattr(self.stressmodels[name].rfunc,
@@ -1493,7 +1439,7 @@ class Model:
 
         """
         if self.stressmodels[name].rfunc is None:
-            self.logger.warning("Stressmodel {} has no rfunc".format(name))
+            self.logger.warning("Stressmodel %s has no rfunc", name)
             return None
         else:
             if p is None:
@@ -1595,7 +1541,7 @@ class Model:
 
         return file_info
 
-    def fit_report(self, output="full"):
+    def fit_report(self, output="basic"):
         """Method that reports on the fit after a model is optimized.
 
         Parameters
@@ -1626,7 +1572,7 @@ class Model:
         model = {
             "nfev": self.fit.nfev,
             "nobs": self.observations().index.size,
-            "noise": str(self.settings["noise"]),
+            "noise": self.settings["noise"],
             "tmin": str(self.settings["tmin"]),
             "tmax": str(self.settings["tmax"]),
             "freq": self.settings["freq"],
@@ -1635,69 +1581,57 @@ class Model:
         }
 
         fit = {
-            "EVP": "{:.2f}".format(self.stats.evp()),
-            "R2": "{:.2f}".format(self.stats.rsq()),
-            "RMSE": "{:.2f}".format(self.stats.rmse()),
-            "AIC": "{:.2f}".format(self.stats.aic() if
-                                   self.settings["noise"] else np.nan),
-            "BIC": "{:.2f}".format(self.stats.bic() if
-                                   self.settings["noise"] else np.nan),
-            "Obj": "{:.2f}".format(self.fit.obj_func),
-            "___": "", "Interpolated": "Yes" if self.interpolate_simulation
-            else "No",
+            "EVP": f"{self.stats.evp():.2f}",
+            "R2": f"{self.stats.rsq():.2f}",
+            "RMSE": f"{self.stats.rmse():.2f}",
+            "AIC": f"{self.stats.aic():.2f}",
+            "BIC": f"{self.stats.bic():.2f}",
+            "Obj": f"{self.fit.obj_func:.2f}",
+            "___": "",
+            "Interp.": "Yes" if self.interpolate_simulation else "No",
         }
 
         parameters = self.parameters.loc[:, ["optimal", "stderr",
                                              "initial", "vary"]]
         stderr = parameters.loc[:, "stderr"] / parameters.loc[:, "optimal"]
-        parameters.loc[:, "stderr"] = stderr.abs().apply("\u00B1{:.2%}".format)
+        parameters.loc[:, "stderr"] = stderr.abs().apply("±{:.2%}".format)
 
         # Determine the width of the fit_report based on the parameters
         width = len(parameters.__str__().split("\n")[1])
         string = "{:{fill}{align}{width}}"
 
         # Create the first header with model information and stats
-        w = max(width - 44, 0)
-        header = "Fit report {name:<16}{string}Fit Statistics\n" \
-                 "{line}\n".format(
-            name=self.name[:14],
-            string=string.format("", fill=' ', align='>', width=w),
-            line=string.format("", fill='=', align='>', width=width))
+        w = max(width - 41, 0)
+        header = f"Fit report {self.name:<16}" \
+                 f"{string.format('', fill=' ', align='>', width=w)}" \
+                 f"Fit Statistics\n" \
+                 f"{string.format('', fill='=', align='>', width=width)}\n"
 
         basic = ""
         w = max(width - 45, 0)
         for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
             val4 = string.format(val4, fill=' ', align='>', width=w)
-            basic += "{:<8} {:<22} {:<12} {:}\n".format(val1, val2, val3, val4)
+            basic += f"{val1:<7} {val2:<22} {val3:<{len(val3)}} " \
+                     f"{val4:>{18 - len(val3)}}\n"
 
         # Create the parameters block
-        parameters = "\nParameters ({n_param} were optimized)\n{line}\n" \
-                     "{parameters}".format(
-            n_param=parameters.vary.sum(),
-            line=string.format("", fill='=', align='>', width=width),
-            parameters=parameters)
+        params = f"\nParameters ({parameters.vary.sum()} optimized)\n" \
+                 f"{string.format('', fill='=', align='>', width=width)}\n" \
+                 f"{parameters}"
 
         if output == "full":
-            cor = {}
-            pcor = self.fit.pcor
-            for idx in pcor:
-                for col in pcor:
-                    if (np.abs(pcor.loc[idx, col]) > 0.5) and (idx != col) \
-                            and ((col, idx) not in cor.keys()):
-                        cor[(idx, col)] = pcor.loc[idx, col].round(2)
+            cor = DataFrame(columns=["value"])
+            for idx, col in combinations(self.fit.pcor, 2):
+                if np.abs(self.fit.pcor.loc[idx, col]) > 0.5:
+                    cor.loc[f"{idx} {col}"] = self.fit.pcor.loc[idx, col]
 
-            cor = DataFrame(data=cor.values(), index=cor.keys(),
-                            columns=["rho"])
-            correlations = "\n\nParameter correlations |rho| > 0.5\n{}" \
-                           "\n{}".format(string.format("", fill='=', align='>',
-                                                       width=width),
-                                         cor.to_string(header=False))
+            corr = f"\n\nParameter correlations |rho| > 0.5\n" \
+                   f"{string.format('', fill='=', align='>', width=width)}" \
+                   f"\n{cor.to_string(float_format='%.2f', header=False)}"
         else:
-            correlations = ""
+            corr = ""
 
-        report = "{header}{basic}{parameters}{correlations}".format(
-            header=header, basic=basic, parameters=parameters,
-            correlations=correlations)
+        report = f"{header}{basic}{params}{corr}"
 
         return report
 

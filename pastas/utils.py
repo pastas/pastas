@@ -338,8 +338,8 @@ def excel2datetime(tindex, freq="D"):
 
 
 def datenum_to_datetime(datenum):
-    """
-    Convert Matlab datenum into Python datetime.
+    """Convert Matlab datenum into Python datetime.
+
     Parameters
     ----------
     datenum: float
@@ -349,6 +349,7 @@ def datenum_to_datetime(datenum):
     -------
     datetime :
         Datetime object corresponding to datenum.
+
     """
     days = datenum % 1.
     return datetime.fromordinal(int(datenum)) \
@@ -364,7 +365,6 @@ def datetime2matlab(tindex):
 def get_stress_tmin_tmax(ml):
     """Get the minimum and maximum time that all of the stresses have data"""
     from .model import Model
-    from .project import Project
     tmin = Timestamp.min
     tmax = Timestamp.max
     if isinstance(ml, Model):
@@ -372,10 +372,6 @@ def get_stress_tmin_tmax(ml):
             for st in ml.stressmodels[sm].stress:
                 tmin = max((tmin, st.series_original.index.min()))
                 tmax = min((tmax, st.series_original.index.max()))
-    elif isinstance(ml, Project):
-        for st in ml.stresses['series']:
-            tmin = max((tmin, st.series_original.index.min()))
-            tmax = min((tmax, st.series_original.index.max()))
     else:
         raise (TypeError('Unknown type {}'.format(type(ml))))
     return tmin, tmax
@@ -530,9 +526,8 @@ def validate_name(name):
 
     for char in ["\\", "/", " "]:
         if char in name:
-            msg = "User-provided name '{}' contains illegal character " \
-                  "{}".format(name, char)
-            logger.warning(msg)
+            logger.warning("User-provided name '%s' contains illegal "
+                           "character %s", name, char)
 
     return name
 

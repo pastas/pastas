@@ -27,5 +27,5 @@ ask you to cite the Pastas article published in Groundwater journal as follows:
     Examples <examples/index>
     Development <developers/index>
     API Docs <api/index>
-    Release Notes <release_notes>
+    Release Notes <releases/index>
 

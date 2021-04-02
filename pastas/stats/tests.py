@@ -252,8 +252,8 @@ def runs_test(series, cutoff="median"):
     elif isinstance(cutoff, float):
         pass
     else:
-        raise NotImplementedError("Cutoff criterion {} is not "
-                                  "implemented".format(cutoff))
+        raise NotImplementedError(f"Cutoff criterion {cutoff} is not "
+                                  f"implemented.")
 
     r[r > cutoff] = 1
     r[r < cutoff] = 0
@@ -515,13 +515,17 @@ def plot_acf(series, alpha=0.05, lags=365, acf_options=None, smooth_conf=True,
     r = get_acf(series, full_output=True, alpha=alpha, lags=lags,
                 **acf_options)
 
+    if r.empty:
+        raise ValueError("ACF result is empty. Check input arguments "
+                         "for calculating acf!")
+
     if smooth_conf:
         conf = r.stderr.rolling(10, min_periods=1).mean().values
     else:
         conf = r.stderr.values
 
     ax.fill_between(r.index.days, conf, -conf, alpha=0.3)
-    ax.vlines(r.index.days, [0], r.loc[:, "acf"].values)
+    ax.vlines(r.index.days, [0], r.loc[:, "acf"].values, color="k")
 
     ax.set_xlabel("Lag [Days]")
     ax.set_xlim(0, r.index.days.max())
@@ -587,10 +591,12 @@ def plot_diagnostics(series, alpha=0.05, bins=50, acf_options=None,
     series.plot(ax=ax)
     ax.set_ylabel(series.name)
     ax.set_xlim(series.index.min(), series.index.max())
-    ax.set_title("{} (n={:.0f}, $\\mu$={:.2f})".format(series.name,
-                                                       series.size,
-                                                       series.mean()))
+    ax.set_title(f"{series.name} (n={series.size :.0f}, $\\mu$"
+                 f"={series.mean() :.2f})")
     ax.grid()
+    ax.tick_params(axis='x', labelrotation=0)
+    for label in ax.get_xticklabels():
+        label.set_horizontalalignment('center')
 
     # Plot the autocorrelation
     plot_acf(series, alpha=alpha, acf_options=acf_options, ax=ax1)
@@ -609,6 +615,47 @@ def plot_diagnostics(series, alpha=0.05, bins=50, acf_options=None,
     ax3.get_lines()[1].set_color("k")
 
     plt.tight_layout()
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=0, ha="center")
-
     return fig.axes
+
+
+def plot_cum_frequency(obs, sim=None, ax=None, figsize=(5, 2)):
+    """Create a plot of the cumulative frequency plot.
+
+    Parameters
+    ----------
+    sim: pandas.Series
+        Series with the simulated values.
+    obs: pandas.Series
+        Series with the observed values.
+    ax: matplotlib.axes.Axes, optional
+        Matplotlib Axes instance to create the plot on. A new Figure and Axes
+        is created when no value for ax is provided.
+    figsize: Tuple, optional
+        2-D Tuple to determine the size of the figure created. Ignored if ax
+        is also provided.
+
+    Returns
+    -------
+    ax: matplotlib.axes.Axes
+
+    Examples
+    --------
+    >>> obs = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
+    >>>                 data=np.random.normal(0, 1, 1000))
+    >>> ps.stats.plot_cum_frequency(obs)
+
+    """
+    if ax is None:
+        _, ax = plt.subplots(1, 1, figsize=figsize)
+
+    ax.plot(obs.sort_values(), arange(0, obs.size) / obs.size * 100,
+            color="k", marker=".", linestyle=" ")
+    if sim is not None:
+        ax.plot(sim.sort_values(), arange(0, sim.size) / sim.size * 100)
+    ax.legend(["Observations", "Simulation"])
+    ax.set_xlabel("Head")
+    ax.set_ylabel("Cum. Frequency [%]")
+    ax.grid()
+    plt.tight_layout()
+
+    return ax

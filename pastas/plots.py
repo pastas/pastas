@@ -1,13 +1,11 @@
 """This module contains all the plotting methods in Pastas.
 
-
 Pastas models come with a number of predefined plotting methods to quickly
 visualize a Model. All of these methods are contained in the `plot`
 attribute of a model. For example, if we stored a :class:`pastas.model.Model`
 instance in the variable `ml`, the plot methods are available as follows::
 
     ml.plot.decomposition()
-
 """
 
 import logging
@@ -18,13 +16,14 @@ from matplotlib.ticker import MultipleLocator
 from pandas import DataFrame, Timestamp, concat
 
 from .decorators import model_tmin_tmax
-from .stats import plot_diagnostics
+from .stats import plot_diagnostics, plot_cum_frequency
 
 logger = logging.getLogger(__name__)
 
 
 class Plotting:
-    """Plots available directly form the Model Class"""
+    """Plots available directly form the Model Class."""
+
     def __init__(self, ml):
         self.ml = ml  # Store a reference to the model class
 
@@ -62,16 +61,14 @@ class Plotting:
         Examples
         --------
         >>> ml.plot()
-
         """
         if ax is None:
             _, ax = plt.subplots(figsize=figsize, **kwargs)
 
-        ax.set_title("Results of {}".format(self.ml.name))
-
         if oseries:
-            o = self.ml.observations()
-            o_nu = self.ml.oseries.series.drop(o.index)
+            o = self.ml.observations(tmin=tmin, tmax=tmax)
+            o_nu = self.ml.oseries.series.drop(o.index).loc[
+                   o.index.min():o.index.max()]
             if not o_nu.empty:
                 # plot parts of the oseries that are not used in grey
                 o_nu.plot(linestyle='', marker='.', color='0.5', label='',
@@ -80,17 +77,22 @@ class Plotting:
 
         if simulation:
             sim = self.ml.simulate(tmin=tmin, tmax=tmax)
-            sim.plot(ax=ax)
-        plt.xlim(tmin, tmax)
-        plt.ylabel("Groundwater levels [meter]")
+            r2 = round(self.ml.stats.rsq(tmin=tmin, tmax=tmax) * 100, 1)
+            sim.plot(ax=ax, label=f'{sim.name} ($R^2$ = {r2}%)')
+
+        # Dress up the plot
+        ax.set_xlim(tmin, tmax)
+        ax.set_ylabel("Groundwater levels [meter]")
+        ax.set_title("Results of {}".format(self.ml.name))
+
         if legend:
-            plt.legend()
+            ax.legend(ncol=2, numpoints=3)
         plt.tight_layout()
         return ax
 
     @model_tmin_tmax
     def results(self, tmin=None, tmax=None, figsize=(10, 8), split=False,
-                adjust_height=False, **kwargs):
+                adjust_height=True, **kwargs):
         """Plot different results in one window to get a quick overview.
 
         Parameters
@@ -104,7 +106,7 @@ class Plotting:
             False.
         adjust_height: bool, optional
             Adjust the height of the graphs, so that the vertical scale of all
-            the subplots on the left is equal.
+            the subplots on the left is equal. Default is True.
 
         Returns
         -------
@@ -113,26 +115,20 @@ class Plotting:
         Examples
         --------
         >>> ml.plots.results()
-
         """
         # Number of rows to make the figure with
-        o = self.ml.observations()
+        o = self.ml.observations(tmin=tmin, tmax=tmax)
+        o_nu = self.ml.oseries.series.drop(o.index).loc[tmin:tmax]
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
-        plot_noise = self.ml.settings["noise"] and self.ml.noisemodel
-        if plot_noise:
-            noise = self.ml.noise(tmin=tmin, tmax=tmax)
         contribs = self.ml.get_contributions(split=split, tmin=tmin,
                                              tmax=tmax, return_warmup=False)
-        fig = plt.figure(figsize=figsize, **kwargs)
+
         ylims = [(min([sim.min(), o[tmin:tmax].min()]),
-                  max([sim.max(), o[tmin:tmax].max()]))]
+                  max([sim.max(), o[tmin:tmax].max()])),
+                 (res.min(), res.max())]  # residuals are bigger than noise
+
         if adjust_height:
-            if plot_noise:
-                ylims.append((min([res.min(), noise.min()]),
-                              max([res.max(), noise.max()])))
-            else:
-                ylims.append((res.min(), res.max()))
             for contrib in contribs:
                 hs = contrib.loc[tmin:tmax]
                 if hs.empty:
@@ -146,48 +142,40 @@ class Plotting:
         else:
             hrs = [2] + [1] * (len(contribs) + 1)
 
-        nrows = len(contribs) + 2
-        gs = fig.add_gridspec(ncols=2, nrows=nrows, width_ratios=[2, 1],
-                              height_ratios=hrs)
+        # Make main Figure
+        fig = plt.figure(figsize=figsize, **kwargs)
+        gs = fig.add_gridspec(ncols=2, nrows=len(contribs) + 2,
+                              width_ratios=[2, 1], height_ratios=hrs)
 
         # Main frame
         ax1 = fig.add_subplot(gs[0, 0])
-        o_nu = self.ml.oseries.series.drop(o.index)
+        o.plot(ax=ax1, linestyle='', marker='.', color='k', x_compat=True)
         if not o_nu.empty:
             # plot parts of the oseries that are not used in grey
             o_nu.plot(ax=ax1, linestyle='', marker='.', color='0.5', label='',
-                      x_compat=True)
-        o.plot(ax=ax1, linestyle='', marker='.', color='k', x_compat=True)
-        # add evp to simulation
-        sim.name = '{} ($R^2$ = {:0.1f}%)'.format(
-            sim.name, self.ml.stats.evp(tmin=tmin, tmax=tmax))
-        sim.plot(ax=ax1, x_compat=True)
-        ax1.legend(loc=(0, 1), ncol=3, frameon=False)
+                      x_compat=True, zorder=-1)
+
+        # add rsq to simulation
+        r2 = self.ml.stats.rsq(tmin=tmin, tmax=tmax)
+        sim.plot(ax=ax1, x_compat=True, label=f'{sim.name} ($R^2$={r2:.2%})')
+        ax1.legend(loc=(0, 1), ncol=3, frameon=False, numpoints=3)
         ax1.set_ylim(ylims[0])
-        if adjust_height:
-            ax1.set_ylim(ylims[0])
-            ax1.grid(True)
 
         # Residuals and noise
         ax2 = fig.add_subplot(gs[1, 0], sharex=ax1)
         res.plot(ax=ax2, color='k', x_compat=True)
-        if plot_noise:
+        if self.ml.settings["noise"] and self.ml.noisemodel:
+            noise = self.ml.noise(tmin=tmin, tmax=tmax)
             noise.plot(ax=ax2, x_compat=True)
         ax2.axhline(0.0, color='k', linestyle='--', zorder=0)
         ax2.legend(loc=(0, 1), ncol=3, frameon=False)
-        if adjust_height:
-            ax2.grid(True)
-
-        # Stats frame
-        ax3 = fig.add_subplot(gs[0:2, 1])
-        ax3.set_title('Model Parameters', loc='left')
 
         # Add a row for each stressmodel
         rmax = 0  # tmax of the step response
         axb = None
-        for i, sm_name in enumerate(self.ml.stressmodels):
+        i = 0
+        for sm_name, sm in self.ml.stressmodels.items():
             # plot the contribution
-            sm = self.ml.stressmodels[sm_name]
             nsplit = sm.get_nsplit()
             if split and nsplit > 1:
                 for _ in range(nsplit):
@@ -196,44 +184,49 @@ class Plotting:
                     ax.legend(loc=(0, 1), ncol=3, frameon=False)
                     if adjust_height:
                         ax.set_ylim(ylims[i + 2])
-                        ax.grid(True)
+                    i = i + 1
             else:
                 ax = fig.add_subplot(gs[i + 2, 0], sharex=ax1)
                 contribs[i].plot(ax=ax, x_compat=True)
                 title = [stress.name for stress in sm.stress]
                 if len(title) > 3:
                     title = title[:3] + ["..."]
-                plt.title("Stresses: %s" % title, loc="right")
+                ax.set_title(f"Stresses: {title}", loc="right",
+                             fontsize=plt.rcParams['legend.fontsize'])
                 ax.legend(loc=(0, 1), ncol=3, frameon=False)
                 if adjust_height:
                     ax.set_ylim(ylims[i + 2])
-                    ax.grid(True)
+                i = i + 1
 
-            # plot the step reponse
+            # plot the step response
             step = self.ml.get_step_response(sm_name, add_0=True)
             if step is not None:
                 rmax = max(rmax, step.index.max())
-                axb = fig.add_subplot(gs[i + 2, 1])
+                axb = fig.add_subplot(gs[i + 1, 1], sharex=axb)
                 step.plot(ax=axb)
-                if adjust_height:
-                    axb.grid(True)
+
+        if axb is not None:
+            axb.set_xlim(0.0, rmax)
 
         # xlim sets minorticks back after plots:
         ax1.minorticks_off()
-
         ax1.set_xlim(tmin, tmax)
-        if axb is not None:
-            axb.set_xlim(0, rmax)
 
-        fig.tight_layout()
+        for ax in fig.axes:
+            ax.grid(True)
+
+        fig.tight_layout()  # Before making the table
 
         # Draw parameters table
+        ax3 = fig.add_subplot(gs[0:2, 1])
+        n_free = self.ml.parameters.vary.sum()
+        ax3.set_title(f'Model Parameters ($n_c$={n_free})', loc='left',
+                      fontsize=plt.rcParams['legend.fontsize'])
         p = self.ml.parameters.copy().loc[:, ["name", "optimal", "stderr"]]
-        p.loc[:, 'name'] = p.index
-        p.loc[:, "stderr"] = np.abs(np.divide(p.loc[:, "stderr"],
-                                              p.loc[:, "optimal"]) * 100)
-        p.loc[:, "stderr"] = p.loc[:, "stderr"].apply("{:.2f}%".format)
+        p.loc[:, "name"] = p.index
+        stderr = p.loc[:, "stderr"] / p.loc[:, "optimal"]
         p.loc[:, "optimal"] = p.loc[:, "optimal"].apply("{:.2f}".format)
+        p.loc[:, "stderr"] = stderr.abs().apply("{:.2%}".format)
 
         ax3.axis('off')
         ax3.table(bbox=(0., 0., 1.0, 1.0), cellText=p.values,
@@ -273,9 +266,8 @@ class Plotting:
         Returns
         -------
         axes: list of matplotlib.axes.Axes
-
         """
-        o = self.ml.observations()
+        o = self.ml.observations(tmin=tmin, tmax=tmax)
 
         # determine the simulation
         sim = self.ml.simulate(tmin=tmin, tmax=tmax,
@@ -344,7 +336,7 @@ class Plotting:
             axes[0].set_title('observations vs. simulation')
             axes[0].set_ylim(ylims[0])
         axes[0].grid(True)
-        axes[0].legend(ncol=3, frameon=False)
+        axes[0].legend(ncol=3, frameon=False, numpoints=3)
 
         if ytick_base and set_axes_properties:
             if isinstance(ytick_base, bool):
@@ -416,7 +408,6 @@ class Plotting:
             Method that computes the autocorrelation.
         scipy.stats.probplot
             Method use to plot the probability plot.
-
         """
         if self.ml.settings["noise"]:
             res = self.ml.noise(tmin=tmin, tmax=tmax)
@@ -425,6 +416,37 @@ class Plotting:
 
         return plot_diagnostics(series=res, figsize=figsize, bins=bins,
                                 acf_options=acf_options, **kwargs)
+
+    @model_tmin_tmax
+    def cum_frequency(self, tmin=None, tmax=None, ax=None, figsize=(5, 2),
+                      **kwargs):
+        """Plot the cumulative frequency for the observations and simulation.
+
+        Parameters
+        ----------
+        Parameters
+        ----------
+        tmin: str or pandas.Timestamp, optional
+        tmax: str or pandas.Timestamp, optional
+        ax: Matplotlib.axes instance, optional
+            Axes to add the plot to.
+        figsize: tuple, optional
+            Tuple with the height and width of the figure in inches.
+        **kwargs:
+            Passed on to plot_cum_frequency
+
+        Returns
+        -------
+        ax: matplotlib.axes.Axes
+
+        See Also
+        --------
+        ps.stats.plot_cum_frequency
+
+        """
+        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        return plot_cum_frequency(obs, sim, ax=ax, figsize=figsize, **kwargs)
 
     def block_response(self, stressmodels=None, ax=None, figsize=None,
                        **kwargs):
@@ -443,7 +465,6 @@ class Plotting:
         -------
         matplotlib.axes.Axes
             matplotlib axes instance.
-
         """
         if ax is None:
             _, ax = plt.subplots(figsize=figsize, **kwargs)
@@ -458,8 +479,8 @@ class Plotting:
                 self.ml.get_block_response(name).plot(ax=ax)
                 legend.append(name)
             else:
-                logger.warning("Stressmodel {} not in stressmodels "
-                               "list.".format(name))
+                logger.warning("Stressmodel %s not in stressmodels list.",
+                               name)
 
         plt.xlim(0)
         plt.xlabel("Time [days]")
@@ -479,7 +500,6 @@ class Plotting:
         -------
         matplotlib.axes.Axes
             matplotlib axes instance.
-
         """
         if ax is None:
             _, ax = plt.subplots(figsize=figsize, **kwargs)
@@ -494,8 +514,8 @@ class Plotting:
                 self.ml.get_step_response(name).plot(ax=ax)
                 legend.append(name)
             else:
-                logger.warning("Stressmodel {} not in stressmodels "
-                               "list.".format(name))
+                logger.warning("Stressmodel %s not in stressmodels list.",
+                               name)
 
         plt.xlim(0)
         plt.xlabel("Time [days]")
@@ -505,8 +525,7 @@ class Plotting:
     @model_tmin_tmax
     def stresses(self, tmin=None, tmax=None, cols=1, split=True, sharex=True,
                  figsize=(10, 8), **kwargs):
-        """This method creates a graph with all the stresses used in the
-         model.
+        """This method creates a graph with all the stresses used in the model.
 
         Parameters
         ----------
@@ -525,7 +544,6 @@ class Plotting:
         -------
         axes: matplotlib.axes
             matplotlib axes instance.
-
         """
         stresses = []
 
@@ -567,8 +585,8 @@ class Plotting:
                           figsize=None, split=True, partition='std',
                           wedgeprops=None, startangle=90,
                           autopct='%1.1f%%', **kwargs):
-        """Make a pie chart of the contributions. This plot is based on the
-        TNO Groundwatertoolbox.
+        """Make a pie chart of the contributions. This plot is based on the TNO
+        Groundwatertoolbox.
 
         Parameters
         ----------
@@ -597,7 +615,6 @@ class Plotting:
         Returns
         -------
         ax: matplotlib.axes
-
         """
         if ax is None:
             _, ax = plt.subplots(figsize=figsize)
@@ -633,8 +650,8 @@ class Plotting:
 
     @model_tmin_tmax
     def stacked_results(self, tmin=None, tmax=None, figsize=(10, 8), **kwargs):
-        """Create a results plot, similar to `ml.plots.results()`, in which
-        the individual contributions of stresses (in stressmodels with multiple
+        """Create a results plot, similar to `ml.plots.results()`, in which the
+        individual contributions of stresses (in stressmodels with multiple
         stresses) are stacked.
 
         Note: does not plot the individual contributions of StressModel2
@@ -648,12 +665,11 @@ class Plotting:
         Returns
         -------
         axes: list of axes objects
-
         """
 
         # %% Contribution per stress on model results plot
         def custom_sort(t):
-            """Sort by mean contribution"""
+            """Sort by mean contribution."""
             return t[1].mean()
 
         # Create standard results plot
@@ -666,11 +682,10 @@ class Plotting:
         for i, sm in zip(range(3, 3 + 2 * nsm, 2),
                          self.ml.stressmodels.keys()):
 
-            # Get the contributions for StressModels with multiple
-            # stresses
+            # Get the contributions for StressModels with multiple stresses
             contributions = []
             sml = self.ml.stressmodels[sm]
-            if (len(sml.stress) > 0) and (sml._name != "StressModel2"):
+            if (len(sml.stress) > 0) and (sml._name == "WellModel"):
                 nsplit = sml.get_nsplit()
                 if nsplit > 1:
                     for istress in range(len(sml.stress)):
@@ -686,7 +701,7 @@ class Plotting:
                 contributions.sort(key=custom_sort)
 
                 # add stacked plot to correct axes
-                ax = axes[i]
+                ax = axes[i - 1]
                 del ax.lines[0]  # delete existing line
 
                 contrib = [c[1] for c in contributions]  # get timeseries
@@ -724,7 +739,6 @@ def compare(models, tmin=None, tmax=None, figsize=(10, 8),
     Returns
     -------
     matplotlib.axes
-
     """
     # sort models by descending order of N stressmodels
     models.sort(key=lambda ml: len(ml.stressmodels), reverse=True)
@@ -735,13 +749,13 @@ def compare(models, tmin=None, tmax=None, figsize=(10, 8),
     # get the axes
     ax_ml = axes[0]  # model result
     ax_res = axes[1]  # model residuals
-    ax_table = axes[2]  # parameters table
-    axes_sm = axes[3:]  # stressmodels
+    ax_table = axes[-1]  # parameters table
+    axes_sm = axes[2:-1]  # stressmodels
 
     # get second model
     for j, iml in enumerate(models[1:], start=2):
         sim = iml.simulate(tmin=tmin, tmax=tmax)
-        sim.name = '{} ($R^2$ = {:0.1f}%)'.format(
+        sim.name = '{} ($R^2$ = {:0.2f}%)'.format(
             sim.name, iml.stats.evp(tmin=tmin, tmax=tmax))
         p, = ax_ml.plot(sim.index, sim, label=sim.name)
         color = p.get_color()
@@ -819,12 +833,12 @@ def compare(models, tmin=None, tmax=None, figsize=(10, 8),
 
 
 class TrackSolve:
-    """ Track and visualize optimization progress for pastas models.
+    """Track and/or visualize optimization progress for Pastas models.
 
     Parameters
     ----------
     ml : pastas.Model
-        pastas Model to set up tracking for
+        pastas Model to track
     tmin : str or pandas.Timestamp, optional
         start time for simulation, by default None which
         defaults to first index in ml.oseries.series
@@ -832,29 +846,17 @@ class TrackSolve:
         end time for simulation, by default None which
         defaults to last index in ml.oseries.series
     update_iter : int, optional
-        update plot every update_iter iterations,
-        by default 1
+        if visualizing optimization progress, update plot every update_iter 
+        iterations, by default nparam
 
     Notes
     -----
-    - Requires a matplotlib backend that supports interactive
-      plotting, i.e. mpl.use("TkAgg").
-    - Some possible speedups on the matplotlib side:
+    - Interactive plotting of optimization progress requires a matplotlib backend 
+      that supports interactive plotting, e.g. `mpl.use("TkAgg")` and 
+      `mpl.interactive(True)`. Some possible speedups on the matplotlib side 
+      include:
         - mpl.style.use("fast")
         - mpl.rcParams['path.simplify_threshold'] = 1.0
-    - Since only parameters are passed to callback function in ml.solve,
-      everything else passed to ml.solve must be known beforehand(?). This means
-      if the tmin / tmax are passed in ml.solve() and not to TrackSolve(), the
-      resulting plot will not correctly represent the statistics of the
-      optimization.
-    - TODO: check if more information passed to solve can be picked up
-      from the model object instead of having to pass to TrackSolve.
-    - TODO: check if statistics are calculated correctly as compared to
-      results from ml.solve().
-    - TODO: check if animation can be sped up somehow.
-    - TODO: check what the relationship is between no. of iterations
-      and the LeastSquares nfev and njev values. Model fit is only updated
-      every few iterations( = nparams).
 
     Examples
     --------
@@ -862,14 +864,25 @@ class TrackSolve:
 
     >>> track = TrackSolve(ml)
 
-    Initialize figure:
+    Solve model and store intermediate optimization results:
 
-    >>> fig = track.initialize_figure()
+    >>> ml.solve(callback=track.track_solve)
 
-    Solve model and pass track.update_figure as callback function:
+    Calculated parameters per iteration are stored in a pandas.DataFrame:
 
-    >>> ml.solve(callback=track.update_figure)
+    >>> track.parameters
 
+    Other stored statistics include `track.evp` (explained variance 
+    percentage), `track.rmse_res` (root-mean-squared error of the residuals), 
+    `track.rmse_noise` (root mean squared error of the noise, only if 
+    noise=True).
+
+    To interactively plot model optimiztion progress while solving pass 
+    `track.plot_track_solve` as callback function:
+
+    >>> ml.solve(callback=track.plot_track_solve)
+
+    Access the resulting figure through `track.fig`.
     """
 
     def __init__(self, ml, tmin=None, tmax=None, update_iter=None):
@@ -880,8 +893,8 @@ class TrackSolve:
         self.ml = ml
         self.viewlim = 75  # no of iterations on axes by default
         if update_iter is None:
-            self.update_iter = \
-                len(self.ml.parameters.loc[self.ml.parameters.vary].index)
+            self.update_iter = len(
+                self.ml.parameters.loc[self.ml.parameters.vary].index)
         else:
             self.update_iter = update_iter  # update plot every update_iter
 
@@ -918,18 +931,21 @@ class TrackSolve:
         self.obs = self.ml.observations(tmin=self.tmin,
                                         tmax=self.tmax)
         # calculate EVP
-        self.evp = self._calc_evp(res.values, self.obs.values)
+        self.evp = np.array([self._calc_evp(res.values, self.obs.values)])
 
-    def _append_params(self, params):
-        """Append parameters to self.parameters DataFrame and
-        update itercount, rmse values and evp.
+    def track_solve(self, params):
+        """Append parameters to self.parameters DataFrame and update itercount,
+        rmse values and evp.
 
         Parameters
         ----------
         params : np.array
             array containing parameters
-
         """
+        # update tmin/tmax and freq once after starting solve
+        if self.itercount == 0:
+            self._update_settings()
+
         # update itercount
         self.itercount += 1
 
@@ -947,13 +963,11 @@ class TrackSolve:
                 self.rmse_noise, np.sqrt(np.sum(n_res ** 2))]
 
         # recalculate EVP
-        self.evp = self._calc_evp(r_res.values, self.obs.values)
+        self.evp = np.r_[self.evp,
+                         self._calc_evp(r_res.values, self.obs.values)]
 
     def _update_axes(self):
-        """extend xlim if no. of iterations exceeds
-        current window.
-
-        """
+        """extend xlim if number of iterations exceeds current window."""
         for iax in self.axes[1:]:
             iax.set_xlim(right=self.viewlim)
             self.fig.canvas.draw()
@@ -965,8 +979,7 @@ class TrackSolve:
 
     @staticmethod
     def _calc_evp(res, obs):
-        """calculate evp
-        """
+        """calculate evp."""
         if obs.var() == 0.0:
             evp = 1.
         else:
@@ -974,7 +987,7 @@ class TrackSolve:
         return evp
 
     def _noise(self, params):
-        """get noise
+        """get noise.
 
         Parameters
         ----------
@@ -985,14 +998,13 @@ class TrackSolve:
         -------
         noise: np.array
             array containing noise
-
         """
         noise = self.ml.noise(p=params, tmin=self.tmin,
                               tmax=self.tmax)
         return noise
 
     def _residuals(self, params):
-        """calculate residuals
+        """calculate residuals.
 
         Parameters
         ----------
@@ -1003,20 +1015,18 @@ class TrackSolve:
         -------
         res: np.array
             array containing residuals
-
         """
         res = self.ml.residuals(p=params, tmin=self.tmin,
                                 tmax=self.tmax)
         return res
 
     def _simulate(self):
-        """simulate model with last entry in self.parameters
+        """simulate model with last entry in self.parameters.
 
         Returns
         -------
         sim: pd.Series
             series containing model evaluation
-
         """
         sim = self.ml.simulate(p=self.parameters.iloc[-1, :].values,
                                tmin=self.tmin, tmax=self.tmax,
@@ -1037,10 +1047,9 @@ class TrackSolve:
         -------
         fig : matplotlib.pyplot.Figure
             handle to the figure
-
         """
         # create plot
-        self.fig, self.axes = plt.subplots(3, 1, figsize=(10, 8), dpi=100)
+        self.fig, self.axes = plt.subplots(3, 1, figsize=figsize, dpi=dpi)
         self.ax0, self.ax1, self.ax2 = self.axes
 
         # plot oseries
@@ -1053,7 +1062,7 @@ class TrackSolve:
         self.ax0.set_ylabel("oseries/model")
         self.ax0.set_title(
             "Iteration: {0} (EVP: {1:.2%})".format(self.itercount,
-                                                   self.evp))
+                                                   self.evp[-1]))
         self.ax0.legend(loc="lower right")
 
         # plot RMSE (residuals and/or residuals)
@@ -1109,26 +1118,23 @@ class TrackSolve:
         self.fig.tight_layout()
         return self.fig
 
-    def update_figure(self, params):
-        """Method to update figure while model is being solved. Pass this
-        method to ml.solve(), e.g.:
+    def plot_track_solve(self, params):
+        """Method to plot model simulation while model is being solved. Pass
+        this method to ml.solve(), e.g.:
 
         >>> track = TrackSolve(ml)
-        >>> fig = track.initialize_figure()
-        >>> ml.solve(callback=track.update_figure)
+        >>> ml.solve(callback=track.plot_track_solve)
 
         Parameters
         ----------
         params : np.array
             array containing parameters
-
         """
+        if not hasattr(self, "fig"):
+            self.initialize_figure()
 
         # update parameters
-        self._append_params(params)
-
-        # update settings from ml.settings
-        self._update_settings()
+        self.track_solve(params)
 
         # check if figure should be updated
         if self.itercount % self.update_iter != 0:
@@ -1164,7 +1170,7 @@ class TrackSolve:
         # update title
         self.ax0.set_title(
             "Iteration: {0} (EVP: {1:.2%})".format(self.itercount,
-                                                   self.evp))
+                                                   self.evp[-1]))
         self.fig.canvas.draw()
 
 

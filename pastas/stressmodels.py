@@ -709,7 +709,7 @@ class WellModel(StressModelBase):
                  settings="well", sort_wells=True):
         if not issubclass(rfunc, HantushWellModel):
             raise NotImplementedError("WellModel only supports the rfunc "
-                                      "HantushWellModel fow now!")
+                                      "HantushWellModel!")
 
         logger.warning("It is recommended to use LmfitSolve as the solver "
                        "when implementing WellModel. See "
@@ -723,10 +723,11 @@ class WellModel(StressModelBase):
             if isinstance(settings, list):
                 settings = [s for _, s in sorted(zip(distances, settings),
                                                  key=lambda pair: pair[0])]
-            distances.sort()
+
+            distances = np.sort(distances)
 
         if settings is None or isinstance(settings, str):
-            settings = len(stress) * [None]
+            settings = len(stress) * [settings]
 
         # convert stresses to TimeSeries if necessary
         stress = self.handle_stress(stress, settings)
@@ -743,7 +744,8 @@ class WellModel(StressModelBase):
                                     name="distances")
 
         meanstress = np.max([s.series.std() for s in stress])
-        rfunc = rfunc(up=up, cutoff=cutoff, meanstress=meanstress)
+        rfunc = rfunc(up=up, cutoff=cutoff, meanstress=meanstress,
+                      distances=self.distances.values)
 
         tmin = np.min([s.series.index.min() for s in stress])
         tmax = np.max([s.series.index.max() for s in stress])
@@ -757,14 +759,6 @@ class WellModel(StressModelBase):
 
     def set_init_parameters(self):
         self.parameters = self.rfunc.get_init_parameters(self.name)
-        # ensure lambda can't get too small or too large
-        self.parameters.loc[self.name + "_b", "pmax"] /= \
-            np.max(self.distances) ** 2
-        self.parameters.loc[self.name + "_b", "pmin"] /= \
-            np.max(self.distances) ** 2
-        # set initial value with mean distance
-        self.parameters.loc[self.name + "_b", "initial"] /= \
-            np.mean(self.distances) ** 2
 
     def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1,
                  istress=None, **kwargs):
@@ -811,16 +805,16 @@ class WellModel(StressModelBase):
         data = []
 
         if isinstance(stress, Series):
-            data.append(TimeSeries(stress, settings))
+            data.append(TimeSeries(stress, settings=settings))
         elif isinstance(stress, dict):
-            for i, value in enumerate(stress.values()):
-                data.append(TimeSeries(value, settings=settings[i]))
+            for i, (name, value) in enumerate(stress.items()):
+                data.append(TimeSeries(value, name=name, settings=settings[i]))
         elif isinstance(stress, list):
             for i, value in enumerate(stress):
                 data.append(TimeSeries(value, settings=settings[i]))
         else:
-            logger.error("Stress format is unknown. Provide a"
-                         "Series, dict or list.")
+            logger.error("Stress format is unknown. Provide a Series, "
+                         "dict or list.")
         return data
 
     def get_stress(self, p=None, tmin=None, tmax=None, freq=None,
@@ -851,14 +845,16 @@ class WellModel(StressModelBase):
 
     def get_parameters(self, model=None, istress=None):
         """ Get parameters including distance to observation point and
-        return as array (dimensions (nstresses, 4)).
+        return as array (dimensions = (nstresses, 4)).
 
         Parameters
         ----------
         model : pastas.Model, optional
-            if not None (default), use optimal model parameters
+            if provided, return optimal model parameters, else return
+            initial parameters
         istress : int, optional
-            if not None (default), return all parameters
+            if provided, return specific parameter set, else
+            return all parameters
 
         Returns
         -------
@@ -907,20 +903,6 @@ class WellModel(StressModelBase):
 class FactorModel(StressModelBase):
     """Model that multiplies a stress by a single value.
 
-    Parameters
-    ----------
-    stress: pandas.Series or pastas.timeseries.TimeSeries
-        Stress which will be multiplied by a factor. The stress does not
-        have to be equidistant.
-    name: str, optional
-        String with the name of the stressmodel.
-    settings: dict or str, optional
-        Dict or String that is forwarded to the TimeSeries object created
-        from the stress.
-    metadata: dict, optional
-        Dictionary with metadata, forwarded to the TimeSeries object created
-        from the stress.
-
     Warnings
     --------
     This stressmodel is deprecated and will be removed in a future version
@@ -928,46 +910,12 @@ class FactorModel(StressModelBase):
     will yield the same result.
 
     """
-    _name = "FactorModel"
 
-    def __init__(self, stress, name="factor", settings=None, metadata=None):
-        if isinstance(stress, list):
-            stress = stress[0]  # Temporary fix Raoul, 2017-10-24
-
-        stress = TimeSeries(stress, settings=settings, metadata=metadata)
-
-        tmin = stress.series_original.index.min()
-        tmax = stress.series_original.index.max()
-
-        StressModelBase.__init__(self, name=name, tmin=tmin, tmax=tmax)
-        self.value = 1.  # Initial value
-        self.stress = [stress]
-        self.set_init_parameters()
-
-    def set_init_parameters(self):
-        self.parameters.loc[self.name + "_f"] = (
-            self.value, -np.inf, np.inf, True, self.name)
-
-    def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1):
-        self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
-        return self.stress[0].series * p[0]
-
-    def to_dict(self, series=True):
-        """Method to export the StressModel object.
-
-        Returns
-        -------
-        data: dict
-            dictionary with all necessary information to reconstruct the
-            StressModel object.
-
-        """
-        data = {
-            "stressmodel": self._name,
-            "name": self.name,
-            "stress": self.dump_stress(series)
-        }
-        return data
+    def __init__(self, **kwargs):
+        raise DeprecationWarning("This stressmodel was deprecated in "
+                                 "0.16.0 and has been removed in 0.17.0."
+                                 "Please use ps.StressModel with rfunc=ps.One "
+                                 "instead. This will yield the same result.")
 
 
 class RechargeModel(StressModelBase):
@@ -1169,7 +1117,7 @@ class RechargeModel(StressModelBase):
                 # only happen when Linear is used as the recharge model
                 stress = stress * p[-1]
             if self.stress[istress].name is not None:
-                name = "{} ({})".format(self.name, self.stress[istress].name)
+                name = f"{self.name} ({self.stress[istress].name})"
 
         return Series(data=fftconvolve(stress, b, 'full')[:stress.size],
                       index=self.prec.series.index, name=name, fastpath=True)
@@ -1284,8 +1232,8 @@ class RechargeModel(StressModelBase):
     def to_dict(self, series=True):
         data = {
             "stressmodel": self._name,
-            "prec": self.prec.to_dict(),
-            "evap": self.evap.to_dict(),
+            "prec": self.prec.to_dict(series=series),
+            "evap": self.evap.to_dict(series=series),
             "rfunc": self.rfunc._name,
             "name": self.name,
             "recharge": self.recharge._name,
@@ -1367,16 +1315,16 @@ class TarsoModel(RechargeModel):
         p0 = self.rfunc.get_init_parameters(self.name)
         one = One(meanstress=self.dmin + 0.5 * (self.dmax - self.dmin))
         pd0 = one.get_init_parameters(self.name).squeeze()
-        p0.loc['{}_d'.format(self.name)] = pd0
-        p0.index = ['{}0'.format(x) for x in p0.index]
+        p0.loc[f'{self.name}_d'] = pd0
+        p0.index = [f'{x}0' for x in p0.index]
 
         # parameters for the second drainage level
         p1 = self.rfunc.get_init_parameters(self.name)
         initial = self.dmin + 0.75 * (self.dmax - self.dmin)
         pd1 = Series({'initial': initial, 'pmin': self.dmin, 'pmax': self.dmax,
                       'vary': True, 'name': self.name})
-        p1.loc['{}_d'.format(self.name)] = pd1
-        p1.index = ['{}1'.format(x) for x in p1.index]
+        p1.loc[f'{self.name}_d'] = pd1
+        p1.index = [f'{x}1' for x in p1.index]
 
         # parameters for the recharge-method
         pr = self.recharge.get_init_parameters(self.name)
@@ -1400,14 +1348,14 @@ class TarsoModel(RechargeModel):
     def _check_stressmodel_compatibility(ml):
         """Internal method to check if no other stressmodels, a constants or a
         transform is used."""
-        msg = "A TarsoModel cannot be combined with {}. Either remove the" \
-              " TarsoModel or the {}."
+        msg = "A TarsoModel cannot be combined with %s. Either remove the" \
+              " TarsoModel or the %s."
         if len(ml.stressmodels) > 1:
-            logger.warning(msg.format("other stressmodels", "stressmodels"))
+            logger.warning(msg, "other stressmodels", "stressmodels")
         if ml.constant is not None:
-            logger.warning(msg.format("a constant", "constant"))
+            logger.warning(msg, "a constant", "constant")
         if ml.transform is not None:
-            logger.warning(msg.format("a transform", "transform"))
+            logger.warning(msg, "a transform", "transform")
 
     @staticmethod
     @njit
@@ -1448,7 +1396,7 @@ class TarsoModel(RechargeModel):
                     (d1 - d - r[i] * c) / (h0 - d - r[i] * c))
                 if dtdr > dt:
                     raise (Exception())
-                # change paraemeters
+                # change parameters
                 high = newhigh
                 if high:
                     S, a, c, d = S1, a_e, c_e, d_e

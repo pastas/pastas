@@ -21,7 +21,6 @@ left-hand menu you will find the different categories of the API documentation.
     rfunc
     solver
     utils
-    project.project
     plots
     stats
 
