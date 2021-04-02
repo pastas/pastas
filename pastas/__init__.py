@@ -9,7 +9,7 @@ from .read import read_meny, read_dino, read_dino_level_gauge, read_knmi, \
 from .rfunc import Gamma, Exponential, Hantush, Polder, One, FourParam, \
     DoubleExponential, HantushWellModel
 from .solver import LmfitSolve, LeastSquares, LmfitSolveNew
-from .stressmodels import StressModel, StressModel2, Constant, FactorModel, \
+from .stressmodels import StressModel, StressModel2, Constant, \
     RechargeModel, WellModel, StepModel, LinearTrend, TarsoModel
 from .timeseries import TimeSeries
 from .transform import ThresholdTransform
@@ -25,10 +25,3 @@ initialize_logger(logger)
 from pandas.plotting import register_matplotlib_converters
 
 register_matplotlib_converters()
-
-
-class Project:
-    def __init__(self):
-        msg = "The Pastas Project class has been removed. Please use the " \
-              "Pastastore (https://github.com/pastas/pastastore). "
-        logger.error(msg)

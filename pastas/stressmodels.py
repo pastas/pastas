@@ -22,7 +22,7 @@ import numpy as np
 from pandas import date_range, Series, Timedelta, DataFrame, concat, Timestamp
 from scipy.signal import fftconvolve
 
-from .decorators import set_parameter, njit, PastasDeprecationWarning
+from .decorators import set_parameter, njit
 from .recharge import Linear
 from .rfunc import One, Exponential, HantushWellModel
 from .timeseries import TimeSeries
@@ -31,8 +31,7 @@ from .utils import validate_name
 logger = getLogger(__name__)
 
 __all__ = ["StressModel", "StressModel2", "Constant", "StepModel",
-           "LinearTrend", "FactorModel", "RechargeModel", "WellModel",
-           "TarsoModel"]
+           "LinearTrend", "RechargeModel", "WellModel", "TarsoModel"]
 
 
 class StressModelBase:
@@ -897,25 +896,6 @@ class WellModel(StressModelBase):
             "sort_wells": self.sort_wells
         }
         return data
-
-
-@PastasDeprecationWarning
-class FactorModel(StressModelBase):
-    """Model that multiplies a stress by a single value.
-
-    Warnings
-    --------
-    This stressmodel is deprecated and will be removed in a future version
-    of Pastas. Please use ps.StressModel with rfunc=ps.One instead. This
-    will yield the same result.
-
-    """
-
-    def __init__(self, **kwargs):
-        raise DeprecationWarning("This stressmodel was deprecated in "
-                                 "0.16.0 and has been removed in 0.17.0."
-                                 "Please use ps.StressModel with rfunc=ps.One "
-                                 "instead. This will yield the same result.")
 
 
 class RechargeModel(StressModelBase):
