@@ -279,12 +279,13 @@ class BaseSolver:
             n x n Pandas DataFrame with the correlations.
 
         """
-        pcor = pcov.loc[pcov.index, pcov.index].copy()
-
-        for i in pcor.index:
-            for j in pcor.columns:
-                pcor.loc[i, j] = pcov.loc[i, j] / \
-                                 np.sqrt(pcov.loc[i, i] * pcov.loc[j, j])
+        index = pcov.index
+        pcov = pcov.to_numpy()
+        v = np.sqrt(np.diag(pcov))
+        with np.errstate(divide='ignore', invalid='ignore'):
+            corr = pcov / np.outer(v, v)
+        corr[pcov == 0] = 0
+        pcor = DataFrame(data=corr, index=index, columns=index)
         return pcor
 
     def to_dict(self):
@@ -562,9 +563,7 @@ class MonteCarlo(BaseSolver):
         BaseSolver.__init__(self, ml=ml, pcov=pcov, nfev=nfev, **kwargs)
 
     def solve(self):
-
         optimal = None
         stderr = None
         success = True
         return success, optimal, stderr
-
