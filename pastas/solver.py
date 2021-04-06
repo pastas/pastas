@@ -453,7 +453,7 @@ class LmfitSolve(BaseSolver):
                 pcov = self.result.covar
 
         names = self.result.var_names
-        self.pcov = DataFrame(pcov, index=names, columns=names)
+        self.pcov = DataFrame(pcov, index=names, columns=names, dtype=float)
         self.pcor = self._get_correlations(self.pcov)
 
         # Set all optimization attributes
