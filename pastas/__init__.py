@@ -4,13 +4,12 @@ import pastas.recharge as rch
 from .model import Model
 from .noisemodels import NoiseModel, ArmaModel
 from .plots import TrackSolve
-from .project import Project
 from .read import read_meny, read_dino, read_dino_level_gauge, read_knmi, \
     read_waterbase
 from .rfunc import Gamma, Exponential, Hantush, Polder, One, FourParam, \
     DoubleExponential, HantushWellModel
 from .solver import LmfitSolve, LeastSquares, LmfitSolveNew
-from .stressmodels import StressModel, StressModel2, Constant, FactorModel, \
+from .stressmodels import StressModel, StressModel2, Constant, \
     RechargeModel, WellModel, StepModel, LinearTrend, TarsoModel
 from .timeseries import TimeSeries
 from .transform import ThresholdTransform

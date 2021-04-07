@@ -22,7 +22,7 @@ import numpy as np
 from pandas import date_range, Series, Timedelta, DataFrame, concat, Timestamp
 from scipy.signal import fftconvolve
 
-from .decorators import set_parameter, njit, PastasDeprecationWarning
+from .decorators import set_parameter, njit
 from .recharge import Linear
 from .rfunc import One, Exponential, HantushWellModel
 from .timeseries import TimeSeries
@@ -31,8 +31,7 @@ from .utils import validate_name
 logger = getLogger(__name__)
 
 __all__ = ["StressModel", "StressModel2", "Constant", "StepModel",
-           "LinearTrend", "FactorModel", "RechargeModel", "WellModel",
-           "TarsoModel"]
+           "LinearTrend", "RechargeModel", "WellModel", "TarsoModel"]
 
 
 class StressModelBase:
@@ -709,7 +708,7 @@ class WellModel(StressModelBase):
                  settings="well", sort_wells=True):
         if not issubclass(rfunc, HantushWellModel):
             raise NotImplementedError("WellModel only supports the rfunc "
-                                      "HantushWellModel fow now!")
+                                      "HantushWellModel!")
 
         logger.warning("It is recommended to use LmfitSolve as the solver "
                        "when implementing WellModel. See "
@@ -723,10 +722,11 @@ class WellModel(StressModelBase):
             if isinstance(settings, list):
                 settings = [s for _, s in sorted(zip(distances, settings),
                                                  key=lambda pair: pair[0])]
-            distances.sort()
+
+            distances = np.sort(distances)
 
         if settings is None or isinstance(settings, str):
-            settings = len(stress) * [None]
+            settings = len(stress) * [settings]
 
         # convert stresses to TimeSeries if necessary
         stress = self.handle_stress(stress, settings)
@@ -743,7 +743,8 @@ class WellModel(StressModelBase):
                                     name="distances")
 
         meanstress = np.max([s.series.std() for s in stress])
-        rfunc = rfunc(up=up, cutoff=cutoff, meanstress=meanstress)
+        rfunc = rfunc(up=up, cutoff=cutoff, meanstress=meanstress,
+                      distances=self.distances.values)
 
         tmin = np.min([s.series.index.min() for s in stress])
         tmax = np.max([s.series.index.max() for s in stress])
@@ -757,14 +758,6 @@ class WellModel(StressModelBase):
 
     def set_init_parameters(self):
         self.parameters = self.rfunc.get_init_parameters(self.name)
-        # ensure lambda can't get too small or too large
-        self.parameters.loc[self.name + "_b", "pmax"] /= \
-            np.max(self.distances) ** 2
-        self.parameters.loc[self.name + "_b", "pmin"] /= \
-            np.max(self.distances) ** 2
-        # set initial value with mean distance
-        self.parameters.loc[self.name + "_b", "initial"] /= \
-            np.mean(self.distances) ** 2
 
     def simulate(self, p=None, tmin=None, tmax=None, freq=None, dt=1,
                  istress=None, **kwargs):
@@ -811,10 +804,10 @@ class WellModel(StressModelBase):
         data = []
 
         if isinstance(stress, Series):
-            data.append(TimeSeries(stress, settings))
+            data.append(TimeSeries(stress, settings=settings))
         elif isinstance(stress, dict):
-            for i, value in enumerate(stress.values()):
-                data.append(TimeSeries(value, settings=settings[i]))
+            for i, (name, value) in enumerate(stress.items()):
+                data.append(TimeSeries(value, name=name, settings=settings[i]))
         elif isinstance(stress, list):
             for i, value in enumerate(stress):
                 data.append(TimeSeries(value, settings=settings[i]))
@@ -851,14 +844,16 @@ class WellModel(StressModelBase):
 
     def get_parameters(self, model=None, istress=None):
         """ Get parameters including distance to observation point and
-        return as array (dimensions (nstresses, 4)).
+        return as array (dimensions = (nstresses, 4)).
 
         Parameters
         ----------
         model : pastas.Model, optional
-            if not None (default), use optimal model parameters
+            if provided, return optimal model parameters, else return
+            initial parameters
         istress : int, optional
-            if not None (default), return all parameters
+            if provided, return specific parameter set, else
+            return all parameters
 
         Returns
         -------
@@ -901,25 +896,6 @@ class WellModel(StressModelBase):
             "sort_wells": self.sort_wells
         }
         return data
-
-
-@PastasDeprecationWarning
-class FactorModel(StressModelBase):
-    """Model that multiplies a stress by a single value.
-
-    Warnings
-    --------
-    This stressmodel is deprecated and will be removed in a future version
-    of Pastas. Please use ps.StressModel with rfunc=ps.One instead. This
-    will yield the same result.
-
-    """
-
-    def __init__(self, **kwargs):
-        raise DeprecationWarning("This stressmodel was deprecated in "
-                                 "0.16.0 and has been removed in 0.17.0."
-                                 "Please use ps.StressModel with rfunc=ps.One "
-                                 "instead. This will yield the same result.")
 
 
 class RechargeModel(StressModelBase):

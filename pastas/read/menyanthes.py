@@ -158,7 +158,7 @@ class MenyData:
                         # time-step, so divide by the timestep now
                         step = series.index.to_series().diff() / offsets.Day(
                             1)
-                        step = step.values.astype(np.float)
+                        step = step.values.astype(np.float64)
                         series = series / step
                         if series.values[0] != 0:
                             series = series[1:]

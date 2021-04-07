@@ -18,21 +18,17 @@ files = [f for f in os.listdir(pathname) if f.endswith('.py')]
 def test_example(file):
     cwd = os.getcwd()
     os.chdir(pathname)
-    if file not in ["example_900.py"]:
+    if file not in ["example_900.py", "test_knmidata.py"]:
         try:
             # run each example
             exec(open(file).read())
             plt.close('all')
         except Exception as e:
             os.chdir(cwd)
-            msg = 'could not run {}'.format(file)
-            raise Exception(msg) from e
+            raise Exception(f"could not run {file}") from e
     os.chdir(cwd)
 
 
 if __name__ == '__main__':
     for file in files:
-        if "knmidata" in file:
-            pass
-        else:
-            test_example(file)
+        test_example(file)
