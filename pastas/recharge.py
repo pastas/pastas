@@ -40,6 +40,7 @@ from numpy import add, float64, multiply, exp, zeros, nan_to_num, vstack
 from pandas import DataFrame
 
 from pastas.decorators import njit
+from .utils import check_numba
 
 
 class RechargeBase:
@@ -164,6 +165,7 @@ class FlexModel(RechargeBase):
     _name = "FlexModel"
 
     def __init__(self):
+        check_numba()
         RechargeBase.__init__(self)
         self.nparam = 6
 
@@ -292,6 +294,7 @@ class Berendrecht(RechargeBase):
     _name = "Berendrecht"
 
     def __init__(self):
+        check_numba()
         RechargeBase.__init__(self)
         self.nparam = 7
 

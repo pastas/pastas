@@ -11,6 +11,7 @@ from pandas import Timedelta, DataFrame, TimedeltaIndex
 from scipy.stats import norm
 
 from ..decorators import njit
+from ..utils import check_numba
 
 
 def acf(x, lags=365, bin_method='rectangle', bin_width=0.5, max_gap=inf,
@@ -207,6 +208,7 @@ def _compute_ccf_rectangle(lags, t_x, x, t_y, y, bin_width=0.5):
     """Internal numba-optimized method to compute the ccf.
 
     """
+    check_numba()
     c = empty_like(lags)
     b = empty_like(lags)
     l = len(lags)
@@ -235,6 +237,7 @@ def _compute_ccf_gaussian(lags, t_x, x, t_y, y, bin_width=0.5):
     """Internal numba-optimized method to compute the ccf.
 
     """
+    check_numba()
     c = empty_like(lags)
     b = empty_like(lags)
     l = len(lags)
