@@ -167,10 +167,12 @@ def ccf(x, y, lags=365, bin_method='rectangle', bin_width=0.5,
     if bin_method == "rectangle":
         if bin_width is None:
             bin_width = 0.5 * dt_mu
+        check_numba()
         c, b = _compute_ccf_rectangle(lags, t_x, x, t_y, y, bin_width)
     elif bin_method == "gaussian":
         if bin_width is None:
             bin_width = 0.25 * dt_mu
+        check_numba()
         c, b = _compute_ccf_gaussian(lags, t_x, x, t_y, y, bin_width)
     elif bin_method == "regular":
         c, b = _compute_ccf_regular(arange(1.0, len(lags) + 1), x, y)
@@ -208,7 +210,6 @@ def _compute_ccf_rectangle(lags, t_x, x, t_y, y, bin_width=0.5):
     """Internal numba-optimized method to compute the ccf.
 
     """
-    check_numba()
     c = empty_like(lags)
     b = empty_like(lags)
     l = len(lags)
@@ -237,7 +238,6 @@ def _compute_ccf_gaussian(lags, t_x, x, t_y, y, bin_width=0.5):
     """Internal numba-optimized method to compute the ccf.
 
     """
-    check_numba()
     c = empty_like(lags)
     b = empty_like(lags)
     l = len(lags)
