@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class Plotting:
-    """Plots available directly form the Model Class."""
+    """Plots available directly from the Model Class."""
 
     def __init__(self, ml):
         self.ml = ml  # Store a reference to the model class
