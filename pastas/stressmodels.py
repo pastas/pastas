@@ -992,10 +992,9 @@ class RechargeModel(StressModelBase):
         self.recharge = recharge
 
         # Store a temperature time series if needed or set to None
-        if self.recharge.temp is True:
-
+        if self.recharge.snow is True:
             if temp is None:
-                msg = "Recharge module requires a temperature series. " \
+                msg = "Recharge model requires a temperature series. " \
                       "No temperature series were provided"
                 raise TypeError(msg)
             elif len(settings) < 3 or len(metadata) < 3:
@@ -1089,7 +1088,7 @@ class RechargeModel(StressModelBase):
         """
         if p is None:
             p = self.parameters.initial.values
-        b = self._get_block(p[:-self.recharge.nparam], dt, tmin, tmax)
+        b = self._get_block(p[:self.rfunc.nparam], dt, tmin, tmax)
         stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq,
                                  istress=istress).values
         name = self.name
@@ -1106,8 +1105,7 @@ class RechargeModel(StressModelBase):
 
     def get_stress(self, p=None, tmin=None, tmax=None, freq=None,
                    istress=None, **kwargs):
-        """Method to obtain the recharge stress calculated by the recharge
-        model.
+        """Method to obtain the recharge stress calculated by the model.
 
         Parameters
         ----------
@@ -1148,7 +1146,6 @@ class RechargeModel(StressModelBase):
                 p = self.parameters.initial.values
             stress = self.recharge.simulate(prec=prec, evap=evap, temp=temp,
                                             p=p[-self.recharge.nparam:])
-
             return Series(data=stress, index=self.prec.series.index,
                           name="recharge", fastpath=True)
         elif istress == 0:
@@ -1159,7 +1156,7 @@ class RechargeModel(StressModelBase):
             return self.temp.series
 
     def get_water_balance(self, p=None, tmin=None, tmax=None, freq=None):
-        """Experimental method to obtain the water balance components.
+        """Method to obtain the water balance components.
 
         Parameters
         ----------
@@ -1204,8 +1201,10 @@ class RechargeModel(StressModelBase):
                                istress=0).values
         evap = self.get_stress(tmin=tmin, tmax=tmax, freq=freq,
                                istress=1).values
+
         if self.temp is not None:
-            temp = self.temp.series.values
+            temp = self.get_stress(tmin=tmin, tmax=tmax, freq=freq,
+                                   istress=2).values
         else:
             temp = None
         df = self.recharge.get_water_balance(prec=prec, evap=evap, temp=temp,

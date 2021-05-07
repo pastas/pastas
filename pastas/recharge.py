@@ -37,7 +37,7 @@ After solving a model, the simulated recharge flux can be obtained:
 """
 
 from logging import getLogger
-from numpy import add, float64, multiply, exp, zeros, nan_to_num, vstack
+from numpy import add, float64, multiply, exp, zeros, nan_to_num, vstack, where
 from pandas import DataFrame
 
 from pastas.decorators import njit
@@ -51,7 +51,7 @@ class RechargeBase:
     """
 
     def __init__(self):
-        self.temp = False
+        self.snow = False
         self.nparam = 0
 
     @staticmethod
@@ -203,8 +203,17 @@ class FlexModel(RechargeBase):
             Recharge flux calculated by the model.
 
         """
-        r = self.get_recharge(prec, evap, srmax=p[0], lp=p[1], ks=p[2],
-                              gamma=p[3], simax=p[4], kv=p[5], dt=dt)[0]
+        r, ea, ei, pe, sr, si = \
+            self.get_recharge(prec=prec, evap=evap, srmax=p[0], lp=p[1],
+                              ks=p[2], gamma=p[3], simax=p[4], kv=p[5],
+                              dt=dt)
+
+        # report big water balance errors (error > 0.1%.)
+        soil_balance = (sr[0] - sr[-1] + (pe - r - ea).sum()) / pe.sum()
+        if abs(soil_balance) > 0.1:
+            logger.warning("Water balance error: %s %% of the total pe flux. "
+                           "Parameters: %s", soil_balance.round(2), p.round(2))
+
         return r
 
     @staticmethod
@@ -262,7 +271,11 @@ class FlexModel(RechargeBase):
                                                   kv=p[5], dt=dt)
 
         data = DataFrame(data=vstack((si, -ei, sr, pe, -ea, -r)).T,
-                         columns=["Si", "Ei", "Sr", "Pe", "Ea", "R"])
+                         columns=["State Interception (Si)",
+                                  "Interception evaporation (Ei)",
+                                  "State Root zone (Sr)",
+                                  "Effective precipitation (Pe)",
+                                  "Actual evaporation (Ea)", "Recharge (R)"])
         return data
 
 
@@ -382,15 +395,25 @@ class Berendrecht(RechargeBase):
 
 
 class FlexSnowModel(RechargeBase):
-    """Experimental Recharge model that takes snow into account.
+    """Non-linear Recharge model based on soil-water balance approach.
+
+    Parameters
+    ----------
+    snow: bool, optional
+        Account for snowfall and snowmelt in the model. If True,
+        a temperature series should be provided to the RechargeModel.
+    gw_uptake: bool, optional
+        If True, the potential evaporation that is left after evaporation
+        from the interception reservoir and the root zone reservoir is
+        subtracted from the recharge flux. EXPERIMENTAL FEATURE!
 
     Notes
     -----
     Note that the preferred unit of the precipitation and evaporation is
-    mm/d and the temperature is degree celsius. This model is similar to the
-    FlexModel but adds a snow bucket on top.
+    mm/d and the temperature is degree celsius.
 
-    The water balance for the snow reservoir is written as:
+    If snow=True, a snow reservoir is added on top. The water balance for
+    the snow reservoir is written as:
 
     .. math::
 
@@ -401,8 +424,8 @@ class FlexSnowModel(RechargeBase):
 
     References
     ----------
-    .. [collenteur_2020] Collenteur, R.A., Bakker, M., Klammler, G., & Birk,
-       S. (in Review) Estimating groundwater recharge from groundwater
+    .. [collenteur_2021] Collenteur, R.A., Bakker, M., Klammler, G., & Birk,
+       S. (Accepted) Estimating groundwater recharge from groundwater
        levels using non-linear transfer function noise models and comparison to
        lysimeter data. https://doi.org/10.5194/hess-2020-392
 
@@ -414,10 +437,11 @@ class FlexSnowModel(RechargeBase):
     """
     _name = "FlexSnowModel"
 
-    def __init__(self):
+    def __init__(self, snow=False, gw_uptake=False):
         RechargeBase.__init__(self)
-        self.nparam = 9
-        self.temp = True
+        self.snow = snow
+        self.nparam = 9 if snow else 6
+        self.gw_uptake = gw_uptake
 
     def get_init_parameters(self, name="recharge"):
         parameters = DataFrame(
@@ -428,9 +452,10 @@ class FlexSnowModel(RechargeBase):
         parameters.loc[name + "_gamma"] = (4.0, 1e-5, 50.0, True, name)
         parameters.loc[name + "_simax"] = (2.0, 1e-5, 10.0, False, name)
         parameters.loc[name + "_kv"] = (1.0, 0.25, 2.0, False, name)
-        parameters.loc[name + "_tp"] = (2.0, -2.0, 2.0, False, name)
-        parameters.loc[name + "_tk"] = (2.0, -2.0, 2.0, False, name)
-        parameters.loc[name + "_k"] = (2.0, 0.0, 10.0, False, name)
+        if self.snow:
+            parameters.loc[name + "_tp"] = (2.0, -2.0, 2.0, False, name)
+            parameters.loc[name + "_tk"] = (2.0, -2.0, 2.0, False, name)
+            parameters.loc[name + "_k"] = (2.0, 0.0, 10.0, False, name)
 
         return parameters
 
@@ -443,9 +468,11 @@ class FlexSnowModel(RechargeBase):
             Precipitation flux in mm/d. Has to have the same length as evap.
         evap: numpy.array
             Potential evaporation flux in mm/d.
+        temp: numpy.array
+            Temperature in degrees Celcius.
         p: array_like
             array_like object with the values as floats representing the
-            model parameters.
+            model parameters. Has to be length self.nparam.
         dt: float, optional
             time step for the calculation of the recharge. Only dt=1 is
             possible now.
@@ -456,23 +483,31 @@ class FlexSnowModel(RechargeBase):
             Recharge flux calculated by the model.
 
         """
-        r, ea, ei, pe, sr, si, ss, sm, pp = \
-            self.get_recharge(prec=prec, evap=evap, temp=temp, srmax=p[0],
-                              lp=p[1], ks=p[2], gamma=p[3], simax=p[4],
-                              kv=p[5], tp=p[6], tk=p[7], k=p[8], dt=dt)
+        if self.snow:
+            ss, ps, pr, m = self.get_snow_balance(prec=prec, temp=temp,
+                                                  tp=p[6], tk=p[7], k=p[8])
+            prec = pr + m
 
-        # report big water balance errors (error > 1 mm.)
-        soil_balance = sr[0] - sr[-1] + (pe - r - ea).sum()
-        if abs(soil_balance) > 1:
-            logger.warning("Water balance error: %s. Parameters: %p",
-                           soil_balance, p)
+        r, ea, ei, pe, sr, si, = \
+            self.get_recharge(prec=prec, evap=evap, srmax=p[0], lp=p[1],
+                              ks=p[2], gamma=p[3], simax=p[4], kv=p[5], dt=dt)
+
+        if self.gw_uptake:
+            # Compute leftover potential evaporation
+            eg = (evap - ea - ei)
+            r = r - eg
+
+        # report big water balance errors (error > 0.1%.)
+        soil_balance = (sr[0] - sr[-1] + (pe - r - ea).sum()) / pe.sum()
+        if abs(soil_balance) > 0.1:
+            logger.warning("Water balance error: %s %% of the total pe flux. "
+                           "Parameters: %s", soil_balance.round(2), p.round(2))
         return r
 
     @staticmethod
     @njit
-    def get_recharge(prec, evap, temp, srmax=250.0, lp=0.25, ks=100.0,
-                     gamma=4.0, simax=2.0, kv=1.0, tp=1.0, tk=1.0, k=2.0,
-                     dt=1.0):
+    def get_recharge(prec, evap, srmax=250.0, lp=0.25, ks=100.0, gamma=4.0,
+                     simax=2.0, kv=1.0, dt=1.0):
         """
         Internal method used for the recharge calculation. If Numba is
         available, this method is significantly faster.
@@ -481,9 +516,6 @@ class FlexSnowModel(RechargeBase):
         n = prec.size
         evap = evap * kv  # Multiply by crop factor
         # Create empty arrays to store the fluxes and states
-        ss = zeros(n, dtype=float64)  # Snow Storage
-        pp = zeros(n, dtype=float64)  # Snow Input
-        sm = zeros(n, dtype=float64)  # Snowmelt
         su = zeros(n, dtype=float64)  # Root Zone Storage State
         su[0] = 0.5 * srmax  # Set the initial system state to half-full
         ea = zeros(n, dtype=float64)  # Actual evaporation Flux
@@ -495,18 +527,11 @@ class FlexSnowModel(RechargeBase):
         lp = lp * srmax  # Do this here outside the for-loop for efficiency
 
         for t in range(n - 1):
-            # Snow bucket
-            if temp[t] <= tp:
-                pp[t] = prec[t]
-            if temp[t] >= tk:
-                sm[t] = min(k * (temp[t] - tk), ss[t])
-            ss[t + 1] = ss[t] + pp[t] - sm[t]
-
             # Interception bucket
-            pe[t] = max(prec[t] - pp[t] + sm[t] - simax + si[t], 0.0)
+            pe[t] = max(prec[t] - simax + si[t], 0.0)
             ei[t] = min(evap[t], si[t])
             ep[t] = evap[t] - ei[t]
-            si[t + 1] = si[t] + dt * (prec[t] - pp[t] + sm[t] - pe[t] - ei[t])
+            si[t + 1] = si[t] + dt * (prec[t] - pe[t] - ei[t])
 
             # Make sure the solution is larger then 0.0 and smaller than su
             if su[t] > srmax:
@@ -525,15 +550,37 @@ class FlexSnowModel(RechargeBase):
             # Calculate state of the root zone storage
             su[t + 1] = su[t] + dt * (pe[t] - r[t] - ea[t])
 
-        return r, ea, ei, pe, su, si, ss, sm, pp
+        return r, ea, ei, pe, su, si
+
+    @staticmethod
+    @njit
+    def get_snow_balance(prec, temp, tp=1.0, tk=1.0, k=2.0):
+        n = prec.size
+        # Create empty arrays to store the fluxes and states
+        ss = zeros(n, dtype=float64)  # Snow Storage
+        ps = where(temp <= tp, prec, 0)  # Snowfall
+        pr = where(temp > tp, prec, 0)  # Rainfall
+        m = zeros(n, dtype=float64)  # Snowmelt
+
+        # Snow bucket
+        for t in range(n - 1):
+            if temp[t] >= tk:
+                m[t] = min(k * (temp[t] - tk), ss[t])
+            ss[t + 1] = ss[t] + ps[t] - m[t]
+
+        return ss, ps, pr, m
 
     def get_water_balance(self, prec, evap, temp, p, dt=1.0, **kwargs):
-        r, ea, ei, pe, sr, si, ss, sm, pp = \
-            self.get_recharge(prec=prec, evap=evap, temp=temp, srmax=p[0],
-                              lp=p[1], ks=p[2], gamma=p[3], simax=p[4],
-                              kv=p[5], tp=p[6], tk=p[7], k=p[8], dt=dt)
+        if self.snow:
+            ss, ps, pr, m = self.get_snow_balance(prec=prec, temp=temp,
+                                                  tp=p[6], tk=p[7], k=p[8])
+            prec = pr + m
 
-        data = DataFrame(data=vstack((si, -ei, sr, pe, -ea, -r, ss, sm, pp)).T,
+        r, ea, ei, pe, sr, si, = \
+            self.get_recharge(prec=prec, evap=evap, srmax=p[0], lp=p[1],
+                              ks=p[2], gamma=p[3], simax=p[4], kv=p[5], dt=dt)
+
+        data = DataFrame(data=vstack((si, -ei, sr, pe, -ea, -r, ss, m, ps)).T,
                          columns=["State Interception (Si)",
                                   "Interception evaporation (Ei)",
                                   "State Root zone (Sr)",
