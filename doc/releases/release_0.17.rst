@@ -1,3 +1,12 @@
+
+Version 0.17.1 (12th of May 2021)
+--------------------------------
+.. note::
+    Intermediate release to solve an Issue with the LmFitSolver that is
+    experienced by many users. See
+    `Issue 295 <https://github.com/pastas/pastas/issues/295>`_.
+
+
 Version 0.17 (2nd of April 2021)
 --------------------------------
 
