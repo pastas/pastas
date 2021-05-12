@@ -46,7 +46,7 @@ def PastasDeprecationWarning(function):
     @wraps(function)
     def _function(*args, **kwargs):
         logger.warning("Deprecation warning: method is deprecated and will "
-                       "be removed in version 0.18.0.")
+                       "be removed in version 0.19.0.")
         return function(*args, **kwargs)
 
     return _function
@@ -57,6 +57,4 @@ def njit(function):
         from numba import njit as jit
         return jit(function)
     except ImportError:
-        logger.warning("Numba is not installed. Installing Numba is "
-                       "recommended for significant speed-ups.")
         return function

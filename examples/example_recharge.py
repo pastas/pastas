@@ -9,7 +9,7 @@ import pandas as pd
 
 import pastas as ps
 
-ps.set_log_level("ERROR")
+ps.set_log_level("WARNING")
 
 # read observations and create the time series model and make meters
 obs = pd.read_csv("data/B32C0639001.csv", parse_dates=['date'],

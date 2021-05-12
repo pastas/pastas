@@ -567,3 +567,11 @@ def show_versions(lmfit=False, numba=False):
         msg = msg + f"\nnumba version: {nb_version}"
 
     return print(msg)
+
+
+def check_numba():
+    try:
+        from numba import njit
+    except ImportError:
+        logger.warning("Numba is not installed. Installing Numba is "
+                       "recommended for significant speed-ups.")

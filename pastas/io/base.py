@@ -54,16 +54,6 @@ def load(fname, **kwargs):
     return ml
 
 
-def load_project(fname, **kwargs):
-    """
-    Method to load a Pastas project. (Deprecated)
-    """
-    msg = "Deprecation Warning: the possibility to load a Pastas project" \
-          " with this method is deprecated. Please use the Pastastore " \
-          "(https://github.com/pastas/pastastore). "
-    logger.error(msg)
-
-
 def _load_model(data):
     """Internal method to create a model from a dictionary."""
     # Create model
