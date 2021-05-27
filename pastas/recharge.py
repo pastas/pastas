@@ -488,7 +488,7 @@ class FlexSnowModel(RechargeBase):
                                                   tp=p[6], tk=p[7], k=p[8])
             prec = pr + m
 
-        r, ea, ei, pe, sr, si, = \
+        r, ea, ei, pe, q, sr, si, = \
             self.get_recharge(prec=prec, evap=evap, srmax=p[0], lp=p[1],
                               ks=p[2], gamma=p[3], simax=p[4], kv=p[5], dt=dt)
 
@@ -498,7 +498,7 @@ class FlexSnowModel(RechargeBase):
             r = r - eg
 
         # report big water balance errors (error > 0.1%.)
-        soil_balance = (sr[0] - sr[-1] + (pe - r - ea).sum()) / pe.sum()
+        soil_balance = (sr[0] - sr[-1] + (pe - r - ea - q).sum()) / pe.sum()
         if abs(soil_balance) > 0.1:
             logger.warning("Water balance error: %s %% of the total pe flux. "
                            "Parameters: %s", soil_balance.round(2), p.round(2))
@@ -524,6 +524,7 @@ class FlexSnowModel(RechargeBase):
         pe = zeros(n, dtype=float64)  # Effective precipitation Flux
         ei = zeros(n, dtype=float64)  # Interception evaporation Flux
         ep = zeros(n, dtype=float64)  # Updated evaporation Flux
+        q = zeros(n, dtype=float64)  # Surface runoff Flux
         lp = lp * srmax  # Do this here outside the for-loop for efficiency
 
         for t in range(n - 1):
@@ -535,6 +536,7 @@ class FlexSnowModel(RechargeBase):
 
             # Make sure the solution is larger then 0.0 and smaller than su
             if su[t] > srmax:
+                q[t] = su[t] - srmax  # Surface runoff
                 su[t] = srmax
             elif su[t] < 0.0:
                 su[t] = 0.0
@@ -550,7 +552,7 @@ class FlexSnowModel(RechargeBase):
             # Calculate state of the root zone storage
             su[t + 1] = su[t] + dt * (pe[t] - r[t] - ea[t])
 
-        return r, ea, ei, pe, su, si
+        return r, ea, ei, pe, q, su, si
 
     @staticmethod
     @njit
@@ -576,16 +578,17 @@ class FlexSnowModel(RechargeBase):
                                                   tp=p[6], tk=p[7], k=p[8])
             prec = pr + m
 
-        r, ea, ei, pe, sr, si, = \
-            self.get_recharge(prec=prec, evap=evap, srmax=p[0], lp=p[1],
-                              ks=p[2], gamma=p[3], simax=p[4], kv=p[5], dt=dt)
+        data = self.get_recharge(prec=prec, evap=evap, srmax=p[0], lp=p[1],
+                                 ks=p[2], gamma=p[3], simax=p[4], kv=p[5],
+                                 dt=dt)
+        columns = ["Recharge (R)", "Actual evaporation (Ea)",
+                   "Interception evaporation (Ei)",
+                   "Effective precipitation (Pe)", "Surface Runoff (Q)",
+                   "State Root zone (Sr)", "State Interception (Si)"]
 
-        data = DataFrame(data=vstack((si, -ei, sr, pe, -ea, -r, ss, m, ps)).T,
-                         columns=["State Interception (Si)",
-                                  "Interception evaporation (Ei)",
-                                  "State Root zone (Sr)",
-                                  "Effective precipitation (Pe)",
-                                  "Actual evaporation (Ea)",
-                                  "Recharge (R)", "State Snow (Ss)",
-                                  "Snowmelt (M)", "Snowfall (Ps)"])
+        if self.snow:
+            columns += ["State Snow (Ss)", "Snowmelt (M)", "Snowfall (Ps)"]
+            data += (ss, m, ps)
+
+        data = DataFrame(data=vstack(data).T, columns=columns)
         return data
