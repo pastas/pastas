@@ -991,13 +991,13 @@ class RechargeModel(StressModelBase):
         # Store recharge object
         self.recharge = recharge
 
-        # Store a temperature time series if needed or set to None
-        if self.recharge.snow is True:
-            if temp is None:
-                msg = "Recharge model requires a temperature series. " \
-                      "No temperature series were provided"
-                raise TypeError(msg)
-            elif len(settings) < 3 or len(metadata) < 3:
+        # Store a temperature time series if provided/needed or set to None
+        if self.recharge.snow is True and temp is None:
+            msg = "Recharge model requires a temperature series. " \
+                  "No temperature series were provided"
+            raise TypeError(msg)
+        if temp is not None:
+            if len(settings) < 3 or len(metadata) < 3:
                 msg = "Number of values for the settings and/or metadata is " \
                       "incorrect."
                 raise TypeError(msg)
