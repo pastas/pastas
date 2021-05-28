@@ -16,6 +16,7 @@ To solve a model the following syntax can be used:
 from logging import getLogger
 
 import numpy as np
+import pandas as pd
 from pandas import DataFrame
 from scipy.linalg import svd
 from scipy.optimize import least_squares
@@ -556,14 +557,47 @@ class LmfitSolveNew(BaseSolver):
         return rv
 
 
-class MonteCarlo(BaseSolver):
+class GlueSolver(BaseSolver):
     _name = "MonteCarlo"
 
     def __init__(self, ml, pcov=None, nfev=None, **kwargs):
         BaseSolver.__init__(self, ml=ml, pcov=pcov, nfev=nfev, **kwargs)
+        self.parameters = None
+        self.obj = None
 
-    def solve(self):
-        optimal = None
-        stderr = None
+    def solve(self, noise=True, weights=None, callback=None, n=1000,
+              target=None):
+
+        self.nfev = n
+        self.obj = np.zeros(n, dtype=float)
+        self.parameters = self._get_parameter_sample(n=n)
+
+        for i, p in self.parameters.iterrows():
+            result = target(p.values)
+            self.obj[i] = result
+
+        optimal = self.parameters.loc[np.argmax(self.obj)].values
+        self.obj_func = np.max(self.obj)
+        stderr = np.ones_like(p) * np.nan
         success = True
+
         return success, optimal, stderr
+
+    def _get_parameter_sample(self, name=None, n=None):
+        #
+
+        if name is None:
+            parameters = self.ml.parameters.copy(deep=True)
+        else:
+            parameters = self.ml.parameters.loc[self.ml.parameters.name ==
+                                                name].copy(deep=True)
+
+        vary = parameters.vary.astype(bool)
+        parameters.loc[~vary, "pmin"] = parameters.loc[~vary, "initial"].values
+        parameters.loc[~vary, "pmax"] = parameters.loc[~vary, "initial"].values
+        pmin = parameters.pmin.to_numpy(dtype=float)
+        pmax = parameters.pmax.to_numpy(dtype=float)
+        samples = np.random.uniform(low=pmin, high=pmax, size=(n, pmin.size))
+        parameters = pd.DataFrame(columns=parameters.index, index=range(n))
+        parameters.loc[:] = samples
+        return parameters
