@@ -250,8 +250,9 @@ class ArmaModel(NoiseModelBase):
         self.set_init_parameters()
 
     def set_init_parameters(self, oseries=None):
-        self.parameters.loc["noise_alpha"] = (10, 1e-9, np.inf, True, "noise")
-        self.parameters.loc["noise_beta"] = (10, -np.inf, np.inf, True,
+        self.parameters.loc["noise_alpha"] = (10.0, 1e-9, np.inf, True,
+                                              "noise")
+        self.parameters.loc["noise_beta"] = (10.0, -np.inf, np.inf, True,
                                              "noise")
 
     def simulate(self, res, p):

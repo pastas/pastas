@@ -1139,7 +1139,7 @@ class Model:
         else:
             parameters = p.optimal
 
-        return parameters.values
+        return parameters.to_numpy(dtype=float)
 
     def get_stressmodel_names(self):
         """Returns list of stressmodel names"""
