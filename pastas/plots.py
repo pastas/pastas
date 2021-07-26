@@ -68,7 +68,7 @@ class Plotting:
         if oseries:
             o = self.ml.observations(tmin=tmin, tmax=tmax)
             o_nu = self.ml.oseries.series.drop(o.index).loc[
-                   o.index.min():o.index.max()]
+                o.index.min():o.index.max()]
             if not o_nu.empty:
                 # plot parts of the oseries that are not used in grey
                 o_nu.plot(linestyle='', marker='.', color='0.5', label='',
@@ -705,10 +705,17 @@ class Plotting:
                 del ax.lines[0]  # delete existing line
 
                 contrib = [c[1] for c in contributions]  # get timeseries
-                vstack = concat(contrib, axis=1)
+                vstack = concat(contrib, axis=1, sort=False)
                 names = [c[0] for c in contributions]  # get names
                 ax.stackplot(vstack.index, vstack.values.T, labels=names)
                 ax.legend(loc="best", ncol=5, fontsize=8)
+
+                # y-scale does not show 0
+                ylower, yupper = ax.get_ylim()
+                if (ylower < 0) and (yupper < 0):
+                    ax.set_ylim(top=0)
+                elif (ylower > 0) and (yupper > 0):
+                    ax.set_ylim(bottom=0)
 
         return axes
 
@@ -804,6 +811,9 @@ def compare(models, tmin=None, tmax=None, figsize=(10, 8),
     parameters = concat(
         [iml.parameters.optimal for iml in models], axis=1, sort=False)
     colnams = ["{}".format(iml.name) for iml in models]
+    # ensure unique names
+    if len(set(colnams)) < len(colnams):
+        colnams = [f"{iml.name}-{i}" for i, iml in enumerate(models)]
     parameters.columns = colnams
     parameters['name'] = parameters.index
     # reorder columns
