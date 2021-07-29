@@ -21,6 +21,48 @@ from .stats import plot_diagnostics, plot_cum_frequency
 logger = logging.getLogger(__name__)
 
 
+def _table_formatter_params(s):
+    """Internal method for formatting parameters in tables in Pastas plots.
+
+    Parameters
+    ----------
+    s : float
+        value to format
+
+    Returns
+    -------
+    str
+        float formatted as str
+    """
+    if np.floor(np.log10(np.abs(s))) <= -2:
+        return f"{s:.2e}"
+    elif np.floor(np.log10(np.abs(s))) > 5:
+        return f"{s:.2e}"
+    else:
+        return f"{s:.2f}"
+
+
+def _table_formatter_stderr(s):
+    """Internal method for formatting stderrs in tables in Pastas plots.
+
+    Parameters
+    ----------
+    s : float
+        value to format
+
+    Returns
+    -------
+    str
+        float formatted as str
+    """
+    if np.floor(np.log10(np.abs(s))) <= -4:
+        return f"{s*100.:.2e}%"
+    elif np.floor(np.log10(np.abs(s))) > 3:
+        return f"{s*100.:.2e}%"
+    else:
+        return f"{s:.2%}"
+
+
 class Plotting:
     """Plots available directly from the Model Class."""
 
@@ -225,8 +267,9 @@ class Plotting:
         p = self.ml.parameters.copy().loc[:, ["name", "optimal", "stderr"]]
         p.loc[:, "name"] = p.index
         stderr = p.loc[:, "stderr"] / p.loc[:, "optimal"]
-        p.loc[:, "optimal"] = p.loc[:, "optimal"].apply("{:.2f}".format)
-        p.loc[:, "stderr"] = stderr.abs().apply("{:.2%}".format)
+        p.loc[:, "optimal"] = p.loc[:, "optimal"].apply(
+            _table_formatter_params)
+        p.loc[:, "stderr"] = stderr.abs().apply(_table_formatter_stderr)
 
         ax3.axis('off')
         ax3.table(bbox=(0., 0., 1.0, 1.0), cellText=p.values,
@@ -818,9 +861,8 @@ def compare(models, tmin=None, tmax=None, figsize=(10, 8),
     parameters['name'] = parameters.index
     # reorder columns
     parameters = parameters.loc[:, ["name"] + colnams]
-    for name, vals in parameters.iterrows():
-        parameters.loc[name, colnams] = [
-            '{:.2f}'.format(v) for v in vals.iloc[1:]]
+    parameters.loc[:, colnams] = parameters.loc[:, colnams].applymap(
+        _table_formatter_params)
 
     # clear existing table
     ax_table.cla()
