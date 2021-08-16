@@ -21,8 +21,50 @@ from .stats import plot_diagnostics, plot_cum_frequency
 logger = logging.getLogger(__name__)
 
 
+def _table_formatter_params(s):
+    """Internal method for formatting parameters in tables in Pastas plots.
+
+    Parameters
+    ----------
+    s : float
+        value to format
+
+    Returns
+    -------
+    str
+        float formatted as str
+    """
+    if np.floor(np.log10(np.abs(s))) <= -2:
+        return f"{s:.2e}"
+    elif np.floor(np.log10(np.abs(s))) > 5:
+        return f"{s:.2e}"
+    else:
+        return f"{s:.2f}"
+
+
+def _table_formatter_stderr(s):
+    """Internal method for formatting stderrs in tables in Pastas plots.
+
+    Parameters
+    ----------
+    s : float
+        value to format
+
+    Returns
+    -------
+    str
+        float formatted as str
+    """
+    if np.floor(np.log10(np.abs(s))) <= -4:
+        return f"{s*100.:.2e}%"
+    elif np.floor(np.log10(np.abs(s))) > 3:
+        return f"{s*100.:.2e}%"
+    else:
+        return f"{s:.2%}"
+
+
 class Plotting:
-    """Plots available directly form the Model Class."""
+    """Plots available directly from the Model Class."""
 
     def __init__(self, ml):
         self.ml = ml  # Store a reference to the model class
@@ -68,7 +110,7 @@ class Plotting:
         if oseries:
             o = self.ml.observations(tmin=tmin, tmax=tmax)
             o_nu = self.ml.oseries.series.drop(o.index).loc[
-                   o.index.min():o.index.max()]
+                o.index.min():o.index.max()]
             if not o_nu.empty:
                 # plot parts of the oseries that are not used in grey
                 o_nu.plot(linestyle='', marker='.', color='0.5', label='',
@@ -225,8 +267,9 @@ class Plotting:
         p = self.ml.parameters.copy().loc[:, ["name", "optimal", "stderr"]]
         p.loc[:, "name"] = p.index
         stderr = p.loc[:, "stderr"] / p.loc[:, "optimal"]
-        p.loc[:, "optimal"] = p.loc[:, "optimal"].apply("{:.2f}".format)
-        p.loc[:, "stderr"] = stderr.abs().apply("{:.2%}".format)
+        p.loc[:, "optimal"] = p.loc[:, "optimal"].apply(
+            _table_formatter_params)
+        p.loc[:, "stderr"] = stderr.abs().apply(_table_formatter_stderr)
 
         ax3.axis('off')
         ax3.table(bbox=(0., 0., 1.0, 1.0), cellText=p.values,
@@ -705,10 +748,17 @@ class Plotting:
                 del ax.lines[0]  # delete existing line
 
                 contrib = [c[1] for c in contributions]  # get timeseries
-                vstack = concat(contrib, axis=1)
+                vstack = concat(contrib, axis=1, sort=False)
                 names = [c[0] for c in contributions]  # get names
                 ax.stackplot(vstack.index, vstack.values.T, labels=names)
                 ax.legend(loc="best", ncol=5, fontsize=8)
+
+                # y-scale does not show 0
+                ylower, yupper = ax.get_ylim()
+                if (ylower < 0) and (yupper < 0):
+                    ax.set_ylim(top=0)
+                elif (ylower > 0) and (yupper > 0):
+                    ax.set_ylim(bottom=0)
 
         return axes
 
@@ -804,13 +854,15 @@ def compare(models, tmin=None, tmax=None, figsize=(10, 8),
     parameters = concat(
         [iml.parameters.optimal for iml in models], axis=1, sort=False)
     colnams = ["{}".format(iml.name) for iml in models]
+    # ensure unique names
+    if len(set(colnams)) < len(colnams):
+        colnams = [f"{iml.name}-{i}" for i, iml in enumerate(models)]
     parameters.columns = colnams
     parameters['name'] = parameters.index
     # reorder columns
     parameters = parameters.loc[:, ["name"] + colnams]
-    for name, vals in parameters.iterrows():
-        parameters.loc[name, colnams] = [
-            '{:.2f}'.format(v) for v in vals.iloc[1:]]
+    parameters.loc[:, colnams] = parameters.loc[:, colnams].applymap(
+        _table_formatter_params)
 
     # clear existing table
     ax_table.cla()

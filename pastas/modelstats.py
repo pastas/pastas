@@ -266,7 +266,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         nparam = self.ml.parameters["vary"].sum()
         if self.ml.settings["noise"]:
-            res = self.ml.noise(tmin=tmin, tmax=tmax)
+            res = (self.ml.noise(tmin=tmin, tmax=tmax) *
+                   self.ml.noise_weights(tmin=tmin, tmax=tmax))
         else:
             res = self.ml.residuals(tmin=tmin, tmax=tmax)
         return metrics.bic(res=res, nparam=nparam)
@@ -287,7 +288,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         nparam = self.ml.parameters["vary"].sum()
         if self.ml.settings["noise"]:
-            res = self.ml.noise(tmin=tmin, tmax=tmax)
+            res = (self.ml.noise(tmin=tmin, tmax=tmax) *
+                   self.ml.noise_weights(tmin=tmin, tmax=tmax))
         else:
             res = self.ml.residuals(tmin=tmin, tmax=tmax)
         return metrics.aic(res=res, nparam=nparam)

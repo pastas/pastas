@@ -25,6 +25,7 @@ import numpy as np
 from pandas import Timedelta, DataFrame, Series
 
 from .decorators import set_parameter, njit
+from .utils import check_numba
 
 __all__ = ["NoiseModel", "ArmaModel"]
 
@@ -243,13 +244,15 @@ class ArmaModel(NoiseModelBase):
     _name = "ArmaModel"
 
     def __init__(self):
+        check_numba()
         NoiseModelBase.__init__(self)
         self.nparam = 2
         self.set_init_parameters()
 
     def set_init_parameters(self, oseries=None):
-        self.parameters.loc["noise_alpha"] = (10, 1e-9, np.inf, True, "noise")
-        self.parameters.loc["noise_beta"] = (10, -np.inf, np.inf, True,
+        self.parameters.loc["noise_alpha"] = (10.0, 1e-9, np.inf, True,
+                                              "noise")
+        self.parameters.loc["noise_beta"] = (10.0, -np.inf, np.inf, True,
                                              "noise")
 
     def simulate(self, res, p):

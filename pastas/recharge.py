@@ -41,6 +41,7 @@ from numpy import add, float64, multiply, exp, zeros, nan_to_num, vstack, where
 from pandas import DataFrame
 
 from pastas.decorators import njit
+from .utils import check_numba
 
 logger = getLogger(__name__)
 
@@ -196,6 +197,7 @@ class FlexModel(RechargeBase):
     _name = "FlexModel"
 
     def __init__(self, snow=False, gw_uptake=False):
+        check_numba()
         RechargeBase.__init__(self)
         self.snow = snow
         self.nparam = 9 if snow else 6
@@ -381,6 +383,7 @@ class Berendrecht(RechargeBase):
     _name = "Berendrecht"
 
     def __init__(self):
+        check_numba()
         RechargeBase.__init__(self)
         self.nparam = 7
 

@@ -40,7 +40,7 @@ else:
             knmi = KnmiStation.fromfile('../data/KNMI_NoLocation.txt')
 
             # use a file with locations:
-            knmi = KnmiStation.fromfile('../data/KNMI_Bilt.txt')
+            #knmi = KnmiStation.fromfile('../data/KNMI_Bilt.txt')
     else:
         knmi = KnmiStation.fromfile('../data/KNMI_Akkrum.txt')
 

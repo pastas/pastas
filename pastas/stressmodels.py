@@ -26,7 +26,7 @@ from .decorators import set_parameter, njit
 from .recharge import Linear
 from .rfunc import One, Exponential, HantushWellModel
 from .timeseries import TimeSeries
-from .utils import validate_name
+from .utils import validate_name, check_numba
 
 logger = getLogger(__name__)
 
@@ -1276,6 +1276,7 @@ class TarsoModel(RechargeModel):
 
     def __init__(self, prec, evap, oseries=None, dmin=None, dmax=None,
                  rfunc=Exponential, **kwargs):
+        check_numba()
         if oseries is not None:
             if dmin is not None or dmax is not None:
                 msg = 'Please specify either oseries or dmin and dmax'

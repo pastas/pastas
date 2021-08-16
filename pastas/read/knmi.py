@@ -7,7 +7,7 @@ from warnings import warn
 
 from numpy import ndarray
 from pandas import read_csv, to_datetime, DataFrame, Timestamp, infer_freq, \
-    Timedelta
+    Timedelta, to_timedelta
 
 from ..timeseries import TimeSeries
 
@@ -219,13 +219,13 @@ class KnmiStation:
 
         if interval.startswith('hour'):
             # hourly data from meteorological stations
-            url = 'http://projects.knmi.nl/klimatologie/uurgegevens/getdata_uur.cgi'
+            url = 'https://www.daggegevens.knmi.nl/klimatologie/uurgegevens'
         elif 'RD' in vars:
             # daily data from rainfall-stations
-            url = 'http://projects.knmi.nl/klimatologie/monv/reeksen/getdata_rr.cgi'
+            url = 'https://www.daggegevens.knmi.nl/klimatologie/monv/reeksen'
         else:
             # daily data from meteorological stations
-            url = 'http://projects.knmi.nl/klimatologie/daggegevens/getdata_dag.cgi'
+            url = 'https://www.daggegevens.knmi.nl/klimatologie/daggegevens'
 
         vars = ":".join(vars)
         stns = ":".join(stns)
@@ -279,9 +279,12 @@ class KnmiStation:
                 self.stations.set_index(['STN'], inplace=True)
 
             # If line contains variables
-            elif ' = ' in line:
+            elif ' = ' in line or ' : ' in line:
                 isLocations = False
-                varDes = line.split(' = ')
+                if ' = ' in line:
+                    varDes = line.split(' = ')
+                else:
+                    varDes = line.split(' : ')
                 self.variables[varDes[0].strip()] = varDes[1].strip()
             # If location data is recognized in the previous line
             elif isLocations:
@@ -341,7 +344,7 @@ class KnmiStation:
         # convert the hours if provided
         if 'HH' in data.keys():
             # hourly data, Hourly division 05 runs from 04.00 UT to 5.00 UT
-            data.index = data.index + Timedelta(data['HH'], unit='h')
+            data.index = data.index + to_timedelta(data['HH'], unit='h')
             data.pop('HH')
         else:
             # daily data
