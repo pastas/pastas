@@ -103,7 +103,7 @@ def rmse(obs=None, sim=None, res=None, missing="drop", weighted=False,
     -----
     Computes the Root Mean Squared Error (RMSE) as follows:
 
-    .. math:: \\text{RMSE} = \\sqrt{\\sum_{i=1}^{N} w_i(n_i- \\bar{n})^2}
+    .. math:: \\text{RMSE} = \\sqrt{\\sum_{i=1}^{N} w_i n_i^2}
 
     where :math:`N` is the number of residuals :math:`n`.
 
