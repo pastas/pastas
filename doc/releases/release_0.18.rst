@@ -17,4 +17,5 @@ Backwards incompatible API changes
 New Example Notebooks
 *********************
 
-
+- An example notebook on uncertainty quantification has been added.
+- 
