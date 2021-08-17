@@ -908,7 +908,7 @@ class RechargeModel(StressModelBase):
         pandas.Series or pastas.timeseries object containing the
         precipitation series.
     evap: pandas.Series or pastas.timeseries.TimeSeries
-        pandas.Series or pastas.timeseries object containing the
+        pandas.Series or pastas.timeseries object containing the potential
         evaporation series.
     rfunc: pastas.rfunc class, optional
         Response function used in the convolution with the stress. Default

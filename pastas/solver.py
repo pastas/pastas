@@ -135,6 +135,10 @@ class BaseSolver:
 
         Returns
         -------
+        data : Pandas.DataFrame
+            DataFrame of length number of observations and two columns labeled
+            0.025 and 0.975 (numerical values) containing the 2.5% and 97.5%
+            interval (for alpha=0.05)
 
         Notes
         -----
@@ -150,6 +154,23 @@ class BaseSolver:
 
     def ci_block_response(self, name, n=1000, alpha=0.05, max_iter=10,
                           **kwargs):
+        """Method to calculate the confidence interval for the block response.
+
+        Returns
+        -------
+        data : Pandas.DataFrame
+            DataFrame of length number of observations and two columns labeled
+            0.025 and 0.975 (numerical values) containing the 2.5% and 97.5%
+            interval (for alpha=0.05)
+
+        Notes
+        -----
+        The confidence interval shows the uncertainty in the simulation due
+        to parameter uncertainty. In other words, there is a 95% probability
+        that the true best-fit line for the observed data lies within the
+        95% confidence interval.
+
+        """
         dt = self.ml.get_block_response(name=name).index.values
         return self._get_confidence_interval(func=self.ml.get_block_response,
                                              n=n, alpha=alpha, name=name,
@@ -158,6 +179,23 @@ class BaseSolver:
 
     def ci_step_response(self, name, n=1000, alpha=0.05, max_iter=10,
                          **kwargs):
+        """Method to calculate the confidence interval for the step response.
+
+        Returns
+        -------
+        data : Pandas.DataFrame
+            DataFrame of length number of observations and two columns labeled
+            0.025 and 0.975 (numerical values) containing the 2.5% and 97.5%
+            interval (for alpha=0.05)
+
+        Notes
+        -----
+        The confidence interval shows the uncertainty in the simulation due
+        to parameter uncertainty. In other words, there is a 95% probability
+        that the true best-fit line for the observed data lies within the
+        95% confidence interval.
+
+        """
         dt = self.ml.get_block_response(name=name).index.values
         return self._get_confidence_interval(func=self.ml.get_step_response,
                                              n=n, alpha=alpha, name=name,
@@ -165,37 +203,30 @@ class BaseSolver:
                                              **kwargs)
 
     def ci_contribution(self, name, n=1000, alpha=0.05, max_iter=10, **kwargs):
+        """Method to calculate the confidence interval for the contribution.
+
+        Returns
+        -------
+        data : Pandas.DataFrame
+            DataFrame of length number of observations and two columns labeled
+            0.025 and 0.975 (numerical values) containing the 2.5% and 97.5%
+            interval (for alpha=0.05)
+
+        Notes
+        -----
+        The confidence interval shows the uncertainty in the simulation due
+        to parameter uncertainty. In other words, there is a 95% probability
+        that the true best-fit line for the observed data lies within the
+        95% confidence interval.
+
+        """
         return self._get_confidence_interval(func=self.ml.get_contribution,
                                              n=n, alpha=alpha, name=name,
                                              max_iter=max_iter,
                                              **kwargs)
 
-    def _get_realizations(self, func, n=None, name=None, max_iter=10,
-                          **kwargs):
-        """Internal method to obtain n number of parameter realizations."""
-        if name:
-            kwargs["name"] = name
-
-        parameter_sample = self._get_parameter_sample(n=n, name=name,
-                                                      max_iter=max_iter)
-        data = {}
-
-        for i, p in enumerate(parameter_sample):
-            data[i] = func(p=p, **kwargs)
-
-        return DataFrame.from_dict(data, orient="columns")
-
-    def _get_confidence_interval(self, func, n=None, name=None, alpha=0.05,
-                                 max_iter=10, **kwargs):
-        """Internal method to obtain a confidence interval."""
-        q = [alpha / 2, 1 - alpha / 2]
-        data = self._get_realizations(func=func, n=n, name=name,
-                                      max_iter=max_iter, **kwargs)
-
-        return data.quantile(q=q, axis=1).transpose()
-
-    def _get_parameter_sample(self, name=None, n=None, max_iter=10):
-        """Internal method to obtain a parameter sets.
+    def get_parameter_sample(self, name=None, n=None, max_iter=10):
+        """Method to obtain a parameter sets for monte carlo analyses.
 
         Parameters
         ----------
@@ -253,6 +284,29 @@ class BaseSolver:
             logger.warning("Parameter sample size is smaller than n: "
                            f"{samples.shape[0]}/{n}. Increase 'max_iter'.")
         return samples[:n, :]
+
+    def _get_realizations(self, func, n=None, name=None, max_iter=10,
+                          **kwargs):
+        """Internal method to obtain n number of parameter realizations."""
+        if name:
+            kwargs["name"] = name
+
+        parameter_sample = self._get_parameter_sample(n=n, name=name,
+                                                      max_iter=max_iter)
+        data = {}
+
+        for i, p in enumerate(parameter_sample):
+            data[i] = func(p=p, **kwargs)
+
+        return DataFrame.from_dict(data, orient="columns")
+
+    def _get_confidence_interval(self, func, n=None, name=None, alpha=0.05,
+                                 max_iter=10, **kwargs):
+        """Internal method to obtain a confidence interval."""
+        q = [alpha / 2, 1 - alpha / 2]
+        data = self._get_realizations(func=func, n=n, name=name,
+                                      max_iter=max_iter, **kwargs)
+        return data.quantile(q=q, axis=1).transpose()
 
     def _get_covariance_matrix(self, name=None):
         """Internal method to obtain the covariance matrix from the model.
@@ -570,16 +624,3 @@ class LmfitSolveNew(BaseSolver):
         extraterm = np.sum(np.log(var_res / weights ** 2))
         rv = np.sum(weighted_noise ** 2) / var_res + extraterm
         return rv
-
-
-class MonteCarlo(BaseSolver):
-    _name = "MonteCarlo"
-
-    def __init__(self, ml, pcov=None, nfev=None, **kwargs):
-        BaseSolver.__init__(self, ml=ml, pcov=pcov, nfev=nfev, **kwargs)
-
-    def solve(self):
-        optimal = None
-        stderr = None
-        success = True
-        return success, optimal, stderr

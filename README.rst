@@ -50,12 +50,11 @@ Get in Touch
 
 Quick installation guide
 ~~~~~~~~~~~~~~~~~~~~~~~~
-To install Pastas, a working version of Python 3.6, 3.7 or 3.8 has to be
+To install Pastas, a working version of Python 3.7, 3.8 or 3.9 has to be
 installed on your computer. We recommend using the `Anaconda Distribution
-<https://www.continuum.io/downloads>`_ with Python 3.7 as it includes most
-of the python package dependencies and the Jupyter Notebook software to run
-the notebooks. However, you are free to install any Python distribution you
-want.
+<https://www.continuum.io/downloads>`_ as it includes most of the python
+package dependencies and the Jupyter Notebook software to run the notebooks.
+However, you are free to install any Python distribution you want.
 
 Stable version
 --------------
@@ -77,14 +76,15 @@ To get the latest development version, use::
   
 Dependencies
 ~~~~~~~~~~~~
-Pastas depends on a number of Python packages, of which all of the necessary are 
-automatically installed when using the pip install manager. To summarize, the 
-following packages are necessary for a minimal function installation of Pastas:
+Pastas depends on a number of Python packages, of which all of the necessary
+are automatically installed when using the pip install manager. To
+summarize, the dependencies necessary for a minimal function installation of
+Pastas
 
-- numpy>=1.16.5
-- matplotlib>=2.0
-- pandas>=1.0
-- scipy>=1.1
+- numpy>=1.7
+- matplotlib>=3.1
+- pandas>=1.1
+- scipy>=1.3
 
 How to Cite Pastas?
 ~~~~~~~~~~~~~~~~~~~

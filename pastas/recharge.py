@@ -1,7 +1,7 @@
 """This module contains the classes for recharge models.
 
 This module contains the different classes that can be used to simulate the
-effect of precipitation and evapotranspiration on groundwater levels.
+effect of precipitation and potential evaporation on groundwater levels.
 Depending on the mathematical formulation this effect may be interpreted as:
 
 1. seepage to the groundwater
@@ -110,7 +110,7 @@ class Linear(RechargeBase):
         Parameters
         ----------
         prec, evap: array_like
-            array with the precipitation and evapotranspiration values. These
+            array with the precipitation and potential evaporation values. These
             arrays must be of the same length and at the same time steps.
         p: array_like
             array_like object with the values as floats representing the
@@ -241,7 +241,7 @@ class FlexModel(RechargeBase):
             elif su[t] < 0.0:
                 su[t] = 0.0
 
-            # Calculate actual evapotranspiration
+            # Calculate actual evaporation
             if su[t] / lp < 1.0:
                 ea[t] = ep[t] * su[t] / lp
             else:
@@ -318,7 +318,7 @@ class Berendrecht(RechargeBase):
         prec: numpy.array
             Precipitation flux in mm/d. Has to have the same length as evap.
         evap: numpy.array
-            Potential evapotranspiration flux in mm/d.
+            Potential evaporation flux in mm/d.
         p: array_like
             array_like object with the values as floats representing the
             model parameters.
