@@ -291,8 +291,8 @@ class BaseSolver:
         if name:
             kwargs["name"] = name
 
-        parameter_sample = self._get_parameter_sample(n=n, name=name,
-                                                      max_iter=max_iter)
+        parameter_sample = self.get_parameter_sample(n=n, name=name,
+                                                     max_iter=max_iter)
         data = {}
 
         for i, p in enumerate(parameter_sample):
