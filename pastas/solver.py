@@ -83,7 +83,7 @@ class BaseSolver:
         # Get the residuals or the noise
         if noise:
             rv = self.ml.noise(p) * \
-                 self.ml.noise_weights(p)
+                self.ml.noise_weights(p)
         else:
             rv = self.ml.residuals(p)
 
@@ -98,12 +98,12 @@ class BaseSolver:
 
         if returnseparate:
             return self.ml.residuals(p).values, \
-                   self.ml.noise(p).values, \
-                   self.ml.noise_weights(p).values
+                self.ml.noise(p).values, \
+                self.ml.noise_weights(p).values
 
         return rv.values
 
-    def prediction_interval(self, n=1000, alpha=0.05, **kwargs):
+    def prediction_interval(self, n=1000, alpha=0.05, max_iter=10, **kwargs):
         """Method to calculate the prediction interval for the simulation.
 
         Returns
@@ -123,14 +123,14 @@ class BaseSolver:
         sigr = self.ml.residuals().std()
 
         data = self._get_realizations(func=self.ml.simulate, n=n, name=None,
-                                      **kwargs)
+                                      max_iter=max_iter, **kwargs)
         data = data + sigr * np.random.randn(data.shape[0], data.shape[1])
 
         q = [alpha / 2, 1 - alpha / 2]
         rv = data.quantile(q, axis=1).transpose()
         return rv
 
-    def ci_simulation(self, n=1000, alpha=0.05, **kwargs):
+    def ci_simulation(self, n=1000, alpha=0.05, max_iter=10, **kwargs):
         """Method to calculate the confidence interval for the simulation.
 
         Returns
@@ -145,31 +145,39 @@ class BaseSolver:
 
         """
         return self._get_confidence_interval(func=self.ml.simulate, n=n,
-                                             alpha=alpha, **kwargs)
+                                             alpha=alpha, max_iter=max_iter,
+                                             **kwargs)
 
-    def ci_block_response(self, name, n=1000, alpha=0.05, **kwargs):
+    def ci_block_response(self, name, n=1000, alpha=0.05, max_iter=10,
+                          **kwargs):
         dt = self.ml.get_block_response(name=name).index.values
         return self._get_confidence_interval(func=self.ml.get_block_response,
                                              n=n, alpha=alpha, name=name,
-                                             dt=dt, **kwargs)
+                                             max_iter=max_iter, dt=dt,
+                                             **kwargs)
 
-    def ci_step_response(self, name, n=1000, alpha=0.05, **kwargs):
+    def ci_step_response(self, name, n=1000, alpha=0.05, max_iter=10,
+                         **kwargs):
         dt = self.ml.get_block_response(name=name).index.values
         return self._get_confidence_interval(func=self.ml.get_step_response,
                                              n=n, alpha=alpha, name=name,
-                                             dt=dt, **kwargs)
-
-    def ci_contribution(self, name, n=1000, alpha=0.05, **kwargs):
-        return self._get_confidence_interval(func=self.ml.get_contribution,
-                                             n=n, alpha=alpha, name=name,
+                                             max_iter=max_iter, dt=dt,
                                              **kwargs)
 
-    def _get_realizations(self, func, n=None, name=None, **kwargs):
+    def ci_contribution(self, name, n=1000, alpha=0.05, max_iter=10, **kwargs):
+        return self._get_confidence_interval(func=self.ml.get_contribution,
+                                             n=n, alpha=alpha, name=name,
+                                             max_iter=max_iter,
+                                             **kwargs)
+
+    def _get_realizations(self, func, n=None, name=None, max_iter=10,
+                          **kwargs):
         """Internal method to obtain n number of parameter realizations."""
         if name:
             kwargs["name"] = name
 
-        parameter_sample = self._get_parameter_sample(n=n, name=name)
+        parameter_sample = self._get_parameter_sample(n=n, name=name,
+                                                      max_iter=max_iter)
         data = {}
 
         for i, p in enumerate(parameter_sample):
@@ -178,14 +186,15 @@ class BaseSolver:
         return DataFrame.from_dict(data, orient="columns")
 
     def _get_confidence_interval(self, func, n=None, name=None, alpha=0.05,
-                                 **kwargs):
+                                 max_iter=10, **kwargs):
         """Internal method to obtain a confidence interval."""
         q = [alpha / 2, 1 - alpha / 2]
-        data = self._get_realizations(func=func, n=n, name=name, **kwargs)
+        data = self._get_realizations(func=func, n=n, name=name,
+                                      max_iter=max_iter, **kwargs)
 
         return data.quantile(q=q, axis=1).transpose()
 
-    def _get_parameter_sample(self, name=None, n=None):
+    def _get_parameter_sample(self, name=None, n=None, max_iter=10):
         """Internal method to obtain a parameter sets.
 
         Parameters
@@ -196,6 +205,10 @@ class BaseSolver:
         name: str, optional
             Name of the stressmodel or model component to obtain the
             parameters for.
+        max_iter : int, optional
+            maximum number of iterations for truncated multivariate 
+            sampling, default is 10. Increase this value if number of 
+            accepted parameter samples is lower than n. 
 
         Returns
         -------
@@ -231,11 +244,14 @@ class BaseSolver:
             samples = np.concatenate((samples, accept), axis=0)
 
             # Make sure there's no endless while loop
-            if it > 10:
+            if it > max_iter:
                 break
             else:
                 it += 1
 
+        if samples.shape[0] < n:
+            logger.warning("Parameter sample size is smaller than n: "
+                           f"{samples.shape[0]}/{n}. Increase 'max_iter'.")
         return samples[:n, :]
 
     def _get_covariance_matrix(self, name=None):
@@ -254,8 +270,8 @@ class BaseSolver:
 
         """
         if name:
-            index = self.ml.parameters.loc[self.ml.parameters.loc[:,
-                                           "name"] == name].index
+            index = self.ml.parameters.loc[
+                self.ml.parameters.loc[:, "name"] == name].index
         else:
             index = self.ml.parameters.index
 
@@ -263,7 +279,7 @@ class BaseSolver:
 
         return pcov
 
-    @staticmethod
+    @ staticmethod
     def _get_correlations(pcov):
         """Internal method to obtain the parameter correlations from the
         covariance matrix.
