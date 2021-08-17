@@ -19,6 +19,6 @@ This project tries to follow `NEP29 <https://numpy
 .org/neps/nep-0029-deprecation_policy.html>`_ and supports:
 
 - All minor versions of Python released 42 months prior to the project, and
-at minimum the two latest minor versions.
+  at minimum the two latest minor versions.
 - All minor versions of NumPy, Scipy, Matplotlib, and Pandas released in the
-24 months prior to the project, and at minimum the last three minor versions.
+  24 months prior to the project, and at minimum the last three minor versions.
