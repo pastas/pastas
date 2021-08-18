@@ -134,7 +134,7 @@ class Plotting:
 
     @model_tmin_tmax
     def results(self, tmin=None, tmax=None, figsize=(10, 8), split=False,
-                adjust_height=True, **kwargs):
+                adjust_height=True, return_warmup=False, **kwargs):
         """Plot different results in one window to get a quick overview.
 
         Parameters
@@ -161,10 +161,12 @@ class Plotting:
         # Number of rows to make the figure with
         o = self.ml.observations(tmin=tmin, tmax=tmax)
         o_nu = self.ml.oseries.series.drop(o.index).loc[tmin:tmax]
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        sim = self.ml.simulate(tmin=tmin, tmax=tmax,
+                               return_warmup=return_warmup)
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         contribs = self.ml.get_contributions(split=split, tmin=tmin,
-                                             tmax=tmax, return_warmup=False)
+                                             tmax=tmax,
+                                             return_warmup=return_warmup)
 
         ylims = [(min([sim.min(), o[tmin:tmax].min()]),
                   max([sim.max(), o[tmin:tmax].max()])),
@@ -253,6 +255,9 @@ class Plotting:
         # xlim sets minorticks back after plots:
         ax1.minorticks_off()
         ax1.set_xlim(tmin, tmax)
+        
+        # sometimes, ticks suddenly appear on top plot, turn off just in case
+        plt.setp(ax1.get_xticklabels(), visible=False)
 
         for ax in fig.axes:
             ax.grid(True)
