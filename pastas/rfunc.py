@@ -336,7 +336,10 @@ class HantushWellModel(RfuncBase):
         cS = p[1]
         rho = np.sqrt(4 * r ** 2 * p[2])
         k0rho = k0(rho)
-        return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
+        if k0rho == 0.0:
+            return 100*365.  # 100 years?
+        else:
+            return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
 
     @staticmethod
     def gain(p):
@@ -366,7 +369,7 @@ class HantushWellModel(RfuncBase):
         """Calculate variance of the gain from parameters A and b.
 
         Variance of the gain is calculated based on propagation of
-        uncertainty using optimal values and the variances of A and b
+        uncertainty using optimal values, the variances of A and b
         and the covariance between A and b.
 
         Parameters
@@ -395,11 +398,11 @@ class HantushWellModel(RfuncBase):
             uncertainty of parameters A and b.
         """
         var_gain = (
-                (k0(2 * np.sqrt(r ** 2 * b))) ** 2 * var_A +
-                (-A * r * k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(
-                    b)) ** 2 * var_b -
-                2 * A * r * k0(2 * np.sqrt(r ** 2 * b)) *
-                k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(b) * cov_Ab
+            (k0(2 * np.sqrt(r ** 2 * b))) ** 2 * var_A +
+            (-A * r * k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(
+                b)) ** 2 * var_b -
+            2 * A * r * k0(2 * np.sqrt(r ** 2 * b)) *
+            k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(b) * cov_Ab
         )
         return var_gain
 
