@@ -377,7 +377,7 @@ class Model:
             istart += 1
         if self.transform:
             sim = self.transform.simulate(sim, p[istart:istart +
-                                                        self.transform.nparam])
+                                                 self.transform.nparam])
 
         # Respect provided tmin/tmax at this point, since warmup matters for
         # simulation but should not be returned, unless return_warmup=True.
@@ -1223,7 +1223,7 @@ class Model:
         # use warmup
         if tmin:
             tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + \
-                        self.settings["time_offset"]
+                self.settings["time_offset"]
         else:
             tmin_warm = None
 
@@ -1502,7 +1502,7 @@ class Model:
         # use warmup
         if tmin:
             tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + \
-                        self.settings["time_offset"]
+                self.settings["time_offset"]
         else:
             tmin_warm = None
 
@@ -1541,7 +1541,7 @@ class Model:
 
         return file_info
 
-    def fit_report(self, output="basic"):
+    def fit_report(self, output="basic", warnbounds=True):
         """Method that reports on the fit after a model is optimized.
 
         Parameters
@@ -1549,6 +1549,9 @@ class Model:
         output: str, optional
             If any other value than "full" is provided, the parameter
             correlations will be removed from the output.
+        warnbounds : bool, optional
+            print warnings when parameters hit or lie very close to 
+            bounds after optimization.
 
         Returns
         -------
@@ -1631,7 +1634,58 @@ class Model:
         else:
             corr = ""
 
-        report = f"{header}{basic}{params}{corr}"
+        if warnbounds:
+            upperhit = Series(index=self.parameters.index, dtype=bool)
+            lowerhit = Series(index=self.parameters.index, dtype=bool)
+
+            for p in self.parameters.index:
+                pmax = self.parameters.loc[p, "pmax"]
+                pmin = self.parameters.loc[p, "pmin"]
+
+                # calculate atol based on pmin, with max 1e-8
+                atol = np.min([1e-8, 10**(np.round(np.log10(pmin))-1)])
+
+                # deal with NaNs in parameter bounds
+                if np.isnan(pmax):
+                    pmax = np.inf
+                if np.isnan(pmin):
+                    pmax = -np.inf
+
+                # determine hits
+                upperhit.loc[p] = np.allclose(
+                    self.parameters.loc[p, "optimal"], pmax,
+                    atol=atol, rtol=1e-5)
+                lowerhit.loc[p] = np.allclose(
+                    self.parameters.loc[p, "optimal"], pmin,
+                    atol=atol, rtol=1e-5)
+
+            nhits = upperhit.sum() + lowerhit.sum()
+
+            if nhits > 0:
+                msg = [
+                    f"\n\nWarning! {nhits} parameter(s) on bounds\n"
+                    f"{string.format('', fill='=', align='>', width=width)}"
+                ]
+
+                for p in upperhit.index:
+                    if upperhit.loc[p]:
+                        msg.append(
+                            f"'{p}' on upper bound: "
+                            f"{self.parameters.loc[p, 'pmax']:.2e}"
+                        )
+                    elif lowerhit.loc[p]:
+                        msg.append(
+                            f"'{p}' on lower bound: "
+                            f"{self.parameters.loc[p, 'pmin']:.2e}"
+                        )
+                # create message
+                bounds = "\n".join(msg)
+            else:
+                bounds = ""
+        else:
+            bounds = ""
+
+        report = f"{header}{basic}{params}{bounds}{corr}"
 
         return report
 
