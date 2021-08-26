@@ -1635,30 +1635,7 @@ class Model:
             corr = ""
 
         if warnbounds:
-            upperhit = Series(index=self.parameters.index, dtype=bool)
-            lowerhit = Series(index=self.parameters.index, dtype=bool)
-
-            for p in self.parameters.index:
-                pmax = self.parameters.loc[p, "pmax"]
-                pmin = self.parameters.loc[p, "pmin"]
-
-                # calculate atol based on pmin, with max 1e-8
-                atol = np.min([1e-8, 10**(np.round(np.log10(pmin))-1)])
-
-                # deal with NaNs in parameter bounds
-                if np.isnan(pmax):
-                    pmax = np.inf
-                if np.isnan(pmin):
-                    pmax = -np.inf
-
-                # determine hits
-                upperhit.loc[p] = np.allclose(
-                    self.parameters.loc[p, "optimal"], pmax,
-                    atol=atol, rtol=1e-5)
-                lowerhit.loc[p] = np.allclose(
-                    self.parameters.loc[p, "optimal"], pmin,
-                    atol=atol, rtol=1e-5)
-
+            lowerhit, upperhit = self._check_parameters_bounds()
             nhits = upperhit.sum() + lowerhit.sum()
 
             if nhits > 0:
@@ -1689,32 +1666,45 @@ class Model:
 
         return report
 
-    def _check_parameters_bounds(self, alpha=0.01):
+    def _check_parameters_bounds(self):
         """Internal method to check if the optimal parameters are close to
         pmin or pmax.
 
-        Parameters
-        ----------
-        alpha: float, optional
-            value between 0 and 1 to determine if the parameters is close to
-            the maximum or minimum is determined as the percentage of the
-            parameter range.
-
         Returns
         -------
-        pmin: pandas.Series
+        lowerhit: pandas.Series
             pandas series with boolean values of the parameters that are
-            close to the minimum values.
-        pmax: pandas.Series
+            close to the minimum (pmin) values.
+        upperhit: pandas.Series
             pandas series with boolean values of the parameters that are
-            close to the maximum values.
+            close to the maximum (pmax) values.
 
         """
-        prange = self.parameters.pmax - self.parameters.pmin
-        pnorm = (self.parameters.optimal - self.parameters.pmin) / prange
-        pmax = pnorm > 1 - alpha
-        pmin = pnorm < alpha
-        return pmin, pmax
+        upperhit = Series(index=self.parameters.index, dtype=bool)
+        lowerhit = Series(index=self.parameters.index, dtype=bool)
+
+        for p in self.parameters.index:
+            pmax = self.parameters.loc[p, "pmax"]
+            pmin = self.parameters.loc[p, "pmin"]
+
+            # calculate atol based on pmin, with max 1e-8
+            atol = np.min([1e-8, 10**(np.round(np.log10(pmin)) - 1)])
+
+            # deal with NaNs in parameter bounds
+            if np.isnan(pmax):
+                pmax = np.inf
+            if np.isnan(pmin):
+                pmax = -np.inf
+
+            # determine hits
+            upperhit.loc[p] = np.allclose(
+                self.parameters.loc[p, "optimal"], pmax,
+                atol=atol, rtol=1e-5)
+            lowerhit.loc[p] = np.allclose(
+                self.parameters.loc[p, "optimal"], pmin,
+                atol=atol, rtol=1e-5)
+
+        return lowerhit, upperhit
 
     def to_dict(self, series=True, file_info=True):
         """Method to export a model to a dictionary.
