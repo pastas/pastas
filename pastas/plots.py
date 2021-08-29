@@ -56,9 +56,9 @@ def _table_formatter_stderr(s):
         float formatted as str
     """
     if np.floor(np.log10(np.abs(s))) <= -4:
-        return f"{s*100.:.2e}%"
+        return f"{s * 100.:.2e}%"
     elif np.floor(np.log10(np.abs(s))) > 3:
-        return f"{s*100.:.2e}%"
+        return f"{s * 100.:.2e}%"
     else:
         return f"{s:.2%}"
 
@@ -110,7 +110,7 @@ class Plotting:
         if oseries:
             o = self.ml.observations(tmin=tmin, tmax=tmax)
             o_nu = self.ml.oseries.series.drop(o.index).loc[
-                o.index.min():o.index.max()]
+                   o.index.min():o.index.max()]
             if not o_nu.empty:
                 # plot parts of the oseries that are not used in grey
                 o_nu.plot(linestyle='', marker='.', color='0.5', label='',
@@ -886,6 +886,59 @@ def compare(models, tmin=None, tmax=None, figsize=(10, 8),
                    colLabels=cols)
     ax_table.axis("off")
 
+    return axes
+
+
+def series(head=None, stresses=None, titles=True, tmin=None, tmax=None,
+           labels=None, figsize=(10, 5)):
+    """Method to plot all the time series going into a Pastas Model.
+
+    Parameters
+    ----------
+    head: pd.Series
+        Pandas time series with DatetimeIndex.
+    stresses: List of pd.Series
+        List with Pandas time series with DatetimeIndex.
+    titles: bool
+        Set the titles or not. Taken from the name attribute of the Series.
+    tmin: str or pd.Timestamp
+    tmax: str or pd.Timestamp
+    labels: List of str
+        List with the labels for each subplot.
+    figsize: tuple
+        Set the size of the figure.
+
+    Returns
+    -------
+    matplotlib.Axes
+
+    """
+    rows = 0
+    if head is not None:
+        rows += 1
+    if stresses is not None:
+        rows += len(stresses)
+
+    _, axes = plt.subplots(rows, 1, figsize=figsize, sharex=True)
+
+    if head is not None:
+        head.plot(ax=axes[0], marker=".", linestyle=" ", color="k")
+        if titles:
+            axes[0].set_title(head.name)
+        if labels is not None:
+            axes[0].set_ylabel(labels[0])
+
+    if stresses is not None:
+        for i, stress in enumerate(stresses, start=rows - len(stresses)):
+            stress.plot(ax=axes[i], color="k")
+            if titles:
+                axes[i].set_title(stress.name)
+            if labels is not None:
+                axes[i].set_ylabel(labels[i])
+
+    plt.xlim([tmin, tmax])
+
+    plt.tight_layout()
     return axes
 
 
