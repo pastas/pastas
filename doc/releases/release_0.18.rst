@@ -6,6 +6,9 @@ New Features / Enhancements
 ***************************
 
 - Improved documentation of the uncertainty quantification methods
+- Add section to fit report if parameters hit or are close to parameter bounds after optimization.
+- Improve method `pastas.Model._check_parameters_bounds()` (used by above).
+- Improve parameter bounds for HantushWellModel, no longer limited by maximum distance.
 
 
 Deprecations
