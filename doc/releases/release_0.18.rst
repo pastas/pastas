@@ -10,6 +10,8 @@ New Features / Enhancements
 - Improve method :meth:`pastas.Model._check_parameters_bounds()` (used by
   above).
 - Improve parameter bounds for HantushWellModel, no longer limited by maximum distance.
+- `pastas.Model.__init__()` now accepts the `freq` argument, which can be
+  used to set the simulation frequency of the Model at creating.
 - :meth:`ps.plots.series` is added to quickly visualise the input time series.
 
 Deprecations

@@ -42,6 +42,10 @@ class Model:
         Dictionary containing metadata of the oseries, passed on the to
         oseries when creating a pastas TimeSeries object. hence,
         ml.oseries.metadata will give you the metadata.
+    freq: str, optional
+        String with the frequency the stressmodels are simulated. Must
+        be one of the following: (D, h, m, s, ms, us, ns) or a multiple of
+        that e.g. "7D". Default is "D". New in 0.18.0.
 
     Returns
     -------
@@ -58,7 +62,7 @@ class Model:
     """
 
     def __init__(self, oseries, constant=True, noisemodel=True, name=None,
-                 metadata=None):
+                 metadata=None, freq="D"):
 
         self.logger = getLogger(__name__)
 
@@ -86,8 +90,8 @@ class Model:
         self.settings = {
             "tmin": None,
             "tmax": None,
-            "freq": "D",
-            "warmup": Timedelta(3650, "D"),
+            "freq": freq,
+            "warmup": Timedelta(3650, freq),
             "time_offset": Timedelta(0),
             "noise": noisemodel,
             "solver": None,
@@ -173,8 +177,6 @@ class Model:
         else:
             self.stressmodels[stressmodel.name] = stressmodel
             self.parameters = self.get_init_parameters(initial=False)
-            if self.settings["freq"] is None:
-                self._set_freq()
             stressmodel.update_stress(freq=self.settings["freq"])
 
             # Check if stress overlaps with oseries, if not give a warning
@@ -835,41 +837,6 @@ class Model:
             self.parameters.loc[name, "pmax"] = pmax
         if optimal is not None:
             self.parameters.loc[name, "optimal"] = optimal
-
-    def _set_freq(self):
-        """Internal method to set the frequency in the settings. This is
-        method is not yet applied and is for future development.
-
-        """
-        freqs = set()
-        if self.oseries.freq:
-            # when the oseries has a constant frequency, us this
-            freqs.add(self.oseries.freq)
-        else:
-            # otherwise determine frequency from the stressmodels
-            for stressmodel in self.stressmodels.values():
-                if stressmodel.stress:
-                    for stress in stressmodel.stress:
-                        if stress.settings['freq']:
-                            # first check the frequency, and use this
-                            freqs.add(stress.settings['freq'])
-                        elif stress.freq_original:
-                            # if this is not available, and the original
-                            # frequency is, take the original frequency
-                            freqs.add(stress.freq_original)
-
-        if len(freqs) == 1:
-            # if there is only one frequency, use this frequency
-            self.settings["freq"] = next(iter(freqs))
-        elif len(freqs) > 1:
-            # if there are more frequencies, take the highest (lowest dt)
-            freqs = list(freqs)
-            dt = np.array([_get_dt(f) for f in freqs])
-            self.settings["freq"] = freqs[np.argmin(dt)]
-        else:
-            self.logger.info("Frequency of model cannot be determined. "
-                             "Frequency is set to daily")
-            self.settings["freq"] = "D"
 
     def _get_time_offset(self, freq):
         """Internal method to get the time offsets from the stressmodels.
