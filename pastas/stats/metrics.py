@@ -103,7 +103,7 @@ def rmse(obs=None, sim=None, res=None, missing="drop", weighted=False,
     -----
     Computes the Root Mean Squared Error (RMSE) as follows:
 
-    .. math:: \\text{RMSE} = \\sqrt{\\sum_{i=1}^{N} w_i(n_i- \\bar{n})^2}
+    .. math:: \\text{RMSE} = \\sqrt{\\sum_{i=1}^{N} w_i n_i^2}
 
     where :math:`N` is the number of residuals :math:`n`.
 
@@ -328,7 +328,7 @@ def nse(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30):
     mu = average(obs.to_numpy(), weights=w)
 
     return 1 - (w * res.to_numpy() ** 2).sum() / \
-           (w * (obs.to_numpy() - mu) ** 2).sum()
+        (w * (obs.to_numpy() - mu) ** 2).sum()
 
 
 def rsq(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30,
@@ -436,7 +436,8 @@ def bic(obs=None, sim=None, res=None, missing="drop", nparam=1):
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
-    return (res.index.size * log((res.to_numpy() ** 2.0).sum()) +
+    return (res.index.size *
+            log((res.to_numpy() ** 2.0).sum() / res.index.size) +
             nparam * log(res.index.size))
 
 
@@ -485,7 +486,8 @@ def aic(obs=None, sim=None, res=None, missing="drop", nparam=1):
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
-    return res.index.size * log((res.to_numpy() ** 2.0).sum()) + 2.0 * nparam
+    return (res.index.size *
+            log((res.to_numpy() ** 2.0).sum() / res.index.size) + 2.0 * nparam)
 
 
 # Forecast Error Metrics

@@ -21,6 +21,48 @@ from .stats import plot_diagnostics, plot_cum_frequency
 logger = logging.getLogger(__name__)
 
 
+def _table_formatter_params(s):
+    """Internal method for formatting parameters in tables in Pastas plots.
+
+    Parameters
+    ----------
+    s : float
+        value to format
+
+    Returns
+    -------
+    str
+        float formatted as str
+    """
+    if np.floor(np.log10(np.abs(s))) <= -2:
+        return f"{s:.2e}"
+    elif np.floor(np.log10(np.abs(s))) > 5:
+        return f"{s:.2e}"
+    else:
+        return f"{s:.2f}"
+
+
+def _table_formatter_stderr(s):
+    """Internal method for formatting stderrs in tables in Pastas plots.
+
+    Parameters
+    ----------
+    s : float
+        value to format
+
+    Returns
+    -------
+    str
+        float formatted as str
+    """
+    if np.floor(np.log10(np.abs(s))) <= -4:
+        return f"{s * 100.:.2e}%"
+    elif np.floor(np.log10(np.abs(s))) > 3:
+        return f"{s * 100.:.2e}%"
+    else:
+        return f"{s:.2%}"
+
+
 class Plotting:
     """Plots available directly from the Model Class."""
 
@@ -92,7 +134,7 @@ class Plotting:
 
     @model_tmin_tmax
     def results(self, tmin=None, tmax=None, figsize=(10, 8), split=False,
-                adjust_height=True, **kwargs):
+                adjust_height=True, return_warmup=False, **kwargs):
         """Plot different results in one window to get a quick overview.
 
         Parameters
@@ -119,10 +161,12 @@ class Plotting:
         # Number of rows to make the figure with
         o = self.ml.observations(tmin=tmin, tmax=tmax)
         o_nu = self.ml.oseries.series.drop(o.index).loc[tmin:tmax]
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        sim = self.ml.simulate(tmin=tmin, tmax=tmax,
+                               return_warmup=return_warmup)
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         contribs = self.ml.get_contributions(split=split, tmin=tmin,
-                                             tmax=tmax, return_warmup=False)
+                                             tmax=tmax,
+                                             return_warmup=return_warmup)
 
         ylims = [(min([sim.min(), o[tmin:tmax].min()]),
                   max([sim.max(), o[tmin:tmax].max()])),
@@ -211,6 +255,9 @@ class Plotting:
         # xlim sets minorticks back after plots:
         ax1.minorticks_off()
         ax1.set_xlim(tmin, tmax)
+        
+        # sometimes, ticks suddenly appear on top plot, turn off just in case
+        plt.setp(ax1.get_xticklabels(), visible=False)
 
         for ax in fig.axes:
             ax.grid(True)
@@ -225,8 +272,9 @@ class Plotting:
         p = self.ml.parameters.copy().loc[:, ["name", "optimal", "stderr"]]
         p.loc[:, "name"] = p.index
         stderr = p.loc[:, "stderr"] / p.loc[:, "optimal"]
-        p.loc[:, "optimal"] = p.loc[:, "optimal"].apply("{:.2f}".format)
-        p.loc[:, "stderr"] = stderr.abs().apply("{:.2%}".format)
+        p.loc[:, "optimal"] = p.loc[:, "optimal"].apply(
+            _table_formatter_params)
+        p.loc[:, "stderr"] = stderr.abs().apply(_table_formatter_stderr)
 
         ax3.axis('off')
         ax3.table(bbox=(0., 0., 1.0, 1.0), cellText=p.values,
@@ -705,10 +753,17 @@ class Plotting:
                 del ax.lines[0]  # delete existing line
 
                 contrib = [c[1] for c in contributions]  # get timeseries
-                vstack = concat(contrib, axis=1)
+                vstack = concat(contrib, axis=1, sort=False)
                 names = [c[0] for c in contributions]  # get names
                 ax.stackplot(vstack.index, vstack.values.T, labels=names)
                 ax.legend(loc="best", ncol=5, fontsize=8)
+
+                # y-scale does not show 0
+                ylower, yupper = ax.get_ylim()
+                if (ylower < 0) and (yupper < 0):
+                    ax.set_ylim(top=0)
+                elif (ylower > 0) and (yupper > 0):
+                    ax.set_ylim(bottom=0)
 
         return axes
 
@@ -804,13 +859,15 @@ def compare(models, tmin=None, tmax=None, figsize=(10, 8),
     parameters = concat(
         [iml.parameters.optimal for iml in models], axis=1, sort=False)
     colnams = ["{}".format(iml.name) for iml in models]
+    # ensure unique names
+    if len(set(colnams)) < len(colnams):
+        colnams = [f"{iml.name}-{i}" for i, iml in enumerate(models)]
     parameters.columns = colnams
     parameters['name'] = parameters.index
     # reorder columns
     parameters = parameters.loc[:, ["name"] + colnams]
-    for name, vals in parameters.iterrows():
-        parameters.loc[name, colnams] = [
-            '{:.2f}'.format(v) for v in vals.iloc[1:]]
+    parameters.loc[:, colnams] = parameters.loc[:, colnams].applymap(
+        _table_formatter_params)
 
     # clear existing table
     ax_table.cla()
@@ -829,6 +886,59 @@ def compare(models, tmin=None, tmax=None, figsize=(10, 8),
                    colLabels=cols)
     ax_table.axis("off")
 
+    return axes
+
+
+def series(head=None, stresses=None, titles=True, tmin=None, tmax=None,
+           labels=None, figsize=(10, 5)):
+    """Method to plot all the time series going into a Pastas Model.
+
+    Parameters
+    ----------
+    head: pd.Series
+        Pandas time series with DatetimeIndex.
+    stresses: List of pd.Series
+        List with Pandas time series with DatetimeIndex.
+    titles: bool
+        Set the titles or not. Taken from the name attribute of the Series.
+    tmin: str or pd.Timestamp
+    tmax: str or pd.Timestamp
+    labels: List of str
+        List with the labels for each subplot.
+    figsize: tuple
+        Set the size of the figure.
+
+    Returns
+    -------
+    matplotlib.Axes
+
+    """
+    rows = 0
+    if head is not None:
+        rows += 1
+    if stresses is not None:
+        rows += len(stresses)
+
+    _, axes = plt.subplots(rows, 1, figsize=figsize, sharex=True)
+
+    if head is not None:
+        head.plot(ax=axes[0], marker=".", linestyle=" ", color="k")
+        if titles:
+            axes[0].set_title(head.name)
+        if labels is not None:
+            axes[0].set_ylabel(labels[0])
+
+    if stresses is not None:
+        for i, stress in enumerate(stresses, start=rows - len(stresses)):
+            stress.plot(ax=axes[i], color="k")
+            if titles:
+                axes[i].set_title(stress.name)
+            if labels is not None:
+                axes[i].set_ylabel(labels[i])
+
+    plt.xlim([tmin, tmax])
+
+    plt.tight_layout()
     return axes
 
 

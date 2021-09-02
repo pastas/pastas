@@ -538,7 +538,7 @@ class StepModel(StressModelBase):
                                                       False, self.name)
 
     def simulate(self, p, tmin=None, tmax=None, freq=None, dt=1):
-        tstart = Timestamp.fromordinal(int(p[-1]), freq="D")
+        tstart = Timestamp.fromordinal(int(p[-1]))
         tindex = date_range(tmin, tmax, freq=freq)
         h = Series(0, tindex, name=self.name)
         h.loc[h.index > tstart] = 1
@@ -908,7 +908,7 @@ class RechargeModel(StressModelBase):
         pandas.Series or pastas.timeseries object containing the
         precipitation series.
     evap: pandas.Series or pastas.timeseries.TimeSeries
-        pandas.Series or pastas.timeseries object containing the
+        pandas.Series or pastas.timeseries object containing the potential
         evaporation series.
     rfunc: pastas.rfunc class, optional
         Response function used in the convolution with the stress. Default
