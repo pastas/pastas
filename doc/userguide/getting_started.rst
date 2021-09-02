@@ -6,7 +6,7 @@ that. See the :ref:`Examples`-section for some example-code.
 
 Installing Python
 -----------------
-To install Pastas, a working version of Python 3.6 or higher has to be
+To install Pastas, a working version of Python 3.7 or higher has to be
 installed on your computer. We recommend using the `Anaconda Distribution
 <https://www.continuum.io/downloads>`_ of Python. This Python distribution
 includes most of the python package dependencies and the Jupyter Notebook
