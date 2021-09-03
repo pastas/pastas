@@ -1656,11 +1656,11 @@ class Model:
 
             # calculate atol based on minimum, with max 1e-8
             # otherwise set 1 order of magnitude lower than minimum value
-            min_val = np.abs(pmin)
-            if min_val == 0.0 or np.isnan(pmin):
+            if pmin == 0.0 or np.isnan(pmin):
                 atol = 1e-8
             else:
-                atol = np.min([1e-8, 10**(np.floor(np.log10(min_val)) - 1)])
+                atol = np.min(
+                    [1e-8, 10**(np.floor(np.log10(np.abs(pmin))) - 1)])
 
             # deal with NaNs in parameter bounds
             if np.isnan(pmax):
