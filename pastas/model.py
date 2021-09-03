@@ -1654,8 +1654,13 @@ class Model:
             pmax = self.parameters.loc[p, "pmax"]
             pmin = self.parameters.loc[p, "pmin"]
 
-            # calculate atol based on pmin, with max 1e-8
-            atol = np.min([1e-8, 10**(np.round(np.log10(np.abs(pmin))) - 1)])
+            # calculate atol based on minimum, with max 1e-8
+            # otherwise set 1 order of magnitude lower than minimum value
+            min_val = np.abs(pmin)
+            if min_val == 0.0:
+                atol = 1e-8
+            else:
+                atol = np.min([1e-8, 10**(np.floor(np.log10(min_val)) - 1)])
 
             # deal with NaNs in parameter bounds
             if np.isnan(pmax):
