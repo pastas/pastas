@@ -1387,3 +1387,63 @@ class TarsoModel(RechargeModel):
                 exp_a = np.exp(-(dt - dtdr) / a)
                 h[i] = (d1 - d) * exp_a + r[i] * c * (1 - exp_a) + d
         return h
+
+
+class ChangeModel(StressModelBase):
+    _name = "ChangeModel"
+
+    def __init__(self, stress, rfunc1, rfunc2, name, tchange, up=True,
+                 cutoff=0.999, settings=None, metadata=None):
+        if isinstance(stress, list):
+            stress = stress[0]  # TODO Temporary fix Raoul, 2017-10-24
+
+        stress = TimeSeries(stress, settings=settings, metadata=metadata)
+
+        StressModelBase.__init__(self, name=name, rfunc=None,
+                                 tmin=stress.series.index.min(),
+                                 tmax=stress.series.index.max())
+        self.rfunc1 = rfunc1(up=up, cutoff=cutoff)
+        self.rfunc2 = rfunc2(up=up, cutoff=cutoff)
+        self.tchange = Timestamp(tchange)
+
+        self.freq = stress.settings["freq"]
+        self.stress = [stress]
+        self.set_init_parameters()
+
+    def set_init_parameters(self):
+        """Internal method to set the initial parameters."""
+        self.parameters = concat(
+            [self.rfunc1.get_init_parameters("{}_1".format(self.name)),
+             self.rfunc2.get_init_parameters("{}_2".format(self.name))])
+
+        tmin = Timestamp.min.toordinal()
+        tmax = Timestamp.max.toordinal()
+        tchange = self.tchange.toordinal()
+
+        self.parameters.loc[self.name + "_beta"] = (0., -np.inf, np.inf,
+                                                    True, self.name)
+        self.parameters.loc[self.name + "_tchange"] = (tchange, tmin, tmax,
+                                                       False, self.name)
+        self.parameters.name = self.name
+
+    def simulate(self, p, tmin=None, tmax=None, freq=None, dt=1.0):
+        self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
+        rfunc1 = self.rfunc1.block(p[:self.rfunc1.nparam])
+        rfunc2 = self.rfunc2.block(
+            p[self.rfunc1.nparam:self.rfunc1.nparam + self.rfunc2.nparam])
+
+        stress = self.stress[0].series
+        npoints = stress.index.size
+        t = np.linspace(0, 1, npoints)
+        beta = p[-2] * npoints
+
+        sigma = stress.index.get_loc(
+            Timestamp.fromordinal(int(p[-1]))) / npoints
+        omega = 1 / (np.exp(beta * (t - sigma)) + 1)
+        h1 = Series(data=fftconvolve(stress, rfunc1, 'full')[:npoints],
+                    index=stress.index, name="1", fastpath=True)
+        h2 = Series(data=fftconvolve(stress, rfunc2, 'full')[:npoints],
+                    index=stress.index, name="1", fastpath=True)
+        h = omega * h1 + (1 - omega) * h2
+
+        return h
