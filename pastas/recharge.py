@@ -74,7 +74,7 @@ class RechargeBase:
             columns=["initial", "pmin", "pmax", "vary", "name"])
         return parameters
 
-    def simulate(self, prec, evap, p, dt=1.0, **kwargs):
+    def simulate(self, prec, evap, p, dt=1.0, return_full=False, **kwargs):
         pass
 
 
@@ -196,12 +196,17 @@ class FlexModel(RechargeBase):
     """
     _name = "FlexModel"
 
-    def __init__(self, snow=False, gw_uptake=False):
+    def __init__(self, interception=True, snow=False, gw_uptake=False):
         check_numba()
         RechargeBase.__init__(self)
         self.snow = snow
-        self.nparam = 9 if snow else 6
+        self.interception = interception
         self.gw_uptake = gw_uptake
+        self.nparam = 5
+        if self.interception:
+            self.nparam += 1
+        if self.snow:
+            self.nparam += 3
 
     def get_init_parameters(self, name="recharge"):
         parameters = DataFrame(
@@ -210,16 +215,18 @@ class FlexModel(RechargeBase):
         parameters.loc[name + "_lp"] = (0.25, 1e-5, 1, False, name)
         parameters.loc[name + "_ks"] = (100.0, 1, 1e4, True, name)
         parameters.loc[name + "_gamma"] = (4.0, 1e-5, 50.0, True, name)
-        parameters.loc[name + "_simax"] = (2.0, 1e-5, 10.0, False, name)
-        parameters.loc[name + "_kv"] = (1.0, 0.25, 2.0, False, name)
+        parameters.loc[name + "_kv"] = (1.0, 0.25, 2.0, True, name)
+        if self.interception:
+            parameters.loc[name + "_simax"] = (2.0, 1e-5, 10.0, False, name)
         if self.snow:
             parameters.loc[name + "_tp"] = (2.0, -2.0, 2.0, False, name)
             parameters.loc[name + "_tk"] = (2.0, -2.0, 2.0, False, name)
-            parameters.loc[name + "_k"] = (2.0, 0.0, 10.0, False, name)
+            parameters.loc[name + "_k"] = (2.0, 0.0, 20.0, False, name)
 
         return parameters
 
-    def simulate(self, prec, evap, temp, p, dt=1.0, **kwargs):
+    def simulate(self, prec, evap, temp, p, dt=1.0, return_full=False,
+                 **kwargs):
         """Simulate the recharge flux.
 
         Parameters
@@ -243,76 +250,107 @@ class FlexModel(RechargeBase):
             Recharge flux calculated by the model.
 
         """
+        evap = evap * p[4]
+
         if self.snow:
             ss, ps, pr, m = self.get_snow_balance(prec=prec, temp=temp,
-                                                  tp=p[6], tk=p[7], k=p[8])
-            prec = pr + m
+                                                  tp=p[-3], tk=p[-2], k=p[-1])
+        else:
+            pr = prec
+            m = 0.0
 
-        r, ea, ei, pe, q, sr, si, = \
-            self.get_recharge(prec=prec, evap=evap, srmax=p[0], lp=p[1],
-                              ks=p[2], gamma=p[3], simax=p[4], kv=p[5], dt=dt)
+        if self.interception:
+            si, ei, pe = self.get_interception_balance(pr=pr, evap=evap,
+                                                       simax=p[5])
+        else:
+            pe = pr
+            ei = 0.0
+
+        r, ea, q, sr = self.get_recharge(prec=pe + m, evap=evap - ei,
+                                         srmax=p[0], lp=p[1], ks=p[2],
+                                         gamma=p[3], dt=dt)
+
+        # report big water balance errors (error > 0.1%.)
+        soil_balance = (sr[0] - sr[-1] + (pe + m - r - ea - q).sum()) / \
+                       pe.sum()
+        if abs(soil_balance) > 0.1:
+            logger.warning("Water balance error: %s %% of the total pe flux. "
+                           "Parameters: %s", soil_balance.round(2), p.round(2))
 
         if self.gw_uptake:
             # Compute leftover potential evaporation
             eg = (evap - ea - ei)
             r = r - eg
 
-        # report big water balance errors (error > 0.1%.)
-        soil_balance = (sr[0] - sr[-1] + (pe - r - ea - q).sum()) / pe.sum()
-        if abs(soil_balance) > 0.1:
-            logger.warning("Water balance error: %s %% of the total pe flux. "
-                           "Parameters: %s", soil_balance.round(2), p.round(2))
-        return r
+        if return_full:
+            data = (r, ea, q, sr)
+            if self.interception:
+                data += (si, ei, pe)
+            if self.snow:
+                data += (ss, ps, pr, m)
+            return data
+        else:
+            return r
 
     @staticmethod
     @njit
     def get_recharge(prec, evap, srmax=250.0, lp=0.25, ks=100.0, gamma=4.0,
-                     simax=2.0, kv=1.0, dt=1.0):
+                     dt=1.0):
         """
         Internal method used for the recharge calculation. If Numba is
         available, this method is significantly faster.
 
         """
         n = prec.size
-        evap = evap * kv  # Multiply by crop factor
         # Create empty arrays to store the fluxes and states
-        su = zeros(n, dtype=float64)  # Root Zone Storage State
-        su[0] = 0.5 * srmax  # Set the initial system state to half-full
+        sr = zeros(n, dtype=float64)  # Root Zone Storage State
+        sr[0] = 0.5 * srmax  # Set the initial system state to half-full
         ea = zeros(n, dtype=float64)  # Actual evaporation Flux
         r = zeros(n, dtype=float64)  # Recharge Flux
-        si = zeros(n, dtype=float64)  # Interception Storage State
-        pe = zeros(n, dtype=float64)  # Effective precipitation Flux
-        ei = zeros(n, dtype=float64)  # Interception evaporation Flux
-        ep = zeros(n, dtype=float64)  # Updated evaporation Flux
         q = zeros(n, dtype=float64)  # Surface runoff Flux
         lp = lp * srmax  # Do this here outside the for-loop for efficiency
 
         for t in range(n - 1):
-            # Interception bucket
-            pe[t] = max(prec[t] - simax + si[t], 0.0)
-            ei[t] = min(evap[t], si[t])
-            ep[t] = evap[t] - ei[t]
-            si[t + 1] = si[t] + dt * (prec[t] - pe[t] - ei[t])
-
             # Make sure the solution is larger then 0.0 and smaller than su
-            if su[t] > srmax:
-                q[t] = su[t] - srmax  # Surface runoff
-                su[t] = srmax
-            elif su[t] < 0.0:
-                su[t] = 0.0
+            if sr[t] > srmax:
+                q[t] = sr[t] - srmax  # Surface runoff
+                sr[t] = srmax
+            elif sr[t] < 0.0:
+                sr[t] = 0.0
 
-            # Calculate actual evapotranspiration
-            if su[t] / lp < 1.0:
-                ea[t] = ep[t] * su[t] / lp
+            # Calculate actual evaporation
+            if sr[t] / lp < 1.0:
+                ea[t] = evap[t] * sr[t] / lp
             else:
-                ea[t] = ep[t]
+                ea[t] = evap[t]
 
             # Calculate the recharge flux
-            r[t] = ks * (su[t] / srmax) ** gamma
+            r[t] = ks * (sr[t] / srmax) ** gamma
             # Calculate state of the root zone storage
-            su[t + 1] = su[t] + dt * (pe[t] - r[t] - ea[t])
+            sr[t + 1] = sr[t] + dt * (prec[t] - r[t] - ea[t])
 
-        return r, ea, ei, pe, q, su, si
+        return r, ea, q, sr
+
+    @staticmethod
+    @njit
+    def get_interception_balance(pr, evap, simax=2.0, dt=1.0):
+        """
+        Internal method used for the interception calculation. If Numba is
+        available, this method is significantly faster.
+
+        """
+        n = pr.size
+        si = zeros(n, dtype=float64)  # Interception Storage State
+        pe = zeros(n, dtype=float64)  # Effective precipitation Flux
+        ei = zeros(n, dtype=float64)  # Interception evaporation Flux
+
+        for t in range(n - 1):
+            # Interception bucket
+            pe[t] = max(pr[t] - simax + si[t], 0.0)
+            ei[t] = min(evap[t], si[t])
+            si[t + 1] = si[t] + dt * (pr[t] - pe[t] - ei[t])
+
+        return si, ei, pe
 
     @staticmethod
     @njit
@@ -333,22 +371,20 @@ class FlexModel(RechargeBase):
         return ss, ps, pr, m
 
     def get_water_balance(self, prec, evap, temp, p, dt=1.0, **kwargs):
-        if self.snow:
-            ss, ps, pr, m = self.get_snow_balance(prec=prec, temp=temp,
-                                                  tp=p[6], tk=p[7], k=p[8])
-            prec = pr + m
+        data = self.simulate(prec=prec, evap=evap, temp=temp, p=p, dt=dt,
+                             return_full=True, **kwargs)
 
-        data = self.get_recharge(prec=prec, evap=evap, srmax=p[0], lp=p[1],
-                                 ks=p[2], gamma=p[3], simax=p[4], kv=p[5],
-                                 dt=dt)
         columns = ["Recharge (R)", "Actual evaporation (Ea)",
-                   "Interception evaporation (Ei)",
-                   "Effective precipitation (Pe)", "Surface Runoff (Q)",
-                   "State Root zone (Sr)", "State Interception (Si)"]
+                   "Surface Runoff (Q)", "State Root zone (Sr)"]
+
+        if self.interception:
+            columns += ["State Interception (Si)",
+                        "Interception evaporation (Ei)",
+                        "Effective precipitation (Pe)"]
 
         if self.snow:
-            columns += ["State Snow (Ss)", "Snowmelt (M)", "Snowfall (Ps)"]
-            data += (ss, m, ps)
+            columns += ["State Snow (Ss)", "Snowfall (Ps)", "Rainfall (Pr)",
+                        "Snowmelt (M)", ]
 
         data = DataFrame(data=vstack(data).T, columns=columns)
         return data
@@ -399,7 +435,7 @@ class Berendrecht(RechargeBase):
         parameters.loc[name + "_ks"] = (100.0, 1, 1e4, True, name)
         return parameters
 
-    def simulate(self, prec, evap, p, dt=1.0, **kwargs):
+    def simulate(self, prec, evap, p, dt=1.0, return_full=False, **kwargs):
         """Simulate the recharge flux.
 
         Parameters
@@ -421,9 +457,13 @@ class Berendrecht(RechargeBase):
             Recharge flux calculated by the model.
 
         """
-        r = self.get_recharge(prec, evap, fi=p[0], fc=p[1], sr=p[2], de=p[3],
-                              l=p[4], m=p[5], ks=p[6], dt=dt)[0]
-        return nan_to_num(r)
+        r, s, ea, pe = self.get_recharge(prec, evap, fi=p[0], fc=p[1], sr=p[2],
+                                         de=p[3], l=p[4], m=p[5], ks=p[6],
+                                         dt=dt)
+        if return_full:
+            return r, s, ea, pe
+        else:
+            return nan_to_num(r)
 
     @staticmethod
     @njit
@@ -461,10 +501,9 @@ class Berendrecht(RechargeBase):
         return r, s, ea, pe
 
     def get_water_balance(self, prec, evap, p, dt=1.0, **kwargs):
-        r, s, ea, pe = self.get_recharge(prec, evap, fi=p[0], fc=p[1],
-                                         sr=p[2], de=p[3], l=p[4], m=p[5],
-                                         ks=p[6], dt=dt)
+        r, s, ea, pe = self.simulate(prec, evap, p=p, dt=dt,
+                                     return_full=True, **kwargs)
         s = s * p[3]  # Because S is computed dimensionless in this model
-        data = DataFrame(data=vstack((s, pe, -ea, -r)).T,
+        data = DataFrame(data=vstack((s, pe, ea, r)).T,
                          columns=["S", "Pe", "Ea", "R"])
         return data
