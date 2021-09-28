@@ -160,7 +160,11 @@ class Plotting:
         """
         # Number of rows to make the figure with
         o = self.ml.observations(tmin=tmin, tmax=tmax)
-        o_nu = self.ml.oseries.series.drop(o.index).loc[tmin:tmax]
+        o_nu = self.ml.oseries.series.drop(o.index)
+        if return_warmup:
+            o_nu = o_nu[tmin - self.ml.settings['warmup']: tmax]
+        else:
+            o_nu = o_nu[tmin: tmax]
         sim = self.ml.simulate(tmin=tmin, tmax=tmax,
                                return_warmup=return_warmup)
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
@@ -254,8 +258,11 @@ class Plotting:
 
         # xlim sets minorticks back after plots:
         ax1.minorticks_off()
-        ax1.set_xlim(tmin, tmax)
-        
+        if return_warmup:
+            ax1.set_xlim(tmin - self.ml.settings['warmup'], tmax)
+        else:
+            ax1.set_xlim(tmin, tmax)
+
         # sometimes, ticks suddenly appear on top plot, turn off just in case
         plt.setp(ax1.get_xticklabels(), visible=False)
 
