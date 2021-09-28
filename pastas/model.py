@@ -42,6 +42,10 @@ class Model:
         Dictionary containing metadata of the oseries, passed on the to
         oseries when creating a pastas TimeSeries object. hence,
         ml.oseries.metadata will give you the metadata.
+    freq: str, optional
+        String with the frequency the stressmodels are simulated. Must
+        be one of the following: (D, h, m, s, ms, us, ns) or a multiple of
+        that e.g. "7D". Default is "D". New in 0.18.0.
 
     Returns
     -------
@@ -58,7 +62,7 @@ class Model:
     """
 
     def __init__(self, oseries, constant=True, noisemodel=True, name=None,
-                 metadata=None):
+                 metadata=None, freq="D"):
 
         self.logger = getLogger(__name__)
 
@@ -86,8 +90,8 @@ class Model:
         self.settings = {
             "tmin": None,
             "tmax": None,
-            "freq": "D",
-            "warmup": Timedelta(3650, "D"),
+            "freq": freq,
+            "warmup": Timedelta(3650, freq),
             "time_offset": Timedelta(0),
             "noise": noisemodel,
             "solver": None,
@@ -173,8 +177,6 @@ class Model:
         else:
             self.stressmodels[stressmodel.name] = stressmodel
             self.parameters = self.get_init_parameters(initial=False)
-            if self.settings["freq"] is None:
-                self._set_freq()
             stressmodel.update_stress(freq=self.settings["freq"])
 
             # Check if stress overlaps with oseries, if not give a warning
@@ -377,7 +379,7 @@ class Model:
             istart += 1
         if self.transform:
             sim = self.transform.simulate(sim, p[istart:istart +
-                                                        self.transform.nparam])
+                                                 self.transform.nparam])
 
         # Respect provided tmin/tmax at this point, since warmup matters for
         # simulation but should not be returned, unless return_warmup=True.
@@ -836,41 +838,6 @@ class Model:
         if optimal is not None:
             self.parameters.loc[name, "optimal"] = optimal
 
-    def _set_freq(self):
-        """Internal method to set the frequency in the settings. This is
-        method is not yet applied and is for future development.
-
-        """
-        freqs = set()
-        if self.oseries.freq:
-            # when the oseries has a constant frequency, us this
-            freqs.add(self.oseries.freq)
-        else:
-            # otherwise determine frequency from the stressmodels
-            for stressmodel in self.stressmodels.values():
-                if stressmodel.stress:
-                    for stress in stressmodel.stress:
-                        if stress.settings['freq']:
-                            # first check the frequency, and use this
-                            freqs.add(stress.settings['freq'])
-                        elif stress.freq_original:
-                            # if this is not available, and the original
-                            # frequency is, take the original frequency
-                            freqs.add(stress.freq_original)
-
-        if len(freqs) == 1:
-            # if there is only one frequency, use this frequency
-            self.settings["freq"] = next(iter(freqs))
-        elif len(freqs) > 1:
-            # if there are more frequencies, take the highest (lowest dt)
-            freqs = list(freqs)
-            dt = np.array([_get_dt(f) for f in freqs])
-            self.settings["freq"] = freqs[np.argmin(dt)]
-        else:
-            self.logger.info("Frequency of model cannot be determined. "
-                             "Frequency is set to daily")
-            self.settings["freq"] = "D"
-
     def _get_time_offset(self, freq):
         """Internal method to get the time offsets from the stressmodels.
 
@@ -1223,7 +1190,7 @@ class Model:
         # use warmup
         if tmin:
             tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + \
-                        self.settings["time_offset"]
+                self.settings["time_offset"]
         else:
             tmin_warm = None
 
@@ -1507,7 +1474,7 @@ class Model:
         # use warmup
         if tmin:
             tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + \
-                        self.settings["time_offset"]
+                self.settings["time_offset"]
         else:
             tmin_warm = None
 
@@ -1546,7 +1513,7 @@ class Model:
 
         return file_info
 
-    def fit_report(self, output="basic"):
+    def fit_report(self, output="basic", warnbounds=True):
         """Method that reports on the fit after a model is optimized.
 
         Parameters
@@ -1554,6 +1521,9 @@ class Model:
         output: str, optional
             If any other value than "full" is provided, the parameter
             correlations will be removed from the output.
+        warnbounds : bool, optional
+            print warnings when parameters hit or lie very close to 
+            bounds after optimization.
 
         Returns
         -------
@@ -1577,7 +1547,7 @@ class Model:
         model = {
             "nfev": self.fit.nfev,
             "nobs": self.observations().index.size,
-            "noise": self.settings["noise"],
+            "noise": str(self.settings["noise"]),
             "tmin": str(self.settings["tmin"]),
             "tmax": str(self.settings["tmax"]),
             "freq": self.settings["freq"],
@@ -1636,36 +1606,82 @@ class Model:
         else:
             corr = ""
 
-        report = f"{header}{basic}{params}{corr}"
+        if warnbounds:
+            lowerhit, upperhit = self._check_parameters_bounds()
+            nhits = upperhit.sum() + lowerhit.sum()
+
+            if nhits > 0:
+                msg = [
+                    f"\n\nWarning! {nhits} parameter(s) on bounds\n"
+                    f"{string.format('', fill='=', align='>', width=width)}"
+                ]
+
+                for p in upperhit.index:
+                    if upperhit.loc[p]:
+                        msg.append(
+                            f"'{p}' on upper bound: "
+                            f"{self.parameters.loc[p, 'pmax']:.2e}"
+                        )
+                    elif lowerhit.loc[p]:
+                        msg.append(
+                            f"'{p}' on lower bound: "
+                            f"{self.parameters.loc[p, 'pmin']:.2e}"
+                        )
+                # create message
+                bounds = "\n".join(msg)
+            else:
+                bounds = ""
+        else:
+            bounds = ""
+
+        report = f"{header}{basic}{params}{bounds}{corr}"
 
         return report
 
-    def _check_parameters_bounds(self, alpha=0.01):
+    def _check_parameters_bounds(self):
         """Internal method to check if the optimal parameters are close to
         pmin or pmax.
 
-        Parameters
-        ----------
-        alpha: float, optional
-            value between 0 and 1 to determine if the parameters is close to
-            the maximum or minimum is determined as the percentage of the
-            parameter range.
-
         Returns
         -------
-        pmin: pandas.Series
+        lowerhit: pandas.Series
             pandas series with boolean values of the parameters that are
-            close to the minimum values.
-        pmax: pandas.Series
+            close to the minimum (pmin) values.
+        upperhit: pandas.Series
             pandas series with boolean values of the parameters that are
-            close to the maximum values.
+            close to the maximum (pmax) values.
 
         """
-        prange = self.parameters.pmax - self.parameters.pmin
-        pnorm = (self.parameters.optimal - self.parameters.pmin) / prange
-        pmax = pnorm > 1 - alpha
-        pmin = pnorm < alpha
-        return pmin, pmax
+        upperhit = Series(index=self.parameters.index, dtype=bool)
+        lowerhit = Series(index=self.parameters.index, dtype=bool)
+
+        for p in self.parameters.index:
+            pmax = self.parameters.loc[p, "pmax"]
+            pmin = self.parameters.loc[p, "pmin"]
+
+            # calculate atol based on minimum, with max 1e-8
+            # otherwise set 1 order of magnitude lower than minimum value
+            if pmin == 0.0 or np.isnan(pmin):
+                atol = 1e-8
+            else:
+                atol = np.min(
+                    [1e-8, 10**(np.floor(np.log10(np.abs(pmin))) - 1)])
+
+            # deal with NaNs in parameter bounds
+            if np.isnan(pmax):
+                pmax = np.inf
+            if np.isnan(pmin):
+                pmax = -np.inf
+
+            # determine hits
+            upperhit.loc[p] = np.allclose(
+                self.parameters.loc[p, "optimal"], pmax,
+                atol=atol, rtol=1e-5)
+            lowerhit.loc[p] = np.allclose(
+                self.parameters.loc[p, "optimal"], pmin,
+                atol=atol, rtol=1e-5)
+
+        return lowerhit, upperhit
 
     def to_dict(self, series=True, file_info=True):
         """Method to export a model to a dictionary.
