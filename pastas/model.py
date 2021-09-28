@@ -1311,6 +1311,7 @@ class Model:
                 t = dt
             else:
                 t = np.linspace(0, response.size * dt, response.size+1)
+            response = np.insert(response, 0, 0.0)
         else:
             if isinstance(dt, np.ndarray):
                 t = dt
