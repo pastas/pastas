@@ -1307,12 +1307,17 @@ class Model:
         response = block_or_step(p, dt, **kwargs)
 
         if add_0:
+            if isinstance(dt, np.ndarray):
+                t = dt
+            else:
+                t = np.linspace(0, response.size * dt, response.size+1)
             response = np.insert(response, 0, 0.0)
-
-        if isinstance(dt, np.ndarray):
-            t = dt
         else:
-            t = np.linspace(dt, response.size * dt, response.size)
+            if isinstance(dt, np.ndarray):
+                t = dt
+            else:
+                t = np.linspace(dt, response.size * dt, response.size)
+
         response = Series(response, index=t, name=name)
         response.index.name = "Time [days]"
 
