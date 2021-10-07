@@ -284,7 +284,7 @@ class HantushWellModel(RfuncBase):
     .. math:: p[0] = A = \\frac{1}{4 \\pi T}
     .. math:: p[1] = a = cS
     .. math:: p[2] = b = 1^2 / (4 \\lambda^2)
-    .. math:: p[3] = r \, \\text{(not optimized)}
+    .. math:: p[3] = r \\text{(not optimized)}
     where :math:`\\lambda = \\sqrt{Tc}`
 
     The parameter r (distance from the well to the observation point)
