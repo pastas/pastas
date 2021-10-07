@@ -8,7 +8,7 @@ from pandas import DataFrame
 from scipy.integrate import quad
 from scipy.special import (gammainc, gammaincinv, k0, k1,
                            exp1, erfc, lambertw, erfcinv)
-# from .decorators import njit
+from .decorators import njit
 
 __all__ = ["Gamma", "Exponential", "Hantush", "Polder", "FourParam",
            "DoubleExponential", "One", "Edelman", "HantushWellModel", "Kleur"]
@@ -936,7 +936,7 @@ class Kleur(RfuncBase):
         
         parameters.loc[name + '_j'] = (1e2, 0.01, 1e5, True, name)
         parameters.loc[name + '_x/L'] = (0.25, 1e-6, 0.5, True, name)
-        parameters.loc[name + 'n'] = (100, 100, 1000, False, name)
+        parameters.loc[name + 'n'] = (500, 100, 1000, False, name)
         return parameters
     
     def get_tmax(self, p, cutoff=None):
@@ -949,9 +949,9 @@ class Kleur(RfuncBase):
         print('Gain for x = L/2 :')
         return np.pi**2 * p[1] / (8 * p[0])
     
-    # @njit
-    def step(self, p, dt=1, cutoff=None, maxtmax=None):
-        t = self.get_t(p, dt, cutoff, maxtmax)
+    @staticmethod
+    @njit
+    def kleur_sumpart(p, t):
         s = np.zeros(len(t))
         for i in range(len(t)):
             s_part = np.array([0.0])
@@ -959,3 +959,7 @@ class Kleur(RfuncBase):
                 s_part = np.append(s_part, ((1 / n**3) * (p[1] - p[1] * np.exp(-n**2 * t[i] / p[1])) * np.sin(n * np.pi * p[2])))
             s[i] =  4 / (np.pi * p[0]) * np.sum(s_part)
         return s
+        
+    def step(self, p, dt=1, cutoff=None, maxtmax=None):
+        t = self.get_t(p, dt, cutoff, maxtmax)
+        return self.kleur_sumpart(p, t)
