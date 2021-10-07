@@ -954,7 +954,7 @@ class Kleur(RfuncBase):
     
     @staticmethod
     @njit
-    def kleur_sumpart(p, t):
+    def step_kleur(p, t):
         s = np.zeros(len(t))
         for i in range(len(t)):
             s_part = np.array([0.0])
@@ -965,4 +965,4 @@ class Kleur(RfuncBase):
         
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
         t = self.get_t(p, dt, cutoff, maxtmax)
-        return self.kleur_sumpart(np.asarray(p), t)
+        return self.step_kleur(np.asarray(p), t)
