@@ -8,7 +8,7 @@ from pandas import DataFrame
 from scipy.integrate import quad
 from scipy.special import (gammainc, gammaincinv, k0, k1,
                            exp1, erfc, lambertw, erfcinv)
-from .decorators import njit
+# from .decorators import njit
 
 __all__ = ["Gamma", "Exponential", "Hantush", "Polder", "FourParam",
            "DoubleExponential", "One", "Edelman", "HantushWellModel", "Kleur"]
@@ -949,7 +949,7 @@ class Kleur(RfuncBase):
         print('Gain for x = L/2 :')
         return np.pi**2 * p[1] / (8 * p[0])
     
-    @njit
+    # @njit
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
         t = self.get_t(p, dt, cutoff, maxtmax)
         s = np.zeros(len(t))
