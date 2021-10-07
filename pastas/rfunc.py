@@ -894,7 +894,9 @@ class Edelman(RfuncBase):
         return s
 
 class Kleur(RfuncBase):
-    """The function of Kraijenhoff van de Leur, describing the response of a polder domain with length L between two ditches. 
+    """The function of Kraijenhoff van de Leur, describing the response of a
+    polder domain with length L between two ditches.
+    
     Parameters
     ----------
     up: bool or None, optional
@@ -908,14 +910,16 @@ class Kleur(RfuncBase):
 
     Notes
     -----
-    The Kraijenhoff van de Leur function is explained in [6]_. The impulse response function
-    may be written as:
+    The Kraijenhoff van de Leur function is explained in [6]_. The impulse
+    response function may be written as:
 
-     .. math:: \\theta(t) =  \\frac{4}{\pi S} \sum_{n=1,3,5...}^\infty \\frac{1}{n} e^{-n^2\\frac{t}{j}} \sin (\\frac{n\pi x}{L})
+    .. math:: \\theta(t) =  \\frac{4}{\pi S} \sum_{n=1,3,5...}^\infty \\frac{1}{n} e^{-n^2\\frac{t}{j}} \sin (\\frac{n\pi x}{L})
 
     References
     ----------
-    .. [6] Kraijenhoff van de Leur, D. A. (1958). A study of non-steady groundwater flow with special reference to a reservoir coefficient. De Ingenieur, 70(19), B87-B94. https://edepot.wur.nl/422032
+    .. [6] Kraijenhoff van de Leur, D. A. (1958). A study of non-steady groundwater
+    flow with special reference to a reservoir coefficient. 
+    De Ingenieur, 70(19), B87-B94. https://edepot.wur.nl/422032
 
     """
     _name = "Kleur"
@@ -933,7 +937,6 @@ class Kleur(RfuncBase):
             parameters.loc[name + '_S'] = (-0.1, -1, -1e-3, True, name)
         else:
             parameters.loc[name + '_S'] = (0.1, 1e-3, 1, True, name)
-        
         parameters.loc[name + '_j'] = (1e2, 0.01, 1e5, True, name)
         parameters.loc[name + '_x/L'] = (0.25, 1e-6, 0.5, True, name)
         parameters.loc[name + 'n'] = (500, 100, 1000, False, name)
@@ -962,4 +965,4 @@ class Kleur(RfuncBase):
         
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
         t = self.get_t(p, dt, cutoff, maxtmax)
-        return self.kleur_sumpart(p, t)
+        return self.kleur_sumpart(np.asarray(p), t)
