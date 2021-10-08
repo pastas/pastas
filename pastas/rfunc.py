@@ -957,10 +957,10 @@ class Kleur(RfuncBase):
     @njit
     def step_kleur(p, t):
         s = np.zeros(len(t))
-        for i, value in enumerate(t):
+        for i, t_value in enumerate(t):
             s_part = np.array([0.0])
             for n in np.arange(1, p[3], 2):
-                s_part = np.append(s_part, ((1 / n**3) * (p[1] - p[1] * np.exp(-n**2 * t[i] / p[1])) * np.sin(n * np.pi * p[2])))
+                s_part = np.append(s_part, ((1 / n**3) * (p[1] - p[1] * np.exp(-n**2 * t_value / p[1])) * np.sin(n * np.pi * p[2])))
             s[i] =  4 / (np.pi * p[0]) * np.sum(s_part)
         return s
         
