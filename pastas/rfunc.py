@@ -918,8 +918,8 @@ class Kleur(RfuncBase):
 
     References
     ----------
-    .. [6] Kraijenhoff van de Leur, D. A. (1958). A study of non-steady groundwater
-    flow with special reference to a reservoir coefficient. 
+    .. [6] Kraijenhoff van de Leur, D. A. (1958). A study of non-steady
+    groundwater flow with special reference to a reservoir coefficient.
     De Ingenieur, 70(19), B87-B94. https://edepot.wur.nl/422032
 
     """
@@ -957,7 +957,7 @@ class Kleur(RfuncBase):
     @njit
     def step_kleur(p, t):
         s = np.zeros(len(t))
-        for i in range(len(t)):
+        for i, value in enumerate(t):
             s_part = np.array([0.0])
             for n in np.arange(1, p[3], 2):
                 s_part = np.append(s_part, ((1 / n**3) * (p[1] - p[1] * np.exp(-n**2 * t[i] / p[1])) * np.sin(n * np.pi * p[2])))
