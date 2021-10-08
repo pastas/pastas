@@ -893,6 +893,7 @@ class Edelman(RfuncBase):
         s = erfc(1 / (p[0] * np.sqrt(t)))
         return s
 
+
 class Kleur(RfuncBase):
     """The function of Kraijenhoff van de Leur, describing the response of a
     polder domain with length L between two ditches.
