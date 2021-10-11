@@ -8,9 +8,10 @@ from pandas import DataFrame
 from scipy.integrate import quad
 from scipy.special import (gammainc, gammaincinv, k0, k1,
                            exp1, erfc, lambertw, erfcinv)
+from .decorators import njit
 
 __all__ = ["Gamma", "Exponential", "Hantush", "Polder", "FourParam",
-           "DoubleExponential", "One", "Edelman", "HantushWellModel"]
+           "DoubleExponential", "One", "Edelman", "HantushWellModel", "Kleur"]
 
 
 class RfuncBase:
@@ -851,7 +852,7 @@ class Edelman(RfuncBase):
 
     Notes
     -----
-    The Edelman function is emplained in [5]_. The impulse response function
+    The Edelman function is explained in [5]_. The impulse response function
     may be written as:
 
     .. math:: \\text{unknown}
@@ -891,3 +892,78 @@ class Edelman(RfuncBase):
         t = self.get_t(p, dt, cutoff, maxtmax)
         s = erfc(1 / (p[0] * np.sqrt(t)))
         return s
+
+
+class Kleur(RfuncBase):
+    """The function of Kraijenhoff van de Leur, describing the response of a
+    polder domain with length L between two ditches.
+    
+    Parameters
+    ----------
+    up: bool or None, optional
+        indicates whether a positive stress will cause the head to go up
+        (True, default) or down (False), if None the head can go both ways.
+    meanstress: float
+        mean value of the stress, used to set the initial value such that
+        the final step times the mean stress equals 1
+    cutoff: float
+        proportion after which the step function is cut off. default is 0.999.
+
+    Notes
+    -----
+    The Kraijenhoff van de Leur function is explained in [6]_. The impulse
+    response function may be written as:
+
+    .. math:: \\theta(t) =  \\frac{4}{\pi S} \sum_{n=1,3,5...}^\infty \\frac{1}{n} e^{-n^2\\frac{t}{j}} \sin (\\frac{n\pi x}{L})
+
+    References
+    ----------
+    .. [6] Kraijenhoff van de Leur, D. A. (1958). A study of non-steady
+    groundwater flow with special reference to a reservoir coefficient.
+    De Ingenieur, 70(19), B87-B94. https://edepot.wur.nl/422032
+
+    """
+    _name = "Kleur"
+
+    def __init__(self, up=True, meanstress=1, cutoff=0.999):
+        RfuncBase.__init__(self, up, meanstress, cutoff)
+        self.nparam = 3
+
+    def get_init_parameters(self, name):
+        parameters = DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        if self.up:
+            parameters.loc[name + '_S'] = (0.1, 1e-3, 1, True, name)
+        elif self.up is False:
+            parameters.loc[name + '_S'] = (-0.1, -1, -1e-3, True, name)
+        else:
+            parameters.loc[name + '_S'] = (0.1, 1e-3, 1, True, name)
+        parameters.loc[name + '_j'] = (1e2, 0.01, 1e5, True, name)
+        parameters.loc[name + '_x/L'] = (0.25, 1e-6, 0.5, True, name)
+        parameters.loc[name + 'n'] = (500, 100, 1000, False, name)
+        return parameters
+    
+    def get_tmax(self, p, cutoff=None):
+        if cutoff is None:
+            cutoff = self.cutoff
+        return - p[1] * np.log(1 -cutoff)
+
+    @staticmethod
+    def gain(p):
+        print('Gain for x = L/2 :')
+        return np.pi**2 * p[1] / (8 * p[0])
+    
+    @staticmethod
+    @njit
+    def step_kleur(p, t):
+        s = np.zeros(len(t))
+        for i, t_value in enumerate(t):
+            s_part = np.array([0.0])
+            for n in np.arange(1, p[3], 2):
+                s_part = np.append(s_part, ((1 / n**3) * (p[1] - p[1] * np.exp(-n**2 * t_value / p[1])) * np.sin(n * np.pi * p[2])))
+            s[i] =  4 / (np.pi * p[0]) * np.sum(s_part)
+        return s
+        
+    def step(self, p, dt=1, cutoff=None, maxtmax=None):
+        t = self.get_t(p, dt, cutoff, maxtmax)
+        return self.step_kleur(np.asarray(p), t)

@@ -7,7 +7,7 @@ from .plots import TrackSolve
 from .read import read_meny, read_dino, read_dino_level_gauge, read_knmi, \
     read_waterbase
 from .rfunc import Gamma, Exponential, Hantush, Polder, One, FourParam, \
-    DoubleExponential, HantushWellModel
+    DoubleExponential, HantushWellModel, Kleur
 from .solver import LmfitSolve, LeastSquares, LmfitSolveNew
 from .stressmodels import StressModel, StressModel2, Constant, \
     RechargeModel, WellModel, StepModel, LinearTrend, TarsoModel
