@@ -1,13 +1,11 @@
-"""This module contains utility functions for working with Pastas models.
-
-"""
+"""This module contains utility functions for working with Pastas models."""
 
 import logging
 from datetime import datetime, timedelta
 from logging import handlers
 
 import numpy as np
-from pandas import Series, to_datetime, Timedelta, Timestamp, date_range
+from pandas import Series, Timedelta, Timestamp, date_range, to_datetime
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
 
@@ -35,16 +33,15 @@ def frequency_is_supported(freq):
     allowed. This means monthly ('M'), yearly ('Y') or even weekly ('W')
     frequencies are not allowed. Use '7D' for a weekly simulation.
 
-    D	calendar day frequency
-    H	hourly frequency
-    T, min	minutely frequency
-    S	secondly frequency
-    L, ms	milliseconds
-    U, us	microseconds
-    N	nanoseconds
+    D   calendar day frequency
+    H   hourly frequency
+    T, min      minutely frequency
+    S   secondly frequency
+    L, ms       milliseconds
+    U, us       microseconds
+    N   nanoseconds
 
     TODO: Rename to get_frequency_string and change Returns-documentation
-
     """
     offset = to_offset(freq)
     if not hasattr(offset, 'delta'):
@@ -78,7 +75,6 @@ def _get_stress_dt(freq):
 
     See http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
     for the offset_aliases supported by Pandas.
-
     """
     # Get the frequency string and multiplier
     offset = to_offset(freq)
@@ -125,7 +121,6 @@ def _get_dt(freq):
     -------
     dt: float
         Number of days
-
     """
     # Get the frequency string and multiplier
     dt = to_offset(freq).delta / Timedelta(1, "D")
@@ -146,7 +141,6 @@ def _get_time_offset(t, freq):
     -------
     offset: pandas.Timedelta
         Timedelta with the offset for the timestamp t.
-
     """
     if freq is None:
         raise TypeError("frequency is None")
@@ -156,7 +150,7 @@ def _get_time_offset(t, freq):
 
 def get_sample(tindex, ref_tindex):
     """Sample the index so that the frequency is not higher than the frequency
-        of ref_tindex.
+    of ref_tindex.
 
     Parameters
     ----------
@@ -173,7 +167,6 @@ def get_sample(tindex, ref_tindex):
     -----
     Find the index closest to the ref_tindex, and then return a selection
     of the index.
-
     """
     if len(tindex) == 1:
         return tindex
@@ -212,7 +205,6 @@ def timestep_weighted_resample(series0, tindex):
     -------
     series : pandas.Series
         The resampled series
-
     """
 
     # determine some arrays for the input-series
@@ -272,7 +264,6 @@ def timestep_weighted_resample_fast(series0, freq):
     -------
     series : pandas.Series
         resampled series
-
     """
     series = series0.copy()
 
@@ -306,9 +297,8 @@ def to_daily_unit(series, method=True):
     """Experimental method, use wth caution!
 
     Recalculate a timeseries of a stress with a non-daily unit (e/g.
-    m3/month) to a daily unit (e.g. m3/day). This method just changes the
-    values of the timeseries, and does not alter the frequency.
-
+    m3/month) to a daily unit (e.g. m3/day). This method just changes
+    the values of the timeseries, and does not alter the frequency.
     """
     if method is True or method == "divide":
         dt = series.index.to_series().diff() / Timedelta(1, 'D')
@@ -331,7 +321,6 @@ def excel2datetime(tindex, freq="D"):
     Returns
     -------
     datetimes: pandas.datetimeindex
-
     """
     datetimes = to_datetime('1899-12-30') + Timedelta(tindex, freq)
     return datetimes
@@ -349,11 +338,10 @@ def datenum_to_datetime(datenum):
     -------
     datetime :
         Datetime object corresponding to datenum.
-
     """
     days = datenum % 1.
     return datetime.fromordinal(int(datenum)) \
-           + timedelta(days=days) - timedelta(days=366)
+        + timedelta(days=days) - timedelta(days=366)
 
 
 def datetime2matlab(tindex):
@@ -363,7 +351,7 @@ def datetime2matlab(tindex):
 
 
 def get_stress_tmin_tmax(ml):
-    """Get the minimum and maximum time that all of the stresses have data"""
+    """Get the minimum and maximum time that all of the stresses have data."""
     from .model import Model
     tmin = Timestamp.min
     tmax = Timestamp.max
@@ -386,7 +374,6 @@ def initialize_logger(logger=None, level=logging.INFO):
         A Logger-instance. Use ps.logger to initialise the Logging instance
         that handles all logging throughout pastas,  including all sub modules
         and packages.
-
     """
     if logger is None:
         logger = logging.getLogger('pastas')
@@ -406,7 +393,6 @@ def set_console_handler(logger=None, level=logging.INFO,
         A Logger-instance. Use ps.logger to initialise the Logging instance
         that handles all logging throughout pastas,  including all sub modules
         and packages.
-
     """
     if logger is None:
         logger = logging.getLogger('pastas')
@@ -433,7 +419,6 @@ def set_log_level(level):
 
     >>> import pandas as ps
     >>> ps.set_log_level("ERROR")
-
     """
     set_console_handler(level=level)
 
@@ -447,7 +432,6 @@ def remove_console_handler(logger=None):
         A Logger-instance. Use ps.logger to initialise the Logging instance
         that handles all logging throughout pastas,  including all sub modules
         and packages.
-
     """
     if logger is None:
         logger = logging.getLogger('pastas')
@@ -461,7 +445,7 @@ def add_file_handlers(logger=None, filenames=('info.log', 'errors.log'),
                       backupCount=20, encoding='utf8',
                       fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                       datefmt='%y-%m-%d %H:%M'):
-    """Method to add file handlers in the logger of Pastas
+    """Method to add file handlers in the logger of Pastas.
 
     Parameters
     -------
@@ -469,7 +453,6 @@ def add_file_handlers(logger=None, filenames=('info.log', 'errors.log'),
         A Logger-instance. Use ps.logger to initialise the Logging instance
         that handles all logging throughout pastas,  including all sub modules
         and packages.
-
     """
     if logger is None:
         logger = logging.getLogger('pastas')
@@ -495,7 +478,6 @@ def remove_file_handlers(logger=None):
         A Logger-instance. Use ps.logger to initialise the Logging instance
         that handles all logging throughout pastas,  including all sub modules
         and packages.
-
     """
     if logger is None:
         logger = logging.getLogger('pastas')
@@ -520,7 +502,6 @@ def validate_name(name):
     Notes
     -----
     Forbidden characters are: "/", "\", " ".
-
     """
     name = str(name)  # Make sure it is a string
 
@@ -541,14 +522,15 @@ def show_versions(lmfit=False, numba=False):
         Print the version of lmfit. Needs to be installed.
     numba: bool, optional
         Print the version of numba. Needs to be installed.
-
     """
-    from pastas import __version__ as ps_version
-    from pandas import __version__ as pd_version
-    from numpy import __version__ as np_version
-    from scipy import __version__ as sc_version
-    from matplotlib import __version__ as mpl_version
     from sys import version as os_version
+
+    from matplotlib import __version__ as mpl_version
+    from numpy import __version__ as np_version
+    from pandas import __version__ as pd_version
+    from scipy import __version__ as sc_version
+
+    from pastas import __version__ as ps_version
 
     msg = (
         f"Python version: {os_version}\n"

@@ -12,21 +12,19 @@ Examples
 See Also
 --------
 pastas.model.Model.add_stressmodel
-
-
 """
 
 from logging import getLogger
 
 import numpy as np
-from pandas import date_range, Series, Timedelta, DataFrame, concat, Timestamp
+from pandas import DataFrame, Series, Timedelta, Timestamp, concat, date_range
 from scipy.signal import fftconvolve
 
-from .decorators import set_parameter, njit
+from .decorators import njit, set_parameter
 from .recharge import Linear
-from .rfunc import One, Exponential, HantushWellModel
+from .rfunc import Exponential, HantushWellModel, One
 from .timeseries import TimeSeries
-from .utils import validate_name, check_numba
+from .utils import check_numba, validate_name
 
 logger = getLogger(__name__)
 
@@ -43,7 +41,6 @@ class StressModelBase:
         Name of this stressmodel object. Used as prefix for the parameters.
     parameters: pandas.DataFrame
         Dataframe containing the parameters.
-
     """
     _name = "StressModelBase"
 
@@ -73,7 +70,6 @@ class StressModelBase:
         Notes
         -----
         The preferred method for parameter setting is through the model.
-
         """
         self.parameters.loc[name, 'initial'] = value
 
@@ -84,7 +80,6 @@ class StressModelBase:
         Notes
         -----
         The preferred method for parameter setting is through the model.
-
         """
         self.parameters.loc[name, 'pmin'] = value
 
@@ -95,7 +90,6 @@ class StressModelBase:
         Notes
         -----
         The preferred method for parameter setting is through the model.
-
         """
         self.parameters.loc[name, 'pmax'] = value
 
@@ -107,7 +101,6 @@ class StressModelBase:
         Notes
         -----
         The preferred method for parameter setting is through the model.
-
         """
         self.parameters.loc[name, 'vary'] = bool(value)
 
@@ -122,7 +115,6 @@ class StressModelBase:
         See Also
         --------
         ps.timeseries.TimeSeries.update_series
-
         """
         for stress in self.stress:
             stress.update_series(**kwargs)
@@ -143,7 +135,6 @@ class StressModelBase:
         -------
         data: dict
             dictionary with the dump of the stresses.
-
         """
         data = []
 
@@ -164,7 +155,6 @@ class StressModelBase:
         -------
         stress: pandas.Dataframe
             Pandas dataframe of the stress(es)
-
         """
         if tmin is None:
             tmin = self.tmin
@@ -183,7 +173,6 @@ class StressModelBase:
         data: dict
             dictionary with all necessary information to reconstruct the
             StressModel object.
-
         """
         data = {
             "stressmodel": self._name,
@@ -200,7 +189,7 @@ class StressModelBase:
             return len(self.stress)
 
     def _get_block(self, p, dt, tmin, tmax):
-        """Internal method to get the block-response function"""
+        """Internal method to get the block-response function."""
         if tmin is not None and tmax is not None:
             day = Timedelta(1, 'D')
             maxtmax = (Timestamp(tmax) - Timestamp(tmin)) / day
@@ -250,7 +239,6 @@ class StressModel(StressModelBase):
     --------
     pastas.rfunc
     pastas.timeseries.TimeSeries
-
     """
     _name = "StressModel"
 
@@ -274,9 +262,7 @@ class StressModel(StressModelBase):
         self.set_init_parameters()
 
     def set_init_parameters(self):
-        """Set the initial parameters (back) to their default values.
-
-        """
+        """Set the initial parameters (back) to their default values."""
         self.parameters = self.rfunc.get_init_parameters(self.name)
 
     def simulate(self, p, tmin=None, tmax=None, freq=None, dt=1.0):
@@ -296,7 +282,6 @@ class StressModel(StressModelBase):
         -------
         pandas.Series
             The simulated head contribution.
-
         """
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
         b = self._get_block(p, dt, tmin, tmax)
@@ -314,7 +299,6 @@ class StressModel(StressModelBase):
         data: dict
             dictionary with all necessary information to reconstruct the
             StressModel object.
-
         """
         data = {
             "stressmodel": self._name,
@@ -371,7 +355,6 @@ class StressModel2(StressModelBase):
     --------
     pastas.rfunc
     pastas.timeseries
-
     """
     _name = "StressModel2"
 
@@ -411,9 +394,7 @@ class StressModel2(StressModelBase):
         self.set_init_parameters()
 
     def set_init_parameters(self):
-        """Set the initial parameters back to their default values.
-
-        """
+        """Set the initial parameters back to their default values."""
         self.parameters = self.rfunc.get_init_parameters(self.name)
         self.parameters.loc[self.name + '_f'] = \
             (-1.0, -2.0, 0.0, True, self.name)
@@ -436,7 +417,6 @@ class StressModel2(StressModelBase):
         -------
         pandas.Series
             The simulated head contribution.
-
         """
         b = self._get_block(p[:-1], dt, tmin, tmax)
         stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq,
@@ -477,7 +457,6 @@ class StressModel2(StressModelBase):
         data: dict
             dictionary with all necessary information to reconstruct the
             StressModel object.
-
         """
         data = {
             "stressmodel": self._name,
@@ -516,7 +495,6 @@ class StepModel(StressModelBase):
     The step trend is calculated as follows. First, a binary series is
     created, with zero values before tstart, and ones after the start. This
     series is convoluted with the block response to simulate a step trend.
-
     """
     _name = "StepModel"
 
@@ -579,7 +557,6 @@ class LinearTrend(StressModelBase):
     While possible, it is not recommended to vary the parameters for the
     start and end time of the linear trend. These parameters are usually
     hard to impossible to estimate from the data.
-
     """
     _name = "LinearTrend"
 
@@ -644,7 +621,6 @@ class Constant(StressModelBase):
     initial: float, optional
         Initial estimate of the parameter value. E.g. The minimum of the
         observed series.
-
     """
     _name = "Constant"
 
@@ -700,7 +676,6 @@ class WellModel(StressModelBase):
     Warnings
     --------
     This model only works with the HantushWellModel response function.
-
     """
     _name = "WellModel"
 
@@ -799,7 +774,6 @@ class WellModel(StressModelBase):
         -------
         stress: list
             return a list with the stresses transformed to pastas TimeSeries.
-
         """
         data = []
 
@@ -883,7 +857,6 @@ class WellModel(StressModelBase):
         data: dict
             dictionary with all necessary information to reconstruct the
             WellModel object.
-
         """
         data = {
             "stressmodel": self._name,
@@ -962,7 +935,6 @@ class RechargeModel(StressModelBase):
     We recommend not to store a RechargeModel is a variable named `rm`. This
     name is already reserved in IPython to remove files and will cause
     problems later.
-
     """
     _name = "RechargeModel"
 
@@ -1053,7 +1025,6 @@ class RechargeModel(StressModelBase):
         See Also
         --------
         ps.timeseries.TimeSeries.update_series
-
         """
         self.prec.update_series(**kwargs)
         self.evap.update_series(**kwargs)
@@ -1083,7 +1054,6 @@ class RechargeModel(StressModelBase):
         Returns
         -------
         pandas.Series
-
         """
         if p is None:
             p = self.parameters.initial.values
@@ -1126,7 +1096,6 @@ class RechargeModel(StressModelBase):
             When no istress is selected, this return the estimated recharge
             flux that is convoluted with a response function on the
             "simulate" method.
-
         """
         if tmin is None:
             tmin = self.tmin
@@ -1194,7 +1163,6 @@ class RechargeModel(StressModelBase):
         >>> ml.solve()
         >>> wb = sm.get_water_balance(ml.get_parameters("rch"))
         >>> wb.plot(subplots=True)
-
         """
         if p is None:
             p = self.parameters.initial.values
@@ -1267,7 +1235,6 @@ class TarsoModel(RechargeModel):
     .. [knotters_1999] Knotters, M. & De Gooijer, Jan G.. (1999). TARSO
        modeling of water table depths. Water Resources Research. 35.
        10.1029/1998WR900049.
-
     """
     _name = "TarsoModel"
 
