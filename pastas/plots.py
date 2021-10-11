@@ -16,7 +16,7 @@ from matplotlib.ticker import MultipleLocator
 from pandas import DataFrame, Timestamp, concat
 
 from .decorators import model_tmin_tmax
-from .stats import plot_cum_frequency, plot_diagnostics
+from .stats import diagnostics, plot_cum_frequency, plot_diagnostics
 
 logger = logging.getLogger(__name__)
 
@@ -258,6 +258,7 @@ class Plotting:
 
         # xlim sets minorticks back after plots:
         ax1.minorticks_off()
+
         if return_warmup:
             ax1.set_xlim(tmin - self.ml.settings['warmup'], tmax)
         else:
@@ -895,8 +896,8 @@ def compare(models, tmin=None, tmax=None, figsize=(10, 8),
     return axes
 
 
-def series(head=None, stresses=None, titles=True, tmin=None, tmax=None,
-           labels=None, figsize=(10, 5)):
+def series(head=None, stresses=None, hist=True, bins=30, titles=True,
+           tmin=None, tmax=None, labels=None, figsize=(10, 5)):
     """Method to plot all the time series going into a Pastas Model.
 
     Parameters
@@ -905,6 +906,12 @@ def series(head=None, stresses=None, titles=True, tmin=None, tmax=None,
         Pandas time series with DatetimeIndex.
     stresses: List of pd.Series
         List with Pandas time series with DatetimeIndex.
+    hist: bool
+        Histogram for the Series. Returns the number of observations, mean,
+        skew and kurtosis as well. For the head series the result of the
+        shapiro-wilk test (p > 0.05) for normality is reported.
+    bins: float
+        Number of bins in the histogram plot.
     titles: bool
         Set the titles or not. Taken from the name attribute of the Series.
     tmin: str or pd.Timestamp
@@ -921,29 +928,100 @@ def series(head=None, stresses=None, titles=True, tmin=None, tmax=None,
     rows = 0
     if head is not None:
         rows += 1
+        if tmin is None:
+            tmin = head.index[0]
+        if tmax is None:
+            tmax = head.index[-1]
     if stresses is not None:
         rows += len(stresses)
 
-    _, axes = plt.subplots(rows, 1, figsize=figsize, sharex=True)
+    if hist is False:
+        _, axes = plt.subplots(rows, 1, figsize=figsize, sharex=True)
 
-    if head is not None:
-        head.plot(ax=axes[0], marker=".", linestyle=" ", color="k")
-        if titles:
-            axes[0].set_title(head.name)
-        if labels is not None:
-            axes[0].set_ylabel(labels[0])
-
-    if stresses is not None:
-        for i, stress in enumerate(stresses, start=rows - len(stresses)):
-            stress.plot(ax=axes[i], color="k")
+        if head is not None:
+            head = head[tmin:tmax]
+            head.plot(ax=axes[0], marker=".", linestyle=" ", color="k")
             if titles:
-                axes[i].set_title(stress.name)
+                axes[0].set_title(head.name)
             if labels is not None:
-                axes[i].set_ylabel(labels[i])
+                axes[0].set_ylabel(labels[0])
 
-    plt.xlim([tmin, tmax])
+        if stresses is not None:
+            for i, stress in enumerate(stresses, start=rows - len(stresses)):
+                stress = stress[tmin:tmax]
+                stress.plot(ax=axes[i], color="k")
+                if titles:
+                    axes[i].set_title(stress.name)
+                if labels is not None:
+                    axes[i].set_ylabel(labels[i])
+        plt.xlim([tmin, tmax])
+
+    if hist is True:
+        _, axes = plt.subplots(rows, 3, figsize=figsize, sharey="row",
+                               gridspec_kw={"width_ratios": (3, 1, 1)})
+        axs = axes.ravel()
+        axs[-2].set_xlabel("Frequency [%]")
+
+        if head is not None:
+            head = head[tmin:tmax]
+            head.plot(ax=axs[0], marker=".", linestyle=" ", color="k")
+            axs[0].set_xlim([tmin, tmax])
+            if titles:
+                axs[0].set_title(head.name)
+            if labels is not None:
+                axs[0].set_ylabel(labels[0])
+
+            # histogram
+            head.hist(ax=axs[1], orientation="horizontal", color="k",
+                      weights=np.ones(len(head)) / len(head) * 100,
+                      bins=bins, grid=False)
+
+            # stats table
+            head_stats = [["Count", f"{head.count():0.0f}"],
+                          ["Mean", f"{head.mean():0.2f}"],
+                          ["Skew", f"{head.skew():0.2f}"],
+                          ["Kurtosis", f"{head.kurtosis():0.2f}"],
+                          ["Normality",
+                           f"{diagnostics(head).loc['Shapiroo','Reject H0']}"]]
+            axs[2].table(bbox=(0.0, 0.0, 1, 1), colWidths=(1.5, 1),
+                         cellText=head_stats)
+            axs[2].axis("off")
+
+        if stresses is not None:
+            if head is not None:
+                start = 3
+                cnt = 1
+            else:
+                start = rows - len(stresses)
+                cnt = 0
+            for i, stress in zip(np.arange(start=start, stop=rows * 3, step=3),
+                                 stresses):
+                stress = stress[tmin:tmax]
+                stress.plot(ax=axs[i], color="k")
+                axs[i].set_xlim([tmin, tmax])
+                axs[i].get_shared_x_axes().join(axs[i], axs[0])
+                if titles:
+                    axs[i].set_title(stress.name)
+                if labels is not None:
+                    axs[i].set_ylabel(labels[cnt])
+                    cnt += 1
+
+                # histogram
+                stress.hist(ax=axs[i+1], orientation="horizontal", color="k",
+                            weights=np.ones(len(stress)) / len(stress) * 100,
+                            bins=bins, grid=False)
+
+                # stats table
+                stress_stats = [["Count", f"{stress.count():0.0f}"],
+                                ["Mean", f"{stress.mean():0.2f}"],
+                                ["Skew", f"{stress.skew():0.2f}"],
+                                ["Kurtosis", f"{stress.kurtosis():0.2f}"]]
+                axs[i+2].table(bbox=(0, 0, 1, 1), colWidths=(1.5, 1),
+                               cellText=stress_stats)
+                axs[i+2].axis("off")
 
     plt.tight_layout()
+
     return axes
 
 
