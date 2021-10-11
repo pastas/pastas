@@ -239,7 +239,7 @@ def runs_test(series, cutoff="median"):
     >>>     print("Reject the Null-hypothesis")
     """
     # Make dichotomous sequence
-    r = series.to_numpy()
+    r = series.copy().to_numpy()
     if cutoff == "mean":
         cutoff = r.mean()
     elif cutoff == "median":
