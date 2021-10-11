@@ -33,20 +33,18 @@ Using the recharge models is as follows:
 After solving a model, the simulated recharge flux can be obtained:
 
 >>> rch_sim = ml.get_stress("rch")
-
 """
 
-from numpy import add, float64, multiply, exp, zeros, nan_to_num, vstack
+from numpy import add, exp, float64, multiply, nan_to_num, vstack, zeros
 from pandas import DataFrame
 
 from pastas.decorators import njit
+
 from .utils import check_numba
 
 
 class RechargeBase:
-    """Base class for classes that calculate the recharge.
-
-    """
+    """Base class for classes that calculate the recharge."""
 
     def __init__(self):
         self.temp = False
@@ -65,7 +63,6 @@ class RechargeBase:
         -------
         parameters: pandas.DataFrame
             Pandas DataFrame with the parameters.
-
         """
         parameters = DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "name"])
@@ -90,7 +87,6 @@ class Linear(RechargeBase):
     .. [asmuth_2002] von Asmuth, J., Bierkens, M., and Maas, K. (2002) Transfer
        function-noise modeling in continuous time using predefined impulse
        response functions, Water Resources Research, 38, 23–1–23–12.
-
     """
     _name = "Linear"
 
@@ -120,7 +116,6 @@ class Linear(RechargeBase):
         -------
         recharge: array_like
             array with the recharge series.
-
         """
         return add(prec, multiply(evap, p))
 
@@ -160,7 +155,6 @@ class FlexModel(RechargeBase):
        S. (in Review) Estimating groundwater recharge from groundwater
        levels using non-linear transfer function noise models and comparison to
        lysimeter data. https://doi.org/10.5194/hess-2020-392
-
     """
     _name = "FlexModel"
 
@@ -200,7 +194,6 @@ class FlexModel(RechargeBase):
         -------
         r: numpy.array
             Recharge flux calculated by the model.
-
         """
         r = self.get_recharge(prec, evap, srmax=p[0], lp=p[1], ks=p[2],
                               gamma=p[3], simax=p[4], kv=p[5], dt=dt)[0]
@@ -210,10 +203,9 @@ class FlexModel(RechargeBase):
     @njit
     def get_recharge(prec, evap, srmax=250.0, lp=0.25, ks=100.0, gamma=4.0,
                      simax=2.0, kv=1.0, dt=1.0):
-        """
-        Internal method used for the recharge calculation. If Numba is
-        available, this method is significantly faster.
+        """Internal method used for the recharge calculation.
 
+        If Numba is available, this method is significantly faster.
         """
         n = prec.size
         evap = evap * kv  # Multiply by crop factor
@@ -289,7 +281,6 @@ class Berendrecht(RechargeBase):
     .. [berendrecht_2006] Berendrecht, W. L., Heemink, A. W., van Geer, F. C.,
        and Gehrels, J. C. (2006) A non-linear state space approach to model
        groundwater fluctuations, Advances in Water Resources, 29, 959–973.
-
     """
     _name = "Berendrecht"
 
@@ -330,7 +321,6 @@ class Berendrecht(RechargeBase):
         -------
         r: numpy.array
             Recharge flux calculated by the model.
-
         """
         r = self.get_recharge(prec, evap, fi=p[0], fc=p[1], sr=p[2], de=p[3],
                               l=p[4], m=p[5], ks=p[6], dt=dt)[0]
@@ -340,10 +330,9 @@ class Berendrecht(RechargeBase):
     @njit
     def get_recharge(prec, evap, fi=1.0, fc=1.0, sr=0.5, de=250.0, l=-2.0,
                      m=0.5, ks=50.0, dt=1.0):
-        """
-        Internal method used for the recharge calculation. If Numba is
-        available, this method is significantly faster.
+        """Internal method used for the recharge calculation.
 
+        If Numba is available, this method is significantly faster.
         """
         n = prec.size
         # Create an empty arrays to store the fluxes and states

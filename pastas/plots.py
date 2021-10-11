@@ -16,7 +16,7 @@ from matplotlib.ticker import MultipleLocator
 from pandas import DataFrame, Timestamp, concat
 
 from .decorators import model_tmin_tmax
-from .stats import plot_diagnostics, plot_cum_frequency
+from .stats import plot_cum_frequency, plot_diagnostics
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +110,7 @@ class Plotting:
         if oseries:
             o = self.ml.observations(tmin=tmin, tmax=tmax)
             o_nu = self.ml.oseries.series.drop(o.index).loc[
-                   o.index.min():o.index.max()]
+                o.index.min():o.index.max()]
             if not o_nu.empty:
                 # plot parts of the oseries that are not used in grey
                 o_nu.plot(linestyle='', marker='.', color='0.5', label='',
@@ -497,7 +497,6 @@ class Plotting:
         See Also
         --------
         ps.stats.plot_cum_frequency
-
         """
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
@@ -918,7 +917,6 @@ def series(head=None, stresses=None, titles=True, tmin=None, tmax=None,
     Returns
     -------
     matplotlib.Axes
-
     """
     rows = 0
     if head is not None:

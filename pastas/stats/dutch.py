@@ -1,13 +1,11 @@
-"""The following methods are descriptive statistics commonly used to
-describe groundwater time series in the Netherlands.
+"""The following methods are descriptive statistics commonly used to describe
+groundwater time series in the Netherlands.
 
 .. codeauthor:: R. Calje, T. van Steijn and R. Collenteur
-
 """
 
 from numpy import nan
-from pandas import date_range, Series, Timedelta
-
+from pandas import Series, Timedelta, date_range
 from pastas.utils import get_sample
 
 
@@ -31,7 +29,6 @@ def q_ghg(series, tmin=None, tmax=None, q=0.94, by_year=True):
     Approximated by taking quantiles of the timeseries values per year and
     calculating the mean of the quantiles. The series is first resampled to
     daily values.
-
     """
     return _q_gxg(series, q, tmin=tmin, tmax=tmax, by_year=by_year)
 
@@ -56,14 +53,13 @@ def q_glg(series, tmin=None, tmax=None, q=0.06, by_year=True):
     Approximated by taking quantiles of the timeseries values per year and
     calculating the mean of the quantiles. The series is first resampled to
     daily values.
-
     """
     return _q_gxg(series, q, tmin=tmin, tmax=tmax, by_year=by_year)
 
 
 def q_gvg(series, tmin=None, tmax=None, by_year=True):
-    """Gemiddeld Voorjaarsgrondwaterstand (GVG) also called MSGL (Mean
-    Spring Groundwater Level).
+    """Gemiddeld Voorjaarsgrondwaterstand (GVG) also called MSGL (Mean Spring
+    Groundwater Level).
 
     Parameters
     ----------
@@ -79,7 +75,6 @@ def q_gvg(series, tmin=None, tmax=None, by_year=True):
     Approximated by taking the median of the values in the period between 14
     March and 15 April (after resampling to daily values). This function
     does not care about series length!
-
     """
     if tmin is not None:
         series = series.loc[tmin:]
@@ -138,7 +133,6 @@ def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
     -----
     Classic method resampling the series to every 14th and 28th of the
     month. Taking the mean of the mean of three highest values per year.
-
     """
 
     # mean_high = lambda s: s.nlargest(3).mean()
@@ -196,7 +190,6 @@ def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
     -----
     Classic method resampling the series to every 14th and 28th of
     the month. Taking the mean of the mean of three lowest values per year.
-
     """
 
     # mean_low = lambda s: s.nsmallest(3).mean()
@@ -254,7 +247,6 @@ def gvg(series, tmin=None, tmax=None, fill_method='linear', limit=8,
     -----
     Classic method resampling the series to every 14th and 28th of the
     month. Taking the mean of the values on March 14, March 28 and April 14.
-
     """
     return _gxg(series, _mean_spring, tmin=tmin, tmax=tmax,
                 fill_method=fill_method, limit=limit, output=output,
@@ -298,7 +290,6 @@ def gg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
     -----
     Classic method resampling the series to every 14th and 28th of
     the month. Taking the mean of the mean of three lowest values per year.
-
     """
 
     # mean_low = lambda s: s.nsmallest(3).mean()
@@ -330,7 +321,6 @@ def _mean_spring(series, min_n_meas):
     -------
     float
         Mean of series, or NaN if no values in spring
-
     """
     inspring = _in_spring(series)
     if inspring.sum() < min_n_meas:
@@ -353,16 +343,16 @@ def _in_spring(series):
     pd.Series
         Boolean series with datetimeindex
     """
-    isinspring = lambda x: (((x.month == 3) and (x.day >= 14)) or
-                            ((x.month == 4) and (x.day < 15)))
+    def isinspring(x): return (((x.month == 3) and (x.day >= 14)) or
+                               ((x.month == 4) and (x.day < 15)))
     return Series(series.index.map(isinspring), index=series.index)
 
 
 def _gxg(series, year_agg, tmin, tmax, fill_method, limit, output,
          min_n_meas, min_n_years, year_offset):
     """Internal method for classic GXG statistics. Resampling the series to
-    every 14th and 28th of the month. Taking the mean of aggregated
-    values per year.
+    every 14th and 28th of the month. Taking the mean of aggregated values per
+    year.
 
     Parameters
     ----------
@@ -409,7 +399,6 @@ def _gxg(series, year_agg, tmin, tmax, fill_method, limit, output,
         * https://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.reindex.html
         * http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.interpolate.html
         * Use None to omit filling and drop NaNs
-
     """
     # handle tmin and tmax
     if tmin is not None:
@@ -486,9 +475,9 @@ def _gxg(series, year_agg, tmin, tmax, fill_method, limit, output,
 
 
 def _q_gxg(series, q, tmin=None, tmax=None, by_year=True):
-    """Dutch groundwater statistics GHG and GLG approximated
-    by taking quantiles of the timeseries values per year
-    and taking the mean of the quantiles.
+    """Dutch groundwater statistics GHG and GLG approximated by taking
+    quantiles of the timeseries values per year and taking the mean of the
+    quantiles.
 
     The series is first resampled to daily values.
 

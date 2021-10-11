@@ -1,13 +1,12 @@
 # coding=utf-8
-"""This module contains all the response functions available in Pastas.
-
-"""
+"""This module contains all the response functions available in Pastas."""
 
 import numpy as np
 from pandas import DataFrame
 from scipy.integrate import quad
-from scipy.special import (gammainc, gammaincinv, k0, k1,
-                           exp1, erfc, lambertw, erfcinv)
+from scipy.special import (erfc, erfcinv, exp1, gammainc, gammaincinv, k0, k1,
+                           lambertw)
+
 from .decorators import njit
 
 __all__ = ["Gamma", "Exponential", "Hantush", "Polder", "FourParam",
@@ -39,12 +38,11 @@ class RfuncBase:
         -------
         parameters : pandas DataFrame
             The initial parameters and parameter bounds used by the solver
-
         """
         pass
 
     def get_tmax(self, p, cutoff=None):
-        """Method to get the response time for a certain cutoff
+        """Method to get the response time for a certain cutoff.
 
         Parameters
         ----------
@@ -59,7 +57,6 @@ class RfuncBase:
         tmax: float
             Number of days when 99.9% of the response has effectuated, when the
             cutoff is chosen at 0.999.
-
         """
         pass
 
@@ -110,7 +107,7 @@ class RfuncBase:
 
     def get_t(self, p, dt, cutoff, maxtmax=None):
         """Internal method to determine the times at which to evaluate the
-        step-response, from t=0
+        step-response, from t=0.
 
         Parameters
         ----------
@@ -130,7 +127,6 @@ class RfuncBase:
         -------
         t: numpy.array
             Array with the times
-
         """
         if isinstance(dt, np.ndarray):
             return dt
@@ -161,7 +157,6 @@ class Gamma(RfuncBase):
     The impulse response function may be written as:
 
     .. math:: \\theta(t) = At^{n-1} e^{-t/a}
-
     """
     _name = "Gamma"
 
@@ -221,7 +216,6 @@ class Exponential(RfuncBase):
     The impulse response function may be written as:
 
     .. math:: \\theta(t) = A e^{-t/a}
-
     """
     _name = "Exponential"
 
@@ -261,8 +255,8 @@ class Exponential(RfuncBase):
 
 
 class HantushWellModel(RfuncBase):
-    """
-    A special implementation of the Hantush well function for multiple wells.
+    """A special implementation of the Hantush well function for multiple
+    wells.
 
     Parameters
     ----------
@@ -298,7 +292,6 @@ class HantushWellModel(RfuncBase):
     - a: is the same  :math:`a = cS`
     - b: is the same, but :math:`r` is set to 1 if passed separately,
       :math:`b = 1^2 / (4 \\lambda^2)`
-
     """
     _name = "HantushWellModel"
 
@@ -338,7 +331,7 @@ class HantushWellModel(RfuncBase):
         rho = np.sqrt(4 * r ** 2 * p[2])
         k0rho = k0(rho)
         if k0rho == 0.0:
-            return 100*365.  # 100 years?
+            return 100 * 365.  # 100 years?
         else:
             return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
 
@@ -409,8 +402,7 @@ class HantushWellModel(RfuncBase):
 
 
 class Hantush(RfuncBase):
-    """
-    The Hantush well function, using the standard A, a, b parameters
+    """The Hantush well function, using the standard A, a, b parameters.
 
     Parameters
     ----------
@@ -447,7 +439,6 @@ class Hantush(RfuncBase):
     .. [asmuth_2008] Von Asmuth, J. R., Maas, K., Bakker, M., & Petersen,
        J. (2008). Modeling time series of ground water head fluctuations
        subjected to multiple stresses. Ground Water, 46(1), 30-40.
-
     """
     _name = "Hantush"
 
@@ -502,7 +493,7 @@ class Hantush(RfuncBase):
 
 
 class Polder(RfuncBase):
-    """The Polder function, using the standard A, a, b parameters
+    """The Polder function, using the standard A, a, b parameters.
 
     Notes
     -----
@@ -521,7 +512,6 @@ class Polder(RfuncBase):
     ----------
     .. [polder] G.A. Bruggeman (1999). Analytical solutions of
        geohydrological problems. Elsevier Science. Amsterdam, Eq. 123.32
-
     """
     _name = "Polder"
 
@@ -584,7 +574,6 @@ class One(RfuncBase):
         the final step times the mean stress equals 1
     cutoff: float
         proportion after which the step function is cut off. default is 0.999.
-
     """
     _name = "One"
 
@@ -642,7 +631,6 @@ class FourParam(RfuncBase):
     If Fourparam.quad is set to True, this response function uses np.quad to
     integrate the Four Parameter response function, which requires more
     calculation time.
-
     """
     _name = "FourParam"
 
@@ -790,7 +778,6 @@ class DoubleExponential(RfuncBase):
     The impulse response function may be written as:
 
     .. math:: \\theta(t) = A (1 - \\alpha) e^{-t/a_1} + A \\alpha e^{-t/a_2}
-
     """
     _name = "DoubleExponential"
 
@@ -864,7 +851,6 @@ class Edelman(RfuncBase):
     References
     ----------
     .. [5] http://grondwaterformules.nl/index.php/formules/waterloop/peilverandering
-
     """
     _name = "Edelman"
 
@@ -897,7 +883,7 @@ class Edelman(RfuncBase):
 class Kleur(RfuncBase):
     """The function of Kraijenhoff van de Leur, describing the response of a
     polder domain with length L between two ditches.
-    
+
     Parameters
     ----------
     up: bool or None, optional
@@ -921,7 +907,6 @@ class Kleur(RfuncBase):
     .. [6] Kraijenhoff van de Leur, D. A. (1958). A study of non-steady
     groundwater flow with special reference to a reservoir coefficient.
     De Ingenieur, 70(19), B87-B94. https://edepot.wur.nl/422032
-
     """
     _name = "Kleur"
 
@@ -942,17 +927,17 @@ class Kleur(RfuncBase):
         parameters.loc[name + '_x/L'] = (0.25, 1e-6, 0.5, True, name)
         parameters.loc[name + 'n'] = (500, 100, 1000, False, name)
         return parameters
-    
+
     def get_tmax(self, p, cutoff=None):
         if cutoff is None:
             cutoff = self.cutoff
-        return - p[1] * np.log(1 -cutoff)
+        return - p[1] * np.log(1 - cutoff)
 
     @staticmethod
     def gain(p):
         print('Gain for x = L/2 :')
         return np.pi**2 * p[1] / (8 * p[0])
-    
+
     @staticmethod
     @njit
     def step_kleur(p, t):
@@ -960,10 +945,14 @@ class Kleur(RfuncBase):
         for i, t_value in enumerate(t):
             s_part = np.array([0.0])
             for n in np.arange(1, p[3], 2):
-                s_part = np.append(s_part, ((1 / n**3) * (p[1] - p[1] * np.exp(-n**2 * t_value / p[1])) * np.sin(n * np.pi * p[2])))
-            s[i] =  4 / (np.pi * p[0]) * np.sum(s_part)
+                s_part = np.append(
+                    s_part, ((1 / n**3) *
+                             (p[1] - p[1] * np.exp(-n**2 * t_value / p[1]))
+                             * np.sin(n * np.pi * p[2]))
+                )
+            s[i] = 4 / (np.pi * p[0]) * np.sum(s_part)
         return s
-        
+
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
         t = self.get_t(p, dt, cutoff, maxtmax)
         return self.step_kleur(np.asarray(p), t)

@@ -6,8 +6,8 @@
 from warnings import warn
 
 from numpy import ndarray
-from pandas import read_csv, to_datetime, DataFrame, Timestamp, infer_freq, \
-    Timedelta, to_timedelta
+from pandas import (DataFrame, Timedelta, Timestamp, infer_freq, read_csv,
+                    to_datetime, to_timedelta)
 
 from ..timeseries import TimeSeries
 
@@ -26,7 +26,6 @@ def read_knmi(fname, variables='RD'):
     -------
     ts: pastas.TimeSeries
         returns a Pastas TimeSeries object or a list of objects.
-
     """
     knmi = KnmiStation.fromfile(fname)
     if variables is None:
@@ -124,7 +123,7 @@ class KnmiStation:
     # Construct KnmiStation from file
     @classmethod
     def fromfile(cls, fname):
-        """Reads data from a KNMI-file"""
+        """Reads data from a KNMI-file."""
         self = cls()
         with open(fname, 'r') as f:
             self.readdata(f)
@@ -135,7 +134,7 @@ class KnmiStation:
     @classmethod
     def download(cls, start=None, end=None, inseason=False, vars='ALL',
                  stns=260, interval='daily'):
-        """Downloads data from the KNMI-server
+        """Downloads data from the KNMI-server.
 
         Parameters
         ----------
@@ -163,7 +162,6 @@ class KnmiStation:
         -----
         For more information see
         https://www.knmi.nl/kennis-en-datacentrum/achtergrond/data-ophalen-vanuit-een-script
-
         """
         self = cls()
         self._download(start=start, end=end, inseason=inseason, vars=vars,
