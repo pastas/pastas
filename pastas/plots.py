@@ -760,7 +760,7 @@ class Plotting:
                     ax.set_ylim(bottom=0)
 
         return axes
-    
+
     @model_tmin_tmax
     def series(self, tmin=None, tmax=None, split=True, **kwargs):
         """Method to plot all the time series going into a Pastas Model.
@@ -792,6 +792,7 @@ class Plotting:
         stresses = _get_stress_series(self.ml, split=split)
         axes = series(obs, stresses=stresses, **kwargs)
         return axes
+
 
 def compare(models, tmin=None, tmax=None, figsize=(10, 8),
             adjust_height=False):
@@ -952,47 +953,35 @@ def series(head=None, stresses=None, hist=True, bins=30, titles=True,
             tmax = head.index[-1]
     if stresses is not None:
         rows += len(stresses)
-
-    if hist is False:
-        _, axes = plt.subplots(rows, 1, figsize=figsize, sharex=True)
-
-        if head is not None:
-            head = head[tmin:tmax]
-            head.plot(ax=axes[0], marker=".", linestyle=" ", color="k")
-            if titles:
-                axes[0].set_title(head.name)
-            if labels is not None:
-                axes[0].set_ylabel(labels[0])
-
-        if stresses is not None:
-            for i, stress in enumerate(stresses, start=rows - len(stresses)):
-                stress = stress[tmin:tmax]
-                stress.plot(ax=axes[i], color="k")
-                if titles:
-                    axes[i].set_title(stress.name)
-                if labels is not None:
-                    axes[i].set_ylabel(labels[i])
-        plt.xlim([tmin, tmax])
-
-    if hist is True:
-        _, axes = plt.subplots(rows, 3, figsize=figsize, sharey="row",
-                               gridspec_kw={"width_ratios": (3, 1, 1)})
-        axs = axes.ravel()
-        axs[-2].set_xlabel("Frequency [%]")
-
-        if head is not None:
-            head = head[tmin:tmax]
-            head.plot(ax=axs[0], marker=".", linestyle=" ", color="k")
-            if titles:
-                axs[0].set_title(head.name)
-            if labels is not None:
-                axs[0].set_ylabel(labels[0])
-
+    sharex = True
+    gridspec_kw = {}
+    cols = 1
+    if hist:
+        sharex = False
+        gridspec_kw["width_ratios"] = (3, 1, 1)
+        cols = 3
+    _, axes = plt.subplots(rows, cols, figsize=figsize, sharex=sharex,
+                           sharey="row", gridspec_kw=gridspec_kw)
+    if rows == 1 and cols == 1:
+        axes = np.array([[axes]])
+    elif rows == 1:
+        axes = axes[np.newaxis]
+    elif cols == 1:
+        axes = axes[:, np.newaxis]
+    if hist:
+        axes[-1, 1].set_xlabel("Frequency [%]")
+    if head is not None:
+        head = head[tmin:tmax]
+        head.plot(ax=axes[0, 0], marker=".", linestyle=" ", color="k")
+        if titles:
+            axes[0, 0].set_title(head.name)
+        if labels is not None:
+            axes[0, 0].set_ylabel(labels[0])
+        if hist:
             # histogram
-            head.hist(ax=axs[1], orientation="horizontal", color="k",
+            head.hist(ax=axes[0, 1], orientation="horizontal", color="k",
                       weights=np.ones(len(head)) / len(head) * 100,
                       bins=bins, grid=False)
-
             # stats table
             head_stats = [["Count", f"{head.count():0.0f}"],
                           ["Mean", f"{head.mean():0.2f}"],
@@ -1000,45 +989,36 @@ def series(head=None, stresses=None, hist=True, bins=30, titles=True,
                           ["Kurtosis", f"{head.kurtosis():0.2f}"],
                           ["Normality",
                            f"{diagnostics(head).loc['Shapiroo','Reject H0']}"]]
-            axs[2].table(bbox=(0.0, 0.0, 1, 1), colWidths=(1.5, 1),
-                         cellText=head_stats)
-            axs[2].axis("off")
-
-        if stresses is not None:
-            if head is not None:
-                start = 3
-                cnt = 1
-            else:
-                start = rows - len(stresses)
-                cnt = 0
-            for i, stress in zip(np.arange(start=start, stop=rows * 3, step=3),
-                                 stresses):
-                stress = stress[tmin:tmax]
-                stress.plot(ax=axs[i], color="k")
-                axs[i].sharex(axs[0])
-                if titles:
-                    axs[i].set_title(stress.name)
-                if labels is not None:
-                    axs[i].set_ylabel(labels[cnt])
-                    cnt += 1
-
+            axes[0, 2].table(bbox=(0.0, 0.0, 1, 1), colWidths=(1.5, 1),
+                             cellText=head_stats)
+            axes[0, 2].axis("off")
+    if stresses is not None:
+        for i, stress in enumerate(stresses, start=rows - len(stresses)):
+            stress = stress[tmin:tmax]
+            stress.plot(ax=axes[i, 0], color="k")
+            if titles:
+                axes[i, 0].set_title(stress.name)
+            if labels is not None:
+                axes[i, 0].set_ylabel(labels[i])
+            if hist:
+                if i > 0:
+                    axes[i, 0].sharex(axes[0, 0])
                 # histogram
-                stress.hist(ax=axs[i+1], orientation="horizontal", color="k",
+                stress.hist(ax=axes[i, 1], orientation="horizontal", color="k",
                             weights=np.ones(len(stress)) / len(stress) * 100,
                             bins=bins, grid=False)
-
                 # stats table
                 stress_stats = [["Count", f"{stress.count():0.0f}"],
                                 ["Mean", f"{stress.mean():0.2f}"],
                                 ["Skew", f"{stress.skew():0.2f}"],
                                 ["Kurtosis", f"{stress.kurtosis():0.2f}"]]
-                axs[i+2].table(bbox=(0, 0, 1, 1), colWidths=(1.5, 1),
-                               cellText=stress_stats)
-                axs[i+2].axis("off")
-        axs[0].set_xlim([tmin, tmax])
-        axs[0].minorticks_off()
-    plt.tight_layout()
+                axes[i, 2].table(bbox=(0, 0, 1, 1), colWidths=(1.5, 1),
+                                 cellText=stress_stats)
+                axes[i, 2].axis("off")
+    axes[0, 0].set_xlim([tmin, tmax])
+    axes[0, 0].minorticks_off()
 
+    plt.tight_layout()
     return axes
 
 
@@ -1392,6 +1372,7 @@ def _get_height_ratios(ylims):
             hr = 0.0
         height_ratios.append(hr)
     return height_ratios
+
 
 def _get_stress_series(ml, split=True):
     stresses = []
