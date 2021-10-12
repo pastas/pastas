@@ -600,20 +600,7 @@ class Plotting:
         axes: matplotlib.axes
             matplotlib axes instance.
         """
-        stresses = []
-
-        for name in self.ml.stressmodels.keys():
-            nstress = len(self.ml.stressmodels[name].stress)
-            if split and nstress > 1:
-                for istress in range(nstress):
-                    stress = self.ml.get_stress(name, istress=istress)
-                    stresses.append(stress)
-            else:
-                stress = self.ml.get_stress(name)
-                if isinstance(stress, list):
-                    stresses.extend(stress)
-                else:
-                    stresses.append(stress)
+        stresses = _get_stress_series(self.ml, split=split)
 
         rows = len(stresses)
         rows = -(-rows // cols)  # round up with out additional import
@@ -773,7 +760,38 @@ class Plotting:
                     ax.set_ylim(bottom=0)
 
         return axes
+    
+    @model_tmin_tmax
+    def series(self, tmin=None, tmax=None, split=True, **kwargs):
+        """Method to plot all the time series going into a Pastas Model.
 
+        Parameters
+        ----------
+        tmin: str or pd.Timestamp
+        tmax: str or pd.Timestamp
+        split: bool, optional
+            Split the stresses in multiple stresses when possible.
+        hist: bool
+            Histogram for the Series. Returns the number of observations, mean,
+            skew and kurtosis as well. For the head series the result of the
+            shapiro-wilk test (p > 0.05) for normality is reported.
+        bins: float
+            Number of bins in the histogram plot.
+        titles: bool
+            Set the titles or not. Taken from the name attribute of the Series.
+        labels: List of str
+            List with the labels for each subplot.
+        figsize: tuple
+            Set the size of the figure.
+
+        Returns
+        -------
+        matplotlib.Axes
+        """
+        obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        stresses = _get_stress_series(self.ml, split=split)
+        axes = series(obs, stresses=stresses, **kwargs)
+        return axes
 
 def compare(models, tmin=None, tmax=None, figsize=(10, 8),
             adjust_height=False):
@@ -965,7 +983,6 @@ def series(head=None, stresses=None, hist=True, bins=30, titles=True,
         if head is not None:
             head = head[tmin:tmax]
             head.plot(ax=axs[0], marker=".", linestyle=" ", color="k")
-            axs[0].set_xlim([tmin, tmax])
             if titles:
                 axs[0].set_title(head.name)
             if labels is not None:
@@ -998,8 +1015,7 @@ def series(head=None, stresses=None, hist=True, bins=30, titles=True,
                                  stresses):
                 stress = stress[tmin:tmax]
                 stress.plot(ax=axs[i], color="k")
-                axs[i].set_xlim([tmin, tmax])
-                axs[i].get_shared_x_axes().join(axs[i], axs[0])
+                axs[i].sharex(axs[0])
                 if titles:
                     axs[i].set_title(stress.name)
                 if labels is not None:
@@ -1019,7 +1035,8 @@ def series(head=None, stresses=None, hist=True, bins=30, titles=True,
                 axs[i+2].table(bbox=(0, 0, 1, 1), colWidths=(1.5, 1),
                                cellText=stress_stats)
                 axs[i+2].axis("off")
-
+        axs[0].set_xlim([tmin, tmax])
+        axs[0].minorticks_off()
     plt.tight_layout()
 
     return axes
@@ -1375,3 +1392,19 @@ def _get_height_ratios(ylims):
             hr = 0.0
         height_ratios.append(hr)
     return height_ratios
+
+def _get_stress_series(ml, split=True):
+    stresses = []
+    for name in ml.stressmodels.keys():
+        nstress = len(ml.stressmodels[name].stress)
+        if split and nstress > 1:
+            for istress in range(nstress):
+                stress = ml.get_stress(name, istress=istress)
+                stresses.append(stress)
+        else:
+            stress = ml.get_stress(name)
+            if isinstance(stress, list):
+                stresses.extend(stress)
+            else:
+                stresses.append(stress)
+    return stresses
