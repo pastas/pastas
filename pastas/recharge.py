@@ -213,15 +213,15 @@ class FlexModel(RechargeBase):
             columns=["initial", "pmin", "pmax", "vary", "name"])
         parameters.loc[name + "_srmax"] = (250.0, 1e-5, 1e3, True, name)
         parameters.loc[name + "_lp"] = (0.25, 1e-5, 1, False, name)
-        parameters.loc[name + "_ks"] = (100.0, 1, 1e4, True, name)
-        parameters.loc[name + "_gamma"] = (4.0, 1e-5, 50.0, True, name)
-        parameters.loc[name + "_kv"] = (1.0, 0.25, 2.0, True, name)
+        parameters.loc[name + "_ks"] = (100.0, 1e-5, 1e4, True, name)
+        parameters.loc[name + "_gamma"] = (4.0, 1e-5, 20.0, True, name)
+        parameters.loc[name + "_kv"] = (1.0, 0.25, 2.0, False, name)
         if self.interception:
             parameters.loc[name + "_simax"] = (2.0, 1e-5, 10.0, False, name)
         if self.snow:
-            parameters.loc[name + "_tp"] = (2.0, -2.0, 2.0, False, name)
-            parameters.loc[name + "_tk"] = (2.0, -2.0, 2.0, False, name)
-            parameters.loc[name + "_k"] = (2.0, 0.0, 20.0, False, name)
+            parameters.loc[name + "_tp"] = (0.0, -4.0, 4.0, True, name)
+            parameters.loc[name + "_tk"] = (0.0, -4.0, 4.0, True, name)
+            parameters.loc[name + "_k"] = (2.0, 0.0, 10.0, True, name)
 
         return parameters
 
@@ -271,11 +271,10 @@ class FlexModel(RechargeBase):
                                          gamma=p[3], dt=dt)
 
         # report big water balance errors (error > 0.1%.)
-        soil_balance = (sr[0] - sr[-1] + (pe + m - r - ea - q).sum()) / \
-                       pe.sum()
-        if abs(soil_balance) > 0.1:
-            logger.warning("Water balance error: %s %% of the total pe flux. "
-                           "Parameters: %s", soil_balance.round(2), p.round(2))
+        balance = (sr[0] - sr[-1] + (pe + m - r - ea - q).sum()) / pe.sum()
+        if abs(balance) > 0.1:
+            logger.info("Water balance error: %s %% of the total pe flux. "
+                        "Parameters: %s", balance.round(2), p.round(2))
 
         if self.gw_uptake:
             # Compute leftover potential evaporation
@@ -325,7 +324,7 @@ class FlexModel(RechargeBase):
                 ea[t] = evap[t]
 
             # Calculate the recharge flux
-            r[t] = ks * (sr[t] / srmax) ** gamma
+            r[t] = min(ks * (sr[t] / srmax) ** gamma, sr[t])
             # Calculate state of the root zone storage
             sr[t + 1] = sr[t] + dt * (prec[t] - r[t] - ea[t])
 
@@ -358,14 +357,15 @@ class FlexModel(RechargeBase):
         n = prec.size
         # Create empty arrays to store the fluxes and states
         ss = zeros(n, dtype=float64)  # Snow Storage
-        ps = where(temp <= tp, prec, 0)  # Snowfall
-        pr = where(temp > tp, prec, 0)  # Rainfall
-        m = zeros(n, dtype=float64)  # Snowmelt
+        ps = where(temp <= tp, prec, 0.0)  # Snowfall
+        pr = where(temp > tp, prec, 0.0)  # Rainfall
+        m = where(temp > tk, k * (temp - tk), 0.0)  # Potential Snowmelt
 
         # Snow bucket
         for t in range(n - 1):
-            if temp[t] >= tk:
-                m[t] = min(k * (temp[t] - tk), ss[t])
+            if temp[t] >= tp:
+                smoothing_factor = 1 - exp(-(ss[t] / 1.5))
+                m[t] = min(m[t] * smoothing_factor, ss[t])
             ss[t + 1] = ss[t] + ps[t] - m[t]
 
         return ss, ps, pr, m

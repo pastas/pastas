@@ -28,7 +28,7 @@ tmin = pd.Timestamp("1990-01-01")  # Needs warmup
 tmax = pd.Timestamp("2010-12-31")
 
 ml = ps.Model(head)
-sm = ps.RechargeModel(rain, evap, recharge=ps.rch.FlexSnowModel(snow=True),
+sm = ps.RechargeModel(rain, evap, recharge=ps.rch.FlexModel(snow=True),
                       rfunc=ps.Exponential, name="rch", temp=temp)
 ml.add_stressmodel(sm)
 
