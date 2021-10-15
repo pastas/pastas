@@ -1390,6 +1390,45 @@ class TarsoModel(RechargeModel):
 
 
 class ChangeModel(StressModelBase):
+    """Model where the response function changes from one to another over time.
+
+    Parameters
+    ----------
+    stress: pandas.Series
+        pandas Series object containing the stress.
+    rfunc1: rfunc class
+        Response function used in the convolution with the stress.
+    rfunc2: rfunc class
+        Response function used in the convolution with the stress.
+    name: str
+        Name of the stress.
+    tchange: str
+        String with the approximate date of the change.
+    up: bool or None, optional
+        True if response function is positive (default), False if negative.
+        None if you don't want to define if response is positive or negative.
+    cutoff: float, optional
+        float between 0 and 1 to determine how long the response is (default
+        is 99% of the actual response time). Used to reduce computation times.
+    settings: dict or str, optional
+        The settings of the stress. This can be a string referring to a
+        predefined settings dict, or a dict with the settings to apply.
+        Refer to the docstring of pastas.Timeseries for further information.
+    metadata: dict, optional
+        dictionary containing metadata about the stress. This is passed onto
+        the TimeSeries object.
+
+    Notes
+    -----
+    This model is based on Obergfjell et al. (2019).
+
+    References
+    ----------
+    Obergfell, C., Bakker, M. and Maas, K. (2019), Identification and
+    Explanation of a Change in the Groundwater Regime using Time Series
+    Analysis. Groundwater, 57: 886-894. https://doi.org/10.1111/gwat.12891
+
+    """
     _name = "ChangeModel"
 
     def __init__(self, stress, rfunc1, rfunc2, name, tchange, up=True,
