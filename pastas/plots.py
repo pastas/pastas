@@ -134,7 +134,8 @@ class Plotting:
 
     @model_tmin_tmax
     def results(self, tmin=None, tmax=None, figsize=(10, 8), split=False,
-                adjust_height=True, return_warmup=False, **kwargs):
+                adjust_height=True, return_warmup=False, block_or_step='step',
+                **kwargs):
         """Plot different results in one window to get a quick overview.
 
         Parameters
@@ -247,11 +248,13 @@ class Plotting:
                 i = i + 1
 
             # plot the step response
-            step = self.ml.get_step_response(sm_name, add_0=True)
-            if step is not None:
-                rmax = max(rmax, step.index.max())
+            response = self.ml._get_response(block_or_step=block_or_step,
+                                             name=sm_name, add_0=True)
+
+            if response is not None:
+                rmax = max(rmax, response.index.max())
                 axb = fig.add_subplot(gs[i + 1, 1], sharex=axb)
-                step.plot(ax=axb)
+                response.plot(ax=axb)
 
         if axb is not None:
             axb.set_xlim(0.0, rmax)
