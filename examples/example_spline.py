@@ -37,3 +37,5 @@ ml2.solve(noise=False)
 
 # Compare both models
 ps.plots.compare([ml, ml2])
+
+axes = ps.plots.compare([ml, ml2], block_or_step='block')

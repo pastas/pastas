@@ -12,7 +12,7 @@ import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.ticker import MultipleLocator
+from matplotlib.ticker import MultipleLocator, LogFormatter
 from pandas import DataFrame, Timestamp, concat
 
 from .decorators import model_tmin_tmax
@@ -150,6 +150,12 @@ class Plotting:
         adjust_height: bool, optional
             Adjust the height of the graphs, so that the vertical scale of all
             the subplots on the left is equal. Default is True.
+        return_warmup: bool, optional
+            Show the warmup-period. Default is false.
+        block_or_step: str, optional
+            Plot the block- or step-response on the right. Default is 'step'.
+        **kwargs: dict, optional
+            Optional arguments, passed on to the plt.figure method.
 
         Returns
         -------
@@ -220,7 +226,8 @@ class Plotting:
         ax2.legend(loc=(0, 1), ncol=3, frameon=False)
 
         # Add a row for each stressmodel
-        rmax = 0  # tmax of the step response
+        rmin = 0  # tmin of the response
+        rmax = 0  # tmax of the response
         axb = None
         i = 0
         for sm_name, sm in self.ml.stressmodels.items():
@@ -255,9 +262,13 @@ class Plotting:
                 rmax = max(rmax, response.index.max())
                 axb = fig.add_subplot(gs[i + 1, 1], sharex=axb)
                 response.plot(ax=axb)
+                if block_or_step == 'block':
+                    rmin = response.index[1]
+                    axb.set_xscale('log')
+                    axb.xaxis.set_major_formatter(LogFormatter())
 
         if axb is not None:
-            axb.set_xlim(0.0, rmax)
+            axb.set_xlim(rmin, rmax)
 
         # xlim sets minorticks back after plots:
         ax1.minorticks_off()
@@ -316,9 +327,9 @@ class Plotting:
         name: str, optional
             Name to give the simulated time series in the legend.
         return_warmup: bool, optional
-            Include the warmup period or not.
+            Show the warmup-period. Default is false.
         min_ylim_diff: float, optional
-            Float with the difference in the ylimits.
+            Float with the difference in the ylimits. Default is None
         **kwargs: dict, optional
             Optional arguments, passed on to the plt.subplots method.
 
@@ -797,8 +808,7 @@ class Plotting:
         return axes
 
 
-def compare(models, tmin=None, tmax=None, figsize=(10, 8),
-            adjust_height=False):
+def compare(models, tmin=None, tmax=None, block_or_step='step', **kwargs):
     """Visual comparison of multiple models in one figure.
 
     Note
@@ -818,7 +828,11 @@ def compare(models, tmin=None, tmax=None, figsize=(10, 8),
         tuple of size 2 to determine the figure size in inches.
     adjust_height: bool, optional
         Adjust the height of the graphs, so that the vertical scale of all
-        the graphs on the left is equal
+        the subplots on the left is equal. Default is True.
+    return_warmup: bool, optional
+        Show the warmup-period. Default is false.
+    block_or_step: str, optional
+        Plot the block- or step-response on the right. Default is 'step'.
 
     Returns
     -------
@@ -829,7 +843,7 @@ def compare(models, tmin=None, tmax=None, figsize=(10, 8),
     # get first model (w most stressmodels) and plot results
     ml = models[0]
     axes = ml.plots.results(tmin=tmin, tmax=tmax, split=False,
-                            figsize=figsize, adjust_height=adjust_height)
+                            block_or_step=block_or_step, **kwargs)
     # get the axes
     ax_ml = axes[0]  # model result
     ax_res = axes[1]  # model residuals
@@ -862,7 +876,8 @@ def compare(models, tmin=None, tmax=None, figsize=(10, 8),
                 ax_contrib = axes_sm[2 * i]
                 ax_resp = axes_sm[2 * i + 1]
                 # get the step-response
-                step = iml.get_step_response(sm_name, add_0=True)
+                response = iml._get_response(block_or_step=block_or_step,
+                                             name=sm_name, add_0=True)
                 # plot the contribution
                 contrib = iml.get_contribution(sm_name, tmin=tmin,
                                                tmax=tmax)
@@ -870,7 +885,7 @@ def compare(models, tmin=None, tmax=None, figsize=(10, 8),
                                 label="{}".format(iml.name),
                                 c=color)
                 # plot the step-reponse
-                ax_resp.plot(step.index, step, c=color)
+                ax_resp.plot(response.index, response, c=color)
                 handles, _ = ax_contrib.get_legend_handles_labels()
                 ax_contrib.legend(handles, ["1", str(j)], loc=(
                     0, 1), ncol=2, frameon=False)
