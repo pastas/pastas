@@ -34,7 +34,9 @@ def _table_formatter_params(s):
     str
         float formatted as str
     """
-    if np.floor(np.log10(np.abs(s))) <= -2:
+    if np.isnan(s):
+        return ''
+    elif np.floor(np.log10(np.abs(s))) <= -2:
         return f"{s:.2e}"
     elif np.floor(np.log10(np.abs(s))) > 5:
         return f"{s:.2e}"
@@ -55,7 +57,9 @@ def _table_formatter_stderr(s):
     str
         float formatted as str
     """
-    if np.floor(np.log10(np.abs(s))) <= -4:
+    if np.isnan(s):
+        return ''
+    elif np.floor(np.log10(np.abs(s))) <= -4:
         return f"{s * 100.:.2e}%"
     elif np.floor(np.log10(np.abs(s))) > 3:
         return f"{s * 100.:.2e}%"
