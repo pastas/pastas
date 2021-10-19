@@ -1039,14 +1039,14 @@ class TrackSolve:
         end time for simulation, by default None which
         defaults to last index in ml.oseries.series
     update_iter : int, optional
-        if visualizing optimization progress, update plot every update_iter 
+        if visualizing optimization progress, update plot every update_iter
         iterations, by default nparam
 
     Notes
     -----
-    - Interactive plotting of optimization progress requires a matplotlib backend 
-      that supports interactive plotting, e.g. `mpl.use("TkAgg")` and 
-      `mpl.interactive(True)`. Some possible speedups on the matplotlib side 
+    Interactive plotting of optimization progress requires a matplotlib
+    backend that supports interactive plotting, e.g. `mpl.use("TkAgg")` and
+    `mpl.interactive(True)`. Some possible speedups on the matplotlib side
       include:
         - mpl.style.use("fast")
         - mpl.rcParams['path.simplify_threshold'] = 1.0
@@ -1065,12 +1065,12 @@ class TrackSolve:
 
     >>> track.parameters
 
-    Other stored statistics include `track.evp` (explained variance 
-    percentage), `track.rmse_res` (root-mean-squared error of the residuals), 
-    `track.rmse_noise` (root mean squared error of the noise, only if 
+    Other stored statistics include `track.evp` (explained variance
+    percentage), `track.rmse_res` (root-mean-squared error of the residuals),
+    `track.rmse_noise` (root mean squared error of the noise, only if
     noise=True).
 
-    To interactively plot model optimiztion progress while solving pass 
+    To interactively plot model optimiztion progress while solving pass
     `track.plot_track_solve` as callback function:
 
     >>> ml.solve(callback=track.plot_track_solve)
