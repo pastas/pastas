@@ -268,7 +268,7 @@ class Plotting:
                     axb.set_xscale('log')
                     axb.xaxis.set_major_formatter(LogFormatter())
                 else:
-                    title = 'Step response',
+                    title = 'Step response'
                 axb.set_title(title, fontsize=plt.rcParams['legend.fontsize'])
 
         if axb is not None:
