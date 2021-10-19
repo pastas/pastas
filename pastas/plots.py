@@ -263,9 +263,13 @@ class Plotting:
                 axb = fig.add_subplot(gs[i + 1, 1], sharex=axb)
                 response.plot(ax=axb)
                 if block_or_step == 'block':
+                    title = 'Block response'
                     rmin = response.index[1]
                     axb.set_xscale('log')
                     axb.xaxis.set_major_formatter(LogFormatter())
+                else:
+                    title = 'Step response',
+                axb.set_title(title, fontsize=plt.rcParams['legend.fontsize'])
 
         if axb is not None:
             axb.set_xlim(rmin, rmax)
