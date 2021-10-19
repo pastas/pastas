@@ -1,9 +1,7 @@
-"""
-This file contains the import routine for import of groundwater observations
+"""This file contains the import routine for import of groundwater observations
 from RWS Waterbase / WaterInfo database. (http://waterinfo.rws.nl/)
 
 Author: R.A. Collenteur, Artesia Water 2017
-
 """
 
 from pandas import read_csv
@@ -37,7 +35,6 @@ def read_waterbase(fname, locations=None, variable="NUMERIEKEWAARDE",
 
     the xy-coordinates are calculates as the mean xy-coordinate in case these
     values are not unique.
-
     """
     ts = []
     df = read_csv(fname, delimiter=";", index_col="Date", decimal=",",

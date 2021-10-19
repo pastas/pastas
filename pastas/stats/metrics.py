@@ -10,14 +10,12 @@ These methods may be used as follows:
 or
 
 >>> ml.stats.rmse()
-
 """
 
 from logging import getLogger
 
-from numpy import nan, abs, average, log, sqrt
-
-from pastas.stats.core import mean, var, std, _get_weights
+from numpy import abs, average, log, nan, sqrt
+from pastas.stats.core import _get_weights, mean, std, var
 
 __all__ = ["rmse", "sse", "mae", "nse", "evp", "rsq", "bic", "aic",
            "pearsonr", "kge_2012"]
@@ -58,7 +56,6 @@ def mae(obs=None, sim=None, res=None, missing="drop", weighted=False,
     .. math:: \\text{MAE} = \\sum_{i=1}^{N} w_i |x_i - y_i|
 
     where :math:`N` is the number of observations in the observed time series.
-
     """
     if res is None:
         res = sim - obs
@@ -106,7 +103,6 @@ def rmse(obs=None, sim=None, res=None, missing="drop", weighted=False,
     .. math:: \\text{RMSE} = \\sqrt{\\sum_{i=1}^{N} w_i n_i^2}
 
     where :math:`N` is the number of residuals :math:`n`.
-
     """
     if res is None:
         res = sim - obs
@@ -146,7 +142,6 @@ def sse(obs=None, sim=None, res=None, missing="drop"):
     .. math:: \\text{SSE} = \\sum(r^2)
 
     Where :math:`r` are the residuals.
-
     """
     if res is None:
         res = (sim - obs)
@@ -195,7 +190,6 @@ def pearsonr(obs, sim, missing="drop", weighted=False, max_gap=30):
     Where :math:`x` is is observed time series, :math:`y` the simulated
     time series, and :math:`N` the number of observations in the observed
     time series.
-
     """
     if missing == "drop":
         obs = obs.dropna()
@@ -259,7 +253,6 @@ def evp(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30):
        von Asmuth. 2012. Software for hydrogeologic time series analysis,
        interfacing data with physical insight. Environmental Modelling &
        Software 38: 178–130.
-
     """
     if res is None:
         res = sim - obs
@@ -311,7 +304,6 @@ def nse(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30):
     .. [nash_1970] Nash, J. E., & Sutcliffe, J. V. (1970). River flow
        forecasting through conceptual models part I-A discussion of
        principles. Journal of hydrology, 10(3), 282-230.
-
     """
     if res is None:
         res = sim - obs
@@ -367,7 +359,6 @@ def rsq(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30,
 
     When nparam is provided, the :math:`\\rho` is
     adjusted for the number of calibration parameters.
-
     """
     if res is None:
         res = sim - obs
@@ -423,7 +414,6 @@ def bic(obs=None, sim=None, res=None, missing="drop", nparam=1):
     .. [akaike_1979] Akaike, H. (1979). A Bayesian extension of the minimum
        AIC procedure of autoregressive model fitting. Biometrika, 66(2),
        237-242.
-
     """
     if res is None:
         res = sim - obs
@@ -473,7 +463,6 @@ def aic(obs=None, sim=None, res=None, missing="drop", nparam=1):
     ----------
     .. [akaike_1974] Akaike, H. (1974). A new look at the statistical model
        identification. IEEE transactions on automatic control, 19(6), 716-723.
-
     """
     if res is None:
         res = sim - obs
@@ -528,7 +517,6 @@ def kge_2012(obs, sim, missing="drop", weighted=False, max_gap=30):
     .. [kling_2012] Kling, H., Fuchs, M., and Paulin, M. (2012). Runoff
       conditions in the upper Danube basin under an ensemble of climate
       change scenarios. Journal of Hydrology, 424-425:264 - 277.
-
     """
     if missing == "drop":
         obs = obs.dropna()

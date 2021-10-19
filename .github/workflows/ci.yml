@@ -54,6 +54,7 @@ jobs:
           py.test ./tests -m "not notebooks"
       
       - name: Run codacy-coverage-reporter
+        if: github.repository == 'pastas/pastas'
         uses: codacy/codacy-coverage-reporter-action@master
         with:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}

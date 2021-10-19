@@ -1,6 +1,4 @@
-"""This module contains the Model class in Pastas.
-
-"""
+"""This module contains the Model class in Pastas."""
 
 from collections import OrderedDict
 from itertools import combinations
@@ -8,18 +6,18 @@ from logging import getLogger
 from os import getlogin
 
 import numpy as np
-from pandas import date_range, Series, Timedelta, DataFrame, Timestamp
+from pandas import DataFrame, Series, Timedelta, Timestamp, date_range
 
 from .decorators import get_stressmodel
-from .io.base import dump, _load_model
+from .io.base import _load_model, dump
 from .modelstats import Statistics
 from .noisemodels import NoiseModel
 from .plots import Plotting
 from .solver import LeastSquares
 from .stressmodels import Constant
 from .timeseries import TimeSeries
-from .utils import _get_dt, _get_time_offset, get_sample, \
-    frequency_is_supported, validate_name
+from .utils import (_get_dt, _get_time_offset, frequency_is_supported,
+                    get_sample, validate_name)
 from .version import __version__
 
 
@@ -58,7 +56,6 @@ class Model:
 
     >>> oseries = pd.Series([1,2,1], index=pd.to_datetime(range(3), unit="D"))
     >>> ml = Model(oseries)
-
     """
 
     def __init__(self, oseries, constant=True, noisemodel=True, name=None,
@@ -121,8 +118,7 @@ class Model:
         self.plot = self.plots.plot  # because we are lazy
 
     def __repr__(self):
-        """Prints a simple string representation of the model.
-        """
+        """Prints a simple string representation of the model."""
         template = ('{cls}(oseries={os}, name={name}, constant={const}, '
                     'noisemodel={noise})')
         return template.format(cls=self.__class__.__name__,
@@ -164,7 +160,6 @@ class Model:
         See Also
         --------
         pastas.stressmodels
-
         """
         # Method can take multiple stressmodels at once through args
         if isinstance(stressmodel, list):
@@ -198,7 +193,6 @@ class Model:
         --------
         >>> d = ps.Constant()
         >>> ml.add_constant(d)
-
         """
         self.constant = constant
         self.parameters = self.get_init_parameters(initial=False)
@@ -220,7 +214,6 @@ class Model:
         See Also
         --------
         pastas.transform
-
         """
         transform.set_model(self)
         self.transform = transform
@@ -239,7 +232,6 @@ class Model:
         --------
         >>> n = ps.NoiseModel()
         >>> ml.add_noisemodel(n)
-
         """
         self.noisemodel = noisemodel
         self.noisemodel.set_init_parameters(oseries=self.oseries.series)
@@ -266,15 +258,12 @@ class Model:
         To obtain a list of the stressmodel names type:
 
         >>> ml.get_stressmodel_names()
-
         """
         self.stressmodels.pop(name, None)
         self.parameters = self.get_init_parameters(initial=False)
 
     def del_constant(self):
-        """Method to safely delete the Constant from the Model.
-
-        """
+        """Method to safely delete the Constant from the Model."""
         if self.constant is None:
             self.logger.warning("No constant is present in this model.")
         else:
@@ -282,9 +271,7 @@ class Model:
             self.parameters = self.get_init_parameters(initial=False)
 
     def del_transform(self):
-        """Method to safely delete the transform from the Model.
-
-        """
+        """Method to safely delete the transform from the Model."""
         if self.transform is None:
             self.logger.warning("No transform is present in this model.")
         else:
@@ -292,9 +279,7 @@ class Model:
             self.parameters = self.get_init_parameters(initial=False)
 
     def del_noisemodel(self):
-        """Method to safely delete the noise model from the Model.
-
-        """
+        """Method to safely delete the noise model from the Model."""
         if self.noisemodel is None:
             self.logger.warning("No noisemodel is present in this model.")
         else:
@@ -339,7 +324,6 @@ class Model:
         the initial parameter values are used. This allows the user to
         get an idea of how the simulation looks with only the initial
         parameters and no calibration.
-
         """
         # Default options when tmin, tmax, freq and warmup are not provided.
         if tmin is None and self.settings['tmin']:
@@ -419,7 +403,6 @@ class Model:
         -------
         res: pandas.Series
             pandas.Series with the residuals series.
-
         """
         # Default options when tmin, tmax, freq and warmup are not provided.
         if tmin is None:
@@ -501,7 +484,6 @@ class Model:
         Warnings
         --------
         This method returns None is no noise model is added to the model.
-
         """
         if self.noisemodel is None or self.settings["noise"] is False:
             self.logger.error("Noise cannot be calculated if there is no "
@@ -523,7 +505,7 @@ class Model:
 
     def noise_weights(self, p=None, tmin=None, tmax=None, freq=None,
                       warmup=None):
-        """ Internal method to calculate the noise weights."""
+        """Internal method to calculate the noise weights."""
         # Get parameters if none are provided
         if p is None:
             p = self.get_parameters()
@@ -567,7 +549,6 @@ class Model:
         observation. It finds the index closest to sim_index, and then returns
         a selection of the oseries. in the residuals method, the simulation is
         interpolated to the observation-timestamps.
-
         """
         if tmin is None and self.settings['tmin']:
             tmin = self.settings['tmin']
@@ -603,9 +584,9 @@ class Model:
                    noise=None, weights=None, initial=True, fit_constant=True):
         """Method to initialize the model.
 
-        This method is called by the solve-method, but can also be triggered
-        manually. See the solve-method for a description of the arguments.
-
+        This method is called by the solve-method, but can also be
+        triggered manually. See the solve-method for a description of
+        the arguments.
         """
         if noise is None and self.noisemodel:
             noise = True
@@ -714,7 +695,6 @@ class Model:
         --------
         pastas.solver
             Different solver objects are available to estimate parameters.
-
         """
 
         # Initialize the model
@@ -789,7 +769,6 @@ class Model:
         It is highly recommended to use this method to set parameter
         properties. Changing the parameter properties directly in the
         parameter `DataFrame` may not work as expected.
-
         """
         if name not in self.parameters.index:
             msg = "parameter %s is not present in the model"
@@ -851,9 +830,6 @@ class Model:
 
         Method to check if the StressModel timestamps match
         (e.g. similar hours)
-
-
-
         """
         time_offsets = set()
         for stressmodel in self.stressmodels.values():
@@ -900,7 +876,6 @@ class Model:
         sim_index: pandas.DatetimeIndex
             Pandas DatetimeIndex instance with the datetimes values for
             which the model is simulated.
-
         """
         # Check if any of the settings are updated
         for key, setting in zip([tmin, tmax, freq, warmup],
@@ -950,7 +925,6 @@ class Model:
 
             1. A pandas timestamp is made from the string
             2. if use_oseries is True, tmin is checked against oseries.
-
         """
         # Get tmin from the oseries
         if use_oseries:
@@ -1012,7 +986,6 @@ class Model:
 
         A detailed description of dealing with tmax and timesteps
         in general can be found in the developers section of the docs.
-
         """
         # Get tmax from the oseries
         if use_oseries:
@@ -1052,7 +1025,6 @@ class Model:
         -------
         parameters: pandas.DataFrame
             pandas.Dataframe with the parameters.
-
         """
         if noise is None:
             noise = self.settings['noise']
@@ -1092,7 +1064,6 @@ class Model:
         -------
         p: numpy.ndarray
             Numpy array with the parameters used in the time series model.
-
         """
         if name:
             p = self.parameters.loc[self.parameters.name == name]
@@ -1109,7 +1080,7 @@ class Model:
         return parameters.to_numpy(dtype=float)
 
     def get_stressmodel_names(self):
-        """Returns list of stressmodel names"""
+        """Returns list of stressmodel names."""
         return list(self.stressmodels.keys())
 
     @get_stressmodel
@@ -1126,7 +1097,6 @@ class Model:
         dict or None
             Dictionary with the settings or "None" of no stress are present,
             e.g., for a step model that uses no stress.
-
         """
         sm = self.stressmodels[name]
         if len(sm.stress) == 0:
@@ -1171,7 +1141,6 @@ class Model:
         -------
         contrib: pandas.Series
             Pandas Series with the contribution.
-
         """
         if p is None:
             p = self.get_parameters(name)
@@ -1227,7 +1196,6 @@ class Model:
         pastas.model.Model.get_contribution
             This method is called to get the individual contributions,
             kwargs are passed on to this method.
-
         """
         contribs = []
         for name in self.stressmodels:
@@ -1258,7 +1226,6 @@ class Model:
         -------
         contrib: pandas.Series
             Pandas Series with the contribution.
-
         """
         sim = self.simulate(tmin=tmin, tmax=tmax)
         # calculate what the simulation without the transform is
@@ -1290,7 +1257,6 @@ class Model:
         Returns
         -------
         response: pandas.Series
-
         """
         if self.stressmodels[name].rfunc is None:
             self.logger.warning("Stressmodel %s has no rfunc.", name)
@@ -1307,12 +1273,17 @@ class Model:
         response = block_or_step(p, dt, **kwargs)
 
         if add_0:
+            if isinstance(dt, np.ndarray):
+                t = dt
+            else:
+                t = np.linspace(0, response.size * dt, response.size + 1)
             response = np.insert(response, 0, 0.0)
-
-        if isinstance(dt, np.ndarray):
-            t = dt
         else:
-            t = np.linspace(dt, response.size * dt, response.size)
+            if isinstance(dt, np.ndarray):
+                t = dt
+            else:
+                t = np.linspace(dt, response.size * dt, response.size)
+
         response = Series(response, index=t, name=name)
         response.index.name = "Time [days]"
 
@@ -1342,7 +1313,6 @@ class Model:
         b: pandas.Series
             Pandas.Series with the block response. The index is based on the
             frequency that is present in the model.settings.
-
         """
         return self._get_response(block_or_step="block", name=name, dt=dt,
                                   p=p, add_0=add_0, **kwargs)
@@ -1371,7 +1341,6 @@ class Model:
         s: pandas.Series
             Pandas.Series with the step response. The index is based on the
             frequency that is present in the model.settings.
-
         """
         return self._get_response(block_or_step="step", name=name, dt=dt,
                                   p=p, add_0=add_0, **kwargs)
@@ -1403,7 +1372,6 @@ class Model:
 
         This means that after 1053 days, 99% of the response of the
         groundwater levels to a recharge pulse has taken place.
-
         """
         if self.stressmodels[name].rfunc is None:
             self.logger.warning("Stressmodel %s has no rfunc", name)
@@ -1450,7 +1418,6 @@ class Model:
         stress: pandas.Series or list of pandas.Series
             If one stress is present, a pandas Series is returned. If more
             are present, a list of pandas Series is returned.
-
         """
         if p is None:
             p = self.get_parameters(name)
@@ -1490,7 +1457,6 @@ class Model:
         -------
         file_info: dict
             dictionary with file information.
-
         """
         # Check if file_info already exists
         if hasattr(self, "file_info"):
@@ -1537,7 +1503,6 @@ class Model:
         The reported values for the fit use the residuals time series where
         possible. If interpolation is used this means that the result may
         slightly differ compared to using ml.simulate() and ml.observations().
-
         """
         model = {
             "nfev": self.fit.nfev,
@@ -1634,8 +1599,8 @@ class Model:
         return report
 
     def _check_parameters_bounds(self):
-        """Internal method to check if the optimal parameters are close to
-        pmin or pmax.
+        """Internal method to check if the optimal parameters are close to pmin
+        or pmax.
 
         Returns
         -------
@@ -1645,7 +1610,6 @@ class Model:
         upperhit: pandas.Series
             pandas series with boolean values of the parameters that are
             close to the maximum (pmax) values.
-
         """
         upperhit = Series(index=self.parameters.index, dtype=bool)
         lowerhit = Series(index=self.parameters.index, dtype=bool)
@@ -1693,7 +1657,6 @@ class Model:
         Helper function for the self.to_file method. To increase backward
         compatibility most attributes are stored in dictionaries that can be
         updated when a model is created.
-
         """
 
         # Create a dictionary to store all data
@@ -1748,7 +1711,6 @@ class Model:
         See Also
         --------
         :mod:`pastas.io.dump`
-
         """
 
         # Get dicts for all data sources
@@ -1774,7 +1736,6 @@ class Model:
         Examples
         --------
         >>> ml_copy = ml.copy(name="new_name")
-
         """
         if name is None:
             name = self.name + "_copy"

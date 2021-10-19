@@ -3,14 +3,13 @@
 Export a .men file
 
 R.C. Caljé - march 2018
-
 """
 
 from os import path
 
-from numpy import vstack, array, NaN, zeros
+from numpy import NaN, array, vstack, zeros
 from pandas import Timestamp
-from scipy.io import savemat, loadmat
+from scipy.io import loadmat, savemat
 
 from ..utils import datetime2matlab
 

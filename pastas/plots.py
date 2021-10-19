@@ -16,7 +16,7 @@ from matplotlib.ticker import MultipleLocator
 from pandas import DataFrame, Timestamp, concat
 
 from .decorators import model_tmin_tmax
-from .stats import plot_diagnostics, plot_cum_frequency
+from .stats import diagnostics, plot_cum_frequency, plot_diagnostics
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +110,7 @@ class Plotting:
         if oseries:
             o = self.ml.observations(tmin=tmin, tmax=tmax)
             o_nu = self.ml.oseries.series.drop(o.index).loc[
-                   o.index.min():o.index.max()]
+                o.index.min():o.index.max()]
             if not o_nu.empty:
                 # plot parts of the oseries that are not used in grey
                 o_nu.plot(linestyle='', marker='.', color='0.5', label='',
@@ -160,7 +160,11 @@ class Plotting:
         """
         # Number of rows to make the figure with
         o = self.ml.observations(tmin=tmin, tmax=tmax)
-        o_nu = self.ml.oseries.series.drop(o.index).loc[tmin:tmax]
+        o_nu = self.ml.oseries.series.drop(o.index)
+        if return_warmup:
+            o_nu = o_nu[tmin - self.ml.settings['warmup']: tmax]
+        else:
+            o_nu = o_nu[tmin: tmax]
         sim = self.ml.simulate(tmin=tmin, tmax=tmax,
                                return_warmup=return_warmup)
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
@@ -254,8 +258,12 @@ class Plotting:
 
         # xlim sets minorticks back after plots:
         ax1.minorticks_off()
-        ax1.set_xlim(tmin, tmax)
-        
+
+        if return_warmup:
+            ax1.set_xlim(tmin - self.ml.settings['warmup'], tmax)
+        else:
+            ax1.set_xlim(tmin, tmax)
+
         # sometimes, ticks suddenly appear on top plot, turn off just in case
         plt.setp(ax1.get_xticklabels(), visible=False)
 
@@ -490,7 +498,6 @@ class Plotting:
         See Also
         --------
         ps.stats.plot_cum_frequency
-
         """
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
@@ -593,20 +600,7 @@ class Plotting:
         axes: matplotlib.axes
             matplotlib axes instance.
         """
-        stresses = []
-
-        for name in self.ml.stressmodels.keys():
-            nstress = len(self.ml.stressmodels[name].stress)
-            if split and nstress > 1:
-                for istress in range(nstress):
-                    stress = self.ml.get_stress(name, istress=istress)
-                    stresses.append(stress)
-            else:
-                stress = self.ml.get_stress(name)
-                if isinstance(stress, list):
-                    stresses.extend(stress)
-                else:
-                    stresses.append(stress)
+        stresses = _get_stress_series(self.ml, split=split)
 
         rows = len(stresses)
         rows = -(-rows // cols)  # round up with out additional import
@@ -767,6 +761,38 @@ class Plotting:
 
         return axes
 
+    @model_tmin_tmax
+    def series(self, tmin=None, tmax=None, split=True, **kwargs):
+        """Method to plot all the time series going into a Pastas Model.
+
+        Parameters
+        ----------
+        tmin: str or pd.Timestamp
+        tmax: str or pd.Timestamp
+        split: bool, optional
+            Split the stresses in multiple stresses when possible.
+        hist: bool
+            Histogram for the Series. Returns the number of observations, mean,
+            skew and kurtosis as well. For the head series the result of the
+            shapiro-wilk test (p > 0.05) for normality is reported.
+        bins: float
+            Number of bins in the histogram plot.
+        titles: bool
+            Set the titles or not. Taken from the name attribute of the Series.
+        labels: List of str
+            List with the labels for each subplot.
+        figsize: tuple
+            Set the size of the figure.
+
+        Returns
+        -------
+        matplotlib.Axes
+        """
+        obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        stresses = _get_stress_series(self.ml, split=split)
+        axes = series(obs, stresses=stresses, **kwargs)
+        return axes
+
 
 def compare(models, tmin=None, tmax=None, figsize=(10, 8),
             adjust_height=False):
@@ -889,8 +915,8 @@ def compare(models, tmin=None, tmax=None, figsize=(10, 8),
     return axes
 
 
-def series(head=None, stresses=None, titles=True, tmin=None, tmax=None,
-           labels=None, figsize=(10, 5)):
+def series(head=None, stresses=None, hist=True, bins=30, titles=True,
+           tmin=None, tmax=None, labels=None, figsize=(10, 5)):
     """Method to plot all the time series going into a Pastas Model.
 
     Parameters
@@ -899,6 +925,12 @@ def series(head=None, stresses=None, titles=True, tmin=None, tmax=None,
         Pandas time series with DatetimeIndex.
     stresses: List of pd.Series
         List with Pandas time series with DatetimeIndex.
+    hist: bool
+        Histogram for the Series. Returns the number of observations, mean,
+        skew and kurtosis as well. For the head series the result of the
+        shapiro-wilk test (p > 0.05) for normality is reported.
+    bins: float
+        Number of bins in the histogram plot.
     titles: bool
         Set the titles or not. Taken from the name attribute of the Series.
     tmin: str or pd.Timestamp
@@ -911,32 +943,80 @@ def series(head=None, stresses=None, titles=True, tmin=None, tmax=None,
     Returns
     -------
     matplotlib.Axes
-
     """
     rows = 0
     if head is not None:
         rows += 1
+        if tmin is None:
+            tmin = head.index[0]
+        if tmax is None:
+            tmax = head.index[-1]
     if stresses is not None:
         rows += len(stresses)
-
-    _, axes = plt.subplots(rows, 1, figsize=figsize, sharex=True)
-
+    sharex = True
+    gridspec_kw = {}
+    cols = 1
+    if hist:
+        sharex = False
+        gridspec_kw["width_ratios"] = (3, 1, 1)
+        cols = 3
+    _, axes = plt.subplots(rows, cols, figsize=figsize, sharex=sharex,
+                           sharey="row", gridspec_kw=gridspec_kw)
+    if rows == 1 and cols == 1:
+        axes = np.array([[axes]])
+    elif rows == 1:
+        axes = axes[np.newaxis]
+    elif cols == 1:
+        axes = axes[:, np.newaxis]
+    if hist:
+        axes[-1, 1].set_xlabel("Frequency [%]")
     if head is not None:
-        head.plot(ax=axes[0], marker=".", linestyle=" ", color="k")
+        head = head[tmin:tmax]
+        head.plot(ax=axes[0, 0], marker=".", linestyle=" ", color="k")
         if titles:
-            axes[0].set_title(head.name)
+            axes[0, 0].set_title(head.name)
         if labels is not None:
-            axes[0].set_ylabel(labels[0])
-
+            axes[0, 0].set_ylabel(labels[0])
+        if hist:
+            # histogram
+            head.hist(ax=axes[0, 1], orientation="horizontal", color="k",
+                      weights=np.ones(len(head)) / len(head) * 100,
+                      bins=bins, grid=False)
+            # stats table
+            head_stats = [["Count", f"{head.count():0.0f}"],
+                          ["Mean", f"{head.mean():0.2f}"],
+                          ["Skew", f"{head.skew():0.2f}"],
+                          ["Kurtosis", f"{head.kurtosis():0.2f}"],
+                          ["Normality",
+                           f"{diagnostics(head).loc['Shapiroo','Reject H0']}"]]
+            axes[0, 2].table(bbox=(0.0, 0.0, 1, 1), colWidths=(1.5, 1),
+                             cellText=head_stats)
+            axes[0, 2].axis("off")
     if stresses is not None:
         for i, stress in enumerate(stresses, start=rows - len(stresses)):
-            stress.plot(ax=axes[i], color="k")
+            stress = stress[tmin:tmax]
+            stress.plot(ax=axes[i, 0], color="k")
             if titles:
-                axes[i].set_title(stress.name)
+                axes[i, 0].set_title(stress.name)
             if labels is not None:
-                axes[i].set_ylabel(labels[i])
-
-    plt.xlim([tmin, tmax])
+                axes[i, 0].set_ylabel(labels[i])
+            if hist:
+                if i > 0:
+                    axes[i, 0].sharex(axes[0, 0])
+                # histogram
+                stress.hist(ax=axes[i, 1], orientation="horizontal", color="k",
+                            weights=np.ones(len(stress)) / len(stress) * 100,
+                            bins=bins, grid=False)
+                # stats table
+                stress_stats = [["Count", f"{stress.count():0.0f}"],
+                                ["Mean", f"{stress.mean():0.2f}"],
+                                ["Skew", f"{stress.skew():0.2f}"],
+                                ["Kurtosis", f"{stress.kurtosis():0.2f}"]]
+                axes[i, 2].table(bbox=(0, 0, 1, 1), colWidths=(1.5, 1),
+                                 cellText=stress_stats)
+                axes[i, 2].axis("off")
+    axes[0, 0].set_xlim([tmin, tmax])
+    axes[0, 0].minorticks_off()
 
     plt.tight_layout()
     return axes
@@ -1292,3 +1372,20 @@ def _get_height_ratios(ylims):
             hr = 0.0
         height_ratios.append(hr)
     return height_ratios
+
+
+def _get_stress_series(ml, split=True):
+    stresses = []
+    for name in ml.stressmodels.keys():
+        nstress = len(ml.stressmodels[name].stress)
+        if split and nstress > 1:
+            for istress in range(nstress):
+                stress = ml.get_stress(name, istress=istress)
+                stresses.append(stress)
+        else:
+            stress = ml.get_stress(name)
+            if isinstance(stress, list):
+                stresses.extend(stress)
+            else:
+                stresses.append(stress)
+    return stresses

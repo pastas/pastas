@@ -1,6 +1,5 @@
-from pandas import read_csv
-
 import pastas as ps
+from pandas import read_csv
 
 # Load series before
 rain = read_csv("tests/data/rain.csv", index_col=0, parse_dates=True,

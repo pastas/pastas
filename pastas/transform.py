@@ -1,8 +1,7 @@
 """This module contains all the transforms that can be added to a model.
 
-These transforms are applied after the simulation, to incorporate nonlinear
-effects.
-
+These transforms are applied after the simulation, to incorporate
+nonlinear effects.
 """
 import numpy as np
 from pandas import DataFrame
@@ -35,7 +34,6 @@ class ThresholdTransform:
     groundwater level reaches the surface level and forms a lake. Because
     of the larger storage of the lake, the (groundwater) level then rises
     slower when it rains.
-
     """
     _name = "ThresholdTransform"
 
@@ -73,7 +71,6 @@ class ThresholdTransform:
         Notes
         -----
         The preferred method for parameter setting is through the model.
-
         """
         self.parameters.loc[name, 'initial'] = value
 
@@ -84,7 +81,6 @@ class ThresholdTransform:
         Notes
         -----
         The preferred method for parameter setting is through the model.
-
         """
         self.parameters.loc[name, 'pmin'] = value
 
@@ -95,7 +91,6 @@ class ThresholdTransform:
         Notes
         -----
         The preferred method for parameter setting is through the model.
-
         """
         self.parameters.loc[name, 'pmax'] = value
 
@@ -107,7 +102,6 @@ class ThresholdTransform:
         Notes
         -----
         The preferred method for parameter setting is through the model.
-
         """
         self.parameters.loc[name, 'vary'] = bool(value)
 
