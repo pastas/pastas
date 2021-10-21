@@ -981,11 +981,14 @@ class Spline(RfuncBase):
 
     Notes
     -----
-    The impulse response function may be written as:
-
-    .. math:: \\theta(t) = A e^{-t/a}
+    The spline response function generates a response function from factors at
+    t = 1, 2, 4, 8, 16, 32, 64, 128, 256, 512 and 1024 days. This response
+    function is more data-driven than existing response functions and has no
+    physical background. Therefore it can primarily be used to compare to other
+    more physical response functions, that probably describe the groundwater
+    system better.
     """
-    _name = "Exponential"
+    _name = "Spline"
 
     def __init__(self, up=True, meanstress=1, cutoff=0.999, kind='quadratic',
                  t=[1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]):
