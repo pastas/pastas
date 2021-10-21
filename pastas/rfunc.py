@@ -6,6 +6,7 @@ from pandas import DataFrame
 from scipy.integrate import quad
 from scipy.special import (erfc, erfcinv, exp1, gammainc, gammaincinv, k0, k1,
                            lambertw)
+from scipy.interpolate import interp1d
 
 from .decorators import njit
 
@@ -956,3 +957,78 @@ class Kleur(RfuncBase):
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
         t = self.get_t(p, dt, cutoff, maxtmax)
         return self.step_kleur(np.asarray(p), t)
+
+
+class Spline(RfuncBase):
+    """Spline response function with parameters: A and a factor for every t.
+
+    Parameters
+    ----------
+    up: bool or None, optional
+        indicates whether a positive stress will cause the head to go up
+        (True, default) or down (False), if None the head can go both ways.
+    meanstress: float
+        mean value of the stress, used to set the initial value such that
+        the final step times the mean stress equals 1
+    cutoff: float
+        proportion after which the step function is cut off. default is 0.999.
+        this parameter is ignored by Points
+    t: list
+        times at which the response function is defined
+    kind: string
+        See scipy.interpolate.interp1d. Most usefull for a smooth response
+        function are ‘quadratic’, ‘cubic’.
+
+    Notes
+    -----
+    The spline response function generates a response function from factors at
+    t = 1, 2, 4, 8, 16, 32, 64, 128, 256, 512 and 1024 days. This response
+    function is more data-driven than existing response functions and has no
+    physical background. Therefore it can primarily be used to compare to other
+    more physical response functions, that probably describe the groundwater
+    system better.
+    """
+    _name = "Spline"
+
+    def __init__(self, up=True, meanstress=1, cutoff=0.999, kind='quadratic',
+                 t=[1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]):
+        RfuncBase.__init__(self, up, meanstress, cutoff)
+        self.kind = kind
+        self.t = t
+        self.nparam = len(t) + 1
+
+    def get_init_parameters(self, name):
+        parameters = DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        if self.up:
+            parameters.loc[name + '_A'] = (1 / self.meanstress, 1e-5,
+                                           100 / self.meanstress, True, name)
+        elif self.up is False:
+            parameters.loc[name + '_A'] = (-1 / self.meanstress,
+                                           -100 / self.meanstress,
+                                           -1e-5, True, name)
+        else:
+            parameters.loc[name + '_A'] = (1 / self.meanstress,
+                                           np.nan, np.nan, True, name)
+        initial = np.linspace(0.0, 1.0, len(self.t)+1)[1:]
+        for i in range(len(self.t)):
+            index = name + '_' + str(self.t[i])
+            vary = True
+            # fix the value of the factor at the last timestep to 1.0
+            if i == len(self.t) - 1:
+                vary = False
+            parameters.loc[index] = (initial[i], 0.0, 1.0, vary, name)
+
+        return parameters
+
+    def get_tmax(self, p, cutoff=None):
+        return self.t[-1]
+
+    def gain(self, p):
+        return p[0]
+
+    def step(self, p, dt=1, cutoff=None, maxtmax=None):
+        f = interp1d(self.t, p[1:len(self.t)+1], kind=self.kind)
+        t = self.get_t(p, dt, cutoff, maxtmax)
+        s = p[0] * f(t)
+        return s

@@ -12,7 +12,7 @@ import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.ticker import MultipleLocator
+from matplotlib.ticker import MultipleLocator, LogFormatter
 from pandas import DataFrame, Timestamp, concat
 
 from .decorators import model_tmin_tmax
@@ -34,7 +34,9 @@ def _table_formatter_params(s):
     str
         float formatted as str
     """
-    if np.floor(np.log10(np.abs(s))) <= -2:
+    if np.isnan(s):
+        return ''
+    elif np.floor(np.log10(np.abs(s))) <= -2:
         return f"{s:.2e}"
     elif np.floor(np.log10(np.abs(s))) > 5:
         return f"{s:.2e}"
@@ -55,7 +57,9 @@ def _table_formatter_stderr(s):
     str
         float formatted as str
     """
-    if np.floor(np.log10(np.abs(s))) <= -4:
+    if np.isnan(s):
+        return ''
+    elif np.floor(np.log10(np.abs(s))) <= -4:
         return f"{s * 100.:.2e}%"
     elif np.floor(np.log10(np.abs(s))) > 3:
         return f"{s * 100.:.2e}%"
@@ -134,7 +138,8 @@ class Plotting:
 
     @model_tmin_tmax
     def results(self, tmin=None, tmax=None, figsize=(10, 8), split=False,
-                adjust_height=True, return_warmup=False, **kwargs):
+                adjust_height=True, return_warmup=False, block_or_step='step',
+                **kwargs):
         """Plot different results in one window to get a quick overview.
 
         Parameters
@@ -149,6 +154,12 @@ class Plotting:
         adjust_height: bool, optional
             Adjust the height of the graphs, so that the vertical scale of all
             the subplots on the left is equal. Default is True.
+        return_warmup: bool, optional
+            Show the warmup-period. Default is false.
+        block_or_step: str, optional
+            Plot the block- or step-response on the right. Default is 'step'.
+        **kwargs: dict, optional
+            Optional arguments, passed on to the plt.figure method.
 
         Returns
         -------
@@ -219,7 +230,8 @@ class Plotting:
         ax2.legend(loc=(0, 1), ncol=3, frameon=False)
 
         # Add a row for each stressmodel
-        rmax = 0  # tmax of the step response
+        rmin = 0  # tmin of the response
+        rmax = 0  # tmax of the response
         axb = None
         i = 0
         for sm_name, sm in self.ml.stressmodels.items():
@@ -247,14 +259,24 @@ class Plotting:
                 i = i + 1
 
             # plot the step response
-            step = self.ml.get_step_response(sm_name, add_0=True)
-            if step is not None:
-                rmax = max(rmax, step.index.max())
+            response = self.ml._get_response(block_or_step=block_or_step,
+                                             name=sm_name, add_0=True)
+
+            if response is not None:
+                rmax = max(rmax, response.index.max())
                 axb = fig.add_subplot(gs[i + 1, 1], sharex=axb)
-                step.plot(ax=axb)
+                response.plot(ax=axb)
+                if block_or_step == 'block':
+                    title = 'Block response'
+                    rmin = response.index[1]
+                    axb.set_xscale('log')
+                    axb.xaxis.set_major_formatter(LogFormatter())
+                else:
+                    title = 'Step response'
+                axb.set_title(title, fontsize=plt.rcParams['legend.fontsize'])
 
         if axb is not None:
-            axb.set_xlim(0.0, rmax)
+            axb.set_xlim(rmin, rmax)
 
         # xlim sets minorticks back after plots:
         ax1.minorticks_off()
@@ -313,9 +335,9 @@ class Plotting:
         name: str, optional
             Name to give the simulated time series in the legend.
         return_warmup: bool, optional
-            Include the warmup period or not.
+            Show the warmup-period. Default is false.
         min_ylim_diff: float, optional
-            Float with the difference in the ylimits.
+            Float with the difference in the ylimits. Default is None
         **kwargs: dict, optional
             Optional arguments, passed on to the plt.subplots method.
 
@@ -794,8 +816,7 @@ class Plotting:
         return axes
 
 
-def compare(models, tmin=None, tmax=None, figsize=(10, 8),
-            adjust_height=False):
+def compare(models, tmin=None, tmax=None, block_or_step='step', **kwargs):
     """Visual comparison of multiple models in one figure.
 
     Note
@@ -815,7 +836,11 @@ def compare(models, tmin=None, tmax=None, figsize=(10, 8),
         tuple of size 2 to determine the figure size in inches.
     adjust_height: bool, optional
         Adjust the height of the graphs, so that the vertical scale of all
-        the graphs on the left is equal
+        the subplots on the left is equal. Default is True.
+    return_warmup: bool, optional
+        Show the warmup-period. Default is false.
+    block_or_step: str, optional
+        Plot the block- or step-response on the right. Default is 'step'.
 
     Returns
     -------
@@ -826,7 +851,7 @@ def compare(models, tmin=None, tmax=None, figsize=(10, 8),
     # get first model (w most stressmodels) and plot results
     ml = models[0]
     axes = ml.plots.results(tmin=tmin, tmax=tmax, split=False,
-                            figsize=figsize, adjust_height=adjust_height)
+                            block_or_step=block_or_step, **kwargs)
     # get the axes
     ax_ml = axes[0]  # model result
     ax_res = axes[1]  # model residuals
@@ -859,7 +884,8 @@ def compare(models, tmin=None, tmax=None, figsize=(10, 8),
                 ax_contrib = axes_sm[2 * i]
                 ax_resp = axes_sm[2 * i + 1]
                 # get the step-response
-                step = iml.get_step_response(sm_name, add_0=True)
+                response = iml._get_response(block_or_step=block_or_step,
+                                             name=sm_name, add_0=True)
                 # plot the contribution
                 contrib = iml.get_contribution(sm_name, tmin=tmin,
                                                tmax=tmax)
@@ -867,7 +893,7 @@ def compare(models, tmin=None, tmax=None, figsize=(10, 8),
                                 label="{}".format(iml.name),
                                 c=color)
                 # plot the step-reponse
-                ax_resp.plot(step.index, step, c=color)
+                ax_resp.plot(response.index, response, c=color)
                 handles, _ = ax_contrib.get_legend_handles_labels()
                 ax_contrib.legend(handles, ["1", str(j)], loc=(
                     0, 1), ncol=2, frameon=False)
@@ -1036,14 +1062,14 @@ class TrackSolve:
         end time for simulation, by default None which
         defaults to last index in ml.oseries.series
     update_iter : int, optional
-        if visualizing optimization progress, update plot every update_iter 
+        if visualizing optimization progress, update plot every update_iter
         iterations, by default nparam
 
     Notes
     -----
-    - Interactive plotting of optimization progress requires a matplotlib backend 
-      that supports interactive plotting, e.g. `mpl.use("TkAgg")` and 
-      `mpl.interactive(True)`. Some possible speedups on the matplotlib side 
+    Interactive plotting of optimization progress requires a matplotlib
+    backend that supports interactive plotting, e.g. `mpl.use("TkAgg")` and
+    `mpl.interactive(True)`. Some possible speedups on the matplotlib side
       include:
         - mpl.style.use("fast")
         - mpl.rcParams['path.simplify_threshold'] = 1.0
@@ -1062,12 +1088,12 @@ class TrackSolve:
 
     >>> track.parameters
 
-    Other stored statistics include `track.evp` (explained variance 
-    percentage), `track.rmse_res` (root-mean-squared error of the residuals), 
-    `track.rmse_noise` (root mean squared error of the noise, only if 
+    Other stored statistics include `track.evp` (explained variance
+    percentage), `track.rmse_res` (root-mean-squared error of the residuals),
+    `track.rmse_noise` (root mean squared error of the noise, only if
     noise=True).
 
-    To interactively plot model optimiztion progress while solving pass 
+    To interactively plot model optimiztion progress while solving pass
     `track.plot_track_solve` as callback function:
 
     >>> ml.solve(callback=track.plot_track_solve)
