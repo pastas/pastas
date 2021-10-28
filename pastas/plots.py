@@ -941,7 +941,7 @@ def compare(models, tmin=None, tmax=None, block_or_step='step', **kwargs):
     return axes
 
 
-def series(head=None, stresses=None, hist=True, bins=30, titles=True,
+def series(head=None, stresses=None, hist=True, titles=True,
            tmin=None, tmax=None, labels=None, figsize=(10, 5)):
     """Method to plot all the time series going into a Pastas Model.
 
@@ -953,10 +953,7 @@ def series(head=None, stresses=None, hist=True, bins=30, titles=True,
         List with Pandas time series with DatetimeIndex.
     hist: bool
         Histogram for the Series. Returns the number of observations, mean,
-        skew and kurtosis as well. For the head series the result of the
-        shapiro-wilk test (p > 0.05) for normality is reported.
-    bins: float
-        Number of bins in the histogram plot.
+        skew and kurtosis as well. The number of bins is determined with Sturges rule.
     titles: bool
         Set the titles or not. Taken from the name attribute of the Series.
     tmin: str or pd.Timestamp
@@ -1007,7 +1004,7 @@ def series(head=None, stresses=None, hist=True, bins=30, titles=True,
             # histogram
             head.hist(ax=axes[0, 1], orientation="horizontal", color="k",
                       weights=np.ones(len(head)) / len(head) * 100,
-                      bins=bins, grid=False)
+                      bins=int(np.ceil(1 + np.log2(len(head)))), grid=False)
             # stats table
             head_stats = [["Count", f"{head.count():0.0f}"],
                           ["Mean", f"{head.mean():0.2f}"],
@@ -1032,7 +1029,7 @@ def series(head=None, stresses=None, hist=True, bins=30, titles=True,
                 # histogram
                 stress.hist(ax=axes[i, 1], orientation="horizontal", color="k",
                             weights=np.ones(len(stress)) / len(stress) * 100,
-                            bins=bins, grid=False)
+                            bins=int(np.ceil(1 + np.log2(len(stress)))), grid=False)
                 # stats table
                 stress_stats = [["Count", f"{stress.count():0.0f}"],
                                 ["Mean", f"{stress.mean():0.2f}"],
