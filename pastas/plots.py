@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import MultipleLocator, LogFormatter
 from pandas import DataFrame, Timestamp, concat
+from scipy.stats import gaussian_kde
 
 from .decorators import model_tmin_tmax
 from .stats import plot_cum_frequency, plot_diagnostics
@@ -941,7 +942,7 @@ def compare(models, tmin=None, tmax=None, block_or_step='step', **kwargs):
     return axes
 
 
-def series(head=None, stresses=None, hist=True, titles=True,
+def series(head=None, stresses=None, hist=True, kde=False, titles=True,
            tmin=None, tmax=None, labels=None, figsize=(10, 5)):
     """Method to plot all the time series going into a Pastas Model.
 
@@ -979,7 +980,7 @@ def series(head=None, stresses=None, hist=True, titles=True,
     sharex = True
     gridspec_kw = {}
     cols = 1
-    if hist:
+    if hist or kde:
         sharex = False
         gridspec_kw["width_ratios"] = (3, 1, 1)
         cols = 3
@@ -991,6 +992,9 @@ def series(head=None, stresses=None, hist=True, titles=True,
         axes = axes[np.newaxis]
     elif cols == 1:
         axes = axes[:, np.newaxis]
+    if kde:
+        hist = False
+        axes[-1, 1].set_xlabel("Density [-]")
     if hist:
         axes[-1, 1].set_xlabel("Frequency [%]")
     if head is not None:
@@ -1001,10 +1005,16 @@ def series(head=None, stresses=None, hist=True, titles=True,
         if labels is not None:
             axes[0, 0].set_ylabel(labels[0])
         if hist:
-            # histogram
             head.hist(ax=axes[0, 1], orientation="horizontal", color="k",
                       weights=np.ones(len(head)) / len(head) * 100,
                       bins=int(np.ceil(1 + np.log2(len(head)))), grid=False)
+        if kde:
+            gkde = gaussian_kde(head, bw_method='scott')
+            sample_range = np.nanmax(head) - np.nanmin(head)
+            ind = np.linspace(np.nanmin(head) - 0.1 * sample_range,
+                              np.nanmax(head) + 0.1 * sample_range, 1000)
+            axes[0, 1].plot(gkde.evaluate(ind), ind, color='k')
+        if hist or kde:
             # stats table
             head_stats = [["Count", f"{head.count():0.0f}"],
                           ["Mean", f"{head.mean():0.2f}"],
@@ -1013,6 +1023,7 @@ def series(head=None, stresses=None, hist=True, titles=True,
             axes[0, 2].table(bbox=(0.0, 0.0, 1, 1), colWidths=(1.5, 1),
                              cellText=head_stats)
             axes[0, 2].axis("off")
+
     if stresses is not None:
         for i, stress in enumerate(stresses, start=rows - len(stresses)):
             stress = stress[tmin:tmax]
@@ -1027,7 +1038,15 @@ def series(head=None, stresses=None, hist=True, titles=True,
                 # histogram
                 stress.hist(ax=axes[i, 1], orientation="horizontal", color="k",
                             weights=np.ones(len(stress)) / len(stress) * 100,
-                            bins=int(np.ceil(1 + np.log2(len(stress)))), grid=False)
+                            bins=int(np.ceil(1 + np.log2(len(stress)))),
+                            grid=False)
+            if kde:
+                gkde = gaussian_kde(stress, bw_method='scott')
+                sample_range = np.nanmax(stress) - np.nanmin(stress)
+                ind = np.linspace(np.nanmin(stress) - 0.1 * sample_range,
+                                  np.nanmax(stress) + 0.1 * sample_range, 1000)
+                axes[i, 1].plot(gkde.evaluate(ind), ind, color='k')
+            if hist or kde:
                 # stats table
                 stress_stats = [["Count", f"{stress.count():0.0f}"],
                                 ["Mean", f"{stress.mean():0.2f}"],
