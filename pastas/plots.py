@@ -16,7 +16,7 @@ from matplotlib.ticker import MultipleLocator, LogFormatter
 from pandas import DataFrame, Timestamp, concat
 
 from .decorators import model_tmin_tmax
-from .stats import diagnostics, plot_cum_frequency, plot_diagnostics
+from .stats import plot_cum_frequency, plot_diagnostics
 
 logger = logging.getLogger(__name__)
 
@@ -1009,9 +1009,7 @@ def series(head=None, stresses=None, hist=True, titles=True,
             head_stats = [["Count", f"{head.count():0.0f}"],
                           ["Mean", f"{head.mean():0.2f}"],
                           ["Skew", f"{head.skew():0.2f}"],
-                          ["Kurtosis", f"{head.kurtosis():0.2f}"],
-                          ["Normality",
-                           f"{diagnostics(head).loc['Shapiroo','Reject H0']}"]]
+                          ["Kurtosis", f"{head.kurtosis():0.2f}"]]
             axes[0, 2].table(bbox=(0.0, 0.0, 1, 1), colWidths=(1.5, 1),
                              cellText=head_stats)
             axes[0, 2].axis("off")
