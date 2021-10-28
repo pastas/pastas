@@ -953,8 +953,12 @@ def series(head=None, stresses=None, hist=True, kde=False, titles=True,
     stresses: List of pd.Series
         List with Pandas time series with DatetimeIndex.
     hist: bool
-        Histogram for the Series. Returns the number of observations, mean,
-        skew and kurtosis as well. The number of bins is determined with Sturges rule.
+        Histogram for the series. The number of bins is determined with Sturges
+        rule. Returns the number of observations, mean, skew and kurtosis.
+    kde: bool
+        Kernel density estimate for the series. The kde is obtained from
+        scipy.gaussian_kde using scott to calculate the estimator bandwidth.
+        Returns the number of observations, mean, skew and kurtosis.
     titles: bool
         Set the titles or not. Taken from the name attribute of the Series.
     tmin: str or pd.Timestamp
