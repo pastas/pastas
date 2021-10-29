@@ -14,9 +14,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import MultipleLocator, LogFormatter
 from pandas import DataFrame, Timestamp, concat
+from scipy.stats import gaussian_kde
 
 from .decorators import model_tmin_tmax
-from .stats import diagnostics, plot_cum_frequency, plot_diagnostics
+from .stats import plot_cum_frequency, plot_diagnostics
 
 logger = logging.getLogger(__name__)
 
@@ -941,7 +942,7 @@ def compare(models, tmin=None, tmax=None, block_or_step='step', **kwargs):
     return axes
 
 
-def series(head=None, stresses=None, hist=True, bins=30, titles=True,
+def series(head=None, stresses=None, hist=True, kde=False, titles=True,
            tmin=None, tmax=None, labels=None, figsize=(10, 5)):
     """Method to plot all the time series going into a Pastas Model.
 
@@ -952,11 +953,12 @@ def series(head=None, stresses=None, hist=True, bins=30, titles=True,
     stresses: List of pd.Series
         List with Pandas time series with DatetimeIndex.
     hist: bool
-        Histogram for the Series. Returns the number of observations, mean,
-        skew and kurtosis as well. For the head series the result of the
-        shapiro-wilk test (p > 0.05) for normality is reported.
-    bins: float
-        Number of bins in the histogram plot.
+        Histogram for the series. The number of bins is determined with Sturges
+        rule. Returns the number of observations, mean, skew and kurtosis.
+    kde: bool
+        Kernel density estimate for the series. The kde is obtained from
+        scipy.gaussian_kde using scott to calculate the estimator bandwidth.
+        Returns the number of observations, mean, skew and kurtosis.
     titles: bool
         Set the titles or not. Taken from the name attribute of the Series.
     tmin: str or pd.Timestamp
@@ -982,7 +984,7 @@ def series(head=None, stresses=None, hist=True, bins=30, titles=True,
     sharex = True
     gridspec_kw = {}
     cols = 1
-    if hist:
+    if hist or kde:
         sharex = False
         gridspec_kw["width_ratios"] = (3, 1, 1)
         cols = 3
@@ -996,6 +998,8 @@ def series(head=None, stresses=None, hist=True, bins=30, titles=True,
         axes = axes[:, np.newaxis]
     if hist:
         axes[-1, 1].set_xlabel("Frequency [%]")
+    if kde:
+        axes[-1, 1].set_xlabel("Density [-]")
     if head is not None:
         head = head[tmin:tmax]
         head.plot(ax=axes[0, 0], marker=".", linestyle=" ", color="k")
@@ -1003,21 +1007,34 @@ def series(head=None, stresses=None, hist=True, bins=30, titles=True,
             axes[0, 0].set_title(head.name)
         if labels is not None:
             axes[0, 0].set_ylabel(labels[0])
-        if hist:
-            # histogram
+        if hist and kde is False:
             head.hist(ax=axes[0, 1], orientation="horizontal", color="k",
                       weights=np.ones(len(head)) / len(head) * 100,
-                      bins=bins, grid=False)
+                      bins=int(np.ceil(1 + np.log2(len(head)))), grid=False)
+        if kde and hist:
+            head.hist(ax=axes[0, 1], orientation="horizontal", color="k",
+                      bins=int(np.ceil(1 + np.log2(len(head)))),
+                      grid=False, density=True)
+        if kde:
+            gkde = gaussian_kde(head, bw_method='scott')
+            sample_range = np.nanmax(head) - np.nanmin(head)
+            ind = np.linspace(np.nanmin(head) - 0.1 * sample_range,
+                              np.nanmax(head) + 0.1 * sample_range, 1000)
+            if hist:
+                colour = 'C5'
+            else:
+                colour = 'k'
+            axes[0, 1].plot(gkde.evaluate(ind), ind, color=colour)
+        if hist or kde:
             # stats table
             head_stats = [["Count", f"{head.count():0.0f}"],
                           ["Mean", f"{head.mean():0.2f}"],
                           ["Skew", f"{head.skew():0.2f}"],
-                          ["Kurtosis", f"{head.kurtosis():0.2f}"],
-                          ["Normality",
-                           f"{diagnostics(head).loc['Shapiroo','Reject H0']}"]]
+                          ["Kurtosis", f"{head.kurtosis():0.2f}"]]
             axes[0, 2].table(bbox=(0.0, 0.0, 1, 1), colWidths=(1.5, 1),
                              cellText=head_stats)
             axes[0, 2].axis("off")
+
     if stresses is not None:
         for i, stress in enumerate(stresses, start=rows - len(stresses)):
             stress = stress[tmin:tmax]
@@ -1027,12 +1044,28 @@ def series(head=None, stresses=None, hist=True, bins=30, titles=True,
             if labels is not None:
                 axes[i, 0].set_ylabel(labels[i])
             if hist:
-                if i > 0:
-                    axes[i, 0].sharex(axes[0, 0])
                 # histogram
                 stress.hist(ax=axes[i, 1], orientation="horizontal", color="k",
                             weights=np.ones(len(stress)) / len(stress) * 100,
-                            bins=bins, grid=False)
+                            bins=int(np.ceil(1 + np.log2(len(stress)))),
+                            grid=False)
+            if kde and hist:
+                stress.hist(ax=axes[i, 1], orientation="horizontal", color="k",
+                            bins=int(np.ceil(1 + np.log2(len(stress)))),
+                            grid=False, density=True)
+            if kde:
+                gkde = gaussian_kde(stress, bw_method='scott')
+                sample_range = np.nanmax(stress) - np.nanmin(stress)
+                ind = np.linspace(np.nanmin(stress) - 0.1 * sample_range,
+                                  np.nanmax(stress) + 0.1 * sample_range, 1000)
+                if hist:
+                    colour = 'C5'
+                else:
+                    colour = 'k'
+                axes[i, 1].plot(gkde.evaluate(ind), ind, color=colour)
+            if hist or kde:
+                if i > 0:
+                    axes[i, 0].sharex(axes[0, 0])
                 # stats table
                 stress_stats = [["Count", f"{stress.count():0.0f}"],
                                 ["Mean", f"{stress.mean():0.2f}"],
