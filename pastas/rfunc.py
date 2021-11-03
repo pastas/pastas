@@ -759,7 +759,8 @@ class FourParam(RfuncBase):
 
 
 class DoubleExponential(RfuncBase):
-    """Gamma response function with 3 parameters A, a, and n.
+    """Double Exponential response function with 4 parameters A, alpha, a1 and
+    a2.
 
     Parameters
     ----------
