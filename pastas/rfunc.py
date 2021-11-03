@@ -882,8 +882,16 @@ class Edelman(RfuncBase):
 
 class Kraijenhoff(RfuncBase):
     """The function of Kraijenhoff van de Leur scaled. The function describes
-    the response of a domain between two drains. The function is the same as
-    Bruggeman equation 133.15.
+    the response of a domain between two drainage channels. The function gives
+    the same outcome as Bruggeman equation 133.15. Bruggeman 133.15 is the
+    response that is actually calculated with this function. [Bruggeman]_
+
+    The response function has three parameters: A, a and b.
+    A is the gain (scaled),
+    a is the reservoir coefficient (j in [Kraijenhoff]_),
+    b is the location in the domain with the origin in the middle. This means
+    that b=0 is in the middle and b=1/2 is at the drainage channel. At b=1/4
+    the response function is most similar to the exponential response function.
 
     Parameters
     ----------
@@ -898,16 +906,19 @@ class Kraijenhoff(RfuncBase):
 
     Notes
     -----
-    The Kraijenhoff van de Leur function is explained in [6]_. The impulse
-    response function may be written as:
+    The Kraijenhoff van de Leur function is explained in [Kraijenhoff]_.
+    The impulse response function may be written as:
 
     .. math:: \\theta(t) =  \\frac{4}{\pi S} \sum_{n=1,3,5...}^\infty \\frac{1}{n} e^{-n^2\\frac{t}{j}} \sin (\\frac{n\pi x}{L})
 
     References
     ----------
-    .. [6] Kraijenhoff van de Leur, D. A. (1958). A study of non-steady
-    groundwater flow with special reference to a reservoir coefficient.
-    De Ingenieur, 70(19), B87-B94. https://edepot.wur.nl/422032
+    .. [Kraijenhoff] Kraijenhoff van de Leur, D. A. (1958). A study of
+    non-steady groundwater flow with special reference to a reservoir
+    coefficient. De Ingenieur, 70(19), B87-B94. https://edepot.wur.nl/422032
+
+    .. [Bruggeman] G.A. Bruggeman (1999). Analytical solutions of
+       geohydrological problems. Elsevier Science. Amsterdam, Eq. 133.15
     """
     _name = "Kraijenhoff"
 
