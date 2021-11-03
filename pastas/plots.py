@@ -1021,7 +1021,7 @@ def series(head=None, stresses=None, hist=True, kde=False, titles=True,
             ind = np.linspace(np.nanmin(head) - 0.1 * sample_range,
                               np.nanmax(head) + 0.1 * sample_range, 1000)
             if hist:
-                colour = 'C5'
+                colour = 'C1'
             else:
                 colour = 'k'
             axes[0, 1].plot(gkde.evaluate(ind), ind, color=colour)
@@ -1059,7 +1059,7 @@ def series(head=None, stresses=None, hist=True, kde=False, titles=True,
                 ind = np.linspace(np.nanmin(stress) - 0.1 * sample_range,
                                   np.nanmax(stress) + 0.1 * sample_range, 1000)
                 if hist:
-                    colour = 'C5'
+                    colour = 'C1'
                 else:
                     colour = 'k'
                 axes[i, 1].plot(gkde.evaluate(ind), ind, color=colour)
