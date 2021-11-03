@@ -8,10 +8,8 @@ from scipy.special import (erfc, erfcinv, exp1, gammainc, gammaincinv, k0, k1,
                            lambertw)
 from scipy.interpolate import interp1d
 
-from .decorators import njit
-
 __all__ = ["Gamma", "Exponential", "Hantush", "Polder", "FourParam",
-           "DoubleExponential", "One", "Edelman", "HantushWellModel", "Kleur"]
+           "DoubleExponential", "One", "Edelman", "HantushWellModel", "Kraijenhoff"]
 
 
 class RfuncBase:
@@ -881,9 +879,10 @@ class Edelman(RfuncBase):
         return s
 
 
-class Kleur(RfuncBase):
-    """The function of Kraijenhoff van de Leur, describing the response of a
-    polder domain with length L between two ditches.
+class Kraijenhoff(RfuncBase):
+    """The function of Kraijenhoff van de Leur scaled. The function describes
+    the response of a domain between two drains. The function is the same as
+    Bruggeman equation 133.15.
 
     Parameters
     ----------
@@ -909,7 +908,7 @@ class Kleur(RfuncBase):
     groundwater flow with special reference to a reservoir coefficient.
     De Ingenieur, 70(19), B87-B94. https://edepot.wur.nl/422032
     """
-    _name = "Kleur"
+    _name = "Kraijenhoff"
 
     def __init__(self, up=True, meanstress=1, cutoff=0.999):
         RfuncBase.__init__(self, up, meanstress, cutoff)
@@ -919,14 +918,13 @@ class Kleur(RfuncBase):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
-            parameters.loc[name + '_S'] = (0.1, 1e-3, 1, True, name)
+            parameters.loc[name + '_A'] = (0.1, 1e-3, 1, True, name)
         elif self.up is False:
-            parameters.loc[name + '_S'] = (-0.1, -1, -1e-3, True, name)
+            parameters.loc[name + '_A'] = (-0.1, -1, -1e-3, True, name)
         else:
-            parameters.loc[name + '_S'] = (0.1, 1e-3, 1, True, name)
-        parameters.loc[name + '_j'] = (1e2, 0.01, 1e5, True, name)
-        parameters.loc[name + '_x/L'] = (0.25, 1e-6, 0.5, True, name)
-        parameters.loc[name + 'n'] = (500, 100, 1000, False, name)
+            parameters.loc[name + '_A'] = (0.1, 1e-3, 1, True, name)
+        parameters.loc[name + '_a'] = (1e2, 0.01, 1e5, True, name)
+        parameters.loc[name + '_b'] = (0, 0, 0.499999, True, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):
@@ -936,27 +934,17 @@ class Kleur(RfuncBase):
 
     @staticmethod
     def gain(p):
-        print('Gain for x = L/2 :')
-        return np.pi**2 * p[1] / (8 * p[0])
-
-    @staticmethod
-    @njit
-    def step_kleur(p, t):
-        s = np.zeros(len(t))
-        for i, t_value in enumerate(t):
-            s_part = np.array([0.0])
-            for n in np.arange(1, p[3], 2):
-                s_part = np.append(
-                    s_part, ((1 / n**3) *
-                             (p[1] - p[1] * np.exp(-n**2 * t_value / p[1]))
-                             * np.sin(n * np.pi * p[2]))
-                )
-            s[i] = 4 / (np.pi * p[0]) * np.sum(s_part)
-        return s
+        return p[0]
 
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
         t = self.get_t(p, dt, cutoff, maxtmax)
-        return self.step_kleur(np.asarray(p), t)
+        h = 0
+        for n in range(200):
+            h += (-1) ** n / (2 * n + 1) ** 3 * \
+                np.cos((2 * n + 1) * np.pi * p[2]) * \
+                np.exp(-(2 * n + 1) ** 2 * t / p[1])
+        s = p[0] * (1 - (8 / (np.pi ** 3 * (1 / 4 - p[2] ** 2)) * h))
+        return s
 
 
 class Spline(RfuncBase):
