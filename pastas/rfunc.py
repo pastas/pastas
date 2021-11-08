@@ -953,7 +953,7 @@ class Kraijenhoff(RfuncBase):
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
         t = self.get_t(p, dt, cutoff, maxtmax)
         h = 0
-        for n in range(200):
+        for n in range(10):
             h += (-1) ** n / (2 * n + 1) ** 3 * \
                 np.cos((2 * n + 1) * np.pi * p[2]) * \
                 np.exp(-(2 * n + 1) ** 2 * t / p[1])
