@@ -293,6 +293,78 @@ def timestep_weighted_resample_fast(series0, freq):
     return series
 
 
+def get_equidistant_series(series, freq):
+    """Get equidistant timeseries using nearest reindexing.
+
+    This method creates an equidistant timeseries with specified freq 
+    using nearest sampling, with additional filling logic that ensures 
+    each original measurement is only included once in the new timeseries. 
+    Values are filled as close as possible to their original timestamp 
+    in the new equidistant timeseries. 
+
+    Note
+    ----
+    This might also be a very elaborate rewrite of a pandas one-liner...
+
+    Parameters
+    ----------
+    series : pandas.Series
+        original (non-equidistant) timeseries
+    freq : str
+        frequency of the new equidistant timeseries 
+        (i.e. "H", "D", "7D", etc.)
+
+    Returns
+    -------
+    s : pandas.Series
+        equidistant timeseries
+    """
+
+    # build new equidistant index
+    idx = date_range(series.index[0].floor(freq),
+                     series.index[-1].ceil(freq),
+                     freq=freq)
+
+    # get linear interpolated index from original series
+    fl = interpolate.interp1d(series.index.asi8,
+                              np.arange(0, series.index.size),
+                              kind='linear', bounds_error=False,
+                              fill_value='extrapolate')
+    ind_linear = fl(idx.asi8)
+
+    # get nearest index from original series
+    f = interpolate.interp1d(series.index.asi8,
+                             np.arange(0, series.index.size),
+                             kind='nearest', bounds_error=False,
+                             fill_value='extrapolate')
+    ind = f(idx.asi8).astype(int)
+
+    # create a new equidistant series
+    s = Series(index=idx, data=np.nan)
+
+    # fill in nearest value for each timestamp in equidistant series
+    s.loc[idx] = series.values[ind]
+
+    # remove duplicates, each observation can only be used once
+    mask = Series(ind).duplicated(keep=False).values
+    # mask all duplicates and set to NaN
+    s.loc[mask] = np.nan
+
+    # look through duplicates which equidistant timestamp is closest
+    # then fill value from original series for closest timestamp
+    for i in np.unique(ind[mask]):
+        # mask duplicates
+        dupe_mask = ind == i
+        # get location of first duplicate
+        first_dupe = np.nonzero(dupe_mask)[0][0]
+        # get index for closest equidistant timestamp
+        i_nearest = np.argmin(np.abs(ind_linear - ind)[dupe_mask])
+        # fill value
+        s.iloc[first_dupe + i_nearest] = series.values[i]
+
+    return s
+
+
 def to_daily_unit(series, method=True):
     """Experimental method, use wth caution!
 
