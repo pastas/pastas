@@ -293,14 +293,14 @@ def timestep_weighted_resample_fast(series0, freq):
     return series
 
 
-def get_equidistant_series(series, freq):
+def get_equidistant_series(series, freq, minimize_data_loss=False):
     """Get equidistant timeseries using nearest reindexing.
 
     This method creates an equidistant timeseries with specified freq 
     using nearest sampling, with additional filling logic that ensures 
     each original measurement is only included once in the new timeseries. 
     Values are filled as close as possible to their original timestamp 
-    in the new equidistant timeseries. 
+    in the new equidistant timeseries.
 
     Note
     ----
@@ -313,6 +313,11 @@ def get_equidistant_series(series, freq):
     freq : str
         frequency of the new equidistant timeseries 
         (i.e. "H", "D", "7D", etc.)
+    minimize_data_loss : bool, optional
+        if set to True, method will attempt use any unsampled
+        points from original timeseries to fill some remaining
+        NaNs in the new equidistant timeseries. Default is False.
+        This only happens in rare cases.
 
     Returns
     -------
@@ -362,6 +367,25 @@ def get_equidistant_series(series, freq):
         # fill value
         s.iloc[first_dupe + i_nearest] = series.values[i]
 
+    # This next part is a pretty ugly bit of code to fill 
+    # nans if there is an unused value in the original 
+    # timeseries
+    if minimize_data_loss:
+        # find remaining nans
+        nanmask = s.isna()
+        if nanmask.sum() > 0:
+            # get unused (not sampled) timestamps from original series
+            unused = set(range(series.index.size)) - set(ind)
+            missing_ts = series.iloc[list(unused)].index
+            # loop through nan timestamps in new series
+            for t in s.loc[nanmask].index:
+                # find closes unused value
+                closest = np.argmin(missing_ts - t)
+                # check if value is not farther away that freq to avoid
+                # weird behavior
+                if np.abs(missing_ts[closest]-t) < Timedelta(freq):
+                    # fill value
+                    s.loc[t] = series.loc[missing_ts[closest]]
     return s
 
 
