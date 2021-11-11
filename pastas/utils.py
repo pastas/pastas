@@ -377,16 +377,17 @@ def get_equidistant_series(series, freq, minimize_data_loss=False):
             # get unused (not sampled) timestamps from original series
             unused = set(range(series.index.size)) - set(ind)
             # dropna: do not consider unused nans
-            missing_ts = series.iloc[list(unused)].dropna().index
-            # loop through nan timestamps in new series
-            for t in s.loc[nanmask].index:
-                # find closes unused value
-                closest = np.argmin(np.abs(missing_ts - t))
-                # check if value is not farther away that freq to avoid
-                # weird behavior
-                if np.abs(missing_ts[closest] - t) <= Timedelta(freq):
-                    # fill value
-                    s.loc[t] = series.loc[missing_ts[closest]]
+            if len(unused) > 0:
+                missing_ts = series.iloc[list(unused)].dropna().index
+                # loop through nan timestamps in new series
+                for t in s.loc[nanmask].index:
+                    # find closes unused value
+                    closest = np.argmin(np.abs(missing_ts - t))
+                    # check if value is not farther away that freq to avoid
+                    # weird behavior
+                    if np.abs(missing_ts[closest] - t) <= Timedelta(freq):
+                        # fill value
+                        s.loc[t] = series.loc[missing_ts[closest]]
     return s
 
 
