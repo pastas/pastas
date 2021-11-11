@@ -8,9 +8,9 @@ from logging import getLogger
 
 import matplotlib.pyplot as plt
 from numpy import arange, cumsum, finfo, median, nan, sqrt, zeros
-from pandas import DataFrame, Series, date_range, infer_freq
+from pandas import DataFrame, infer_freq
 from pastas.stats.core import acf as get_acf
-from pastas.utils import get_sample
+from pastas.utils import get_equidistant_series
 from scipy.stats import chi2, norm, normaltest, probplot, shapiro
 
 logger = getLogger(__name__)
@@ -338,18 +338,7 @@ def stoffer_toloi(series, lags=15, nparam=0, freq="D"):
     >>> else:
     >>>    print("Reject the Null-hypothesis")
     """
-    # build new equidistant index
-    idx = date_range(series.index[0].floor(freq),
-                     series.index[-1].ceil(freq),
-                     freq=freq)
-    # get nearest index from original series
-    sample_idx = get_sample(series.index, idx)
-    # create a new equidistant series
-    s = Series(index=idx, data=nan)
-    # fill new series with sampled data from original series
-    s.loc[idx[:sample_idx.size]] = series.loc[sample_idx].values
-    # trim any trailing nans
-    s = s.loc[s.first_valid_index():s.last_valid_index()]
+    s = get_equidistant_series(series, freq, minimize_data_loss=True)
 
     nobs = s.size
     z = (s - s.mean()).fillna(0.0)
