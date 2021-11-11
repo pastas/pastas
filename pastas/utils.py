@@ -296,10 +296,10 @@ def timestep_weighted_resample_fast(series0, freq):
 def get_equidistant_series(series, freq, minimize_data_loss=False):
     """Get equidistant timeseries using nearest reindexing.
 
-    This method creates an equidistant timeseries with specified freq 
-    using nearest sampling, with additional filling logic that ensures 
-    each original measurement is only included once in the new timeseries. 
-    Values are filled as close as possible to their original timestamp 
+    This method creates an equidistant timeseries with specified freq
+    using nearest sampling, with additional filling logic that ensures
+    each original measurement is only included once in the new timeseries.
+    Values are filled as close as possible to their original timestamp
     in the new equidistant timeseries.
 
     Note
@@ -311,7 +311,7 @@ def get_equidistant_series(series, freq, minimize_data_loss=False):
     series : pandas.Series
         original (non-equidistant) timeseries
     freq : str
-        frequency of the new equidistant timeseries 
+        frequency of the new equidistant timeseries
         (i.e. "H", "D", "7D", etc.)
     minimize_data_loss : bool, optional
         if set to True, method will attempt use any unsampled
