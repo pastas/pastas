@@ -199,7 +199,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return metrics.evp(obs=obs, res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
-    def rsq(self, tmin=None, tmax=None, weighted=False):
+    def rsq(self, tmin=None, tmax=None, weighted=False, **kwargs):
         """R-squared.
 
         Parameters
@@ -216,7 +216,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         """
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
-        return metrics.rsq(obs=obs, res=res, weighted=weighted)
+        return metrics.rsq(obs=obs, res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
     def kge_2012(self, tmin=None, tmax=None, weighted=False, **kwargs):
