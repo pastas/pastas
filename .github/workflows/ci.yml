@@ -43,17 +43,18 @@ jobs:
           # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=80 --statistics
       
-      - name: Run tests
+      - name: Run tests and notebooks
         if: ${{ github.event_name == 'pull_request' }}
         run: |
           py.test ./tests
       
-      - name: Run all tests
+      - name: Run tests only
         if: ${{ github.event_name == 'push' }}
         run: |
           py.test ./tests -m "not notebooks"
       
       - name: Run codacy-coverage-reporter
+        if: github.repository == 'pastas/pastas'
         uses: codacy/codacy-coverage-reporter-action@master
         with:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}

@@ -20,14 +20,13 @@ These methods may be used as follows.
     rmse       0.114364
     mae        0.089956
     nse        0.929136
-
 """
 
 from numpy import nan
 from pandas import DataFrame
 
 from .decorators import model_tmin_tmax
-from .stats import metrics, diagnostics
+from .stats import diagnostics, metrics
 
 
 class Statistics:
@@ -47,7 +46,6 @@ class Statistics:
         To obtain a list of all statistics that are included type:
 
         >>> print(ml.stats.ops)
-
         """
         # Save a reference to the model.
         self.ml = ml
@@ -74,7 +72,6 @@ included in Pastas. To obtain a list of all statistics that are included type:
         See Also
         --------
         pastas.stats.rmse
-
         """
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         return metrics.rmse(res=res, weighted=weighted, **kwargs)
@@ -99,7 +96,6 @@ included in Pastas. To obtain a list of all statistics that are included type:
         See Also
         --------
         pastas.stats.rmse
-
         """
         if not self.ml.settings["noise"]:
             return nan
@@ -119,7 +115,6 @@ included in Pastas. To obtain a list of all statistics that are included type:
         See Also
         --------
         pastas.stats.sse
-
         """
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         return metrics.sse(res=res)
@@ -139,7 +134,6 @@ included in Pastas. To obtain a list of all statistics that are included type:
         See Also
         --------
         pastas.stats.mae
-
         """
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         return metrics.mae(res=res, weighted=weighted, **kwargs)
@@ -159,7 +153,6 @@ included in Pastas. To obtain a list of all statistics that are included type:
         See Also
         --------
         pastas.stats.nse
-
         """
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
@@ -180,7 +173,6 @@ included in Pastas. To obtain a list of all statistics that are included type:
         See Also
         --------
         pastas.stats.pearsonr
-
         """
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
@@ -201,14 +193,13 @@ included in Pastas. To obtain a list of all statistics that are included type:
         See Also
         --------
         pastas.stats.evp
-
         """
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
         return metrics.evp(obs=obs, res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
-    def rsq(self, tmin=None, tmax=None, weighted=False):
+    def rsq(self, tmin=None, tmax=None, weighted=False, **kwargs):
         """R-squared.
 
         Parameters
@@ -222,11 +213,10 @@ included in Pastas. To obtain a list of all statistics that are included type:
         See Also
         --------
         pastas.stats.rsq
-
         """
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
-        return metrics.rsq(obs=obs, res=res, weighted=weighted)
+        return metrics.rsq(obs=obs, res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
     def kge_2012(self, tmin=None, tmax=None, weighted=False, **kwargs):
@@ -243,7 +233,6 @@ included in Pastas. To obtain a list of all statistics that are included type:
         See Also
         --------
         pastas.stats.kge_2012
-
         """
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
@@ -262,7 +251,6 @@ included in Pastas. To obtain a list of all statistics that are included type:
         See Also
         --------
         pastas.stats.bic
-
         """
         nparam = self.ml.parameters["vary"].sum()
         if self.ml.settings["noise"]:
@@ -284,7 +272,6 @@ included in Pastas. To obtain a list of all statistics that are included type:
         See Also
         --------
         pastas.stats.bic
-
         """
         nparam = self.ml.parameters["vary"].sum()
         if self.ml.settings["noise"]:
@@ -319,7 +306,6 @@ included in Pastas. To obtain a list of all statistics that are included type:
         or
 
         >>> ml.stats.summary(stats=["mae", "rmse"])
-
         """
         if stats is None:
             stats_to_compute = self.ops

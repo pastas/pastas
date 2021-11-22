@@ -2,17 +2,15 @@
 residual time series of a calibrated (Pastas) model.
 
 .. codeauthor:: R.A Collenteur
-
 """
 
 from logging import getLogger
 
 import matplotlib.pyplot as plt
-from numpy import sqrt, cumsum, nan, zeros, arange, finfo, median
+from numpy import arange, cumsum, finfo, median, nan, sqrt, zeros
 from pandas import DataFrame, infer_freq
-from scipy.stats import chi2, norm, shapiro, normaltest, probplot
-
 from pastas.stats.core import acf as get_acf
+from scipy.stats import chi2, norm, normaltest, probplot, shapiro
 
 logger = getLogger(__name__)
 __all__ = ["durbin_watson", "ljung_box", "runs_test", "stoffer_toloi",
@@ -76,7 +74,6 @@ def durbin_watson(series=None):
     >>> data = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
     >>>                data=np.random.rand(1000))
     >>> result = ps.stats.durbin_watson(data)
-
     """
     if not infer_freq(series.index):
         logger.warning("Caution: The Durbin-Watson test should only be used "
@@ -160,7 +157,6 @@ def ljung_box(series=None, lags=15, nparam=0, full_output=False):
         This method is called to compute the autocorrelation function.
     pastas.stats.stoffer_toloi
         Similar method but adapted for time series with missing data.
-
     """
     if not infer_freq(series.index):
         logger.warning("Caution: The Ljung-Box test should only be used "
@@ -241,10 +237,9 @@ def runs_test(series, cutoff="median"):
     >>>           "autocorrelation. p =", p.round(2))
     >>> else:
     >>>     print("Reject the Null-hypothesis")
-
     """
     # Make dichotomous sequence
-    r = series.to_numpy()
+    r = series.copy().to_numpy()
     if cutoff == "mean":
         cutoff = r.mean()
     elif cutoff == "median":
@@ -341,7 +336,6 @@ def stoffer_toloi(series, lags=15, nparam=0, freq="D"):
     >>>          "autocorrelation. p =", p.round(2))
     >>> else:
     >>>    print("Reject the Null-hypothesis")
-
     """
     series = series.asfreq(freq=freq)  # Make time series equidistant
 
@@ -433,7 +427,6 @@ def diagnostics(series, alpha=0.05, nparam=0, lags=15, stats=(),
 
     In this example, the Null-hypothesis is not rejected and the data may be
     assumed to be white noise.
-
     """
     cols = ["Checks", "Statistic", "P-value"]
     df = DataFrame(index=stats, columns=cols)
@@ -504,7 +497,6 @@ def plot_acf(series, alpha=0.05, lags=365, acf_options=None, smooth_conf=True,
     >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
     >>>                 data=np.random.rand(1000))
     >>> ps.stats.plot_acf(res)
-
     """
     if ax is None:
         _, ax = plt.subplots(1, 1, figsize=figsize)
@@ -576,7 +568,6 @@ def plot_diagnostics(series, alpha=0.05, bins=50, acf_options=None,
         Method that computes the autocorrelation.
     scipy.stats.probplot
         Method use to plot the probability plot.
-
     """
     # Create the figure and axes
     fig = plt.figure(figsize=figsize, **kwargs)
@@ -643,7 +634,6 @@ def plot_cum_frequency(obs, sim=None, ax=None, figsize=(5, 2)):
     >>> obs = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
     >>>                 data=np.random.normal(0, 1, 1000))
     >>> ps.stats.plot_cum_frequency(obs)
-
     """
     if ax is None:
         _, ax = plt.subplots(1, 1, figsize=figsize)

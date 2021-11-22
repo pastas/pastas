@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 with open("README.rst", "r") as fh:
     long_description = fh.read()
@@ -30,16 +30,15 @@ setup(
         'Intended Audience :: Science/Research',
         'Intended Audience :: Other Audience',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Topic :: Scientific/Engineering :: Hydrology',
     ],
     platforms='Windows, Mac OS-X',
-    install_requires=['numpy>=1.16.5',
-                      'matplotlib>=2.0',
-                      'pandas>=1.0',
-                      'scipy>=1.1'],
+    install_requires=['numpy>=1.17',
+                      'matplotlib>=3.1',
+                      'pandas>=1.1',
+                      'scipy>=1.3'],
     packages=find_packages(exclude=[]),
 )

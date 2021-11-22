@@ -7,7 +7,6 @@ Author: T. van Steijn, R.A. Collenteur, 2017
 
 import numpy as np
 import pandas as pd
-
 import pastas as ps
 
 

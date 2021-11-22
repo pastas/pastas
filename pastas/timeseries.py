@@ -3,9 +3,9 @@ from logging import getLogger
 import pandas as pd
 from pandas.tseries.frequencies import to_offset
 
-from .utils import _get_stress_dt, _get_dt, _get_time_offset, \
-    timestep_weighted_resample
 from .rcparams import rcParams
+from .utils import (_get_dt, _get_stress_dt, _get_time_offset,
+                    timestep_weighted_resample)
 
 logger = getLogger(__name__)
 
@@ -51,7 +51,6 @@ class TimeSeries:
     --------
     pastas.timeseries.TimeSeries.update_series
         For the individual options for the different settings.
-
     """
     _predefined_settings = rcParams["timeseries"]
 
@@ -139,8 +138,7 @@ class TimeSeries:
             self.update_series(force_update=True, **self.settings)
 
     def __repr__(self):
-        """Prints a simple string representation of the time series.
-        """
+        """Prints a simple string representation of the time series."""
         return f"{self.__class__.__name__}" \
                f"(name={self.name}, " \
                f"freq={self.settings['freq']}, " \
@@ -154,7 +152,7 @@ class TimeSeries:
 
     @series_original.setter
     def series_original(self, series):
-        """Sets a new freq_original for the TimeSeries"""
+        """Sets a new freq_original for the TimeSeries."""
         if not isinstance(series, pd.Series):
             raise TypeError(f"Expected a Pandas Series, got {type(series)}")
         else:
@@ -237,7 +235,6 @@ class TimeSeries:
         -----
         The method will validate if any of the settings is changed to
         determine if the series need to be updated.
-
         """
         if self._update_settings(**kwargs) or force_update:
             tmin = self.settings['tmin']
@@ -263,14 +260,13 @@ class TimeSeries:
         Parameters
         ----------
         other: float or pandas.Series
-
         """
         self._series = self.series.multiply(other)
         self._series_original = self.series_original.multiply(other)
         self.update_series(force_update=True)
 
     def _validate_series(self, series):
-        """ Validate user provided time series.
+        """Validate user provided time series.
 
         Parameters
         ----------
@@ -293,7 +289,6 @@ class TimeSeries:
         5. Find the frequency of the time series
         6. Handle duplicate indices, average if they exist
         7. drop nan-values (info message is provided by _fill_nan method)
-
         """
 
         # 1. Make sure the values are floats
@@ -367,7 +362,6 @@ class TimeSeries:
         -------
         update: bool
             True if settings are changed and series need to be updated.
-
         """
         update = False
         for key, value in kwargs.items():
@@ -382,9 +376,7 @@ class TimeSeries:
         return update
 
     def _change_frequency(self, series):
-        """Method to change the frequency of the time series.
-
-        """
+        """Method to change the frequency of the time series."""
         freq = self.settings["freq"]
 
         # 1. If no freq string is present or is provided (e.g. Oseries)
@@ -409,15 +401,13 @@ class TimeSeries:
 
         # Drop nan-values at the beginning and end of the time series
         series = series.loc[
-                 series.first_valid_index():series.last_valid_index()]
+            series.first_valid_index():series.last_valid_index()]
 
         return series
 
     def _sample_up(self, series):
         """Resample the time series when the frequency increases (e.g. from
-        weekly to daily values).
-
-        """
+        weekly to daily values)."""
         method = self.settings["sample_up"]
         freq = self.settings["freq"]
 
@@ -458,7 +448,6 @@ class TimeSeries:
         make sure the labels are still at the end of each period, and
         data at the right side of the bucket is included (see
         http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.resample.html)
-
         """
         method = self.settings["sample_down"]
         freq = self.settings["freq"]
@@ -513,9 +502,7 @@ class TimeSeries:
 
     def _fill_nan(self, series):
         """Fill up the nan-values when present and a constant frequency is
-        required.
-
-        """
+        required."""
 
         method = self.settings["fill_nan"]
         freq = self.freq_original
@@ -540,7 +527,7 @@ class TimeSeries:
         else:
             method = "drop"
             n = series.isnull().values.sum()
-            series.dropna(inplace=True)
+            series = series.dropna()
         if n > 0:
             logger.info("Time Series %s: %s nan-value(s) was/were found and "
                         "filled with: %s.", self.name, n, method)
@@ -548,9 +535,7 @@ class TimeSeries:
         return series
 
     def _fill_before(self, series):
-        """Method to add a period in front of the available time series.
-
-        """
+        """Method to add a period in front of the available time series."""
         freq = self.settings["freq"]
         method = self.settings["fill_before"]
         tmin = self.settings["tmin"]
@@ -581,9 +566,7 @@ class TimeSeries:
         return series
 
     def _fill_after(self, series):
-        """Method to add a period in front of the available time series.
-
-        """
+        """Method to add a period in front of the available time series."""
         freq = self.settings["freq"]
         method = self.settings["fill_after"]
         tmax = self.settings["tmax"]
@@ -614,9 +597,7 @@ class TimeSeries:
         return series
 
     def _normalize(self, series):
-        """Method to normalize the time series.
-
-        """
+        """Method to normalize the time series."""
         method = self.settings["norm"]
 
         if method is None:
@@ -655,7 +636,6 @@ class TimeSeries:
         data: dict
             dictionary with the necessary information to recreate the
             TimeSeries object completely.
-
         """
         data = {}
 
@@ -683,7 +663,6 @@ class TimeSeries:
         Returns
         -------
         matplotlib.Axes
-
         """
 
         if original:

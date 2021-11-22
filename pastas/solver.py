@@ -1,6 +1,4 @@
-"""
-
-This module contains the different solvers that are available for Pastas.
+"""This module contains the different solvers that are available for Pastas.
 
 All solvers inherit from the BaseSolver class, which contains general method
 for selecting the correct time series to misfit and options to weight the
@@ -10,7 +8,6 @@ residuals or noise series.
 To solve a model the following syntax can be used:
 
 >>> ml.solve(solver=ps.LeastSquares)
-
 """
 
 from logging import getLogger
@@ -78,12 +75,11 @@ class BaseSolver:
         -------
         rv:
             residuals series (if noise=False) or noise series (if noise=True)
-
         """
         # Get the residuals or the noise
         if noise:
             rv = self.ml.noise(p) * \
-                 self.ml.noise_weights(p)
+                self.ml.noise_weights(p)
         else:
             rv = self.ml.residuals(p)
 
@@ -98,12 +94,12 @@ class BaseSolver:
 
         if returnseparate:
             return self.ml.residuals(p).values, \
-                   self.ml.noise(p).values, \
-                   self.ml.noise_weights(p).values
+                self.ml.noise(p).values, \
+                self.ml.noise_weights(p).values
 
         return rv.values
 
-    def prediction_interval(self, n=1000, alpha=0.05, **kwargs):
+    def prediction_interval(self, n=1000, alpha=0.05, max_iter=10, **kwargs):
         """Method to calculate the prediction interval for the simulation.
 
         Returns
@@ -117,24 +113,27 @@ class BaseSolver:
         -----
         Add residuals assuming a Normal distribution with standard deviation
         equal to the standard deviation of the residuals.
-
         """
 
         sigr = self.ml.residuals().std()
 
         data = self._get_realizations(func=self.ml.simulate, n=n, name=None,
-                                      **kwargs)
+                                      max_iter=max_iter, **kwargs)
         data = data + sigr * np.random.randn(data.shape[0], data.shape[1])
 
         q = [alpha / 2, 1 - alpha / 2]
         rv = data.quantile(q, axis=1).transpose()
         return rv
 
-    def ci_simulation(self, n=1000, alpha=0.05, **kwargs):
+    def ci_simulation(self, n=1000, alpha=0.05, max_iter=10, **kwargs):
         """Method to calculate the confidence interval for the simulation.
 
         Returns
         -------
+        data : Pandas.DataFrame
+            DataFrame of length number of observations and two columns labeled
+            0.025 and 0.975 (numerical values) containing the 2.5% and 97.5%
+            interval (for alpha=0.05)
 
         Notes
         -----
@@ -142,51 +141,83 @@ class BaseSolver:
         to parameter uncertainty. In other words, there is a 95% probability
         that the true best-fit line for the observed data lies within the
         95% confidence interval.
-
         """
         return self._get_confidence_interval(func=self.ml.simulate, n=n,
-                                             alpha=alpha, **kwargs)
+                                             alpha=alpha, max_iter=max_iter,
+                                             **kwargs)
 
-    def ci_block_response(self, name, n=1000, alpha=0.05, **kwargs):
+    def ci_block_response(self, name, n=1000, alpha=0.05, max_iter=10,
+                          **kwargs):
+        """Method to calculate the confidence interval for the block response.
+
+        Returns
+        -------
+        data : Pandas.DataFrame
+            DataFrame of length number of observations and two columns labeled
+            0.025 and 0.975 (numerical values) containing the 2.5% and 97.5%
+            interval (for alpha=0.05)
+
+        Notes
+        -----
+        The confidence interval shows the uncertainty in the simulation due
+        to parameter uncertainty. In other words, there is a 95% probability
+        that the true best-fit line for the observed data lies within the
+        95% confidence interval.
+        """
         dt = self.ml.get_block_response(name=name).index.values
         return self._get_confidence_interval(func=self.ml.get_block_response,
                                              n=n, alpha=alpha, name=name,
-                                             dt=dt, **kwargs)
+                                             max_iter=max_iter, dt=dt,
+                                             **kwargs)
 
-    def ci_step_response(self, name, n=1000, alpha=0.05, **kwargs):
+    def ci_step_response(self, name, n=1000, alpha=0.05, max_iter=10,
+                         **kwargs):
+        """Method to calculate the confidence interval for the step response.
+
+        Returns
+        -------
+        data : Pandas.DataFrame
+            DataFrame of length number of observations and two columns labeled
+            0.025 and 0.975 (numerical values) containing the 2.5% and 97.5%
+            interval (for alpha=0.05)
+
+        Notes
+        -----
+        The confidence interval shows the uncertainty in the simulation due
+        to parameter uncertainty. In other words, there is a 95% probability
+        that the true best-fit line for the observed data lies within the
+        95% confidence interval.
+        """
         dt = self.ml.get_block_response(name=name).index.values
         return self._get_confidence_interval(func=self.ml.get_step_response,
                                              n=n, alpha=alpha, name=name,
-                                             dt=dt, **kwargs)
-
-    def ci_contribution(self, name, n=1000, alpha=0.05, **kwargs):
-        return self._get_confidence_interval(func=self.ml.get_contribution,
-                                             n=n, alpha=alpha, name=name,
+                                             max_iter=max_iter, dt=dt,
                                              **kwargs)
 
-    def _get_realizations(self, func, n=None, name=None, **kwargs):
-        """Internal method to obtain n number of parameter realizations."""
-        if name:
-            kwargs["name"] = name
+    def ci_contribution(self, name, n=1000, alpha=0.05, max_iter=10, **kwargs):
+        """Method to calculate the confidence interval for the contribution.
 
-        parameter_sample = self._get_parameter_sample(n=n, name=name)
-        data = {}
+        Returns
+        -------
+        data : Pandas.DataFrame
+            DataFrame of length number of observations and two columns labeled
+            0.025 and 0.975 (numerical values) containing the 2.5% and 97.5%
+            interval (for alpha=0.05)
 
-        for i, p in enumerate(parameter_sample):
-            data[i] = func(p=p, **kwargs)
+        Notes
+        -----
+        The confidence interval shows the uncertainty in the simulation due
+        to parameter uncertainty. In other words, there is a 95% probability
+        that the true best-fit line for the observed data lies within the
+        95% confidence interval.
+        """
+        return self._get_confidence_interval(func=self.ml.get_contribution,
+                                             n=n, alpha=alpha, name=name,
+                                             max_iter=max_iter,
+                                             **kwargs)
 
-        return DataFrame.from_dict(data, orient="columns")
-
-    def _get_confidence_interval(self, func, n=None, name=None, alpha=0.05,
-                                 **kwargs):
-        """Internal method to obtain a confidence interval."""
-        q = [alpha / 2, 1 - alpha / 2]
-        data = self._get_realizations(func=func, n=n, name=name, **kwargs)
-
-        return data.quantile(q=q, axis=1).transpose()
-
-    def _get_parameter_sample(self, name=None, n=None):
-        """Internal method to obtain a parameter sets.
+    def get_parameter_sample(self, name=None, n=None, max_iter=10):
+        """Method to obtain a parameter sets for monte carlo analyses.
 
         Parameters
         ----------
@@ -196,12 +227,15 @@ class BaseSolver:
         name: str, optional
             Name of the stressmodel or model component to obtain the
             parameters for.
+        max_iter : int, optional
+            maximum number of iterations for truncated multivariate
+            sampling, default is 10. Increase this value if number of
+            accepted parameter samples is lower than n.
 
         Returns
         -------
         numpy.ndarray
             Numpy array with N parameter samples.
-
         """
         p = self.ml.get_parameters(name=name)
         pcov = self._get_covariance_matrix(name=name)
@@ -231,12 +265,38 @@ class BaseSolver:
             samples = np.concatenate((samples, accept), axis=0)
 
             # Make sure there's no endless while loop
-            if it > 10:
+            if it > max_iter:
                 break
             else:
                 it += 1
 
+        if samples.shape[0] < n:
+            logger.warning("Parameter sample size is smaller than n: "
+                           f"{samples.shape[0]}/{n}. Increase 'max_iter'.")
         return samples[:n, :]
+
+    def _get_realizations(self, func, n=None, name=None, max_iter=10,
+                          **kwargs):
+        """Internal method to obtain n number of parameter realizations."""
+        if name:
+            kwargs["name"] = name
+
+        parameter_sample = self.get_parameter_sample(n=n, name=name,
+                                                     max_iter=max_iter)
+        data = {}
+
+        for i, p in enumerate(parameter_sample):
+            data[i] = func(p=p, **kwargs)
+
+        return DataFrame.from_dict(data, orient="columns")
+
+    def _get_confidence_interval(self, func, n=None, name=None, alpha=0.05,
+                                 max_iter=10, **kwargs):
+        """Internal method to obtain a confidence interval."""
+        q = [alpha / 2, 1 - alpha / 2]
+        data = self._get_realizations(func=func, n=n, name=name,
+                                      max_iter=max_iter, **kwargs)
+        return data.quantile(q=q, axis=1).transpose()
 
     def _get_covariance_matrix(self, name=None):
         """Internal method to obtain the covariance matrix from the model.
@@ -251,11 +311,10 @@ class BaseSolver:
         -------
         pcov: pandas.DataFrame
             Pandas DataFrame with the covariances for the parameters.
-
         """
         if name:
-            index = self.ml.parameters.loc[self.ml.parameters.loc[:,
-                                           "name"] == name].index
+            index = self.ml.parameters.loc[
+                self.ml.parameters.loc[:, "name"] == name].index
         else:
             index = self.ml.parameters.index
 
@@ -263,7 +322,7 @@ class BaseSolver:
 
         return pcov
 
-    @staticmethod
+    @ staticmethod
     def _get_correlations(pcov):
         """Internal method to obtain the parameter correlations from the
         covariance matrix.
@@ -277,7 +336,6 @@ class BaseSolver:
         -------
         pcor: pandas.DataFrame
             n x n Pandas DataFrame with the correlations.
-
         """
         index = pcov.index
         pcov = pcov.to_numpy()
@@ -319,7 +377,6 @@ class LeastSquares(BaseSolver):
         References
         ----------
         .. [scipy_ref] https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
-
         """
         BaseSolver.__init__(self, ml=ml, pcov=pcov, nfev=nfev, **kwargs)
 
@@ -377,7 +434,6 @@ class LeastSquares(BaseSolver):
         -----
         This method is copied from Scipy, please refer to:
         https://github.com/scipy/scipy/blob/v1.0.0/scipy/optimize/optimize.py
-
         """
         cost = 2 * cost  # res.cost is half sum of squares!
 
@@ -554,16 +610,3 @@ class LmfitSolveNew(BaseSolver):
         extraterm = np.sum(np.log(var_res / weights ** 2))
         rv = np.sum(weighted_noise ** 2) / var_res + extraterm
         return rv
-
-
-class MonteCarlo(BaseSolver):
-    _name = "MonteCarlo"
-
-    def __init__(self, ml, pcov=None, nfev=None, **kwargs):
-        BaseSolver.__init__(self, ml=ml, pcov=pcov, nfev=nfev, **kwargs)
-
-    def solve(self):
-        optimal = None
-        stderr = None
-        success = True
-        return success, optimal, stderr

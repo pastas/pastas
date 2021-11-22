@@ -1,6 +1,4 @@
-import numpy as np
 from pandas import read_csv, Series
-
 from numpy import sin, arange
 import pastas as ps
 

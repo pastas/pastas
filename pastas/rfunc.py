@@ -1,16 +1,17 @@
 # coding=utf-8
-"""This module contains all the response functions available in Pastas.
-
-"""
+"""This module contains all the response functions available in Pastas."""
 
 import numpy as np
 from pandas import DataFrame
 from scipy.integrate import quad
-from scipy.special import (gammainc, gammaincinv, k0, k1,
-                           exp1, erfc, lambertw, erfcinv)
+from scipy.special import (erfc, erfcinv, exp1, gammainc, gammaincinv, k0, k1,
+                           lambertw)
+from scipy.interpolate import interp1d
+
+from .decorators import njit
 
 __all__ = ["Gamma", "Exponential", "Hantush", "Polder", "FourParam",
-           "DoubleExponential", "One", "Edelman", "HantushWellModel"]
+           "DoubleExponential", "One", "Edelman", "HantushWellModel", "Kleur"]
 
 
 class RfuncBase:
@@ -38,12 +39,11 @@ class RfuncBase:
         -------
         parameters : pandas DataFrame
             The initial parameters and parameter bounds used by the solver
-
         """
         pass
 
     def get_tmax(self, p, cutoff=None):
-        """Method to get the response time for a certain cutoff
+        """Method to get the response time for a certain cutoff.
 
         Parameters
         ----------
@@ -58,7 +58,6 @@ class RfuncBase:
         tmax: float
             Number of days when 99.9% of the response has effectuated, when the
             cutoff is chosen at 0.999.
-
         """
         pass
 
@@ -109,7 +108,7 @@ class RfuncBase:
 
     def get_t(self, p, dt, cutoff, maxtmax=None):
         """Internal method to determine the times at which to evaluate the
-        step-response, from t=0
+        step-response, from t=0.
 
         Parameters
         ----------
@@ -129,7 +128,6 @@ class RfuncBase:
         -------
         t: numpy.array
             Array with the times
-
         """
         if isinstance(dt, np.ndarray):
             return dt
@@ -160,7 +158,6 @@ class Gamma(RfuncBase):
     The impulse response function may be written as:
 
     .. math:: \\theta(t) = At^{n-1} e^{-t/a}
-
     """
     _name = "Gamma"
 
@@ -220,7 +217,6 @@ class Exponential(RfuncBase):
     The impulse response function may be written as:
 
     .. math:: \\theta(t) = A e^{-t/a}
-
     """
     _name = "Exponential"
 
@@ -260,8 +256,8 @@ class Exponential(RfuncBase):
 
 
 class HantushWellModel(RfuncBase):
-    """
-    A special implementation of the Hantush well function for multiple wells.
+    """A special implementation of the Hantush well function for multiple
+    wells.
 
     Parameters
     ----------
@@ -284,7 +280,7 @@ class HantushWellModel(RfuncBase):
     .. math:: p[0] = A = \\frac{1}{4 \\pi T}
     .. math:: p[1] = a = cS
     .. math:: p[2] = b = 1^2 / (4 \\lambda^2)
-    .. math:: p[3] = r \, \\text{(not optimized)}
+    .. math:: p[3] = r \\text{(not optimized)}
     where :math:`\\lambda = \\sqrt{Tc}`
 
     The parameter r (distance from the well to the observation point)
@@ -297,7 +293,6 @@ class HantushWellModel(RfuncBase):
     - a: is the same  :math:`a = cS`
     - b: is the same, but :math:`r` is set to 1 if passed separately,
       :math:`b = 1^2 / (4 \\lambda^2)`
-
     """
     _name = "HantushWellModel"
 
@@ -324,7 +319,7 @@ class HantushWellModel(RfuncBase):
         # set initial and bounds for b taking into account distances
         binit = 1.0 / np.mean(self.distances) ** 2
         bmin = 1e-4 / np.max(self.distances) ** 2
-        bmax = 25. / np.max(self.distances) ** 2
+        bmax = 25. / np.min(self.distances) ** 2
         parameters.loc[name + '_b'] = (binit, bmin, bmax, True, name)
         return parameters
 
@@ -336,7 +331,10 @@ class HantushWellModel(RfuncBase):
         cS = p[1]
         rho = np.sqrt(4 * r ** 2 * p[2])
         k0rho = k0(rho)
-        return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
+        if k0rho == 0.0:
+            return 100 * 365.  # 100 years?
+        else:
+            return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
 
     @staticmethod
     def gain(p):
@@ -366,7 +364,7 @@ class HantushWellModel(RfuncBase):
         """Calculate variance of the gain from parameters A and b.
 
         Variance of the gain is calculated based on propagation of
-        uncertainty using optimal values and the variances of A and b
+        uncertainty using optimal values, the variances of A and b
         and the covariance between A and b.
 
         Parameters
@@ -395,18 +393,17 @@ class HantushWellModel(RfuncBase):
             uncertainty of parameters A and b.
         """
         var_gain = (
-                (k0(2 * np.sqrt(r ** 2 * b))) ** 2 * var_A +
-                (-A * r * k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(
-                    b)) ** 2 * var_b -
-                2 * A * r * k0(2 * np.sqrt(r ** 2 * b)) *
-                k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(b) * cov_Ab
+            (k0(2 * np.sqrt(r ** 2 * b))) ** 2 * var_A +
+            (-A * r * k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(
+                b)) ** 2 * var_b -
+            2 * A * r * k0(2 * np.sqrt(r ** 2 * b)) *
+            k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(b) * cov_Ab
         )
         return var_gain
 
 
 class Hantush(RfuncBase):
-    """
-    The Hantush well function, using the standard A, a, b parameters
+    """The Hantush well function, using the standard A, a, b parameters.
 
     Parameters
     ----------
@@ -443,7 +440,6 @@ class Hantush(RfuncBase):
     .. [asmuth_2008] Von Asmuth, J. R., Maas, K., Bakker, M., & Petersen,
        J. (2008). Modeling time series of ground water head fluctuations
        subjected to multiple stresses. Ground Water, 46(1), 30-40.
-
     """
     _name = "Hantush"
 
@@ -498,7 +494,7 @@ class Hantush(RfuncBase):
 
 
 class Polder(RfuncBase):
-    """The Polder function, using the standard A, a, b parameters
+    """The Polder function, using the standard A, a, b parameters.
 
     Notes
     -----
@@ -517,7 +513,6 @@ class Polder(RfuncBase):
     ----------
     .. [polder] G.A. Bruggeman (1999). Analytical solutions of
        geohydrological problems. Elsevier Science. Amsterdam, Eq. 123.32
-
     """
     _name = "Polder"
 
@@ -580,7 +575,6 @@ class One(RfuncBase):
         the final step times the mean stress equals 1
     cutoff: float
         proportion after which the step function is cut off. default is 0.999.
-
     """
     _name = "One"
 
@@ -638,7 +632,6 @@ class FourParam(RfuncBase):
     If Fourparam.quad is set to True, this response function uses np.quad to
     integrate the Four Parameter response function, which requires more
     calculation time.
-
     """
     _name = "FourParam"
 
@@ -786,7 +779,6 @@ class DoubleExponential(RfuncBase):
     The impulse response function may be written as:
 
     .. math:: \\theta(t) = A (1 - \\alpha) e^{-t/a_1} + A \\alpha e^{-t/a_2}
-
     """
     _name = "DoubleExponential"
 
@@ -848,7 +840,7 @@ class Edelman(RfuncBase):
 
     Notes
     -----
-    The Edelman function is emplained in [5]_. The impulse response function
+    The Edelman function is explained in [5]_. The impulse response function
     may be written as:
 
     .. math:: \\text{unknown}
@@ -860,7 +852,6 @@ class Edelman(RfuncBase):
     References
     ----------
     .. [5] http://grondwaterformules.nl/index.php/formules/waterloop/peilverandering
-
     """
     _name = "Edelman"
 
@@ -887,4 +878,157 @@ class Edelman(RfuncBase):
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
         t = self.get_t(p, dt, cutoff, maxtmax)
         s = erfc(1 / (p[0] * np.sqrt(t)))
+        return s
+
+
+class Kleur(RfuncBase):
+    """The function of Kraijenhoff van de Leur, describing the response of a
+    polder domain with length L between two ditches.
+
+    Parameters
+    ----------
+    up: bool or None, optional
+        indicates whether a positive stress will cause the head to go up
+        (True, default) or down (False), if None the head can go both ways.
+    meanstress: float
+        mean value of the stress, used to set the initial value such that
+        the final step times the mean stress equals 1
+    cutoff: float
+        proportion after which the step function is cut off. default is 0.999.
+
+    Notes
+    -----
+    The Kraijenhoff van de Leur function is explained in [6]_. The impulse
+    response function may be written as:
+
+    .. math:: \\theta(t) =  \\frac{4}{\pi S} \sum_{n=1,3,5...}^\infty \\frac{1}{n} e^{-n^2\\frac{t}{j}} \sin (\\frac{n\pi x}{L})
+
+    References
+    ----------
+    .. [6] Kraijenhoff van de Leur, D. A. (1958). A study of non-steady
+    groundwater flow with special reference to a reservoir coefficient.
+    De Ingenieur, 70(19), B87-B94. https://edepot.wur.nl/422032
+    """
+    _name = "Kleur"
+
+    def __init__(self, up=True, meanstress=1, cutoff=0.999):
+        RfuncBase.__init__(self, up, meanstress, cutoff)
+        self.nparam = 3
+
+    def get_init_parameters(self, name):
+        parameters = DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        if self.up:
+            parameters.loc[name + '_S'] = (0.1, 1e-3, 1, True, name)
+        elif self.up is False:
+            parameters.loc[name + '_S'] = (-0.1, -1, -1e-3, True, name)
+        else:
+            parameters.loc[name + '_S'] = (0.1, 1e-3, 1, True, name)
+        parameters.loc[name + '_j'] = (1e2, 0.01, 1e5, True, name)
+        parameters.loc[name + '_x/L'] = (0.25, 1e-6, 0.5, True, name)
+        parameters.loc[name + 'n'] = (500, 100, 1000, False, name)
+        return parameters
+
+    def get_tmax(self, p, cutoff=None):
+        if cutoff is None:
+            cutoff = self.cutoff
+        return - p[1] * np.log(1 - cutoff)
+
+    @staticmethod
+    def gain(p):
+        print('Gain for x = L/2 :')
+        return np.pi**2 * p[1] / (8 * p[0])
+
+    @staticmethod
+    @njit
+    def step_kleur(p, t):
+        s = np.zeros(len(t))
+        for i, t_value in enumerate(t):
+            s_part = np.array([0.0])
+            for n in np.arange(1, p[3], 2):
+                s_part = np.append(
+                    s_part, ((1 / n**3) *
+                             (p[1] - p[1] * np.exp(-n**2 * t_value / p[1]))
+                             * np.sin(n * np.pi * p[2]))
+                )
+            s[i] = 4 / (np.pi * p[0]) * np.sum(s_part)
+        return s
+
+    def step(self, p, dt=1, cutoff=None, maxtmax=None):
+        t = self.get_t(p, dt, cutoff, maxtmax)
+        return self.step_kleur(np.asarray(p), t)
+
+
+class Spline(RfuncBase):
+    """Spline response function with parameters: A and a factor for every t.
+
+    Parameters
+    ----------
+    up: bool or None, optional
+        indicates whether a positive stress will cause the head to go up
+        (True, default) or down (False), if None the head can go both ways.
+    meanstress: float
+        mean value of the stress, used to set the initial value such that
+        the final step times the mean stress equals 1
+    cutoff: float
+        proportion after which the step function is cut off. default is 0.999.
+        this parameter is ignored by Points
+    t: list
+        times at which the response function is defined
+    kind: string
+        See scipy.interpolate.interp1d. Most usefull for a smooth response
+        function are ‘quadratic’, ‘cubic’.
+
+    Notes
+    -----
+    The spline response function generates a response function from factors at
+    t = 1, 2, 4, 8, 16, 32, 64, 128, 256, 512 and 1024 days. This response
+    function is more data-driven than existing response functions and has no
+    physical background. Therefore it can primarily be used to compare to other
+    more physical response functions, that probably describe the groundwater
+    system better.
+    """
+    _name = "Spline"
+
+    def __init__(self, up=True, meanstress=1, cutoff=0.999, kind='quadratic',
+                 t=[1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]):
+        RfuncBase.__init__(self, up, meanstress, cutoff)
+        self.kind = kind
+        self.t = t
+        self.nparam = len(t) + 1
+
+    def get_init_parameters(self, name):
+        parameters = DataFrame(
+            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        if self.up:
+            parameters.loc[name + '_A'] = (1 / self.meanstress, 1e-5,
+                                           100 / self.meanstress, True, name)
+        elif self.up is False:
+            parameters.loc[name + '_A'] = (-1 / self.meanstress,
+                                           -100 / self.meanstress,
+                                           -1e-5, True, name)
+        else:
+            parameters.loc[name + '_A'] = (1 / self.meanstress,
+                                           np.nan, np.nan, True, name)
+        initial = np.linspace(0.0, 1.0, len(self.t)+1)[1:]
+        for i in range(len(self.t)):
+            index = name + '_' + str(self.t[i])
+            vary = True
+            # fix the value of the factor at the last timestep to 1.0
+            if i == len(self.t) - 1:
+                vary = False
+            parameters.loc[index] = (initial[i], 0.0, 1.0, vary, name)
+
+        return parameters
+
+    def get_tmax(self, p, cutoff=None):
+        return self.t[-1]
+
+    def gain(self, p):
+        return p[0]
+
+    def step(self, p, dt=1, cutoff=None, maxtmax=None):
+        f = interp1d(self.t, p[1:len(self.t)+1], kind=self.kind)
+        t = self.get_t(p, dt, cutoff, maxtmax)
+        s = p[0] * f(t)
         return s
