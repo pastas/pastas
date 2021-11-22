@@ -140,6 +140,8 @@ class FlexModel(RechargeBase):
 
     Parameters
     ----------
+    interception: bool, optional
+        Use an interception reservoir in the model or not.
     snow: bool, optional
         Account for snowfall and snowmelt in the model. If True,
         a temperature series should be provided to the RechargeModel.
@@ -150,9 +152,9 @@ class FlexModel(RechargeBase):
 
     Notes
     -----
-    Note that the preferred unit of the precipitation and evaporation is mm/d.
-
-    The water balance for the unsaturated zone reservoir is written as:
+    For a detailed description of the recharge model and parameters we refer
+    to [collenteur_2021]_.The water balance for the unsaturated zone
+    reservoir is written as:
 
     .. math::
 
@@ -164,21 +166,16 @@ class FlexModel(RechargeBase):
 
         R = K_s \\left( \\frac{S}{S_u}\\right) ^\\gamma
 
-    For a detailed description of the recharge model and parameters we refer
-    to Collenteur et al. (2021).
-
-    Note that the preferred unit of the precipitation and evaporation is
-    mm/d and the temperature is degree celsius.
-
-    If snow=True, a snow reservoir is added on top. The water balance for
-    the snow reservoir is written as:
+    If snow=True, a snow reservoir is added on top. For a detailed
+    description of the degree-day snow model and parameters we refer to
+    [kavetski_2007]. The water balance for the snow reservoir is written as:
 
     .. math::
 
         \\frac{dSs}{dt} = Ps - M
 
-    For a detailed description of the degree-day snow model and parameters we
-    refer to Kavetski and Kuczera (2007).
+    Note that the preferred unit of the precipitation and evaporation is
+    mm/d and the temperature is degree celsius.
 
     References
     ----------
@@ -214,35 +211,37 @@ class FlexModel(RechargeBase):
         parameters.loc[name + "_srmax"] = (250.0, 1e-5, 1e3, True, name)
         parameters.loc[name + "_lp"] = (0.25, 1e-5, 1, False, name)
         parameters.loc[name + "_ks"] = (100.0, 1e-5, 1e4, True, name)
-        parameters.loc[name + "_gamma"] = (4.0, 1e-5, 20.0, True, name)
+        parameters.loc[name + "_gamma"] = (2.0, 1e-5, 20.0, True, name)
         parameters.loc[name + "_kv"] = (1.0, 0.25, 2.0, False, name)
         if self.interception:
             parameters.loc[name + "_simax"] = (2.0, 1e-5, 10.0, False, name)
         if self.snow:
             parameters.loc[name + "_tp"] = (0.0, -4.0, 4.0, True, name)
             parameters.loc[name + "_tk"] = (0.0, -4.0, 4.0, True, name)
-            parameters.loc[name + "_k"] = (2.0, 0.0, 10.0, True, name)
+            parameters.loc[name + "_k"] = (2.0, 1.0, 10.0, True, name)
 
         return parameters
 
     def simulate(self, prec, evap, temp, p, dt=1.0, return_full=False,
                  **kwargs):
-        """Simulate the recharge flux.
+        """Simulate the soil water balance model.
 
         Parameters
         ----------
         prec: numpy.array
-            Precipitation flux in mm/d. Has to have the same length as evap.
+            Precipitation flux in mm/d. Must have the same length as evap.
         evap: numpy.array
             Potential evaporation flux in mm/d.
         temp: numpy.array
             Temperature in degrees Celcius.
         p: array_like
             array_like object with the values as floats representing the
-            model parameters. Has to be length self.nparam.
+            model parameters. Must be length self.nparam.
         dt: float, optional
             time step for the calculation of the recharge. Only dt=1 is
             possible now.
+        return_full: bool
+            return all fluxes and states as Numpy arrays.
 
         Returns
         -------
@@ -250,57 +249,94 @@ class FlexModel(RechargeBase):
             Recharge flux calculated by the model.
 
         """
-        evap = evap * p[4]
+        ep = evap * p[4]
 
         if self.snow:
-            ss, ps, pr, m = self.get_snow_balance(prec=prec, temp=temp,
-                                                  tp=p[-3], tk=p[-2], k=p[-1])
+            ss, ps, m = self.get_snow_balance(prec=prec, temp=temp, tp=p[-3],
+                                              tk=p[-2], k=p[-1])
+            pr = prec - ps  # Remove snowfall from precipitation
         else:
-            pr = prec
+            pr = prec  # All precipitation is rainfall and melt is zero
             m = 0.0
 
         if self.interception:
-            si, ei, pe = self.get_interception_balance(pr=pr, evap=evap,
+            si, ei, pi = self.get_interception_balance(pr=pr, ep=ep,
                                                        simax=p[5])
+            ep = ep + ei  # Update potential evaporation after interception
+            pe = pr - pi  # Update rainfall after interception
         else:
             pe = pr
-            ei = 0.0
 
-        r, ea, q, sr = self.get_recharge(prec=pe + m, evap=evap - ei,
-                                         srmax=p[0], lp=p[1], ks=p[2],
-                                         gamma=p[3], dt=dt)
+        sr, r, ea, q, _ = self.get_root_zone_balance(pe=pe - m, ep=ep,
+                                                     srmax=p[0], lp=p[1],
+                                                     ks=p[2], gamma=p[3],
+                                                     dt=dt)
 
         # report big water balance errors (error > 0.1%.)
-        balance = (sr[0] - sr[-1] + (pe + m - r - ea - q).sum()) / pe.sum()
-        if abs(balance) > 0.1:
+        error = (sr[0] - sr[-1] + (pe - m + r + ea + q).sum()) / pe.sum()
+        if abs(error) > 0.1:
             logger.info("Water balance error: %s %% of the total pe flux. "
-                        "Parameters: %s", balance.round(2), p.round(2))
+                        "Parameters: %s", error.round(2), p.round(2))
 
         if self.gw_uptake:
             # Compute leftover potential evaporation
-            eg = (evap - ea - ei)
-            r = r - eg
+            eg = (ea + ep)
+            r = r + eg
 
         if return_full:
-            data = (r, ea, q, sr)
+            data = (sr, r, ea, q, pe)
             if self.interception:
-                data += (si, ei, pe)
+                data += (si, ei, pi)
             if self.snow:
-                data += (ss, ps, pr, m)
+                data += (ss, ps, m)
             return data
         else:
-            return r
+            return -r
 
     @staticmethod
     @njit
-    def get_recharge(prec, evap, srmax=250.0, lp=0.25, ks=100.0, gamma=4.0,
-                     dt=1.0):
-        """
-        Internal method used for the recharge calculation. If Numba is
-        available, this method is significantly faster.
+    def get_root_zone_balance(pe, ep, srmax=250.0, lp=0.25, ks=100.0,
+                              gamma=4.0, dt=1.0):
+        """Method to compute the water balance of the root zone reservoir.
+
+        Parameters
+        ----------
+        pe: numpy.array
+            Effective precipitation flux in mm/d.
+        ep: numpy.array
+            Potential evaporation flux in mm/d.
+        srmax: float, optional
+            Maximum storage capacity of the root zone.
+        lp: float, optional
+            Parameter determining when actual evaporation equals potential.
+        ks: float, optional
+            Saturated hydraulic conductivity in mm/d.
+        gamma: float, optional
+            Parameter determining the nonlinearity of outflow / recharge.
+        dt: float, optional
+            time step for the calculation of the recharge. Only dt=1 is
+            possible now.
+
+        Returns
+        -------
+        sr: numpy.array
+            Storage in the root zone reservoir.
+        r: numpy.array
+            Recharge flux in mm/d
+        ea: numpy.array
+            Evaporation flux in mm/d. Consists of transpiration and soil
+            evaporation. Does not include interception evaporation.
+        q: numpy.array
+            surface runoff flux in mm/d.
+        pe: numpy.array
+            Incoming infiltration flux in mm/d.
+
+        Notes
+        -----
+        If Numba is available, this method is significantly faster.
 
         """
-        n = prec.size
+        n = pe.size
         # Create empty arrays to store the fluxes and states
         sr = zeros(n, dtype=float64)  # Root Zone Storage State
         sr[0] = 0.5 * srmax  # Set the initial system state to half-full
@@ -310,32 +346,62 @@ class FlexModel(RechargeBase):
         lp = lp * srmax  # Do this here outside the for-loop for efficiency
 
         for t in range(n - 1):
-            # Make sure the solution is larger then 0.0 and smaller than su
+            # Make sure the solution is larger then 0.0 and smaller than sr
             if sr[t] > srmax:
                 q[t] = sr[t] - srmax  # Surface runoff
                 sr[t] = srmax
             elif sr[t] < 0.0:
                 sr[t] = 0.0
 
-            # Calculate actual evaporation
+            # Calculate evaporation from the root zone reservoir
             if sr[t] / lp < 1.0:
-                ea[t] = evap[t] * sr[t] / lp
+                ea[t] = ep[t] * sr[t] / lp
             else:
-                ea[t] = evap[t]
+                ea[t] = ep[t]
 
             # Calculate the recharge flux
             r[t] = min(ks * (sr[t] / srmax) ** gamma, sr[t])
-            # Calculate state of the root zone storage
-            sr[t + 1] = sr[t] + dt * (prec[t] - r[t] - ea[t])
+            # Update storage in the root zone
+            sr[t + 1] = sr[t] + dt * (pe[t] - r[t] - ea[t])
 
-        return r, ea, q, sr
+        return sr, -r, -ea, -q, pe
 
     @staticmethod
     @njit
-    def get_interception_balance(pr, evap, simax=2.0, dt=1.0):
-        """
-        Internal method used for the interception calculation. If Numba is
-        available, this method is significantly faster.
+    def get_interception_balance(pr, ep, simax=2.0, dt=1.0):
+        """Method to compute the water balance of the interception reservoir.
+
+        Parameters
+        ----------
+        pr: numpy.array
+            Numpy Array with rainfall in mm/day.
+        ep: numpy.array
+            Numpy Array with potential evaporation in mm/day.
+        simax: float, optional
+            storage capacity of the interception reservoir.
+        dt: float
+            time step used for computation. Only dt=1.0 is possible now.
+
+        Returns
+        -------
+        si: numpy.array
+            Interception storage.
+        ei: numpy.array
+            Interception evaporation.
+        pi: numpy.array
+            Incoming rainfall that is intercepted.
+
+        Notes
+        -----
+        The water balance for the snow storage reservoir is defined as follows:
+
+        .. math::
+
+            \\frac{dS_i}{dt} = P_r - E_i - P_e
+
+        where $S_i$ [L] is the interception storage, $P_r$ [L/T] is the
+        incoming rainfall, $E_i$ [L/T] the interception evaporation, and $P_e$
+        [L/T] the overflow from the interception reservoir.
 
         """
         n = pr.size
@@ -346,19 +412,55 @@ class FlexModel(RechargeBase):
         for t in range(n - 1):
             # Interception bucket
             pe[t] = max(pr[t] - simax + si[t], 0.0)
-            ei[t] = min(evap[t], si[t])
+            ei[t] = min(ep[t], si[t])
             si[t + 1] = si[t] + dt * (pr[t] - pe[t] - ei[t])
 
-        return si, ei, pe
+        pe[t + 1] = max(pr[t + 1] - simax + si[t + 1], 0.0)
+        ei[t + 1] = min(ep[t + 1], si[t + 1])
+
+        pi = pr - pe  # Compute intercepted precipitation
+
+        return si, -ei, pi
 
     @staticmethod
     @njit
     def get_snow_balance(prec, temp, tp=1.0, tk=1.0, k=2.0):
+        """Method to compute the water balance of the snow reservoir.
+
+        Parameters
+        ----------
+        prec: numpy.array
+            Numpy Array with precipitation in mm/day.
+        temp: numpy.array
+            Numpy Array with the mean daily temperature in degree Celsius.
+        tp: float, optional
+        tk: float, optional
+        k: float, optional
+
+        Returns
+        -------
+        ss: numpy.array
+            storage in the snow reservoir.
+        ps: numpy.array
+            snowfall flux in mm/d.
+        m: numpy.array
+            snow melt flux in mm/d.
+
+        Notes
+        -----
+
+        .. math::
+
+            \\frac{dS_s}{dt} = P_s - M
+
+        where $S_s$ [L] is the snow storage, $P_s$ [L/T] the snowfall,
+        and $M$ [L/T] the snow melt from the snow reservoir.
+
+        """
         n = prec.size
         # Create empty arrays to store the fluxes and states
         ss = zeros(n, dtype=float64)  # Snow Storage
         ps = where(temp <= tp, prec, 0.0)  # Snowfall
-        pr = where(temp > tp, prec, 0.0)  # Rainfall
         m = where(temp > tk, k * (temp - tk), 0.0)  # Potential Snowmelt
 
         # Snow bucket
@@ -368,26 +470,41 @@ class FlexModel(RechargeBase):
                 m[t] = min(m[t] * smoothing_factor, ss[t])
             ss[t + 1] = ss[t] + ps[t] - m[t]
 
-        return ss, ps, pr, m
+        return ss, ps, -m
 
     def get_water_balance(self, prec, evap, temp, p, dt=1.0, **kwargs):
         data = self.simulate(prec=prec, evap=evap, temp=temp, p=p, dt=dt,
                              return_full=True, **kwargs)
 
-        columns = ["Recharge (R)", "Actual evaporation (Ea)",
-                   "Surface Runoff (Q)", "State Root zone (Sr)"]
+        columns = ["State Root zone (Sr)", "Recharge (R)",
+                   "Actual evaporation (Ea)", "Surface Runoff (Q)",
+                   "Effective precipitation (Pe)"]
 
         if self.interception:
             columns += ["State Interception (Si)",
                         "Interception evaporation (Ei)",
-                        "Effective precipitation (Pe)"]
+                        "Intercepted precipitation (Pi)"]
 
         if self.snow:
-            columns += ["State Snow (Ss)", "Snowfall (Ps)", "Rainfall (Pr)",
-                        "Snowmelt (M)", ]
+            columns += ["State Snow (Ss)", "Snowfall (Ps)", "Snowmelt (M)", ]
 
         data = DataFrame(data=vstack(data).T, columns=columns)
         return data
+
+    def check_snow_balance(self, prec, temp, **kwargs):
+        ss, ps, m = self.get_snow_balance(prec, temp, **kwargs)
+        error = (ss[0] - ss[-1] + (ps + m).sum())
+        return error
+
+    def check_interception_balance(self, prec, evap, **kwargs):
+        si, ei, pi = self.get_interception_balance(prec, evap, **kwargs)
+        error = (si[0] - si[-1] + (pi + ei).sum())
+        return error
+
+    def check_root_zone_balance(self, prec, evap, **kwargs):
+        sr, r, ea, q, pe = self.get_root_zone_balance(prec, evap, **kwargs)
+        error = (sr[0] - sr[-1] + (r + ea + q + pe).sum())
+        return error
 
 
 class Berendrecht(RechargeBase):
