@@ -902,7 +902,7 @@ class Kraijenhoff(RfuncBase):
     .. math:: \\theta(t) =  \\frac{4}{\pi S} \sum_{n=1,3,5...}^\infty \\frac{1}{n} e^{-n^2\\frac{t}{j}} \sin (\\frac{n\pi x}{L})
 
     The function describes the response of a domain between two drainage
-    channels. The function gives the same outcome as Bruggeman equation 133.15. 
+    channels. The function gives the same outcome as Bruggeman equation 133.15.
     Bruggeman 133.15 is the response that is actually calculated with this
     function. [Bruggeman]_
 
