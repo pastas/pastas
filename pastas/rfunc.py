@@ -939,6 +939,7 @@ class Kraijenhoff(RfuncBase):
             parameters.loc[name + '_A'] = (0.1, 1e-3, 1, True, name)
         parameters.loc[name + '_a'] = (1e2, 0.01, 1e5, True, name)
         parameters.loc[name + '_b'] = (0, 0, 0.499999, True, name)
+        parameters.loc[name + '_n'] = (10, 1, 1000, False, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):
@@ -953,7 +954,7 @@ class Kraijenhoff(RfuncBase):
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
         t = self.get_t(p, dt, cutoff, maxtmax)
         h = 0
-        for n in range(10):
+        for n in range(p[3]):
             h += (-1) ** n / (2 * n + 1) ** 3 * \
                 np.cos((2 * n + 1) * np.pi * p[2]) * \
                 np.exp(-(2 * n + 1) ** 2 * t / p[1])
