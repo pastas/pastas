@@ -912,6 +912,7 @@ class Kraijenhoff(RfuncBase):
     b is the location in the domain with the origin in the middle. This means
     that b=0 is in the middle and b=1/2 is at the drainage channel. At b=1/4
     the response function is most similar to the exponential response function.
+    n is the number of terms in the sum part of the response function. Default is 10.
 
     References
     ----------
