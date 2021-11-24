@@ -9,7 +9,8 @@ from scipy.special import (erfc, erfcinv, exp1, gammainc, gammaincinv, k0, k1,
 from scipy.interpolate import interp1d
 
 __all__ = ["Gamma", "Exponential", "Hantush", "Polder", "FourParam",
-           "DoubleExponential", "One", "Edelman", "HantushWellModel", "Kraijenhoff"]
+           "DoubleExponential", "One", "Edelman", "HantushWellModel",
+           "Kraijenhoff"]
 
 
 class RfuncBase:
@@ -391,11 +392,11 @@ class HantushWellModel(RfuncBase):
             uncertainty of parameters A and b.
         """
         var_gain = (
-            (k0(2 * np.sqrt(r ** 2 * b))) ** 2 * var_A +
-            (-A * r * k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(
-                b)) ** 2 * var_b -
-            2 * A * r * k0(2 * np.sqrt(r ** 2 * b)) *
-            k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(b) * cov_Ab
+                (k0(2 * np.sqrt(r ** 2 * b))) ** 2 * var_A +
+                (-A * r * k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(
+                    b)) ** 2 * var_b -
+                2 * A * r * k0(2 * np.sqrt(r ** 2 * b)) *
+                k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(b) * cov_Ab
         )
         return var_gain
 
@@ -916,17 +917,19 @@ class Kraijenhoff(RfuncBase):
     References
     ----------
     .. [Kraijenhoff] Kraijenhoff van de Leur, D. A. (1958). A study of
-    non-steady groundwater flow with special reference to a reservoir
-    coefficient. De Ingenieur, 70(19), B87-B94. https://edepot.wur.nl/422032
+       non-steady groundwater flow with special reference to a reservoir
+       coefficient. De Ingenieur, 70(19), B87-B94. https://edepot.wur.nl/422032
 
     .. [Bruggeman] G.A. Bruggeman (1999). Analytical solutions of
        geohydrological problems. Elsevier Science. Amsterdam, Eq. 133.15
+
     """
     _name = "Kraijenhoff"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.999):
+    def __init__(self, up=True, meanstress=1, cutoff=0.999, n_terms=10):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 3
+        self.n_terms = n_terms
 
     def get_init_parameters(self, name):
         parameters = DataFrame(
@@ -949,18 +952,14 @@ class Kraijenhoff(RfuncBase):
     @staticmethod
     def gain(p):
         return p[0]
-    
-    @staticmethod
-    def n_terms(n=10):
-        return int(n)
 
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
         t = self.get_t(p, dt, cutoff, maxtmax)
         h = 0
-        for n in range(self.n_terms()):
+        for n in range(self.n_terms):
             h += (-1) ** n / (2 * n + 1) ** 3 * \
-                np.cos((2 * n + 1) * np.pi * p[2]) * \
-                np.exp(-(2 * n + 1) ** 2 * t / p[1])
+                 np.cos((2 * n + 1) * np.pi * p[2]) * \
+                 np.exp(-(2 * n + 1) ** 2 * t / p[1])
         s = p[0] * (1 - (8 / (np.pi ** 3 * (1 / 4 - p[2] ** 2)) * h))
         return s
 
@@ -1016,7 +1015,7 @@ class Spline(RfuncBase):
         else:
             parameters.loc[name + '_A'] = (1 / self.meanstress,
                                            np.nan, np.nan, True, name)
-        initial = np.linspace(0.0, 1.0, len(self.t)+1)[1:]
+        initial = np.linspace(0.0, 1.0, len(self.t) + 1)[1:]
         for i in range(len(self.t)):
             index = name + '_' + str(self.t[i])
             vary = True
@@ -1034,7 +1033,7 @@ class Spline(RfuncBase):
         return p[0]
 
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
-        f = interp1d(self.t, p[1:len(self.t)+1], kind=self.kind)
+        f = interp1d(self.t, p[1:len(self.t) + 1], kind=self.kind)
         t = self.get_t(p, dt, cutoff, maxtmax)
         s = p[0] * f(t)
         return s
