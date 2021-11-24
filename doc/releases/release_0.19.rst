@@ -6,7 +6,9 @@ New Features / Enhancements
 ***************************
 
 - :class:`ps.ChangeModel` is added, simulating a response that changes over
-time.
+  time.
+- :method:`ps.utils.get_equidistant_series` is added, a method to get
+  equidistant timeseries using nearest reindexing.
 
 Deprecations
 ************
