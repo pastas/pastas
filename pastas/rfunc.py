@@ -912,7 +912,6 @@ class Kraijenhoff(RfuncBase):
     b is the location in the domain with the origin in the middle. This means
     that b=0 is in the middle and b=1/2 is at the drainage channel. At b=1/4
     the response function is most similar to the exponential response function.
-    n is the number of terms in the sum part of the response function. Default is 10.
 
     References
     ----------
@@ -940,7 +939,6 @@ class Kraijenhoff(RfuncBase):
             parameters.loc[name + '_A'] = (0.1, 1e-3, 1, True, name)
         parameters.loc[name + '_a'] = (1e2, 0.01, 1e5, True, name)
         parameters.loc[name + '_b'] = (0, 0, 0.499999, True, name)
-        parameters.loc[name + '_n'] = (10, 1, 1000, False, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):
@@ -951,11 +949,15 @@ class Kraijenhoff(RfuncBase):
     @staticmethod
     def gain(p):
         return p[0]
+    
+    @staticmethod
+    def n_terms(n=10):
+        return int(n)
 
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
         t = self.get_t(p, dt, cutoff, maxtmax)
         h = 0
-        for n in range(int(p[3])):
+        for n in range(self.n_terms()):
             h += (-1) ** n / (2 * n + 1) ** 3 * \
                 np.cos((2 * n + 1) * np.pi * p[2]) * \
                 np.exp(-(2 * n + 1) ** 2 * t / p[1])
