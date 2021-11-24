@@ -296,16 +296,6 @@ def timestep_weighted_resample_fast(series0, freq):
 def get_equidistant_series(series, freq, minimize_data_loss=False):
     """Get equidistant timeseries using nearest reindexing.
 
-    This method creates an equidistant timeseries with specified freq
-    using nearest sampling, with additional filling logic that ensures
-    each original measurement is only included once in the new timeseries.
-    Values are filled as close as possible to their original timestamp
-    in the new equidistant timeseries.
-
-    Note
-    ----
-    This might also be a very elaborate rewrite of a pandas one-liner...
-
     Parameters
     ----------
     series : pandas.Series
@@ -323,6 +313,17 @@ def get_equidistant_series(series, freq, minimize_data_loss=False):
     -------
     s : pandas.Series
         equidistant timeseries
+
+    Notes
+    -----
+    This method creates an equidistant timeseries with specified freq
+    using nearest sampling, with additional filling logic that ensures
+    each original measurement is only included once in the new timeseries.
+    Values are filled as close as possible to their original timestamp
+    in the new equidistant timeseries.
+
+    This might also be a very elaborate rewrite of a pandas one-liner...
+
     """
 
     # build new equidistant index
@@ -439,7 +440,7 @@ def datenum_to_datetime(datenum):
     """
     days = datenum % 1.
     return datetime.fromordinal(int(datenum)) \
-        + timedelta(days=days) - timedelta(days=366)
+           + timedelta(days=days) - timedelta(days=366)
 
 
 def datetime2matlab(tindex):
