@@ -1,5 +1,5 @@
 from pandas import read_csv, Series
-from numpy import sin, arange
+from numpy import sin, arange, isclose
 import pastas as ps
 
 # Load series before
@@ -84,7 +84,7 @@ def test_flexmodel_water_balance_rootzone():
     p = rain.to_numpy()
     sr, r, ea, q, pe = rch.get_root_zone_balance(p, e)
     error = (sr[0] - sr[-1] + (r + ea + q + pe)[:-1].sum())
-    assert np.isclose(error, 0)
+    assert isclose(error, 0)
 
 
 def test_flexmodel_water_balance_snow():
@@ -93,7 +93,7 @@ def test_flexmodel_water_balance_snow():
     t = temp.to_numpy()
     ss, snow, m = rch.get_snow_balance(p, t)
     error = (ss[0] - ss[-1] + (snow + m)[:-1].sum())
-    assert np.isclose(error, 0)
+    assert isclose(error, 0)
 
 
 def test_flexmodel_water_balance_interception():
@@ -102,4 +102,4 @@ def test_flexmodel_water_balance_interception():
     p = rain.to_numpy()
     si, ei, pi = rch.get_interception_balance(p, e)
     error = (si[0] - si[-1] + (pi + ei)[:-1].sum())
-    assert np.isclose(error, 0)
+    assert isclose(error, 0)

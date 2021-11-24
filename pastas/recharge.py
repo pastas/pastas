@@ -148,7 +148,8 @@ class FlexModel(RechargeBase):
     gw_uptake: bool, optional
         If True, the potential evaporation that is left after evaporation
         from the interception reservoir and the root zone reservoir is
-        subtracted from the recharge flux. EXPERIMENTAL FEATURE!
+        subtracted from the recharge flux. EXPERIMENTAL FEATURE that may be
+        removed in the future!
 
     Notes
     -----
@@ -168,7 +169,7 @@ class FlexModel(RechargeBase):
 
     If snow=True, a snow reservoir is added on top. For a detailed
     description of the degree-day snow model and parameters we refer to
-    [kavetski_2007]. The water balance for the snow reservoir is written as:
+    [kavetski_2007]_. The water balance for the snow reservoir is written as:
 
     .. math::
 
@@ -218,7 +219,7 @@ class FlexModel(RechargeBase):
         if self.snow:
             parameters.loc[name + "_tp"] = (0.0, -4.0, 4.0, True, name)
             parameters.loc[name + "_tk"] = (0.0, -4.0, 4.0, True, name)
-            parameters.loc[name + "_k"] = (2.0, 1.0, 10.0, True, name)
+            parameters.loc[name + "_k"] = (2.0, 1.0, 20.0, True, name)
 
         return parameters
 
@@ -280,8 +281,8 @@ class FlexModel(RechargeBase):
 
         if self.gw_uptake:
             # Compute leftover potential evaporation
-            eg = (ea + ep)
-            r = r + eg
+            eg = ep + ea  # positive flux
+            r = r + eg  #
 
         if return_full:
             data = (sr, r, ea, q, pe)
@@ -448,6 +449,7 @@ class FlexModel(RechargeBase):
 
         Notes
         -----
+        The water balance fro the snow reservoir is as follows:
 
         .. math::
 
@@ -465,8 +467,8 @@ class FlexModel(RechargeBase):
 
         # Snow bucket
         for t in range(n - 1):
-            if temp[t] >= tp:
-                smoothing_factor = 1 - exp(-(ss[t] / 1.5))
+            if temp[t] > tk:
+                smoothing_factor = 1.0 - exp(-(ss[t] / 1.5))
                 m[t] = min(m[t] * smoothing_factor, ss[t])
             ss[t + 1] = ss[t] + ps[t] - m[t]
 
