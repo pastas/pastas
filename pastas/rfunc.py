@@ -935,11 +935,16 @@ class Kraijenhoff(RfuncBase):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
-            parameters.loc[name + '_A'] = (0.1, 1e-3, 1, True, name)
+            parameters.loc[name + '_A'] = (1 / self.meanstress, 1e-5,
+                                           100 / self.meanstress, True, name)
         elif self.up is False:
-            parameters.loc[name + '_A'] = (-0.1, -1, -1e-3, True, name)
+            parameters.loc[name + '_A'] = (-1 / self.meanstress,
+                                           -100 / self.meanstress,
+                                           -1e-5, True, name)
         else:
-            parameters.loc[name + '_A'] = (0.1, 1e-3, 1, True, name)
+            parameters.loc[name + '_A'] = (1 / self.meanstress,
+                                           np.nan, np.nan, True, name)
+
         parameters.loc[name + '_a'] = (1e2, 0.01, 1e5, True, name)
         parameters.loc[name + '_b'] = (0, 0, 0.499999, True, name)
         return parameters
