@@ -7,6 +7,8 @@ New Features / Enhancements
 
 - :class:`ps.ChangeModel` is added, simulating a response that changes over
 time.
+- :class:`ps.rfunc.Kraijenhoff` is added, simulating the response in a 
+domain between two drainage channels.
 
 Deprecations
 ************
