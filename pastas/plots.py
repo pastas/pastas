@@ -1001,7 +1001,7 @@ def series(head=None, stresses=None, hist=True, kde=False, titles=True,
     if kde:
         axes[-1, 1].set_xlabel("Density [-]")
     if head is not None:
-        head = head[tmin:tmax]
+        head = head[tmin:tmax].dropna()
         head.plot(ax=axes[0, 0], marker=".", linestyle=" ", color="k")
         if titles:
             axes[0, 0].set_title(head.name)
@@ -1017,11 +1017,11 @@ def series(head=None, stresses=None, hist=True, kde=False, titles=True,
                       grid=False, density=True)
         if kde:
             gkde = gaussian_kde(head, bw_method='scott')
-            sample_range = np.nanmax(head) - np.nanmin(head)
-            ind = np.linspace(np.nanmin(head) - 0.1 * sample_range,
-                              np.nanmax(head) + 0.1 * sample_range, 1000)
+            sample_range = np.max(head) - np.min(head)
+            ind = np.linspace(np.min(head) - 0.1 * sample_range,
+                              np.max(head) + 0.1 * sample_range, 1000)
             if hist:
-                colour = 'C5'
+                colour = 'C1'
             else:
                 colour = 'k'
             axes[0, 1].plot(gkde.evaluate(ind), ind, color=colour)
@@ -1029,6 +1029,8 @@ def series(head=None, stresses=None, hist=True, kde=False, titles=True,
             # stats table
             head_stats = [["Count", f"{head.count():0.0f}"],
                           ["Mean", f"{head.mean():0.2f}"],
+                          ["Max", f"{head.max():0.2f}"],
+                          ["Min", f"{head.min():0.2f}"],
                           ["Skew", f"{head.skew():0.2f}"],
                           ["Kurtosis", f"{head.kurtosis():0.2f}"]]
             axes[0, 2].table(bbox=(0.0, 0.0, 1, 1), colWidths=(1.5, 1),
@@ -1037,7 +1039,7 @@ def series(head=None, stresses=None, hist=True, kde=False, titles=True,
 
     if stresses is not None:
         for i, stress in enumerate(stresses, start=rows - len(stresses)):
-            stress = stress[tmin:tmax]
+            stress = stress[tmin:tmax].dropna()
             stress.plot(ax=axes[i, 0], color="k")
             if titles:
                 axes[i, 0].set_title(stress.name)
@@ -1055,11 +1057,11 @@ def series(head=None, stresses=None, hist=True, kde=False, titles=True,
                             grid=False, density=True)
             if kde:
                 gkde = gaussian_kde(stress, bw_method='scott')
-                sample_range = np.nanmax(stress) - np.nanmin(stress)
-                ind = np.linspace(np.nanmin(stress) - 0.1 * sample_range,
-                                  np.nanmax(stress) + 0.1 * sample_range, 1000)
+                sample_range = np.max(stress) - np.min(stress)
+                ind = np.linspace(np.min(stress) - 0.1 * sample_range,
+                                  np.min(stress) + 0.1 * sample_range, 1000)
                 if hist:
-                    colour = 'C5'
+                    colour = 'C1'
                 else:
                     colour = 'k'
                 axes[i, 1].plot(gkde.evaluate(ind), ind, color=colour)
