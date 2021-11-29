@@ -8,8 +8,9 @@ from logging import getLogger
 
 import matplotlib.pyplot as plt
 from numpy import arange, cumsum, finfo, median, nan, sqrt, zeros
-from pandas import DataFrame, infer_freq
+from pandas import DataFrame, date_range, infer_freq
 from pastas.stats.core import acf as get_acf
+from pastas.utils import _get_time_offset, get_equidistant_series
 from scipy.stats import chi2, norm, normaltest, probplot, shapiro
 
 logger = getLogger(__name__)
@@ -274,7 +275,8 @@ def runs_test(series, cutoff="median"):
     return z_stat, pval
 
 
-def stoffer_toloi(series, lags=15, nparam=0, freq="D"):
+def stoffer_toloi(series, lags=15, nparam=0, freq="D",
+                  snap_to_equidistant_timestamps=False):
     """Adapted Ljung-Box test to deal with missing data [stoffer_1992]_.
 
     Parameters
@@ -288,6 +290,12 @@ def stoffer_toloi(series, lags=15, nparam=0, freq="D"):
         Number of parameters of the noisemodel.
     freq: str, optional
         String with the frequency to resample the time series to.
+    snap_to_equidistant_timestamps : bool, optional
+        if False (default), a sample is taken from series with equidistant 
+        timesteps using pandas' reindex. Only values are kept that lie on
+        those equidistant timestamps. If True, an equidistant timeseries is
+        created taking as many values as possible from the original series
+        which are then snapped to the nearest equidistant timestamp.
 
     Returns
     -------
@@ -336,13 +344,39 @@ def stoffer_toloi(series, lags=15, nparam=0, freq="D"):
     >>>          "autocorrelation. p =", p.round(2))
     >>> else:
     >>>    print("Reject the Null-hypothesis")
-    """
-    series = series.asfreq(freq=freq)  # Make time series equidistant
 
-    nobs = series.size
-    z = (series - series.mean()).fillna(0.0)
+    See Also
+    --------
+    pastas.utils.get_equidistant_series
+    """
+    if snap_to_equidistant_timestamps:
+        # create equidistant timeseries snapping values from the original
+        # series to the nearest equidistant timestamp. No values
+        # are duplicated and data loss is minimized.
+        s = get_equidistant_series(series, freq, minimize_data_loss=True)
+    else:
+        # get equidistant sample from original timeseries, checks which
+        # time offset is the most common to maximize the number of values
+        # taken from the original series.
+        t_offset = _get_time_offset(series.index, freq).value_counts().idxmax()
+        new_idx = date_range(
+            series.index[0].floor(freq) + t_offset,
+            series.index[-1].floor(freq) + t_offset,
+            freq=freq
+        )
+        s = series.reindex(new_idx)
+        # warn if more than 10% of data is lost in sample
+        if s.dropna().index.size < (0.9 * series.dropna().index.size):
+            msg = ("While selecting equidistant values from series with "
+                   "`as_freq` more than 10\% of values were dropped. Consider "
+                   "setting `make_equidistant` to True."
+                   )
+            logger.warning(msg)
+
+    nobs = s.size
+    z = (s - s.mean()).fillna(0.0)
     y = z.to_numpy()
-    yn = series.notna().to_numpy()
+    yn = s.notna().to_numpy()
 
     dz0 = (y ** 2).sum() / nobs
     da0 = (yn ** 2).sum() / nobs

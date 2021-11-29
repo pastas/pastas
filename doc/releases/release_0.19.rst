@@ -6,7 +6,9 @@ New Features / Enhancements
 ***************************
 
 - :class:`ps.ChangeModel` is added, simulating a response that changes over
-time.
+  time.
+- :method:`ps.utils.get_equidistant_series` is added, a method to get
+  equidistant timeseries using nearest reindexing.
 - :class:`ps.rfunc.Kraijenhoff` is added, simulating the response in a 
 domain between two drainage channels.
 
@@ -22,3 +24,4 @@ New Example Notebooks
 *********************
 
 - An example notebook for the :class:`ps.ChangeModel` is added.
+- An example notebook showcasing methods for creating equidistant timeseries is added.
