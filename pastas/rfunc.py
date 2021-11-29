@@ -332,7 +332,7 @@ class HantushWellModel(RfuncBase):
         rho = np.sqrt(4 * r ** 2 * p[2])
         k0rho = k0(rho)
         if k0rho == 0.0:
-            return 100 * 365.  # 100 years?
+            return 100 * 365.  # 100 years
         else:
             return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
 

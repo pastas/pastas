@@ -738,7 +738,7 @@ class WellModel(StressModelBase):
                  istress=None, **kwargs):
         distances = self.get_distances(istress=istress)
         stress_df = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq,
-                                    istress=istress)
+                                    istress=istress, squeeze=False)
         h = Series(data=0, index=self.stress[0].series.index, name=self.name)
         for name, r in distances.iteritems():
             stress = stress_df.loc[:, name]
@@ -791,7 +791,7 @@ class WellModel(StressModelBase):
         return data
 
     def get_stress(self, p=None, tmin=None, tmax=None, freq=None,
-                   istress=None, **kwargs):
+                   istress=None, squeeze=True, **kwargs):
         if tmin is None:
             tmin = self.tmin
         if tmax is None:
@@ -800,13 +800,20 @@ class WellModel(StressModelBase):
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
 
         if istress is None:
-            return DataFrame.from_dict({s.name: s.series for s in self.stress})
+            df = DataFrame.from_dict({s.name: s.series for s in self.stress})
+            if squeeze:
+                return df.squeeze()
+            else:
+                return df
         elif isinstance(istress, list):
             return DataFrame.from_dict(
                 {s.name: s.series for s in self.stress}
             ).iloc[:, istress]
         else:
-            return self.stress[istress].series.to_frame()
+            if squeeze:
+                return self.stress[istress].series
+            else:
+                return self.stress[istress].series.to_frame()
 
     def get_distances(self, istress=None):
         if istress is None:
