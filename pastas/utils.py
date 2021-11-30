@@ -293,6 +293,105 @@ def timestep_weighted_resample_fast(series0, freq):
     return series
 
 
+def get_equidistant_series(series, freq, minimize_data_loss=False):
+    """Get equidistant timeseries using nearest reindexing.
+
+    Parameters
+    ----------
+    series : pandas.Series
+        original (non-equidistant) timeseries
+    freq : str
+        frequency of the new equidistant timeseries
+        (i.e. "H", "D", "7D", etc.)
+    minimize_data_loss : bool, optional
+        if set to True, method will attempt use any unsampled
+        points from original timeseries to fill some remaining
+        NaNs in the new equidistant timeseries. Default is False.
+        This only happens in rare cases.
+
+    Returns
+    -------
+    s : pandas.Series
+        equidistant timeseries
+
+    Notes
+    -----
+    This method creates an equidistant timeseries with specified freq
+    using nearest sampling, with additional filling logic that ensures
+    each original measurement is only included once in the new timeseries.
+    Values are filled as close as possible to their original timestamp
+    in the new equidistant timeseries.
+
+    This might also be a very elaborate rewrite of a pandas one-liner...
+
+    """
+
+    # build new equidistant index
+    idx = date_range(series.index[0].floor(freq),
+                     series.index[-1].ceil(freq),
+                     freq=freq)
+
+    # get linear interpolated index from original series
+    fl = interpolate.interp1d(series.index.asi8,
+                              np.arange(0, series.index.size),
+                              kind='linear', bounds_error=False,
+                              fill_value='extrapolate')
+    ind_linear = fl(idx.asi8)
+
+    # get nearest index from original series
+    f = interpolate.interp1d(series.index.asi8,
+                             np.arange(0, series.index.size),
+                             kind='nearest', bounds_error=False,
+                             fill_value='extrapolate')
+    ind = f(idx.asi8).astype(int)
+
+    # create a new equidistant series
+    s = Series(index=idx, data=np.nan)
+
+    # fill in nearest value for each timestamp in equidistant series
+    s.loc[idx] = series.values[ind]
+
+    # remove duplicates, each observation can only be used once
+    mask = Series(ind).duplicated(keep=False).values
+    # mask all duplicates and set to NaN
+    s.loc[mask] = np.nan
+
+    # look through duplicates which equidistant timestamp is closest
+    # then fill value from original series for closest timestamp
+    for i in np.unique(ind[mask]):
+        # mask duplicates
+        dupe_mask = ind == i
+        # get location of first duplicate
+        first_dupe = np.nonzero(dupe_mask)[0][0]
+        # get index for closest equidistant timestamp
+        i_nearest = np.argmin(np.abs(ind_linear - ind)[dupe_mask])
+        # fill value
+        s.iloc[first_dupe + i_nearest] = series.values[i]
+
+    # This next part is a pretty ugly bit of code to fill up any
+    # nans if there are unused values in the original timeseries
+    # that lie close enough to our missing datapoint
+    if minimize_data_loss:
+        # find remaining nans
+        nanmask = s.isna()
+        if nanmask.sum() > 0:
+            # get unused (not sampled) timestamps from original series
+            unused = set(range(series.index.size)) - set(ind)
+            # dropna: do not consider unused nans
+            if len(unused) > 0:
+                missing_ts = series.iloc[list(unused)].dropna().index
+                # loop through nan timestamps in new series
+                for t in s.loc[nanmask].index:
+                    # find closes unused value
+                    closest = np.argmin(np.abs(missing_ts - t))
+                    # check if value is not farther away that freq to avoid
+                    # weird behavior
+                    if np.abs(missing_ts[closest] - t) <= Timedelta(freq):
+                        # fill value
+                        s.loc[t] = series.loc[missing_ts[closest]]
+    return s
+
+
 def to_daily_unit(series, method=True):
     """Experimental method, use wth caution!
 
@@ -341,7 +440,7 @@ def datenum_to_datetime(datenum):
     """
     days = datenum % 1.
     return datetime.fromordinal(int(datenum)) \
-        + timedelta(days=days) - timedelta(days=366)
+           + timedelta(days=days) - timedelta(days=366)
 
 
 def datetime2matlab(tindex):
