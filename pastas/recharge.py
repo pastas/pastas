@@ -37,7 +37,8 @@ After solving a model, the simulated recharge flux can be obtained:
 """
 
 from logging import getLogger
-from numpy import add, float64, multiply, exp, zeros, nan_to_num, vstack, where
+from numpy import add, float64, multiply, exp, zeros, nan_to_num, vstack, \
+    where, inf
 from pandas import DataFrame
 
 from pastas.decorators import njit
@@ -204,7 +205,7 @@ class FlexModel(RechargeBase):
         if self.interception:
             self.nparam += 1
         if self.snow:
-            self.nparam += 3
+            self.nparam += 2
 
     def get_init_parameters(self, name="recharge"):
         parameters = DataFrame(
@@ -217,8 +218,7 @@ class FlexModel(RechargeBase):
         if self.interception:
             parameters.loc[name + "_simax"] = (2.0, 1e-5, 10.0, False, name)
         if self.snow:
-            parameters.loc[name + "_tp"] = (0.0, -4.0, 4.0, True, name)
-            parameters.loc[name + "_tk"] = (0.0, -4.0, 4.0, True, name)
+            parameters.loc[name + "_tt"] = (0.0, -inf, inf, True, name)
             parameters.loc[name + "_k"] = (2.0, 1.0, 20.0, True, name)
 
         return parameters
@@ -253,8 +253,8 @@ class FlexModel(RechargeBase):
         ep = evap * p[4]
 
         if self.snow:
-            ss, ps, m = self.get_snow_balance(prec=prec, temp=temp, tp=p[-3],
-                                              tk=p[-2], k=p[-1])
+            ss, ps, m = self.get_snow_balance(prec=prec, temp=temp,
+                                              tt=p[-2], k=p[-1])
             pr = prec - ps  # Remove snowfall from precipitation
         else:
             pr = prec  # All precipitation is rainfall and melt is zero
@@ -425,7 +425,7 @@ class FlexModel(RechargeBase):
 
     @staticmethod
     @njit
-    def get_snow_balance(prec, temp, tp=1.0, tk=1.0, k=2.0):
+    def get_snow_balance(prec, temp, tt=0.0, k=2.0):
         """Method to compute the water balance of the snow reservoir.
 
         Parameters
@@ -434,8 +434,7 @@ class FlexModel(RechargeBase):
             Numpy Array with precipitation in mm/day.
         temp: numpy.array
             Numpy Array with the mean daily temperature in degree Celsius.
-        tp: float, optional
-        tk: float, optional
+        tt: float, optional
         k: float, optional
 
         Returns
@@ -462,12 +461,12 @@ class FlexModel(RechargeBase):
         n = prec.size
         # Create empty arrays to store the fluxes and states
         ss = zeros(n, dtype=float64)  # Snow Storage
-        ps = where(temp <= tp, prec, 0.0)  # Snowfall
-        m = where(temp > tk, k * (temp - tk), 0.0)  # Potential Snowmelt
+        ps = where(temp <= tt, prec, 0.0)  # Snowfall
+        m = where(temp > tt, k * (temp - tt), 0.0)  # Potential Snowmelt
 
         # Snow bucket
         for t in range(n - 1):
-            if temp[t] > tk:
+            if temp[t] > tt:
                 smoothing_factor = 1.0 - exp(-(ss[t] / 1.5))
                 m[t] = min(m[t] * smoothing_factor, ss[t])
             ss[t + 1] = ss[t] + ps[t] - m[t]
