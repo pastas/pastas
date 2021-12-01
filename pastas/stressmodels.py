@@ -941,7 +941,8 @@ class RechargeModel(StressModelBase):
 
     def __init__(self, prec, evap, rfunc=Exponential, name="recharge",
                  recharge=Linear(), temp=None, cutoff=0.999,
-                 settings=("prec", "evap"), metadata=(None, None)):
+                 settings=("prec", "evap", "evap"),
+                 metadata=(None, None, None)):
         # Store the precipitation and evaporation time series
         self.prec = TimeSeries(prec, settings=settings[0],
                                metadata=metadata[0])
@@ -963,13 +964,13 @@ class RechargeModel(StressModelBase):
         # Store recharge object
         self.recharge = recharge
 
-        # Store a temperature time series if needed or set to None
-        if self.recharge.temp is True:
-            if temp is None:
-                msg = "Recharge module requires a temperature series. " \
-                      "No temperature series were provided"
-                raise TypeError(msg)
-            elif len(settings) < 3 or len(metadata) < 3:
+        # Store a temperature time series if provided/needed or set to None
+        if self.recharge.snow is True and temp is None:
+            msg = "Recharge model requires a temperature series. " \
+                  "No temperature series were provided"
+            raise TypeError(msg)
+        if temp is not None:
+            if len(settings) < 3 or len(metadata) < 3:
                 msg = "Number of values for the settings and/or metadata is " \
                       "incorrect."
                 raise TypeError(msg)
@@ -1058,7 +1059,7 @@ class RechargeModel(StressModelBase):
         """
         if p is None:
             p = self.parameters.initial.values
-        b = self._get_block(p[:-self.recharge.nparam], dt, tmin, tmax)
+        b = self._get_block(p[:self.rfunc.nparam], dt, tmin, tmax)
         stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq,
                                  istress=istress).values
         name = self.name
@@ -1075,8 +1076,7 @@ class RechargeModel(StressModelBase):
 
     def get_stress(self, p=None, tmin=None, tmax=None, freq=None,
                    istress=None, **kwargs):
-        """Method to obtain the recharge stress calculated by the recharge
-        model.
+        """Method to obtain the recharge stress calculated by the model.
 
         Parameters
         ----------
@@ -1114,10 +1114,8 @@ class RechargeModel(StressModelBase):
                 temp = None
             if p is None:
                 p = self.parameters.initial.values
-
             stress = self.recharge.simulate(prec=prec, evap=evap, temp=temp,
                                             p=p[-self.recharge.nparam:])
-
             return Series(data=stress, index=self.prec.series.index,
                           name="recharge", fastpath=True)
         elif istress == 0:
@@ -1128,7 +1126,7 @@ class RechargeModel(StressModelBase):
             return self.temp.series
 
     def get_water_balance(self, p=None, tmin=None, tmax=None, freq=None):
-        """Experimental method to obtain the water balance components.
+        """Method to obtain the water balance components.
 
         Parameters
         ----------
@@ -1173,7 +1171,12 @@ class RechargeModel(StressModelBase):
         evap = self.get_stress(tmin=tmin, tmax=tmax, freq=freq,
                                istress=1).values
 
-        df = self.recharge.get_water_balance(prec=prec, evap=evap, temp=None,
+        if self.temp is not None:
+            temp = self.get_stress(tmin=tmin, tmax=tmax, freq=freq,
+                                   istress=2).values
+        else:
+            temp = None
+        df = self.recharge.get_water_balance(prec=prec, evap=evap, temp=temp,
                                              p=p[-self.recharge.nparam:])
         df.index = self.prec.series.index
         return df
