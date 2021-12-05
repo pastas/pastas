@@ -8,10 +8,9 @@ from scipy.special import (erfc, erfcinv, exp1, gammainc, gammaincinv, k0, k1,
                            lambertw)
 from scipy.interpolate import interp1d
 
-from .decorators import njit
-
 __all__ = ["Gamma", "Exponential", "Hantush", "Polder", "FourParam",
-           "DoubleExponential", "One", "Edelman", "HantushWellModel", "Kleur"]
+           "DoubleExponential", "One", "Edelman", "HantushWellModel",
+           "Kraijenhoff"]
 
 
 class RfuncBase:
@@ -393,11 +392,11 @@ class HantushWellModel(RfuncBase):
             uncertainty of parameters A and b.
         """
         var_gain = (
-            (k0(2 * np.sqrt(r ** 2 * b))) ** 2 * var_A +
-            (-A * r * k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(
-                b)) ** 2 * var_b -
-            2 * A * r * k0(2 * np.sqrt(r ** 2 * b)) *
-            k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(b) * cov_Ab
+                (k0(2 * np.sqrt(r ** 2 * b))) ** 2 * var_A +
+                (-A * r * k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(
+                    b)) ** 2 * var_b -
+                2 * A * r * k0(2 * np.sqrt(r ** 2 * b)) *
+                k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(b) * cov_Ab
         )
         return var_gain
 
@@ -761,7 +760,8 @@ class FourParam(RfuncBase):
 
 
 class DoubleExponential(RfuncBase):
-    """Gamma response function with 3 parameters A, a, and n.
+    """Double Exponential response function with 4 parameters A, alpha, a1 and
+    a2.
 
     Parameters
     ----------
@@ -881,9 +881,8 @@ class Edelman(RfuncBase):
         return s
 
 
-class Kleur(RfuncBase):
-    """The function of Kraijenhoff van de Leur, describing the response of a
-    polder domain with length L between two ditches.
+class Kraijenhoff(RfuncBase):
+    """The response function of Kraijenhoff van de Leur (and Bruggeman 133.15)
 
     Parameters
     ----------
@@ -898,35 +897,56 @@ class Kleur(RfuncBase):
 
     Notes
     -----
-    The Kraijenhoff van de Leur function is explained in [6]_. The impulse
-    response function may be written as:
+    The Kraijenhoff van de Leur function is explained in [Kraijenhoff]_.
+    The impulse response function may be written as:
 
     .. math:: \\theta(t) =  \\frac{4}{\pi S} \sum_{n=1,3,5...}^\infty \\frac{1}{n} e^{-n^2\\frac{t}{j}} \sin (\\frac{n\pi x}{L})
 
+    The function describes the response of a domain between two drainage
+    channels. The function gives the same outcome as Bruggeman equation 133.15.
+    Bruggeman 133.15 is the response that is actually calculated with this
+    function. [Bruggeman]_
+
+    The response function has three parameters: A, a and b.
+    A is the gain (scaled),
+    a is the reservoir coefficient (j in [Kraijenhoff]_),
+    b is the location in the domain with the origin in the middle. This means
+    that b=0 is in the middle and b=1/2 is at the drainage channel. At b=1/4
+    the response function is most similar to the exponential response function.
+
     References
     ----------
-    .. [6] Kraijenhoff van de Leur, D. A. (1958). A study of non-steady
-    groundwater flow with special reference to a reservoir coefficient.
-    De Ingenieur, 70(19), B87-B94. https://edepot.wur.nl/422032
-    """
-    _name = "Kleur"
+    .. [Kraijenhoff] Kraijenhoff van de Leur, D. A. (1958). A study of
+       non-steady groundwater flow with special reference to a reservoir
+       coefficient. De Ingenieur, 70(19), B87-B94. https://edepot.wur.nl/422032
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.999):
+    .. [Bruggeman] G.A. Bruggeman (1999). Analytical solutions of
+       geohydrological problems. Elsevier Science. Amsterdam, Eq. 133.15
+
+    """
+    _name = "Kraijenhoff"
+
+    def __init__(self, up=True, meanstress=1, cutoff=0.999, n_terms=10):
         RfuncBase.__init__(self, up, meanstress, cutoff)
         self.nparam = 3
+        self.n_terms = n_terms
 
     def get_init_parameters(self, name):
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
-            parameters.loc[name + '_S'] = (0.1, 1e-3, 1, True, name)
+            parameters.loc[name + '_A'] = (1 / self.meanstress, 1e-5,
+                                           100 / self.meanstress, True, name)
         elif self.up is False:
-            parameters.loc[name + '_S'] = (-0.1, -1, -1e-3, True, name)
+            parameters.loc[name + '_A'] = (-1 / self.meanstress,
+                                           -100 / self.meanstress,
+                                           -1e-5, True, name)
         else:
-            parameters.loc[name + '_S'] = (0.1, 1e-3, 1, True, name)
-        parameters.loc[name + '_j'] = (1e2, 0.01, 1e5, True, name)
-        parameters.loc[name + '_x/L'] = (0.25, 1e-6, 0.5, True, name)
-        parameters.loc[name + 'n'] = (500, 100, 1000, False, name)
+            parameters.loc[name + '_A'] = (1 / self.meanstress,
+                                           np.nan, np.nan, True, name)
+
+        parameters.loc[name + '_a'] = (1e2, 0.01, 1e5, True, name)
+        parameters.loc[name + '_b'] = (0, 0, 0.499999, True, name)
         return parameters
 
     def get_tmax(self, p, cutoff=None):
@@ -936,27 +956,17 @@ class Kleur(RfuncBase):
 
     @staticmethod
     def gain(p):
-        print('Gain for x = L/2 :')
-        return np.pi**2 * p[1] / (8 * p[0])
-
-    @staticmethod
-    @njit
-    def step_kleur(p, t):
-        s = np.zeros(len(t))
-        for i, t_value in enumerate(t):
-            s_part = np.array([0.0])
-            for n in np.arange(1, p[3], 2):
-                s_part = np.append(
-                    s_part, ((1 / n**3) *
-                             (p[1] - p[1] * np.exp(-n**2 * t_value / p[1]))
-                             * np.sin(n * np.pi * p[2]))
-                )
-            s[i] = 4 / (np.pi * p[0]) * np.sum(s_part)
-        return s
+        return p[0]
 
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
         t = self.get_t(p, dt, cutoff, maxtmax)
-        return self.step_kleur(np.asarray(p), t)
+        h = 0
+        for n in range(self.n_terms):
+            h += (-1) ** n / (2 * n + 1) ** 3 * \
+                 np.cos((2 * n + 1) * np.pi * p[2]) * \
+                 np.exp(-(2 * n + 1) ** 2 * t / p[1])
+        s = p[0] * (1 - (8 / (np.pi ** 3 * (1 / 4 - p[2] ** 2)) * h))
+        return s
 
 
 class Spline(RfuncBase):
@@ -1010,7 +1020,7 @@ class Spline(RfuncBase):
         else:
             parameters.loc[name + '_A'] = (1 / self.meanstress,
                                            np.nan, np.nan, True, name)
-        initial = np.linspace(0.0, 1.0, len(self.t)+1)[1:]
+        initial = np.linspace(0.0, 1.0, len(self.t) + 1)[1:]
         for i in range(len(self.t)):
             index = name + '_' + str(self.t[i])
             vary = True
@@ -1028,7 +1038,7 @@ class Spline(RfuncBase):
         return p[0]
 
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
-        f = interp1d(self.t, p[1:len(self.t)+1], kind=self.kind)
+        f = interp1d(self.t, p[1:len(self.t) + 1], kind=self.kind)
         t = self.get_t(p, dt, cutoff, maxtmax)
         s = p[0] * f(t)
         return s
