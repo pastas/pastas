@@ -78,7 +78,8 @@ class PastasEncoder(json.JSONEncoder):
             return o.to_json(date_format="iso", orient="split")
         elif isinstance(o, DataFrame):
             # Necessary to maintain order when using the JSON format!
-            return o.to_json(orient="index")
+            # Do not use o.to_json() because of float precision
+            return json.dumps(o.to_dict(orient="index"), indent=0)
         elif isinstance(o, Timedelta):
             return o.to_timedelta64().__str__()
         elif isna(o):
