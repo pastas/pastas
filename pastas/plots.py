@@ -979,7 +979,7 @@ def compare(models, tmin=None, tmax=None, block_or_step='step',
         ax_ml.relim()
         ax_ml.autoscale()
 
-                # update tmin/tmax for ml0 if None is passed
+    # update tmin/tmax for ml0 if None is passed
     if tmin[0] is None:
         tmin[0] = ml.settings["tmin"]
     if tmax[0] is None:
