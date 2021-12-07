@@ -854,15 +854,9 @@ def compare(models, tmin=None, tmax=None, block_or_step='step',
     """
     # get tmin/tmax per model
     if not isinstance(tmin, list):
-        tmin = to_datetime([tmin] * len(models))
-    else:
-        tmin = to_datetime(tmin)
+        tmin = [tmin] * len(models)
     if not isinstance(tmax, list):
-        tmax = to_datetime([tmax] * len(models))
-    else:
-        tmax = to_datetime(tmax)
-    mintmin = np.min(tmin)
-    maxtmax = np.max(tmax)
+        tmax = [tmax] * len(models)
 
     # sort models by descending order of N stressmodels
     models_sorted = sorted(models, key=lambda ml: len(
@@ -878,10 +872,6 @@ def compare(models, tmin=None, tmax=None, block_or_step='step',
     axes = ml.plots.results(tmin=tmin[0], tmax=tmax[0], split=False,
                             block_or_step=block_or_step,
                             adjust_height=adjust_height, **kwargs)
-    # get tmin including warmup if return_warmup=True
-    if kwargs.pop("return_warmup", False):
-        mintmin = np.min(
-            [mintmin, ml.settings["tmin"] - ml.settings['warmup']])
 
     # get the axes
     ax_ml = axes[0]  # model result
@@ -941,6 +931,11 @@ def compare(models, tmin=None, tmax=None, block_or_step='step',
                     ax_contrib.relim()
                     ax_contrib.autoscale()
             i += 1
+        # update tmin/tmax if None is passed
+        if tmin[j] is None:
+            tmin[j] = iml.settings["tmin"]
+        if tmax[j] is None:
+            tmax[j] = iml.settings["tmax"]
 
     # set legend for simulation axes
     handles, labels = ax_ml.get_legend_handles_labels()
@@ -983,6 +978,22 @@ def compare(models, tmin=None, tmax=None, block_or_step='step',
     if not adjust_height:
         ax_ml.relim()
         ax_ml.autoscale()
+
+                # update tmin/tmax for ml0 if None is passed
+    if tmin[0] is None:
+        tmin[0] = ml.settings["tmin"]
+    if tmax[0] is None:
+        tmax[0] = ml.settings["tmax"]
+
+    mintmin = np.min(to_datetime(tmin))
+    print(tmin)
+    maxtmax = np.max(to_datetime(tmax))
+
+    # get tmin including warmup if return_warmup=True
+    if kwargs.pop("return_warmup", False):
+        mintmin = np.min(
+            [mintmin, ml.settings["tmin"] - ml.settings['warmup']])
+
     if (not isna(mintmin)) and (not isna(maxtmax)):
         ax_ml.set_xlim(mintmin, maxtmax)
     plt.draw()
