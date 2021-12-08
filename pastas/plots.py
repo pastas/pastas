@@ -13,7 +13,7 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import MultipleLocator, LogFormatter
-from pandas import DataFrame, Timestamp, concat
+from pandas import DataFrame, Timestamp, concat, to_datetime, isna
 from scipy.stats import gaussian_kde
 
 from .decorators import model_tmin_tmax
@@ -817,7 +817,8 @@ class Plotting:
         return axes
 
 
-def compare(models, tmin=None, tmax=None, block_or_step='step', **kwargs):
+def compare(models, tmin=None, tmax=None, block_or_step='step',
+            adjust_height=True, **kwargs):
     """Visual comparison of multiple models in one figure.
 
     Note
@@ -831,13 +832,17 @@ def compare(models, tmin=None, tmax=None, block_or_step='step', **kwargs):
     models: list
         list of pastas Models, works for N models, but certain
         things might not display nicely if the list gets too long.
-    tmin: str or pandas.Timestamp, optional
-    tmax: str or pandas.Timestamp, optional
+    tmin: (list of) str or pandas.Timestamp, optional
+        if list is provided, length must match no. of models
+    tmax: (list of) str or pandas.Timestamp, optional
+        if list is provided, length must match no. of models
     figsize: tuple, optional
         tuple of size 2 to determine the figure size in inches.
     adjust_height: bool, optional
         Adjust the height of the graphs, so that the vertical scale of all
-        the subplots on the left is equal. Default is True.
+        the subplots on the left is equal. Default is True, in which case the
+        axes are not rescaled to include all data, so certain data might 
+        not be visible. Set to False to ensure you can see all data.
     return_warmup: bool, optional
         Show the warmup-period. Default is false.
     block_or_step: str, optional
@@ -847,12 +852,27 @@ def compare(models, tmin=None, tmax=None, block_or_step='step', **kwargs):
     -------
     matplotlib.axes
     """
+    # get tmin/tmax per model
+    if not isinstance(tmin, list):
+        tmin = [tmin] * len(models)
+    if not isinstance(tmax, list):
+        tmax = [tmax] * len(models)
+
     # sort models by descending order of N stressmodels
-    models.sort(key=lambda ml: len(ml.stressmodels), reverse=True)
+    models_sorted = sorted(models, key=lambda ml: len(
+        ml.stressmodels), reverse=True)
+    tmin = [t for _, t in sorted(zip(models, tmin),
+                                 key=lambda pair: len(pair[0].stressmodels),
+                                 reverse=True)]
+    tmax = [t for _, t in sorted(zip(models, tmax),
+                                 key=lambda pair: len(pair[0].stressmodels),
+                                 reverse=True)]
     # get first model (w most stressmodels) and plot results
-    ml = models[0]
-    axes = ml.plots.results(tmin=tmin, tmax=tmax, split=False,
-                            block_or_step=block_or_step, **kwargs)
+    ml = models_sorted[0]
+    axes = ml.plots.results(tmin=tmin[0], tmax=tmax[0], split=False,
+                            block_or_step=block_or_step,
+                            adjust_height=adjust_height, **kwargs)
+
     # get the axes
     ax_ml = axes[0]  # model result
     ax_res = axes[1]  # model residuals
@@ -860,22 +880,26 @@ def compare(models, tmin=None, tmax=None, block_or_step='step', **kwargs):
     axes_sm = axes[2:-1]  # stressmodels
 
     # get second model
-    for j, iml in enumerate(models[1:], start=2):
-        sim = iml.simulate(tmin=tmin, tmax=tmax)
+    for j, iml in enumerate(models_sorted[1:], start=1):
+        sim = iml.simulate(tmin=tmin[j], tmax=tmax[j])
         sim.name = '{} ($R^2$ = {:0.2f}%)'.format(
-            sim.name, iml.stats.evp(tmin=tmin, tmax=tmax))
+            sim.name, iml.stats.evp(tmin=tmin[j], tmax=tmax[j]))
         p, = ax_ml.plot(sim.index, sim, label=sim.name)
         color = p.get_color()
 
         # Residuals and noise
-        res = iml.residuals(tmin=tmin, tmax=tmax)
+        res = iml.residuals(tmin=tmin[j], tmax=tmax[j])
 
-        ax_res.plot(res.index, res, label="Residuals" + str(j), c=color)
+        ax_res.plot(res.index, res, label="Residuals" + str(j + 1), c=color)
         if iml.settings["noise"]:
-            noise = iml.noise(tmin=tmin, tmax=tmax)
-            ax_res.plot(noise.index, noise, label="Noise" + str(j), c=color,
+            noise = iml.noise(tmin=tmin[j], tmax=tmax[j])
+            ax_res.plot(noise.index, noise, label="Noise" + str(j + 1), c=color,
                         alpha=0.5)
         ax_res.legend(loc=(0, 1), ncol=4, frameon=False)
+        # recalculate axes limits
+        if not adjust_height:
+            ax_res.relim()
+            ax_res.autoscale()
 
         # Loop through original stressmodels and check which are in
         # the second model
@@ -888,19 +912,30 @@ def compare(models, tmin=None, tmax=None, block_or_step='step', **kwargs):
                 response = iml._get_response(block_or_step=block_or_step,
                                              name=sm_name, add_0=True)
                 # plot the contribution
-                contrib = iml.get_contribution(sm_name, tmin=tmin,
-                                               tmax=tmax)
+                contrib = iml.get_contribution(sm_name, tmin=tmin[j],
+                                               tmax=tmax[j])
                 ax_contrib.plot(contrib.index, contrib,
-                                label="{}".format(iml.name),
+                                label=f"{j+1}",
                                 c=color)
                 # plot the step-reponse
                 ax_resp.plot(response.index, response, c=color)
-                handles, _ = ax_contrib.get_legend_handles_labels()
-                ax_contrib.legend(handles, ["1", str(j)], loc=(
-                    0, 1), ncol=2, frameon=False)
+                handles, labels = ax_contrib.get_legend_handles_labels()
+                labels[0] = "1"
+                ax_contrib.legend(handles, labels, loc=(0, 1),
+                                  ncol=2, frameon=False)
                 plt.sca(ax_contrib)
                 plt.title("")
+
+                # recalculate axes limits
+                if not adjust_height:
+                    ax_contrib.relim()
+                    ax_contrib.autoscale()
             i += 1
+        # update tmin/tmax if None is passed
+        if tmin[j] is None:
+            tmin[j] = iml.settings["tmin"]
+        if tmax[j] is None:
+            tmax[j] = iml.settings["tmax"]
 
     # set legend for simulation axes
     handles, labels = ax_ml.get_legend_handles_labels()
@@ -939,6 +974,29 @@ def compare(models, tmin=None, tmax=None, block_or_step='step', **kwargs):
                    colLabels=cols)
     ax_table.axis("off")
 
+    # rescale axes
+    if not adjust_height:
+        ax_ml.relim()
+        ax_ml.autoscale()
+
+    # update tmin/tmax for ml0 if None is passed
+    if tmin[0] is None:
+        tmin[0] = ml.settings["tmin"]
+    if tmax[0] is None:
+        tmax[0] = ml.settings["tmax"]
+
+    mintmin = np.min(to_datetime(tmin))
+    print(tmin)
+    maxtmax = np.max(to_datetime(tmax))
+
+    # get tmin including warmup if return_warmup=True
+    if kwargs.pop("return_warmup", False):
+        mintmin = np.min(
+            [mintmin, ml.settings["tmin"] - ml.settings['warmup']])
+
+    if (not isna(mintmin)) and (not isna(maxtmax)):
+        ax_ml.set_xlim(mintmin, maxtmax)
+    plt.draw()
     return axes
 
 

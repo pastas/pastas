@@ -69,7 +69,7 @@ def test_del_noisemodel():
 def test_solve_model():
     ml = test_add_stressmodel()
     ml.solve()
-    return
+    return ml
 
 
 def test_solve_empty_model():
@@ -90,8 +90,20 @@ def test_save_model():
 
 
 def test_load_model():
-    test_save_model()
-    _ = ps.io.load("test.pas")
+    ml = test_solve_model()
+    # add some fictitious tiny value for testing float precision
+    ml.parameters.loc["rch_f", "pmax"] = 1.23456789e-10
+    ml.to_file("test.pas")
+    ml2 = ps.io.load("test.pas")
+    
+    # dataframe dtypes don't match... make the same here
+    ml.parameters["pmax"] = ml.parameters["pmax"].astype(float)
+    ml.parameters["vary"] = ml.parameters["vary"].astype(bool)
+    ml2.parameters["vary"] = ml.parameters["vary"].astype(bool)
+    
+    # check if parameters and pcov dataframes are equal
+    assert ml.parameters.equals(ml2.parameters)
+    assert ml.fit.pcov.equals(ml2.fit.pcov)
     return
 
 
