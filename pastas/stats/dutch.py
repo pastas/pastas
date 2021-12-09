@@ -187,7 +187,7 @@ def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
         * 'mean' (default) : for mean of yearly values
         * 'yearly': for series of yearly values
         * 'data': for series with selected data for calculating statistic
-        * 'full': for series with all data points (14th, 28th of each month) 
+        * 'full': for series with all data points (14th, 28th of each month)
     min_n_meas: int, optional
         Minimum number of measurements per year (at maximum 24)
     min_n_years: int, optional
@@ -259,7 +259,7 @@ def gvg(series, tmin=None, tmax=None, fill_method='linear', limit=8,
         * 'mean' (default) : for mean of yearly values
         * 'yearly': for series of yearly values
         * 'data': for series with selected data for calculating statistic
-        * 'full': for series with all data points (14th, 28th of each month) 
+        * 'full': for series with all data points (14th, 28th of each month)
     min_n_meas: int, optional
         Minimum number of measurements per year (at maximum 3)
     min_n_years: int, optional
@@ -317,7 +317,7 @@ def gg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
         * 'mean' (default) : for mean of yearly values
         * 'yearly' : for series with yearly means
         * 'data' : for series with selected data for calculating statistic
-        * 'full' : for series with all data points (14th, 28th of each month) 
+        * 'full' : for series with all data points (14th, 28th of each month)
     min_n_meas: int, optional
         Minimum number of measurements per year (at maximum 24)
     min_n_years: int, optional
