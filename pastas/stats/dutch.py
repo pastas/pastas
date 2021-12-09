@@ -5,7 +5,7 @@ groundwater time series in the Netherlands.
 """
 
 from numpy import nan
-from pandas import Series, Timedelta, date_range
+from pandas import Series, Timedelta, concat, date_range
 from pastas.utils import get_sample
 
 
@@ -136,18 +136,29 @@ def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
     """
 
     # mean_high = lambda s: s.nlargest(3).mean()
-    def mean_high(s, min_n_meas):
+    def highs(s, min_n_meas):
         if len(s) < min_n_meas:
-            return nan
+            return Series(nan)
         else:
             if len(s) > 20:
-                return s.nlargest(3).mean()
+                return s.nlargest(3)
             elif len(s) > 12:
-                return s.nlargest(2).mean()
+                return s.nlargest(2)
             else:
-                return s.nlargest(1).mean()
+                return s.nlargest(1)
 
-    return _gxg(series, mean_high, tmin=tmin, tmax=tmax,
+    def mean_high(s, min_n_meas):
+        return highs(s, min_n_meas).mean()
+    if output in ['mean', 'yearly']:
+        f_agg = mean_high
+    elif output == "data":
+        f_agg = highs
+    elif output == "full":
+        f_agg = None
+    else:
+        raise ValueError(f"Unrecognized option for output: {output}")
+
+    return _gxg(series, f_agg, tmin=tmin, tmax=tmax,
                 fill_method=fill_method, limit=limit, output=output,
                 min_n_meas=min_n_meas, min_n_years=min_n_years,
                 year_offset=year_offset)
@@ -172,8 +183,11 @@ def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
         Maximum number of days to fill using fill method, use None to
         fill nothing.
     output : str, optional
-        output type 'yearly' for series of yearly values, 'mean' for
-        mean of yearly values
+        output type
+        * 'mean' (default) : for mean of yearly values
+        * 'yearly': for series of yearly values
+        * 'data': for series with selected data for calculating statistic
+        * 'full': for series with all data points (14th, 28th of each month) 
     min_n_meas: int, optional
         Minimum number of measurements per year (at maximum 24)
     min_n_years: int, optional
@@ -193,18 +207,30 @@ def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
     """
 
     # mean_low = lambda s: s.nsmallest(3).mean()
-    def mean_low(s, min_n_meas):
+    def lows(s, min_n_meas):
         if len(s) < min_n_meas:
-            return nan
+            return Series(nan)
         else:
             if len(s) > 20:
-                return s.nsmallest(3).mean()
+                return s.nsmallest(3)
             elif len(s) > 12:
-                return s.nsmallest(2).mean()
+                return s.nsmallest(2)
             else:
-                return s.nsmallest(1).mean()
+                return s.nsmallest(1)
 
-    return _gxg(series, mean_low, tmin=tmin, tmax=tmax,
+    def mean_low(s, min_n_meas):
+        return lows(s, min_n_meas).mean()
+
+    if output in ['mean', 'yearly']:
+        f_agg = mean_low
+    elif output == "data":
+        f_agg = lows
+    elif output == "full":
+        f_agg = None
+    else:
+        raise ValueError(f"Unrecognized option for output: {output}")
+
+    return _gxg(series, f_agg, tmin=tmin, tmax=tmax,
                 fill_method=fill_method, limit=limit, output=output,
                 min_n_meas=min_n_meas, min_n_years=min_n_years,
                 year_offset=year_offset)
@@ -229,8 +255,11 @@ def gvg(series, tmin=None, tmax=None, fill_method='linear', limit=8,
         Maximum number of days to fill using fill method, use None to
         fill nothing
     output : str, optional
-        output type 'yearly' for series of yearly values, 'mean' for
-        mean of yearly values
+        output type
+        * 'mean' (default) : for mean of yearly values
+        * 'yearly': for series of yearly values
+        * 'data': for series with selected data for calculating statistic
+        * 'full': for series with all data points (14th, 28th of each month) 
     min_n_meas: int, optional
         Minimum number of measurements per year (at maximum 3)
     min_n_years: int, optional
@@ -248,7 +277,19 @@ def gvg(series, tmin=None, tmax=None, fill_method='linear', limit=8,
     Classic method resampling the series to every 14th and 28th of the
     month. Taking the mean of the values on March 14, March 28 and April 14.
     """
-    return _gxg(series, _mean_spring, tmin=tmin, tmax=tmax,
+    def _mean_spring(s, min_n_meas):
+        return _get_spring(s, min_n_meas).mean()
+
+    if output in ['mean', 'yearly']:
+        f_agg = _mean_spring
+    elif output == "data":
+        f_agg = _get_spring
+    elif output == "full":
+        f_agg = None
+    else:
+        raise ValueError(f"Unrecognized option for output: {output}")
+
+    return _gxg(series, f_agg, tmin=tmin, tmax=tmax,
                 fill_method=fill_method, limit=limit, output=output,
                 min_n_meas=min_n_meas, min_n_years=min_n_years,
                 year_offset=year_offset)
@@ -272,8 +313,11 @@ def gg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
         Maximum number of days to fill using fill method, use None to
         fill nothing.
     output : str, optional
-        output type 'yearly' for series of yearly values, 'mean' for
-        mean of yearly values
+        output type
+        * 'mean' (default) : for mean of yearly values
+        * 'yearly' : for series with yearly means
+        * 'data' : for series with selected data for calculating statistic
+        * 'full' : for series with all data points (14th, 28th of each month) 
     min_n_meas: int, optional
         Minimum number of measurements per year (at maximum 24)
     min_n_years: int, optional
@@ -284,12 +328,12 @@ def gg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
     Returns
     -------
     pd.Series or scalar
-        Series of yearly values or mean of yearly values
+        series of yearly values or mean of yearly values
 
     Notes
     -----
     Classic method resampling the series to every 14th and 28th of
-    the month. Taking the mean of the mean of three lowest values per year.
+    the month.
     """
 
     # mean_low = lambda s: s.nsmallest(3).mean()
@@ -307,10 +351,10 @@ def gg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
 
 # Helper functions
 
-def _mean_spring(series, min_n_meas):
-    """Internal method to determine mean of timeseries values in spring.
+def _get_spring(series, min_n_meas):
+    """Internal method to get values of timeseries values in spring.
 
-    Year aggregator function for gvg method.
+    Part of year aggregator function for gvg method.
 
     Parameters
     ----------
@@ -320,13 +364,13 @@ def _mean_spring(series, min_n_meas):
     Returns
     -------
     float
-        Mean of series, or NaN if no values in spring
+        values of series in spring, or NaN if no values in spring
     """
     inspring = _in_spring(series)
     if inspring.sum() < min_n_meas:
-        return nan
+        return Series(nan)
     else:
-        return series.loc[inspring].mean()
+        return series.loc[inspring]
 
 
 def _in_spring(series):
@@ -458,11 +502,25 @@ def _gxg(series, year_agg, tmin, tmax, fill_method, limit, output,
     series.dropna(inplace=True)
 
     # resample the series to yearly values
-    yearly = series.resample(year_offset).apply(year_agg,
-                                                min_n_meas=min_n_meas)
+    if output == "full":
+        return series
+    elif output in ["yearly", "mean"]:
+        yearly = series.resample(year_offset).apply(year_agg,
+                                                    min_n_meas=min_n_meas)
+    elif output == "data":
+        yearly = series.resample(year_offset)
+        collect = {}
+        for yr, group in yearly:
+            s = year_agg(group, min_n_meas=min_n_meas)
+            if isinstance(s, Series):
+                s = s.sort_index()
+            collect[yr] = s
+        yearly = concat(collect)
 
     # return statements
     if output.startswith('year'):
+        return yearly
+    elif output == "data":
         return yearly
     elif output == 'mean':
         if yearly.notna().sum() < min_n_years:
