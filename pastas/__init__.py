@@ -1,6 +1,7 @@
 import logging
 
 import pastas.recharge as rch
+import pastas.stats as stats
 from .model import Model
 from .noisemodels import NoiseModel, ArmaModel
 from .plots import TrackSolve

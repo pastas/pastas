@@ -1,9 +1,14 @@
 """This module contains methods to compute the groundwater signatures."""
-
+import pandas as pd
 from pandas import NA, Timedelta, DatetimeIndex
 from numpy import diff
+import pastas as ps
 
-__all__ = []
+__all__ = ["cv_monthly_mean", "cv_date_min", "cv_fall_rate", "cv_rise_rate",
+           "parde_seasonality", "avg_seasonal_fluctuation",
+           "interannual_variation", "low_pulse_count", "high_pulse_count",
+           "low_pulse_duration", "high_pulse_duration", "amplitude_range",
+           ]
 
 
 def cv_monthly_mean(series, freq="M"):
@@ -117,6 +122,10 @@ def avg_seasonal_fluctuation(series):
     groundwater heads per year and the averaged 3 lowest monthly groundwater
     heads per year.
 
+    Average seasonal fluctuation (s):
+
+        s = MHW - MLW
+
     References
     ----------
     .. [martens_2013] Martens, K., van Camp, M., van Damme, D., & Walraevens,
@@ -125,8 +134,46 @@ def avg_seasonal_fluctuation(series):
        dunes. Journal of Hydrology, 499, 236–246.
 
     """
+    s = series.resample("M")
+    hl = s.min().groupby(s.min().index.year).nsmallest(3).groupby(
+        level=0).mean()
+    hw = s.max().groupby(s.max().index.year).nlargest(3).groupby(
+        level=0).mean()
 
-    return NotImplementedError
+    return hw.mean() - hl.mean()
+
+
+def interannual_variation(series):
+    """Interannual variation after [martens_2013]_.
+
+    Returns
+    -------
+
+    Notes
+    -----
+    The average between the range in annually averaged 3 highest monthly
+    groundwater heads and the range in annually averaged 3 lowest monthly
+    groundwater heads.
+
+    Inter-yearly variation of high and low water table (y):
+
+        y = ((min_HW - max_HW) + (min_LW - max_LW)) / 2
+
+    References
+    ----------
+    .. [martens_2013] Martens, K., van Camp, M., van Damme, D., & Walraevens,
+       K. (2013). Groundwater dynamics converted to a groundwater
+       classification as a tool for nature development programs in the
+       dunes. Journal of Hydrology, 499, 236–246.
+
+    """
+    s = series.resample("M")
+    hl = s.min().groupby(s.min().index.year).nsmallest(3).groupby(
+        level=0).mean()
+    hw = s.max().groupby(s.max().index.year).nlargest(3).groupby(
+        level=0).mean()
+
+    return (hw.min() - hw.max()) + (hl.min() - hl.max()) / 2
 
 
 def collwell_contingency(series):
@@ -193,30 +240,6 @@ def baseflow_stability(series):
     .. [heudorfer_2019] Heudorfer, B., Haaf, E., Stahl, K., & Barthel, R.
        (2019). Index‐based characterization and quantification of groundwater 
        dynamics. Water Resources Research, 55, 5575–5592. 
-
-    """
-
-    return NotImplementedError
-
-
-def interannual_variation(series):
-    """Interannual variation after [martens_2013]_.
-
-    Returns
-    -------
-
-    Notes
-    -----
-    The average between the range in annually averaged 3 highest monthly
-    groundwater heads and the range in annually averaged 3 lowest monthly
-    groundwater heads.
-
-    References
-    ----------
-    .. [martens_2013] Martens, K., van Camp, M., van Damme, D., & Walraevens,
-       K. (2013). Groundwater dynamics converted to a groundwater
-       classification as a tool for nature development programs in the
-       dunes. Journal of Hydrology, 499, 236–246.
 
     """
 
@@ -855,3 +878,28 @@ def cv_fall_rate(series):
     difference = series.diff()
     falls = difference[difference < 0]
     return falls.std() / falls.mean()
+
+
+def summary(series, signatures=None):
+    """Method to get many signatures for a time series.
+
+    Parameters
+    ----------
+    series: pandas.Series
+    signatures: list
+        By default all available signatures are returned.
+
+    Returns
+    -------
+
+    """
+    if signatures is None:
+        signatures = __all__
+
+    data = pd.Series(index=signatures)
+
+    for signature in signatures:
+        func = getattr(ps.stats.signatures, signature)
+        data.loc[signature] = func(series)
+
+    return data

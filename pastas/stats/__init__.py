@@ -20,4 +20,5 @@ from .metrics import mae, evp, nse, rmse, sse, rsq, aic, bic, pearsonr, \
 from .tests import runs_test, ljung_box, durbin_watson, stoffer_toloi, \
     diagnostics, plot_acf, plot_diagnostics, plot_cum_frequency
 from .sgi import sgi
-from .signatures import *
+import pastas.stats.signatures as signatures
+import pastas.stats.metrics as metrics
