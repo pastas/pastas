@@ -205,6 +205,8 @@ class FlexModel(RechargeBase):
         self.nparam = 5
         if self.interception:
             self.nparam += 1
+        if self.gw_uptake:
+            self.nparam += 1
         if self.snow:
             self.nparam += 2
         self.kwargs['interception'] = interception
@@ -221,6 +223,8 @@ class FlexModel(RechargeBase):
         parameters.loc[name + "_kv"] = (1.0, 0.25, 2.0, False, name)
         if self.interception:
             parameters.loc[name + "_simax"] = (2.0, 1e-5, 10.0, False, name)
+        if self.gw_uptake:
+            parameters.loc[name + "_f"] = (1.0, 0.0, 1.0, True, name)
         if self.snow:
             parameters.loc[name + "_tt"] = (0.0, -inf, inf, True, name)
             parameters.loc[name + "_k"] = (2.0, 1.0, 20.0, True, name)
@@ -285,8 +289,12 @@ class FlexModel(RechargeBase):
 
         if self.gw_uptake:
             # Compute leftover potential evaporation
+            if self.interception:
+                p_f = p[6]
+            else:
+                p_f = p[5]
             eg = ep + ea  # positive flux
-            r = r + eg  #
+            r = r + p_f * eg
 
         if return_full:
             data = (sr, r, ea, q, pe)
