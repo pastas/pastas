@@ -90,7 +90,11 @@ def _load_model(data):
         if "rfunc" in ts.keys():
             ts["rfunc"] = getattr(ps.rfunc, ts["rfunc"])
         if "recharge" in ts.keys():
-            ts["recharge"] = getattr(ps.recharge, ts["recharge"])()
+            recharge_kwargs = {}
+            if 'recharge_kwargs' in ts:
+                recharge_kwargs = ts["recharge_kwargs"]
+            ts["recharge"] = getattr(
+                ps.recharge, ts["recharge"])(**recharge_kwargs)
         if "stress" in ts.keys():
             for i, stress in enumerate(ts["stress"]):
                 _remove_keyword(stress)

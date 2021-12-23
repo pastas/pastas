@@ -55,6 +55,7 @@ class RechargeBase:
     def __init__(self):
         self.snow = False
         self.nparam = 0
+        self.kwargs = {}
 
     @staticmethod
     def get_init_parameters(name="recharge"):
@@ -206,6 +207,9 @@ class FlexModel(RechargeBase):
             self.nparam += 1
         if self.snow:
             self.nparam += 2
+        self.kwargs['interception'] = interception
+        self.kwargs['snow'] = snow
+        self.kwargs['gw_uptake'] = gw_uptake
 
     def get_init_parameters(self, name="recharge"):
         parameters = DataFrame(
