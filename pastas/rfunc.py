@@ -303,6 +303,7 @@ class HantushWellModel(RfuncBase):
 
     def __init__(self):
         RfuncBase.__init__(self)
+        self.distances = 1.0
         self.nparam = 3
 
     def set_distances(self, distances):
