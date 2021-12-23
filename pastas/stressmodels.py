@@ -19,6 +19,7 @@ from logging import getLogger
 import numpy as np
 from pandas import DataFrame, Series, Timedelta, Timestamp, concat, date_range
 from scipy.signal import fftconvolve
+import inspect
 
 from .decorators import njit, set_parameter
 from .recharge import Linear
@@ -45,13 +46,18 @@ class StressModelBase:
     """
     _name = "StressModelBase"
 
-    def __init__(self, name, tmin, tmax, rfunc=None):
+    def __init__(self, name, tmin, tmax, rfunc=None, up=True, meanstress=1,
+                 cutoff=0.999):
         self.name = validate_name(name)
         self.tmin = tmin
         self.tmax = tmax
         self.freq = None
-
+        if rfunc is not None:
+            if inspect.isclass(rfunc):
+                rfunc = rfunc()
+            rfunc._add_to_model(up=up, meanstress=meanstress, cutoff=cutoff)
         self.rfunc = rfunc
+
         self.parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
 
@@ -208,7 +214,7 @@ class StressModel(StressModelBase):
     ----------
     stress: pandas.Series
         pandas Series object containing the stress.
-    rfunc: rfunc class
+    rfunc: rfunc class or instance
         Response function used in the convolution with the stress.
     name: str
         Name of the stress.
@@ -233,7 +239,7 @@ class StressModel(StressModelBase):
     --------
     >>> import pastas as ps
     >>> import pandas as pd
-    >>> sm = ps.StressModel(stress=pd.Series(), rfunc=ps.Gamma, name="Prec",
+    >>> sm = ps.StressModel(stress=pd.Series(), rfunc=ps.Gamma(), name="Prec",
     >>>                     settings="prec")
 
     See Also
@@ -253,11 +259,10 @@ class StressModel(StressModelBase):
         if meanstress is None:
             meanstress = stress.series.std()
 
-        rfunc = rfunc(up=up, cutoff=cutoff, meanstress=meanstress)
-
         StressModelBase.__init__(self, name=name,
                                  tmin=stress.series.index.min(),
-                                 tmax=stress.series.index.max(), rfunc=rfunc)
+                                 tmax=stress.series.index.max(), rfunc=rfunc,
+                                 up=up, meanstress=meanstress, cutoff=cutoff)
         self.freq = stress.settings["freq"]
         self.stress = [stress]
         self.set_init_parameters()
@@ -304,6 +309,7 @@ class StressModel(StressModelBase):
         data = {
             "stressmodel": self._name,
             "rfunc": self.rfunc._name,
+            "rfunc_kwargs": self.rfunc.kwargs,
             "name": self.name,
             "up": self.rfunc.up,
             "cutoff": self.rfunc.cutoff,
@@ -384,10 +390,9 @@ class StressModel2(StressModelBase):
         if meanstress is None:
             meanstress = (stress0.series - stress1.series).std()
 
-        rfunc = rfunc(up=up, cutoff=cutoff, meanstress=meanstress)
-
         StressModelBase.__init__(self, name=name, tmin=index.min(),
-                                 tmax=index.max(), rfunc=rfunc)
+                                 tmax=index.max(), rfunc=rfunc, up=up,
+                                 cutoff=cutoff, meanstress=meanstress)
         self.stress.append(stress0)
         self.stress.append(stress1)
 
@@ -462,6 +467,7 @@ class StressModel2(StressModelBase):
         data = {
             "stressmodel": self._name,
             "rfunc": self.rfunc._name,
+            "rfunc_kwargs": self.rfunc.kwargs,
             "name": self.name,
             "up": self.rfunc.up,
             "cutoff": self.rfunc.cutoff,
@@ -500,10 +506,9 @@ class StepModel(StressModelBase):
     _name = "StepModel"
 
     def __init__(self, tstart, name, rfunc=One, up=True, cutoff=0.999):
-        rfunc = rfunc(up=up, cutoff=cutoff, meanstress=1.0)
-
         StressModelBase.__init__(self, name=name, tmin=Timestamp.min,
-                                 tmax=Timestamp.max, rfunc=rfunc)
+                                 tmax=Timestamp.max, rfunc=rfunc, up=up,
+                                 cutoff=cutoff)
         self.tstart = Timestamp(tstart)
         self.set_init_parameters()
 
@@ -719,14 +724,14 @@ class WellModel(StressModelBase):
                                     name="distances")
 
         meanstress = np.max([s.series.std() for s in stress])
-        rfunc = rfunc(up=up, cutoff=cutoff, meanstress=meanstress,
-                      distances=self.distances.values)
 
         tmin = np.min([s.series.index.min() for s in stress])
         tmax = np.max([s.series.index.max() for s in stress])
 
         StressModelBase.__init__(self, name=name, tmin=tmin,
-                                 tmax=tmax, rfunc=rfunc)
+                                 tmax=tmax, rfunc=rfunc, up=up,
+                                 meanstress=meanstress, cutoff=cutoff)
+        self.rfunc.set_distances(self.distances.values)
 
         self.stress = stress
         self.freq = self.stress[0].settings["freq"]
@@ -869,6 +874,7 @@ class WellModel(StressModelBase):
         data = {
             "stressmodel": self._name,
             "rfunc": self.rfunc._name,
+            "rfunc_kwargs": self.rfunc.kwargs,
             "name": self.name,
             "up": True if self.rfunc.up else False,
             "distances": self.distances.to_list(),
@@ -891,7 +897,7 @@ class RechargeModel(StressModelBase):
     evap: pandas.Series or pastas.timeseries.TimeSeries
         pandas.Series or pastas.timeseries object containing the potential
         evaporation series.
-    rfunc: pastas.rfunc class, optional
+    rfunc: pastas.rfunc class or instance, optional
         Response function used in the convolution with the stress. Default
         is Exponential.
     name: str, optional
@@ -1001,10 +1007,9 @@ class RechargeModel(StressModelBase):
         meanstress = self.get_stress(p=p, tmin=index.min(), tmax=index.max(),
                                      freq=self.prec.settings["freq"]).std()
 
-        rfunc = rfunc(up=True, cutoff=cutoff, meanstress=meanstress)
-
         StressModelBase.__init__(self, name=name, tmin=index.min(),
-                                 tmax=index.max(), rfunc=rfunc)
+                                 tmax=index.max(), rfunc=rfunc, up=True,
+                                 meanstress=meanstress, cutoff=cutoff)
 
         self.stress = [self.prec, self.evap]
         if self.temp:
@@ -1194,6 +1199,7 @@ class RechargeModel(StressModelBase):
             "prec": self.prec.to_dict(series=series),
             "evap": self.evap.to_dict(series=series),
             "rfunc": self.rfunc._name,
+            "rfunc_kwargs": self.rfunc.kwargs,
             "name": self.name,
             "recharge": self.recharge._name,
             "recharge_kwargs": self.recharge.kwargs,
@@ -1375,9 +1381,9 @@ class ChangeModel(StressModelBase):
     ----------
     stress: pandas.Series
         pandas Series object containing the stress.
-    rfunc1: rfunc class
+    rfunc1: rfunc class or instance
         Response function used in the convolution with the stress.
-    rfunc2: rfunc class
+    rfunc2: rfunc class or instance
         Response function used in the convolution with the stress.
     name: str
         Name of the stress.
@@ -1420,8 +1426,14 @@ class ChangeModel(StressModelBase):
         StressModelBase.__init__(self, name=name, rfunc=None,
                                  tmin=stress.series.index.min(),
                                  tmax=stress.series.index.max())
-        self.rfunc1 = rfunc1(up=up, cutoff=cutoff)
-        self.rfunc2 = rfunc2(up=up, cutoff=cutoff)
+        if inspect.isclass(rfunc1):
+            rfunc1 = rfunc1()
+        rfunc1._add_to_model(up=up, cutoff=cutoff)
+        self.rfunc1 = rfunc1
+        if inspect.isclass(rfunc2):
+            rfunc2 = rfunc2()
+        rfunc2._add_to_model(up=up, cutoff=cutoff)
+        self.rfunc2 = rfunc2
         self.tchange = Timestamp(tchange)
 
         self.freq = stress.settings["freq"]
@@ -1532,7 +1544,7 @@ class ReservoirModel(StressModelBase):
             meanstress = (stress0.series - stress1.series).std()
 
         StressModelBase.__init__(self, name=name, tmin=index.min(),
-                                 tmax=index.max(), rfunc=None)
+                                 tmax=index.max())
         self.stress.append(stress0)
         self.stress.append(stress1)
 

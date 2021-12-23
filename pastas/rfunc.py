@@ -16,7 +16,10 @@ __all__ = ["Gamma", "Exponential", "Hantush", "Polder", "FourParam",
 class RfuncBase:
     _name = "RfuncBase"
 
-    def __init__(self, up, meanstress, cutoff):
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
+
+    def _add_to_model(self, up=True, meanstress=1, cutoff=0.999):
         self.up = up
         # Completely arbitrary number to prevent division by zero
         if 1e-8 > meanstress > 0:
@@ -160,8 +163,8 @@ class Gamma(RfuncBase):
     """
     _name = "Gamma"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.999):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self):
+        RfuncBase.__init__(self)
         self.nparam = 3
 
     def get_init_parameters(self, name):
@@ -219,8 +222,8 @@ class Exponential(RfuncBase):
     """
     _name = "Exponential"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.999):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self):
+        RfuncBase.__init__(self)
         self.nparam = 2
 
     def get_init_parameters(self, name):
@@ -295,9 +298,11 @@ class HantushWellModel(RfuncBase):
     """
     _name = "HantushWellModel"
 
-    def __init__(self, up=False, meanstress=1, cutoff=0.999, distances=1.0):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self):
+        RfuncBase.__init__(self)
         self.nparam = 3
+
+    def set_distances(self, distances):
         self.distances = distances
 
     def get_init_parameters(self, name):
@@ -392,11 +397,11 @@ class HantushWellModel(RfuncBase):
             uncertainty of parameters A and b.
         """
         var_gain = (
-                (k0(2 * np.sqrt(r ** 2 * b))) ** 2 * var_A +
-                (-A * r * k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(
-                    b)) ** 2 * var_b -
-                2 * A * r * k0(2 * np.sqrt(r ** 2 * b)) *
-                k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(b) * cov_Ab
+            (k0(2 * np.sqrt(r ** 2 * b))) ** 2 * var_A +
+            (-A * r * k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(
+                b)) ** 2 * var_b -
+            2 * A * r * k0(2 * np.sqrt(r ** 2 * b)) *
+            k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(b) * cov_Ab
         )
         return var_gain
 
@@ -442,8 +447,8 @@ class Hantush(RfuncBase):
     """
     _name = "Hantush"
 
-    def __init__(self, up=False, meanstress=1, cutoff=0.999):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self):
+        RfuncBase.__init__(self)
         self.nparam = 3
 
     def get_init_parameters(self, name):
@@ -515,8 +520,8 @@ class Polder(RfuncBase):
     """
     _name = "Polder"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.999):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self):
+        RfuncBase.__init__(self)
         self.nparam = 3
 
     def get_init_parameters(self, name):
@@ -577,8 +582,8 @@ class One(RfuncBase):
     """
     _name = "One"
 
-    def __init__(self, up=None, meanstress=1, cutoff=0.999):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self):
+        RfuncBase.__init__(self)
         self.nparam = 1
 
     def get_init_parameters(self, name):
@@ -634,10 +639,10 @@ class FourParam(RfuncBase):
     """
     _name = "FourParam"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.999):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self, quad=False):
+        RfuncBase.__init__(self, quad=quad)
         self.nparam = 4
-        self.quad = False
+        self.quad = quad
 
     def get_init_parameters(self, name):
         parameters = DataFrame(
@@ -782,8 +787,8 @@ class DoubleExponential(RfuncBase):
     """
     _name = "DoubleExponential"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.999):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self):
+        RfuncBase.__init__(self)
         self.nparam = 4
 
     def get_init_parameters(self, name):
@@ -855,8 +860,8 @@ class Edelman(RfuncBase):
     """
     _name = "Edelman"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.999):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self):
+        RfuncBase.__init__(self)
         self.nparam = 1
 
     def get_init_parameters(self, name):
@@ -926,8 +931,8 @@ class Kraijenhoff(RfuncBase):
     """
     _name = "Kraijenhoff"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.999, n_terms=10):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self, n_terms=10):
+        RfuncBase.__init__(self, n_terms=n_terms)
         self.nparam = 3
         self.n_terms = n_terms
 
@@ -963,8 +968,8 @@ class Kraijenhoff(RfuncBase):
         h = 0
         for n in range(self.n_terms):
             h += (-1) ** n / (2 * n + 1) ** 3 * \
-                 np.cos((2 * n + 1) * np.pi * p[2]) * \
-                 np.exp(-(2 * n + 1) ** 2 * t / p[1])
+                np.cos((2 * n + 1) * np.pi * p[2]) * \
+                np.exp(-(2 * n + 1) ** 2 * t / p[1])
         s = p[0] * (1 - (8 / (np.pi ** 3 * (1 / 4 - p[2] ** 2)) * h))
         return s
 
@@ -1000,9 +1005,9 @@ class Spline(RfuncBase):
     """
     _name = "Spline"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.999, kind='quadratic',
+    def __init__(self, kind='quadratic',
                  t=[1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+        RfuncBase.__init__(self, kind=kind, t=t)
         self.kind = kind
         self.t = t
         self.nparam = len(t) + 1

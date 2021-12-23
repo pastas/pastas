@@ -52,10 +52,10 @@ class RechargeBase:
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.snow = False
         self.nparam = 0
-        self.kwargs = {}
+        self.kwargs = kwargs
 
     @staticmethod
     def get_init_parameters(name="recharge"):
@@ -198,7 +198,8 @@ class FlexModel(RechargeBase):
 
     def __init__(self, interception=True, snow=False, gw_uptake=False):
         check_numba()
-        RechargeBase.__init__(self)
+        RechargeBase.__init__(self, interception=interception, snow=snow,
+                              gw_uptake=gw_uptake)
         self.snow = snow
         self.interception = interception
         self.gw_uptake = gw_uptake
@@ -207,9 +208,6 @@ class FlexModel(RechargeBase):
             self.nparam += 1
         if self.snow:
             self.nparam += 2
-        self.kwargs['interception'] = interception
-        self.kwargs['snow'] = snow
-        self.kwargs['gw_uptake'] = gw_uptake
 
     def get_init_parameters(self, name="recharge"):
         parameters = DataFrame(
