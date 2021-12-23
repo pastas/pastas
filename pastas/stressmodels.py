@@ -1196,6 +1196,7 @@ class RechargeModel(StressModelBase):
             "rfunc": self.rfunc._name,
             "name": self.name,
             "recharge": self.recharge._name,
+            "recharge_kwargs": self.recharge.kwargs,
             "cutoff": self.rfunc.cutoff,
             "temp": self.temp.to_dict() if self.temp else None
         }
@@ -1464,7 +1465,8 @@ class ChangeModel(StressModelBase):
         h = omega * h1 + (1 - omega) * h2
 
         return h
-    
+
+
 class ReservoirModel(StressModelBase):
     """Time series model consisting of a single reservoir with two stresses.
     The first stress causes the head to go up and the second stress causes 
@@ -1500,12 +1502,12 @@ class ReservoirModel(StressModelBase):
     """
     _name = "ReservoirModel"
 
-    def __init__(self, stress, reservoir, name, meanhead, 
-                 settings=("prec", "evap"), metadata=(None, None), 
+    def __init__(self, stress, reservoir, name, meanhead,
+                 settings=("prec", "evap"), metadata=(None, None),
                  meanstress=None):
         # Set resevoir object
         self.reservoir = reservoir(meanhead)
-        
+
         # Code below is copied from StressModel2 and may not be optimal
         # Check the series, then determine tmin and tmax
         stress0 = TimeSeries(stress[0], settings=settings[0],
@@ -1560,7 +1562,7 @@ class ReservoirModel(StressModelBase):
         pandas.Series
             The simulated head contribution.
         """
-        
+
         stress = self.get_stress(tmin=tmin, tmax=tmax, freq=freq)
         h = Series(data=self.reservoir.simulate(stress[0], stress[1], p),
                    index=stress[0].index, name=self.name, fastpath=True)
@@ -1587,7 +1589,7 @@ class ReservoirModel(StressModelBase):
             StressModel object.
         """
         pass
-    
+
     def _get_block(self, p, dt, tmin, tmax):
         """Internal method to get the block-response function.
         Cannot be used (yet?) since there is no block response"""
