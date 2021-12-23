@@ -92,7 +92,7 @@ def _load_model(data):
         if "recharge" in ts.keys():
             recharge_kwargs = {}
             if 'recharge_kwargs' in ts:
-                recharge_kwargs = ts["recharge_kwargs"]
+                recharge_kwargs = ts.pop("recharge_kwargs")
             ts["recharge"] = getattr(
                 ps.recharge, ts["recharge"])(**recharge_kwargs)
         if "stress" in ts.keys():
