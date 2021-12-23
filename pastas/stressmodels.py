@@ -1279,7 +1279,8 @@ class TarsoModel(RechargeModel):
     def set_init_parameters(self):
         # parameters for the first drainage level
         p0 = self.rfunc.get_init_parameters(self.name)
-        one = One(meanstress=self.dmin + 0.5 * (self.dmax - self.dmin))
+        one = One()
+        one._add_to_model(meanstress=self.dmin + 0.5 * (self.dmax - self.dmin))
         pd0 = one.get_init_parameters(self.name).squeeze()
         p0.loc[f'{self.name}_d'] = pd0
         p0.index = [f'{x}0' for x in p0.index]
