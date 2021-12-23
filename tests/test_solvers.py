@@ -1,6 +1,5 @@
-from pandas import read_csv
-
 import pastas as ps
+from pandas import read_csv
 
 
 def create_model():

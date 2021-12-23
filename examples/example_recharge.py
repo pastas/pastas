@@ -23,13 +23,16 @@ evap = ps.read_knmi("data/etmgeg_260.txt", variables="EV24").series * 1e3
 rain = ps.read_knmi("data/etmgeg_260.txt", variables="RH").series * 1e3
 
 # Initialize recharge model and create stressmodel
-rch = ps.rch.FlexModel()
-# rch = ps.rch.Berendrecht()
-# rch = ps.rch.Linear()
-sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, recharge=rch)
+rch = ps.rch.FlexModel(interception=True)
+sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential, recharge=rch,
+                      name="rch")
 
 ml.add_stressmodel(sm)
 
 ml.solve(noise=True, tmin="1990")
 
 ml.plots.results()
+
+df = ml.stressmodels["rch"].get_water_balance(ml.get_parameters("rch"))
+df.plot(subplots=True)
+

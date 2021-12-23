@@ -1,13 +1,11 @@
-"""This module contains utility functions for working with Pastas models.
-
-"""
+"""This module contains utility functions for working with Pastas models."""
 
 import logging
 from datetime import datetime, timedelta
 from logging import handlers
 
 import numpy as np
-from pandas import Series, to_datetime, Timedelta, Timestamp, date_range
+from pandas import Series, Timedelta, Timestamp, date_range, to_datetime
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
 
@@ -35,16 +33,15 @@ def frequency_is_supported(freq):
     allowed. This means monthly ('M'), yearly ('Y') or even weekly ('W')
     frequencies are not allowed. Use '7D' for a weekly simulation.
 
-    D	calendar day frequency
-    H	hourly frequency
-    T, min	minutely frequency
-    S	secondly frequency
-    L, ms	milliseconds
-    U, us	microseconds
-    N	nanoseconds
+    D   calendar day frequency
+    H   hourly frequency
+    T, min      minutely frequency
+    S   secondly frequency
+    L, ms       milliseconds
+    U, us       microseconds
+    N   nanoseconds
 
     TODO: Rename to get_frequency_string and change Returns-documentation
-
     """
     offset = to_offset(freq)
     if not hasattr(offset, 'delta'):
@@ -78,7 +75,6 @@ def _get_stress_dt(freq):
 
     See http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
     for the offset_aliases supported by Pandas.
-
     """
     # Get the frequency string and multiplier
     offset = to_offset(freq)
@@ -125,7 +121,6 @@ def _get_dt(freq):
     -------
     dt: float
         Number of days
-
     """
     # Get the frequency string and multiplier
     dt = to_offset(freq).delta / Timedelta(1, "D")
@@ -146,7 +141,6 @@ def _get_time_offset(t, freq):
     -------
     offset: pandas.Timedelta
         Timedelta with the offset for the timestamp t.
-
     """
     if freq is None:
         raise TypeError("frequency is None")
@@ -156,7 +150,7 @@ def _get_time_offset(t, freq):
 
 def get_sample(tindex, ref_tindex):
     """Sample the index so that the frequency is not higher than the frequency
-        of ref_tindex.
+    of ref_tindex.
 
     Parameters
     ----------
@@ -173,7 +167,6 @@ def get_sample(tindex, ref_tindex):
     -----
     Find the index closest to the ref_tindex, and then return a selection
     of the index.
-
     """
     if len(tindex) == 1:
         return tindex
@@ -212,7 +205,6 @@ def timestep_weighted_resample(series0, tindex):
     -------
     series : pandas.Series
         The resampled series
-
     """
 
     # determine some arrays for the input-series
@@ -272,7 +264,6 @@ def timestep_weighted_resample_fast(series0, freq):
     -------
     series : pandas.Series
         resampled series
-
     """
     series = series0.copy()
 
@@ -302,13 +293,111 @@ def timestep_weighted_resample_fast(series0, freq):
     return series
 
 
+def get_equidistant_series(series, freq, minimize_data_loss=False):
+    """Get equidistant timeseries using nearest reindexing.
+
+    Parameters
+    ----------
+    series : pandas.Series
+        original (non-equidistant) timeseries
+    freq : str
+        frequency of the new equidistant timeseries
+        (i.e. "H", "D", "7D", etc.)
+    minimize_data_loss : bool, optional
+        if set to True, method will attempt use any unsampled
+        points from original timeseries to fill some remaining
+        NaNs in the new equidistant timeseries. Default is False.
+        This only happens in rare cases.
+
+    Returns
+    -------
+    s : pandas.Series
+        equidistant timeseries
+
+    Notes
+    -----
+    This method creates an equidistant timeseries with specified freq
+    using nearest sampling, with additional filling logic that ensures
+    each original measurement is only included once in the new timeseries.
+    Values are filled as close as possible to their original timestamp
+    in the new equidistant timeseries.
+
+    This might also be a very elaborate rewrite of a pandas one-liner...
+
+    """
+
+    # build new equidistant index
+    idx = date_range(series.index[0].floor(freq),
+                     series.index[-1].ceil(freq),
+                     freq=freq)
+
+    # get linear interpolated index from original series
+    fl = interpolate.interp1d(series.index.asi8,
+                              np.arange(0, series.index.size),
+                              kind='linear', bounds_error=False,
+                              fill_value='extrapolate')
+    ind_linear = fl(idx.asi8)
+
+    # get nearest index from original series
+    f = interpolate.interp1d(series.index.asi8,
+                             np.arange(0, series.index.size),
+                             kind='nearest', bounds_error=False,
+                             fill_value='extrapolate')
+    ind = f(idx.asi8).astype(int)
+
+    # create a new equidistant series
+    s = Series(index=idx, data=np.nan)
+
+    # fill in nearest value for each timestamp in equidistant series
+    s.loc[idx] = series.values[ind]
+
+    # remove duplicates, each observation can only be used once
+    mask = Series(ind).duplicated(keep=False).values
+    # mask all duplicates and set to NaN
+    s.loc[mask] = np.nan
+
+    # look through duplicates which equidistant timestamp is closest
+    # then fill value from original series for closest timestamp
+    for i in np.unique(ind[mask]):
+        # mask duplicates
+        dupe_mask = ind == i
+        # get location of first duplicate
+        first_dupe = np.nonzero(dupe_mask)[0][0]
+        # get index for closest equidistant timestamp
+        i_nearest = np.argmin(np.abs(ind_linear - ind)[dupe_mask])
+        # fill value
+        s.iloc[first_dupe + i_nearest] = series.values[i]
+
+    # This next part is a pretty ugly bit of code to fill up any
+    # nans if there are unused values in the original timeseries
+    # that lie close enough to our missing datapoint
+    if minimize_data_loss:
+        # find remaining nans
+        nanmask = s.isna()
+        if nanmask.sum() > 0:
+            # get unused (not sampled) timestamps from original series
+            unused = set(range(series.index.size)) - set(ind)
+            # dropna: do not consider unused nans
+            if len(unused) > 0:
+                missing_ts = series.iloc[list(unused)].dropna().index
+                # loop through nan timestamps in new series
+                for t in s.loc[nanmask].index:
+                    # find closes unused value
+                    closest = np.argmin(np.abs(missing_ts - t))
+                    # check if value is not farther away that freq to avoid
+                    # weird behavior
+                    if np.abs(missing_ts[closest] - t) <= Timedelta(freq):
+                        # fill value
+                        s.loc[t] = series.loc[missing_ts[closest]]
+    return s
+
+
 def to_daily_unit(series, method=True):
     """Experimental method, use wth caution!
 
     Recalculate a timeseries of a stress with a non-daily unit (e/g.
-    m3/month) to a daily unit (e.g. m3/day). This method just changes the
-    values of the timeseries, and does not alter the frequency.
-
+    m3/month) to a daily unit (e.g. m3/day). This method just changes
+    the values of the timeseries, and does not alter the frequency.
     """
     if method is True or method == "divide":
         dt = series.index.to_series().diff() / Timedelta(1, 'D')
@@ -331,7 +420,6 @@ def excel2datetime(tindex, freq="D"):
     Returns
     -------
     datetimes: pandas.datetimeindex
-
     """
     datetimes = to_datetime('1899-12-30') + Timedelta(tindex, freq)
     return datetimes
@@ -349,7 +437,6 @@ def datenum_to_datetime(datenum):
     -------
     datetime :
         Datetime object corresponding to datenum.
-
     """
     days = datenum % 1.
     return datetime.fromordinal(int(datenum)) \
@@ -363,7 +450,7 @@ def datetime2matlab(tindex):
 
 
 def get_stress_tmin_tmax(ml):
-    """Get the minimum and maximum time that all of the stresses have data"""
+    """Get the minimum and maximum time that all of the stresses have data."""
     from .model import Model
     tmin = Timestamp.min
     tmax = Timestamp.max
@@ -386,7 +473,6 @@ def initialize_logger(logger=None, level=logging.INFO):
         A Logger-instance. Use ps.logger to initialise the Logging instance
         that handles all logging throughout pastas,  including all sub modules
         and packages.
-
     """
     if logger is None:
         logger = logging.getLogger('pastas')
@@ -406,7 +492,6 @@ def set_console_handler(logger=None, level=logging.INFO,
         A Logger-instance. Use ps.logger to initialise the Logging instance
         that handles all logging throughout pastas,  including all sub modules
         and packages.
-
     """
     if logger is None:
         logger = logging.getLogger('pastas')
@@ -433,7 +518,6 @@ def set_log_level(level):
 
     >>> import pandas as ps
     >>> ps.set_log_level("ERROR")
-
     """
     set_console_handler(level=level)
 
@@ -447,7 +531,6 @@ def remove_console_handler(logger=None):
         A Logger-instance. Use ps.logger to initialise the Logging instance
         that handles all logging throughout pastas,  including all sub modules
         and packages.
-
     """
     if logger is None:
         logger = logging.getLogger('pastas')
@@ -461,7 +544,7 @@ def add_file_handlers(logger=None, filenames=('info.log', 'errors.log'),
                       backupCount=20, encoding='utf8',
                       fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                       datefmt='%y-%m-%d %H:%M'):
-    """Method to add file handlers in the logger of Pastas
+    """Method to add file handlers in the logger of Pastas.
 
     Parameters
     -------
@@ -469,7 +552,6 @@ def add_file_handlers(logger=None, filenames=('info.log', 'errors.log'),
         A Logger-instance. Use ps.logger to initialise the Logging instance
         that handles all logging throughout pastas,  including all sub modules
         and packages.
-
     """
     if logger is None:
         logger = logging.getLogger('pastas')
@@ -495,7 +577,6 @@ def remove_file_handlers(logger=None):
         A Logger-instance. Use ps.logger to initialise the Logging instance
         that handles all logging throughout pastas,  including all sub modules
         and packages.
-
     """
     if logger is None:
         logger = logging.getLogger('pastas')
@@ -520,7 +601,6 @@ def validate_name(name):
     Notes
     -----
     Forbidden characters are: "/", "\", " ".
-
     """
     name = str(name)  # Make sure it is a string
 
@@ -541,14 +621,15 @@ def show_versions(lmfit=False, numba=False):
         Print the version of lmfit. Needs to be installed.
     numba: bool, optional
         Print the version of numba. Needs to be installed.
-
     """
-    from pastas import __version__ as ps_version
-    from pandas import __version__ as pd_version
-    from numpy import __version__ as np_version
-    from scipy import __version__ as sc_version
-    from matplotlib import __version__ as mpl_version
     from sys import version as os_version
+
+    from matplotlib import __version__ as mpl_version
+    from numpy import __version__ as np_version
+    from pandas import __version__ as pd_version
+    from scipy import __version__ as sc_version
+
+    from pastas import __version__ as ps_version
 
     msg = (
         f"Python version: {os_version}\n"

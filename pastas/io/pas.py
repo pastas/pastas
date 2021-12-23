@@ -3,15 +3,13 @@
 Import a .pas file (basically a json format)
 
 R.A. Collenteur - August 2017
-
 """
-from logging import getLogger
 import json
 from collections import OrderedDict
+from logging import getLogger
 
-from pandas import Series, Timedelta, DataFrame, read_json, Timestamp, \
-    to_numeric, isna
-
+from pandas import (DataFrame, Series, Timedelta, Timestamp, isna, read_json,
+                    to_numeric)
 from pastas import TimeSeries
 
 logger = getLogger(__name__)
@@ -63,8 +61,7 @@ def dump(fname, data):
 
 
 class PastasEncoder(json.JSONEncoder):
-    """Enhanced encoder to deal with the pandas formats used
-    throughout Pastas.
+    """Enhanced encoder to deal with the pandas formats used throughout Pastas.
 
     Notes
     -----
@@ -72,7 +69,6 @@ class PastasEncoder(json.JSONEncoder):
     Timedelta, TimeStamps.
 
     see: https://docs.python.org/3/library/json.html
-
     """
 
     def default(self, o):
@@ -82,7 +78,8 @@ class PastasEncoder(json.JSONEncoder):
             return o.to_json(date_format="iso", orient="split")
         elif isinstance(o, DataFrame):
             # Necessary to maintain order when using the JSON format!
-            return o.to_json(orient="index")
+            # Do not use o.to_json() because of float precision
+            return json.dumps(o.to_dict(orient="index"), indent=0)
         elif isinstance(o, Timedelta):
             return o.to_timedelta64().__str__()
         elif isna(o):

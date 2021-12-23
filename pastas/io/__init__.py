@@ -1,1 +1,1 @@
-from .base import load, dump
+from .base import dump, load

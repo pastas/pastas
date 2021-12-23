@@ -18,13 +18,12 @@ or, to delete the noise model from the model:
 See Also
 --------
 pastas.model.Model.add_noisemodel
-
 """
 
 import numpy as np
-from pandas import Timedelta, DataFrame, Series
+from pandas import DataFrame, Series, Timedelta
 
-from .decorators import set_parameter, njit
+from .decorators import njit, set_parameter
 from .utils import check_numba
 
 __all__ = ["NoiseModel", "ArmaModel"]
@@ -49,49 +48,41 @@ class NoiseModelBase:
 
     @set_parameter
     def _set_initial(self, name, value):
-        """
-        Internal method to set the initial parameter value.
+        """Internal method to set the initial parameter value.
 
         Notes
         -----
         The preferred method for parameter setting is through the model.
-
         """
         self.parameters.loc[name, "initial"] = value
 
     @set_parameter
     def _set_pmin(self, name, value):
-        """
-        Internal method to set the minimum value of the noisemodel.
+        """Internal method to set the minimum value of the noisemodel.
 
         Notes
         -----
         The preferred method for parameter setting is through the model.
-
         """
         self.parameters.loc[name, "pmin"] = value
 
     @set_parameter
     def _set_pmax(self, name, value):
-        """
-        Internal method to set the maximum parameter values.
+        """Internal method to set the maximum parameter values.
 
         Notes
         -----
         The preferred method for parameter setting is through the model.
-
         """
         self.parameters.loc[name, "pmax"] = value
 
     @set_parameter
     def _set_vary(self, name, value):
-        """
-        Internal method to set if the parameter is varied.
+        """Internal method to set if the parameter is varied.
 
         Notes
         -----
         The preferred method for parameter setting is through the model.
-
         """
         self.parameters.loc[name, "vary"] = value
 
@@ -142,7 +133,6 @@ class NoiseModel(NoiseModelBase):
     .. [1] von Asmuth, J. R., and M. F. P. Bierkens (2005), Modeling
            irregularly spaced residual series as a continuous stochastic
            process, Water Resour. Res., 41, W12404, doi:10.1029/2004WR003726.
-
     """
     _name = "NoiseModel"
 
@@ -168,7 +158,6 @@ class NoiseModel(NoiseModelBase):
         -------
         noise: pandas.Series
             Series of the noise.
-
         """
         alpha = p[0]
         odelt = np.diff(res.index.to_numpy()) / Timedelta("1D")
@@ -199,7 +188,6 @@ class NoiseModel(NoiseModelBase):
         .. math:: w = 1 / sqrt((1 - exp(-2 \\Delta t / \\alpha)))
 
         which are then normalized so that sum(w) = len(res)
-
         """
         alpha = p[0]
         # large for first measurement
@@ -213,8 +201,8 @@ class NoiseModel(NoiseModelBase):
 
 
 class ArmaModel(NoiseModelBase):
-    """
-    ARMA(1,1) Noise model to simulate the noise as defined in
+    """ARMA(1,1) Noise model to simulate the noise as defined in.
+
     [collenteur_2020]_.
 
     Notes
@@ -239,7 +227,6 @@ class ArmaModel(NoiseModelBase):
        groundwater levels using non-linear transfer function noise models
        and comparison to lysimeter data, Hydrol. Earth Syst. Sci. Discuss.
        https://doi.org/10.5194/hess-2020-392
-
     """
     _name = "ArmaModel"
 
@@ -274,5 +261,5 @@ class ArmaModel(NoiseModelBase):
         # We have to loop through each value
         for i in range(1, res.size):
             a[i] = res[i] - res[i - 1] * np.exp(-odelt[i - 1] / alpha) - \
-                   a[i - 1] * pm * np.exp(-odelt[i - 1] / np.abs(beta))
+                a[i - 1] * pm * np.exp(-odelt[i - 1] / np.abs(beta))
         return a
