@@ -17,6 +17,9 @@ class RfuncBase:
     _name = "RfuncBase"
 
     def __init__(self, **kwargs):
+        self.up = True
+        self.meanstress = 1
+        self.cutoff = 0.999
         self.kwargs = kwargs
 
     def _add_to_model(self, up=True, meanstress=1, cutoff=0.999):
