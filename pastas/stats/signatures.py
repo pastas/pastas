@@ -1,14 +1,14 @@
 """This module contains methods to compute the groundwater signatures."""
 import pandas as pd
 from pandas import NA, Timedelta, DatetimeIndex
-from numpy import diff
+from numpy import diff, sqrt
 import pastas as ps
 
 __all__ = ["cv_monthly_mean", "cv_date_min", "cv_fall_rate", "cv_rise_rate",
-           "parde_seasonality", "avg_seasonal_fluctuation",
+           "parde_seasonality", "avg_seasonal_fluctuation", "magnitude",
            "interannual_variation", "low_pulse_count", "high_pulse_count",
            "low_pulse_duration", "high_pulse_duration", "amplitude_range",
-           ]
+           "bimodality_coefficient", "mean_annual_maximum", ]
 
 
 def cv_monthly_mean(series, freq="M"):
@@ -550,7 +550,7 @@ def amplitude_range(series):
     return series.max() - series.min()
 
 
-def duration_curve_slope(l=0, u=0.1):
+def duration_curve_slope(series, l=0.1, u=0.9):
     """Slope of the duration curve between percentile l and u.
 
     Returns
@@ -566,6 +566,27 @@ def duration_curve_slope(l=0, u=0.1):
     .. [oudin_2010] Oudin, L., Kay, A., Andréassian, V., & Perrin, C. (2010).
        Are seemingly physically similar catchments truly hydrologically
        similar? Water Resources Research, 46, W11558.
+
+    """
+    series[series.quantile(l) > series < series.quantile(u)].sort_values()
+    return NotImplementedError
+
+
+def duration_curve_range(l=0.1, u=0.9):
+    """Range of the duration curve between the percentile l and u.
+
+    Returns
+    -------
+
+    Notes
+    -----
+    Range of the duration curve between the percentile l and u.
+
+    References
+    ----------
+    .. [richards_1990] Richards, R. P. (1990). Measures of Flow Variability
+       and a New Flow‐Based Classification of Great Lakes Tributaries.
+       Journal of Great Lakes Research, 16(1), 53–70.
 
     """
 
@@ -611,29 +632,7 @@ def mean_annual_maximum(series):
        covariance. Journal of Hydrology, 237(3‐4), 184–197.
 
     """
-
-    return NotImplementedError
-
-
-def duration_curve_range(l=0.1, u=0.9):
-    """Range of the duration curve between the percentile l and u.
-
-    Returns
-    -------
-
-    Notes
-    -----
-    Range of the duration curve between the percentile l and u.
-
-    References
-    ----------
-    .. [richards_1990] Richards, R. P. (1990). Measures of Flow Variability
-       and a New Flow‐Based Classification of Great Lakes Tributaries.
-       Journal of Great Lakes Research, 16(1), 53–70.
-
-    """
-
-    return NotImplementedError
+    return series.resample("A").max().mean()
 
 
 def bimodality_coefficient(series):
@@ -647,18 +646,30 @@ def bimodality_coefficient(series):
     Squared product moment skewness plus one, divided by product moment
     kurtosis.
 
+        b = (skew **2 + 1 ) / kurtosis
+
+    Adapted from the R "modes" package
+
     References
     ----------
     .. [Ellison_1987] Ellison, A. M. (1987). Effect of seed dimorphism on the
        density‐dependent dynamics of experimental populations of atriplex
        triangularis. American Journal of Botany, 74(8), 1280–1288.
-    .. [deevi_2016] Deevi, S., & 4D Strategies (2016). Modes: Find the modes
-       and assess the modality of complex and mixture distributions,
-       especially with big datasets. R package version 0.7.0.
 
     """
+    n = series.size
+    # Compute the skew for a finite sample
+    skew = (1 / n) * sum((series - series.mean()) ** 3) / \
+           (((1 / n) * sum((series - series.mean()) ** 2)) ** 1.5)
+    skew *= (sqrt(n * (n - 1))) / (n - 2)
 
-    return NotImplementedError
+    # Compute the kurtosis for a finite sample
+    kurt = (1 / n) * sum((series - series.mean()) ** 4) / (
+            ((1 / n) * sum((series - series.mean()) ** 2)) ** 2) - 3
+    kurt = ((n - 1) * ((n + 1) * kurt - 3 * (n - 1)) / ((n - 2) * (n - 3))) + 3
+
+    return ((skew ** 2) + 1) / \
+           (kurt + ((3 * ((n - 1) ** 2)) / ((n - 2) * (n - 3))))
 
 
 def excess_mass(series):
@@ -738,6 +749,8 @@ def magnitude(series):
     -----
     Difference of peak head to base head, divided by base head.
 
+    (h_max - h_min ) / h_min
+
     References
     ----------
     .. [hannah_2000] Hannah, D. M., Smith, B. P. G., Gurnell, A. M.,
@@ -745,6 +758,7 @@ def magnitude(series):
        Hydrological Processes, 14(2), 317–338.
 
     """
+    return (series.max() - series.min()) / series.min()
 
 
 def recession_constant(series):
