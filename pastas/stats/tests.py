@@ -491,7 +491,8 @@ def diagnostics(series, alpha=0.05, nparam=0, lags=15, stats=(),
         stat, p = stoffer_toloi(series, nparam=nparam, lags=lags)
         df.loc["Stoffer-Toloi", cols] = "Autocorr.", stat, p
 
-    df["Reject H0"] = df.loc[:, "P-value"] < alpha
+    df["Reject H0 ($\\alpha$={:.2f})".format(alpha)] = \
+        df.loc[:, "P-value"] < alpha
     df[["Statistic", "P-value"]] = \
         df[["Statistic", "P-value"]].applymap(float_fmt.format)
 
@@ -542,8 +543,9 @@ def plot_acf(series, alpha=0.05, lags=365, acf_options=None, smooth_conf=True,
                 **acf_options)
 
     if r.empty:
-        raise ValueError("ACF result is empty. Check input arguments "
-                         "for calculating acf!")
+        raise ValueError("The computed autocorrelation functions has no "
+                         "values. Possibly changing the input arguments ("
+                         "'acf_options') for calculating ACF helps")
 
     if smooth_conf:
         conf = r.stderr.rolling(10, min_periods=1).mean().values
