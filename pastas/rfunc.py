@@ -280,6 +280,7 @@ class HantushWellModel(RfuncBase):
     .. math:: p[1] = a = cS
     .. math:: p[2] = b = 1^2 / (4 \\lambda^2)
     .. math:: p[3] = r \\text{(not optimized)}
+
     where :math:`\\lambda = \\sqrt{Tc}`
 
     The parameter r (distance from the well to the observation point)
@@ -292,6 +293,7 @@ class HantushWellModel(RfuncBase):
     - a: is the same  :math:`a = cS`
     - b: is the same, but :math:`r` is set to 1 if passed separately,
       :math:`b = 1^2 / (4 \\lambda^2)`
+
     """
     _name = "HantushWellModel"
 

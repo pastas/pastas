@@ -543,9 +543,9 @@ def plot_acf(series, alpha=0.05, lags=365, acf_options=None, smooth_conf=True,
                 **acf_options)
 
     if r.empty:
-        raise ValueError("The computed autocorrelation functions has no "
-                         "values. Possibly changing the input arguments ("
-                         "'acf_options') for calculating ACF helps")
+        raise ValueError("The computed autocorrelation function has no "
+                         "values. Changing the input arguments ('acf_options')"
+                         " for calculating ACF may help.")
 
     if smooth_conf:
         conf = r.stderr.rolling(10, min_periods=1).mean().values

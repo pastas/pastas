@@ -115,7 +115,7 @@ class Plotting:
         if oseries:
             o = self.ml.observations(tmin=tmin, tmax=tmax)
             o_nu = self.ml.oseries.series.drop(o.index).loc[
-                o.index.min():o.index.max()]
+                   o.index.min():o.index.max()]
             if not o_nu.empty:
                 # plot parts of the oseries that are not used in grey
                 o_nu.plot(linestyle='', marker='.', color='0.5', label='',
@@ -893,7 +893,8 @@ def compare(models, tmin=None, tmax=None, block_or_step='step',
         ax_res.plot(res.index, res, label="Residuals" + str(j + 1), c=color)
         if iml.settings["noise"]:
             noise = iml.noise(tmin=tmin[j], tmax=tmax[j])
-            ax_res.plot(noise.index, noise, label="Noise" + str(j + 1), c=color,
+            ax_res.plot(noise.index, noise, label="Noise" + str(j + 1),
+                        c=color,
                         alpha=0.5)
         ax_res.legend(loc=(0, 1), ncol=4, frameon=False)
         # recalculate axes limits
@@ -915,7 +916,7 @@ def compare(models, tmin=None, tmax=None, block_or_step='step',
                 contrib = iml.get_contribution(sm_name, tmin=tmin[j],
                                                tmax=tmax[j])
                 ax_contrib.plot(contrib.index, contrib,
-                                label=f"{j+1}",
+                                label=f"{j + 1}",
                                 c=color)
                 # plot the step-reponse
                 ax_resp.plot(response.index, response, c=color)
@@ -1163,7 +1164,7 @@ class TrackSolve:
     Interactive plotting of optimization progress requires a matplotlib
     backend that supports interactive plotting, e.g. `mpl.use("TkAgg")` and
     `mpl.interactive(True)`. Some possible speedups on the matplotlib side
-      include:
+    include:
         - mpl.style.use("fast")
         - mpl.rcParams['path.simplify_threshold'] = 1.0
 
