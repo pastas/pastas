@@ -25,7 +25,7 @@ def test_notebook(file):
     cwd = os.getcwd()
 
     os.chdir(pathname)
-    if file not in ["12_emcee_uncertainty.ipynb"]:
+    if file not in ["12_emcee_uncertainty.ipynb", "20_reservoir.ipynb"]:
         try:
             # run autotest on each notebook
             cmd = 'jupyter ' + 'nbconvert ' + \
