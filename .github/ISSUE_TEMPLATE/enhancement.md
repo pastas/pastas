@@ -1,6 +1,6 @@
 ---
 name: Enhancement
-about: Create a report to help us improve Pastas
+about: Suggest an enhancement of the existing code in Pastas
 title: "[ENHANCEMENT]"
 labels: enhancement
 assignees: ''
