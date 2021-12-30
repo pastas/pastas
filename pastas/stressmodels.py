@@ -22,7 +22,6 @@ from scipy.signal import fftconvolve
 
 from .decorators import njit, set_parameter
 from .recharge import Linear
-from .reservoir import Reservoir1
 from .rfunc import Exponential, HantushWellModel, One
 from .timeseries import TimeSeries
 from .utils import check_numba, validate_name
@@ -30,7 +29,8 @@ from .utils import check_numba, validate_name
 logger = getLogger(__name__)
 
 __all__ = ["StressModel", "StressModel2", "Constant", "StepModel",
-           "LinearTrend", "RechargeModel", "WellModel", "TarsoModel"]
+           "LinearTrend", "RechargeModel", "WellModel", "TarsoModel",
+           "ChangeModel"]
 
 
 class StressModelBase:
@@ -355,7 +355,7 @@ class StressModel2(StressModelBase):
     See Also
     --------
     pastas.rfunc
-    pastas.timeseries
+    pastas.timeseries.TimeSeries
     """
     _name = "StressModel2"
 
@@ -900,7 +900,7 @@ class RechargeModel(StressModelBase):
         String with the name of the recharge model. Options are: Linear (
         default), FlexModel and Berendrecht. These can be accessed through
         ps.rch.
-    temp: pandas.Series or pastas.TimeSeries, optional
+    temp: pandas.Series or pastas.timeseries.TimeSeries, optional
         pandas.Series or pastas.TimeSeries object containing the
         temperature series. It depends on the recharge model is this
         argument is required or not.
@@ -921,8 +921,8 @@ class RechargeModel(StressModelBase):
     See Also
     --------
     pastas.rfunc
-    pastas.timeseries
-    pastas.rch
+    pastas.timeseries.TimeSeries
+    pastas.recharge
 
     Notes
     -----

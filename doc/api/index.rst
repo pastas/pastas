@@ -13,6 +13,7 @@ left-hand menu you will find the different categories of the API documentation.
     :recursive:
 
     model.Model
+    modelplots.Plotting
     timeseries.TimeSeries
     stressmodels
     recharge

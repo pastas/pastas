@@ -12,7 +12,7 @@ from .decorators import get_stressmodel
 from .io.base import _load_model, dump
 from .modelstats import Statistics
 from .noisemodels import NoiseModel
-from .plots import Plotting
+from .modelplots import Plotting
 from .solver import LeastSquares
 from .stressmodels import Constant
 from .timeseries import TimeSeries
@@ -363,7 +363,7 @@ class Model:
             istart += 1
         if self.transform:
             sim = self.transform.simulate(sim, p[istart:istart +
-                                                 self.transform.nparam])
+                                                        self.transform.nparam])
 
         # Respect provided tmin/tmax at this point, since warmup matters for
         # simulation but should not be returned, unless return_warmup=True.
@@ -1159,7 +1159,7 @@ class Model:
         # use warmup
         if tmin:
             tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + \
-                self.settings["time_offset"]
+                        self.settings["time_offset"]
         else:
             tmin_warm = None
 
@@ -1436,7 +1436,7 @@ class Model:
         # use warmup
         if tmin:
             tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + \
-                self.settings["time_offset"]
+                        self.settings["time_offset"]
         else:
             tmin_warm = None
 
@@ -1624,7 +1624,7 @@ class Model:
                 atol = 1e-8
             else:
                 atol = np.min(
-                    [1e-8, 10**(np.floor(np.log10(np.abs(pmin))) - 1)])
+                    [1e-8, 10 ** (np.floor(np.log10(np.abs(pmin))) - 1)])
 
             # deal with NaNs in parameter bounds
             if np.isnan(pmax):

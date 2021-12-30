@@ -10,7 +10,7 @@ from scipy.interpolate import interp1d
 
 __all__ = ["Gamma", "Exponential", "Hantush", "Polder", "FourParam",
            "DoubleExponential", "One", "Edelman", "HantushWellModel",
-           "Kraijenhoff"]
+           "Kraijenhoff", "Spline"]
 
 
 class RfuncBase:
