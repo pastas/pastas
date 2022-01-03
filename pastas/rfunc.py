@@ -988,17 +988,17 @@ class Spline(RfuncBase):
     t: list
         times at which the response function is defined
     kind: string
-        See scipy.interpolate.interp1d. Most usefull for a smooth response
-        function are ‘quadratic’, ‘cubic’.
+        see scipy.interpolate.interp1d. Most useful for a smooth response
+        function are ‘quadratic’ and ‘cubic’.
 
     Notes
     -----
     The spline response function generates a response function from factors at
-    t = 1, 2, 4, 8, 16, 32, 64, 128, 256, 512 and 1024 days. This response
-    function is more data-driven than existing response functions and has no
-    physical background. Therefore it can primarily be used to compare to other
-    more physical response functions, that probably describe the groundwater
-    system better.
+    t = 1, 2, 4, 8, 16, 32, 64, 128, 256, 512 and 1024 days by default. This 
+    response function is more data-driven than existing response functions and 
+    has no physical background. Therefore it can primarily be used to compare 
+    to other more physical response functions, that probably describe the 
+    groundwater system better.
     """
     _name = "Spline"
 

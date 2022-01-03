@@ -86,7 +86,7 @@ Pastas
 - pandas>=1.1
 - scipy>=1.3
 
-Apart from this, is comes highly recommended to install Numba (>0.51) to
+Apart from this, is is highly recommended to install Numba (>0.51) to
 gain significant speed-ups.
 
 How to Cite Pastas?

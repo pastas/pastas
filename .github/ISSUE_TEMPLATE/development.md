@@ -8,7 +8,7 @@ assignees: ''
 ---
 
 **Describe the proposed feature**
-A clear and concise description of what the proposed enhancement is.
+A clear and concise description of what the proposed new feature is.
 
 **Expected usage**
 A clear and concise description of what you expected to happen.
