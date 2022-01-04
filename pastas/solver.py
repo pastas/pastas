@@ -1,6 +1,4 @@
-"""
-
-This module contains the different solvers that are available for Pastas.
+"""This module contains the different solvers that are available for Pastas.
 
 All solvers inherit from the BaseSolver class, which contains general method
 for selecting the correct time series to misfit and options to weight the
@@ -10,7 +8,6 @@ residuals or noise series.
 To solve a model the following syntax can be used:
 
 >>> ml.solve(solver=ps.LeastSquares)
-
 """
 
 from logging import getLogger
@@ -78,7 +75,6 @@ class BaseSolver:
         -------
         rv:
             residuals series (if noise=False) or noise series (if noise=True)
-
         """
         # Get the residuals or the noise
         if noise:
@@ -117,7 +113,6 @@ class BaseSolver:
         -----
         Add residuals assuming a Normal distribution with standard deviation
         equal to the standard deviation of the residuals.
-
         """
 
         sigr = self.ml.residuals().std()
@@ -146,7 +141,6 @@ class BaseSolver:
         to parameter uncertainty. In other words, there is a 95% probability
         that the true best-fit line for the observed data lies within the
         95% confidence interval.
-
         """
         return self._get_confidence_interval(func=self.ml.simulate, n=n,
                                              alpha=alpha, max_iter=max_iter,
@@ -169,7 +163,6 @@ class BaseSolver:
         to parameter uncertainty. In other words, there is a 95% probability
         that the true best-fit line for the observed data lies within the
         95% confidence interval.
-
         """
         dt = self.ml.get_block_response(name=name).index.values
         return self._get_confidence_interval(func=self.ml.get_block_response,
@@ -194,7 +187,6 @@ class BaseSolver:
         to parameter uncertainty. In other words, there is a 95% probability
         that the true best-fit line for the observed data lies within the
         95% confidence interval.
-
         """
         dt = self.ml.get_block_response(name=name).index.values
         return self._get_confidence_interval(func=self.ml.get_step_response,
@@ -218,7 +210,6 @@ class BaseSolver:
         to parameter uncertainty. In other words, there is a 95% probability
         that the true best-fit line for the observed data lies within the
         95% confidence interval.
-
         """
         return self._get_confidence_interval(func=self.ml.get_contribution,
                                              n=n, alpha=alpha, name=name,
@@ -237,15 +228,14 @@ class BaseSolver:
             Name of the stressmodel or model component to obtain the
             parameters for.
         max_iter : int, optional
-            maximum number of iterations for truncated multivariate 
-            sampling, default is 10. Increase this value if number of 
-            accepted parameter samples is lower than n. 
+            maximum number of iterations for truncated multivariate
+            sampling, default is 10. Increase this value if number of
+            accepted parameter samples is lower than n.
 
         Returns
         -------
         numpy.ndarray
             Numpy array with N parameter samples.
-
         """
         p = self.ml.get_parameters(name=name)
         pcov = self._get_covariance_matrix(name=name)
@@ -321,7 +311,6 @@ class BaseSolver:
         -------
         pcov: pandas.DataFrame
             Pandas DataFrame with the covariances for the parameters.
-
         """
         if name:
             index = self.ml.parameters.loc[
@@ -347,7 +336,6 @@ class BaseSolver:
         -------
         pcor: pandas.DataFrame
             n x n Pandas DataFrame with the correlations.
-
         """
         index = pcov.index
         pcov = pcov.to_numpy()
@@ -389,7 +377,6 @@ class LeastSquares(BaseSolver):
         References
         ----------
         .. [scipy_ref] https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
-
         """
         BaseSolver.__init__(self, ml=ml, pcov=pcov, nfev=nfev, **kwargs)
 
@@ -447,7 +434,6 @@ class LeastSquares(BaseSolver):
         -----
         This method is copied from Scipy, please refer to:
         https://github.com/scipy/scipy/blob/v1.0.0/scipy/optimize/optimize.py
-
         """
         cost = 2 * cost  # res.cost is half sum of squares!
 

@@ -10,14 +10,12 @@ These methods may be used as follows:
 or
 
 >>> ml.stats.rmse()
-
 """
 
 from logging import getLogger
 
-from numpy import nan, abs, average, log, sqrt
-
-from pastas.stats.core import mean, var, std, _get_weights
+from numpy import abs, average, log, nan, sqrt
+from pastas.stats.core import _get_weights, mean, std, var
 
 __all__ = ["rmse", "sse", "mae", "nse", "evp", "rsq", "bic", "aic",
            "pearsonr", "kge_2012"]
@@ -58,7 +56,6 @@ def mae(obs=None, sim=None, res=None, missing="drop", weighted=False,
     .. math:: \\text{MAE} = \\sum_{i=1}^{N} w_i |x_i - y_i|
 
     where :math:`N` is the number of observations in the observed time series.
-
     """
     if res is None:
         res = sim - obs
@@ -106,7 +103,6 @@ def rmse(obs=None, sim=None, res=None, missing="drop", weighted=False,
     .. math:: \\text{RMSE} = \\sqrt{\\sum_{i=1}^{N} w_i n_i^2}
 
     where :math:`N` is the number of residuals :math:`n`.
-
     """
     if res is None:
         res = sim - obs
@@ -146,7 +142,6 @@ def sse(obs=None, sim=None, res=None, missing="drop"):
     .. math:: \\text{SSE} = \\sum(r^2)
 
     Where :math:`r` are the residuals.
-
     """
     if res is None:
         res = (sim - obs)
@@ -195,7 +190,6 @@ def pearsonr(obs, sim, missing="drop", weighted=False, max_gap=30):
     Where :math:`x` is is observed time series, :math:`y` the simulated
     time series, and :math:`N` the number of observations in the observed
     time series.
-
     """
     if missing == "drop":
         obs = obs.dropna()
@@ -259,7 +253,6 @@ def evp(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30):
        von Asmuth. 2012. Software for hydrogeologic time series analysis,
        interfacing data with physical insight. Environmental Modelling &
        Software 38: 178–130.
-
     """
     if res is None:
         res = sim - obs
@@ -304,6 +297,8 @@ def nse(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30):
 
     Notes
     -----
+    NSE computed according to [nash_1970]_
+
     .. math:: \\text{NSE} = 1 - \\frac{\\sum(h_s-h_o)^2}{\\sum(h_o-\\mu_{h,o})}
 
     References
@@ -311,7 +306,6 @@ def nse(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30):
     .. [nash_1970] Nash, J. E., & Sutcliffe, J. V. (1970). River flow
        forecasting through conceptual models part I-A discussion of
        principles. Journal of hydrology, 10(3), 282-230.
-
     """
     if res is None:
         res = sim - obs
@@ -328,7 +322,7 @@ def nse(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30):
     mu = average(obs.to_numpy(), weights=w)
 
     return 1 - (w * res.to_numpy() ** 2).sum() / \
-        (w * (obs.to_numpy() - mu) ** 2).sum()
+           (w * (obs.to_numpy() - mu) ** 2).sum()
 
 
 def rsq(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30,

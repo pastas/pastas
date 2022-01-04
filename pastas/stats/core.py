@@ -1,13 +1,13 @@
 """The following methods may be used to calculate the crosscorrelation and
-autocorrelation for a time series. These methods are 'special' in the sense
-that they are able to deal with irregular time steps often observed in
-hydrological time series.
+autocorrelation for a time series.
 
+These methods are 'special' in the sense that they are able to deal with
+irregular time steps often observed in hydrological time series.
 """
 
-from numpy import inf, exp, sqrt, pi, empty_like, corrcoef, arange, nan, \
-    ones, array, diff, append, average
-from pandas import Timedelta, DataFrame, TimedeltaIndex
+from numpy import (append, arange, array, average, corrcoef, diff, empty_like,
+                   exp, inf, nan, ones, pi, sqrt)
+from pandas import DataFrame, Timedelta, TimedeltaIndex
 from scipy.stats import norm
 
 from ..decorators import njit
@@ -15,7 +15,7 @@ from ..utils import check_numba
 
 
 def acf(x, lags=365, bin_method='rectangle', bin_width=0.5, max_gap=inf,
-        min_obs=100, full_output=False, alpha=0.05):
+        min_obs=20, full_output=False, alpha=0.05):
     """Calculate the autocorrelation function for irregular time steps.
 
     Parameters
@@ -80,7 +80,6 @@ def acf(x, lags=365, bin_method='rectangle', bin_width=0.5, max_gap=inf,
     --------
     pastas.stats.ccf
     statsmodels.api.tsa.acf
-
     """
     c = ccf(x=x, y=x, lags=lags, bin_method=bin_method, bin_width=bin_width,
             max_gap=max_gap, min_obs=min_obs, full_output=full_output,
@@ -93,7 +92,7 @@ def acf(x, lags=365, bin_method='rectangle', bin_width=0.5, max_gap=inf,
 
 
 def ccf(x, y, lags=365, bin_method='rectangle', bin_width=0.5,
-        max_gap=inf, min_obs=100, full_output=False, alpha=0.05):
+        max_gap=inf, min_obs=20, full_output=False, alpha=0.05):
     """Method to compute the cross-correlation for irregular time series.
 
     Parameters
@@ -144,7 +143,6 @@ def ccf(x, y, lags=365, bin_method='rectangle', bin_width=0.5,
     Examples
     --------
     >>> ccf = ps.stats.ccf(x, y, bin_method="gaussian")
-
     """
     # prepare the time indices for x and y
     if x.index.inferred_freq and y.index.inferred_freq:
@@ -192,9 +190,7 @@ def ccf(x, y, lags=365, bin_method='rectangle', bin_width=0.5,
 
 
 def _preprocess(x, max_gap):
-    """Internal method to preprocess the time series.
-
-    """
+    """Internal method to preprocess the time series."""
     dt = x.index.to_series().diff().dropna().values / Timedelta(1, "D")
     dt_mu = dt[dt < max_gap].mean()  # Deal with big gaps if present
     t = dt.cumsum()
@@ -207,9 +203,7 @@ def _preprocess(x, max_gap):
 
 @njit
 def _compute_ccf_rectangle(lags, t_x, x, t_y, y, bin_width=0.5):
-    """Internal numba-optimized method to compute the ccf.
-
-    """
+    """Internal numba-optimized method to compute the ccf."""
     c = empty_like(lags)
     b = empty_like(lags)
     l = len(lags)
@@ -235,9 +229,7 @@ def _compute_ccf_rectangle(lags, t_x, x, t_y, y, bin_width=0.5):
 
 @njit
 def _compute_ccf_gaussian(lags, t_x, x, t_y, y, bin_width=0.5):
-    """Internal numba-optimized method to compute the ccf.
-
-    """
+    """Internal numba-optimized method to compute the ccf."""
     c = empty_like(lags)
     b = empty_like(lags)
     l = len(lags)
@@ -296,7 +288,6 @@ def mean(x, weighted=True, max_gap=30):
 
     where :math:`w_i` are the weights, taken as the time step between
     observations, normalized by the sum of all time steps.
-
     """
     w = _get_weights(x, weighted=weighted, max_gap=max_gap)
     return average(x.to_numpy(), weights=w)
@@ -326,7 +317,6 @@ def var(x, weighted=True, max_gap=30):
     where :math:`w_i` are the weights, taken as the time step between
     observations, normalized by the sum of all time steps. Note how
     weighted mean (:math:`\\bar{x}`) is used in this formula.
-
     """
     w = _get_weights(x, weighted=weighted, max_gap=max_gap)
     mu = average(x.to_numpy(), weights=w)
@@ -352,7 +342,6 @@ def std(x, weighted=True, max_gap=30):
     See Also
     --------
     ps.stats.mean, ps.stats.var
-
     """
     return sqrt(var(x, weighted=weighted, max_gap=max_gap))
 

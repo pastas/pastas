@@ -1,5 +1,4 @@
-"""
-Contains the class MenyData, which represents the data in a Menyanthes file
+"""Contains the class MenyData, which represents the data in a Menyanthes file.
 
 Currently only the observations (H) and stresses (IN) and model results are supported.
 
@@ -10,7 +9,6 @@ Currently only the observations (H) and stresses (IN) and model results are supp
 # previous data entry)
 # Extraction - cubic meters(flux summed starting from date of previous data
 # entry)
-
 """
 
 from os import path
@@ -34,7 +32,6 @@ def read_meny(fname, locations=None, datatype='H'):
 
     Returns
     -------
-
     """
     meny = MenyData(fname, data=datatype)
     if datatype == 'H':
@@ -86,8 +83,6 @@ class MenyData:
         ----------
         fname: str
             String with the filename and path to a menyanthes file.
-
-
         """
 
         mat = self.read_file(fname)
@@ -114,9 +109,7 @@ class MenyData:
 
     @staticmethod
     def read_file(fname):
-        """This method is used to read the file.
-
-        """
+        """This method is used to read the file."""
 
         # Check if file is present
         if not (path.isfile(fname)):
@@ -128,9 +121,7 @@ class MenyData:
         return mat
 
     def read_in(self, mat):
-        """Read the input part.
-
-        """
+        """Read the input part."""
 
         # Check if more then one time series model is present
         if not isinstance(mat['IN'], np.ndarray):
@@ -174,9 +165,7 @@ class MenyData:
             self.IN[IN.Name] = data
 
     def read_h(self, mat):
-        """Read the dependent variable part.
-
-        """
+        """Read the dependent variable part."""
 
         # Check if more then one time series model is present
         if not isinstance(mat['H'], np.ndarray):
@@ -212,9 +201,7 @@ class MenyData:
             self.H[H.Name] = data
 
     def read_m(self, mat):
-        """Read the result part.
-
-        """
+        """Read the result part."""
         # Check if more then one time series model is present
         if not isinstance(mat['M'], np.ndarray):
             mat['M'] = [mat['M']]

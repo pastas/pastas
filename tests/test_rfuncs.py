@@ -1,6 +1,5 @@
-import pytest
-
 import pastas as ps
+import pytest
 
 
 @pytest.mark.parametrize("rfunc_name", ps.rfunc.__all__)

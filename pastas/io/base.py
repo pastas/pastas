@@ -1,21 +1,17 @@
-"""
-Import model
-"""
+"""Import model."""
 
 from importlib import import_module
 from logging import getLogger
 from os import path
 
-from pandas import to_numeric
-
 import pastas as ps
+from pandas import to_numeric
 
 logger = getLogger(__name__)
 
 
 def load(fname, **kwargs):
-    """
-    Method to load a Pastas Model from file.
+    """Method to load a Pastas Model from file.
 
     Parameters
     ----------
@@ -34,7 +30,6 @@ def load(fname, **kwargs):
     --------
     >>> import pastas as ps
     >>> ml = ps.io.load("model.pas")
-
     """
     if not path.exists(fname):
         logger.error("File not found: %s", fname)
@@ -95,7 +90,11 @@ def _load_model(data):
         if "rfunc" in ts.keys():
             ts["rfunc"] = getattr(ps.rfunc, ts["rfunc"])
         if "recharge" in ts.keys():
-            ts["recharge"] = getattr(ps.recharge, ts["recharge"])()
+            recharge_kwargs = {}
+            if 'recharge_kwargs' in ts:
+                recharge_kwargs = ts.pop("recharge_kwargs")
+            ts["recharge"] = getattr(
+                ps.recharge, ts["recharge"])(**recharge_kwargs)
         if "stress" in ts.keys():
             for i, stress in enumerate(ts["stress"]):
                 _remove_keyword(stress)
@@ -142,8 +141,7 @@ def _load_model(data):
 
 
 def dump(fname, data, **kwargs):
-    """
-    Method to save a pastas-model to a file.
+    """Method to save a pastas-model to a file.
 
     Parameters
     ----------
@@ -164,7 +162,6 @@ def dump(fname, data, **kwargs):
     -----
     The specific dump-module is automatically chosen based on the provided
     file extension.
-
     """
     ext = path.splitext(fname)[1]
     dump_mod = import_module("pastas.io" + ext)

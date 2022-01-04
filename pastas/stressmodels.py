@@ -12,26 +12,25 @@ Examples
 See Also
 --------
 pastas.model.Model.add_stressmodel
-
-
 """
 
 from logging import getLogger
 
 import numpy as np
-from pandas import date_range, Series, Timedelta, DataFrame, concat, Timestamp
+from pandas import DataFrame, Series, Timedelta, Timestamp, concat, date_range
 from scipy.signal import fftconvolve
 
-from .decorators import set_parameter, njit
+from .decorators import njit, set_parameter
 from .recharge import Linear
-from .rfunc import One, Exponential, HantushWellModel
+from .rfunc import Exponential, HantushWellModel, One
 from .timeseries import TimeSeries
-from .utils import validate_name, check_numba
+from .utils import check_numba, validate_name
 
 logger = getLogger(__name__)
 
 __all__ = ["StressModel", "StressModel2", "Constant", "StepModel",
-           "LinearTrend", "RechargeModel", "WellModel", "TarsoModel"]
+           "LinearTrend", "RechargeModel", "WellModel", "TarsoModel",
+           "ChangeModel"]
 
 
 class StressModelBase:
@@ -43,7 +42,6 @@ class StressModelBase:
         Name of this stressmodel object. Used as prefix for the parameters.
     parameters: pandas.DataFrame
         Dataframe containing the parameters.
-
     """
     _name = "StressModelBase"
 
@@ -73,7 +71,6 @@ class StressModelBase:
         Notes
         -----
         The preferred method for parameter setting is through the model.
-
         """
         self.parameters.loc[name, 'initial'] = value
 
@@ -84,7 +81,6 @@ class StressModelBase:
         Notes
         -----
         The preferred method for parameter setting is through the model.
-
         """
         self.parameters.loc[name, 'pmin'] = value
 
@@ -95,7 +91,6 @@ class StressModelBase:
         Notes
         -----
         The preferred method for parameter setting is through the model.
-
         """
         self.parameters.loc[name, 'pmax'] = value
 
@@ -107,7 +102,6 @@ class StressModelBase:
         Notes
         -----
         The preferred method for parameter setting is through the model.
-
         """
         self.parameters.loc[name, 'vary'] = bool(value)
 
@@ -122,7 +116,6 @@ class StressModelBase:
         See Also
         --------
         ps.timeseries.TimeSeries.update_series
-
         """
         for stress in self.stress:
             stress.update_series(**kwargs)
@@ -143,7 +136,6 @@ class StressModelBase:
         -------
         data: dict
             dictionary with the dump of the stresses.
-
         """
         data = []
 
@@ -164,7 +156,6 @@ class StressModelBase:
         -------
         stress: pandas.Dataframe
             Pandas dataframe of the stress(es)
-
         """
         if tmin is None:
             tmin = self.tmin
@@ -183,7 +174,6 @@ class StressModelBase:
         data: dict
             dictionary with all necessary information to reconstruct the
             StressModel object.
-
         """
         data = {
             "stressmodel": self._name,
@@ -200,7 +190,7 @@ class StressModelBase:
             return len(self.stress)
 
     def _get_block(self, p, dt, tmin, tmax):
-        """Internal method to get the block-response function"""
+        """Internal method to get the block-response function."""
         if tmin is not None and tmax is not None:
             day = Timedelta(1, 'D')
             maxtmax = (Timestamp(tmax) - Timestamp(tmin)) / day
@@ -250,7 +240,6 @@ class StressModel(StressModelBase):
     --------
     pastas.rfunc
     pastas.timeseries.TimeSeries
-
     """
     _name = "StressModel"
 
@@ -274,9 +263,7 @@ class StressModel(StressModelBase):
         self.set_init_parameters()
 
     def set_init_parameters(self):
-        """Set the initial parameters (back) to their default values.
-
-        """
+        """Set the initial parameters (back) to their default values."""
         self.parameters = self.rfunc.get_init_parameters(self.name)
 
     def simulate(self, p, tmin=None, tmax=None, freq=None, dt=1.0):
@@ -296,7 +283,6 @@ class StressModel(StressModelBase):
         -------
         pandas.Series
             The simulated head contribution.
-
         """
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
         b = self._get_block(p, dt, tmin, tmax)
@@ -314,7 +300,6 @@ class StressModel(StressModelBase):
         data: dict
             dictionary with all necessary information to reconstruct the
             StressModel object.
-
         """
         data = {
             "stressmodel": self._name,
@@ -370,8 +355,7 @@ class StressModel2(StressModelBase):
     See Also
     --------
     pastas.rfunc
-    pastas.timeseries
-
+    pastas.timeseries.TimeSeries
     """
     _name = "StressModel2"
 
@@ -411,9 +395,7 @@ class StressModel2(StressModelBase):
         self.set_init_parameters()
 
     def set_init_parameters(self):
-        """Set the initial parameters back to their default values.
-
-        """
+        """Set the initial parameters back to their default values."""
         self.parameters = self.rfunc.get_init_parameters(self.name)
         self.parameters.loc[self.name + '_f'] = \
             (-1.0, -2.0, 0.0, True, self.name)
@@ -436,7 +418,6 @@ class StressModel2(StressModelBase):
         -------
         pandas.Series
             The simulated head contribution.
-
         """
         b = self._get_block(p[:-1], dt, tmin, tmax)
         stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq,
@@ -477,7 +458,6 @@ class StressModel2(StressModelBase):
         data: dict
             dictionary with all necessary information to reconstruct the
             StressModel object.
-
         """
         data = {
             "stressmodel": self._name,
@@ -516,7 +496,6 @@ class StepModel(StressModelBase):
     The step trend is calculated as follows. First, a binary series is
     created, with zero values before tstart, and ones after the start. This
     series is convoluted with the block response to simulate a step trend.
-
     """
     _name = "StepModel"
 
@@ -579,7 +558,6 @@ class LinearTrend(StressModelBase):
     While possible, it is not recommended to vary the parameters for the
     start and end time of the linear trend. These parameters are usually
     hard to impossible to estimate from the data.
-
     """
     _name = "LinearTrend"
 
@@ -644,7 +622,6 @@ class Constant(StressModelBase):
     initial: float, optional
         Initial estimate of the parameter value. E.g. The minimum of the
         observed series.
-
     """
     _name = "Constant"
 
@@ -700,7 +677,6 @@ class WellModel(StressModelBase):
     Warnings
     --------
     This model only works with the HantushWellModel response function.
-
     """
     _name = "WellModel"
 
@@ -763,7 +739,7 @@ class WellModel(StressModelBase):
                  istress=None, **kwargs):
         distances = self.get_distances(istress=istress)
         stress_df = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq,
-                                    istress=istress)
+                                    istress=istress, squeeze=False)
         h = Series(data=0, index=self.stress[0].series.index, name=self.name)
         for name, r in distances.iteritems():
             stress = stress_df.loc[:, name]
@@ -799,7 +775,6 @@ class WellModel(StressModelBase):
         -------
         stress: list
             return a list with the stresses transformed to pastas TimeSeries.
-
         """
         data = []
 
@@ -817,7 +792,7 @@ class WellModel(StressModelBase):
         return data
 
     def get_stress(self, p=None, tmin=None, tmax=None, freq=None,
-                   istress=None, **kwargs):
+                   istress=None, squeeze=True, **kwargs):
         if tmin is None:
             tmin = self.tmin
         if tmax is None:
@@ -826,13 +801,20 @@ class WellModel(StressModelBase):
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
 
         if istress is None:
-            return DataFrame.from_dict({s.name: s.series for s in self.stress})
+            df = DataFrame.from_dict({s.name: s.series for s in self.stress})
+            if squeeze:
+                return df.squeeze()
+            else:
+                return df
         elif isinstance(istress, list):
             return DataFrame.from_dict(
                 {s.name: s.series for s in self.stress}
             ).iloc[:, istress]
         else:
-            return self.stress[istress].series.to_frame()
+            if squeeze:
+                return self.stress[istress].series
+            else:
+                return self.stress[istress].series.to_frame()
 
     def get_distances(self, istress=None):
         if istress is None:
@@ -883,7 +865,6 @@ class WellModel(StressModelBase):
         data: dict
             dictionary with all necessary information to reconstruct the
             WellModel object.
-
         """
         data = {
             "stressmodel": self._name,
@@ -919,7 +900,7 @@ class RechargeModel(StressModelBase):
         String with the name of the recharge model. Options are: Linear (
         default), FlexModel and Berendrecht. These can be accessed through
         ps.rch.
-    temp: pandas.Series or pastas.TimeSeries, optional
+    temp: pandas.Series or pastas.timeseries.TimeSeries, optional
         pandas.Series or pastas.TimeSeries object containing the
         temperature series. It depends on the recharge model is this
         argument is required or not.
@@ -940,8 +921,8 @@ class RechargeModel(StressModelBase):
     See Also
     --------
     pastas.rfunc
-    pastas.timeseries
-    pastas.rch
+    pastas.timeseries.TimeSeries
+    pastas.recharge
 
     Notes
     -----
@@ -962,13 +943,13 @@ class RechargeModel(StressModelBase):
     We recommend not to store a RechargeModel is a variable named `rm`. This
     name is already reserved in IPython to remove files and will cause
     problems later.
-
     """
     _name = "RechargeModel"
 
     def __init__(self, prec, evap, rfunc=Exponential, name="recharge",
                  recharge=Linear(), temp=None, cutoff=0.999,
-                 settings=("prec", "evap"), metadata=(None, None)):
+                 settings=("prec", "evap", "evap"),
+                 metadata=(None, None, None)):
         # Store the precipitation and evaporation time series
         self.prec = TimeSeries(prec, settings=settings[0],
                                metadata=metadata[0])
@@ -990,13 +971,13 @@ class RechargeModel(StressModelBase):
         # Store recharge object
         self.recharge = recharge
 
-        # Store a temperature time series if needed or set to None
-        if self.recharge.temp is True:
-            if temp is None:
-                msg = "Recharge module requires a temperature series. " \
-                      "No temperature series were provided"
-                raise TypeError(msg)
-            elif len(settings) < 3 or len(metadata) < 3:
+        # Store a temperature time series if provided/needed or set to None
+        if self.recharge.snow is True and temp is None:
+            msg = "Recharge model requires a temperature series. " \
+                  "No temperature series were provided"
+            raise TypeError(msg)
+        if temp is not None:
+            if len(settings) < 3 or len(metadata) < 3:
                 msg = "Number of values for the settings and/or metadata is " \
                       "incorrect."
                 raise TypeError(msg)
@@ -1053,7 +1034,6 @@ class RechargeModel(StressModelBase):
         See Also
         --------
         ps.timeseries.TimeSeries.update_series
-
         """
         self.prec.update_series(**kwargs)
         self.evap.update_series(**kwargs)
@@ -1083,11 +1063,10 @@ class RechargeModel(StressModelBase):
         Returns
         -------
         pandas.Series
-
         """
         if p is None:
             p = self.parameters.initial.values
-        b = self._get_block(p[:-self.recharge.nparam], dt, tmin, tmax)
+        b = self._get_block(p[:self.rfunc.nparam], dt, tmin, tmax)
         stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq,
                                  istress=istress).values
         name = self.name
@@ -1104,8 +1083,7 @@ class RechargeModel(StressModelBase):
 
     def get_stress(self, p=None, tmin=None, tmax=None, freq=None,
                    istress=None, **kwargs):
-        """Method to obtain the recharge stress calculated by the recharge
-        model.
+        """Method to obtain the recharge stress calculated by the model.
 
         Parameters
         ----------
@@ -1126,7 +1104,6 @@ class RechargeModel(StressModelBase):
             When no istress is selected, this return the estimated recharge
             flux that is convoluted with a response function on the
             "simulate" method.
-
         """
         if tmin is None:
             tmin = self.tmin
@@ -1144,10 +1121,8 @@ class RechargeModel(StressModelBase):
                 temp = None
             if p is None:
                 p = self.parameters.initial.values
-
             stress = self.recharge.simulate(prec=prec, evap=evap, temp=temp,
                                             p=p[-self.recharge.nparam:])
-
             return Series(data=stress, index=self.prec.series.index,
                           name="recharge", fastpath=True)
         elif istress == 0:
@@ -1158,7 +1133,7 @@ class RechargeModel(StressModelBase):
             return self.temp.series
 
     def get_water_balance(self, p=None, tmin=None, tmax=None, freq=None):
-        """Experimental method to obtain the water balance components.
+        """Method to obtain the water balance components.
 
         Parameters
         ----------
@@ -1194,7 +1169,6 @@ class RechargeModel(StressModelBase):
         >>> ml.solve()
         >>> wb = sm.get_water_balance(ml.get_parameters("rch"))
         >>> wb.plot(subplots=True)
-
         """
         if p is None:
             p = self.parameters.initial.values
@@ -1204,7 +1178,12 @@ class RechargeModel(StressModelBase):
         evap = self.get_stress(tmin=tmin, tmax=tmax, freq=freq,
                                istress=1).values
 
-        df = self.recharge.get_water_balance(prec=prec, evap=evap, temp=None,
+        if self.temp is not None:
+            temp = self.get_stress(tmin=tmin, tmax=tmax, freq=freq,
+                                   istress=2).values
+        else:
+            temp = None
+        df = self.recharge.get_water_balance(prec=prec, evap=evap, temp=temp,
                                              p=p[-self.recharge.nparam:])
         df.index = self.prec.series.index
         return df
@@ -1217,6 +1196,7 @@ class RechargeModel(StressModelBase):
             "rfunc": self.rfunc._name,
             "name": self.name,
             "recharge": self.recharge._name,
+            "recharge_kwargs": self.recharge.kwargs,
             "cutoff": self.rfunc.cutoff,
             "temp": self.temp.to_dict() if self.temp else None
         }
@@ -1267,7 +1247,6 @@ class TarsoModel(RechargeModel):
     .. [knotters_1999] Knotters, M. & De Gooijer, Jan G.. (1999). TARSO
        modeling of water table depths. Water Resources Research. 35.
        10.1029/1998WR900049.
-
     """
     _name = "TarsoModel"
 
@@ -1387,3 +1366,231 @@ class TarsoModel(RechargeModel):
                 exp_a = np.exp(-(dt - dtdr) / a)
                 h[i] = (d1 - d) * exp_a + r[i] * c * (1 - exp_a) + d
         return h
+
+
+class ChangeModel(StressModelBase):
+    """Model where the response function changes from one to another over time.
+
+    Parameters
+    ----------
+    stress: pandas.Series
+        pandas Series object containing the stress.
+    rfunc1: rfunc class
+        response function used in the convolution with the stress.
+    rfunc2: rfunc class
+        response function used in the convolution with the stress.
+    name: str
+        name of the stress.
+    tchange: str
+        string with the approximate date of the change.
+    up: bool or None, optional
+        True if response function is positive (default), False if negative.
+        None if you don't want to define if response is positive or negative.
+    cutoff: float, optional
+        float between 0 and 1 to determine how long the response is (default
+        is 99% of the actual response time). Used to reduce computation times.
+    settings: dict or str, optional
+        the settings of the stress. This can be a string referring to a
+        predefined settings dict, or a dict with the settings to apply.
+        Refer to the docstring of pastas.Timeseries for further information.
+    metadata: dict, optional
+        dictionary containing metadata about the stress. This is passed onto
+        the TimeSeries object.
+
+    Notes
+    -----
+    This model is based on Obergfjell et al. (2019).
+
+    References
+    ----------
+    Obergfell, C., Bakker, M. and Maas, K. (2019), Identification and
+    Explanation of a Change in the Groundwater Regime using Time Series
+    Analysis. Groundwater, 57: 886-894. https://doi.org/10.1111/gwat.12891
+
+    """
+    _name = "ChangeModel"
+
+    def __init__(self, stress, rfunc1, rfunc2, name, tchange, up=True,
+                 cutoff=0.999, settings=None, metadata=None):
+        if isinstance(stress, list):
+            stress = stress[0]  # TODO Temporary fix Raoul, 2017-10-24
+
+        stress = TimeSeries(stress, settings=settings, metadata=metadata)
+
+        StressModelBase.__init__(self, name=name, rfunc=None,
+                                 tmin=stress.series.index.min(),
+                                 tmax=stress.series.index.max())
+        self.rfunc1 = rfunc1(up=up, cutoff=cutoff)
+        self.rfunc2 = rfunc2(up=up, cutoff=cutoff)
+        self.tchange = Timestamp(tchange)
+
+        self.freq = stress.settings["freq"]
+        self.stress = [stress]
+        self.set_init_parameters()
+
+    def set_init_parameters(self):
+        """Internal method to set the initial parameters."""
+        self.parameters = concat(
+            [self.rfunc1.get_init_parameters("{}_1".format(self.name)),
+             self.rfunc2.get_init_parameters("{}_2".format(self.name))])
+
+        tmin = Timestamp.min.toordinal()
+        tmax = Timestamp.max.toordinal()
+        tchange = self.tchange.toordinal()
+
+        self.parameters.loc[self.name + "_beta"] = (0., -np.inf, np.inf,
+                                                    True, self.name)
+        self.parameters.loc[self.name + "_tchange"] = (tchange, tmin, tmax,
+                                                       False, self.name)
+        self.parameters.name = self.name
+
+    def simulate(self, p, tmin=None, tmax=None, freq=None, dt=1.0):
+        self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
+        rfunc1 = self.rfunc1.block(p[:self.rfunc1.nparam])
+        rfunc2 = self.rfunc2.block(
+            p[self.rfunc1.nparam:self.rfunc1.nparam + self.rfunc2.nparam])
+
+        stress = self.stress[0].series
+        npoints = stress.index.size
+        t = np.linspace(0, 1, npoints)
+        beta = p[-2] * npoints
+
+        sigma = stress.index.get_loc(
+            Timestamp.fromordinal(int(p[-1]))) / npoints
+        omega = 1 / (np.exp(beta * (t - sigma)) + 1)
+        h1 = Series(data=fftconvolve(stress, rfunc1, 'full')[:npoints],
+                    index=stress.index, name="1", fastpath=True)
+        h2 = Series(data=fftconvolve(stress, rfunc2, 'full')[:npoints],
+                    index=stress.index, name="1", fastpath=True)
+        h = omega * h1 + (1 - omega) * h2
+
+        return h
+
+
+class ReservoirModel(StressModelBase):
+    """Time series model consisting of a single reservoir with two stresses.
+    The first stress causes the head to go up and the second stress causes 
+    the head to go down.
+
+    Parameters
+    ----------
+    stress: list of pandas.Series or list of pastas.timeseries
+        list of two pandas.Series or pastas.timeseries objects containing the
+        stresses. Usually the first is the precipitation and the second the
+        evaporation.
+    name: str
+        Name of the stress
+    settings: list of dicts or strs, optional
+        The settings of the stresses. This can be a string referring to a
+        predefined settings dict, or a dict with the settings to apply.
+        Refer to the docstring of pastas.Timeseries for further information.
+        Default is ("prec", "evap").
+    metadata: list of dicts, optional
+        dictionary containing metadata about the stress. This is passed onto
+        the TimeSeries object.
+
+    Notes
+    -----
+    The order in which the stresses are provided is the order the metadata
+    and settings dictionaries or string are passed onto the TimeSeries
+    objects. By default, the precipitation stress is the first and the
+    evaporation stress the second stress.
+
+    See Also
+    --------
+    pastas.timeseries
+    """
+    _name = "ReservoirModel"
+
+    def __init__(self, stress, reservoir, name, meanhead,
+                 settings=("prec", "evap"), metadata=(None, None),
+                 meanstress=None):
+        # Set resevoir object
+        self.reservoir = reservoir(meanhead)
+
+        # Code below is copied from StressModel2 and may not be optimal
+        # Check the series, then determine tmin and tmax
+        stress0 = TimeSeries(stress[0], settings=settings[0],
+                             metadata=metadata[0])
+        stress1 = TimeSeries(stress[1], settings=settings[1],
+                             metadata=metadata[1])
+
+        # Select indices from validated stress where both series are available.
+        index = stress0.series.index.intersection(stress1.series.index)
+        if index.empty:
+            msg = ('The two stresses that were provided have no '
+                   'overlapping time indices. Please make sure the '
+                   'indices of the time series overlap.')
+            logger.error(msg)
+            raise Exception(msg)
+
+        # First check the series, then determine tmin and tmax
+        stress0.update_series(tmin=index.min(), tmax=index.max())
+        stress1.update_series(tmin=index.min(), tmax=index.max())
+
+        if meanstress is None:
+            meanstress = (stress0.series - stress1.series).std()
+
+        StressModelBase.__init__(self, name=name, tmin=index.min(),
+                                 tmax=index.max(), rfunc=None)
+        self.stress.append(stress0)
+        self.stress.append(stress1)
+
+        self.freq = stress0.settings["freq"]
+        self.set_init_parameters()
+
+    def set_init_parameters(self):
+        """Set the initial parameters back to their default values."""
+        self.parameters = self.reservoir.get_init_parameters(self.name)
+
+    def simulate(self, p, tmin=None, tmax=None, freq=None, dt=1, istress=None):
+        """Simulates the head contribution.
+
+        Parameters
+        ----------
+        p: array_like
+            array_like object with the values as floats representing the
+            model parameters.
+        tmin: str, optional
+        tmax: str, optional
+        freq: str, optional
+        dt: float, time step
+        istress: int, not used
+
+        Returns
+        -------
+        pandas.Series
+            The simulated head contribution.
+        """
+
+        stress = self.get_stress(tmin=tmin, tmax=tmax, freq=freq)
+        h = Series(data=self.reservoir.simulate(stress[0], stress[1], p),
+                   index=stress[0].index, name=self.name, fastpath=True)
+        return h
+
+    def get_stress(self, p=None, tmin=None, tmax=None, freq=None,
+                   istress=0, **kwargs):
+        if tmin is None:
+            tmin = self.tmin
+        if tmax is None:
+            tmax = self.tmax
+
+        self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
+
+        return self.stress[0].series, self.stress[1].series
+
+    def to_dict(self, series=True):
+        """Method to export the StressModel object.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct the
+            StressModel object.
+        """
+        pass
+
+    def _get_block(self, p, dt, tmin, tmax):
+        """Internal method to get the block-response function.
+        Cannot be used (yet?) since there is no block response"""
+        pass
