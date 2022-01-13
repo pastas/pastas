@@ -38,7 +38,7 @@ After solving a model, the simulated recharge flux can be obtained:
 
 from logging import getLogger
 from numpy import add, float64, multiply, exp, zeros, nan_to_num, vstack, \
-    where, inf
+    where, inf, power
 from pandas import DataFrame
 
 from pastas.decorators import njit
@@ -634,6 +634,100 @@ class Berendrecht(RechargeBase):
         r, s, ea, pe = self.simulate(prec, evap, p=p, dt=dt,
                                      return_full=True, **kwargs)
         s = s * p[3]  # Because S is computed dimensionless in this model
+        data = DataFrame(data=vstack((s, pe, ea, r)).T,
+                         columns=["S", "Pe", "Ea", "R"])
+        return data
+
+
+class Peterson(RechargeBase):
+    """Recharge to the groundwater calculated based on [peterson_2014]_.
+
+    References
+    ----------
+    .. [peterson_2014] Peterson, T.J. and Western A.W. (2014). Nonlinear 
+    time-series modeling of unconfined groundwater head. 
+
+    """
+    _name = "Peterson"
+
+    def __init__(self):
+        check_numba()
+        RechargeBase.__init__(self)
+        self.nparam = 5
+
+    def get_init_parameters(self, name="recharge"):
+        parameters = DataFrame(
+            columns=["initial", "pmin", "pmax", "vary", "name"])
+        parameters.loc[name + "_scap"] = (1.0, 0.0, 3.0, True, name)
+        parameters.loc[name + "_alpha"] = (1.0, 0.0, 1.5, True, name)
+        parameters.loc[name + "_ksat"] = (1.0, 0.0, 3.0, True, name)
+        parameters.loc[name + "_beta"] = (0.5, 0.0, 1.5, True, name)
+        parameters.loc[name + "_gamma"] = (1.0, 0.0, 2.0, True, name)
+        return parameters
+
+    def simulate(self, prec, evap, p, dt=1.0, return_full=False, **kwargs):
+        """Simulate the recharge flux.
+
+        Parameters
+        ----------
+        prec: numpy.array
+            Precipitation flux in mm/d. Has to have the same length as evap.
+        evap: numpy.array
+            Potential evapotranspiration flux in mm/d.
+        p: array_like
+            array_like object with the values as floats representing the
+            model parameters.
+        dt: float, optional
+            time step for the calculation of the recharge.
+
+        Returns
+        -------
+        r: numpy.array
+            Recharge flux calculated by the model.
+
+        """
+        r, s, ea, pe = self.get_recharge(prec, evap, smsc=p[0],
+                                         alpha=p[1], ksat=p[2],
+                                         beta=p[3], gamma=p[4], dt=dt)
+        if return_full:
+            return r, s, ea, pe
+        else:
+            return nan_to_num(r)
+
+    @staticmethod
+    @njit
+    def get_recharge(prec, evap, smsc=1.0, alpha=1.0,
+                     ksat=1.0, beta=0.5, gamma=1.0, dt=1.0):
+        """
+        Internal method used for the recharge calculation. If Numba is
+        available, this method is significantly faster.
+
+        """
+        n = len(prec)
+        # Create an empty arrays to store the fluxes and states
+        pe = zeros(n, dtype=float64)  # Effective precipitation flux
+        sm = zeros(n + 1, dtype=float64)  # Root zone storage state
+        sm[0] = smsc / 2  # Set the initial system state
+        r = zeros(n, dtype=float64)  # Recharge flux
+        ea = zeros(n, dtype=float64)  # Actual evaporation flux
+        # Update params
+        smsc = power(10, smsc)
+        ksat = power(10, ksat)
+        beta = power(10, beta)
+
+        for t in range(0, n):
+            sm_frac = sm[t] / smsc
+            pe[t] = prec[t] * power(1 - sm_frac, alpha)
+            r[t] = ksat * power(sm_frac, beta)
+            ea[t] = evap[t] * power(sm_frac, gamma)
+            sm[t+1] = sm[t] + (pe[t] - r[t] - ea[t]) * dt
+            sm[t+1] = max(0, sm[t+1])
+            sm[t+1] = min(smsc, sm[t+1])
+        return r, sm[1:], ea, pe
+
+    def get_water_balance(self, prec, evap, p, dt=1.0, **kwargs):
+        r, s, ea, pe = self.simulate(prec, evap, p=p, dt=dt,
+                                     return_full=True, **kwargs)
         data = DataFrame(data=vstack((s, pe, ea, r)).T,
                          columns=["S", "Pe", "Ea", "R"])
         return data
