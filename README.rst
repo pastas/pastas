@@ -5,8 +5,8 @@ Pastas: Analysis of Groundwater Time Series
    :width: 200px
    :align: left
 
-.. image:: https://travis-ci.com/pastas/pastas.svg?branch=master
-   :target: https://travis-ci.com/pastas/pastas
+.. image:: https://github.com/pastas/pastas/actions/workflows/ci.yml/badge.svg?branch=master
+   :target: https://github.com/pastas/pastas/actions/workflows/ci.yml
 .. image:: https://img.shields.io/pypi/v/pastas.svg
    :target: https://pypi.python.org/pypi/pastas
 .. image:: https://img.shields.io/pypi/l/pastas.svg
