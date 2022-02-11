@@ -222,7 +222,7 @@ class FlexModel(RechargeBase):
         if self.interception:
             parameters.loc[name + "_simax"] = (2.0, 1e-5, 10.0, False, name)
         if self.snow:
-            parameters.loc[name + "_tt"] = (0.0, -inf, inf, True, name)
+            parameters.loc[name + "_tt"] = (0.0, -10, 10, True, name)
             parameters.loc[name + "_k"] = (2.0, 1.0, 20.0, True, name)
 
         return parameters
@@ -343,14 +343,14 @@ class FlexModel(RechargeBase):
         """
         n = pe.size
         # Create empty arrays to store the fluxes and states
-        sr = zeros(n, dtype=float64)  # Root Zone Storage State
+        sr = zeros(n + 1, dtype=float64)  # Root Zone Storage State
         sr[0] = 0.5 * srmax  # Set the initial system state to half-full
         ea = zeros(n, dtype=float64)  # Actual evaporation Flux
         r = zeros(n, dtype=float64)  # Recharge Flux
         q = zeros(n, dtype=float64)  # Surface runoff Flux
         lp = lp * srmax  # Do this here outside the for-loop for efficiency
 
-        for t in range(n - 1):
+        for t in range(n):
             # Make sure the solution is larger then 0.0 and smaller than sr
             if sr[t] > srmax:
                 q[t] = sr[t] - srmax  # Surface runoff
@@ -369,7 +369,7 @@ class FlexModel(RechargeBase):
             # Update storage in the root zone
             sr[t + 1] = sr[t] + dt * (pe[t] - r[t] - ea[t])
 
-        return sr, -r, -ea, -q, pe
+        return sr[:-1], -r, -ea, -q, pe
 
     @staticmethod
     @njit
@@ -410,22 +410,20 @@ class FlexModel(RechargeBase):
 
         """
         n = pr.size
-        si = zeros(n, dtype=float64)  # Interception Storage State
+        si = zeros(n + 1, dtype=float64)  # Interception Storage State
         pe = zeros(n, dtype=float64)  # Effective precipitation Flux
         ei = zeros(n, dtype=float64)  # Interception evaporation Flux
 
-        for t in range(n - 1):
+        for t in range(n):
             # Interception bucket
-            pe[t] = max(pr[t] - simax + si[t], 0.0)
             ei[t] = min(ep[t], si[t])
-            si[t + 1] = si[t] + dt * (pr[t] - pe[t] - ei[t])
-
-        pe[t + 1] = max(pr[t + 1] - simax + si[t + 1], 0.0)
-        ei[t + 1] = min(ep[t + 1], si[t + 1])
+            si[t + 1] = si[t] + dt * (pr[t] - ei[t])
+            pe[t] = max(si[t + 1] - simax, 0.0)
+            si[t + 1] = si[t + 1] - pe[t]
 
         pi = pr - pe  # Compute intercepted precipitation
 
-        return si, -ei, pi
+        return si[:-1], -ei, pi
 
     @staticmethod
     @njit
@@ -464,18 +462,18 @@ class FlexModel(RechargeBase):
         """
         n = prec.size
         # Create empty arrays to store the fluxes and states
-        ss = zeros(n, dtype=float64)  # Snow Storage
+        ss = zeros(n + 1, dtype=float64)  # Snow Storage
         ps = where(temp <= tt, prec, 0.0)  # Snowfall
         m = where(temp > tt, k * (temp - tt), 0.0)  # Potential Snowmelt
 
         # Snow bucket
-        for t in range(n - 1):
+        for t in range(n):
             if temp[t] > tt:
                 smoothing_factor = 1.0 - exp(-(ss[t] / 1.5))
                 m[t] = min(m[t] * smoothing_factor, ss[t])
             ss[t + 1] = ss[t] + ps[t] - m[t]
 
-        return ss, ps, -m
+        return ss[:-1], ps, -m
 
     def get_water_balance(self, prec, evap, temp, p, dt=1.0, **kwargs):
         data = self.simulate(prec=prec, evap=evap, temp=temp, p=p, dt=dt,
