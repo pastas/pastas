@@ -38,7 +38,7 @@ After solving a model, the simulated recharge flux can be obtained:
 
 from logging import getLogger
 from numpy import add, float64, multiply, exp, zeros, nan_to_num, vstack, \
-    where, inf
+    where
 from pandas import DataFrame
 
 from pastas.decorators import njit
@@ -220,9 +220,9 @@ class FlexModel(RechargeBase):
         parameters.loc[name + "_gamma"] = (2.0, 1e-5, 20.0, True, name)
         parameters.loc[name + "_kv"] = (1.0, 0.25, 2.0, False, name)
         if self.interception:
-            parameters.loc[name + "_simax"] = (2.0, 1e-5, 10.0, False, name)
+            parameters.loc[name + "_simax"] = (2.0, 0.0, 10.0, False, name)
         if self.snow:
-            parameters.loc[name + "_tt"] = (0.0, -10, 10, True, name)
+            parameters.loc[name + "_tt"] = (0.0, -10.0, 10.0, True, name)
             parameters.loc[name + "_k"] = (2.0, 1.0, 20.0, True, name)
 
         return parameters
@@ -415,7 +415,6 @@ class FlexModel(RechargeBase):
         ei = zeros(n, dtype=float64)  # Interception evaporation Flux
 
         for t in range(n):
-            # Interception bucket
             ei[t] = min(ep[t], si[t])
             si[t + 1] = si[t] + dt * (pr[t] - ei[t])
             pe[t] = max(si[t + 1] - simax, 0.0)

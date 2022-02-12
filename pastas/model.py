@@ -6,7 +6,7 @@ from logging import getLogger
 from os import getlogin
 
 import numpy as np
-from pandas import DataFrame, Series, Timedelta, Timestamp, date_range
+from pandas import DataFrame, Series, Timedelta, Timestamp, date_range, concat
 
 from .decorators import get_stressmodel
 from .io.base import _load_model, dump
@@ -1029,18 +1029,18 @@ class Model:
         if noise is None:
             noise = self.settings['noise']
 
-        parameters = DataFrame(columns=self.parameters.columns)
+        frames = [DataFrame(columns=self.parameters.columns)]
+
         for sm in self.stressmodels.values():
-            parameters = parameters.append(sm.parameters, sort=False)
+            frames.append(sm.parameters)
         if self.constant:
-            parameters = parameters.append(self.constant.parameters,
-                                           sort=False)
+            frames.append(self.constant.parameters)
         if self.transform:
-            parameters = parameters.append(self.transform.parameters,
-                                           sort=False)
+            frames.append(self.transform.parameters)
         if self.noisemodel and noise:
-            parameters = parameters.append(self.noisemodel.parameters,
-                                           sort=False)
+            frames.append(self.noisemodel.parameters)
+
+        parameters = concat(frames)
 
         # Set initial parameters to optimal parameters from model
         if not initial:
