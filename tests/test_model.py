@@ -97,9 +97,11 @@ def test_load_model():
     ml2 = ps.io.load("test.pas")
     
     # dataframe dtypes don't match... make the same here
-    ml.parameters["pmax"] = ml.parameters["pmax"].astype(float)
+    # this is caused because the parameters df is loaded empty without
+    # information on the datatype in each column
+    for icol in ["initial", "optimal", "pmin", "pmax", "stderr"]:
+        ml.parameters[icol] = ml.parameters[icol].astype(float)
     ml.parameters["vary"] = ml.parameters["vary"].astype(bool)
-    ml2.parameters["vary"] = ml.parameters["vary"].astype(bool)
     
     # check if parameters and pcov dataframes are equal
     assert ml.parameters.equals(ml2.parameters)
