@@ -10,11 +10,11 @@ import pandas as pd
 import pastas as ps
 
 oseries = pd.read_csv('data/head_nb1.csv', parse_dates=['date'],
-                      index_col='date', squeeze=True)
-rain = pd.read_csv('data/rain_nb1.csv', parse_dates=['date'], index_col='date',
-                   squeeze=True)
-evap = pd.read_csv('data/evap_nb1.csv', parse_dates=['date'], index_col='date',
-                   squeeze=True)
+                      index_col='date').squeeze("columns")
+rain = pd.read_csv('data/rain_nb1.csv', parse_dates=['date'],
+                   index_col='date').squeeze("columns")
+evap = pd.read_csv('data/evap_nb1.csv', parse_dates=['date'],
+                   index_col='date').squeeze("columns")
 
 ml = ps.Model(oseries)
 sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential,

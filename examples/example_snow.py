@@ -3,14 +3,14 @@ import pastas as ps
 
 ps.set_log_level("WARNING")
 
-head = pd.read_csv("data/heby_head.csv", index_col=0, parse_dates=True,
-                   squeeze=True)
-evap = pd.read_csv("data/heby_evap.csv", index_col=0, parse_dates=True,
-                   squeeze=True)
-prec = pd.read_csv("data/heby_prec.csv", index_col=0, parse_dates=True,
-                   squeeze=True)
-temp = pd.read_csv("data/heby_temp.csv", index_col=0, parse_dates=True,
-                   squeeze=True)
+head = pd.read_csv("data/heby_head.csv", index_col=0,
+                   parse_dates=True).squeeze("columns")
+evap = pd.read_csv("data/heby_evap.csv", index_col=0,
+                   parse_dates=True).squeeze("columns")
+prec = pd.read_csv("data/heby_prec.csv", index_col=0,
+                   parse_dates=True).squeeze("columns")
+temp = pd.read_csv("data/heby_temp.csv", index_col=0,
+                   parse_dates=True).squeeze("columns")
 
 tmin = "1985"  # Needs warmup
 tmax = "2018"

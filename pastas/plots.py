@@ -811,7 +811,7 @@ class TrackSolve:
 
         # set grid for each plot
         for iax in [self.ax0, self.ax1, self.ax2]:
-            iax.grid(b=True)
+            iax.grid(visible=True)
 
         self.fig.tight_layout()
         return self.fig

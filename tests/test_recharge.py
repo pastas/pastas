@@ -3,13 +3,14 @@ from numpy import sin, arange, isclose
 import pastas as ps
 
 # Load series before
-rain = read_csv("tests/data/rain.csv", index_col=0, parse_dates=True,
-                squeeze=True).loc["2005":] * 1e3
-evap = read_csv("tests/data/evap.csv", index_col=0, parse_dates=True,
-                squeeze=True).loc["2005":] * 1e3
-obs = read_csv("tests/data/obs.csv", index_col=0, parse_dates=True,
-               squeeze=True)
-temp = Series(index=evap.index, data=sin(arange(evap.size) / 365 * 6))
+rain = read_csv("tests/data/rain.csv", index_col=0,
+                parse_dates=True).squeeze("columns").loc["2005":] * 1e3
+evap = read_csv("tests/data/evap.csv", index_col=0,
+                parse_dates=True).squeeze("columns").loc["2005":] * 1e3
+obs = read_csv("tests/data/obs.csv", index_col=0,
+               parse_dates=True).squeeze("columns")
+temp = Series(index=evap.index, data=sin(arange(evap.size) / 365 * 6),
+              dtype=float)
 
 
 def test_create_rechargemodel():

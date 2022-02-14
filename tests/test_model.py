@@ -1,12 +1,12 @@
 import pastas as ps
 from pandas import read_csv
 
-rain = read_csv("tests/data/rain.csv", index_col=0, parse_dates=True,
-                squeeze=True)
-evap = read_csv("tests/data/evap.csv", index_col=0, parse_dates=True,
-                squeeze=True)
-obs = read_csv("tests/data/obs.csv", index_col=0, parse_dates=True,
-               squeeze=True)
+rain = read_csv("tests/data/rain.csv", index_col=0,
+                parse_dates=True).squeeze("columns")
+evap = read_csv("tests/data/evap.csv", index_col=0,
+                parse_dates=True).squeeze("columns")
+obs = read_csv("tests/data/obs.csv", index_col=0,
+               parse_dates=True).squeeze("columns")
 
 
 def test_create_model():
@@ -95,7 +95,7 @@ def test_load_model():
     ml.parameters.loc["rch_f", "pmax"] = 1.23456789e-10
     ml.to_file("test.pas")
     ml2 = ps.io.load("test.pas")
-    
+
     # dataframe dtypes don't match... make the same here
     # this is caused because the parameters df is loaded empty without
     # information on the datatype in each column
