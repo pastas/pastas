@@ -278,10 +278,12 @@ class FlexModel(RechargeBase):
                                                      dt=dt)
 
         # report big water balance errors (error > 0.1%.)
-        error = (sr[0] - sr[-1] + (pe - m + r + ea + q).sum()) / pe.sum()
+        error = (sr[0] - sr[-1] + (pe - m + r + ea + q).sum()) / \
+                (pe.sum() + 1e-10)  # avoid division by zero
         if abs(error) > 0.1:
             logger.info("Water balance error: %s %% of the total pe flux. "
-                        "Parameters: %s", error.round(2), p.round(2))
+                        "Parameters: %s", error.round(2),
+                        p.astype(float).round(2))
 
         if self.gw_uptake:
             # Compute leftover potential evaporation

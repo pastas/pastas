@@ -367,8 +367,8 @@ def stoffer_toloi(series, lags=15, nparam=0, freq="D",
         # warn if more than 10% of data is lost in sample
         if s.dropna().index.size < (0.9 * series.dropna().index.size):
             msg = ("While selecting equidistant values from series with "
-                   "`as_freq` more than 10\% of values were dropped. Consider "
-                   "setting `make_equidistant` to True."
+                   "`as_freq` more than 10 %% of values were dropped. "
+                   "Consider setting `make_equidistant` to True."
                    )
             logger.warning(msg)
 
