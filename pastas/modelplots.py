@@ -72,7 +72,7 @@ class Plotting:
         if oseries:
             o = self.ml.observations(tmin=tmin, tmax=tmax)
             o_nu = self.ml.oseries.series.drop(o.index).loc[
-                   o.index.min():o.index.max()]
+                o.index.min():o.index.max()]
             if not o_nu.empty:
                 # plot parts of the oseries that are not used in grey
                 o_nu.plot(linestyle='', marker='.', color='0.5', label='',
@@ -711,13 +711,14 @@ class Plotting:
                 nsplit = sml.get_nsplit()
                 if nsplit > 1:
                     for istress in range(len(sml.stress)):
-                        h = self.ml.get_contribution(sm, istress=istress)
+                        h = self.ml.get_contribution(sm, istress=istress,
+                                                     tmin=tmin, tmax=tmax)
                         name = sml.stress[istress].name
                         if name is None:
                             name = sm
                         contributions.append((name, h))
                 else:
-                    h = self.ml.get_contribution(sm)
+                    h = self.ml.get_contribution(sm, tmin=tmin, tmax=tmax)
                     name = sm
                     contributions.append((name, h))
                 contributions.sort(key=custom_sort)
