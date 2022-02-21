@@ -146,11 +146,11 @@ def compare(models, tmin=None, tmax=None, block_or_step='step',
 
     # Draw parameters table
     parameters = concat(
-        [iml.parameters.optimal for iml in models], axis=1, sort=False)
-    colnams = ["{}".format(iml.name) for iml in models]
+        [iml.parameters.optimal for iml in models_sorted], axis=1, sort=False)
+    colnams = ["{}".format(iml.name) for iml in models_sorted]
     # ensure unique names
     if len(set(colnams)) < len(colnams):
-        colnams = [f"{iml.name}-{i}" for i, iml in enumerate(models)]
+        colnams = [f"{iml.name}-{i}" for i, iml in enumerate(models_sorted)]
     parameters.columns = colnams
     parameters['name'] = parameters.index
     # reorder columns
