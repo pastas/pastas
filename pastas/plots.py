@@ -82,8 +82,8 @@ def compare(models, tmin=None, tmax=None, block_or_step='step',
     # get second model
     for j, iml in enumerate(models_sorted[1:], start=1):
         sim = iml.simulate(tmin=tmin[j], tmax=tmax[j])
-        sim.name = '{} ($R^2$ = {:0.2f}%)'.format(
-            sim.name, iml.stats.evp(tmin=tmin[j], tmax=tmax[j]))
+        sim.name = '{} ($R^2$ = {:0.2%})'.format(
+            sim.name, iml.stats.rsq(tmin=tmin[j], tmax=tmax[j]))
         p, = ax_ml.plot(sim.index, sim, label=sim.name)
         color = p.get_color()
 
@@ -187,7 +187,6 @@ def compare(models, tmin=None, tmax=None, block_or_step='step',
         tmax[0] = ml.settings["tmax"]
 
     mintmin = np.min(to_datetime(tmin))
-    print(tmin)
     maxtmax = np.max(to_datetime(tmax))
 
     # get tmin including warmup if return_warmup=True
