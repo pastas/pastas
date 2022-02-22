@@ -344,6 +344,10 @@ class KnmiStation:
             # hourly data, Hourly division 05 runs from 04.00 UT to 5.00 UT
             data.index = data.index + to_timedelta(data['HH'], unit='h')
             data.pop('HH')
+        elif 'H' in data.keys():
+            # hourly data, Hourly division 05 runs from 04.00 UT to 5.00 UT
+            data.index = data.index + to_timedelta(data['H'], unit='h')
+            data.pop('H')
         else:
             # daily data
             if 'RD' in data.keys():
