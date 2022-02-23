@@ -363,7 +363,7 @@ class Model:
             istart += 1
         if self.transform:
             sim = self.transform.simulate(sim, p[istart:istart +
-                                                        self.transform.nparam])
+                                                 self.transform.nparam])
 
         # Respect provided tmin/tmax at this point, since warmup matters for
         # simulation but should not be returned, unless return_warmup=True.
@@ -1041,6 +1041,7 @@ class Model:
             frames.append(self.noisemodel.parameters)
 
         parameters = concat(frames)
+        parameters = parameters.infer_objects()
 
         # Set initial parameters to optimal parameters from model
         if not initial:
@@ -1159,7 +1160,7 @@ class Model:
         # use warmup
         if tmin:
             tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + \
-                        self.settings["time_offset"]
+                self.settings["time_offset"]
         else:
             tmin_warm = None
 
@@ -1436,7 +1437,7 @@ class Model:
         # use warmup
         if tmin:
             tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + \
-                        self.settings["time_offset"]
+                self.settings["time_offset"]
         else:
             tmin_warm = None
 
