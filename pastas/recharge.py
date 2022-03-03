@@ -710,13 +710,14 @@ class Peterson(RechargeBase):
         # Create an empty arrays to store the fluxes and states
         pe = zeros(n, dtype=float64)  # Effective precipitation flux
         sm = zeros(n + 1, dtype=float64)  # Root zone storage state
-        sm[0] = smsc / 2  # Set the initial system state
         r = zeros(n, dtype=float64)  # Recharge flux
         ea = zeros(n, dtype=float64)  # Actual evaporation flux
         # Update params
         smsc = power(10, smsc)
         ksat = power(10, ksat)
         beta = power(10, beta)
+        # Set the initial system state
+        sm[0] = smsc / 2 
 
         for t in range(0, n):
             sm_frac = sm[t] / smsc
