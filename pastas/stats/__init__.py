@@ -10,6 +10,7 @@
     pastas.stats.tests
     pastas.stats.sgi
     pastas.stats.dutch
+    pastas.stats.signatures
 """
 
 from .core import acf, ccf, mean, std, var
