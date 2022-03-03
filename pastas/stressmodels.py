@@ -22,7 +22,6 @@ from scipy.signal import fftconvolve
 
 from .decorators import njit, set_parameter
 from .recharge import Linear
-from .reservoir import Reservoir1
 from .rfunc import Exponential, HantushWellModel, One
 from .timeseries import TimeSeries
 from .utils import check_numba, validate_name
@@ -30,7 +29,8 @@ from .utils import check_numba, validate_name
 logger = getLogger(__name__)
 
 __all__ = ["StressModel", "StressModel2", "Constant", "StepModel",
-           "LinearTrend", "RechargeModel", "WellModel", "TarsoModel"]
+           "LinearTrend", "RechargeModel", "WellModel", "TarsoModel",
+           "ChangeModel"]
 
 
 class StressModelBase:
@@ -355,7 +355,7 @@ class StressModel2(StressModelBase):
     See Also
     --------
     pastas.rfunc
-    pastas.timeseries
+    pastas.timeseries.TimeSeries
     """
     _name = "StressModel2"
 
@@ -900,7 +900,7 @@ class RechargeModel(StressModelBase):
         String with the name of the recharge model. Options are: Linear (
         default), FlexModel and Berendrecht. These can be accessed through
         ps.rch.
-    temp: pandas.Series or pastas.TimeSeries, optional
+    temp: pandas.Series or pastas.timeseries.TimeSeries, optional
         pandas.Series or pastas.TimeSeries object containing the
         temperature series. It depends on the recharge model is this
         argument is required or not.
@@ -921,8 +921,8 @@ class RechargeModel(StressModelBase):
     See Also
     --------
     pastas.rfunc
-    pastas.timeseries
-    pastas.rch
+    pastas.timeseries.TimeSeries
+    pastas.recharge
 
     Notes
     -----
@@ -1196,6 +1196,7 @@ class RechargeModel(StressModelBase):
             "rfunc": self.rfunc._name,
             "name": self.name,
             "recharge": self.recharge._name,
+            "recharge_kwargs": self.recharge.kwargs,
             "cutoff": self.rfunc.cutoff,
             "temp": self.temp.to_dict() if self.temp else None
         }
@@ -1375,13 +1376,13 @@ class ChangeModel(StressModelBase):
     stress: pandas.Series
         pandas Series object containing the stress.
     rfunc1: rfunc class
-        Response function used in the convolution with the stress.
+        response function used in the convolution with the stress.
     rfunc2: rfunc class
-        Response function used in the convolution with the stress.
+        response function used in the convolution with the stress.
     name: str
-        Name of the stress.
+        name of the stress.
     tchange: str
-        String with the approximate date of the change.
+        string with the approximate date of the change.
     up: bool or None, optional
         True if response function is positive (default), False if negative.
         None if you don't want to define if response is positive or negative.
@@ -1389,7 +1390,7 @@ class ChangeModel(StressModelBase):
         float between 0 and 1 to determine how long the response is (default
         is 99% of the actual response time). Used to reduce computation times.
     settings: dict or str, optional
-        The settings of the stress. This can be a string referring to a
+        the settings of the stress. This can be a string referring to a
         predefined settings dict, or a dict with the settings to apply.
         Refer to the docstring of pastas.Timeseries for further information.
     metadata: dict, optional
@@ -1464,7 +1465,8 @@ class ChangeModel(StressModelBase):
         h = omega * h1 + (1 - omega) * h2
 
         return h
-    
+
+
 class ReservoirModel(StressModelBase):
     """Time series model consisting of a single reservoir with two stresses.
     The first stress causes the head to go up and the second stress causes 
@@ -1500,12 +1502,12 @@ class ReservoirModel(StressModelBase):
     """
     _name = "ReservoirModel"
 
-    def __init__(self, stress, reservoir, name, meanhead, 
-                 settings=("prec", "evap"), metadata=(None, None), 
+    def __init__(self, stress, reservoir, name, meanhead,
+                 settings=("prec", "evap"), metadata=(None, None),
                  meanstress=None):
         # Set resevoir object
         self.reservoir = reservoir(meanhead)
-        
+
         # Code below is copied from StressModel2 and may not be optimal
         # Check the series, then determine tmin and tmax
         stress0 = TimeSeries(stress[0], settings=settings[0],
@@ -1560,7 +1562,7 @@ class ReservoirModel(StressModelBase):
         pandas.Series
             The simulated head contribution.
         """
-        
+
         stress = self.get_stress(tmin=tmin, tmax=tmax, freq=freq)
         h = Series(data=self.reservoir.simulate(stress[0], stress[1], p),
                    index=stress[0].index, name=self.name, fastpath=True)
@@ -1587,7 +1589,7 @@ class ReservoirModel(StressModelBase):
             StressModel object.
         """
         pass
-    
+
     def _get_block(self, p, dt, tmin, tmax):
         """Internal method to get the block-response function.
         Cannot be used (yet?) since there is no block response"""

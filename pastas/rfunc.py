@@ -10,7 +10,7 @@ from scipy.interpolate import interp1d
 
 __all__ = ["Gamma", "Exponential", "Hantush", "Polder", "FourParam",
            "DoubleExponential", "One", "Edelman", "HantushWellModel",
-           "Kraijenhoff"]
+           "Kraijenhoff", "Spline"]
 
 
 class RfuncBase:
@@ -280,6 +280,7 @@ class HantushWellModel(RfuncBase):
     .. math:: p[1] = a = cS
     .. math:: p[2] = b = 1^2 / (4 \\lambda^2)
     .. math:: p[3] = r \\text{(not optimized)}
+
     where :math:`\\lambda = \\sqrt{Tc}`
 
     The parameter r (distance from the well to the observation point)
@@ -292,6 +293,7 @@ class HantushWellModel(RfuncBase):
     - a: is the same  :math:`a = cS`
     - b: is the same, but :math:`r` is set to 1 if passed separately,
       :math:`b = 1^2 / (4 \\lambda^2)`
+
     """
     _name = "HantushWellModel"
 
@@ -900,7 +902,7 @@ class Kraijenhoff(RfuncBase):
     The Kraijenhoff van de Leur function is explained in [Kraijenhoff]_.
     The impulse response function may be written as:
 
-    .. math:: \\theta(t) =  \\frac{4}{\pi S} \sum_{n=1,3,5...}^\infty \\frac{1}{n} e^{-n^2\\frac{t}{j}} \sin (\\frac{n\pi x}{L})
+    .. math:: \\theta(t) = \\frac{4}{\pi S} \sum_{n=1,3,5...}^\infty \\frac{1}{n} e^{-n^2\\frac{t}{j}} \sin (\\frac{n\pi x}{L})
 
     The function describes the response of a domain between two drainage
     channels. The function gives the same outcome as Bruggeman equation 133.15.
@@ -986,17 +988,17 @@ class Spline(RfuncBase):
     t: list
         times at which the response function is defined
     kind: string
-        See scipy.interpolate.interp1d. Most usefull for a smooth response
-        function are ‘quadratic’, ‘cubic’.
+        see scipy.interpolate.interp1d. Most useful for a smooth response
+        function are ‘quadratic’ and ‘cubic’.
 
     Notes
     -----
     The spline response function generates a response function from factors at
-    t = 1, 2, 4, 8, 16, 32, 64, 128, 256, 512 and 1024 days. This response
-    function is more data-driven than existing response functions and has no
-    physical background. Therefore it can primarily be used to compare to other
-    more physical response functions, that probably describe the groundwater
-    system better.
+    t = 1, 2, 4, 8, 16, 32, 64, 128, 256, 512 and 1024 days by default. This 
+    response function is more data-driven than existing response functions and 
+    has no physical background. Therefore it can primarily be used to compare 
+    to other more physical response functions, that probably describe the 
+    groundwater system better.
     """
     _name = "Spline"
 

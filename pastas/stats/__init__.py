@@ -3,7 +3,6 @@
 .. autosummary::
    :nosignatures:
    :toctree: ./generated
-   :noindex:
 
     pastas.stats.core
     pastas.stats.metrics

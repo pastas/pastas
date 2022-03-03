@@ -7,7 +7,7 @@ New Features / Enhancements
 
 - :class:`ps.ChangeModel` is added, simulating a response that changes over
   time (PR #332).
-- :method:`ps.utils.get_equidistant_series` is added, a method to get
+- :function:`ps.utils.get_equidistant_series` is added, a method to get
   equidistant timeseries using nearest reindexing.
 - :class:`ps.rfunc.Kraijenhoff` is added, simulating the response in a 
   domain between two drainage channels.
