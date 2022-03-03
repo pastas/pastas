@@ -3,7 +3,7 @@ import pandas as pd
 from pandas import NA, Timedelta, DatetimeIndex, cut
 from numpy import diff, sqrt, log, arange
 import pastas as ps
-from scipy.stats.stats import linregress
+from scipy.stats import linregress
 
 __all__ = ["cv_period_mean", "cv_date_min", "cv_fall_rate", "cv_rise_rate",
            "parde_seasonality", "avg_seasonal_fluctuation",  # "magnitude",
