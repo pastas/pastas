@@ -150,8 +150,9 @@ class FlexModel(RechargeBase):
     gw_uptake: bool, optional
         If True, the potential evaporation that is left after evaporation
         from the interception reservoir and the root zone reservoir is
-        subtracted from the recharge flux. EXPERIMENTAL FEATURE that may be
-        removed in the future!
+        subtracted from the recharge flux. An additional parameter can be used
+        to scale the excess evaporation. Note that this is an EXPERIMENTAL 
+        FEATURE that may be removed in the future!
 
     Notes
     -----
