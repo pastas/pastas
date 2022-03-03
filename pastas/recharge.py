@@ -717,7 +717,7 @@ class Peterson(RechargeBase):
         ksat = power(10, ksat)
         beta = power(10, beta)
         # Set the initial system state
-        sm[0] = smsc / 2 
+        sm[0] = smsc / 2
 
         for t in range(0, n):
             sm_frac = sm[t] / smsc
