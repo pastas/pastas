@@ -38,7 +38,7 @@ After solving a model, the simulated recharge flux can be obtained:
 
 from logging import getLogger
 from numpy import add, float64, multiply, exp, zeros, nan_to_num, vstack, \
-    where, inf, power
+    where, power
 from pandas import DataFrame
 
 from pastas.decorators import njit
@@ -222,11 +222,11 @@ class FlexModel(RechargeBase):
         parameters.loc[name + "_gamma"] = (2.0, 1e-5, 20.0, True, name)
         parameters.loc[name + "_kv"] = (1.0, 0.25, 2.0, False, name)
         if self.interception:
-            parameters.loc[name + "_simax"] = (2.0, 1e-5, 10.0, False, name)
+            parameters.loc[name + "_simax"] = (2.0, 0.0, 10.0, False, name)
         if self.gw_uptake:
             parameters.loc[name + "_f"] = (1.0, 0.0, 1.0, True, name)
         if self.snow:
-            parameters.loc[name + "_tt"] = (0.0, -inf, inf, True, name)
+            parameters.loc[name + "_tt"] = (0.0, -10.0, 10.0, True, name)
             parameters.loc[name + "_k"] = (2.0, 1.0, 20.0, True, name)
 
         return parameters
@@ -282,10 +282,12 @@ class FlexModel(RechargeBase):
                                                      dt=dt)
 
         # report big water balance errors (error > 0.1%.)
-        error = (sr[0] - sr[-1] + (pe - m + r + ea + q).sum()) / pe.sum()
+        error = (sr[0] - sr[-1] + (pe - m + r + ea + q).sum()) / \
+                (pe.sum() + 1e-10)  # avoid division by zero
         if abs(error) > 0.1:
             logger.info("Water balance error: %s %% of the total pe flux. "
-                        "Parameters: %s", error.round(2), p.round(2))
+                        "Parameters: %s", error.round(2),
+                        p.astype(float).round(2))
 
         if self.gw_uptake:
             # Compute leftover potential evaporation

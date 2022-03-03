@@ -297,6 +297,8 @@ def nse(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30):
 
     Notes
     -----
+    NSE computed according to [nash_1970]_
+
     .. math:: \\text{NSE} = 1 - \\frac{\\sum(h_s-h_o)^2}{\\sum(h_o-\\mu_{h,o})}
 
     References
@@ -320,7 +322,7 @@ def nse(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30):
     mu = average(obs.to_numpy(), weights=w)
 
     return 1 - (w * res.to_numpy() ** 2).sum() / \
-        (w * (obs.to_numpy() - mu) ** 2).sum()
+           (w * (obs.to_numpy() - mu) ** 2).sum()
 
 
 def rsq(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30,
@@ -359,6 +361,7 @@ def rsq(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30,
 
     When nparam is provided, the :math:`\\rho` is
     adjusted for the number of calibration parameters.
+
     """
     if res is None:
         res = sim - obs
@@ -414,6 +417,7 @@ def bic(obs=None, sim=None, res=None, missing="drop", nparam=1):
     .. [akaike_1979] Akaike, H. (1979). A Bayesian extension of the minimum
        AIC procedure of autoregressive model fitting. Biometrika, 66(2),
        237-242.
+
     """
     if res is None:
         res = sim - obs
@@ -463,6 +467,7 @@ def aic(obs=None, sim=None, res=None, missing="drop", nparam=1):
     ----------
     .. [akaike_1974] Akaike, H. (1974). A new look at the statistical model
        identification. IEEE transactions on automatic control, 19(6), 716-723.
+
     """
     if res is None:
         res = sim - obs
@@ -517,6 +522,7 @@ def kge_2012(obs, sim, missing="drop", weighted=False, max_gap=30):
     .. [kling_2012] Kling, H., Fuchs, M., and Paulin, M. (2012). Runoff
       conditions in the upper Danube basin under an ensemble of climate
       change scenarios. Journal of Hydrology, 424-425:264 - 277.
+
     """
     if missing == "drop":
         obs = obs.dropna()

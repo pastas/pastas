@@ -2,6 +2,8 @@ from pandas.plotting import register_matplotlib_converters
 import logging
 
 import pastas.recharge as rch
+import pastas.stats as stats
+import pastas.plots as plots
 
 from .model import Model
 from .noisemodels import ArmaModel, NoiseModel

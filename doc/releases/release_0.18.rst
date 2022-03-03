@@ -1,5 +1,5 @@
 Version 0.18 (2nd of September 2021)
---------------------------------
+------------------------------------
 Minor update introducing a few new features and fixes some smaller bugs.
 
 New Features / Enhancements

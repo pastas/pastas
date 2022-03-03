@@ -6,13 +6,13 @@ from logging import getLogger
 from os import getlogin
 
 import numpy as np
-from pandas import DataFrame, Series, Timedelta, Timestamp, date_range
+from pandas import DataFrame, Series, Timedelta, Timestamp, date_range, concat
 
 from .decorators import get_stressmodel
 from .io.base import _load_model, dump
 from .modelstats import Statistics
 from .noisemodels import NoiseModel
-from .plots import Plotting
+from .modelplots import Plotting
 from .solver import LeastSquares
 from .stressmodels import Constant
 from .timeseries import TimeSeries
@@ -1029,18 +1029,19 @@ class Model:
         if noise is None:
             noise = self.settings['noise']
 
-        parameters = DataFrame(columns=self.parameters.columns)
+        frames = [DataFrame(columns=self.parameters.columns)]
+
         for sm in self.stressmodels.values():
-            parameters = parameters.append(sm.parameters, sort=False)
+            frames.append(sm.parameters)
         if self.constant:
-            parameters = parameters.append(self.constant.parameters,
-                                           sort=False)
+            frames.append(self.constant.parameters)
         if self.transform:
-            parameters = parameters.append(self.transform.parameters,
-                                           sort=False)
+            frames.append(self.transform.parameters)
         if self.noisemodel and noise:
-            parameters = parameters.append(self.noisemodel.parameters,
-                                           sort=False)
+            frames.append(self.noisemodel.parameters)
+
+        parameters = concat(frames)
+        parameters = parameters.infer_objects()
 
         # Set initial parameters to optimal parameters from model
         if not initial:
@@ -1624,7 +1625,7 @@ class Model:
                 atol = 1e-8
             else:
                 atol = np.min(
-                    [1e-8, 10**(np.floor(np.log10(np.abs(pmin))) - 1)])
+                    [1e-8, 10 ** (np.floor(np.log10(np.abs(pmin))) - 1)])
 
             # deal with NaNs in parameter bounds
             if np.isnan(pmax):

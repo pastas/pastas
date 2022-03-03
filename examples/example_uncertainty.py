@@ -6,15 +6,15 @@ import pastas as ps
 ps.set_log_level("ERROR")
 
 # read observations and create the time series model
-obs = pd.read_csv("data/head_nb1.csv", index_col=0, parse_dates=True,
-                  squeeze=True)
+obs = pd.read_csv("data/head_nb1.csv", index_col=0,
+                  parse_dates=True).squeeze("columns")
 ml = ps.Model(obs, name="groundwater head")
 
 # read weather data and create stressmodel
-rain = pd.read_csv("data/rain_nb1.csv", index_col=0, parse_dates=True,
-                   squeeze=True)
-evap = pd.read_csv("data/evap_nb1.csv", index_col=0, parse_dates=True,
-                   squeeze=True)
+rain = pd.read_csv("data/rain_nb1.csv", index_col=0,
+                   parse_dates=True).squeeze("columns")
+evap = pd.read_csv("data/evap_nb1.csv", index_col=0,
+                   parse_dates=True).squeeze("columns")
 sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential,
                       name='recharge')
 ml.add_stressmodel(sm)
