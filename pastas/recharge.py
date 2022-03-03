@@ -151,7 +151,7 @@ class FlexModel(RechargeBase):
         If True, the potential evaporation that is left after evaporation
         from the interception reservoir and the root zone reservoir is
         subtracted from the recharge flux. An additional parameter can be used
-        to scale the excess evaporation. Note that this is an EXPERIMENTAL 
+        to scale the excess evaporation. Note that this is an EXPERIMENTAL
         FEATURE that may be removed in the future!
 
     Notes
@@ -647,8 +647,8 @@ class Peterson(RechargeBase):
 
     References
     ----------
-    .. [peterson_2014] Peterson, T.J. and Western A.W. (2014). Nonlinear 
-    time-series modeling of unconfined groundwater head. 
+    .. [peterson_2014] Peterson, T.J. and Western A.W. (2014). Nonlinear
+    time-series modeling of unconfined groundwater head.
 
     """
     _name = "Peterson"
