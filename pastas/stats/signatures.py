@@ -84,7 +84,7 @@ def cv_date_min(series):
 
 
 def parde_seasonality(series, normalize=True):
-    """parde seasonality according to [parde_1933]_.
+    """Parde seasonality according to [parde_1933]_.
 
     Parameters
     ----------
@@ -114,7 +114,7 @@ def parde_seasonality(series, normalize=True):
 
 
 def parde_coefficients(series, normalize=True):
-    """parde coefficients for each month [parde_1933]_.
+    """Parde coefficients for each month [parde_1933]_.
 
     Parameters
     ----------
@@ -147,8 +147,39 @@ def parde_coefficients(series, normalize=True):
     return coefficients
 
 
+def _martens(series, normalize=True):
+    """Functions for the Martens average seasonal fluctuation and
+    interanual fluctuation.
+
+    Parameters
+    ----------
+    series: pandas.Series
+        Pandas Series with DatetimeIndex and head values.
+    normalize: bool, optional
+        normalize the time series to values between zero and one.
+
+    Returns
+    -------
+    hl: pandas.Series
+        Lowest heads
+    hw: pandas.Series
+        Largest heads
+    """
+
+    if normalize:
+        series = _normalize(series)
+
+    s = series.resample("M")
+    hl = s.min().groupby(s.min().index.year).nsmallest(3).groupby(
+        level=0).mean()
+    hw = s.max().groupby(s.max().index.year).nlargest(3).groupby(
+        level=0).mean()
+
+    return hl, hw
+
+
 def avg_seasonal_fluctuation(series, normalize=False):
-    """classification according to [martens_2013]_.
+    """Classification according to [martens_2013]_.
 
     Parameters
     ----------
@@ -179,14 +210,8 @@ def avg_seasonal_fluctuation(series, normalize=False):
        dunes. Journal of Hydrology, 499, 236–246.
 
     """
-    if normalize:
-        series = _normalize(series)
 
-    s = series.resample("M")
-    hl = s.min().groupby(s.min().index.year).nsmallest(3).groupby(
-        level=0).mean()
-    hw = s.max().groupby(s.max().index.year).nlargest(3).groupby(
-        level=0).mean()
+    hl, hw = _martens(series, normalize=normalize)
 
     return hw.mean() - hl.mean()
 
@@ -226,14 +251,8 @@ def interannual_variation(series, normalize=False):
        dunes. Journal of Hydrology, 499, 236–246.
 
     """
-    if normalize:
-        series = _normalize(series)
 
-    s = series.resample("M")
-    hl = s.min().groupby(s.min().index.year).nsmallest(3).groupby(
-        level=0).mean()
-    hw = s.max().groupby(s.max().index.year).nlargest(3).groupby(
-        level=0).mean()
+    hl, hw = _martens(series, normalize=normalize)
 
     return (hw.max() - hw.min()) + (hl.max() - hl.min()) / 2
 
@@ -822,8 +841,8 @@ def bimodality_coefficient(series, normalize=True):
     skew *= (sqrt(n * (n - 1))) / (n - 2)
 
     # Compute the kurtosis for a finite sample
-    kurt = (1 / n) * sum((series - series.mean()) ** 4) / (
-            ((1 / n) * sum((series - series.mean()) ** 2)) ** 2) - 3
+    kurt = (1 / n) * sum((series - series.mean()) ** 4) / \
+           (((1 / n) * sum((series - series.mean()) ** 2)) ** 2) - 3
     kurt = ((n - 1) * ((n + 1) * kurt - 3 * (n - 1)) / ((n - 2) * (n - 3))) + 3
 
     return ((skew ** 2) + 1) / \
@@ -1066,6 +1085,48 @@ def richards_baker_index(series, normalize=True):
     return series.diff().dropna().abs().sum() / series.sum()
 
 
+def _baseflow(series, normalize=True):
+    """Baseflow function for the baseflow index and stability
+
+    Parameters
+    ----------
+    series: pandas.Series
+        Pandas Series with DatetimeIndex and head values.
+    normalize: bool, optional
+        normalize the time series to values between zero and one.
+
+    Returns
+    -------
+    series: pandas.Series
+        Pandas Series of the original for
+    ht: pandas.Series
+        Pandas Series for the base head
+    """
+    if normalize:
+        series = _normalize(series)
+
+    # A/B. Selecting minima hm over 5 day periods
+    hm = series.resample("5D").min()
+
+    # C. define the turning points ht (0.9 * head < adjacent heads)
+    ht = pd.Series(dtype=float)
+    for i, h in enumerate(hm.iloc[1:-1], start=1):
+        if (h < hm.iloc[i - 1]) & (h < hm.iloc[i + 1]):
+            ht[hm.index[i]] = h
+
+    # ensure that index is a DatetimeIndex
+    ht.index = pd.to_datetime(ht.index)
+
+    # D. Interpolate
+    ht = ht.resample("D").interpolate()
+
+    # E. Assign a base head to each day
+    ht[ht > series.resample("D").mean().loc[ht.index]] = \
+        series.resample("D").mean()
+
+    return series, ht
+
+
 def baseflow_index(series, normalize=True):
     """Baseflow index according to [wmo_2008]_.
 
@@ -1093,31 +1154,10 @@ def baseflow_index(series, normalize=True):
        Geneva, Switzerland: World Meteorological Organization.
 
     """
-    if normalize:
-        series = _normalize(series)
 
-    # A/B. Selecting minima hm over 5 day periods
-    hm = series.resample("5D").min()
+    series, ht = _baseflow(series, normalize=normalize)
 
-    # C. define the turning points ht (0.9 * head < adjacent heads)
-    ht = pd.Series(dtype=float)
-    for i, h in enumerate(hm.iloc[1:-1], start=1):
-        if (h < hm.iloc[i - 1]) & (h < hm.iloc[i + 1]):
-            ht[hm.index[i]] = h
-
-    # ensure that index is a DatetimeIndex
-    ht.index = pd.to_datetime(ht.index)
-
-    # D. Interpolate
-    ht = ht.resample("D").interpolate()
-
-    # E. Assign a base head to each day
-    ht[ht > series.resample("D").mean().loc[ht.index]] = \
-        series.resample("D").mean()
-
-    # Compute the baseflow index
-    bfi = series.resample("D").mean().sum() / ht.sum()
-    return bfi
+    return series.resample("D").mean().sum() / ht.sum()
 
 
 def baseflow_stability(series, normalize=True):
@@ -1149,27 +1189,8 @@ def baseflow_stability(series, normalize=True):
        dynamics. Water Resources Research, 55, 5575–5592.
 
     """
-    if normalize:
-        series = _normalize(series)
 
-    # A/B. Selecting minima hm over 5 day periods
-    hm = series.resample("5D").min()
-
-    # C. define the turning points ht (0.9 * head < adjacent heads)
-    ht = pd.Series(dtype=float)
-    for i, h in enumerate(hm.iloc[1:-1], start=1):
-        if (h < hm.iloc[i - 1]) & (h < hm.iloc[i + 1]):
-            ht[hm.index[i]] = h
-
-    # ensure that index is a DatetimeIndex
-    ht.index = pd.to_datetime(ht.index)
-
-    # D. Interpolate
-    ht = ht.resample("D").interpolate()
-
-    # E. Assign a base head to each day
-    ht[ht > series.resample("D").mean().loc[ht.index]] = \
-        series.resample("D").mean()
+    series, ht = _baseflow(series, normalize=normalize)
 
     return ht.resample("A").mean().max() - ht.resample("A").mean().min()
 
