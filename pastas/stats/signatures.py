@@ -6,7 +6,7 @@ import pastas as ps
 from scipy.stats import linregress
 
 __all__ = ["cv_period_mean", "cv_date_min", "cv_fall_rate", "cv_rise_rate",
-           "parde_seasonality", "avg_seasonal_fluctuation",  # "magnitude",
+           "parde_seasonality", "avg_seasonal_fluctuation", "magnitude",
            "interannual_variation", "low_pulse_count", "high_pulse_count",
            "low_pulse_duration", "high_pulse_duration", "amplitude_range",
            "bimodality_coefficient", "mean_annual_maximum", "rise_rate",
