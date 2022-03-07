@@ -70,6 +70,15 @@ def test_flexmodel_no_interception():
     return
 
 
+def test_flexmodel_gw_uptake():
+    ml = ps.Model(obs, name="rch_model")
+    rm = ps.RechargeModel(prec=rain, evap=evap,
+                          recharge=ps.rch.FlexModel(gw_uptake=True))
+    ml.add_stressmodel(rm)
+    ml.solve()
+    return
+
+
 def test_flexmodel_snow():
     ml = ps.Model(obs, name="rch_model")
     rm = ps.RechargeModel(prec=rain, evap=evap, temp=temp,
@@ -104,3 +113,21 @@ def test_flexmodel_water_balance_interception():
     si, ei, pi = rch.get_interception_balance(p, e)
     error = (si[0] - si[-1] + (pi + ei)[:-1].sum())
     assert isclose(error, 0)
+
+
+def test_peterson():
+    ml = ps.Model(obs, name="rch_model")
+    rm = ps.RechargeModel(prec=rain, evap=evap, recharge=ps.rch.Peterson())
+    ml.add_stressmodel(rm)
+    ml.solve()
+    return
+
+
+# don't test water balance because of forward Euler
+# def test_peterson_water_balance():
+#     rch = ps.rch.Peterson()
+#     e = evap.to_numpy()
+#     p = rain.to_numpy()
+#     r, sm, ea, pe = rch.get_recharge(p, e)
+#     error = (sm[0] - sm[-1] + (r + ea + pe)[:-1].sum())
+#     assert isclose(error, 0)
