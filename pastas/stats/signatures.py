@@ -1,7 +1,7 @@
 """This module contains methods to compute the groundwater signatures."""
 import pandas as pd
 from pandas import NA, Timedelta, DatetimeIndex, cut
-from numpy import diff, sqrt, log, arange
+from numpy import diff, sqrt, log, arange, nan
 import pastas as ps
 from scipy.stats import linregress
 
@@ -1105,6 +1105,9 @@ def baseflow_index(series, normalize=True):
         if (h < hm.iloc[i - 1]) & (h < hm.iloc[i + 1]):
             ht[hm.index[i]] = h
 
+    # ensure that index is a DatetimeIndex
+    ht.index = pd.to_datetime(ht.index)
+
     # D. Interpolate
     ht = ht.resample("D").interpolate()
 
@@ -1157,6 +1160,9 @@ def baseflow_stability(series, normalize=True):
     for i, h in enumerate(hm.iloc[1:-1], start=1):
         if (h < hm.iloc[i - 1]) & (h < hm.iloc[i + 1]):
             ht[hm.index[i]] = h
+
+    # ensure that index is a DatetimeIndex
+    ht.index = pd.to_datetime(ht.index)
 
     # D. Interpolate
     ht = ht.resample("D").interpolate()
