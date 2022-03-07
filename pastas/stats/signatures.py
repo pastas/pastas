@@ -1,7 +1,7 @@
 """This module contains methods to compute the groundwater signatures."""
 import pandas as pd
 from pandas import NA, Timedelta, DatetimeIndex, cut
-from numpy import diff, sqrt, log, arange, nan
+from numpy import diff, sqrt, log, arange
 import pastas as ps
 from scipy.stats import linregress
 
@@ -1317,8 +1317,8 @@ def peak_base_time(series):
     References
     ----------
     .. [heudorfer_2019] Heudorfer, B., Haaf, E., Stahl, K., & Barthel, R.
-       (2019). Index‐based characterization and quantification of groundwater 
-       dynamics. Water Resources Research, 55, 5575–5592. 
+       (2019). Index‐based characterization and quantification of groundwater
+       dynamics. Water Resources Research, 55, 5575–5592.
        https://doi.org/10.1029/2018WR024418
 
     """
