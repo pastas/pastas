@@ -687,7 +687,7 @@ class Peterson(RechargeBase):
     def get_init_parameters(self, name="recharge"):
         parameters = DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "name"])
-        parameters.loc[name + "_scap"] = (1.0, 0.0, 3.0, True, name)
+        parameters.loc[name + "_scap"] = (1.5, 0.5, 3.0, True, name)
         parameters.loc[name + "_alpha"] = (1.0, 0.0, 1.5, True, name)
         parameters.loc[name + "_ksat"] = (1.0, 0.0, 3.0, True, name)
         parameters.loc[name + "_beta"] = (0.5, 0.0, 1.5, True, name)
@@ -715,7 +715,7 @@ class Peterson(RechargeBase):
             Recharge flux calculated by the model.
 
         """
-        r, s, ea, pe = self.get_recharge(prec, evap, smsc=p[0],
+        r, s, ea, pe = self.get_recharge(prec, evap, scap=p[0],
                                          alpha=p[1], ksat=p[2],
                                          beta=p[3], gamma=p[4], dt=dt)
         if return_full:
@@ -725,7 +725,7 @@ class Peterson(RechargeBase):
 
     @staticmethod
     @njit
-    def get_recharge(prec, evap, smsc=1.0, alpha=1.0,
+    def get_recharge(prec, evap, scap=1.0, alpha=1.0,
                      ksat=1.0, beta=0.5, gamma=1.0, dt=1.0):
         """
         Internal method used for the recharge calculation. If Numba is
@@ -739,7 +739,7 @@ class Peterson(RechargeBase):
         r = zeros(n, dtype=float64)  # Recharge flux
         ea = zeros(n, dtype=float64)  # Actual evaporation flux
         # Update params
-        smsc = power(10, smsc)
+        smsc = power(10, scap)
         ksat = power(10, ksat)
         beta = power(10, beta)
         # Set the initial system state
@@ -748,11 +748,9 @@ class Peterson(RechargeBase):
         for t in range(n):
             sm_frac = sm[t] / smsc
             pe[t] = prec[t] * power(1 - sm_frac, alpha)
-            r[t] = ksat * power(sm_frac, beta)
-            ea[t] = evap[t] * power(sm_frac, gamma)
-            sm[t+1] = sm[t] + (pe[t] - r[t] - ea[t]) * dt
-            sm[t+1] = max(0, sm[t+1])
-            sm[t+1] = min(smsc, sm[t+1])
+            ea[t] = max(sm[t+1], evap[t] * power(sm_frac, gamma))
+            r[t] = max(sm[t+1], ksat * power(sm_frac, beta))
+            sm[t+1] = min(smsc, max(0.0, sm[t] + (pe[t] - ea[t] - r[t]) * dt))
         return r, sm[1:], ea, pe
 
     def get_water_balance(self, prec, evap, p, dt=1.0, **kwargs):
