@@ -157,7 +157,7 @@ class FlexModel(RechargeBase):
     Notes
     -----
     For a detailed description of the recharge model and parameters we refer
-    to [collenteur_2021]_.The water balance for the unsaturated zone
+    to [collenteur_2021]_. The water balance for the unsaturated zone
     reservoir is written as:
 
     .. math::
@@ -642,6 +642,34 @@ class Berendrecht(RechargeBase):
 
 class Peterson(RechargeBase):
     """Recharge to the groundwater calculated based on [peterson_2014]_.
+    The water balance for the unsaturated zone reservoir is written as:
+
+    .. math::
+
+        \\frac{dS}{dt} = P_e - E_a - R
+
+    where the fluxes $P_e$, $E_a$ and $R$ are calculated as:
+
+    .. math::
+
+        P_e = P \left(1 - \frac{S}{\hat{S_{cap}}}\right)^\alpha
+
+    .. math::
+
+        E_a = E_p \left(\frac{S}{\hat{S_{cap}}}\right)^\gamma
+
+    .. math::
+
+        R = \hat{k_{sat}}\left(\frac{S}{\hat{S_{cap}}}\right)^{\hat{\beta}}
+
+    with the parameters:
+
+    .. math:: 
+
+        \hat{S_{cap}} = 10^{S_{cap}}; \hat{k_{sat}} = 10^{k_{sat}}; \hat{\beta} = 10^{\beta}
+
+    Note that the method currently uses forward Euler method to solve
+    the ODE so significant water balance errors can occur.
 
     References
     ----------
@@ -672,7 +700,7 @@ class Peterson(RechargeBase):
         Parameters
         ----------
         prec: numpy.array
-            Precipitation flux in mm/d. Has to have the same length as evap.
+            Precipitation flux in mm/d. Must have the same length as evap.
         evap: numpy.array
             Potential evapotranspiration flux in mm/d.
         p: array_like
@@ -717,7 +745,7 @@ class Peterson(RechargeBase):
         # Set the initial system state
         sm[0] = smsc / 2
 
-        for t in range(0, n):
+        for t in range(n):
             sm_frac = sm[t] / smsc
             pe[t] = prec[t] * power(1 - sm_frac, alpha)
             r[t] = ksat * power(sm_frac, beta)
