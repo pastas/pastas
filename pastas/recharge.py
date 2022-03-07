@@ -421,14 +421,14 @@ class FlexModel(RechargeBase):
 
         """
         n = pr.size
-        si = zeros(n, dtype=float64)  # Interception Storage State
+        si = zeros(n + 1, dtype=float64)  # Interception Storage State
         pe = zeros(n, dtype=float64)  # Effective precipitation Flux
         ei = zeros(n, dtype=float64)  # Interception evaporation Flux
 
         for t in range(n):
             # Interception bucket
             ei[t] = min(ep[t], si[t])
-            si[t + 1] = si[t] + dt * (pr[t] - pe[t] - ei[t])
+            si[t + 1] = si[t] + dt * (pr[t] - ei[t])
             pe[t] = max(si[t + 1] - simax, 0.0)
             si[t + 1] = si[t + 1] - pe[t]
 
