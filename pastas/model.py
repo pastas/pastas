@@ -371,8 +371,9 @@ class Model:
             sim = sim.loc[tmin:tmax]
 
         if sim.hasnans:
-            sim = sim.dropna()
-            self.logger.warning('Nan-values were removed from the simulation.')
+            self.logger.error('Simulation contains Nan-values.')
+            raise ValueError("Simulation contains NaNs. "
+                             "Check stresses timeseries settings!")
 
         sim.name = 'Simulation'
         return sim
@@ -428,7 +429,8 @@ class Model:
         if self.interpolate_simulation:
             # interpolate simulation to times of observations
             sim_interpolated = np.interp(oseries_calib.index.asi8,
-                                         sim.index.asi8, sim.values)
+                                         sim.index.asi8, sim.values,
+                                         left=np.nan, right=np.nan)
         else:
             # all of the observation indexes are in the simulation
             sim_interpolated = sim.reindex(oseries_calib.index)
@@ -611,8 +613,9 @@ class Model:
             self._get_time_offset(self.settings["freq"])
 
         # Set tmin and tmax
-        self.settings["tmin"] = self.get_tmin(tmin)
-        self.settings["tmax"] = self.get_tmax(tmax)
+        self.settings["tmin"] = self.get_tmin(
+            tmin).floor(self.settings["freq"])
+        self.settings["tmax"] = self.get_tmax(tmax).ceil(self.settings["freq"])
 
         # make sure calibration data is renewed
         self.sim_index = self._get_sim_index(self.settings["tmin"],
