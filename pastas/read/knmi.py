@@ -18,7 +18,7 @@ def read_knmi(fname, variables='RD'):
     Parameters
     ----------
     fname: str
-        Filename and path to a Dino file.
+        Filename and path to a KNMI file.
     variables: str, optional
         String with the variable name to extract.
 
