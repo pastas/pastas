@@ -19,6 +19,7 @@ from logging import getLogger
 import numpy as np
 from pandas import DataFrame, Series, Timedelta, Timestamp, concat, date_range
 from scipy.signal import fftconvolve
+from scipy import __version__ as scipyversion
 
 from .decorators import njit, set_parameter
 from .recharge import Linear
@@ -686,9 +687,13 @@ class WellModel(StressModelBase):
             raise NotImplementedError("WellModel only supports the rfunc "
                                       "HantushWellModel!")
 
-        logger.warning("It is recommended to use LmfitSolve as the solver "
-                       "when implementing WellModel. See "
-                       "https://github.com/pastas/pastas/issues/177.")
+        # Check if scipy < 1.8
+        from distutils.version import StrictVersion
+        if StrictVersion(scipyversion) < StrictVersion("1.8.0"):
+            logger.warning(
+                "It is recommended to use LmfitSolve as the solver "
+                "or update to scipy>=1.8.0 when implementing WellModel."
+                " See https://github.com/pastas/pastas/issues/177.")
 
         # sort wells by distance
         self.sort_wells = sort_wells
