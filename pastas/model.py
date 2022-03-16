@@ -1485,8 +1485,8 @@ class Model:
             If any other value than "full" is provided, the parameter
             correlations will be removed from the output.
         warnings : bool, optional
-            print warnings in case of optimization failure, parameters 
-            hitting bounds, or length of responses exceeding calibration 
+            print warnings in case of optimization failure, parameters
+            hitting bounds, or length of responses exceeding calibration
             period.
 
         Returns
@@ -1621,7 +1621,7 @@ class Model:
         return report
 
     def _check_response_tmax(self, cutoff=None):
-        """Internal method to check whether response tmax is smaller than 
+        """Internal method to check whether response tmax is smaller than
         calibration period.
 
         Parameters
