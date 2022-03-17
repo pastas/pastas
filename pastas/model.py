@@ -1532,8 +1532,8 @@ class Model:
         }
 
         if warnbounds:
-            DeprecationWarning("Kwarg 'warnbounds' is deprecated. "
-                               "Use warnings=True instead")
+            DeprecationWarning("The 'warnbounds' argument is deprecated. "
+                               "Use warnings=True instead.")
 
         parameters = self.parameters.loc[:, ["optimal", "stderr",
                                              "initial", "vary"]]
