@@ -1476,7 +1476,7 @@ class Model:
 
         return file_info
 
-    def fit_report(self, output="basic", warnings=True):
+    def fit_report(self, output="basic", warnings=True, warnbounds=None):
         """Method that reports on the fit after a model is optimized.
 
         Parameters
@@ -1488,6 +1488,8 @@ class Model:
             print warnings in case of optimization failure, parameters
             hitting bounds, or length of responses exceeding calibration
             period.
+        warnbounds : bool, optional
+            deprecated, use warnings instead
 
         Returns
         -------
@@ -1528,6 +1530,10 @@ class Model:
             "___": "",
             "Interp.": "Yes" if self.interpolate_simulation else "No",
         }
+
+        if warnbounds:
+            DeprecationWarning("Kwarg 'warnbounds' is deprecated. "
+                               "Use warnings=True instead")
 
         parameters = self.parameters.loc[:, ["optimal", "stderr",
                                              "initial", "vary"]]
