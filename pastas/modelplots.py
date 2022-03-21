@@ -411,7 +411,7 @@ class Plotting:
 
     @model_tmin_tmax
     def diagnostics(self, tmin=None, tmax=None, figsize=(10, 6), bins=50,
-                    acf_options=None, fig=None, **kwargs):
+                    acf_options=None, fig=None, alpha=0.05, **kwargs):
         """Plot a window that helps in diagnosing basic model assumptions.
 
         Parameters
@@ -429,6 +429,8 @@ class Plotting:
             pastas.stats.acf.
         fig: Matplotib.Figure instance, optional
             Optionally provide a Matplotib.Figure instance to plot onto.
+        alpha: float, optional
+            Significance level to calculate the (1-alpha)-confidence intervals.
         **kwargs: dict, optional
             Optional keyword arguments, passed on to plt.figure.
 
@@ -453,12 +455,12 @@ class Plotting:
             Method use to plot the probability plot.
         """
         if self.ml.settings["noise"]:
-            res = self.ml.noise(tmin=tmin, tmax=tmax)
+            res = self.ml.noise(tmin=tmin, tmax=tmax).iloc[1:]
         else:
             res = self.ml.residuals(tmin=tmin, tmax=tmax)
 
         return diagnostics(series=res, figsize=figsize, bins=bins, fig=fig,
-                           acf_options=acf_options, **kwargs)
+                           acf_options=acf_options, alpha=alpha, **kwargs)
 
     @model_tmin_tmax
     def cum_frequency(self, tmin=None, tmax=None, ax=None, figsize=(5, 2),
@@ -782,7 +784,8 @@ class Plotting:
         return axes
 
     @model_tmin_tmax
-    def summary_pdf(self, tmin=None, tmax=None, fname=None, dpi=150):
+    def summary_pdf(self, tmin=None, tmax=None, fname=None, dpi=150,
+                    results_kwargs={}, diagnostics_kwargs={}):
         """Create a PDF file (A4) with the results and diagnostics plot.
 
         Parameters
@@ -793,6 +796,10 @@ class Plotting:
             string with the file name / path to store the PDF file.
         dpi: int, optional
             dpi to save the figure with.
+        results_kwargs: dict, optional
+            dictionary passed on to ml.plots.results method.
+        diagnostics_kwargs: dict, optional
+            dictionary passed on to ml.plots.diagnostics method.
 
         Returns
         -------
@@ -807,8 +814,8 @@ class Plotting:
 
         fig1, fig2 = fig.subfigures(2, 1, height_ratios=[1.25, 1.])
 
-        self.results(fig=fig1, tmin=tmin, tmax=tmax)
-        self.diagnostics(fig=fig2, tmin=tmin, tmax=tmax)
+        self.results(fig=fig1, tmin=tmin, tmax=tmax, **results_kwargs)
+        self.diagnostics(fig=fig2, tmin=tmin, tmax=tmax, **diagnostics_kwargs)
         fig2.subplots_adjust(wspace=0.2)
 
         fig1.suptitle("Model Results", fontweight="bold")
