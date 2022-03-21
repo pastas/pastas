@@ -400,7 +400,7 @@ def stoffer_toloi(series, lags=15, nparam=0, freq="D",
     # remove correlation where no observations are available (de = 0)
     da = da[re != 0][:lags]
     re = re[re != 0][:lags]
-    k = arange(1, lags + 1)
+    k = arange(1, len(re) + 1)
 
     # Compute the Q-statistic
     qm = nobs ** 2 * sum(da * re ** 2 / (nobs - k))
