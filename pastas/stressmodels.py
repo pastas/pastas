@@ -20,6 +20,7 @@ import numpy as np
 from pandas import DataFrame, Series, Timedelta, Timestamp, concat, date_range
 from scipy.signal import fftconvolve
 from scipy import __version__ as scipyversion
+from warnings import warn
 
 from .decorators import njit, set_parameter
 from .recharge import Linear
@@ -246,6 +247,7 @@ class StressModel(StressModelBase):
 
     def __init__(self, stress, rfunc, name, up=True, cutoff=0.999,
                  settings=None, metadata=None, meanstress=None):
+
         if isinstance(stress, list):
             stress = stress[0]  # TODO Temporary fix Raoul, 2017-10-24
 
@@ -363,6 +365,13 @@ class StressModel2(StressModelBase):
     def __init__(self, stress, rfunc, name, up=True, cutoff=0.999,
                  settings=("prec", "evap"), metadata=(None, None),
                  meanstress=None):
+
+        msg = "StressModel2 will be deprecated in 0.21.0 and will be removed" \
+              " in 0.22.0 and is replace by the RechargeModel stress model. " \
+              "Please use ps.RechargeModel(prec, evap, " \
+              "recharge=ps.rch.Linear) for the same stress model."
+        warn(msg)
+
         # First check the series, then determine tmin and tmax
         stress0 = TimeSeries(stress[0], settings=settings[0],
                              metadata=metadata[0])
