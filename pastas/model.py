@@ -6,7 +6,7 @@ from logging import getLogger
 from os import getlogin
 
 import numpy as np
-from pandas import DataFrame, Series, Timedelta, Timestamp, date_range
+from pandas import DataFrame, Series, Timedelta, Timestamp, date_range, concat
 
 from .decorators import get_stressmodel
 from .io.base import _load_model, dump
@@ -111,6 +111,7 @@ class Model:
         self.interpolate_simulation = None
         self.normalize_residuals = False
         self.fit = None
+        self._solve_success = False
 
         # Load other modules
         self.stats = Statistics(self)
@@ -363,7 +364,7 @@ class Model:
             istart += 1
         if self.transform:
             sim = self.transform.simulate(sim, p[istart:istart +
-                                                        self.transform.nparam])
+                                                 self.transform.nparam])
 
         # Respect provided tmin/tmax at this point, since warmup matters for
         # simulation but should not be returned, unless return_warmup=True.
@@ -729,6 +730,7 @@ class Model:
 
         self.parameters.optimal = optimal
         self.parameters.stderr = stderr
+        self._solve_success = success  # store for fit_report
 
         if report:
             if isinstance(report, str):
@@ -1029,18 +1031,19 @@ class Model:
         if noise is None:
             noise = self.settings['noise']
 
-        parameters = DataFrame(columns=self.parameters.columns)
+        frames = [DataFrame(columns=self.parameters.columns)]
+
         for sm in self.stressmodels.values():
-            parameters = parameters.append(sm.parameters, sort=False)
+            frames.append(sm.parameters)
         if self.constant:
-            parameters = parameters.append(self.constant.parameters,
-                                           sort=False)
+            frames.append(self.constant.parameters)
         if self.transform:
-            parameters = parameters.append(self.transform.parameters,
-                                           sort=False)
+            frames.append(self.transform.parameters)
         if self.noisemodel and noise:
-            parameters = parameters.append(self.noisemodel.parameters,
-                                           sort=False)
+            frames.append(self.noisemodel.parameters)
+
+        parameters = concat(frames)
+        parameters = parameters.infer_objects()
 
         # Set initial parameters to optimal parameters from model
         if not initial:
@@ -1159,7 +1162,7 @@ class Model:
         # use warmup
         if tmin:
             tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + \
-                        self.settings["time_offset"]
+                self.settings["time_offset"]
         else:
             tmin_warm = None
 
@@ -1436,7 +1439,7 @@ class Model:
         # use warmup
         if tmin:
             tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + \
-                        self.settings["time_offset"]
+                self.settings["time_offset"]
         else:
             tmin_warm = None
 
@@ -1474,7 +1477,7 @@ class Model:
 
         return file_info
 
-    def fit_report(self, output="basic", warnbounds=True):
+    def fit_report(self, output="basic", warnings=True, warnbounds=None):
         """Method that reports on the fit after a model is optimized.
 
         Parameters
@@ -1482,9 +1485,12 @@ class Model:
         output: str, optional
             If any other value than "full" is provided, the parameter
             correlations will be removed from the output.
+        warnings : bool, optional
+            print warnings in case of optimization failure, parameters
+            hitting bounds, or length of responses exceeding calibration
+            period.
         warnbounds : bool, optional
-            print warnings when parameters hit or lie very close to 
-            bounds after optimization.
+            deprecated, use warnings instead
 
         Returns
         -------
@@ -1526,6 +1532,10 @@ class Model:
             "Interp.": "Yes" if self.interpolate_simulation else "No",
         }
 
+        if warnbounds:
+            DeprecationWarning("The 'warnbounds' argument is deprecated. "
+                               "Use warnings=True instead.")
+
         parameters = self.parameters.loc[:, ["optimal", "stderr",
                                              "initial", "vary"]]
         stderr = parameters.loc[:, "stderr"] / parameters.loc[:, "optimal"]
@@ -1536,18 +1546,23 @@ class Model:
         string = "{:{fill}{align}{width}}"
 
         # Create the first header with model information and stats
-        w = max(width - 41, 0)
-        header = f"Fit report {self.name:<16}" \
-                 f"{string.format('', fill=' ', align='>', width=w)}" \
-                 f"Fit Statistics\n" \
-                 f"{string.format('', fill='=', align='>', width=width)}\n"
+        wspace = max(width - (11 + 14 + len(self.name)), 1)
+        mspace = width - wspace - (11 + 14)
+        header = (
+            f"Fit report {self.name:<{mspace}.{mspace}}"
+            f"{string.format('', fill=' ', align='>', width=wspace)}"
+            f"Fit Statistics\n"
+            f"{string.format('', fill='=', align='>', width=width)}\n"
+        )
 
         basic = ""
-        w = max(width - 45, 0)
+        len_val4 = max([len(v) for v in fit.values()])
+        wspace = width - (8 + 23 + 9 + len_val4)
         for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
-            val4 = string.format(val4, fill=' ', align='>', width=w)
-            basic += f"{val1:<7} {val2:<22} {val3:<{len(val3)}} " \
-                     f"{val4:>{18 - len(val3)}}\n"
+            basic += (
+                f"{val1:<8}{val2:<23}{val3:<9}"
+                f"{val4:>{wspace+len_val4}}\n"
+            )
 
         # Create the parameters block
         params = f"\nParameters ({parameters.vary.sum()} optimized)\n" \
@@ -1566,37 +1581,85 @@ class Model:
         else:
             corr = ""
 
-        if warnbounds:
+        if warnings:
+            msg = []
+            # model optmization unsuccesful
+            if not self._solve_success:
+                msg.append("Model parameters could not be estimated well")
+
+            # parameter bound warnings
             lowerhit, upperhit = self._check_parameters_bounds()
             nhits = upperhit.sum() + lowerhit.sum()
 
             if nhits > 0:
-                msg = [
-                    f"\n\nWarning! {nhits} parameter(s) on bounds\n"
-                    f"{string.format('', fill='=', align='>', width=width)}"
-                ]
-
                 for p in upperhit.index:
                     if upperhit.loc[p]:
                         msg.append(
-                            f"'{p}' on upper bound: "
+                            f"Parameter '{p}' on upper bound: "
                             f"{self.parameters.loc[p, 'pmax']:.2e}"
                         )
                     elif lowerhit.loc[p]:
                         msg.append(
-                            f"'{p}' on lower bound: "
+                            f"Parameter '{p}' on lower bound: "
                             f"{self.parameters.loc[p, 'pmin']:.2e}"
                         )
-                # create message
-                bounds = "\n".join(msg)
-            else:
-                bounds = ""
-        else:
-            bounds = ""
+            # check response t_cutoff vs length calibration period
+            response_tmax_check = self._check_response_tmax()
+            if (~response_tmax_check["check_ok"]).any():
+                mask = ~response_tmax_check["check_ok"]
+                for i in response_tmax_check.loc[mask].index:
+                    msg.append(f"Response tmax for '{i}' > "
+                               "than calibration period")
 
-        report = f"{header}{basic}{params}{bounds}{corr}"
+            # create message
+            if len(msg) > 0:
+                msg = [
+                    f"\n\nWarnings! ({len(msg)})\n"
+                    f"{string.format('', fill='=', align='>', width=width)}"
+                ] + msg
+                warnings = "\n".join(msg)
+            else:
+                warnings = ""
+        else:
+            warnings = ""
+
+        report = f"{header}{basic}{params}{warnings}{corr}"
 
         return report
+
+    def _check_response_tmax(self, cutoff=None):
+        """Internal method to check whether response tmax is smaller than
+        calibration period.
+
+        Parameters
+        ----------
+        cutoff : float, optional
+            cutoff for response function, by default None, which uses
+            cutoff defined for each response function
+
+        Returns
+        -------
+        check : pandas.DataFrame
+            dataframe containing length calibration period, response tmax
+            for each stressmodel, and check result
+        """
+
+        len_oseries_calib = (self.settings["tmax"] -
+                             self.settings["tmin"]).days
+
+        check = DataFrame(index=self.stressmodels.keys(),
+                          columns=["len_oseries_calib",
+                                   "response_tmax",
+                                   "check_ok"])
+        check["len_oseries_calib"] = len_oseries_calib
+
+        for sm_name in self.stressmodels:
+            check.loc[sm_name, "response_tmax"] = self.get_response_tmax(
+                sm_name, cutoff=cutoff)
+
+        check["check_ok"] = check["response_tmax"] < check["len_oseries_calib"]
+
+        return check
 
     def _check_parameters_bounds(self):
         """Internal method to check if the optimal parameters are close to pmin

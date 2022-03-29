@@ -60,3 +60,8 @@ def test_tracksolve():
     ml = test_add_stressmodel()
     track = TrackSolve(ml)
     ml.solve(callback=track.plot_track_solve)
+
+
+def test_summary_pdf():
+    ml = test_add_stressmodel()
+    ml.plots.summary_pdf()

@@ -82,8 +82,8 @@ def compare(models, tmin=None, tmax=None, block_or_step='step',
     # get second model
     for j, iml in enumerate(models_sorted[1:], start=1):
         sim = iml.simulate(tmin=tmin[j], tmax=tmax[j])
-        sim.name = '{} ($R^2$ = {:0.2f}%)'.format(
-            sim.name, iml.stats.evp(tmin=tmin[j], tmax=tmax[j]))
+        sim.name = '{} ($R^2$ = {:0.2%})'.format(
+            sim.name, iml.stats.rsq(tmin=tmin[j], tmax=tmax[j]))
         p, = ax_ml.plot(sim.index, sim, label=sim.name)
         color = p.get_color()
 
@@ -146,11 +146,11 @@ def compare(models, tmin=None, tmax=None, block_or_step='step',
 
     # Draw parameters table
     parameters = concat(
-        [iml.parameters.optimal for iml in models], axis=1, sort=False)
-    colnams = ["{}".format(iml.name) for iml in models]
+        [iml.parameters.optimal for iml in models_sorted], axis=1, sort=False)
+    colnams = ["{}".format(iml.name) for iml in models_sorted]
     # ensure unique names
     if len(set(colnams)) < len(colnams):
-        colnams = [f"{iml.name}-{i}" for i, iml in enumerate(models)]
+        colnams = [f"{iml.name}-{i}" for i, iml in enumerate(models_sorted)]
     parameters.columns = colnams
     parameters['name'] = parameters.index
     # reorder columns
@@ -187,7 +187,6 @@ def compare(models, tmin=None, tmax=None, block_or_step='step',
         tmax[0] = ml.settings["tmax"]
 
     mintmin = np.min(to_datetime(tmin))
-    print(tmin)
     maxtmax = np.max(to_datetime(tmax))
 
     # get tmin including warmup if return_warmup=True
@@ -408,7 +407,7 @@ def acf(series, alpha=0.05, lags=365, acf_options=None, smooth_conf=True,
 
 
 def diagnostics(series, alpha=0.05, bins=50, acf_options=None,
-                figsize=(10, 6), **kwargs):
+                figsize=(10, 6), fig=None, **kwargs):
     """Plot that helps in diagnosing basic model assumptions.
 
     Parameters
@@ -423,6 +422,8 @@ def diagnostics(series, alpha=0.05, bins=50, acf_options=None,
         Dictionary with keyword arguments passed on to pastas.stats.acf.
     figsize: tuple, optional
         Tuple with the height and width of the figure in inches.
+    fig: Matplotib.Figure instance, optional
+        Optionally provide a Matplotib.Figure instance to plot onto.
     **kwargs: dict, optional
         Optional keyword arguments, passed on to plt.figure.
 
@@ -449,12 +450,14 @@ def diagnostics(series, alpha=0.05, bins=50, acf_options=None,
         Method use to plot the probability plot.
     """
     # Create the figure and axes
-    fig = plt.figure(figsize=figsize, **kwargs)
-    shape = (2, 3)
-    ax = plt.subplot2grid(shape, (0, 0), colspan=2, rowspan=1)
-    ax1 = plt.subplot2grid(shape, (1, 0), colspan=2, rowspan=1)
-    ax2 = plt.subplot2grid(shape, (0, 2), colspan=1, rowspan=1)
-    ax3 = plt.subplot2grid(shape, (1, 2), colspan=1, rowspan=1)
+    if fig is None:
+        fig = plt.figure(figsize=figsize, constrained_layout=True, **kwargs)
+
+    gs = fig.add_gridspec(ncols=2, nrows=2, width_ratios=[2, 1])
+    ax = fig.add_subplot(gs[0, 0])
+    ax2 = fig.add_subplot(gs[0, 1])
+    ax1 = fig.add_subplot(gs[1, 0])
+    ax3 = fig.add_subplot(gs[1, 1])
 
     # Plot the residuals or noise series
     ax.axhline(0, c="k")
@@ -470,6 +473,7 @@ def diagnostics(series, alpha=0.05, bins=50, acf_options=None,
 
     # Plot the autocorrelation
     acf(series, alpha=alpha, acf_options=acf_options, ax=ax1)
+    ax1.set_title(None)
 
     # Plot the histogram for normality and add a 'best fit' line
     _, bins, _ = ax2.hist(series.values, bins=bins, density=True)
@@ -484,7 +488,6 @@ def diagnostics(series, alpha=0.05, bins=50, acf_options=None,
     ax3.get_lines()[0].set_color(c)
     ax3.get_lines()[1].set_color("k")
 
-    plt.tight_layout()
     return fig.axes
 
 
@@ -811,7 +814,7 @@ class TrackSolve:
 
         # set grid for each plot
         for iax in [self.ax0, self.ax1, self.ax2]:
-            iax.grid(b=True)
+            iax.grid(visible=True)
 
         self.fig.tight_layout()
         return self.fig

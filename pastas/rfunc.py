@@ -1,12 +1,16 @@
 # coding=utf-8
 """This module contains all the response functions available in Pastas."""
 
+from logging import getLogger
+
 import numpy as np
 from pandas import DataFrame
 from scipy.integrate import quad
 from scipy.special import (erfc, erfcinv, exp1, gammainc, gammaincinv, k0, k1,
                            lambertw)
 from scipy.interpolate import interp1d
+
+logger = getLogger(__name__)
 
 __all__ = ["Gamma", "Exponential", "Hantush", "Polder", "FourParam",
            "DoubleExponential", "One", "Edelman", "HantushWellModel",
@@ -324,8 +328,18 @@ class HantushWellModel(RfuncBase):
         parameters.loc[name + '_b'] = (binit, bmin, bmax, True, name)
         return parameters
 
+    @staticmethod
+    def _get_distance_from_params(p):
+        if len(p) == 3:
+            r = 1.0
+            logger.info("No distance passed to HantushWellModel, "
+                        "assuming r=1.0.")
+        else:
+            r = p[3]
+        return r
+
     def get_tmax(self, p, cutoff=None):
-        r = 1.0 if len(p) == 3 else p[3]
+        r = self._get_distance_from_params(p)
         # approximate formula for tmax
         if cutoff is None:
             cutoff = self.cutoff
@@ -337,14 +351,13 @@ class HantushWellModel(RfuncBase):
         else:
             return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
 
-    @staticmethod
-    def gain(p):
-        r = 1.0 if len(p) == 3 else p[3]
+    def gain(self, p):
+        r = self._get_distance_from_params(p)
         rho = np.sqrt(4 * r ** 2 * p[2])
         return p[0] * k0(rho)
 
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
-        r = 1.0 if len(p) == 3 else p[3]
+        r = self._get_distance_from_params(p)
         cS = p[1]
         rho = np.sqrt(4 * r ** 2 * p[2])
         k0rho = k0(rho)
@@ -394,11 +407,11 @@ class HantushWellModel(RfuncBase):
             uncertainty of parameters A and b.
         """
         var_gain = (
-                (k0(2 * np.sqrt(r ** 2 * b))) ** 2 * var_A +
-                (-A * r * k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(
-                    b)) ** 2 * var_b -
-                2 * A * r * k0(2 * np.sqrt(r ** 2 * b)) *
-                k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(b) * cov_Ab
+            (k0(2 * np.sqrt(r ** 2 * b))) ** 2 * var_A +
+            (-A * r * k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(
+                b)) ** 2 * var_b -
+            2 * A * r * k0(2 * np.sqrt(r ** 2 * b)) *
+            k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(b) * cov_Ab
         )
         return var_gain
 
@@ -902,7 +915,7 @@ class Kraijenhoff(RfuncBase):
     The Kraijenhoff van de Leur function is explained in [Kraijenhoff]_.
     The impulse response function may be written as:
 
-    .. math:: \\theta(t) =  \\frac{4}{\pi S} \sum_{n=1,3,5...}^\infty \\frac{1}{n} e^{-n^2\\frac{t}{j}} \sin (\\frac{n\pi x}{L})
+    .. math:: \\theta(t) = \\frac{4}{\pi S} \sum_{n=1,3,5...}^\infty \\frac{1}{n} e^{-n^2\\frac{t}{j}} \sin (\\frac{n\pi x}{L})
 
     The function describes the response of a domain between two drainage
     channels. The function gives the same outcome as Bruggeman equation 133.15.
@@ -965,8 +978,8 @@ class Kraijenhoff(RfuncBase):
         h = 0
         for n in range(self.n_terms):
             h += (-1) ** n / (2 * n + 1) ** 3 * \
-                 np.cos((2 * n + 1) * np.pi * p[2]) * \
-                 np.exp(-(2 * n + 1) ** 2 * t / p[1])
+                np.cos((2 * n + 1) * np.pi * p[2]) * \
+                np.exp(-(2 * n + 1) ** 2 * t / p[1])
         s = p[0] * (1 - (8 / (np.pi ** 3 * (1 / 4 - p[2] ** 2)) * h))
         return s
 
