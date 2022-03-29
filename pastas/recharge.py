@@ -38,7 +38,7 @@ After solving a model, the simulated recharge flux can be obtained:
 
 from logging import getLogger
 from numpy import add, float64, multiply, exp, zeros, nan_to_num, vstack, \
-    where
+    where, power
 from pandas import DataFrame
 
 from pastas.decorators import njit
@@ -150,13 +150,14 @@ class FlexModel(RechargeBase):
     gw_uptake: bool, optional
         If True, the potential evaporation that is left after evaporation
         from the interception reservoir and the root zone reservoir is
-        subtracted from the recharge flux. EXPERIMENTAL FEATURE that may be
-        removed in the future!
+        subtracted from the recharge flux. An additional parameter can be used
+        to scale the excess evaporation. Note that this is an EXPERIMENTAL
+        FEATURE that may be removed in the future!
 
     Notes
     -----
     For a detailed description of the recharge model and parameters we refer
-    to [collenteur_2021]_.The water balance for the unsaturated zone
+    to [collenteur_2021]_. The water balance for the unsaturated zone
     reservoir is written as:
 
     .. math::
@@ -205,6 +206,8 @@ class FlexModel(RechargeBase):
         self.nparam = 5
         if self.interception:
             self.nparam += 1
+        if self.gw_uptake:
+            self.nparam += 1
         if self.snow:
             self.nparam += 2
         self.kwargs['interception'] = interception
@@ -221,6 +224,8 @@ class FlexModel(RechargeBase):
         parameters.loc[name + "_kv"] = (1.0, 0.25, 2.0, False, name)
         if self.interception:
             parameters.loc[name + "_simax"] = (2.0, 0.0, 10.0, False, name)
+        if self.gw_uptake:
+            parameters.loc[name + "_gf"] = (1.0, 0.0, 1.0, True, name)
         if self.snow:
             parameters.loc[name + "_tt"] = (0.0, -10.0, 10.0, True, name)
             parameters.loc[name + "_k"] = (2.0, 1.0, 20.0, True, name)
@@ -287,8 +292,12 @@ class FlexModel(RechargeBase):
 
         if self.gw_uptake:
             # Compute leftover potential evaporation
+            if self.interception:
+                gf = p[6]
+            else:
+                gf = p[5]
             eg = ep + ea  # positive flux
-            r = r + eg  #
+            r = r + gf * eg
 
         if return_full:
             data = (sr, r, ea, q, pe)
@@ -417,6 +426,7 @@ class FlexModel(RechargeBase):
         ei = zeros(n, dtype=float64)  # Interception evaporation Flux
 
         for t in range(n):
+            # Interception bucket
             ei[t] = min(ep[t], si[t])
             si[t + 1] = si[t] + dt * (pr[t] - ei[t])
             pe[t] = max(si[t + 1] - simax, 0.0)
@@ -625,6 +635,128 @@ class Berendrecht(RechargeBase):
         r, s, ea, pe = self.simulate(prec, evap, p=p, dt=dt,
                                      return_full=True, **kwargs)
         s = s * p[3]  # Because S is computed dimensionless in this model
+        data = DataFrame(data=vstack((s, pe, ea, r)).T,
+                         columns=["S", "Pe", "Ea", "R"])
+        return data
+
+
+class Peterson(RechargeBase):
+    """Recharge to the groundwater calculated based on [peterson_2014]_.
+    The water balance for the unsaturated zone reservoir is written as:
+
+    .. math::
+
+        \\frac{dS}{dt} = P_e - E_a - R
+
+    where the fluxes $P_e$, $E_a$ and $R$ are calculated as:
+
+    .. math::
+
+        P_e = P \left(1 - \frac{S}{\hat{S_{cap}}}\right)^\alpha
+
+    .. math::
+
+        E_a = E_p \left(\frac{S}{\hat{S_{cap}}}\right)^\gamma
+
+    .. math::
+
+        R = \hat{k_{sat}}\left(\frac{S}{\hat{S_{cap}}}\right)^{\hat{\beta}}
+
+    with the parameters:
+
+    .. math:: 
+
+        \hat{S_{cap}} = 10^{S_{cap}}; \hat{k_{sat}} = 10^{k_{sat}}; \hat{\beta} = 10^{\beta}
+
+    Note that the method currently uses forward Euler method to solve
+    the ODE so significant water balance errors can occur.
+
+    References
+    ----------
+    .. [peterson_2014] Peterson, T.J. and Western A.W. (2014). Nonlinear
+    time-series modeling of unconfined groundwater head.
+
+    """
+    _name = "Peterson"
+
+    def __init__(self):
+        check_numba()
+        RechargeBase.__init__(self)
+        self.nparam = 5
+
+    def get_init_parameters(self, name="recharge"):
+        parameters = DataFrame(
+            columns=["initial", "pmin", "pmax", "vary", "name"])
+        parameters.loc[name + "_scap"] = (1.5, 0.5, 3.0, True, name)
+        parameters.loc[name + "_alpha"] = (1.0, 0.0, 1.5, True, name)
+        parameters.loc[name + "_ksat"] = (1.0, 0.0, 3.0, True, name)
+        parameters.loc[name + "_beta"] = (0.5, 0.0, 1.5, True, name)
+        parameters.loc[name + "_gamma"] = (1.0, 0.0, 2.0, True, name)
+        return parameters
+
+    def simulate(self, prec, evap, p, dt=1.0, return_full=False, **kwargs):
+        """Simulate the recharge flux.
+
+        Parameters
+        ----------
+        prec: numpy.array
+            Precipitation flux in mm/d. Must have the same length as evap.
+        evap: numpy.array
+            Potential evapotranspiration flux in mm/d.
+        p: array_like
+            array_like object with the values as floats representing the
+            model parameters.
+        dt: float, optional
+            time step for the calculation of the recharge.
+
+        Returns
+        -------
+        r: numpy.array
+            Recharge flux calculated by the model.
+
+        """
+        r, s, ea, pe = self.get_recharge(prec, evap, scap=p[0],
+                                         alpha=p[1], ksat=p[2],
+                                         beta=p[3], gamma=p[4], dt=dt)
+        if return_full:
+            return r, s, ea, pe
+        else:
+            return nan_to_num(r)
+
+    @staticmethod
+    @njit
+    def get_recharge(prec, evap, scap=1.0, alpha=1.0,
+                     ksat=1.0, beta=0.5, gamma=1.0, dt=1.0):
+        """
+        Internal method used for the recharge calculation. If Numba is
+        available, this method is significantly faster.
+
+        """
+        n = len(prec)
+        # Create an empty arrays to store the fluxes and states
+        pe = zeros(n, dtype=float64)  # Effective precipitation flux
+        sm = zeros(n + 1, dtype=float64)  # Root zone storage state
+        r = zeros(n, dtype=float64)  # Recharge flux
+        ea = zeros(n, dtype=float64)  # Actual evaporation flux
+        # Update params
+        smsc = power(10, scap)
+        ksat = power(10, ksat)
+        beta = power(10, beta)
+        # Set the initial system state
+        sm[0] = smsc / 2
+
+        for t in range(n):
+            sm_frac = sm[t] / smsc
+            pe[t] = prec[t] * power(1 - sm_frac, alpha)
+            ea[t] = max(sm[t + 1], evap[t] * power(sm_frac, gamma))
+            r[t] = max(sm[t + 1], ksat * power(sm_frac, beta))
+            sm[t + 1] = min(smsc,
+                            max(0.0, sm[t] + (pe[t] - ea[t] - r[t]) * dt))
+        return r, sm[1:], ea, pe
+
+    def get_water_balance(self, prec, evap, p, dt=1.0, **kwargs):
+        r, s, ea, pe = self.simulate(prec, evap, p=p, dt=dt,
+                                     return_full=True, **kwargs)
         data = DataFrame(data=vstack((s, pe, ea, r)).T,
                          columns=["S", "Pe", "Ea", "R"])
         return data
