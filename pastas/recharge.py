@@ -225,7 +225,7 @@ class FlexModel(RechargeBase):
         if self.interception:
             parameters.loc[name + "_simax"] = (2.0, 0.0, 10.0, False, name)
         if self.gw_uptake:
-            parameters.loc[name + "_f"] = (1.0, 0.0, 1.0, True, name)
+            parameters.loc[name + "_gf"] = (1.0, 0.0, 1.0, True, name)
         if self.snow:
             parameters.loc[name + "_tt"] = (0.0, -10.0, 10.0, True, name)
             parameters.loc[name + "_k"] = (2.0, 1.0, 20.0, True, name)
@@ -293,11 +293,11 @@ class FlexModel(RechargeBase):
         if self.gw_uptake:
             # Compute leftover potential evaporation
             if self.interception:
-                p_f = p[6]
+                gf = p[6]
             else:
-                p_f = p[5]
+                gf = p[5]
             eg = ep + ea  # positive flux
-            r = r + p_f * eg
+            r = r + gf * eg
 
         if return_full:
             data = (sr, r, ea, q, pe)
@@ -748,9 +748,10 @@ class Peterson(RechargeBase):
         for t in range(n):
             sm_frac = sm[t] / smsc
             pe[t] = prec[t] * power(1 - sm_frac, alpha)
-            ea[t] = max(sm[t+1], evap[t] * power(sm_frac, gamma))
-            r[t] = max(sm[t+1], ksat * power(sm_frac, beta))
-            sm[t+1] = min(smsc, max(0.0, sm[t] + (pe[t] - ea[t] - r[t]) * dt))
+            ea[t] = max(sm[t + 1], evap[t] * power(sm_frac, gamma))
+            r[t] = max(sm[t + 1], ksat * power(sm_frac, beta))
+            sm[t + 1] = min(smsc,
+                            max(0.0, sm[t] + (pe[t] - ea[t] - r[t]) * dt))
         return r, sm[1:], ea, pe
 
     def get_water_balance(self, prec, evap, p, dt=1.0, **kwargs):
