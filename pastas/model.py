@@ -111,6 +111,7 @@ class Model:
         self.interpolate_simulation = None
         self.normalize_residuals = False
         self.fit = None
+        self._solve_success = False
 
         # Load other modules
         self.stats = Statistics(self)
@@ -1583,7 +1584,7 @@ class Model:
         if warnings:
             msg = []
             # model optmization unsuccesful
-            if hasattr(self, "_solve_success"):
+            if not self._solve_success:
                 msg.append("Model parameters could not be estimated well")
 
             # parameter bound warnings
