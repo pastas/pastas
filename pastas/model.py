@@ -1542,7 +1542,7 @@ class Model:
         parameters.loc[:, "stderr"] = stderr.abs().apply("±{:.2%}".format)
 
         # Determine the width of the fit_report based on the parameters
-        width = max(len(parameters.to_string().split("\n")[1]), 50)
+        width = len(parameters.to_string().split("\n")[1])
         string = "{:{fill}{align}{width}}"
 
         # Create the first header with model information and stats
