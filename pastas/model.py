@@ -1542,7 +1542,7 @@ class Model:
         parameters.loc[:, "stderr"] = stderr.abs().apply("±{:.2%}".format)
 
         # Determine the width of the fit_report based on the parameters
-        width = len(parameters.__str__().split("\n")[1])
+        width = max(len(parameters.to_string().split("\n")[1]), 50)
         string = "{:{fill}{align}{width}}"
 
         # Create the first header with model information and stats
@@ -1567,7 +1567,7 @@ class Model:
         # Create the parameters block
         params = f"\nParameters ({parameters.vary.sum()} optimized)\n" \
                  f"{string.format('', fill='=', align='>', width=width)}\n" \
-                 f"{parameters}"
+                 f"{parameters.to_string()}"
 
         if output == "full":
             cor = DataFrame(columns=["value"])
