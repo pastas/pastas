@@ -499,16 +499,16 @@ def diagnostics(series, alpha=0.05, nparam=0, lags=15, stats=(),
 
 
 def plot_acf():
-    raise DeprecationWarning("The method plot_acf has been deprecated. Use "
+    raise DeprecationWarning("The method plot_acf is deprecated. Use "
                              "'ps.plot.acf' instead.")
 
 
 def plot_diagnostics():
-    raise DeprecationWarning("The method plot_diagnostics has been deprecated."
+    raise DeprecationWarning("The method plot_diagnostics is deprecated."
                              " Use 'ps.plot.diagnostics' instead.")
 
 
 def plot_cum_frequency():
-    raise DeprecationWarning("The method plot_cum_frequency has been "
+    raise DeprecationWarning("The method plot_cum_frequency is "
                              "deprecated. Use 'ps.plot.cum_frequency' "
                              "instead.")

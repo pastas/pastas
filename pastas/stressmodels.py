@@ -366,8 +366,8 @@ class StressModel2(StressModelBase):
                  settings=("prec", "evap"), metadata=(None, None),
                  meanstress=None):
 
-        msg = "StressModel2 will be deprecated in 0.21.0 and will be removed" \
-              " in 0.22.0 and is replace by the RechargeModel stress model. " \
+        msg = "StressModel2 is deprecated. It will be removed in version " \
+              "0.22.0 and is replaced by the RechargeModel stress model. " \
               "Please use ps.RechargeModel(prec, evap, " \
               "recharge=ps.rch.Linear) for the same stress model."
         warn(msg)
