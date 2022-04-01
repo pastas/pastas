@@ -256,7 +256,8 @@ class Plotting:
         for ax in fig.axes:
             ax.grid(True)
 
-        fig.tight_layout(pad=0.0)  # Before making the table
+        if isinstance(fig, plt.Figure):
+            fig.tight_layout(pad=0.0)  # Before making the table
 
         # Draw parameters table
         ax3 = fig.add_subplot(gs[0:2, 1])
