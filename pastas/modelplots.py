@@ -74,7 +74,7 @@ class Plotting:
         if oseries:
             o = self.ml.observations(tmin=tmin, tmax=tmax)
             o_nu = self.ml.oseries.series.drop(o.index).loc[
-                   o.index.min():o.index.max()]
+                o.index.min():o.index.max()]
             if not o_nu.empty:
                 # plot parts of the oseries that are not used in grey
                 o_nu.plot(linestyle='', marker='.', color='0.5', label='',
@@ -165,8 +165,7 @@ class Plotting:
 
         # Make main Figure
         if fig is None:
-            fig = plt.figure(figsize=figsize, constrained_layout=True,
-                             **kwargs)
+            fig = plt.figure(figsize=figsize, **kwargs)
 
         gs = fig.add_gridspec(ncols=2, nrows=len(contribs) + 2,
                               width_ratios=[2, 1], height_ratios=hrs)
@@ -256,6 +255,8 @@ class Plotting:
 
         for ax in fig.axes:
             ax.grid(True)
+
+        fig.tight_layout(pad=0.0)  # Before making the table
 
         # Draw parameters table
         ax3 = fig.add_subplot(gs[0:2, 1])
