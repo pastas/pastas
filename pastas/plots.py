@@ -78,6 +78,7 @@ def compare(models, tmin=None, tmax=None, block_or_step='step',
     ax_res = axes[1]  # model residuals
     ax_table = axes[-1]  # parameters table
     axes_sm = axes[2:-1]  # stressmodels
+    ax_resp_max = [axes[3].get_xlim()[1]] 
 
     # get second model
     for j, iml in enumerate(models_sorted[1:], start=1):
@@ -126,6 +127,8 @@ def compare(models, tmin=None, tmax=None, block_or_step='step',
                                   ncol=2, frameon=False)
                 plt.sca(ax_contrib)
                 plt.title("")
+                ax_resp_max.append(response.index[-1])
+                ax_resp.set_xlim(right=max(ax_resp_max))
 
                 # recalculate axes limits
                 if not adjust_height:
