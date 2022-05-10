@@ -279,24 +279,24 @@ class HantushWellModel(RfuncBase):
     [veling_2010]_ and [asmuth_2008]_. The impulse response function may be
     written as:
 
-    .. math:: \\theta(t) = \\frac{A}{t} K_0 \\left( \\frac{r^2}{4 \\lambda^2} \\right) \\exp(-t/a - ab/t)
-    .. math:: p[0] = A = \\frac{1}{4 \\pi T}
+    .. math:: \\theta(r, t) = \\frac{A}{2t} \\right) \\exp(-t/a - abr^2/t)
+    .. math:: p[0] = A = \\frac{1}{2 \\pi T}
     .. math:: p[1] = a = cS
-    .. math:: p[2] = b = 1^2 / (4 \\lambda^2)
+    .. math:: p[2] = b = 1 / (4 \\lambda^2)
     .. math:: p[3] = r \\text{(not optimized)}
 
     where :math:`\\lambda = \\sqrt{Tc}`
 
     The parameter r (distance from the well to the observation point)
     is passed as a known value, and is used to scale the response function.
-    The optimized parameters are slightly different from the original
+    The optimized parameters A and b are slightly different from the original
     Hantush implementation:
 
-    - A: in the original Hantush parameter A is the gain. Now the gain is
-      equal to :math:`\\text{gain} = A K_0 ( \\sqrt(4 r^2 b) )`
+    - A: in the original Hantush parameter A is equal to the gain. Now the gain
+      is given by :math:`\\text{gain} = A K_0 \\left( 2r \\sqrt(b) \\right)`
     - a: is the same  :math:`a = cS`
-    - b: is the same, but :math:`r` is set to 1 if passed separately,
-      :math:`b = 1^2 / (4 \\lambda^2)`
+    - b: is given by :math:`b = 1 / (4 \\lambda^2)` as :math:`r` is passed
+      separately.
 
     """
     _name = "HantushWellModel"
@@ -353,7 +353,7 @@ class HantushWellModel(RfuncBase):
 
     def gain(self, p):
         r = self._get_distance_from_params(p)
-        rho = np.sqrt(4 * r ** 2 * p[2])
+        rho = 2 * r * np.sqrt(p[2])
         return p[0] * k0(rho)
 
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
@@ -435,8 +435,8 @@ class Hantush(RfuncBase):
     The Hantush well function is explained in [hantush_1955]_, [veling_2010]_
     and [asmuth_2008]_. The impulse response function may be written as:
 
-    .. math:: \\theta(t) = \\frac{A}{t} \\exp(-t/a - ab/t)
-    .. math:: p[0] = A = \\frac{1}{2 \\pi T}
+    .. math:: \\theta(t) = \\frac{A}{2t \\text{K}_0 \\left( 2 \\sqrt{b} \\right)} \\exp(-t/a - ab/t)
+    .. math:: p[0] = A = \\frac{\\text{K}_0 \\left( 2 \\sqrt{b} \\right)}{2 \\pi T}
     .. math:: p[1] = a = cS
     .. math:: p[2] = b = r^2 / (4 \\lambda^2)
 
@@ -609,6 +609,9 @@ class One(RfuncBase):
             parameters.loc[name + '_d'] = (
                 self.meanstress, np.nan, np.nan, True, name)
         return parameters
+
+    def get_tmax(self, p, cutoff=None):
+        return 0.
 
     def gain(self, p):
         return p[0]
