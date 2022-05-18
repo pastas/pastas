@@ -367,8 +367,8 @@ def stoffer_toloi(series, lags=15, nparam=0, freq="D",
         # warn if more than 10% of data is lost in sample
         if s.dropna().index.size < (0.9 * series.dropna().index.size):
             msg = ("While selecting equidistant values from series with "
-                   "`as_freq` more than 10\% of values were dropped. Consider "
-                   "setting `make_equidistant` to True."
+                   "`as_freq` more than 10 %% of values were dropped. "
+                   "Consider setting `make_equidistant` to True."
                    )
             logger.warning(msg)
 
@@ -400,7 +400,7 @@ def stoffer_toloi(series, lags=15, nparam=0, freq="D",
     # remove correlation where no observations are available (de = 0)
     da = da[re != 0][:lags]
     re = re[re != 0][:lags]
-    k = arange(1, lags + 1)
+    k = arange(1, len(re) + 1)
 
     # Compute the Q-statistic
     qm = nobs ** 2 * sum(da * re ** 2 / (nobs - k))
@@ -499,16 +499,16 @@ def diagnostics(series, alpha=0.05, nparam=0, lags=15, stats=(),
 
 
 def plot_acf():
-    raise DeprecationWarning("The method plot_acf has been deprecated. Use "
+    raise DeprecationWarning("The method plot_acf is deprecated. Use "
                              "'ps.plot.acf' instead.")
 
 
 def plot_diagnostics():
-    raise DeprecationWarning("The method plot_diagnostics has been deprecated."
+    raise DeprecationWarning("The method plot_diagnostics is deprecated."
                              " Use 'ps.plot.diagnostics' instead.")
 
 
 def plot_cum_frequency():
-    raise DeprecationWarning("The method plot_cum_frequency has been "
+    raise DeprecationWarning("The method plot_cum_frequency is "
                              "deprecated. Use 'ps.plot.cum_frequency' "
                              "instead.")

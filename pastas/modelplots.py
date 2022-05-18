@@ -6,8 +6,10 @@ import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import MultipleLocator, LogFormatter
 from pandas import concat
+
 from .decorators import model_tmin_tmax
 from .plots import series, diagnostics, cum_frequency, \
     _table_formatter_params, _table_formatter_stderr
@@ -72,7 +74,7 @@ class Plotting:
         if oseries:
             o = self.ml.observations(tmin=tmin, tmax=tmax)
             o_nu = self.ml.oseries.series.drop(o.index).loc[
-                   o.index.min():o.index.max()]
+                o.index.min():o.index.max()]
             if not o_nu.empty:
                 # plot parts of the oseries that are not used in grey
                 o_nu.plot(linestyle='', marker='.', color='0.5', label='',
@@ -97,7 +99,7 @@ class Plotting:
     @model_tmin_tmax
     def results(self, tmin=None, tmax=None, figsize=(10, 8), split=False,
                 adjust_height=True, return_warmup=False, block_or_step='step',
-                **kwargs):
+                fig=None, **kwargs):
         """Plot different results in one window to get a quick overview.
 
         Parameters
@@ -116,6 +118,8 @@ class Plotting:
             Show the warmup-period. Default is false.
         block_or_step: str, optional
             Plot the block- or step-response on the right. Default is 'step'.
+        fig: Matplotib.Figure instance, optional
+            Optionally provide a Matplotib.Figure instance to plot onto.
         **kwargs: dict, optional
             Optional arguments, passed on to the plt.figure method.
 
@@ -160,7 +164,9 @@ class Plotting:
             hrs = [2] + [1] * (len(contribs) + 1)
 
         # Make main Figure
-        fig = plt.figure(figsize=figsize, **kwargs)
+        if fig is None:
+            fig = plt.figure(figsize=figsize, **kwargs)
+
         gs = fig.add_gridspec(ncols=2, nrows=len(contribs) + 2,
                               width_ratios=[2, 1], height_ratios=hrs)
 
@@ -250,7 +256,8 @@ class Plotting:
         for ax in fig.axes:
             ax.grid(True)
 
-        fig.tight_layout()  # Before making the table
+        if isinstance(fig, plt.Figure):
+            fig.tight_layout(pad=0.0)  # Before making the table
 
         # Draw parameters table
         ax3 = fig.add_subplot(gs[0:2, 1])
@@ -406,7 +413,7 @@ class Plotting:
 
     @model_tmin_tmax
     def diagnostics(self, tmin=None, tmax=None, figsize=(10, 6), bins=50,
-                    acf_options=None, **kwargs):
+                    acf_options=None, fig=None, alpha=0.05, **kwargs):
         """Plot a window that helps in diagnosing basic model assumptions.
 
         Parameters
@@ -422,6 +429,10 @@ class Plotting:
         acf_options: dict, optional
             dictionary with keyword arguments that are passed on to
             pastas.stats.acf.
+        fig: Matplotib.Figure instance, optional
+            Optionally provide a Matplotib.Figure instance to plot onto.
+        alpha: float, optional
+            Significance level to calculate the (1-alpha)-confidence intervals.
         **kwargs: dict, optional
             Optional keyword arguments, passed on to plt.figure.
 
@@ -446,12 +457,12 @@ class Plotting:
             Method use to plot the probability plot.
         """
         if self.ml.settings["noise"]:
-            res = self.ml.noise(tmin=tmin, tmax=tmax)
+            res = self.ml.noise(tmin=tmin, tmax=tmax).iloc[1:]
         else:
             res = self.ml.residuals(tmin=tmin, tmax=tmax)
 
-        return diagnostics(series=res, figsize=figsize, bins=bins,
-                           acf_options=acf_options, **kwargs)
+        return diagnostics(series=res, figsize=figsize, bins=bins, fig=fig,
+                           acf_options=acf_options, alpha=alpha, **kwargs)
 
     @model_tmin_tmax
     def cum_frequency(self, tmin=None, tmax=None, ax=None, figsize=(5, 2),
@@ -711,13 +722,14 @@ class Plotting:
                 nsplit = sml.get_nsplit()
                 if nsplit > 1:
                     for istress in range(len(sml.stress)):
-                        h = self.ml.get_contribution(sm, istress=istress)
+                        h = self.ml.get_contribution(sm, istress=istress,
+                                                     tmin=tmin, tmax=tmax)
                         name = sml.stress[istress].name
                         if name is None:
                             name = sm
                         contributions.append((name, h))
                 else:
-                    h = self.ml.get_contribution(sm)
+                    h = self.ml.get_contribution(sm, tmin=tmin, tmax=tmax)
                     name = sm
                     contributions.append((name, h))
                 contributions.sort(key=custom_sort)
@@ -772,6 +784,49 @@ class Plotting:
         stresses = _get_stress_series(self.ml, split=split)
         axes = series(obs, stresses=stresses, **kwargs)
         return axes
+
+    @model_tmin_tmax
+    def summary_pdf(self, tmin=None, tmax=None, fname=None, dpi=150,
+                    results_kwargs={}, diagnostics_kwargs={}):
+        """Create a PDF file (A4) with the results and diagnostics plot.
+
+        Parameters
+        ----------
+        tmin: str or pd.Timestamp, optional
+        tmax: str or pd.Timestamp, optional
+        fname: str, optional
+            string with the file name / path to store the PDF file.
+        dpi: int, optional
+            dpi to save the figure with.
+        results_kwargs: dict, optional
+            dictionary passed on to ml.plots.results method.
+        diagnostics_kwargs: dict, optional
+            dictionary passed on to ml.plots.diagnostics method.
+
+        Returns
+        -------
+        fig: matplotlib.Figure instance
+
+        """
+        if fname is None:
+            fname = "{}.pdf".format(self.ml.name)
+        pdf = PdfPages(fname)
+
+        fig = plt.figure(figsize=(8.27, 11.69), dpi=50)
+
+        fig1, fig2 = fig.subfigures(2, 1, height_ratios=[1.25, 1.])
+
+        self.results(fig=fig1, tmin=tmin, tmax=tmax, **results_kwargs)
+        self.diagnostics(fig=fig2, tmin=tmin, tmax=tmax, **diagnostics_kwargs)
+        fig2.subplots_adjust(wspace=0.2)
+
+        fig1.suptitle("Model Results", fontweight="bold")
+        fig2.suptitle("Model Diagnostics", fontweight="bold")
+
+        plt.subplots_adjust(left=0.1, top=0.9, right=0.95, bottom=0.1)
+        pdf.savefig(fig, papertype="a4", orientation="portrait", dpi=dpi)
+        pdf.close()
+        return fig
 
 
 def _get_height_ratios(ylims):

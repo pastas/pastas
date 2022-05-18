@@ -83,8 +83,8 @@ def compare(models, tmin=None, tmax=None, block_or_step='step',
     # get second model
     for j, iml in enumerate(models_sorted[1:], start=1):
         sim = iml.simulate(tmin=tmin[j], tmax=tmax[j])
-        sim.name = '{} ($R^2$ = {:0.2f}%)'.format(
-            sim.name, iml.stats.evp(tmin=tmin[j], tmax=tmax[j]))
+        sim.name = '{} ($R^2$ = {:0.2%})'.format(
+            sim.name, iml.stats.rsq(tmin=tmin[j], tmax=tmax[j]))
         p, = ax_ml.plot(sim.index, sim, label=sim.name)
         color = p.get_color()
 
@@ -149,11 +149,11 @@ def compare(models, tmin=None, tmax=None, block_or_step='step',
 
     # Draw parameters table
     parameters = concat(
-        [iml.parameters.optimal for iml in models], axis=1, sort=False)
-    colnams = ["{}".format(iml.name) for iml in models]
+        [iml.parameters.optimal for iml in models_sorted], axis=1, sort=False)
+    colnams = ["{}".format(iml.name) for iml in models_sorted]
     # ensure unique names
     if len(set(colnams)) < len(colnams):
-        colnams = [f"{iml.name}-{i}" for i, iml in enumerate(models)]
+        colnams = [f"{iml.name}-{i}" for i, iml in enumerate(models_sorted)]
     parameters.columns = colnams
     parameters['name'] = parameters.index
     # reorder columns
@@ -190,7 +190,6 @@ def compare(models, tmin=None, tmax=None, block_or_step='step',
         tmax[0] = ml.settings["tmax"]
 
     mintmin = np.min(to_datetime(tmin))
-    print(tmin)
     maxtmax = np.max(to_datetime(tmax))
 
     # get tmin including warmup if return_warmup=True
@@ -411,7 +410,7 @@ def acf(series, alpha=0.05, lags=365, acf_options=None, smooth_conf=True,
 
 
 def diagnostics(series, alpha=0.05, bins=50, acf_options=None,
-                figsize=(10, 6), **kwargs):
+                figsize=(10, 6), fig=None, **kwargs):
     """Plot that helps in diagnosing basic model assumptions.
 
     Parameters
@@ -426,6 +425,8 @@ def diagnostics(series, alpha=0.05, bins=50, acf_options=None,
         Dictionary with keyword arguments passed on to pastas.stats.acf.
     figsize: tuple, optional
         Tuple with the height and width of the figure in inches.
+    fig: Matplotib.Figure instance, optional
+        Optionally provide a Matplotib.Figure instance to plot onto.
     **kwargs: dict, optional
         Optional keyword arguments, passed on to plt.figure.
 
@@ -452,12 +453,14 @@ def diagnostics(series, alpha=0.05, bins=50, acf_options=None,
         Method use to plot the probability plot.
     """
     # Create the figure and axes
-    fig = plt.figure(figsize=figsize, **kwargs)
-    shape = (2, 3)
-    ax = plt.subplot2grid(shape, (0, 0), colspan=2, rowspan=1)
-    ax1 = plt.subplot2grid(shape, (1, 0), colspan=2, rowspan=1)
-    ax2 = plt.subplot2grid(shape, (0, 2), colspan=1, rowspan=1)
-    ax3 = plt.subplot2grid(shape, (1, 2), colspan=1, rowspan=1)
+    if fig is None:
+        fig = plt.figure(figsize=figsize, constrained_layout=True, **kwargs)
+
+    gs = fig.add_gridspec(ncols=2, nrows=2, width_ratios=[2, 1])
+    ax = fig.add_subplot(gs[0, 0])
+    ax2 = fig.add_subplot(gs[0, 1])
+    ax1 = fig.add_subplot(gs[1, 0])
+    ax3 = fig.add_subplot(gs[1, 1])
 
     # Plot the residuals or noise series
     ax.axhline(0, c="k")
@@ -473,6 +476,7 @@ def diagnostics(series, alpha=0.05, bins=50, acf_options=None,
 
     # Plot the autocorrelation
     acf(series, alpha=alpha, acf_options=acf_options, ax=ax1)
+    ax1.set_title(None)
 
     # Plot the histogram for normality and add a 'best fit' line
     _, bins, _ = ax2.hist(series.values, bins=bins, density=True)
@@ -487,7 +491,6 @@ def diagnostics(series, alpha=0.05, bins=50, acf_options=None,
     ax3.get_lines()[0].set_color(c)
     ax3.get_lines()[1].set_color("k")
 
-    plt.tight_layout()
     return fig.axes
 
 
@@ -619,13 +622,13 @@ class TrackSolve:
 
         # calculate RMSE residuals
         res = self._residuals(self.ml.parameters.initial.values)
-        r_rmse = np.sqrt(np.sum(res ** 2))
+        r_rmse = np.sqrt(np.mean(res ** 2))
         self.rmse_res = np.array([r_rmse])
 
         # calculate RMSE noise
-        if self.ml.noisemodel is not None:
+        if self.ml.settings["noise"] and self.ml.noisemodel is not None:
             noise = self._noise(self.ml.parameters.initial.values)
-            n_rmse = np.sqrt(np.sum(noise ** 2))
+            n_rmse = np.sqrt(np.mean(noise ** 2))
             self.rmse_noise = np.array([n_rmse])
 
         # get observations
@@ -656,12 +659,12 @@ class TrackSolve:
 
         # calculate new RMSE values
         r_res = self._residuals(params)
-        self.rmse_res = np.r_[self.rmse_res, np.sqrt(np.sum(r_res ** 2))]
+        self.rmse_res = np.r_[self.rmse_res, np.sqrt(np.mean(r_res ** 2))]
 
-        if self.ml.noisemodel is not None:
+        if self.ml.settings["noise"] and self.ml.noisemodel is not None:
             n_res = self._noise(params)
             self.rmse_noise = np.r_[
-                self.rmse_noise, np.sqrt(np.sum(n_res ** 2))]
+                self.rmse_noise, np.sqrt(np.mean(n_res ** 2))]
 
         # recalculate EVP
         self.evp = np.r_[self.evp,
@@ -700,7 +703,8 @@ class TrackSolve:
         noise: np.array
             array containing noise
         """
-        noise = self.ml.noise(p=params, tmin=self.tmin,
+        noise = self.ml.noise(p=params,
+                              tmin=self.tmin,
                               tmax=self.tmax)
         return noise
 
@@ -717,7 +721,8 @@ class TrackSolve:
         res: np.array
             array containing residuals
         """
-        res = self.ml.residuals(p=params, tmin=self.tmin,
+        res = self.ml.residuals(p=params,
+                                tmin=self.tmin,
                                 tmax=self.tmax)
         return res
 
@@ -754,19 +759,22 @@ class TrackSolve:
         self.ax0, self.ax1, self.ax2 = self.axes
 
         # plot oseries
-        self.obs.plot(marker=".", ls="none", label="observations",
-                      color="k", ms=4, x_compat=True, ax=self.ax0)
+        self.ax0.plot(self.obs.index, self.obs,
+                      marker=".", ls="none", label="observations",
+                      color="k", ms=4)
 
         # plot simulation
         sim = self._simulate()
         self.simplot, = self.ax0.plot(sim.index, sim, label="model")
-        self.ax0.set_ylabel("oseries/model")
+        self.ax0.set_ylabel("head")
         self.ax0.set_title(
             "Iteration: {0} (EVP: {1:.2%})".format(self.itercount,
                                                    self.evp[-1]))
-        self.ax0.legend(loc="lower right")
+        self.ax0.legend(loc=(0, 1), frameon=False, ncol=2)
 
         # plot RMSE (residuals and/or residuals)
+        plt.sca(self.ax1)
+        plt.yscale("log")
         legend_handles = []
         self.r_rmse_plot_line, = self.ax1.plot(
             range(self.itercount + 1), self.rmse_res, c="k", ls="solid",
@@ -775,10 +783,10 @@ class TrackSolve:
             self.itercount, self.rmse_res[-1], c="k", marker="o", ls="none")
         legend_handles.append(self.r_rmse_plot_line)
         self.ax1.set_xlim(0, self.viewlim)
-        self.ax1.set_ylim(0, 1.05 * self.rmse_res[-1])
+        self.ax1.set_ylim(1e-2, 2 * self.rmse_res[-1])
         self.ax1.set_ylabel("RMSE")
 
-        if self.ml.noisemodel is not None:
+        if self.ml.settings["noise"] and self.ml.noisemodel is not None:
             self.n_rmse_plot_line, = self.ax1.plot(
                 range(self.itercount + 1), self.rmse_noise, c="C0", ls="solid",
                 label="Noise")
@@ -787,7 +795,8 @@ class TrackSolve:
                 ls="none")
             legend_handles.append(self.n_rmse_plot_line)
         legend_labels = [i.get_label() for i in legend_handles]
-        self.ax1.legend(legend_handles, legend_labels, loc="upper right")
+        self.ax1.legend(legend_handles, legend_labels, loc=(0, 1),
+                        frameon=False, ncol=2)
 
         # plot parameters values on semilogy
         plt.sca(self.ax2)
@@ -805,16 +814,16 @@ class TrackSolve:
             legend_handles.append(pa)
 
         legend_labels = [i.get_label() for i in legend_handles]
-        self.ax2.legend(legend_handles, legend_labels, loc="lower right",
-                        ncol=3)
+        self.ax2.legend(legend_handles, legend_labels, loc=(0, 1),
+                        ncol=6, frameon=False)
         self.ax2.set_xlim(0, self.viewlim)
-        self.ax2.set_ylim(1e-6, 1e5)
+        self.ax2.set_ylim(1e-3, 1e4)
         self.ax2.set_ylabel("Parameter values")
         self.ax2.set_xlabel("Iteration")
 
         # set grid for each plot
         for iax in [self.ax0, self.ax1, self.ax2]:
-            iax.grid(b=True)
+            iax.grid(visible=True)
 
         self.fig.tight_layout()
         return self.fig
@@ -855,11 +864,13 @@ class TrackSolve:
             range(self.itercount + 1), np.array(self.rmse_res))
         self.r_rmse_plot_dot.set_data(
             np.array([self.itercount]), np.array(self.rmse_res[-1]))
-        # update rmse noise
-        self.n_rmse_plot_line.set_data(
-            range(self.itercount + 1), np.array(self.rmse_noise))
-        self.n_rmse_plot_dot.set_data(
-            np.array([self.itercount]), np.array(self.rmse_noise[-1]))
+
+        if self.ml.settings["noise"] and self.ml.noisemodel is not None:
+            # update rmse noise
+            self.n_rmse_plot_line.set_data(
+                range(self.itercount + 1), np.array(self.rmse_noise))
+            self.n_rmse_plot_dot.set_data(
+                np.array([self.itercount]), np.array(self.rmse_noise[-1]))
 
         # update parameter plots
         for j, (p1, p2) in enumerate(self.param_plot_handles):
@@ -872,6 +883,7 @@ class TrackSolve:
         self.ax0.set_title(
             "Iteration: {0} (EVP: {1:.2%})".format(self.itercount,
                                                    self.evp[-1]))
+        plt.pause(1e-10)
         self.fig.canvas.draw()
 
 

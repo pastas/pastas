@@ -13,7 +13,7 @@ from .read import (read_dino, read_dino_level_gauge, read_knmi, read_meny,
                    read_waterbase)
 from .rfunc import (DoubleExponential, Exponential, FourParam, Gamma, Hantush,
                     HantushWellModel, Kraijenhoff, One, Polder, Spline)
-from .solver import LeastSquares, LmfitSolve, LmfitSolveNew
+from .solver import LeastSquares, LmfitSolve
 from .stressmodels import (Constant, LinearTrend, RechargeModel, StepModel,
                            StressModel, StressModel2, TarsoModel, WellModel,
                            ChangeModel, ReservoirModel)

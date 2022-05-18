@@ -13,7 +13,7 @@ ps.set_log_level("WARNING")
 
 # read observations and create the time series model and make meters
 obs = pd.read_csv("data/B32C0639001.csv", parse_dates=['date'],
-                  index_col='date', squeeze=True)
+                  index_col='date').squeeze("columns")
 
 # Create the time series model
 ml = ps.Model(obs, name="head")

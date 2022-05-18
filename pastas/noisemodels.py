@@ -44,7 +44,8 @@ class NoiseModelBase:
             pinit = np.median(pinit)
         else:
             pinit = 14.0
-        self.parameters.loc["noise_alpha"] = (pinit, 1e-5, 5000, True, "noise")
+        self.parameters.loc["noise_alpha"] = (pinit, 1e-5, 5000.0, True,
+                                              "noise")
 
     @set_parameter
     def _set_initial(self, name, value):
@@ -237,9 +238,14 @@ class ArmaModel(NoiseModelBase):
         self.set_init_parameters()
 
     def set_init_parameters(self, oseries=None):
-        self.parameters.loc["noise_alpha"] = (10.0, 1e-9, np.inf, True,
+        if oseries is not None:
+            pinit = np.diff(oseries.index.to_numpy()) / Timedelta("1D")
+            pinit = np.median(pinit)
+        else:
+            pinit = 14.0
+        self.parameters.loc["noise_alpha"] = (pinit, 1e-9, np.inf, True,
                                               "noise")
-        self.parameters.loc["noise_beta"] = (10.0, -np.inf, np.inf, True,
+        self.parameters.loc["noise_beta"] = (1., -np.inf, np.inf, True,
                                              "noise")
 
     def simulate(self, res, p):
@@ -257,9 +263,14 @@ class ArmaModel(NoiseModelBase):
         # Create an array to store the noise
         a = np.zeros_like(res)
         a[0] = res[0]
+
+        if beta == 0.0:  # Prevent division by zero errors
+            beta = 1e-24
+
         pm = beta / np.abs(beta)
+
         # We have to loop through each value
         for i in range(1, res.size):
             a[i] = res[i] - res[i - 1] * np.exp(-odelt[i - 1] / alpha) - \
-                a[i - 1] * pm * np.exp(-odelt[i - 1] / np.abs(beta))
+                   a[i - 1] * pm * np.exp(-odelt[i - 1] / np.abs(beta))
         return a

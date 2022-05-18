@@ -19,6 +19,8 @@ from logging import getLogger
 import numpy as np
 from pandas import DataFrame, Series, Timedelta, Timestamp, concat, date_range
 from scipy.signal import fftconvolve
+from scipy import __version__ as scipyversion
+from warnings import warn
 
 from .decorators import njit, set_parameter
 from .recharge import Linear
@@ -245,6 +247,7 @@ class StressModel(StressModelBase):
 
     def __init__(self, stress, rfunc, name, up=True, cutoff=0.999,
                  settings=None, metadata=None, meanstress=None):
+
         if isinstance(stress, list):
             stress = stress[0]  # TODO Temporary fix Raoul, 2017-10-24
 
@@ -362,6 +365,13 @@ class StressModel2(StressModelBase):
     def __init__(self, stress, rfunc, name, up=True, cutoff=0.999,
                  settings=("prec", "evap"), metadata=(None, None),
                  meanstress=None):
+
+        msg = "StressModel2 is deprecated. It will be removed in version " \
+              "0.22.0 and is replaced by the RechargeModel stress model. " \
+              "Please use ps.RechargeModel(prec, evap, " \
+              "recharge=ps.rch.Linear) for the same stress model."
+        warn(msg)
+
         # First check the series, then determine tmin and tmax
         stress0 = TimeSeries(stress[0], settings=settings[0],
                              metadata=metadata[0])
@@ -686,9 +696,13 @@ class WellModel(StressModelBase):
             raise NotImplementedError("WellModel only supports the rfunc "
                                       "HantushWellModel!")
 
-        logger.warning("It is recommended to use LmfitSolve as the solver "
-                       "when implementing WellModel. See "
-                       "https://github.com/pastas/pastas/issues/177.")
+        # Check if scipy < 1.8
+        from distutils.version import StrictVersion
+        if StrictVersion(scipyversion) < StrictVersion("1.8.0"):
+            logger.warning(
+                "It is recommended to use LmfitSolve as the solver "
+                "or update to scipy>=1.8.0 when implementing WellModel."
+                " See https://github.com/pastas/pastas/issues/177.")
 
         # sort wells by distance
         self.sort_wells = sort_wells

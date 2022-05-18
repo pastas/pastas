@@ -11,16 +11,16 @@ import pastas as ps
 
 # read observations
 head = pd.read_csv("notebooks/data_notebook_5/head_wellex.csv",
-                   index_col="Date", parse_dates=True)
+                   index_col="Date", parse_dates=True).squeeze("columns")
 
 # Create the time series model
 ml = ps.Model(head, name="head")
 
 # read weather data
 rain = pd.read_csv("notebooks/data_notebook_5/prec_wellex.csv",
-                   index_col="Date", parse_dates=True)
+                   index_col="Date", parse_dates=True).squeeze("columns")
 evap = pd.read_csv("notebooks/data_notebook_5/evap_wellex.csv",
-                   index_col="Date", parse_dates=True)
+                   index_col="Date", parse_dates=True).squeeze("columns")
 
 # Create stress
 rm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential,
