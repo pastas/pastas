@@ -158,9 +158,12 @@ class Gamma(RfuncBase):
 
     Notes
     -----
-    The impulse response function may be written as:
+    The impulse response function is:
 
     .. math:: \\theta(t) = At^{n-1} e^{-t/a}
+    
+    where A, a, and n are parameters. The Gamma function is equal to the 
+    Exponential function when n=1.
     """
     _name = "Gamma"
 
@@ -217,9 +220,11 @@ class Exponential(RfuncBase):
 
     Notes
     -----
-    The impulse response function may be written as:
+    The impulse response function is:
 
     .. math:: \\theta(t) = A e^{-t/a}
+    
+    where A and a are parameters.
     """
     _name = "Exponential"
 
@@ -259,7 +264,7 @@ class Exponential(RfuncBase):
 
 
 class HantushWellModel(RfuncBase):
-    """A special implementation of the Hantush well function for multiple
+    """An implementation of the Hantush well function for multiple pumping
     wells.
 
     Parameters
@@ -275,29 +280,23 @@ class HantushWellModel(RfuncBase):
 
     Notes
     -----
-    The Hantush well function is explained in [hantush_1955]_,
-    [veling_2010]_ and [asmuth_2008]_. The impulse response function may be
-    written as:
+    The impulse response function is:
 
     .. math:: \\theta(r, t) = \\frac{A}{2t} \\right) \\exp(-t/a - abr^2/t)
-    .. math:: p[0] = A = \\frac{1}{2 \\pi T}
-    .. math:: p[1] = a = cS
-    .. math:: p[2] = b = 1 / (4 \\lambda^2)
-    .. math:: p[3] = r \\text{(not optimized)}
 
-    where :math:`\\lambda = \\sqrt{Tc}`
+    where r is the distance from the pumping well to the observation point
+    and must be specified. A, a, and b are parameters, which are slightly 
+    different from the Hantush response function. The gain is defined as:
+    
+    :math:`\\text{gain} = A K_0 \\left( 2r \\sqrt(b) \\right)`
+    
+    The implementation used here is explained in  [veling_2010]_.
 
-    The parameter r (distance from the well to the observation point)
-    is passed as a known value, and is used to scale the response function.
-    The optimized parameters A and b are slightly different from the original
-    Hantush implementation:
+    References
+    ----------
 
-    - A: in the original Hantush parameter A is equal to the gain. Now the gain
-      is given by :math:`\\text{gain} = A K_0 \\left( 2r \\sqrt(b) \\right)`
-    - a: is the same  :math:`a = cS`
-    - b: is given by :math:`b = 1 / (4 \\lambda^2)` as :math:`r` is passed
-      separately.
-
+    .. [veling_2010] Veling, E. J. M., & Maas, C. (2010). Hantush well function
+       revisited. Journal of hydrology, 393(3), 381-388.
     """
     _name = "HantushWellModel"
 
@@ -432,28 +431,19 @@ class Hantush(RfuncBase):
 
     Notes
     -----
-    The Hantush well function is explained in [hantush_1955]_, [veling_2010]_
-    and [asmuth_2008]_. The impulse response function may be written as:
+    The impulse response function is:
 
     .. math:: \\theta(t) = \\frac{A}{2t \\text{K}_0 \\left( 2 \\sqrt{b} \\right)} \\exp(-t/a - ab/t)
-    .. math:: p[0] = A = \\frac{\\text{K}_0 \\left( 2 \\sqrt{b} \\right)}{2 \\pi T}
-    .. math:: p[1] = a = cS
-    .. math:: p[2] = b = r^2 / (4 \\lambda^2)
 
-    where :math:`\\lambda = \\sqrt{Tc}`
+    where A, a, and b are parameters.
+    
+    The implementation used here is explained in  [veling_2010]_.
 
     References
     ----------
-    .. [hantush_1955] Hantush, M. S., & Jacob, C. E. (1955). Non‐steady
-       radial flow in an infinite leaky aquifer. Eos, Transactions American
-       Geophysical Union, 36(1), 95-100.
 
     .. [veling_2010] Veling, E. J. M., & Maas, C. (2010). Hantush well function
        revisited. Journal of hydrology, 393(3), 381-388.
-
-    .. [asmuth_2008] Von Asmuth, J. R., Maas, K., Bakker, M., & Petersen,
-       J. (2008). Modeling time series of ground water head fluctuations
-       subjected to multiple stresses. Ground Water, 46(1), 30-40.
     """
     _name = "Hantush"
 
