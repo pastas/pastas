@@ -190,6 +190,7 @@ def avg_seasonal_fluctuation(series, normalize=False):
 
     Returns
     -------
+
     float
 
     Notes
@@ -316,9 +317,9 @@ def colwell_components(series, bins=11, freq="M", method="mean",
     y = df.sum(axis=0)  # Head
     z = series.size  # Total number of observations
 
-    hx = -((x / z) * log(x / z)).sum()
-    hy = - ((y / z) * log(y / z)).sum()
-    hxy = - (df / z * log(df / z)).sum().sum()
+    hx = -(x / z * log(x / z)).sum()
+    hy = - (y / z * log(y / z)).sum()
+    hxy = - (df / z * log(df / z, where=df!=0)).sum().sum()
 
     # Compute final components
     p = 1 - (hxy - hy) / log(bins)  # Predictability
@@ -1106,7 +1107,7 @@ def _baseflow(series, normalize=True):
         series = _normalize(series)
 
     # A/B. Selecting minima hm over 5 day periods
-    hm = series.resample("5D").min()
+    hm = series.resample("5D").min().dropna()
 
     # C. define the turning points ht (0.9 * head < adjacent heads)
     ht = pd.Series(dtype=float)
