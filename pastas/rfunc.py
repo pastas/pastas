@@ -285,7 +285,7 @@ class HantushWellModel(RfuncBase):
     .. math:: \\theta(r, t) = \\frac{A}{2t} \\right) \\exp(-t/a - abr^2/t)
 
     where r is the distance from the pumping well to the observation point
-    and must be specified. A, a, and b are parameters, which are slightly 
+    and must be specified. A, a, and b are parameters, which are slightly
     different from the Hantush response function. The gain is defined as:
     
     :math:`\\text{gain} = A K_0 \\left( 2r \\sqrt(b) \\right)`
@@ -433,7 +433,8 @@ class Hantush(RfuncBase):
     -----
     The impulse response function is:
 
-    .. math:: \\theta(t) = \\frac{A}{2t \\text{K}_0 \\left( 2 \\sqrt{b} \\right)} \\exp(-t/a - ab/t)
+    .. math:: \\theta(t) = \\frac{A}{2t \\text{K}_0\\left(2\\sqrt{b} \\right)}
+              \\exp(-t/a - ab/t)
 
     where A, a, and b are parameters.
     
