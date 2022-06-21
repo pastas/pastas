@@ -161,8 +161,8 @@ class Gamma(RfuncBase):
     The impulse response function is:
 
     .. math:: \\theta(t) = At^{n-1} e^{-t/a}
-    
-    where A, a, and n are parameters. The Gamma function is equal to the 
+
+    where A, a, and n are parameters. The Gamma function is equal to the
     Exponential function when n=1.
     """
     _name = "Gamma"
