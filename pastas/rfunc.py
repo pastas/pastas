@@ -223,7 +223,7 @@ class Exponential(RfuncBase):
     The impulse response function is:
 
     .. math:: \\theta(t) = A e^{-t/a}
-    
+
     where A and a are parameters.
     """
     _name = "Exponential"
