@@ -279,11 +279,11 @@ class HantushWellModel(RfuncBase):
     [veling_2010]_ and [asmuth_2008]_. The impulse response function may be
     written as:
 
-    .. math:: \\theta(r, t) = \\frac{A}{2t} \\right) \\exp(-t/a - abr^2/t)
+    .. math:: \\theta(r, t) = \\frac{A}{2t} \\exp(-t/a - abr^2/t)
     .. math:: p[0] = A = \\frac{1}{2 \\pi T}
     .. math:: p[1] = a = cS
     .. math:: p[2] = b = 1 / (4 \\lambda^2)
-    .. math:: p[3] = r \\text{(not optimized)}
+    .. math:: p[3] = r \\, \\text{(not optimized)}
 
     where :math:`\\lambda = \\sqrt{Tc}`
 
