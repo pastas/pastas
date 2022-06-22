@@ -783,6 +783,10 @@ class TrackSolve:
             "Iteration: {0} (EVP: {1:.2%})".format(self.itercount,
                                                    self.evp[-1]))
         self.ax0.legend(loc=(0, 1), frameon=False, ncol=2)
+        omax = self.obs.max()
+        omin = self.obs.min()
+        vspace = 0.05 * (omax - omin)
+        self.ax0.set_ylim(bottom=omin - vspace, top=omax + vspace)
 
         # plot RMSE (residuals and/or residuals)
         plt.sca(self.ax1)
