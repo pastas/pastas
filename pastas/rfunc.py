@@ -297,7 +297,6 @@ class HantushWellModel(RfuncBase):
     - a: is the same  :math:`a = cS`
     - b: is the same, but :math:`r` is set to 1 if passed separately,
       :math:`b = 1^2 / (4 \\lambda^2)`
-
     """
     _name = "HantushWellModel"
 
@@ -937,7 +936,6 @@ class Kraijenhoff(RfuncBase):
 
     .. [Bruggeman] G.A. Bruggeman (1999). Analytical solutions of
        geohydrological problems. Elsevier Science. Amsterdam, Eq. 133.15
-
     """
     _name = "Kraijenhoff"
 
@@ -1007,10 +1005,10 @@ class Spline(RfuncBase):
     Notes
     -----
     The spline response function generates a response function from factors at
-    t = 1, 2, 4, 8, 16, 32, 64, 128, 256, 512 and 1024 days by default. This 
-    response function is more data-driven than existing response functions and 
-    has no physical background. Therefore it can primarily be used to compare 
-    to other more physical response functions, that probably describe the 
+    t = 1, 2, 4, 8, 16, 32, 64, 128, 256, 512 and 1024 days by default. This
+    response function is more data-driven than existing response functions and
+    has no physical background. Therefore it can primarily be used to compare
+    to other more physical response functions, that probably describe the
     groundwater system better.
     """
     _name = "Spline"
