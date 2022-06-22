@@ -402,8 +402,12 @@ class HantushWellModel(RfuncBase):
         Returns
         -------
         var_gain : float or np.array
-            variance of the gain calculated based on propagation of
-            uncertainty of parameters A and b.
+            variance of the gain calculated based on propagation of uncertainty
+            of parameters A and b.
+
+        See Also
+        --------
+        ps.WellModel.variance_gain
         """
         var_gain = (
             (k0(2 * np.sqrt(r ** 2 * b))) ** 2 * var_A +
