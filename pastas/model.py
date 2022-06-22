@@ -6,7 +6,8 @@ from logging import getLogger
 from os import getlogin
 
 import numpy as np
-from pandas import DataFrame, Series, Timedelta, Timestamp, date_range, concat
+from pandas import (DataFrame, Series, Timedelta, Timestamp,
+                    date_range, concat, to_timedelta)
 
 from .decorators import get_stressmodel
 from .io.base import _load_model, dump
@@ -88,7 +89,8 @@ class Model:
             "tmin": None,
             "tmax": None,
             "freq": freq,
-            "warmup": Timedelta(3650, freq),
+            "warmup": (3650 * to_timedelta(freq) if freq[0].isdigit()
+                       else Timedelta(3650, freq)),
             "time_offset": Timedelta(0),
             "noise": noisemodel,
             "solver": None,
