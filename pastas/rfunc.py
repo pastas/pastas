@@ -282,7 +282,7 @@ class HantushWellModel(RfuncBase):
     -----
     The impulse response function is:
 
-    .. math:: \\theta(r, t) = \\frac{A}{2t} \\right) \\exp(-t/a - abr^2/t)
+    .. math:: \\theta(r, t) = \\frac{A}{2t} \\exp(-t/a - abr^2/t)
 
     where r is the distance from the pumping well to the observation point
     and must be specified. A, a, and b are parameters, which are slightly
