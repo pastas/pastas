@@ -682,7 +682,8 @@ class Plotting:
         return ax
 
     @model_tmin_tmax
-    def stacked_results(self, tmin=None, tmax=None, figsize=(10, 8), **kwargs):
+    def stacked_results(self, tmin=None, tmax=None, figsize=(10, 8),
+                        stacklegend=False, **kwargs):
         """Create a results plot, similar to `ml.plots.results()`, in which the
         individual contributions of stresses (in stressmodels with multiple
         stresses) are stacked.
@@ -742,7 +743,8 @@ class Plotting:
                 vstack = concat(contrib, axis=1, sort=False)
                 names = [c[0] for c in contributions]  # get names
                 ax.stackplot(vstack.index, vstack.values.T, labels=names)
-                ax.legend(loc="best", ncol=5, fontsize=8)
+                if stacklegend:
+                    ax.legend(loc="best", ncol=5, fontsize=8)
 
                 # y-scale does not show 0
                 ylower, yupper = ax.get_ylim()
