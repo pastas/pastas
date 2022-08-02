@@ -586,7 +586,7 @@ class TrackSolve:
     `track.rmse_noise` (root mean squared error of the noise, only if
     noise=True).
 
-    To interactively plot model optimiztion progress while solving pass
+    To interactively plot model optimization progress while solving pass
     `track.plot_track_solve` as callback function::
 
         ml.solve(callback=track.plot_track_solve)
