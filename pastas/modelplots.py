@@ -695,6 +695,8 @@ class Plotting:
         tmin : str or pandas.Timestamp, optional
         tmax : str or pandas.Timestamp, optional
         figsize : tuple, optional
+        stacklegend : bool, optional
+            Add legend to the stacked plot.
 
         Returns
         -------
