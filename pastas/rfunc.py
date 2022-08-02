@@ -322,7 +322,7 @@ class HantushWellModel(RfuncBase):
         parameters.loc[name + '_a'] = (100, 1e-3, 1e4, True, name)
         # set initial and bounds for b taking into account distances
         binit = 1.0 / np.mean(self.distances) ** 2
-        bmin = 1e-4 / np.max(self.distances) ** 2
+        bmin = 1e-6 / np.max(self.distances) ** 2
         bmax = 25. / np.min(self.distances) ** 2
         parameters.loc[name + '_b'] = (binit, bmin, bmax, True, name)
         return parameters
