@@ -186,7 +186,7 @@ class Gamma(RfuncBase):
                                            np.nan, np.nan, True, name)
 
         # if n is too small, the length of response function is close to zero
-        parameters.loc[name + '_n'] = (1, 0.1, 100, True, name)
+        parameters.loc[name + '_n'] = (1, 0.01, 100, True, name)
         parameters.loc[name + '_a'] = (10, 0.01, 1e4, True, name)
         return parameters
 
