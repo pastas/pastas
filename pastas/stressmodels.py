@@ -921,6 +921,8 @@ class WellModel(StressModelBase):
             raise AttributeError("Model not optimized! Run solve() first!")
         if self.rfunc._name != "HantushWellModel":
             raise ValueError("Response function must be HantushWellModel!")
+        if model.fit.pcov.isna().all(axis=None):
+            model.logger.warn("Covariance matrix contains only NaNs!")
 
         # get parameters and (co)variances
         A = model.parameters.loc[self.name + "_A", "optimal"]
