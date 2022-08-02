@@ -243,7 +243,7 @@ class ArmaModel(NoiseModelBase):
             pinit = np.median(pinit)
         else:
             pinit = 14.0
-        self.parameters.loc["noise_alpha"] = (pinit, 1e-9, np.inf, True,
+        self.parameters.loc["noise_alpha"] = (pinit, 1e-9, 5000.0, True,
                                               "noise")
         self.parameters.loc["noise_beta"] = (1., -np.inf, np.inf, True,
                                              "noise")

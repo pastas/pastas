@@ -41,4 +41,5 @@ setup(
                       'pandas>=1.1',
                       'scipy>=1.3'],
     packages=find_packages(exclude=[]),
+    extras_require={'full': ['numba>=0.51', 'lmfit>=1.0.0']},
 )
