@@ -6,7 +6,8 @@ from logging import getLogger
 from os import getlogin
 
 import numpy as np
-from pandas import DataFrame, Series, Timedelta, Timestamp, date_range, concat
+from pandas import (DataFrame, Series, Timedelta, Timestamp,
+                    date_range, concat, to_timedelta)
 
 from .decorators import get_stressmodel
 from .io.base import _load_model, dump
@@ -88,7 +89,8 @@ class Model:
             "tmin": None,
             "tmax": None,
             "freq": freq,
-            "warmup": Timedelta(3650, freq),
+            "warmup": (3650 * to_timedelta(freq) if freq[0].isdigit()
+                       else Timedelta(3650, freq)),
             "time_offset": Timedelta(0),
             "noise": noisemodel,
             "solver": None,
@@ -1542,7 +1544,7 @@ class Model:
         parameters.loc[:, "stderr"] = stderr.abs().apply("±{:.2%}".format)
 
         # Determine the width of the fit_report based on the parameters
-        width = len(parameters.__str__().split("\n")[1])
+        width = len(parameters.to_string().split("\n")[1])
         string = "{:{fill}{align}{width}}"
 
         # Create the first header with model information and stats
@@ -1567,7 +1569,7 @@ class Model:
         # Create the parameters block
         params = f"\nParameters ({parameters.vary.sum()} optimized)\n" \
                  f"{string.format('', fill='=', align='>', width=width)}\n" \
-                 f"{parameters}"
+                 f"{parameters.to_string()}"
 
         if output == "full":
             cor = DataFrame(columns=["value"])

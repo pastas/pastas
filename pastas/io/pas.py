@@ -4,6 +4,7 @@ Import a .pas file (basically a json format)
 
 R.A. Collenteur - August 2017
 """
+import datetime
 import json
 from collections import OrderedDict
 from logging import getLogger
@@ -72,7 +73,7 @@ class PastasEncoder(json.JSONEncoder):
     """
 
     def default(self, o):
-        if isinstance(o, Timestamp):
+        if isinstance(o, Timestamp) or isinstance(o, datetime.datetime):
             return o.isoformat()
         elif isinstance(o, Series):
             return o.to_json(date_format="iso", orient="split")

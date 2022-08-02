@@ -366,8 +366,8 @@ class StressModel2(StressModelBase):
                  settings=("prec", "evap"), metadata=(None, None),
                  meanstress=None):
 
-        msg = "StressModel2 will be deprecated in 0.21.0 and will be removed" \
-              " in 0.22.0 and is replace by the RechargeModel stress model. " \
+        msg = "StressModel2 is deprecated. It will be removed in version " \
+              "0.22.0 and is replaced by the RechargeModel stress model. " \
               "Please use ps.RechargeModel(prec, evap, " \
               "recharge=ps.rch.Linear) for the same stress model."
         warn(msg)
@@ -891,6 +891,54 @@ class WellModel(StressModelBase):
             "sort_wells": self.sort_wells
         }
         return data
+
+    def variance_gain(self, model, istress=None):
+        """Calculate variance of the gain for WellModel.
+
+        Variance of the gain is calculated based on propagation of uncertainty
+        using optimal values and the variances of A and b and the covariance
+        between A and b.
+
+        Parameters
+        ----------
+        model : pastas.Model
+            optimized model
+        istress : int or list of int, optional
+            index of stress(es) for which to calculate variance of gain
+
+        Returns
+        -------
+        var_gain : float
+            variance of the gain calculated from model results
+            for parameters A and b
+
+        See Also
+        --------
+        pastas.HantushWellModel.variance_gain
+
+        """
+        if model.fit is None:
+            raise AttributeError("Model not optimized! Run solve() first!")
+        if self.rfunc._name != "HantushWellModel":
+            raise ValueError("Response function must be HantushWellModel!")
+        if model.fit.pcov.isna().all(axis=None):
+            model.logger.warn("Covariance matrix contains only NaNs!")
+
+        # get parameters and (co)variances
+        A = model.parameters.loc[self.name + "_A", "optimal"]
+        b = model.parameters.loc[self.name + "_b", "optimal"]
+        var_A = model.fit.pcov.loc[self.name + "_A", self.name + "_A"]
+        var_b = model.fit.pcov.loc[self.name + "_b", self.name + "_b"]
+        cov_Ab = model.fit.pcov.loc[self.name + "_A", self.name + "_b"]
+
+        if istress is None:
+            r = np.asarray(self.distances)
+        elif isinstance(istress, int) or isinstance(istress, list):
+            r = self.distances.iloc[istress]
+        else:
+            raise ValueError("Parameter 'istress' must be None, list or int!")
+
+        return self.rfunc.variance_gain(A, b, var_A, var_b, cov_Ab, r=r)
 
 
 class RechargeModel(StressModelBase):

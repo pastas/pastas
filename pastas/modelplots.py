@@ -74,7 +74,7 @@ class Plotting:
         if oseries:
             o = self.ml.observations(tmin=tmin, tmax=tmax)
             o_nu = self.ml.oseries.series.drop(o.index).loc[
-                   o.index.min():o.index.max()]
+                o.index.min():o.index.max()]
             if not o_nu.empty:
                 # plot parts of the oseries that are not used in grey
                 o_nu.plot(linestyle='', marker='.', color='0.5', label='',
@@ -165,8 +165,7 @@ class Plotting:
 
         # Make main Figure
         if fig is None:
-            fig = plt.figure(figsize=figsize, constrained_layout=True,
-                             **kwargs)
+            fig = plt.figure(figsize=figsize, **kwargs)
 
         gs = fig.add_gridspec(ncols=2, nrows=len(contribs) + 2,
                               width_ratios=[2, 1], height_ratios=hrs)
@@ -256,6 +255,9 @@ class Plotting:
 
         for ax in fig.axes:
             ax.grid(True)
+
+        if isinstance(fig, plt.Figure):
+            fig.tight_layout(pad=0.0)  # Before making the table
 
         # Draw parameters table
         ax3 = fig.add_subplot(gs[0:2, 1])
@@ -680,7 +682,8 @@ class Plotting:
         return ax
 
     @model_tmin_tmax
-    def stacked_results(self, tmin=None, tmax=None, figsize=(10, 8), **kwargs):
+    def stacked_results(self, tmin=None, tmax=None, figsize=(10, 8),
+                        stacklegend=False, **kwargs):
         """Create a results plot, similar to `ml.plots.results()`, in which the
         individual contributions of stresses (in stressmodels with multiple
         stresses) are stacked.
@@ -692,6 +695,8 @@ class Plotting:
         tmin : str or pandas.Timestamp, optional
         tmax : str or pandas.Timestamp, optional
         figsize : tuple, optional
+        stacklegend : bool, optional
+            Add legend to the stacked plot.
 
         Returns
         -------
@@ -740,7 +745,8 @@ class Plotting:
                 vstack = concat(contrib, axis=1, sort=False)
                 names = [c[0] for c in contributions]  # get names
                 ax.stackplot(vstack.index, vstack.values.T, labels=names)
-                ax.legend(loc="best", ncol=5, fontsize=8)
+                if stacklegend:
+                    ax.legend(loc="best", ncol=5, fontsize=8)
 
                 # y-scale does not show 0
                 ylower, yupper = ax.get_ylim()

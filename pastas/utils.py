@@ -442,7 +442,7 @@ def datenum_to_datetime(datenum):
     """
     days = datenum % 1.
     return datetime.fromordinal(int(datenum)) \
-           + timedelta(days=days) - timedelta(days=366)
+        + timedelta(days=days) - timedelta(days=366)
 
 
 def datetime2matlab(tindex):

@@ -72,7 +72,7 @@ Developers
 ----------
 To get the latest development version, use::
 
-   pip install https://github.com/pastas/pastas/zipball/dev
+   pip install git+https://github.com/pastas/pastas.git@dev#egg=pastas
   
 Dependencies
 ~~~~~~~~~~~~
@@ -87,7 +87,14 @@ Pastas
 - scipy>=1.3
 
 Apart from this, is is highly recommended to install Numba (>0.51) to
-gain significant speed-ups.
+gain significant speed-ups. To install Numba (and another optional 
+dependency LmFit) at the same time with Pastas use::
+
+   pip install pastas[full]
+
+or for the development version use::
+
+   pip install git+https://github.com/pastas/pastas.git@dev#egg=pastas[full]
 
 How to Cite Pastas?
 ~~~~~~~~~~~~~~~~~~~
