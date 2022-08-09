@@ -161,3 +161,8 @@ def test_observations():
     ml = test_add_stressmodel()
     ml.observations()
     return
+
+def test_get_all_series():
+    ml = test_add_stressmodel()
+    ml.get_all_series()
+    return

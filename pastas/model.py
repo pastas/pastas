@@ -1239,6 +1239,54 @@ class Model:
         sim_org = ml.simulate(tmin=tmin, tmax=tmax)
         return sim - sim_org
 
+    def get_all_series(self, tmin=None, tmax=None, split=True):
+        """Method to get all the time series from the pastas Model.
+
+        Parameters
+        ----------
+        tmin: str, optional
+            String with a start date for the simulation period (E.g. '1980').
+            If none is provided, the tmin from the oseries is used.
+        tmax: str, optional
+            String with an end date for the simulation period (E.g. '2010').
+            If none is provided, the tmax from the oseries is used.
+        split: bool, optional
+            Passed on to ml.get_contributions. Split the contribution from
+            recharge into evaporation and precipitation. See also
+            ml.get_contributions.
+
+        Returns
+        -------
+        series: pandas.DataFrame
+            Pandas DataFrame with the time series as columns and DatetimeIndex.
+
+        Notes
+        -----
+        Export the observed, simulated time series, the noise and residuals
+        series, and the contributions from the different stressmodels.
+
+        Examples
+        --------
+        >>> df = ml.get_all_series(tmin="2000", tmax="2010)  # return DataFrame
+        >>> df.to_csv("fname.csv")
+        """
+        obs = self.observations(tmax=tmax)
+        obs.name = "Head_Calibration"
+
+        sim = self.simulate(tmax=tmax)
+        res = self.residuals(tmax=tmax)
+        noise = self.noise(tmax=tmax)
+
+        contribs = self.get_contributions(tmax=tmax, split=split)
+
+        series = [obs, sim, res, noise]
+
+        for contrib in contribs:
+            series.append(contrib)
+
+        series = concat(series, axis=1)
+        return series
+
     def _get_response(self, block_or_step, name, p=None, dt=None, add_0=False,
                       **kwargs):
         """Internal method to compute the block and step response.
