@@ -1240,7 +1240,7 @@ class Model:
         return sim - sim_org
 
     def get_all_series(self, tmin=None, tmax=None, split=True):
-        """Method to get all the time series from the pastas Model.
+        """Method to get all the modeled time series from the pastas Model.
 
         Parameters
         ----------
@@ -1270,14 +1270,14 @@ class Model:
         >>> df = ml.get_all_series(tmin="2000", tmax="2010)  # return DataFrame
         >>> df.to_csv("fname.csv")
         """
-        obs = self.observations(tmax=tmax)
+        obs = self.observations(tmin=tmin,tmax=tmax)
         obs.name = "Head_Calibration"
 
-        sim = self.simulate(tmax=tmax)
-        res = self.residuals(tmax=tmax)
-        noise = self.noise(tmax=tmax)
+        sim = self.simulate(tmin=tmin,tmax=tmax)
+        res = self.residuals(tmin=tmin,tmax=tmax)
+        noise = self.noise(tmin=tmin,tmax=tmax)
 
-        contribs = self.get_contributions(tmax=tmax, split=split)
+        contribs = self.get_contributions(tmin=tmin,tmax=tmax, split=split)
 
         series = [obs, sim, res, noise]
 
