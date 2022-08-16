@@ -23,7 +23,7 @@ evap = pd.read_csv("data/evap_nb1.csv", index_col=0,
                    parse_dates=True).squeeze("columns")
 
 # create stress
-sm = ps.RechargeModel(stress=[rain, evap], rfunc=ps.Exponential,
+sm = ps.RechargeModel(rain, evap, rfunc=ps.Exponential,
                       recharge=ps.rch.Linear(), name="recharge")
 ml.add_stressmodel(sm)
 
