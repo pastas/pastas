@@ -30,9 +30,8 @@ from .utils import check_numba, validate_name
 
 logger = getLogger(__name__)
 
-__all__ = ["StressModel", "StressModel2", "Constant", "StepModel",
-           "LinearTrend", "RechargeModel", "WellModel", "TarsoModel",
-           "ChangeModel"]
+__all__ = ["StressModel", "Constant", "StepModel", "LinearTrend",
+           "RechargeModel", "WellModel", "TarsoModel", "ChangeModel"]
 
 
 class StressModelBase:

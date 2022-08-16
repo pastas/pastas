@@ -25,8 +25,8 @@ if True:
     evap.series_original = s
 
 # Create stress
-sm = ps.StressModel2(stress=[rain, evap], rfunc=ps.Exponential,
-                     name='recharge')
+sm = ps.RechargeModel(stress=[rain, evap], rfunc=ps.Exponential,
+                      recharge=ps.rch.Linear(), name='recharge')
 ml.add_stressmodel(sm)
 
 ## Solve
