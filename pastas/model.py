@@ -366,7 +366,7 @@ class Model:
             istart += 1
         if self.transform:
             sim = self.transform.simulate(sim, p[istart:istart +
-                                                 self.transform.nparam])
+                                                        self.transform.nparam])
 
         # Respect provided tmin/tmax at this point, since warmup matters for
         # simulation but should not be returned, unless return_warmup=True.
@@ -1164,7 +1164,7 @@ class Model:
         # use warmup
         if tmin:
             tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + \
-                self.settings["time_offset"]
+                        self.settings["time_offset"]
         else:
             tmin_warm = None
 
@@ -1239,7 +1239,7 @@ class Model:
         sim_org = ml.simulate(tmin=tmin, tmax=tmax)
         return sim - sim_org
 
-    def get_all_series(self, tmin=None, tmax=None, split=True):
+    def get_output_series(self, tmin=None, tmax=None, split=True):
         """Method to get all the modeled time series from the pastas Model.
 
         Parameters
@@ -1267,17 +1267,17 @@ class Model:
 
         Examples
         --------
-        >>> df = ml.get_all_series(tmin="2000", tmax="2010)  # return DataFrame
+        >>> df = ml.get_all_series(tmin="2000", tmax="2010")  # return DataFrame
         >>> df.to_csv("fname.csv")
         """
-        obs = self.observations(tmin=tmin,tmax=tmax)
+        obs = self.observations(tmin=tmin, tmax=tmax)
         obs.name = "Head_Calibration"
 
-        sim = self.simulate(tmin=tmin,tmax=tmax)
-        res = self.residuals(tmin=tmin,tmax=tmax)
-        noise = self.noise(tmin=tmin,tmax=tmax)
+        sim = self.simulate(tmin=tmin, tmax=tmax)
+        res = self.residuals(tmin=tmin, tmax=tmax)
+        noise = self.noise(tmin=tmin, tmax=tmax)
 
-        contribs = self.get_contributions(tmin=tmin,tmax=tmax, split=split)
+        contribs = self.get_contributions(tmin=tmin, tmax=tmax, split=split)
 
         series = [obs, sim, res, noise]
 
@@ -1489,7 +1489,7 @@ class Model:
         # use warmup
         if tmin:
             tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + \
-                self.settings["time_offset"]
+                        self.settings["time_offset"]
         else:
             tmin_warm = None
 
@@ -1611,7 +1611,7 @@ class Model:
         for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
             basic += (
                 f"{val1:<8}{val2:<23}{val3:<9}"
-                f"{val4:>{wspace+len_val4}}\n"
+                f"{val4:>{wspace + len_val4}}\n"
             )
 
         # Create the parameters block
@@ -1664,9 +1664,9 @@ class Model:
             # create message
             if len(msg) > 0:
                 msg = [
-                    f"\n\nWarnings! ({len(msg)})\n"
-                    f"{string.format('', fill='=', align='>', width=width)}"
-                ] + msg
+                          f"\n\nWarnings! ({len(msg)})\n"
+                          f"{string.format('', fill='=', align='>', width=width)}"
+                      ] + msg
                 warnings = "\n".join(msg)
             else:
                 warnings = ""
