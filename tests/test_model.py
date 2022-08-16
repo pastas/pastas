@@ -162,7 +162,7 @@ def test_observations():
     ml.observations()
     return
 
-def test_get_all_series():
+def test_get_output_series():
     ml = test_add_stressmodel()
-    ml.get_all_series()
+    ml.get_output_series()
     return
