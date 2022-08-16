@@ -85,6 +85,18 @@ def _load_model(data):
 
     # Add stressmodels
     for name, ts in data["stressmodels"].items():
+        # Deal with old StressModel2 files for version 0.22.0
+        if ts["stressmodel"] == "StressModel2":
+            logger.warning(
+                "StressModel2 is removed since Pastas 0.22.0. Make sure to "
+                "save this file using v0.22.0 as this file will not work in ")
+            ts["stressmodel"] = "RechargeModel"
+            ts["recharge"] = "Linear"
+            ts["prec"] = ts["stress"][0]
+            ts["evap"] = ts["stress"][1]
+            ts.pop("stress")
+            ts.pop("up")
+
         stressmodel = getattr(ps.stressmodels, ts["stressmodel"])
         ts.pop("stressmodel")
         if "rfunc" in ts.keys():
