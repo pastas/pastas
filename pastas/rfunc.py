@@ -287,9 +287,9 @@ class HantushWellModel(RfuncBase):
     where r is the distance from the pumping well to the observation point
     and must be specified. A, a, and b are parameters, which are slightly
     different from the Hantush response function. The gain is defined as:
-    
+
     :math:`\\text{gain} = A K_0 \\left( 2r \\sqrt(b) \\right)`
-    
+
     The implementation used here is explained in  [veling_2010]_.
 
     References
@@ -350,8 +350,9 @@ class HantushWellModel(RfuncBase):
         else:
             return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
 
-    def gain(self, p):
-        r = self._get_distance_from_params(p)
+    def gain(self, p, r=None):
+        if r is None:
+            r = self._get_distance_from_params(p)
         rho = 2 * r * np.sqrt(p[2])
         return p[0] * k0(rho)
 
@@ -379,6 +380,11 @@ class HantushWellModel(RfuncBase):
         Variance of the gain is calculated based on propagation of
         uncertainty using optimal values, the variances of A and b
         and the covariance between A and b.
+
+        Note
+        ----
+        Estimated variance can be biased for non-linear functions as it uses
+        truncated series expansion.
 
         Parameters
         ----------
@@ -441,7 +447,7 @@ class Hantush(RfuncBase):
               \\exp(-t/a - ab/t)
 
     where A, a, and b are parameters.
-    
+
     The implementation used here is explained in  [veling_2010]_.
 
     References
