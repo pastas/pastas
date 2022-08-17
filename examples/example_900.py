@@ -5,24 +5,26 @@ This is the time at which precipitation is logged in dutch KNMI-stations.
 """
 import pastas as ps
 import pandas as pd
+import hydropandas as hpd
 
 # read observations
-obs = ps.read_dino('data/B58C0698001_1.csv')
+obs = hpd.GroundwaterObs.from_dino('data/B58C0698001_1.csv')
 
 # Create the time series model
-ml = ps.Model(obs)
+ml = ps.Model(obs['stand_m_tov_nap'])
 
 # read weather data
-knmi = ps.read.knmi.KnmiStation.fromfile(
-    'data/neerslaggeg_HEIBLOEM-L_967-2.txt')
-rain = ps.TimeSeries(knmi.data['RD'], settings='prec')
+rain = hpd.PrecipitationObs.from_knmi(967, "precipitation", 
+                                      startdate=obs.index[0],
+                                      enddate=obs.index[-1])
 
-evap = ps.read_knmi('data/etmgeg_380.txt', variables='EV24')
+evap = hpd.EvaporationObs.from_knmi(380, "EV24", 
+                                    startdate=obs.index[0],
+                                    enddate=obs.index[-1])
+
 if True:
-    # also add 9 hours to the evaporation
-    s = evap.series_original
-    s.index = s.index + pd.to_timedelta(9, 'h')
-    evap.series_original = s
+    # also add 8 hours to the evaporation
+    evap.index = evap.index + pd.to_timedelta(8, 'h')
 
 # Create stress
 sm = ps.StressModel2(stress=[rain, evap], rfunc=ps.Exponential,

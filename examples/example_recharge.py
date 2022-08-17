@@ -6,6 +6,7 @@ Author: R.A. Collenteur, University of Graz.
 
 """
 import pandas as pd
+import hydropandas as hpd
 
 import pastas as ps
 
@@ -19,8 +20,13 @@ obs = pd.read_csv("data/B32C0639001.csv", parse_dates=['date'],
 ml = ps.Model(obs, name="head")
 
 # read weather data and make mm/d !
-evap = ps.read_knmi("data/etmgeg_260.txt", variables="EV24").series * 1e3
-rain = ps.read_knmi("data/etmgeg_260.txt", variables="RH").series * 1e3
+rain = hpd.PrecipitationObs.from_knmi(260, "meteo", 
+                                      startdate=obs.index[0],
+                                      enddate=obs.index[-1]) * 1e3
+
+evap = hpd.EvaporationObs.from_knmi(260, "EV24", 
+                                    startdate=obs.index[0],
+                                    enddate=obs.index[-1]) * 1e3
 
 # Initialize recharge model and create stressmodel
 rch = ps.rch.FlexModel(interception=True)
