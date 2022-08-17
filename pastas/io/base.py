@@ -85,11 +85,15 @@ def _load_model(data):
 
     # Add stressmodels
     for name, ts in data["stressmodels"].items():
-        # Deal with old StressModel2 files for version 0.22.0
+        # Deal with old StressModel2 files for version 0.22.0. Remove in 0.23.0.
         if ts["stressmodel"] == "StressModel2":
-            logger.warning(
-                "StressModel2 is removed since Pastas 0.22.0. Make sure to "
-                "save this file using v0.22.0 as this file will not work in ")
+            logger.warning("StressModel2 is removed since Pastas 0.22.0 and "
+                           "is replaced by the RechargeModel using a Linear "
+                           "recharge model. Make sure to save this file "
+                           "again using Pastas version 0.22.0 as this file "
+                           "cannot be loaded in newer Pastas versions. This "
+                           "will automatically update your model to the newer "
+                           "RechargeModel stress model.")
             ts["stressmodel"] = "RechargeModel"
             ts["recharge"] = "Linear"
             ts["prec"] = ts["stress"][0]
