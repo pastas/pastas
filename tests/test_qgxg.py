@@ -68,7 +68,7 @@ class TestQGXG(object):
 
     def test_q_gxg_series(self):
         s = pd.read_csv('tests/data/hseries_gxg.csv', index_col=0, header=0,
-                        parse_dates=True, dayfirst=True, squeeze=True)
+                        parse_dates=True, dayfirst=True).squeeze("columns")
         ghg = ps.stats.q_ghg(s)
         glg = ps.stats.q_glg(s)
         gvg = ps.stats.q_gvg(s)

@@ -6,7 +6,7 @@ from scipy.stats import norm
 
 
 def sgi(series):
-    """Method to compute the Standardized Groundwater Index.
+    """Method to compute the Standardized Groundwater Index [sgi_2013]_.
 
     Parameters
     ----------
@@ -20,7 +20,7 @@ def sgi(series):
 
     References
     ----------
-    .. [sgi_2013]: Bloomfield, J. P. and Marchant, B. P.: Analysis of
+    .. [sgi_2013] Bloomfield, J. P. and Marchant, B. P.: Analysis of
        groundwater drought building on the standardised precipitation index
        approach, Hydrol. Earth Syst. Sci., 17, 4769–4787, 2013.
     """

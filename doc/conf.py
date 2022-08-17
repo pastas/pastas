@@ -14,6 +14,8 @@
 
 import os
 import sys
+from datetime import date
+year = date.today().strftime("%Y")
 
 import matplotlib
 
@@ -58,7 +60,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Pastas'
-copyright = u'2019, R.A. Collenteur, M. Bakker, R. Calje, F. Schaars'
+copyright = u'{}, R.A. Collenteur, M. Bakker, R. Calje, F. Schaars'.format(
+    year)
 author = u'R.A. Collenteur, M. Bakker, R. Calje, F. Schaars'
 
 # The version.

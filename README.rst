@@ -1,12 +1,12 @@
-PASTAS: HYDROLOGICAL TIME SERIES ANALYSIS
-=========================================
+Pastas: Analysis of Groundwater Time Series
+===========================================
 
 .. image:: /doc/_static/logo_small.png
    :width: 200px
    :align: left
 
-.. image:: https://travis-ci.com/pastas/pastas.svg?branch=master
-   :target: https://travis-ci.com/pastas/pastas
+.. image:: https://github.com/pastas/pastas/actions/workflows/ci.yml/badge.svg?branch=master
+   :target: https://github.com/pastas/pastas/actions/workflows/ci.yml
 .. image:: https://img.shields.io/pypi/v/pastas.svg
    :target: https://pypi.python.org/pypi/pastas
 .. image:: https://img.shields.io/pypi/l/pastas.svg
@@ -27,10 +27,10 @@ PASTAS: HYDROLOGICAL TIME SERIES ANALYSIS
 Pastas: what is it?
 ~~~~~~~~~~~~~~~~~~~
 Pastas is an open source python package for processing, simulating and analyzing 
-hydrological time series (models). The object oriented structure allows for
-the quick implementation of new model components. Time series models can be
-created, calibrated, and analysed with just a few lines of python code with
-the built-in optimization, visualisation, and statistical analysis tools.
+groundwater time series. The object oriented structure allows for the quick
+implementation of new model components. Time series models can be created,
+calibrated, and analysed with just a few lines of python code with the
+built-in optimization, visualisation, and statistical analysis tools.
 
 Documentation & Examples
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -72,7 +72,7 @@ Developers
 ----------
 To get the latest development version, use::
 
-   pip install https://github.com/pastas/pastas/zipball/dev
+   pip install git+https://github.com/pastas/pastas.git@dev#egg=pastas
   
 Dependencies
 ~~~~~~~~~~~~
@@ -85,6 +85,16 @@ Pastas
 - matplotlib>=3.1
 - pandas>=1.1
 - scipy>=1.3
+
+Apart from this, is is highly recommended to install Numba (>0.51) to
+gain significant speed-ups. To install Numba (and another optional 
+dependency LmFit) at the same time with Pastas use::
+
+   pip install pastas[full]
+
+or for the development version use::
+
+   pip install git+https://github.com/pastas/pastas.git@dev#egg=pastas[full]
 
 How to Cite Pastas?
 ~~~~~~~~~~~~~~~~~~~

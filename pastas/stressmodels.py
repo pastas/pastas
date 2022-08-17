@@ -19,10 +19,11 @@ from logging import getLogger
 import numpy as np
 from pandas import DataFrame, Series, Timedelta, Timestamp, concat, date_range
 from scipy.signal import fftconvolve
+from scipy import __version__ as scipyversion
+from warnings import warn
 
 from .decorators import njit, set_parameter
 from .recharge import Linear
-from .reservoir import Reservoir1
 from .rfunc import Exponential, HantushWellModel, One
 from .timeseries import TimeSeries
 from .utils import check_numba, validate_name
@@ -30,7 +31,8 @@ from .utils import check_numba, validate_name
 logger = getLogger(__name__)
 
 __all__ = ["StressModel", "StressModel2", "Constant", "StepModel",
-           "LinearTrend", "RechargeModel", "WellModel", "TarsoModel"]
+           "LinearTrend", "RechargeModel", "WellModel", "TarsoModel",
+           "ChangeModel"]
 
 
 class StressModelBase:
@@ -245,6 +247,7 @@ class StressModel(StressModelBase):
 
     def __init__(self, stress, rfunc, name, up=True, cutoff=0.999,
                  settings=None, metadata=None, meanstress=None):
+
         if isinstance(stress, list):
             stress = stress[0]  # TODO Temporary fix Raoul, 2017-10-24
 
@@ -355,13 +358,20 @@ class StressModel2(StressModelBase):
     See Also
     --------
     pastas.rfunc
-    pastas.timeseries
+    pastas.timeseries.TimeSeries
     """
     _name = "StressModel2"
 
     def __init__(self, stress, rfunc, name, up=True, cutoff=0.999,
                  settings=("prec", "evap"), metadata=(None, None),
                  meanstress=None):
+
+        msg = "StressModel2 is deprecated. It will be removed in version " \
+              "0.22.0 and is replaced by the RechargeModel stress model. " \
+              "Please use ps.RechargeModel(prec, evap, " \
+              "recharge=ps.rch.Linear) for the same stress model."
+        warn(msg)
+
         # First check the series, then determine tmin and tmax
         stress0 = TimeSeries(stress[0], settings=settings[0],
                              metadata=metadata[0])
@@ -686,9 +696,13 @@ class WellModel(StressModelBase):
             raise NotImplementedError("WellModel only supports the rfunc "
                                       "HantushWellModel!")
 
-        logger.warning("It is recommended to use LmfitSolve as the solver "
-                       "when implementing WellModel. See "
-                       "https://github.com/pastas/pastas/issues/177.")
+        # Check if scipy < 1.8
+        from distutils.version import StrictVersion
+        if StrictVersion(scipyversion) < StrictVersion("1.8.0"):
+            logger.warning(
+                "It is recommended to use LmfitSolve as the solver "
+                "or update to scipy>=1.8.0 when implementing WellModel."
+                " See https://github.com/pastas/pastas/issues/177.")
 
         # sort wells by distance
         self.sort_wells = sort_wells
@@ -878,6 +892,54 @@ class WellModel(StressModelBase):
         }
         return data
 
+    def variance_gain(self, model, istress=None):
+        """Calculate variance of the gain for WellModel.
+
+        Variance of the gain is calculated based on propagation of uncertainty
+        using optimal values and the variances of A and b and the covariance
+        between A and b.
+
+        Parameters
+        ----------
+        model : pastas.Model
+            optimized model
+        istress : int or list of int, optional
+            index of stress(es) for which to calculate variance of gain
+
+        Returns
+        -------
+        var_gain : float
+            variance of the gain calculated from model results
+            for parameters A and b
+
+        See Also
+        --------
+        pastas.HantushWellModel.variance_gain
+
+        """
+        if model.fit is None:
+            raise AttributeError("Model not optimized! Run solve() first!")
+        if self.rfunc._name != "HantushWellModel":
+            raise ValueError("Response function must be HantushWellModel!")
+        if model.fit.pcov.isna().all(axis=None):
+            model.logger.warn("Covariance matrix contains only NaNs!")
+
+        # get parameters and (co)variances
+        A = model.parameters.loc[self.name + "_A", "optimal"]
+        b = model.parameters.loc[self.name + "_b", "optimal"]
+        var_A = model.fit.pcov.loc[self.name + "_A", self.name + "_A"]
+        var_b = model.fit.pcov.loc[self.name + "_b", self.name + "_b"]
+        cov_Ab = model.fit.pcov.loc[self.name + "_A", self.name + "_b"]
+
+        if istress is None:
+            r = np.asarray(self.distances)
+        elif isinstance(istress, int) or isinstance(istress, list):
+            r = self.distances.iloc[istress]
+        else:
+            raise ValueError("Parameter 'istress' must be None, list or int!")
+
+        return self.rfunc.variance_gain(A, b, var_A, var_b, cov_Ab, r=r)
+
 
 class RechargeModel(StressModelBase):
     """Stressmodel simulating the effect of groundwater recharge on the
@@ -900,7 +962,7 @@ class RechargeModel(StressModelBase):
         String with the name of the recharge model. Options are: Linear (
         default), FlexModel and Berendrecht. These can be accessed through
         ps.rch.
-    temp: pandas.Series or pastas.TimeSeries, optional
+    temp: pandas.Series or pastas.timeseries.TimeSeries, optional
         pandas.Series or pastas.TimeSeries object containing the
         temperature series. It depends on the recharge model is this
         argument is required or not.
@@ -921,8 +983,8 @@ class RechargeModel(StressModelBase):
     See Also
     --------
     pastas.rfunc
-    pastas.timeseries
-    pastas.rch
+    pastas.timeseries.TimeSeries
+    pastas.recharge
 
     Notes
     -----
@@ -1196,6 +1258,7 @@ class RechargeModel(StressModelBase):
             "rfunc": self.rfunc._name,
             "name": self.name,
             "recharge": self.recharge._name,
+            "recharge_kwargs": self.recharge.kwargs,
             "cutoff": self.rfunc.cutoff,
             "temp": self.temp.to_dict() if self.temp else None
         }
@@ -1375,13 +1438,13 @@ class ChangeModel(StressModelBase):
     stress: pandas.Series
         pandas Series object containing the stress.
     rfunc1: rfunc class
-        Response function used in the convolution with the stress.
+        response function used in the convolution with the stress.
     rfunc2: rfunc class
-        Response function used in the convolution with the stress.
+        response function used in the convolution with the stress.
     name: str
-        Name of the stress.
+        name of the stress.
     tchange: str
-        String with the approximate date of the change.
+        string with the approximate date of the change.
     up: bool or None, optional
         True if response function is positive (default), False if negative.
         None if you don't want to define if response is positive or negative.
@@ -1389,7 +1452,7 @@ class ChangeModel(StressModelBase):
         float between 0 and 1 to determine how long the response is (default
         is 99% of the actual response time). Used to reduce computation times.
     settings: dict or str, optional
-        The settings of the stress. This can be a string referring to a
+        the settings of the stress. This can be a string referring to a
         predefined settings dict, or a dict with the settings to apply.
         Refer to the docstring of pastas.Timeseries for further information.
     metadata: dict, optional
@@ -1464,7 +1527,8 @@ class ChangeModel(StressModelBase):
         h = omega * h1 + (1 - omega) * h2
 
         return h
-    
+
+
 class ReservoirModel(StressModelBase):
     """Time series model consisting of a single reservoir with two stresses.
     The first stress causes the head to go up and the second stress causes 
@@ -1500,12 +1564,12 @@ class ReservoirModel(StressModelBase):
     """
     _name = "ReservoirModel"
 
-    def __init__(self, stress, reservoir, name, meanhead, 
-                 settings=("prec", "evap"), metadata=(None, None), 
+    def __init__(self, stress, reservoir, name, meanhead,
+                 settings=("prec", "evap"), metadata=(None, None),
                  meanstress=None):
         # Set resevoir object
         self.reservoir = reservoir(meanhead)
-        
+
         # Code below is copied from StressModel2 and may not be optimal
         # Check the series, then determine tmin and tmax
         stress0 = TimeSeries(stress[0], settings=settings[0],
@@ -1560,7 +1624,7 @@ class ReservoirModel(StressModelBase):
         pandas.Series
             The simulated head contribution.
         """
-        
+
         stress = self.get_stress(tmin=tmin, tmax=tmax, freq=freq)
         h = Series(data=self.reservoir.simulate(stress[0], stress[1], p),
                    index=stress[0].index, name=self.name, fastpath=True)
@@ -1587,7 +1651,7 @@ class ReservoirModel(StressModelBase):
             StressModel object.
         """
         pass
-    
+
     def _get_block(self, p, dt, tmin, tmax):
         """Internal method to get the block-response function.
         Cannot be used (yet?) since there is no block response"""

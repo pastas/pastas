@@ -1,6 +1,8 @@
 # coding=utf-8
 """This module contains all the response functions available in Pastas."""
 
+from logging import getLogger
+
 import numpy as np
 from pandas import DataFrame
 from scipy.integrate import quad
@@ -8,9 +10,11 @@ from scipy.special import (erfc, erfcinv, exp1, gammainc, gammaincinv, k0, k1,
                            lambertw)
 from scipy.interpolate import interp1d
 
+logger = getLogger(__name__)
+
 __all__ = ["Gamma", "Exponential", "Hantush", "Polder", "FourParam",
            "DoubleExponential", "One", "Edelman", "HantushWellModel",
-           "Kraijenhoff"]
+           "Kraijenhoff", "Spline"]
 
 
 class RfuncBase:
@@ -154,9 +158,12 @@ class Gamma(RfuncBase):
 
     Notes
     -----
-    The impulse response function may be written as:
+    The impulse response function is:
 
     .. math:: \\theta(t) = At^{n-1} e^{-t/a}
+
+    where A, a, and n are parameters. The Gamma function is equal to the
+    Exponential function when n=1.
     """
     _name = "Gamma"
 
@@ -179,7 +186,7 @@ class Gamma(RfuncBase):
                                            np.nan, np.nan, True, name)
 
         # if n is too small, the length of response function is close to zero
-        parameters.loc[name + '_n'] = (1, 0.1, 100, True, name)
+        parameters.loc[name + '_n'] = (1, 0.01, 100, True, name)
         parameters.loc[name + '_a'] = (10, 0.01, 1e4, True, name)
         return parameters
 
@@ -213,9 +220,11 @@ class Exponential(RfuncBase):
 
     Notes
     -----
-    The impulse response function may be written as:
+    The impulse response function is:
 
     .. math:: \\theta(t) = A e^{-t/a}
+
+    where A and a are parameters.
     """
     _name = "Exponential"
 
@@ -255,7 +264,7 @@ class Exponential(RfuncBase):
 
 
 class HantushWellModel(RfuncBase):
-    """A special implementation of the Hantush well function for multiple
+    """An implementation of the Hantush well function for multiple pumping
     wells.
 
     Parameters
@@ -271,27 +280,23 @@ class HantushWellModel(RfuncBase):
 
     Notes
     -----
-    The Hantush well function is explained in [hantush_1955]_,
-    [veling_2010]_ and [asmuth_2008]_. The impulse response function may be
-    written as:
+    The impulse response function is:
 
-    .. math:: \\theta(t) = \\frac{A}{t} K_0 \\left( \\frac{r^2}{4 \\lambda^2} \\right) \\exp(-t/a - ab/t)
-    .. math:: p[0] = A = \\frac{1}{4 \\pi T}
-    .. math:: p[1] = a = cS
-    .. math:: p[2] = b = 1^2 / (4 \\lambda^2)
-    .. math:: p[3] = r \\text{(not optimized)}
-    where :math:`\\lambda = \\sqrt{Tc}`
+    .. math:: \\theta(r, t) = \\frac{A}{2t} \\exp(-t/a - abr^2/t)
 
-    The parameter r (distance from the well to the observation point)
-    is passed as a known value, and is used to scale the response function.
-    The optimized parameters are slightly different from the original
-    Hantush implementation:
+    where r is the distance from the pumping well to the observation point
+    and must be specified. A, a, and b are parameters, which are slightly
+    different from the Hantush response function. The gain is defined as:
+    
+    :math:`\\text{gain} = A K_0 \\left( 2r \\sqrt(b) \\right)`
+    
+    The implementation used here is explained in  [veling_2010]_.
 
-    - A: in the original Hantush parameter A is the gain. Now the gain is
-      equal to :math:`\\text{gain} = A K_0 ( \\sqrt(4 r^2 b) )`
-    - a: is the same  :math:`a = cS`
-    - b: is the same, but :math:`r` is set to 1 if passed separately,
-      :math:`b = 1^2 / (4 \\lambda^2)`
+    References
+    ----------
+
+    .. [veling_2010] Veling, E. J. M., & Maas, C. (2010). Hantush well function
+       revisited. Journal of hydrology, 393(3), 381-388.
     """
     _name = "HantushWellModel"
 
@@ -317,13 +322,23 @@ class HantushWellModel(RfuncBase):
         parameters.loc[name + '_a'] = (100, 1e-3, 1e4, True, name)
         # set initial and bounds for b taking into account distances
         binit = 1.0 / np.mean(self.distances) ** 2
-        bmin = 1e-4 / np.max(self.distances) ** 2
+        bmin = 1e-6 / np.max(self.distances) ** 2
         bmax = 25. / np.min(self.distances) ** 2
         parameters.loc[name + '_b'] = (binit, bmin, bmax, True, name)
         return parameters
 
+    @staticmethod
+    def _get_distance_from_params(p):
+        if len(p) == 3:
+            r = 1.0
+            logger.info("No distance passed to HantushWellModel, "
+                        "assuming r=1.0.")
+        else:
+            r = p[3]
+        return r
+
     def get_tmax(self, p, cutoff=None):
-        r = 1.0 if len(p) == 3 else p[3]
+        r = self._get_distance_from_params(p)
         # approximate formula for tmax
         if cutoff is None:
             cutoff = self.cutoff
@@ -335,14 +350,13 @@ class HantushWellModel(RfuncBase):
         else:
             return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
 
-    @staticmethod
-    def gain(p):
-        r = 1.0 if len(p) == 3 else p[3]
-        rho = np.sqrt(4 * r ** 2 * p[2])
+    def gain(self, p):
+        r = self._get_distance_from_params(p)
+        rho = 2 * r * np.sqrt(p[2])
         return p[0] * k0(rho)
 
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
-        r = 1.0 if len(p) == 3 else p[3]
+        r = self._get_distance_from_params(p)
         cS = p[1]
         rho = np.sqrt(4 * r ** 2 * p[2])
         k0rho = k0(rho)
@@ -388,15 +402,19 @@ class HantushWellModel(RfuncBase):
         Returns
         -------
         var_gain : float or np.array
-            variance of the gain calculated based on propagation of
-            uncertainty of parameters A and b.
+            variance of the gain calculated based on propagation of uncertainty
+            of parameters A and b.
+
+        See Also
+        --------
+        ps.WellModel.variance_gain
         """
         var_gain = (
-                (k0(2 * np.sqrt(r ** 2 * b))) ** 2 * var_A +
-                (-A * r * k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(
-                    b)) ** 2 * var_b -
-                2 * A * r * k0(2 * np.sqrt(r ** 2 * b)) *
-                k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(b) * cov_Ab
+            (k0(2 * np.sqrt(r ** 2 * b))) ** 2 * var_A +
+            (-A * r * k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(
+                b)) ** 2 * var_b -
+            2 * A * r * k0(2 * np.sqrt(r ** 2 * b)) *
+            k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(b) * cov_Ab
         )
         return var_gain
 
@@ -417,28 +435,20 @@ class Hantush(RfuncBase):
 
     Notes
     -----
-    The Hantush well function is explained in [hantush_1955]_, [veling_2010]_
-    and [asmuth_2008]_. The impulse response function may be written as:
+    The impulse response function is:
 
-    .. math:: \\theta(t) = \\frac{A}{t} \\exp(-t/a - ab/t)
-    .. math:: p[0] = A = \\frac{1}{2 \\pi T}
-    .. math:: p[1] = a = cS
-    .. math:: p[2] = b = r^2 / (4 \\lambda^2)
+    .. math:: \\theta(t) = \\frac{A}{2t \\text{K}_0\\left(2\\sqrt{b} \\right)}
+              \\exp(-t/a - ab/t)
 
-    where :math:`\\lambda = \\sqrt{Tc}`
+    where A, a, and b are parameters.
+    
+    The implementation used here is explained in  [veling_2010]_.
 
     References
     ----------
-    .. [hantush_1955] Hantush, M. S., & Jacob, C. E. (1955). Non‐steady
-       radial flow in an infinite leaky aquifer. Eos, Transactions American
-       Geophysical Union, 36(1), 95-100.
 
     .. [veling_2010] Veling, E. J. M., & Maas, C. (2010). Hantush well function
        revisited. Journal of hydrology, 393(3), 381-388.
-
-    .. [asmuth_2008] Von Asmuth, J. R., Maas, K., Bakker, M., & Petersen,
-       J. (2008). Modeling time series of ground water head fluctuations
-       subjected to multiple stresses. Ground Water, 46(1), 30-40.
     """
     _name = "Hantush"
 
@@ -594,6 +604,9 @@ class One(RfuncBase):
             parameters.loc[name + '_d'] = (
                 self.meanstress, np.nan, np.nan, True, name)
         return parameters
+
+    def get_tmax(self, p, cutoff=None):
+        return 0.
 
     def gain(self, p):
         return p[0]
@@ -900,7 +913,7 @@ class Kraijenhoff(RfuncBase):
     The Kraijenhoff van de Leur function is explained in [Kraijenhoff]_.
     The impulse response function may be written as:
 
-    .. math:: \\theta(t) =  \\frac{4}{\pi S} \sum_{n=1,3,5...}^\infty \\frac{1}{n} e^{-n^2\\frac{t}{j}} \sin (\\frac{n\pi x}{L})
+    .. math:: \\theta(t) = \\frac{4}{\pi S} \sum_{n=1,3,5...}^\infty \\frac{1}{n} e^{-n^2\\frac{t}{j}} \sin (\\frac{n\pi x}{L})
 
     The function describes the response of a domain between two drainage
     channels. The function gives the same outcome as Bruggeman equation 133.15.
@@ -922,7 +935,6 @@ class Kraijenhoff(RfuncBase):
 
     .. [Bruggeman] G.A. Bruggeman (1999). Analytical solutions of
        geohydrological problems. Elsevier Science. Amsterdam, Eq. 133.15
-
     """
     _name = "Kraijenhoff"
 
@@ -963,8 +975,8 @@ class Kraijenhoff(RfuncBase):
         h = 0
         for n in range(self.n_terms):
             h += (-1) ** n / (2 * n + 1) ** 3 * \
-                 np.cos((2 * n + 1) * np.pi * p[2]) * \
-                 np.exp(-(2 * n + 1) ** 2 * t / p[1])
+                np.cos((2 * n + 1) * np.pi * p[2]) * \
+                np.exp(-(2 * n + 1) ** 2 * t / p[1])
         s = p[0] * (1 - (8 / (np.pi ** 3 * (1 / 4 - p[2] ** 2)) * h))
         return s
 
@@ -986,17 +998,17 @@ class Spline(RfuncBase):
     t: list
         times at which the response function is defined
     kind: string
-        See scipy.interpolate.interp1d. Most usefull for a smooth response
-        function are ‘quadratic’, ‘cubic’.
+        see scipy.interpolate.interp1d. Most useful for a smooth response
+        function are ‘quadratic’ and ‘cubic’.
 
     Notes
     -----
     The spline response function generates a response function from factors at
-    t = 1, 2, 4, 8, 16, 32, 64, 128, 256, 512 and 1024 days. This response
-    function is more data-driven than existing response functions and has no
-    physical background. Therefore it can primarily be used to compare to other
-    more physical response functions, that probably describe the groundwater
-    system better.
+    t = 1, 2, 4, 8, 16, 32, 64, 128, 256, 512 and 1024 days by default. This
+    response function is more data-driven than existing response functions and
+    has no physical background. Therefore it can primarily be used to compare
+    to other more physical response functions, that probably describe the
+    groundwater system better.
     """
     _name = "Spline"
 

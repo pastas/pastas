@@ -296,6 +296,10 @@ def timestep_weighted_resample_fast(series0, freq):
 def get_equidistant_series(series, freq, minimize_data_loss=False):
     """Get equidistant timeseries using nearest reindexing.
 
+    This method will shift observations to the nearest equidistant timestep to
+    create an equidistant timeseries, if necessary. Each observation is
+    guaranteed to only be used once in the equidistant timeseries.
+
     Parameters
     ----------
     series : pandas.Series
@@ -317,13 +321,10 @@ def get_equidistant_series(series, freq, minimize_data_loss=False):
     Notes
     -----
     This method creates an equidistant timeseries with specified freq
-    using nearest sampling, with additional filling logic that ensures
-    each original measurement is only included once in the new timeseries.
-    Values are filled as close as possible to their original timestamp
-    in the new equidistant timeseries.
-
-    This might also be a very elaborate rewrite of a pandas one-liner...
-
+    using nearest sampling (meaning observations can be shifted in time), 
+    with additional filling logic that ensures each original measurement
+    is only included once in the new timeseries. Values are filled as close
+    as possible to their original timestamp in the new equidistant timeseries.
     """
 
     # build new equidistant index
@@ -368,21 +369,22 @@ def get_equidistant_series(series, freq, minimize_data_loss=False):
         # fill value
         s.iloc[first_dupe + i_nearest] = series.values[i]
 
-    # This next part is a pretty ugly bit of code to fill up any
+    # This next part is an ugly bit of code to fill up any
     # nans if there are unused values in the original timeseries
-    # that lie close enough to our missing datapoint
+    # that lie close enough to our missing datapoint in the new equidisant
+    # series.
     if minimize_data_loss:
         # find remaining nans
         nanmask = s.isna()
         if nanmask.sum() > 0:
             # get unused (not sampled) timestamps from original series
             unused = set(range(series.index.size)) - set(ind)
-            # dropna: do not consider unused nans
             if len(unused) > 0:
+                # dropna: do not consider unused nans
                 missing_ts = series.iloc[list(unused)].dropna().index
                 # loop through nan timestamps in new series
                 for t in s.loc[nanmask].index:
-                    # find closes unused value
+                    # find closest unused value
                     closest = np.argmin(np.abs(missing_ts - t))
                     # check if value is not farther away that freq to avoid
                     # weird behavior
@@ -440,7 +442,7 @@ def datenum_to_datetime(datenum):
     """
     days = datenum % 1.
     return datetime.fromordinal(int(datenum)) \
-           + timedelta(days=days) - timedelta(days=366)
+        + timedelta(days=days) - timedelta(days=366)
 
 
 def datetime2matlab(tindex):

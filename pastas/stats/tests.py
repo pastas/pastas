@@ -6,12 +6,11 @@ residual time series of a calibrated (Pastas) model.
 
 from logging import getLogger
 
-import matplotlib.pyplot as plt
 from numpy import arange, cumsum, finfo, median, nan, sqrt, zeros
 from pandas import DataFrame, date_range, infer_freq
 from pastas.stats.core import acf as get_acf
 from pastas.utils import _get_time_offset, get_equidistant_series
-from scipy.stats import chi2, norm, normaltest, probplot, shapiro
+from scipy.stats import chi2, norm, normaltest, shapiro
 
 logger = getLogger(__name__)
 __all__ = ["durbin_watson", "ljung_box", "runs_test", "stoffer_toloi",
@@ -368,8 +367,8 @@ def stoffer_toloi(series, lags=15, nparam=0, freq="D",
         # warn if more than 10% of data is lost in sample
         if s.dropna().index.size < (0.9 * series.dropna().index.size):
             msg = ("While selecting equidistant values from series with "
-                   "`as_freq` more than 10\% of values were dropped. Consider "
-                   "setting `make_equidistant` to True."
+                   "`as_freq` more than 10 %% of values were dropped. "
+                   "Consider setting `make_equidistant` to True."
                    )
             logger.warning(msg)
 
@@ -401,7 +400,7 @@ def stoffer_toloi(series, lags=15, nparam=0, freq="D",
     # remove correlation where no observations are available (de = 0)
     da = da[re != 0][:lags]
     re = re[re != 0][:lags]
-    k = arange(1, lags + 1)
+    k = arange(1, len(re) + 1)
 
     # Compute the Q-statistic
     qm = nobs ** 2 * sum(da * re ** 2 / (nobs - k))
@@ -491,195 +490,25 @@ def diagnostics(series, alpha=0.05, nparam=0, lags=15, stats=(),
         stat, p = stoffer_toloi(series, nparam=nparam, lags=lags)
         df.loc["Stoffer-Toloi", cols] = "Autocorr.", stat, p
 
-    df["Reject H0"] = df.loc[:, "P-value"] < alpha
+    df["Reject H0 ($\\alpha$={:.2f})".format(alpha)] = \
+        df.loc[:, "P-value"] < alpha
     df[["Statistic", "P-value"]] = \
         df[["Statistic", "P-value"]].applymap(float_fmt.format)
 
     return df
 
 
-def plot_acf(series, alpha=0.05, lags=365, acf_options=None, smooth_conf=True,
-             ax=None, figsize=(5, 2)):
-    """Method to plot the autocorrelation function.
-
-    Parameters
-    ----------
-    series: pandas.Series
-        Residual series to plot the autocorrelation function for.
-    alpha: float, optional
-        Significance level to calculate the (1-alpha)-confidence intervals.
-        For 95% confidence intervals, alpha should be 0.05.
-    lags: int, optional
-        Maximum number of lags (in days) to compute the autocorrelation for.
-    acf_options: dict, optional
-        Dictionary with keyword arguments passed on to pastas.stats.acf.
-    smooth_conf: bool, optional
-        For irregular time series the confidence interval may be
-    ax: matplotlib.axes.Axes, optional
-        Matplotlib Axes instance to plot the ACF on. A new Figure and Axes
-        is created when no value for ax is provided.
-    figsize: Tuple, optional
-        2-D Tuple to determine the size of the figure created. Ignored if ax
-        is also provided.
-
-    Returns
-    -------
-    ax: matplotlib.axes.Axes
-
-    Examples
-    --------
-    >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
-    >>>                 data=np.random.rand(1000))
-    >>> ps.stats.plot_acf(res)
-    """
-    if ax is None:
-        _, ax = plt.subplots(1, 1, figsize=figsize)
-
-    # Plot the autocorrelation
-    if acf_options is None:
-        acf_options = {}
-    r = get_acf(series, full_output=True, alpha=alpha, lags=lags,
-                **acf_options)
-
-    if r.empty:
-        raise ValueError("ACF result is empty. Check input arguments "
-                         "for calculating acf!")
-
-    if smooth_conf:
-        conf = r.stderr.rolling(10, min_periods=1).mean().values
-    else:
-        conf = r.stderr.values
-
-    ax.fill_between(r.index.days, conf, -conf, alpha=0.3)
-    ax.vlines(r.index.days, [0], r.loc[:, "acf"].values, color="k")
-
-    ax.set_xlabel("Lag [Days]")
-    ax.set_xlim(0, r.index.days.max())
-    ax.set_ylabel('Autocorrelation [-]')
-    ax.set_title("Autocorrelation plot")
-
-    ax.grid()
-    return ax
+def plot_acf():
+    raise DeprecationWarning("The method plot_acf is deprecated. Use "
+                             "'ps.plot.acf' instead.")
 
 
-def plot_diagnostics(series, alpha=0.05, bins=50, acf_options=None,
-                     figsize=(10, 6), **kwargs):
-    """Plot a window that helps in diagnosing basic model assumptions.
-
-    Parameters
-    ----------
-    series: pandas.Series
-        Pandas Series with the residual time series to diagnose.
-    alpha: float, optional
-        Significance level to calculate the (1-alpha)-confidence intervals.
-    bins: int optional
-        Number of bins used for the histogram. 50 is default.
-    acf_options: dict, optional
-        Dictionary with keyword arguments passed on to pastas.stats.acf.
-    figsize: tuple, optional
-        Tuple with the height and width of the figure in inches.
-    **kwargs: dict, optional
-        Optional keyword arguments, passed on to plt.figure.
-
-    Returns
-    -------
-    axes: matplotlib.axes.Axes
-
-    Examples
-    --------
-    >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
-    >>>                 data=np.random.normal(0, 1, 1000))
-    >>> ps.stats.plot_diagnostics(res)
-
-    Note
-    ----
-    The two right-hand side plots assume that the noise or residuals follow a
-    Normal distribution.
-
-    See Also
-    --------
-    pastas.stats.acf
-        Method that computes the autocorrelation.
-    scipy.stats.probplot
-        Method use to plot the probability plot.
-    """
-    # Create the figure and axes
-    fig = plt.figure(figsize=figsize, **kwargs)
-    shape = (2, 3)
-    ax = plt.subplot2grid(shape, (0, 0), colspan=2, rowspan=1)
-    ax1 = plt.subplot2grid(shape, (1, 0), colspan=2, rowspan=1)
-    ax2 = plt.subplot2grid(shape, (0, 2), colspan=1, rowspan=1)
-    ax3 = plt.subplot2grid(shape, (1, 2), colspan=1, rowspan=1)
-
-    # Plot the residuals or noise series
-    ax.axhline(0, c="k")
-    series.plot(ax=ax)
-    ax.set_ylabel(series.name)
-    ax.set_xlim(series.index.min(), series.index.max())
-    ax.set_title(f"{series.name} (n={series.size :.0f}, $\\mu$"
-                 f"={series.mean() :.2f})")
-    ax.grid()
-    ax.tick_params(axis='x', labelrotation=0)
-    for label in ax.get_xticklabels():
-        label.set_horizontalalignment('center')
-
-    # Plot the autocorrelation
-    plot_acf(series, alpha=alpha, acf_options=acf_options, ax=ax1)
-
-    # Plot the histogram for normality and add a 'best fit' line
-    _, bins, _ = ax2.hist(series.values, bins=bins, density=True)
-    y = norm.pdf(bins, series.mean(), series.std())
-    ax2.plot(bins, y, 'k--')
-    ax2.set_ylabel("Probability density")
-    ax2.set_title("Histogram")
-
-    # Plot the probability plot
-    probplot(series, plot=ax3, dist="norm", rvalue=True)
-    c = ax.get_lines()[1].get_color()
-    ax3.get_lines()[0].set_color(c)
-    ax3.get_lines()[1].set_color("k")
-
-    plt.tight_layout()
-    return fig.axes
+def plot_diagnostics():
+    raise DeprecationWarning("The method plot_diagnostics is deprecated."
+                             " Use 'ps.plot.diagnostics' instead.")
 
 
-def plot_cum_frequency(obs, sim=None, ax=None, figsize=(5, 2)):
-    """Create a plot of the cumulative frequency plot.
-
-    Parameters
-    ----------
-    sim: pandas.Series
-        Series with the simulated values.
-    obs: pandas.Series
-        Series with the observed values.
-    ax: matplotlib.axes.Axes, optional
-        Matplotlib Axes instance to create the plot on. A new Figure and Axes
-        is created when no value for ax is provided.
-    figsize: Tuple, optional
-        2-D Tuple to determine the size of the figure created. Ignored if ax
-        is also provided.
-
-    Returns
-    -------
-    ax: matplotlib.axes.Axes
-
-    Examples
-    --------
-    >>> obs = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
-    >>>                 data=np.random.normal(0, 1, 1000))
-    >>> ps.stats.plot_cum_frequency(obs)
-    """
-    if ax is None:
-        _, ax = plt.subplots(1, 1, figsize=figsize)
-
-    ax.plot(obs.sort_values(), arange(0, obs.size) / obs.size * 100,
-            color="k", marker=".", linestyle=" ")
-    if sim is not None:
-        ax.plot(sim.sort_values(), arange(0, sim.size) / sim.size * 100)
-    ax.legend(["Observations", "Simulation"])
-    ax.set_xlabel("Head")
-    ax.set_ylabel("Cum. Frequency [%]")
-    ax.grid()
-    plt.tight_layout()
-
-    return ax
+def plot_cum_frequency():
+    raise DeprecationWarning("The method plot_cum_frequency is "
+                             "deprecated. Use 'ps.plot.cum_frequency' "
+                             "instead.")
