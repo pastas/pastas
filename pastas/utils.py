@@ -1,6 +1,7 @@
 """This module contains utility functions for working with Pastas models."""
 
 import logging
+from logging import handlers
 from platform import platform
 from datetime import datetime, timedelta
 
@@ -562,9 +563,9 @@ def add_file_handlers(logger=None, filenames=('info.log', 'errors.log'),
 
     # create file handlers, set the level & formatter, and add it to the logger
     for filename, level in zip(filenames, levels):
-        fh = logging.handlers.RotatingFileHandler(filename, maxBytes=maxBytes,
-                                                  backupCount=backupCount,
-                                                  encoding=encoding)
+        fh = handlers.RotatingFileHandler(filename, maxBytes=maxBytes,
+                                          backupCount=backupCount,
+                                          encoding=encoding)
         fh.setLevel(level)
         fh.setFormatter(formatter)
         logger.addHandler(fh)
@@ -583,7 +584,7 @@ def remove_file_handlers(logger=None):
     if logger is None:
         logger = logging.getLogger('pastas')
     for handler in logger.handlers:
-        if isinstance(handler, logging.handlers.RotatingFileHandler):
+        if isinstance(handler, handlers.RotatingFileHandler):
             logger.removeHandler(handler)
 
 
