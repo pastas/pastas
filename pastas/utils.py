@@ -1,8 +1,8 @@
 """This module contains utility functions for working with Pastas models."""
 
 import logging
+from platform import platform
 from datetime import datetime, timedelta
-from logging import handlers
 
 import numpy as np
 from pandas import Series, Timedelta, Timestamp, date_range, to_datetime
@@ -321,7 +321,7 @@ def get_equidistant_series(series, freq, minimize_data_loss=False):
     Notes
     -----
     This method creates an equidistant timeseries with specified freq
-    using nearest sampling (meaning observations can be shifted in time), 
+    using nearest sampling (meaning observations can be shifted in time),
     with additional filling logic that ensures each original measurement
     is only included once in the new timeseries. Values are filled as close
     as possible to their original timestamp in the new equidistant timeseries.
@@ -562,7 +562,7 @@ def add_file_handlers(logger=None, filenames=('info.log', 'errors.log'),
 
     # create file handlers, set the level & formatter, and add it to the logger
     for filename, level in zip(filenames, levels):
-        fh = handlers.RotatingFileHandler(filename, maxBytes=maxBytes,
+        fh = logging.handlers.RotatingFileHandler(filename, maxBytes=maxBytes,
                                           backupCount=backupCount,
                                           encoding=encoding)
         fh.setLevel(level)
@@ -583,33 +583,40 @@ def remove_file_handlers(logger=None):
     if logger is None:
         logger = logging.getLogger('pastas')
     for handler in logger.handlers:
-        if isinstance(handler, handlers.RotatingFileHandler):
+        if isinstance(handler, logging.handlers.RotatingFileHandler):
             logger.removeHandler(handler)
 
 
-def validate_name(name):
+def validate_name(name, raise_error=False):
     """Method to check user-provided names and log a warning if wrong.
 
     Parameters
     ----------
     name: str
-        String with the name to check for 'illegal' characters.
+        String with the name to check for illegal characters.
+    raise_error: bool
+        raise Exception error if illegal character is found, default
+        is False which only logs a warning
 
     Returns
     -------
     name: str
         Unchanged name string
 
-    Notes
-    -----
-    Forbidden characters are: "/", "\", " ".
     """
-    name = str(name)  # Make sure it is a string
+    ilchar = ["/", "\\", " ", ".", "'", '"', "`",]
+    if 'windows' in platform().lower():
+        ilchar += ["#", "%", "&", "@", "{", "}", "|", "$",
+                   "*", "<", ">", "?", "!", ":", "=", "+"]
 
-    for char in ["\\", "/", " "]:
+    name = str(name)
+    for char in ilchar:
         if char in name:
-            logger.warning("User-provided name '%s' contains illegal "
-                           "character %s", name, char)
+            msg = f"User-provided name '{name}' contains illegal character. Please remove {char} from name."
+            if raise_error:
+                raise Exception(msg)
+            else:
+                logger.warning(msg)
 
     return name
 
