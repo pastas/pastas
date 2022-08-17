@@ -6,7 +6,8 @@ from logging import getLogger
 from os import getlogin
 
 import numpy as np
-from pandas import DataFrame, Series, Timedelta, Timestamp, date_range, concat
+from pandas import (DataFrame, Series, Timedelta, Timestamp,
+                    date_range, concat, to_timedelta)
 
 from .decorators import get_stressmodel
 from .io.base import _load_model, dump
@@ -88,7 +89,8 @@ class Model:
             "tmin": None,
             "tmax": None,
             "freq": freq,
-            "warmup": Timedelta(3650, freq),
+            "warmup": (3650 * to_timedelta(freq) if freq[0].isdigit()
+                       else Timedelta(3650, freq)),
             "time_offset": Timedelta(0),
             "noise": noisemodel,
             "solver": None,
@@ -364,7 +366,7 @@ class Model:
             istart += 1
         if self.transform:
             sim = self.transform.simulate(sim, p[istart:istart +
-                                                 self.transform.nparam])
+                                                        self.transform.nparam])
 
         # Respect provided tmin/tmax at this point, since warmup matters for
         # simulation but should not be returned, unless return_warmup=True.
@@ -1162,7 +1164,7 @@ class Model:
         # use warmup
         if tmin:
             tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + \
-                self.settings["time_offset"]
+                        self.settings["time_offset"]
         else:
             tmin_warm = None
 
@@ -1236,6 +1238,57 @@ class Model:
         ml.del_transform()
         sim_org = ml.simulate(tmin=tmin, tmax=tmax)
         return sim - sim_org
+
+    def get_output_series(self, tmin=None, tmax=None, add_contributions=True,
+                          split=True):
+        """Method to get all the modeled output time series from the Model.
+
+        Parameters
+        ----------
+        tmin: str, optional
+            String with a start date for the simulation period (E.g. '1980').
+            If none is provided, the tmin from the oseries is used.
+        tmax: str, optional
+            String with an end date for the simulation period (E.g. '2010').
+            If none is provided, the tmax from the oseries is used.
+        add_contributions: bool, optional
+            Add the contributions from the different stresses or not.¬
+        split: bool, optional
+            Passed on to ml.get_contributions. Split the contribution from
+            recharge into evaporation and precipitation. See also
+            ml.get_contributions.
+
+        Returns
+        -------
+        df: pandas.DataFrame
+            Pandas DataFrame with the time series as columns and DatetimeIndex.
+
+        Notes
+        -----
+        Export the observed, simulated time series, the noise and residuals
+        series, and the contributions from the different stressmodels.
+
+        Examples
+        --------
+        >>> df = ml.get_output_series(tmin="2000", tmax="2010")
+        >>> df.to_csv("fname.csv")
+        """
+        obs = self.observations(tmin=tmin, tmax=tmax)
+        obs.name = "Head_Calibration"
+
+        sim = self.simulate(tmin=tmin, tmax=tmax)
+        res = self.residuals(tmin=tmin, tmax=tmax)
+        noise = self.noise(tmin=tmin, tmax=tmax)
+
+        df = [obs, sim, res, noise]
+
+        if add_contributions:
+            contribs = self.get_contributions(tmin=tmin, tmax=tmax, split=split)
+            for contrib in contribs:
+                df.append(contrib)
+
+        df = concat(df, axis=1)
+        return df
 
     def _get_response(self, block_or_step, name, p=None, dt=None, add_0=False,
                       **kwargs):
@@ -1439,7 +1492,7 @@ class Model:
         # use warmup
         if tmin:
             tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + \
-                self.settings["time_offset"]
+                        self.settings["time_offset"]
         else:
             tmin_warm = None
 
@@ -1561,7 +1614,7 @@ class Model:
         for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
             basic += (
                 f"{val1:<8}{val2:<23}{val3:<9}"
-                f"{val4:>{wspace+len_val4}}\n"
+                f"{val4:>{wspace + len_val4}}\n"
             )
 
         # Create the parameters block
@@ -1614,9 +1667,9 @@ class Model:
             # create message
             if len(msg) > 0:
                 msg = [
-                    f"\n\nWarnings! ({len(msg)})\n"
-                    f"{string.format('', fill='=', align='>', width=width)}"
-                ] + msg
+                          f"\n\nWarnings! ({len(msg)})\n"
+                          f"{string.format('', fill='=', align='>', width=width)}"
+                      ] + msg
                 warnings = "\n".join(msg)
             else:
                 warnings = ""
