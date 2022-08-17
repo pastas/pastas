@@ -640,7 +640,7 @@ class TrackSolve:
         # get observations
         self.obs = self.ml.observations(tmin=self.tmin, tmax=self.tmax)
         # calculate EVP
-        self.evp = np.array([evp(obs=self.obs.values, res=res.values)])
+        self.evp = np.array([evp(obs=self.obs, res=res)])
 
     def track_solve(self, params):
         """Append parameters to self.parameters DataFrame and update itercount,
@@ -671,7 +671,7 @@ class TrackSolve:
             self.rmse_noise = np.r_[self.rmse_noise, rmse(res=n_res)]
 
         # recalculate EVP
-        self.evp = np.r_[self.evp, evp(obs=self.obs.values, res=r_res.values)]
+        self.evp = np.r_[self.evp, evp(obs=self.obs, res=r_res)]
 
     def _update_axes(self):
         """extend xlim if number of iterations exceeds current window."""
