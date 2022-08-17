@@ -102,7 +102,7 @@ def test_load_model():
     for icol in ["initial", "optimal", "pmin", "pmax", "stderr"]:
         ml.parameters[icol] = ml.parameters[icol].astype(float)
     ml.parameters["vary"] = ml.parameters["vary"].astype(bool)
-    
+
     # check if parameters and pcov dataframes are equal
     assert ml.parameters.equals(ml2.parameters)
     assert ml.fit.pcov.equals(ml2.fit.pcov)
@@ -160,4 +160,16 @@ def test_noise():
 def test_observations():
     ml = test_add_stressmodel()
     ml.observations()
+    return
+
+
+def test_get_output_series():
+    ml = test_add_stressmodel()
+    ml.get_output_series()
+    return
+
+
+def test_get_output_series_arguments():
+    ml = test_add_stressmodel()
+    ml.get_output_series(split=False, add_contributions=False)
     return
