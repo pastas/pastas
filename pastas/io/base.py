@@ -52,7 +52,6 @@ def load(fname, **kwargs):
 def _load_model(data):
     """Internal method to create a model from a dictionary."""
     # Create model
-    _remove_keyword(data["oseries"])
     oseries = ps.TimeSeries(**data["oseries"])
 
     if "constant" in data.keys():
@@ -113,13 +112,10 @@ def _load_model(data):
                 ps.recharge, ts["recharge"])(**recharge_kwargs)
         if "stress" in ts.keys():
             for i, stress in enumerate(ts["stress"]):
-                _remove_keyword(stress)
                 ts["stress"][i] = ps.TimeSeries(**stress)
         if "prec" in ts.keys():
-            _remove_keyword(ts["prec"])
             ts["prec"] = ps.TimeSeries(**ts["prec"])
         if "evap" in ts.keys():
-            _remove_keyword(ts["evap"])
             ts["evap"] = ps.TimeSeries(**ts["evap"])
         if "temp" in ts.keys() and ts["temp"] is not None:
             ts["temp"] = ps.TimeSeries(**ts["temp"])
@@ -182,11 +178,3 @@ def dump(fname, data, **kwargs):
     ext = path.splitext(fname)[1]
     dump_mod = import_module("pastas.io" + ext)
     return dump_mod.dump(fname, data, **kwargs)
-
-
-def _remove_keyword(data):
-    if "to_daily_unit" in data["settings"].keys():
-        logger.warning("The key 'to_daily_unit' is removed. This "
-                       "file will not work from Pastas 0.17.0. Make "
-                       "sure to save your model again to a .pas-file.")
-        data["settings"].pop("to_daily_unit")
