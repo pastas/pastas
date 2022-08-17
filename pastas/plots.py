@@ -41,7 +41,7 @@ def compare(models, tmin=None, tmax=None, block_or_step='step',
     adjust_height: bool, optional
         Adjust the height of the graphs, so that the vertical scale of all
         the subplots on the left is equal. Default is True, in which case the
-        axes are not rescaled to include all data, so certain data might 
+        axes are not rescaled to include all data, so certain data might
         not be visible. Set to False to ensure you can see all data.
     return_warmup: bool, optional
         Show the warmup-period. Default is false.
@@ -78,7 +78,6 @@ def compare(models, tmin=None, tmax=None, block_or_step='step',
     ax_res = axes[1]  # model residuals
     ax_table = axes[-1]  # parameters table
     axes_sm = axes[2:-1]  # stressmodels
-    ax_resp_max = [axes[3].get_xlim()[1]] 
 
     # get second model
     for j, iml in enumerate(models_sorted[1:], start=1):
@@ -127,8 +126,6 @@ def compare(models, tmin=None, tmax=None, block_or_step='step',
                                   ncol=2, frameon=False)
                 plt.sca(ax_contrib)
                 plt.title("")
-                ax_resp_max.append(response.index[-1])
-                ax_resp.set_xlim(right=max(ax_resp_max))
 
                 # recalculate axes limits
                 if not adjust_height:
@@ -409,14 +406,18 @@ def acf(series, alpha=0.05, lags=365, acf_options=None, smooth_conf=True,
     return ax
 
 
-def diagnostics(series, alpha=0.05, bins=50, acf_options=None,
-                figsize=(10, 6), fig=None, **kwargs):
+def diagnostics(series, sim=None, alpha=0.05, bins=50, acf_options=None,
+                figsize=(10, 5), fig=None, heteroscedasicity=True,
+                **kwargs):
     """Plot that helps in diagnosing basic model assumptions.
 
     Parameters
     ----------
     series: pandas.Series
         Pandas Series with the residual time series to diagnose.
+    sim: pandas.Series, optional
+        Pandas Series with the simulated time series. Used to diagnose on
+        heteroscedasticity. Ignored if heteroscedasticity is set to False.
     alpha: float, optional
         Significance level to calculate the (1-alpha)-confidence intervals.
     bins: int optional
@@ -427,6 +428,9 @@ def diagnostics(series, alpha=0.05, bins=50, acf_options=None,
         Tuple with the height and width of the figure in inches.
     fig: Matplotib.Figure instance, optional
         Optionally provide a Matplotib.Figure instance to plot onto.
+    heteroscedasicity: bool, optional
+        Create two additional subplots to check for heteroscedasticity. If
+        true, a simulated time series has to be provided with the sim argument.
     **kwargs: dict, optional
         Optional keyword arguments, passed on to plt.figure.
 
@@ -456,7 +460,18 @@ def diagnostics(series, alpha=0.05, bins=50, acf_options=None,
     if fig is None:
         fig = plt.figure(figsize=figsize, constrained_layout=True, **kwargs)
 
-    gs = fig.add_gridspec(ncols=2, nrows=2, width_ratios=[2, 1])
+    if heteroscedasicity:
+        if sim is None:
+            msg = "A simulated time series has to be provided to make plots " \
+                  "to diagnose heteroscedasticity. Provide 'sim' argument."
+            logger.error(msg=msg)
+            raise KeyError(msg)
+
+        gs = fig.add_gridspec(ncols=3, nrows=2, width_ratios=[3, 1, 1])
+        ax4 = fig.add_subplot(gs[0, 2])
+        ax5 = fig.add_subplot(gs[1, 2])
+    else:
+        gs = fig.add_gridspec(ncols=2, nrows=2, width_ratios=[3, 1])
     ax = fig.add_subplot(gs[0, 0])
     ax2 = fig.add_subplot(gs[0, 1])
     ax1 = fig.add_subplot(gs[1, 0])
@@ -486,10 +501,28 @@ def diagnostics(series, alpha=0.05, bins=50, acf_options=None,
     ax2.set_title("Histogram")
 
     # Plot the probability plot
-    probplot(series, plot=ax3, dist="norm", rvalue=True)
+    _, (_, _, r) = probplot(series, plot=ax3, dist="norm", rvalue=False)
     c = ax.get_lines()[1].get_color()
     ax3.get_lines()[0].set_color(c)
     ax3.get_lines()[1].set_color("k")
+
+    # Plot R2 here because probplot has suboptimal positioning
+    ax3.text(0.5, 0.1, "$R^2={:.2f}$".format(r ** 2), transform=ax3.transAxes)
+
+    if heteroscedasicity and sim is not None:
+        # Plot residuals vs. simulation
+        sim = sim.loc[series.index]
+        ax4.plot(sim, series, marker=".", linestyle=" ", color=c, alpha=0.7)
+        ax4.grid()
+        ax4.set_xlabel("Simulated values")
+        ax4.set_ylabel("Residuals")
+
+        # Plot residuals vs. simulation
+        ax5.plot(sim, np.sqrt(series.abs()), marker=".", linestyle=" ",
+                 color=c, alpha=0.7)
+        ax5.set_xlabel("Simulated values")
+        ax5.set_ylabel("$\\sqrt{|Residuals|}$")
+        ax5.grid()
 
     return fig.axes
 
@@ -564,27 +597,35 @@ class TrackSolve:
 
     Examples
     --------
-    Create a TrackSolve object for your model:
+    Set matplotlib backend and interactive mode (put this at the top
+    of your script)::
 
-    >>> track = TrackSolve(ml)
+        import matplotlib as mpl
+        mpl.use("TkAgg")
+        import matplotlib.pyplot as plt
+        plt.ion()
 
-    Solve model and store intermediate optimization results:
+    Create a TrackSolve object for your model::
 
-    >>> ml.solve(callback=track.track_solve)
+        track = TrackSolve(ml)
 
-    Calculated parameters per iteration are stored in a pandas.DataFrame:
+    Solve model and store intermediate optimization results::
 
-    >>> track.parameters
+        ml.solve(callback=track.track_solve)
+
+    Calculated parameters per iteration are stored in a pandas.DataFrame::
+
+        track.parameters
 
     Other stored statistics include `track.evp` (explained variance
     percentage), `track.rmse_res` (root-mean-squared error of the residuals),
     `track.rmse_noise` (root mean squared error of the noise, only if
     noise=True).
 
-    To interactively plot model optimiztion progress while solving pass
-    `track.plot_track_solve` as callback function:
+    To interactively plot model optimization progress while solving pass
+    `track.plot_track_solve` as callback function::
 
-    >>> ml.solve(callback=track.plot_track_solve)
+        ml.solve(callback=track.plot_track_solve)
 
     Access the resulting figure through `track.fig`.
     """
@@ -630,6 +671,10 @@ class TrackSolve:
             noise = self._noise(self.ml.parameters.initial.values)
             n_rmse = np.sqrt(np.mean(noise ** 2))
             self.rmse_noise = np.array([n_rmse])
+        else:
+            # drop noise parameter if noisemodel exists but noise
+            # in settings is False
+            self.parameters.drop(columns=["noise_alpha"], inplace=True)
 
         # get observations
         self.obs = self.ml.observations(tmin=self.tmin,
@@ -758,6 +803,9 @@ class TrackSolve:
         self.fig, self.axes = plt.subplots(3, 1, figsize=figsize, dpi=dpi)
         self.ax0, self.ax1, self.ax2 = self.axes
 
+        # share x-axes between 2nd and 3rd axes
+        self.ax1.get_shared_x_axes().join(self.ax1, self.ax2)
+
         # plot oseries
         self.ax0.plot(self.obs.index, self.obs,
                       marker=".", ls="none", label="observations",
@@ -765,20 +813,24 @@ class TrackSolve:
 
         # plot simulation
         sim = self._simulate()
-        self.simplot, = self.ax0.plot(sim.index, sim, label="model")
+        self.simplot, = self.ax0.plot(sim.index, sim, label="simulation")
         self.ax0.set_ylabel("head")
         self.ax0.set_title(
             "Iteration: {0} (EVP: {1:.2%})".format(self.itercount,
                                                    self.evp[-1]))
         self.ax0.legend(loc=(0, 1), frameon=False, ncol=2)
+        omax = self.obs.max()
+        omin = self.obs.min()
+        vspace = 0.05 * (omax - omin)
+        self.ax0.set_ylim(bottom=omin - vspace, top=omax + vspace)
 
         # plot RMSE (residuals and/or residuals)
         plt.sca(self.ax1)
         plt.yscale("log")
         legend_handles = []
         self.r_rmse_plot_line, = self.ax1.plot(
-            range(self.itercount + 1), self.rmse_res, c="k", ls="solid",
-            label="Residuals")
+            [0], self.rmse_res[0:1], c="k", ls="solid",
+            label="residuals")
         self.r_rmse_plot_dot, = self.ax1.plot(
             self.itercount, self.rmse_res[-1], c="k", marker="o", ls="none")
         legend_handles.append(self.r_rmse_plot_line)
@@ -788,8 +840,8 @@ class TrackSolve:
 
         if self.ml.settings["noise"] and self.ml.noisemodel is not None:
             self.n_rmse_plot_line, = self.ax1.plot(
-                range(self.itercount + 1), self.rmse_noise, c="C0", ls="solid",
-                label="Noise")
+                [0], self.rmse_noise[0:1], c="C0", ls="solid",
+                label="noise")
             self.n_rmse_plot_dot, = self.ax1.plot(
                 self.itercount, self.rmse_res[-1], c="C0", marker="o",
                 ls="none")
@@ -804,10 +856,14 @@ class TrackSolve:
         self.param_plot_handles = []
         legend_handles = []
         for pname, row in self.ml.parameters.iterrows():
+            if pname.startswith("noise"):
+                if (not self.ml.settings["noise"] or
+                        self.ml.noisemodel is None):
+                    continue
             pa, = self.ax2.plot(
-                range(self.itercount + 1), np.abs(row.initial), marker=".",
+                [0], np.abs(row.initial), marker=".",
                 ls="none", label=pname)
-            pb, = self.ax2.plot(range(self.itercount + 1),
+            pb, = self.ax2.plot([0],
                                 np.abs(row.initial), ls="solid",
                                 c=pa.get_color())
             self.param_plot_handles.append((pa, pb))
@@ -825,6 +881,7 @@ class TrackSolve:
         for iax in [self.ax0, self.ax1, self.ax2]:
             iax.grid(visible=True)
 
+        self.fig.align_ylabels()
         self.fig.tight_layout()
         return self.fig
 
@@ -885,6 +942,34 @@ class TrackSolve:
                                                    self.evp[-1]))
         plt.pause(1e-10)
         self.fig.canvas.draw()
+
+    def plot_track_solve_history(self, fig=None):
+        """Plot optimization history.
+
+        Parameters
+        ----------
+        fig : matplotlib.pyplot.Figure, optional
+            figure handle, by default None, which constructs a new
+            figure with `self.initialize_figure()`
+
+        Returns
+        -------
+        axes : list of matplotlib.pyplot.Axes
+            list of axes handles in figure
+        """
+
+        if fig is None:
+            fig = self.initialize_figure()
+        self.plot_track_solve(self.ml.parameters.optimal.values)
+
+        self.fig.axes[1].autoscale(tight=False, axis="both")
+        self.fig.axes[2].autoscale(tight=False, axis="both")
+
+        self.fig.axes[1].set_xlim(left=0)
+        # because of bug with autoscaling log axis?
+        self.fig.axes[1].set_ylim(top=1.05 * self.rmse_res.max())
+
+        return fig.axes
 
 
 def _table_formatter_params(s):
