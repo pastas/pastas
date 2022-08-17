@@ -563,8 +563,8 @@ def add_file_handlers(logger=None, filenames=('info.log', 'errors.log'),
     # create file handlers, set the level & formatter, and add it to the logger
     for filename, level in zip(filenames, levels):
         fh = logging.handlers.RotatingFileHandler(filename, maxBytes=maxBytes,
-                                          backupCount=backupCount,
-                                          encoding=encoding)
+                                                  backupCount=backupCount,
+                                                  encoding=encoding)
         fh.setLevel(level)
         fh.setFormatter(formatter)
         logger.addHandler(fh)
@@ -604,7 +604,7 @@ def validate_name(name, raise_error=False):
         Unchanged name string
 
     """
-    ilchar = ["/", "\\", " ", ".", "'", '"', "`",]
+    ilchar = ["/", "\\", " ", ".", "'", '"', "`"]
     if 'windows' in platform().lower():
         ilchar += ["#", "%", "&", "@", "{", "}", "|", "$",
                    "*", "<", ">", "?", "!", ":", "=", "+"]
