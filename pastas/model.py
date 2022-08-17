@@ -1239,8 +1239,9 @@ class Model:
         sim_org = ml.simulate(tmin=tmin, tmax=tmax)
         return sim - sim_org
 
-    def get_output_series(self, tmin=None, tmax=None, split=True):
-        """Method to get all the modeled time series from the pastas Model.
+    def get_output_series(self, tmin=None, tmax=None, add_contributions=True,
+                          split=True):
+        """Method to get all the modeled output time series from the Model.
 
         Parameters
         ----------
@@ -1250,6 +1251,8 @@ class Model:
         tmax: str, optional
             String with an end date for the simulation period (E.g. '2010').
             If none is provided, the tmax from the oseries is used.
+        add_contributions: bool, optional
+            Add the contributions from the different stresses or not.¬
         split: bool, optional
             Passed on to ml.get_contributions. Split the contribution from
             recharge into evaporation and precipitation. See also
@@ -1257,7 +1260,7 @@ class Model:
 
         Returns
         -------
-        series: pandas.DataFrame
+        df: pandas.DataFrame
             Pandas DataFrame with the time series as columns and DatetimeIndex.
 
         Notes
@@ -1267,7 +1270,7 @@ class Model:
 
         Examples
         --------
-        >>> df = ml.get_all_series(tmin="2000", tmax="2010")  # return DataFrame
+        >>> df = ml.get_output_series(tmin="2000", tmax="2010")
         >>> df.to_csv("fname.csv")
         """
         obs = self.observations(tmin=tmin, tmax=tmax)
@@ -1277,15 +1280,15 @@ class Model:
         res = self.residuals(tmin=tmin, tmax=tmax)
         noise = self.noise(tmin=tmin, tmax=tmax)
 
-        contribs = self.get_contributions(tmin=tmin, tmax=tmax, split=split)
+        df = [obs, sim, res, noise]
 
-        series = [obs, sim, res, noise]
+        if add_contributions:
+            contribs = self.get_contributions(tmin=tmin, tmax=tmax, split=split)
+            for contrib in contribs:
+                df.append(contrib)
 
-        for contrib in contribs:
-            series.append(contrib)
-
-        series = concat(series, axis=1)
-        return series
+        df = concat(df, axis=1)
+        return df
 
     def _get_response(self, block_or_step, name, p=None, dt=None, add_0=False,
                       **kwargs):
