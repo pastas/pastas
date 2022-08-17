@@ -10,6 +10,7 @@ import numpy as np
 from pandas import DataFrame, Timestamp, concat, to_datetime, isna
 from scipy.stats import gaussian_kde, norm, probplot
 from pastas.stats.core import acf as get_acf
+from pastas.stats.metrics import rmse, evp
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ def compare(models, tmin=None, tmax=None, block_or_step='step',
     adjust_height: bool, optional
         Adjust the height of the graphs, so that the vertical scale of all
         the subplots on the left is equal. Default is True, in which case the
-        axes are not rescaled to include all data, so certain data might 
+        axes are not rescaled to include all data, so certain data might
         not be visible. Set to False to ensure you can see all data.
     return_warmup: bool, optional
         Show the warmup-period. Default is false.
@@ -94,8 +95,7 @@ def compare(models, tmin=None, tmax=None, block_or_step='step',
         if iml.settings["noise"]:
             noise = iml.noise(tmin=tmin[j], tmax=tmax[j])
             ax_res.plot(noise.index, noise, label="Noise" + str(j + 1),
-                        c=color,
-                        alpha=0.5)
+                        c=color, alpha=0.5)
         ax_res.legend(loc=(0, 1), ncol=4, frameon=False)
         # recalculate axes limits
         if not adjust_height:
@@ -116,8 +116,7 @@ def compare(models, tmin=None, tmax=None, block_or_step='step',
                 contrib = iml.get_contribution(sm_name, tmin=tmin[j],
                                                tmax=tmax[j])
                 ax_contrib.plot(contrib.index, contrib,
-                                label=f"{j + 1}",
-                                c=color)
+                                label=f"{j + 1}", c=color)
                 # plot the step-reponse
                 ax_resp.plot(response.index, response, c=color)
                 handles, labels = ax_contrib.get_legend_handles_labels()
@@ -561,7 +560,7 @@ class TrackSolve:
 
     Examples
     --------
-    Set matplotlib backend and interactive mode (put this at the top 
+    Set matplotlib backend and interactive mode (put this at the top
     of your script)::
 
         import matplotlib as mpl
@@ -627,24 +626,21 @@ class TrackSolve:
 
         # calculate RMSE residuals
         res = self._residuals(self.ml.parameters.initial.values)
-        r_rmse = np.sqrt(np.mean(res ** 2))
-        self.rmse_res = np.array([r_rmse])
+        self.rmse_res = np.array([rmse(res=res)])
 
         # calculate RMSE noise
         if self.ml.settings["noise"] and self.ml.noisemodel is not None:
             noise = self._noise(self.ml.parameters.initial.values)
-            n_rmse = np.sqrt(np.mean(noise ** 2))
-            self.rmse_noise = np.array([n_rmse])
+            self.rmse_noise = np.array([rmse(res=noise)])
         else:
             # drop noise parameter if noisemodel exists but noise
             # in settings is False
             self.parameters.drop(columns=["noise_alpha"], inplace=True)
 
         # get observations
-        self.obs = self.ml.observations(tmin=self.tmin,
-                                        tmax=self.tmax)
+        self.obs = self.ml.observations(tmin=self.tmin, tmax=self.tmax)
         # calculate EVP
-        self.evp = np.array([self._calc_evp(res.values, self.obs.values)])
+        self.evp = np.array([evp(obs=self.obs.values, res=res.values)])
 
     def track_solve(self, params):
         """Append parameters to self.parameters DataFrame and update itercount,
@@ -668,16 +664,14 @@ class TrackSolve:
 
         # calculate new RMSE values
         r_res = self._residuals(params)
-        self.rmse_res = np.r_[self.rmse_res, np.sqrt(np.mean(r_res ** 2))]
+        self.rmse_res = np.r_[self.rmse_res, rmse(res=r_res)]
 
         if self.ml.settings["noise"] and self.ml.noisemodel is not None:
             n_res = self._noise(params)
-            self.rmse_noise = np.r_[
-                self.rmse_noise, np.sqrt(np.mean(n_res ** 2))]
+            self.rmse_noise = np.r_[self.rmse_noise, rmse(res=n_res)]
 
         # recalculate EVP
-        self.evp = np.r_[self.evp,
-                         self._calc_evp(r_res.values, self.obs.values)]
+        self.evp = np.r_[self.evp, evp(obs=self.obs.values, res=r_res.values)]
 
     def _update_axes(self):
         """extend xlim if number of iterations exceeds current window."""
@@ -689,15 +683,6 @@ class TrackSolve:
         self.tmin = self.ml.settings["tmin"]
         self.tmax = self.ml.settings["tmax"]
         self.freq = self.ml.settings["freq"]
-
-    @staticmethod
-    def _calc_evp(res, obs):
-        """calculate evp."""
-        if obs.var() == 0.0:
-            evp = 1.
-        else:
-            evp = max(0.0, (1 - (res.var(ddof=0) / obs.var(ddof=0))))
-        return evp
 
     def _noise(self, params):
         """get noise.
@@ -780,7 +765,7 @@ class TrackSolve:
         self.simplot, = self.ax0.plot(sim.index, sim, label="simulation")
         self.ax0.set_ylabel("head")
         self.ax0.set_title(
-            "Iteration: {0} (EVP: {1:.2%})".format(self.itercount,
+            "Iteration: {0} (EVP: {1:.2f}%)".format(self.itercount,
                                                    self.evp[-1]))
         self.ax0.legend(loc=(0, 1), frameon=False, ncol=2)
         omax = self.obs.max()
@@ -793,8 +778,7 @@ class TrackSolve:
         plt.yscale("log")
         legend_handles = []
         self.r_rmse_plot_line, = self.ax1.plot(
-            [0], self.rmse_res[0:1], c="k", ls="solid",
-            label="residuals")
+            [0], self.rmse_res[0:1], c="k", ls="solid", label="residuals")
         self.r_rmse_plot_dot, = self.ax1.plot(
             self.itercount, self.rmse_res[-1], c="k", marker="o", ls="none")
         legend_handles.append(self.r_rmse_plot_line)
@@ -902,7 +886,7 @@ class TrackSolve:
 
         # update title
         self.ax0.set_title(
-            "Iteration: {0} (EVP: {1:.2%})".format(self.itercount,
+            "Iteration: {0} (EVP: {1:.2f}%)".format(self.itercount,
                                                    self.evp[-1]))
         plt.pause(1e-10)
         self.fig.canvas.draw()
