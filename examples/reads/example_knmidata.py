@@ -57,4 +57,3 @@ if 'EV24' in knmi.data.columns and not np.all(np.isnan(knmi.data['EV24'])):
     axarr[1].set_title(knmi.variables['EV24'])
 
 plt.show()
-
