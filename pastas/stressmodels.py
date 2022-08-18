@@ -142,6 +142,7 @@ class StressModelBase:
         data = []
 
         for stress in self.stress:
+            stress.name = validate_name(stress.name, raise_error=True)
             data.append(stress.to_dict(series=series))
 
         return data
