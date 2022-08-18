@@ -52,7 +52,6 @@ def load(fname, **kwargs):
 def _load_model(data):
     """Internal method to create a model from a dictionary."""
     # Create model
-    _remove_keyword(data["oseries"])
     oseries = ps.TimeSeries(**data["oseries"])
 
     if "constant" in data.keys():
@@ -85,6 +84,22 @@ def _load_model(data):
 
     # Add stressmodels
     for name, ts in data["stressmodels"].items():
+        # Deal with old StressModel2 files for version 0.22.0. Remove in 0.23.0.
+        if ts["stressmodel"] == "StressModel2":
+            logger.warning("StressModel2 is removed since Pastas 0.22.0 and "
+                           "is replaced by the RechargeModel using a Linear "
+                           "recharge model. Make sure to save this file "
+                           "again using Pastas version 0.22.0 as this file "
+                           "cannot be loaded in newer Pastas versions. This "
+                           "will automatically update your model to the newer "
+                           "RechargeModel stress model.")
+            ts["stressmodel"] = "RechargeModel"
+            ts["recharge"] = "Linear"
+            ts["prec"] = ts["stress"][0]
+            ts["evap"] = ts["stress"][1]
+            ts.pop("stress")
+            ts.pop("up")
+
         stressmodel = getattr(ps.stressmodels, ts["stressmodel"])
         ts.pop("stressmodel")
         if "rfunc" in ts.keys():
@@ -97,13 +112,10 @@ def _load_model(data):
                 ps.recharge, ts["recharge"])(**recharge_kwargs)
         if "stress" in ts.keys():
             for i, stress in enumerate(ts["stress"]):
-                _remove_keyword(stress)
                 ts["stress"][i] = ps.TimeSeries(**stress)
         if "prec" in ts.keys():
-            _remove_keyword(ts["prec"])
             ts["prec"] = ps.TimeSeries(**ts["prec"])
         if "evap" in ts.keys():
-            _remove_keyword(ts["evap"])
             ts["evap"] = ps.TimeSeries(**ts["evap"])
         if "temp" in ts.keys() and ts["temp"] is not None:
             ts["temp"] = ps.TimeSeries(**ts["temp"])
@@ -166,11 +178,3 @@ def dump(fname, data, **kwargs):
     ext = path.splitext(fname)[1]
     dump_mod = import_module("pastas.io" + ext)
     return dump_mod.dump(fname, data, **kwargs)
-
-
-def _remove_keyword(data):
-    if "to_daily_unit" in data["settings"].keys():
-        logger.warning("The key 'to_daily_unit' is removed. This "
-                       "file will not work from Pastas 0.17.0. Make "
-                       "sure to save your model again to a .pas-file.")
-        data["settings"].pop("to_daily_unit")

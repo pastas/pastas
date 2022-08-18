@@ -15,8 +15,8 @@ from .rfunc import (DoubleExponential, Exponential, FourParam, Gamma, Hantush,
                     HantushWellModel, Kraijenhoff, One, Polder, Spline)
 from .solver import LeastSquares, LmfitSolve
 from .stressmodels import (Constant, LinearTrend, RechargeModel, StepModel,
-                           StressModel, StressModel2, TarsoModel, WellModel,
-                           ChangeModel, ReservoirModel)
+                           StressModel, TarsoModel, WellModel, ChangeModel,
+                           ReservoirModel)
 from .timeseries import TimeSeries
 from .transform import ThresholdTransform
 from .utils import initialize_logger, set_log_level, show_versions

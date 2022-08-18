@@ -39,6 +39,11 @@ Documentation & Examples
 - View and edit a working example notebook of a Pastas model in `MyBinder <https://mybinder.org/v2/gh/pastas/pastas/master?filepath=examples%2Fnotebooks%2F1_basic_model.ipynb>`_
 - A list of Publications that used Pastas is available in a `dedicated GitHub repo <https://github.com/pastas/pastas_research>`_
 
+Related packages
+~~~~~~~~~~~~~~~~
+- Pastastore is a package for managing multiple timeseries and pastas models: https://github.com/pastas/pastastore
+- Hydropandas can be used to obtain Dutch observation datasets: https://github.com/ArtesiaWater/hydropandas
+
 Get in Touch
 ~~~~~~~~~~~~
 - Questions on Pastas can be asked and answered on `Github Discussions <https://github.com/pastas/pastas/discussions>`_.
