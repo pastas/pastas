@@ -1499,4 +1499,4 @@ class StressModel2:
         msg = "StressModel2 was removed in Pastas 0.22.0 and is replaced by " \
               "the RechargeModel stress model. Please use ps.RechargeModel(" \
               "prec, evap, recharge=ps.rch.Linear) for the same stress model."
-        raise DeprecationWarning(msg)
+        raise UserWarning(msg)
