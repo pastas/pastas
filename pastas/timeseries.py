@@ -5,7 +5,7 @@ from pandas.tseries.frequencies import to_offset
 
 from .rcparams import rcParams
 from .utils import (_get_dt, _get_stress_dt, _get_time_offset,
-                    timestep_weighted_resample)
+                    timestep_weighted_resample, validate_name)
 
 logger = getLogger(__name__)
 
@@ -108,8 +108,8 @@ class TimeSeries:
         # Use user provided name or set from series
         if name is None:
             name = series.name
-        self.name = name
-        self._series_original.name = name
+        self.name = validate_name(name)
+        self._series_original.name = validate_name(name)
 
         if metadata is not None:
             self.metadata.update(metadata)

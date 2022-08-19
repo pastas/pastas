@@ -141,6 +141,7 @@ class StressModelBase:
         data = []
 
         for stress in self.stress:
+            stress.name = validate_name(stress.name, raise_error=True)
             data.append(stress.to_dict(series=series))
 
         return data
@@ -178,7 +179,7 @@ class StressModelBase:
         """
         data = {
             "stressmodel": self._name,
-            "name": self.name,
+            "name": validate_name(self.name, raise_error=True),
             "stress": self.dump_stress(series)
         }
         return data
@@ -1365,7 +1366,7 @@ class ChangeModel(StressModelBase):
 
 class ReservoirModel(StressModelBase):
     """Time series model consisting of a single reservoir with two stresses.
-    The first stress causes the head to go up and the second stress causes 
+    The first stress causes the head to go up and the second stress causes
     the head to go down.
 
     Parameters
