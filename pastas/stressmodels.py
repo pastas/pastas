@@ -31,7 +31,8 @@ from .utils import check_numba, validate_name
 logger = getLogger(__name__)
 
 __all__ = ["StressModel", "Constant", "StepModel", "LinearTrend",
-           "RechargeModel", "WellModel", "TarsoModel", "ChangeModel"]
+           "RechargeModel", "WellModel", "TarsoModel", "ChangeModel",
+           "StressModel2"]
 
 
 class StressModelBase:
@@ -1491,3 +1492,11 @@ class ReservoirModel(StressModelBase):
         """Internal method to get the block-response function.
         Cannot be used (yet?) since there is no block response"""
         pass
+
+
+class StressModel2:
+    def __init__(self, *args, **kwargs):
+        msg = "StressModel2 was removed in Pastas 0.22.0 and is replaced by " \
+              "the RechargeModel stress model. Please use ps.RechargeModel(" \
+              "prec, evap, recharge=ps.rch.Linear) for the same stress model."
+        raise DeprecationWarning(msg)
