@@ -3,7 +3,7 @@
 
 """
 
-from warnings import warn
+import warnings
 
 from numpy import ndarray
 from pandas import (DataFrame, Timedelta, Timestamp, infer_freq, read_csv,
@@ -27,6 +27,8 @@ def read_knmi(fname, variables='RD'):
     ts: pastas.TimeSeries
         returns a Pastas TimeSeries object or a list of objects.
     """
+    warnings.warn("The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io", DeprecationWarning)
+
     knmi = KnmiStation.fromfile(fname)
     if variables is None:
         variables = knmi.variables.keys()
@@ -107,11 +109,13 @@ class KnmiStation:
     """
 
     def __init__(self, *args, **kwargs):
+        warnings.warn("The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io", DeprecationWarning)
+
         self.stations = DataFrame()
         self.variables = dict()
         self.data = DataFrame()
         if len(args) > 0 or len(kwargs) > 0:
-            warn("In the future use KnmiStation.download(**kwargs) "
+            warnings.warn("In the future use KnmiStation.download(**kwargs) "
                  "instead of KnmiStation(**kwargs)", FutureWarning)
             self._download(*args, **kwargs)
             # diable download method, as old code will call this again
@@ -331,7 +335,7 @@ class KnmiStation:
         f.close()
 
         if data.empty:
-            warn('No KNMI data found')
+            warnings.warn('No KNMI data found')
             self.data = data
             return
 

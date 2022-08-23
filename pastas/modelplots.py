@@ -412,7 +412,7 @@ class Plotting:
         return axes
 
     @model_tmin_tmax
-    def diagnostics(self, tmin=None, tmax=None, figsize=(10, 6), bins=50,
+    def diagnostics(self, tmin=None, tmax=None, figsize=(10, 5), bins=50,
                     acf_options=None, fig=None, alpha=0.05, **kwargs):
         """Plot a window that helps in diagnosing basic model assumptions.
 
@@ -461,8 +461,11 @@ class Plotting:
         else:
             res = self.ml.residuals(tmin=tmin, tmax=tmax)
 
-        return diagnostics(series=res, figsize=figsize, bins=bins, fig=fig,
-                           acf_options=acf_options, alpha=alpha, **kwargs)
+        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+
+        return diagnostics(series=res, sim=sim, figsize=figsize, bins=bins,
+                           fig=fig, acf_options=acf_options, alpha=alpha,
+                           **kwargs)
 
     @model_tmin_tmax
     def cum_frequency(self, tmin=None, tmax=None, ax=None, figsize=(5, 2),

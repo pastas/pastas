@@ -1828,6 +1828,7 @@ class Model:
         --------
         :mod:`pastas.io.dump`
         """
+        self.name = validate_name(self.name, raise_error=True)
 
         # Get dicts for all data sources
         data = self.to_dict(series=series)
