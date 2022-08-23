@@ -294,9 +294,9 @@ class HantushWellModel(RfuncBase):
     where r is the distance from the pumping well to the observation point
     and must be specified. A, a, and b are parameters, which are slightly
     different from the Hantush response function. The gain is defined as:
-    
+
     :math:`\\text{gain} = A K_0 \\left( 2r \\sqrt(b) \\right)`
-    
+
     The implementation used here is explained in  [veling_2010]_.
 
     References
@@ -317,8 +317,8 @@ class HantushWellModel(RfuncBase):
 
     def get_init_parameters(self, name):
         if self.distances is None:
-            raise(Exception('distances is None. Use method set_dictances to '
-                            'set the distances (which is done in WellModel).'))
+            raise(Exception('distances is None. Set using method set_distances'
+                            'or use Hantush.'))
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
@@ -454,7 +454,7 @@ class Hantush(RfuncBase):
               \\exp(-t/a - ab/t)
 
     where A, a, and b are parameters.
-    
+
     The implementation used here is explained in  [veling_2010]_.
 
     References

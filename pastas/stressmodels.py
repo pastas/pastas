@@ -55,6 +55,10 @@ class StressModelBase:
         self.freq = None
         if rfunc is not None:
             if inspect.isclass(rfunc):
+                DeprecationWarning('Response functions should be added to a '
+                                   'stress-model as an instance, and not as a '
+                                   'class. This will raise an error from '
+                                   'Pastas version 0.23.')
                 rfunc = rfunc()
             rfunc._set_init_parameter_settings(up=up, meanstress=meanstress,
                                                cutoff=cutoff)
@@ -1328,10 +1332,18 @@ class ChangeModel(StressModelBase):
                                  tmin=stress.series.index.min(),
                                  tmax=stress.series.index.max())
         if inspect.isclass(rfunc1):
+            DeprecationWarning('Response functions should be added to a '
+                               'stress-model as an instance, and not as a '
+                               'class. This will raise an error from '
+                               'Pastas version 0.23.')
             rfunc1 = rfunc1()
         rfunc1._set_init_parameter_settings(up=up, cutoff=cutoff)
         self.rfunc1 = rfunc1
         if inspect.isclass(rfunc2):
+            DeprecationWarning('Response functions should be added to a '
+                               'stress-model as an instance, and not as a '
+                               'class. This will raise an error from '
+                               'Pastas version 0.23.')
             rfunc2 = rfunc2()
         rfunc2._set_init_parameter_settings(up=up, cutoff=cutoff)
         self.rfunc2 = rfunc2
