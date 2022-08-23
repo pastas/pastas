@@ -115,8 +115,11 @@ def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
         Maximum number of days to fill using fill method, use None to
         fill nothing
     output : str, optional
-        output type 'yearly' for series of yearly values, 'mean' for mean
-        of yearly values
+        output type
+        * 'mean' (default) : for mean of yearly values
+        * 'yearly': for series of yearly values
+        * 'g3': for series with selected data for calculating statistic
+        * 'semimonthly': for series with all data points (14th, 28th of each month)
     min_n_meas: int, optional
         Minimum number of measurements per year (at maximum 24).
     min_n_years: int, optional
@@ -151,9 +154,9 @@ def ghg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
         return highs(s, min_n_meas).mean()
     if output in ['mean', 'yearly']:
         f_agg = mean_high
-    elif output == "data":
+    elif output == "g3":
         f_agg = highs
-    elif output == "full":
+    elif output == "semimonthly":
         f_agg = None
     else:
         raise ValueError(f"Unrecognized option for output: {output}")
@@ -186,8 +189,8 @@ def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
         output type
         * 'mean' (default) : for mean of yearly values
         * 'yearly': for series of yearly values
-        * 'data': for series with selected data for calculating statistic
-        * 'full': for series with all data points (14th, 28th of each month)
+        * 'g3': for series with selected data for calculating statistic
+        * 'semimonthly': for series with all data points (14th, 28th of each month)
     min_n_meas: int, optional
         Minimum number of measurements per year (at maximum 24)
     min_n_years: int, optional
@@ -223,9 +226,9 @@ def glg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
 
     if output in ['mean', 'yearly']:
         f_agg = mean_low
-    elif output == "data":
+    elif output == "g3":
         f_agg = lows
-    elif output == "full":
+    elif output == "semimonthly":
         f_agg = None
     else:
         raise ValueError(f"Unrecognized option for output: {output}")
@@ -258,8 +261,8 @@ def gvg(series, tmin=None, tmax=None, fill_method='linear', limit=8,
         output type
         * 'mean' (default) : for mean of yearly values
         * 'yearly': for series of yearly values
-        * 'data': for series with selected data for calculating statistic
-        * 'full': for series with all data points (14th, 28th of each month)
+        * 'g3': for series with selected data for calculating statistic
+        * 'semimonthly': for series with all data points (14th, 28th of each month)
     min_n_meas: int, optional
         Minimum number of measurements per year (at maximum 3)
     min_n_years: int, optional
@@ -282,9 +285,9 @@ def gvg(series, tmin=None, tmax=None, fill_method='linear', limit=8,
 
     if output in ['mean', 'yearly']:
         f_agg = _mean_spring
-    elif output == "data":
+    elif output == "g3":
         f_agg = _get_spring
-    elif output == "full":
+    elif output == "semimonthly":
         f_agg = None
     else:
         raise ValueError(f"Unrecognized option for output: {output}")
@@ -315,9 +318,9 @@ def gg(series, tmin=None, tmax=None, fill_method='nearest', limit=0,
     output : str, optional
         output type
         * 'mean' (default) : for mean of yearly values
-        * 'yearly' : for series with yearly means
-        * 'data' : for series with selected data for calculating statistic
-        * 'full' : for series with all data points (14th, 28th of each month)
+        * 'yearly': for series of yearly values
+        * 'g3': for series with selected data for calculating statistic
+        * 'semimonthly': for series with all data points (14th, 28th of each month)
     min_n_meas: int, optional
         Minimum number of measurements per year (at maximum 24)
     min_n_years: int, optional
@@ -414,8 +417,11 @@ def _gxg(series, year_agg, tmin, tmax, fill_method, limit, output,
         Maximum number of days to fill using fill method, use None to
         fill nothing
     output : str
-        output type 'yearly' for series of yearly values, 'mean' for
-        mean of yearly values
+        output type
+        * 'mean' (default) : for mean of yearly values
+        * 'yearly': for series of yearly values
+        * 'g3': for series with selected data for calculating statistic
+        * 'semimonthly': for series with all data points (14th, 28th of each month)
     min_n_meas: int, optional
         Minimum number of measurements per year
     min_n_years: int
@@ -502,12 +508,12 @@ def _gxg(series, year_agg, tmin, tmax, fill_method, limit, output,
     series.dropna(inplace=True)
 
     # resample the series to yearly values
-    if output == "full":
+    if output == "semimonthly":
         return series
     elif output in ["yearly", "mean"]:
         yearly = series.resample(year_offset).apply(year_agg,
                                                     min_n_meas=min_n_meas)
-    elif output == "data":
+    elif output == "g3":
         yearly = series.resample(year_offset)
         collect = {}
         for yr, group in yearly:
@@ -520,7 +526,7 @@ def _gxg(series, year_agg, tmin, tmax, fill_method, limit, output,
     # return statements
     if output.startswith('year'):
         return yearly
-    elif output == "data":
+    elif output == "g3":
         return yearly
     elif output == 'mean':
         if yearly.notna().sum() < min_n_years:
