@@ -7,6 +7,7 @@ import numpy as np
 from pandas import DataFrame
 
 from .decorators import set_parameter
+from .utils import validate_name
 
 
 class ThresholdTransform:
@@ -42,7 +43,7 @@ class ThresholdTransform:
         self.value = value
         self.vmin = vmin
         self.vmax = vmax
-        self.name = name
+        self.name = validate_name(name)
         self.nparam = nparam
         self.parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
