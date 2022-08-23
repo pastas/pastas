@@ -4,6 +4,8 @@ from RWS Waterbase / WaterInfo database. (http://waterinfo.rws.nl/)
 Author: R.A. Collenteur, Artesia Water 2017
 """
 
+import warnings
+
 from pandas import read_csv
 
 from ..timeseries import TimeSeries
@@ -36,6 +38,8 @@ def read_waterbase(fname, locations=None, variable="NUMERIEKEWAARDE",
     the xy-coordinates are calculates as the mean xy-coordinate in case these
     values are not unique.
     """
+    warnings.warn("The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io", DeprecationWarning)
+
     ts = []
     df = read_csv(fname, delimiter=";", index_col="Date", decimal=",",
                   usecols=["MEETPUNT_IDENTIFICATIE", "WAARNEMINGDATUM",

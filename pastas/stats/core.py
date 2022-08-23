@@ -15,7 +15,7 @@ from ..utils import check_numba
 
 
 def acf(x, lags=365, bin_method='rectangle', bin_width=0.5, max_gap=inf,
-        min_obs=100, full_output=False, alpha=0.05):
+        min_obs=20, full_output=False, alpha=0.05):
     """Calculate the autocorrelation function for irregular time steps.
 
     Parameters
@@ -92,7 +92,7 @@ def acf(x, lags=365, bin_method='rectangle', bin_width=0.5, max_gap=inf,
 
 
 def ccf(x, y, lags=365, bin_method='rectangle', bin_width=0.5,
-        max_gap=inf, min_obs=100, full_output=False, alpha=0.05):
+        max_gap=inf, min_obs=20, full_output=False, alpha=0.05):
     """Method to compute the cross-correlation for irregular time series.
 
     Parameters

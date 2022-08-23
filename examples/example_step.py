@@ -8,8 +8,8 @@ import pandas as pd
 import pastas as ps
 
 # read observations
-obs = pd.read_csv("data/head_nb1.csv", index_col=0, parse_dates=True,
-                  squeeze=True)
+obs = pd.read_csv("data/head_nb1.csv", index_col=0,
+                  parse_dates=True).squeeze("columns")
 # add 10 cm to the series from 2007
 obs["2007":] = obs["2007":] + 1.5
 
@@ -17,14 +17,14 @@ obs["2007":] = obs["2007":] + 1.5
 ml = ps.Model(obs)
 
 # read weather data
-rain = pd.read_csv("data/rain_nb1.csv", index_col=0, parse_dates=True,
-                   squeeze=True)
-evap = pd.read_csv("data/evap_nb1.csv", index_col=0, parse_dates=True,
-                   squeeze=True)
+rain = pd.read_csv("data/rain_nb1.csv", index_col=0,
+                   parse_dates=True).squeeze("columns")
+evap = pd.read_csv("data/evap_nb1.csv", index_col=0,
+                   parse_dates=True).squeeze("columns")
 
 # create stress
-sm = ps.StressModel2(stress=[rain, evap], rfunc=ps.Exponential,
-                     name="recharge")
+sm = ps.RechargeModel(rain, evap, rfunc=ps.Exponential,
+                      recharge=ps.rch.Linear(), name="recharge")
 ml.add_stressmodel(sm)
 
 # add a stepmodel with an exponential response

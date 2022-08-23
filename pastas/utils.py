@@ -1,8 +1,9 @@
 """This module contains utility functions for working with Pastas models."""
 
 import logging
-from datetime import datetime, timedelta
 from logging import handlers
+from platform import platform
+from datetime import datetime, timedelta
 
 import numpy as np
 from pandas import Series, Timedelta, Timestamp, date_range, to_datetime
@@ -296,6 +297,10 @@ def timestep_weighted_resample_fast(series0, freq):
 def get_equidistant_series(series, freq, minimize_data_loss=False):
     """Get equidistant timeseries using nearest reindexing.
 
+    This method will shift observations to the nearest equidistant timestep to
+    create an equidistant timeseries, if necessary. Each observation is
+    guaranteed to only be used once in the equidistant timeseries.
+
     Parameters
     ----------
     series : pandas.Series
@@ -317,13 +322,10 @@ def get_equidistant_series(series, freq, minimize_data_loss=False):
     Notes
     -----
     This method creates an equidistant timeseries with specified freq
-    using nearest sampling, with additional filling logic that ensures
-    each original measurement is only included once in the new timeseries.
-    Values are filled as close as possible to their original timestamp
-    in the new equidistant timeseries.
-
-    This might also be a very elaborate rewrite of a pandas one-liner...
-
+    using nearest sampling (meaning observations can be shifted in time),
+    with additional filling logic that ensures each original measurement
+    is only included once in the new timeseries. Values are filled as close
+    as possible to their original timestamp in the new equidistant timeseries.
     """
 
     # build new equidistant index
@@ -368,21 +370,22 @@ def get_equidistant_series(series, freq, minimize_data_loss=False):
         # fill value
         s.iloc[first_dupe + i_nearest] = series.values[i]
 
-    # This next part is a pretty ugly bit of code to fill up any
+    # This next part is an ugly bit of code to fill up any
     # nans if there are unused values in the original timeseries
-    # that lie close enough to our missing datapoint
+    # that lie close enough to our missing datapoint in the new equidisant
+    # series.
     if minimize_data_loss:
         # find remaining nans
         nanmask = s.isna()
         if nanmask.sum() > 0:
             # get unused (not sampled) timestamps from original series
             unused = set(range(series.index.size)) - set(ind)
-            # dropna: do not consider unused nans
             if len(unused) > 0:
+                # dropna: do not consider unused nans
                 missing_ts = series.iloc[list(unused)].dropna().index
                 # loop through nan timestamps in new series
                 for t in s.loc[nanmask].index:
-                    # find closes unused value
+                    # find closest unused value
                     closest = np.argmin(np.abs(missing_ts - t))
                     # check if value is not farther away that freq to avoid
                     # weird behavior
@@ -440,7 +443,7 @@ def datenum_to_datetime(datenum):
     """
     days = datenum % 1.
     return datetime.fromordinal(int(datenum)) \
-           + timedelta(days=days) - timedelta(days=366)
+        + timedelta(days=days) - timedelta(days=366)
 
 
 def datetime2matlab(tindex):
@@ -585,29 +588,36 @@ def remove_file_handlers(logger=None):
             logger.removeHandler(handler)
 
 
-def validate_name(name):
+def validate_name(name, raise_error=False):
     """Method to check user-provided names and log a warning if wrong.
 
     Parameters
     ----------
     name: str
-        String with the name to check for 'illegal' characters.
+        String with the name to check for illegal characters.
+    raise_error: bool
+        raise Exception error if illegal character is found, default
+        is False which only logs a warning
 
     Returns
     -------
     name: str
         Unchanged name string
 
-    Notes
-    -----
-    Forbidden characters are: "/", "\", " ".
     """
-    name = str(name)  # Make sure it is a string
+    ilchar = ["/", "\\", " ", ".", "'", '"', "`"]
+    if 'windows' in platform().lower():
+        ilchar += ["#", "%", "&", "@", "{", "}", "|", "$",
+                   "*", "<", ">", "?", "!", ":", "=", "+"]
 
-    for char in ["\\", "/", " "]:
+    name = str(name)
+    for char in ilchar:
         if char in name:
-            logger.warning("User-provided name '%s' contains illegal "
-                           "character %s", name, char)
+            msg = f"User-provided name '{name}' contains illegal character. Please remove {char} from name."
+            if raise_error:
+                raise Exception(msg)
+            else:
+                logger.warning(msg)
 
     return name
 

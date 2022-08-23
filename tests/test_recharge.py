@@ -3,13 +3,14 @@ from numpy import sin, arange, isclose
 import pastas as ps
 
 # Load series before
-rain = read_csv("tests/data/rain.csv", index_col=0, parse_dates=True,
-                squeeze=True).loc["2005":] * 1e3
-evap = read_csv("tests/data/evap.csv", index_col=0, parse_dates=True,
-                squeeze=True).loc["2005":] * 1e3
-obs = read_csv("tests/data/obs.csv", index_col=0, parse_dates=True,
-               squeeze=True)
-temp = Series(index=evap.index, data=sin(arange(evap.size) / 365 * 6))
+rain = read_csv("tests/data/rain.csv", index_col=0,
+                parse_dates=True).squeeze("columns").loc["2005":] * 1e3
+evap = read_csv("tests/data/evap.csv", index_col=0,
+                parse_dates=True).squeeze("columns").loc["2005":] * 1e3
+obs = read_csv("tests/data/obs.csv", index_col=0,
+               parse_dates=True).squeeze("columns")
+temp = Series(index=evap.index, data=sin(arange(evap.size) / 365 * 6),
+              dtype=float)
 
 
 def test_create_rechargemodel():
@@ -69,6 +70,15 @@ def test_flexmodel_no_interception():
     return
 
 
+def test_flexmodel_gw_uptake():
+    ml = ps.Model(obs, name="rch_model")
+    rm = ps.RechargeModel(prec=rain, evap=evap,
+                          recharge=ps.rch.FlexModel(gw_uptake=True))
+    ml.add_stressmodel(rm)
+    ml.solve()
+    return
+
+
 def test_flexmodel_snow():
     ml = ps.Model(obs, name="rch_model")
     rm = ps.RechargeModel(prec=rain, evap=evap, temp=temp,
@@ -103,3 +113,21 @@ def test_flexmodel_water_balance_interception():
     si, ei, pi = rch.get_interception_balance(p, e)
     error = (si[0] - si[-1] + (pi + ei)[:-1].sum())
     assert isclose(error, 0)
+
+
+def test_peterson():
+    ml = ps.Model(obs, name="rch_model")
+    rm = ps.RechargeModel(prec=rain, evap=evap, recharge=ps.rch.Peterson())
+    ml.add_stressmodel(rm)
+    ml.solve()
+    return
+
+
+# don't test water balance because of forward Euler
+# def test_peterson_water_balance():
+#     rch = ps.rch.Peterson()
+#     e = evap.to_numpy()
+#     p = rain.to_numpy()
+#     r, sm, ea, pe = rch.get_recharge(p, e)
+#     error = (sm[0] - sm[-1] + (r + ea + pe)[:-1].sum())
+#     assert isclose(error, 0)

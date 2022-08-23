@@ -1,6 +1,7 @@
 
 Version 0.17.1 (12th of May 2021)
---------------------------------
+---------------------------------
+
 .. note::
     Intermediate release to solve an Issue with the LmFitSolver that is
     experienced by many users. See

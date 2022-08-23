@@ -2,7 +2,7 @@ Getting Started with Pastas
 ===========================
 On this page you will find all the information to get started with Pastas.
 A basic knowledge of programming in Python is assumed, but nothing more than
-that. See the :ref:`Examples`-section for some example-code.
+that. See the Examples section for some example-code.
 
 Installing Python
 -----------------
@@ -48,7 +48,7 @@ automatically installed when using the pip install manager. To summarize, the
 following packages are necessary for a minimal function installation of
 Pastas:
 
-.. include:: ../../requirements.travis.txt
+.. include:: ../../requirements.ci.txt
     :literal:
 
 Other optional dependencies include::

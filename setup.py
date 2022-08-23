@@ -33,6 +33,7 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Topic :: Scientific/Engineering :: Hydrology',
     ],
     platforms='Windows, Mac OS-X',
@@ -41,4 +42,5 @@ setup(
                       'pandas>=1.1',
                       'scipy>=1.3'],
     packages=find_packages(exclude=[]),
+    extras_require={'full': ['numba>=0.51', 'lmfit>=1.0.0']},
 )
