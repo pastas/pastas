@@ -26,7 +26,8 @@ class RfuncBase:
         self.cutoff = 0.999
         self.kwargs = kwargs
 
-    def _add_to_model(self, up=True, meanstress=1, cutoff=0.999):
+    def _set_init_parameter_settings(self, up=True, meanstress=1,
+                                     cutoff=0.999):
         self.up = up
         # Completely arbitrary number to prevent division by zero
         if 1e-8 > meanstress > 0:
@@ -308,13 +309,16 @@ class HantushWellModel(RfuncBase):
 
     def __init__(self):
         RfuncBase.__init__(self)
-        self.distances = 1.0
+        self.distances = None
         self.nparam = 3
 
     def set_distances(self, distances):
         self.distances = distances
 
     def get_init_parameters(self, name):
+        if self.distances is None:
+            raise(Exception('distances is None. Use method set_dictances to '
+                            'set the distances (which is done in WellModel).'))
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:

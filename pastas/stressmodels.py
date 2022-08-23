@@ -56,7 +56,8 @@ class StressModelBase:
         if rfunc is not None:
             if inspect.isclass(rfunc):
                 rfunc = rfunc()
-            rfunc._add_to_model(up=up, meanstress=meanstress, cutoff=cutoff)
+            rfunc._set_init_parameter_settings(up=up, meanstress=meanstress,
+                                               cutoff=cutoff)
         self.rfunc = rfunc
 
         self.parameters = DataFrame(
@@ -532,7 +533,8 @@ class WellModel(StressModelBase):
 
     def __init__(self, stress, rfunc, name, distances, up=False, cutoff=0.999,
                  settings="well", sort_wells=True):
-        if not issubclass(rfunc, HantushWellModel):
+        if not (isinstance(rfunc, HantushWellModel) or
+                issubclass(rfunc, HantushWellModel)):
             raise NotImplementedError("WellModel only supports the rfunc "
                                       "HantushWellModel!")
 
@@ -1177,7 +1179,8 @@ class TarsoModel(RechargeModel):
         # parameters for the first drainage level
         p0 = self.rfunc.get_init_parameters(self.name)
         one = One()
-        one._add_to_model(meanstress=self.dmin + 0.5 * (self.dmax - self.dmin))
+        meanstress = self.dmin + 0.5 * (self.dmax - self.dmin)
+        one._set_init_parameter_settings(meanstress=meanstress)
         pd0 = one.get_init_parameters(self.name).squeeze()
         p0.loc[f'{self.name}_d'] = pd0
         p0.index = [f'{x}0' for x in p0.index]
@@ -1326,11 +1329,11 @@ class ChangeModel(StressModelBase):
                                  tmax=stress.series.index.max())
         if inspect.isclass(rfunc1):
             rfunc1 = rfunc1()
-        rfunc1._add_to_model(up=up, cutoff=cutoff)
+        rfunc1._set_init_parameter_settings(up=up, cutoff=cutoff)
         self.rfunc1 = rfunc1
         if inspect.isclass(rfunc2):
             rfunc2 = rfunc2()
-        rfunc2._add_to_model(up=up, cutoff=cutoff)
+        rfunc2._set_init_parameter_settings(up=up, cutoff=cutoff)
         self.rfunc2 = rfunc2
         self.tchange = Timestamp(tchange)
 
