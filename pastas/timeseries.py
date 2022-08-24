@@ -550,14 +550,16 @@ class TimeSeries:
             series = series.reindex(series.index.union(index_extend[:-1]))
 
             if method == "mean":
-                series.fillna(series.mean(), inplace=True)  # Default option
-                logger.info("Time Series %s was extended to %s with the mean "
-                            "value of the time series.", self.name,
-                            series.index.min())
+                mean_value = series.mean()
+                series.fillna(mean_value, inplace=True)  # Default option
+                logger.info("Time Series %s was extended in the past to %s "
+                            "with the mean value (%.2g) of the time series.",
+                            self.name, series.index.min(), mean_value)
             elif isinstance(method, float):
                 series.fillna(method, inplace=True)
-                logger.info("Time Series %s was extended to %s by adding %s "
-                            "values.", self.name, series.index.min(), method)
+                logger.info("Time Series %s was extended in the past to %s by "
+                            "adding %s values.", self.name, series.index.min(),
+                            method)
             else:
                 logger.info("Time Series %s: User-defined option for "
                             "fill_before %s is not supported.", self.name,
@@ -581,14 +583,16 @@ class TimeSeries:
             series = series.reindex(series.index.union(index_extend))
 
             if method == "mean":
-                series.fillna(series.mean(), inplace=True)  # Default option
-                logger.info("Time Series %s was extended to %s with the mean "
-                            "value of the time series.", self.name,
-                            series.index.max())
+                mean_value = series.mean()
+                series.fillna(mean_value, inplace=True)  # Default option
+                logger.info("Time Series %s was extended in the future to %s "
+                            "with the mean value (%.2g) of the time series.",
+                            self.name, series.index.max(), mean_value)
             elif isinstance(method, float):
                 series.fillna(method, inplace=True)
-                logger.info("Time Series %s was extended to %s by adding %s "
-                            "values.", self.name, series.index.max(), method)
+                logger.info("Time Series %s was extended in the future to %s "
+                            "by adding %s values.", self.name,
+                            series.index.max(), method)
             else:
                 logger.info("Time Series %s: User-defined option for "
                             "fill_after %s is not supported", self.name,
