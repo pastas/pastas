@@ -727,12 +727,12 @@ class WellModel(StressModelBase):
         }
         return data
 
-    def variance_gain(self, model, istress=None):
+    def variance_gain(self, model, istress=None, r=None):
         """Calculate variance of the gain for WellModel.
 
         Variance of the gain is calculated based on propagation of uncertainty
-        using optimal values and the variances of A and b and the covariance
-        between A and b.
+        using optimal parameter values and the estimated variances of A and b
+        and the covariance between A and b.
 
         Parameters
         ----------
@@ -740,6 +740,9 @@ class WellModel(StressModelBase):
             optimized model
         istress : int or list of int, optional
             index of stress(es) for which to calculate variance of gain
+        r : np.array, optional
+            radial distance(s) at which to calculate variance of the gain,
+            only considered if istress is None
 
         Returns
         -------
@@ -750,7 +753,6 @@ class WellModel(StressModelBase):
         See Also
         --------
         pastas.HantushWellModel.variance_gain
-
         """
         if model.fit is None:
             raise AttributeError("Model not optimized! Run solve() first!")
@@ -766,11 +768,13 @@ class WellModel(StressModelBase):
         var_b = model.fit.pcov.loc[self.name + "_b", self.name + "_b"]
         cov_Ab = model.fit.pcov.loc[self.name + "_A", self.name + "_b"]
 
-        if istress is None:
+        if istress is None and r is None:
             r = np.asarray(self.distances)
         elif isinstance(istress, int) or isinstance(istress, list):
             r = self.distances.iloc[istress]
-        else:
+            if r is not None:
+                logger.warning("kwarg 'r' is only used if istress is None!")
+        elif istress is not None and r is None:
             raise ValueError("Parameter 'istress' must be None, list or int!")
 
         return self.rfunc.variance_gain(A, b, var_A, var_b, cov_Ab, r=r)
@@ -1303,7 +1307,6 @@ class ChangeModel(StressModelBase):
     Obergfell, C., Bakker, M. and Maas, K. (2019), Identification and
     Explanation of a Change in the Groundwater Regime using Time Series
     Analysis. Groundwater, 57: 886-894. https://doi.org/10.1111/gwat.12891
-
     """
     _name = "ChangeModel"
 
@@ -1366,8 +1369,8 @@ class ChangeModel(StressModelBase):
 
 class ReservoirModel(StressModelBase):
     """Time series model consisting of a single reservoir with two stresses.
-    The first stress causes the head to go up and the second stress causes
-    the head to go down.
+    The first stress causes the head to go up and the second stress causes the
+    head to go down.
 
     Parameters
     ----------
@@ -1489,5 +1492,7 @@ class ReservoirModel(StressModelBase):
 
     def _get_block(self, p, dt, tmin, tmax):
         """Internal method to get the block-response function.
-        Cannot be used (yet?) since there is no block response"""
+
+        Cannot be used (yet?) since there is no block response
+        """
         pass
