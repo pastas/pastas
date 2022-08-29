@@ -1,9 +1,10 @@
 from pandas.plotting import register_matplotlib_converters
 import logging
 
-import pastas.recharge as rch
-import pastas.stats as stats
-import pastas.plots as plots
+from . import recharge as rch
+from . import stats
+from . import plots
+from . import reservoir
 
 from .model import Model
 from .noisemodels import ArmaModel, NoiseModel
