@@ -6,7 +6,7 @@ contribution that explains (part of) the output series.
 Examples
 --------
 
->>> sm = ps.StressModel(stress, rfunc=ps.Gamma, name="sm1")
+>>> sm = ps.StressModel(stress, rfunc=ps.Gamma(), name="sm1")
 >>> ml.add_stressmodel(stressmodel=sm)
 
 See Also
@@ -221,7 +221,7 @@ class StressModel(StressModelBase):
     ----------
     stress: pandas.Series
         pandas Series object containing the stress.
-    rfunc: rfunc class or instance
+    rfunc: pastas.rfunc instance (class is deprecated)
         Response function used in the convolution with the stress.
     name: str
         Name of the stress.
@@ -337,7 +337,7 @@ class StepModel(StressModelBase):
         vary=True) to vary the start time of the step trend.
     name: str
         String with the name of the stressmodel.
-    rfunc: pastas.rfunc.RfuncBase class, optional
+    rfunc: pastas.rfunc instance (class is deprecated)
         Pastas response function used to simulate the effect of the step.
         Default is rfunc.One, an instant effect.
     up: bool, optional
@@ -355,7 +355,7 @@ class StepModel(StressModelBase):
     """
     _name = "StepModel"
 
-    def __init__(self, tstart, name, rfunc=One, up=True, cutoff=0.999):
+    def __init__(self, tstart, name, rfunc=One(), up=True, cutoff=0.999):
         StressModelBase.__init__(self, name=name, tmin=Timestamp.min,
                                  tmax=Timestamp.max, rfunc=rfunc, up=up,
                                  cutoff=cutoff)
@@ -502,7 +502,7 @@ class WellModel(StressModelBase):
     ----------
     stress: list
         list containing the stresses timeseries.
-    rfunc: pastas.rfunc
+    rfunc: pastas.rfunc instance (class is deprecated)
         this model only works with the HantushWellModel response function.
     name: str
         Name of the stressmodel.
@@ -800,7 +800,7 @@ class RechargeModel(StressModelBase):
     evap: pandas.Series or pastas.timeseries.TimeSeries
         pandas.Series or pastas.timeseries object containing the potential
         evaporation series.
-    rfunc: pastas.rfunc class or instance, optional
+    rfunc: pastas.rfunc instance (class is deprecated), optional
         Response function used in the convolution with the stress. Default
         is Exponential.
     name: str, optional
@@ -843,7 +843,7 @@ class RechargeModel(StressModelBase):
 
     Examples
     --------
-    >>> sm = ps.RechargeModel(rain, evap, rfunc=ps.Exponential,
+    >>> sm = ps.RechargeModel(rain, evap, rfunc=ps.Exponential(),
     >>>                       recharge=ps.rch.FlexModel(), name="rch")
     >>> ml.add_stressmodel(sm)
 
@@ -855,7 +855,7 @@ class RechargeModel(StressModelBase):
     """
     _name = "RechargeModel"
 
-    def __init__(self, prec, evap, rfunc=Exponential, name="recharge",
+    def __init__(self, prec, evap, rfunc=Exponential(), name="recharge",
                  recharge=Linear(), temp=None, cutoff=0.999,
                  settings=("prec", "evap", "evap"),
                  metadata=(None, None, None)):
@@ -1130,7 +1130,7 @@ class TarsoModel(RechargeModel):
         The maximum drainage level. It is used to determine the initial values
         of the drainage levels and the upper boundary of the upper drainage
         level. Specify either oseries or dmin and dmax.
-    rfunc: pastas.rfunc
+    rfunc: pastas.rfunc instance (class is deprecated)
         this model only works with the Exponential response function.
 
     See Also
@@ -1160,7 +1160,7 @@ class TarsoModel(RechargeModel):
     _name = "TarsoModel"
 
     def __init__(self, prec, evap, oseries=None, dmin=None, dmax=None,
-                 rfunc=Exponential, **kwargs):
+                 rfunc=Exponential(), **kwargs):
         check_numba()
         if oseries is not None:
             if dmin is not None or dmax is not None:
@@ -1172,7 +1172,8 @@ class TarsoModel(RechargeModel):
         elif dmin is None or dmax is None:
             msg = 'Please specify either oseries or dmin and dmax'
             raise (Exception(msg))
-        if not issubclass(rfunc, Exponential):
+        if not (isinstance(rfunc, Exponential) or
+                issubclass(rfunc, Exponential)):
             raise NotImplementedError("TarsoModel only supports rfunc "
                                       "Exponential!")
         self.dmin = dmin
@@ -1286,9 +1287,9 @@ class ChangeModel(StressModelBase):
     ----------
     stress: pandas.Series
         pandas Series object containing the stress.
-    rfunc1: rfunc class or instance
+    rfunc1: pastas.rfunc instance (class is deprecated)
         response function used in the convolution with the stress.
-    rfunc2: rfunc class or instance
+    rfunc2: pastas.rfunc instance (class is deprecated)
         response function used in the convolution with the stress.
     name: str
         name of the stress.
