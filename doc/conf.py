@@ -241,3 +241,6 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
 }
+
+# Allow errors in notebooks, so we can see the error online
+nbsphinx_allow_errors = True
