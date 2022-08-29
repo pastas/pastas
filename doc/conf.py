@@ -44,7 +44,6 @@ extensions = [
     'IPython.sphinxext.ipython_console_highlighting',  # lowercase didn't work
     'sphinx.ext.autosectionlabel',
     'nbsphinx',
-    'nbsphinx_link',
     'sphinx_gallery.load_style',
 ]
 
