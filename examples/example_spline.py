@@ -36,7 +36,8 @@ ml2.solve(noise=noise, fit_constant=fit_constant)
 
 # Solve with a Spline response function
 ml3 = ps.Model(obs, name="Spline")
-sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Spline)
+rfunc = ps.Spline(t=[1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024])
+sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=rfunc)
 ml3.add_stressmodel(sm)
 ml3.solve(noise=noise, fit_constant=fit_constant)
 
