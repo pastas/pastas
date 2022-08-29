@@ -355,7 +355,9 @@ class StepModel(StressModelBase):
     """
     _name = "StepModel"
 
-    def __init__(self, tstart, name, rfunc=One(), up=True, cutoff=0.999):
+    def __init__(self, tstart, name, rfunc=None, up=True, cutoff=0.999):
+        if rfunc is None:
+            rfunc = One()
         StressModelBase.__init__(self, name=name, tmin=Timestamp.min,
                                  tmax=Timestamp.max, rfunc=rfunc, up=up,
                                  cutoff=cutoff)
@@ -855,10 +857,12 @@ class RechargeModel(StressModelBase):
     """
     _name = "RechargeModel"
 
-    def __init__(self, prec, evap, rfunc=Exponential(), name="recharge",
+    def __init__(self, prec, evap, rfunc=None, name="recharge",
                  recharge=Linear(), temp=None, cutoff=0.999,
                  settings=("prec", "evap", "evap"),
                  metadata=(None, None, None)):
+        if rfunc is None:
+            rfunc = Exponential()
         # Store the precipitation and evaporation time series
         self.prec = TimeSeries(prec, settings=settings[0],
                                metadata=metadata[0])
@@ -1160,7 +1164,7 @@ class TarsoModel(RechargeModel):
     _name = "TarsoModel"
 
     def __init__(self, prec, evap, oseries=None, dmin=None, dmax=None,
-                 rfunc=Exponential(), **kwargs):
+                 rfunc=None, **kwargs):
         check_numba()
         if oseries is not None:
             if dmin is not None or dmax is not None:
@@ -1172,6 +1176,8 @@ class TarsoModel(RechargeModel):
         elif dmin is None or dmax is None:
             msg = 'Please specify either oseries or dmin and dmax'
             raise (Exception(msg))
+        if rfunc is None:
+            rfunc = Exponential()
         if not (isinstance(rfunc, Exponential) or
                 issubclass(rfunc, Exponential)):
             raise NotImplementedError("TarsoModel only supports rfunc "
