@@ -785,9 +785,9 @@ class WellModel(StressModelBase):
         if istress is None and r is None:
             r = np.asarray(self.distances)
         elif isinstance(istress, int) or isinstance(istress, list):
-            r = self.distances.iloc[istress]
             if r is not None:
                 logger.warning("kwarg 'r' is only used if istress is None!")
+            r = self.distances.iloc[istress]
         elif istress is not None and r is None:
             raise ValueError("Parameter 'istress' must be None, list or int!")
 
