@@ -78,6 +78,7 @@ Related packages
 ~~~~~~~~~~~~~~~~
 - `Pastastore <https://github.com/pastas/pastastore>`_ is a Python package for managing multiple timeseries and pastas models 
 - `Hydropandas <https://github.com/ArtesiaWater/hydropandas/blob/master/examples/03_hydropandas_and_pastas.ipynb>`_ can be used to obtain Dutch timeseries (KNMI, Dinoloket, ..)
+- `PyEt <https://github.com/phydrus/pyet>`_ can be used to compute potential evaporation from meteorological variables.
 
 Dependencies
 ~~~~~~~~~~~~
