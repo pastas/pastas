@@ -1,5 +1,4 @@
 nbsphinx
-nbsphinx_link
 Ipython
 ipykernel
 pydata-sphinx-theme

@@ -9,7 +9,7 @@ import shutil
 
 import pytest
 
-pathname = os.path.join('examples', 'notebooks')
+pathname = os.path.join('doc', 'examples')
 # get list of notebooks to run
 files = [f for f in os.listdir(pathname) if f.endswith('.ipynb')]
 
