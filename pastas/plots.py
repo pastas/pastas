@@ -41,7 +41,7 @@ def compare(models, tmin=None, tmax=None, block_or_step='step',
     adjust_height: bool, optional
         Adjust the height of the graphs, so that the vertical scale of all
         the subplots on the left is equal. Default is True, in which case the
-        axes are not rescaled to include all data, so certain data might 
+        axes are not rescaled to include all data, so certain data might
         not be visible. Set to False to ensure you can see all data.
     return_warmup: bool, optional
         Show the warmup-period. Default is false.
@@ -342,7 +342,7 @@ def series(head=None, stresses=None, hist=True, kde=False, titles=True,
 
 
 def acf(series, alpha=0.05, lags=365, acf_options=None, smooth_conf=True,
-        ax=None, figsize=(5, 2)):
+        color='k', ax=None, figsize=(5, 2)):
     """Plot of the autocorrelation function of a time series.
 
     Parameters
@@ -358,6 +358,8 @@ def acf(series, alpha=0.05, lags=365, acf_options=None, smooth_conf=True,
         Dictionary with keyword arguments passed on to pastas.stats.acf.
     smooth_conf: bool, optional
         For irregular time series the confidence interval may be
+    color: str, optional
+        Color of the vertical autocorrelation lines.
     ax: matplotlib.axes.Axes, optional
         Matplotlib Axes instance to plot the ACF on. A new Figure and Axes
         is created when no value for ax is provided.
@@ -373,7 +375,7 @@ def acf(series, alpha=0.05, lags=365, acf_options=None, smooth_conf=True,
     --------
     >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
     >>>                 data=np.random.rand(1000))
-    >>> ps.stats.plot_acf(res)
+    >>> ps.plots.acf(res)
     """
     if ax is None:
         _, ax = plt.subplots(1, 1, figsize=figsize)
@@ -395,14 +397,14 @@ def acf(series, alpha=0.05, lags=365, acf_options=None, smooth_conf=True,
         conf = r.stderr.values
 
     ax.fill_between(r.index.days, conf, -conf, alpha=0.3)
-    ax.vlines(r.index.days, [0], r.loc[:, "acf"].values, color="k")
+    ax.vlines(r.index.days, [0], r.loc[:, "acf"].values, color=color)
 
     ax.set_xlabel("Lag [Days]")
     ax.set_xlim(0, r.index.days.max())
     ax.set_ylabel('Autocorrelation [-]')
     ax.set_title("Autocorrelation plot")
 
-    ax.grid()
+    ax.grid(True)
     return ax
 
 
@@ -561,7 +563,7 @@ class TrackSolve:
 
     Examples
     --------
-    Set matplotlib backend and interactive mode (put this at the top 
+    Set matplotlib backend and interactive mode (put this at the top
     of your script)::
 
         import matplotlib as mpl
