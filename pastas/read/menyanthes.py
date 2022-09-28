@@ -11,6 +11,8 @@ Currently only the observations (H) and stresses (IN) and model results are supp
 # entry)
 """
 
+import warnings
+
 from os import path
 
 import numpy as np
@@ -33,6 +35,8 @@ def read_meny(fname, locations=None, datatype='H'):
     Returns
     -------
     """
+    warnings.warn("The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io", DeprecationWarning)
+
     meny = MenyData(fname, data=datatype)
     if datatype == 'H':
         data = meny.H
@@ -84,6 +88,7 @@ class MenyData:
         fname: str
             String with the filename and path to a menyanthes file.
         """
+        warnings.warn("The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io", DeprecationWarning)
 
         mat = self.read_file(fname)
 

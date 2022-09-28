@@ -41,4 +41,4 @@ using Pandas is generally a good idea, for example::
     import pandas as pd
 
     ts = pd.read_csv("your_file.csv", parse_dates=True,
-                     infer_datetime_format=True, squeeze=True)
+                     infer_datetime_format=True).squeeze()

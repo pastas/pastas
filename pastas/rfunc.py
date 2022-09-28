@@ -20,7 +20,14 @@ __all__ = ["Gamma", "Exponential", "Hantush", "Polder", "FourParam",
 class RfuncBase:
     _name = "RfuncBase"
 
-    def __init__(self, up, meanstress, cutoff):
+    def __init__(self, **kwargs):
+        self.up = True
+        self.meanstress = 1
+        self.cutoff = 0.999
+        self.kwargs = kwargs
+
+    def _set_init_parameter_settings(self, up=True, meanstress=1,
+                                     cutoff=0.999):
         self.up = up
         # Completely arbitrary number to prevent division by zero
         if 1e-8 > meanstress > 0:
@@ -167,8 +174,8 @@ class Gamma(RfuncBase):
     """
     _name = "Gamma"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.999):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self):
+        RfuncBase.__init__(self)
         self.nparam = 3
 
     def get_init_parameters(self, name):
@@ -228,8 +235,8 @@ class Exponential(RfuncBase):
     """
     _name = "Exponential"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.999):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self):
+        RfuncBase.__init__(self)
         self.nparam = 2
 
     def get_init_parameters(self, name):
@@ -287,9 +294,9 @@ class HantushWellModel(RfuncBase):
     where r is the distance from the pumping well to the observation point
     and must be specified. A, a, and b are parameters, which are slightly
     different from the Hantush response function. The gain is defined as:
-    
+
     :math:`\\text{gain} = A K_0 \\left( 2r \\sqrt(b) \\right)`
-    
+
     The implementation used here is explained in  [veling_2010]_.
 
     References
@@ -300,12 +307,18 @@ class HantushWellModel(RfuncBase):
     """
     _name = "HantushWellModel"
 
-    def __init__(self, up=False, meanstress=1, cutoff=0.999, distances=1.0):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self):
+        RfuncBase.__init__(self)
+        self.distances = None
         self.nparam = 3
+
+    def set_distances(self, distances):
         self.distances = distances
 
     def get_init_parameters(self, name):
+        if self.distances is None:
+            raise(Exception('distances is None. Set using method set_distances'
+                            'or use Hantush.'))
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
@@ -350,8 +363,9 @@ class HantushWellModel(RfuncBase):
         else:
             return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
 
-    def gain(self, p):
-        r = self._get_distance_from_params(p)
+    def gain(self, p, r=None):
+        if r is None:
+            r = self._get_distance_from_params(p)
         rho = 2 * r * np.sqrt(p[2])
         return p[0] * k0(rho)
 
@@ -379,6 +393,11 @@ class HantushWellModel(RfuncBase):
         Variance of the gain is calculated based on propagation of
         uncertainty using optimal values, the variances of A and b
         and the covariance between A and b.
+
+        Note
+        ----
+        Estimated variance can be biased for non-linear functions as it uses
+        truncated series expansion.
 
         Parameters
         ----------
@@ -441,7 +460,7 @@ class Hantush(RfuncBase):
               \\exp(-t/a - ab/t)
 
     where A, a, and b are parameters.
-    
+
     The implementation used here is explained in  [veling_2010]_.
 
     References
@@ -452,8 +471,8 @@ class Hantush(RfuncBase):
     """
     _name = "Hantush"
 
-    def __init__(self, up=False, meanstress=1, cutoff=0.999):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self):
+        RfuncBase.__init__(self)
         self.nparam = 3
 
     def get_init_parameters(self, name):
@@ -525,8 +544,8 @@ class Polder(RfuncBase):
     """
     _name = "Polder"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.999):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self):
+        RfuncBase.__init__(self)
         self.nparam = 3
 
     def get_init_parameters(self, name):
@@ -587,8 +606,8 @@ class One(RfuncBase):
     """
     _name = "One"
 
-    def __init__(self, up=None, meanstress=1, cutoff=0.999):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self):
+        RfuncBase.__init__(self)
         self.nparam = 1
 
     def get_init_parameters(self, name):
@@ -647,10 +666,10 @@ class FourParam(RfuncBase):
     """
     _name = "FourParam"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.999):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self, quad=False):
+        RfuncBase.__init__(self, quad=quad)
         self.nparam = 4
-        self.quad = False
+        self.quad = quad
 
     def get_init_parameters(self, name):
         parameters = DataFrame(
@@ -795,8 +814,8 @@ class DoubleExponential(RfuncBase):
     """
     _name = "DoubleExponential"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.999):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self):
+        RfuncBase.__init__(self)
         self.nparam = 4
 
     def get_init_parameters(self, name):
@@ -868,8 +887,8 @@ class Edelman(RfuncBase):
     """
     _name = "Edelman"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.999):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self):
+        RfuncBase.__init__(self)
         self.nparam = 1
 
     def get_init_parameters(self, name):
@@ -938,8 +957,8 @@ class Kraijenhoff(RfuncBase):
     """
     _name = "Kraijenhoff"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.999, n_terms=10):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self, n_terms=10):
+        RfuncBase.__init__(self, n_terms=n_terms)
         self.nparam = 3
         self.n_terms = n_terms
 
@@ -1012,9 +1031,9 @@ class Spline(RfuncBase):
     """
     _name = "Spline"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.999, kind='quadratic',
+    def __init__(self, kind='quadratic',
                  t=[1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+        RfuncBase.__init__(self, kind=kind, t=t)
         self.kind = kind
         self.t = t
         self.nparam = len(t) + 1

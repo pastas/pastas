@@ -9,7 +9,7 @@ import shutil
 
 import pytest
 
-pathname = os.path.join('examples', 'notebooks')
+pathname = os.path.join('doc', 'examples')
 # get list of notebooks to run
 files = [f for f in os.listdir(pathname) if f.endswith('.ipynb')]
 
@@ -25,7 +25,7 @@ def test_notebook(file):
     cwd = os.getcwd()
 
     os.chdir(pathname)
-    if file not in ["12_emcee_uncertainty.ipynb", "20_reservoir.ipynb"]:
+    if file not in ["12_emcee_uncertainty.ipynb", "19_reservoir.ipynb"]:
         try:
             # run autotest on each notebook
             cmd = 'jupyter ' + 'nbconvert ' + \

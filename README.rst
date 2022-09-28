@@ -35,7 +35,7 @@ built-in optimization, visualisation, and statistical analysis tools.
 Documentation & Examples
 ~~~~~~~~~~~~~~~~~~~~~~~~
 - Documentation is provided on a dedicated website: http://pastas.readthedocs.io/
-- Examples can be found on the `examples directory on the documentation website <https://pastas.readthedocs.io/en/dev/examples/index.html>`_.
+- Examples can be found on the `examples directory on the documentation website <https://pastas.readthedocs.io/en/dev/examples/index.html>`_
 - View and edit a working example notebook of a Pastas model in `MyBinder <https://mybinder.org/v2/gh/pastas/pastas/master?filepath=examples%2Fnotebooks%2F1_basic_model.ipynb>`_
 - A list of Publications that used Pastas is available in a `dedicated GitHub repo <https://github.com/pastas/pastas_research>`_
 
@@ -73,7 +73,13 @@ Developers
 To get the latest development version, use::
 
    pip install git+https://github.com/pastas/pastas.git@dev#egg=pastas
-  
+
+Related packages
+~~~~~~~~~~~~~~~~
+- `Pastastore <https://github.com/pastas/pastastore>`_ is a Python package for managing multiple timeseries and pastas models 
+- `Hydropandas <https://github.com/ArtesiaWater/hydropandas/blob/master/examples/03_hydropandas_and_pastas.ipynb>`_ can be used to obtain Dutch timeseries (KNMI, Dinoloket, ..)
+- `PyEt <https://github.com/phydrus/pyet>`_ can be used to compute potential evaporation from meteorological variables.
+
 Dependencies
 ~~~~~~~~~~~~
 Pastas depends on a number of Python packages, of which all of the necessary
