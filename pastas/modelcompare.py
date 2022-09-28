@@ -6,6 +6,7 @@ from pandas import DataFrame, concat
 
 import pastas as ps
 from pastas.plots import _table_formatter_params
+from warnings import warn
 
 
 class ModelComparison:
@@ -62,10 +63,12 @@ class ModelComparison:
             list of models to compare
         """
         self.models = models
+        # attributes that are set and used later
         self.figure = None
         self.axes = None
         self.mosaic = None
         self.cmap = None
+        self.adjust_height = False
         self.smdict = None
 
     def initialize_figure(self, mosaic=None, figsize=(10, 8), cmap="tab10"):
@@ -89,9 +92,14 @@ class ModelComparison:
         self.axes = axes
         self.cmap = plt.get_cmap(cmap)
 
-    def initialize_adjust_figure(self, mosaic=None, figsize=(10, 8), cmap="tab10", smdict=None):
-        """initialize a custom figure based on a mosaic with an adjusted height
-        based on contributions in the first row of the mosaic
+    def initialize_adjust_height_figure(
+        self, mosaic=None, figsize=(10, 8), cmap="tab10", smdict=None
+    ):
+        """initialize subplots based on a mosaic with equal vertical scales.
+
+        The height of each subplot is calculated based on the y-data limits in
+        each subplot. This is calculation is performed on the first column of
+        axes in the mosaic.
 
         Parameters
         ----------
@@ -109,6 +117,8 @@ class ModelComparison:
             in the second. By default None, which creates a separate subplot
             for each stressmodel.
         """
+        self.adjust_height = True
+
         if mosaic is None:
             mosaic = self.get_default_mosaic()
 
@@ -120,45 +130,90 @@ class ModelComparison:
         elif smdict is not None and self.smdict is None:
             self.smdict = smdict
 
-        # loop through models to eventually get min and max of every contribution
-        dfminmax = DataFrame(index=self.get_unique_stressmodels(), columns=["min", "max"])
+        # loop through models to get min and max
+        sim_minmax = [1e30, -1e30]
+        res_minmax = [1e30, -1e30]
+        contrib_minmax = DataFrame(
+            index=self.get_unique_stressmodels(), columns=["min", "max"]
+        )
         for ml in self.models:
+            # get sim min/max
+            sim = ml.simulate()
+            o = ml.observations()
+            sim_minmax[0] = np.nanmin(
+                [np.nanmin([sim.min(), o.min()]), sim_minmax[0]]
+            )
+            sim_minmax[1] = np.nanmax(
+                [np.nanmax([sim.max(), o.max()]), sim_minmax[1]]
+            )
+
+            # get res min/max
+            res = ml.residuals()
+            res_minmax[0] = np.nanmin([res.min(), res_minmax[0]])
+            res_minmax[1] = np.nanmax([res.max(), res_minmax[1]])
+
+            # get contrib min/max
             smnames = ml.get_stressmodel_names()
             for smname in smnames:
                 contribution = ml.get_contribution(smname)
-                dfminmax.loc[smname, "min"] = np.nanmin([dfminmax.loc[smname, "min"], np.min(contribution)])
-                dfminmax.loc[smname, "max"] = np.nanmax([dfminmax.loc[smname, "max"], np.max(contribution)])
+                contrib_minmax.loc[smname, "min"] = np.nanmin(
+                    [contrib_minmax.loc[smname, "min"], np.min(contribution)]
+                )
+                contrib_minmax.loc[smname, "max"] = np.nanmax(
+                    [contrib_minmax.loc[smname, "max"], np.max(contribution)]
+                )
 
         # get maximum dy for each subplot
-        conheights = {}
+        heights = {}
         # convert mosaic to dataframe and take first column
         dfmos = DataFrame(mosaic).iloc[:, 0]
         # get original ratio of each string in first column of mosaic
-        mosval = (dfmos.value_counts() / len(dfmos)).to_dict()
-        for ky in mosval:
-            if "con" in ky:  # if entry is contribution
+        mosfrac = (dfmos.value_counts() / len(dfmos)).to_dict()
+        for ky in mosfrac:
+            if ky == "sim":
+                heights[ky] = sim_minmax[1] - sim_minmax[0]
+            elif ky == "res":
+                heights[ky] = res_minmax[1] - res_minmax[0]
+            elif "con" in ky:  # if entry is contribution
                 # loop through stressmodelnames provided for subplot
-                smnames = self.smdict[int(ky[-1])]
-                conheights[ky] = np.nanmax(dfminmax.loc[smnames, "max"]) - np.nanmin(dfminmax.loc[smnames, "min"])
+                smnames = self.smdict[int(ky[3:])]  # index is after 'con'
+                # fmt: off
+                heights[ky] = (
+                    np.nanmax(contrib_minmax.loc[smnames, "max"]) - 
+                    np.nanmin(contrib_minmax.loc[smnames, "min"])
+                )
+                # fmt: on
 
-        # sum of all dy of contributions
-        den = np.sum([conheights[ky] for ky in conheights])
-        # part of contributions in total rows
-        confsum = np.sum([mosval[x] for x in mosval if "con" in x])
-        for ky in mosval:
-            if ky in conheights:  # if contribution use ratio of contribution heights
-                mosval[ky] = conheights[ky] / den * confsum
+        # sum of scaled dy
+        hsum = np.sum(list(heights.values()))
+        # total height ratio of scaled dy subplots
+        hratio = 1.0 - np.sum(
+            [mosfrac[ky] for ky in mosfrac if ky not in heights]
+        )
+        heights_list = []  # collect heights
+        for ky in mosfrac:
+            nrows = dfmos.value_counts().loc[ky]
+            if ky in heights:
+                # add entry if axes spans multiple tiles in mosaic
+                heights_list += [heights[ky] / hsum * hratio / nrows] * nrows
             else:  # use the ratio of mosaic
-                mosval[ky] = mosval[ky] / dfmos.value_counts().loc[ky]
-
-        # get heights from mosval dict
-        heights = [mosval[row] for row in dfmos.values]
+                heights_list += [mosfrac[ky]]
 
         self.mosaic = mosaic
-        figure, axes = plt.subplot_mosaic(self.mosaic, figsize=figsize, gridspec_kw=dict(height_ratios=heights))
+        figure, axes = plt.subplot_mosaic(
+            self.mosaic,
+            figsize=figsize,
+            gridspec_kw=dict(height_ratios=heights_list),
+        )
+
         self.figure = figure
         self.axes = axes
         self.cmap = plt.get_cmap(cmap)
+
+        # set ylimits to data limits for scaling properly
+        for axlbl in self.axes:
+            if axlbl in ["sim", "res"] or axlbl.startswith("con"):
+                self.axes[axlbl].autoscale(enable=None, axis="y", tight=True)
 
     def get_unique_stressmodels(self, models=None):
         """Get all unique stressmodel names.
@@ -198,7 +253,7 @@ class ModelComparison:
         if n_stressmodels is None:
             n_stressmodels = len(
                 self.get_unique_stressmodels(models=self.models)
-                )
+            )
 
         mosaic = [
             ["sim", "sim", "met"],
@@ -498,6 +553,12 @@ class ModelComparison:
             self.initialize_figure(mosaic=[[axn]], figsize=(10, 3))
 
         if smdict is None and self.smdict is None:
+            if self.adjust_height:
+                warn(
+                    "When combining stressmodels into one subplot in "
+                    "combination with 'adjust_height', provide 'smdict' to "
+                    "`initialize_adjust_height_figure()` for best results."
+                )
             self.smdict = {
                 i: [smn]
                 for i, smn in enumerate(self.get_unique_stressmodels())
@@ -669,7 +730,7 @@ class ModelComparison:
         cols = metrics.columns.to_list()[-1:] + metrics.columns.to_list()[:-1]
         self.plot_table(axn=axn, df=metrics[cols].round(2))
 
-    def plot_table_diagnostics(self, axn="diag", diag_col='P-value'):
+    def plot_table_diagnostics(self, axn="diag", diag_col="P-value"):
         """plot diagnostics table.
 
         Parameters
@@ -717,10 +778,11 @@ class ModelComparison:
         param_selection=None,
         grid=True,
         legend=True,
+        adjust_height=False,
     ):
         """plot the models in a comparison plot.
 
-        Plot is similar to `ml.plots.results()`.
+        The resulting plot is similar to `ml.plots.results()`.
 
         Parameters
         ----------
@@ -741,9 +803,17 @@ class ModelComparison:
             grid in each subplots, by default True
         legend : bool, optional
             add legend in each subplot, by default True
+        adjust_height : bool, optional
+            adjust the height of the graphs, so that the vertical scale of all
+            the subplots on the left is equal. Default is False. When combining
+            stress contributions in one subplot, please also provide smdict for
+            best results.
         """
-        if self.axes is None:
+        self.adjust_height = adjust_height
+        if self.axes is None and not self.adjust_height:
             self.initialize_figure()
+        if self.axes is None and self.adjust_height:
+            self.initialize_adjust_height_figure(smdict=smdict)
 
         # sim
         self.plot_oseries()
@@ -757,12 +827,7 @@ class ModelComparison:
         self.plot_contribution(smdict=smdict, normalized=normalized)
         self.plot_response(smdict=smdict)
 
-        # met
-        self.plot_table_metrics()
-
-        # tab
-        self.plot_table_params(param_selection=param_selection)
-
+        # share x-axes
         xshare_left = []
         xshare_right = []
         for axn in self.axes.keys():
@@ -774,23 +839,24 @@ class ModelComparison:
                         ncol=max([int(np.ceil(len(l))), 4]),
                         loc=(0, 1),
                         frameon=False,
-                        fontsize="x-small",
-                        markerscale=0.7,
+                        # fontsize="x-small",
+                        markerscale=1.0,
                         numpoints=3,
                     )
-            # share x-axes
-            if (
-                axn in ("sim", "res")
-                or axn.startswith("con")
-                or axn.startswith("stress")
-            ):
+            if axn in ("sim", "res") or axn.startswith("con"):
                 xshare_left.append(self.axes[axn])
             if axn.startswith("rf"):
                 xshare_right.append(self.axes[axn])
-        # share x-axes
+
         if len(xshare_left) > 1:
             self.share_xaxes(xshare_left)
         if len(xshare_right) > 1:
             self.share_xaxes(xshare_right)
 
-        self.figure.tight_layout()
+        # met
+        self.plot_table_metrics()
+
+        # tab
+        self.plot_table_params(param_selection=param_selection)
+
+        self.figure.tight_layout(pad=0.0)
