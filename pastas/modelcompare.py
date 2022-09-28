@@ -584,15 +584,15 @@ class ModelComparison:
                                 color=self.cmap(i),
                             )
 
-    def plot_stress(self, names=None, axn="stress"):
+    def plot_stress(self, axn="stress", names=None):
         """plot stresses time series.
 
         Parameters
         ----------
-        names : list of str, optional
-            names of stresses to plot, by default None
         axn : str, optional
             name of labeled axes to plot stresses on, by default "stress"
+        names : list of str, optional
+            names of stresses to plot, by default None
         """
         if self.axes is None:
             self.initialize_figure(mosaic=[[axn]], figsize=(10, 3))
