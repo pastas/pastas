@@ -117,6 +117,8 @@ class ModelComparison:
                 i: [smn]
                 for i, smn in enumerate(self.get_unique_stressmodels())
             }
+        elif smdict is not None and self.smdict is None:
+            self.smdict = smdict
 
         # convert mosaic to dataframe and take first row
         dfmos = DataFrame(mosaic).iloc[:, 0]
@@ -150,8 +152,8 @@ class ModelComparison:
         # get heights from mosval dict
         heights = [mosval[row] for row in dfmos.values]
 
-        figure, axes = plt.subplot_mosaic(
-            self.mosaic, figsize=figsize, gridspec_kw=dict(height_ratios=heights))
+        self.mosaic = mosaic
+        figure, axes = plt.subplot_mosaic(self.mosaic, figsize=figsize, gridspec_kw=dict(height_ratios=heights))
         self.figure = figure
         self.axes = axes
         self.cmap = plt.get_cmap(cmap)
