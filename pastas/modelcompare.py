@@ -112,7 +112,7 @@ class ModelComparison:
         if mosaic is None:
             mosaic = self.get_default_mosaic()
 
-        if smdict is None:
+        if smdict is None and self.smdict is None:
             self.smdict = {
                 i: [smn]
                 for i, smn in enumerate(self.get_unique_stressmodels())
@@ -442,6 +442,8 @@ class ModelComparison:
                 i: [smn]
                 for i, smn in enumerate(self.get_unique_stressmodels())
             }
+        else:
+            self.smdict = smdict
 
         for i, ml in enumerate(self.models):
             for j, namlist in self.smdict.items():
@@ -496,6 +498,8 @@ class ModelComparison:
                 i: [smn]
                 for i, smn in enumerate(self.get_unique_stressmodels())
             }
+        else:
+            self.smdict = smdict
 
         for i, ml in enumerate(self.models):
             for j, namlist in self.smdict.items():
