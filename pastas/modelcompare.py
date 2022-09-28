@@ -66,6 +66,7 @@ class ModelComparison:
         self.axes = None
         self.mosaic = None
         self.cmap = None
+        self.smdict = None
 
     def initialize_figure(self, mosaic=None, figsize=(10, 8), cmap="tab10"):
         """initialize a custom figure based on a mosaic.
@@ -80,8 +81,7 @@ class ModelComparison:
             colormap, by default "tab10"
         """
         if mosaic is None:
-            u_sm = self.get_unique_stressmodels(models=self.models)
-            mosaic = self.get_default_mosaic(len(u_sm))
+            mosaic = self.get_default_mosaic()
 
         self.mosaic = mosaic
         figure, axes = plt.subplot_mosaic(self.mosaic, figsize=figsize)
@@ -110,19 +110,25 @@ class ModelComparison:
 
         return sm_unique
 
-    def get_default_mosaic(self, n_stressmodels=0):
+    def get_default_mosaic(self, n_stressmodels=None):
         """Get default mosaic for matplotlib.subplot_mosaic().
 
         Parameters
         ----------
-        n_stressmodels : int, optional
-            number of stressmodel plots to include in mosaic
+        n_stressmodels : None, optional
+            number of stressmodel plots to include in mosaic by default None
+            which uses the numberof unique stressmodels in all models
 
         Returns
         -------
         mosaic : list
             list of lists containing axes labels
         """
+        if n_stressmodels is None:
+            n_stressmodels = len(
+                self.get_unique_stressmodels(models=self.models)
+                )
+
         mosaic = [
             ["sim", "sim", "met"],
             ["sim", "sim", "tab"],
@@ -218,23 +224,23 @@ class ModelComparison:
         else:
             return params
 
-    def get_diagnostics(self, models=None):
+    def get_diagnostics(self, models=None, diag_col="P-value"):
         """Get p-values of statistical tests in a DataFrame.
 
         Parameters
         ----------
         models : list of ps.Model, optional
             list of models to calculate diagnostics for
+        diag_col : str, optional
+            name of diagnostics column to obtain, by default "P-value"
         """
         if models is None:
             models = self.models
 
-        diags = DataFrame(index=[f"{x.name}_pvalue" for x in models])
+        diags = DataFrame(index=[x.name for x in models])
         for ml in models:
             mldiag = ml.stats.diagnostics()
-            diags.loc[f"{ml.name}_pvalue", mldiag.index] = mldiag[
-                "P-value"
-            ].values
+            diags.loc[f"{ml.name}", mldiag.index] = mldiag[diag_col].values
 
         return diags.transpose()
 
@@ -364,14 +370,14 @@ class ModelComparison:
         if self.axes is None:
             self.initialize_figure(mosaic=[[axn]], figsize=(5, 3))
 
-        if smdict is None:
-            smdict = {
+        if smdict is None and self.smdict is None:
+            self.smdict = {
                 i: [smn]
                 for i, smn in enumerate(self.get_unique_stressmodels())
             }
 
         for i, ml in enumerate(self.models):
-            for j, namlist in smdict.items():
+            for j, namlist in self.smdict.items():
                 for smn in namlist:
                     # skip if contribution not in model
                     if not smn in ml.stressmodels:
@@ -418,14 +424,14 @@ class ModelComparison:
         if self.axes is None:
             self.initialize_figure(mosaic=[[axn]], figsize=(10, 3))
 
-        if smdict is None:
-            smdict = {
+        if smdict is None and self.smdict is None:
+            self.smdict = {
                 i: [smn]
                 for i, smn in enumerate(self.get_unique_stressmodels())
             }
 
         for i, ml in enumerate(self.models):
-            for j, namlist in smdict.items():
+            for j, namlist in self.smdict.items():
                 for smn in namlist:
                     if not smn in ml.stressmodels:
                         continue
@@ -504,8 +510,32 @@ class ModelComparison:
                 label=label,
             )
 
+    def plot_table(self, axn="table", df=DataFrame(["emtpy"])):
+        """plot dataframe as table
+
+        Parameters
+        ----------
+        axn : str, optional
+            name of labeled axes to plot table on, by default "table"
+        df : pandas DataFrame
+            Pandas Dataframe to plot. Note that the first column is the index
+            column that is shown.
+        """
+        if self.axes is None:
+            self.initialize_figure(mosaic=[[axn]], figsize=(6, 4))
+
+        self.axes[axn].table(
+            df.values.tolist(),
+            colLabels=df.columns,
+            colColours=[(1.0, 1.0, 1.0, 1.0)]
+            + [self.cmap(i, alpha=0.75) for i in range(len(df.columns) - 1)],
+            bbox=(0.0, 0.0, 1.0, 1.0),
+        )
+        self.axes[axn].set_xticks([])
+        self.axes[axn].set_yticks([])
+
     def plot_table_params(
-        self, axn="tab", paramcol="optimal", param_selection=None
+        self, axn="tab", param_col="optimal", param_selection=None
     ):
         """plot model parameters table.
 
@@ -513,7 +543,7 @@ class ModelComparison:
         ----------
         axn : str, optional
             name of labeled axes to plot table on, by default "tab"
-        paramcol : str, optional
+        param_col : str, optional
             name of parameter column to include, by default "optimal"
         param_selection : str, optional
             string to filter parameter names that are included in table, by
@@ -525,21 +555,13 @@ class ModelComparison:
         params = self.get_parameters(
             self.models,
             param_selection=param_selection,
-            param_col=paramcol,
+            param_col=param_col,
         ).applymap(_table_formatter_params)
+
         # add seperate column with parameter names
         params.loc[:, "Parameters"] = params.index
         cols = params.columns.to_list()[-1:] + params.columns.to_list()[:-1]
-        params_list = params[cols].values.tolist()
-        self.axes[axn].table(
-            params_list,
-            colLabels=cols,
-            colColours=[(1.0, 1.0, 1.0, 1.0)]
-            + [self.cmap(i, alpha=0.75) for i in range(len(cols) - 1)],
-            bbox=(0.0, 0.0, 1.0, 1.0),
-        )
-        self.axes[axn].set_xticks([])
-        self.axes[axn].set_yticks([])
+        self.plot_table(df=params[cols], axn=axn)
 
     def plot_table_metrics(self, axn="met", metric_selection=["rsq", "aic"]):
         """plot metrics table.
@@ -567,43 +589,29 @@ class ModelComparison:
         if "rsq" in metrics.index:
             metrics = metrics.rename(index={"rsq": f"R\N{SUPERSCRIPT TWO}"})
 
+        # add seperate column with parameter names
         metrics.loc[:, "Metrics"] = metrics.index
         cols = metrics.columns.to_list()[-1:] + metrics.columns.to_list()[:-1]
-        metrics_list = metrics[cols].round(2).values.tolist()
-        self.axes[axn].table(
-            metrics_list,
-            colLabels=cols,
-            colColours=[(1.0, 1.0, 1.0, 1.0)]
-            + [self.cmap(i, alpha=0.75) for i in range(len(cols) - 1)],
-            bbox=(0.0, 0.0, 1.0, 1.0),
-        )
-        self.axes[axn].set_xticks([])
-        self.axes[axn].set_yticks([])
+        self.plot_table(df=metrics[cols].round(2), axn=axn)
 
-    def plot_table_diagnostics(self, axn="diag"):
+    def plot_table_diagnostics(self, axn="diag", diag_col='P-value'):
         """plot diagnostics table.
 
         Parameters
         ----------
         axn : str, optional
             name of labeled axis to plot table on, by default "diag"
+        diag_col : str, optional
+            name of diagnostics column to obtain, by default "P-value"
         """
         if self.axes is None:
             self.initialize_figure(mosaic=[[axn]], figsize=(6, 4))
 
-        diags = self.get_diagnostics(self.models)
-        diags.loc[:, "Test"] = diags.index
+        # add seperate column with parameter names
+        diags = self.get_diagnostics(self.models, diag_col=diag_col)
+        diags.loc[:, f"Test\n{diag_col}"] = diags.index
         cols = diags.columns.to_list()[-1:] + diags.columns.to_list()[:-1]
-        diags_list = diags[cols].values.tolist()
-        self.axes[axn].table(
-            diags_list,
-            colLabels=[c.replace("_", "\n") for c in cols],
-            colColours=[(1.0, 1.0, 1.0, 1.0)]
-            + [self.cmap(i, alpha=0.75) for i in range(len(cols) - 1)],
-            bbox=(0.0, 0.0, 1.0, 1.0),
-        )
-        self.axes[axn].set_xticks([])
-        self.axes[axn].set_yticks([])
+        self.plot_table(df=diags[cols], axn=axn)
 
     def share_xaxes(self, axes):
         """share x-axes.
