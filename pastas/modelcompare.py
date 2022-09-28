@@ -89,6 +89,73 @@ class ModelComparison:
         self.axes = axes
         self.cmap = plt.get_cmap(cmap)
 
+    def initialize_adjust_figure(self, mosaic=None, figsize=(10, 8), cmap="tab10", smdict=None):
+        """initialize a custom figure based on a mosaic with an adjusted height
+        based on contributions in the first row of the mosaic
+
+        Parameters
+        ----------
+        mosaic : list, optional
+            subplot mosaic, by default None which uses the default mosaic.
+        figsize : tuple, optional
+            figure size, by default (10, 8)
+        cmap : str, optional
+            colormap, by default "tab10"
+        smdict : dict, optional
+            Dictionary with integers (index) as keys and list of stressmodel
+            names as values that have to be in each subplot. For example, `{0:
+            ['prec', 'evap'], 1: ['rech']}` where stressmodels 'prec' and
+            'evap' are plotted in the first respons function window and 'rech'
+            in the second. By default None, which creates a separate subplot
+            for each stressmodel.
+        """
+        if mosaic is None:
+            mosaic = self.get_default_mosaic()
+
+        if smdict is None:
+            self.smdict = {
+                i: [smn]
+                for i, smn in enumerate(self.get_unique_stressmodels())
+            }
+
+        # convert mosaic to dataframe and take first row
+        dfmos = DataFrame(mosaic).iloc[:, 0]
+        # take into acount the amount of provided rows in mosaic
+        mosval = (dfmos.value_counts() / len(dfmos)).to_dict()
+
+        conheights = {}
+        # loop through models to eventually get contributions
+        for ml in self.models:
+            for ky in mosval:
+                if "con" in ky:  # if key is contribution
+                    # loop through contributions provided for subplot
+                    for smname in self.smdict[int(ky[-1])]:
+                        if smname in ml.get_stressmodel_names():
+                            contribution = ml.get_contribution(smname)
+                            dy = contribution.max() - contribution.min()
+                            if ky in conheights:
+                                conheights[ky] = max(conheights[ky], dy)
+                            else:
+                                conheights[ky] = dy
+
+        # sum of all dy of contributions
+        den = np.sum([conheights[ky] for ky in conheights])
+        # part of contributions in total rows
+        confsum = np.sum([mosval[x] for x in mosval if "con" in x])
+        for ky in mosval:
+            if ky in conheights:  # if contribution use ratio of contribution heights
+                mosval[ky] = conheights[ky] / den * confsum
+            else:  # use the ratio of mosaic
+                mosval[ky] = mosval[ky] / dfmos.value_counts().loc[ky]
+        # get heights from mosval dict
+        heights = [mosval[row] for row in dfmos.values]
+
+        figure, axes = plt.subplot_mosaic(
+            self.mosaic, figsize=figsize, gridspec_kw=dict(height_ratios=heights))
+        self.figure = figure
+        self.axes = axes
+        self.cmap = plt.get_cmap(cmap)
+
     def get_unique_stressmodels(self, models=None):
         """Get all unique stressmodel names.
 
