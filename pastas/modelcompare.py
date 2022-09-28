@@ -179,7 +179,7 @@ class ModelComparison:
                 smnames = self.smdict[int(ky[3:])]  # index is after 'con'
                 # fmt: off
                 heights[ky] = (
-                    np.nanmax(contrib_minmax.loc[smnames, "max"]) - 
+                    np.nanmax(contrib_minmax.loc[smnames, "max"]) -
                     np.nanmin(contrib_minmax.loc[smnames, "min"])
                 )
                 # fmt: on
@@ -228,11 +228,7 @@ class ModelComparison:
 
         sm_unique = []
         for ml in models:
-            [
-                sm_unique.append(x)
-                for x in ml.get_stressmodel_names()
-                if x not in sm_unique
-            ]
+            sm_unique += [x for x in ml.get_stressmodel_names() if x not in sm_unique]
 
         return sm_unique
 
@@ -646,7 +642,7 @@ class ModelComparison:
                 label=label,
             )
 
-    def plot_table(self, axn="table", df=DataFrame(["emtpy"])):
+    def plot_table(self, axn="table", df=None):
         """plot dataframe as table
 
         Parameters
@@ -659,6 +655,9 @@ class ModelComparison:
         """
         if self.axes is None:
             self.initialize_figure(mosaic=[[axn]], figsize=(6, 4))
+
+        if df is None:
+            df = DataFrame(["empty"])
 
         self.axes[axn].table(
             df.values.tolist(),
@@ -699,7 +698,7 @@ class ModelComparison:
         cols = params.columns.to_list()[-1:] + params.columns.to_list()[:-1]
         self.plot_table(axn=axn, df=params[cols])
 
-    def plot_table_metrics(self, axn="met", metric_selection=["rsq", "aic"]):
+    def plot_table_metrics(self, axn="met", metric_selection=None):
         """plot metrics table.
 
         Parameters
@@ -707,11 +706,14 @@ class ModelComparison:
         axn : str, optional
             name of labeled axes to plot table on, by default "met"
         metric_selection : list, optional
-            list of str describing which metrics to include, by default ["rsq",
-            "aic"]
+            list of str describing which metrics to include, by default None
+            which uses ["rsq", "aic"]
         """
         if self.axes is None:
             self.initialize_figure(mosaic=[[axn]], figsize=(6, 4))
+
+        if metric_selection is None:
+            metric_selection = ["rsq", "aic"]
 
         metrics = self.get_metrics(
             self.models, metric_selection=metric_selection
