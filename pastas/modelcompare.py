@@ -120,25 +120,26 @@ class ModelComparison:
         elif smdict is not None and self.smdict is None:
             self.smdict = smdict
 
-        # convert mosaic to dataframe and take first row
-        dfmos = DataFrame(mosaic).iloc[:, 0]
-        # take into acount the amount of provided rows in mosaic
-        mosval = (dfmos.value_counts() / len(dfmos)).to_dict()
-
-        conheights = {}
-        # loop through models to eventually get contributions
+        # loop through models to eventually get min and max of every contribution
+        dfminmax = DataFrame(index=self.get_unique_stressmodels(), columns=["min", "max"])
         for ml in self.models:
-            for ky in mosval:
-                if "con" in ky:  # if key is contribution
-                    # loop through contributions provided for subplot
-                    for smname in self.smdict[int(ky[-1])]:
-                        if smname in ml.get_stressmodel_names():
-                            contribution = ml.get_contribution(smname)
-                            dy = contribution.max() - contribution.min()
-                            if ky in conheights:
-                                conheights[ky] = max(conheights[ky], dy)
-                            else:
-                                conheights[ky] = dy
+            smnames = ml.get_stressmodel_names()
+            for smname in smnames:
+                contribution = ml.get_contribution(smname)
+                dfminmax.loc[smname, "min"] = np.nanmin([dfminmax.loc[smname, "min"], np.min(contribution)])
+                dfminmax.loc[smname, "max"] = np.nanmax([dfminmax.loc[smname, "max"], np.max(contribution)])
+
+        # get maximum dy for each subplot
+        conheights = {}
+        # convert mosaic to dataframe and take first column
+        dfmos = DataFrame(mosaic).iloc[:, 0]
+        # get original ratio of each string in first column of mosaic
+        mosval = (dfmos.value_counts() / len(dfmos)).to_dict()
+        for ky in mosval:
+            if "con" in ky:  # if entry is contribution
+                # loop through stressmodelnames provided for subplot
+                smnames = self.smdict[int(ky[-1])]
+                conheights[ky] = np.nanmax(dfminmax.loc[smnames, "max"]) - np.nanmin(dfminmax.loc[smnames, "min"])
 
         # sum of all dy of contributions
         den = np.sum([conheights[ky] for ky in conheights])
@@ -149,6 +150,7 @@ class ModelComparison:
                 mosval[ky] = conheights[ky] / den * confsum
             else:  # use the ratio of mosaic
                 mosval[ky] = mosval[ky] / dfmos.value_counts().loc[ky]
+
         # get heights from mosval dict
         heights = [mosval[row] for row in dfmos.values]
 
