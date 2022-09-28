@@ -442,7 +442,7 @@ class ModelComparison:
                 i: [smn]
                 for i, smn in enumerate(self.get_unique_stressmodels())
             }
-        else:
+        elif smdict is not None and self.smdict is None:
             self.smdict = smdict
 
         for i, ml in enumerate(self.models):
@@ -498,7 +498,7 @@ class ModelComparison:
                 i: [smn]
                 for i, smn in enumerate(self.get_unique_stressmodels())
             }
-        else:
+        elif smdict is not None and self.smdict is None:
             self.smdict = smdict
 
         for i, ml in enumerate(self.models):
@@ -632,7 +632,7 @@ class ModelComparison:
         # add seperate column with parameter names
         params.loc[:, "Parameters"] = params.index
         cols = params.columns.to_list()[-1:] + params.columns.to_list()[:-1]
-        self.plot_table(df=params[cols], axn=axn)
+        self.plot_table(axn=axn, df=params[cols])
 
     def plot_table_metrics(self, axn="met", metric_selection=["rsq", "aic"]):
         """plot metrics table.
@@ -663,7 +663,7 @@ class ModelComparison:
         # add seperate column with parameter names
         metrics.loc[:, "Metrics"] = metrics.index
         cols = metrics.columns.to_list()[-1:] + metrics.columns.to_list()[:-1]
-        self.plot_table(df=metrics[cols].round(2), axn=axn)
+        self.plot_table(axn=axn, df=metrics[cols].round(2))
 
     def plot_table_diagnostics(self, axn="diag", diag_col='P-value'):
         """plot diagnostics table.
@@ -682,7 +682,7 @@ class ModelComparison:
         diags = self.get_diagnostics(self.models, diag_col=diag_col)
         diags.loc[:, f"Test\n{diag_col}"] = diags.index
         cols = diags.columns.to_list()[-1:] + diags.columns.to_list()[:-1]
-        self.plot_table(df=diags[cols], axn=axn)
+        self.plot_table(axn=axn, df=diags[cols])
 
     def share_xaxes(self, axes):
         """share x-axes.
