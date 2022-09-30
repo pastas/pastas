@@ -5,7 +5,6 @@ import numpy as np
 from pandas import DataFrame, concat
 
 import pastas as ps
-from pastas.plots import _table_formatter_params
 from warnings import warn
 
 
@@ -691,7 +690,7 @@ class ModelComparison:
             self.models,
             param_selection=param_selection,
             param_col=param_col,
-        ).applymap(_table_formatter_params)
+        ).applymap(ps.plots._table_formatter_params)
 
         # add seperate column with parameter names
         params.loc[:, "Parameters"] = params.index
@@ -778,6 +777,7 @@ class ModelComparison:
         smdict=None,
         normalized=False,
         param_selection=None,
+        figsize=(10,8),
         grid=True,
         legend=True,
         adjust_height=False,
@@ -801,6 +801,8 @@ class ModelComparison:
         param_selection : list, optional
             list of (sub)strings of which parameters to show in table, by
             default None
+        figsize : tuple, optional
+            figure size, by default (10, 8)
         grid : bool, optional
             grid in each subplots, by default True
         legend : bool, optional
@@ -813,9 +815,9 @@ class ModelComparison:
         """
         self.adjust_height = adjust_height
         if self.axes is None and not self.adjust_height:
-            self.initialize_figure()
+            self.initialize_figure(figsize=figsize)
         if self.axes is None and self.adjust_height:
-            self.initialize_adjust_height_figure(smdict=smdict)
+            self.initialize_adjust_height_figure(smdict=smdict, figsize=figsize)
 
         # sim
         self.plot_oseries()
