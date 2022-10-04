@@ -2,7 +2,6 @@
 
 """
 
-from inspect import stack
 import logging
 
 import matplotlib.pyplot as plt
