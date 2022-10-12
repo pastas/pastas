@@ -670,7 +670,7 @@ def check_numba():
 
 def check_numba_scipy():
     try:
-        import numba_scipy
+        import numba_scipy as _
     except ImportError:
         logger.warning(
             "numba_scipy is not installed, defaulting to numpy implementation."

@@ -1,5 +1,4 @@
-from ast import Mod
-from functools import wraps, partial
+from functools import wraps
 from logging import getLogger
 
 logger = getLogger(__name__)
@@ -54,7 +53,7 @@ def PastasDeprecationWarning(function):
 
 
 def njit(function=None, parallel=False):
-    
+
     def njit_decorator(f):
         try:
             from numba import njit
@@ -62,7 +61,7 @@ def njit(function=None, parallel=False):
             return fnumba
         except ImportError:
             return f
-    
+
     if function:
         return njit_decorator(function)
 
