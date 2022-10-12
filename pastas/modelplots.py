@@ -838,7 +838,7 @@ class Plotting:
         fig2.suptitle("Model Diagnostics", fontweight="bold")
 
         plt.subplots_adjust(left=0.1, top=0.9, right=0.95, bottom=0.1)
-        pdf.savefig(fig, papertype="a4", orientation="portrait", dpi=dpi)
+        pdf.savefig(fig, orientation="portrait", dpi=dpi)
         pdf.close()
         return fig
 
