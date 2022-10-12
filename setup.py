@@ -45,6 +45,7 @@ setup(
     ],
     packages=find_packages(exclude=[]),
     extras_require={
-        "full": ["numba>=0.51", "numba-scipy>=0.3.1", "lmfit>=1.0.0"]
+        "full": ["numba>=0.51", "lmfit>=1.0.0"],
+        "numbascipy": ["numba-scipy>=0.3.1"]
     },
 )
