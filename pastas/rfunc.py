@@ -405,10 +405,10 @@ class HantushWellModel(RfuncBase):
             tau_i = tau[i]
             if tau_i < rho / 2:
                 F[i] = w * exp1(rhosq / (4 * tau_i)) - (w - 1) * exp1(
-            tau_i + rhosq / (4 * tau_i))
+                    tau_i + rhosq / (4 * tau_i))
             elif tau_i >= rho / 2:
                 F[i] = 2 * k0rho - w * exp1(tau_i) + (w - 1) * exp1(
-            tau_i + rhosq / (4 * tau_i))
+                    tau_i + rhosq / (4 * tau_i))
         return A * F / 2
 
     @staticmethod
@@ -440,7 +440,7 @@ class HantushWellModel(RfuncBase):
         A, a, b = p[:3]
         r = self._get_distance_from_params(p)
         t = self.get_t(p, dt, cutoff, maxtmax)
-        
+
         if self.quad:
             return self.quad_step(A, a, b, r, t)
         else:
@@ -494,7 +494,7 @@ class HantushWellModel(RfuncBase):
         """
         var_gain = (
             (k0(2 * r * np.exp(b / 2))) ** 2 * var_A +
-            (A * r * k1(2 * r * np.exp(b / 2)))**2 * np.exp(b) * var_b 
+            (A * r * k1(2 * r * np.exp(b / 2)))**2 * np.exp(b) * var_b
             - 2 * A * r * k0(2 * r * np.exp(b / 2)) *
             k1(2 * r * np.exp(b / 2)) * np.exp(b / 2) * cov_Ab
         )
@@ -593,10 +593,10 @@ class Hantush(RfuncBase):
             tau_i = tau[i]
             if tau_i < rho / 2:
                 F[i] = w * exp1(rhosq / (4 * tau_i)) - (w - 1) * exp1(
-            tau_i + rhosq / (4 * tau_i))
+                    tau_i + rhosq / (4 * tau_i))
             elif tau_i >= rho / 2:
                 F[i] = 2 * k0rho - w * exp1(tau_i) + (w - 1) * exp1(
-            tau_i + rhosq / (4 * tau_i))
+                    tau_i + rhosq / (4 * tau_i))
         return A * F / (2 * k0rho)
 
     @staticmethod
@@ -626,7 +626,7 @@ class Hantush(RfuncBase):
     def step(self, p, dt=1, cutoff=None, maxtmax=None):
         A, a, b = p
         t = self.get_t(p, dt, cutoff, maxtmax)
-        
+
         if self.quad:
             return self.quad_step(A, a, b, t)
         else:
