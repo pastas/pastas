@@ -9,6 +9,13 @@ from scipy.integrate import quad
 from scipy.special import (erfc, erfcinv, exp1, gammainc, gammaincinv, k0, k1,
                            lambertw)
 from scipy.interpolate import interp1d
+from .decorators import njit
+from .utils import check_numba, check_numba_scipy
+
+try:
+    from numba import prange
+except ModuleNotFoundError:
+    prange = range
 
 logger = getLogger(__name__)
 
@@ -146,6 +153,7 @@ class RfuncBase:
             if maxtmax is not None:
                 tmax = min(tmax, maxtmax)
             tmax = max(tmax, 3 * dt)
+            # print(tmax)
             return np.arange(dt, tmax, dt)
 
 
@@ -307,18 +315,27 @@ class HantushWellModel(RfuncBase):
     """
     _name = "HantushWellModel"
 
-    def __init__(self):
+    def __init__(self, use_numba=False, quad=False):
         RfuncBase.__init__(self)
         self.distances = None
         self.nparam = 3
+        self.use_numba = use_numba  # requires numba_scipy for real speedups
+        self.quad = quad  # if quad=True, implicitly uses numba
+        # check numba and numba_scipy installation
+        if self.quad or self.use_numba:
+            check_numba()
+            # turn off use_numba if numba_scipy is not available
+            # or there is a version conflict
+            if self.use_numba:
+                self.use_numba = check_numba_scipy()
 
     def set_distances(self, distances):
         self.distances = distances
 
     def get_init_parameters(self, name):
         if self.distances is None:
-            raise(Exception('distances is None. Set using method set_distances'
-                            'or use Hantush.'))
+            raise(Exception('distances is None. Set using method'
+                            ' set_distances() or use Hantush.'))
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
@@ -334,9 +351,10 @@ class HantushWellModel(RfuncBase):
                                            np.nan, True, name)
         parameters.loc[name + '_a'] = (100, 1e-3, 1e4, True, name)
         # set initial and bounds for b taking into account distances
-        binit = 1.0 / np.mean(self.distances) ** 2
-        bmin = 1e-6 / np.max(self.distances) ** 2
-        bmax = 25. / np.min(self.distances) ** 2
+        # note log transform to avoid extremely small values for b
+        binit = np.log(1.0 / np.mean(self.distances) ** 2)
+        bmin = np.log(1e-6 / np.max(self.distances) ** 2)
+        bmax = np.log(25. / np.min(self.distances) ** 2)
         parameters.loc[name + '_b'] = (binit, bmin, bmax, True, name)
         return parameters
 
@@ -355,36 +373,82 @@ class HantushWellModel(RfuncBase):
         # approximate formula for tmax
         if cutoff is None:
             cutoff = self.cutoff
-        cS = p[1]
-        rho = np.sqrt(4 * r ** 2 * p[2])
+        a, b = p[1:3]
+        rho = 2 * r * np.exp(b / 2)
         k0rho = k0(rho)
         if k0rho == 0.0:
-            return 100 * 365.  # 100 years
+            return 50 * 365.  # 50 years, need to set some tmax if k0rho==0.0
         else:
-            return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
+            return lambertw(1 / ((1 - cutoff) * k0rho)).real * a
 
     def gain(self, p, r=None):
         if r is None:
             r = self._get_distance_from_params(p)
-        rho = 2 * r * np.sqrt(p[2])
+        rho = 2 * r * np.exp(p[2] / 2)
         return p[0] * k0(rho)
 
-    def step(self, p, dt=1, cutoff=None, maxtmax=None):
-        r = self._get_distance_from_params(p)
-        cS = p[1]
-        rho = np.sqrt(4 * r ** 2 * p[2])
+    @staticmethod
+    @njit
+    def _integrand_hantush(y, b):
+        return np.exp(-y - (b / y)) / y
+
+    @staticmethod
+    @njit(parallel=True)
+    def numba_step(A, a, b, r, t):
+        rho = 2 * r * np.exp(b / 2)
+        rhosq = rho**2
         k0rho = k0(rho)
-        t = self.get_t(p, dt, cutoff, maxtmax)
-        tau = t / cS
+        tau = t / a
+        w = (exp1(rho) - k0rho) / (exp1(rho) - exp1(rho / 2))
+        F = np.zeros((tau.size,), dtype=np.float64)
+        for i in prange(tau.size):
+            tau_i = tau[i]
+            if tau_i < rho / 2:
+                F[i] = w * exp1(rhosq / (4 * tau_i)) - (w - 1) * exp1(
+            tau_i + rhosq / (4 * tau_i))
+            elif tau_i >= rho / 2:
+                F[i] = 2 * k0rho - w * exp1(tau_i) + (w - 1) * exp1(
+            tau_i + rhosq / (4 * tau_i))
+        return A * F / 2
+
+    @staticmethod
+    def numpy_step(A, a, b, r, t):
+        rho = 2 * r * np.exp(b / 2)
+        rhosq = rho**2
+        k0rho = k0(rho)
+        tau = t / a
         tau1 = tau[tau < rho / 2]
         tau2 = tau[tau >= rho / 2]
         w = (exp1(rho) - k0rho) / (exp1(rho) - exp1(rho / 2))
         F = np.zeros_like(tau)
-        F[tau < rho / 2] = w * exp1(rho ** 2 / (4 * tau1)) - (w - 1) * exp1(
-            tau1 + rho ** 2 / (4 * tau1))
+        F[tau < rho / 2] = w * exp1(rhosq / (4 * tau1)) - (w - 1) * exp1(
+            tau1 + rhosq / (4 * tau1))
         F[tau >= rho / 2] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(
-            tau2 + rho ** 2 / (4 * tau2))
-        return p[0] * F / 2
+            tau2 + rhosq / (4 * tau2))
+        return A * F / 2
+
+    def quad_step(self, A, a, b, r, t):
+        F = np.zeros_like(t)
+        brsq = np.exp(b) * r**2
+        u = a * brsq / t
+        for i in range(0, len(t)):
+            F[i] = quad(self._integrand_hantush,
+                        u[i], np.inf, args=(brsq,))[0]
+        return F * A / 2
+
+    def step(self, p, dt=1, cutoff=None, maxtmax=None):
+        A, a, b = p[:3]
+        r = self._get_distance_from_params(p)
+        t = self.get_t(p, dt, cutoff, maxtmax)
+        
+        if self.quad:
+            return self.quad_step(A, a, b, r, t)
+        else:
+            # if numba_scipy is available and param a >= ~30, numba is faster
+            if a >= 30. and self.use_numba:
+                return self.numba_step(A, a, b, r, t)
+            else:  # otherwise numpy is faster
+                return self.numpy_step(A, a, b, r, t)
 
     @staticmethod
     def variance_gain(A, b, var_A, var_b, cov_Ab, r=1.0):
@@ -429,11 +493,10 @@ class HantushWellModel(RfuncBase):
         ps.WellModel.variance_gain
         """
         var_gain = (
-            (k0(2 * np.sqrt(r ** 2 * b))) ** 2 * var_A +
-            (-A * r * k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(
-                b)) ** 2 * var_b -
-            2 * A * r * k0(2 * np.sqrt(r ** 2 * b)) *
-            k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(b) * cov_Ab
+            (k0(2 * r * np.exp(b / 2))) ** 2 * var_A +
+            (A * r * k1(2 * r * np.exp(b / 2)))**2 * np.exp(b) * var_b 
+            - 2 * A * r * k0(2 * r * np.exp(b / 2)) *
+            k1(2 * r * np.exp(b / 2)) * np.exp(b / 2) * cov_Ab
         )
         return var_gain
 
@@ -471,9 +534,18 @@ class Hantush(RfuncBase):
     """
     _name = "Hantush"
 
-    def __init__(self):
+    def __init__(self, use_numba=False, quad=False):
         RfuncBase.__init__(self)
         self.nparam = 3
+        self.use_numba = use_numba
+        self.quad = quad
+        # check numba and numba_scipy installation
+        if self.quad or self.use_numba:
+            check_numba()
+            # turn off use_numba if numba_scipy is not available
+            # or there is a version conflict
+            if self.use_numba:
+                self.use_numba = check_numba_scipy()
 
     def get_init_parameters(self, name):
         parameters = DataFrame(
@@ -495,30 +567,74 @@ class Hantush(RfuncBase):
         # approximate formula for tmax
         if cutoff is None:
             cutoff = self.cutoff
-        cS = p[1]
-        rho = np.sqrt(4 * p[2])
-        k0rho = k0(rho)
-        return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
+        a, b = p[1:]
+        rho = 2 * np.sqrt(b)
+        return lambertw(1 / ((1 - cutoff) * k0(rho))).real * a
 
     @staticmethod
     def gain(p):
         return p[0]
 
-    def step(self, p, dt=1, cutoff=None, maxtmax=None):
-        cS = p[1]
-        rho = np.sqrt(4 * p[2])
+    @staticmethod
+    @njit
+    def _integrand_hantush(y, b):
+        return np.exp(-y - (b / y)) / y
+
+    @staticmethod
+    @njit(parallel=True)
+    def numba_step(A, a, b, t):
+        rho = 2 * np.sqrt(b)
+        rhosq = rho**2
         k0rho = k0(rho)
-        t = self.get_t(p, dt, cutoff, maxtmax)
-        tau = t / cS
+        tau = t / a
+        w = (exp1(rho) - k0rho) / (exp1(rho) - exp1(rho / 2))
+        F = np.zeros((tau.size,), dtype=np.float64)
+        for i in prange(tau.size):
+            tau_i = tau[i]
+            if tau_i < rho / 2:
+                F[i] = w * exp1(rhosq / (4 * tau_i)) - (w - 1) * exp1(
+            tau_i + rhosq / (4 * tau_i))
+            elif tau_i >= rho / 2:
+                F[i] = 2 * k0rho - w * exp1(tau_i) + (w - 1) * exp1(
+            tau_i + rhosq / (4 * tau_i))
+        return A * F / (2 * k0rho)
+
+    @staticmethod
+    def numpy_step(A, a, b, t):
+        rho = 2 * np.sqrt(b)
+        rhosq = rho**2
+        k0rho = k0(rho)
+        tau = t / a
         tau1 = tau[tau < rho / 2]
         tau2 = tau[tau >= rho / 2]
         w = (exp1(rho) - k0rho) / (exp1(rho) - exp1(rho / 2))
         F = np.zeros_like(tau)
-        F[tau < rho / 2] = w * exp1(rho ** 2 / (4 * tau1)) - (w - 1) * exp1(
-            tau1 + rho ** 2 / (4 * tau1))
+        F[tau < rho / 2] = w * exp1(rhosq / (4 * tau1)) - (w - 1) * exp1(
+            tau1 + rhosq / (4 * tau1))
         F[tau >= rho / 2] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(
-            tau2 + rho ** 2 / (4 * tau2))
-        return p[0] * F / (2 * k0rho)
+            tau2 + rhosq / (4 * tau2))
+        return A * F / (2 * k0rho)
+
+    def quad_step(self, A, a, b, t):
+        F = np.zeros_like(t)
+        u = a * b / t
+        for i in range(0, len(t)):
+            F[i] = quad(self._integrand_hantush,
+                        u[i], np.inf, args=(b,))[0]
+        return F * A / (2 * k0(2 * np.sqrt(b)))
+
+    def step(self, p, dt=1, cutoff=None, maxtmax=None):
+        A, a, b = p
+        t = self.get_t(p, dt, cutoff, maxtmax)
+        
+        if self.quad:
+            return self.quad_step(A, a, b, t)
+        else:
+            # if numba_scipy is available and param a >= ~30, numba is faster
+            if a >= 30. and self.use_numba:
+                return self.numba_step(A, a, b, t)
+            else:  # otherwise numpy is faster
+                return self.numpy_step(A, a, b, t)
 
 
 class Polder(RfuncBase):
