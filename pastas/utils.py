@@ -9,6 +9,7 @@ import numpy as np
 from pandas import Series, Timedelta, Timestamp, date_range, to_datetime
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
+from scipy import __version__ as sc_version
 
 logger = logging.getLogger(__name__)
 
@@ -637,7 +638,6 @@ def show_versions(lmfit=False, numba=False):
     from matplotlib import __version__ as mpl_version
     from numpy import __version__ as np_version
     from pandas import __version__ as pd_version
-    from scipy import __version__ as sc_version
 
     from pastas import __version__ as ps_version
 
@@ -666,3 +666,21 @@ def check_numba():
     except ImportError:
         logger.warning("Numba is not installed. Installing Numba is "
                        "recommended for significant speed-ups.")
+
+
+def check_numba_scipy():
+    try:
+        import numba_scipy
+    except ImportError:
+        logger.warning(
+            "numba_scipy is not installed, defaulting to numpy implementation."
+        )
+        return False
+
+    from distutils.version import StrictVersion
+    if StrictVersion(sc_version) > StrictVersion("1.7.3"):
+        logger.warning(
+            "numba_scipy supports scipy<=1.7.3, found {0}".format(sc_version)
+        )
+        return False
+    return True
