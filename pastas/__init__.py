@@ -7,7 +7,7 @@ import pastas.recharge as rch
 import pastas.stats as stats
 
 from .model import Model
-from .modelcompare import ModelComparison
+from .modelcompare import CompareModels
 from .noisemodels import ArmaModel, NoiseModel
 from .plots import TrackSolve
 from .rcparams import rcParams

@@ -8,11 +8,11 @@ import pastas as ps
 from warnings import warn
 
 
-class ModelComparison:
+class CompareModels:
     """Class for visually comparing pastas Models.
 
     This is a versatile class for constructing visual model comparison plots.
-    The default `ModelComparison.plot()` method mimics `ml.plots.results()` but
+    The default `CompareModels.plot()` method mimics `ml.plots.results()` but
     allows multiple models to be included in the figure. Instead of parameter
     uncertainties, by default only optimal values are shown for each model and
     a table containing fit metrics is included in the top right of the figure.
@@ -38,11 +38,11 @@ class ModelComparison:
     Additional logic is available to control plotting of multiple contributions
     of stresses on the same set of axes. Additionally some helper methods are
     defined to obtain relevant information from the models passed to
-    ModelComparison.
+    CompareModels.
 
     Example usage::
 
-        mc = ps.ModelComparison([ml1, ml2])
+        mc = ps.CompareModels([ml1, ml2])
         mc.plot()
 
         # obtain axes handles

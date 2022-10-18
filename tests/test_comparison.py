@@ -1,4 +1,4 @@
-from pastas.modelcompare import ModelComparison
+from pastas.modelcompare import CompareModels
 
 from test_model import test_add_stressmodel, test_add_stressmodels
 
@@ -7,7 +7,7 @@ def test_comparison_class():
     ml.solve()
     ml2 = test_add_stressmodels()
     ml2.solve()
-    mc = ModelComparison(models=[ml, ml2])
+    mc = CompareModels(models=[ml, ml2])
     return mc
 
 def test_comparison_plot():

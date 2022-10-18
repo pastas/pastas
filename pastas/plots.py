@@ -11,7 +11,7 @@ from pandas import DataFrame, Timestamp, concat, to_datetime, isna
 from scipy.stats import gaussian_kde, norm, probplot
 from pastas.stats.core import acf as get_acf
 from pastas.stats.metrics import rmse, evp
-from pastas.modelcompare import ModelComparison
+from pastas.modelcompare import CompareModels
 
 logger = logging.getLogger(__name__)
 
@@ -31,19 +31,21 @@ def compare(models, adjust_height=False, **kwargs):
     Parameters
     ----------
     models: list
-        list of pastas Models, works for N models, but certain
+        List of pastas Models, works for N models, but certain
         things might not display nicely if the list gets too long.
     adjust_height: bool, optional
         Adjust the height of the graphs, so that the vertical scale of all
         the subplots on the left is equal. Default is False, in which case the
         axes are not rescaled to include all data, so certain data might
         not be visible. Set to False to ensure you can see all data.
+    **kwargs
+        Kwargs are passed to the CompareModels.plot() function.
 
     Returns
     -------
     matplotlib.axes
     """
-    mc = ModelComparison(models)
+    mc = CompareModels(models)
     mc.plot(adjust_height=adjust_height, **kwargs)
 
     return mc.axes
