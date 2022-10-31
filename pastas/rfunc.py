@@ -316,7 +316,7 @@ class HantushWellModel(RfuncBase):
     _name = "HantushWellModel"
 
     def __init__(self, use_numba=False, quad=False):
-        RfuncBase.__init__(self)
+        RfuncBase.__init__(self, use_numba=use_numba, quad=quad)
         self.distances = None
         self.nparam = 3
         self.use_numba = use_numba  # requires numba_scipy for real speedups
@@ -535,7 +535,7 @@ class Hantush(RfuncBase):
     _name = "Hantush"
 
     def __init__(self, use_numba=False, quad=False):
-        RfuncBase.__init__(self)
+        RfuncBase.__init__(self, use_numba=use_numba, quad=quad)
         self.nparam = 3
         self.use_numba = use_numba
         self.quad = quad
@@ -605,13 +605,14 @@ class Hantush(RfuncBase):
         rhosq = rho**2
         k0rho = k0(rho)
         tau = t / a
-        tau1 = tau[tau < rho / 2]
-        tau2 = tau[tau >= rho / 2]
+        tau_mask = tau < rho / 2
+        tau1 = tau[tau_mask]
+        tau2 = tau[~tau_mask]
         w = (exp1(rho) - k0rho) / (exp1(rho) - exp1(rho / 2))
         F = np.zeros_like(tau)
-        F[tau < rho / 2] = w * exp1(rhosq / (4 * tau1)) - (w - 1) * exp1(
+        F[tau_mask] = w * exp1(rhosq / (4 * tau1)) - (w - 1) * exp1(
             tau1 + rhosq / (4 * tau1))
-        F[tau >= rho / 2] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(
+        F[~tau_mask] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(
             tau2 + rhosq / (4 * tau2))
         return A * F / (2 * k0rho)
 
