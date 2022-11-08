@@ -138,7 +138,8 @@ class Linear(RechargeBase):
 
 
 class FlexModel(RechargeBase):
-    """Recharge to the groundwater calculated according to [collenteur_2021]_.
+    """Recharge to the groundwater calculated according to
+    :cite:t:`collenteur_estimation_2021`.
 
     Parameters
     ----------
@@ -157,8 +158,8 @@ class FlexModel(RechargeBase):
     Notes
     -----
     For a detailed description of the recharge model and parameters we refer
-    to [collenteur_2021]_. The water balance for the unsaturated zone
-    reservoir is written as:
+    to :cite:t:`collenteur_estimation_2021`. The water balance for the
+    unsaturated zone reservoir is written as:
 
     .. math::
 
@@ -183,11 +184,6 @@ class FlexModel(RechargeBase):
 
     References
     ----------
-    .. [collenteur_2021] Collenteur, R. A., Bakker, M., Klammler, G., and
-       Birk, S.: Estimation of groundwater recharge from groundwater levels
-       using nonlinear transfer function noise models and comparison to
-       lysimeter data, Hydrol. Earth Syst. Sci., 25, 2931–2949,
-       https://doi.org/10.5194/hess-25-2931-2021, 2021.
 
     .. [kavetski_2007] Kavetski, D. and Kuczera, G. (2007). Model smoothing
        strategies to remove microscale discontinuities and  spurious
