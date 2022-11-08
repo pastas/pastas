@@ -5,6 +5,8 @@
 # Required
 version: 2
 
+
+
 build:
   os: ubuntu-22.04
   tools:
@@ -19,10 +21,12 @@ sphinx:
 #  configuration: mkdocs.yml
 
 # Optionally build your docs in additional formats such as PDF and ePub
-formats: all
+formats:
+  - epub
 
 # Optionally set the version of Python and requirements required to build your docs
 python:
+  system_packages: true
   install:
     - requirements: requirements.rtd.txt
     - requirements: requirements.ci.txt
