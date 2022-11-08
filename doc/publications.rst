@@ -22,7 +22,7 @@ Peer-reviewed publications
 .. bibliography:: publications.bib
     :labelprefix: A
     :keyprefix: a-
-    :list: enumerated
+    :list: bullet
     :filter: year == "2021"
 
 2020
@@ -36,7 +36,7 @@ Peer-reviewed publications
 2019
 ****
 .. bibliography:: publications.bib
-    :keyprefix: a-
+    :all:
     :list: enumerated
     :filter: year == "2019"
 
