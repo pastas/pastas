@@ -1148,7 +1148,7 @@ class TarsoModel(RechargeModel):
     Notes
     -----
     The Threshold autoregressive self-exciting open-loop (Tarso) model
-    :cite:t:`knotters_threshold_1999` is nonlinear in structure because it
+    :cite:t:`knotters_tarso_1999` is nonlinear in structure because it
     incorporates two regimes which are separated by a threshold. This model
     method can be used to simulate a groundwater system where the groundwater
     head reaches the surface or drainage level in wet conditions. TarsoModel

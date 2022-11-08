@@ -9,12 +9,33 @@ automatically (after next commit/release) !
 Peer-reviewed publications
 --------------------------
 
+2022
+****
 .. bibliography:: publications.bib
     :list: enumerated
-    :all:
+    :filter: year == "2022"
 
 2021
-----
+****
 .. bibliography:: publications.bib
     :list: enumerated
     :filter: year == "2021"
+
+2020
+****
+.. bibliography:: publications.bib
+    :list: enumerated
+    :filter: year == "2020"
+
+2019
+****
+.. bibliography:: publications.bib
+    :list: enumerated
+    :filter: year == "2019"
+
+
+Academic Theses
+---------------
+
+Here the PhD., MSc, and BSc. thesis are to be added in the future. For now we refer to the
+[GitHub repo](https://github.com/pastas/pastas_research)

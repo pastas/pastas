@@ -75,7 +75,7 @@ author = u'R.A. Collenteur, M. Bakker, R. Calje, F. Schaars'
 # The version.
 version = __version__
 release = __version__
-language = None
+language = 'en'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
