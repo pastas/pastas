@@ -12,24 +12,31 @@ Peer-reviewed publications
 2022
 ****
 .. bibliography:: publications.bib
+    :labelprefix: A
+    :keyprefix: a-
     :list: enumerated
     :filter: year == "2022"
 
 2021
 ****
 .. bibliography:: publications.bib
+    :labelprefix: A
+    :keyprefix: a-
     :list: enumerated
     :filter: year == "2021"
 
 2020
 ****
 .. bibliography:: publications.bib
+    :labelprefix: A
+    :keyprefix: a-
     :list: enumerated
     :filter: year == "2020"
 
 2019
 ****
 .. bibliography:: publications.bib
+    :keyprefix: a-
     :list: enumerated
     :filter: year == "2019"
 
