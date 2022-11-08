@@ -20,9 +20,9 @@ import requests
 
 year = date.today().strftime("%Y")
 
-import matplotlib
+from matplotlib import use
 
-matplotlib.use('agg')
+use('agg')
 
 from pastas.version import __version__
 
