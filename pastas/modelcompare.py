@@ -227,7 +227,8 @@ class CompareModels:
 
         sm_unique = []
         for ml in models:
-            sm_unique += [x for x in ml.get_stressmodel_names() if x not in sm_unique]
+            sm_unique += [x for x in ml.get_stressmodel_names()
+                          if x not in sm_unique]
 
         return sm_unique
 
@@ -758,9 +759,11 @@ class CompareModels:
         axes : list of matplotlib.Axes
             list of axes objects
         """
-        axes[0].get_shared_x_axes().join(*axes[1:])
-        for iax in axes[:-1]:
-            iax.set_xticklabels([])
+        for i, iax in enumerate(axes):
+            if i < (len(axes) - 1):
+                iax.sharex(axes[-1])
+                for t in iax.get_xticklabels():
+                    t.set_visible(False)
 
     def share_yaxes(self, axes):
         """share y-axes.
@@ -770,14 +773,15 @@ class CompareModels:
         axes : list of matplotlib.Axes
             list of axes objects
         """
-        axes[0].get_shared_y_axes().join(*axes[1:])
+        for iax in axes[1:]:
+            iax.sharey(axes[0])
 
     def plot(
         self,
         smdict=None,
         normalized=False,
         param_selection=None,
-        figsize=(10,8),
+        figsize=(10, 8),
         grid=True,
         legend=True,
         adjust_height=False,
@@ -817,7 +821,8 @@ class CompareModels:
         if self.axes is None and not self.adjust_height:
             self.initialize_figure(figsize=figsize)
         if self.axes is None and self.adjust_height:
-            self.initialize_adjust_height_figure(smdict=smdict, figsize=figsize)
+            self.initialize_adjust_height_figure(
+                smdict=smdict, figsize=figsize)
 
         # sim
         self.plot_oseries()
