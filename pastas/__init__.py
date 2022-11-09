@@ -1,12 +1,13 @@
-from pandas.plotting import register_matplotlib_converters
 import logging
 
-from . import recharge as rch
-from . import stats
-from . import plots
-from . import reservoir
+from pandas.plotting import register_matplotlib_converters
+
+import pastas.plots as plots
+import pastas.recharge as rch
+import pastas.stats as stats
 
 from .model import Model
+from .modelcompare import CompareModels
 from .noisemodels import ArmaModel, NoiseModel
 from .plots import TrackSolve
 from .rcparams import rcParams
@@ -15,9 +16,9 @@ from .read import (read_dino, read_dino_level_gauge, read_knmi, read_meny,
 from .rfunc import (DoubleExponential, Exponential, FourParam, Gamma, Hantush,
                     HantushWellModel, Kraijenhoff, One, Polder, Spline)
 from .solver import LeastSquares, LmfitSolve
-from .stressmodels import (Constant, LinearTrend, RechargeModel, StepModel,
-                           StressModel, TarsoModel, WellModel, ChangeModel,
-                           ReservoirModel)
+from .stressmodels import (ChangeModel, Constant, LinearTrend, RechargeModel,
+                           ReservoirModel, StepModel, StressModel,
+                           TarsoModel, WellModel)
 from .timeseries import TimeSeries
 from .transform import ThresholdTransform
 from .utils import initialize_logger, set_log_level, show_versions
