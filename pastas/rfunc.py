@@ -297,13 +297,8 @@ class HantushWellModel(RfuncBase):
 
     :math:`\\text{gain} = A K_0 \\left( 2r \\sqrt(b) \\right)`
 
-    The implementation used here is explained in  [veling_2010]_.
+    The implementation used here is explained in  :cite:t:`veling_hantush_2010`.
 
-    References
-    ----------
-
-    .. [veling_2010] Veling, E. J. M., & Maas, C. (2010). Hantush well function
-       revisited. Journal of hydrology, 393(3), 381-388.
     """
     _name = "HantushWellModel"
 
@@ -317,8 +312,8 @@ class HantushWellModel(RfuncBase):
 
     def get_init_parameters(self, name):
         if self.distances is None:
-            raise(Exception('distances is None. Set using method set_distances'
-                            'or use Hantush.'))
+            raise (Exception('distances is None. Set using method set_distances'
+                             'or use Hantush.'))
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
@@ -429,11 +424,11 @@ class HantushWellModel(RfuncBase):
         ps.WellModel.variance_gain
         """
         var_gain = (
-            (k0(2 * np.sqrt(r ** 2 * b))) ** 2 * var_A +
-            (-A * r * k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(
-                b)) ** 2 * var_b -
-            2 * A * r * k0(2 * np.sqrt(r ** 2 * b)) *
-            k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(b) * cov_Ab
+                (k0(2 * np.sqrt(r ** 2 * b))) ** 2 * var_A +
+                (-A * r * k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(
+                    b)) ** 2 * var_b -
+                2 * A * r * k0(2 * np.sqrt(r ** 2 * b)) *
+                k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(b) * cov_Ab
         )
         return var_gain
 
@@ -461,7 +456,7 @@ class Hantush(RfuncBase):
 
     where A, a, and b are parameters.
 
-    The implementation used here is explained in  [veling_2010]_.
+    The implementation used here is explained in  :cite:t:`veling_hantush_2010`.
 
     References
     ----------
@@ -526,8 +521,9 @@ class Polder(RfuncBase):
 
     Notes
     -----
-    The Polder function is explained in [polder]_. The impulse response
-    function may be written as:
+    The Polder function is explained in Eq. 123.32 in
+    :cite:t:`bruggeman_analytical_1999`. The impulse response function may be
+    written as:
 
     .. math:: \\theta(t) = \\exp(-\\sqrt(4b)) \\frac{A}{t^{-3/2}}
        \\exp(-t/a -b/t)
@@ -537,10 +533,6 @@ class Polder(RfuncBase):
 
     where :math:`\\lambda = \\sqrt{kDc}`
 
-    References
-    ----------
-    .. [polder] G.A. Bruggeman (1999). Analytical solutions of
-       geohydrological problems. Elsevier Science. Amsterdam, Eq. 123.32
     """
     _name = "Polder"
 
@@ -872,8 +864,8 @@ class Edelman(RfuncBase):
 
     Notes
     -----
-    The Edelman function is explained in [5]_. The impulse response function
-    may be written as:
+    The Edelman function is explained in :cite:t:`edelman_over_1947`. The
+    impulse response function may be written as:
 
     .. math:: \\text{unknown}
 
@@ -881,9 +873,6 @@ class Edelman(RfuncBase):
 
     .. math:: p[0] = \\beta = \\frac{\\sqrt{\\frac{4kD}{S}}}{x}
 
-    References
-    ----------
-    .. [5] http://grondwaterformules.nl/index.php/formules/waterloop/peilverandering
     """
     _name = "Edelman"
 
@@ -914,7 +903,7 @@ class Edelman(RfuncBase):
 
 
 class Kraijenhoff(RfuncBase):
-    """The response function of Kraijenhoff van de Leur (and Bruggeman 133.15)
+    """The response function of :cite:t:`van_de_leur_study_1958`.
 
     Parameters
     ----------
@@ -929,31 +918,24 @@ class Kraijenhoff(RfuncBase):
 
     Notes
     -----
-    The Kraijenhoff van de Leur function is explained in [Kraijenhoff]_.
-    The impulse response function may be written as:
+    The Kraijenhoff van de Leur function is explained in
+    :cite:t:`van_de_leur_study_1958`. The impulse response function may be
+    written as:
 
     .. math:: \\theta(t) = \\frac{4}{\pi S} \sum_{n=1,3,5...}^\infty \\frac{1}{n} e^{-n^2\\frac{t}{j}} \sin (\\frac{n\pi x}{L})
 
     The function describes the response of a domain between two drainage
-    channels. The function gives the same outcome as Bruggeman equation 133.15.
-    Bruggeman 133.15 is the response that is actually calculated with this
-    function. [Bruggeman]_
+    channels. The function gives the same outcome as equation 133.15 in
+    :cite:t:`bruggeman_analytical_1999`. This is the response that
+    is actually calculated with this function.
 
     The response function has three parameters: A, a and b.
     A is the gain (scaled),
-    a is the reservoir coefficient (j in [Kraijenhoff]_),
+    a is the reservoir coefficient (j in :cite:t:`van_de_leur_study_1958`),
     b is the location in the domain with the origin in the middle. This means
     that b=0 is in the middle and b=1/2 is at the drainage channel. At b=1/4
     the response function is most similar to the exponential response function.
 
-    References
-    ----------
-    .. [Kraijenhoff] Kraijenhoff van de Leur, D. A. (1958). A study of
-       non-steady groundwater flow with special reference to a reservoir
-       coefficient. De Ingenieur, 70(19), B87-B94. https://edepot.wur.nl/422032
-
-    .. [Bruggeman] G.A. Bruggeman (1999). Analytical solutions of
-       geohydrological problems. Elsevier Science. Amsterdam, Eq. 133.15
     """
     _name = "Kraijenhoff"
 
@@ -994,8 +976,8 @@ class Kraijenhoff(RfuncBase):
         h = 0
         for n in range(self.n_terms):
             h += (-1) ** n / (2 * n + 1) ** 3 * \
-                np.cos((2 * n + 1) * np.pi * p[2]) * \
-                np.exp(-(2 * n + 1) ** 2 * t / p[1])
+                 np.cos((2 * n + 1) * np.pi * p[2]) * \
+                 np.exp(-(2 * n + 1) ** 2 * t / p[1])
         s = p[0] * (1 - (8 / (np.pi ** 3 * (1 / 4 - p[2] ** 2)) * h))
         return s
 

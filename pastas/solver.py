@@ -360,7 +360,7 @@ class LeastSquares(BaseSolver):
     _name = "LeastSquares"
 
     def __init__(self, ml, pcov=None, nfev=None, **kwargs):
-        """Solver based on Scipy's least_squares method [scipy_ref]_.
+        """Solver based on Scipy's least_squares method.
 
         Notes
         -----
@@ -374,9 +374,10 @@ class LeastSquares(BaseSolver):
 
         >>> ml.solve(solver=ps.LeastSquares)
 
-        References
-        ----------
-        .. [scipy_ref] https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
+        Notes
+        -----
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
+
         """
         BaseSolver.__init__(self, ml=ml, pcov=pcov, nfev=nfev, **kwargs)
 
@@ -469,14 +470,15 @@ class LmfitSolve(BaseSolver):
     _name = "LmfitSolve"
 
     def __init__(self, ml, pcov=None, nfev=None, **kwargs):
-        """Solving the model using the LmFit solver [LM]_.
+        """Solving the model using the LmFit solver.
 
          This is basically a wrapper around the scipy solvers, adding some
          cool functionality for boundary conditions.
 
-        References
-        ----------
-        .. [LM] https://github.com/lmfit/lmfit-py/
+        Notes
+        -----
+        https://github.com/lmfit/lmfit-py/
+
         """
         try:
             global lmfit
