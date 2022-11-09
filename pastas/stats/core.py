@@ -56,7 +56,7 @@ def acf(x, lags=365, bin_method='rectangle', bin_width=0.5, max_gap=inf,
     -----
     Calculate the autocorrelation function for irregular timesteps based on
     the slotting technique. Different methods (kernels) to bin the data are
-    available. Method here is basec on :cite:t:`rehfeld_comparison_2011`
+    available. Method here is based on :cite:t:`rehfeld_comparison_2011`.
 
     Tip
     ---
