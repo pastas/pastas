@@ -7,4 +7,3 @@ Add a short description describing the pull request (PR) here.
 - [ ] PEP8 compliant code
 - [ ] tests added / passed
 - [ ] Example Notebook (for new features)
-- [ ] API changes documented in Release Notes
