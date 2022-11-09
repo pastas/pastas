@@ -98,7 +98,9 @@ def test_save_model():
 
 
 def test_load_model():
-    ml = test_solve_model()
+    ml = ps.Model(obs, name="Test_Model")
+    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, name='rch')
+    ml.add_stressmodel(sm)
     # add some fictitious tiny value for testing float precision
     ml.parameters.loc["rch_f", "pmax"] = 1.23456789e-10
     ml.to_file("test.pas")
