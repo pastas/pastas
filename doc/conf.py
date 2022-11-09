@@ -17,6 +17,7 @@ import sys
 from datetime import date
 
 import requests
+import re
 
 year = date.today().strftime("%Y")
 
@@ -179,7 +180,9 @@ params = {"format": "bibtex",
 
 r = requests.get(url=url, params=params)
 with open("publications.bib", mode="w") as file:
-    file.write(r.text)
+    # Replace citation key to prevent duplicate labels and article now shown
+    text = re.sub("@[a-z]*{", "@{A_", r.text)
+    file.write(text)
 
 # Add some settings for bibtex
 bibtex_bibfiles = ['references.bib', 'publications.bib']
