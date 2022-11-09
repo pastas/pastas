@@ -181,7 +181,7 @@ params = {"format": "bibtex",
 r = requests.get(url=url, params=params)
 with open("publications.bib", mode="w") as file:
     # Replace citation key to prevent duplicate labels and article now shown
-    text = re.sub("(?:@[a-z])*{", "{A_", r.text)
+    text = re.sub(r'(@([a-z]*){)', r'\1X_', r.text)
     file.write(text)
 
 # Add some settings for bibtex
