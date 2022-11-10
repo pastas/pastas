@@ -1148,22 +1148,17 @@ class TarsoModel(RechargeModel):
     Notes
     -----
     The Threshold autoregressive self-exciting open-loop (Tarso) model
-    [knotters_1999]_ is nonlinear in structure because it incorporates two
-    regimes which are separated by a threshold. This model method can be
-    used to simulate a groundwater system where the groundwater head reaches
-    the surface or drainage level in wet conditions. TarsoModel uses two
-    drainage levels, with two exponential response functions. When the
+    :cite:t:`knotters_tarso_1999` is nonlinear in structure because it
+    incorporates two regimes which are separated by a threshold. This model
+    method can be used to simulate a groundwater system where the groundwater
+    head reaches the surface or drainage level in wet conditions. TarsoModel
+    uses two drainage levels, with two exponential response functions. When the
     simulation reaches the second drainage level, the second response
     function becomes active. Because of its structure, TarsoModel cannot be
     combined with other stress models, a constant or a transform.
     TarsoModel inherits from RechargeModel. Only parameters specific to the
     child class are named above.
 
-    References
-    ----------
-    .. [knotters_1999] Knotters, M. & De Gooijer, Jan G.. (1999). TARSO
-       modeling of water table depths. Water Resources Research. 35.
-       10.1029/1998WR900049.
     """
     _name = "TarsoModel"
 
@@ -1321,13 +1316,8 @@ class ChangeModel(StressModelBase):
 
     Notes
     -----
-    This model is based on Obergfjell et al. (2019).
+    This model is based on :cite:t:`obergfell_identification_2019`.
 
-    References
-    ----------
-    Obergfell, C., Bakker, M. and Maas, K. (2019), Identification and
-    Explanation of a Change in the Groundwater Regime using Time Series
-    Analysis. Groundwater, 57: 886-894. https://doi.org/10.1111/gwat.12891
     """
     _name = "ChangeModel"
 
