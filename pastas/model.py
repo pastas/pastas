@@ -93,7 +93,7 @@ class Model:
                 Timedelta(3650, "D") / Timedelta(freq) * to_timedelta(freq)
                 if freq[0].isdigit()
                 else Timedelta(3650, freq)
-                ),
+            ),
             "time_offset": Timedelta(0),
             "noise": noisemodel,
             "solver": None,

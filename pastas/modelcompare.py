@@ -842,7 +842,7 @@ class CompareModels:
         for axn in self.axes.keys():
             if axn not in ("tab", "met", "dia"):
                 self.axes[axn].grid(grid)
-                if legend:
+                if legend and not axn.startswith("rf"):
                     _, l = self.axes[axn].get_legend_handles_labels()
                     self.axes[axn].legend(
                         ncol=max([int(np.ceil(len(l))), 4]),
