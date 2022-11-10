@@ -465,7 +465,7 @@ class Plotting:
 
         if self.ml.interpolate_simulation:
             sim_interpolated = np.interp(res.index.asi8,
-                                         sim.index.asi8, 
+                                         sim.index.asi8,
                                          sim.values)
             sim = Series(index=res.index, data=sim_interpolated)
 
