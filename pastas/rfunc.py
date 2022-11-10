@@ -488,11 +488,10 @@ class HantushWellModel(RfuncBase):
         ps.WellModel.variance_gain
         """
         var_gain = (
-            (k0(2 * np.sqrt(r ** 2 * b))) ** 2 * var_A +
-            (-A * r * k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(
-                b)) ** 2 * var_b -
-            2 * A * r * k0(2 * np.sqrt(r ** 2 * b)) *
-            k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(b) * cov_Ab
+            (k0(2 * r * np.exp(b / 2))) ** 2 * var_A +
+            (A * r * k1(2 * r * np.exp(b / 2)))**2 * np.exp(b) * var_b
+            - 2 * A * r * k0(2 * r * np.exp(b / 2)) *
+            k1(2 * r * np.exp(b / 2)) * np.exp(b / 2) * cov_Ab
         )
         return var_gain
 
