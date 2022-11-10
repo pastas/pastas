@@ -153,7 +153,6 @@ class RfuncBase:
             if maxtmax is not None:
                 tmax = min(tmax, maxtmax)
             tmax = max(tmax, 3 * dt)
-            # print(tmax)
             return np.arange(dt, tmax, dt)
 
 
