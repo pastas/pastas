@@ -1,15 +1,16 @@
 """This module contains utility functions for working with Pastas models."""
 
 import logging
+from datetime import datetime, timedelta
 from logging import handlers
 from platform import platform
-from datetime import datetime, timedelta
 
 import numpy as np
+from packaging import version
 from pandas import Series, Timedelta, Timestamp, date_range, to_datetime
 from pandas.tseries.frequencies import to_offset
-from scipy import interpolate
 from scipy import __version__ as sc_version
+from scipy import interpolate
 
 logger = logging.getLogger(__name__)
 
@@ -677,8 +678,7 @@ def check_numba_scipy():
         )
         return False
 
-    from distutils.version import StrictVersion
-    if StrictVersion(sc_version) > StrictVersion("1.7.3"):
+    if version.parse(sc_version) > version.parse("1.7.3"):
         logger.warning(
             "numba_scipy supports scipy<=1.7.3, found {0}".format(sc_version)
         )
