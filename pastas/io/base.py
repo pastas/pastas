@@ -42,10 +42,14 @@ def load(fname, **kwargs):
 
     ml = _load_model(data)
 
-    logger.info("Pastas Model from file %s successfully loaded. This file "
-                "was created with Pastas %s. Your current version of Pastas "
-                "is: %s", fname, data["file_info"]["pastas_version"],
-                ps.__version__)
+    logger.info(
+        "Pastas Model from file %s successfully loaded. This file "
+        "was created with Pastas %s. Your current version of Pastas "
+        "is: %s",
+        fname,
+        data["file_info"]["pastas_version"],
+        ps.__version__,
+    )
     return ml
 
 
@@ -74,8 +78,9 @@ def _load_model(data):
     else:
         noise = False
 
-    ml = ps.Model(oseries, constant=constant, noisemodel=noise, name=name,
-                  metadata=metadata)
+    ml = ps.Model(
+        oseries, constant=constant, noisemodel=noise, name=name, metadata=metadata
+    )
 
     if "settings" in data.keys():
         ml.settings.update(data["settings"])
@@ -86,13 +91,15 @@ def _load_model(data):
     for name, ts in data["stressmodels"].items():
         # Deal with old StressModel2 files for version 0.22.0. Remove in 0.23.0.
         if ts["stressmodel"] == "StressModel2":
-            logger.warning("StressModel2 is removed since Pastas 0.22.0 and "
-                           "is replaced by the RechargeModel using a Linear "
-                           "recharge model. Make sure to save this file "
-                           "again using Pastas version 0.22.0 as this file "
-                           "cannot be loaded in newer Pastas versions. This "
-                           "will automatically update your model to the newer "
-                           "RechargeModel stress model.")
+            logger.warning(
+                "StressModel2 is removed since Pastas 0.22.0 and "
+                "is replaced by the RechargeModel using a Linear "
+                "recharge model. Make sure to save this file "
+                "again using Pastas version 0.22.0 as this file "
+                "cannot be loaded in newer Pastas versions. This "
+                "will automatically update your model to the newer "
+                "RechargeModel stress model."
+            )
             ts["stressmodel"] = "RechargeModel"
             ts["recharge"] = "Linear"
             ts["prec"] = ts["stress"][0]
@@ -106,10 +113,9 @@ def _load_model(data):
             ts["rfunc"] = getattr(ps.rfunc, ts["rfunc"])
         if "recharge" in ts.keys():
             recharge_kwargs = {}
-            if 'recharge_kwargs' in ts:
+            if "recharge_kwargs" in ts:
                 recharge_kwargs = ts.pop("recharge_kwargs")
-            ts["recharge"] = getattr(
-                ps.recharge, ts["recharge"])(**recharge_kwargs)
+            ts["recharge"] = getattr(ps.recharge, ts["recharge"])(**recharge_kwargs)
         if "stress" in ts.keys():
             for i, stress in enumerate(ts["stress"]):
                 ts["stress"][i] = ps.TimeSeries(**stress)
@@ -146,7 +152,7 @@ def _load_model(data):
     ml.parameters = ml.parameters.apply(to_numeric, errors="ignore")
 
     # When initial values changed
-    for param, value in ml.parameters.loc[:, "initial"].iteritems():
+    for param, value in ml.parameters.loc[:, "initial"].items():
         ml.set_parameter(name=param, initial=value)
 
     return ml
