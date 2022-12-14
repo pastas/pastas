@@ -6,8 +6,8 @@ from logging import getLogger
 import numpy as np
 from pandas import DataFrame
 from scipy.integrate import quad
-from scipy.special import (erfc, erfcinv, exp1, gammainc, gammaincinv, k0, k1,
-                           lambertw)
+from scipy.special import (erfc, erfcinv, exp1, gamma, gammainc, gammaincinv, 
+                           k0, k1, lambertw)
 from scipy.interpolate import interp1d
 
 logger = getLogger(__name__)
@@ -115,6 +115,32 @@ class RfuncBase:
         """
         s = self.step(p, dt, cutoff, maxtmax)
         return np.append(s[0], np.subtract(s[1:], s[:-1]))
+    
+    def impulse(self, t, p):
+        """Method to return the impulse response function.
+
+        Parameters
+        ----------
+        p: array_like
+            array_like object with the values as floats representing the
+            model parameters.
+        dt: float
+            timestep as a multiple of of day.
+        cutoff: float, optional
+            float between 0 and 1.
+        maxtmax: int, optional
+            Maximum timestep to compute the block response for.
+
+        Returns
+        -------
+        s: numpy.array
+            Array with the impulse response.
+            
+        Note
+        ----
+        Only used for internal consistency checks
+        """
+        pass
 
     def get_t(self, p, dt, cutoff, maxtmax=None):
         """Internal method to determine the times at which to evaluate the
@@ -209,6 +235,11 @@ class Gamma(RfuncBase):
         t = self.get_t(p, dt, cutoff, maxtmax)
         s = p[0] * gammainc(p[1], t / p[2])
         return s
+    
+    def impulse(self, t, p):
+        A, n, a = p
+        ir = A * t ** (n - 1) * np.exp(-t / a) / (a ** n * gamma(n))
+        return ir
 
 
 class Exponential(RfuncBase):
@@ -229,7 +260,7 @@ class Exponential(RfuncBase):
     -----
     The impulse response function is:
 
-    .. math:: \\theta(t) = A e^{-t/a}
+    .. math:: \\theta(t) = A / a * e^{-t/a}
 
     where A and a are parameters.
     """
@@ -268,6 +299,11 @@ class Exponential(RfuncBase):
         t = self.get_t(p, dt, cutoff, maxtmax)
         s = p[0] * (1.0 - np.exp(-t / p[1]))
         return s
+    
+    def impulse(self, t, p):
+        A, a = p
+        ir = A / a * np.exp(-t / a)
+        return ir
 
 
 class HantushWellModel(RfuncBase):
@@ -514,6 +550,11 @@ class Hantush(RfuncBase):
         F[tau >= rho / 2] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(
             tau2 + rho ** 2 / (4 * tau2))
         return p[0] * F / (2 * k0rho)
+    
+    def impulse(self, t, p):
+        A, a, b = p
+        ir = A / (2 * t * k0(2 * np.sqrt(b))) * np.exp(-t / a - a * b / t)
+        return ir
 
 
 class Polder(RfuncBase):
@@ -574,6 +615,11 @@ class Polder(RfuncBase):
         if not self.up:
             s = -s
         return s
+    
+    def impulse(self, t, p):
+        A, a, b = p
+        ir = A * t ** (-1.5) * np.exp(-t / a - b / t) 
+        return ir
 
     @staticmethod
     def polder_function(x, y):
