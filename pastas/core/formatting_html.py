@@ -1,6 +1,6 @@
 import uuid
 import pastas as ps
-from pandas import DataFrame
+from pandas import DataFrame, concat
 from functools import lru_cache
 from html import escape
 from importlib.resources import read_binary
@@ -50,14 +50,14 @@ def _icon(icon_name):
     )
 
 
-def array_section(ml, attrname, collapsed="checked"):
+def model_section(ml, attrname, collapsed="checked"):
     # "unique" id to expand/collapse the section
     data_id = "section-" + str(uuid.uuid4())
     data_repr = short_data_repr_html(ml, attrname)
     # preview = escape(inline_variable_array_repr(variable, max_width=70))
     preview = attrname
     data_repr = short_data_repr_html(ml, attrname)
-    data_icon = _icon("icon-file-text2")
+    data_icon = _icon("icon-database")
 
     return (
         "<div class='xr-array-wrap'>"
@@ -69,9 +69,57 @@ def array_section(ml, attrname, collapsed="checked"):
     )
 
 
-def short_data_repr_html(ml, attrname):
+def stressmodel_section(sm, collapsed=""):
+    # "unique" id to expand/collapse the section
+    data_id = "section-" + str(uuid.uuid4())
+    smdict = sm.to_dict()
+    settings = DataFrame(
+        dict(
+            [
+                (ky, smdict[ky])
+                for ky in (
+                    "stressmodel",
+                    "name",
+                    "rfunc",
+                    "rfunc_kwargs",
+                    "up",
+                    "cutoff",
+                    "recharge",
+                    "recharge_kwargs",
+                )
+                if ky in smdict.keys()
+            ]
+        ),
+        index=["settings"],
+    )
+    stresses = concat([x.series.to_frame() for x in sm.stress])
+    stress_settings = concat(
+        [DataFrame(x.settings, index=[f"Settings {x.name}"]) for x in sm.stress]
+    )
+    data_repr = short_data_repr_html(settings)
+    data_repr_stresses = short_data_repr_html(stresses)
+    data_repr_settings = short_data_repr_html(stress_settings)
+    preview = f"{smdict['stressmodel']} {smdict['name']}"
+    data_icon = _icon("icon-database")
+
+    return (
+        "<div class='xr-array-wrap'>"
+        f"<input id='{data_id}' class='xr-array-in' type='checkbox' {collapsed}>"
+        f"<label for='{data_id}' title='Show/hide data repr'>{data_icon}</label>"
+        f"<div class='xr-array-preview xr-preview'><span>{preview}</span></div>"
+        f"<div class='xr-array-data'>{data_repr}</div>"
+        f"<div class='xr-array-data'>{data_repr_stresses}</div>"
+        f"<div class='xr-array-data'>{data_repr_settings}</div>"
+        "</div>"
+    )
+
+
+def short_data_repr_html(obj, attrname=None):
     """Format "data" for object and Variable."""
-    internal_data = getattr(ml, attrname, ml)
+    if attrname is not None:
+        internal_data = getattr(obj, attrname, obj)
+    else:
+        internal_data = obj
     if isinstance(internal_data, ps.TimeSeries):
         internal_data = internal_data.series.to_frame(name=internal_data.name)
     if isinstance(internal_data, dict):
@@ -92,9 +140,12 @@ def model_repr(ml):
     ]
 
     sections = [
-        array_section(ml, "oseries"),
-        array_section(ml, "settings", collapsed=""),
-        array_section(ml, "parameters", collapsed=""),
+        model_section(ml, "oseries"),
+        model_section(ml, "settings", collapsed=""),
+        model_section(ml, "parameters", collapsed=""),
     ]
+    for sm in ml.stressmodels.values():
+        sections.append(stressmodel_section(sm))
+
     # return ml.oseries.series.to_frame()
     return _obj_repr(ml, header_components, sections)
