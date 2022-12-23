@@ -288,7 +288,7 @@ class BaseSolver:
         for i, p in enumerate(parameter_sample):
             data[i] = func(p=p, **kwargs)
 
-        return DataFrame.from_dict(data, orient="columns")
+        return DataFrame.from_dict(data, orient="columns", dtype=float)
 
     def _get_confidence_interval(self, func, n=None, name=None, alpha=0.05,
                                  max_iter=10, **kwargs):
@@ -428,7 +428,7 @@ class LeastSquares(BaseSolver):
 
         Returns
         -------
-        pcov: numpy.array
+        pcov: numpy.Array
             numpy array with the covariance matrix.
 
         Notes
