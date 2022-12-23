@@ -785,6 +785,7 @@ class CompareModels:
         grid=True,
         legend=True,
         adjust_height=False,
+        legend_kwargs=None,
     ):
         """plot the models in a comparison plot.
 
@@ -816,6 +817,8 @@ class CompareModels:
             the subplots on the left is equal. Default is False. When combining
             stress contributions in one subplot, please also provide smdict for
             best results.
+        legend_kwargs : dict, optional
+            pass legend keyword arguments to plots
         """
         self.adjust_height = adjust_height
         if self.axes is None and not self.adjust_height:
@@ -842,15 +845,18 @@ class CompareModels:
         for axn in self.axes.keys():
             if axn not in ("tab", "met", "dia"):
                 self.axes[axn].grid(grid)
-                if legend:
+                if legend and not axn.startswith("rf"):
+                    if legend_kwargs is None:
+                        legend_kwargs = {}
                     _, l = self.axes[axn].get_legend_handles_labels()
                     self.axes[axn].legend(
-                        ncol=max([int(np.ceil(len(l))), 4]),
-                        loc=(0, 1),
-                        frameon=False,
-                        # fontsize="x-small",
-                        markerscale=1.0,
-                        numpoints=3,
+                        ncol=legend_kwargs.pop(
+                            "ncol", max([int(np.ceil(len(l))), 4])),
+                        loc=legend_kwargs.pop("loc", (0, 1)),
+                        frameon=legend_kwargs.pop("frameon", False),
+                        markerscale=legend_kwargs.pop("markerscale", 1.0),
+                        numpoints=legend_kwargs.pop("numpoints", 3),
+                        **legend_kwargs,
                     )
             if axn in ("sim", "res") or axn.startswith("con"):
                 xshare_left.append(self.axes[axn])

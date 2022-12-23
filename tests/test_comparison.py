@@ -23,7 +23,7 @@ ml2.solve(report=False)
 
 def test_comparison_plot():
     mc = ps.CompareModels(models=[ml1, ml2])
-    mc.plot()
+    mc.plot(legend_kwargs={"ncol": 2})
     return
 
 

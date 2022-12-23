@@ -78,8 +78,7 @@ class BaseSolver:
         """
         # Get the residuals or the noise
         if noise:
-            rv = self.ml.noise(p) * \
-                 self.ml.noise_weights(p)
+            rv = self.ml.noise(p) * self.ml.noise_weights(p)
         else:
             rv = self.ml.residuals(p)
 
@@ -93,9 +92,9 @@ class BaseSolver:
             callback(p)
 
         if returnseparate:
-            return self.ml.residuals(p).values, \
-                   self.ml.noise(p).values, \
-                   self.ml.noise_weights(p).values
+            return (self.ml.residuals(p).values,
+                    self.ml.noise(p).values,
+                    self.ml.noise_weights(p).values)
 
         return rv.values
 
