@@ -5,7 +5,7 @@ with open("README.rst", "r") as fh:
 
 # Get the version.
 version = {}
-with open("pastas/version.py") as fp:
+with open("src/pastas/version.py") as fp:
     exec(fp.read(), version)
 
 setup(
