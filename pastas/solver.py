@@ -17,7 +17,7 @@ from pandas import DataFrame, Series
 from scipy.linalg import svd
 from scipy.optimize import least_squares
 
-from pastas.typeh import Type, Optional, Tuple, pstAL, pstMl, pstCB, pstFu
+from pastas.typeh import Type, Optional, Tuple, Union, pstAL, pstMl, pstCB, pstFu
 
 logger = getLogger(__name__)
 

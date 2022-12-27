@@ -6,7 +6,7 @@ from logging import getLogger
 import numpy as np
 from pandas import DataFrame
 from scipy.integrate import quad
-from scipy.special import (erfc, erfcinv, exp1, gamma, gammainc, gammaincinv, 
+from scipy.special import (erfc, erfcinv, exp1, gamma, gammainc, gammaincinv,
                            k0, k1, lambertw)
 from scipy.interpolate import interp1d
 
@@ -117,7 +117,7 @@ class RfuncBase:
         """
         s = self.step(p, dt, cutoff, maxtmax)
         return np.append(s[0], np.subtract(s[1:], s[:-1]))
-    
+
     def impulse(self, t, p):
         """Method to return the impulse response function.
 
@@ -137,7 +137,7 @@ class RfuncBase:
         -------
         s: numpy.array
             Array with the impulse response.
-            
+
         Note
         ----
         Only used for internal consistency checks
@@ -237,7 +237,7 @@ class Gamma(RfuncBase):
         t = self.get_t(p, dt, cutoff, maxtmax)
         s = p[0] * gammainc(p[1], t / p[2])
         return s
-    
+
     def impulse(self, t, p):
         A, n, a = p
         ir = A * t ** (n - 1) * np.exp(-t / a) / (a ** n * gamma(n))
@@ -267,7 +267,6 @@ class Exponential(RfuncBase):
     where A and a are parameters.
     """
     _name = "Exponential"
-
 
     def __init__(self):
         RfuncBase.__init__(self)
@@ -302,7 +301,7 @@ class Exponential(RfuncBase):
         t = self.get_t(p, dt, cutoff, maxtmax)
         s = p[0] * (1.0 - np.exp(-t / p[1]))
         return s
-    
+
     def impulse(self, t, p):
         A, a = p
         ir = A / a * np.exp(-t / a)
@@ -340,7 +339,6 @@ class HantushWellModel(RfuncBase):
 
     """
     _name = "HantushWellModel"
-
 
     def __init__(self):
         RfuncBase.__init__(self)
@@ -398,7 +396,7 @@ class HantushWellModel(RfuncBase):
         else:
             return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
 
-    def gain(self, p: pstAL: r: Optional[float] = None) -> float:
+    def gain(self, p: pstAL, r: Optional[float] = None) -> float:
         if r is None:
             r = self._get_distance_from_params(p)
         rho = 2 * r * np.sqrt(p[2])
@@ -464,11 +462,11 @@ class HantushWellModel(RfuncBase):
         ps.WellModel.variance_gain
         """
         var_gain = (
-                (k0(2 * np.sqrt(r ** 2 * b))) ** 2 * var_A +
-                (-A * r * k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(
-                    b)) ** 2 * var_b -
-                2 * A * r * k0(2 * np.sqrt(r ** 2 * b)) *
-                k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(b) * cov_Ab
+            (k0(2 * np.sqrt(r ** 2 * b))) ** 2 * var_A +
+            (-A * r * k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(
+                b)) ** 2 * var_b -
+            2 * A * r * k0(2 * np.sqrt(r ** 2 * b)) *
+            k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(b) * cov_Ab
         )
         return var_gain
 
@@ -505,7 +503,6 @@ class Hantush(RfuncBase):
        revisited. Journal of hydrology, 393(3), 381-388.
     """
     _name = "Hantush"
-
 
     def __init__(self):
         RfuncBase.__init__(self)
@@ -555,7 +552,7 @@ class Hantush(RfuncBase):
         F[tau >= rho / 2] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(
             tau2 + rho ** 2 / (4 * tau2))
         return p[0] * F / (2 * k0rho)
-    
+
     def impulse(self, t, p):
         A, a, b = p
         ir = A / (2 * t * k0(2 * np.sqrt(b))) * np.exp(-t / a - a * b / t)
@@ -620,10 +617,10 @@ class Polder(RfuncBase):
         if not self.up:
             s = -s
         return s
-    
+
     def impulse(self, t, p):
         A, a, b = p
-        ir = A * t ** (-1.5) * np.exp(-t / a - b / t) 
+        ir = A * t ** (-1.5) * np.exp(-t / a - b / t)
         return ir
 
     @staticmethod
@@ -648,7 +645,6 @@ class One(RfuncBase):
         proportion after which the step function is cut off. default is 0.999.
     """
     _name = "One"
-
 
     def __init__(self):
         RfuncBase.__init__(self)
@@ -709,7 +705,6 @@ class FourParam(RfuncBase):
     calculation time.
     """
     _name = "FourParam"
-
 
     def __init__(self, quad=False):
         RfuncBase.__init__(self, quad=quad)
@@ -859,7 +854,6 @@ class DoubleExponential(RfuncBase):
     """
     _name = "DoubleExponential"
 
-
     def __init__(self):
         RfuncBase.__init__(self)
         self.nparam = 4
@@ -993,7 +987,6 @@ class Kraijenhoff(RfuncBase):
     """
     _name = "Kraijenhoff"
 
-
     def __init__(self, n_terms=10):
         RfuncBase.__init__(self, n_terms=n_terms)
         self.nparam = 3
@@ -1031,8 +1024,8 @@ class Kraijenhoff(RfuncBase):
         h = 0
         for n in range(self.n_terms):
             h += (-1) ** n / (2 * n + 1) ** 3 * \
-                 np.cos((2 * n + 1) * np.pi * p[2]) * \
-                 np.exp(-(2 * n + 1) ** 2 * t / p[1])
+                np.cos((2 * n + 1) * np.pi * p[2]) * \
+                np.exp(-(2 * n + 1) ** 2 * t / p[1])
         s = p[0] * (1 - (8 / (np.pi ** 3 * (1 / 4 - p[2] ** 2)) * h))
         return s
 
@@ -1068,7 +1061,6 @@ class Spline(RfuncBase):
     groundwater system better.
     """
     _name = "Spline"
-
 
     def __init__(self, kind: Optional[str] = 'quadratic',
                  t: Optional[list] = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]):

@@ -49,7 +49,7 @@ class StressModelBase:
     """
     _name = "StressModelBase"
 
-    def __init__(self, name: str, tmin: pstTm, tmax: pstTm, rfunc: Optional[pstRF] = None: up: Optional[bool] = True, meanstress: Optional[float] = 1.0, cutoff: Optional[float] = 0.999):
+    def __init__(self, name: str, tmin: pstTm, tmax: pstTm, rfunc: Optional[pstRF] = None, up: Optional[bool] = True, meanstress: Optional[float] = 1.0, cutoff: Optional[float] = 0.999):
         self.name = validate_name(name)
         self.tmin = tmin
         self.tmax = tmax
@@ -742,7 +742,7 @@ class WellModel(StressModelBase):
         }
         return data
 
-    def variance_gain(self, model: pstMl, istress: Optional[int] = None) -> float:
+    def variance_gain(self, model: pstMl, istress: Optional[int] = None, r: Optional[pstAL] = None) -> float:
         """Calculate variance of the gain for WellModel.
 
         Variance of the gain is calculated based on propagation of uncertainty
@@ -755,7 +755,7 @@ class WellModel(StressModelBase):
             optimized model
         istress : int or list of int, optional
             index of stress(es) for which to calculate variance of gain
-        r : np.array, optional
+        r : array_like, optional
             radial distance(s) at which to calculate variance of the gain,
             only considered if istress is None
 

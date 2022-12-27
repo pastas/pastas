@@ -960,7 +960,7 @@ class Model:
 
         return tmin
 
-    def get_tmax(self, tmin: Optional[pstTm] = None, use_oseries: Optional[bool] = True, use_stresses: Optional[bool] = False) -> Type[Timestamp]:
+    def get_tmax(self, tmax: Optional[pstTm] = None, use_oseries: Optional[bool] = True, use_stresses: Optional[bool] = False) -> Type[Timestamp]:
         """Method that checks and returns valid values for tmax.
 
         Parameters

@@ -355,8 +355,8 @@ def gg(series: Type[Series], tmin: Optional[pstTm] = None, tmax: Optional[pstTm]
 
 # Helper functions
 
-def _mean_spring(series: Type[Series], min_n_meas: int) -> float:
-    """Internal method to determine mean of timeseries values in spring.
+def _get_spring(series: Type[Series], min_n_meas: int) -> float:
+    """Internal method to get values of timeseries values in spring.
 
     Part of year aggregator function for gvg method.
 

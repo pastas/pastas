@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import MultipleLocator, LogFormatter
-from pandas import concat, Timestamp, Series
+from pandas import concat, Series
 
 from .decorators import model_tmin_tmax
 from .plots import series, diagnostics, cum_frequency, \
@@ -687,7 +687,7 @@ class Plotting:
 
     @model_tmin_tmax
     def stacked_results(self, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, figsize: Optional[tuple] = (10, 8),
-                        stacklegend: Optional[bool] = False, **kwargs) -> pstAx:
+                        stacklegend: Optional[bool] = False, stacklegend_kws: Optional[dict] = None, **kwargs) -> pstAx:
         """Create a results plot, similar to `ml.plots.results()`, in which the
         individual contributions of stresses (in stressmodels with multiple
         stresses) are stacked.
@@ -802,7 +802,7 @@ class Plotting:
 
     @model_tmin_tmax
     def summary_pdf(self, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, fname: Optional[str] = None, dpi: Optional[int] = 150,
-                    results_kwargs: Optional[dict] = {}, diagnostics_kwargs: Optional[dict] = {}):
+                    results_kwargs: Optional[dict] = None, diagnostics_kwargs: Optional[dict] = None):
         """Create a PDF file (A4) with the results and diagnostics plot.
 
         Parameters
@@ -825,6 +825,13 @@ class Plotting:
         """
         if fname is None:
             fname = "{}.pdf".format(self.ml.name)
+
+        if results_kwargs is None:
+            results_kwargs = {}
+
+        if diagnostics_kwargs is None:
+            diagnostics_kwargs = {}
+
         pdf = PdfPages(fname)
 
         fig = plt.figure(figsize=(8.27, 11.69), dpi=50)

@@ -34,4 +34,4 @@ pstRB = TypeVar("pstRB", bound=ReservoirBase)  # Reservoir Base
 pstCB = TypeVar("pstCB", bound=Union[SolveTimer, TrackSolve])  # Callback
 pstFu = TypeVar("pstFu")  # Function (e.g. Objective Function)
 pstRF = TypeVar("pstRF", bound=RfuncBase)  # rFunc Base
-pstAL = TypeVar("pstAL", bound=ArrayLike)  # Array Like (NumPy based)
+pstAL = TypeVar("pstAL", bound=Type[ArrayLike])  # Array Like (NumPy based)

@@ -12,7 +12,7 @@ from scipy.stats import gaussian_kde, norm, probplot
 from pastas.stats.core import acf as get_acf
 from pastas.stats.metrics import rmse, evp
 from pastas.typeh import Type, Optional, pstAx, pstFi, pstTm, pstMl, pstAL
-
+from pastas.modelcompare import CompareModels
 
 logger = logging.getLogger(__name__)
 
@@ -20,8 +20,7 @@ __all__ = ["compare", "series", "acf", "diagnostics", "cum_frequency",
            "TrackSolve"]
 
 
-def compare(models: list[pstMl], tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, block_or_step: Optional[str] = 'step',
-            adjust_height: Optional[bool] = True, **kwargs) -> pstAx:
+def compare(models: list[pstMl], adjust_height: Optional[bool] = True, **kwargs) -> pstAx:
     """Plot multiple Pastas models in one figure to visually compare models.
 
     Note
@@ -195,8 +194,7 @@ def series(head: Optional[Type[Series]] = None, stresses: Optional[list[Type[Ser
 
 
 def acf(series: Type[Series], alpha: Optional[float] = 0.05, lags: Optional[int] = 365, acf_options: Optional[dict] = None, smooth_conf: Optional[bool] = True,
-        ax: Optional[pstAx] = None, figsize: Optional[tuple] = (5, 2)):
-
+        color: Optional[str] = "k", ax: Optional[pstAx] = None, figsize: Optional[tuple] = (5, 2)):
     """Plot of the autocorrelation function of a time series.
 
     Parameters

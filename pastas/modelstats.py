@@ -27,7 +27,7 @@ from pandas import DataFrame
 
 from .decorators import model_tmin_tmax
 from .stats import diagnostics, metrics
-from .typeh import Type, Union, Optional, pstMl, pstTm
+from .typeh import Type, Optional, pstMl, pstTm
 
 
 class Statistics:

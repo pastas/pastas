@@ -1,7 +1,7 @@
 """This module contains methods to compute the groundwater signatures."""
 import pandas as pd
-from pandas import NA, Timedelta, DatetimeIndex, cut, Series
-from numpy import diff, sqrt, log, arange
+from pandas import Timedelta, DatetimeIndex, cut, Series
+from numpy import diff, sqrt, log, arange, nan
 
 import pastas as ps
 from scipy.stats import linregress

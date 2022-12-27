@@ -179,7 +179,7 @@ class NoiseModel(NoiseModelBase):
         .. math:: w = 1 / sqrt((1 - exp(-2 \\Delta t / \\alpha)))
 
         which are then normalized so that sum(w) = len(res).
-Ò
+
         """
         alpha = p[0]
         # large for first measurement
