@@ -23,7 +23,7 @@ These methods may be used as follows.
 """
 
 from numpy import nan
-from pandas import DataFrame, Timestamp
+from pandas import DataFrame
 
 from .decorators import model_tmin_tmax
 from .stats import diagnostics, metrics

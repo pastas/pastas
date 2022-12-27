@@ -15,10 +15,10 @@ from pandas import (DataFrame, Series, Timedelta, Timestamp,
 from pastas.decorators import get_stressmodel
 from pastas.io.base import _load_model, dump
 from pastas.modelstats import Statistics
-from pastas.noisemodels import NoiseModel, NoiseModelBase
+from pastas.noisemodels import NoiseModel
 from pastas.modelplots import Plotting
-from pastas.solver import LeastSquares, BaseSolver
-from pastas.stressmodels import Constant, StressModelBase
+from pastas.solver import LeastSquares
+from pastas.stressmodels import Constant
 from pastas.timeseries import TimeSeries
 from pastas.transform import ThresholdTransform
 from pastas.utils import (_get_dt, _get_time_offset, frequency_is_supported,
@@ -1875,7 +1875,3 @@ class Model:
         for sm in self.stressmodels.values():
             if hasattr(sm, '_check_stressmodel_compatibility'):
                 sm._check_stressmodel_compatibility(self)
-
-
-if __name__ == "__main__":
-    Model()

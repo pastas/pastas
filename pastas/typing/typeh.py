@@ -2,7 +2,7 @@
 
 # Base Classes for TypeVar
 # Internal
-import pastas as ps
+# import pastas as ps
 # from pastas.noisemodels import NoiseModelBase
 # from pastas.stressmodels import StressModelBase
 # from pastas.solver import BaseSolver
@@ -40,4 +40,4 @@ pstRV = TypeVar("pstRV", bound=Any)  # Reservoir Base
 pstCB = TypeVar("pstCB", bound=Any)  # Callback
 pstFu = TypeVar("pstFu", bound=Any)  # Function (e.g. Objective Function)
 pstRF = TypeVar("pstRF", bound=Any)  # rFunc Base
-pstAL = TypeVar("pstAL", bound=Type[ArrayLike])  # Array Like (NumPy based)
+pstAL = TypeVar("pstAL", bound=ArrayLike)  # Array Like (NumPy based)

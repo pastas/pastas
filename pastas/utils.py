@@ -11,7 +11,7 @@ from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
 
 # Type Hinting
-from pastas.typing import Type, Optional, Tuple, Union, Any, pstAL, pstMl, pstTm
+from pastas.typing import Type, Optional, Tuple, Any, pstAL, pstMl, pstTm
 
 logger = logging.getLogger(__name__)
 

@@ -5,7 +5,7 @@ groundwater time series in the Netherlands.
 """
 
 from numpy import nan
-from pandas import Series, Timedelta, concat, date_range, Timestamp
+from pandas import Series, Timedelta, concat, date_range
 from pastas.utils import get_sample
 # Type Hinting
 from pastas.typing import Type, Optional, Union, pstFu, pstTm

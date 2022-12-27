@@ -16,8 +16,6 @@ import numpy as np
 from pandas import DataFrame, Series
 from scipy.linalg import svd
 from scipy.optimize import least_squares
-from .timer import SolveTimer
-from .plots import TrackSolve
 
 # Type Hinting
 from pastas.typing import Type, Optional, Tuple, Union, pstAL, pstCB, pstFu, pstMl
