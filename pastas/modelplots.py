@@ -8,20 +8,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import MultipleLocator, LogFormatter
-from matplotlib.axes._base import _AxesBase
-from matplotlib.figure import FigureBase
-from pandas import concat, Series, Timestamp
+from pandas import concat, Series
 
 from .decorators import model_tmin_tmax
 from .plots import series, diagnostics, cum_frequency, \
     _table_formatter_params, _table_formatter_stderr
 
 # Type Hinting
-# from typing import Type, Optional, TypeVar, Union
-# pstAx = TypeVar("pstAx", bound=_AxesBase)  # Matplotlib Axes
-# pstFi = TypeVar("pstFi", bound=FigureBase)  # Matplotlib Figure
-# pstTm = TypeVar("pstTm", bound=Union[str, Timestamp])  # Tmin or Tmax
-# pstMl = TypeVar("pstMl")  # Pastas Model
 from pastas.typing import Type, Optional, pstAx, pstFi, pstTm, pstMl
 
 logger = logging.getLogger(__name__)

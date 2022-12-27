@@ -11,11 +11,6 @@ from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
 
 # Type Hinting
-# from typing import Type, Optional, Tuple, TypeVar, Union, Any
-# from numpy.typing import ArrayLike
-# pstAL = TypeVar("pstAL", bound=Type[ArrayLike])  # Array Like (NumPy based)
-# pstMl = TypeVar("pstMl")
-# pstTm = TypeVar("pstTm", bound=Union[str, Timestamp])  # Tmin or Tmax
 from pastas.typing import Type, Optional, Tuple, Union, Any, pstAL, pstMl, pstTm
 
 logger = logging.getLogger(__name__)

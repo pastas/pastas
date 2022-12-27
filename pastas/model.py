@@ -26,13 +26,7 @@ from pastas.utils import (_get_dt, _get_time_offset, frequency_is_supported,
 from pastas.version import __version__
 
 # Type Hinting
-# from typing import Type, Union, Optional, Tuple, TypeVar
 from pastas.typing import Type, Union, Optional, Tuple, pstTm, pstSM, pstNM, pstBS, pstAL, pstMl
-# pstTm = TypeVar("pstTm", bound=Union[str, Timestamp])  # Tmin or Tmax
-# pstSM = TypeVar("pstSM", bound=StressModelBase)  # Stress Model
-# pstNM = TypeVar("pstNM", bound=NoiseModelBase)  # Noise Model
-# pstBS = TypeVar("pstBS", bound=BaseSolver)  # Base Solver
-# pstAL = TypeVar("pstAL", bound=Type[ArrayLike])  # Array Like (NumPy based)
 
 
 class Model:

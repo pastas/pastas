@@ -30,17 +30,6 @@ from .utils import check_numba, validate_name
 
 
 # Type Hinting
-# from .recharge import RechargeBase
-# from .reservoir import ReservoirBase
-# from .rfunc import RfuncBase
-# from numpy.typing import ArrayLike
-# from typing import Type, Optional, Tuple, Union, TypeVar
-# pstAL = TypeVar("pstAL", bound=Type[ArrayLike])  # Array Like (NumPy based)
-# pstRF = TypeVar("pstRF", bound=RfuncBase)  # rFunc Base
-# pstRB = TypeVar("pstRB", bound=RechargeBase)  # Recharge Base
-# pstRV = TypeVar("pstRV", bound=ReservoirBase)  # Reservoir Base
-# pstTm = TypeVar("pstTm", bound=Union[str, Timestamp])  # Tmin or Tmax
-# pstMl = TypeVar("pstMl")  # Model
 from pastas.typing import Type, Optional, Tuple, Union, pstAL, pstRF, pstRB, pstRV, pstTm, pstMl
 
 logger = getLogger(__name__)

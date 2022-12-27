@@ -43,9 +43,6 @@ from pandas import DataFrame
 
 from .decorators import njit
 from .utils import check_numba
-# from typing import Type, Optional, Tuple, TypeVar
-# from numpy.typing import ArrayLike
-# pstAL = TypeVar("pstAL", bound=Type[ArrayLike])  # Array Like (NumPy based)
 from pastas.typing import Type, Optional, Tuple, pstAL
 
 logger = getLogger(__name__)

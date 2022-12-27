@@ -11,9 +11,6 @@ from scipy.special import (erfc, erfcinv, exp1, gamma, gammainc, gammaincinv,
 from scipy.interpolate import interp1d
 
 # Type Hinting
-# from typing import Type, Optional, Union, TypeVar
-# from numpy.typing import ArrayLike
-# pstAL = TypeVar("pstAL", bound=Type[ArrayLike])  # Array Like (NumPy based)
 from pastas.typing import Type, Optional, Union, pstAL
 
 logger = getLogger(__name__)

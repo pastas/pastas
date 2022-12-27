@@ -20,12 +20,6 @@ from .timer import SolveTimer
 from .plots import TrackSolve
 
 # Type Hinting
-# from typing import Type, Optional, Tuple, Union, TypeVar
-# from numpy.typing import ArrayLike
-# pstAL = TypeVar("pstAL", bound=Type[ArrayLike])  # Array Like (NumPy based)
-# pstCB = TypeVar("pstCB", bound=Union[SolveTimer, TrackSolve])  # Callback
-# pstFu = TypeVar("pstFu")  # Function (e.g. Objective Function)
-# pstMl = TypeVar("pstMl")  # Model
 from pastas.typing import Type, Optional, Tuple, Union, pstAL, pstCB, pstFu, pstMl
 
 

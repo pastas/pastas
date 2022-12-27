@@ -9,10 +9,7 @@ from pandas import DataFrame, Series
 from .decorators import set_parameter
 from .utils import validate_name
 
-# from typing import Type, Optional, TypeVar
-# from numpy.typing import ArrayLike
-# pstAL = TypeVar("pstAL", bound=Type[ArrayLike])  # Array Like (NumPy based)
-# pstMl = TypeVar("pstMl")
+# Type Hinting
 from pastas.typing import Type, Optional, pstAL, pstMl
 
 

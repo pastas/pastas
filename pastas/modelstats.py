@@ -29,9 +29,6 @@ from .decorators import model_tmin_tmax
 from .stats import diagnostics, metrics
 
 # Type Hinting
-# from typing import Type, Optional, TypeVar, Union
-# pstMl = TypeVar("pstMl")  # Model
-# pstTm = TypeVar("pstTm", bound=Union[str, Timestamp])  # Tmin or Tmax
 from pastas.typing import Type, Optional, pstMl, pstFi, pstTm
 
 

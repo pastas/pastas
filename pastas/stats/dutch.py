@@ -9,9 +9,6 @@ from pandas import Series, Timedelta, concat, date_range, Timestamp
 from pastas.utils import get_sample
 # Type Hinting
 from pastas.typing import Type, Optional, Union, pstFu, pstTm
-# from typing import Type, Optional, Union, TypeVar
-# pstFu = TypeVar("pstFu")  # Function (e.g. Objective Function)
-# pstTm = TypeVar("pstTm", bound=Union[str, Timestamp])  # Tmin or Tmax
 
 
 def q_ghg(series: Type[Series], tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, q: Optional[float] = 0.94, by_year: Optional[bool] = True) -> Type[Series]:

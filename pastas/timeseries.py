@@ -7,9 +7,6 @@ from .rcparams import rcParams
 from .utils import (_get_dt, _get_stress_dt, _get_time_offset,
                     timestep_weighted_resample, validate_name)
 # Type Hinting
-# from typing import Type, Optional, TypeVar, Union
-# pstAx = TypeVar("pstAx", bound=_AxesBase)  # Matplotlib Axes
-# pstTm = TypeVar("pstTm", bound=Union[str, pd.Timestamp])  # Tmin or Tmax
 from pastas.typing import Type, Optional, Union, pstAx, pstTS
 
 
