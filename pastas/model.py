@@ -26,7 +26,7 @@ from pastas.utils import (_get_dt, _get_time_offset, frequency_is_supported,
 from pastas.version import __version__
 
 # Type Hinting
-from pastas.typing import Type, Union, Optional, Tuple, pstTm, pstSM, pstNM, pstBS, pstAL, pstMl
+from pastas.typing import Type, Union, Optional, Tuple, List, pstTm, pstSM, pstNM, pstBS, pstAL, pstMl
 
 
 class Model:
@@ -1189,7 +1189,7 @@ class Model:
 
         return contrib
 
-    def get_contributions(self, split: Optional[bool] = True, **kwargs) -> list[Type[Series]]:
+    def get_contributions(self, split: Optional[bool] = True, **kwargs) -> List[Type[Series]]:
         """Method to get contributions of all stressmodels.
 
         Parameters
@@ -1449,7 +1449,7 @@ class Model:
 
     @get_stressmodel
     def get_stress(self, name: str, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, freq: Optional[str] = None, warmup: Optional[float] = None,
-                   istress: Optional[int] = None, return_warmup: Optional[bool] = False, p: Optional[pstAL] = None) -> Union[Type[Series], list[Type[Series]]]:
+                   istress: Optional[int] = None, return_warmup: Optional[bool] = False, p: Optional[pstAL] = None) -> Union[Type[Series], List[Type[Series]]]:
         """Method to obtain the stress(es) from the stressmodel.
 
         Parameters

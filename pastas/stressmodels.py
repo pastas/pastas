@@ -30,7 +30,7 @@ from .utils import check_numba, validate_name
 
 
 # Type Hinting
-from pastas.typing import Type, Optional, Tuple, Union, pstAL, pstRF, pstRB, pstRV, pstTm, pstMl
+from pastas.typing import Type, Optional, Tuple, List, Union, pstAL, pstRF, pstRB, pstRV, pstTm, pstMl
 
 logger = getLogger(__name__)
 
@@ -539,7 +539,7 @@ class WellModel(StressModelBase):
     """
     _name = "WellModel"
 
-    def __init__(self, stress: list[Type[Series]], rfunc: pstRF, name: str, distances: pstAL, up: Optional[bool] = False, cutoff: Optional[float] = 0.999,
+    def __init__(self, stress: List[Type[Series]], rfunc: pstRF, name: str, distances: pstAL, up: Optional[bool] = False, cutoff: Optional[float] = 0.999,
                  settings: Optional[str] = "well", sort_wells: Optional[bool] = True):
         if not (isinstance(rfunc, HantushWellModel) or
                 issubclass(rfunc, HantushWellModel)):

@@ -23,7 +23,7 @@ from matplotlib.figure import FigureBase
 # Numpy
 from numpy.typing import ArrayLike
 # Typing
-from typing import Type, Union, Optional, Tuple, Any, TypeVar
+from typing import Type, Union, Optional, Tuple, List, Any, TypeVar
 
 pstAx = TypeVar("pstAx", bound=_AxesBase)  # Matplotlib Axes
 pstFi = TypeVar("pstFi", bound=FigureBase)  # Matplotlib Figure

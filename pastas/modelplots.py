@@ -15,7 +15,7 @@ from .plots import series, diagnostics, cum_frequency, \
     _table_formatter_params, _table_formatter_stderr
 
 # Type Hinting
-from pastas.typing import Type, Optional, pstAx, pstFi, pstTm, pstMl
+from pastas.typing import Type, Optional, List, pstAx, pstFi, pstTm, pstMl
 
 logger = logging.getLogger(__name__)
 
@@ -501,7 +501,7 @@ class Plotting:
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
         return cum_frequency(obs, sim, ax=ax, figsize=figsize, **kwargs)
 
-    def block_response(self, stressmodels: Optional[list[str]] = None, ax: Optional[pstAx] = None, figsize: Optional[tuple] = None,
+    def block_response(self, stressmodels: Optional[List[str]] = None, ax: Optional[pstAx] = None, figsize: Optional[tuple] = None,
                        **kwargs) -> pstAx:
         """Plot the block response for a specific stressmodels.
 
@@ -540,7 +540,7 @@ class Plotting:
         plt.legend(legend)
         return ax
 
-    def step_response(self, stressmodels: Optional[list[str]] = None, ax: Optional[pstAx] = None, figsize: Optional[tuple] = None,
+    def step_response(self, stressmodels: Optional[List[str]] = None, ax: Optional[pstAx] = None, figsize: Optional[tuple] = None,
                       **kwargs) -> pstAx:
         """Plot the step response for a specific stressmodels.
 
@@ -853,7 +853,7 @@ class Plotting:
         return fig
 
 
-def _get_height_ratios(ylims: list[list, tuple]) -> list[float]:
+def _get_height_ratios(ylims: List[list, tuple]) -> List[float]:
     height_ratios = []
     for ylim in ylims:
         hr = ylim[1] - ylim[0]
@@ -863,7 +863,7 @@ def _get_height_ratios(ylims: list[list, tuple]) -> list[float]:
     return height_ratios
 
 
-def _get_stress_series(ml, split: Optional[bool] = True) -> list[Type[Series]]:
+def _get_stress_series(ml, split: Optional[bool] = True) -> List[Type[Series]]:
     stresses = []
     for name in ml.stressmodels.keys():
         nstress = len(ml.stressmodels[name].stress)

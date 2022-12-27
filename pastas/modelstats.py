@@ -29,7 +29,7 @@ from .decorators import model_tmin_tmax
 from .stats import diagnostics, metrics
 
 # Type Hinting
-from pastas.typing import Type, Optional, pstMl, pstFi, pstTm
+from pastas.typing import Type, Optional, pstMl, List, pstTm
 
 
 class Statistics:
@@ -285,7 +285,7 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return metrics.aic(res=res, nparam=nparam)
 
     @model_tmin_tmax
-    def summary(self, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, stats: Optional[list[str]] = None) -> Type[DataFrame]:
+    def summary(self, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, stats: Optional[List[str]] = None) -> Type[DataFrame]:
         """Returns a Pandas DataFrame with goodness-of-fit metrics.
 
         Parameters

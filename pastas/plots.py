@@ -15,7 +15,7 @@ from .stats.metrics import rmse, evp
 from .modelcompare import CompareModels
 
 # Type Hinting
-from pastas.typing import Type, Optional, pstAL, pstAx, pstFi, pstTm, pstMl
+from pastas.typing import Type, Optional, List, pstAL, pstAx, pstFi, pstTm, pstMl
 
 
 logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ __all__ = ["compare", "series", "acf", "diagnostics", "cum_frequency",
            "TrackSolve"]
 
 
-def compare(models: list[pstMl], adjust_height: Optional[bool] = True, **kwargs) -> pstAx:
+def compare(models: List[pstMl], adjust_height: Optional[bool] = True, **kwargs) -> pstAx:
     """Plot multiple Pastas models in one figure to visually compare models.
 
     Note
@@ -56,8 +56,8 @@ def compare(models: list[pstMl], adjust_height: Optional[bool] = True, **kwargs)
     return mc.axes
 
 
-def series(head: Optional[Type[Series]] = None, stresses: Optional[list[Type[Series]]] = None, hist: Optional[bool] = True, kde: Optional[bool] = False, titles: Optional[bool] = True,
-           tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, labels: Optional[list[str]] = None, figsize: Optional[tuple] = (10, 5)) -> pstAx:
+def series(head: Optional[Type[Series]] = None, stresses: Optional[List[Type[Series]]] = None, hist: Optional[bool] = True, kde: Optional[bool] = False, titles: Optional[bool] = True,
+           tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, labels: Optional[List[str]] = None, figsize: Optional[tuple] = (10, 5)) -> pstAx:
     """Plot all the input time series in a single plot.
 
     Parameters
@@ -785,7 +785,7 @@ class TrackSolve:
         plt.pause(1e-10)
         self.fig.canvas.draw()
 
-    def plot_track_solve_history(self, fig: Optional[pstFi] = None) -> list[pstAx]:
+    def plot_track_solve_history(self, fig: Optional[pstFi] = None) -> List[pstAx]:
         """Plot optimization history.
 
         Parameters
