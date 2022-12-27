@@ -125,7 +125,7 @@ class Linear(RechargeBase):
         """
         return add(prec, multiply(evap, p))
 
-    def get_water_balance(self, prec: pstAL, evap: pstAL, p: pstAL, **kwargs) -> type[DataFrame]:
+    def get_water_balance(self, prec: pstAL, evap: pstAL, p: pstAL, **kwargs) -> Type[DataFrame]:
         ea = multiply(evap, p)
         r = add(prec, multiply(evap, p))
         return DataFrame(data=vstack((prec, ea, -r)).T,
