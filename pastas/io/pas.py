@@ -16,12 +16,12 @@ from pastas import TimeSeries
 logger = getLogger(__name__)
 
 
-def load(fname):
+def load(fname: str) -> dict:
     data = json.load(open(fname), object_hook=pastas_hook)
     return data
 
 
-def pastas_hook(obj):
+def pastas_hook(obj: dict):
     for key, value in obj.items():
         if key in ["tmin", "tmax", "date_modified", "date_created"]:
             val = Timestamp(value)
@@ -56,7 +56,7 @@ def pastas_hook(obj):
     return obj
 
 
-def dump(fname, data):
+def dump(fname: str, data: dict):
     json.dump(data, open(fname, 'w'), indent=4, cls=PastasEncoder)
     logger.info("%s file successfully exported", fname)
 

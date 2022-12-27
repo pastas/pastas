@@ -4,10 +4,12 @@ These transforms are applied after the simulation, to incorporate
 nonlinear effects.
 """
 import numpy as np
-from pandas import DataFrame
+from pandas import DataFrame, Series
 
 from .decorators import set_parameter
 from .utils import validate_name
+
+from pastas.typeh import Type, Optional, pstMl, pstAL
 
 
 class ThresholdTransform:
@@ -38,8 +40,8 @@ class ThresholdTransform:
     """
     _name = "ThresholdTransform"
 
-    def __init__(self, value=np.nan, vmin=np.nan, vmax=np.nan,
-                 name='ThresholdTransform', nparam=2):
+    def __init__(self, value: Optional[float] = np.nan, vmin: Optional[float] = np.nan, vmax: Optional[float] = np.nan,
+                 name: Optional[str] = 'ThresholdTransform', nparam: Optional[int] = 2):
         self.value = value
         self.vmin = vmin
         self.vmax = vmax
@@ -48,7 +50,7 @@ class ThresholdTransform:
         self.parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
 
-    def set_model(self, ml):
+    def set_model(self, ml: pstMl):
         obs = ml.observations()
         if np.isnan(self.value):
             self.value = obs.min() + 0.75 * (obs.max() - obs.min())
@@ -66,7 +68,7 @@ class ThresholdTransform:
                 0.5, 0., 1., True, self.name)
 
     @set_parameter
-    def _set_initial(self, name, value):
+    def _set_initial(self, name: str, value: float):
         """Internal method to set the initial parameter value.
 
         Notes
@@ -76,7 +78,7 @@ class ThresholdTransform:
         self.parameters.loc[name, 'initial'] = value
 
     @set_parameter
-    def _set_pmin(self, name, value):
+    def _set_pmin(self, name: str, value: float):
         """Internal method to set the lower bound of the parameter value.
 
         Notes
@@ -86,7 +88,7 @@ class ThresholdTransform:
         self.parameters.loc[name, 'pmin'] = value
 
     @set_parameter
-    def _set_pmax(self, name, value):
+    def _set_pmax(self, name: str, value: float):
         """Internal method to set the upper bound of the parameter value.
 
         Notes
@@ -96,7 +98,7 @@ class ThresholdTransform:
         self.parameters.loc[name, 'pmax'] = value
 
     @set_parameter
-    def _set_vary(self, name, value):
+    def _set_vary(self, name: str, value: float):
         """Internal method to set if the parameter is varied during
         optimization.
 
@@ -106,7 +108,7 @@ class ThresholdTransform:
         """
         self.parameters.loc[name, 'vary'] = bool(value)
 
-    def simulate(self, h, p):
+    def simulate(self, h: Type[Series], p: pstAL) -> Type[Series]:
         if self.nparam == 1:
             # value above a threshold p[0] are equal to the threshold
             h[h > p[0]] = p[0]
@@ -118,7 +120,7 @@ class ThresholdTransform:
             raise ValueError('Not yet implemented yet')
         return h
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         data = {
             "transform": self._name,
             "value": self.value,

@@ -2,10 +2,12 @@
 Index."""
 
 from numpy import linspace
+from pandas import Series
 from scipy.stats import norm
+from ..typeh import Type
 
 
-def sgi(series):
+def sgi(series: Type[Series]):
     """Method to compute the Standardized Groundwater Index [sgi_2013]_.
 
     Parameters

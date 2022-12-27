@@ -7,10 +7,12 @@ from os import path
 import pastas as ps
 from pandas import to_numeric
 
+from ..typeh import pstMl
+
 logger = getLogger(__name__)
 
 
-def load(fname, **kwargs):
+def load(fname: str, **kwargs) -> pstMl:
     """Method to load a Pastas Model from file.
 
     Parameters
@@ -53,7 +55,7 @@ def load(fname, **kwargs):
     return ml
 
 
-def _load_model(data):
+def _load_model(data: dict) -> pstMl:
     """Internal method to create a model from a dictionary."""
     # Create model
     oseries = ps.TimeSeries(**data["oseries"])
@@ -115,7 +117,8 @@ def _load_model(data):
             recharge_kwargs = {}
             if "recharge_kwargs" in ts:
                 recharge_kwargs = ts.pop("recharge_kwargs")
-            ts["recharge"] = getattr(ps.recharge, ts["recharge"])(**recharge_kwargs)
+            ts["recharge"] = getattr(
+                ps.recharge, ts["recharge"])(**recharge_kwargs)
         if "stress" in ts.keys():
             for i, stress in enumerate(ts["stress"]):
                 ts["stress"][i] = ps.TimeSeries(**stress)
@@ -158,7 +161,7 @@ def _load_model(data):
     return ml
 
 
-def dump(fname, data, **kwargs):
+def dump(fname: str, data: dict, **kwargs):
     """Method to save a pastas-model to a file.
 
     Parameters

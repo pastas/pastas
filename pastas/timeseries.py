@@ -7,6 +7,8 @@ from .rcparams import rcParams
 from .utils import (_get_dt, _get_stress_dt, _get_time_offset,
                     timestep_weighted_resample, validate_name)
 
+from pastas.typeh import Type, Optional, Union, pstAx, pstTS
+
 logger = getLogger(__name__)
 
 
@@ -54,8 +56,8 @@ class TimeSeries:
     """
     _predefined_settings = rcParams["timeseries"]
 
-    def __init__(self, series, name=None, settings=None, metadata=None,
-                 freq_original=None, **kwargs):
+    def __init__(self, series: Type[pd.Series], name: Optional[str] = None, settings: Optional[Union[str, dict]] = None, metadata: Optional[dict] = None,
+                 freq_original: str = None, **kwargs):
         if isinstance(series, TimeSeries):
             # Copy all the series
             self._series_original = series.series_original.copy()
@@ -147,11 +149,11 @@ class TimeSeries:
                f"tmax={self.settings['tmax']})"
 
     @property
-    def series_original(self):
+    def series_original(self) -> pstTS:
         return self._series_original
 
     @series_original.setter
-    def series_original(self, series):
+    def series_original(self, series: Type[pd.Series]):
         """Sets a new freq_original for the TimeSeries."""
         if not isinstance(series, pd.Series):
             raise TypeError(f"Expected a Pandas Series, got {type(series)}")
@@ -169,7 +171,7 @@ class TimeSeries:
             self.update_series(force_update=True, **self.settings)
 
     @property
-    def series(self):
+    def series(self) -> Type[pd.Series]:
         return self._series
 
     @series.setter
@@ -188,7 +190,7 @@ class TimeSeries:
                              " it is calculated from series_original. Please"
                              " set series_original to update the series.")
 
-    def update_series(self, force_update=False, **kwargs):
+    def update_series(self, force_update: Optional[bool] = False, **kwargs):
         """Method to update the series with new options.
 
         Parameters
@@ -254,7 +256,7 @@ class TimeSeries:
 
             self._series = series
 
-    def multiply(self, other):
+    def multiply(self, other: float):
         """Method to multiply the original time series.
 
         Parameters
@@ -265,7 +267,7 @@ class TimeSeries:
         self._series_original = self.series_original.multiply(other)
         self.update_series(force_update=True)
 
-    def _validate_series(self, series):
+    def _validate_series(self, series: Type[pd.Series]) -> Type[pd.Series]:
         """Validate user provided time series.
 
         Parameters
@@ -355,7 +357,7 @@ class TimeSeries:
 
         return series
 
-    def _update_settings(self, **kwargs):
+    def _update_settings(self, **kwargs) -> bool:
         """Internal method that check if an update is actually necessary.
 
         Returns
@@ -375,7 +377,7 @@ class TimeSeries:
                 update = True
         return update
 
-    def _change_frequency(self, series):
+    def _change_frequency(self, series: Type[pd.Series]) -> Type[pd.Series]:
         """Method to change the frequency of the time series."""
         freq = self.settings["freq"]
 
@@ -405,7 +407,7 @@ class TimeSeries:
 
         return series
 
-    def _sample_up(self, series):
+    def _sample_up(self, series: Type[pd.Series]) -> Type[pd.Series]:
         """Resample the time series when the frequency increases (e.g. from
         weekly to daily values)."""
         method = self.settings["sample_up"]
@@ -439,7 +441,7 @@ class TimeSeries:
 
         return series
 
-    def _sample_down(self, series):
+    def _sample_down(self, series: Type[pd.Series]) -> Type[pd.Series]:
         """Resample the time series when the frequency decreases (e.g. from
         daily to weekly values).
 
@@ -490,7 +492,7 @@ class TimeSeries:
 
         return series
 
-    def _sample_weighted(self, series):
+    def _sample_weighted(self, series: Type[pd.Series]) -> Type[pd.Series]:
         freq = self.settings["freq"]
         time_offset = self.settings['time_offset']
         tindex = pd.date_range(series.index[0].ceil(freq) + time_offset,
@@ -500,7 +502,7 @@ class TimeSeries:
                     "timestep_weighted_resample.", self.name, freq)
         return series
 
-    def _fill_nan(self, series):
+    def _fill_nan(self, series: Type[pd.Series]) -> Type[pd.Series]:
         """Fill up the nan-values when present and a constant frequency is
         required."""
 
@@ -534,7 +536,7 @@ class TimeSeries:
 
         return series
 
-    def _fill_before(self, series):
+    def _fill_before(self, series: Type[pd.Series]) -> Type[pd.Series]:
         """Method to add a period in front of the available time series."""
         freq = self.settings["freq"]
         method = self.settings["fill_before"]
@@ -565,7 +567,7 @@ class TimeSeries:
 
         return series
 
-    def _fill_after(self, series):
+    def _fill_after(self, series: Type[pd.Series]) -> Type[pd.Series]:
         """Method to add a period in front of the available time series."""
         freq = self.settings["freq"]
         method = self.settings["fill_after"]
@@ -596,7 +598,7 @@ class TimeSeries:
 
         return series
 
-    def _normalize(self, series):
+    def _normalize(self, series: Type[pd.Series]) -> Type[pd.Series]:
         """Method to normalize the time series."""
         method = self.settings["norm"]
 
@@ -622,7 +624,7 @@ class TimeSeries:
 
         return series
 
-    def to_dict(self, series=True):
+    def to_dict(self, series: Optional[bool] = True) -> dict:
         """Method to export the Time Series to a json format.
 
         Parameters
@@ -651,7 +653,7 @@ class TimeSeries:
 
         return data
 
-    def plot(self, original=False, **kwargs):
+    def plot(self, original: Optional[bool] = False, **kwargs) -> pstAx:
         """Method to plot the TimeSeries object. Plots the edited series by
         default.
 

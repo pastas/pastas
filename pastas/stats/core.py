@@ -7,15 +7,16 @@ irregular time steps often observed in hydrological time series.
 
 from numpy import (append, arange, array, average, corrcoef, diff, empty_like,
                    exp, inf, nan, ones, pi, sqrt)
-from pandas import DataFrame, Timedelta, TimedeltaIndex
+from pandas import Series, DataFrame, Timedelta, TimedeltaIndex
 from scipy.stats import norm
 
 from ..decorators import njit
 from ..utils import check_numba
+from ..typeh import Type, Optional, Union, Tuple, pstAL
 
 
-def acf(x, lags=365, bin_method='rectangle', bin_width=0.5, max_gap=inf,
-        min_obs=20, full_output=False, alpha=0.05):
+def acf(x: Type[Series], lags: Optional[pstAL] = 365, bin_method: Optional[str] = 'rectangle', bin_width: Optional[float] = 0.5, max_gap: Optional[float] = inf,
+        min_obs: Optional[int] = 20, full_output: Optional[bool] = False, alpha: Optional[float] = 0.05) -> Union[Type[Series], Type[DataFrame]]:
     """Calculate the autocorrelation function for irregular time steps.
 
     Parameters
@@ -91,8 +92,8 @@ def acf(x, lags=365, bin_method='rectangle', bin_width=0.5, max_gap=inf,
         return c
 
 
-def ccf(x, y, lags=365, bin_method='rectangle', bin_width=0.5,
-        max_gap=inf, min_obs=20, full_output=False, alpha=0.05):
+def ccf(x: Type[Series], y: Type[Series], lags: Optional[pstAL] = 365, bin_method: Optional[str] = 'rectangle', bin_width: Optional[float] = 0.5,
+        max_gap: Optional[float] = inf, min_obs: Optional[int] = 20, full_output: Optional[bool] = False, alpha: Optional[float] = 0.05) -> Union[Type[Series], Type[DataFrame]]:
     """Method to compute the cross-correlation for irregular time series.
 
     Parameters
@@ -189,7 +190,7 @@ def ccf(x, y, lags=365, bin_method='rectangle', bin_width=0.5,
         return result.ccf
 
 
-def _preprocess(x, max_gap):
+def _preprocess(x: Type[Series], max_gap: int) -> Tuple[Type[Series], float, float]:
     """Internal method to preprocess the time series."""
     dt = x.index.to_series().diff().dropna().values / Timedelta(1, "D")
     dt_mu = dt[dt < max_gap].mean()  # Deal with big gaps if present
@@ -202,7 +203,7 @@ def _preprocess(x, max_gap):
 
 
 @njit
-def _compute_ccf_rectangle(lags, t_x, x, t_y, y, bin_width=0.5):
+def _compute_ccf_rectangle(lags: pstAL, t_x: pstAL, x: pstAL, t_y: pstAL, y: pstAL, bin_width: Optional[float] = 0.5) -> Tuple[pstAL, pstAL]:
     """Internal numba-optimized method to compute the ccf."""
     c = empty_like(lags)
     b = empty_like(lags)
@@ -228,7 +229,7 @@ def _compute_ccf_rectangle(lags, t_x, x, t_y, y, bin_width=0.5):
 
 
 @njit
-def _compute_ccf_gaussian(lags, t_x, x, t_y, y, bin_width=0.5):
+def _compute_ccf_gaussian(lags: pstAL, t_x: pstAL, x: pstAL, t_y: pstAL, y: pstAL, bin_width: Optional[float] = 0.5) -> Tuple[pstAL, pstAL]:
     """Internal numba-optimized method to compute the ccf."""
     c = empty_like(lags)
     b = empty_like(lags)
@@ -257,7 +258,7 @@ def _compute_ccf_gaussian(lags, t_x, x, t_y, y, bin_width=0.5):
     return c, b
 
 
-def _compute_ccf_regular(lags, x, y):
+def _compute_ccf_regular(lags: pstAL, x: pstAL, y: pstAL) -> Tuple[pstAL, pstAL]:
     c = empty_like(lags)
     for i, lag in enumerate(lags):
         c[i] = corrcoef(x[:-int(lag)], y[int(lag):])[0, 1]
@@ -265,7 +266,7 @@ def _compute_ccf_regular(lags, x, y):
     return c, b
 
 
-def mean(x, weighted=True, max_gap=30):
+def mean(x: Type[Series], weighted: Optional[bool] = True, max_gap: Optional[int] = 30) -> pstAL:
     """Method to compute the (weighted) mean of a time series.
 
     Parameters
@@ -293,7 +294,7 @@ def mean(x, weighted=True, max_gap=30):
     return average(x.to_numpy(), weights=w)
 
 
-def var(x, weighted=True, max_gap=30):
+def var(x: Type[Series], weighted: Optional[bool] = True, max_gap: Optional[int] = 30) -> pstAL:
     """Method to compute the (weighted) variance of a time series.
 
     Parameters
@@ -324,7 +325,7 @@ def var(x, weighted=True, max_gap=30):
     return sigma
 
 
-def std(x, weighted=True, max_gap=30):
+def std(x: Type[Series], weighted: Optional[bool] = True, max_gap: Optional[int] = 30) -> pstAL:
     """Method to compute the (weighted) variance of a time series.
 
     Parameters
@@ -348,7 +349,7 @@ def std(x, weighted=True, max_gap=30):
 
 # Helper functions
 
-def _get_weights(x, weighted, max_gap=30):
+def _get_weights(x: Type[Series], weighted: Optional[bool] = True, max_gap: Optional[int] = 30) -> pstAL:
     """Helper method to compute the weights as the time step between obs.
 
     Parameters

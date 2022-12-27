@@ -12,14 +12,15 @@ from pandas import Timestamp
 from scipy.io import loadmat, savemat
 
 from ..utils import datetime2matlab
+from ..typeh import Optional
 
 
-def load(fname):
+def load(fname: str):
     raise NotImplementedError("This is not implemented yet. See the "
                               "reads-section for a Menyanthes-read")
 
 
-def dump(fname, data, version=3, verbose=True):
+def dump(fname: str, data: dict, version: Optional[int] = 3, verbose: Optional[bool] = True):
     # version can also be a specific version, like '2.x.g.t (beta)', or an integer (see below)
     if version == 3:
         version = '3.x.b.c (gamma)'
