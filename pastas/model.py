@@ -12,21 +12,27 @@ from pandas import (DataFrame, Series, Timedelta, Timestamp,
                     date_range, concat, to_timedelta)
 
 # Internal Pastas
-from .decorators import get_stressmodel
-from .io.base import _load_model, dump
-from .modelstats import Statistics
-from .noisemodels import NoiseModel
-from .modelplots import Plotting
-from .solver import LeastSquares
-from .stressmodels import Constant
-from .timeseries import TimeSeries
-from .transform import ThresholdTransform
-from .utils import (_get_dt, _get_time_offset, frequency_is_supported,
-                    get_sample, validate_name)
-from .version import __version__
+from pastas.decorators import get_stressmodel
+from pastas.io.base import _load_model, dump
+from pastas.modelstats import Statistics
+from pastas.noisemodels import NoiseModel, NoiseModelBase
+from pastas.modelplots import Plotting
+from pastas.solver import LeastSquares, BaseSolver
+from pastas.stressmodels import Constant, StressModelBase
+from pastas.timeseries import TimeSeries
+from pastas.transform import ThresholdTransform
+from pastas.utils import (_get_dt, _get_time_offset, frequency_is_supported,
+                          get_sample, validate_name)
+from pastas.version import __version__
 
 # Type Hinting
-from .typeh import Type, Union, Optional, Tuple, pstSM, pstNM, pstBS, pstAL, pstTm, pstMl
+# from typing import Type, Union, Optional, Tuple, TypeVar
+from pastas.typing import Type, Union, Optional, Tuple, pstTm, pstSM, pstNM, pstBS, pstAL, pstMl
+# pstTm = TypeVar("pstTm", bound=Union[str, Timestamp])  # Tmin or Tmax
+# pstSM = TypeVar("pstSM", bound=StressModelBase)  # Stress Model
+# pstNM = TypeVar("pstNM", bound=NoiseModelBase)  # Noise Model
+# pstBS = TypeVar("pstBS", bound=BaseSolver)  # Base Solver
+# pstAL = TypeVar("pstAL", bound=Type[ArrayLike])  # Array Like (NumPy based)
 
 
 class Model:
@@ -1875,3 +1881,7 @@ class Model:
         for sm in self.stressmodels.values():
             if hasattr(sm, '_check_stressmodel_compatibility'):
                 sm._check_stressmodel_compatibility(self)
+
+
+if __name__ == "__main__":
+    Model()

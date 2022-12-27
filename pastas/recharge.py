@@ -41,9 +41,12 @@ from numpy import add, float64, multiply, exp, zeros, nan_to_num, vstack, \
     where, power
 from pandas import DataFrame
 
-from pastas.decorators import njit
+from .decorators import njit
 from .utils import check_numba
-from .typeh import Type, Optional, Tuple, pstAL
+# from typing import Type, Optional, Tuple, TypeVar
+# from numpy.typing import ArrayLike
+# pstAL = TypeVar("pstAL", bound=Type[ArrayLike])  # Array Like (NumPy based)
+from pastas.typing import Type, Optional, Tuple, pstAL
 
 logger = getLogger(__name__)
 
@@ -53,10 +56,10 @@ class RechargeBase:
 
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self):
         self.snow = False
         self.nparam = 0
-        self.kwargs = kwargs
+        self.kwargs = {}
 
     @staticmethod
     def get_init_parameters(name: Optional[str] = "recharge") -> Type[DataFrame]:
@@ -105,7 +108,7 @@ class Linear(RechargeBase):
         parameters.loc[name + "_f"] = (-1.0, -2.0, 0.0, True, name)
         return parameters
 
-    def simulate(self, prec: pstAL, evap: pstAL, p: pstAL) -> pstAL:
+    def simulate(self, prec: pstAL, evap: pstAL, p: pstAL, **kwargs) -> pstAL:
         """Simulate the precipitation excess flux.
 
         Parameters
@@ -125,7 +128,7 @@ class Linear(RechargeBase):
         """
         return add(prec, multiply(evap, p))
 
-    def get_water_balance(self, prec: pstAL, evap: pstAL, p: pstAL) -> type[DataFrame]:
+    def get_water_balance(self, prec: pstAL, evap: pstAL, p: pstAL, **kwargs) -> type[DataFrame]:
         ea = multiply(evap, p)
         r = add(prec, multiply(evap, p))
         return DataFrame(data=vstack((prec, ea, -r)).T,
@@ -183,8 +186,7 @@ class FlexModel(RechargeBase):
 
     def __init__(self, interception: Optional[bool] = True, snow: Optional[bool] = False, gw_uptake: Optional[bool] = False):
         check_numba()
-        RechargeBase.__init__(self, interception=interception, snow=snow,
-                              gw_uptake=gw_uptake)
+        RechargeBase.__init__(self)
         self.snow = snow
         self.interception = interception
         self.gw_uptake = gw_uptake
@@ -214,7 +216,7 @@ class FlexModel(RechargeBase):
 
         return parameters
 
-    def simulate(self, prec: pstAL, evap: pstAL, temp: pstAL, p: pstAL, dt: Optional[float] = 1.0, return_full: Optional[bool] = False) -> pstAL:
+    def simulate(self, prec: pstAL, evap: pstAL, temp: pstAL, p: pstAL, dt: Optional[float] = 1.0, return_full: Optional[bool] = False, **kwargs) -> pstAL:
         """Simulate the soil water balance model.
 
         Parameters
@@ -485,17 +487,17 @@ class FlexModel(RechargeBase):
 
         return DataFrame(data=vstack(data).T, columns=columns)
 
-    def check_snow_balance(self, prec: pstAL, temp: pstAL) -> float:
+    def check_snow_balance(self, prec: pstAL, temp: pstAL, **kwargs) -> float:
         ss, ps, m = self.get_snow_balance(prec, temp)
         error = (ss[0] - ss[-1] + (ps + m).sum())
         return error
 
-    def check_interception_balance(self, prec: pstAL, evap: pstAL) -> float:
+    def check_interception_balance(self, prec: pstAL, evap: pstAL, **kwargs) -> float:
         si, ei, pi = self.get_interception_balance(prec, evap)
         error = (si[0] - si[-1] + (pi + ei).sum())
         return error
 
-    def check_root_zone_balance(self, prec: pstAL, evap: pstAL):
+    def check_root_zone_balance(self, prec: pstAL, evap: pstAL, **kwargs):
         sr, r, ea, q, pe = self.get_root_zone_balance(prec, evap)
         error = (sr[0] - sr[-1] + (r + ea + q + pe).sum())
         return error
@@ -541,7 +543,7 @@ class Berendrecht(RechargeBase):
         parameters.loc[name + "_ks"] = (100.0, 1, 1e4, True, name)
         return parameters
 
-    def simulate(self, prec: pstAL, evap: pstAL, p: pstAL, dt: pstAL = 1.0, return_full: Optional[bool] = False) -> Tuple[pstAL]:
+    def simulate(self, prec: pstAL, evap: pstAL, p: pstAL, dt: pstAL = 1.0, return_full: Optional[bool] = False, **kwargs) -> Tuple[pstAL]:
         """Simulate the recharge flux.
 
         Parameters
@@ -666,7 +668,7 @@ class Peterson(RechargeBase):
         parameters.loc[name + "_gamma"] = (1.0, 0.0, 2.0, True, name)
         return parameters
 
-    def simulate(self, prec: pstAL, evap: pstAL, p: pstAL, dt: Optional[float] = 1.0, return_full: Optional[bool] = False) -> pstAL:
+    def simulate(self, prec: pstAL, evap: pstAL, p: pstAL, dt: Optional[float] = 1.0, return_full: Optional[bool] = False, **kwargs) -> pstAL:
         """Simulate the recharge flux.
 
         Parameters

@@ -38,7 +38,8 @@ def read_waterbase(fname, locations=None, variable="NUMERIEKEWAARDE",
     the xy-coordinates are calculates as the mean xy-coordinate in case these
     values are not unique.
     """
-    warnings.warn("The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io", DeprecationWarning)
+    warnings.warn(
+        "The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io", DeprecationWarning)
 
     ts = []
     df = read_csv(fname, delimiter=";", index_col="Date", decimal=",",

@@ -21,7 +21,6 @@ from pandas import DataFrame, Series, Timedelta, Timestamp, concat, date_range
 from scipy.signal import fftconvolve
 import inspect
 from scipy import __version__ as scipyversion
-from warnings import warn
 
 from .decorators import njit, set_parameter
 from .recharge import Linear
@@ -29,7 +28,20 @@ from .rfunc import Exponential, HantushWellModel, One
 from .timeseries import TimeSeries
 from .utils import check_numba, validate_name
 
-from pastas.typeh import Type, Optional, Union, Tuple, pstAL, pstMl, pstTm, pstSM, pstRF, pstRB
+
+# Type Hinting
+# from .recharge import RechargeBase
+# from .reservoir import ReservoirBase
+# from .rfunc import RfuncBase
+# from numpy.typing import ArrayLike
+# from typing import Type, Optional, Tuple, Union, TypeVar
+# pstAL = TypeVar("pstAL", bound=Type[ArrayLike])  # Array Like (NumPy based)
+# pstRF = TypeVar("pstRF", bound=RfuncBase)  # rFunc Base
+# pstRB = TypeVar("pstRB", bound=RechargeBase)  # Recharge Base
+# pstRV = TypeVar("pstRV", bound=ReservoirBase)  # Reservoir Base
+# pstTm = TypeVar("pstTm", bound=Union[str, Timestamp])  # Tmin or Tmax
+# pstMl = TypeVar("pstMl")  # Model
+from pastas.typing import Type, Optional, Tuple, Union, pstAL, pstRF, pstRB, pstRV, pstTm, pstMl
 
 logger = getLogger(__name__)
 
@@ -863,11 +875,13 @@ class RechargeModel(StressModelBase):
     _name = "RechargeModel"
 
     def __init__(self, prec: Type[Series], evap: Type[Series], rfunc: Optional[pstRF] = None, name: Optional[str] = "recharge",
-                 recharge: Optional[pstSM] = Linear(), temp: Type[Series] = None, cutoff: Optional[float] = 0.999,
+                 recharge: Optional[pstRB] = None, temp: Type[Series] = None, cutoff: Optional[float] = 0.999,
                  settings: Optional[Tuple[Union[str, dict], Union[str, dict], Union[str, dict]]] = ("prec", "evap", "evap"), metadata: Optional[Tuple[dict, dict, dict]] = (None, None, None)):
 
         if rfunc is None:
             rfunc = Exponential()
+        if recharge is None:
+            recharge = Linear()
 
         # Store the precipitation and evaporation time series
         self.prec = TimeSeries(prec, settings=settings[0],
@@ -1033,14 +1047,13 @@ class RechargeModel(StressModelBase):
         if istress is None:
             prec = self.prec.series.values
             evap = self.evap.series.values
+            temp = None
             if self.temp is not None:
                 temp = self.temp.series.values
-            else:
-                temp = None
             if p is None:
                 p = self.parameters.initial.values
-            stress = self.recharge.simulate(prec=prec, evap=evap, temp=temp,
-                                            p=p[-self.recharge.nparam:])
+            stress = self.recharge.simulate(
+                prec=prec, evap=evap, p=p[-self.recharge.nparam:], **{"temp": temp})
             return Series(data=stress, index=self.prec.series.index,
                           name="recharge", fastpath=True)
         elif istress == 0:
@@ -1429,7 +1442,7 @@ class ReservoirModel(StressModelBase):
     """
     _name = "ReservoirModel"
 
-    def __init__(self, stress: Type[Series], reservoir: pstRB, name: str, meanhead: float,
+    def __init__(self, stress: Type[Series], reservoir: pstRV, name: str, meanhead: float,
                  settings: Optional[Tuple[Union[str, dict], Union[str, dict]]] = ("prec", "evap"), metadata: Optional[Tuple[dict, dict]] = (None, None),
                  meanstress: Optional[float] = None):
         # Set resevoir object

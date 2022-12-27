@@ -5,9 +5,13 @@ groundwater time series in the Netherlands.
 """
 
 from numpy import nan
-from pandas import Series, Timedelta, concat, date_range
+from pandas import Series, Timedelta, concat, date_range, Timestamp
 from pastas.utils import get_sample
-from ..typeh import Type, Optional, Union, pstTm, pstFu
+# Type Hinting
+from pastas.typing import Type, Optional, Union, pstFu, pstTm
+# from typing import Type, Optional, Union, TypeVar
+# pstFu = TypeVar("pstFu")  # Function (e.g. Objective Function)
+# pstTm = TypeVar("pstTm", bound=Union[str, Timestamp])  # Tmin or Tmax
 
 
 def q_ghg(series: Type[Series], tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, q: Optional[float] = 0.94, by_year: Optional[bool] = True) -> Type[Series]:
@@ -240,7 +244,7 @@ def glg(series: Type[Series], tmin: Optional[pstTm] = None, tmax: Optional[pstTm
                 year_offset=year_offset)
 
 
-def gvg(series: Type[Series], tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, fill_method: Optional[bool] = 'linear', limit: Optional[int] = 0,
+def gvg(series: Type[Series], tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, fill_method: Optional[bool] = 'linear', limit: Optional[int] = 8,
         output: Optional[str] = 'mean', min_n_meas: Optional[int] = 2, min_n_years: Optional[int] = 8, year_offset: Optional[str] = 'a') -> Union[Type[Series], float]:
     """Calculate the 'Gemiddelde Voorjaars Grondwaterstand' (Average Spring
     Groundwater Level).

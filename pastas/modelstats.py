@@ -23,11 +23,16 @@ These methods may be used as follows.
 """
 
 from numpy import nan
-from pandas import DataFrame
+from pandas import DataFrame, Timestamp
 
 from .decorators import model_tmin_tmax
 from .stats import diagnostics, metrics
-from .typeh import Type, Optional, pstMl, pstTm
+
+# Type Hinting
+# from typing import Type, Optional, TypeVar, Union
+# pstMl = TypeVar("pstMl")  # Model
+# pstTm = TypeVar("pstTm", bound=Union[str, Timestamp])  # Tmin or Tmax
+from pastas.typing import Type, Optional, pstMl, pstFi, pstTm
 
 
 class Statistics:

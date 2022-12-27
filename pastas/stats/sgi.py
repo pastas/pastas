@@ -4,7 +4,8 @@ Index."""
 from numpy import linspace
 from pandas import Series
 from scipy.stats import norm
-from ..typeh import Type
+# Type Hinting
+from pastas.typing import Type
 
 
 def sgi(series: Type[Series]):

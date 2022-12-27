@@ -6,13 +6,26 @@
 import logging
 
 import matplotlib.pyplot as plt
+from matplotlib.axes._base import _AxesBase
+from matplotlib.figure import FigureBase
 import numpy as np
 from pandas import Series, DataFrame, Timestamp, concat, to_datetime, isna
 from scipy.stats import gaussian_kde, norm, probplot
-from pastas.stats.core import acf as get_acf
-from pastas.stats.metrics import rmse, evp
-from pastas.typeh import Type, Optional, pstAx, pstFi, pstTm, pstMl, pstAL
-from pastas.modelcompare import CompareModels
+
+from .stats.core import acf as get_acf
+from .stats.metrics import rmse, evp
+from .modelcompare import CompareModels
+
+# Type Hinting
+# from typing import Type, Optional, TypeVar, Union
+# from numpy.typing import ArrayLike
+# pstAL = TypeVar("pstAL", bound=Type[ArrayLike])  # Array Like (NumPy based)
+# pstAx = TypeVar("pstAx", bound=_AxesBase)  # Matplotlib Axes
+# pstFi = TypeVar("pstFi", bound=FigureBase)  # Matplotlib Figure
+# pstTm = TypeVar("pstTm", bound=Union[str, Timestamp])  # Tmin or Tmax
+# pstMl = TypeVar("pstMl")  # Model
+from pastas.typing import Type, Optional, pstAL, pstAx, pstFi, pstTm, pstMl
+
 
 logger = logging.getLogger(__name__)
 

@@ -12,7 +12,8 @@ from pandas import Timestamp
 from scipy.io import loadmat, savemat
 
 from ..utils import datetime2matlab
-from ..typeh import Optional
+# Type Hinting
+from pastas.typing import Optional
 
 
 def load(fname: str):

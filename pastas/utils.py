@@ -10,7 +10,13 @@ from pandas import Series, Timedelta, Timestamp, date_range, to_datetime, Index,
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
 
-from .typeh import Type, Optional, Tuple, pstAL, pstTm, pstMl
+# Type Hinting
+# from typing import Type, Optional, Tuple, TypeVar, Union, Any
+# from numpy.typing import ArrayLike
+# pstAL = TypeVar("pstAL", bound=Type[ArrayLike])  # Array Like (NumPy based)
+# pstMl = TypeVar("pstMl")
+# pstTm = TypeVar("pstTm", bound=Union[str, Timestamp])  # Tmin or Tmax
+from pastas.typing import Type, Optional, Tuple, Union, Any, pstAL, pstMl, pstTm
 
 logger = logging.getLogger(__name__)
 
@@ -456,7 +462,7 @@ def datetime2matlab(tindex: Type[DatetimeIndex]) -> pstAL:
 
 def get_stress_tmin_tmax(ml: pstMl) -> Tuple[pstTm, pstTm]:
     """Get the minimum and maximum time that all of the stresses have data."""
-    from .model import Model
+    from pastas.model import Model
     tmin = Timestamp.min
     tmax = Timestamp.max
     if isinstance(ml, Model):
@@ -469,7 +475,7 @@ def get_stress_tmin_tmax(ml: pstMl) -> Tuple[pstTm, pstTm]:
     return tmin, tmax
 
 
-def initialize_logger(logger: Optional[Type[logging.Logger]] = None, level: Optional[logging._Level] = logging.INFO):
+def initialize_logger(logger: Optional[Any] = None, level: Optional[Any] = logging.INFO):
     """Internal method to create a logger instance to log program output.
 
     Parameters
@@ -487,7 +493,7 @@ def initialize_logger(logger: Optional[Type[logging.Logger]] = None, level: Opti
     # add_file_handlers(logger)
 
 
-def set_console_handler(logger: Optional[Type[logging.Logger]] = None, level: Optional[logging._Level] = logging.INFO,
+def set_console_handler(logger: Optional[Type[Any]] = None, level: Optional[Any] = logging.INFO,
                         fmt: str = "%(levelname)s: %(message)s"):
     """Method to add a console handler to the logger of Pastas.
 
@@ -527,7 +533,7 @@ def set_log_level(level: str):
     set_console_handler(level=level)
 
 
-def remove_console_handler(logger: Optional[Type[logging.Logger]] = None):
+def remove_console_handler(logger: Optional[Type[Any]] = None):
     """Method to remove the console handler to the logger of Pastas.
 
     Parameters
@@ -544,8 +550,8 @@ def remove_console_handler(logger: Optional[Type[logging.Logger]] = None):
             logger.removeHandler(handler)
 
 
-def add_file_handlers(logger: Optional[Type[logging.Logger]] = None, filenames: Optional[Tuple[str, str]] = ('info.log', 'errors.log'),
-                      levels: Optional[Tuple[logging._Level, logging._Level]] = (logging.INFO, logging.ERROR), maxBytes: Optional[int] = 10485760,
+def add_file_handlers(logger: Optional[Type[Any]] = None, filenames: Optional[Tuple[str, str]] = ('info.log', 'errors.log'),
+                      levels: Optional[Tuple[Any, Any]] = (logging.INFO, logging.ERROR), maxBytes: Optional[int] = 10485760,
                       backupCount: Optional[int] = 20, encoding: Optional[str] = 'utf8',
                       fmt: Optional[str] = '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                       datefmt: Optional[str] = '%y-%m-%d %H:%M'):

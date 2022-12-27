@@ -6,8 +6,12 @@ from pandas.tseries.frequencies import to_offset
 from .rcparams import rcParams
 from .utils import (_get_dt, _get_stress_dt, _get_time_offset,
                     timestep_weighted_resample, validate_name)
+# Type Hinting
+# from typing import Type, Optional, TypeVar, Union
+# pstAx = TypeVar("pstAx", bound=_AxesBase)  # Matplotlib Axes
+# pstTm = TypeVar("pstTm", bound=Union[str, pd.Timestamp])  # Tmin or Tmax
+from pastas.typing import Type, Optional, Union, pstAx, pstTS
 
-from pastas.typeh import Type, Optional, Union, pstAx, pstTS
 
 logger = getLogger(__name__)
 
@@ -149,7 +153,7 @@ class TimeSeries:
                f"tmax={self.settings['tmax']})"
 
     @property
-    def series_original(self) -> pstTS:
+    def series_original(self) -> Type[pstTS]:
         return self._series_original
 
     @series_original.setter

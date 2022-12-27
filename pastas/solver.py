@@ -16,8 +16,18 @@ import numpy as np
 from pandas import DataFrame, Series
 from scipy.linalg import svd
 from scipy.optimize import least_squares
+from .timer import SolveTimer
+from .plots import TrackSolve
 
-from pastas.typeh import Type, Optional, Tuple, Union, pstAL, pstMl, pstCB, pstFu
+# Type Hinting
+# from typing import Type, Optional, Tuple, Union, TypeVar
+# from numpy.typing import ArrayLike
+# pstAL = TypeVar("pstAL", bound=Type[ArrayLike])  # Array Like (NumPy based)
+# pstCB = TypeVar("pstCB", bound=Union[SolveTimer, TrackSolve])  # Callback
+# pstFu = TypeVar("pstFu")  # Function (e.g. Objective Function)
+# pstMl = TypeVar("pstMl")  # Model
+from pastas.typing import Type, Optional, Tuple, Union, pstAL, pstCB, pstFu, pstMl
+
 
 logger = getLogger(__name__)
 

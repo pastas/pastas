@@ -10,7 +10,11 @@ from scipy.special import (erfc, erfcinv, exp1, gamma, gammainc, gammaincinv,
                            k0, k1, lambertw)
 from scipy.interpolate import interp1d
 
-from pastas.typeh import Type, Optional, Union, pstAL
+# Type Hinting
+# from typing import Type, Optional, Union, TypeVar
+# from numpy.typing import ArrayLike
+# pstAL = TypeVar("pstAL", bound=Type[ArrayLike])  # Array Like (NumPy based)
+from pastas.typing import Type, Optional, Union, pstAL
 
 logger = getLogger(__name__)
 
@@ -664,7 +668,7 @@ class One(RfuncBase):
                 self.meanstress, np.nan, np.nan, True, name)
         return parameters
 
-    def get_tmax(self, p: pstAL, cutoff: float[Optional] = None) -> float:
+    def get_tmax(self, p: pstAL, cutoff: Optional[float] = None) -> float:
         return 0.
 
     def gain(self, p: pstAL) -> float:

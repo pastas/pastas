@@ -12,7 +12,11 @@ from scipy.stats import norm
 
 from ..decorators import njit
 from ..utils import check_numba
-from ..typeh import Type, Optional, Union, Tuple, pstAL
+# Type Hinting
+from pastas.typing import Type, Optional, Union, Tuple, pstAL
+# from typing import Type, Optional, Union, Tuple, TypeVar
+# from numpy.typing import ArrayLike
+# pstAL = TypeVar("pstAL", bound=Type[ArrayLike])  # Array Like (NumPy based)
 
 
 def acf(x: Type[Series], lags: Optional[pstAL] = 365, bin_method: Optional[str] = 'rectangle', bin_width: Optional[float] = 0.5, max_gap: Optional[float] = inf,

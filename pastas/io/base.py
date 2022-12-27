@@ -6,8 +6,8 @@ from os import path
 
 import pastas as ps
 from pandas import to_numeric
-
-from ..typeh import pstMl
+# Type Hinting
+from pastas.typing import pstMl
 
 logger = getLogger(__name__)
 

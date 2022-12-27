@@ -17,8 +17,8 @@ from logging import getLogger
 from numpy import abs, average, log, nan, sqrt
 from pastas.stats.core import _get_weights, mean, std, var
 from pandas import Series
-
-from ..typeh import Type, Optional
+# Type Hinting
+from pastas.typing import Type, Optional
 
 __all__ = ["rmse", "sse", "mae", "nse", "evp", "rsq", "bic", "aic",
            "pearsonr", "kge_2012"]

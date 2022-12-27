@@ -17,7 +17,11 @@ from numpy import float64
 # from scipy.integrate import solve_ivp  # only used in simulateold
 from pandas import DataFrame, Series
 from pastas.decorators import njit
-from pastas.typeh import Type, Optional, pstAL
+# Type Hinting
+# from typing import Type, Optional, TypeVar
+# from numpy.typing import ArrayLike
+# pstAL = TypeVar("pstAL", bound=Type[ArrayLike])  # Array Like (NumPy based)
+from pastas.typing import Type, Optional, pstAL
 
 
 class ReservoirBase:

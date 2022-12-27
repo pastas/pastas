@@ -25,7 +25,12 @@ from pandas import DataFrame, Series, Timedelta
 
 from .decorators import njit, set_parameter
 from .utils import check_numba
-from .typeh import Type, Optional, pstAL
+
+# Type Hinting
+# from typing import Type, Optional, TypeVar
+# from numpy.typing import ArrayLike
+# pstAL = TypeVar("pstAL", bound=Type[ArrayLike])  # Array Like (NumPy based)
+from pastas.typing import Type, Optional, pstAL
 
 __all__ = ["NoiseModel", "ArmaModel"]
 
