@@ -107,7 +107,7 @@ class NoiseModel(NoiseModelBase):
 
     Notes
     -----
-    Calculates the noise [1]_ according to:
+    Calculates the noise :cite:t:`von_asmuth_modeling_2005` according to:
 
     .. math::
 
@@ -122,19 +122,8 @@ class NoiseModel(NoiseModelBase):
     The units of the alpha parameter is always in days. The first value of
     the noise is the residual ($v(t=0=r(t=0)$). First weight is
     1 / sig_residuals (i.e., delt = infty). Normalization of weights as in
-    Von Asmuth and Bierkens (2005), optional.
+    :cite:t:`von_asmuth_modeling_2005`, optional.
 
-    Differences compared to NoiseModelOld:
-
-    1. First value is residual
-    2. First weight is 1 / sig_residuals (i.e., delt = infty)
-    3. Normalization of weights as in Von Asmuth and Bierkens (2005), optional
-
-    References
-    ----------
-    .. [1] von Asmuth, J. R., and M. F. P. Bierkens (2005), Modeling
-           irregularly spaced residual series as a continuous stochastic
-           process, Water Resour. Res., 41, W12404, doi:10.1029/2004WR003726.
     """
     _name = "NoiseModel"
 
@@ -189,7 +178,8 @@ class NoiseModel(NoiseModelBase):
 
         .. math:: w = 1 / sqrt((1 - exp(-2 \\Delta t / \\alpha)))
 
-        which are then normalized so that sum(w) = len(res)
+        which are then normalized so that sum(w) = len(res).
+Ò
         """
         alpha = p[0]
         # large for first measurement
@@ -205,7 +195,7 @@ class NoiseModel(NoiseModelBase):
 class ArmaModel(NoiseModelBase):
     """ARMA(1,1) Noise model to simulate the noise as defined in.
 
-    [collenteur_2020]_.
+    :cite:t:`collenteur_estimation_2021`.
 
     Notes
     -----
@@ -222,13 +212,6 @@ class ArmaModel(NoiseModelBase):
     This model has only been tested on regular time steps and should not be
     used for irregular time steps yet.
 
-    References
-    ----------
-    .. [collenteur_2020] Collenteur, R., Bakker, M., Klammler, G., and Birk,
-       S. (in review, 2020.) Estimating groundwater recharge from
-       groundwater levels using non-linear transfer function noise models
-       and comparison to lysimeter data, Hydrol. Earth Syst. Sci. Discuss.
-       https://doi.org/10.5194/hess-2020-392
     """
     _name = "ArmaModel"
 

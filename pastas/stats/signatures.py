@@ -2,6 +2,7 @@
 import pandas as pd
 from pandas import NA, Timedelta, DatetimeIndex, cut, Series
 from numpy import diff, sqrt, log, arange
+
 import pastas as ps
 from scipy.stats import linregress
 
@@ -501,7 +502,7 @@ def low_pulse_duration(series: Type[Series], quantile: Optional[float] = 0.8) ->
 
     """
     h = series < series.quantile(quantile)
-    sel = h.astype(int).diff().replace(0.0, NA).shift(-1).dropna().index
+    sel = h.astype(int).diff().replace(0.0, nan).shift(-1).dropna().index
     return (diff(sel.to_numpy()) / Timedelta("1D"))[::2].mean()
 
 
@@ -533,7 +534,7 @@ def high_pulse_duration(series: Type[Series], quantile: Optional[float] = 0.8) -
 
     """
     h = series > series.quantile(quantile)
-    sel = h.astype(int).diff().replace(0.0, NA).shift(-1).dropna().index
+    sel = h.astype(int).diff().replace(0.0, nan).shift(-1).dropna().index
     return (diff(sel.to_numpy()) / Timedelta("1D"))[::2].mean()
 
 

@@ -13,6 +13,7 @@ from pastas.stats.core import acf as get_acf
 from pastas.stats.metrics import rmse, evp
 from pastas.typeh import Type, Optional, pstAx, pstFi, pstTm, pstMl, pstAL
 
+
 logger = logging.getLogger(__name__)
 
 __all__ = ["compare", "series", "acf", "diagnostics", "cum_frequency",
@@ -32,172 +33,24 @@ def compare(models: list[pstMl], tmin: Optional[pstTm] = None, tmax: Optional[ps
     Parameters
     ----------
     models: list
-        list of pastas Models, works for N models, but certain
+        List of pastas Models, works for N models, but certain
         things might not display nicely if the list gets too long.
-    tmin: (list of) str or pandas.Timestamp, optional
-        if list is provided, length must match no. of models
-    tmax: (list of) str or pandas.Timestamp, optional
-        if list is provided, length must match no. of models
-    figsize: tuple, optional
-        tuple of size 2 to determine the figure size in inches.
     adjust_height: bool, optional
         Adjust the height of the graphs, so that the vertical scale of all
-        the subplots on the left is equal. Default is True, in which case the
+        the subplots on the left is equal. Default is False, in which case the
         axes are not rescaled to include all data, so certain data might
         not be visible. Set to False to ensure you can see all data.
-    return_warmup: bool, optional
-        Show the warmup-period. Default is false.
-    block_or_step: str, optional
-        Plot the block- or step-response on the right. Default is 'step'.
+    **kwargs
+        Kwargs are passed to the CompareModels.plot() function.
 
     Returns
     -------
     matplotlib.axes
     """
-    # get tmin/tmax per model
-    if not isinstance(tmin, list):
-        tmin = [tmin] * len(models)
-    if not isinstance(tmax, list):
-        tmax = [tmax] * len(models)
+    mc = CompareModels(models)
+    mc.plot(adjust_height=adjust_height, **kwargs)
 
-    # sort models by descending order of N stressmodels
-    models_sorted = sorted(models, key=lambda ml: len(
-        ml.stressmodels), reverse=True)
-    tmin = [t for _, t in sorted(zip(models, tmin),
-                                 key=lambda pair: len(pair[0].stressmodels),
-                                 reverse=True)]
-    tmax = [t for _, t in sorted(zip(models, tmax),
-                                 key=lambda pair: len(pair[0].stressmodels),
-                                 reverse=True)]
-    # get first model (w most stressmodels) and plot results
-    ml = models_sorted[0]
-    axes = ml.plots.results(tmin=tmin[0], tmax=tmax[0], split=False,
-                            block_or_step=block_or_step,
-                            adjust_height=adjust_height, **kwargs)
-
-    # get the axes
-    ax_ml = axes[0]  # model result
-    ax_res = axes[1]  # model residuals
-    ax_table = axes[-1]  # parameters table
-    axes_sm = axes[2:-1]  # stressmodels
-
-    # get second model
-    for j, iml in enumerate(models_sorted[1:], start=1):
-        sim = iml.simulate(tmin=tmin[j], tmax=tmax[j])
-        sim.name = '{} ($R^2$ = {:0.2%})'.format(
-            sim.name, iml.stats.rsq(tmin=tmin[j], tmax=tmax[j]))
-        p, = ax_ml.plot(sim.index, sim, label=sim.name)
-        color = p.get_color()
-
-        # Residuals and noise
-        res = iml.residuals(tmin=tmin[j], tmax=tmax[j])
-
-        ax_res.plot(res.index, res, label="Residuals" + str(j + 1), c=color)
-        if iml.settings["noise"]:
-            noise = iml.noise(tmin=tmin[j], tmax=tmax[j])
-            ax_res.plot(noise.index, noise, label="Noise" + str(j + 1),
-                        c=color, alpha=0.5)
-        ax_res.legend(loc=(0, 1), ncol=4, frameon=False)
-        # recalculate axes limits
-        if not adjust_height:
-            ax_res.relim()
-            ax_res.autoscale()
-
-        # Loop through original stressmodels and check which are in
-        # the second model
-        i = 0
-        for sm_name in ml.stressmodels:
-            if sm_name in iml.stressmodels.keys():
-                ax_contrib = axes_sm[2 * i]
-                ax_resp = axes_sm[2 * i + 1]
-                # get the step-response
-                response = iml._get_response(block_or_step=block_or_step,
-                                             name=sm_name, add_0=True)
-                # plot the contribution
-                contrib = iml.get_contribution(sm_name, tmin=tmin[j],
-                                               tmax=tmax[j])
-                ax_contrib.plot(contrib.index, contrib,
-                                label=f"{j + 1}", c=color)
-                # plot the step-reponse
-                ax_resp.plot(response.index, response, c=color)
-                handles, labels = ax_contrib.get_legend_handles_labels()
-                labels[0] = "1"
-                ax_contrib.legend(handles, labels, loc=(0, 1),
-                                  ncol=2, frameon=False)
-                plt.sca(ax_contrib)
-                plt.title("")
-
-                # recalculate axes limits
-                if not adjust_height:
-                    ax_contrib.relim()
-                    ax_contrib.autoscale()
-            i += 1
-        # update tmin/tmax if None is passed
-        if tmin[j] is None:
-            tmin[j] = iml.settings["tmin"]
-        if tmax[j] is None:
-            tmax[j] = iml.settings["tmax"]
-
-    # set legend for simulation axes
-    handles, labels = ax_ml.get_legend_handles_labels()
-    labels = [ilbl.replace("Simulation", "Sim" + str(i))
-              for i, ilbl in enumerate(labels)]
-    ax_ml.legend(handles, labels, loc=(0, 1), ncol=4, frameon=False)
-
-    # Draw parameters table
-    parameters = concat(
-        [iml.parameters.optimal for iml in models_sorted], axis=1, sort=False)
-    colnams = ["{}".format(iml.name) for iml in models_sorted]
-    # ensure unique names
-    if len(set(colnams)) < len(colnams):
-        colnams = [f"{iml.name}-{i}" for i, iml in enumerate(models_sorted)]
-    parameters.columns = colnams
-    parameters['name'] = parameters.index
-    # reorder columns
-    parameters = parameters.loc[:, ["name"] + colnams]
-    parameters.loc[:, colnams] = parameters.loc[:, colnams].applymap(
-        _table_formatter_params)
-
-    # clear existing table
-    ax_table.cla()
-    # loc='upper center'
-    cols = []
-    for icol in parameters.columns:
-        if len(icol) > 8:
-            new_col = "\n".join([icol[i:i + 8]
-                                 for i in range(0, len(icol), 8)])
-            cols.append(new_col)
-        else:
-            cols.append(icol)
-    ax_table.table(bbox=(0., 0., 1.0, 1.0),
-                   cellText=parameters.values,
-                   colWidths=[0.5] + [0.25] * len(models),
-                   colLabels=cols)
-    ax_table.axis("off")
-
-    # rescale axes
-    if not adjust_height:
-        ax_ml.relim()
-        ax_ml.autoscale()
-
-    # update tmin/tmax for ml0 if None is passed
-    if tmin[0] is None:
-        tmin[0] = ml.settings["tmin"]
-    if tmax[0] is None:
-        tmax[0] = ml.settings["tmax"]
-
-    mintmin = np.min(to_datetime(tmin))
-    maxtmax = np.max(to_datetime(tmax))
-
-    # get tmin including warmup if return_warmup=True
-    if kwargs.pop("return_warmup", False):
-        mintmin = np.min(
-            [mintmin, ml.settings["tmin"] - ml.settings['warmup']])
-
-    if (not isna(mintmin)) and (not isna(maxtmax)):
-        ax_ml.set_xlim(mintmin, maxtmax)
-    plt.draw()
-    return axes
+    return mc.axes
 
 
 def series(head: Optional[Type[Series]] = None, stresses: Optional[list[Type[Series]]] = None, hist: Optional[bool] = True, kde: Optional[bool] = False, titles: Optional[bool] = True,
@@ -343,6 +196,7 @@ def series(head: Optional[Type[Series]] = None, stresses: Optional[list[Type[Ser
 
 def acf(series: Type[Series], alpha: Optional[float] = 0.05, lags: Optional[int] = 365, acf_options: Optional[dict] = None, smooth_conf: Optional[bool] = True,
         ax: Optional[pstAx] = None, figsize: Optional[tuple] = (5, 2)):
+
     """Plot of the autocorrelation function of a time series.
 
     Parameters
@@ -358,6 +212,8 @@ def acf(series: Type[Series], alpha: Optional[float] = 0.05, lags: Optional[int]
         Dictionary with keyword arguments passed on to pastas.stats.acf.
     smooth_conf: bool, optional
         For irregular time series the confidence interval may be
+    color: str, optional
+        Color of the vertical autocorrelation lines.
     ax: matplotlib.axes.Axes, optional
         Matplotlib Axes instance to plot the ACF on. A new Figure and Axes
         is created when no value for ax is provided.
@@ -373,7 +229,7 @@ def acf(series: Type[Series], alpha: Optional[float] = 0.05, lags: Optional[int]
     --------
     >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
     >>>                 data=np.random.rand(1000))
-    >>> ps.stats.plot_acf(res)
+    >>> ps.plots.acf(res)
     """
     if ax is None:
         _, ax = plt.subplots(1, 1, figsize=figsize)
@@ -395,14 +251,14 @@ def acf(series: Type[Series], alpha: Optional[float] = 0.05, lags: Optional[int]
         conf = r.stderr.values
 
     ax.fill_between(r.index.days, conf, -conf, alpha=0.3)
-    ax.vlines(r.index.days, [0], r.loc[:, "acf"].values, color="k")
+    ax.vlines(r.index.days, [0], r.loc[:, "acf"].values, color=color)
 
     ax.set_xlabel("Lag [Days]")
     ax.set_xlim(0, r.index.days.max())
     ax.set_ylabel('Autocorrelation [-]')
     ax.set_title("Autocorrelation plot")
 
-    ax.grid()
+    ax.grid(True)
     return ax
 
 

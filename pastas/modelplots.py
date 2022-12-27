@@ -750,7 +750,14 @@ class Plotting:
                 names = [c[0] for c in contributions]  # get names
                 ax.stackplot(vstack.index, vstack.values.T, labels=names)
                 if stacklegend:
-                    ax.legend(loc="best", ncol=5, fontsize=8)
+                    if stacklegend_kws is None:
+                        stacklegend_kws = {}
+                    else:
+                        ncol = stacklegend_kws.pop("ncol", 5)
+                        fontsize = stacklegend_kws.pop("fontsize", 6)
+                        loc = stacklegend_kws.pop("loc", "best")
+                    ax.legend(loc=loc, ncol=ncol, fontsize=fontsize,
+                              **stacklegend_kws)
 
                 # y-scale does not show 0
                 ylower, yupper = ax.get_ylim()
@@ -832,7 +839,7 @@ class Plotting:
         fig2.suptitle("Model Diagnostics", fontweight="bold")
 
         plt.subplots_adjust(left=0.1, top=0.9, right=0.95, bottom=0.1)
-        pdf.savefig(fig, papertype="a4", orientation="portrait", dpi=dpi)
+        pdf.savefig(fig, orientation="portrait", dpi=dpi)
         pdf.close()
         return fig
 

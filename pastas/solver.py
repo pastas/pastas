@@ -54,7 +54,7 @@ class BaseSolver:
         self.result = None  # Object returned by the optimization method
 
     def misfit(self, p: pstAL, noise: bool, weights: Optional[Type[Series]] = None, callback: Optional[pstCB] = None,
-               returnseparate: Optional[bool] = False) -> pstAL:
+               returnseparate: Optional[bool] = False) -> Union[pstAL, Tuple[pstAL, pstAL, pstAL]]:
         """This method is called by all solvers to obtain a series that are
         minimized in the optimization process. It handles the application of
         the weights, a noisemodel and other optimization options.
@@ -81,8 +81,8 @@ class BaseSolver:
         """
         # Get the residuals or the noise
         if noise:
-            rv = self.ml.noise(p) * \
-                self.ml.noise_weights(p)
+            rv = self.ml.noise(p) * self.ml.noise_weights(p)
+
         else:
             rv = self.ml.residuals(p)
 
@@ -96,9 +96,9 @@ class BaseSolver:
             callback(p)
 
         if returnseparate:
-            return self.ml.residuals(p).values, \
-                self.ml.noise(p).values, \
-                self.ml.noise_weights(p).values
+            return (self.ml.residuals(p).values,
+                    self.ml.noise(p).values,
+                    self.ml.noise_weights(p).values)
 
         return rv.values
 
@@ -289,7 +289,7 @@ class BaseSolver:
         for i, p in enumerate(parameter_sample):
             data[i] = func(p=p, **kwargs)
 
-        return DataFrame.from_dict(data, orient="columns")
+        return DataFrame.from_dict(data, orient="columns", dtype=float)
 
     def _get_confidence_interval(self,  func: pstFu, n: Optional[int] = None, name: Optional[str] = None, max_iter: Optional[int] = 10, alpha: Optional[float] = 0.05, **kwargs) -> Type[DataFrame]:
         """Internal method to obtain a confidence interval."""
@@ -374,9 +374,10 @@ class LeastSquares(BaseSolver):
 
         >>> ml.solve(solver=ps.LeastSquares)
 
-        References
-        ----------
-        .. [scipy_ref] https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
+        Notes
+        -----
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
+
         """
         BaseSolver.__init__(self, ml=ml, pcov=pcov, nfev=nfev, **kwargs)
 
@@ -430,6 +431,7 @@ class LeastSquares(BaseSolver):
         pcov: array_like
             array with the covariance matrix.
 
+
         Notes
         -----
         This method is copied from Scipy, please refer to:
@@ -474,9 +476,10 @@ class LmfitSolve(BaseSolver):
          This is basically a wrapper around the scipy solvers, adding some
          cool functionality for boundary conditions.
 
-        References
-        ----------
-        .. [LM] https://github.com/lmfit/lmfit-py/
+        Notes
+        -----
+        https://github.com/lmfit/lmfit-py/
+
         """
         try:
             global lmfit

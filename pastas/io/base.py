@@ -112,7 +112,10 @@ def _load_model(data: dict) -> pstMl:
         stressmodel = getattr(ps.stressmodels, ts["stressmodel"])
         ts.pop("stressmodel")
         if "rfunc" in ts.keys():
-            ts["rfunc"] = getattr(ps.rfunc, ts["rfunc"])
+            rfunc_kwargs = {}
+            if "rfunc_kwargs" in ts:
+                rfunc_kwargs = ts.pop("rfunc_kwargs")
+            ts["rfunc"] = getattr(ps.rfunc, ts["rfunc"])(**rfunc_kwargs)
         if "recharge" in ts.keys():
             recharge_kwargs = {}
             if "recharge_kwargs" in ts:

@@ -57,13 +57,7 @@ def acf(x: Type[Series], lags: Optional[pstAL] = 365, bin_method: Optional[str] 
     -----
     Calculate the autocorrelation function for irregular timesteps based on
     the slotting technique. Different methods (kernels) to bin the data are
-    available.
-
-    References
-    ----------
-    Rehfeld, K., Marwan, N., Heitzig, J., Kurths, J. (2011). Comparison
-    of correlation analysis techniques for irregularly sampled time series.
-    Nonlinear Processes in Geophysics. 18. 389-404. 10.5194 pg-18-389-2011.
+    available. Method here is based on :cite:t:`rehfeld_comparison_2011`.
 
     Tip
     ---
@@ -129,12 +123,6 @@ def ccf(x: Type[Series], y: Type[Series], lags: Optional[pstAL] = 365, bin_metho
     -------
     c: pandas.Series or pandas.DataFrame
         The Cross-correlation function.
-
-    References
-    ----------
-    Rehfeld, K., Marwan, N., Heitzig, J., Kurths, J. (2011). Comparison
-    of correlation analysis techniques for irregularly sampled time series.
-    Nonlinear Processes in Geophysics. 18. 389-404. 10.5194 pg-18-389-2011.
 
     Tip
     ---
