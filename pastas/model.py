@@ -862,7 +862,7 @@ class Model:
         else:
             return Timedelta(0)
 
-    def _get_sim_index(self, tmin: Type[Timestamp], tmax: Type[Timestamp], freq: str, warmup: type[Timedelta], update_sim_index: Optional[Type[bool]] = False):
+    def _get_sim_index(self, tmin: Type[Timestamp], tmax: Type[Timestamp], freq: str, warmup: Type[Timedelta], update_sim_index: Optional[Type[bool]] = False):
         """Internal method to get the simulation index, including the warmup.
 
         Parameters
@@ -1723,7 +1723,7 @@ class Model:
 
         return check
 
-    def _check_parameters_bounds(self) -> Tuple[Type[Series], type[Series]]:
+    def _check_parameters_bounds(self) -> Tuple[Type[Series], Type[Series]]:
         """Internal method to check if the optimal parameters are close to pmin
         or pmax.
 

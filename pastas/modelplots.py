@@ -15,7 +15,7 @@ from .plots import series, diagnostics, cum_frequency, \
     _table_formatter_params, _table_formatter_stderr
 
 # Type Hinting
-from pastas.typing import Type, Optional, List, pstAx, pstFi, pstTm, pstMl
+from pastas.typing import Type, Optional, List, Union, pstAx, pstFi, pstTm, pstMl
 
 logger = logging.getLogger(__name__)
 
@@ -853,7 +853,7 @@ class Plotting:
         return fig
 
 
-def _get_height_ratios(ylims: List[list, tuple]) -> List[float]:
+def _get_height_ratios(ylims: List[Union[list, tuple]]) -> List[float]:
     height_ratios = []
     for ylim in ylims:
         hr = ylim[1] - ylim[0]
