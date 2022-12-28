@@ -19,8 +19,9 @@ from .stressmodels import Constant
 from .timeseries import TimeSeries
 from .utils import (_get_dt, _get_time_offset, frequency_is_supported,
                     get_sample, validate_name)
-from .version import __version__
+from .version import get_pastas_version
 
+__version__ = get_pastas_version()
 
 class Model:
     """Class that initiates a Pastas time series model.

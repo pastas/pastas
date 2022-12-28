@@ -1,7 +1,7 @@
 from platform import python_version
 
 
-def get_pastas_version():
+def get_pastas_version() -> str:
     if python_version() < "3.8.0":
         __version__ = None
         with open("../../pyproject.toml") as fo:
@@ -17,7 +17,3 @@ def get_pastas_version():
         from importlib.metadata import version
         __version__ = version("pastas")
     return __version__
-
-
-if __name__ == "__main":
-    __version__ = get_pastas_version()
