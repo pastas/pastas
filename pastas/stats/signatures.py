@@ -1,7 +1,7 @@
 """This module contains methods to compute the groundwater signatures."""
 import pandas as pd
-from pandas import NA, Timedelta, DatetimeIndex, cut
-from numpy import diff, sqrt, log, arange
+from pandas import Timedelta, DatetimeIndex, cut
+from numpy import diff, sqrt, log, arange, nan
 import pastas as ps
 from scipy.stats import linregress
 
@@ -498,7 +498,7 @@ def low_pulse_duration(series, quantile=0.2):
 
     """
     h = series < series.quantile(quantile)
-    sel = h.astype(int).diff().replace(0.0, NA).shift(-1).dropna().index
+    sel = h.astype(int).diff().replace(0.0, nan).shift(-1).dropna().index
     return (diff(sel.to_numpy()) / Timedelta("1D"))[::2].mean()
 
 
@@ -530,7 +530,7 @@ def high_pulse_duration(series, quantile=0.8):
 
     """
     h = series > series.quantile(quantile)
-    sel = h.astype(int).diff().replace(0.0, NA).shift(-1).dropna().index
+    sel = h.astype(int).diff().replace(0.0, nan).shift(-1).dropna().index
     return (diff(sel.to_numpy()) / Timedelta("1D"))[::2].mean()
 
 

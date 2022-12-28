@@ -14,15 +14,24 @@
 
 import os
 import sys
-import matplotlib
+import re
+import requests
 from datetime import date
+from matplotlib import use
 from pastas.version import get_pastas_version
+
+from dataclasses import dataclass, field
+# sphinx
+from sphinxcontrib.bibtex.style.referencing.author_year import AuthorYearReferenceStyle
+from sphinxcontrib.bibtex.style.referencing import BracketStyle
+import sphinxcontrib.bibtex.plugin
+
 year = date.today().strftime("%Y")
 
-
-matplotlib.use('agg')
+use('agg')
 
 __version__ = get_pastas_version()
+
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -45,15 +54,13 @@ extensions = [
     'IPython.sphinxext.ipython_console_highlighting',  # lowercase didn't work
     'sphinx.ext.autosectionlabel',
     'nbsphinx',
-    'nbsphinx_link',
     'sphinx_gallery.load_style',
+    'sphinxcontrib.bibtex',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 source_suffix = '.rst'
-
-# The encoding of source files.
 source_encoding = 'utf-8'
 
 # The master toctree document.
@@ -68,13 +75,7 @@ author = u'R.A. Collenteur, M. Bakker, R. Calje, F. Schaars'
 # The version.
 version = __version__
 release = __version__
-language = None
-
-# There are two options for replacing |today|: either, you set today to some
-# non-false value, then it is used:
-# today = ''
-# Else, today_fmt is used as the format for a strftime call.
-# today_fmt = '%B %d, %Y'
+language = 'en'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -112,14 +113,18 @@ todo_include_todos = False
 html_theme = "pydata_sphinx_theme"
 html_logo = "_static/logo.png"
 html_static_path = ['_static']
+html_short_title = "Pastas"
+html_favicon = "_static/favo.ico"
+html_css_files = ['css/custom.css']
+html_show_sphinx = True
+html_show_copyright = True
+htmlhelp_basename = 'Pastasdoc'  # Output file base name for HTML help builder.
+html_use_smartypants = True
 
 html_theme_options = {
     "github_url": "https://github.com/pastas/pastas",
     "use_edit_page_button": False
 }
-
-autosummary_generate = True
-numpydoc_show_class_members = False
 
 html_context = {
     "github_user": "pastas",
@@ -128,42 +133,59 @@ html_context = {
     "doc_path": "doc",
 }
 
-html_css_files = [
-    'css/custom.css',
-]
+autosummary_generate = True
+numpydoc_show_class_members = False
 
-# A shorter title for the navigation bar.  Default is the same as html_title.
-html_short_title = "Pastas"
-html_favicon = "_static/favo.ico"
-
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
-
-
-# If true, SmartyPants will be used to convert quotes and dashes to
-# typographically correct entities.
-html_use_smartypants = True
-
-# If false, no module index is generated.
-# html_domain_indices = True
-
-# If false, no index is generated.
-# html_use_index = True
-
-# If true, the index is split into individual pages for each letter.
-# html_split_index = False
 
 # If true, links to the reST sources are added to the pages.
 # html_show_sourcelink = True
 
-# If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
-html_show_sphinx = True
-# If true, "(C) Copyright ..." is shown in the HTML footer. Default is True.
-html_show_copyright = True
+# -- Generating references and publications lists -------------------------
 
-# Output file base name for HTML help builder.
-htmlhelp_basename = 'Pastasdoc'
+# support Round brackets
+def bracket_style() -> BracketStyle:
+    return BracketStyle(left='(', right=')', )
+
+
+@dataclass
+class MyReferenceStyle(AuthorYearReferenceStyle):
+    bracket_parenthetical: BracketStyle = field(default_factory=bracket_style)
+    bracket_textual: BracketStyle = field(default_factory=bracket_style)
+    bracket_author: BracketStyle = field(default_factory=bracket_style)
+    bracket_label: BracketStyle = field(default_factory=bracket_style)
+    bracket_year: BracketStyle = field(default_factory=bracket_style)
+
+
+sphinxcontrib.bibtex.plugin.register_plugin(
+    'sphinxcontrib.bibtex.style.referencing',
+    'author_year_round', MyReferenceStyle)
+
+# Generate bibliography-files from Zotero library
+# Get a Bibtex reference file from the Zotero group for referencing
+url = "https://api.zotero.org/groups/4846685/collections/8UG7PVLY/items/"
+params = {"format": "bibtex",
+          "style": "apa",
+          "limit": 100}
+
+r = requests.get(url=url, params=params)
+with open("references.bib", mode="w") as file:
+    file.write(r.text)
+
+# Get a Bibtex reference file from the Zotero group for publications list
+url = "https://api.zotero.org/groups/4846685/collections/Q4F7R59G/items/"
+params = {"format": "bibtex",
+          "style": "apa",
+          "limit": 100}
+
+r = requests.get(url=url, params=params)
+with open("publications.bib", mode="w") as file:
+    # Replace citation key to prevent duplicate labels and article now shown
+    text = re.sub(r'(@([a-z]*){)', r'\1X_', r.text)
+    file.write(text)
+
+# Add some settings for bibtex
+bibtex_bibfiles = ['references.bib', 'publications.bib']
+bibtex_reference_style = "author_year_round"
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -242,3 +264,6 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
 }
+
+# Allow errors in notebooks, so we can see the error online
+nbsphinx_allow_errors = True

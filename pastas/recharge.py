@@ -52,10 +52,10 @@ class RechargeBase:
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.snow = False
         self.nparam = 0
-        self.kwargs = {}
+        self.kwargs = kwargs
 
     @staticmethod
     def get_init_parameters(name="recharge"):
@@ -81,7 +81,8 @@ class RechargeBase:
 
 
 class Linear(RechargeBase):
-    """Linear model for precipitation excess according to [asmuth_2002]_.
+    """Linear model for precipitation excess according to
+    :cite:t:`von_asmuth_transfer_2002`.
 
     Notes
     -----
@@ -89,12 +90,6 @@ class Linear(RechargeBase):
 
     .. math::
         R = P - f * E
-
-    References
-    ----------
-    .. [asmuth_2002] von Asmuth, J., Bierkens, M., and Maas, K. (2002) Transfer
-       function-noise modeling in continuous time using predefined impulse
-       response functions, Water Resources Research, 38, 23–1–23–12.
 
     """
     _name = "Linear"
@@ -138,7 +133,8 @@ class Linear(RechargeBase):
 
 
 class FlexModel(RechargeBase):
-    """Recharge to the groundwater calculated according to [collenteur_2021]_.
+    """Recharge to the groundwater calculated according to
+    :cite:t:`collenteur_estimation_2021`.
 
     Parameters
     ----------
@@ -157,8 +153,8 @@ class FlexModel(RechargeBase):
     Notes
     -----
     For a detailed description of the recharge model and parameters we refer
-    to [collenteur_2021]_. The water balance for the unsaturated zone
-    reservoir is written as:
+    to :cite:t:`collenteur_estimation_2021`. The water balance for the
+    unsaturated zone reservoir is written as:
 
     .. math::
 
@@ -172,7 +168,8 @@ class FlexModel(RechargeBase):
 
     If snow=True, a snow reservoir is added on top. For a detailed
     description of the degree-day snow model and parameters we refer to
-    [kavetski_2007]_. The water balance for the snow reservoir is written as:
+    :cite:t:`kavetski_model_2007`. The water balance for the snow reservoir
+    is written as:
 
     .. math::
 
@@ -181,25 +178,13 @@ class FlexModel(RechargeBase):
     Note that the preferred unit of the precipitation and evaporation is
     mm/d and the temperature is degree celsius.
 
-    References
-    ----------
-    .. [collenteur_2021] Collenteur, R. A., Bakker, M., Klammler, G., and
-       Birk, S.: Estimation of groundwater recharge from groundwater levels
-       using nonlinear transfer function noise models and comparison to
-       lysimeter data, Hydrol. Earth Syst. Sci., 25, 2931–2949,
-       https://doi.org/10.5194/hess-25-2931-2021, 2021.
-
-    .. [kavetski_2007] Kavetski, D. and Kuczera, G. (2007). Model smoothing
-       strategies to remove microscale discontinuities and  spurious
-       secondary optima  in  objective  functions  in  hydrological
-       calibration. Water Resources Research, 43(3).
-
     """
     _name = "FlexModel"
 
     def __init__(self, interception=True, snow=False, gw_uptake=False):
         check_numba()
-        RechargeBase.__init__(self)
+        RechargeBase.__init__(self, interception=interception, snow=snow,
+                              gw_uptake=gw_uptake)
         self.snow = snow
         self.interception = interception
         self.gw_uptake = gw_uptake
@@ -210,9 +195,6 @@ class FlexModel(RechargeBase):
             self.nparam += 1
         if self.snow:
             self.nparam += 2
-        self.kwargs['interception'] = interception
-        self.kwargs['snow'] = snow
-        self.kwargs['gw_uptake'] = gw_uptake
 
     def get_init_parameters(self, name="recharge"):
         parameters = DataFrame(
@@ -522,12 +504,13 @@ class FlexModel(RechargeBase):
 
 
 class Berendrecht(RechargeBase):
-    """Recharge to the groundwater calculated according to [berendrecht_2006]_.
+    """Recharge to the groundwater calculated according to
+    :cite:t:`berendrecht_non-linear_2006`.
 
     Notes
     -----
     Note that the preferred unit of the precipitation and evaporation is
-    mm/d. The waterbalance for the unsaturated zone reservoir is written as:
+    mm/d. The water balance for the unsaturated zone reservoir is written as:
 
     .. math::
         \\frac{dS_e}{dt} = \\frac{1}{D_e}(f_iP - E_a - R)
@@ -539,12 +522,6 @@ class Berendrecht(RechargeBase):
 
     For a detailed description of the recharge model and parameters we refer
     to the original publication.
-
-    References
-    ----------
-    .. [berendrecht_2006] Berendrecht, W. L., Heemink, A. W., van Geer, F. C.,
-       and Gehrels, J. C. (2006) A non-linear state space approach to model
-       groundwater fluctuations, Advances in Water Resources, 29, 959–973.
 
     """
     _name = "Berendrecht"
@@ -641,7 +618,9 @@ class Berendrecht(RechargeBase):
 
 
 class Peterson(RechargeBase):
-    """Recharge to the groundwater calculated based on [peterson_2014]_.
+    """Recharge to the groundwater calculated based on
+    :cite:t:`peterson_nonlinear_2014`.
+
     The water balance for the unsaturated zone reservoir is written as:
 
     .. math::
@@ -670,11 +649,6 @@ class Peterson(RechargeBase):
 
     Note that the method currently uses forward Euler method to solve
     the ODE so significant water balance errors can occur.
-
-    References
-    ----------
-    .. [peterson_2014] Peterson, T.J. and Western A.W. (2014). Nonlinear
-    time-series modeling of unconfined groundwater head.
 
     """
     _name = "Peterson"

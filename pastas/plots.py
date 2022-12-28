@@ -7,9 +7,11 @@ import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
-from pandas import DataFrame, Timestamp, concat, to_datetime, isna
+from pandas import DataFrame, Timestamp, to_datetime, isna
 from scipy.stats import gaussian_kde, norm, probplot
 from pastas.stats.core import acf as get_acf
+from pastas.stats.metrics import rmse, evp
+from pastas.modelcompare import CompareModels
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +19,7 @@ __all__ = ["compare", "series", "acf", "diagnostics", "cum_frequency",
            "TrackSolve"]
 
 
-def compare(models, tmin=None, tmax=None, block_or_step='step',
-            adjust_height=True, **kwargs):
+def compare(models, adjust_height=False, **kwargs):
     """Plot multiple Pastas models in one figure to visually compare models.
 
     Note
@@ -30,174 +31,24 @@ def compare(models, tmin=None, tmax=None, block_or_step='step',
     Parameters
     ----------
     models: list
-        list of pastas Models, works for N models, but certain
+        List of pastas Models, works for N models, but certain
         things might not display nicely if the list gets too long.
-    tmin: (list of) str or pandas.Timestamp, optional
-        if list is provided, length must match no. of models
-    tmax: (list of) str or pandas.Timestamp, optional
-        if list is provided, length must match no. of models
-    figsize: tuple, optional
-        tuple of size 2 to determine the figure size in inches.
     adjust_height: bool, optional
         Adjust the height of the graphs, so that the vertical scale of all
-        the subplots on the left is equal. Default is True, in which case the
-        axes are not rescaled to include all data, so certain data might 
+        the subplots on the left is equal. Default is False, in which case the
+        axes are not rescaled to include all data, so certain data might
         not be visible. Set to False to ensure you can see all data.
-    return_warmup: bool, optional
-        Show the warmup-period. Default is false.
-    block_or_step: str, optional
-        Plot the block- or step-response on the right. Default is 'step'.
+    **kwargs
+        Kwargs are passed to the CompareModels.plot() function.
 
     Returns
     -------
     matplotlib.axes
     """
-    # get tmin/tmax per model
-    if not isinstance(tmin, list):
-        tmin = [tmin] * len(models)
-    if not isinstance(tmax, list):
-        tmax = [tmax] * len(models)
+    mc = CompareModels(models)
+    mc.plot(adjust_height=adjust_height, **kwargs)
 
-    # sort models by descending order of N stressmodels
-    models_sorted = sorted(models, key=lambda ml: len(
-        ml.stressmodels), reverse=True)
-    tmin = [t for _, t in sorted(zip(models, tmin),
-                                 key=lambda pair: len(pair[0].stressmodels),
-                                 reverse=True)]
-    tmax = [t for _, t in sorted(zip(models, tmax),
-                                 key=lambda pair: len(pair[0].stressmodels),
-                                 reverse=True)]
-    # get first model (w most stressmodels) and plot results
-    ml = models_sorted[0]
-    axes = ml.plots.results(tmin=tmin[0], tmax=tmax[0], split=False,
-                            block_or_step=block_or_step,
-                            adjust_height=adjust_height, **kwargs)
-
-    # get the axes
-    ax_ml = axes[0]  # model result
-    ax_res = axes[1]  # model residuals
-    ax_table = axes[-1]  # parameters table
-    axes_sm = axes[2:-1]  # stressmodels
-
-    # get second model
-    for j, iml in enumerate(models_sorted[1:], start=1):
-        sim = iml.simulate(tmin=tmin[j], tmax=tmax[j])
-        sim.name = '{} ($R^2$ = {:0.2%})'.format(
-            sim.name, iml.stats.rsq(tmin=tmin[j], tmax=tmax[j]))
-        p, = ax_ml.plot(sim.index, sim, label=sim.name)
-        color = p.get_color()
-
-        # Residuals and noise
-        res = iml.residuals(tmin=tmin[j], tmax=tmax[j])
-
-        ax_res.plot(res.index, res, label="Residuals" + str(j + 1), c=color)
-        if iml.settings["noise"]:
-            noise = iml.noise(tmin=tmin[j], tmax=tmax[j])
-            ax_res.plot(noise.index, noise, label="Noise" + str(j + 1),
-                        c=color,
-                        alpha=0.5)
-        ax_res.legend(loc=(0, 1), ncol=4, frameon=False)
-        # recalculate axes limits
-        if not adjust_height:
-            ax_res.relim()
-            ax_res.autoscale()
-
-        # Loop through original stressmodels and check which are in
-        # the second model
-        i = 0
-        for sm_name in ml.stressmodels:
-            if sm_name in iml.stressmodels.keys():
-                ax_contrib = axes_sm[2 * i]
-                ax_resp = axes_sm[2 * i + 1]
-                # get the step-response
-                response = iml._get_response(block_or_step=block_or_step,
-                                             name=sm_name, add_0=True)
-                # plot the contribution
-                contrib = iml.get_contribution(sm_name, tmin=tmin[j],
-                                               tmax=tmax[j])
-                ax_contrib.plot(contrib.index, contrib,
-                                label=f"{j + 1}",
-                                c=color)
-                # plot the step-reponse
-                ax_resp.plot(response.index, response, c=color)
-                handles, labels = ax_contrib.get_legend_handles_labels()
-                labels[0] = "1"
-                ax_contrib.legend(handles, labels, loc=(0, 1),
-                                  ncol=2, frameon=False)
-                plt.sca(ax_contrib)
-                plt.title("")
-
-                # recalculate axes limits
-                if not adjust_height:
-                    ax_contrib.relim()
-                    ax_contrib.autoscale()
-            i += 1
-        # update tmin/tmax if None is passed
-        if tmin[j] is None:
-            tmin[j] = iml.settings["tmin"]
-        if tmax[j] is None:
-            tmax[j] = iml.settings["tmax"]
-
-    # set legend for simulation axes
-    handles, labels = ax_ml.get_legend_handles_labels()
-    labels = [ilbl.replace("Simulation", "Sim" + str(i))
-              for i, ilbl in enumerate(labels)]
-    ax_ml.legend(handles, labels, loc=(0, 1), ncol=4, frameon=False)
-
-    # Draw parameters table
-    parameters = concat(
-        [iml.parameters.optimal for iml in models_sorted], axis=1, sort=False)
-    colnams = ["{}".format(iml.name) for iml in models_sorted]
-    # ensure unique names
-    if len(set(colnams)) < len(colnams):
-        colnams = [f"{iml.name}-{i}" for i, iml in enumerate(models_sorted)]
-    parameters.columns = colnams
-    parameters['name'] = parameters.index
-    # reorder columns
-    parameters = parameters.loc[:, ["name"] + colnams]
-    parameters.loc[:, colnams] = parameters.loc[:, colnams].applymap(
-        _table_formatter_params)
-
-    # clear existing table
-    ax_table.cla()
-    # loc='upper center'
-    cols = []
-    for icol in parameters.columns:
-        if len(icol) > 8:
-            new_col = "\n".join([icol[i:i + 8]
-                                 for i in range(0, len(icol), 8)])
-            cols.append(new_col)
-        else:
-            cols.append(icol)
-    ax_table.table(bbox=(0., 0., 1.0, 1.0),
-                   cellText=parameters.values,
-                   colWidths=[0.5] + [0.25] * len(models),
-                   colLabels=cols)
-    ax_table.axis("off")
-
-    # rescale axes
-    if not adjust_height:
-        ax_ml.relim()
-        ax_ml.autoscale()
-
-    # update tmin/tmax for ml0 if None is passed
-    if tmin[0] is None:
-        tmin[0] = ml.settings["tmin"]
-    if tmax[0] is None:
-        tmax[0] = ml.settings["tmax"]
-
-    mintmin = np.min(to_datetime(tmin))
-    maxtmax = np.max(to_datetime(tmax))
-
-    # get tmin including warmup if return_warmup=True
-    if kwargs.pop("return_warmup", False):
-        mintmin = np.min(
-            [mintmin, ml.settings["tmin"] - ml.settings['warmup']])
-
-    if (not isna(mintmin)) and (not isna(maxtmax)):
-        ax_ml.set_xlim(mintmin, maxtmax)
-    plt.draw()
-    return axes
+    return mc.axes
 
 
 def series(head=None, stresses=None, hist=True, kde=False, titles=True,
@@ -342,7 +193,7 @@ def series(head=None, stresses=None, hist=True, kde=False, titles=True,
 
 
 def acf(series, alpha=0.05, lags=365, acf_options=None, smooth_conf=True,
-        ax=None, figsize=(5, 2)):
+        color='k', ax=None, figsize=(5, 2)):
     """Plot of the autocorrelation function of a time series.
 
     Parameters
@@ -358,6 +209,8 @@ def acf(series, alpha=0.05, lags=365, acf_options=None, smooth_conf=True,
         Dictionary with keyword arguments passed on to pastas.stats.acf.
     smooth_conf: bool, optional
         For irregular time series the confidence interval may be
+    color: str, optional
+        Color of the vertical autocorrelation lines.
     ax: matplotlib.axes.Axes, optional
         Matplotlib Axes instance to plot the ACF on. A new Figure and Axes
         is created when no value for ax is provided.
@@ -373,7 +226,7 @@ def acf(series, alpha=0.05, lags=365, acf_options=None, smooth_conf=True,
     --------
     >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
     >>>                 data=np.random.rand(1000))
-    >>> ps.stats.plot_acf(res)
+    >>> ps.plots.acf(res)
     """
     if ax is None:
         _, ax = plt.subplots(1, 1, figsize=figsize)
@@ -395,25 +248,29 @@ def acf(series, alpha=0.05, lags=365, acf_options=None, smooth_conf=True,
         conf = r.stderr.values
 
     ax.fill_between(r.index.days, conf, -conf, alpha=0.3)
-    ax.vlines(r.index.days, [0], r.loc[:, "acf"].values, color="k")
+    ax.vlines(r.index.days, [0], r.loc[:, "acf"].values, color=color)
 
     ax.set_xlabel("Lag [Days]")
     ax.set_xlim(0, r.index.days.max())
     ax.set_ylabel('Autocorrelation [-]')
     ax.set_title("Autocorrelation plot")
 
-    ax.grid()
+    ax.grid(True)
     return ax
 
 
-def diagnostics(series, alpha=0.05, bins=50, acf_options=None,
-                figsize=(10, 6), fig=None, **kwargs):
+def diagnostics(series, sim=None, alpha=0.05, bins=50, acf_options=None,
+                figsize=(10, 5), fig=None, heteroscedasicity=True,
+                **kwargs):
     """Plot that helps in diagnosing basic model assumptions.
 
     Parameters
     ----------
     series: pandas.Series
         Pandas Series with the residual time series to diagnose.
+    sim: pandas.Series, optional
+        Pandas Series with the simulated time series. Used to diagnose on
+        heteroscedasticity. Ignored if heteroscedasticity is set to False.
     alpha: float, optional
         Significance level to calculate the (1-alpha)-confidence intervals.
     bins: int optional
@@ -424,6 +281,9 @@ def diagnostics(series, alpha=0.05, bins=50, acf_options=None,
         Tuple with the height and width of the figure in inches.
     fig: Matplotib.Figure instance, optional
         Optionally provide a Matplotib.Figure instance to plot onto.
+    heteroscedasicity: bool, optional
+        Create two additional subplots to check for heteroscedasticity. If
+        true, a simulated time series has to be provided with the sim argument.
     **kwargs: dict, optional
         Optional keyword arguments, passed on to plt.figure.
 
@@ -453,7 +313,18 @@ def diagnostics(series, alpha=0.05, bins=50, acf_options=None,
     if fig is None:
         fig = plt.figure(figsize=figsize, constrained_layout=True, **kwargs)
 
-    gs = fig.add_gridspec(ncols=2, nrows=2, width_ratios=[2, 1])
+    if heteroscedasicity:
+        if sim is None:
+            msg = "A simulated time series has to be provided to make plots " \
+                  "to diagnose heteroscedasticity. Provide 'sim' argument."
+            logger.error(msg=msg)
+            raise KeyError(msg)
+
+        gs = fig.add_gridspec(ncols=3, nrows=2, width_ratios=[3, 1, 1])
+        ax4 = fig.add_subplot(gs[0, 2])
+        ax5 = fig.add_subplot(gs[1, 2])
+    else:
+        gs = fig.add_gridspec(ncols=2, nrows=2, width_ratios=[3, 1])
     ax = fig.add_subplot(gs[0, 0])
     ax2 = fig.add_subplot(gs[0, 1])
     ax1 = fig.add_subplot(gs[1, 0])
@@ -483,10 +354,28 @@ def diagnostics(series, alpha=0.05, bins=50, acf_options=None,
     ax2.set_title("Histogram")
 
     # Plot the probability plot
-    probplot(series, plot=ax3, dist="norm", rvalue=True)
+    _, (_, _, r) = probplot(series, plot=ax3, dist="norm", rvalue=False)
     c = ax.get_lines()[1].get_color()
     ax3.get_lines()[0].set_color(c)
     ax3.get_lines()[1].set_color("k")
+
+    # Plot R2 here because probplot has suboptimal positioning
+    ax3.text(0.5, 0.1, "$R^2={:.2f}$".format(r ** 2), transform=ax3.transAxes)
+
+    if heteroscedasicity and sim is not None:
+        # Plot residuals vs. simulation
+        sim = sim.loc[series.index]
+        ax4.plot(sim, series, marker=".", linestyle=" ", color=c, alpha=0.7)
+        ax4.grid()
+        ax4.set_xlabel("Simulated values")
+        ax4.set_ylabel("Residuals")
+
+        # Plot residuals vs. simulation
+        ax5.plot(sim, np.sqrt(series.abs()), marker=".", linestyle=" ",
+                 color=c, alpha=0.7)
+        ax5.set_xlabel("Simulated values")
+        ax5.set_ylabel("$\\sqrt{|Residuals|}$")
+        ax5.grid()
 
     return fig.axes
 
@@ -561,7 +450,7 @@ class TrackSolve:
 
     Examples
     --------
-    Set matplotlib backend and interactive mode (put this at the top 
+    Set matplotlib backend and interactive mode (put this at the top
     of your script)::
 
         import matplotlib as mpl
@@ -627,24 +516,21 @@ class TrackSolve:
 
         # calculate RMSE residuals
         res = self._residuals(self.ml.parameters.initial.values)
-        r_rmse = np.sqrt(np.mean(res ** 2))
-        self.rmse_res = np.array([r_rmse])
+        self.rmse_res = np.array([rmse(res=res)])
 
         # calculate RMSE noise
         if self.ml.settings["noise"] and self.ml.noisemodel is not None:
             noise = self._noise(self.ml.parameters.initial.values)
-            n_rmse = np.sqrt(np.mean(noise ** 2))
-            self.rmse_noise = np.array([n_rmse])
+            self.rmse_noise = np.array([rmse(res=noise)])
         else:
             # drop noise parameter if noisemodel exists but noise
             # in settings is False
             self.parameters.drop(columns=["noise_alpha"], inplace=True)
 
         # get observations
-        self.obs = self.ml.observations(tmin=self.tmin,
-                                        tmax=self.tmax)
+        self.obs = self.ml.observations(tmin=self.tmin, tmax=self.tmax)
         # calculate EVP
-        self.evp = np.array([self._calc_evp(res.values, self.obs.values)])
+        self.evp = np.array([evp(obs=self.obs, res=res)])
 
     def track_solve(self, params):
         """Append parameters to self.parameters DataFrame and update itercount,
@@ -668,16 +554,14 @@ class TrackSolve:
 
         # calculate new RMSE values
         r_res = self._residuals(params)
-        self.rmse_res = np.r_[self.rmse_res, np.sqrt(np.mean(r_res ** 2))]
+        self.rmse_res = np.r_[self.rmse_res, rmse(res=r_res)]
 
         if self.ml.settings["noise"] and self.ml.noisemodel is not None:
             n_res = self._noise(params)
-            self.rmse_noise = np.r_[
-                self.rmse_noise, np.sqrt(np.mean(n_res ** 2))]
+            self.rmse_noise = np.r_[self.rmse_noise, rmse(res=n_res)]
 
         # recalculate EVP
-        self.evp = np.r_[self.evp,
-                         self._calc_evp(r_res.values, self.obs.values)]
+        self.evp = np.r_[self.evp, evp(obs=self.obs, res=r_res)]
 
     def _update_axes(self):
         """extend xlim if number of iterations exceeds current window."""
@@ -689,15 +573,6 @@ class TrackSolve:
         self.tmin = self.ml.settings["tmin"]
         self.tmax = self.ml.settings["tmax"]
         self.freq = self.ml.settings["freq"]
-
-    @staticmethod
-    def _calc_evp(res, obs):
-        """calculate evp."""
-        if obs.var() == 0.0:
-            evp = 1.
-        else:
-            evp = max(0.0, (1 - (res.var(ddof=0) / obs.var(ddof=0))))
-        return evp
 
     def _noise(self, params):
         """get noise.
@@ -780,7 +655,7 @@ class TrackSolve:
         self.simplot, = self.ax0.plot(sim.index, sim, label="simulation")
         self.ax0.set_ylabel("head")
         self.ax0.set_title(
-            "Iteration: {0} (EVP: {1:.2%})".format(self.itercount,
+            "Iteration: {0} (EVP: {1:.2f}%)".format(self.itercount,
                                                    self.evp[-1]))
         self.ax0.legend(loc=(0, 1), frameon=False, ncol=2)
         omax = self.obs.max()
@@ -793,8 +668,7 @@ class TrackSolve:
         plt.yscale("log")
         legend_handles = []
         self.r_rmse_plot_line, = self.ax1.plot(
-            [0], self.rmse_res[0:1], c="k", ls="solid",
-            label="residuals")
+            [0], self.rmse_res[0:1], c="k", ls="solid", label="residuals")
         self.r_rmse_plot_dot, = self.ax1.plot(
             self.itercount, self.rmse_res[-1], c="k", marker="o", ls="none")
         legend_handles.append(self.r_rmse_plot_line)
@@ -902,7 +776,7 @@ class TrackSolve:
 
         # update title
         self.ax0.set_title(
-            "Iteration: {0} (EVP: {1:.2%})".format(self.itercount,
+            "Iteration: {0} (EVP: {1:.2f}%)".format(self.itercount,
                                                    self.evp[-1]))
         plt.pause(1e-10)
         self.fig.canvas.draw()
