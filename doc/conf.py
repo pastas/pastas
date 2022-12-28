@@ -14,14 +14,15 @@
 
 import os
 import sys
+import matplotlib
 from datetime import date
+from pastas.version import get_pastas_version
 year = date.today().strftime("%Y")
 
-import matplotlib
 
 matplotlib.use('agg')
 
-from pastas.version import __version__
+__version__ = get_pastas_version()
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
