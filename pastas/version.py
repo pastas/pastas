@@ -1,3 +1,23 @@
-# This is the only location where the version will be written and changed.
-# Based on https://packaging.python.org/single_source_version/
-__version__ = '0.21.0'
+from platform import python_version
+
+
+def get_pastas_version():
+    if python_version() < "3.8.0":
+        __version__ = None
+        with open("../../pyproject.toml") as fo:
+            l = fo.readline()
+            while l:
+                if "version" in l:
+                    __version__ = l.split()[-1].strip().strip('"')
+                    break
+                l = fo.readline()
+        if __version__ is None:
+            raise ValueError("No version found in pyproject.toml")
+    else:
+        from importlib.metadata import version
+        __version__ = version("pastas")
+    return __version__
+
+
+if __name__ == "__main":
+    __version__ = get_pastas_version()
