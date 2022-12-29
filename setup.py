@@ -37,7 +37,7 @@ setup(
         'Topic :: Scientific/Engineering :: Hydrology',
     ],
     platforms='Windows, Mac OS-X',
-    install_requires=['numpy>=1.17',
+    install_requires=['numpy>=1.17, <1.24',
                       'matplotlib>=3.1',
                       'pandas>=1.1',
                       'scipy>=1.3'],
