@@ -236,6 +236,7 @@ class FlexModel(RechargeBase):
         Returns
         -------
         r: array_like
+
             Recharge flux calculated by the model.
 
         """
@@ -441,7 +442,7 @@ class FlexModel(RechargeBase):
 
         Notes
         -----
-        The water balance fro the snow reservoir is as follows:
+        The water balance from the snow reservoir is as follows:
 
         .. math::
 
