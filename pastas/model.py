@@ -31,7 +31,7 @@ from .utils import (
     get_sample,
     validate_name,
 )
-from .core import formatting_html
+from .html_repr import formatting_html
 from .version import __version__
 
 

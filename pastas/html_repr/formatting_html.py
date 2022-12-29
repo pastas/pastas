@@ -6,8 +6,8 @@ from html import escape
 from importlib.resources import read_binary
 
 STATIC_FILES = (
-    ("pastas.static.html", "icons-svg-inline.html"),
-    ("pastas.static.css", "style.css"),
+    ("pastas.html_repr.static.html", "icons-svg-inline.html"),
+    ("pastas.html_repr.static.css", "style.css"),
 )
 
 
@@ -25,7 +25,8 @@ def _obj_repr(obj, header_components, sections):
     If CSS is not injected (untrusted notebook), fallback to the plain text repr.
     """
     header = f"<div class='xr-header'>{''.join(h for h in header_components)}</div>"
-    sections = "".join(f"<li class='xr-section-item'>{s}</li>" for s in sections)
+    sections = "".join(
+        f"<li class='xr-section-item'>{s}</li>" for s in sections)
 
     icons_svg, css_style = _load_static_files()
     return (
@@ -64,7 +65,7 @@ def model_section(ml, attrname, collapsed="checked"):
         f"<input id='{data_id}' class='xr-array-in' type='checkbox' {collapsed}>"
         f"<label for='{data_id}' title='Show/hide data repr'>{data_icon}</label>"
         f"<div class='xr-array-preview xr-preview'><span>{preview}</span></div>"
-        f"<div class='xr-array-data'>{data_repr}</div>"
+        f"<div class='xr-array-data'>{attrname}: {data_repr}</div>"
         "</div>"
     )
 
@@ -94,7 +95,8 @@ def stressmodel_section(sm, collapsed=""):
     )
     stresses = concat([x.series.to_frame() for x in sm.stress])
     stress_settings = concat(
-        [DataFrame(x.settings, index=[f"Settings {x.name}"]) for x in sm.stress]
+        [DataFrame(x.settings, index=[
+                   f"Settings {x.name}"]) for x in sm.stress]
     )
     data_repr = short_data_repr_html(settings)
     data_repr_stresses = short_data_repr_html(stresses)
@@ -107,9 +109,9 @@ def stressmodel_section(sm, collapsed=""):
         f"<input id='{data_id}' class='xr-array-in' type='checkbox' {collapsed}>"
         f"<label for='{data_id}' title='Show/hide data repr'>{data_icon}</label>"
         f"<div class='xr-array-preview xr-preview'><span>{preview}</span></div>"
-        f"<div class='xr-array-data'>{data_repr}</div>"
-        f"<div class='xr-array-data'>{data_repr_stresses}</div>"
-        f"<div class='xr-array-data'>{data_repr_settings}</div>"
+        f"<div class='xr-array-data'>{preview}, settings:\n{data_repr}</div>"
+        f"<div class='xr-array-data'>{preview}, stresses:{data_repr_stresses}</div>"
+        f"<div class='xr-array-data'>{preview}, stress settings:{data_repr_settings}</div>"
         "</div>"
     )
 
