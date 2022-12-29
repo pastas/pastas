@@ -1494,9 +1494,14 @@ class ReservoirModel(StressModelBase):
         pass
 
 
-class StressModel2:
-    def __init__(self, *args, **kwargs):
-        msg = "StressModel2 was removed in Pastas 0.22.0 and is replaced by " \
-              "the RechargeModel stress model. Please use ps.RechargeModel(" \
-              "prec, evap, recharge=ps.rch.Linear) for the same stress model."
-        raise UserWarning(msg)
+class StressModel2(StressModelBase):
+    def __new__(cls, *args, **kwargs):
+        msg = "StressModel2 is deprecated since in Pastas 0.21.0 and will " \
+              "be removed in Pastas 0.23. The stress model is replaced by the" \
+              " RechargeModel stress model. An instance of the " \
+              "ps.REchargeModel is automatically created instead. Please use " \
+              "ps.RechargeModel(prec, evap, recharge=ps.rch.Linear) for the " \
+              "same stress model in the future. "
+        logger.warning(msg)
+
+        return RechargeModel(*args, **kwargs)
