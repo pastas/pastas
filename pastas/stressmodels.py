@@ -35,7 +35,8 @@ from pastas.typing import Type, Optional, Tuple, List, Union, pstAL, pstRF, pstR
 logger = getLogger(__name__)
 
 __all__ = ["StressModel", "Constant", "StepModel", "LinearTrend",
-           "RechargeModel", "WellModel", "TarsoModel", "ChangeModel"]
+           "RechargeModel", "WellModel", "TarsoModel", "ChangeModel",
+           "StressModel2"]
 
 
 class StressModelBase:
@@ -1525,3 +1526,16 @@ class ReservoirModel(StressModelBase):
         Cannot be used (yet?) since there is no block response
         """
         pass
+
+
+class StressModel2(StressModelBase):
+    def __new__(cls, *args, **kwargs):
+        msg = "StressModel2 is deprecated since in Pastas 0.21.0 and will " \
+              "be removed in Pastas 0.23. The stress model is replaced by the" \
+              " RechargeModel stress model. An instance of the " \
+              "ps.RechargeModel is automatically created instead. Please use " \
+              "ps.RechargeModel(prec, evap, recharge=ps.rch.Linear) for the " \
+              "same stress model in the future. "
+        logger.warning(msg)
+
+        return RechargeModel(*args, **kwargs)
