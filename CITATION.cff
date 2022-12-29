@@ -1,0 +1,37 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: "Collenteur"
+    given-names: "R.A."
+  - family-names: "Bakker"
+    given-names: "M"
+  - family-names: "Caljé"
+    given-names: "R"
+  - family-names: "Schaars"
+    given-names: "F"
+title: "Pastas: open-source software for the analysis of hydrogeological time series"
+version: 0.22.0
+doi: 10.5281/zenodo.1465866
+date-released: 2022-08-02
+url: "https://github.com/pastas/pastas"
+preferred-citation:
+  type: article
+  authors:
+    - family-names: "Collenteur"
+      given-names: "R.A."
+      orcid: "https://orcid.org/0000-0001-7843-1538"
+    - family-names: "Caljé"
+      given-names: "R"
+    - family-names: "Klop"
+      given-names: "S.A."
+    - family-names: "Schaars"
+      given-names: "F"
+    - family-names: "Bakker"
+      given-names: "M"
+      orcid: "https://orcid.org/0000-0002-5629-2861"
+  doi: "10.1111/gwat.12925"
+  journal: "Groundwater"
+  month: 7
+  title: "Pastas: open source software for the analysis of groundwater time series"
+  volume: 57
+  year: 2019

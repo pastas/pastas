@@ -103,7 +103,10 @@ def _load_model(data):
         stressmodel = getattr(ps.stressmodels, ts["stressmodel"])
         ts.pop("stressmodel")
         if "rfunc" in ts.keys():
-            ts["rfunc"] = getattr(ps.rfunc, ts["rfunc"])
+            rfunc_kwargs = {}
+            if "rfunc_kwargs" in ts:
+                rfunc_kwargs = ts.pop("rfunc_kwargs")
+            ts["rfunc"] = getattr(ps.rfunc, ts["rfunc"])(**rfunc_kwargs)
         if "recharge" in ts.keys():
             recharge_kwargs = {}
             if 'recharge_kwargs' in ts:
@@ -146,7 +149,7 @@ def _load_model(data):
     ml.parameters = ml.parameters.apply(to_numeric, errors="ignore")
 
     # When initial values changed
-    for param, value in ml.parameters.loc[:, "initial"].iteritems():
+    for param, value in ml.parameters.loc[:, "initial"].items():
         ml.set_parameter(name=param, initial=value)
 
     return ml

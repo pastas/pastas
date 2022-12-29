@@ -237,7 +237,7 @@ def evp(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30):
     Notes
     -----
     Commonly used goodness-of-fit metric groundwater level models as
-    computed in [asmuth_2012]_.
+    computed in :cite:t:`von_asmuth_groundwater_2012`.
 
     .. math:: \\text{EVP} = \\frac{\\sigma_h^2 - \\sigma_r^2}{\\sigma_h^2}
         * 100
@@ -246,13 +246,6 @@ def evp(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30):
     :math:`\\sigma_r^2` is the variance of the residuals. The returned value
     is bounded between 0% and 100%.
 
-    References
-    ----------
-    .. [asmuth_2012] von Asmuth, J., K. Maas, M. Knotters, M. Bierkens,
-       M. Bakker, T.N. Olsthoorn, D.G. Cirkel, I. Leunk, F. Schaars, and D.C.
-       von Asmuth. 2012. Software for hydrogeologic time series analysis,
-       interfacing data with physical insight. Environmental Modelling &
-       Software 38: 178–130.
     """
     if res is None:
         res = sim - obs
@@ -297,15 +290,10 @@ def nse(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30):
 
     Notes
     -----
-    NSE computed according to [nash_1970]_
+    NSE computed according to :cite:t:`nash_river_1970`
 
     .. math:: \\text{NSE} = 1 - \\frac{\\sum(h_s-h_o)^2}{\\sum(h_o-\\mu_{h,o})}
 
-    References
-    ----------
-    .. [nash_1970] Nash, J. E., & Sutcliffe, J. V. (1970). River flow
-       forecasting through conceptual models part I-A discussion of
-       principles. Journal of hydrology, 10(3), 282-230.
     """
     if res is None:
         res = sim - obs
@@ -405,18 +393,12 @@ def bic(obs=None, sim=None, res=None, missing="drop", nparam=1):
 
     Notes
     -----
-    The Bayesian Information Criterium (BIC) [akaike_1979]_ is computed as
-    follows:
+    The Bayesian Information Criterium (BIC) :cite:t:`akaike_bayesian_1979`
+    is computed as follows:
 
     .. math:: \\text{BIC} = -2 log(L) + n_{param} * log(N)
 
     where :math:`n_{param}` is the number of calibration parameters.
-
-    References
-    ----------
-    .. [akaike_1979] Akaike, H. (1979). A Bayesian extension of the minimum
-       AIC procedure of autoregressive model fitting. Biometrika, 66(2),
-       237-242.
 
     """
     if res is None:
@@ -455,18 +437,13 @@ def aic(obs=None, sim=None, res=None, missing="drop", nparam=1):
 
     Notes
     -----
-    The Akaike Information Criterium (AIC) [akaike_1974]_ is computed as
-    follows:
+    The Akaike Information Criterium (AIC) :cite:t:`akaike_new_1970` is
+    computed as follows:
 
     .. math:: \\text{AIC} = -2 log(L) + 2 nparam
 
     where :math:`n_{param}` is the number of calibration parameters and L is
     the likelihood function for the model.
-
-    References
-    ----------
-    .. [akaike_1974] Akaike, H. (1974). A new look at the statistical model
-       identification. IEEE transactions on automatic control, 19(6), 716-723.
 
     """
     if res is None:
@@ -508,7 +485,8 @@ def kge_2012(obs, sim, missing="drop", weighted=False, max_gap=30):
 
     Notes
     -----
-    The (weighted) Kling-Gupta Efficiency [kling_2012]_ is computed as follows:
+    The (weighted) Kling-Gupta Efficiency :cite:t:`kling_runoff_2012` is
+    computed as follows:
 
     .. math:: \\text{KGE} = 1 - \\sqrt{(r-1)^2 + (\\beta-1)^2 - (\\gamma-1)^2}
 
@@ -516,12 +494,6 @@ def kge_2012(obs, sim, missing="drop", weighted=False, max_gap=30):
     \\frac{\\bar{\\sigma}_x / \\bar{x}}{\\bar{\\sigma}_y / \\bar{y}}`. If
     weighted equals True, the weighted mean, variance and pearson
     correlation are used.
-
-    References
-    ----------
-    .. [kling_2012] Kling, H., Fuchs, M., and Paulin, M. (2012). Runoff
-      conditions in the upper Danube basin under an ensemble of climate
-      change scenarios. Journal of Hydrology, 424-425:264 - 277.
 
     """
     if missing == "drop":

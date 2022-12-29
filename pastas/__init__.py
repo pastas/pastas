@@ -1,11 +1,13 @@
-from pandas.plotting import register_matplotlib_converters
 import logging
 
+from pandas.plotting import register_matplotlib_converters
+
+import pastas.plots as plots
 import pastas.recharge as rch
 import pastas.stats as stats
-import pastas.plots as plots
 
 from .model import Model
+from .modelcompare import CompareModels
 from .noisemodels import ArmaModel, NoiseModel
 from .plots import TrackSolve
 from .rcparams import rcParams

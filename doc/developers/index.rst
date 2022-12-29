@@ -66,6 +66,7 @@ The following people have contributed code to the Pastas project. Please
 notify us when contributors are missing from this list.
 
 - `Onno Ebbens <https://github.com/OnnoEbbens>`_
+- `Martin Vonk <https://github.com/martinvonk>`_
 - `Stijn Klop <https://github.com/saklop>`_
 - `Tom van Steijn <https://github.com/tomvansteijn>`_
 - `Hugo van de Berg <https://github.com/Hugovdberg>`_
