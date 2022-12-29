@@ -1063,10 +1063,11 @@ class Spline(RfuncBase):
     """
     _name = "Spline"
 
-    def __init__(self, kind: Optional[str] = 'quadratic',
-                 t: Optional[list] = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]):
+    def __init__(self, kind: Optional[str] = 'quadratic', t: Optional[list] = None):
         RfuncBase.__init__(self, kind=kind, t=t)
         self.kind = kind
+        if t is None:
+            t = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
         self.t = t
         self.nparam = len(t) + 1
 
