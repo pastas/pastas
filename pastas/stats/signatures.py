@@ -20,12 +20,12 @@ __all__ = ["cv_period_mean", "cv_date_min", "cv_fall_rate", "cv_rise_rate",
            "richards_pathlength", "richards_baker_index", "baseflow_stability"]
 
 
-def _normalize(series: Type[Series]) -> Type[Series]:
+def _normalize(series: Series) -> Series:
     series = (series - series.min()) / (series.max() - series.min())
     return series
 
 
-def cv_period_mean(series: Type[Series], freq: Optional[str] = "M") -> float:
+def cv_period_mean(series: Series, freq: str = "M") -> float:
     """Coefficient of variation of mean head over a period (default monthly).
 
     Parameters
@@ -56,7 +56,7 @@ def cv_period_mean(series: Type[Series], freq: Optional[str] = "M") -> float:
     return cv
 
 
-def cv_date_min(series: Type[Series]) -> float:
+def cv_date_min(series: Series) -> float:
     """Coefficient of variation of the date of annual minimum head.
 
     Parameters
@@ -87,7 +87,7 @@ def cv_date_min(series: Type[Series]) -> float:
     return cv
 
 
-def parde_seasonality(series: Type[Series], normalize: Optional[bool] = True) -> float:
+def parde_seasonality(series: Series, normalize: bool = True) -> float:
     """Parde seasonality according to [parde_1933]_.
 
     Parameters
@@ -117,7 +117,7 @@ def parde_seasonality(series: Type[Series], normalize: Optional[bool] = True) ->
     return coefficients.max() - coefficients.min()
 
 
-def parde_coefficients(series: Type[Series], normalize: Optional[bool] = True) -> float:
+def parde_coefficients(series: Series, normalize: bool = True) -> float:
     """Parde coefficients for each month [parde_1933]_.
 
     Parameters
@@ -151,7 +151,7 @@ def parde_coefficients(series: Type[Series], normalize: Optional[bool] = True) -
     return coefficients
 
 
-def _martens(series: Type[Series], normalize: Optional[bool] = True) -> Tuple[Type[Series], Type[Series]]:
+def _martens(series: Series, normalize: bool = True) -> Tuple[Series, Series]:
     """Functions for the Martens average seasonal fluctuation and
     interanual fluctuation.
 
@@ -182,7 +182,7 @@ def _martens(series: Type[Series], normalize: Optional[bool] = True) -> Tuple[Ty
     return hl, hw
 
 
-def avg_seasonal_fluctuation(series: Type[Series], normalize: Optional[bool] = True) -> float:
+def avg_seasonal_fluctuation(series: Series, normalize: bool = True) -> float:
     """Classification according to [martens_2013]_.
 
     Parameters
@@ -221,7 +221,7 @@ def avg_seasonal_fluctuation(series: Type[Series], normalize: Optional[bool] = T
     return hw.mean() - hl.mean()
 
 
-def interannual_variation(series: Type[Series], normalize: Optional[bool] = True) -> float:
+def interannual_variation(series: Series, normalize: bool = True) -> float:
     """Interannual variation after [martens_2013]_.
 
     Parameters
@@ -262,8 +262,8 @@ def interannual_variation(series: Type[Series], normalize: Optional[bool] = True
     return (hw.max() - hw.min()) + (hl.max() - hl.min()) / 2
 
 
-def colwell_components(series: Type[Series], bins: Optional[int] = 11, freq: Optional[str] = "M", method: Optional[str] = "mean",
-                       normalize: Optional[bool] = True) -> Tuple[float, float, float]:
+def colwell_components(series: Series, bins: int = 11, freq: str = "M", method: str = "mean",
+                       normalize: bool = True) -> Tuple[float, float, float]:
     """Colwell predictability, constant, and contingency [colwell_1974]_.
 
     Parameters
@@ -332,8 +332,8 @@ def colwell_components(series: Type[Series], bins: Optional[int] = 11, freq: Opt
     return p, c, m
 
 
-def colwell_constancy(series: Type[Series], bins: Optional[int] = 11, freq: Optional[str] = "M", method: Optional[str] = "mean",
-                      normalize: Optional[bool] = True) -> Tuple[float, float, float]:
+def colwell_constancy(series: Series, bins: int = 11, freq: str = "M", method: str = "mean",
+                      normalize: bool = True) -> Tuple[float, float, float]:
     """Colwells constancy index after [colwell_1974]_.
 
     Parameters
@@ -370,8 +370,8 @@ def colwell_constancy(series: Type[Series], bins: Optional[int] = 11, freq: Opti
                            normalize=normalize)[1]
 
 
-def colwell_contingency(series: Type[Series], bins: Optional[int] = 11, freq: Optional[str] = "M", method: Optional[str] = "mean",
-                        normalize: Optional[bool] = True) -> Tuple[float, float, float]:
+def colwell_contingency(series: Series, bins: int = 11, freq: str = "M", method: str = "mean",
+                        normalize: bool = True) -> Tuple[float, float, float]:
     """Colwell contingency [colwell_1974]_
 
     Parameters
@@ -411,7 +411,7 @@ def colwell_contingency(series: Type[Series], bins: Optional[int] = 11, freq: Op
                            normalize=normalize)[2]
 
 
-def low_pulse_count(series: Type[Series], quantile: Optional[float] = 0.2) -> int:
+def low_pulse_count(series: Series, quantile: float = 0.2) -> int:
     """Number of times the series drops below a certain threshold.
 
     Parameters
@@ -443,7 +443,7 @@ def low_pulse_count(series: Type[Series], quantile: Optional[float] = 0.2) -> in
     return (h.astype(int).diff() > 0).sum()
 
 
-def high_pulse_count(series: Type[Series], quantile: Optional[float] = 0.8) -> int:
+def high_pulse_count(series: Series, quantile: float = 0.8) -> int:
     """Number of times the series exceeds a certain threshold.
 
     Parameters
@@ -475,7 +475,7 @@ def high_pulse_count(series: Type[Series], quantile: Optional[float] = 0.8) -> i
     return (h.astype(int).diff() > 0).sum()
 
 
-def low_pulse_duration(series: Type[Series], quantile: Optional[float] = 0.8) -> float:
+def low_pulse_duration(series: Series, quantile: float = 0.8) -> float:
     """Average duration of pulses where the head is below a certain threshold.
 
     Parameters
@@ -506,7 +506,7 @@ def low_pulse_duration(series: Type[Series], quantile: Optional[float] = 0.8) ->
     return (diff(sel.to_numpy()) / Timedelta("1D"))[::2].mean()
 
 
-def high_pulse_duration(series: Type[Series], quantile: Optional[float] = 0.8) -> float:
+def high_pulse_duration(series: Series, quantile: float = 0.8) -> float:
     """Average duration of pulses where the head exceeds a certain threshold.
 
     Parameters
@@ -538,7 +538,7 @@ def high_pulse_duration(series: Type[Series], quantile: Optional[float] = 0.8) -
     return (diff(sel.to_numpy()) / Timedelta("1D"))[::2].mean()
 
 
-def amplitude_range(series: Type[Series]) -> float:
+def amplitude_range(series: Series) -> float:
     """Range of unscaled groundwater head.
 
     Parameters
@@ -558,7 +558,7 @@ def amplitude_range(series: Type[Series]) -> float:
     return series.max() - series.min()
 
 
-def rise_rate(series: Type[Series], normalize: Optional[bool] = False) -> float:
+def rise_rate(series: Series, normalize: bool = False) -> float:
     """Mean of positive head changes from one day to the next.
 
     Parameters
@@ -591,7 +591,7 @@ def rise_rate(series: Type[Series], normalize: Optional[bool] = False) -> float:
     return rises.mean()
 
 
-def fall_rate(series: Type[Series], normalize: Optional[bool] = False) -> float:
+def fall_rate(series: Series, normalize: bool = False) -> float:
     """Mean negative head changes from one day to the next.
 
     Parameters
@@ -625,7 +625,7 @@ def fall_rate(series: Type[Series], normalize: Optional[bool] = False) -> float:
     return falls.mean()
 
 
-def cv_rise_rate(series: Type[Series], normalize: Optional[bool] = False) -> float:
+def cv_rise_rate(series: Series, normalize: bool = False) -> float:
     """Coefficient of Variation in rise rate.
 
     Parameters
@@ -658,7 +658,7 @@ def cv_rise_rate(series: Type[Series], normalize: Optional[bool] = False) -> flo
     return rises.std() / rises.mean()
 
 
-def cv_fall_rate(series: Type[Series], normalize: Optional[bool] = False) -> float:
+def cv_fall_rate(series: Series, normalize: bool = False) -> float:
     """Coefficient of Variation in fall rate.
 
     Parameters
@@ -691,7 +691,7 @@ def cv_fall_rate(series: Type[Series], normalize: Optional[bool] = False) -> flo
     return falls.std() / falls.mean()
 
 
-def magnitude(series: Type[Series]) -> float:
+def magnitude(series: Series) -> float:
     """Difference of peak head to base head, divided by base head.
 
     Parameters
@@ -720,7 +720,7 @@ def magnitude(series: Type[Series]) -> float:
     return (series.max() - series.min()) / series.min()
 
 
-def reversals_avg(series: Type[Series]) -> float:
+def reversals_avg(series: Series) -> float:
     """Average annual number of rises and falls in daily head.
 
     Parameters
@@ -748,7 +748,7 @@ def reversals_avg(series: Type[Series]) -> float:
     return reversals.resample("A").sum().mean()
 
 
-def reversals_cv(series: Type[Series]) -> float:
+def reversals_cv(series: Series) -> float:
     """Coefficient of Variation in annual number of rises and falls.
 
     Parameters
@@ -776,7 +776,7 @@ def reversals_cv(series: Type[Series]) -> float:
     return reversals.std() / reversals.mean()
 
 
-def mean_annual_maximum(series: Type[Series], normalize: Optional[bool] = False) -> float:
+def mean_annual_maximum(series: Series, normalize: bool = False) -> float:
     """Mean of annual maximum.
 
     Parameters
@@ -806,7 +806,7 @@ def mean_annual_maximum(series: Type[Series], normalize: Optional[bool] = False)
     return series.resample("A").max().mean()
 
 
-def bimodality_coefficient(series: Type[Series], normalize: Optional[bool] = False) -> float:
+def bimodality_coefficient(series: Series, normalize: bool = False) -> float:
     """Bimodality coefficient after [Ellison_1987]_.
 
     Parameters
@@ -854,7 +854,7 @@ def bimodality_coefficient(series: Type[Series], normalize: Optional[bool] = Fal
            (kurt + ((3 * ((n - 1) ** 2)) / ((n - 2) * (n - 3))))
 
 
-def recession_constant(series: Type[Series], bins: Optional[int] = 20, normalize: Optional[bool] = False) -> float:
+def recession_constant(series: Series, bins: int = 20, normalize: bool = False) -> float:
     """Recession constant after [kirchner_2009]_.
 
     Parameters
@@ -899,7 +899,7 @@ def recession_constant(series: Type[Series], bins: Optional[int] = 20, normalize
     return fit.slope
 
 
-def recovery_constant(series: Type[Series], bins: Optional[int] = 20, normalize: Optional[bool] = False) -> float:
+def recovery_constant(series: Series, bins: int = 20, normalize: bool = False) -> float:
     """Recovery constant after [kirchner_2009]_.
 
     Parameters
@@ -945,7 +945,7 @@ def recovery_constant(series: Type[Series], bins: Optional[int] = 20, normalize:
     return fit.slope
 
 
-def duration_curve_slope(series: Type[Series], l: Optional[float] = 0.1, u: Optional[float] = 0.9, normalize: Optional[bool] = True) -> float:
+def duration_curve_slope(series: Series, l: float = 0.1, u: float = 0.9, normalize: bool = True) -> float:
     """Slope of the duration curve between percentile l and u.
 
     Parameters
@@ -984,7 +984,7 @@ def duration_curve_slope(series: Type[Series], l: Optional[float] = 0.1, u: Opti
     return linregress(s.index, s.values).slope
 
 
-def duration_curve_range(series: Type[Series], l: Optional[float] = 0.1, u: Optional[float] = 0.9, normalize: Optional[bool] = True) -> float:
+def duration_curve_range(series: Series, l: float = 0.1, u: float = 0.9, normalize: bool = True) -> float:
     """Range of the duration curve between the percentile l and u.
 
     Parameters
@@ -1019,7 +1019,7 @@ def duration_curve_range(series: Type[Series], l: Optional[float] = 0.1, u: Opti
     return series.quantile(u) - series.quantile(l)
 
 
-def richards_pathlength(series: Type[Series], normalize: Optional[bool] = True) -> float:
+def richards_pathlength(series: Series, normalize: bool = True) -> float:
     """The path length of the time series, standardized by time series length.
 
     Parameters
@@ -1056,7 +1056,7 @@ def richards_pathlength(series: Type[Series], normalize: Optional[bool] = True) 
     return sum(sqrt(dh ** 2 + dt ** 2)) / sum(dt)
 
 
-def richards_baker_index(series: Type[Series], normalize: Optional[bool] = True) -> float:
+def richards_baker_index(series: Series, normalize: bool = True) -> float:
     """Richards-Baker index according to [baker_2004]_.
 
     Parameters
@@ -1090,7 +1090,7 @@ def richards_baker_index(series: Type[Series], normalize: Optional[bool] = True)
     return series.diff().dropna().abs().sum() / series.sum()
 
 
-def _baseflow(series: Type[Series], normalize: Optional[bool] = True) -> Tuple[Type[Series], Type[Series]]:
+def _baseflow(series: Series, normalize: bool = True) -> Tuple[Series, Series]:
     """Baseflow function for the baseflow index and stability
 
     Parameters
@@ -1132,7 +1132,7 @@ def _baseflow(series: Type[Series], normalize: Optional[bool] = True) -> Tuple[T
     return series, ht
 
 
-def baseflow_index(series: Type[Series], normalize: Optional[bool] = True) -> float:
+def baseflow_index(series: Series, normalize: bool = True) -> float:
     """Baseflow index according to [wmo_2008]_.
 
     Parameters
@@ -1165,7 +1165,7 @@ def baseflow_index(series: Type[Series], normalize: Optional[bool] = True) -> fl
     return series.resample("D").mean().sum() / ht.sum()
 
 
-def baseflow_stability(series: Type[Series], normalize: Optional[bool] = True) -> float:
+def baseflow_stability(series: Series, normalize: bool = True) -> float:
     """Baseflow stability after [heudorfer_2019]_.
 
     Parameters
@@ -1200,7 +1200,7 @@ def baseflow_stability(series: Type[Series], normalize: Optional[bool] = True) -
     return ht.resample("A").mean().max() - ht.resample("A").mean().min()
 
 
-def hurst_exponent(series: Type[Series]):
+def hurst_exponent(series: Series):
     """Hurst exponent according to [wang_2006]_.
 
     Returns
@@ -1222,7 +1222,7 @@ def hurst_exponent(series: Type[Series]):
     return NotImplementedError
 
 
-def autocorr(series: Type[Series], freq: Optional[str] = "w"):
+def autocorr(series: Series, freq: str = "w"):
     """Lag where the first peak in the autocorrelation function occurs.
 
     Returns
@@ -1242,7 +1242,7 @@ def autocorr(series: Type[Series], freq: Optional[str] = "w"):
     return NotImplementedError
 
 
-def lyapunov_exponent(series: Type[Series]):
+def lyapunov_exponent(series: Series):
     """The exponential rate of divergence of nearby data points
     [hilborn_1994]_.
 
@@ -1265,7 +1265,7 @@ def lyapunov_exponent(series: Type[Series]):
     return NotImplementedError
 
 
-def peak_timescale(series: Type[Series]):
+def peak_timescale(series: Series):
     """Area under peak divided by difference of peak head to peak base.
 
     Returns
@@ -1287,7 +1287,7 @@ def peak_timescale(series: Type[Series]):
     return NotImplementedError
 
 
-def excess_mass(series: Type[Series]):
+def excess_mass(series: Series):
     """Test statistic of the dip test, after [hartigan_1985]_.
 
     Returns
@@ -1308,7 +1308,7 @@ def excess_mass(series: Type[Series]):
     return NotImplementedError
 
 
-def critical_bandwidth(series: Type[Series]):
+def critical_bandwidth(series: Series):
     """Test statistic of the Silverman test, after [silverman_1981]_.
 
     Returns
@@ -1330,7 +1330,7 @@ def critical_bandwidth(series: Type[Series]):
     return NotImplementedError
 
 
-def peak_base_time(series: Type[Series]):
+def peak_base_time(series: Series):
     """Difference between peak and base head, standardized by duration of peak.
 
     Returns
@@ -1351,7 +1351,7 @@ def peak_base_time(series: Type[Series]):
     return NotImplementedError
 
 
-def summary(series: Type[Series], signatures: Optional[list] = None) -> Type[Series]:
+def summary(series: Series, signatures: Optional[list] = None) -> Series:
     """Method to get many signatures for a time series.
 
     Parameters

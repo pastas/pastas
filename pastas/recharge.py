@@ -53,13 +53,13 @@ class RechargeBase:
 
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.snow = False
         self.nparam = 0
         self.kwargs = {}
 
     @staticmethod
-    def get_init_parameters(name: Optional[str] = "recharge") -> Type[DataFrame]:
+    def get_init_parameters(name: str = "recharge") -> DataFrame:
         """Method to obtain the initial parameters.
 
         Parameters
@@ -95,11 +95,11 @@ class Linear(RechargeBase):
     """
     _name = "Linear"
 
-    def __init__(self):
+    def __init__(self) -> None:
         RechargeBase.__init__(self)
         self.nparam = 1
 
-    def get_init_parameters(self, name: Optional[str] = "recharge") -> Type[DataFrame]:
+    def get_init_parameters(self, name: str = "recharge") -> DataFrame:
         parameters = DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "name"])
         parameters.loc[name + "_f"] = (-1.0, -2.0, 0.0, True, name)
@@ -125,7 +125,7 @@ class Linear(RechargeBase):
         """
         return add(prec, multiply(evap, p))
 
-    def get_water_balance(self, prec: pstAL, evap: pstAL, p: pstAL, **kwargs) -> Type[DataFrame]:
+    def get_water_balance(self, prec: pstAL, evap: pstAL, p: pstAL, **kwargs) -> DataFrame:
         ea = multiply(evap, p)
         r = add(prec, multiply(evap, p))
         return DataFrame(data=vstack((prec, ea, -r)).T,
@@ -181,7 +181,7 @@ class FlexModel(RechargeBase):
     """
     _name = "FlexModel"
 
-    def __init__(self, interception: Optional[bool] = True, snow: Optional[bool] = False, gw_uptake: Optional[bool] = False):
+    def __init__(self, interception: bool = True, snow: bool = False, gw_uptake: bool = False):
         check_numba()
         RechargeBase.__init__(self)
         self.snow = snow
@@ -195,7 +195,7 @@ class FlexModel(RechargeBase):
         if self.snow:
             self.nparam += 2
 
-    def get_init_parameters(self, name: Optional[str] = "recharge") -> Type[DataFrame]:
+    def get_init_parameters(self, name: str = "recharge") -> DataFrame:
         parameters = DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "name"])
         parameters.loc[name + "_srmax"] = (250.0, 1e-5, 1e3, True, name)
@@ -213,7 +213,7 @@ class FlexModel(RechargeBase):
 
         return parameters
 
-    def simulate(self, prec: pstAL, evap: pstAL, temp: pstAL, p: pstAL, dt: Optional[float] = 1.0, return_full: Optional[bool] = False, **kwargs) -> pstAL:
+    def simulate(self, prec: pstAL, evap: pstAL, temp: pstAL, p: pstAL, dt: float = 1.0, return_full: bool = False, **kwargs) -> pstAL:
         """Simulate the soil water balance model.
 
         Parameters
@@ -292,8 +292,8 @@ class FlexModel(RechargeBase):
 
     @staticmethod
     @njit
-    def get_root_zone_balance(pe: pstAL, ep: pstAL, srmax: Optional[float] = 250.0, lp: Optional[float] = 0.25, ks: Optional[float] = 100.0,
-                              gamma: Optional[float] = 4.0, dt: Optional[float] = 1.0) -> Tuple[pstAL]:
+    def get_root_zone_balance(pe: pstAL, ep: pstAL, srmax: float = 250.0, lp: float = 0.25, ks: float = 100.0,
+                              gamma: float = 4.0, dt: float = 1.0) -> Tuple[pstAL]:
         """Method to compute the water balance of the root zone reservoir.
 
         Parameters
@@ -365,7 +365,7 @@ class FlexModel(RechargeBase):
 
     @staticmethod
     @njit
-    def get_interception_balance(pr: pstAL, ep: pstAL, simax: Optional[float] = 2.0, dt: Optional[float] = 1.0) -> Tuple[pstAL]:
+    def get_interception_balance(pr: pstAL, ep: pstAL, simax: float = 2.0, dt: float = 1.0) -> Tuple[pstAL]:
         """Method to compute the water balance of the interception reservoir.
 
         Parameters
@@ -419,7 +419,7 @@ class FlexModel(RechargeBase):
 
     @staticmethod
     @njit
-    def get_snow_balance(prec: pstAL, temp: pstAL, tt: Optional[float] = 0.0, k: Optional[float] = 2.0) -> Tuple[pstAL]:
+    def get_snow_balance(prec: pstAL, temp: pstAL, tt: float = 0.0, k: float = 2.0) -> Tuple[pstAL]:
         """Method to compute the water balance of the snow reservoir.
 
         Parameters
@@ -467,7 +467,7 @@ class FlexModel(RechargeBase):
 
         return ss[:-1], ps, -m
 
-    def get_water_balance(self, prec: pstAL, evap: pstAL, temp: pstAL, p: pstAL, dt: Optional[float] = 1.0, **kwargs) -> Type[DataFrame]:
+    def get_water_balance(self, prec: pstAL, evap: pstAL, temp: pstAL, p: pstAL, dt: float = 1.0, **kwargs) -> DataFrame:
         data = self.simulate(prec=prec, evap=evap, temp=temp,
                              p=p, dt=dt, return_full=True, **kwargs)
 
@@ -495,7 +495,7 @@ class FlexModel(RechargeBase):
         error = (si[0] - si[-1] + (pi + ei).sum())
         return error
 
-    def check_root_zone_balance(self, prec: pstAL, evap: pstAL, **kwargs):
+    def check_root_zone_balance(self, prec: pstAL, evap: pstAL, **kwargs) -> float:
         sr, r, ea, q, pe = self.get_root_zone_balance(prec, evap)
         error = (sr[0] - sr[-1] + (r + ea + q + pe).sum())
         return error
@@ -524,12 +524,12 @@ class Berendrecht(RechargeBase):
     """
     _name = "Berendrecht"
 
-    def __init__(self):
+    def __init__(self) -> None:
         check_numba()
         RechargeBase.__init__(self)
         self.nparam = 7
 
-    def get_init_parameters(self, name: Optional[str] = "recharge") -> Type[DataFrame]:
+    def get_init_parameters(self, name: str = "recharge") -> DataFrame:
         parameters = DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "name"])
         parameters.loc[name + "_fi"] = (0.9, 0.7, 1.3, False, name)
@@ -541,7 +541,7 @@ class Berendrecht(RechargeBase):
         parameters.loc[name + "_ks"] = (100.0, 1, 1e4, True, name)
         return parameters
 
-    def simulate(self, prec: pstAL, evap: pstAL, p: pstAL, dt: pstAL = 1.0, return_full: Optional[bool] = False, **kwargs) -> Tuple[pstAL]:
+    def simulate(self, prec: pstAL, evap: pstAL, p: pstAL, dt: pstAL = 1.0, return_full: bool = False, **kwargs) -> Tuple[pstAL]:
         """Simulate the recharge flux.
 
         Parameters
@@ -573,8 +573,8 @@ class Berendrecht(RechargeBase):
 
     @staticmethod
     @njit
-    def get_recharge(prec: pstAL, evap: pstAL, fi: Optional[float] = 1.0, fc: Optional[float] = 1.0, sr: Optional[float] = 0.5, de: Optional[float] = 250.0, l: Optional[float] = -2.0,
-                     m: Optional[float] = 0.5, ks: Optional[float] = 50.0, dt: Optional[float] = 1.0) -> pstAL:
+    def get_recharge(prec: pstAL, evap: pstAL, fi: float = 1.0, fc: float = 1.0, sr: float = 0.5, de: float = 250.0, l: float = -2.0,
+                     m: float = 0.5, ks: float = 50.0, dt: float = 1.0) -> pstAL:
         """
         Internal method used for the recharge calculation. If Numba is
         available, this method is significantly faster.
@@ -606,7 +606,7 @@ class Berendrecht(RechargeBase):
             s[t + 1] = s[t] + dt / de * (pe[t] - ea[t] - r[t])
         return r, s, ea, pe
 
-    def get_water_balance(self, prec: pstAL, evap: pstAL, p: pstAL, dt: Optional[float] = 1.0, **kwargs) -> Type[DataFrame]:
+    def get_water_balance(self, prec: pstAL, evap: pstAL, p: pstAL, dt: float = 1.0, **kwargs) -> DataFrame:
         r, s, ea, pe = self.simulate(prec, evap, p=p, dt=dt,
                                      return_full=True, **kwargs)
         s = s * p[3]  # Because S is computed dimensionless in this model
@@ -651,12 +651,12 @@ class Peterson(RechargeBase):
     """
     _name = "Peterson"
 
-    def __init__(self):
+    def __init__(self) -> None:
         check_numba()
         RechargeBase.__init__(self)
         self.nparam = 5
 
-    def get_init_parameters(self, name: Optional[str] = "recharge") -> Type[DataFrame]:
+    def get_init_parameters(self, name: str = "recharge") -> DataFrame:
         parameters = DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "name"])
         parameters.loc[name + "_scap"] = (1.5, 0.5, 3.0, True, name)
@@ -666,7 +666,7 @@ class Peterson(RechargeBase):
         parameters.loc[name + "_gamma"] = (1.0, 0.0, 2.0, True, name)
         return parameters
 
-    def simulate(self, prec: pstAL, evap: pstAL, p: pstAL, dt: Optional[float] = 1.0, return_full: Optional[bool] = False, **kwargs) -> pstAL:
+    def simulate(self, prec: pstAL, evap: pstAL, p: pstAL, dt: float = 1.0, return_full: bool = False, **kwargs) -> pstAL:
         """Simulate the recharge flux.
 
         Parameters
@@ -697,8 +697,8 @@ class Peterson(RechargeBase):
 
     @staticmethod
     @njit
-    def get_recharge(prec: pstAL, evap: pstAL, scap: Optional[float] = 1.0, alpha: Optional[float] = 1.0,
-                     ksat: Optional[float] = 1.0, beta: Optional[float] = 0.5, gamma: Optional[float] = 1.0, dt: Optional[float] = 1.0):
+    def get_recharge(prec: pstAL, evap: pstAL, scap: float = 1.0, alpha: float = 1.0,
+                     ksat: float = 1.0, beta: float = 0.5, gamma: float = 1.0, dt: float = 1.0):
         """
         Internal method used for the recharge calculation. If Numba is
         available, this method is significantly faster.
@@ -726,7 +726,7 @@ class Peterson(RechargeBase):
                             max(0.0, sm[t] + (pe[t] - ea[t] - r[t]) * dt))
         return r, sm[1:], ea, pe
 
-    def get_water_balance(self, prec: pstAL, evap: pstAL, p: pstAL, dt: Optional[float] = 1.0, **kwargs) -> Type[DataFrame]:
+    def get_water_balance(self, prec: pstAL, evap: pstAL, p: pstAL, dt: float = 1.0, **kwargs) -> DataFrame:
         r, s, ea, pe = self.simulate(prec, evap, p=p, dt=dt,
                                      return_full=True, **kwargs)
         data = DataFrame(data=vstack((s, pe, ea, r)).T,

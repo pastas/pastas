@@ -20,7 +20,7 @@ __all__ = ["durbin_watson", "ljung_box", "runs_test", "stoffer_toloi",
            "diagnostics", "plot_acf", "plot_diagnostics"]
 
 
-def durbin_watson(series: Type[Series] = None) -> float:
+def durbin_watson(series: Series = None) -> float:
     """Durbin-Watson test for autocorrelation.
 
     Parameters
@@ -89,7 +89,7 @@ def durbin_watson(series: Type[Series] = None) -> float:
     return dw_stat, p
 
 
-def ljung_box(series: Type[Series] = None, lags: Optional[int] = 15, nparam: Optional[int] = 0, full_output: Optional[bool] = False) -> Tuple[float, float]:
+def ljung_box(series: Series = None, lags: int = 15, nparam: int = 0, full_output: bool = False) -> Tuple[float, float]:
     """Ljung-box test for autocorrelation.
 
     Parameters
@@ -185,7 +185,7 @@ def ljung_box(series: Type[Series] = None, lags: Optional[int] = 15, nparam: Opt
         return q_stat[-1], pval[-1]
 
 
-def runs_test(series: Type[Series], cutoff: Optional[str] = "median") -> Tuple[float, float]:
+def runs_test(series: Series, cutoff: str = "median") -> Tuple[float, float]:
     """Runs test for autocorrelation.
 
     Parameters
@@ -277,8 +277,8 @@ def runs_test(series: Type[Series], cutoff: Optional[str] = "median") -> Tuple[f
     return z_stat, pval
 
 
-def stoffer_toloi(series: Type[Series], lags: Optional[int] = 15, nparam: Optional[int] = 0, freq: Optional[str] = "D",
-                  snap_to_equidistant_timestamps: Optional[bool] = False) -> Tuple[float, float]:
+def stoffer_toloi(series: Series, lags: int = 15, nparam: int = 0, freq: str = "D",
+                  snap_to_equidistant_timestamps: bool = False) -> Tuple[float, float]:
     """Adapted Ljung-Box test to deal with missing data [stoffer_1992]_.
 
     Parameters
@@ -414,8 +414,8 @@ def stoffer_toloi(series: Type[Series], lags: Optional[int] = 15, nparam: Option
     return qm, pval
 
 
-def diagnostics(series: Type[Series], alpha: Optional[float] = 0.05, nparam: Optional[int] = 0, lags: Optional[int] = 15, stats: tuple = (),
-                float_fmt: Optional[str] = "{0:.2f}") -> Type[DataFrame]:
+def diagnostics(series: Series, alpha: float = 0.05, nparam: int = 0, lags: int = 15, stats: tuple = (),
+                float_fmt: str = "{0:.2f}") -> DataFrame:
     """Methods to compute various diagnostics checks for a time series.
 
     Parameters

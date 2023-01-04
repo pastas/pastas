@@ -25,12 +25,12 @@ from pastas.typing import Type, Optional, pstAL
 class ReservoirBase:
     """Base class for reservoir classes."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.temp = False
         self.nparam = 0
 
     @staticmethod
-    def get_init_parameters(name: Optional[str] = "recharge"):
+    def get_init_parameters(name: str = "recharge") -> DataFrame:
         """Method to obtain the initial parameters.
 
         Parameters
@@ -47,7 +47,7 @@ class ReservoirBase:
             columns=["initial", "pmin", "pmax", "vary", "name"])
         return parameters
 
-    def simulate(self, prec, evap, p, dt=1.0, **kwargs):
+    def simulate(self, prec: Series, evap: Series, p: pstAL, dt: float = 1.0, **kwargs) -> pstAL:
         pass
 
 
@@ -64,12 +64,12 @@ class Reservoir1(ReservoirBase):
     """
     _name = "Reservoir1"
 
-    def __init__(self, initialhead: float):
+    def __init__(self, initialhead: float) -> None:
         ReservoirBase.__init__(self)
         self.nparam = 4
         self.initialhead = initialhead
 
-    def get_init_parameters(self, name: Optional[str] = "reservoir") -> Type[DataFrame]:
+    def get_init_parameters(self, name: str = "reservoir") -> DataFrame:
         parameters = DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "name"])
         parameters.loc[name + "_S"] = (0.1, 0.001, 1, True, name)
@@ -80,7 +80,7 @@ class Reservoir1(ReservoirBase):
         parameters.loc[name + "_f"] = (-1.0, -2.0, 0.0, True, name)
         return parameters
 
-    def simulate(self, prec: Type[Series], evap: Type[Series], p: pstAL) -> pstAL:
+    def simulate(self, prec: Series, evap: Series, p: pstAL) -> pstAL:
         return self.simulatehead(prec.values, evap.values, p)
 
     @staticmethod
@@ -160,12 +160,12 @@ class Reservoir2(ReservoirBase):
     """
     _name = "Reservoir2"
 
-    def __init__(self, initialhead: float):
+    def __init__(self, initialhead: float) -> None:
         ReservoirBase.__init__(self)
         self.nparam = 6
         self.initialhead = initialhead
 
-    def get_init_parameters(self, name: Optional[str] = "reservoir") -> Type[DataFrame]:
+    def get_init_parameters(self, name: str = "reservoir") -> DataFrame:
         parameters = DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "name"])
         parameters.loc[name + "_S"] = (0.1, 0.001, 1, True, name)
@@ -178,7 +178,7 @@ class Reservoir2(ReservoirBase):
         parameters.loc[name + "_deld"] = (0.01, 0.001, 10, True, name)
         return parameters
 
-    def simulate(self, prec: Type[Series], evap: Type[Series], p: pstAL) -> pstAL:
+    def simulate(self, prec: Series, evap: Series, p: pstAL) -> pstAL:
         return self.simulatehead(prec.values, evap.values, p)
 
     @staticmethod

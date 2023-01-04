@@ -35,13 +35,13 @@ __all__ = ["NoiseModel", "ArmaModel"]
 class NoiseModelBase:
     _name = "NoiseModelBase"
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.nparam = 1
         self.name = "noise"
         self.parameters = DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "name"])
 
-    def set_init_parameters(self, oseries: Optional[Type[Series]] = None):
+    def set_init_parameters(self, oseries: Optional[Series] = None) -> None:
         if oseries is not None:
             pinit = np.diff(oseries.index.to_numpy()) / Timedelta("1D")
             pinit = np.median(pinit)
@@ -51,7 +51,7 @@ class NoiseModelBase:
                                               "noise")
 
     @set_parameter
-    def _set_initial(self, name: str, value: float):
+    def _set_initial(self, name: str, value: float) -> None:
         """Internal method to set the initial parameter value.
 
         Notes
@@ -61,7 +61,7 @@ class NoiseModelBase:
         self.parameters.loc[name, "initial"] = value
 
     @set_parameter
-    def _set_pmin(self, name: str, value: float):
+    def _set_pmin(self, name: str, value: float) -> None:
         """Internal method to set the minimum value of the noisemodel.
 
         Notes
@@ -71,7 +71,7 @@ class NoiseModelBase:
         self.parameters.loc[name, "pmin"] = value
 
     @set_parameter
-    def _set_pmax(self, name: str, value: float):
+    def _set_pmax(self, name: str, value: float) -> None:
         """Internal method to set the maximum parameter values.
 
         Notes
@@ -81,7 +81,7 @@ class NoiseModelBase:
         self.parameters.loc[name, "pmax"] = value
 
     @set_parameter
-    def _set_vary(self, name: str, value: float):
+    def _set_vary(self, name: str, value: float) -> None:
         """Internal method to set if the parameter is varied.
 
         Notes
@@ -90,11 +90,11 @@ class NoiseModelBase:
         """
         self.parameters.loc[name, "vary"] = value
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         return {"type": self._name}
 
     @staticmethod
-    def weights(res, p):
+    def weights(res, p) -> int:
         return 1
 
 
@@ -129,14 +129,14 @@ class NoiseModel(NoiseModelBase):
     """
     _name = "NoiseModel"
 
-    def __init__(self, norm=True):
+    def __init__(self, norm: bool = True) -> None:
         NoiseModelBase.__init__(self)
         self.norm = norm
         self.nparam = 1
         self.set_init_parameters()
 
     @staticmethod
-    def simulate(res: Type[Series], p: pstAL) -> Type[Series]:
+    def simulate(res: Series, p: pstAL) -> Series:
         """Simulate noise from the residuals.
 
         Parameters
@@ -158,7 +158,7 @@ class NoiseModel(NoiseModelBase):
                       * res.values[:-1])
         return Series(data=v, index=res.index, name="Noise")
 
-    def weights(self, res: Type[Series], p: pstAL) -> Type[Series]:
+    def weights(self, res: Series, p: pstAL) -> Series:
         """Method to calculate the weights for the noise.
 
         Parameters
@@ -217,13 +217,13 @@ class ArmaModel(NoiseModelBase):
     """
     _name = "ArmaModel"
 
-    def __init__(self):
+    def __init__(self) -> None:
         check_numba()
         NoiseModelBase.__init__(self)
         self.nparam = 2
         self.set_init_parameters()
 
-    def set_init_parameters(self, oseries: Type[Series] = None):
+    def set_init_parameters(self, oseries: Series = None) -> None:
         if oseries is not None:
             pinit = np.diff(oseries.index.to_numpy()) / Timedelta("1D")
             pinit = np.median(pinit)
@@ -234,7 +234,7 @@ class ArmaModel(NoiseModelBase):
         self.parameters.loc["noise_beta"] = (1., -np.inf, np.inf, True,
                                              "noise")
 
-    def simulate(self, res: Type[Series], p: pstAL) -> Type[Series]:
+    def simulate(self, res: Series, p: pstAL) -> Series:
         alpha = p[0]
         beta = p[1]
 

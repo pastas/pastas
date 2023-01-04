@@ -17,8 +17,8 @@ from ..utils import check_numba
 from pastas.typing import Type, Optional, Union, Tuple, pstAL
 
 
-def acf(x: Type[Series], lags: Optional[pstAL] = 365, bin_method: Optional[str] = 'rectangle', bin_width: Optional[float] = 0.5, max_gap: Optional[float] = inf,
-        min_obs: Optional[int] = 20, full_output: Optional[bool] = False, alpha: Optional[float] = 0.05) -> Union[Type[Series], Type[DataFrame]]:
+def acf(x: Series, lags: pstAL = 365, bin_method: str = 'rectangle', bin_width: float = 0.5, max_gap: float = inf,
+        min_obs: int = 20, full_output: bool = False, alpha: float = 0.05) -> Union[Series, DataFrame]:
     """Calculate the autocorrelation function for irregular time steps.
 
     Parameters
@@ -88,8 +88,8 @@ def acf(x: Type[Series], lags: Optional[pstAL] = 365, bin_method: Optional[str] 
         return c
 
 
-def ccf(x: Type[Series], y: Type[Series], lags: Optional[pstAL] = 365, bin_method: Optional[str] = 'rectangle', bin_width: Optional[float] = 0.5,
-        max_gap: Optional[float] = inf, min_obs: Optional[int] = 20, full_output: Optional[bool] = False, alpha: Optional[float] = 0.05) -> Union[Type[Series], Type[DataFrame]]:
+def ccf(x: Series, y: Series, lags: pstAL = 365, bin_method: str = 'rectangle', bin_width: float = 0.5,
+        max_gap: float = inf, min_obs: int = 20, full_output: bool = False, alpha: float = 0.05) -> Union[Series, DataFrame]:
     """Method to compute the cross-correlation for irregular time series.
 
     Parameters
@@ -180,7 +180,7 @@ def ccf(x: Type[Series], y: Type[Series], lags: Optional[pstAL] = 365, bin_metho
         return result.ccf
 
 
-def _preprocess(x: Type[Series], max_gap: int) -> Tuple[Type[Series], float, float]:
+def _preprocess(x: Series, max_gap: int) -> Tuple[Series, float, float]:
     """Internal method to preprocess the time series."""
     dt = x.index.to_series().diff().dropna().values / Timedelta(1, "D")
     dt_mu = dt[dt < max_gap].mean()  # Deal with big gaps if present
@@ -193,7 +193,7 @@ def _preprocess(x: Type[Series], max_gap: int) -> Tuple[Type[Series], float, flo
 
 
 @njit
-def _compute_ccf_rectangle(lags: pstAL, t_x: pstAL, x: pstAL, t_y: pstAL, y: pstAL, bin_width: Optional[float] = 0.5) -> Tuple[pstAL, pstAL]:
+def _compute_ccf_rectangle(lags: pstAL, t_x: pstAL, x: pstAL, t_y: pstAL, y: pstAL, bin_width: float = 0.5) -> Tuple[pstAL, pstAL]:
     """Internal numba-optimized method to compute the ccf."""
     c = empty_like(lags)
     b = empty_like(lags)
@@ -219,7 +219,7 @@ def _compute_ccf_rectangle(lags: pstAL, t_x: pstAL, x: pstAL, t_y: pstAL, y: pst
 
 
 @njit
-def _compute_ccf_gaussian(lags: pstAL, t_x: pstAL, x: pstAL, t_y: pstAL, y: pstAL, bin_width: Optional[float] = 0.5) -> Tuple[pstAL, pstAL]:
+def _compute_ccf_gaussian(lags: pstAL, t_x: pstAL, x: pstAL, t_y: pstAL, y: pstAL, bin_width: float = 0.5) -> Tuple[pstAL, pstAL]:
     """Internal numba-optimized method to compute the ccf."""
     c = empty_like(lags)
     b = empty_like(lags)
@@ -256,7 +256,7 @@ def _compute_ccf_regular(lags: pstAL, x: pstAL, y: pstAL) -> Tuple[pstAL, pstAL]
     return c, b
 
 
-def mean(x: Type[Series], weighted: Optional[bool] = True, max_gap: Optional[int] = 30) -> pstAL:
+def mean(x: Series, weighted: bool = True, max_gap: int = 30) -> pstAL:
     """Method to compute the (weighted) mean of a time series.
 
     Parameters
@@ -284,7 +284,7 @@ def mean(x: Type[Series], weighted: Optional[bool] = True, max_gap: Optional[int
     return average(x.to_numpy(), weights=w)
 
 
-def var(x: Type[Series], weighted: Optional[bool] = True, max_gap: Optional[int] = 30) -> pstAL:
+def var(x: Series, weighted: bool = True, max_gap: int = 30) -> pstAL:
     """Method to compute the (weighted) variance of a time series.
 
     Parameters
@@ -315,7 +315,7 @@ def var(x: Type[Series], weighted: Optional[bool] = True, max_gap: Optional[int]
     return sigma
 
 
-def std(x: Type[Series], weighted: Optional[bool] = True, max_gap: Optional[int] = 30) -> pstAL:
+def std(x: Series, weighted: bool = True, max_gap: int = 30) -> pstAL:
     """Method to compute the (weighted) variance of a time series.
 
     Parameters
@@ -339,7 +339,7 @@ def std(x: Type[Series], weighted: Optional[bool] = True, max_gap: Optional[int]
 
 # Helper functions
 
-def _get_weights(x: Type[Series], weighted: Optional[bool] = True, max_gap: Optional[int] = 30) -> pstAL:
+def _get_weights(x: Series, weighted: bool = True, max_gap: int = 30) -> pstAL:
     """Helper method to compute the weights as the time step between obs.
 
     Parameters

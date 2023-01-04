@@ -20,11 +20,11 @@ from pastas.typing import Type, Optional, List, pstAL, pstAx, pstFi, pstTm, pstM
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["compare", "series", "acf", "diagnostics", "cum_frequency",
+__all__ = ["compare", "Series", "acf", "diagnostics", "cum_frequency",
            "TrackSolve"]
 
 
-def compare(models: List[pstMl], adjust_height: Optional[bool] = True, **kwargs) -> pstAx:
+def compare(models: List[pstMl], adjust_height: bool = True, **kwargs) -> pstAx:
     """Plot multiple Pastas models in one figure to visually compare models.
 
     Note
@@ -56,21 +56,21 @@ def compare(models: List[pstMl], adjust_height: Optional[bool] = True, **kwargs)
     return mc.axes
 
 
-def series(head: Optional[Type[Series]] = None, stresses: Optional[List[Type[Series]]] = None, hist: Optional[bool] = True, kde: Optional[bool] = False, titles: Optional[bool] = True,
-           tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, labels: Optional[List[str]] = None, figsize: Optional[tuple] = (10, 5)) -> pstAx:
-    """Plot all the input time series in a single plot.
+def Series(head: Optional[Series] = None, stresses: Optional[List[Series]] = None, hist: bool = True, kde: bool = False, titles: bool = True,
+           tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, labels: Optional[List[str]] = None, figsize: tuple = (10, 5)) -> pstAx:
+    """Plot all the input time Series in a single plot.
 
     Parameters
     ----------
     head: pd.Series
-        Pandas time series with DatetimeIndex.
+        Pandas time Series with DatetimeIndex.
     stresses: List of pd.Series
-        List with Pandas time series with DatetimeIndex.
+        List with Pandas time Series with DatetimeIndex.
     hist: bool
-        Histogram for the series. The number of bins is determined with Sturges
+        Histogram for the Series. The number of bins is determined with Sturges
         rule. Returns the number of observations, mean, skew and kurtosis.
     kde: bool
-        Kernel density estimate for the series. The kde is obtained from
+        Kernel density estimate for the Series. The kde is obtained from
         scipy.gaussian_kde using scott to calculate the estimator bandwidth.
         Returns the number of observations, mean, skew and kurtosis.
     titles: bool
@@ -197,14 +197,14 @@ def series(head: Optional[Type[Series]] = None, stresses: Optional[List[Type[Ser
     return axes
 
 
-def acf(series: Type[Series], alpha: Optional[float] = 0.05, lags: Optional[int] = 365, acf_options: Optional[dict] = None, smooth_conf: Optional[bool] = True,
-        color: Optional[str] = "k", ax: Optional[pstAx] = None, figsize: Optional[tuple] = (5, 2)):
-    """Plot of the autocorrelation function of a time series.
+def acf(Series: Series, alpha: float = 0.05, lags: int = 365, acf_options: Optional[dict] = None, smooth_conf: bool = True,
+        color: str = "k", ax: Optional[pstAx] = None, figsize: tuple = (5, 2)) -> pstAx:
+    """Plot of the autocorrelation function of a time Series.
 
     Parameters
     ----------
-    series: pandas.Series
-        Residual series to plot the autocorrelation function for.
+    Series: pandas.Series
+        Residual Series to plot the autocorrelation function for.
     alpha: float, optional
         Significance level to calculate the (1-alpha)-confidence intervals.
         For 95% confidence intervals, alpha should be 0.05.
@@ -213,7 +213,7 @@ def acf(series: Type[Series], alpha: Optional[float] = 0.05, lags: Optional[int]
     acf_options: dict, optional
         Dictionary with keyword arguments passed on to pastas.stats.acf.
     smooth_conf: bool, optional
-        For irregular time series the confidence interval may be
+        For irregular time Series the confidence interval may be
     color: str, optional
         Color of the vertical autocorrelation lines.
     ax: matplotlib.axes.Axes, optional
@@ -239,7 +239,7 @@ def acf(series: Type[Series], alpha: Optional[float] = 0.05, lags: Optional[int]
     # Plot the autocorrelation
     if acf_options is None:
         acf_options = {}
-    r = get_acf(series, full_output=True, alpha=alpha, lags=lags,
+    r = get_acf(Series, full_output=True, alpha=alpha, lags=lags,
                 **acf_options)
 
     if r.empty:
@@ -264,16 +264,16 @@ def acf(series: Type[Series], alpha: Optional[float] = 0.05, lags: Optional[int]
     return ax
 
 
-def diagnostics(series: Type[Series], sim: Optional[Type[Series]] = None, alpha: Optional[float] = 0.05, bins: Optional[int] = 50, acf_options: Optional[dict] = None,
-                figsize: Optional[tuple] = (10, 5), fig: Optional[pstFi] = None, heteroscedasicity: Optional[bool] = True, **kwargs) -> pstAx:
+def diagnostics(Series: Series, sim: Optional[Series] = None, alpha: float = 0.05, bins: int = 50, acf_options: Optional[dict] = None,
+                figsize: tuple = (10, 5), fig: Optional[pstFi] = None, heteroscedasicity: bool = True, **kwargs) -> pstAx:
     """Plot that helps in diagnosing basic model assumptions.
 
     Parameters
     ----------
-    series: pandas.Series
-        Pandas Series with the residual time series to diagnose.
+    Series: pandas.Series
+        Pandas Series with the residual time Series to diagnose.
     sim: pandas.Series, optional
-        Pandas Series with the simulated time series. Used to diagnose on
+        Pandas Series with the simulated time Series. Used to diagnose on
         heteroscedasticity. Ignored if heteroscedasticity is set to False.
     alpha: float, optional
         Significance level to calculate the (1-alpha)-confidence intervals.
@@ -287,7 +287,7 @@ def diagnostics(series: Type[Series], sim: Optional[Type[Series]] = None, alpha:
         Optionally provide a Matplotib.Figure instance to plot onto.
     heteroscedasicity: bool, optional
         Create two additional subplots to check for heteroscedasticity. If
-        true, a simulated time series has to be provided with the sim argument.
+        true, a simulated time Series has to be provided with the sim argument.
     **kwargs: dict, optional
         Optional keyword arguments, passed on to plt.figure.
 
@@ -319,7 +319,7 @@ def diagnostics(series: Type[Series], sim: Optional[Type[Series]] = None, alpha:
 
     if heteroscedasicity:
         if sim is None:
-            msg = "A simulated time series has to be provided to make plots " \
+            msg = "A simulated time Series has to be provided to make plots " \
                   "to diagnose heteroscedasticity. Provide 'sim' argument."
             logger.error(msg=msg)
             raise KeyError(msg)
@@ -334,31 +334,31 @@ def diagnostics(series: Type[Series], sim: Optional[Type[Series]] = None, alpha:
     ax1 = fig.add_subplot(gs[1, 0])
     ax3 = fig.add_subplot(gs[1, 1])
 
-    # Plot the residuals or noise series
+    # Plot the residuals or noise Series
     ax.axhline(0, c="k")
-    series.plot(ax=ax)
-    ax.set_ylabel(series.name)
-    ax.set_xlim(series.index.min(), series.index.max())
-    ax.set_title(f"{series.name} (n={series.size :.0f}, $\\mu$"
-                 f"={series.mean() :.2f})")
+    Series.plot(ax=ax)
+    ax.set_ylabel(Series.name)
+    ax.set_xlim(Series.index.min(), Series.index.max())
+    ax.set_title(f"{Series.name} (n={Series.size :.0f}, $\\mu$"
+                 f"={Series.mean() :.2f})")
     ax.grid()
     ax.tick_params(axis='x', labelrotation=0)
     for label in ax.get_xticklabels():
         label.set_horizontalalignment('center')
 
     # Plot the autocorrelation
-    acf(series, alpha=alpha, acf_options=acf_options, ax=ax1)
+    acf(Series, alpha=alpha, acf_options=acf_options, ax=ax1)
     ax1.set_title(None)
 
     # Plot the histogram for normality and add a 'best fit' line
-    _, bins, _ = ax2.hist(series.values, bins=bins, density=True)
-    y = norm.pdf(bins, series.mean(), series.std())
+    _, bins, _ = ax2.hist(Series.values, bins=bins, density=True)
+    y = norm.pdf(bins, Series.mean(), Series.std())
     ax2.plot(bins, y, 'k--')
     ax2.set_ylabel("Probability density")
     ax2.set_title("Histogram")
 
     # Plot the probability plot
-    _, (_, _, r) = probplot(series, plot=ax3, dist="norm", rvalue=False)
+    _, (_, _, r) = probplot(Series, plot=ax3, dist="norm", rvalue=False)
     c = ax.get_lines()[1].get_color()
     ax3.get_lines()[0].set_color(c)
     ax3.get_lines()[1].set_color("k")
@@ -368,14 +368,14 @@ def diagnostics(series: Type[Series], sim: Optional[Type[Series]] = None, alpha:
 
     if heteroscedasicity and sim is not None:
         # Plot residuals vs. simulation
-        sim = sim.loc[series.index]
-        ax4.plot(sim, series, marker=".", linestyle=" ", color=c, alpha=0.7)
+        sim = sim.loc[Series.index]
+        ax4.plot(sim, Series, marker=".", linestyle=" ", color=c, alpha=0.7)
         ax4.grid()
         ax4.set_xlabel("Simulated values")
         ax4.set_ylabel("Residuals")
 
         # Plot residuals vs. simulation
-        ax5.plot(sim, np.sqrt(series.abs()), marker=".", linestyle=" ",
+        ax5.plot(sim, np.sqrt(Series.abs()), marker=".", linestyle=" ",
                  color=c, alpha=0.7)
         ax5.set_xlabel("Simulated values")
         ax5.set_ylabel("$\\sqrt{|Residuals|}$")
@@ -384,8 +384,8 @@ def diagnostics(series: Type[Series], sim: Optional[Type[Series]] = None, alpha:
     return fig.axes
 
 
-def cum_frequency(obs: Type[Series], sim: Optional[Type[Series]] = None, ax: Optional[pstAx] = None, figsize: Optional[tuple] = (5, 2)) -> pstAx:
-    """Plot of the cumulative frequency of a time series.
+def cum_frequency(obs: Series, sim: Optional[Series] = None, ax: Optional[pstAx] = None, figsize: tuple = (5, 2)) -> pstAx:
+    """Plot of the cumulative frequency of a time Series.
 
     Parameters
     ----------
@@ -435,10 +435,10 @@ class TrackSolve:
         pastas Model to track
     tmin : str or pandas.Timestamp, optional
         start time for simulation, by default None which
-        defaults to first index in ml.oseries.series
+        defaults to first index in ml.oSeries.Series
     tmax : str or pandas.Timestamp, optional
         end time for simulation, by default None which
-        defaults to last index in ml.oseries.series
+        defaults to last index in ml.oSeries.Series
     update_iter : int, optional
         if visualizing optimization progress, update plot every update_iter
         iterations, by default nparam
@@ -487,7 +487,7 @@ class TrackSolve:
     Access the resulting figure through `track.fig`.
     """
 
-    def __init__(self, ml: pstMl, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, update_iter: Optional[int] = None):
+    def __init__(self, ml: pstMl, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, update_iter: Optional[int] = None) -> None:
         logger.warning("TrackSolve feature under development. If you find any "
                        "bugs please post an issue on GitHub: "
                        "https://github.com/pastas/pastas/issues")
@@ -502,12 +502,12 @@ class TrackSolve:
 
         # get tmin/tmax
         if tmin is None:
-            self.tmin = self.ml.oseries.series.index[0]
+            self.tmin = self.ml.oSeries.Series.index[0]
         else:
             self.tmin = Timestamp(tmin)
 
         if tmax is None:
-            self.tmax = self.ml.oseries.series.index[-1]
+            self.tmax = self.ml.oSeries.Series.index[-1]
         else:
             self.tmax = Timestamp(tmax)
 
@@ -536,7 +536,7 @@ class TrackSolve:
         # calculate EVP
         self.evp = np.array([evp(obs=self.obs, res=res)])
 
-    def track_solve(self, params: pstAL):
+    def track_solve(self, params: pstAL) -> None:
         """Append parameters to self.parameters DataFrame and update itercount,
         rmse values and evp.
 
@@ -567,18 +567,18 @@ class TrackSolve:
         # recalculate EVP
         self.evp = np.r_[self.evp, evp(obs=self.obs, res=r_res)]
 
-    def _update_axes(self):
+    def _update_axes(self) -> None:
         """extend xlim if number of iterations exceeds current window."""
         for iax in self.axes[1:]:
             iax.set_xlim(right=self.viewlim)
             self.fig.canvas.draw()
 
-    def _update_settings(self):
+    def _update_settings(self) -> None:
         self.tmin = self.ml.settings["tmin"]
         self.tmax = self.ml.settings["tmax"]
         self.freq = self.ml.settings["freq"]
 
-    def _noise(self, params):
+    def _noise(self, params: pstAL) -> pstAL:
         """get noise.
 
         Parameters
@@ -596,17 +596,17 @@ class TrackSolve:
                               tmax=self.tmax)
         return noise
 
-    def _residuals(self, params):
+    def _residuals(self, params: pstAL) -> pstAL:
         """calculate residuals.
 
         Parameters
         ----------
-        params: np.array
+        params: pstAL
             array containing parameters
 
         Returns
         -------
-        res: np.array
+        res: array_like
             array containing residuals
         """
         res = self.ml.residuals(p=params,
@@ -614,20 +614,20 @@ class TrackSolve:
                                 tmax=self.tmax)
         return res
 
-    def _simulate(self):
+    def _simulate(self) -> Series:
         """simulate model with last entry in self.parameters.
 
         Returns
         -------
         sim: pd.Series
-            series containing model evaluation
+            Series containing model evaluation
         """
         sim = self.ml.simulate(p=self.parameters.iloc[-1, :].values,
                                tmin=self.tmin, tmax=self.tmax,
                                freq=self.ml.settings["freq"])
         return sim
 
-    def initialize_figure(self, figsize=(10, 8), dpi=100):
+    def initialize_figure(self, figsize: Tuple[int] = (10, 8), dpi: int = 100) -> pstFi:
         """Initialize figure for plotting optimization progress.
 
         Parameters
@@ -649,7 +649,7 @@ class TrackSolve:
         # share x-axes between 2nd and 3rd axes
         self.ax1.get_shared_x_axes().join(self.ax1, self.ax2)
 
-        # plot oseries
+        # plot oSeries
         self.ax0.plot(self.obs.index, self.obs,
                       marker=".", ls="none", label="observations",
                       color="k", ms=4)
@@ -727,7 +727,7 @@ class TrackSolve:
         self.fig.tight_layout()
         return self.fig
 
-    def plot_track_solve(self, params: pstAL):
+    def plot_track_solve(self, params: pstAL) -> None:
         """Method to plot model simulation while model is being solved. Pass
         this method to ml.solve(), e.g.:
 

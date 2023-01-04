@@ -39,7 +39,7 @@ class SolveTimer(tqdm):
     be updated quite as nicely.
     """
 
-    def __init__(self, max_time: Optional[float] = None, *args, **kwargs):
+    def __init__(self, max_time: Optional[float] = None, *args, **kwargs) -> None:
         """Initialize SolveTimer.
 
         Parameters
@@ -56,7 +56,7 @@ class SolveTimer(tqdm):
         self.max_time = max_time
         super(SolveTimer, self).__init__(*args, **kwargs)
 
-    def timer(self, _, n: Optional[int] = 1):
+    def timer(self, _, n: int = 1):
         """Callback method for ps.Model.solve().
         """
         displayed = super(SolveTimer, self).update(n)

@@ -23,14 +23,14 @@ __all__ = ["Gamma", "Exponential", "Hantush", "Polder", "FourParam",
 class RfuncBase:
     _name = "RfuncBase"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         self.up = True
         self.meanstress = 1
         self.cutoff = 0.999
         self.kwargs = kwargs
 
-    def _set_init_parameter_settings(self, up: Optional[bool] = True, meanstress: Optional[float] = 1.0,
-                                     cutoff: Optional[float] = 0.999):
+    def _set_init_parameter_settings(self, up: bool = True, meanstress: float = 1.0,
+                                     cutoff: float = 0.999) -> None:
         self.up = up
         # Completely arbitrary number to prevent division by zero
         if 1e-8 > meanstress > 0:
@@ -40,7 +40,7 @@ class RfuncBase:
         self.meanstress = meanstress
         self.cutoff = cutoff
 
-    def get_init_parameters(self, name: str):
+    def get_init_parameters(self, name: str) -> DataFrame:
         """Get initial parameters and bounds. It is called by the stressmodel.
 
         Parameters
@@ -55,7 +55,7 @@ class RfuncBase:
         """
         pass
 
-    def get_tmax(self, p: pstAL, cutoff: Optional[float] = None):
+    def get_tmax(self, p: pstAL, cutoff: Optional[float] = None) -> float:
         """Method to get the response time for a certain cutoff.
 
         Parameters
@@ -74,7 +74,7 @@ class RfuncBase:
         """
         pass
 
-    def step(self, p: pstAL, dt: Optional[float] = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None):
+    def step(self, p: pstAL, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
         """Method to return the step function.
 
         Parameters
@@ -96,7 +96,7 @@ class RfuncBase:
         """
         pass
 
-    def block(self, p: pstAL, dt: Optional[float] = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
+    def block(self, p: pstAL, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
         """Method to return the block function.
 
         Parameters
@@ -119,7 +119,7 @@ class RfuncBase:
         s = self.step(p, dt, cutoff, maxtmax)
         return np.append(s[0], np.subtract(s[1:], s[:-1]))
 
-    def impulse(self, t, p):
+    def impulse(self, t: pstAL, p: pstAL) -> pstAL:
         """Method to return the impulse response function.
 
         Parameters
@@ -136,7 +136,7 @@ class RfuncBase:
 
         Returns
         -------
-        s: numpy.array
+        s: array_like
             Array with the impulse response.
 
         Note
@@ -203,11 +203,11 @@ class Gamma(RfuncBase):
     """
     _name = "Gamma"
 
-    def __init__(self):
+    def __init__(self) -> None:
         RfuncBase.__init__(self)
         self.nparam = 3
 
-    def get_init_parameters(self, name: str) -> Type[DataFrame]:
+    def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
@@ -234,12 +234,12 @@ class Gamma(RfuncBase):
     def gain(self, p: pstAL) -> float:
         return p[0]
 
-    def step(self, p: pstAL, dt: Optional[float] = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
+    def step(self, p: pstAL, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
         t = self.get_t(p, dt, cutoff, maxtmax)
         s = p[0] * gammainc(p[1], t / p[2])
         return s
 
-    def impulse(self, t, p):
+    def impulse(self, t, p) -> pstAL:
         A, n, a = p
         ir = A * t ** (n - 1) * np.exp(-t / a) / (a ** n * gamma(n))
         return ir
@@ -269,11 +269,11 @@ class Exponential(RfuncBase):
     """
     _name = "Exponential"
 
-    def __init__(self):
+    def __init__(self) -> None:
         RfuncBase.__init__(self)
         self.nparam = 2
 
-    def get_init_parameters(self, name: str) -> Type[DataFrame]:
+    def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
@@ -298,12 +298,12 @@ class Exponential(RfuncBase):
     def gain(self, p: pstAL) -> float:
         return p[0]
 
-    def step(self, p: pstAL, dt: Optional[float] = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[float] = None) -> pstAL:
+    def step(self, p: pstAL, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[float] = None) -> pstAL:
         t = self.get_t(p, dt, cutoff, maxtmax)
         s = p[0] * (1.0 - np.exp(-t / p[1]))
         return s
 
-    def impulse(self, t, p):
+    def impulse(self, t: pstAL, p: pstAL) -> pstAL:
         A, a = p
         ir = A / a * np.exp(-t / a)
         return ir
@@ -341,15 +341,15 @@ class HantushWellModel(RfuncBase):
     """
     _name = "HantushWellModel"
 
-    def __init__(self):
+    def __init__(self) -> None:
         RfuncBase.__init__(self)
         self.distances = None
         self.nparam = 3
 
-    def set_distances(self, distances):
+    def set_distances(self, distances) -> None:
         self.distances = distances
 
-    def get_init_parameters(self, name: str) -> Type[DataFrame]:
+    def get_init_parameters(self, name: str) -> DataFrame:
         if self.distances is None:
             raise (Exception('distances is None. Set using method set_distances'
                              'or use Hantush.'))
@@ -505,11 +505,11 @@ class Hantush(RfuncBase):
     """
     _name = "Hantush"
 
-    def __init__(self):
+    def __init__(self) -> None:
         RfuncBase.__init__(self)
         self.nparam = 3
 
-    def get_init_parameters(self, name: str) -> Type[DataFrame]:
+    def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
@@ -554,7 +554,7 @@ class Hantush(RfuncBase):
             tau2 + rho ** 2 / (4 * tau2))
         return p[0] * F / (2 * k0rho)
 
-    def impulse(self, t, p):
+    def impulse(self, t: pstAL, p: pstAL) -> pstAL:
         A, a, b = p
         ir = A / (2 * t * k0(2 * np.sqrt(b))) * np.exp(-t / a - a * b / t)
         return ir
@@ -580,11 +580,11 @@ class Polder(RfuncBase):
     """
     _name = "Polder"
 
-    def __init__(self):
+    def __init__(self) -> None:
         RfuncBase.__init__(self)
         self.nparam = 3
 
-    def get_init_parameters(self, name) -> Type[DataFrame]:
+    def get_init_parameters(self, name) -> DataFrame:
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         parameters.loc[name + '_A'] = (1, 0, 2, True, name)
@@ -610,7 +610,7 @@ class Polder(RfuncBase):
             g = -g
         return g
 
-    def step(self, p: pstAL, dt: Optional[float] = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
+    def step(self, p: pstAL, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
         t = self.get_t(p, dt, cutoff, maxtmax)
         A, a, b = p
         s = A * self.polder_function(np.sqrt(b), np.sqrt(t / a))
@@ -619,7 +619,7 @@ class Polder(RfuncBase):
             s = -s
         return s
 
-    def impulse(self, t, p):
+    def impulse(self, t: pstAL, p: pstAL) -> pstAL:
         A, a, b = p
         ir = A * t ** (-1.5) * np.exp(-t / a - b / t)
         return ir
@@ -647,11 +647,11 @@ class One(RfuncBase):
     """
     _name = "One"
 
-    def __init__(self):
+    def __init__(self) -> None:
         RfuncBase.__init__(self)
         self.nparam = 1
 
-    def get_init_parameters(self, name: str) -> Type[DataFrame]:
+    def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
@@ -671,13 +671,13 @@ class One(RfuncBase):
     def gain(self, p: pstAL) -> float:
         return p[0]
 
-    def step(self, p: pstAL, dt: Optional[float] = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
+    def step(self, p: pstAL, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
         if isinstance(dt, np.ndarray):
             return p[0] * np.ones(len(dt))
         else:
             return p[0] * np.ones(1)
 
-    def block(self, p: pstAL, dt: Optional[float] = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
+    def block(self, p: pstAL, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
         return p[0] * np.ones(1)
 
 
@@ -707,12 +707,12 @@ class FourParam(RfuncBase):
     """
     _name = "FourParam"
 
-    def __init__(self, quad=False):
+    def __init__(self, quad: bool = False) -> None:
         RfuncBase.__init__(self, quad=quad)
         self.nparam = 4
         self.quad = quad
 
-    def get_init_parameters(self, name: str) -> Type[DataFrame]:
+    def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
@@ -773,7 +773,7 @@ class FourParam(RfuncBase):
     def gain(p: pstAL) -> float:
         return p[0]
 
-    def step(self, p: pstAL, dt: Optional[float] = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
+    def step(self, p: pstAL, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
 
         if self.quad:
             t = self.get_t(p, dt, cutoff, maxtmax)
@@ -855,11 +855,11 @@ class DoubleExponential(RfuncBase):
     """
     _name = "DoubleExponential"
 
-    def __init__(self):
+    def __init__(self) -> None:
         RfuncBase.__init__(self)
         self.nparam = 4
 
-    def get_init_parameters(self, name: str) -> Type[DataFrame]:
+    def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
@@ -889,7 +889,7 @@ class DoubleExponential(RfuncBase):
     def gain(self, p: pstAL) -> float:
         return p[0]
 
-    def step(self, p: pstAL, dt: Optional[float] = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
+    def step(self, p: pstAL, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
         t = self.get_t(p, dt, cutoff, maxtmax)
         s = p[0] * (1 - ((1 - p[1]) * np.exp(-t / p[2]) +
                          p[1] * np.exp(-t / p[3])))
@@ -925,11 +925,11 @@ class Edelman(RfuncBase):
     """
     _name = "Edelman"
 
-    def __init__(self):
+    def __init__(self) -> None:
         RfuncBase.__init__(self)
         self.nparam = 1
 
-    def get_init_parameters(self, name: str) -> Type[DataFrame]:
+    def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         beta_init = 1.0
@@ -945,7 +945,7 @@ class Edelman(RfuncBase):
     def gain(p: pstAL) -> float:
         return 1.
 
-    def step(self, p: pstAL, dt: Optional[float] = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
+    def step(self, p: pstAL, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
         t = self.get_t(p, dt, cutoff, maxtmax)
         s = erfc(1 / (p[0] * np.sqrt(t)))
         return s
@@ -988,12 +988,12 @@ class Kraijenhoff(RfuncBase):
     """
     _name = "Kraijenhoff"
 
-    def __init__(self, n_terms=10):
+    def __init__(self, n_terms: int = 10) -> None:
         RfuncBase.__init__(self, n_terms=n_terms)
         self.nparam = 3
         self.n_terms = n_terms
 
-    def get_init_parameters(self, name: str) -> Type[DataFrame]:
+    def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
@@ -1020,7 +1020,7 @@ class Kraijenhoff(RfuncBase):
     def gain(p: pstAL) -> float:
         return p[0]
 
-    def step(self, p: pstAL, dt: Optional[float] = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
+    def step(self, p: pstAL, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
         t = self.get_t(p, dt, cutoff, maxtmax)
         h = 0
         for n in range(self.n_terms):
@@ -1063,7 +1063,7 @@ class Spline(RfuncBase):
     """
     _name = "Spline"
 
-    def __init__(self, kind: Optional[str] = 'quadratic', t: Optional[list] = None):
+    def __init__(self, kind: str = 'quadratic', t: Optional[list] = None) -> None:
         RfuncBase.__init__(self, kind=kind, t=t)
         self.kind = kind
         if t is None:
@@ -1071,7 +1071,7 @@ class Spline(RfuncBase):
         self.t = t
         self.nparam = len(t) + 1
 
-    def get_init_parameters(self, name: str) -> Type[DataFrame]:
+    def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
@@ -1101,7 +1101,7 @@ class Spline(RfuncBase):
     def gain(self, p: pstAL) -> float:
         return p[0]
 
-    def step(self, p: pstAL, dt: Optional[float] = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
+    def step(self, p: pstAL, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
         f = interp1d(self.t, p[1:len(self.t) + 1], kind=self.kind)
         t = self.get_t(p, dt, cutoff, maxtmax)
         s = p[0] * f(t)

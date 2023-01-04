@@ -56,7 +56,7 @@ def pastas_hook(obj: dict):
     return obj
 
 
-def dump(fname: str, data: dict):
+def dump(fname: str, data: dict) -> None:
     json.dump(data, open(fname, 'w'), indent=4, cls=PastasEncoder)
     logger.info("%s file successfully exported", fname)
 
@@ -67,7 +67,7 @@ class PastasEncoder(json.JSONEncoder):
     Notes
     -----
     Currently supported formats are: DataFrame, Series,
-    Timedelta, TimeStamps.
+    Timedelta, Timestamps.
 
     see: https://docs.python.org/3/library/json.html
     """

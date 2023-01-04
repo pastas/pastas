@@ -44,7 +44,7 @@ class BaseSolver:
 
     """
 
-    def __init__(self, ml: pstMl, pcov: Optional[Type[DataFrame]] = None, nfev: Optional[int] = None, obj_func: Optional[pstFu] = None, **kwargs):
+    def __init__(self, ml: pstMl, pcov: Optional[DataFrame] = None, nfev: Optional[int] = None, obj_func: Optional[pstFu] = None, **kwargs) -> None:
         self.ml = ml
         self.pcov = pcov  # Covariances of the parameters
         if pcov is None:
@@ -55,8 +55,8 @@ class BaseSolver:
         self.obj_func = obj_func
         self.result = None  # Object returned by the optimization method
 
-    def misfit(self, p: pstAL, noise: bool, weights: Optional[Type[Series]] = None, callback: Optional[pstCB] = None,
-               returnseparate: Optional[bool] = False) -> Union[pstAL, Tuple[pstAL, pstAL, pstAL]]:
+    def misfit(self, p: pstAL, noise: bool, weights: Optional[Series] = None, callback: Optional[pstCB] = None,
+               returnseparate: bool = False) -> Union[pstAL, Tuple[pstAL, pstAL, pstAL]]:
         """This method is called by all solvers to obtain a series that are
         minimized in the optimization process. It handles the application of
         the weights, a noisemodel and other optimization options.
@@ -104,7 +104,7 @@ class BaseSolver:
 
         return rv.values
 
-    def prediction_interval(self, n: Optional[int] = 1000, alpha: Optional[float] = 0.05, max_iter: Optional[int] = 10, **kwargs) -> Type[DataFrame]:
+    def prediction_interval(self, n: int = 1000, alpha: float = 0.05, max_iter: int = 10, **kwargs) -> DataFrame:
         """Method to calculate the prediction interval for the simulation.
 
         Returns
@@ -130,7 +130,7 @@ class BaseSolver:
         rv = data.quantile(q, axis=1).transpose()
         return rv
 
-    def ci_simulation(self, n: Optional[int] = 1000, alpha: Optional[float] = 0.05, max_iter: Optional[int] = 10, **kwargs) -> Type[DataFrame]:
+    def ci_simulation(self, n: int = 1000, alpha: float = 0.05, max_iter: int = 10, **kwargs) -> DataFrame:
         """Method to calculate the confidence interval for the simulation.
 
         Returns
@@ -151,7 +151,7 @@ class BaseSolver:
                                              alpha=alpha, max_iter=max_iter,
                                              **kwargs)
 
-    def ci_block_response(self, name: str, n: Optional[int] = 1000, alpha: Optional[float] = 0.05, max_iter: Optional[int] = 10, **kwargs) -> Type[DataFrame]:
+    def ci_block_response(self, name: str, n: int = 1000, alpha: float = 0.05, max_iter: int = 10, **kwargs) -> DataFrame:
         """Method to calculate the confidence interval for the block response.
 
         Returns
@@ -174,7 +174,7 @@ class BaseSolver:
                                              max_iter=max_iter, dt=dt,
                                              **kwargs)
 
-    def ci_step_response(self, name: str, n: Optional[int] = 1000, alpha: Optional[float] = 0.05, max_iter: Optional[int] = 10, **kwargs) -> Type[DataFrame]:
+    def ci_step_response(self, name: str, n: int = 1000, alpha: float = 0.05, max_iter: int = 10, **kwargs) -> DataFrame:
         """Method to calculate the confidence interval for the step response.
 
         Returns
@@ -197,7 +197,7 @@ class BaseSolver:
                                              max_iter=max_iter, dt=dt,
                                              **kwargs)
 
-    def ci_contribution(self, name: str, n: Optional[int] = 1000, alpha: Optional[float] = 0.05, max_iter: Optional[int] = 10, **kwargs) -> Type[DataFrame]:
+    def ci_contribution(self, name: str, n: int = 1000, alpha: float = 0.05, max_iter: int = 10, **kwargs) -> DataFrame:
         """Method to calculate the confidence interval for the contribution.
 
         Returns
@@ -219,7 +219,7 @@ class BaseSolver:
                                              max_iter=max_iter,
                                              **kwargs)
 
-    def get_parameter_sample(self, name: Optional[str] = None, n: Optional[int] = None, max_iter: Optional[int] = 10) -> pstAL:
+    def get_parameter_sample(self, name: Optional[str] = None, n: int = None, max_iter: int = 10) -> pstAL:
         """Method to obtain a parameter sets for monte carlo analyses.
 
         Parameters
@@ -278,8 +278,8 @@ class BaseSolver:
                            f"{samples.shape[0]}/{n}. Increase 'max_iter'.")
         return samples[:n, :]
 
-    def _get_realizations(self, func: pstFu, n: Optional[int] = None, name: Optional[str] = None, max_iter: Optional[int] = 10,
-                          **kwargs) -> Type[DataFrame]:
+    def _get_realizations(self, func: pstFu, n: Optional[int] = None, name: Optional[str] = None, max_iter: int = 10,
+                          **kwargs) -> DataFrame:
         """Internal method to obtain n number of parameter realizations."""
         if name:
             kwargs["name"] = name
@@ -293,14 +293,14 @@ class BaseSolver:
 
         return DataFrame.from_dict(data, orient="columns", dtype=float)
 
-    def _get_confidence_interval(self,  func: pstFu, n: Optional[int] = None, name: Optional[str] = None, max_iter: Optional[int] = 10, alpha: Optional[float] = 0.05, **kwargs) -> Type[DataFrame]:
+    def _get_confidence_interval(self,  func: pstFu, n: Optional[int] = None, name: Optional[str] = None, max_iter: int = 10, alpha: float = 0.05, **kwargs) -> DataFrame:
         """Internal method to obtain a confidence interval."""
         q = [alpha / 2, 1 - alpha / 2]
         data = self._get_realizations(func=func, n=n, name=name,
                                       max_iter=max_iter, **kwargs)
         return data.quantile(q=q, axis=1).transpose()
 
-    def _get_covariance_matrix(self, name: Optional[str] = None) -> Type[DataFrame]:
+    def _get_covariance_matrix(self, name: Optional[str] = None) -> DataFrame:
         """Internal method to obtain the covariance matrix from the model.
 
         Parameters
@@ -325,7 +325,7 @@ class BaseSolver:
         return pcov
 
     @staticmethod
-    def _get_correlations(pcov: Type[DataFrame]) -> Type[DataFrame]:
+    def _get_correlations(pcov: DataFrame) -> DataFrame:
         """Internal method to obtain the parameter correlations from the
         covariance matrix.
 
@@ -348,7 +348,7 @@ class BaseSolver:
         pcor = DataFrame(data=corr, index=index, columns=index)
         return pcor
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         data = {
             "name": self._name,
             "pcov": self.pcov,
@@ -361,7 +361,7 @@ class BaseSolver:
 class LeastSquares(BaseSolver):
     _name = "LeastSquares"
 
-    def __init__(self, ml: pstMl, pcov: Optional[Type[DataFrame]] = None, nfev: Optional[int] = None, **kwargs):
+    def __init__(self, ml: pstMl, pcov: Optional[DataFrame] = None, nfev: Optional[int] = None, **kwargs) -> None:
         """Solver based on Scipy's least_squares method [scipy_ref]_.
 
         Notes
@@ -383,7 +383,7 @@ class LeastSquares(BaseSolver):
         """
         BaseSolver.__init__(self, ml=ml, pcov=pcov, nfev=nfev, **kwargs)
 
-    def solve(self, noise: Optional[bool] = True, weights: Optional[Type[Series]] = None, callback: Optional[pstCB] = None, **kwargs) -> Tuple[bool, pstAL, pstAL]:
+    def solve(self, noise: bool = True, weights: Optional[Series] = None, callback: Optional[pstCB] = None, **kwargs) -> Tuple[bool, pstAL, pstAL]:
         self.vary = self.ml.parameters.vary.values.astype(bool)
         self.initial = self.ml.parameters.initial.values.copy()
         parameters = self.ml.parameters.loc[self.vary]
@@ -412,13 +412,13 @@ class LeastSquares(BaseSolver):
 
         return success, optimal, stderr
 
-    def objfunction(self, p: pstAL, noise: bool, weights: Type[Series], callback: pstCB) -> pstAL:
+    def objfunction(self, p: pstAL, noise: bool, weights: Series, callback: pstCB) -> pstAL:
         par = self.initial
         par[self.vary] = p
         return self.misfit(p=par, noise=noise, weights=weights,
                            callback=callback)
 
-    def _get_covariances(self, jacobian: pstAL, cost: float, absolute_sigma: Optional[bool] = False) -> pstAL:
+    def _get_covariances(self, jacobian: pstAL, cost: float, absolute_sigma: bool = False) -> pstAL:
         """Internal method to get the covariance matrix from the jacobian.
 
         Parameters
@@ -472,7 +472,7 @@ class LeastSquares(BaseSolver):
 class LmfitSolve(BaseSolver):
     _name = "LmfitSolve"
 
-    def __init__(self, ml: pstMl, pcov: Optional[Type[DataFrame]] = None, nfev: Optional[int] = None, **kwargs):
+    def __init__(self, ml: pstMl, pcov: Optional[DataFrame] = None, nfev: Optional[int] = None, **kwargs) -> None:
         """Solving the model using the LmFit solver [LM]_.
 
          This is basically a wrapper around the scipy solvers, adding some
@@ -491,7 +491,7 @@ class LmfitSolve(BaseSolver):
             raise ImportError(msg)
         BaseSolver.__init__(self, ml=ml, pcov=pcov, nfev=nfev, **kwargs)
 
-    def solve(self, noise: Optional[bool] = True, weights: Optional[Type[Series]] = None, callback: Optional[pstCB] = None, method: Optional[str] = "leastsq",
+    def solve(self, noise: bool = True, weights: Optional[Series] = None, callback: Optional[pstCB] = None, method: Optional[str] = "leastsq",
               **kwargs) -> Tuple[bool, pstAL, pstAL]:
 
         # Deal with the parameters
@@ -535,6 +535,6 @@ class LmfitSolve(BaseSolver):
 
         return success, optimal[:idx], stderr[:idx]
 
-    def objfunction(self, parameters: Type[DataFrame], noise: bool, weights: Type[Series], callback: pstCB) -> pstAL:
+    def objfunction(self, parameters: DataFrame, noise: bool, weights: Series, callback: pstCB) -> pstAL:
         p = np.array([p.value for p in parameters.values()])
         return self.misfit(p=p, noise=noise, weights=weights, callback=callback)

@@ -51,7 +51,7 @@ class StressModelBase:
     """
     _name = "StressModelBase"
 
-    def __init__(self, name: str, tmin: pstTm, tmax: pstTm, rfunc: Optional[pstRF] = None, up: Optional[bool] = True, meanstress: Optional[float] = 1.0, cutoff: Optional[float] = 0.999):
+    def __init__(self, name: str, tmin: pstTm, tmax: pstTm, rfunc: Optional[pstRF] = None, up: bool = True, meanstress: float = 1.0, cutoff: float = 0.999) -> None:
         self.name = validate_name(name)
         self.tmin = tmin
         self.tmax = tmax
@@ -73,14 +73,14 @@ class StressModelBase:
         self.stress = []
 
     @property
-    def nparam(self):
+    def nparam(self) -> Tuple[int]:
         return self.parameters.index.size
 
-    def set_init_parameters(self):
+    def set_init_parameters(self) -> None:
         """Set the initial parameters (back) to their default values."""
 
     @set_parameter
-    def _set_initial(self, name: str, value: float):
+    def _set_initial(self, name: str, value: float) -> None:
         """Internal method to set the initial parameter value.
 
         Notes
@@ -90,7 +90,7 @@ class StressModelBase:
         self.parameters.loc[name, 'initial'] = value
 
     @set_parameter
-    def _set_pmin(self, name: str, value: float):
+    def _set_pmin(self, name: str, value: float) -> None:
         """Internal method to set the lower bound of the parameter value.
 
         Notes
@@ -100,7 +100,7 @@ class StressModelBase:
         self.parameters.loc[name, 'pmin'] = value
 
     @set_parameter
-    def _set_pmax(self, name: str, value: float):
+    def _set_pmax(self, name: str, value: float) -> None:
         """Internal method to set the upper bound of the parameter value.
 
         Notes
@@ -110,7 +110,7 @@ class StressModelBase:
         self.parameters.loc[name, 'pmax'] = value
 
     @set_parameter
-    def _set_vary(self, name: str, value: float):
+    def _set_vary(self, name: str, value: float) -> None:
         """Internal method to set if the parameter is varied during
         optimization.
 
@@ -120,7 +120,7 @@ class StressModelBase:
         """
         self.parameters.loc[name, 'vary'] = bool(value)
 
-    def update_stress(self, **kwargs):
+    def update_stress(self, **kwargs) -> None:
         """Method to update the settings of the individual TimeSeries.
 
         Notes
@@ -138,7 +138,7 @@ class StressModelBase:
         if "freq" in kwargs:
             self.freq = kwargs["freq"]
 
-    def dump_stress(self, series: Optional[bool] = True):
+    def dump_stress(self, series: bool = True) -> dict:
         """Method to dump all stresses in the stresses list.
 
         Parameters
@@ -161,7 +161,7 @@ class StressModelBase:
         return data
 
     def get_stress(self, p: Optional[pstAL] = None, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, freq: Optional[str] = None,
-                   istress: Optional[int] = None, **kwargs) -> Type[DataFrame]:
+                   istress: Optional[int] = None, **kwargs) -> DataFrame:
         """Returns the stress or stresses of the time series object as a pandas
         DataFrame.
 
@@ -182,7 +182,7 @@ class StressModelBase:
 
         return self.stress[0].series
 
-    def to_dict(self, series: Optional[bool] = True) -> dict:
+    def to_dict(self, series: bool = True) -> dict:
         """Method to export the StressModel object.
 
         Returns
@@ -198,14 +198,14 @@ class StressModelBase:
         }
         return data
 
-    def get_nsplit(self):
+    def get_nsplit(self) -> int:
         """Determine in how many timeseries the contribution can be split."""
         if hasattr(self, 'nsplit'):
             return self.nsplit
         else:
             return len(self.stress)
 
-    def _get_block(self, p: pstAL, dt: float, tmin: pstTm, tmax: pstTm):
+    def _get_block(self, p: pstAL, dt: float, tmin: pstTm, tmax: pstTm) -> pstAL:
         """Internal method to get the block-response function."""
         if tmin is not None and tmax is not None:
             day = Timedelta(1, 'D')
@@ -259,8 +259,8 @@ class StressModel(StressModelBase):
     """
     _name = "StressModel"
 
-    def __init__(self, stress: Type[Series], rfunc: pstRF, name: str, up: Optional[bool] = True, cutoff: Optional[float] = 0.999,
-                 settings: Optional[Union[dict, str]] = None, metadata: Optional[dict] = None, meanstress: Optional[float] = None):
+    def __init__(self, stress: Series, rfunc: pstRF, name: str, up: bool = True, cutoff: float = 0.999,
+                 settings: Optional[Union[dict, str]] = None, metadata: Optional[dict] = None, meanstress: Optional[float] = None) -> None:
 
         if isinstance(stress, list):
             stress = stress[0]  # TODO Temporary fix Raoul, 2017-10-24
@@ -278,11 +278,11 @@ class StressModel(StressModelBase):
         self.stress = [stress]
         self.set_init_parameters()
 
-    def set_init_parameters(self):
+    def set_init_parameters(self) -> None:
         """Set the initial parameters (back) to their default values."""
         self.parameters = self.rfunc.get_init_parameters(self.name)
 
-    def simulate(self, p: pstAL, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, freq: Optional[str] = None, dt: Optional[float] = 1.0) -> Type[Series]:
+    def simulate(self, p: pstAL, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, freq: Optional[str] = None, dt: float = 1.0) -> Series:
         """Simulates the head contribution.
 
         Parameters
@@ -308,7 +308,7 @@ class StressModel(StressModelBase):
                    index=stress.index, name=self.name, fastpath=True)
         return h
 
-    def to_dict(self, series: Optional[bool] = True) -> dict:
+    def to_dict(self, series: bool = True) -> dict:
         """Method to export the StressModel object.
 
         Returns
@@ -358,7 +358,7 @@ class StepModel(StressModelBase):
     """
     _name = "StepModel"
 
-    def __init__(self, tstart: pstTm, name: str, rfunc: Optional[pstRF] = None, up: Optional[bool] = True, cutoff: Optional[float] = 0.999):
+    def __init__(self, tstart: pstTm, name: str, rfunc: Optional[pstRF] = None, up: bool = True, cutoff: float = 0.999) -> None:
         if rfunc is None:
             rfunc = One()
         StressModelBase.__init__(self, name=name, tmin=Timestamp.min,
@@ -367,7 +367,7 @@ class StepModel(StressModelBase):
         self.tstart = Timestamp(tstart)
         self.set_init_parameters()
 
-    def set_init_parameters(self):
+    def set_init_parameters(self) -> None:
         self.parameters = self.rfunc.get_init_parameters(self.name)
         tmin = Timestamp.min.toordinal()
         tmax = Timestamp.max.toordinal()
@@ -376,7 +376,7 @@ class StepModel(StressModelBase):
         self.parameters.loc[self.name + "_tstart"] = (tinit, tmin, tmax,
                                                       False, self.name)
 
-    def simulate(self, p: pstAL, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, freq: Optional[str] = None, dt: Optional[float] = 1.0) -> Type[Series]:
+    def simulate(self, p: pstAL, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, freq: Optional[str] = None, dt: float = 1.0) -> Series:
         tstart = Timestamp.fromordinal(int(p[-1]))
         tindex = date_range(tmin, tmax, freq=freq)
         h = Series(0, tindex, name=self.name)
@@ -388,7 +388,7 @@ class StepModel(StressModelBase):
                    index=h.index, name=self.name, fastpath=True)
         return h
 
-    def to_dict(self, series: Optional[bool] = True) -> dict:
+    def to_dict(self, series: bool = True) -> dict:
         data = {
             "stressmodel": self._name,
             'tstart': self.tstart,
@@ -421,14 +421,14 @@ class LinearTrend(StressModelBase):
     """
     _name = "LinearTrend"
 
-    def __init__(self, start, end, name="trend"):
+    def __init__(self, start: pstTm, end: pstTm, name: str = "trend") -> None:
         StressModelBase.__init__(self, name=name, tmin=Timestamp.min,
                                  tmax=Timestamp.max)
         self.start = start
         self.end = end
         self.set_init_parameters()
 
-    def set_init_parameters(self):
+    def set_init_parameters(self) -> None:
         """Set the initial parameters for the stress model."""
         start = Timestamp(self.start).toordinal()
         end = Timestamp(self.end).toordinal()
@@ -442,7 +442,7 @@ class LinearTrend(StressModelBase):
         self.parameters.loc[self.name + "_tend"] = (end, tmin, tmax,
                                                     False, self.name)
 
-    def simulate(self, p: pstAL, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, freq: Optional[str] = None, dt: Optional[float] = 1.0) -> Type[Series]:
+    def simulate(self, p: pstAL, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, freq: Optional[str] = None, dt: float = 1.0) -> Series:
         """Simulate the trend."""
         tindex = date_range(tmin, tmax, freq=freq)
 
@@ -462,7 +462,7 @@ class LinearTrend(StressModelBase):
         trend = trend.cumsum() * p[0]
         return trend.rename(self.name)
 
-    def to_dict(self, series: Optional[bool] = True) -> dict:
+    def to_dict(self, series: bool = True) -> dict:
         data = {
             "stressmodel": self._name,
             'start': self.start,
@@ -485,7 +485,7 @@ class Constant(StressModelBase):
     """
     _name = "Constant"
 
-    def __init__(self, name: Optional[str] = "constant", initial: Optional[float] = 0.0):
+    def __init__(self, name: str = "constant", initial: float = 0.0) -> None:
         StressModelBase.__init__(self, name=name, tmin=Timestamp.min,
                                  tmax=Timestamp.max)
         self.initial = initial
@@ -540,8 +540,8 @@ class WellModel(StressModelBase):
     """
     _name = "WellModel"
 
-    def __init__(self, stress: List[Type[Series]], rfunc: pstRF, name: str, distances: pstAL, up: Optional[bool] = False, cutoff: Optional[float] = 0.999,
-                 settings: Optional[str] = "well", sort_wells: Optional[bool] = True):
+    def __init__(self, stress: List[Series], rfunc: pstRF, name: str, distances: pstAL, up: bool = False, cutoff: float = 0.999,
+                 settings: str = "well", sort_wells: bool = True) -> None:
         if not (isinstance(rfunc, HantushWellModel) or
                 issubclass(rfunc, HantushWellModel)):
             raise NotImplementedError("WellModel only supports the rfunc "
@@ -597,11 +597,11 @@ class WellModel(StressModelBase):
         self.freq = self.stress[0].settings["freq"]
         self.set_init_parameters()
 
-    def set_init_parameters(self):
+    def set_init_parameters(self) -> None:
         self.parameters = self.rfunc.get_init_parameters(self.name)
 
-    def simulate(self, p: Optional[pstAL] = None, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, freq: Optional[str] = None, dt: Optional[float] = 1.0,
-                 istress: Optional[int] = None, **kwargs):
+    def simulate(self, p: Optional[pstAL] = None, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, freq: Optional[str] = None, dt: float = 1.0,
+                 istress: Optional[int] = None, **kwargs) -> Series:
         distances = self.get_distances(istress=istress)
         stress_df = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq,
                                     istress=istress, squeeze=False)
@@ -657,7 +657,7 @@ class WellModel(StressModelBase):
         return data
 
     def get_stress(self, p: Optional[pstAL] = None, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, freq: Optional[str] = None,
-                   istress: Optional[int] = None, squeeze: Optional[bool] = True, **kwargs) -> Type[DataFrame]:
+                   istress: Optional[int] = None, squeeze: bool = True, **kwargs) -> DataFrame:
         if tmin is None:
             tmin = self.tmin
         if tmax is None:
@@ -681,7 +681,7 @@ class WellModel(StressModelBase):
             else:
                 return self.stress[istress].series.to_frame()
 
-    def get_distances(self, istress: Optional[int] = None):
+    def get_distances(self, istress: Optional[int] = None) -> DataFrame:
         if istress is None:
             return self.distances
         elif isinstance(istress, list):
@@ -689,7 +689,7 @@ class WellModel(StressModelBase):
         else:
             return self.distances.iloc[istress:istress + 1]
 
-    def get_parameters(self, model=None, istress: Optional[int] = None):
+    def get_parameters(self, model=None, istress: Optional[int] = None) -> pstAL:
         """ Get parameters including distance to observation point and
         return as array (dimensions = (nstresses, 4)).
 
@@ -704,7 +704,7 @@ class WellModel(StressModelBase):
 
         Returns
         -------
-        p : np.array
+        p : array_like
             parameters for each stress as row of array, if istress is used
             returns only one row.
 
@@ -722,7 +722,7 @@ class WellModel(StressModelBase):
             p_with_r = np.r_[p, distances]
         return p_with_r
 
-    def to_dict(self, series: Optional[bool] = True) -> dict:
+    def to_dict(self, series: bool = True) -> dict:
         """Method to export the WellModel object.
 
         Returns
@@ -864,9 +864,9 @@ class RechargeModel(StressModelBase):
     """
     _name = "RechargeModel"
 
-    def __init__(self, prec: Type[Series], evap: Type[Series], rfunc: Optional[pstRF] = None, name: Optional[str] = "recharge",
-                 recharge: Optional[pstRB] = None, temp: Type[Series] = None, cutoff: Optional[float] = 0.999,
-                 settings: Optional[Tuple[Union[str, dict], Union[str, dict], Union[str, dict]]] = ("prec", "evap", "evap"), metadata: Optional[Tuple[dict, dict, dict]] = (None, None, None)):
+    def __init__(self, prec: Series, evap: Series, rfunc: Optional[pstRF] = None, name: str = "recharge",
+                 recharge: Optional[pstRB] = None, temp: Series = None, cutoff: float = 0.999,
+                 settings: Tuple[Union[str, dict], Union[str, dict], Union[str, dict]] = ("prec", "evap", "evap"), metadata: Optional[Tuple[dict, dict, dict]] = (None, None, None)) -> None:
 
         if rfunc is None:
             rfunc = Exponential()
@@ -938,14 +938,14 @@ class RechargeModel(StressModelBase):
         else:
             self.nsplit = 1
 
-    def set_init_parameters(self):
+    def set_init_parameters(self) -> None:
         """Internal method to set the initial parameters."""
         self.parameters = concat(
             [self.rfunc.get_init_parameters(self.name),
              self.recharge.get_init_parameters(self.name)
              ])
 
-    def update_stress(self, **kwargs):
+    def update_stress(self, **kwargs) -> None:
         """Method to update the settings of the individual TimeSeries.
 
         Notes
@@ -966,7 +966,7 @@ class RechargeModel(StressModelBase):
             self.freq = kwargs["freq"]
 
     def simulate(self, p: Optional[pstAL] = None, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, freq: Optional[str] = None,
-                 dt: Optional[float] = 1.0, istress: Optional[int] = None, **kwargs) -> Type[Series]:
+                 dt: float = 1.0, istress: Optional[int] = None, **kwargs) -> Series:
         """Method to simulate the contribution of recharge to the head.
 
         Parameters
@@ -1004,7 +1004,7 @@ class RechargeModel(StressModelBase):
                       index=self.prec.series.index, name=name, fastpath=True)
 
     def get_stress(self, p: Optional[pstAL] = None, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, freq: Optional[str] = None,
-                   istress: Optional[int] = None, **kwargs) -> Type[Series]:
+                   istress: Optional[int] = None, **kwargs) -> Series:
         """Method to obtain the recharge stress calculated by the model.
 
         Parameters
@@ -1053,7 +1053,7 @@ class RechargeModel(StressModelBase):
         else:
             return self.temp.series
 
-    def get_water_balance(self, p: Optional[pstAL] = None, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, freq: Optional[str] = None) -> Type[DataFrame]:
+    def get_water_balance(self, p: Optional[pstAL] = None, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, freq: Optional[str] = None) -> DataFrame:
         """Method to obtain the water balance components.
 
         Parameters
@@ -1109,7 +1109,7 @@ class RechargeModel(StressModelBase):
         df.index = self.prec.series.index
         return df
 
-    def to_dict(self, series: Optional[bool] = True) -> dict:
+    def to_dict(self, series: bool = True) -> dict:
         data = {
             "stressmodel": self._name,
             "prec": self.prec.to_dict(series=series),
@@ -1167,8 +1167,8 @@ class TarsoModel(RechargeModel):
     """
     _name = "TarsoModel"
 
-    def __init__(self, prec: Type[Series], evap: Type[Series], oseries: Optional[Type[Series]] = None, dmin: Optional[float] = None, dmax: Optional[float] = None,
-                 rfunc: Optional[pstRF] = Exponential, **kwargs):
+    def __init__(self, prec: Series, evap: Series, oseries: Optional[Series] = None, dmin: Optional[float] = None, dmax: Optional[float] = None,
+                 rfunc: Optional[pstRF] = Exponential, **kwargs) -> None:
         check_numba()
         if oseries is not None:
             if dmin is not None or dmax is not None:
@@ -1190,7 +1190,7 @@ class TarsoModel(RechargeModel):
         self.dmax = dmax
         super().__init__(prec=prec, evap=evap, rfunc=rfunc, **kwargs)
 
-    def set_init_parameters(self):
+    def set_init_parameters(self) -> None:
         # parameters for the first drainage level
         p0 = self.rfunc.get_init_parameters(self.name)
         one = One()
@@ -1214,20 +1214,20 @@ class TarsoModel(RechargeModel):
         # combine all parameters
         self.parameters = concat([p0, p1, pr])
 
-    def simulate(self, p: Optional[pstAL] = None, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, freq=None, dt: Optional[float] = 1.0) -> Type[Series]:
+    def simulate(self, p: Optional[pstAL] = None, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, freq=None, dt: float = 1.0) -> Series:
         stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq)
         h = self.tarso(p[:-self.recharge.nparam], stress.values, dt)
         sim = Series(h, name=self.name, index=stress.index)
         return sim
 
-    def to_dict(self, series: Optional[bool] = True) -> dict:
+    def to_dict(self, series: bool = True) -> dict:
         data = super().to_dict(series)
         data['dmin'] = self.dmin
         data['dmax'] = self.dmax
         return data
 
     @staticmethod
-    def _check_stressmodel_compatibility(ml: pstMl):
+    def _check_stressmodel_compatibility(ml: pstMl) -> None:
         """Internal method to check if no other stressmodels, a constants or a
         transform is used."""
         msg = "A TarsoModel cannot be combined with %s. Either remove the" \
@@ -1326,8 +1326,8 @@ class ChangeModel(StressModelBase):
     """
     _name = "ChangeModel"
 
-    def __init__(self, stress: Type[Series], rfunc1: pstRF, rfunc2: pstRF, name: str, tchange: str,
-                 up: Optional[bool] = True, cutoff: Optional[float] = 0.999, settings: Optional[Union[dict, str]] = None, metadata: Optional[dict] = None):
+    def __init__(self, stress: Series, rfunc1: pstRF, rfunc2: pstRF, name: str, tchange: str,
+                 up: bool = True, cutoff: float = 0.999, settings: Optional[Union[dict, str]] = None, metadata: Optional[dict] = None) -> None:
         if isinstance(stress, list):
             stress = stress[0]  # TODO Temporary fix Raoul, 2017-10-24
 
@@ -1358,7 +1358,7 @@ class ChangeModel(StressModelBase):
         self.stress = [stress]
         self.set_init_parameters()
 
-    def set_init_parameters(self):
+    def set_init_parameters(self) -> None:
         """Internal method to set the initial parameters."""
         self.parameters = concat(
             [self.rfunc1.get_init_parameters("{}_1".format(self.name)),
@@ -1374,7 +1374,7 @@ class ChangeModel(StressModelBase):
                                                        False, self.name)
         self.parameters.name = self.name
 
-    def simulate(self, p: pstAL, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, freq: Optional[str] = None, dt: Optional[float] = 1.0) -> Type[Series]:
+    def simulate(self, p: pstAL, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, freq: Optional[str] = None, dt: float = 1.0) -> Series:
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
         rfunc1 = self.rfunc1.block(p[:self.rfunc1.nparam])
         rfunc2 = self.rfunc2.block(
@@ -1432,9 +1432,9 @@ class ReservoirModel(StressModelBase):
     """
     _name = "ReservoirModel"
 
-    def __init__(self, stress: Type[Series], reservoir: pstRV, name: str, meanhead: float,
+    def __init__(self, stress: Series, reservoir: pstRV, name: str, meanhead: float,
                  settings: Optional[Tuple[Union[str, dict], Union[str, dict]]] = ("prec", "evap"), metadata: Optional[Tuple[dict, dict]] = (None, None),
-                 meanstress: Optional[float] = None):
+                 meanstress: Optional[float] = None) -> None:
         # Set resevoir object
         self.reservoir = reservoir(meanhead)
 
@@ -1469,11 +1469,11 @@ class ReservoirModel(StressModelBase):
         self.freq = stress0.settings["freq"]
         self.set_init_parameters()
 
-    def set_init_parameters(self):
+    def set_init_parameters(self) -> None:
         """Set the initial parameters back to their default values."""
         self.parameters = self.reservoir.get_init_parameters(self.name)
 
-    def simulate(self, p: pstAL, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, freq: Optional[str] = None, dt: Optional[float] = 1.0, istress: Optional[int] = None) -> Type[Series]:
+    def simulate(self, p: pstAL, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, freq: Optional[str] = None, dt: float = 1.0, istress: Optional[int] = None) -> Series:
         """Simulates the head contribution.
 
         Parameters
@@ -1499,7 +1499,7 @@ class ReservoirModel(StressModelBase):
         return h
 
     def get_stress(self, p: Optional[pstAL] = None, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, freq: Optional[str] = None,
-                   istress: Optional[int] = 0, **kwargs) -> Tuple[Type[Series], Type[Series]]:
+                   istress: int = 0, **kwargs) -> Tuple[Series, Series]:
         if tmin is None:
             tmin = self.tmin
         if tmax is None:
@@ -1509,7 +1509,7 @@ class ReservoirModel(StressModelBase):
 
         return self.stress[0].series, self.stress[1].series
 
-    def to_dict(self, series: Optional[bool] = True) -> dict:
+    def to_dict(self, series: bool = True) -> dict:
         """Method to export the StressModel object.
 
         Returns

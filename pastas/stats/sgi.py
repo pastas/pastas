@@ -4,11 +4,9 @@ Index."""
 from numpy import linspace
 from pandas import Series
 from scipy.stats import norm
-# Type Hinting
-from pastas.typing import Type
 
 
-def sgi(series: Type[Series]):
+def sgi(series: Series) -> Series:
     """Method to compute the Standardized Groundwater Index [sgi_2013]_.
 
     Parameters

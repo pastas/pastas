@@ -6,7 +6,7 @@ from platform import platform
 from datetime import datetime, timedelta
 
 import numpy as np
-from pandas import Series, Timedelta, Timestamp, date_range, to_datetime, Index, DatetimeIndex
+from pandas import Series, Timedelta, Timestamp, date_range, to_datetime, Index, DatetimeIndex, Time
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
 
@@ -131,8 +131,8 @@ def _get_dt(freq: str) -> float:
     return dt
 
 
-def _get_time_offset(t: Type[Timestamp], freq: str) -> Type[Timedelta]:
-    """Internal method to calculate the time offset of a TimeStamp.
+def _get_time_offset(t: Timestamp, freq: str) -> Timedelta:
+    """Internal method to calculate the time offset of a Timestamp.
 
     Parameters
     ----------
@@ -152,7 +152,7 @@ def _get_time_offset(t: Type[Timestamp], freq: str) -> Type[Timedelta]:
     return t - t.floor(freq)
 
 
-def get_sample(tindex: Type[Index], ref_tindex: Type[Index]) -> Type[Index]:
+def get_sample(tindex: Index, ref_tindex: Index) -> Index:
     """Sample the index so that the frequency is not higher than the frequency
     of ref_tindex.
 
@@ -182,7 +182,7 @@ def get_sample(tindex: Type[Index], ref_tindex: Type[Index]) -> Type[Index]:
         return tindex[ind]
 
 
-def timestep_weighted_resample(series0: Type[Series], tindex: Type[Index]) -> Type[Series]:
+def timestep_weighted_resample(series0: Series, tindex: Index) -> Series:
     """Resample a timeseries to a new tindex, using an overlapping period
     weighted average.
 
@@ -242,7 +242,7 @@ def timestep_weighted_resample(series0: Type[Series], tindex: Type[Index]) -> Ty
     return series
 
 
-def timestep_weighted_resample_fast(series0: Type[Series], freq: str) -> Type[Series]:
+def timestep_weighted_resample_fast(series0: Series, freq: str) -> Series:
     """Resample a time series to a new frequency, using an overlapping period
     weighted average.
 
@@ -297,7 +297,7 @@ def timestep_weighted_resample_fast(series0: Type[Series], freq: str) -> Type[Se
     return series
 
 
-def get_equidistant_series(series: Type[Series], freq: str, minimize_data_loss: Optional[bool] = False) -> Type[Series]:
+def get_equidistant_series(series: Series, freq: str, minimize_data_loss: bool = False) -> Series:
     """Get equidistant timeseries using nearest reindexing.
 
     This method will shift observations to the nearest equidistant timestep to
@@ -398,7 +398,7 @@ def get_equidistant_series(series: Type[Series], freq: str, minimize_data_loss: 
     return s
 
 
-def to_daily_unit(series: Type[Series], method: Optional[bool] = True) -> Type[Series]:
+def to_daily_unit(series: Series, method: bool = True) -> Series:
     """Experimental method, use wth caution!
 
     Recalculate a timeseries of a stress with a non-daily unit (e/g.
@@ -414,7 +414,7 @@ def to_daily_unit(series: Type[Series], method: Optional[bool] = True) -> Type[S
     return series
 
 
-def excel2datetime(tindex: Type[DatetimeIndex], freq="D") -> Type[DatetimeIndex]:
+def excel2datetime(tindex: DatetimeIndex, freq="D") -> DatetimeIndex:
     """Method to convert excel datetime to pandas timetime objects.
 
     Parameters
@@ -431,7 +431,7 @@ def excel2datetime(tindex: Type[DatetimeIndex], freq="D") -> Type[DatetimeIndex]
     return datetimes
 
 
-def datenum_to_datetime(datenum: float) -> Type[datetime]:
+def datenum_to_datetime(datenum: float) -> datetime:
     """Convert Matlab datenum into Python datetime.
 
     Parameters
@@ -449,7 +449,7 @@ def datenum_to_datetime(datenum: float) -> Type[datetime]:
         + timedelta(days=days) - timedelta(days=366)
 
 
-def datetime2matlab(tindex: Type[DatetimeIndex]) -> pstAL:
+def datetime2matlab(tindex: DatetimeIndex) -> pstAL:
     mdn = tindex + Timedelta(days=366)
     frac = (tindex - tindex.round("D")).seconds / (24.0 * 60.0 * 60.0)
     return mdn.toordinal() + frac
@@ -470,7 +470,7 @@ def get_stress_tmin_tmax(ml: pstMl) -> Tuple[pstTm, pstTm]:
     return tmin, tmax
 
 
-def initialize_logger(logger: Optional[Any] = None, level: Optional[Any] = logging.INFO):
+def initialize_logger(logger: Optional[Any] = None, level: Optional[Any] = logging.INFO) -> None:
     """Internal method to create a logger instance to log program output.
 
     Parameters
@@ -488,8 +488,8 @@ def initialize_logger(logger: Optional[Any] = None, level: Optional[Any] = loggi
     # add_file_handlers(logger)
 
 
-def set_console_handler(logger: Optional[Type[Any]] = None, level: Optional[Any] = logging.INFO,
-                        fmt: str = "%(levelname)s: %(message)s"):
+def set_console_handler(logger: Optional[Any] = None, level: Optional[Any] = logging.INFO,
+                        fmt: str = "%(levelname)s: %(message)s") -> None:
     """Method to add a console handler to the logger of Pastas.
 
     Parameters
@@ -509,7 +509,7 @@ def set_console_handler(logger: Optional[Type[Any]] = None, level: Optional[Any]
     logger.addHandler(ch)
 
 
-def set_log_level(level: str):
+def set_log_level(level: str) -> None:
     """Set the log-level of the console. This method is just a wrapper around
     set_console_handler.
 
@@ -528,7 +528,7 @@ def set_log_level(level: str):
     set_console_handler(level=level)
 
 
-def remove_console_handler(logger: Optional[Type[Any]] = None):
+def remove_console_handler(logger: Optional[Any] = None) -> None:
     """Method to remove the console handler to the logger of Pastas.
 
     Parameters
@@ -545,11 +545,11 @@ def remove_console_handler(logger: Optional[Type[Any]] = None):
             logger.removeHandler(handler)
 
 
-def add_file_handlers(logger: Optional[Type[Any]] = None, filenames: Optional[Tuple[str, str]] = ('info.log', 'errors.log'),
-                      levels: Optional[Tuple[Any, Any]] = (logging.INFO, logging.ERROR), maxBytes: Optional[int] = 10485760,
-                      backupCount: Optional[int] = 20, encoding: Optional[str] = 'utf8',
-                      fmt: Optional[str] = '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                      datefmt: Optional[str] = '%y-%m-%d %H:%M'):
+def add_file_handlers(logger: Optional[Any] = None, filenames: Tuple[str, str] = ('info.log', 'errors.log'),
+                      levels: Tuple[Any, Any] = (logging.INFO, logging.ERROR), maxBytes: int = 10485760,
+                      backupCount: int = 20, encoding: str = 'utf8',
+                      fmt: str = '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                      datefmt: str = '%y-%m-%d %H:%M') -> None:
     """Method to add file handlers in the logger of Pastas.
 
     Parameters
@@ -574,7 +574,7 @@ def add_file_handlers(logger: Optional[Type[Any]] = None, filenames: Optional[Tu
         logger.addHandler(fh)
 
 
-def remove_file_handlers(logger: Optional[Type[logging.Logger]] = None):
+def remove_file_handlers(logger: Optional[Type[logging.Logger]] = None) -> None:
     """Method to remove any file handlers in the logger of Pastas.
 
     Parameters
@@ -591,7 +591,7 @@ def remove_file_handlers(logger: Optional[Type[logging.Logger]] = None):
             logger.removeHandler(handler)
 
 
-def validate_name(name: str, raise_error: Optional[bool] = False) -> str:
+def validate_name(name: str, raise_error: bool = False) -> str:
     """Method to check user-provided names and log a warning if wrong.
 
     Parameters
@@ -625,7 +625,7 @@ def validate_name(name: str, raise_error: Optional[bool] = False) -> str:
     return name
 
 
-def show_versions(lmfit: Optional[bool] = False, numba: Optional[bool] = False) -> None:
+def show_versions(lmfit: bool = False, numba: bool = False) -> None:
     """Method to print the version of dependencies.
 
     Parameters
@@ -663,7 +663,7 @@ def show_versions(lmfit: Optional[bool] = False, numba: Optional[bool] = False) 
     return print(msg)
 
 
-def check_numba():
+def check_numba() -> None:
     try:
         from numba import njit
     except ImportError:
