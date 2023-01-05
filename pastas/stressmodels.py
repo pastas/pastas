@@ -21,7 +21,6 @@ from pandas import DataFrame, Series, Timedelta, Timestamp, concat, date_range
 from scipy.signal import fftconvolve
 import inspect
 from scipy import __version__ as scipyversion
-from warnings import warn
 
 from .decorators import njit, set_parameter
 from .recharge import Linear
@@ -32,7 +31,8 @@ from .utils import check_numba, validate_name
 logger = getLogger(__name__)
 
 __all__ = ["StressModel", "Constant", "StepModel", "LinearTrend",
-           "RechargeModel", "WellModel", "TarsoModel", "ChangeModel"]
+           "RechargeModel", "WellModel", "TarsoModel", "ChangeModel",
+           "StressModel2"]
 
 
 class StressModelBase:
@@ -773,7 +773,7 @@ class WellModel(StressModelBase):
         if self.rfunc._name != "HantushWellModel":
             raise ValueError("Response function must be HantushWellModel!")
         if model.fit.pcov.isna().all(axis=None):
-            model.logger.warn("Covariance matrix contains only NaNs!")
+            model.logger.warning("Covariance matrix contains only NaNs!")
 
         # get parameters and (co)variances
         A = model.parameters.loc[self.name + "_A", "optimal"]
@@ -812,9 +812,9 @@ class RechargeModel(StressModelBase):
     name: str, optional
         Name of the stress. Default is "recharge".
     recharge: pastas.recharge instance, optional
-        String with the name of the recharge model. Options are: Linear (
-        default), FlexModel and Berendrecht. These can be accessed through
-        ps.rch.
+        Instance of a recharge model. Options are: Linear, FlexModel and
+        Berendrecht. These can be accessed through ps.rch. If no recharge
+        model is provided, ps.rch.Linear() is used.
     temp: pandas.Series or pastas.timeseries.TimeSeries, optional
         pandas.Series or pastas.TimeSeries object containing the
         temperature series. It depends on the recharge model is this
@@ -858,15 +858,20 @@ class RechargeModel(StressModelBase):
     We recommend not to store a RechargeModel is a variable named `rm`. This
     name is already reserved in IPython to remove files and will cause
     problems later.
+
     """
     _name = "RechargeModel"
 
     def __init__(self, prec, evap, rfunc=None, name="recharge",
-                 recharge=Linear(), temp=None, cutoff=0.999,
+                 recharge=None, temp=None, cutoff=0.999,
                  settings=("prec", "evap", "evap"),
                  metadata=(None, None, None)):
         if rfunc is None:
             rfunc = Exponential()
+
+        if recharge is None:
+            recharge = Linear()
+
         # Store the precipitation and evaporation time series
         self.prec = TimeSeries(prec, settings=settings[0],
                                metadata=metadata[0])
@@ -1521,3 +1526,16 @@ class ReservoirModel(StressModelBase):
         Cannot be used (yet?) since there is no block response
         """
         pass
+
+
+class StressModel2(StressModelBase):
+    def __new__(cls, *args, **kwargs):
+        msg = "StressModel2 is deprecated since in Pastas 0.21.0 and will " \
+              "be removed in Pastas 0.23. The stress model is replaced by the" \
+              " RechargeModel stress model. An instance of the " \
+              "ps.RechargeModel is automatically created instead. Please use " \
+              "ps.RechargeModel(prec, evap, recharge=ps.rch.Linear) for the " \
+              "same stress model in the future. "
+        logger.warning(msg)
+
+        return RechargeModel(*args, **kwargs)

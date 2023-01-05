@@ -220,11 +220,11 @@ class FlexModel(RechargeBase):
 
         Parameters
         ----------
-        prec: numpy.array
+        prec: numpy.Array
             Precipitation flux in mm/d. Must have the same length as evap.
-        evap: numpy.array
+        evap: numpy.Array
             Potential evaporation flux in mm/d.
-        temp: numpy.array
+        temp: numpy.Array
             Temperature in degrees Celcius.
         p: array_like
             array_like object with the values as floats representing the
@@ -237,7 +237,7 @@ class FlexModel(RechargeBase):
 
         Returns
         -------
-        r: numpy.array
+        r: numpy.Array
             Recharge flux calculated by the model.
 
         """
@@ -299,9 +299,9 @@ class FlexModel(RechargeBase):
 
         Parameters
         ----------
-        pe: numpy.array
+        pe: numpy.Array
             Effective precipitation flux in mm/d.
-        ep: numpy.array
+        ep: numpy.Array
             Potential evaporation flux in mm/d.
         srmax: float, optional
             Maximum storage capacity of the root zone.
@@ -317,16 +317,16 @@ class FlexModel(RechargeBase):
 
         Returns
         -------
-        sr: numpy.array
+        sr: numpy.Array
             Storage in the root zone reservoir.
-        r: numpy.array
+        r: numpy.Array
             Recharge flux in mm/d
-        ea: numpy.array
+        ea: numpy.Array
             Evaporation flux in mm/d. Consists of transpiration and soil
             evaporation. Does not include interception evaporation.
-        q: numpy.array
+        q: numpy.Array
             surface runoff flux in mm/d.
-        pe: numpy.array
+        pe: numpy.Array
             Incoming infiltration flux in mm/d.
 
         Notes
@@ -371,9 +371,9 @@ class FlexModel(RechargeBase):
 
         Parameters
         ----------
-        pr: numpy.array
+        pr: numpy.Array
             Numpy Array with rainfall in mm/day.
-        ep: numpy.array
+        ep: numpy.Array
             Numpy Array with potential evaporation in mm/day.
         simax: float, optional
             storage capacity of the interception reservoir.
@@ -382,11 +382,11 @@ class FlexModel(RechargeBase):
 
         Returns
         -------
-        si: numpy.array
+        si: numpy.Array
             Interception storage.
-        ei: numpy.array
+        ei: numpy.Array
             Interception evaporation.
-        pi: numpy.array
+        pi: numpy.Array
             Incoming rainfall that is intercepted.
 
         Notes
@@ -425,25 +425,25 @@ class FlexModel(RechargeBase):
 
         Parameters
         ----------
-        prec: numpy.array
+        prec: numpy.Array
             Numpy Array with precipitation in mm/day.
-        temp: numpy.array
+        temp: numpy.Array
             Numpy Array with the mean daily temperature in degree Celsius.
         tt: float, optional
         k: float, optional
 
         Returns
         -------
-        ss: numpy.array
+        ss: numpy.Array
             storage in the snow reservoir.
-        ps: numpy.array
+        ps: numpy.Array
             snowfall flux in mm/d.
-        m: numpy.array
+        m: numpy.Array
             snow melt flux in mm/d.
 
         Notes
         -----
-        The water balance fro the snow reservoir is as follows:
+        The water balance from the snow reservoir is as follows:
 
         .. math::
 
@@ -548,9 +548,9 @@ class Berendrecht(RechargeBase):
 
         Parameters
         ----------
-        prec: numpy.array
+        prec: numpy.Array
             Precipitation flux in mm/d. Has to have the same length as evap.
-        evap: numpy.array
+        evap: numpy.Array
             Potential evapotranspiration flux in mm/d.
         p: array_like
             array_like object with the values as floats representing the
@@ -561,7 +561,7 @@ class Berendrecht(RechargeBase):
 
         Returns
         -------
-        r: numpy.array
+        r: numpy.Array
             Recharge flux calculated by the model.
 
         """
@@ -673,9 +673,9 @@ class Peterson(RechargeBase):
 
         Parameters
         ----------
-        prec: numpy.array
+        prec: numpy.Array
             Precipitation flux in mm/d. Must have the same length as evap.
-        evap: numpy.array
+        evap: numpy.Array
             Potential evapotranspiration flux in mm/d.
         p: array_like
             array_like object with the values as floats representing the
@@ -685,7 +685,7 @@ class Peterson(RechargeBase):
 
         Returns
         -------
-        r: numpy.array
+        r: numpy.Array
             Recharge flux calculated by the model.
 
         """

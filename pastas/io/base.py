@@ -164,7 +164,7 @@ def _load_model(data):
     ml.parameters = ml.parameters.apply(to_numeric, errors="ignore")
 
     # When initial values changed
-    for param, value in ml.parameters.loc[:, "initial"].iteritems():
+    for param, value in ml.parameters.loc[:, "initial"].items():
         ml.set_parameter(name=param, initial=value)
 
     return ml

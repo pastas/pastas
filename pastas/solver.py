@@ -78,8 +78,7 @@ class BaseSolver:
         """
         # Get the residuals or the noise
         if noise:
-            rv = self.ml.noise(p) * \
-                 self.ml.noise_weights(p)
+            rv = self.ml.noise(p) * self.ml.noise_weights(p)
         else:
             rv = self.ml.residuals(p)
 
@@ -93,9 +92,9 @@ class BaseSolver:
             callback(p)
 
         if returnseparate:
-            return self.ml.residuals(p).values, \
-                   self.ml.noise(p).values, \
-                   self.ml.noise_weights(p).values
+            return (self.ml.residuals(p).values,
+                    self.ml.noise(p).values,
+                    self.ml.noise_weights(p).values)
 
         return rv.values
 
@@ -288,7 +287,7 @@ class BaseSolver:
         for i, p in enumerate(parameter_sample):
             data[i] = func(p=p, **kwargs)
 
-        return DataFrame.from_dict(data, orient="columns")
+        return DataFrame.from_dict(data, orient="columns", dtype=float)
 
     def _get_confidence_interval(self, func, n=None, name=None, alpha=0.05,
                                  max_iter=10, **kwargs):
@@ -428,7 +427,7 @@ class LeastSquares(BaseSolver):
 
         Returns
         -------
-        pcov: numpy.array
+        pcov: numpy.Array
             numpy array with the covariance matrix.
 
         Notes
