@@ -15,10 +15,10 @@ from ..utils import check_numba
 
 # Type Hinting
 from typing import Union, Tuple
-from pastas.typing import pstAL
+from pastas.typing import Array_Like
 
 
-def acf(x: Series, lags: pstAL = 365, bin_method: str = 'rectangle', bin_width: float = 0.5, max_gap: float = inf,
+def acf(x: Series, lags: Array_Like = 365, bin_method: str = 'rectangle', bin_width: float = 0.5, max_gap: float = inf,
         min_obs: int = 20, full_output: bool = False, alpha: float = 0.05) -> Union[Series, DataFrame]:
     """Calculate the autocorrelation function for irregular time steps.
 
@@ -89,7 +89,7 @@ def acf(x: Series, lags: pstAL = 365, bin_method: str = 'rectangle', bin_width: 
         return c
 
 
-def ccf(x: Series, y: Series, lags: pstAL = 365, bin_method: str = 'rectangle', bin_width: float = 0.5,
+def ccf(x: Series, y: Series, lags: Array_Like = 365, bin_method: str = 'rectangle', bin_width: float = 0.5,
         max_gap: float = inf, min_obs: int = 20, full_output: bool = False, alpha: float = 0.05) -> Union[Series, DataFrame]:
     """Method to compute the cross-correlation for irregular time series.
 
@@ -194,7 +194,7 @@ def _preprocess(x: Series, max_gap: int) -> Tuple[Series, float, float]:
 
 
 @njit
-def _compute_ccf_rectangle(lags: pstAL, t_x: pstAL, x: pstAL, t_y: pstAL, y: pstAL, bin_width: float = 0.5) -> Tuple[pstAL, pstAL]:
+def _compute_ccf_rectangle(lags: Array_Like, t_x: Array_Like, x: Array_Like, t_y: Array_Like, y: Array_Like, bin_width: float = 0.5) -> Tuple[Array_Like, Array_Like]:
     """Internal numba-optimized method to compute the ccf."""
     c = empty_like(lags)
     b = empty_like(lags)
@@ -220,7 +220,7 @@ def _compute_ccf_rectangle(lags: pstAL, t_x: pstAL, x: pstAL, t_y: pstAL, y: pst
 
 
 @njit
-def _compute_ccf_gaussian(lags: pstAL, t_x: pstAL, x: pstAL, t_y: pstAL, y: pstAL, bin_width: float = 0.5) -> Tuple[pstAL, pstAL]:
+def _compute_ccf_gaussian(lags: Array_Like, t_x: Array_Like, x: Array_Like, t_y: Array_Like, y: Array_Like, bin_width: float = 0.5) -> Tuple[Array_Like, Array_Like]:
     """Internal numba-optimized method to compute the ccf."""
     c = empty_like(lags)
     b = empty_like(lags)
@@ -249,7 +249,7 @@ def _compute_ccf_gaussian(lags: pstAL, t_x: pstAL, x: pstAL, t_y: pstAL, y: pstA
     return c, b
 
 
-def _compute_ccf_regular(lags: pstAL, x: pstAL, y: pstAL) -> Tuple[pstAL, pstAL]:
+def _compute_ccf_regular(lags: Array_Like, x: Array_Like, y: Array_Like) -> Tuple[Array_Like, Array_Like]:
     c = empty_like(lags)
     for i, lag in enumerate(lags):
         c[i] = corrcoef(x[:-int(lag)], y[int(lag):])[0, 1]
@@ -257,7 +257,7 @@ def _compute_ccf_regular(lags: pstAL, x: pstAL, y: pstAL) -> Tuple[pstAL, pstAL]
     return c, b
 
 
-def mean(x: Series, weighted: bool = True, max_gap: int = 30) -> pstAL:
+def mean(x: Series, weighted: bool = True, max_gap: int = 30) -> Array_Like:
     """Method to compute the (weighted) mean of a time series.
 
     Parameters
@@ -285,7 +285,7 @@ def mean(x: Series, weighted: bool = True, max_gap: int = 30) -> pstAL:
     return average(x.to_numpy(), weights=w)
 
 
-def var(x: Series, weighted: bool = True, max_gap: int = 30) -> pstAL:
+def var(x: Series, weighted: bool = True, max_gap: int = 30) -> Array_Like:
     """Method to compute the (weighted) variance of a time series.
 
     Parameters
@@ -316,7 +316,7 @@ def var(x: Series, weighted: bool = True, max_gap: int = 30) -> pstAL:
     return sigma
 
 
-def std(x: Series, weighted: bool = True, max_gap: int = 30) -> pstAL:
+def std(x: Series, weighted: bool = True, max_gap: int = 30) -> Array_Like:
     """Method to compute the (weighted) variance of a time series.
 
     Parameters
@@ -340,7 +340,7 @@ def std(x: Series, weighted: bool = True, max_gap: int = 30) -> pstAL:
 
 # Helper functions
 
-def _get_weights(x: Series, weighted: bool = True, max_gap: int = 30) -> pstAL:
+def _get_weights(x: Series, weighted: bool = True, max_gap: int = 30) -> Array_Like:
     """Helper method to compute the weights as the time step between obs.
 
     Parameters

@@ -29,15 +29,15 @@ Axes = TypeVar("Axes", bound=_AxesBase)  # Matplotlib Axes
 Figure = TypeVar("Figure", bound=FigureBase)  # Matplotlib Figure
 # pstS = TypeVar("pstS", bound=Type[Series])
 # pstDF = TypeVar("pstDF", bound=Type[DataFrame])
-pstTm = TypeVar("pstTm", bound=Union[str, Timestamp])  # Tmin or Tmax
-pstMl = TypeVar("pstMl", bound=Any)  # Model
-pstTS = TypeVar("pstTS", bound=Any)  # Time Series
-pstSM = TypeVar("pstSM", bound=Any)  # Stress Model
-pstNM = TypeVar("pstNM", bound=Any)  # Noise Model
-pstBS = TypeVar("pstBS", bound=Any)  # Base Solver
-pstRB = TypeVar("pstRB", bound=Any)  # Recharge Base
-pstRV = TypeVar("pstRV", bound=Any)  # Reservoir Base
-pstCB = TypeVar("pstCB", bound=Any)  # Callback
-pstFu = TypeVar("pstFu", bound=Any)  # Function (e.g. Objective Function)
-pstRF = TypeVar("pstRF", bound=Any)  # rFunc Base
-pstAL = TypeVar("pstAL", bound=ArrayLike)  # Array Like (NumPy based)
+Tminmax = TypeVar("Tminmax", bound=Union[str, Timestamp])  # Tmin or Tmax
+Model = TypeVar("Model", bound=Any)  # Model
+TimeSeries = TypeVar("TimeSeries", bound=Any)  # Time Series
+StressModel = TypeVar("StressModel", bound=Any)  # Stress Model
+NoiseModel = TypeVar("NoiseModel", bound=Any)  # Noise Model
+Solver = TypeVar("Solver", bound=Any)  # Base Solver
+Recharge = TypeVar("Recharge", bound=Any)  # Recharge Base
+Reservoir = TypeVar("Reservoir", bound=Any)  # Reservoir Base
+CallBack = TypeVar("CallBack", bound=Any)  # Callback
+Function = TypeVar("Function", bound=Any)  # Function (e.g. Objective Function)
+RFunc = TypeVar("RFunc", bound=Any)  # rFunc Base
+Array_Like = TypeVar("Array_Like", bound=ArrayLike)  # Array Like (NumPy based)

@@ -12,7 +12,7 @@ from scipy.interpolate import interp1d
 
 # Type Hinting
 from typing import Optional, Union
-from pastas.typing import pstAL
+from pastas.typing import Array_Like
 
 logger = getLogger(__name__)
 
@@ -56,7 +56,7 @@ class RfuncBase:
         """
         pass
 
-    def get_tmax(self, p: pstAL, cutoff: Optional[float] = None) -> float:
+    def get_tmax(self, p: Array_Like, cutoff: Optional[float] = None) -> float:
         """Method to get the response time for a certain cutoff.
 
         Parameters
@@ -75,7 +75,7 @@ class RfuncBase:
         """
         pass
 
-    def step(self, p: pstAL, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
+    def step(self, p: Array_Like, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> Array_Like:
         """Method to return the step function.
 
         Parameters
@@ -97,7 +97,7 @@ class RfuncBase:
         """
         pass
 
-    def block(self, p: pstAL, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
+    def block(self, p: Array_Like, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> Array_Like:
         """Method to return the block function.
 
         Parameters
@@ -120,7 +120,7 @@ class RfuncBase:
         s = self.step(p, dt, cutoff, maxtmax)
         return np.append(s[0], np.subtract(s[1:], s[:-1]))
 
-    def impulse(self, t: pstAL, p: pstAL) -> pstAL:
+    def impulse(self, t: Array_Like, p: Array_Like) -> Array_Like:
         """Method to return the impulse response function.
 
         Parameters
@@ -146,7 +146,7 @@ class RfuncBase:
         """
         pass
 
-    def get_t(self, p: pstAL, dt: float, cutoff: float, maxtmax: Optional[int] = None) -> pstAL:
+    def get_t(self, p: Array_Like, dt: float, cutoff: float, maxtmax: Optional[int] = None) -> Array_Like:
         """Internal method to determine the times at which to evaluate the
         step-response, from t=0.
 
@@ -227,20 +227,20 @@ class Gamma(RfuncBase):
         parameters.loc[name + '_a'] = (10, 0.01, 1e4, True, name)
         return parameters
 
-    def get_tmax(self, p: pstAL, cutoff: Optional[float] = None) -> float:
+    def get_tmax(self, p: Array_Like, cutoff: Optional[float] = None) -> float:
         if cutoff is None:
             cutoff = self.cutoff
         return gammaincinv(p[1], cutoff) * p[2]
 
-    def gain(self, p: pstAL) -> float:
+    def gain(self, p: Array_Like) -> float:
         return p[0]
 
-    def step(self, p: pstAL, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
+    def step(self, p: Array_Like, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> Array_Like:
         t = self.get_t(p, dt, cutoff, maxtmax)
         s = p[0] * gammainc(p[1], t / p[2])
         return s
 
-    def impulse(self, t, p) -> pstAL:
+    def impulse(self, t, p) -> Array_Like:
         A, n, a = p
         ir = A * t ** (n - 1) * np.exp(-t / a) / (a ** n * gamma(n))
         return ir
@@ -291,20 +291,20 @@ class Exponential(RfuncBase):
         parameters.loc[name + '_a'] = (10, 0.01, 1000, True, name)
         return parameters
 
-    def get_tmax(self, p: pstAL, cutoff=None) -> float:
+    def get_tmax(self, p: Array_Like, cutoff=None) -> float:
         if cutoff is None:
             cutoff = self.cutoff
         return -p[1] * np.log(1 - cutoff)
 
-    def gain(self, p: pstAL) -> float:
+    def gain(self, p: Array_Like) -> float:
         return p[0]
 
-    def step(self, p: pstAL, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[float] = None) -> pstAL:
+    def step(self, p: Array_Like, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[float] = None) -> Array_Like:
         t = self.get_t(p, dt, cutoff, maxtmax)
         s = p[0] * (1.0 - np.exp(-t / p[1]))
         return s
 
-    def impulse(self, t: pstAL, p: pstAL) -> pstAL:
+    def impulse(self, t: Array_Like, p: Array_Like) -> Array_Like:
         A, a = p
         ir = A / a * np.exp(-t / a)
         return ir
@@ -376,7 +376,7 @@ class HantushWellModel(RfuncBase):
         return parameters
 
     @staticmethod
-    def _get_distance_from_params(p: pstAL) -> float:
+    def _get_distance_from_params(p: Array_Like) -> float:
         if len(p) == 3:
             r = 1.0
             logger.info("No distance passed to HantushWellModel, "
@@ -385,7 +385,7 @@ class HantushWellModel(RfuncBase):
             r = p[3]
         return r
 
-    def get_tmax(self, p: pstAL, cutoff: Optional[float] = None) -> float:
+    def get_tmax(self, p: Array_Like, cutoff: Optional[float] = None) -> float:
         r = self._get_distance_from_params(p)
         # approximate formula for tmax
         if cutoff is None:
@@ -398,13 +398,13 @@ class HantushWellModel(RfuncBase):
         else:
             return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
 
-    def gain(self, p: pstAL, r: Optional[float] = None) -> float:
+    def gain(self, p: Array_Like, r: Optional[float] = None) -> float:
         if r is None:
             r = self._get_distance_from_params(p)
         rho = 2 * r * np.sqrt(p[2])
         return p[0] * k0(rho)
 
-    def step(self, p: pstAL, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
+    def step(self, p: Array_Like, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> Array_Like:
         r = self._get_distance_from_params(p)
         cS = p[1]
         rho = np.sqrt(4 * r ** 2 * p[2])
@@ -422,7 +422,7 @@ class HantushWellModel(RfuncBase):
         return p[0] * F / 2
 
     @staticmethod
-    def variance_gain(A: float, b: float, var_A: float, var_b: float, cov_Ab: float, r: Optional[float] = 1.0) -> Union[float, pstAL]:
+    def variance_gain(A: float, b: float, var_A: float, var_b: float, cov_Ab: float, r: Optional[float] = 1.0) -> Union[float, Array_Like]:
         """Calculate variance of the gain from parameters A and b.
 
         Variance of the gain is calculated based on propagation of
@@ -526,7 +526,7 @@ class Hantush(RfuncBase):
         parameters.loc[name + '_b'] = (1, 1e-6, 25, True, name)
         return parameters
 
-    def get_tmax(self, p: pstAL, cutoff: Optional[float] = None) -> float:
+    def get_tmax(self, p: Array_Like, cutoff: Optional[float] = None) -> float:
         # approximate formula for tmax
         if cutoff is None:
             cutoff = self.cutoff
@@ -536,10 +536,10 @@ class Hantush(RfuncBase):
         return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
 
     @staticmethod
-    def gain(p: pstAL) -> float:
+    def gain(p: Array_Like) -> float:
         return p[0]
 
-    def step(self, p: pstAL, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
+    def step(self, p: Array_Like, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> Array_Like:
         cS = p[1]
         rho = np.sqrt(4 * p[2])
         k0rho = k0(rho)
@@ -555,7 +555,7 @@ class Hantush(RfuncBase):
             tau2 + rho ** 2 / (4 * tau2))
         return p[0] * F / (2 * k0rho)
 
-    def impulse(self, t: pstAL, p: pstAL) -> pstAL:
+    def impulse(self, t: Array_Like, p: Array_Like) -> Array_Like:
         A, a, b = p
         ir = A / (2 * t * k0(2 * np.sqrt(b))) * np.exp(-t / a - a * b / t)
         return ir
@@ -593,7 +593,7 @@ class Polder(RfuncBase):
         parameters.loc[name + '_b'] = (1, 1e-6, 25, True, name)
         return parameters
 
-    def get_tmax(self, p: pstAL, cutoff: Optional[float] = None) -> float:
+    def get_tmax(self, p: Array_Like, cutoff: Optional[float] = None) -> float:
         if cutoff is None:
             cutoff = self.cutoff
         _, a, b = p
@@ -604,14 +604,14 @@ class Polder(RfuncBase):
         tmax = a * y ** 2
         return tmax
 
-    def gain(self, p: pstAL) -> float:
+    def gain(self, p: Array_Like) -> float:
         # the steady state solution of Mazure
         g = p[0] * np.exp(-np.sqrt(4 * p[2]))
         if not self.up:
             g = -g
         return g
 
-    def step(self, p: pstAL, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
+    def step(self, p: Array_Like, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> Array_Like:
         t = self.get_t(p, dt, cutoff, maxtmax)
         A, a, b = p
         s = A * self.polder_function(np.sqrt(b), np.sqrt(t / a))
@@ -620,7 +620,7 @@ class Polder(RfuncBase):
             s = -s
         return s
 
-    def impulse(self, t: pstAL, p: pstAL) -> pstAL:
+    def impulse(self, t: Array_Like, p: Array_Like) -> Array_Like:
         A, a, b = p
         ir = A * t ** (-1.5) * np.exp(-t / a - b / t)
         return ir
@@ -666,19 +666,19 @@ class One(RfuncBase):
                 self.meanstress, np.nan, np.nan, True, name)
         return parameters
 
-    def get_tmax(self, p: pstAL, cutoff: Optional[float] = None) -> float:
+    def get_tmax(self, p: Array_Like, cutoff: Optional[float] = None) -> float:
         return 0.
 
-    def gain(self, p: pstAL) -> float:
+    def gain(self, p: Array_Like) -> float:
         return p[0]
 
-    def step(self, p: pstAL, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
+    def step(self, p: Array_Like, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> Array_Like:
         if isinstance(dt, np.ndarray):
             return p[0] * np.ones(len(dt))
         else:
             return p[0] * np.ones(1)
 
-    def block(self, p: pstAL, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
+    def block(self, p: Array_Like, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> Array_Like:
         return p[0] * np.ones(1)
 
 
@@ -733,10 +733,10 @@ class FourParam(RfuncBase):
         return parameters
 
     @staticmethod
-    def function(t: float, p: pstAL) -> float:
+    def function(t: float, p: Array_Like) -> float:
         return (t ** (p[1] - 1)) * np.exp(-t / p[2] - p[2] * p[3] / t)
 
-    def get_tmax(self, p: pstAL, cutoff: Optional[float] = None) -> float:
+    def get_tmax(self, p: Array_Like, cutoff: Optional[float] = None) -> float:
         if cutoff is None:
             cutoff = self.cutoff
 
@@ -771,10 +771,10 @@ class FourParam(RfuncBase):
             return np.searchsorted(y, cutoff)
 
     @staticmethod
-    def gain(p: pstAL) -> float:
+    def gain(p: Array_Like) -> float:
         return p[0]
 
-    def step(self, p: pstAL, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
+    def step(self, p: Array_Like, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> Array_Like:
 
         if self.quad:
             t = self.get_t(p, dt, cutoff, maxtmax)
@@ -879,7 +879,7 @@ class DoubleExponential(RfuncBase):
         parameters.loc[name + '_a2'] = (10, 0.01, 5000, True, name)
         return parameters
 
-    def get_tmax(self, p: pstAL, cutoff: Optional[float] = None) -> float:
+    def get_tmax(self, p: Array_Like, cutoff: Optional[float] = None) -> float:
         if cutoff is None:
             cutoff = self.cutoff
         if p[2] > p[3]:  # a1 > a2
@@ -887,10 +887,10 @@ class DoubleExponential(RfuncBase):
         else:  # a1 < a2
             return -p[3] * np.log(1 - cutoff)
 
-    def gain(self, p: pstAL) -> float:
+    def gain(self, p: Array_Like) -> float:
         return p[0]
 
-    def step(self, p: pstAL, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
+    def step(self, p: Array_Like, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> Array_Like:
         t = self.get_t(p, dt, cutoff, maxtmax)
         s = p[0] * (1 - ((1 - p[1]) * np.exp(-t / p[2]) +
                          p[1] * np.exp(-t / p[3])))
@@ -937,16 +937,16 @@ class Edelman(RfuncBase):
         parameters.loc[name + '_beta'] = (beta_init, 0, 1000, True, name)
         return parameters
 
-    def get_tmax(self, p: pstAL, cutoff: Optional[float] = None) -> float:
+    def get_tmax(self, p: Array_Like, cutoff: Optional[float] = None) -> float:
         if cutoff is None:
             cutoff = self.cutoff
         return 1. / (p[0] * erfcinv(cutoff * erfc(0))) ** 2
 
     @staticmethod
-    def gain(p: pstAL) -> float:
+    def gain(p: Array_Like) -> float:
         return 1.
 
-    def step(self, p: pstAL, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
+    def step(self, p: Array_Like, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> Array_Like:
         t = self.get_t(p, dt, cutoff, maxtmax)
         s = erfc(1 / (p[0] * np.sqrt(t)))
         return s
@@ -1012,16 +1012,16 @@ class Kraijenhoff(RfuncBase):
         parameters.loc[name + '_b'] = (0, 0, 0.499999, True, name)
         return parameters
 
-    def get_tmax(self, p: pstAL, cutoff: Optional[float] = None) -> float:
+    def get_tmax(self, p: Array_Like, cutoff: Optional[float] = None) -> float:
         if cutoff is None:
             cutoff = self.cutoff
         return - p[1] * np.log(1 - cutoff)
 
     @staticmethod
-    def gain(p: pstAL) -> float:
+    def gain(p: Array_Like) -> float:
         return p[0]
 
-    def step(self, p: pstAL, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
+    def step(self, p: Array_Like, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> Array_Like:
         t = self.get_t(p, dt, cutoff, maxtmax)
         h = 0
         for n in range(self.n_terms):
@@ -1096,13 +1096,13 @@ class Spline(RfuncBase):
 
         return parameters
 
-    def get_tmax(self, p: pstAL, cutoff: Optional[float] = None) -> float:
+    def get_tmax(self, p: Array_Like, cutoff: Optional[float] = None) -> float:
         return self.t[-1]
 
-    def gain(self, p: pstAL) -> float:
+    def gain(self, p: Array_Like) -> float:
         return p[0]
 
-    def step(self, p: pstAL, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> pstAL:
+    def step(self, p: Array_Like, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> Array_Like:
         f = interp1d(self.t, p[1:len(self.t) + 1], kind=self.kind)
         t = self.get_t(p, dt, cutoff, maxtmax)
         s = p[0] * f(t)

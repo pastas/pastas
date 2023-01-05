@@ -10,7 +10,7 @@ from .decorators import set_parameter
 from .utils import validate_name
 
 # Type Hinting
-from pastas.typing import pstAL, pstMl
+from pastas.typing import Array_Like, Model
 
 
 class ThresholdTransform:
@@ -51,7 +51,7 @@ class ThresholdTransform:
         self.parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
 
-    def set_model(self, ml: pstMl) -> None:
+    def set_model(self, ml: Model) -> None:
         obs = ml.observations()
         if np.isnan(self.value):
             self.value = obs.min() + 0.75 * (obs.max() - obs.min())
@@ -109,7 +109,7 @@ class ThresholdTransform:
         """
         self.parameters.loc[name, 'vary'] = bool(value)
 
-    def simulate(self, h: Series, p: pstAL) -> Series:
+    def simulate(self, h: Series, p: Array_Like) -> Series:
         if self.nparam == 1:
             # value above a threshold p[0] are equal to the threshold
             h[h > p[0]] = p[0]

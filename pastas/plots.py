@@ -16,7 +16,7 @@ from .modelcompare import CompareModels
 
 # Type Hinting
 from typing import Optional, List, Tuple
-from pastas.typing import pstAL, Axes, Figure, pstTm, pstMl
+from pastas.typing import Array_Like, Axes, Figure, Tminmax, Model
 
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ __all__ = ["compare", "Series", "acf", "diagnostics", "cum_frequency",
            "TrackSolve"]
 
 
-def compare(models: List[pstMl], adjust_height: bool = True, **kwargs) -> Axes:
+def compare(models: List[Model], adjust_height: bool = True, **kwargs) -> Axes:
     """Plot multiple Pastas models in one figure to visually compare models.
 
     Note
@@ -57,8 +57,8 @@ def compare(models: List[pstMl], adjust_height: bool = True, **kwargs) -> Axes:
     return mc.axes
 
 
-def Series(head: Optional[Series] = None, stresses: Optional[List[Series]] = None, hist: bool = True, kde: bool = False, titles: bool = True,
-           tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, labels: Optional[List[str]] = None, figsize: tuple = (10, 5)) -> Axes:
+def series(head: Optional[Series] = None, stresses: Optional[List[Series]] = None, hist: bool = True, kde: bool = False, titles: bool = True,
+           tmin: Optional[Tminmax] = None, tmax: Optional[Tminmax] = None, labels: Optional[List[str]] = None, figsize: tuple = (10, 5)) -> Axes:
     """Plot all the input time Series in a single plot.
 
     Parameters
@@ -488,7 +488,7 @@ class TrackSolve:
     Access the resulting figure through `track.fig`.
     """
 
-    def __init__(self, ml: pstMl, tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, update_iter: Optional[int] = None) -> None:
+    def __init__(self, ml: Model, tmin: Optional[Tminmax] = None, tmax: Optional[Tminmax] = None, update_iter: Optional[int] = None) -> None:
         logger.warning("TrackSolve feature under development. If you find any "
                        "bugs please post an issue on GitHub: "
                        "https://github.com/pastas/pastas/issues")
@@ -537,7 +537,7 @@ class TrackSolve:
         # calculate EVP
         self.evp = np.array([evp(obs=self.obs, res=res)])
 
-    def track_solve(self, params: pstAL) -> None:
+    def track_solve(self, params: Array_Like) -> None:
         """Append parameters to self.parameters DataFrame and update itercount,
         rmse values and evp.
 
@@ -579,7 +579,7 @@ class TrackSolve:
         self.tmax = self.ml.settings["tmax"]
         self.freq = self.ml.settings["freq"]
 
-    def _noise(self, params: pstAL) -> pstAL:
+    def _noise(self, params: Array_Like) -> Array_Like:
         """get noise.
 
         Parameters
@@ -597,12 +597,12 @@ class TrackSolve:
                               tmax=self.tmax)
         return noise
 
-    def _residuals(self, params: pstAL) -> pstAL:
+    def _residuals(self, params: Array_Like) -> Array_Like:
         """calculate residuals.
 
         Parameters
         ----------
-        params: pstAL
+        params: Array_Like
             array containing parameters
 
         Returns
@@ -728,7 +728,7 @@ class TrackSolve:
         self.fig.tight_layout()
         return self.fig
 
-    def plot_track_solve(self, params: pstAL) -> None:
+    def plot_track_solve(self, params: Array_Like) -> None:
         """Method to plot model simulation while model is being solved. Pass
         this method to ml.solve(), e.g.:
 

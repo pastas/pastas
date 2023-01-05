@@ -10,7 +10,7 @@ from .utils import (_get_dt, _get_stress_dt, _get_time_offset,
 
 # Type Hinting
 from typing import Optional, Union
-from pastas.typing import Axes, pstTS
+from pastas.typing import Axes
 
 
 logger = getLogger(__name__)
@@ -153,7 +153,7 @@ class TimeSeries:
                f"tmax={self.settings['tmax']})"
 
     @property
-    def series_original(self) -> pstTS:
+    def series_original(self) -> Series:
         return self._series_original
 
     @series_original.setter

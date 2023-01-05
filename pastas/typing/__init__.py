@@ -1,1 +1,1 @@
-from .types import Axes, Figure, pstTm, pstMl, pstTS, pstSM, pstNM, pstBS, pstRB, pstRV, pstCB, pstFu, pstRF, pstAL
+from .types import Axes, Figure, Tminmax, Model, TimeSeries, StressModel, NoiseModel, Solver, Recharge, Reservoir, CallBack, Function, RFunc, Array_Like

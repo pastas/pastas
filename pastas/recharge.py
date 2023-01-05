@@ -46,7 +46,7 @@ from .utils import check_numba
 
 # Type Hinting
 from typing import Tuple
-from pastas.typing import Tuple, pstAL
+from pastas.typing import Array_Like
 
 logger = getLogger(__name__)
 
@@ -108,7 +108,7 @@ class Linear(RechargeBase):
         parameters.loc[name + "_f"] = (-1.0, -2.0, 0.0, True, name)
         return parameters
 
-    def simulate(self, prec: pstAL, evap: pstAL, p: pstAL, **kwargs) -> pstAL:
+    def simulate(self, prec: Array_Like, evap: Array_Like, p: Array_Like, **kwargs) -> Array_Like:
         """Simulate the precipitation excess flux.
 
         Parameters
@@ -128,7 +128,7 @@ class Linear(RechargeBase):
         """
         return add(prec, multiply(evap, p))
 
-    def get_water_balance(self, prec: pstAL, evap: pstAL, p: pstAL, **kwargs) -> DataFrame:
+    def get_water_balance(self, prec: Array_Like, evap: Array_Like, p: Array_Like, **kwargs) -> DataFrame:
         ea = multiply(evap, p)
         r = add(prec, multiply(evap, p))
         return DataFrame(data=vstack((prec, ea, -r)).T,
@@ -216,7 +216,7 @@ class FlexModel(RechargeBase):
 
         return parameters
 
-    def simulate(self, prec: pstAL, evap: pstAL, temp: pstAL, p: pstAL, dt: float = 1.0, return_full: bool = False, **kwargs) -> pstAL:
+    def simulate(self, prec: Array_Like, evap: Array_Like, temp: Array_Like, p: Array_Like, dt: float = 1.0, return_full: bool = False, **kwargs) -> Array_Like:
         """Simulate the soil water balance model.
 
         Parameters
@@ -295,8 +295,8 @@ class FlexModel(RechargeBase):
 
     @staticmethod
     @njit
-    def get_root_zone_balance(pe: pstAL, ep: pstAL, srmax: float = 250.0, lp: float = 0.25, ks: float = 100.0,
-                              gamma: float = 4.0, dt: float = 1.0) -> Tuple[pstAL]:
+    def get_root_zone_balance(pe: Array_Like, ep: Array_Like, srmax: float = 250.0, lp: float = 0.25, ks: float = 100.0,
+                              gamma: float = 4.0, dt: float = 1.0) -> Tuple[Array_Like]:
         """Method to compute the water balance of the root zone reservoir.
 
         Parameters
@@ -368,7 +368,7 @@ class FlexModel(RechargeBase):
 
     @staticmethod
     @njit
-    def get_interception_balance(pr: pstAL, ep: pstAL, simax: float = 2.0, dt: float = 1.0) -> Tuple[pstAL]:
+    def get_interception_balance(pr: Array_Like, ep: Array_Like, simax: float = 2.0, dt: float = 1.0) -> Tuple[Array_Like]:
         """Method to compute the water balance of the interception reservoir.
 
         Parameters
@@ -422,7 +422,7 @@ class FlexModel(RechargeBase):
 
     @staticmethod
     @njit
-    def get_snow_balance(prec: pstAL, temp: pstAL, tt: float = 0.0, k: float = 2.0) -> Tuple[pstAL]:
+    def get_snow_balance(prec: Array_Like, temp: Array_Like, tt: float = 0.0, k: float = 2.0) -> Tuple[Array_Like]:
         """Method to compute the water balance of the snow reservoir.
 
         Parameters
@@ -470,7 +470,7 @@ class FlexModel(RechargeBase):
 
         return ss[:-1], ps, -m
 
-    def get_water_balance(self, prec: pstAL, evap: pstAL, temp: pstAL, p: pstAL, dt: float = 1.0, **kwargs) -> DataFrame:
+    def get_water_balance(self, prec: Array_Like, evap: Array_Like, temp: Array_Like, p: Array_Like, dt: float = 1.0, **kwargs) -> DataFrame:
         data = self.simulate(prec=prec, evap=evap, temp=temp,
                              p=p, dt=dt, return_full=True, **kwargs)
 
@@ -488,17 +488,17 @@ class FlexModel(RechargeBase):
 
         return DataFrame(data=vstack(data).T, columns=columns)
 
-    def check_snow_balance(self, prec: pstAL, temp: pstAL, **kwargs) -> float:
+    def check_snow_balance(self, prec: Array_Like, temp: Array_Like, **kwargs) -> float:
         ss, ps, m = self.get_snow_balance(prec, temp)
         error = (ss[0] - ss[-1] + (ps + m).sum())
         return error
 
-    def check_interception_balance(self, prec: pstAL, evap: pstAL, **kwargs) -> float:
+    def check_interception_balance(self, prec: Array_Like, evap: Array_Like, **kwargs) -> float:
         si, ei, pi = self.get_interception_balance(prec, evap)
         error = (si[0] - si[-1] + (pi + ei).sum())
         return error
 
-    def check_root_zone_balance(self, prec: pstAL, evap: pstAL, **kwargs) -> float:
+    def check_root_zone_balance(self, prec: Array_Like, evap: Array_Like, **kwargs) -> float:
         sr, r, ea, q, pe = self.get_root_zone_balance(prec, evap)
         error = (sr[0] - sr[-1] + (r + ea + q + pe).sum())
         return error
@@ -544,7 +544,7 @@ class Berendrecht(RechargeBase):
         parameters.loc[name + "_ks"] = (100.0, 1, 1e4, True, name)
         return parameters
 
-    def simulate(self, prec: pstAL, evap: pstAL, p: pstAL, dt: pstAL = 1.0, return_full: bool = False, **kwargs) -> Tuple[pstAL]:
+    def simulate(self, prec: Array_Like, evap: Array_Like, p: Array_Like, dt: Array_Like = 1.0, return_full: bool = False, **kwargs) -> Tuple[Array_Like]:
         """Simulate the recharge flux.
 
         Parameters
@@ -576,8 +576,8 @@ class Berendrecht(RechargeBase):
 
     @staticmethod
     @njit
-    def get_recharge(prec: pstAL, evap: pstAL, fi: float = 1.0, fc: float = 1.0, sr: float = 0.5, de: float = 250.0, l: float = -2.0,
-                     m: float = 0.5, ks: float = 50.0, dt: float = 1.0) -> pstAL:
+    def get_recharge(prec: Array_Like, evap: Array_Like, fi: float = 1.0, fc: float = 1.0, sr: float = 0.5, de: float = 250.0, l: float = -2.0,
+                     m: float = 0.5, ks: float = 50.0, dt: float = 1.0) -> Array_Like:
         """
         Internal method used for the recharge calculation. If Numba is
         available, this method is significantly faster.
@@ -609,7 +609,7 @@ class Berendrecht(RechargeBase):
             s[t + 1] = s[t] + dt / de * (pe[t] - ea[t] - r[t])
         return r, s, ea, pe
 
-    def get_water_balance(self, prec: pstAL, evap: pstAL, p: pstAL, dt: float = 1.0, **kwargs) -> DataFrame:
+    def get_water_balance(self, prec: Array_Like, evap: Array_Like, p: Array_Like, dt: float = 1.0, **kwargs) -> DataFrame:
         r, s, ea, pe = self.simulate(prec, evap, p=p, dt=dt,
                                      return_full=True, **kwargs)
         s = s * p[3]  # Because S is computed dimensionless in this model
@@ -669,7 +669,7 @@ class Peterson(RechargeBase):
         parameters.loc[name + "_gamma"] = (1.0, 0.0, 2.0, True, name)
         return parameters
 
-    def simulate(self, prec: pstAL, evap: pstAL, p: pstAL, dt: float = 1.0, return_full: bool = False, **kwargs) -> pstAL:
+    def simulate(self, prec: Array_Like, evap: Array_Like, p: Array_Like, dt: float = 1.0, return_full: bool = False, **kwargs) -> Array_Like:
         """Simulate the recharge flux.
 
         Parameters
@@ -700,7 +700,7 @@ class Peterson(RechargeBase):
 
     @staticmethod
     @njit
-    def get_recharge(prec: pstAL, evap: pstAL, scap: float = 1.0, alpha: float = 1.0,
+    def get_recharge(prec: Array_Like, evap: Array_Like, scap: float = 1.0, alpha: float = 1.0,
                      ksat: float = 1.0, beta: float = 0.5, gamma: float = 1.0, dt: float = 1.0):
         """
         Internal method used for the recharge calculation. If Numba is
@@ -729,7 +729,7 @@ class Peterson(RechargeBase):
                             max(0.0, sm[t] + (pe[t] - ea[t] - r[t]) * dt))
         return r, sm[1:], ea, pe
 
-    def get_water_balance(self, prec: pstAL, evap: pstAL, p: pstAL, dt: float = 1.0, **kwargs) -> DataFrame:
+    def get_water_balance(self, prec: Array_Like, evap: Array_Like, p: Array_Like, dt: float = 1.0, **kwargs) -> DataFrame:
         r, s, ea, pe = self.simulate(prec, evap, p=p, dt=dt,
                                      return_full=True, **kwargs)
         data = DataFrame(data=vstack((s, pe, ea, r)).T,

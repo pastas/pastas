@@ -8,7 +8,7 @@ import pastas as ps
 from warnings import warn
 
 from typing import Optional, Tuple, List
-from pastas.typing import pstMl, Axes
+from pastas.typing import Model, Axes
 
 
 class CompareModels:
@@ -56,7 +56,7 @@ class CompareModels:
         mc.figure.savefig("modelcomparison.png")
     """
 
-    def __init__(self, models: Optional[List[pstMl]] = None) -> None:
+    def __init__(self, models: Optional[List[Model]] = None) -> None:
         """Initialize model compare class.
 
         Parameters
@@ -215,7 +215,7 @@ class CompareModels:
             if axlbl in ["sim", "res"] or axlbl.startswith("con"):
                 self.axes[axlbl].autoscale(enable=None, axis="y", tight=True)
 
-    def get_unique_stressmodels(self, models: List[pstMl] = None) -> List[str]:
+    def get_unique_stressmodels(self, models: List[Model] = None) -> List[str]:
         """Get all unique stressmodel names.
 
         Parameters
@@ -262,7 +262,7 @@ class CompareModels:
 
         return mosaic
 
-    def get_tmin_tmax(self, models: List[pstMl] = None) -> DataFrame:
+    def get_tmin_tmax(self, models: List[Model] = None) -> DataFrame:
         """get tmin and tmax of all models.
 
         Parameters
@@ -282,7 +282,7 @@ class CompareModels:
 
         return tmintmax
 
-    def get_metrics(self, models: Optional[list[pstMl]] = None, metric_selection: Optional[list[str]] = None) -> DataFrame:
+    def get_metrics(self, models: Optional[list[Model]] = None, metric_selection: Optional[list[str]] = None) -> DataFrame:
         """get metrics of all models in a DataFrame.
 
         Parameters
@@ -311,7 +311,7 @@ class CompareModels:
         return metrics
 
     def get_parameters(
-        self, models: Optional[List[pstMl]] = None, param_col: str = "optimal", param_selection: Optional[List[str]] = None
+        self, models: Optional[List[Model]] = None, param_col: str = "optimal", param_selection: Optional[List[str]] = None
     ) -> DataFrame:
         """get parameter values of all models in a DataFrame.
 
@@ -347,7 +347,7 @@ class CompareModels:
         else:
             return params
 
-    def get_diagnostics(self, models: Optional[List[pstMl]] = None, diag_col: str = "P-value") -> DataFrame:
+    def get_diagnostics(self, models: Optional[List[Model]] = None, diag_col: str = "P-value") -> DataFrame:
         """Get p-values of statistical tests in a DataFrame.
 
         Parameters

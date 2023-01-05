@@ -8,12 +8,12 @@ import pastas as ps
 from pandas import to_numeric
 
 # Type Hinting
-from pastas.typing import pstMl
+from pastas.typing import Model
 
 logger = getLogger(__name__)
 
 
-def load(fname: str, **kwargs) -> pstMl:
+def load(fname: str, **kwargs) -> Model:
     """Method to load a Pastas Model from file.
 
     Parameters
@@ -56,7 +56,7 @@ def load(fname: str, **kwargs) -> pstMl:
     return ml
 
 
-def _load_model(data: dict) -> pstMl:
+def _load_model(data: dict) -> Model:
     """Internal method to create a model from a dictionary."""
     # Create model
     oseries = ps.TimeSeries(**data["oseries"])
