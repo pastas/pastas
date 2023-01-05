@@ -240,7 +240,7 @@ class Gamma(RfuncBase):
         s = p[0] * gammainc(p[1], t / p[2])
         return s
 
-    def impulse(self, t, p) -> Array_Like:
+    def impulse(self, t: Array_Like, p: Array_Like) -> Array_Like:
         A, n, a = p
         ir = A * t ** (n - 1) * np.exp(-t / a) / (a ** n * gamma(n))
         return ir

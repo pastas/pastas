@@ -602,7 +602,7 @@ class TrackSolve:
 
         Parameters
         ----------
-        params: Array_Like
+        params: np.array
             array containing parameters
 
         Returns

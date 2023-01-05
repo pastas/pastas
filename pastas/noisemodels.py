@@ -168,7 +168,7 @@ class NoiseModel(NoiseModelBase):
             Pandas Series with the residuals to compute the weights for. The
             Series index must be a DatetimeIndex.
         p: array_like
-            array_like with the parameters used in the noise model.
+            NumPy array with the parameters used in the noise model.
 
         Returns
         -------

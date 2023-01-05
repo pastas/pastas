@@ -648,8 +648,8 @@ def show_versions(lmfit: bool = False, numba: bool = False) -> None:
 
     msg = (
         f"Python version: {os_version}\n"
-        f"Numpy version: {np_version}\n"
-        f"Scipy version: {sc_version}\n"
+        f"NumPy version: {np_version}\n"
+        f"SciPy version: {sc_version}\n"
         f"Pandas version: {pd_version}\n"
         f"Pastas version: {ps_version}\n"
         f"Matplotlib version: {mpl_version}"

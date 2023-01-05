@@ -234,12 +234,11 @@ class FlexModel(RechargeBase):
             time step for the calculation of the recharge. Only dt=1 is
             possible now.
         return_full: bool
-            return all fluxes and states as Numpy arrays.
+            return all fluxes and states as NumPy arrays.
 
         Returns
         -------
         r: array_like
-
             Recharge flux calculated by the model.
 
         """
@@ -374,9 +373,9 @@ class FlexModel(RechargeBase):
         Parameters
         ----------
         pr: array_like
-            Numpy Array with rainfall in mm/day.
+            NumPy Array with rainfall in mm/day.
         ep: array_like
-            Numpy Array with potential evaporation in mm/day.
+            NumPy Array with potential evaporation in mm/day.
         simax: float, optional
             storage capacity of the interception reservoir.
         dt: float
@@ -428,9 +427,9 @@ class FlexModel(RechargeBase):
         Parameters
         ----------
         prec: array_like
-            Numpy Array with precipitation in mm/day.
+            NumPy Array with precipitation in mm/day.
         temp: array_like
-            Numpy Array with the mean daily temperature in degree Celsius.
+            NumPy Array with the mean daily temperature in degree Celsius.
         tt: float, optional
         k: float, optional
 

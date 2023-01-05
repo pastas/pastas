@@ -1079,7 +1079,7 @@ class Model:
         Returns
         -------
         p: array_like
-            Numpy array with the parameters used in the time series model.
+            NumPy array with the parameters used in the time series model.
         """
         if name:
             p = self.parameters.loc[self.parameters.name == name]
