@@ -8,7 +8,7 @@ import pastas as ps
 from warnings import warn
 
 from typing import Optional, Tuple, List
-from pastas.typing import pstMl, pstAx
+from pastas.typing import pstMl, Axes
 
 
 class CompareModels:
@@ -200,13 +200,13 @@ class CompareModels:
                 heights_list += [mosfrac[ky]]
 
         self.mosaic = mosaic
-        figure, axes = plt.subplot_mosaic(
+        fig, axes = plt.subplot_mosaic(
             self.mosaic,
             figsize=figsize,
             gridspec_kw=dict(height_ratios=heights_list),
         )
 
-        self.figure = figure
+        self.figure = fig
         self.axes = axes
         self.cmap = plt.get_cmap(cmap)
 
@@ -752,7 +752,7 @@ class CompareModels:
         cols = diags.columns.to_list()[-1:] + diags.columns.to_list()[:-1]
         self.plot_table(axn=axn, df=diags[cols])
 
-    def share_xaxes(self, axes: List[pstAx]) -> None:
+    def share_xaxes(self, axes: List[Axes]) -> None:
         """share x-axes.
 
         Parameters
@@ -766,7 +766,7 @@ class CompareModels:
                 for t in iax.get_xticklabels():
                     t.set_visible(False)
 
-    def share_yaxes(self, axes: List[pstAx]) -> None:
+    def share_yaxes(self, axes: List[Axes]) -> None:
         """share y-axes.
 
         Parameters

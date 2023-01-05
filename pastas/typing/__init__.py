@@ -1,1 +1,1 @@
-from .types import pstAx, pstFi, pstTm, pstMl, pstTS, pstSM, pstNM, pstBS, pstRB, pstRV, pstCB, pstFu, pstRF, pstAL
+from .types import Axes, Figure, pstTm, pstMl, pstTS, pstSM, pstNM, pstBS, pstRB, pstRV, pstCB, pstFu, pstRF, pstAL

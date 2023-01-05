@@ -42,4 +42,4 @@ ml3.add_stressmodel(sm)
 ml3.solve(noise=noise, fit_constant=fit_constant)
 
 # Compare both models
-axes = ps.plots.compare([ml1, ml2, ml3])
+ax = ps.plots.compare([ml1, ml2, ml3])

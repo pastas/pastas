@@ -6,7 +6,7 @@ from platform import platform
 from datetime import datetime, timedelta
 
 import numpy as np
-from pandas import Series, Timedelta, Timestamp, date_range, to_datetime, Index, DatetimeIndex, Time
+from pandas import Series, Timedelta, Timestamp, date_range, to_datetime, Index, DatetimeIndex
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
 

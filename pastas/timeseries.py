@@ -10,7 +10,7 @@ from .utils import (_get_dt, _get_stress_dt, _get_time_offset,
 
 # Type Hinting
 from typing import Optional, Union
-from pastas.typing import pstAx, pstTS
+from pastas.typing import Axes, pstTS
 
 
 logger = getLogger(__name__)
@@ -661,7 +661,7 @@ class TimeSeries:
 
         return data
 
-    def plot(self, original: bool = False, **kwargs) -> pstAx:
+    def plot(self, original: bool = False, **kwargs) -> Axes:
         """Method to plot the TimeSeries object. Plots the edited series by
         default.
 

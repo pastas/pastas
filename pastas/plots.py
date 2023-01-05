@@ -16,7 +16,7 @@ from .modelcompare import CompareModels
 
 # Type Hinting
 from typing import Optional, List, Tuple
-from pastas.typing import pstAL, pstAx, pstFi, pstTm, pstMl
+from pastas.typing import pstAL, Axes, Figure, pstTm, pstMl
 
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ __all__ = ["compare", "Series", "acf", "diagnostics", "cum_frequency",
            "TrackSolve"]
 
 
-def compare(models: List[pstMl], adjust_height: bool = True, **kwargs) -> pstAx:
+def compare(models: List[pstMl], adjust_height: bool = True, **kwargs) -> Axes:
     """Plot multiple Pastas models in one figure to visually compare models.
 
     Note
@@ -58,7 +58,7 @@ def compare(models: List[pstMl], adjust_height: bool = True, **kwargs) -> pstAx:
 
 
 def Series(head: Optional[Series] = None, stresses: Optional[List[Series]] = None, hist: bool = True, kde: bool = False, titles: bool = True,
-           tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, labels: Optional[List[str]] = None, figsize: tuple = (10, 5)) -> pstAx:
+           tmin: Optional[pstTm] = None, tmax: Optional[pstTm] = None, labels: Optional[List[str]] = None, figsize: tuple = (10, 5)) -> Axes:
     """Plot all the input time Series in a single plot.
 
     Parameters
@@ -199,7 +199,7 @@ def Series(head: Optional[Series] = None, stresses: Optional[List[Series]] = Non
 
 
 def acf(Series: Series, alpha: float = 0.05, lags: int = 365, acf_options: Optional[dict] = None, smooth_conf: bool = True,
-        color: str = "k", ax: Optional[pstAx] = None, figsize: tuple = (5, 2)) -> pstAx:
+        color: str = "k", ax: Optional[Axes] = None, figsize: tuple = (5, 2)) -> Axes:
     """Plot of the autocorrelation function of a time Series.
 
     Parameters
@@ -266,7 +266,7 @@ def acf(Series: Series, alpha: float = 0.05, lags: int = 365, acf_options: Optio
 
 
 def diagnostics(Series: Series, sim: Optional[Series] = None, alpha: float = 0.05, bins: int = 50, acf_options: Optional[dict] = None,
-                figsize: tuple = (10, 5), fig: Optional[pstFi] = None, heteroscedasicity: bool = True, **kwargs) -> pstAx:
+                figsize: tuple = (10, 5), fig: Optional[Figure] = None, heteroscedasicity: bool = True, **kwargs) -> Axes:
     """Plot that helps in diagnosing basic model assumptions.
 
     Parameters
@@ -385,7 +385,7 @@ def diagnostics(Series: Series, sim: Optional[Series] = None, alpha: float = 0.0
     return fig.axes
 
 
-def cum_frequency(obs: Series, sim: Optional[Series] = None, ax: Optional[pstAx] = None, figsize: tuple = (5, 2)) -> pstAx:
+def cum_frequency(obs: Series, sim: Optional[Series] = None, ax: Optional[Axes] = None, figsize: tuple = (5, 2)) -> Axes:
     """Plot of the cumulative frequency of a time Series.
 
     Parameters
@@ -628,7 +628,7 @@ class TrackSolve:
                                freq=self.ml.settings["freq"])
         return sim
 
-    def initialize_figure(self, figsize: Tuple[int] = (10, 8), dpi: int = 100) -> pstFi:
+    def initialize_figure(self, figsize: Tuple[int] = (10, 8), dpi: int = 100) -> Figure:
         """Initialize figure for plotting optimization progress.
 
         Parameters
@@ -786,7 +786,7 @@ class TrackSolve:
         plt.pause(1e-10)
         self.fig.canvas.draw()
 
-    def plot_track_solve_history(self, fig: Optional[pstFi] = None) -> List[pstAx]:
+    def plot_track_solve_history(self, fig: Optional[Figure] = None) -> List[Axes]:
         """Plot optimization history.
 
         Parameters

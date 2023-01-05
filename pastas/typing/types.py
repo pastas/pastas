@@ -23,10 +23,10 @@ from matplotlib.figure import FigureBase
 # Numpy
 from numpy.typing import ArrayLike
 # Typing
-from typing import Type, Union, Optional, Tuple, List, Any, TypeVar
+from typing import Union, Any, TypeVar
 
-pstAx = TypeVar("pstAx", bound=_AxesBase)  # Matplotlib Axes
-pstFi = TypeVar("pstFi", bound=FigureBase)  # Matplotlib Figure
+Axes = TypeVar("Axes", bound=_AxesBase)  # Matplotlib Axes
+Figure = TypeVar("Figure", bound=FigureBase)  # Matplotlib Figure
 # pstS = TypeVar("pstS", bound=Type[Series])
 # pstDF = TypeVar("pstDF", bound=Type[DataFrame])
 pstTm = TypeVar("pstTm", bound=Union[str, Timestamp])  # Tmin or Tmax
