@@ -64,18 +64,18 @@ def series(head: Optional[Series] = None, stresses: Optional[List[Series]] = Non
     Parameters
     ----------
     head: pd.Series
-        Pandas time Series with DatetimeIndex.
+        Pandas time series with DatetimeIndex.
     stresses: List of pd.Series
-        List with Pandas time Series with DatetimeIndex.
+        List with Pandas time series with DatetimeIndex.
     hist: bool
-        Histogram for the Series. The number of bins is determined with Sturges
+        Histogram for the series. The number of bins is determined with Sturges
         rule. Returns the number of observations, mean, skew and kurtosis.
     kde: bool
-        Kernel density estimate for the Series. The kde is obtained from
+        Kernel density estimate for the series. The kde is obtained from
         scipy.gaussian_kde using scott to calculate the estimator bandwidth.
         Returns the number of observations, mean, skew and kurtosis.
     titles: bool
-        Set the titles or not. Taken from the name attribute of the Series.
+        Set the titles or not. Taken from the name attribute of the series.
     tmin: str or pd.Timestamp
     tmax: str or pd.Timestamp
     labels: List of str
@@ -198,14 +198,14 @@ def series(head: Optional[Series] = None, stresses: Optional[List[Series]] = Non
     return axes
 
 
-def acf(Series: Series, alpha: float = 0.05, lags: int = 365, acf_options: Optional[dict] = None, smooth_conf: bool = True,
+def acf(series: Series, alpha: float = 0.05, lags: int = 365, acf_options: Optional[dict] = None, smooth_conf: bool = True,
         color: str = "k", ax: Optional[Axes] = None, figsize: tuple = (5, 2)) -> Axes:
-    """Plot of the autocorrelation function of a time Series.
+    """Plot of the autocorrelation function of a time series.
 
     Parameters
     ----------
-    Series: pandas.Series
-        Residual Series to plot the autocorrelation function for.
+    series: pandas.Series
+        Residual series to plot the autocorrelation function for.
     alpha: float, optional
         Significance level to calculate the (1-alpha)-confidence intervals.
         For 95% confidence intervals, alpha should be 0.05.
@@ -214,7 +214,7 @@ def acf(Series: Series, alpha: float = 0.05, lags: int = 365, acf_options: Optio
     acf_options: dict, optional
         Dictionary with keyword arguments passed on to pastas.stats.acf.
     smooth_conf: bool, optional
-        For irregular time Series the confidence interval may be
+        For irregular time series the confidence interval may be
     color: str, optional
         Color of the vertical autocorrelation lines.
     ax: matplotlib.axes.Axes, optional
@@ -240,7 +240,7 @@ def acf(Series: Series, alpha: float = 0.05, lags: int = 365, acf_options: Optio
     # Plot the autocorrelation
     if acf_options is None:
         acf_options = {}
-    r = get_acf(Series, full_output=True, alpha=alpha, lags=lags,
+    r = get_acf(series, full_output=True, alpha=alpha, lags=lags,
                 **acf_options)
 
     if r.empty:
@@ -265,16 +265,16 @@ def acf(Series: Series, alpha: float = 0.05, lags: int = 365, acf_options: Optio
     return ax
 
 
-def diagnostics(Series: Series, sim: Optional[Series] = None, alpha: float = 0.05, bins: int = 50, acf_options: Optional[dict] = None,
+def diagnostics(series: Series, sim: Optional[Series] = None, alpha: float = 0.05, bins: int = 50, acf_options: Optional[dict] = None,
                 figsize: tuple = (10, 5), fig: Optional[Figure] = None, heteroscedasicity: bool = True, **kwargs) -> Axes:
     """Plot that helps in diagnosing basic model assumptions.
 
     Parameters
     ----------
-    Series: pandas.Series
-        Pandas Series with the residual time Series to diagnose.
+    series: pandas.Series
+        Pandas Series with the residual time series to diagnose.
     sim: pandas.Series, optional
-        Pandas Series with the simulated time Series. Used to diagnose on
+        Pandas series with the simulated time series. Used to diagnose on
         heteroscedasticity. Ignored if heteroscedasticity is set to False.
     alpha: float, optional
         Significance level to calculate the (1-alpha)-confidence intervals.
@@ -288,7 +288,7 @@ def diagnostics(Series: Series, sim: Optional[Series] = None, alpha: float = 0.0
         Optionally provide a Matplotib.Figure instance to plot onto.
     heteroscedasicity: bool, optional
         Create two additional subplots to check for heteroscedasticity. If
-        true, a simulated time Series has to be provided with the sim argument.
+        true, a simulated time series has to be provided with the sim argument.
     **kwargs: dict, optional
         Optional keyword arguments, passed on to plt.figure.
 
@@ -320,7 +320,7 @@ def diagnostics(Series: Series, sim: Optional[Series] = None, alpha: float = 0.0
 
     if heteroscedasicity:
         if sim is None:
-            msg = "A simulated time Series has to be provided to make plots " \
+            msg = "A simulated time series has to be provided to make plots " \
                   "to diagnose heteroscedasticity. Provide 'sim' argument."
             logger.error(msg=msg)
             raise KeyError(msg)
@@ -335,31 +335,31 @@ def diagnostics(Series: Series, sim: Optional[Series] = None, alpha: float = 0.0
     ax1 = fig.add_subplot(gs[1, 0])
     ax3 = fig.add_subplot(gs[1, 1])
 
-    # Plot the residuals or noise Series
+    # Plot the residuals or noise series
     ax.axhline(0, c="k")
-    Series.plot(ax=ax)
-    ax.set_ylabel(Series.name)
-    ax.set_xlim(Series.index.min(), Series.index.max())
-    ax.set_title(f"{Series.name} (n={Series.size :.0f}, $\\mu$"
-                 f"={Series.mean() :.2f})")
+    series.plot(ax=ax)
+    ax.set_ylabel(series.name)
+    ax.set_xlim(series.index.min(), series.index.max())
+    ax.set_title(f"{series.name} (n={series.size :.0f}, $\\mu$"
+                 f"={series.mean() :.2f})")
     ax.grid()
     ax.tick_params(axis='x', labelrotation=0)
     for label in ax.get_xticklabels():
         label.set_horizontalalignment('center')
 
     # Plot the autocorrelation
-    acf(Series, alpha=alpha, acf_options=acf_options, ax=ax1)
+    acf(series, alpha=alpha, acf_options=acf_options, ax=ax1)
     ax1.set_title(None)
 
     # Plot the histogram for normality and add a 'best fit' line
-    _, bins, _ = ax2.hist(Series.values, bins=bins, density=True)
-    y = norm.pdf(bins, Series.mean(), Series.std())
+    _, bins, _ = ax2.hist(series.values, bins=bins, density=True)
+    y = norm.pdf(bins, series.mean(), series.std())
     ax2.plot(bins, y, 'k--')
     ax2.set_ylabel("Probability density")
     ax2.set_title("Histogram")
 
     # Plot the probability plot
-    _, (_, _, r) = probplot(Series, plot=ax3, dist="norm", rvalue=False)
+    _, (_, _, r) = probplot(series, plot=ax3, dist="norm", rvalue=False)
     c = ax.get_lines()[1].get_color()
     ax3.get_lines()[0].set_color(c)
     ax3.get_lines()[1].set_color("k")
@@ -369,14 +369,14 @@ def diagnostics(Series: Series, sim: Optional[Series] = None, alpha: float = 0.0
 
     if heteroscedasicity and sim is not None:
         # Plot residuals vs. simulation
-        sim = sim.loc[Series.index]
-        ax4.plot(sim, Series, marker=".", linestyle=" ", color=c, alpha=0.7)
+        sim = sim.loc[series.index]
+        ax4.plot(sim, series, marker=".", linestyle=" ", color=c, alpha=0.7)
         ax4.grid()
         ax4.set_xlabel("Simulated values")
         ax4.set_ylabel("Residuals")
 
         # Plot residuals vs. simulation
-        ax5.plot(sim, np.sqrt(Series.abs()), marker=".", linestyle=" ",
+        ax5.plot(sim, np.sqrt(series.abs()), marker=".", linestyle=" ",
                  color=c, alpha=0.7)
         ax5.set_xlabel("Simulated values")
         ax5.set_ylabel("$\\sqrt{|Residuals|}$")
@@ -436,10 +436,10 @@ class TrackSolve:
         pastas Model to track
     tmin : str or pandas.Timestamp, optional
         start time for simulation, by default None which
-        defaults to first index in ml.oSeries.Series
+        defaults to first index in ml.oseries.Series
     tmax : str or pandas.Timestamp, optional
         end time for simulation, by default None which
-        defaults to last index in ml.oSeries.Series
+        defaults to last index in ml.oseries.Series
     update_iter : int, optional
         if visualizing optimization progress, update plot every update_iter
         iterations, by default nparam
@@ -503,12 +503,12 @@ class TrackSolve:
 
         # get tmin/tmax
         if tmin is None:
-            self.tmin = self.ml.oSeries.Series.index[0]
+            self.tmin = self.ml.oseries.series.index[0]
         else:
             self.tmin = Timestamp(tmin)
 
         if tmax is None:
-            self.tmax = self.ml.oSeries.Series.index[-1]
+            self.tmax = self.ml.oseries.series.index[-1]
         else:
             self.tmax = Timestamp(tmax)
 
@@ -650,7 +650,7 @@ class TrackSolve:
         # share x-axes between 2nd and 3rd axes
         self.ax1.get_shared_x_axes().join(self.ax1, self.ax2)
 
-        # plot oSeries
+        # plot oseries
         self.ax0.plot(self.obs.index, self.obs,
                       marker=".", ls="none", label="observations",
                       color="k", ms=4)
