@@ -18,7 +18,7 @@ from numpy import abs, average, log, nan, sqrt
 from pastas.stats.core import _get_weights, mean, std, var
 from pandas import Series
 # Type Hinting
-from pastas.typing import Type, Optional
+from typing import Optional
 
 __all__ = ["rmse", "sse", "mae", "nse", "evp", "rsq", "bic", "aic",
            "pearsonr", "kge_2012"]

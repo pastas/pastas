@@ -43,7 +43,10 @@ from pandas import DataFrame
 
 from .decorators import njit
 from .utils import check_numba
-from pastas.typing import Type, Optional, Tuple, pstAL
+
+# Type Hinting
+from typing import Tuple
+from pastas.typing import Tuple, pstAL
 
 logger = getLogger(__name__)
 

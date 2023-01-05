@@ -11,8 +11,9 @@ from pandas import Series, DataFrame, date_range, infer_freq
 from pastas.stats.core import acf as get_acf
 from pastas.utils import _get_time_offset, get_equidistant_series
 from scipy.stats import chi2, norm, normaltest, shapiro
+
 # Type Hinting
-from pastas.typing import Type, Optional, Tuple
+from typing import Tuple
 
 
 logger = getLogger(__name__)

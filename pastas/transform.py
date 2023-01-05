@@ -10,7 +10,7 @@ from .decorators import set_parameter
 from .utils import validate_name
 
 # Type Hinting
-from pastas.typing import Type, Optional, pstAL, pstMl
+from pastas.typing import pstAL, pstMl
 
 
 class ThresholdTransform:

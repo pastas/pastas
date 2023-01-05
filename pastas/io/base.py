@@ -6,6 +6,7 @@ from os import path
 
 import pastas as ps
 from pandas import to_numeric
+
 # Type Hinting
 from pastas.typing import pstMl
 

@@ -2,8 +2,9 @@ try:
     from tqdm.auto import tqdm
 except ModuleNotFoundError:
     raise ModuleNotFoundError("SolveTimer requires 'tqdm' to be installed.")
+
 # Type Hinting
-from pastas.typing import Optional
+from typing import Optional
 
 
 class ExceededMaxSolveTime(Exception):

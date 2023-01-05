@@ -11,7 +11,8 @@ from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
 
 # Type Hinting
-from pastas.typing import Type, Optional, Tuple, Any, pstAL, pstMl, pstTm
+from typing import Optional, Tuple, Any
+from pastas.typing import pstAL, pstMl, pstTm
 
 logger = logging.getLogger(__name__)
 
@@ -545,8 +546,8 @@ def remove_console_handler(logger: Optional[Any] = None) -> None:
             logger.removeHandler(handler)
 
 
-def add_file_handlers(logger: Optional[Any] = None, filenames: Tuple[str, str] = ('info.log', 'errors.log'),
-                      levels: Tuple[Any, Any] = (logging.INFO, logging.ERROR), maxBytes: int = 10485760,
+def add_file_handlers(logger: Optional[Any] = None, filenames: Tuple[str] = ('info.log', 'errors.log'),
+                      levels: Tuple[Any] = (logging.INFO, logging.ERROR), maxBytes: int = 10485760,
                       backupCount: int = 20, encoding: str = 'utf8',
                       fmt: str = '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                       datefmt: str = '%y-%m-%d %H:%M') -> None:
@@ -574,7 +575,7 @@ def add_file_handlers(logger: Optional[Any] = None, filenames: Tuple[str, str] =
         logger.addHandler(fh)
 
 
-def remove_file_handlers(logger: Optional[Type[logging.Logger]] = None) -> None:
+def remove_file_handlers(logger: Optional[logging.Logger] = None) -> None:
     """Method to remove any file handlers in the logger of Pastas.
 
     Parameters

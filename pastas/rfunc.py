@@ -11,7 +11,8 @@ from scipy.special import (erfc, erfcinv, exp1, gamma, gammainc, gammaincinv,
 from scipy.interpolate import interp1d
 
 # Type Hinting
-from pastas.typing import Type, Optional, Union, pstAL
+from typing import Optional, Union
+from pastas.typing import pstAL
 
 logger = getLogger(__name__)
 

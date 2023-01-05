@@ -14,7 +14,8 @@ from ..decorators import njit
 from ..utils import check_numba
 
 # Type Hinting
-from pastas.typing import Type, Optional, Union, Tuple, pstAL
+from typing import Union, Tuple
+from pastas.typing import pstAL
 
 
 def acf(x: Series, lags: pstAL = 365, bin_method: str = 'rectangle', bin_width: float = 0.5, max_gap: float = inf,

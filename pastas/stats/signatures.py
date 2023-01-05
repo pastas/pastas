@@ -6,7 +6,8 @@ from numpy import diff, sqrt, log, arange, nan
 import pastas as ps
 from scipy.stats import linregress
 
-from pastas.typing import Type, Optional, Tuple
+# Type Hinting
+from typing import Optional, Tuple
 
 
 __all__ = ["cv_period_mean", "cv_date_min", "cv_fall_rate", "cv_rise_rate",

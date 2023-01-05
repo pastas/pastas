@@ -27,7 +27,8 @@ from .decorators import njit, set_parameter
 from .utils import check_numba
 
 # Type Hinting
-from pastas.typing import Type, Optional, pstAL
+from typing import Optional
+from pastas.typing import Optional, pstAL
 
 __all__ = ["NoiseModel", "ArmaModel"]
 

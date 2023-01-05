@@ -29,7 +29,8 @@ from .decorators import model_tmin_tmax
 from .stats import diagnostics, metrics
 
 # Type Hinting
-from pastas.typing import Type, Optional, pstMl, List, pstTm
+from typing import Optional
+from pastas.typing import pstMl, List, pstTm
 
 
 class Statistics:

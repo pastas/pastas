@@ -15,7 +15,8 @@ from .stats.metrics import rmse, evp
 from .modelcompare import CompareModels
 
 # Type Hinting
-from pastas.typing import Type, Optional, List, pstAL, pstAx, pstFi, pstTm, pstMl
+from typing import Optional, List, Tuple
+from pastas.typing import pstAL, pstAx, pstFi, pstTm, pstMl
 
 
 logger = logging.getLogger(__name__)

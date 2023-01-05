@@ -28,9 +28,9 @@ from .rfunc import Exponential, HantushWellModel, One
 from .timeseries import TimeSeries
 from .utils import check_numba, validate_name
 
-
 # Type Hinting
-from pastas.typing import Type, Optional, Tuple, List, Union, pstAL, pstRF, pstRB, pstRV, pstTm, pstMl
+from typing import Optional, Tuple, List, Union
+from pastas.typing import pstAL, pstRF, pstRB, pstRV, pstTm, pstMl
 
 logger = getLogger(__name__)
 

@@ -7,7 +7,8 @@ from pandas import DataFrame, concat
 import pastas as ps
 from warnings import warn
 
-from pastas.typing import Optional, Tuple, List, pstMl, pstAx
+from typing import Optional, Tuple, List
+from pastas.typing import pstMl, pstAx
 
 
 class CompareModels:

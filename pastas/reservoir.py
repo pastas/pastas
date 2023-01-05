@@ -19,7 +19,7 @@ from pandas import DataFrame, Series
 from pastas.decorators import njit
 
 # Type Hinting
-from pastas.typing import Type, Optional, pstAL
+from pastas.typing import pstAL
 
 
 class ReservoirBase:

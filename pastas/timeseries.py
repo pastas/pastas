@@ -7,8 +7,10 @@ from pandas.tseries.frequencies import to_offset
 from .rcparams import rcParams
 from .utils import (_get_dt, _get_stress_dt, _get_time_offset,
                     timestep_weighted_resample, validate_name)
+
 # Type Hinting
-from pastas.typing import Type, Optional, Union, pstAx, pstTS
+from typing import Optional, Union
+from pastas.typing import pstAx, pstTS
 
 
 logger = getLogger(__name__)

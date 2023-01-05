@@ -18,7 +18,8 @@ from scipy.linalg import svd
 from scipy.optimize import least_squares
 
 # Type Hinting
-from pastas.typing import Type, Optional, Tuple, Union, pstAL, pstCB, pstFu, pstMl
+from typing import Optional, Tuple, Union
+from pastas.typing import pstAL, pstCB, pstFu, pstMl
 
 
 logger = getLogger(__name__)

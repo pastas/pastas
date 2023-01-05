@@ -15,7 +15,8 @@ from .plots import series, diagnostics, cum_frequency, \
     _table_formatter_params, _table_formatter_stderr
 
 # Type Hinting
-from pastas.typing import Type, Optional, List, Union, pstAx, pstFi, pstTm, pstMl
+from typing import Optional, List, Union
+from pastas.typing import pstAx, pstFi, pstTm, pstMl
 
 logger = logging.getLogger(__name__)
 

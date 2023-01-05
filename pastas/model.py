@@ -26,7 +26,8 @@ from pastas.utils import (_get_dt, _get_time_offset, frequency_is_supported,
 from pastas.version import __version__
 
 # Type Hinting
-from pastas.typing import Type, Union, Optional, Tuple, List, pstTm, pstSM, pstNM, pstBS, pstAL, pstMl
+from typing import Union, Optional, Tuple, List
+from pastas.typing import pstTm, pstSM, pstNM, pstBS, pstAL, pstMl
 
 
 class Model:
