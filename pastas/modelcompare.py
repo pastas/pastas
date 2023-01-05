@@ -282,7 +282,7 @@ class CompareModels:
 
         return tmintmax
 
-    def get_metrics(self, models: Optional[list[Model]] = None, metric_selection: Optional[list[str]] = None) -> DataFrame:
+    def get_metrics(self, models: Optional[List[Model]] = None, metric_selection: Optional[List[str]] = None) -> DataFrame:
         """get metrics of all models in a DataFrame.
 
         Parameters
