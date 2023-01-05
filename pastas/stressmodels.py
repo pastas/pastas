@@ -815,9 +815,9 @@ class RechargeModel(StressModelBase):
     name: str, optional
         Name of the stress. Default is "recharge".
     recharge: pastas.recharge instance, optional
-        String with the name of the recharge model. Options are: Linear (
-        default), FlexModel and Berendrecht. These can be accessed through
-        ps.rch.
+        Instance of a recharge model. Options are: Linear, FlexModel and
+        Berendrecht. These can be accessed through ps.rch. If no recharge
+        model is provided, ps.rch.Linear() is used.
     temp: pandas.Series or pastas.timeseries.TimeSeries, optional
         pandas.Series or pastas.TimeSeries object containing the
         temperature series. It depends on the recharge model is this
@@ -861,6 +861,7 @@ class RechargeModel(StressModelBase):
     We recommend not to store a RechargeModel is a variable named `rm`. This
     name is already reserved in IPython to remove files and will cause
     problems later.
+
     """
     _name = "RechargeModel"
 
@@ -870,6 +871,7 @@ class RechargeModel(StressModelBase):
 
         if rfunc is None:
             rfunc = Exponential()
+
         if recharge is None:
             recharge = Linear()
 
