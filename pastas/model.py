@@ -101,8 +101,11 @@ class Model:
             "tmin": None,
             "tmax": None,
             "freq": freq,
-            "warmup": (3650 * to_timedelta(freq) if freq[0].isdigit()
-                       else Timedelta(3650, freq)),
+            "warmup": (
+                Timedelta(3650, "D") / Timedelta(freq) * to_timedelta(freq)
+                if freq[0].isdigit()
+                else Timedelta(3650, freq)
+            ),
             "time_offset": Timedelta(0),
             "noise": noisemodel,
             "solver": None,
@@ -900,7 +903,9 @@ class Model:
                 break
 
         if self.sim_index is None or update_sim_index:
+            # TODO: sort out what to do for freq > "D"
             tmin = (tmin - warmup).floor(freq) + self.settings["time_offset"]
+            # tmin = (tmin - warmup) + self.settings["time_offset"]
             sim_index = date_range(tmin, tmax, freq=freq)
         else:
             sim_index = self.sim_index
@@ -1439,7 +1444,7 @@ class Model:
         >>> ml.get_response_tmax("recharge", cutoff=0.99)
         >>> 703
 
-        This means that after 1053 days, 99% of the response of the
+        This means that after 703 days, 99% of the response of the
         groundwater levels to a recharge pulse has taken place.
         """
         if self.stressmodels[name].rfunc is None:

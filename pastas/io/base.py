@@ -3,6 +3,8 @@
 from importlib import import_module
 from logging import getLogger
 from os import path
+from packaging import version
+from numpy import log
 
 import pastas as ps
 from pandas import to_numeric
@@ -109,6 +111,19 @@ def _load_model(data: dict) -> Model:
             ts["evap"] = ts["stress"][1]
             ts.pop("stress")
             ts.pop("up")
+
+        # Deal with old parameter value b in HantushWellModel: b_new = np.log(b_old)
+        if ((ts["stressmodel"] == "WellModel") and
+            (version.parse(data["file_info"]["pastas_version"]) <
+             version.parse("0.22.0"))):
+            logger.warning("The value of parameter 'b' in HantushWellModel"
+                           "was modified in 0.22.0: b_new = log(b_old). The value of "
+                           "'b' is automatically updated on load.")
+            wnam = ts["name"]
+            for pcol in ["initial", "optimal", "pmin", "pmax"]:
+                if data["parameters"].loc[wnam + "_b", pcol] > 0:
+                    data["parameters"].loc[wnam + "_b", pcol] = \
+                        log(data["parameters"].loc[wnam + "_b", pcol])
 
         stressmodel = getattr(ps.stressmodels, ts["stressmodel"])
         ts.pop("stressmodel")

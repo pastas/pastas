@@ -468,6 +468,12 @@ class Plotting:
 
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
 
+        if self.ml.interpolate_simulation:
+            sim_interpolated = np.interp(res.index.asi8,
+                                         sim.index.asi8,
+                                         sim.values)
+            sim = Series(index=res.index, data=sim_interpolated)
+
         return diagnostics(series=res, sim=sim, figsize=figsize, bins=bins,
                            fig=fig, acf_options=acf_options, alpha=alpha,
                            **kwargs)

@@ -369,6 +369,7 @@ def diagnostics(series: Series, sim: Optional[Series] = None, alpha: float = 0.0
 
     if heteroscedasicity and sim is not None:
         # Plot residuals vs. simulation
+        # interpolate simulation to times of observations
         sim = sim.loc[series.index]
         ax4.plot(sim, series, marker=".", linestyle=" ", color=c, alpha=0.7)
         ax4.grid()

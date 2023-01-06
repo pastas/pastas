@@ -1,13 +1,15 @@
 """This module contains utility functions for working with Pastas models."""
 
 import logging
+from datetime import datetime, timedelta
 from logging import handlers
 from platform import platform
-from datetime import datetime, timedelta
 
 import numpy as np
+from packaging import version
 from pandas import Series, Timedelta, Timestamp, date_range, to_datetime, Index, DatetimeIndex
 from pandas.tseries.frequencies import to_offset
+from scipy import __version__ as sc_version
 from scipy import interpolate
 
 # Type Hinting
@@ -642,7 +644,6 @@ def show_versions(lmfit: bool = False, numba: bool = False) -> None:
     from matplotlib import __version__ as mpl_version
     from numpy import __version__ as np_version
     from pandas import __version__ as pd_version
-    from scipy import __version__ as sc_version
 
     from pastas import __version__ as ps_version
 
@@ -671,3 +672,20 @@ def check_numba() -> None:
     except ImportError:
         logger.warning("Numba is not installed. Installing Numba is "
                        "recommended for significant speed-ups.")
+
+
+def check_numba_scipy():
+    try:
+        import numba_scipy as _
+    except ImportError:
+        logger.warning(
+            "numba_scipy is not installed, defaulting to numpy implementation."
+        )
+        return False
+
+    if version.parse(sc_version) > version.parse("1.7.3"):
+        logger.warning(
+            "numba_scipy supports scipy<=1.7.3, found {0}".format(sc_version)
+        )
+        return False
+    return True
