@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import MultipleLocator, LogFormatter
-from pandas import concat
+from pandas import concat, Series
 
 from .decorators import model_tmin_tmax
 from .plots import series, diagnostics, cum_frequency, \
@@ -462,6 +462,12 @@ class Plotting:
             res = self.ml.residuals(tmin=tmin, tmax=tmax)
 
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+
+        if self.ml.interpolate_simulation:
+            sim_interpolated = np.interp(res.index.asi8,
+                                         sim.index.asi8,
+                                         sim.values)
+            sim = Series(index=res.index, data=sim_interpolated)
 
         return diagnostics(series=res, sim=sim, figsize=figsize, bins=bins,
                            fig=fig, acf_options=acf_options, alpha=alpha,
