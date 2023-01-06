@@ -446,7 +446,7 @@ class HantushWellModel(RfuncBase):
         return A * F / 2
 
     @staticmethod
-    def numpy_step(A, a, b, r, t):
+    def numpy_step(A: float, a: float, b: float, r: float, t: Array_Like) -> Array_Like:
         rho = 2 * r * np.exp(b / 2)
         rhosq = rho**2
         k0rho = k0(rho)
@@ -461,7 +461,7 @@ class HantushWellModel(RfuncBase):
             tau2 + rhosq / (4 * tau2))
         return A * F / 2
 
-    def quad_step(self, A, a, b, r, t):
+    def quad_step(self, A: float, a: float, b: float, r: float, t: Array_Like) -> Array_Like:
         F = np.zeros_like(t)
         brsq = np.exp(b) * r**2
         u = a * brsq / t
@@ -470,7 +470,7 @@ class HantushWellModel(RfuncBase):
                         u[i], np.inf, args=(brsq,))[0]
         return F * A / 2
 
-    def step(self, p, dt=1, cutoff=None, maxtmax=None):
+    def step(self, p: Array_Like, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> Array_Like:
         A, a, b = p[:3]
         r = self._get_distance_from_params(p)
         t = self.get_t(p, dt, cutoff, maxtmax)
@@ -658,7 +658,7 @@ class Hantush(RfuncBase):
                         u[i], np.inf, args=(b,))[0]
         return F * A / (2 * k0(2 * np.sqrt(b)))
 
-    def step(self, p: Array_Like, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None):
+    def step(self, p: Array_Like, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> Array_Like:
         A, a, b = p
         t = self.get_t(p, dt, cutoff, maxtmax)
 
@@ -671,7 +671,7 @@ class Hantush(RfuncBase):
             else:  # otherwise numpy is faster
                 return self.numpy_step(A, a, b, t)
 
-    def impulse(self, t, p):
+    def impulse(self, t: Array_Like, p: Array_Like) -> Array_Like:
         A, a, b = p
         ir = A / (2 * t * k0(2 * np.sqrt(b))) * np.exp(-t / a - a * b / t)
         return ir
