@@ -548,8 +548,8 @@ class WellModel(StressModelBase):
                                       "HantushWellModel!")
 
         # Check if scipy < 1.8
-        from distutils.version import StrictVersion
-        if StrictVersion(scipyversion) < StrictVersion("1.8.0"):
+        from packaging import version
+        if version.parse(scipyversion) < version.parse("1.8.0"):
             logger.warning(
                 "It is recommended to use LmfitSolve as the solver "
                 "or update to scipy>=1.8.0 when implementing WellModel."

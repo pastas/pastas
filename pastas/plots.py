@@ -10,9 +10,9 @@ import numpy as np
 from pandas import Series, DataFrame, Timestamp
 from scipy.stats import gaussian_kde, norm, probplot
 
-from .stats.core import acf as get_acf
-from .stats.metrics import rmse, evp
-from .modelcompare import CompareModels
+from pastas.modelcompare import CompareModels
+from pastas.stats.core import acf as get_acf
+from pastas.stats.metrics import evp, rmse
 
 # Type Hinting
 from typing import Optional, List, Tuple

@@ -121,9 +121,10 @@ def _load_model(data: dict) -> Model:
                            "'b' is automatically updated on load.")
             wnam = ts["name"]
             for pcol in ["initial", "optimal", "pmin", "pmax"]:
-                if data["parameters"].loc[wnam + "_b", pcol] > 0:
-                    data["parameters"].loc[wnam + "_b", pcol] = \
-                        log(data["parameters"].loc[wnam + "_b", pcol])
+                if wnam + "_b" in data["parameters"].index:
+                    if data["parameters"].loc[wnam + "_b", pcol] > 0:
+                        data["parameters"].loc[wnam + "_b", pcol] = \
+                            log(data["parameters"].loc[wnam + "_b", pcol])
 
         stressmodel = getattr(ps.stressmodels, ts["stressmodel"])
         ts.pop("stressmodel")
