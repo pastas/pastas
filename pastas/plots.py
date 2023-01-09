@@ -16,7 +16,7 @@ from pastas.stats.metrics import evp, rmse
 
 # Type Hinting
 from typing import Optional, List, Tuple
-from pastas.typing import Array_Like, Axes, Figure, Tminmax, Model
+from pastas.typing import ArrayLike, Axes, Figure, TimestampType, Model
 
 
 logger = logging.getLogger(__name__)
@@ -57,8 +57,10 @@ def compare(models: List[Model], adjust_height: bool = True, **kwargs) -> Axes:
     return mc.axes
 
 
-def series(head: Optional[Series] = None, stresses: Optional[List[Series]] = None, hist: bool = True, kde: bool = False, titles: bool = True,
-           tmin: Optional[Tminmax] = None, tmax: Optional[Tminmax] = None, labels: Optional[List[str]] = None, figsize: tuple = (10, 5)) -> Axes:
+def series(
+        head: Optional[Series] = None, stresses: Optional[List[Series]] = None, hist: bool = True, kde: bool = False,
+        titles: bool = True, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None,
+        labels: Optional[List[str]] = None, figsize: tuple = (10, 5)) -> Axes:
     """Plot all the input time Series in a single plot.
 
     Parameters
@@ -198,7 +200,8 @@ def series(head: Optional[Series] = None, stresses: Optional[List[Series]] = Non
     return axes
 
 
-def acf(series: Series, alpha: float = 0.05, lags: int = 365, acf_options: Optional[dict] = None, smooth_conf: bool = True,
+def acf(
+        series: Series, alpha: float = 0.05, lags: int = 365, acf_options: Optional[dict] = None, smooth_conf: bool = True,
         color: str = "k", ax: Optional[Axes] = None, figsize: tuple = (5, 2)) -> Axes:
     """Plot of the autocorrelation function of a time series.
 
@@ -265,8 +268,10 @@ def acf(series: Series, alpha: float = 0.05, lags: int = 365, acf_options: Optio
     return ax
 
 
-def diagnostics(series: Series, sim: Optional[Series] = None, alpha: float = 0.05, bins: int = 50, acf_options: Optional[dict] = None,
-                figsize: tuple = (10, 5), fig: Optional[Figure] = None, heteroscedasicity: bool = True, **kwargs) -> Axes:
+def diagnostics(
+        series: Series, sim: Optional[Series] = None, alpha: float = 0.05, bins: int = 50, acf_options: Optional[dict] = None,
+        figsize: tuple = (10, 5),
+        fig: Optional[Figure] = None, heteroscedasicity: bool = True, **kwargs) -> Axes:
     """Plot that helps in diagnosing basic model assumptions.
 
     Parameters
@@ -386,7 +391,8 @@ def diagnostics(series: Series, sim: Optional[Series] = None, alpha: float = 0.0
     return fig.axes
 
 
-def cum_frequency(obs: Series, sim: Optional[Series] = None, ax: Optional[Axes] = None, figsize: tuple = (5, 2)) -> Axes:
+def cum_frequency(
+        obs: Series, sim: Optional[Series] = None, ax: Optional[Axes] = None, figsize: tuple = (5, 2)) -> Axes:
     """Plot of the cumulative frequency of a time Series.
 
     Parameters
@@ -489,7 +495,9 @@ class TrackSolve:
     Access the resulting figure through `track.fig`.
     """
 
-    def __init__(self, ml: Model, tmin: Optional[Tminmax] = None, tmax: Optional[Tminmax] = None, update_iter: Optional[int] = None) -> None:
+    def __init__(
+            self, ml: Model, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None,
+            update_iter: Optional[int] = None) -> None:
         logger.warning("TrackSolve feature under development. If you find any "
                        "bugs please post an issue on GitHub: "
                        "https://github.com/pastas/pastas/issues")
@@ -538,7 +546,7 @@ class TrackSolve:
         # calculate EVP
         self.evp = np.array([evp(obs=self.obs, res=res)])
 
-    def track_solve(self, params: Array_Like) -> None:
+    def track_solve(self, params: ArrayLike) -> None:
         """Append parameters to self.parameters DataFrame and update itercount,
         rmse values and evp.
 
@@ -580,7 +588,7 @@ class TrackSolve:
         self.tmax = self.ml.settings["tmax"]
         self.freq = self.ml.settings["freq"]
 
-    def _noise(self, params: Array_Like) -> Array_Like:
+    def _noise(self, params: ArrayLike) -> ArrayLike:
         """get noise.
 
         Parameters
@@ -598,7 +606,7 @@ class TrackSolve:
                               tmax=self.tmax)
         return noise
 
-    def _residuals(self, params: Array_Like) -> Array_Like:
+    def _residuals(self, params: ArrayLike) -> ArrayLike:
         """calculate residuals.
 
         Parameters
@@ -729,7 +737,7 @@ class TrackSolve:
         self.fig.tight_layout()
         return self.fig
 
-    def plot_track_solve(self, params: Array_Like) -> None:
+    def plot_track_solve(self, params: ArrayLike) -> None:
         """Method to plot model simulation while model is being solved. Pass
         this method to ml.solve(), e.g.:
 

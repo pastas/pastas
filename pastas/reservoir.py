@@ -19,7 +19,7 @@ from pandas import DataFrame, Series
 from pastas.decorators import njit
 
 # Type Hinting
-from pastas.typing import Array_Like
+from pastas.typing import ArrayLike
 
 
 class ReservoirBase:
@@ -47,7 +47,7 @@ class ReservoirBase:
             columns=["initial", "pmin", "pmax", "vary", "name"])
         return parameters
 
-    def simulate(self, prec: Series, evap: Series, p: Array_Like, dt: float = 1.0, **kwargs) -> Array_Like:
+    def simulate(self, prec: Series, evap: Series, p: ArrayLike, dt: float = 1.0, **kwargs) -> ArrayLike:
         pass
 
 
@@ -80,12 +80,12 @@ class Reservoir1(ReservoirBase):
         parameters.loc[name + "_f"] = (-1.0, -2.0, 0.0, True, name)
         return parameters
 
-    def simulate(self, prec: Series, evap: Series, p: Array_Like) -> Array_Like:
+    def simulate(self, prec: Series, evap: Series, p: ArrayLike) -> ArrayLike:
         return self.simulatehead(prec.values, evap.values, p)
 
     @staticmethod
     @njit
-    def simulatehead(prec: Array_Like, evap: Array_Like, p: Array_Like) -> Array_Like:
+    def simulatehead(prec: ArrayLike, evap: ArrayLike, p: ArrayLike) -> ArrayLike:
         """Simulate the head in the reservoir
 
         Parameters
@@ -178,12 +178,12 @@ class Reservoir2(ReservoirBase):
         parameters.loc[name + "_deld"] = (0.01, 0.001, 10, True, name)
         return parameters
 
-    def simulate(self, prec: Series, evap: Series, p: Array_Like) -> Array_Like:
+    def simulate(self, prec: Series, evap: Series, p: ArrayLike) -> ArrayLike:
         return self.simulatehead(prec.values, evap.values, p)
 
     @staticmethod
     @njit
-    def simulatehead(prec: Array_Like, evap: Array_Like, p: Array_Like) -> Array_Like:
+    def simulatehead(prec: ArrayLike, evap: ArrayLike, p: ArrayLike) -> ArrayLike:
         """Simulate the head in the reservoir
 
         Parameters

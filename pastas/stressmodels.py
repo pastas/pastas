@@ -30,7 +30,7 @@ from .utils import check_numba, validate_name
 
 # Type Hinting
 from typing import Optional, Tuple, List, Union
-from pastas.typing import Array_Like, RFunc, Recharge, Reservoir, Tminmax, Model
+from pastas.typing import ArrayLike, RFunc, Recharge, Reservoir, TimestampType, Model
 
 logger = getLogger(__name__)
 
@@ -51,7 +51,9 @@ class StressModelBase:
     """
     _name = "StressModelBase"
 
-    def __init__(self, name: str, tmin: Tminmax, tmax: Tminmax, rfunc: Optional[RFunc] = None, up: bool = True, meanstress: float = 1.0, cutoff: float = 0.999) -> None:
+    def __init__(
+            self, name: str, tmin: TimestampType, tmax: TimestampType, rfunc: Optional[RFunc] = None, up: bool = True,
+            meanstress: float = 1.0, cutoff: float = 0.999) -> None:
         self.name = validate_name(name)
         self.tmin = tmin
         self.tmax = tmax
@@ -160,8 +162,9 @@ class StressModelBase:
 
         return data
 
-    def get_stress(self, p: Optional[Array_Like] = None, tmin: Optional[Tminmax] = None, tmax: Optional[Tminmax] = None, freq: Optional[str] = None,
-                   istress: Optional[int] = None, **kwargs) -> DataFrame:
+    def get_stress(
+            self, p: Optional[ArrayLike] = None, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None,
+            freq: Optional[str] = None, istress: Optional[int] = None, **kwargs) -> DataFrame:
         """Returns the stress or stresses of the time series object as a pandas
         DataFrame.
 
@@ -205,7 +208,7 @@ class StressModelBase:
         else:
             return len(self.stress)
 
-    def _get_block(self, p: Array_Like, dt: float, tmin: Tminmax, tmax: Tminmax) -> Array_Like:
+    def _get_block(self, p: ArrayLike, dt: float, tmin: TimestampType, tmax: TimestampType) -> ArrayLike:
         """Internal method to get the block-response function."""
         if tmin is not None and tmax is not None:
             day = Timedelta(1, 'D')
@@ -260,7 +263,8 @@ class StressModel(StressModelBase):
     _name = "StressModel"
 
     def __init__(self, stress: Series, rfunc: RFunc, name: str, up: bool = True, cutoff: float = 0.999,
-                 settings: Optional[Union[dict, str]] = None, metadata: Optional[dict] = None, meanstress: Optional[float] = None) -> None:
+                 settings: Optional[Union[dict, str]] = None, metadata: Optional[dict] = None,
+                 meanstress: Optional[float] = None) -> None:
 
         if isinstance(stress, list):
             stress = stress[0]  # TODO Temporary fix Raoul, 2017-10-24
@@ -282,7 +286,9 @@ class StressModel(StressModelBase):
         """Set the initial parameters (back) to their default values."""
         self.parameters = self.rfunc.get_init_parameters(self.name)
 
-    def simulate(self, p: Array_Like, tmin: Optional[Tminmax] = None, tmax: Optional[Tminmax] = None, freq: Optional[str] = None, dt: float = 1.0) -> Series:
+    def simulate(
+            self, p: ArrayLike, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None,
+            freq: Optional[str] = None, dt: float = 1.0) -> Series:
         """Simulates the head contribution.
 
         Parameters
@@ -358,7 +364,7 @@ class StepModel(StressModelBase):
     """
     _name = "StepModel"
 
-    def __init__(self, tstart: Tminmax, name: str, rfunc: Optional[RFunc] = None, up: bool = True, cutoff: float = 0.999) -> None:
+    def __init__(self, tstart: TimestampType, name: str, rfunc: Optional[RFunc] = None, up: bool = True, cutoff: float = 0.999) -> None:
         if rfunc is None:
             rfunc = One()
         StressModelBase.__init__(self, name=name, tmin=Timestamp.min,
@@ -376,7 +382,9 @@ class StepModel(StressModelBase):
         self.parameters.loc[self.name + "_tstart"] = (tinit, tmin, tmax,
                                                       False, self.name)
 
-    def simulate(self, p: Array_Like, tmin: Optional[Tminmax] = None, tmax: Optional[Tminmax] = None, freq: Optional[str] = None, dt: float = 1.0) -> Series:
+    def simulate(
+            self, p: ArrayLike, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None,
+            freq: Optional[str] = None, dt: float = 1.0) -> Series:
         tstart = Timestamp.fromordinal(int(p[-1]))
         tindex = date_range(tmin, tmax, freq=freq)
         h = Series(0, tindex, name=self.name)
@@ -421,7 +429,7 @@ class LinearTrend(StressModelBase):
     """
     _name = "LinearTrend"
 
-    def __init__(self, start: Tminmax, end: Tminmax, name: str = "trend") -> None:
+    def __init__(self, start: TimestampType, end: TimestampType, name: str = "trend") -> None:
         StressModelBase.__init__(self, name=name, tmin=Timestamp.min,
                                  tmax=Timestamp.max)
         self.start = start
@@ -442,7 +450,9 @@ class LinearTrend(StressModelBase):
         self.parameters.loc[self.name + "_tend"] = (end, tmin, tmax,
                                                     False, self.name)
 
-    def simulate(self, p: Array_Like, tmin: Optional[Tminmax] = None, tmax: Optional[Tminmax] = None, freq: Optional[str] = None, dt: float = 1.0) -> Series:
+    def simulate(
+            self, p: ArrayLike, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None,
+            freq: Optional[str] = None, dt: float = 1.0) -> Series:
         """Simulate the trend."""
         tindex = date_range(tmin, tmax, freq=freq)
 
@@ -540,8 +550,10 @@ class WellModel(StressModelBase):
     """
     _name = "WellModel"
 
-    def __init__(self, stress: List[Series], rfunc: RFunc, name: str, distances: Array_Like, up: bool = False, cutoff: float = 0.999,
-                 settings: str = "well", sort_wells: bool = True) -> None:
+    def __init__(
+            self, stress: List[Series],
+            rfunc: RFunc, name: str, distances: ArrayLike, up: bool = False, cutoff: float = 0.999, settings: str = "well",
+            sort_wells: bool = True) -> None:
         if not (isinstance(rfunc, HantushWellModel) or
                 issubclass(rfunc, HantushWellModel)):
             raise NotImplementedError("WellModel only supports the rfunc "
@@ -600,8 +612,9 @@ class WellModel(StressModelBase):
     def set_init_parameters(self) -> None:
         self.parameters = self.rfunc.get_init_parameters(self.name)
 
-    def simulate(self, p: Optional[Array_Like] = None, tmin: Optional[Tminmax] = None, tmax: Optional[Tminmax] = None, freq: Optional[str] = None, dt: float = 1.0,
-                 istress: Optional[int] = None, **kwargs) -> Series:
+    def simulate(
+            self, p: Optional[ArrayLike] = None, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None,
+            freq: Optional[str] = None, dt: float = 1.0, istress: Optional[int] = None, **kwargs) -> Series:
         distances = self.get_distances(istress=istress)
         stress_df = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq,
                                     istress=istress, squeeze=False)
@@ -656,8 +669,9 @@ class WellModel(StressModelBase):
                          "dict or list.")
         return data
 
-    def get_stress(self, p: Optional[Array_Like] = None, tmin: Optional[Tminmax] = None, tmax: Optional[Tminmax] = None, freq: Optional[str] = None,
-                   istress: Optional[int] = None, squeeze: bool = True, **kwargs) -> DataFrame:
+    def get_stress(self, p: Optional[ArrayLike] = None, tmin: Optional[TimestampType] = None,
+                   tmax: Optional[TimestampType] = None, freq: Optional[str] = None, istress: Optional[int] = None,
+                   squeeze: bool = True, **kwargs) -> DataFrame:
         if tmin is None:
             tmin = self.tmin
         if tmax is None:
@@ -689,7 +703,7 @@ class WellModel(StressModelBase):
         else:
             return self.distances.iloc[istress:istress + 1]
 
-    def get_parameters(self, model=None, istress: Optional[int] = None) -> Array_Like:
+    def get_parameters(self, model=None, istress: Optional[int] = None) -> ArrayLike:
         """ Get parameters including distance to observation point and
         return as array (dimensions = (nstresses, 4)).
 
@@ -744,7 +758,7 @@ class WellModel(StressModelBase):
         }
         return data
 
-    def variance_gain(self, model: Model, istress: Optional[int] = None, r: Optional[Array_Like] = None) -> float:
+    def variance_gain(self, model: Model, istress: Optional[int] = None, r: Optional[ArrayLike] = None) -> float:
         """Calculate variance of the gain for WellModel.
 
         Variance of the gain is calculated based on propagation of uncertainty
@@ -865,9 +879,13 @@ class RechargeModel(StressModelBase):
     """
     _name = "RechargeModel"
 
-    def __init__(self, prec: Series, evap: Series, rfunc: Optional[RFunc] = None, name: str = "recharge",
-                 recharge: Optional[Recharge] = None, temp: Series = None, cutoff: float = 0.999,
-                 settings: Tuple[Union[str, dict], Union[str, dict], Union[str, dict]] = ("prec", "evap", "evap"), metadata: Optional[Tuple[dict, dict, dict]] = (None, None, None)) -> None:
+    def __init__(
+            self, prec: Series, evap: Series, rfunc: Optional[RFunc] = None, name: str = "recharge",
+            recharge: Optional[Recharge] = None, temp: Series = None, cutoff: float = 0.999,
+            settings: Tuple[Union[str, dict],
+                            Union[str, dict],
+                            Union[str, dict]] = ("prec", "evap", "evap"),
+            metadata: Optional[Tuple[dict, dict, dict]] = (None, None, None)) -> None:
 
         if rfunc is None:
             rfunc = Exponential()
@@ -967,8 +985,9 @@ class RechargeModel(StressModelBase):
         if "freq" in kwargs:
             self.freq = kwargs["freq"]
 
-    def simulate(self, p: Optional[Array_Like] = None, tmin: Optional[Tminmax] = None, tmax: Optional[Tminmax] = None, freq: Optional[str] = None,
-                 dt: float = 1.0, istress: Optional[int] = None, **kwargs) -> Series:
+    def simulate(
+            self, p: Optional[ArrayLike] = None, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None,
+            freq: Optional[str] = None, dt: float = 1.0, istress: Optional[int] = None, **kwargs) -> Series:
         """Method to simulate the contribution of recharge to the head.
 
         Parameters
@@ -1005,8 +1024,9 @@ class RechargeModel(StressModelBase):
         return Series(data=fftconvolve(stress, b, 'full')[:stress.size],
                       index=self.prec.series.index, name=name, fastpath=True)
 
-    def get_stress(self, p: Optional[Array_Like] = None, tmin: Optional[Tminmax] = None, tmax: Optional[Tminmax] = None, freq: Optional[str] = None,
-                   istress: Optional[int] = None, **kwargs) -> Series:
+    def get_stress(
+            self, p: Optional[ArrayLike] = None, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None,
+            freq: Optional[str] = None, istress: Optional[int] = None, **kwargs) -> Series:
         """Method to obtain the recharge stress calculated by the model.
 
         Parameters
@@ -1055,7 +1075,9 @@ class RechargeModel(StressModelBase):
         else:
             return self.temp.series
 
-    def get_water_balance(self, p: Optional[Array_Like] = None, tmin: Optional[Tminmax] = None, tmax: Optional[Tminmax] = None, freq: Optional[str] = None) -> DataFrame:
+    def get_water_balance(
+            self, p: Optional[ArrayLike] = None, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None,
+            freq: Optional[str] = None) -> DataFrame:
         """Method to obtain the water balance components.
 
         Parameters
@@ -1169,8 +1191,9 @@ class TarsoModel(RechargeModel):
     """
     _name = "TarsoModel"
 
-    def __init__(self, prec: Series, evap: Series, oseries: Optional[Series] = None, dmin: Optional[float] = None, dmax: Optional[float] = None,
-                 rfunc: Optional[RFunc] = Exponential, **kwargs) -> None:
+    def __init__(
+            self, prec: Series, evap: Series, oseries: Optional[Series] = None, dmin: Optional[float] = None,
+            dmax: Optional[float] = None, rfunc: Optional[RFunc] = Exponential, **kwargs) -> None:
         check_numba()
         if oseries is not None:
             if dmin is not None or dmax is not None:
@@ -1216,7 +1239,8 @@ class TarsoModel(RechargeModel):
         # combine all parameters
         self.parameters = concat([p0, p1, pr])
 
-    def simulate(self, p: Optional[Array_Like] = None, tmin: Optional[Tminmax] = None, tmax: Optional[Tminmax] = None, freq=None, dt: float = 1.0) -> Series:
+    def simulate(self, p: Optional[ArrayLike] = None, tmin: Optional[TimestampType] = None,
+                 tmax: Optional[TimestampType] = None, freq=None, dt: float = 1.0) -> Series:
         stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq)
         h = self.tarso(p[:-self.recharge.nparam], stress.values, dt)
         sim = Series(h, name=self.name, index=stress.index)
@@ -1243,7 +1267,7 @@ class TarsoModel(RechargeModel):
 
     @staticmethod
     @njit
-    def tarso(p: Array_Like, r: Array_Like, dt: float) -> Array_Like:
+    def tarso(p: ArrayLike, r: ArrayLike, dt: float) -> ArrayLike:
         """Calculates the head based on exponential decay of the previous
         timestep and recharge, using two thresholds."""
         A0, a0, d0, A1, a1, d1 = p
@@ -1328,8 +1352,8 @@ class ChangeModel(StressModelBase):
     """
     _name = "ChangeModel"
 
-    def __init__(self, stress: Series, rfunc1: RFunc, rfunc2: RFunc, name: str, tchange: str,
-                 up: bool = True, cutoff: float = 0.999, settings: Optional[Union[dict, str]] = None, metadata: Optional[dict] = None) -> None:
+    def __init__(self, stress: Series, rfunc1: RFunc, rfunc2: RFunc, name: str, tchange: str, up: bool = True,
+                 cutoff: float = 0.999, settings: Optional[Union[dict, str]] = None, metadata: Optional[dict] = None) -> None:
         if isinstance(stress, list):
             stress = stress[0]  # TODO Temporary fix Raoul, 2017-10-24
 
@@ -1376,7 +1400,9 @@ class ChangeModel(StressModelBase):
                                                        False, self.name)
         self.parameters.name = self.name
 
-    def simulate(self, p: Array_Like, tmin: Optional[Tminmax] = None, tmax: Optional[Tminmax] = None, freq: Optional[str] = None, dt: float = 1.0) -> Series:
+    def simulate(
+            self, p: ArrayLike, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None,
+            freq: Optional[str] = None, dt: float = 1.0) -> Series:
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
         rfunc1 = self.rfunc1.block(p[:self.rfunc1.nparam])
         rfunc2 = self.rfunc2.block(
@@ -1434,9 +1460,12 @@ class ReservoirModel(StressModelBase):
     """
     _name = "ReservoirModel"
 
-    def __init__(self, stress: Series, reservoir: Reservoir, name: str, meanhead: float,
-                 settings: Optional[Tuple[Union[str, dict], Union[str, dict]]] = ("prec", "evap"), metadata: Optional[Tuple[dict, dict]] = (None, None),
-                 meanstress: Optional[float] = None) -> None:
+    def __init__(
+            self, stress: Series, reservoir: Reservoir, name: str, meanhead: float,
+            settings: Optional[Tuple[Union[str, dict],
+                                     Union[str, dict]]] = ("prec", "evap"),
+            metadata: Optional[Tuple[dict, dict]] = (None, None),
+            meanstress: Optional[float] = None) -> None:
         # Set resevoir object
         self.reservoir = reservoir(meanhead)
 
@@ -1475,7 +1504,9 @@ class ReservoirModel(StressModelBase):
         """Set the initial parameters back to their default values."""
         self.parameters = self.reservoir.get_init_parameters(self.name)
 
-    def simulate(self, p: Array_Like, tmin: Optional[Tminmax] = None, tmax: Optional[Tminmax] = None, freq: Optional[str] = None, dt: float = 1.0, istress: Optional[int] = None) -> Series:
+    def simulate(
+            self, p: ArrayLike, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None,
+            freq: Optional[str] = None, dt: float = 1.0, istress: Optional[int] = None) -> Series:
         """Simulates the head contribution.
 
         Parameters
@@ -1500,7 +1531,7 @@ class ReservoirModel(StressModelBase):
                    index=stress[0].index, name=self.name, fastpath=True)
         return h
 
-    def get_stress(self, p: Optional[Array_Like] = None, tmin: Optional[Tminmax] = None, tmax: Optional[Tminmax] = None, freq: Optional[str] = None,
+    def get_stress(self, p: Optional[ArrayLike] = None, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None, freq: Optional[str] = None,
                    istress: int = 0, **kwargs) -> Tuple[Series, Series]:
         if tmin is None:
             tmin = self.tmin

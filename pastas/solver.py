@@ -19,7 +19,7 @@ from scipy.optimize import least_squares
 
 # Type Hinting
 from typing import Optional, Tuple, Union
-from pastas.typing import Array_Like, CallBack, Function, Model
+from pastas.typing import ArrayLike, CallBack, Function, Model
 
 
 logger = getLogger(__name__)
@@ -56,8 +56,8 @@ class BaseSolver:
         self.obj_func = obj_func
         self.result = None  # Object returned by the optimization method
 
-    def misfit(self, p: Array_Like, noise: bool, weights: Optional[Series] = None, callback: Optional[CallBack] = None,
-               returnseparate: bool = False) -> Union[Array_Like, Tuple[Array_Like, Array_Like, Array_Like]]:
+    def misfit(self, p: ArrayLike, noise: bool, weights: Optional[Series] = None, callback: Optional[CallBack] = None,
+               returnseparate: bool = False) -> Union[ArrayLike, Tuple[ArrayLike, ArrayLike, ArrayLike]]:
         """This method is called by all solvers to obtain a series that are
         minimized in the optimization process. It handles the application of
         the weights, a noisemodel and other optimization options.
@@ -220,7 +220,7 @@ class BaseSolver:
                                              max_iter=max_iter,
                                              **kwargs)
 
-    def get_parameter_sample(self, name: Optional[str] = None, n: int = None, max_iter: int = 10) -> Array_Like:
+    def get_parameter_sample(self, name: Optional[str] = None, n: int = None, max_iter: int = 10) -> ArrayLike:
         """Method to obtain a parameter sets for monte carlo analyses.
 
         Parameters
@@ -384,7 +384,7 @@ class LeastSquares(BaseSolver):
         """
         BaseSolver.__init__(self, ml=ml, pcov=pcov, nfev=nfev, **kwargs)
 
-    def solve(self, noise: bool = True, weights: Optional[Series] = None, callback: Optional[CallBack] = None, **kwargs) -> Tuple[bool, Array_Like, Array_Like]:
+    def solve(self, noise: bool = True, weights: Optional[Series] = None, callback: Optional[CallBack] = None, **kwargs) -> Tuple[bool, ArrayLike, ArrayLike]:
         self.vary = self.ml.parameters.vary.values.astype(bool)
         self.initial = self.ml.parameters.initial.values.copy()
         parameters = self.ml.parameters.loc[self.vary]
@@ -413,13 +413,13 @@ class LeastSquares(BaseSolver):
 
         return success, optimal, stderr
 
-    def objfunction(self, p: Array_Like, noise: bool, weights: Series, callback: CallBack) -> Array_Like:
+    def objfunction(self, p: ArrayLike, noise: bool, weights: Series, callback: CallBack) -> ArrayLike:
         par = self.initial
         par[self.vary] = p
         return self.misfit(p=par, noise=noise, weights=weights,
                            callback=callback)
 
-    def _get_covariances(self, jacobian: Array_Like, cost: float, absolute_sigma: bool = False) -> Array_Like:
+    def _get_covariances(self, jacobian: ArrayLike, cost: float, absolute_sigma: bool = False) -> ArrayLike:
         """Internal method to get the covariance matrix from the jacobian.
 
         Parameters
@@ -493,7 +493,7 @@ class LmfitSolve(BaseSolver):
         BaseSolver.__init__(self, ml=ml, pcov=pcov, nfev=nfev, **kwargs)
 
     def solve(self, noise: bool = True, weights: Optional[Series] = None, callback: Optional[CallBack] = None, method: Optional[str] = "leastsq",
-              **kwargs) -> Tuple[bool, Array_Like, Array_Like]:
+              **kwargs) -> Tuple[bool, ArrayLike, ArrayLike]:
 
         # Deal with the parameters
         parameters = lmfit.Parameters()
@@ -536,6 +536,6 @@ class LmfitSolve(BaseSolver):
 
         return success, optimal[:idx], stderr[:idx]
 
-    def objfunction(self, parameters: DataFrame, noise: bool, weights: Series, callback: CallBack) -> Array_Like:
+    def objfunction(self, parameters: DataFrame, noise: bool, weights: Series, callback: CallBack) -> ArrayLike:
         p = np.array([p.value for p in parameters.values()])
         return self.misfit(p=p, noise=noise, weights=weights, callback=callback)

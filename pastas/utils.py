@@ -14,7 +14,7 @@ from scipy import interpolate
 
 # Type Hinting
 from typing import Optional, Tuple, Any
-from pastas.typing import Array_Like, Tminmax
+from pastas.typing import ArrayLike, TimestampType
 from pastas.typing import Model as ModelType
 
 logger = logging.getLogger(__name__)
@@ -453,13 +453,13 @@ def datenum_to_datetime(datenum: float) -> datetime:
         + timedelta(days=days) - timedelta(days=366)
 
 
-def datetime2matlab(tindex: DatetimeIndex) -> Array_Like:
+def datetime2matlab(tindex: DatetimeIndex) -> ArrayLike:
     mdn = tindex + Timedelta(days=366)
     frac = (tindex - tindex.round("D")).seconds / (24.0 * 60.0 * 60.0)
     return mdn.toordinal() + frac
 
 
-def get_stress_tmin_tmax(ml: ModelType) -> Tuple[Tminmax, Tminmax]:
+def get_stress_tmin_tmax(ml: ModelType) -> Tuple[TimestampType, TimestampType]:
     """Get the minimum and maximum time that all of the stresses have data."""
     from pastas import Model
     tmin = Timestamp.min

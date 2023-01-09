@@ -1,7 +1,7 @@
 from .types import (
     Axes,
     Figure,
-    Tminmax,
+    TimestampType,
     Model,
     TimeSeries,
     StressModel,
@@ -12,5 +12,5 @@ from .types import (
     CallBack,
     Function,
     RFunc,
-    Array_Like,
+    ArrayLike,
 )

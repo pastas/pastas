@@ -9,19 +9,19 @@ from pandas import Timestamp
 from matplotlib.axes._base import _AxesBase
 from matplotlib.figure import FigureBase
 # Numpy
-from numpy.typing import ArrayLike
+from numpy.typing import ArrayLike as NumpyArrayLike
 
 # External Types
 Axes = TypeVar("Axes", bound=_AxesBase)  # Matplotlib Axes
 Figure = TypeVar("Figure", bound=FigureBase)  # Matplotlib Figure
-Array_Like = TypeVar("Array_Like", bound=ArrayLike)  # Array Like (NumPy based)
+ArrayLike = TypeVar("ArrayLike", bound=NumpyArrayLike)  # Array Like (NumPy based)
 
 # Internal library
-if TYPE_CHECKING: # https://mypy.readthedocs.io/en/latest/runtime_troubles.html
+if TYPE_CHECKING:  # https://mypy.readthedocs.io/en/latest/runtime_troubles.html
     import pastas as ps
 
 # Internal Types
-Tminmax = TypeVar("Tminmax", bound=Union[str, Timestamp])  # Tmin or Tmax
+TimestampType = TypeVar("TimestampType", bound=Union[str, Timestamp])  # Tmin or Tmax
 Model = TypeVar("Model", bound="ps.Model")  # Model
 TimeSeries = TypeVar("TimeSeries", bound="ps.TimeSeries")  # Time Series
 StressModel = TypeVar("StressModel", bound="ps.stressmodels.StressModelBase")  # Stress Model

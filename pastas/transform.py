@@ -10,7 +10,7 @@ from .decorators import set_parameter
 from .utils import validate_name
 
 # Type Hinting
-from pastas.typing import Array_Like, Model
+from pastas.typing import ArrayLike, Model
 
 
 class ThresholdTransform:
@@ -109,7 +109,7 @@ class ThresholdTransform:
         """
         self.parameters.loc[name, 'vary'] = bool(value)
 
-    def simulate(self, h: Series, p: Array_Like) -> Series:
+    def simulate(self, h: Series, p: ArrayLike) -> Series:
         if self.nparam == 1:
             # value above a threshold p[0] are equal to the threshold
             h[h > p[0]] = p[0]

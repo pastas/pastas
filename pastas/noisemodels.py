@@ -28,7 +28,7 @@ from .utils import check_numba
 
 # Type Hinting
 from typing import Optional
-from pastas.typing import Array_Like
+from pastas.typing import ArrayLike
 
 __all__ = ["NoiseModel", "ArmaModel"]
 
@@ -137,7 +137,7 @@ class NoiseModel(NoiseModelBase):
         self.set_init_parameters()
 
     @staticmethod
-    def simulate(res: Series, p: Array_Like) -> Series:
+    def simulate(res: Series, p: ArrayLike) -> Series:
         """Simulate noise from the residuals.
 
         Parameters
@@ -159,7 +159,7 @@ class NoiseModel(NoiseModelBase):
                       * res.values[:-1])
         return Series(data=v, index=res.index, name="Noise")
 
-    def weights(self, res: Series, p: Array_Like) -> Series:
+    def weights(self, res: Series, p: ArrayLike) -> Series:
         """Method to calculate the weights for the noise.
 
         Parameters
@@ -235,7 +235,7 @@ class ArmaModel(NoiseModelBase):
         self.parameters.loc["noise_beta"] = (1., -np.inf, np.inf, True,
                                              "noise")
 
-    def simulate(self, res: Series, p: Array_Like) -> Series:
+    def simulate(self, res: Series, p: ArrayLike) -> Series:
         alpha = p[0]
         beta = p[1]
 
@@ -246,7 +246,7 @@ class ArmaModel(NoiseModelBase):
 
     @staticmethod
     @njit
-    def calculate_noise(res: Array_Like, odelt: Array_Like, alpha: float, beta: float) -> Array_Like:
+    def calculate_noise(res: ArrayLike, odelt: ArrayLike, alpha: float, beta: float) -> ArrayLike:
         # Create an array to store the noise
         a = np.zeros_like(res)
         a[0] = res[0]
