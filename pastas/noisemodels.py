@@ -178,7 +178,7 @@ class NoiseModel(NoiseModelBase):
         .. math:: w = 1 / sqrt((1 - exp(-2 \\Delta t / \\alpha)))
 
         which are then normalized so that sum(w) = len(res).
-Ò
+
         """
         alpha = p[0]
         # large for first measurement
@@ -255,5 +255,5 @@ class ArmaModel(NoiseModelBase):
         # We have to loop through each value
         for i in range(1, res.size):
             a[i] = res[i] - res[i - 1] * np.exp(-odelt[i - 1] / alpha) - \
-                   a[i - 1] * pm * np.exp(-odelt[i - 1] / np.abs(beta))
+                a[i - 1] * pm * np.exp(-odelt[i - 1] / np.abs(beta))
         return a
