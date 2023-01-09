@@ -78,8 +78,7 @@ class BaseSolver:
         """
         # Get the residuals or the noise
         if noise:
-            rv = self.ml.noise(p) * \
-                 self.ml.noise_weights(p)
+            rv = self.ml.noise(p) * self.ml.noise_weights(p)
         else:
             rv = self.ml.residuals(p)
 
@@ -93,9 +92,9 @@ class BaseSolver:
             callback(p)
 
         if returnseparate:
-            return self.ml.residuals(p).values, \
-                   self.ml.noise(p).values, \
-                   self.ml.noise_weights(p).values
+            return (self.ml.residuals(p).values,
+                    self.ml.noise(p).values,
+                    self.ml.noise_weights(p).values)
 
         return rv.values
 
@@ -288,7 +287,7 @@ class BaseSolver:
         for i, p in enumerate(parameter_sample):
             data[i] = func(p=p, **kwargs)
 
-        return DataFrame.from_dict(data, orient="columns")
+        return DataFrame.from_dict(data, orient="columns", dtype=float)
 
     def _get_confidence_interval(self, func, n=None, name=None, alpha=0.05,
                                  max_iter=10, **kwargs):
@@ -360,7 +359,7 @@ class LeastSquares(BaseSolver):
     _name = "LeastSquares"
 
     def __init__(self, ml, pcov=None, nfev=None, **kwargs):
-        """Solver based on Scipy's least_squares method [scipy_ref]_.
+        """Solver based on Scipy's least_squares method.
 
         Notes
         -----
@@ -374,9 +373,10 @@ class LeastSquares(BaseSolver):
 
         >>> ml.solve(solver=ps.LeastSquares)
 
-        References
-        ----------
-        .. [scipy_ref] https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
+        Notes
+        -----
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
+
         """
         BaseSolver.__init__(self, ml=ml, pcov=pcov, nfev=nfev, **kwargs)
 
@@ -427,7 +427,7 @@ class LeastSquares(BaseSolver):
 
         Returns
         -------
-        pcov: numpy.array
+        pcov: numpy.Array
             numpy array with the covariance matrix.
 
         Notes
@@ -469,14 +469,15 @@ class LmfitSolve(BaseSolver):
     _name = "LmfitSolve"
 
     def __init__(self, ml, pcov=None, nfev=None, **kwargs):
-        """Solving the model using the LmFit solver [LM]_.
+        """Solving the model using the LmFit solver.
 
          This is basically a wrapper around the scipy solvers, adding some
          cool functionality for boundary conditions.
 
-        References
-        ----------
-        .. [LM] https://github.com/lmfit/lmfit-py/
+        Notes
+        -----
+        https://github.com/lmfit/lmfit-py/
+
         """
         try:
             global lmfit

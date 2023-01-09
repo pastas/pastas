@@ -82,7 +82,7 @@ class TestGXG(object):
 
         # def test_gxg_series(self):
         #     s = pd.read_csv('data\\hseries_gxg.csv', index_col=0, header=0,
-        #                     parse_dates=True, dayfirst=True, squeeze=True)
+        #                     parse_dates=True, dayfirst=True).squeeze()
         #     ps = Model(s)
         #     ps.freq = 'D'
         #     ghg = ps.stats.ghg(s)
@@ -102,8 +102,7 @@ class TestGXG(object):
 
         # def test_gxg_series(self, capsys):
         #     s = pd.read_csv(r'data/hseries_gxg.csv', index_col=0, header=0,
-        #         parse_dates=True, dayfirst=True,
-        #         squeeze=True,)
+        #         parse_dates=True, dayfirst=True).squeeze()
         #     ps = Model(s)
         #     ghg = ps.stats.ghg(s)
         #     glg = ps.stats.glg(s)

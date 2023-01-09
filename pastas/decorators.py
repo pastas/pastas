@@ -46,15 +46,23 @@ def PastasDeprecationWarning(function):
     @wraps(function)
     def _function(*args, **kwargs):
         logger.warning("Deprecation warning: method is deprecated and will "
-                       "be removed in version 0.22.0.")
+                       "be removed in version 0.23.0.")
         return function(*args, **kwargs)
 
     return _function
 
 
-def njit(function):
-    try:
-        from numba import njit as jit
-        return jit(function)
-    except ImportError:
-        return function
+def njit(function=None, parallel=False):
+
+    def njit_decorator(f):
+        try:
+            from numba import njit
+            fnumba = njit(f, parallel=parallel)
+            return fnumba
+        except ImportError:
+            return f
+
+    if function:
+        return njit_decorator(function)
+
+    return njit_decorator

@@ -6,9 +6,16 @@ from logging import getLogger
 import numpy as np
 from pandas import DataFrame
 from scipy.integrate import quad
-from scipy.special import (erfc, erfcinv, exp1, gammainc, gammaincinv, k0, k1,
-                           lambertw)
+from scipy.special import (erfc, erfcinv, exp1, gamma, gammainc, gammaincinv,
+                           k0, k1, lambertw)
 from scipy.interpolate import interp1d
+from .decorators import njit
+from .utils import check_numba, check_numba_scipy
+
+try:
+    from numba import prange
+except ModuleNotFoundError:
+    prange = range
 
 logger = getLogger(__name__)
 
@@ -20,7 +27,14 @@ __all__ = ["Gamma", "Exponential", "Hantush", "Polder", "FourParam",
 class RfuncBase:
     _name = "RfuncBase"
 
-    def __init__(self, up, meanstress, cutoff):
+    def __init__(self, **kwargs):
+        self.up = True
+        self.meanstress = 1
+        self.cutoff = 0.999
+        self.kwargs = kwargs
+
+    def _set_init_parameter_settings(self, up=True, meanstress=1,
+                                     cutoff=0.999):
         self.up = up
         # Completely arbitrary number to prevent division by zero
         if 1e-8 > meanstress > 0:
@@ -109,6 +123,32 @@ class RfuncBase:
         s = self.step(p, dt, cutoff, maxtmax)
         return np.append(s[0], np.subtract(s[1:], s[:-1]))
 
+    def impulse(self, t, p):
+        """Method to return the impulse response function.
+
+        Parameters
+        ----------
+        p: array_like
+            array_like object with the values as floats representing the
+            model parameters.
+        dt: float
+            timestep as a multiple of of day.
+        cutoff: float, optional
+            float between 0 and 1.
+        maxtmax: int, optional
+            Maximum timestep to compute the block response for.
+
+        Returns
+        -------
+        s: numpy.array
+            Array with the impulse response.
+
+        Note
+        ----
+        Only used for internal consistency checks
+        """
+        pass
+
     def get_t(self, p, dt, cutoff, maxtmax=None):
         """Internal method to determine the times at which to evaluate the
         step-response, from t=0.
@@ -160,15 +200,15 @@ class Gamma(RfuncBase):
     -----
     The impulse response function is:
 
-    .. math:: \\theta(t) = At^{n-1} e^{-t/a}
+    .. math:: \\theta(t) = At^{n-1} e^{-t/a} / (a^n Gamma(n))
 
     where A, a, and n are parameters. The Gamma function is equal to the
     Exponential function when n=1.
     """
     _name = "Gamma"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.999):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self):
+        RfuncBase.__init__(self)
         self.nparam = 3
 
     def get_init_parameters(self, name):
@@ -203,6 +243,11 @@ class Gamma(RfuncBase):
         s = p[0] * gammainc(p[1], t / p[2])
         return s
 
+    def impulse(self, t, p):
+        A, n, a = p
+        ir = A * t ** (n - 1) * np.exp(-t / a) / (a ** n * gamma(n))
+        return ir
+
 
 class Exponential(RfuncBase):
     """Exponential response function with 2 parameters: A and a.
@@ -222,14 +267,14 @@ class Exponential(RfuncBase):
     -----
     The impulse response function is:
 
-    .. math:: \\theta(t) = A e^{-t/a}
+    .. math:: \\theta(t) = A / a * e^{-t/a}
 
     where A and a are parameters.
     """
     _name = "Exponential"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.999):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self):
+        RfuncBase.__init__(self)
         self.nparam = 2
 
     def get_init_parameters(self, name):
@@ -262,6 +307,11 @@ class Exponential(RfuncBase):
         s = p[0] * (1.0 - np.exp(-t / p[1]))
         return s
 
+    def impulse(self, t, p):
+        A, a = p
+        ir = A / a * np.exp(-t / a)
+        return ir
+
 
 class HantushWellModel(RfuncBase):
     """An implementation of the Hantush well function for multiple pumping
@@ -287,25 +337,35 @@ class HantushWellModel(RfuncBase):
     where r is the distance from the pumping well to the observation point
     and must be specified. A, a, and b are parameters, which are slightly
     different from the Hantush response function. The gain is defined as:
-    
+
     :math:`\\text{gain} = A K_0 \\left( 2r \\sqrt(b) \\right)`
-    
-    The implementation used here is explained in  [veling_2010]_.
 
-    References
-    ----------
+    The implementation used here is explained in  :cite:t:`veling_hantush_2010`.
 
-    .. [veling_2010] Veling, E. J. M., & Maas, C. (2010). Hantush well function
-       revisited. Journal of hydrology, 393(3), 381-388.
     """
     _name = "HantushWellModel"
 
-    def __init__(self, up=False, meanstress=1, cutoff=0.999, distances=1.0):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self, use_numba=False, quad=False):
+        RfuncBase.__init__(self, use_numba=use_numba, quad=quad)
+        self.distances = None
         self.nparam = 3
+        self.use_numba = use_numba  # requires numba_scipy for real speedups
+        self.quad = quad  # if quad=True, implicitly uses numba
+        # check numba and numba_scipy installation
+        if self.quad or self.use_numba:
+            check_numba()
+            # turn off use_numba if numba_scipy is not available
+            # or there is a version conflict
+            if self.use_numba:
+                self.use_numba = check_numba_scipy()
+
+    def set_distances(self, distances):
         self.distances = distances
 
     def get_init_parameters(self, name):
+        if self.distances is None:
+            raise(Exception('distances is None. Set using method'
+                            ' set_distances() or use Hantush.'))
         parameters = DataFrame(
             columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
         if self.up:
@@ -321,9 +381,10 @@ class HantushWellModel(RfuncBase):
                                            np.nan, True, name)
         parameters.loc[name + '_a'] = (100, 1e-3, 1e4, True, name)
         # set initial and bounds for b taking into account distances
-        binit = 1.0 / np.mean(self.distances) ** 2
-        bmin = 1e-6 / np.max(self.distances) ** 2
-        bmax = 25. / np.min(self.distances) ** 2
+        # note log transform to avoid extremely small values for b
+        binit = np.log(1.0 / np.mean(self.distances) ** 2)
+        bmin = np.log(1e-6 / np.max(self.distances) ** 2)
+        bmax = np.log(25. / np.min(self.distances) ** 2)
         parameters.loc[name + '_b'] = (binit, bmin, bmax, True, name)
         return parameters
 
@@ -342,35 +403,82 @@ class HantushWellModel(RfuncBase):
         # approximate formula for tmax
         if cutoff is None:
             cutoff = self.cutoff
-        cS = p[1]
-        rho = np.sqrt(4 * r ** 2 * p[2])
+        a, b = p[1:3]
+        rho = 2 * r * np.exp(b / 2)
         k0rho = k0(rho)
         if k0rho == 0.0:
-            return 100 * 365.  # 100 years
+            return 50 * 365.  # 50 years, need to set some tmax if k0rho==0.0
         else:
-            return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
+            return lambertw(1 / ((1 - cutoff) * k0rho)).real * a
 
-    def gain(self, p):
-        r = self._get_distance_from_params(p)
-        rho = 2 * r * np.sqrt(p[2])
+    def gain(self, p, r=None):
+        if r is None:
+            r = self._get_distance_from_params(p)
+        rho = 2 * r * np.exp(p[2] / 2)
         return p[0] * k0(rho)
 
-    def step(self, p, dt=1, cutoff=None, maxtmax=None):
-        r = self._get_distance_from_params(p)
-        cS = p[1]
-        rho = np.sqrt(4 * r ** 2 * p[2])
+    @staticmethod
+    @njit
+    def _integrand_hantush(y, b):
+        return np.exp(-y - (b / y)) / y
+
+    @staticmethod
+    @njit(parallel=True)
+    def numba_step(A, a, b, r, t):
+        rho = 2 * r * np.exp(b / 2)
+        rhosq = rho**2
         k0rho = k0(rho)
-        t = self.get_t(p, dt, cutoff, maxtmax)
-        tau = t / cS
+        tau = t / a
+        w = (exp1(rho) - k0rho) / (exp1(rho) - exp1(rho / 2))
+        F = np.zeros((tau.size,), dtype=np.float64)
+        for i in prange(tau.size):
+            tau_i = tau[i]
+            if tau_i < rho / 2:
+                F[i] = w * exp1(rhosq / (4 * tau_i)) - (w - 1) * exp1(
+                    tau_i + rhosq / (4 * tau_i))
+            elif tau_i >= rho / 2:
+                F[i] = 2 * k0rho - w * exp1(tau_i) + (w - 1) * exp1(
+                    tau_i + rhosq / (4 * tau_i))
+        return A * F / 2
+
+    @staticmethod
+    def numpy_step(A, a, b, r, t):
+        rho = 2 * r * np.exp(b / 2)
+        rhosq = rho**2
+        k0rho = k0(rho)
+        tau = t / a
         tau1 = tau[tau < rho / 2]
         tau2 = tau[tau >= rho / 2]
         w = (exp1(rho) - k0rho) / (exp1(rho) - exp1(rho / 2))
         F = np.zeros_like(tau)
-        F[tau < rho / 2] = w * exp1(rho ** 2 / (4 * tau1)) - (w - 1) * exp1(
-            tau1 + rho ** 2 / (4 * tau1))
+        F[tau < rho / 2] = w * exp1(rhosq / (4 * tau1)) - (w - 1) * exp1(
+            tau1 + rhosq / (4 * tau1))
         F[tau >= rho / 2] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(
-            tau2 + rho ** 2 / (4 * tau2))
-        return p[0] * F / 2
+            tau2 + rhosq / (4 * tau2))
+        return A * F / 2
+
+    def quad_step(self, A, a, b, r, t):
+        F = np.zeros_like(t)
+        brsq = np.exp(b) * r**2
+        u = a * brsq / t
+        for i in range(0, len(t)):
+            F[i] = quad(self._integrand_hantush,
+                        u[i], np.inf, args=(brsq,))[0]
+        return F * A / 2
+
+    def step(self, p, dt=1, cutoff=None, maxtmax=None):
+        A, a, b = p[:3]
+        r = self._get_distance_from_params(p)
+        t = self.get_t(p, dt, cutoff, maxtmax)
+
+        if self.quad:
+            return self.quad_step(A, a, b, r, t)
+        else:
+            # if numba_scipy is available and param a >= ~30, numba is faster
+            if a >= 30. and self.use_numba:
+                return self.numba_step(A, a, b, r, t)
+            else:  # otherwise numpy is faster
+                return self.numpy_step(A, a, b, r, t)
 
     @staticmethod
     def variance_gain(A, b, var_A, var_b, cov_Ab, r=1.0):
@@ -379,6 +487,11 @@ class HantushWellModel(RfuncBase):
         Variance of the gain is calculated based on propagation of
         uncertainty using optimal values, the variances of A and b
         and the covariance between A and b.
+
+        Note
+        ----
+        Estimated variance can be biased for non-linear functions as it uses
+        truncated series expansion.
 
         Parameters
         ----------
@@ -410,11 +523,10 @@ class HantushWellModel(RfuncBase):
         ps.WellModel.variance_gain
         """
         var_gain = (
-            (k0(2 * np.sqrt(r ** 2 * b))) ** 2 * var_A +
-            (-A * r * k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(
-                b)) ** 2 * var_b -
-            2 * A * r * k0(2 * np.sqrt(r ** 2 * b)) *
-            k1(2 * np.sqrt(r ** 2 * b)) / np.sqrt(b) * cov_Ab
+            (k0(2 * r * np.exp(b / 2))) ** 2 * var_A +
+            (A * r * k1(2 * r * np.exp(b / 2)))**2 * np.exp(b) * var_b
+            - 2 * A * r * k0(2 * r * np.exp(b / 2)) *
+            k1(2 * r * np.exp(b / 2)) * np.exp(b / 2) * cov_Ab
         )
         return var_gain
 
@@ -441,8 +553,8 @@ class Hantush(RfuncBase):
               \\exp(-t/a - ab/t)
 
     where A, a, and b are parameters.
-    
-    The implementation used here is explained in  [veling_2010]_.
+
+    The implementation used here is explained in  :cite:t:`veling_hantush_2010`.
 
     References
     ----------
@@ -452,9 +564,18 @@ class Hantush(RfuncBase):
     """
     _name = "Hantush"
 
-    def __init__(self, up=False, meanstress=1, cutoff=0.999):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self, use_numba=False, quad=False):
+        RfuncBase.__init__(self, use_numba=use_numba, quad=quad)
         self.nparam = 3
+        self.use_numba = use_numba
+        self.quad = quad
+        # check numba and numba_scipy installation
+        if self.quad or self.use_numba:
+            check_numba()
+            # turn off use_numba if numba_scipy is not available
+            # or there is a version conflict
+            if self.use_numba:
+                self.use_numba = check_numba_scipy()
 
     def get_init_parameters(self, name):
         parameters = DataFrame(
@@ -476,30 +597,80 @@ class Hantush(RfuncBase):
         # approximate formula for tmax
         if cutoff is None:
             cutoff = self.cutoff
-        cS = p[1]
-        rho = np.sqrt(4 * p[2])
-        k0rho = k0(rho)
-        return lambertw(1 / ((1 - cutoff) * k0rho)).real * cS
+        a, b = p[1:]
+        rho = 2 * np.sqrt(b)
+        return lambertw(1 / ((1 - cutoff) * k0(rho))).real * a
 
     @staticmethod
     def gain(p):
         return p[0]
 
-    def step(self, p, dt=1, cutoff=None, maxtmax=None):
-        cS = p[1]
-        rho = np.sqrt(4 * p[2])
+    @staticmethod
+    @njit
+    def _integrand_hantush(y, b):
+        return np.exp(-y - (b / y)) / y
+
+    @staticmethod
+    @njit(parallel=True)
+    def numba_step(A, a, b, t):
+        rho = 2 * np.sqrt(b)
+        rhosq = rho**2
         k0rho = k0(rho)
-        t = self.get_t(p, dt, cutoff, maxtmax)
-        tau = t / cS
-        tau1 = tau[tau < rho / 2]
-        tau2 = tau[tau >= rho / 2]
+        tau = t / a
+        w = (exp1(rho) - k0rho) / (exp1(rho) - exp1(rho / 2))
+        F = np.zeros((tau.size,), dtype=np.float64)
+        for i in prange(tau.size):
+            tau_i = tau[i]
+            if tau_i < rho / 2:
+                F[i] = w * exp1(rhosq / (4 * tau_i)) - (w - 1) * exp1(
+                    tau_i + rhosq / (4 * tau_i))
+            elif tau_i >= rho / 2:
+                F[i] = 2 * k0rho - w * exp1(tau_i) + (w - 1) * exp1(
+                    tau_i + rhosq / (4 * tau_i))
+        return A * F / (2 * k0rho)
+
+    @staticmethod
+    def numpy_step(A, a, b, t):
+        rho = 2 * np.sqrt(b)
+        rhosq = rho**2
+        k0rho = k0(rho)
+        tau = t / a
+        tau_mask = tau < rho / 2
+        tau1 = tau[tau_mask]
+        tau2 = tau[~tau_mask]
         w = (exp1(rho) - k0rho) / (exp1(rho) - exp1(rho / 2))
         F = np.zeros_like(tau)
-        F[tau < rho / 2] = w * exp1(rho ** 2 / (4 * tau1)) - (w - 1) * exp1(
-            tau1 + rho ** 2 / (4 * tau1))
-        F[tau >= rho / 2] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(
-            tau2 + rho ** 2 / (4 * tau2))
-        return p[0] * F / (2 * k0rho)
+        F[tau_mask] = w * exp1(rhosq / (4 * tau1)) - (w - 1) * exp1(
+            tau1 + rhosq / (4 * tau1))
+        F[~tau_mask] = 2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(
+            tau2 + rhosq / (4 * tau2))
+        return A * F / (2 * k0rho)
+
+    def quad_step(self, A, a, b, t):
+        F = np.zeros_like(t)
+        u = a * b / t
+        for i in range(0, len(t)):
+            F[i] = quad(self._integrand_hantush,
+                        u[i], np.inf, args=(b,))[0]
+        return F * A / (2 * k0(2 * np.sqrt(b)))
+
+    def step(self, p, dt=1, cutoff=None, maxtmax=None):
+        A, a, b = p
+        t = self.get_t(p, dt, cutoff, maxtmax)
+
+        if self.quad:
+            return self.quad_step(A, a, b, t)
+        else:
+            # if numba_scipy is available and param a >= ~30, numba is faster
+            if a >= 30. and self.use_numba:
+                return self.numba_step(A, a, b, t)
+            else:  # otherwise numpy is faster
+                return self.numpy_step(A, a, b, t)
+
+    def impulse(self, t, p):
+        A, a, b = p
+        ir = A / (2 * t * k0(2 * np.sqrt(b))) * np.exp(-t / a - a * b / t)
+        return ir
 
 
 class Polder(RfuncBase):
@@ -507,8 +678,9 @@ class Polder(RfuncBase):
 
     Notes
     -----
-    The Polder function is explained in [polder]_. The impulse response
-    function may be written as:
+    The Polder function is explained in Eq. 123.32 in
+    :cite:t:`bruggeman_analytical_1999`. The impulse response function may be
+    written as:
 
     .. math:: \\theta(t) = \\exp(-\\sqrt(4b)) \\frac{A}{t^{-3/2}}
        \\exp(-t/a -b/t)
@@ -518,15 +690,11 @@ class Polder(RfuncBase):
 
     where :math:`\\lambda = \\sqrt{kDc}`
 
-    References
-    ----------
-    .. [polder] G.A. Bruggeman (1999). Analytical solutions of
-       geohydrological problems. Elsevier Science. Amsterdam, Eq. 123.32
     """
     _name = "Polder"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.999):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self):
+        RfuncBase.__init__(self)
         self.nparam = 3
 
     def get_init_parameters(self, name):
@@ -564,6 +732,11 @@ class Polder(RfuncBase):
             s = -s
         return s
 
+    def impulse(self, t, p):
+        A, a, b = p
+        ir = A * t ** (-1.5) * np.exp(-t / a - b / t)
+        return ir
+
     @staticmethod
     def polder_function(x, y):
         s = 0.5 * np.exp(2 * x) * erfc(x / y + y) + \
@@ -587,8 +760,8 @@ class One(RfuncBase):
     """
     _name = "One"
 
-    def __init__(self, up=None, meanstress=1, cutoff=0.999):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self):
+        RfuncBase.__init__(self)
         self.nparam = 1
 
     def get_init_parameters(self, name):
@@ -647,10 +820,10 @@ class FourParam(RfuncBase):
     """
     _name = "FourParam"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.999):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self, quad=False):
+        RfuncBase.__init__(self, quad=quad)
         self.nparam = 4
-        self.quad = False
+        self.quad = quad
 
     def get_init_parameters(self, name):
         parameters = DataFrame(
@@ -795,8 +968,8 @@ class DoubleExponential(RfuncBase):
     """
     _name = "DoubleExponential"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.999):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self):
+        RfuncBase.__init__(self)
         self.nparam = 4
 
     def get_init_parameters(self, name):
@@ -853,8 +1026,8 @@ class Edelman(RfuncBase):
 
     Notes
     -----
-    The Edelman function is explained in [5]_. The impulse response function
-    may be written as:
+    The Edelman function is explained in :cite:t:`edelman_over_1947`. The
+    impulse response function may be written as:
 
     .. math:: \\text{unknown}
 
@@ -862,14 +1035,11 @@ class Edelman(RfuncBase):
 
     .. math:: p[0] = \\beta = \\frac{\\sqrt{\\frac{4kD}{S}}}{x}
 
-    References
-    ----------
-    .. [5] http://grondwaterformules.nl/index.php/formules/waterloop/peilverandering
     """
     _name = "Edelman"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.999):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self):
+        RfuncBase.__init__(self)
         self.nparam = 1
 
     def get_init_parameters(self, name):
@@ -895,7 +1065,7 @@ class Edelman(RfuncBase):
 
 
 class Kraijenhoff(RfuncBase):
-    """The response function of Kraijenhoff van de Leur (and Bruggeman 133.15)
+    """The response function of :cite:t:`van_de_leur_study_1958`.
 
     Parameters
     ----------
@@ -910,36 +1080,29 @@ class Kraijenhoff(RfuncBase):
 
     Notes
     -----
-    The Kraijenhoff van de Leur function is explained in [Kraijenhoff]_.
-    The impulse response function may be written as:
+    The Kraijenhoff van de Leur function is explained in
+    :cite:t:`van_de_leur_study_1958`. The impulse response function may be
+    written as:
 
     .. math:: \\theta(t) = \\frac{4}{\pi S} \sum_{n=1,3,5...}^\infty \\frac{1}{n} e^{-n^2\\frac{t}{j}} \sin (\\frac{n\pi x}{L})
 
     The function describes the response of a domain between two drainage
-    channels. The function gives the same outcome as Bruggeman equation 133.15.
-    Bruggeman 133.15 is the response that is actually calculated with this
-    function. [Bruggeman]_
+    channels. The function gives the same outcome as equation 133.15 in
+    :cite:t:`bruggeman_analytical_1999`. This is the response that
+    is actually calculated with this function.
 
     The response function has three parameters: A, a and b.
     A is the gain (scaled),
-    a is the reservoir coefficient (j in [Kraijenhoff]_),
+    a is the reservoir coefficient (j in :cite:t:`van_de_leur_study_1958`),
     b is the location in the domain with the origin in the middle. This means
     that b=0 is in the middle and b=1/2 is at the drainage channel. At b=1/4
     the response function is most similar to the exponential response function.
 
-    References
-    ----------
-    .. [Kraijenhoff] Kraijenhoff van de Leur, D. A. (1958). A study of
-       non-steady groundwater flow with special reference to a reservoir
-       coefficient. De Ingenieur, 70(19), B87-B94. https://edepot.wur.nl/422032
-
-    .. [Bruggeman] G.A. Bruggeman (1999). Analytical solutions of
-       geohydrological problems. Elsevier Science. Amsterdam, Eq. 133.15
     """
     _name = "Kraijenhoff"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.999, n_terms=10):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+    def __init__(self, n_terms=10):
+        RfuncBase.__init__(self, n_terms=n_terms)
         self.nparam = 3
         self.n_terms = n_terms
 
@@ -1012,9 +1175,9 @@ class Spline(RfuncBase):
     """
     _name = "Spline"
 
-    def __init__(self, up=True, meanstress=1, cutoff=0.999, kind='quadratic',
+    def __init__(self, kind='quadratic',
                  t=[1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]):
-        RfuncBase.__init__(self, up, meanstress, cutoff)
+        RfuncBase.__init__(self, kind=kind, t=t)
         self.kind = kind
         self.t = t
         self.nparam = len(t) + 1

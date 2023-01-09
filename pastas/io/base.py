@@ -3,6 +3,8 @@
 from importlib import import_module
 from logging import getLogger
 from os import path
+from packaging import version
+from numpy import log
 
 import pastas as ps
 from pandas import to_numeric
@@ -52,7 +54,6 @@ def load(fname, **kwargs):
 def _load_model(data):
     """Internal method to create a model from a dictionary."""
     # Create model
-    _remove_keyword(data["oseries"])
     oseries = ps.TimeSeries(**data["oseries"])
 
     if "constant" in data.keys():
@@ -85,10 +86,43 @@ def _load_model(data):
 
     # Add stressmodels
     for name, ts in data["stressmodels"].items():
+        # Deal with old StressModel2 files for version 0.22.0. Remove in 0.23.0.
+        if ts["stressmodel"] == "StressModel2":
+            logger.warning("StressModel2 is removed since Pastas 0.22.0 and "
+                           "is replaced by the RechargeModel using a Linear "
+                           "recharge model. Make sure to save this file "
+                           "again using Pastas version 0.22.0 as this file "
+                           "cannot be loaded in newer Pastas versions. This "
+                           "will automatically update your model to the newer "
+                           "RechargeModel stress model.")
+            ts["stressmodel"] = "RechargeModel"
+            ts["recharge"] = "Linear"
+            ts["prec"] = ts["stress"][0]
+            ts["evap"] = ts["stress"][1]
+            ts.pop("stress")
+            ts.pop("up")
+
+        # Deal with old parameter value b in HantushWellModel: b_new = np.log(b_old)
+        if ((ts["stressmodel"] == "WellModel") and
+            (version.parse(data["file_info"]["pastas_version"]) <
+             version.parse("0.22.0"))):
+            logger.warning("The value of parameter 'b' in HantushWellModel"
+                           "was modified in 0.22.0: b_new = log(b_old). The value of "
+                           "'b' is automatically updated on load.")
+            wnam = ts["name"]
+            for pcol in ["initial", "optimal", "pmin", "pmax"]:
+                if wnam + "_b" in data["parameters"].index:
+                    if data["parameters"].loc[wnam + "_b", pcol] > 0:
+                        data["parameters"].loc[wnam + "_b", pcol] = \
+                            log(data["parameters"].loc[wnam + "_b", pcol])
+
         stressmodel = getattr(ps.stressmodels, ts["stressmodel"])
         ts.pop("stressmodel")
         if "rfunc" in ts.keys():
-            ts["rfunc"] = getattr(ps.rfunc, ts["rfunc"])
+            rfunc_kwargs = {}
+            if "rfunc_kwargs" in ts:
+                rfunc_kwargs = ts.pop("rfunc_kwargs")
+            ts["rfunc"] = getattr(ps.rfunc, ts["rfunc"])(**rfunc_kwargs)
         if "recharge" in ts.keys():
             recharge_kwargs = {}
             if 'recharge_kwargs' in ts:
@@ -97,13 +131,10 @@ def _load_model(data):
                 ps.recharge, ts["recharge"])(**recharge_kwargs)
         if "stress" in ts.keys():
             for i, stress in enumerate(ts["stress"]):
-                _remove_keyword(stress)
                 ts["stress"][i] = ps.TimeSeries(**stress)
         if "prec" in ts.keys():
-            _remove_keyword(ts["prec"])
             ts["prec"] = ps.TimeSeries(**ts["prec"])
         if "evap" in ts.keys():
-            _remove_keyword(ts["evap"])
             ts["evap"] = ps.TimeSeries(**ts["evap"])
         if "temp" in ts.keys() and ts["temp"] is not None:
             ts["temp"] = ps.TimeSeries(**ts["temp"])
@@ -134,7 +165,7 @@ def _load_model(data):
     ml.parameters = ml.parameters.apply(to_numeric, errors="ignore")
 
     # When initial values changed
-    for param, value in ml.parameters.loc[:, "initial"].iteritems():
+    for param, value in ml.parameters.loc[:, "initial"].items():
         ml.set_parameter(name=param, initial=value)
 
     return ml
@@ -166,11 +197,3 @@ def dump(fname, data, **kwargs):
     ext = path.splitext(fname)[1]
     dump_mod = import_module("pastas.io" + ext)
     return dump_mod.dump(fname, data, **kwargs)
-
-
-def _remove_keyword(data):
-    if "to_daily_unit" in data["settings"].keys():
-        logger.warning("The key 'to_daily_unit' is removed. This "
-                       "file will not work from Pastas 0.17.0. Make "
-                       "sure to save your model again to a .pas-file.")
-        data["settings"].pop("to_daily_unit")

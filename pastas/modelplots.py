@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import MultipleLocator, LogFormatter
-from pandas import concat
+from pandas import concat, Series
 
 from .decorators import model_tmin_tmax
 from .plots import series, diagnostics, cum_frequency, \
@@ -412,7 +412,7 @@ class Plotting:
         return axes
 
     @model_tmin_tmax
-    def diagnostics(self, tmin=None, tmax=None, figsize=(10, 6), bins=50,
+    def diagnostics(self, tmin=None, tmax=None, figsize=(10, 5), bins=50,
                     acf_options=None, fig=None, alpha=0.05, **kwargs):
         """Plot a window that helps in diagnosing basic model assumptions.
 
@@ -461,8 +461,17 @@ class Plotting:
         else:
             res = self.ml.residuals(tmin=tmin, tmax=tmax)
 
-        return diagnostics(series=res, figsize=figsize, bins=bins, fig=fig,
-                           acf_options=acf_options, alpha=alpha, **kwargs)
+        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+
+        if self.ml.interpolate_simulation:
+            sim_interpolated = np.interp(res.index.asi8,
+                                         sim.index.asi8,
+                                         sim.values)
+            sim = Series(index=res.index, data=sim_interpolated)
+
+        return diagnostics(series=res, sim=sim, figsize=figsize, bins=bins,
+                           fig=fig, acf_options=acf_options, alpha=alpha,
+                           **kwargs)
 
     @model_tmin_tmax
     def cum_frequency(self, tmin=None, tmax=None, ax=None, figsize=(5, 2),
@@ -683,7 +692,7 @@ class Plotting:
 
     @model_tmin_tmax
     def stacked_results(self, tmin=None, tmax=None, figsize=(10, 8),
-                        stacklegend=False, **kwargs):
+                        stacklegend=False, stacklegend_kws=None, **kwargs):
         """Create a results plot, similar to `ml.plots.results()`, in which the
         individual contributions of stresses (in stressmodels with multiple
         stresses) are stacked.
@@ -746,7 +755,14 @@ class Plotting:
                 names = [c[0] for c in contributions]  # get names
                 ax.stackplot(vstack.index, vstack.values.T, labels=names)
                 if stacklegend:
-                    ax.legend(loc="best", ncol=5, fontsize=8)
+                    if stacklegend_kws is None:
+                        stacklegend_kws = {}
+                    else:
+                        ncol = stacklegend_kws.pop("ncol", 5)
+                        fontsize = stacklegend_kws.pop("fontsize", 6)
+                        loc = stacklegend_kws.pop("loc", "best")
+                    ax.legend(loc=loc, ncol=ncol, fontsize=fontsize,
+                              **stacklegend_kws)
 
                 # y-scale does not show 0
                 ylower, yupper = ax.get_ylim()
@@ -828,7 +844,7 @@ class Plotting:
         fig2.suptitle("Model Diagnostics", fontweight="bold")
 
         plt.subplots_adjust(left=0.1, top=0.9, right=0.95, bottom=0.1)
-        pdf.savefig(fig, papertype="a4", orientation="portrait", dpi=dpi)
+        pdf.savefig(fig, orientation="portrait", dpi=dpi)
         pdf.close()
         return fig
 

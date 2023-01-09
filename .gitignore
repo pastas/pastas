@@ -23,5 +23,10 @@ dist
 
 .vscode/*
 
+# Spyder project settings
+.spyderproject
+.spyproject
+.pylint.d/
+
 .DS_Store
 /doc/api/generated/

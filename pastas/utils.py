@@ -3,10 +3,13 @@
 import logging
 from datetime import datetime, timedelta
 from logging import handlers
+from platform import platform
 
 import numpy as np
+from packaging import version
 from pandas import Series, Timedelta, Timestamp, date_range, to_datetime
 from pandas.tseries.frequencies import to_offset
+from scipy import __version__ as sc_version
 from scipy import interpolate
 
 logger = logging.getLogger(__name__)
@@ -321,7 +324,7 @@ def get_equidistant_series(series, freq, minimize_data_loss=False):
     Notes
     -----
     This method creates an equidistant timeseries with specified freq
-    using nearest sampling (meaning observations can be shifted in time), 
+    using nearest sampling (meaning observations can be shifted in time),
     with additional filling logic that ensures each original measurement
     is only included once in the new timeseries. Values are filled as close
     as possible to their original timestamp in the new equidistant timeseries.
@@ -587,29 +590,36 @@ def remove_file_handlers(logger=None):
             logger.removeHandler(handler)
 
 
-def validate_name(name):
+def validate_name(name, raise_error=False):
     """Method to check user-provided names and log a warning if wrong.
 
     Parameters
     ----------
     name: str
-        String with the name to check for 'illegal' characters.
+        String with the name to check for illegal characters.
+    raise_error: bool
+        raise Exception error if illegal character is found, default
+        is False which only logs a warning
 
     Returns
     -------
     name: str
         Unchanged name string
 
-    Notes
-    -----
-    Forbidden characters are: "/", "\", " ".
     """
-    name = str(name)  # Make sure it is a string
+    ilchar = ["/", "\\", " ", ".", "'", '"', "`"]
+    if 'windows' in platform().lower():
+        ilchar += ["#", "%", "&", "@", "{", "}", "|", "$",
+                   "*", "<", ">", "?", "!", ":", "=", "+"]
 
-    for char in ["\\", "/", " "]:
+    name = str(name)
+    for char in ilchar:
         if char in name:
-            logger.warning("User-provided name '%s' contains illegal "
-                           "character %s", name, char)
+            msg = f"User-provided name '{name}' contains illegal character. Please remove {char} from name."
+            if raise_error:
+                raise Exception(msg)
+            else:
+                logger.warning(msg)
 
     return name
 
@@ -629,7 +639,6 @@ def show_versions(lmfit=False, numba=False):
     from matplotlib import __version__ as mpl_version
     from numpy import __version__ as np_version
     from pandas import __version__ as pd_version
-    from scipy import __version__ as sc_version
 
     from pastas import __version__ as ps_version
 
@@ -658,3 +667,20 @@ def check_numba():
     except ImportError:
         logger.warning("Numba is not installed. Installing Numba is "
                        "recommended for significant speed-ups.")
+
+
+def check_numba_scipy():
+    try:
+        import numba_scipy as _
+    except ImportError:
+        logger.warning(
+            "numba_scipy is not installed, defaulting to numpy implementation."
+        )
+        return False
+
+    if version.parse(sc_version) > version.parse("1.7.3"):
+        logger.warning(
+            "numba_scipy supports scipy<=1.7.3, found {0}".format(sc_version)
+        )
+        return False
+    return True

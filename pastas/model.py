@@ -89,8 +89,11 @@ class Model:
             "tmin": None,
             "tmax": None,
             "freq": freq,
-            "warmup": (3650 * to_timedelta(freq) if freq[0].isdigit()
-                       else Timedelta(3650, freq)),
+            "warmup": (
+                Timedelta(3650, "D") / Timedelta(freq) * to_timedelta(freq)
+                if freq[0].isdigit()
+                else Timedelta(3650, freq)
+            ),
             "time_offset": Timedelta(0),
             "noise": noisemodel,
             "solver": None,
@@ -889,7 +892,9 @@ class Model:
                 break
 
         if self.sim_index is None or update_sim_index:
+            # TODO: sort out what to do for freq > "D"
             tmin = (tmin - warmup).floor(freq) + self.settings["time_offset"]
+            # tmin = (tmin - warmup) + self.settings["time_offset"]
             sim_index = date_range(tmin, tmax, freq=freq)
         else:
             sim_index = self.sim_index
@@ -1239,6 +1244,58 @@ class Model:
         sim_org = ml.simulate(tmin=tmin, tmax=tmax)
         return sim - sim_org
 
+    def get_output_series(self, tmin=None, tmax=None, add_contributions=True,
+                          split=True):
+        """Method to get all the modeled output time series from the Model.
+
+        Parameters
+        ----------
+        tmin: str, optional
+            String with a start date for the simulation period (E.g. '1980').
+            If none is provided, the tmin from the oseries is used.
+        tmax: str, optional
+            String with an end date for the simulation period (E.g. '2010').
+            If none is provided, the tmax from the oseries is used.
+        add_contributions: bool, optional
+            Add the contributions from the different stresses or not.¬
+        split: bool, optional
+            Passed on to ml.get_contributions. Split the contribution from
+            recharge into evaporation and precipitation. See also
+            ml.get_contributions.
+
+        Returns
+        -------
+        df: pandas.DataFrame
+            Pandas DataFrame with the time series as columns and DatetimeIndex.
+
+        Notes
+        -----
+        Export the observed, simulated time series, the noise and residuals
+        series, and the contributions from the different stressmodels.
+
+        Examples
+        --------
+        >>> df = ml.get_output_series(tmin="2000", tmax="2010")
+        >>> df.to_csv("fname.csv")
+        """
+        obs = self.observations(tmin=tmin, tmax=tmax)
+        obs.name = "Head_Calibration"
+
+        sim = self.simulate(tmin=tmin, tmax=tmax)
+        res = self.residuals(tmin=tmin, tmax=tmax)
+        noise = self.noise(tmin=tmin, tmax=tmax)
+
+        df = [obs, sim, res, noise]
+
+        if add_contributions:
+            contribs = self.get_contributions(
+                tmin=tmin, tmax=tmax, split=split)
+            for contrib in contribs:
+                df.append(contrib)
+
+        df = concat(df, axis=1)
+        return df
+
     def _get_response(self, block_or_step, name, p=None, dt=None, add_0=False,
                       **kwargs):
         """Internal method to compute the block and step response.
@@ -1375,7 +1432,7 @@ class Model:
         >>> ml.get_response_tmax("recharge", cutoff=0.99)
         >>> 703
 
-        This means that after 1053 days, 99% of the response of the
+        This means that after 703 days, 99% of the response of the
         groundwater levels to a recharge pulse has taken place.
         """
         if self.stressmodels[name].rfunc is None:
@@ -1563,7 +1620,7 @@ class Model:
         for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
             basic += (
                 f"{val1:<8}{val2:<23}{val3:<9}"
-                f"{val4:>{wspace+len_val4}}\n"
+                f"{val4:>{wspace + len_val4}}\n"
             )
 
         # Create the parameters block
@@ -1777,6 +1834,7 @@ class Model:
         --------
         :mod:`pastas.io.dump`
         """
+        self.name = validate_name(self.name, raise_error=True)
 
         # Get dicts for all data sources
         data = self.to_dict(series=series)

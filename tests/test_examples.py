@@ -9,7 +9,7 @@ import os
 import matplotlib.pyplot as plt
 import pytest
 
-pathname = 'examples'
+pathname = os.path.join('doc', 'examples')
 # get list of examples to run
 files = [f for f in os.listdir(pathname) if f.endswith('.py')]
 
@@ -18,14 +18,13 @@ files = [f for f in os.listdir(pathname) if f.endswith('.py')]
 def test_example(file):
     cwd = os.getcwd()
     os.chdir(pathname)
-    if file not in ["example_900.py", "test_knmidata.py"]:
-        try:
-            # run each example
-            exec(open(file).read())
-            plt.close('all')
-        except Exception as e:
-            os.chdir(cwd)
-            raise Exception(f"could not run {file}") from e
+    try:
+        # run each example
+        exec(open(file).read())
+        plt.close('all')
+    except Exception as e:
+        os.chdir(cwd)
+        raise Exception(f"could not run {file}") from e
     os.chdir(cwd)
 
 
