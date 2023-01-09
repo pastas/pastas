@@ -21,7 +21,7 @@ from pastas.typing import Array_Like, Axes, Figure, Tminmax, Model
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["compare", "Series", "acf", "diagnostics", "cum_frequency",
+__all__ = ["compare", "series", "acf", "diagnostics", "cum_frequency",
            "TrackSolve"]
 
 

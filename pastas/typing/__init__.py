@@ -1,1 +1,16 @@
-from .types import Axes, Figure, Tminmax, Model, TimeSeries, StressModel, NoiseModel, Solver, Recharge, Reservoir, CallBack, Function, RFunc, Array_Like
+from .types import (
+    Axes,
+    Figure,
+    Tminmax,
+    Model,
+    TimeSeries,
+    StressModel,
+    NoiseModel,
+    Solver,
+    Recharge,
+    Reservoir,
+    CallBack,
+    Function,
+    RFunc,
+    Array_Like,
+)

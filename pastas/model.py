@@ -1325,7 +1325,7 @@ class Model:
             timestep for the response function.
         add_0: bool, optional
             Add a zero at t=0.
-        kwargs: dict
+        kwargs: dict: passed to rfunc.step() or rfunc.block()
 
         Returns
         -------

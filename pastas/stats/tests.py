@@ -21,7 +21,7 @@ __all__ = ["durbin_watson", "ljung_box", "runs_test", "stoffer_toloi",
            "diagnostics", "plot_acf", "plot_diagnostics"]
 
 
-def durbin_watson(series: Series = None) -> float:
+def durbin_watson(series: Series) -> float:
     """Durbin-Watson test for autocorrelation.
 
     Parameters
@@ -90,7 +90,7 @@ def durbin_watson(series: Series = None) -> float:
     return dw_stat, p
 
 
-def ljung_box(series: Series = None, lags: int = 15, nparam: int = 0, full_output: bool = False) -> Tuple[float, float]:
+def ljung_box(series: Series, lags: int = 15, nparam: int = 0, full_output: bool = False) -> Tuple[float, float]:
     """Ljung-box test for autocorrelation.
 
     Parameters
