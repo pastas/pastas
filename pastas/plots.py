@@ -7,11 +7,12 @@ import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
-from pandas import DataFrame, Timestamp, to_datetime, isna
+from pandas import DataFrame, Timestamp
 from scipy.stats import gaussian_kde, norm, probplot
-from pastas.stats.core import acf as get_acf
-from pastas.stats.metrics import rmse, evp
+
 from pastas.modelcompare import CompareModels
+from pastas.stats.core import acf as get_acf
+from pastas.stats.metrics import evp, rmse
 
 logger = logging.getLogger(__name__)
 
