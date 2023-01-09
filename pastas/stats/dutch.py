@@ -13,9 +13,11 @@ from typing import Optional, Union
 from pastas.typing import Function, TimestampType
 
 
-def q_ghg(
-        series: Series, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None, q: float = 0.94,
-        by_year: bool = True) -> Series:
+def q_ghg(series: Series,
+          tmin: Optional[TimestampType] = None,
+          tmax: Optional[TimestampType] = None,
+          q: float = 0.94,
+          by_year: bool = True) -> Series:
     """Gemiddeld Hoogste Grondwaterstand (GHG) also called MHGL (Mean High
     Groundwater Level).
 
@@ -39,9 +41,11 @@ def q_ghg(
     return _q_gxg(series, q, tmin=tmin, tmax=tmax, by_year=by_year)
 
 
-def q_glg(
-        series: Series, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None, q: float = 0.06,
-        by_year: bool = True) -> Series:
+def q_glg(series: Series,
+          tmin: Optional[TimestampType] = None,
+          tmax: Optional[TimestampType] = None,
+          q: float = 0.06,
+          by_year: bool = True) -> Series:
     """Gemiddeld Laagste Grondwaterstand (GLG) also called MLGL (Mean Low
     Groundwater Level).
 
@@ -65,7 +69,10 @@ def q_glg(
     return _q_gxg(series, q, tmin=tmin, tmax=tmax, by_year=by_year)
 
 
-def q_gvg(series: Series, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None, by_year: bool = True) -> Series:
+def q_gvg(series: Series,
+          tmin: Optional[TimestampType] = None,
+          tmax: Optional[TimestampType] = None,
+          by_year: bool = True) -> Series:
     """Gemiddeld Voorjaarsgrondwaterstand (GVG) also called MSGL (Mean Spring
     Groundwater Level).
 
@@ -104,8 +111,14 @@ def q_gvg(series: Series, tmin: Optional[TimestampType] = None, tmax: Optional[T
         return nan
 
 
-def ghg(series: Series, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None,
-        fill_method: str = 'nearest', limit: int = 0, output: str = 'mean', min_n_meas: int = 16, min_n_years: int = 8,
+def ghg(series: Series,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+        fill_method: str = 'nearest',
+        limit: int = 0,
+        output: str = 'mean',
+        min_n_meas: int = 16,
+        min_n_years: int = 8,
         year_offset: str = 'a-mar') -> Union[Series, float]:
     """Calculate the 'Gemiddelde Hoogste Grondwaterstand' (Average High
     Groundwater Level)
@@ -176,8 +189,14 @@ def ghg(series: Series, tmin: Optional[TimestampType] = None, tmax: Optional[Tim
                 year_offset=year_offset)
 
 
-def glg(series: Series, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None,
-        fill_method: str = 'nearest', limit: int = 0, output: str = 'mean', min_n_meas: int = 16, min_n_years: int = 8,
+def glg(series: Series,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+        fill_method: str = 'nearest',
+        limit: int = 0,
+        output: str = 'mean',
+        min_n_meas: int = 16,
+        min_n_years: int = 8,
         year_offset: str = 'a-mar') -> Union[Series, float]:
     """Calculate the 'Gemiddelde Laagste Grondwaterstand' (Average Low
     Groundwater Level).
@@ -249,8 +268,15 @@ def glg(series: Series, tmin: Optional[TimestampType] = None, tmax: Optional[Tim
                 year_offset=year_offset)
 
 
-def gvg(series: Series, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None, fill_method: str = 'linear', limit: int = 8,
-        output: str = 'mean', min_n_meas: int = 2, min_n_years: int = 8, year_offset: str = 'a') -> Union[Series, float]:
+def gvg(series: Series,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+        fill_method: str = 'linear',
+        limit: int = 8,
+        output: str = 'mean',
+        min_n_meas: int = 2,
+        min_n_years: int = 8,
+        year_offset: str = 'a') -> Union[Series, float]:
     """Calculate the 'Gemiddelde Voorjaars Grondwaterstand' (Average Spring
     Groundwater Level).
 
@@ -308,8 +334,15 @@ def gvg(series: Series, tmin: Optional[TimestampType] = None, tmax: Optional[Tim
                 year_offset=year_offset)
 
 
-def gg(series: Series, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None, fill_method: str = 'nearest', limit: int = 0,
-        output: str = 'mean', min_n_meas: int = 16, min_n_years: int = 8, year_offset: str = 'a-mar') -> Union[Series, float]:
+def gg(series: Series,
+       tmin: Optional[TimestampType] = None,
+       tmax: Optional[TimestampType] = None,
+       fill_method: str = 'nearest',
+       limit: int = 0,
+       output: str = 'mean',
+       min_n_meas: int = 16,
+       min_n_years: int = 8,
+       year_offset: str = 'a-mar') -> Union[Series, float]:
     """Calculate the 'Gemiddelde Grondwaterstand' (Average Groundwater Level)
 
     Parameters
@@ -406,9 +439,9 @@ def _in_spring(series: Series) -> Series:
 
 
 def _gxg(series: Series, year_agg: Function, tmin: Optional[TimestampType],
-         tmax: Optional[TimestampType],
-         fill_method: str, limit: Union[int, None],
-         output: str, min_n_meas: int, min_n_years: int, year_offset: str) -> Union[Series, float]:
+         tmax: Optional[TimestampType], fill_method: str,
+         limit: Union[int, None], output: str, min_n_meas: int,
+         min_n_years: int, year_offset: str) -> Union[Series, float]:
     """Internal method for classic GXG statistics. Resampling the series to
     every 14th and 28th of the month. Taking the mean of aggregated values per
     year.
@@ -550,9 +583,11 @@ def _gxg(series: Series, year_agg: Function, tmin: Optional[TimestampType],
         raise (ValueError(msg))
 
 
-def _q_gxg(
-        series: Series, q: float, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None,
-        by_year: bool = True) -> Series:
+def _q_gxg(series: Series,
+           q: float,
+           tmin: Optional[TimestampType] = None,
+           tmax: Optional[TimestampType] = None,
+           by_year: bool = True) -> Series:
     """Dutch groundwater statistics GHG and GLG approximated by taking
     quantiles of the timeseries values per year and taking the mean of the
     quantiles.

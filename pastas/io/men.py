@@ -19,8 +19,12 @@ def load(fname: str) -> NotImplementedError:
                               "reads-section for a Menyanthes-read")
 
 
-def dump(fname: str, data: dict, version: int = 3, verbose: bool = True) -> None:
-    # version can also be a specific version, like '2.x.g.t (beta)', or an integer (see below)
+def dump(fname: str,
+         data: dict,
+         version: int = 3,
+         verbose: bool = True) -> None:
+    # version can also be a specific version,
+    # like '2.x.g.t (beta)', or an integer (see below)
     if version == 3:
         version = '3.x.b.c (gamma)'
     elif version == 2:

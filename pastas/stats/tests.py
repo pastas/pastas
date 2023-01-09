@@ -90,7 +90,10 @@ def durbin_watson(series: Series) -> float:
     return dw_stat, p
 
 
-def ljung_box(series: Series, lags: int = 15, nparam: int = 0, full_output: bool = False) -> Tuple[float, float]:
+def ljung_box(series: Series,
+              lags: int = 15,
+              nparam: int = 0,
+              full_output: bool = False) -> Tuple[float, float]:
     """Ljung-box test for autocorrelation.
 
     Parameters
@@ -278,8 +281,12 @@ def runs_test(series: Series, cutoff: str = "median") -> Tuple[float, float]:
     return z_stat, pval
 
 
-def stoffer_toloi(series: Series, lags: int = 15, nparam: int = 0, freq: str = "D",
-                  snap_to_equidistant_timestamps: bool = False) -> Tuple[float, float]:
+def stoffer_toloi(
+        series: Series,
+        lags: int = 15,
+        nparam: int = 0,
+        freq: str = "D",
+        snap_to_equidistant_timestamps: bool = False) -> Tuple[float, float]:
     """Adapted Ljung-Box test to deal with missing data [stoffer_1992]_.
 
     Parameters
@@ -415,7 +422,11 @@ def stoffer_toloi(series: Series, lags: int = 15, nparam: int = 0, freq: str = "
     return qm, pval
 
 
-def diagnostics(series: Series, alpha: float = 0.05, nparam: int = 0, lags: int = 15, stats: tuple = (),
+def diagnostics(series: Series,
+                alpha: float = 0.05,
+                nparam: int = 0,
+                lags: int = 15,
+                stats: tuple = (),
                 float_fmt: str = "{0:.2f}") -> DataFrame:
     """Methods to compute various diagnostics checks for a time series.
 

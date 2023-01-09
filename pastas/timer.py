@@ -40,7 +40,10 @@ class SolveTimer(tqdm):
     be updated quite as nicely.
     """
 
-    def __init__(self, max_time: Optional[float] = None, *args, **kwargs) -> None:
+    def __init__(self,
+                 max_time: Optional[float] = None,
+                 *args,
+                 **kwargs) -> None:
         """Initialize SolveTimer.
 
         Parameters

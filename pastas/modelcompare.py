@@ -73,7 +73,10 @@ class CompareModels:
         self.adjust_height = False
         self.smdict = None
 
-    def initialize_figure(self, mosaic: Optional[List[List[str]]] = None, figsize: Tuple[int] = (10, 8), cmap: str = "tab10") -> None:
+    def initialize_figure(self,
+                          mosaic: Optional[List[List[str]]] = None,
+                          figsize: Tuple[int] = (10, 8),
+                          cmap: str = "tab10") -> None:
         """initialize a custom figure based on a mosaic.
 
         Parameters
@@ -94,7 +97,12 @@ class CompareModels:
         self.axes = axes
         self.cmap = plt.get_cmap(cmap)
 
-    def initialize_adjust_height_figure(self, mosaic: Optional[List[List[str]]] = None, figsize: Tuple[int] = (10, 8), cmap: str = "tab10", smdict: Optional[dict] = None) -> None:
+    def initialize_adjust_height_figure(self,
+                                        mosaic: Optional[List[
+                                            List[str]]] = None,
+                                        figsize: Tuple[int] = (10, 8),
+                                        cmap: str = "tab10",
+                                        smdict: Optional[dict] = None) -> None:
         """initialize subplots based on a mosaic with equal vertical scales.
 
         The height of each subplot is calculated based on the y-data limits in
@@ -233,7 +241,9 @@ class CompareModels:
 
         return sm_unique
 
-    def get_default_mosaic(self, n_stressmodels: Optional[int] = None) -> List[List[str]]:
+    def get_default_mosaic(self,
+                           n_stressmodels: Optional[int] = None
+                          ) -> List[List[str]]:
         """Get default mosaic for matplotlib.subplot_mosaic().
 
         Parameters
@@ -282,7 +292,9 @@ class CompareModels:
 
         return tmintmax
 
-    def get_metrics(self, models: Optional[List[Model]] = None, metric_selection: Optional[List[str]] = None) -> DataFrame:
+    def get_metrics(self,
+                    models: Optional[List[Model]] = None,
+                    metric_selection: Optional[List[str]] = None) -> DataFrame:
         """get metrics of all models in a DataFrame.
 
         Parameters
@@ -311,8 +323,10 @@ class CompareModels:
         return metrics
 
     def get_parameters(
-        self, models: Optional[List[Model]] = None, param_col: str = "optimal", param_selection: Optional[List[str]] = None
-    ) -> DataFrame:
+            self,
+            models: Optional[List[Model]] = None,
+            param_col: str = "optimal",
+            param_selection: Optional[List[str]] = None) -> DataFrame:
         """get parameter values of all models in a DataFrame.
 
         Parameters
@@ -347,7 +361,9 @@ class CompareModels:
         else:
             return params
 
-    def get_diagnostics(self, models: Optional[List[Model]] = None, diag_col: str = "P-value") -> DataFrame:
+    def get_diagnostics(self,
+                        models: Optional[List[Model]] = None,
+                        diag_col: str = "P-value") -> DataFrame:
         """Get p-values of statistical tests in a DataFrame.
 
         Parameters
@@ -441,7 +457,7 @@ class CompareModels:
             self.axes[axn].plot(
                 residuals.index,
                 residuals.values,
-                label=f"Residuals",
+                label="Residuals",
                 color=self.cmap(i),
             )
 
@@ -462,12 +478,15 @@ class CompareModels:
                 self.axes[axn].plot(
                     noise.index,
                     noise.values,
-                    label=f"Noise",
+                    label="Noise",
                     linestyle="--",
                     color=f"C{i}",
                 )
 
-    def plot_response(self, smdict: Optional[dict] = None, axn: str = "rf{i}", response: str = "step") -> None:
+    def plot_response(self,
+                      smdict: Optional[dict] = None,
+                      axn: str = "rf{i}",
+                      response: str = "step") -> None:
         """plot step or block responses.
 
         Parameters
@@ -505,7 +524,7 @@ class CompareModels:
             for j, namlist in self.smdict.items():
                 for smn in namlist:
                     # skip if contribution not in model
-                    if not smn in ml.stressmodels:
+                    if smn not in ml.stressmodels:
                         continue
                     if response == "step":
                         step = ml.get_step_response(smn, add_0=True)
@@ -524,7 +543,10 @@ class CompareModels:
                             color=self.cmap(i),
                         )
 
-    def plot_contribution(self, smdict: Optional[dict] = None, axn: str = "con{i}", normalized: bool = False) -> None:
+    def plot_contribution(self,
+                          smdict: Optional[dict] = None,
+                          axn: str = "con{i}",
+                          normalized: bool = False) -> None:
         """plot stressmodel contributions.
 
         Parameters
@@ -566,7 +588,7 @@ class CompareModels:
         for i, ml in enumerate(self.models):
             for j, namlist in self.smdict.items():
                 for smn in namlist:
-                    if not smn in ml.stressmodels:
+                    if smn not in ml.stressmodels:
                         continue
                     for con in ml.get_contributions(split=False):
                         if smn in con.name:
@@ -585,7 +607,9 @@ class CompareModels:
                                 color=self.cmap(i),
                             )
 
-    def plot_stress(self, axn: str = "stress", names: Optional[List[str]] = None) -> None:
+    def plot_stress(self,
+                    axn: str = "stress",
+                    names: Optional[List[str]] = None) -> None:
         """plot stresses time series.
 
         Parameters
@@ -643,7 +667,9 @@ class CompareModels:
                 label=label,
             )
 
-    def plot_table(self, axn: str = "table", df: Optional[DataFrame] = None) -> None:
+    def plot_table(self,
+                   axn: str = "table",
+                   df: Optional[DataFrame] = None) -> None:
         """plot dataframe as table
 
         Parameters
@@ -670,9 +696,10 @@ class CompareModels:
         self.axes[axn].set_xticks([])
         self.axes[axn].set_yticks([])
 
-    def plot_table_params(
-        self, axn: str = "tab", param_col: str = "optimal", param_selection: Optional[List[str]] = None
-    ) -> None:
+    def plot_table_params(self,
+                          axn: str = "tab",
+                          param_col: str = "optimal",
+                          param_selection: Optional[List[str]] = None) -> None:
         """plot model parameters table.
 
         Parameters
@@ -699,7 +726,10 @@ class CompareModels:
         cols = params.columns.to_list()[-1:] + params.columns.to_list()[:-1]
         self.plot_table(axn=axn, df=params[cols])
 
-    def plot_table_metrics(self, axn: str = "met", metric_selection: Optional[List[str]] = None) -> None:
+    def plot_table_metrics(
+            self,
+            axn: str = "met",
+            metric_selection: Optional[List[str]] = None) -> None:
         """plot metrics table.
 
         Parameters
@@ -733,7 +763,9 @@ class CompareModels:
         cols = metrics.columns.to_list()[-1:] + metrics.columns.to_list()[:-1]
         self.plot_table(axn=axn, df=metrics[cols].round(2))
 
-    def plot_table_diagnostics(self, axn: str = "diag", diag_col: str = "P-value") -> None:
+    def plot_table_diagnostics(self,
+                               axn: str = "diag",
+                               diag_col: str = "P-value") -> None:
         """plot diagnostics table.
 
         Parameters

@@ -41,8 +41,12 @@ class ThresholdTransform:
     """
     _name = "ThresholdTransform"
 
-    def __init__(self, value: float = np.nan, vmin: float = np.nan, vmax: float = np.nan,
-                 name: str = 'ThresholdTransform', nparam: int = 2) -> None:
+    def __init__(self,
+                 value: float = np.nan,
+                 vmin: float = np.nan,
+                 vmax: float = np.nan,
+                 name: str = 'ThresholdTransform',
+                 nparam: int = 2) -> None:
         self.value = value
         self.vmin = vmin
         self.vmax = vmax

@@ -37,7 +37,9 @@ class RfuncBase:
         self.cutoff = 0.999
         self.kwargs = kwargs
 
-    def _set_init_parameter_settings(self, up: bool = True, meanstress: float = 1.0,
+    def _set_init_parameter_settings(self,
+                                     up: bool = True,
+                                     meanstress: float = 1.0,
                                      cutoff: float = 0.999) -> None:
         self.up = up
         # Completely arbitrary number to prevent division by zero
@@ -82,7 +84,11 @@ class RfuncBase:
         """
         pass
 
-    def step(self, p: ArrayLike, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> ArrayLike:
+    def step(self,
+             p: ArrayLike,
+             dt: float = 1.0,
+             cutoff: Optional[float] = None,
+             maxtmax: Optional[int] = None) -> ArrayLike:
         """Method to return the step function.
 
         Parameters
@@ -104,7 +110,11 @@ class RfuncBase:
         """
         pass
 
-    def block(self, p: ArrayLike, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> ArrayLike:
+    def block(self,
+              p: ArrayLike,
+              dt: float = 1.0,
+              cutoff: Optional[float] = None,
+              maxtmax: Optional[int] = None) -> ArrayLike:
         """Method to return the block function.
 
         Parameters
@@ -153,7 +163,11 @@ class RfuncBase:
         """
         pass
 
-    def get_t(self, p: ArrayLike, dt: float, cutoff: float, maxtmax: Optional[int] = None) -> ArrayLike:
+    def get_t(self,
+              p: ArrayLike,
+              dt: float,
+              cutoff: float,
+              maxtmax: Optional[int] = None) -> ArrayLike:
         """Internal method to determine the times at which to evaluate the
         step-response, from t=0.
 
@@ -242,7 +256,11 @@ class Gamma(RfuncBase):
     def gain(self, p: ArrayLike) -> float:
         return p[0]
 
-    def step(self, p: ArrayLike, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> ArrayLike:
+    def step(self,
+             p: ArrayLike,
+             dt: float = 1.0,
+             cutoff: Optional[float] = None,
+             maxtmax: Optional[int] = None) -> ArrayLike:
         t = self.get_t(p, dt, cutoff, maxtmax)
         s = p[0] * gammainc(p[1], t / p[2])
         return s
@@ -306,7 +324,11 @@ class Exponential(RfuncBase):
     def gain(self, p: ArrayLike) -> float:
         return p[0]
 
-    def step(self, p: ArrayLike, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[float] = None) -> ArrayLike:
+    def step(self,
+             p: ArrayLike,
+             dt: float = 1.0,
+             cutoff: Optional[float] = None,
+             maxtmax: Optional[float] = None) -> ArrayLike:
         t = self.get_t(p, dt, cutoff, maxtmax)
         s = p[0] * (1.0 - np.exp(-t / p[1]))
         return s
@@ -461,7 +483,8 @@ class HantushWellModel(RfuncBase):
             tau2 + rhosq / (4 * tau2))
         return A * F / 2
 
-    def quad_step(self, A: float, a: float, b: float, r: float, t: ArrayLike) -> ArrayLike:
+    def quad_step(self, A: float, a: float, b: float, r: float,
+                  t: ArrayLike) -> ArrayLike:
         F = np.zeros_like(t)
         brsq = np.exp(b) * r**2
         u = a * brsq / t
@@ -470,7 +493,11 @@ class HantushWellModel(RfuncBase):
                         u[i], np.inf, args=(brsq,))[0]
         return F * A / 2
 
-    def step(self, p: ArrayLike, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> ArrayLike:
+    def step(self,
+             p: ArrayLike,
+             dt: float = 1.0,
+             cutoff: Optional[float] = None,
+             maxtmax: Optional[int] = None) -> ArrayLike:
         A, a, b = p[:3]
         r = self._get_distance_from_params(p)
         t = self.get_t(p, dt, cutoff, maxtmax)
@@ -485,7 +512,12 @@ class HantushWellModel(RfuncBase):
                 return self.numpy_step(A, a, b, r, t)
 
     @staticmethod
-    def variance_gain(A: float, b: float, var_A: float, var_b: float, cov_Ab: float, r: Optional[float] = 1.0) -> Union[float, ArrayLike]:
+    def variance_gain(A: float,
+                      b: float,
+                      var_A: float,
+                      var_b: float,
+                      cov_Ab: float,
+                      r: Optional[float] = 1.0) -> Union[float, ArrayLike]:
         """Calculate variance of the gain from parameters A and b.
 
         Variance of the gain is calculated based on propagation of
@@ -658,7 +690,11 @@ class Hantush(RfuncBase):
                         u[i], np.inf, args=(b,))[0]
         return F * A / (2 * k0(2 * np.sqrt(b)))
 
-    def step(self, p: ArrayLike, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> ArrayLike:
+    def step(self,
+             p: ArrayLike,
+             dt: float = 1.0,
+             cutoff: Optional[float] = None,
+             maxtmax: Optional[int] = None) -> ArrayLike:
         A, a, b = p
         t = self.get_t(p, dt, cutoff, maxtmax)
 
@@ -727,7 +763,11 @@ class Polder(RfuncBase):
             g = -g
         return g
 
-    def step(self, p: ArrayLike, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> ArrayLike:
+    def step(self,
+             p: ArrayLike,
+             dt: float = 1.0,
+             cutoff: Optional[float] = None,
+             maxtmax: Optional[int] = None) -> ArrayLike:
         t = self.get_t(p, dt, cutoff, maxtmax)
         A, a, b = p
         s = A * self.polder_function(np.sqrt(b), np.sqrt(t / a))
@@ -788,13 +828,21 @@ class One(RfuncBase):
     def gain(self, p: ArrayLike) -> float:
         return p[0]
 
-    def step(self, p: ArrayLike, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> ArrayLike:
+    def step(self,
+             p: ArrayLike,
+             dt: float = 1.0,
+             cutoff: Optional[float] = None,
+             maxtmax: Optional[int] = None) -> ArrayLike:
         if isinstance(dt, np.ndarray):
             return p[0] * np.ones(len(dt))
         else:
             return p[0] * np.ones(1)
 
-    def block(self, p: ArrayLike, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> ArrayLike:
+    def block(self,
+              p: ArrayLike,
+              dt: float = 1.0,
+              cutoff: Optional[float] = None,
+              maxtmax: Optional[int] = None) -> ArrayLike:
         return p[0] * np.ones(1)
 
 
@@ -890,7 +938,11 @@ class FourParam(RfuncBase):
     def gain(p: ArrayLike) -> float:
         return p[0]
 
-    def step(self, p: ArrayLike, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> ArrayLike:
+    def step(self,
+             p: ArrayLike,
+             dt: float = 1.0,
+             cutoff: Optional[float] = None,
+             maxtmax: Optional[int] = None) -> ArrayLike:
 
         if self.quad:
             t = self.get_t(p, dt, cutoff, maxtmax)
@@ -1006,7 +1058,11 @@ class DoubleExponential(RfuncBase):
     def gain(self, p: ArrayLike) -> float:
         return p[0]
 
-    def step(self, p: ArrayLike, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> ArrayLike:
+    def step(self,
+             p: ArrayLike,
+             dt: float = 1.0,
+             cutoff: Optional[float] = None,
+             maxtmax: Optional[int] = None) -> ArrayLike:
         t = self.get_t(p, dt, cutoff, maxtmax)
         s = p[0] * (1 - ((1 - p[1]) * np.exp(-t / p[2]) +
                          p[1] * np.exp(-t / p[3])))
@@ -1062,7 +1118,11 @@ class Edelman(RfuncBase):
     def gain(p: ArrayLike) -> float:
         return 1.
 
-    def step(self, p: ArrayLike, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> ArrayLike:
+    def step(self,
+             p: ArrayLike,
+             dt: float = 1.0,
+             cutoff: Optional[float] = None,
+             maxtmax: Optional[int] = None) -> ArrayLike:
         t = self.get_t(p, dt, cutoff, maxtmax)
         s = erfc(1 / (p[0] * np.sqrt(t)))
         return s
@@ -1137,7 +1197,11 @@ class Kraijenhoff(RfuncBase):
     def gain(p: ArrayLike) -> float:
         return p[0]
 
-    def step(self, p: ArrayLike, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> ArrayLike:
+    def step(self,
+             p: ArrayLike,
+             dt: float = 1.0,
+             cutoff: Optional[float] = None,
+             maxtmax: Optional[int] = None) -> ArrayLike:
         t = self.get_t(p, dt, cutoff, maxtmax)
         h = 0
         for n in range(self.n_terms):
@@ -1218,7 +1282,11 @@ class Spline(RfuncBase):
     def gain(self, p: ArrayLike) -> float:
         return p[0]
 
-    def step(self, p: ArrayLike, dt: float = 1.0, cutoff: Optional[float] = None, maxtmax: Optional[int] = None) -> ArrayLike:
+    def step(self,
+             p: ArrayLike,
+             dt: float = 1.0,
+             cutoff: Optional[float] = None,
+             maxtmax: Optional[int] = None) -> ArrayLike:
         f = interp1d(self.t, p[1:len(self.t) + 1], kind=self.kind)
         t = self.get_t(p, dt, cutoff, maxtmax)
         s = p[0] * f(t)

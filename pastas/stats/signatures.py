@@ -263,7 +263,10 @@ def interannual_variation(series: Series, normalize: bool = True) -> float:
     return (hw.max() - hw.min()) + (hl.max() - hl.min()) / 2
 
 
-def colwell_components(series: Series, bins: int = 11, freq: str = "M", method: str = "mean",
+def colwell_components(series: Series,
+                       bins: int = 11,
+                       freq: str = "M",
+                       method: str = "mean",
                        normalize: bool = True) -> Tuple[float, float, float]:
     """Colwell predictability, constant, and contingency [colwell_1974]_.
 
@@ -333,7 +336,10 @@ def colwell_components(series: Series, bins: int = 11, freq: str = "M", method: 
     return p, c, m
 
 
-def colwell_constancy(series: Series, bins: int = 11, freq: str = "M", method: str = "mean",
+def colwell_constancy(series: Series,
+                      bins: int = 11,
+                      freq: str = "M",
+                      method: str = "mean",
                       normalize: bool = True) -> Tuple[float, float, float]:
     """Colwells constancy index after [colwell_1974]_.
 
@@ -366,12 +372,17 @@ def colwell_constancy(series: Series, bins: int = 11, freq: str = "M", method: s
        Contingency of periodic phenomena. Ecology, 55(5), 1148–1153.
 
     """
-    return \
-        colwell_components(series=series, bins=bins, freq=freq, method=method,
-                           normalize=normalize)[1]
+    return colwell_components(series=series,
+                              bins=bins,
+                              freq=freq,
+                              method=method,
+                              normalize=normalize)[1]
 
 
-def colwell_contingency(series: Series, bins: int = 11, freq: str = "M", method: str = "mean",
+def colwell_contingency(series: Series,
+                        bins: int = 11,
+                        freq: str = "M",
+                        method: str = "mean",
                         normalize: bool = True) -> Tuple[float, float, float]:
     """Colwell contingency [colwell_1974]_
 
@@ -407,9 +418,11 @@ def colwell_contingency(series: Series, bins: int = 11, freq: str = "M", method:
        Contingency of periodic phenomena. Ecology, 55(5), 1148–1153.
 
     """
-    return \
-        colwell_components(series=series, bins=bins, freq=freq, method=method,
-                           normalize=normalize)[2]
+    return colwell_components(series=series,
+                              bins=bins,
+                              freq=freq,
+                              method=method,
+                              normalize=normalize)[2]
 
 
 def low_pulse_count(series: Series, quantile: float = 0.2) -> int:
@@ -855,7 +868,9 @@ def bimodality_coefficient(series: Series, normalize: bool = False) -> float:
            (kurt + ((3 * ((n - 1) ** 2)) / ((n - 2) * (n - 3))))
 
 
-def recession_constant(series: Series, bins: int = 20, normalize: bool = False) -> float:
+def recession_constant(series: Series,
+                       bins: int = 20,
+                       normalize: bool = False) -> float:
     """Recession constant after [kirchner_2009]_.
 
     Parameters
@@ -900,7 +915,9 @@ def recession_constant(series: Series, bins: int = 20, normalize: bool = False) 
     return fit.slope
 
 
-def recovery_constant(series: Series, bins: int = 20, normalize: bool = False) -> float:
+def recovery_constant(series: Series,
+                      bins: int = 20,
+                      normalize: bool = False) -> float:
     """Recovery constant after [kirchner_2009]_.
 
     Parameters
@@ -946,7 +963,10 @@ def recovery_constant(series: Series, bins: int = 20, normalize: bool = False) -
     return fit.slope
 
 
-def duration_curve_slope(series: Series, l: float = 0.1, u: float = 0.9, normalize: bool = True) -> float:
+def duration_curve_slope(series: Series,
+                         l: float = 0.1,
+                         u: float = 0.9,
+                         normalize: bool = True) -> float:
     """Slope of the duration curve between percentile l and u.
 
     Parameters
@@ -985,7 +1005,10 @@ def duration_curve_slope(series: Series, l: float = 0.1, u: float = 0.9, normali
     return linregress(s.index, s.values).slope
 
 
-def duration_curve_range(series: Series, l: float = 0.1, u: float = 0.9, normalize: bool = True) -> float:
+def duration_curve_range(series: Series,
+                         l: float = 0.1,
+                         u: float = 0.9,
+                         normalize: bool = True) -> float:
     """Range of the duration curve between the percentile l and u.
 
     Parameters

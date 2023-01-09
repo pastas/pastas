@@ -301,7 +301,9 @@ def timestep_weighted_resample_fast(series0: Series, freq: str) -> Series:
     return series
 
 
-def get_equidistant_series(series: Series, freq: str, minimize_data_loss: bool = False) -> Series:
+def get_equidistant_series(series: Series,
+                           freq: str,
+                           minimize_data_loss: bool = False) -> Series:
     """Get equidistant timeseries using nearest reindexing.
 
     This method will shift observations to the nearest equidistant timestep to
@@ -474,7 +476,8 @@ def get_stress_tmin_tmax(ml: ModelType) -> Tuple[TimestampType, TimestampType]:
     return tmin, tmax
 
 
-def initialize_logger(logger: Optional[Any] = None, level: Optional[Any] = logging.INFO) -> None:
+def initialize_logger(logger: Optional[Any] = None,
+                      level: Optional[Any] = logging.INFO) -> None:
     """Internal method to create a logger instance to log program output.
 
     Parameters
@@ -492,7 +495,8 @@ def initialize_logger(logger: Optional[Any] = None, level: Optional[Any] = loggi
     # add_file_handlers(logger)
 
 
-def set_console_handler(logger: Optional[Any] = None, level: Optional[Any] = logging.INFO,
+def set_console_handler(logger: Optional[Any] = None,
+                        level: Optional[Any] = logging.INFO,
                         fmt: str = "%(levelname)s: %(message)s") -> None:
     """Method to add a console handler to the logger of Pastas.
 
@@ -549,11 +553,15 @@ def remove_console_handler(logger: Optional[Any] = None) -> None:
             logger.removeHandler(handler)
 
 
-def add_file_handlers(logger: Optional[Any] = None, filenames: Tuple[str] = ('info.log', 'errors.log'),
-                      levels: Tuple[Any] = (logging.INFO, logging.ERROR), maxBytes: int = 10485760,
-                      backupCount: int = 20, encoding: str = 'utf8',
-                      fmt: str = '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                      datefmt: str = '%y-%m-%d %H:%M') -> None:
+def add_file_handlers(
+        logger: Optional[Any] = None,
+        filenames: Tuple[str] = ('info.log', 'errors.log'),
+        levels: Tuple[Any] = (logging.INFO, logging.ERROR),
+        maxBytes: int = 10485760,
+        backupCount: int = 20,
+        encoding: str = 'utf8',
+        fmt: str = '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt: str = '%y-%m-%d %H:%M') -> None:
     """Method to add file handlers in the logger of Pastas.
 
     Parameters
@@ -620,7 +628,8 @@ def validate_name(name: str, raise_error: bool = False) -> str:
     name = str(name)
     for char in ilchar:
         if char in name:
-            msg = f"User-provided name '{name}' contains illegal character. Please remove {char} from name."
+            msg = f"User-provided name '{name}' contains illegal character."
+            msg += f"Please remove {char} from name."
             if raise_error:
                 raise Exception(msg)
             else:

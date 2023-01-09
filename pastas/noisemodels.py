@@ -246,7 +246,8 @@ class ArmaModel(NoiseModelBase):
 
     @staticmethod
     @njit
-    def calculate_noise(res: ArrayLike, odelt: ArrayLike, alpha: float, beta: float) -> ArrayLike:
+    def calculate_noise(res: ArrayLike, odelt: ArrayLike, alpha: float,
+                        beta: float) -> ArrayLike:
         # Create an array to store the noise
         a = np.zeros_like(res)
         a[0] = res[0]

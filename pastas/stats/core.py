@@ -18,8 +18,14 @@ from typing import Union, Tuple
 from pastas.typing import ArrayLike
 
 
-def acf(x: Series, lags: ArrayLike = 365, bin_method: str = 'rectangle', bin_width: float = 0.5, max_gap: float = inf,
-        min_obs: int = 20, full_output: bool = False, alpha: float = 0.05) -> Union[Series, DataFrame]:
+def acf(x: Series,
+        lags: ArrayLike = 365,
+        bin_method: str = 'rectangle',
+        bin_width: float = 0.5,
+        max_gap: float = inf,
+        min_obs: int = 20,
+        full_output: bool = False,
+        alpha: float = 0.05) -> Union[Series, DataFrame]:
     """Calculate the autocorrelation function for irregular time steps.
 
     Parameters
@@ -89,8 +95,15 @@ def acf(x: Series, lags: ArrayLike = 365, bin_method: str = 'rectangle', bin_wid
         return c
 
 
-def ccf(x: Series, y: Series, lags: ArrayLike = 365, bin_method: str = 'rectangle', bin_width: float = 0.5,
-        max_gap: float = inf, min_obs: int = 20, full_output: bool = False, alpha: float = 0.05) -> Union[Series, DataFrame]:
+def ccf(x: Series,
+        y: Series,
+        lags: ArrayLike = 365,
+        bin_method: str = 'rectangle',
+        bin_width: float = 0.5,
+        max_gap: float = inf,
+        min_obs: int = 20,
+        full_output: bool = False,
+        alpha: float = 0.05) -> Union[Series, DataFrame]:
     """Method to compute the cross-correlation for irregular time series.
 
     Parameters
@@ -194,7 +207,13 @@ def _preprocess(x: Series, max_gap: int) -> Tuple[Series, float, float]:
 
 
 @njit
-def _compute_ccf_rectangle(lags: ArrayLike, t_x: ArrayLike, x: ArrayLike, t_y: ArrayLike, y: ArrayLike, bin_width: float = 0.5) -> Tuple[ArrayLike, ArrayLike]:
+def _compute_ccf_rectangle(
+        lags: ArrayLike,
+        t_x: ArrayLike,
+        x: ArrayLike,
+        t_y: ArrayLike,
+        y: ArrayLike,
+        bin_width: float = 0.5) -> Tuple[ArrayLike, ArrayLike]:
     """Internal numba-optimized method to compute the ccf."""
     c = empty_like(lags)
     b = empty_like(lags)
@@ -220,7 +239,13 @@ def _compute_ccf_rectangle(lags: ArrayLike, t_x: ArrayLike, x: ArrayLike, t_y: A
 
 
 @njit
-def _compute_ccf_gaussian(lags: ArrayLike, t_x: ArrayLike, x: ArrayLike, t_y: ArrayLike, y: ArrayLike, bin_width: float = 0.5) -> Tuple[ArrayLike, ArrayLike]:
+def _compute_ccf_gaussian(
+        lags: ArrayLike,
+        t_x: ArrayLike,
+        x: ArrayLike,
+        t_y: ArrayLike,
+        y: ArrayLike,
+        bin_width: float = 0.5) -> Tuple[ArrayLike, ArrayLike]:
     """Internal numba-optimized method to compute the ccf."""
     c = empty_like(lags)
     b = empty_like(lags)
@@ -249,7 +274,8 @@ def _compute_ccf_gaussian(lags: ArrayLike, t_x: ArrayLike, x: ArrayLike, t_y: Ar
     return c, b
 
 
-def _compute_ccf_regular(lags: ArrayLike, x: ArrayLike, y: ArrayLike) -> Tuple[ArrayLike, ArrayLike]:
+def _compute_ccf_regular(lags: ArrayLike, x: ArrayLike,
+                         y: ArrayLike) -> Tuple[ArrayLike, ArrayLike]:
     c = empty_like(lags)
     for i, lag in enumerate(lags):
         c[i] = corrcoef(x[:-int(lag)], y[int(lag):])[0, 1]

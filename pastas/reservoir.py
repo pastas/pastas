@@ -47,7 +47,12 @@ class ReservoirBase:
             columns=["initial", "pmin", "pmax", "vary", "name"])
         return parameters
 
-    def simulate(self, prec: Series, evap: Series, p: ArrayLike, dt: float = 1.0, **kwargs) -> ArrayLike:
+    def simulate(self,
+                 prec: Series,
+                 evap: Series,
+                 p: ArrayLike,
+                 dt: float = 1.0,
+                 **kwargs) -> ArrayLike:
         pass
 
 

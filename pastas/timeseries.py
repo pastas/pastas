@@ -60,8 +60,13 @@ class TimeSeries:
     """
     _predefined_settings = rcParams["timeseries"]
 
-    def __init__(self, series: Series, name: Optional[str] = None, settings: Optional[Union[str, dict]] = None, metadata: Optional[dict] = None,
-                 freq_original: str = None, **kwargs) -> None:
+    def __init__(self,
+                 series: Series,
+                 name: Optional[str] = None,
+                 settings: Optional[Union[str, dict]] = None,
+                 metadata: Optional[dict] = None,
+                 freq_original: str = None,
+                 **kwargs) -> None:
         if isinstance(series, TimeSeries):
             # Copy all the series
             self._series_original = series.series_original.copy()

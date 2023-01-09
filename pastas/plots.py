@@ -58,9 +58,15 @@ def compare(models: List[Model], adjust_height: bool = True, **kwargs) -> Axes:
 
 
 def series(
-        head: Optional[Series] = None, stresses: Optional[List[Series]] = None, hist: bool = True, kde: bool = False,
-        titles: bool = True, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None,
-        labels: Optional[List[str]] = None, figsize: tuple = (10, 5)) -> Axes:
+    head: Optional[Series] = None,
+    stresses: Optional[List[Series]] = None,
+    hist: bool = True,
+    kde: bool = False,
+    titles: bool = True,
+    tmin: Optional[TimestampType] = None,
+    tmax: Optional[TimestampType] = None,
+    labels: Optional[List[str]] = None,
+    figsize: tuple = (10, 5)) -> Axes:
     """Plot all the input time Series in a single plot.
 
     Parameters
@@ -200,9 +206,14 @@ def series(
     return axes
 
 
-def acf(
-        series: Series, alpha: float = 0.05, lags: int = 365, acf_options: Optional[dict] = None, smooth_conf: bool = True,
-        color: str = "k", ax: Optional[Axes] = None, figsize: tuple = (5, 2)) -> Axes:
+def acf(series: Series,
+        alpha: float = 0.05,
+        lags: int = 365,
+        acf_options: Optional[dict] = None,
+        smooth_conf: bool = True,
+        color: str = "k",
+        ax: Optional[Axes] = None,
+        figsize: tuple = (5, 2)) -> Axes:
     """Plot of the autocorrelation function of a time series.
 
     Parameters
@@ -268,10 +279,15 @@ def acf(
     return ax
 
 
-def diagnostics(
-        series: Series, sim: Optional[Series] = None, alpha: float = 0.05, bins: int = 50, acf_options: Optional[dict] = None,
-        figsize: tuple = (10, 5),
-        fig: Optional[Figure] = None, heteroscedasicity: bool = True, **kwargs) -> Axes:
+def diagnostics(series: Series,
+                sim: Optional[Series] = None,
+                alpha: float = 0.05,
+                bins: int = 50,
+                acf_options: Optional[dict] = None,
+                figsize: tuple = (10, 5),
+                fig: Optional[Figure] = None,
+                heteroscedasicity: bool = True,
+                **kwargs) -> Axes:
     """Plot that helps in diagnosing basic model assumptions.
 
     Parameters
@@ -391,8 +407,10 @@ def diagnostics(
     return fig.axes
 
 
-def cum_frequency(
-        obs: Series, sim: Optional[Series] = None, ax: Optional[Axes] = None, figsize: tuple = (5, 2)) -> Axes:
+def cum_frequency(obs: Series,
+                  sim: Optional[Series] = None,
+                  ax: Optional[Axes] = None,
+                  figsize: tuple = (5, 2)) -> Axes:
     """Plot of the cumulative frequency of a time Series.
 
     Parameters
@@ -495,9 +513,12 @@ class TrackSolve:
     Access the resulting figure through `track.fig`.
     """
 
-    def __init__(
-            self, ml: Model, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None,
-            update_iter: Optional[int] = None) -> None:
+    def __init__(self,
+                 ml: Model,
+                 tmin: Optional[TimestampType] = None,
+                 tmax: Optional[TimestampType] = None,
+                 update_iter: Optional[int] = None) -> None:
+
         logger.warning("TrackSolve feature under development. If you find any "
                        "bugs please post an issue on GitHub: "
                        "https://github.com/pastas/pastas/issues")
@@ -637,7 +658,9 @@ class TrackSolve:
                                freq=self.ml.settings["freq"])
         return sim
 
-    def initialize_figure(self, figsize: Tuple[int] = (10, 8), dpi: int = 100) -> Figure:
+    def initialize_figure(self,
+                          figsize: Tuple[int] = (10, 8),
+                          dpi: int = 100) -> Figure:
         """Initialize figure for plotting optimization progress.
 
         Parameters
