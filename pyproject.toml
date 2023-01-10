@@ -43,7 +43,7 @@ documentation = "https://pastas.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
 full = ["numba >= 0.51", "lmfit >= 1.0.0"]
-numbascipy = ["numba-scipy>=0.3.1"]
-tqdm = [tqdm]
-rtd = [nbsphinx, Ipython, ipykernel, pydata-sphinx-theme, sphinx-gallery, sphinx>=3.1, <6.0, sphinxcontrib-bibtex, requests]
-ci = [corner, emcee]
+numbascipy = ["numba-scipy >= 0.3.1"]
+tqdm = ["tqdm"]
+rtd = ["nbsphinx", "Ipython", "ipykernel", "pydata-sphinx-theme", "sphinx-gallery", "sphinx>=3.1, <6.0", "sphinxcontrib-bibtex", "requests"]
+ci = ["corner", "emcee"]
