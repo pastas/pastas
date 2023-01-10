@@ -14,22 +14,25 @@
 
 import os
 import sys
-import re
-import requests
 from datetime import date
-from matplotlib import use
-from pastas.version import __version__
 
-from dataclasses import dataclass, field
-# sphinx
-from sphinxcontrib.bibtex.style.referencing.author_year import AuthorYearReferenceStyle
-from sphinxcontrib.bibtex.style.referencing import BracketStyle
-import sphinxcontrib.bibtex.plugin
+import requests
+import re
 
 year = date.today().strftime("%Y")
 
+from matplotlib import use
+
 use('agg')
 
+from pastas.version import __version__
+
+from dataclasses import dataclass, field
+import sphinxcontrib.bibtex.plugin
+
+from sphinxcontrib.bibtex.style.referencing import BracketStyle
+from sphinxcontrib.bibtex.style.referencing.author_year \
+    import AuthorYearReferenceStyle
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
