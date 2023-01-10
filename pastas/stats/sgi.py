@@ -2,12 +2,12 @@
 Index."""
 
 from numpy import linspace
+from pandas import Series
 from scipy.stats import norm
 
 
-def sgi(series):
-    """Method to compute the Standardized Groundwater Index
-    :cite:t:`bloomfield_analysis_2013`.
+def sgi(series: Series) -> Series:
+    """Method to compute the Standardized Groundwater Index [sgi_2013]_.
 
     Parameters
     ----------

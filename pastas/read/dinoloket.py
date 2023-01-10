@@ -29,8 +29,8 @@ def read_dino(fname, variable='Stand_cm_tov_NAP', factor=0.01):
     ts: pastas.TimeSeries
         returns a Pastas TimeSeries object or a list of objects.
     """
-    warnings.warn("The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io", DeprecationWarning)
-
+    warnings.warn(
+        "The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io", DeprecationWarning)
 
     # Read the file
     dino = DinoGrondwaterstand(fname)
@@ -79,8 +79,8 @@ def read_dino_level_gauge(fname, variable='Stand_cm_tov_NAP', factor=0.01):
     ts: pastas.TimeSeries
         returns a Pastas TimeSeries object or a list of objects.
     """
-    warnings.warn("The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io", DeprecationWarning)
-
+    warnings.warn(
+        "The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io", DeprecationWarning)
 
     # Read the file
     dino = DinoPeilschaal(fname)
@@ -113,7 +113,8 @@ def read_dino_level_gauge(fname, variable='Stand_cm_tov_NAP', factor=0.01):
 
 class DinoGrondwaterstand:
     def __init__(self, fname):
-        warnings.warn("The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io", DeprecationWarning)
+        warnings.warn(
+            "The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io", DeprecationWarning)
         with open(fname, 'r') as f:
             # lees de header
             line = f.readline()
@@ -245,7 +246,8 @@ class DinoGrondwaterstand:
 
 class DinoPeilschaal:
     def __init__(self, fname):
-        warnings.warn("The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io", DeprecationWarning)
+        warnings.warn(
+            "The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io", DeprecationWarning)
 
         with open(fname, 'r') as f:
             # lees de header

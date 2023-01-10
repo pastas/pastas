@@ -7,12 +7,17 @@ import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
-from pandas import DataFrame, Timestamp
+from pandas import Series, DataFrame, Timestamp
 from scipy.stats import gaussian_kde, norm, probplot
 
 from pastas.modelcompare import CompareModels
 from pastas.stats.core import acf as get_acf
 from pastas.stats.metrics import evp, rmse
+
+# Type Hinting
+from typing import Optional, List, Tuple
+from pastas.typing import ArrayLike, Axes, Figure, TimestampType, Model
+
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +25,7 @@ __all__ = ["compare", "series", "acf", "diagnostics", "cum_frequency",
            "TrackSolve"]
 
 
-def compare(models, adjust_height=False, **kwargs):
+def compare(models: List[Model], adjust_height: bool = True, **kwargs) -> Axes:
     """Plot multiple Pastas models in one figure to visually compare models.
 
     Note
@@ -52,9 +57,17 @@ def compare(models, adjust_height=False, **kwargs):
     return mc.axes
 
 
-def series(head=None, stresses=None, hist=True, kde=False, titles=True,
-           tmin=None, tmax=None, labels=None, figsize=(10, 5)):
-    """Plot all the input time series in a single plot.
+def series(
+    head: Optional[Series] = None,
+    stresses: Optional[List[Series]] = None,
+    hist: bool = True,
+    kde: bool = False,
+    titles: bool = True,
+    tmin: Optional[TimestampType] = None,
+    tmax: Optional[TimestampType] = None,
+    labels: Optional[List[str]] = None,
+    figsize: tuple = (10, 5)) -> Axes:
+    """Plot all the input time Series in a single plot.
 
     Parameters
     ----------
@@ -70,7 +83,7 @@ def series(head=None, stresses=None, hist=True, kde=False, titles=True,
         scipy.gaussian_kde using scott to calculate the estimator bandwidth.
         Returns the number of observations, mean, skew and kurtosis.
     titles: bool
-        Set the titles or not. Taken from the name attribute of the Series.
+        Set the titles or not. Taken from the name attribute of the series.
     tmin: str or pd.Timestamp
     tmax: str or pd.Timestamp
     labels: List of str
@@ -193,8 +206,14 @@ def series(head=None, stresses=None, hist=True, kde=False, titles=True,
     return axes
 
 
-def acf(series, alpha=0.05, lags=365, acf_options=None, smooth_conf=True,
-        color='k', ax=None, figsize=(5, 2)):
+def acf(series: Series,
+        alpha: float = 0.05,
+        lags: int = 365,
+        acf_options: Optional[dict] = None,
+        smooth_conf: bool = True,
+        color: str = "k",
+        ax: Optional[Axes] = None,
+        figsize: tuple = (5, 2)) -> Axes:
     """Plot of the autocorrelation function of a time series.
 
     Parameters
@@ -260,9 +279,15 @@ def acf(series, alpha=0.05, lags=365, acf_options=None, smooth_conf=True,
     return ax
 
 
-def diagnostics(series, sim=None, alpha=0.05, bins=50, acf_options=None,
-                figsize=(10, 5), fig=None, heteroscedasicity=True,
-                **kwargs):
+def diagnostics(series: Series,
+                sim: Optional[Series] = None,
+                alpha: float = 0.05,
+                bins: int = 50,
+                acf_options: Optional[dict] = None,
+                figsize: tuple = (10, 5),
+                fig: Optional[Figure] = None,
+                heteroscedasicity: bool = True,
+                **kwargs) -> Axes:
     """Plot that helps in diagnosing basic model assumptions.
 
     Parameters
@@ -270,7 +295,7 @@ def diagnostics(series, sim=None, alpha=0.05, bins=50, acf_options=None,
     series: pandas.Series
         Pandas Series with the residual time series to diagnose.
     sim: pandas.Series, optional
-        Pandas Series with the simulated time series. Used to diagnose on
+        Pandas series with the simulated time series. Used to diagnose on
         heteroscedasticity. Ignored if heteroscedasticity is set to False.
     alpha: float, optional
         Significance level to calculate the (1-alpha)-confidence intervals.
@@ -382,8 +407,11 @@ def diagnostics(series, sim=None, alpha=0.05, bins=50, acf_options=None,
     return fig.axes
 
 
-def cum_frequency(obs, sim=None, ax=None, figsize=(5, 2)):
-    """Plot of the cumulative frequency of a time series.
+def cum_frequency(obs: Series,
+                  sim: Optional[Series] = None,
+                  ax: Optional[Axes] = None,
+                  figsize: tuple = (5, 2)) -> Axes:
+    """Plot of the cumulative frequency of a time Series.
 
     Parameters
     ----------
@@ -433,10 +461,10 @@ class TrackSolve:
         pastas Model to track
     tmin : str or pandas.Timestamp, optional
         start time for simulation, by default None which
-        defaults to first index in ml.oseries.series
+        defaults to first index in ml.oseries.Series
     tmax : str or pandas.Timestamp, optional
         end time for simulation, by default None which
-        defaults to last index in ml.oseries.series
+        defaults to last index in ml.oseries.Series
     update_iter : int, optional
         if visualizing optimization progress, update plot every update_iter
         iterations, by default nparam
@@ -485,7 +513,12 @@ class TrackSolve:
     Access the resulting figure through `track.fig`.
     """
 
-    def __init__(self, ml, tmin=None, tmax=None, update_iter=None):
+    def __init__(self,
+                 ml: Model,
+                 tmin: Optional[TimestampType] = None,
+                 tmax: Optional[TimestampType] = None,
+                 update_iter: Optional[int] = None) -> None:
+
         logger.warning("TrackSolve feature under development. If you find any "
                        "bugs please post an issue on GitHub: "
                        "https://github.com/pastas/pastas/issues")
@@ -534,13 +567,13 @@ class TrackSolve:
         # calculate EVP
         self.evp = np.array([evp(obs=self.obs, res=res)])
 
-    def track_solve(self, params):
+    def track_solve(self, params: ArrayLike) -> None:
         """Append parameters to self.parameters DataFrame and update itercount,
         rmse values and evp.
 
         Parameters
         ----------
-        params : np.array
+        params : array_like
             array containing parameters
         """
         # update tmin/tmax and freq once after starting solve
@@ -565,28 +598,28 @@ class TrackSolve:
         # recalculate EVP
         self.evp = np.r_[self.evp, evp(obs=self.obs, res=r_res)]
 
-    def _update_axes(self):
+    def _update_axes(self) -> None:
         """extend xlim if number of iterations exceeds current window."""
         for iax in self.axes[1:]:
             iax.set_xlim(right=self.viewlim)
             self.fig.canvas.draw()
 
-    def _update_settings(self):
+    def _update_settings(self) -> None:
         self.tmin = self.ml.settings["tmin"]
         self.tmax = self.ml.settings["tmax"]
         self.freq = self.ml.settings["freq"]
 
-    def _noise(self, params):
+    def _noise(self, params: ArrayLike) -> ArrayLike:
         """get noise.
 
         Parameters
         ----------
-        params: np.array
+        params: array_like
             array containing parameters
 
         Returns
         -------
-        noise: np.array
+        noise: array_like
             array containing noise
         """
         noise = self.ml.noise(p=params,
@@ -594,7 +627,7 @@ class TrackSolve:
                               tmax=self.tmax)
         return noise
 
-    def _residuals(self, params):
+    def _residuals(self, params: ArrayLike) -> ArrayLike:
         """calculate residuals.
 
         Parameters
@@ -604,7 +637,7 @@ class TrackSolve:
 
         Returns
         -------
-        res: np.array
+        res: array_like
             array containing residuals
         """
         res = self.ml.residuals(p=params,
@@ -612,20 +645,22 @@ class TrackSolve:
                                 tmax=self.tmax)
         return res
 
-    def _simulate(self):
+    def _simulate(self) -> Series:
         """simulate model with last entry in self.parameters.
 
         Returns
         -------
         sim: pd.Series
-            series containing model evaluation
+            Series containing model evaluation
         """
         sim = self.ml.simulate(p=self.parameters.iloc[-1, :].values,
                                tmin=self.tmin, tmax=self.tmax,
                                freq=self.ml.settings["freq"])
         return sim
 
-    def initialize_figure(self, figsize=(10, 8), dpi=100):
+    def initialize_figure(self,
+                          figsize: Tuple[int] = (10, 8),
+                          dpi: int = 100) -> Figure:
         """Initialize figure for plotting optimization progress.
 
         Parameters
@@ -658,7 +693,7 @@ class TrackSolve:
         self.ax0.set_ylabel("head")
         self.ax0.set_title(
             "Iteration: {0} (EVP: {1:.2f}%)".format(self.itercount,
-                                                   self.evp[-1]))
+                                                    self.evp[-1]))
         self.ax0.legend(loc=(0, 1), frameon=False, ncol=2)
         omax = self.obs.max()
         omin = self.obs.min()
@@ -725,7 +760,7 @@ class TrackSolve:
         self.fig.tight_layout()
         return self.fig
 
-    def plot_track_solve(self, params):
+    def plot_track_solve(self, params: ArrayLike) -> None:
         """Method to plot model simulation while model is being solved. Pass
         this method to ml.solve(), e.g.:
 
@@ -734,7 +769,7 @@ class TrackSolve:
 
         Parameters
         ----------
-        params : np.array
+        params : array_like
             array containing parameters
         """
         if not hasattr(self, "fig"):
@@ -779,11 +814,11 @@ class TrackSolve:
         # update title
         self.ax0.set_title(
             "Iteration: {0} (EVP: {1:.2f}%)".format(self.itercount,
-                                                   self.evp[-1]))
+                                                    self.evp[-1]))
         plt.pause(1e-10)
         self.fig.canvas.draw()
 
-    def plot_track_solve_history(self, fig=None):
+    def plot_track_solve_history(self, fig: Optional[Figure] = None) -> List[Axes]:
         """Plot optimization history.
 
         Parameters
@@ -812,7 +847,7 @@ class TrackSolve:
         return fig.axes
 
 
-def _table_formatter_params(s):
+def _table_formatter_params(s: float) -> str:
     """Internal method for formatting parameters in tables in Pastas plots.
 
     Parameters
@@ -835,7 +870,7 @@ def _table_formatter_params(s):
         return f"{s:.2f}"
 
 
-def _table_formatter_stderr(s):
+def _table_formatter_stderr(s: float) -> str:
     """Internal method for formatting stderrs in tables in Pastas plots.
 
     Parameters

@@ -7,15 +7,25 @@ irregular time steps often observed in hydrological time series.
 
 from numpy import (append, arange, array, average, corrcoef, diff, empty_like,
                    exp, inf, nan, ones, pi, sqrt)
-from pandas import DataFrame, Timedelta, TimedeltaIndex
+from pandas import Series, DataFrame, Timedelta, TimedeltaIndex
 from scipy.stats import norm
 
 from ..decorators import njit
 from ..utils import check_numba
 
+# Type Hinting
+from typing import Union, Tuple
+from pastas.typing import ArrayLike
 
-def acf(x, lags=365, bin_method='rectangle', bin_width=0.5, max_gap=inf,
-        min_obs=20, full_output=False, alpha=0.05):
+
+def acf(x: Series,
+        lags: ArrayLike = 365,
+        bin_method: str = 'rectangle',
+        bin_width: float = 0.5,
+        max_gap: float = inf,
+        min_obs: int = 20,
+        full_output: bool = False,
+        alpha: float = 0.05) -> Union[Series, DataFrame]:
     """Calculate the autocorrelation function for irregular time steps.
 
     Parameters
@@ -85,8 +95,15 @@ def acf(x, lags=365, bin_method='rectangle', bin_width=0.5, max_gap=inf,
         return c
 
 
-def ccf(x, y, lags=365, bin_method='rectangle', bin_width=0.5,
-        max_gap=inf, min_obs=20, full_output=False, alpha=0.05):
+def ccf(x: Series,
+        y: Series,
+        lags: ArrayLike = 365,
+        bin_method: str = 'rectangle',
+        bin_width: float = 0.5,
+        max_gap: float = inf,
+        min_obs: int = 20,
+        full_output: bool = False,
+        alpha: float = 0.05) -> Union[Series, DataFrame]:
     """Method to compute the cross-correlation for irregular time series.
 
     Parameters
@@ -177,7 +194,7 @@ def ccf(x, y, lags=365, bin_method='rectangle', bin_width=0.5,
         return result.ccf
 
 
-def _preprocess(x, max_gap):
+def _preprocess(x: Series, max_gap: int) -> Tuple[Series, float, float]:
     """Internal method to preprocess the time series."""
     dt = x.index.to_series().diff().dropna().values / Timedelta(1, "D")
     dt_mu = dt[dt < max_gap].mean()  # Deal with big gaps if present
@@ -190,7 +207,13 @@ def _preprocess(x, max_gap):
 
 
 @njit
-def _compute_ccf_rectangle(lags, t_x, x, t_y, y, bin_width=0.5):
+def _compute_ccf_rectangle(
+        lags: ArrayLike,
+        t_x: ArrayLike,
+        x: ArrayLike,
+        t_y: ArrayLike,
+        y: ArrayLike,
+        bin_width: float = 0.5) -> Tuple[ArrayLike, ArrayLike]:
     """Internal numba-optimized method to compute the ccf."""
     c = empty_like(lags)
     b = empty_like(lags)
@@ -216,7 +239,13 @@ def _compute_ccf_rectangle(lags, t_x, x, t_y, y, bin_width=0.5):
 
 
 @njit
-def _compute_ccf_gaussian(lags, t_x, x, t_y, y, bin_width=0.5):
+def _compute_ccf_gaussian(
+        lags: ArrayLike,
+        t_x: ArrayLike,
+        x: ArrayLike,
+        t_y: ArrayLike,
+        y: ArrayLike,
+        bin_width: float = 0.5) -> Tuple[ArrayLike, ArrayLike]:
     """Internal numba-optimized method to compute the ccf."""
     c = empty_like(lags)
     b = empty_like(lags)
@@ -245,7 +274,8 @@ def _compute_ccf_gaussian(lags, t_x, x, t_y, y, bin_width=0.5):
     return c, b
 
 
-def _compute_ccf_regular(lags, x, y):
+def _compute_ccf_regular(lags: ArrayLike, x: ArrayLike,
+                         y: ArrayLike) -> Tuple[ArrayLike, ArrayLike]:
     c = empty_like(lags)
     for i, lag in enumerate(lags):
         c[i] = corrcoef(x[:-int(lag)], y[int(lag):])[0, 1]
@@ -253,7 +283,7 @@ def _compute_ccf_regular(lags, x, y):
     return c, b
 
 
-def mean(x, weighted=True, max_gap=30):
+def mean(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
     """Method to compute the (weighted) mean of a time series.
 
     Parameters
@@ -281,7 +311,7 @@ def mean(x, weighted=True, max_gap=30):
     return average(x.to_numpy(), weights=w)
 
 
-def var(x, weighted=True, max_gap=30):
+def var(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
     """Method to compute the (weighted) variance of a time series.
 
     Parameters
@@ -312,7 +342,7 @@ def var(x, weighted=True, max_gap=30):
     return sigma
 
 
-def std(x, weighted=True, max_gap=30):
+def std(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
     """Method to compute the (weighted) variance of a time series.
 
     Parameters
@@ -336,7 +366,7 @@ def std(x, weighted=True, max_gap=30):
 
 # Helper functions
 
-def _get_weights(x, weighted, max_gap=30):
+def _get_weights(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
     """Helper method to compute the weights as the time step between obs.
 
     Parameters

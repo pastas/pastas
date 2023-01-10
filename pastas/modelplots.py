@@ -14,6 +14,10 @@ from .decorators import model_tmin_tmax
 from .plots import series, diagnostics, cum_frequency, \
     _table_formatter_params, _table_formatter_stderr
 
+# Type Hinting
+from typing import Optional, List, Union
+from pastas.typing import Axes, Figure, TimestampType, Model
+
 logger = logging.getLogger(__name__)
 
 
@@ -30,17 +34,24 @@ class Plotting:
 
     """
 
-    def __init__(self, ml):
+    def __init__(self, ml: Model) -> None:
         self.ml = ml  # Store a reference to the model class
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         msg = "This module contains all the built-in plotting options that " \
               "are available."
         return msg
 
     @model_tmin_tmax
-    def plot(self, tmin=None, tmax=None, oseries=True, simulation=True,
-             ax=None, figsize=None, legend=True, **kwargs):
+    def plot(self,
+             tmin: Optional[TimestampType] = None,
+             tmax: Optional[TimestampType] = None,
+             oseries: bool = True,
+             simulation: bool = True,
+             ax: Optional[Axes] = None,
+             figsize: Optional[tuple] = None,
+             legend: bool = True,
+             **kwargs) -> Axes:
         """Make a plot of the observed and simulated series.
 
         Parameters
@@ -97,9 +108,16 @@ class Plotting:
         return ax
 
     @model_tmin_tmax
-    def results(self, tmin=None, tmax=None, figsize=(10, 8), split=False,
-                adjust_height=True, return_warmup=False, block_or_step='step',
-                fig=None, **kwargs):
+    def results(self,
+                tmin: Optional[TimestampType] = None,
+                tmax: Optional[TimestampType] = None,
+                figsize: tuple = (10, 8),
+                split: bool = False,
+                adjust_height: bool = True,
+                return_warmup: bool = False,
+                block_or_step: str = 'step',
+                fig: Optional[Figure] = None,
+                **kwargs) -> Axes:
         """Plot different results in one window to get a quick overview.
 
         Parameters
@@ -135,13 +153,15 @@ class Plotting:
         o = self.ml.observations(tmin=tmin, tmax=tmax)
         o_nu = self.ml.oseries.series.drop(o.index)
         if return_warmup:
-            o_nu = o_nu[tmin - self.ml.settings['warmup']: tmax]
+            o_nu = o_nu[tmin - self.ml.settings['warmup']:tmax]
         else:
-            o_nu = o_nu[tmin: tmax]
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax,
+            o_nu = o_nu[tmin:tmax]
+        sim = self.ml.simulate(tmin=tmin,
+                               tmax=tmax,
                                return_warmup=return_warmup)
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
-        contribs = self.ml.get_contributions(split=split, tmin=tmin,
+        contribs = self.ml.get_contributions(split=split,
+                                             tmin=tmin,
                                              tmax=tmax,
                                              return_warmup=return_warmup)
 
@@ -278,9 +298,17 @@ class Plotting:
         return fig.axes
 
     @model_tmin_tmax
-    def decomposition(self, tmin=None, tmax=None, ytick_base=True, split=True,
-                      figsize=(10, 8), axes=None, name=None,
-                      return_warmup=False, min_ylim_diff=None, **kwargs):
+    def decomposition(self,
+                      tmin: Optional[TimestampType] = None,
+                      tmax: Optional[TimestampType] = None,
+                      ytick_base: bool = True,
+                      split: bool = True,
+                      figsize: tuple = (10, 8),
+                      axes: Optional[Axes] = None,
+                      name: Optional[str] = None,
+                      return_warmup: bool = False,
+                      min_ylim_diff: Optional[float] = None,
+                      **kwargs) -> Axes:
         """Plot the decomposition of a time-series in the different stresses.
 
         Parameters
@@ -412,8 +440,15 @@ class Plotting:
         return axes
 
     @model_tmin_tmax
-    def diagnostics(self, tmin=None, tmax=None, figsize=(10, 5), bins=50,
-                    acf_options=None, fig=None, alpha=0.05, **kwargs):
+    def diagnostics(self,
+                    tmin: Optional[TimestampType] = None,
+                    tmax: Optional[TimestampType] = None,
+                    figsize: tuple = (10, 5),
+                    bins: int = 50,
+                    acf_options: Optional[dict] = None,
+                    fig: Optional[Figure] = None,
+                    alpha: float = 0.05,
+                    **kwargs) -> Axes:
         """Plot a window that helps in diagnosing basic model assumptions.
 
         Parameters
@@ -474,8 +509,12 @@ class Plotting:
                            **kwargs)
 
     @model_tmin_tmax
-    def cum_frequency(self, tmin=None, tmax=None, ax=None, figsize=(5, 2),
-                      **kwargs):
+    def cum_frequency(self,
+                      tmin: Optional[TimestampType] = None,
+                      tmax: Optional[TimestampType] = None,
+                      ax: Optional[Axes] = None,
+                      figsize: tuple = (5, 2),
+                      **kwargs) -> Axes:
         """Plot the cumulative frequency for the observations and simulation.
 
         Parameters
@@ -503,8 +542,11 @@ class Plotting:
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
         return cum_frequency(obs, sim, ax=ax, figsize=figsize, **kwargs)
 
-    def block_response(self, stressmodels=None, ax=None, figsize=None,
-                       **kwargs):
+    def block_response(self,
+                       stressmodels: Optional[List[str]] = None,
+                       ax: Optional[Axes] = None,
+                       figsize: Optional[tuple] = None,
+                       **kwargs) -> Axes:
         """Plot the block response for a specific stressmodels.
 
         Parameters
@@ -542,8 +584,11 @@ class Plotting:
         plt.legend(legend)
         return ax
 
-    def step_response(self, stressmodels=None, ax=None, figsize=None,
-                      **kwargs):
+    def step_response(self,
+                      stressmodels: Optional[List[str]] = None,
+                      ax: Optional[Axes] = None,
+                      figsize: Optional[tuple] = None,
+                      **kwargs) -> Axes:
         """Plot the step response for a specific stressmodels.
 
         Parameters
@@ -578,14 +623,20 @@ class Plotting:
         return ax
 
     @model_tmin_tmax
-    def stresses(self, tmin=None, tmax=None, cols=1, split=True, sharex=True,
-                 figsize=(10, 8), **kwargs):
+    def stresses(self,
+                 tmin: Optional[TimestampType] = None,
+                 tmax: Optional[TimestampType] = None,
+                 cols: int = 1,
+                 split: bool = True,
+                 sharex: bool = True,
+                 figsize: tuple = (10, 8),
+                 **kwargs) -> Axes:
         """This method creates a graph with all the stresses used in the model.
 
         Parameters
         ----------
-        tmin
-        tmax
+        tmin: str or pd.Timestamp, optional
+        tmax: str or pd.Timestamp, optional
         cols: int
             number of columns used for plotting.
         split: bool, optional
@@ -597,7 +648,7 @@ class Plotting:
 
         Returns
         -------
-        axes: matplotlib.axes
+        axes: matplotlib.axes.Axes
             matplotlib axes instance.
         """
         stresses = _get_stress_series(self.ml, split=split)
@@ -623,10 +674,17 @@ class Plotting:
         return axes
 
     @model_tmin_tmax
-    def contributions_pie(self, tmin=None, tmax=None, ax=None,
-                          figsize=None, split=True, partition='std',
-                          wedgeprops=None, startangle=90,
-                          autopct='%1.1f%%', **kwargs):
+    def contributions_pie(self,
+                          tmin: Optional[TimestampType] = None,
+                          tmax: Optional[TimestampType] = None,
+                          ax: Optional[Axes] = None,
+                          figsize: Optional[Figure] = None,
+                          split: bool = True,
+                          partition: str = 'std',
+                          wedgeprops: Optional[dict] = None,
+                          startangle: float = 90.0,
+                          autopct: str = "%1.1f%%",
+                          **kwargs) -> Axes:
         """Make a pie chart of the contributions. This plot is based on the TNO
         Groundwatertoolbox.
 
@@ -691,8 +749,13 @@ class Plotting:
         return ax
 
     @model_tmin_tmax
-    def stacked_results(self, tmin=None, tmax=None, figsize=(10, 8),
-                        stacklegend=False, stacklegend_kws=None, **kwargs):
+    def stacked_results(self,
+                        tmin: Optional[TimestampType] = None,
+                        tmax: Optional[TimestampType] = None,
+                        figsize: tuple = (10, 8),
+                        stacklegend: bool = False,
+                        stacklegend_kws: Optional[dict] = None,
+                        **kwargs) -> Axes:
         """Create a results plot, similar to `ml.plots.results()`, in which the
         individual contributions of stresses (in stressmodels with multiple
         stresses) are stacked.
@@ -712,7 +775,7 @@ class Plotting:
         axes: list of axes objects
         """
 
-        # %% Contribution per stress on model results plot
+        # Contribution per stress on model results plot
         def custom_sort(t):
             """Sort by mean contribution."""
             return t[1].mean()
@@ -774,7 +837,11 @@ class Plotting:
         return axes
 
     @model_tmin_tmax
-    def series(self, tmin=None, tmax=None, split=True, **kwargs):
+    def series(self,
+               tmin: Optional[TimestampType] = None,
+               tmax: Optional[TimestampType] = None,
+               split: bool = True,
+               **kwargs) -> Axes:
         """Method to plot all the time series going into a Pastas Model.
 
         Parameters
@@ -806,8 +873,13 @@ class Plotting:
         return axes
 
     @model_tmin_tmax
-    def summary_pdf(self, tmin=None, tmax=None, fname=None, dpi=150,
-                    results_kwargs={}, diagnostics_kwargs={}):
+    def summary_pdf(self,
+                    tmin: Optional[TimestampType] = None,
+                    tmax: Optional[TimestampType] = None,
+                    fname: Optional[str] = None,
+                    dpi: int = 150,
+                    results_kwargs: Optional[dict] = None,
+                    diagnostics_kwargs: Optional[dict] = None) -> Figure:
         """Create a PDF file (A4) with the results and diagnostics plot.
 
         Parameters
@@ -830,6 +902,13 @@ class Plotting:
         """
         if fname is None:
             fname = "{}.pdf".format(self.ml.name)
+
+        if results_kwargs is None:
+            results_kwargs = {}
+
+        if diagnostics_kwargs is None:
+            diagnostics_kwargs = {}
+
         pdf = PdfPages(fname)
 
         fig = plt.figure(figsize=(8.27, 11.69), dpi=50)
@@ -849,7 +928,7 @@ class Plotting:
         return fig
 
 
-def _get_height_ratios(ylims):
+def _get_height_ratios(ylims: List[Union[list, tuple]]) -> List[float]:
     height_ratios = []
     for ylim in ylims:
         hr = ylim[1] - ylim[0]
@@ -859,7 +938,7 @@ def _get_height_ratios(ylims):
     return height_ratios
 
 
-def _get_stress_series(ml, split=True):
+def _get_stress_series(ml, split: bool = True) -> List[Series]:
     stresses = []
     for name in ml.stressmodels.keys():
         nstress = len(ml.stressmodels[name].stress)

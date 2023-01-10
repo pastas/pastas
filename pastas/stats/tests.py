@@ -7,17 +7,21 @@ residual time series of a calibrated (Pastas) model.
 from logging import getLogger
 
 from numpy import arange, cumsum, finfo, median, nan, sqrt, zeros
-from pandas import DataFrame, date_range, infer_freq
+from pandas import Series, DataFrame, date_range, infer_freq
 from pastas.stats.core import acf as get_acf
 from pastas.utils import _get_time_offset, get_equidistant_series
 from scipy.stats import chi2, norm, normaltest, shapiro
+
+# Type Hinting
+from typing import Tuple
+
 
 logger = getLogger(__name__)
 __all__ = ["durbin_watson", "ljung_box", "runs_test", "stoffer_toloi",
            "diagnostics", "plot_acf", "plot_diagnostics"]
 
 
-def durbin_watson(series=None):
+def durbin_watson(series: Series) -> float:
     """Durbin-Watson test for autocorrelation.
 
     Parameters
@@ -86,7 +90,10 @@ def durbin_watson(series=None):
     return dw_stat, p
 
 
-def ljung_box(series=None, lags=15, nparam=0, full_output=False):
+def ljung_box(series: Series,
+              lags: int = 15,
+              nparam: int = 0,
+              full_output: bool = False) -> Tuple[float, float]:
     """Ljung-box test for autocorrelation.
 
     Parameters
@@ -182,7 +189,7 @@ def ljung_box(series=None, lags=15, nparam=0, full_output=False):
         return q_stat[-1], pval[-1]
 
 
-def runs_test(series, cutoff="median"):
+def runs_test(series: Series, cutoff: str = "median") -> Tuple[float, float]:
     """Runs test for autocorrelation.
 
     Parameters
@@ -274,8 +281,12 @@ def runs_test(series, cutoff="median"):
     return z_stat, pval
 
 
-def stoffer_toloi(series, lags=15, nparam=0, freq="D",
-                  snap_to_equidistant_timestamps=False):
+def stoffer_toloi(
+        series: Series,
+        lags: int = 15,
+        nparam: int = 0,
+        freq: str = "D",
+        snap_to_equidistant_timestamps: bool = False) -> Tuple[float, float]:
     """Adapted Ljung-Box test to deal with missing data [stoffer_1992]_.
 
     Parameters
@@ -290,7 +301,7 @@ def stoffer_toloi(series, lags=15, nparam=0, freq="D",
     freq: str, optional
         String with the frequency to resample the time series to.
     snap_to_equidistant_timestamps : bool, optional
-        if False (default), a sample is taken from series with equidistant 
+        if False (default), a sample is taken from series with equidistant
         timesteps using pandas' reindex. Only values are kept that lie on
         those equidistant timestamps. If True, an equidistant timeseries is
         created taking as many values as possible from the original series
@@ -411,8 +422,12 @@ def stoffer_toloi(series, lags=15, nparam=0, freq="D",
     return qm, pval
 
 
-def diagnostics(series, alpha=0.05, nparam=0, lags=15, stats=(),
-                float_fmt="{0:.2f}"):
+def diagnostics(series: Series,
+                alpha: float = 0.05,
+                nparam: int = 0,
+                lags: int = 15,
+                stats: tuple = (),
+                float_fmt: str = "{0:.2f}") -> DataFrame:
     """Methods to compute various diagnostics checks for a time series.
 
     Parameters
@@ -426,8 +441,8 @@ def diagnostics(series, alpha=0.05, nparam=0, lags=15, stats=(),
     lags: int, optional
         Maximum number of lags (in days) to compute the autocorrelation
         tests for.
-    stats: list, optional
-        List with the diagnostic checks to perform. Not implemented yet.
+    stats: tuple, optional
+        Tuple with the diagnostic checks to perform. Not implemented yet.
     float_fmt: str
         String to use for formatting the floats in the returned DataFrame.
 
@@ -461,6 +476,7 @@ def diagnostics(series, alpha=0.05, nparam=0, lags=15, stats=(),
     In this example, the Null-hypothesis is not rejected and the data may be
     assumed to be white noise.
     """
+
     cols = ["Checks", "Statistic", "P-value"]
     df = DataFrame(index=stats, columns=cols)
 

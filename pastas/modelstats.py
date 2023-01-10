@@ -28,12 +28,26 @@ from pandas import DataFrame
 from .decorators import model_tmin_tmax
 from .stats import diagnostics, metrics
 
+# Type Hinting
+from typing import Optional, List
+from pastas.typing import Model, TimestampType
+
 
 class Statistics:
     # Save all statistics that can be calculated.
-    ops = ["rmse", "rmsn", "sse", "mae", "nse", "evp", "rsq", "bic", "aic", ]
+    ops = [
+        "rmse",
+        "rmsn",
+        "sse",
+        "mae",
+        "nse",
+        "evp",
+        "rsq",
+        "bic",
+        "aic",
+    ]
 
-    def __init__(self, ml):
+    def __init__(self, ml: Model):
         """This class provides statistics to to pastas Model class.
 
         Parameters
@@ -58,7 +72,11 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return msg
 
     @model_tmin_tmax
-    def rmse(self, tmin=None, tmax=None, weighted=False, **kwargs):
+    def rmse(self,
+             tmin: Optional[TimestampType] = None,
+             tmax: Optional[TimestampType] = None,
+             weighted: bool = False,
+             **kwargs) -> float:
         """Root mean squared error of the residuals.
 
         Parameters
@@ -77,7 +95,11 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return metrics.rmse(res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
-    def rmsn(self, tmin=None, tmax=None, weighted=False, **kwargs):
+    def rmsn(self,
+             tmin: Optional[TimestampType] = None,
+             tmax: Optional[TimestampType] = None,
+             weighted: bool = False,
+             **kwargs) -> float:
         """Root mean squared error of the noise.
 
         Parameters
@@ -104,7 +126,9 @@ included in Pastas. To obtain a list of all statistics that are included type:
             return metrics.rmse(res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
-    def sse(self, tmin=None, tmax=None):
+    def sse(self,
+            tmin: Optional[TimestampType] = None,
+            tmax: Optional[TimestampType] = None) -> float:
         """Sum of the squares of the error (SSE)
 
         Parameters
@@ -120,7 +144,11 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return metrics.sse(res=res)
 
     @model_tmin_tmax
-    def mae(self, tmin=None, tmax=None, weighted=False, **kwargs):
+    def mae(self,
+            tmin: Optional[TimestampType] = None,
+            tmax: Optional[TimestampType] = None,
+            weighted: bool = False,
+            **kwargs) -> float:
         """Mean Absolute Error (MAE) of the residuals.
 
         Parameters
@@ -139,7 +167,11 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return metrics.mae(res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
-    def nse(self, tmin=None, tmax=None, weighted=False, **kwargs):
+    def nse(self,
+            tmin: Optional[TimestampType] = None,
+            tmax: Optional[TimestampType] = None,
+            weighted: bool = False,
+            **kwargs) -> float:
         """Nash-Sutcliffe coefficient for model fit .
 
         Parameters
@@ -159,7 +191,11 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return metrics.nse(obs=obs, res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
-    def pearsonr(self, tmin=None, tmax=None, weighted=False, **kwargs):
+    def pearsonr(self,
+                 tmin: Optional[TimestampType] = None,
+                 tmax: Optional[TimestampType] = None,
+                 weighted: bool = False,
+                 **kwargs) -> float:
         """Compute the (weighted) Pearson correlation (r).
 
         Parameters
@@ -179,7 +215,11 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return metrics.pearsonr(obs=obs, sim=sim, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
-    def evp(self, tmin=None, tmax=None, weighted=False, **kwargs):
+    def evp(self,
+            tmin: Optional[TimestampType] = None,
+            tmax: Optional[TimestampType] = None,
+            weighted: bool = False,
+            **kwargs) -> float:
         """Explained variance percentage.
 
         Parameters
@@ -199,7 +239,11 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return metrics.evp(obs=obs, res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
-    def rsq(self, tmin=None, tmax=None, weighted=False, **kwargs):
+    def rsq(self,
+            tmin: Optional[TimestampType] = None,
+            tmax: Optional[TimestampType] = None,
+            weighted: bool = False,
+            **kwargs) -> float:
         """R-squared.
 
         Parameters
@@ -219,7 +263,11 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return metrics.rsq(obs=obs, res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
-    def kge_2012(self, tmin=None, tmax=None, weighted=False, **kwargs):
+    def kge_2012(self,
+                 tmin: Optional[TimestampType] = None,
+                 tmax: Optional[TimestampType] = None,
+                 weighted: bool = False,
+                 **kwargs) -> float:
         """Kling-Gupta Efficiency.
 
         Parameters
@@ -239,7 +287,9 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return metrics.kge_2012(obs=obs, sim=sim, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
-    def bic(self, tmin=None, tmax=None):
+    def bic(self,
+            tmin: Optional[TimestampType] = None,
+            tmax: Optional[TimestampType] = None) -> float:
         """Bayesian Information Criterium (BIC).
 
         Parameters
@@ -261,7 +311,9 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return metrics.bic(res=res, nparam=nparam)
 
     @model_tmin_tmax
-    def aic(self, tmin=None, tmax=None):
+    def aic(self,
+            tmin: Optional[TimestampType] = None,
+            tmax: Optional[TimestampType] = None) -> float:
         """Akaike Information Criterium (AIC).
 
         Parameters
@@ -282,7 +334,10 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return metrics.aic(res=res, nparam=nparam)
 
     @model_tmin_tmax
-    def summary(self, tmin=None, tmax=None, stats=None):
+    def summary(self,
+                tmin: Optional[TimestampType] = None,
+                tmax: Optional[TimestampType] = None,
+                stats: Optional[List[str]] = None) -> DataFrame:
         """Returns a Pandas DataFrame with goodness-of-fit metrics.
 
         Parameters
@@ -321,8 +376,12 @@ included in Pastas. To obtain a list of all statistics that are included type:
         return stats
 
     @model_tmin_tmax
-    def diagnostics(self, tmin=None, tmax=None, alpha=0.05, stats=(),
-                    float_fmt="{0:.2f}"):
+    def diagnostics(self,
+                    tmin: Optional[TimestampType] = None,
+                    tmax: Optional[TimestampType] = None,
+                    alpha: float = 0.05,
+                    stats: tuple = (),
+                    float_fmt: str = "{0:.2f}") -> DataFrame:
         if self.ml.noisemodel and self.ml.settings["noise"]:
             series = self.ml.noise(tmin=tmin, tmax=tmax)
             nparam = self.ml.noisemodel.nparam
@@ -330,5 +389,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
             series = self.ml.residuals(tmin=tmin, tmax=tmax)
             nparam = 0
 
-        return diagnostics(series=series, alpha=alpha, nparam=nparam,
-                           stats=stats, float_fmt=float_fmt)
+        return diagnostics(series=series,
+                           alpha=alpha,
+                           nparam=nparam,
+                           stats=stats,
+                           float_fmt=float_fmt)

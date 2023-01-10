@@ -7,15 +7,20 @@ from platform import platform
 
 import numpy as np
 from packaging import version
-from pandas import Series, Timedelta, Timestamp, date_range, to_datetime
+from pandas import Series, Timedelta, Timestamp, date_range, to_datetime, Index, DatetimeIndex
 from pandas.tseries.frequencies import to_offset
 from scipy import __version__ as sc_version
 from scipy import interpolate
 
+# Type Hinting
+from typing import Optional, Tuple, Any
+from pastas.typing import ArrayLike, TimestampType
+from pastas.typing import Model as ModelType
+
 logger = logging.getLogger(__name__)
 
 
-def frequency_is_supported(freq):
+def frequency_is_supported(freq: str) -> str:
     """Method to determine if a frequency is supported for a Pastas model.
 
     Parameters
@@ -59,7 +64,7 @@ def frequency_is_supported(freq):
     return freq
 
 
-def _get_stress_dt(freq):
+def _get_stress_dt(freq: str) -> float:
     """Internal method to obtain a timestep in days from a frequency string.
 
     Parameters
@@ -113,7 +118,7 @@ def _get_stress_dt(freq):
     return dt
 
 
-def _get_dt(freq):
+def _get_dt(freq: str) -> float:
     """Internal method to obtain a timestep in DAYS from a frequency string.
 
     Parameters
@@ -130,8 +135,8 @@ def _get_dt(freq):
     return dt
 
 
-def _get_time_offset(t, freq):
-    """Internal method to calculate the time offset of a TimeStamp.
+def _get_time_offset(t: Timestamp, freq: str) -> Timedelta:
+    """Internal method to calculate the time offset of a Timestamp.
 
     Parameters
     ----------
@@ -151,7 +156,7 @@ def _get_time_offset(t, freq):
     return t - t.floor(freq)
 
 
-def get_sample(tindex, ref_tindex):
+def get_sample(tindex: Index, ref_tindex: Index) -> Index:
     """Sample the index so that the frequency is not higher than the frequency
     of ref_tindex.
 
@@ -181,7 +186,7 @@ def get_sample(tindex, ref_tindex):
         return tindex[ind]
 
 
-def timestep_weighted_resample(series0, tindex):
+def timestep_weighted_resample(series0: Series, tindex: Index) -> Series:
     """Resample a timeseries to a new tindex, using an overlapping period
     weighted average.
 
@@ -241,7 +246,7 @@ def timestep_weighted_resample(series0, tindex):
     return series
 
 
-def timestep_weighted_resample_fast(series0, freq):
+def timestep_weighted_resample_fast(series0: Series, freq: str) -> Series:
     """Resample a time series to a new frequency, using an overlapping period
     weighted average.
 
@@ -296,7 +301,9 @@ def timestep_weighted_resample_fast(series0, freq):
     return series
 
 
-def get_equidistant_series(series, freq, minimize_data_loss=False):
+def get_equidistant_series(series: Series,
+                           freq: str,
+                           minimize_data_loss: bool = False) -> Series:
     """Get equidistant timeseries using nearest reindexing.
 
     This method will shift observations to the nearest equidistant timestep to
@@ -397,7 +404,7 @@ def get_equidistant_series(series, freq, minimize_data_loss=False):
     return s
 
 
-def to_daily_unit(series, method=True):
+def to_daily_unit(series: Series, method: bool = True) -> Series:
     """Experimental method, use wth caution!
 
     Recalculate a timeseries of a stress with a non-daily unit (e/g.
@@ -413,7 +420,7 @@ def to_daily_unit(series, method=True):
     return series
 
 
-def excel2datetime(tindex, freq="D"):
+def excel2datetime(tindex: DatetimeIndex, freq="D") -> DatetimeIndex:
     """Method to convert excel datetime to pandas timetime objects.
 
     Parameters
@@ -430,7 +437,7 @@ def excel2datetime(tindex, freq="D"):
     return datetimes
 
 
-def datenum_to_datetime(datenum):
+def datenum_to_datetime(datenum: float) -> datetime:
     """Convert Matlab datenum into Python datetime.
 
     Parameters
@@ -448,15 +455,15 @@ def datenum_to_datetime(datenum):
         + timedelta(days=days) - timedelta(days=366)
 
 
-def datetime2matlab(tindex):
+def datetime2matlab(tindex: DatetimeIndex) -> ArrayLike:
     mdn = tindex + Timedelta(days=366)
     frac = (tindex - tindex.round("D")).seconds / (24.0 * 60.0 * 60.0)
     return mdn.toordinal() + frac
 
 
-def get_stress_tmin_tmax(ml):
+def get_stress_tmin_tmax(ml: ModelType) -> Tuple[TimestampType, TimestampType]:
     """Get the minimum and maximum time that all of the stresses have data."""
-    from .model import Model
+    from pastas import Model
     tmin = Timestamp.min
     tmax = Timestamp.max
     if isinstance(ml, Model):
@@ -469,7 +476,8 @@ def get_stress_tmin_tmax(ml):
     return tmin, tmax
 
 
-def initialize_logger(logger=None, level=logging.INFO):
+def initialize_logger(logger: Optional[Any] = None,
+                      level: Optional[Any] = logging.INFO) -> None:
     """Internal method to create a logger instance to log program output.
 
     Parameters
@@ -487,8 +495,9 @@ def initialize_logger(logger=None, level=logging.INFO):
     # add_file_handlers(logger)
 
 
-def set_console_handler(logger=None, level=logging.INFO,
-                        fmt="%(levelname)s: %(message)s"):
+def set_console_handler(logger: Optional[Any] = None,
+                        level: Optional[Any] = logging.INFO,
+                        fmt: str = "%(levelname)s: %(message)s") -> None:
     """Method to add a console handler to the logger of Pastas.
 
     Parameters
@@ -508,7 +517,7 @@ def set_console_handler(logger=None, level=logging.INFO,
     logger.addHandler(ch)
 
 
-def set_log_level(level):
+def set_log_level(level: str) -> None:
     """Set the log-level of the console. This method is just a wrapper around
     set_console_handler.
 
@@ -527,7 +536,7 @@ def set_log_level(level):
     set_console_handler(level=level)
 
 
-def remove_console_handler(logger=None):
+def remove_console_handler(logger: Optional[Any] = None) -> None:
     """Method to remove the console handler to the logger of Pastas.
 
     Parameters
@@ -544,11 +553,15 @@ def remove_console_handler(logger=None):
             logger.removeHandler(handler)
 
 
-def add_file_handlers(logger=None, filenames=('info.log', 'errors.log'),
-                      levels=(logging.INFO, logging.ERROR), maxBytes=10485760,
-                      backupCount=20, encoding='utf8',
-                      fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                      datefmt='%y-%m-%d %H:%M'):
+def add_file_handlers(
+        logger: Optional[Any] = None,
+        filenames: Tuple[str] = ('info.log', 'errors.log'),
+        levels: Tuple[Any] = (logging.INFO, logging.ERROR),
+        maxBytes: int = 10485760,
+        backupCount: int = 20,
+        encoding: str = 'utf8',
+        fmt: str = '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt: str = '%y-%m-%d %H:%M') -> None:
     """Method to add file handlers in the logger of Pastas.
 
     Parameters
@@ -573,7 +586,7 @@ def add_file_handlers(logger=None, filenames=('info.log', 'errors.log'),
         logger.addHandler(fh)
 
 
-def remove_file_handlers(logger=None):
+def remove_file_handlers(logger: Optional[logging.Logger] = None) -> None:
     """Method to remove any file handlers in the logger of Pastas.
 
     Parameters
@@ -590,7 +603,7 @@ def remove_file_handlers(logger=None):
             logger.removeHandler(handler)
 
 
-def validate_name(name, raise_error=False):
+def validate_name(name: str, raise_error: bool = False) -> str:
     """Method to check user-provided names and log a warning if wrong.
 
     Parameters
@@ -615,7 +628,8 @@ def validate_name(name, raise_error=False):
     name = str(name)
     for char in ilchar:
         if char in name:
-            msg = f"User-provided name '{name}' contains illegal character. Please remove {char} from name."
+            msg = f"User-provided name '{name}' contains illegal character."
+            msg += f"Please remove {char} from name."
             if raise_error:
                 raise Exception(msg)
             else:
@@ -624,7 +638,7 @@ def validate_name(name, raise_error=False):
     return name
 
 
-def show_versions(lmfit=False, numba=False):
+def show_versions(lmfit: bool = False, numba: bool = False) -> None:
     """Method to print the version of dependencies.
 
     Parameters
@@ -644,8 +658,8 @@ def show_versions(lmfit=False, numba=False):
 
     msg = (
         f"Python version: {os_version}\n"
-        f"Numpy version: {np_version}\n"
-        f"Scipy version: {sc_version}\n"
+        f"NumPy version: {np_version}\n"
+        f"SciPy version: {sc_version}\n"
         f"Pandas version: {pd_version}\n"
         f"Pastas version: {ps_version}\n"
         f"Matplotlib version: {mpl_version}"
@@ -661,7 +675,7 @@ def show_versions(lmfit=False, numba=False):
     return print(msg)
 
 
-def check_numba():
+def check_numba() -> None:
     try:
         from numba import njit
     except ImportError:

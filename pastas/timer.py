@@ -3,6 +3,9 @@ try:
 except ModuleNotFoundError:
     raise ModuleNotFoundError("SolveTimer requires 'tqdm' to be installed.")
 
+# Type Hinting
+from typing import Optional
+
 
 class ExceededMaxSolveTime(Exception):
     """Custom Exception when model optimization exceeds threshold.
@@ -14,7 +17,7 @@ class SolveTimer(tqdm):
     """Progress indicator for model optimization.
 
     Usage
-    ----- 
+    -----
     Print timer and number of iterations in console while running
     `ml.solve()`::
 
@@ -25,7 +28,7 @@ class SolveTimer(tqdm):
 
         Optimization progress: 73it [00:01, 67.68it/s]
 
-    Set maximum allowable time (in seconds) for solve, otherwise raise 
+    Set maximum allowable time (in seconds) for solve, otherwise raise
     ExceededMaxSolveTime exception::
 
         with SolveTimer(max_time=60) as t:
@@ -37,7 +40,10 @@ class SolveTimer(tqdm):
     be updated quite as nicely.
     """
 
-    def __init__(self, max_time=None, *args, **kwargs):
+    def __init__(self,
+                 max_time: Optional[float] = None,
+                 *args,
+                 **kwargs) -> None:
         """Initialize SolveTimer.
 
         Parameters
@@ -54,7 +60,7 @@ class SolveTimer(tqdm):
         self.max_time = max_time
         super(SolveTimer, self).__init__(*args, **kwargs)
 
-    def timer(self, _, n=1):
+    def timer(self, _, n: int = 1):
         """Callback method for ps.Model.solve().
         """
         displayed = super(SolveTimer, self).update(n)
