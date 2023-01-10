@@ -36,7 +36,7 @@ from .stressmodels import (
     TarsoModel,
     WellModel,
 )
-from .timeseries import TimeSeries, validate_timeseries
+from .timeseries import TimeSeries
 from .transform import ThresholdTransform
 from .utils import initialize_logger, set_log_level, show_versions
 from .version import __version__
