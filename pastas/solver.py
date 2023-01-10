@@ -12,15 +12,15 @@ To solve a model the following syntax can be used:
 
 from logging import getLogger
 
+# Type Hinting
+from typing import Optional, Tuple, Union
+
 import numpy as np
 from pandas import DataFrame, Series
 from scipy.linalg import svd
 from scipy.optimize import least_squares
 
-# Type Hinting
-from typing import Optional, Tuple, Union
 from pastas.typing import ArrayLike, CallBack, Function, Model
-
 
 logger = getLogger(__name__)
 
@@ -45,12 +45,14 @@ class BaseSolver:
 
     """
 
-    def __init__(self,
-                 ml: Model,
-                 pcov: Optional[DataFrame] = None,
-                 nfev: Optional[int] = None,
-                 obj_func: Optional[Function] = None,
-                 **kwargs) -> None:
+    def __init__(
+        self,
+        ml: Model,
+        pcov: Optional[DataFrame] = None,
+        nfev: Optional[int] = None,
+        obj_func: Optional[Function] = None,
+        **kwargs,
+    ) -> None:
         self.ml = ml
         self.pcov = pcov  # Covariances of the parameters
         if pcov is None:
@@ -67,7 +69,7 @@ class BaseSolver:
         noise: bool,
         weights: Optional[Series] = None,
         callback: Optional[CallBack] = None,
-        returnseparate: bool = False
+        returnseparate: bool = False,
     ) -> Union[ArrayLike, Tuple[ArrayLike, ArrayLike, ArrayLike]]:
         """This method is called by all solvers to obtain a series that are
         minimized in the optimization process. It handles the application of
@@ -110,17 +112,17 @@ class BaseSolver:
             callback(p)
 
         if returnseparate:
-            return (self.ml.residuals(p).values,
-                    self.ml.noise(p).values,
-                    self.ml.noise_weights(p).values)
+            return (
+                self.ml.residuals(p).values,
+                self.ml.noise(p).values,
+                self.ml.noise_weights(p).values,
+            )
 
         return rv.values
 
-    def prediction_interval(self,
-                            n: int = 1000,
-                            alpha: float = 0.05,
-                            max_iter: int = 10,
-                            **kwargs) -> DataFrame:
+    def prediction_interval(
+        self, n: int = 1000, alpha: float = 0.05, max_iter: int = 10, **kwargs
+    ) -> DataFrame:
         """Method to calculate the prediction interval for the simulation.
 
         Returns
@@ -138,19 +140,18 @@ class BaseSolver:
 
         sigr = self.ml.residuals().std()
 
-        data = self._get_realizations(func=self.ml.simulate, n=n, name=None,
-                                      max_iter=max_iter, **kwargs)
+        data = self._get_realizations(
+            func=self.ml.simulate, n=n, name=None, max_iter=max_iter, **kwargs
+        )
         data = data + sigr * np.random.randn(data.shape[0], data.shape[1])
 
         q = [alpha / 2, 1 - alpha / 2]
         rv = data.quantile(q, axis=1).transpose()
         return rv
 
-    def ci_simulation(self,
-                      n: int = 1000,
-                      alpha: float = 0.05,
-                      max_iter: int = 10,
-                      **kwargs) -> DataFrame:
+    def ci_simulation(
+        self, n: int = 1000, alpha: float = 0.05, max_iter: int = 10, **kwargs
+    ) -> DataFrame:
         """Method to calculate the confidence interval for the simulation.
 
         Returns
@@ -167,16 +168,18 @@ class BaseSolver:
         that the true best-fit line for the observed data lies within the
         95% confidence interval.
         """
-        return self._get_confidence_interval(func=self.ml.simulate, n=n,
-                                             alpha=alpha, max_iter=max_iter,
-                                             **kwargs)
+        return self._get_confidence_interval(
+            func=self.ml.simulate, n=n, alpha=alpha, max_iter=max_iter, **kwargs
+        )
 
-    def ci_block_response(self,
-                          name: str,
-                          n: int = 1000,
-                          alpha: float = 0.05,
-                          max_iter: int = 10,
-                          **kwargs) -> DataFrame:
+    def ci_block_response(
+        self,
+        name: str,
+        n: int = 1000,
+        alpha: float = 0.05,
+        max_iter: int = 10,
+        **kwargs,
+    ) -> DataFrame:
         """Method to calculate the confidence interval for the block response.
 
         Returns
@@ -194,17 +197,24 @@ class BaseSolver:
         95% confidence interval.
         """
         dt = self.ml.get_block_response(name=name).index.values
-        return self._get_confidence_interval(func=self.ml.get_block_response,
-                                             n=n, alpha=alpha, name=name,
-                                             max_iter=max_iter, dt=dt,
-                                             **kwargs)
+        return self._get_confidence_interval(
+            func=self.ml.get_block_response,
+            n=n,
+            alpha=alpha,
+            name=name,
+            max_iter=max_iter,
+            dt=dt,
+            **kwargs,
+        )
 
-    def ci_step_response(self,
-                         name: str,
-                         n: int = 1000,
-                         alpha: float = 0.05,
-                         max_iter: int = 10,
-                         **kwargs) -> DataFrame:
+    def ci_step_response(
+        self,
+        name: str,
+        n: int = 1000,
+        alpha: float = 0.05,
+        max_iter: int = 10,
+        **kwargs,
+    ) -> DataFrame:
         """Method to calculate the confidence interval for the step response.
 
         Returns
@@ -222,17 +232,24 @@ class BaseSolver:
         95% confidence interval.
         """
         dt = self.ml.get_block_response(name=name).index.values
-        return self._get_confidence_interval(func=self.ml.get_step_response,
-                                             n=n, alpha=alpha, name=name,
-                                             max_iter=max_iter, dt=dt,
-                                             **kwargs)
+        return self._get_confidence_interval(
+            func=self.ml.get_step_response,
+            n=n,
+            alpha=alpha,
+            name=name,
+            max_iter=max_iter,
+            dt=dt,
+            **kwargs,
+        )
 
-    def ci_contribution(self,
-                        name: str,
-                        n: int = 1000,
-                        alpha: float = 0.05,
-                        max_iter: int = 10,
-                        **kwargs) -> DataFrame:
+    def ci_contribution(
+        self,
+        name: str,
+        n: int = 1000,
+        alpha: float = 0.05,
+        max_iter: int = 10,
+        **kwargs,
+    ) -> DataFrame:
         """Method to calculate the confidence interval for the contribution.
 
         Returns
@@ -249,15 +266,18 @@ class BaseSolver:
         that the true best-fit line for the observed data lies within the
         95% confidence interval.
         """
-        return self._get_confidence_interval(func=self.ml.get_contribution,
-                                             n=n, alpha=alpha, name=name,
-                                             max_iter=max_iter,
-                                             **kwargs)
+        return self._get_confidence_interval(
+            func=self.ml.get_contribution,
+            n=n,
+            alpha=alpha,
+            name=name,
+            max_iter=max_iter,
+            **kwargs,
+        )
 
-    def get_parameter_sample(self,
-                             name: Optional[str] = None,
-                             n: int = None,
-                             max_iter: int = 10) -> ArrayLike:
+    def get_parameter_sample(
+        self, name: Optional[str] = None, n: int = None, max_iter: int = 10
+    ) -> ArrayLike:
         """Method to obtain a parameter sets for monte carlo analyses.
 
         Parameters
@@ -284,8 +304,7 @@ class BaseSolver:
         if name is None:
             parameters = self.ml.parameters
         else:
-            parameters = self.ml.parameters.loc[
-                self.ml.parameters.name == name]
+            parameters = self.ml.parameters.loc[self.ml.parameters.name == name]
 
         pmin = parameters.pmin.fillna(-np.inf).values
         pmax = parameters.pmax.fillna(np.inf).values
@@ -299,10 +318,10 @@ class BaseSolver:
         # Start truncated multivariate sampling
         it = 0
         while samples.shape[0] < n:
-            s = np.random.multivariate_normal(p, pcov, size=(n,),
-                                              check_valid="ignore")
-            accept = s[(np.min(s - pmin, axis=1) >= 0) &
-                       (np.max(s - pmax, axis=1) <= 0)]
+            s = np.random.multivariate_normal(p, pcov, size=(n,), check_valid="ignore")
+            accept = s[
+                (np.min(s - pmin, axis=1) >= 0) & (np.max(s - pmax, axis=1) <= 0)
+            ]
             samples = np.concatenate((samples, accept), axis=0)
 
             # Make sure there's no endless while loop
@@ -312,22 +331,25 @@ class BaseSolver:
                 it += 1
 
         if samples.shape[0] < n:
-            logger.warning("Parameter sample size is smaller than n: "
-                           f"{samples.shape[0]}/{n}. Increase 'max_iter'.")
+            logger.warning(
+                "Parameter sample size is smaller than n: "
+                f"{samples.shape[0]}/{n}. Increase 'max_iter'."
+            )
         return samples[:n, :]
 
-    def _get_realizations(self,
-                          func: Function,
-                          n: Optional[int] = None,
-                          name: Optional[str] = None,
-                          max_iter: int = 10,
-                          **kwargs) -> DataFrame:
+    def _get_realizations(
+        self,
+        func: Function,
+        n: Optional[int] = None,
+        name: Optional[str] = None,
+        max_iter: int = 10,
+        **kwargs,
+    ) -> DataFrame:
         """Internal method to obtain n number of parameter realizations."""
         if name:
             kwargs["name"] = name
 
-        parameter_sample = self.get_parameter_sample(n=n, name=name,
-                                                     max_iter=max_iter)
+        parameter_sample = self.get_parameter_sample(n=n, name=name, max_iter=max_iter)
         data = {}
 
         for i, p in enumerate(parameter_sample):
@@ -335,17 +357,20 @@ class BaseSolver:
 
         return DataFrame.from_dict(data, orient="columns", dtype=float)
 
-    def _get_confidence_interval(self,
-                                 func: Function,
-                                 n: Optional[int] = None,
-                                 name: Optional[str] = None,
-                                 max_iter: int = 10,
-                                 alpha: float = 0.05,
-                                 **kwargs) -> DataFrame:
+    def _get_confidence_interval(
+        self,
+        func: Function,
+        n: Optional[int] = None,
+        name: Optional[str] = None,
+        max_iter: int = 10,
+        alpha: float = 0.05,
+        **kwargs,
+    ) -> DataFrame:
         """Internal method to obtain a confidence interval."""
         q = [alpha / 2, 1 - alpha / 2]
-        data = self._get_realizations(func=func, n=n, name=name,
-                                      max_iter=max_iter, **kwargs)
+        data = self._get_realizations(
+            func=func, n=n, name=name, max_iter=max_iter, **kwargs
+        )
         return data.quantile(q=q, axis=1).transpose()
 
     def _get_covariance_matrix(self, name: Optional[str] = None) -> DataFrame:
@@ -364,7 +389,8 @@ class BaseSolver:
         """
         if name:
             index = self.ml.parameters.loc[
-                self.ml.parameters.loc[:, "name"] == name].index
+                self.ml.parameters.loc[:, "name"] == name
+            ].index
         else:
             index = self.ml.parameters.index
 
@@ -390,7 +416,7 @@ class BaseSolver:
         index = pcov.index
         pcov = pcov.to_numpy()
         v = np.sqrt(np.diag(pcov))
-        with np.errstate(divide='ignore', invalid='ignore'):
+        with np.errstate(divide="ignore", invalid="ignore"):
             corr = pcov / np.outer(v, v)
         corr[pcov == 0] = 0
         pcor = DataFrame(data=corr, index=index, columns=index)
@@ -401,7 +427,7 @@ class BaseSolver:
             "name": self._name,
             "pcov": self.pcov,
             "nfev": self.nfev,
-            "obj_func": self.obj_func
+            "obj_func": self.obj_func,
         }
         return data
 
@@ -409,11 +435,13 @@ class BaseSolver:
 class LeastSquares(BaseSolver):
     _name = "LeastSquares"
 
-    def __init__(self,
-                 ml: Model,
-                 pcov: Optional[DataFrame] = None,
-                 nfev: Optional[int] = None,
-                 **kwargs) -> None:
+    def __init__(
+        self,
+        ml: Model,
+        pcov: Optional[DataFrame] = None,
+        nfev: Optional[int] = None,
+        **kwargs,
+    ) -> None:
         """Solver based on Scipy's least_squares method [scipy_ref]_.
 
         Notes
@@ -431,30 +459,39 @@ class LeastSquares(BaseSolver):
         Notes
         -----
         https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
-
         """
         BaseSolver.__init__(self, ml=ml, pcov=pcov, nfev=nfev, **kwargs)
 
-    def solve(self,
-              noise: bool = True,
-              weights: Optional[Series] = None,
-              callback: Optional[CallBack] = None,
-              **kwargs) -> Tuple[bool, ArrayLike, ArrayLike]:
+    def solve(
+        self,
+        noise: bool = True,
+        weights: Optional[Series] = None,
+        callback: Optional[CallBack] = None,
+        **kwargs,
+    ) -> Tuple[bool, ArrayLike, ArrayLike]:
         self.vary = self.ml.parameters.vary.values.astype(bool)
         self.initial = self.ml.parameters.initial.values.copy()
         parameters = self.ml.parameters.loc[self.vary]
 
         # Set the boundaries
-        bounds = (np.where(parameters.pmin.isnull(), -np.inf, parameters.pmin),
-                  np.where(parameters.pmax.isnull(), np.inf, parameters.pmax))
+        bounds = (
+            np.where(parameters.pmin.isnull(), -np.inf, parameters.pmin),
+            np.where(parameters.pmax.isnull(), np.inf, parameters.pmax),
+        )
 
-        self.result = least_squares(self.objfunction, bounds=bounds,
-                                    x0=parameters.initial.values,
-                                    args=(noise, weights, callback), **kwargs)
+        self.result = least_squares(
+            self.objfunction,
+            bounds=bounds,
+            x0=parameters.initial.values,
+            args=(noise, weights, callback),
+            **kwargs,
+        )
 
-        self.pcov = DataFrame(self._get_covariances(self.result.jac,
-                                                    self.result.cost),
-                              index=parameters.index, columns=parameters.index)
+        self.pcov = DataFrame(
+            self._get_covariances(self.result.jac, self.result.cost),
+            index=parameters.index,
+            columns=parameters.index,
+        )
         self.pcor = self._get_correlations(self.pcov)
         self.nfev = self.result.nfev
         self.obj_func = self.result.cost
@@ -468,17 +505,16 @@ class LeastSquares(BaseSolver):
 
         return success, optimal, stderr
 
-    def objfunction(self, p: ArrayLike, noise: bool, weights: Series,
-                    callback: CallBack) -> ArrayLike:
+    def objfunction(
+        self, p: ArrayLike, noise: bool, weights: Series, callback: CallBack
+    ) -> ArrayLike:
         par = self.initial
         par[self.vary] = p
-        return self.misfit(p=par, noise=noise, weights=weights,
-                           callback=callback)
+        return self.misfit(p=par, noise=noise, weights=weights, callback=callback)
 
-    def _get_covariances(self,
-                         jacobian: ArrayLike,
-                         cost: float,
-                         absolute_sigma: bool = False) -> ArrayLike:
+    def _get_covariances(
+        self, jacobian: ArrayLike, cost: float, absolute_sigma: bool = False
+    ) -> ArrayLike:
         """Internal method to get the covariance matrix from the jacobian.
 
         Parameters
@@ -505,8 +541,8 @@ class LeastSquares(BaseSolver):
         _, s, VT = svd(jacobian, full_matrices=False)
         threshold = np.finfo(float).eps * max(jacobian.shape) * s[0]
         s = s[s > threshold]
-        VT = VT[:s.size]
-        pcov = np.dot(VT.T / s ** 2, VT)
+        VT = VT[: s.size]
+        pcov = np.dot(VT.T / s**2, VT)
         n_param = self.ml.parameters.index.size
         warn_cov = False
         if pcov is None:
@@ -523,8 +559,7 @@ class LeastSquares(BaseSolver):
                 warn_cov = True
 
         if warn_cov:
-            logger.warning(
-                'Covariance of the parameters could not be estimated')
+            logger.warning("Covariance of the parameters could not be estimated")
 
         return pcov
 
@@ -532,11 +567,13 @@ class LeastSquares(BaseSolver):
 class LmfitSolve(BaseSolver):
     _name = "LmfitSolve"
 
-    def __init__(self,
-                 ml: Model,
-                 pcov: Optional[DataFrame] = None,
-                 nfev: Optional[int] = None,
-                 **kwargs) -> None:
+    def __init__(
+        self,
+        ml: Model,
+        pcov: Optional[DataFrame] = None,
+        nfev: Optional[int] = None,
+        **kwargs,
+    ) -> None:
         """Solving the model using the LmFit solver [LM]_.
 
          This is basically a wrapper around the scipy solvers, adding some
@@ -545,7 +582,6 @@ class LmfitSolve(BaseSolver):
         Notes
         -----
         https://github.com/lmfit/lmfit-py/
-
         """
         try:
             global lmfit
@@ -555,24 +591,30 @@ class LmfitSolve(BaseSolver):
             raise ImportError(msg)
         BaseSolver.__init__(self, ml=ml, pcov=pcov, nfev=nfev, **kwargs)
 
-    def solve(self,
-              noise: bool = True,
-              weights: Optional[Series] = None,
-              callback: Optional[CallBack] = None,
-              method: Optional[str] = "leastsq",
-              **kwargs) -> Tuple[bool, ArrayLike, ArrayLike]:
+    def solve(
+        self,
+        noise: bool = True,
+        weights: Optional[Series] = None,
+        callback: Optional[CallBack] = None,
+        method: Optional[str] = "leastsq",
+        **kwargs,
+    ) -> Tuple[bool, ArrayLike, ArrayLike]:
 
         # Deal with the parameters
         parameters = lmfit.Parameters()
-        p = self.ml.parameters.loc[:, ['initial', 'pmin', 'pmax', 'vary']]
+        p = self.ml.parameters.loc[:, ["initial", "pmin", "pmax", "vary"]]
         for k in p.index:
             pp = np.where(p.loc[k].isnull(), None, p.loc[k])
             parameters.add(k, value=pp[0], min=pp[1], max=pp[2], vary=pp[3])
 
         # Create the Minimizer object and minimize
-        self.mini = lmfit.Minimizer(userfcn=self.objfunction, calc_covar=True,
-                                    fcn_args=(noise, weights, callback),
-                                    params=parameters, **kwargs)
+        self.mini = lmfit.Minimizer(
+            userfcn=self.objfunction,
+            calc_covar=True,
+            fcn_args=(noise, weights, callback),
+            params=parameters,
+            **kwargs,
+        )
         self.result = self.mini.minimize(method=method)
 
         # Set all parameter attributes
@@ -603,7 +645,8 @@ class LmfitSolve(BaseSolver):
 
         return success, optimal[:idx], stderr[:idx]
 
-    def objfunction(self, parameters: DataFrame, noise: bool, weights: Series,
-                    callback: CallBack) -> ArrayLike:
+    def objfunction(
+        self, parameters: DataFrame, noise: bool, weights: Series, callback: CallBack
+    ) -> ArrayLike:
         p = np.array([p.value for p in parameters.values()])
         return self.misfit(p=p, noise=noise, weights=weights, callback=callback)

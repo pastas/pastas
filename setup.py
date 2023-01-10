@@ -35,14 +35,16 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Topic :: Scientific/Engineering :: Hydrology",
     ],
-    platforms='Windows, Mac OS-X',
-    install_requires=['numpy>=1.17, <1.24',
-                      'matplotlib>=3.1',
-                      'pandas>=1.1',
-                      'scipy>=1.8'],
+    platforms="Windows, Mac OS-X",
+    install_requires=[
+        "numpy>=1.17, <1.24",
+        "matplotlib>=3.1",
+        "pandas>=1.1",
+        "scipy>=1.8",
+    ],
     packages=find_packages(exclude=[]),
     extras_require={
         "full": ["numba>=0.51", "lmfit>=1.0.0"],
-        "numbascipy": ["numba-scipy>=0.3.1"]
+        "numbascipy": ["numba-scipy>=0.3.1"],
     },
 )
