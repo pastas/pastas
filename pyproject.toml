@@ -47,3 +47,9 @@ numbascipy = ["numba-scipy >= 0.3.1"]
 tqdm = ["tqdm"]
 rtd = ["nbsphinx", "Ipython", "ipykernel", "pydata-sphinx-theme", "sphinx-gallery", "sphinx>=3.1, <6.0", "sphinxcontrib-bibtex", "requests"]
 ci = ["corner", "emcee"]
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
