@@ -1,1 +1,1 @@
-*.pas linguist-vendored
+tests/* linguist-vendored
