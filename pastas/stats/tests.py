@@ -6,19 +6,26 @@ residual time series of a calibrated (Pastas) model.
 
 from logging import getLogger
 
-from numpy import arange, cumsum, finfo, median, nan, sqrt, zeros
-from pandas import Series, DataFrame, date_range, infer_freq
-from pastas.stats.core import acf as get_acf
-from pastas.utils import _get_time_offset, get_equidistant_series
-from scipy.stats import chi2, norm, normaltest, shapiro
-
 # Type Hinting
 from typing import Tuple
 
+from numpy import arange, cumsum, finfo, median, nan, sqrt, zeros
+from pandas import DataFrame, Series, date_range, infer_freq
+from scipy.stats import chi2, norm, normaltest, shapiro
+
+from pastas.stats.core import acf as get_acf
+from pastas.utils import _get_time_offset, get_equidistant_series
 
 logger = getLogger(__name__)
-__all__ = ["durbin_watson", "ljung_box", "runs_test", "stoffer_toloi",
-           "diagnostics", "plot_acf", "plot_diagnostics"]
+__all__ = [
+    "durbin_watson",
+    "ljung_box",
+    "runs_test",
+    "stoffer_toloi",
+    "diagnostics",
+    "plot_acf",
+    "plot_diagnostics",
+]
 
 
 def durbin_watson(series: Series) -> float:
@@ -80,8 +87,10 @@ def durbin_watson(series: Series) -> float:
     >>> result = ps.stats.durbin_watson(data)
     """
     if not infer_freq(series.index):
-        logger.warning("Caution: The Durbin-Watson test should only be used "
-                       "for time series with equidistant time steps.")
+        logger.warning(
+            "Caution: The Durbin-Watson test should only be used "
+            "for time series with equidistant time steps."
+        )
 
     rho = series.autocorr(lag=1)  # Take the first value of the ACF
 
@@ -90,10 +99,9 @@ def durbin_watson(series: Series) -> float:
     return dw_stat, p
 
 
-def ljung_box(series: Series,
-              lags: int = 15,
-              nparam: int = 0,
-              full_output: bool = False) -> Tuple[float, float]:
+def ljung_box(
+    series: Series, lags: int = 15, nparam: int = 0, full_output: bool = False
+) -> Tuple[float, float]:
     """Ljung-box test for autocorrelation.
 
     Parameters
@@ -166,9 +174,11 @@ def ljung_box(series: Series,
         Similar method but adapted for time series with missing data.
     """
     if not infer_freq(series.index):
-        logger.warning("Caution: The Ljung-Box test should only be used "
-                       "for time series with equidistant time steps. "
-                       "Consider using ps.stats.stoffer_toloi instead.")
+        logger.warning(
+            "Caution: The Ljung-Box test should only be used "
+            "for time series with equidistant time steps. "
+            "Consider using ps.stats.stoffer_toloi instead."
+        )
 
     acf = get_acf(series, lags=lags, bin_method="regular")
     nobs = series.index.size
@@ -177,13 +187,12 @@ def ljung_box(series: Series,
     acf = acf.drop(0, errors="ignore").dropna()
     lags = arange(1, len(acf) + 1)
 
-    q_stat = nobs * (nobs + 2) * cumsum(acf.values ** 2 / (nobs - lags))
+    q_stat = nobs * (nobs + 2) * cumsum(acf.values**2 / (nobs - lags))
     dof = max(lags[-1] - nparam, 1)
     pval = chi2.sf(q_stat, df=dof)
 
     if full_output:
-        result = DataFrame(data={"Q Stat": q_stat, "P-value": pval},
-                           index=acf.index)
+        result = DataFrame(data={"Q Stat": q_stat, "P-value": pval}, index=acf.index)
         return result
     else:
         return q_stat[-1], pval[-1]
@@ -254,8 +263,7 @@ def runs_test(series: Series, cutoff: str = "median") -> Tuple[float, float]:
     elif isinstance(cutoff, float):
         pass
     else:
-        raise NotImplementedError(f"Cutoff criterion {cutoff} is not "
-                                  f"implemented.")
+        raise NotImplementedError(f"Cutoff criterion {cutoff} is not " f"implemented.")
 
     r[r > cutoff] = 1
     r[r < cutoff] = 0
@@ -271,8 +279,9 @@ def runs_test(series: Series, cutoff: str = "median") -> Tuple[float, float]:
     # Calculate the expected number of runs and the standard deviation
     n_neg_pos = 2.0 * n_neg * n_pos
     n_runs_exp = n_neg_pos / (n_neg + n_pos) + 1
-    n_runs_std = (n_neg_pos * (n_neg_pos - n_neg - n_pos)) / \
-                 ((n_neg + n_pos) ** 2 * (n_neg + n_pos - 1))
+    n_runs_std = (n_neg_pos * (n_neg_pos - n_neg - n_pos)) / (
+        (n_neg + n_pos) ** 2 * (n_neg + n_pos - 1)
+    )
 
     # Calculate Z-statistic and pvalue
     z_stat = (n_runs - n_runs_exp) / sqrt(n_runs_std)
@@ -282,11 +291,12 @@ def runs_test(series: Series, cutoff: str = "median") -> Tuple[float, float]:
 
 
 def stoffer_toloi(
-        series: Series,
-        lags: int = 15,
-        nparam: int = 0,
-        freq: str = "D",
-        snap_to_equidistant_timestamps: bool = False) -> Tuple[float, float]:
+    series: Series,
+    lags: int = 15,
+    nparam: int = 0,
+    freq: str = "D",
+    snap_to_equidistant_timestamps: bool = False,
+) -> Tuple[float, float]:
     """Adapted Ljung-Box test to deal with missing data [stoffer_1992]_.
 
     Parameters
@@ -372,15 +382,16 @@ def stoffer_toloi(
         new_idx = date_range(
             series.index[0].floor(freq) + t_offset,
             series.index[-1].floor(freq) + t_offset,
-            freq=freq
+            freq=freq,
         )
         s = series.reindex(new_idx)
         # warn if more than 10% of data is lost in sample
         if s.dropna().index.size < (0.9 * series.dropna().index.size):
-            msg = ("While selecting equidistant values from series with "
-                   "`as_freq` more than 10 %% of values were dropped. "
-                   "Consider setting `make_equidistant` to True."
-                   )
+            msg = (
+                "While selecting equidistant values from series with "
+                "`as_freq` more than 10 %% of values were dropped. "
+                "Consider setting `make_equidistant` to True."
+            )
             logger.warning(msg)
 
     nobs = s.size
@@ -388,8 +399,8 @@ def stoffer_toloi(
     y = z.to_numpy()
     yn = s.notna().to_numpy()
 
-    dz0 = (y ** 2).sum() / nobs
-    da0 = (yn ** 2).sum() / nobs
+    dz0 = (y**2).sum() / nobs
+    da0 = (yn**2).sum() / nobs
     de0 = dz0 / da0
 
     # initialize, compute all correlation up to one year.
@@ -399,9 +410,9 @@ def stoffer_toloi(
     de = zeros(nlags)
 
     for i in range(0, nlags):
-        hh = y[:-i - 1] * y[i + 1:]
+        hh = y[: -i - 1] * y[i + 1 :]
         dz[i] = hh.sum() / nobs
-        hh = yn[:-i - 1] * yn[i + 1:]
+        hh = yn[: -i - 1] * yn[i + 1 :]
         da[i] = hh.sum() / (nobs - i - 1)
         if abs(da[i]) > finfo(float).eps:
             de[i] = dz[i] / da[i]
@@ -414,7 +425,7 @@ def stoffer_toloi(
     k = arange(1, len(re) + 1)
 
     # Compute the Q-statistic
-    qm = nobs ** 2 * sum(da * re ** 2 / (nobs - k))
+    qm = nobs**2 * sum(da * re**2 / (nobs - k))
 
     dof = max(len(k) - nparam, 1)
     pval = chi2.sf(qm, df=dof)
@@ -422,12 +433,14 @@ def stoffer_toloi(
     return qm, pval
 
 
-def diagnostics(series: Series,
-                alpha: float = 0.05,
-                nparam: int = 0,
-                lags: int = 15,
-                stats: tuple = (),
-                float_fmt: str = "{0:.2f}") -> DataFrame:
+def diagnostics(
+    series: Series,
+    alpha: float = 0.05,
+    nparam: int = 0,
+    lags: int = 15,
+    stats: tuple = (),
+    float_fmt: str = "{0:.2f}",
+) -> DataFrame:
     """Methods to compute various diagnostics checks for a time series.
 
     Parameters
@@ -482,7 +495,11 @@ def diagnostics(series: Series,
 
     # Shapiroo-Wilk test for Normality
     stat, p = shapiro(series)
-    df.loc["Shapiroo", cols] = "Normality", stat, p,
+    df.loc["Shapiroo", cols] = (
+        "Normality",
+        stat,
+        p,
+    )
 
     # D'Agostino test for Normality
     stat, p = normaltest(series)
@@ -506,25 +523,30 @@ def diagnostics(series: Series,
         stat, p = stoffer_toloi(series, nparam=nparam, lags=lags)
         df.loc["Stoffer-Toloi", cols] = "Autocorr.", stat, p
 
-    df["Reject H0 ($\\alpha$={:.2f})".format(alpha)] = \
-        df.loc[:, "P-value"] < alpha
-    df[["Statistic", "P-value"]] = \
-        df[["Statistic", "P-value"]].applymap(float_fmt.format)
+    df["Reject H0 ($\\alpha$={:.2f})".format(alpha)] = df.loc[:, "P-value"] < alpha
+    df[["Statistic", "P-value"]] = df[["Statistic", "P-value"]].applymap(
+        float_fmt.format
+    )
 
     return df
 
 
 def plot_acf():
-    raise DeprecationWarning("The method plot_acf is deprecated. Use "
-                             "'ps.plot.acf' instead.")
+    raise DeprecationWarning(
+        "The method plot_acf is deprecated. Use " "'ps.plot.acf' instead."
+    )
 
 
 def plot_diagnostics():
-    raise DeprecationWarning("The method plot_diagnostics is deprecated."
-                             " Use 'ps.plot.diagnostics' instead.")
+    raise DeprecationWarning(
+        "The method plot_diagnostics is deprecated."
+        " Use 'ps.plot.diagnostics' instead."
+    )
 
 
 def plot_cum_frequency():
-    raise DeprecationWarning("The method plot_cum_frequency is "
-                             "deprecated. Use 'ps.plot.cum_frequency' "
-                             "instead.")
+    raise DeprecationWarning(
+        "The method plot_cum_frequency is "
+        "deprecated. Use 'ps.plot.cum_frequency' "
+        "instead."
+    )

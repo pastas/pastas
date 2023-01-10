@@ -11,8 +11,9 @@ from pandas import read_csv
 from ..timeseries import TimeSeries
 
 
-def read_waterbase(fname, locations=None, variable="NUMERIEKEWAARDE",
-                   kind="waterlevel", freq="10min"):
+def read_waterbase(
+    fname, locations=None, variable="NUMERIEKEWAARDE", kind="waterlevel", freq="10min"
+):
     """Method to import waterlevel ts from waterbase.
 
     Parameters
@@ -39,16 +40,31 @@ def read_waterbase(fname, locations=None, variable="NUMERIEKEWAARDE",
     values are not unique.
     """
     warnings.warn(
-        "The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io", DeprecationWarning)
+        "The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io",
+        DeprecationWarning,
+    )
 
     ts = []
-    df = read_csv(fname, delimiter=";", index_col="Date", decimal=",",
-                  usecols=["MEETPUNT_IDENTIFICATIE", "WAARNEMINGDATUM",
-                           "WAARNEMINGTIJD", variable, "EPSG", "X", "Y"],
-                  parse_dates={"Date": ["WAARNEMINGDATUM", "WAARNEMINGTIJD"]},
-                  infer_datetime_format=True, dayfirst=True,
-                  na_values=[-999999999, 999999999],
-                  encoding="ISO-8859-1")
+    df = read_csv(
+        fname,
+        delimiter=";",
+        index_col="Date",
+        decimal=",",
+        usecols=[
+            "MEETPUNT_IDENTIFICATIE",
+            "WAARNEMINGDATUM",
+            "WAARNEMINGTIJD",
+            variable,
+            "EPSG",
+            "X",
+            "Y",
+        ],
+        parse_dates={"Date": ["WAARNEMINGDATUM", "WAARNEMINGTIJD"]},
+        infer_datetime_format=True,
+        dayfirst=True,
+        na_values=[-999999999, 999999999],
+        encoding="ISO-8859-1",
+    )
 
     if locations is None:
         locations = df.MEETPUNT_IDENTIFICATIE.unique()
@@ -62,11 +78,14 @@ def read_waterbase(fname, locations=None, variable="NUMERIEKEWAARDE",
             "y": series.Y.mean(),
             "z": 0,
             "projection": "epsg:" + str(series.loc[:, "EPSG"].unique()[0]),
-            "units": "cm"
+            "units": "cm",
         }
         series = series.loc[:, variable].sort_index()
-        ts.append(TimeSeries(series, name=name, metadata=metadata,
-                             settings=kind, freq_original=freq))
+        ts.append(
+            TimeSeries(
+                series, name=name, metadata=metadata, settings=kind, freq_original=freq
+            )
+        )
 
     if len(ts) == 1:
         ts = ts[0]

@@ -6,13 +6,20 @@
 import warnings
 
 from numpy import ndarray
-from pandas import (DataFrame, Timedelta, Timestamp, infer_freq, read_csv,
-                    to_datetime, to_timedelta)
+from pandas import (
+    DataFrame,
+    Timedelta,
+    Timestamp,
+    infer_freq,
+    read_csv,
+    to_datetime,
+    to_timedelta,
+)
 
 from ..timeseries import TimeSeries
 
 
-def read_knmi(fname, variables='RD'):
+def read_knmi(fname, variables="RD"):
     """This method can be used to import KNMI data from a file in Pastas.
 
     Parameters
@@ -28,7 +35,9 @@ def read_knmi(fname, variables='RD'):
         returns a Pastas TimeSeries object or a list of objects.
     """
     warnings.warn(
-        "The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io", DeprecationWarning)
+        "The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io",
+        DeprecationWarning,
+    )
 
     knmi = KnmiStation.fromfile(fname)
     if variables is None:
@@ -36,40 +45,49 @@ def read_knmi(fname, variables='RD'):
     if isinstance(variables, str):
         variables = [variables]
 
-    stn_codes = knmi.data['STN'].unique()
+    stn_codes = knmi.data["STN"].unique()
 
     ts = []
     for code in stn_codes:
         for variable in variables:
             if variable not in knmi.data.keys():
-                raise (ValueError(
-                    "variable %s is not in this dataset. Please use one of "
-                    "the following keys: %s" % (variable, knmi.data.keys())))
+                raise (
+                    ValueError(
+                        "variable %s is not in this dataset. Please use one of "
+                        "the following keys: %s" % (variable, knmi.data.keys())
+                    )
+                )
 
-            series = knmi.data.loc[knmi.data['STN'] == code, variable]
+            series = knmi.data.loc[knmi.data["STN"] == code, variable]
             # get rid of the hours when data is daily
-            if infer_freq(series.index) == 'D':
+            if infer_freq(series.index) == "D":
                 series.index = series.index.normalize()
 
             metadata = {}
             if knmi.stations is not None and not knmi.stations.empty:
                 station = knmi.stations.loc[code, :]
-                metadata['x'] = station.LON_east
-                metadata['y'] = station.LAT_north
-                metadata['z'] = station.ALT_m
-                metadata['projection'] = 'epsg:4326'
+                metadata["x"] = station.LON_east
+                metadata["y"] = station.LAT_north
+                metadata["z"] = station.ALT_m
+                metadata["projection"] = "epsg:4326"
                 stationname = station.NAME
             else:
                 stationname = str(code)
-            metadata['description'] = knmi.variables[variable]
-            if variable == 'RD' or variable == 'RH':
-                kind = 'prec'
-            elif variable == 'EV24':
-                kind = 'evap'
+            metadata["description"] = knmi.variables[variable]
+            if variable == "RD" or variable == "RH":
+                kind = "prec"
+            elif variable == "EV24":
+                kind = "evap"
             else:
                 kind = None
-            ts.append(TimeSeries(series, name=variable + ' ' + stationname,
-                                 metadata=metadata, settings=kind))
+            ts.append(
+                TimeSeries(
+                    series,
+                    name=variable + " " + stationname,
+                    metadata=metadata,
+                    settings=kind,
+                )
+            )
     if len(ts) == 1:
         ts = ts[0]
     return ts
@@ -111,14 +129,19 @@ class KnmiStation:
 
     def __init__(self, *args, **kwargs):
         warnings.warn(
-            "The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io", DeprecationWarning)
+            "The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io",
+            DeprecationWarning,
+        )
 
         self.stations = DataFrame()
         self.variables = dict()
         self.data = DataFrame()
         if len(args) > 0 or len(kwargs) > 0:
-            warnings.warn("In the future use KnmiStation.download(**kwargs) "
-                          "instead of KnmiStation(**kwargs)", FutureWarning)
+            warnings.warn(
+                "In the future use KnmiStation.download(**kwargs) "
+                "instead of KnmiStation(**kwargs)",
+                FutureWarning,
+            )
             self._download(*args, **kwargs)
             # diable download method, as old code will call this again
             self.download = lambda *args, **kwargs: None
@@ -131,15 +154,22 @@ class KnmiStation:
     def fromfile(cls, fname):
         """Reads data from a KNMI-file."""
         self = cls()
-        with open(fname, 'r') as f:
+        with open(fname, "r") as f:
             self.readdata(f)
         f.close()
         return self
 
     # Construct KnmiStation from download
     @classmethod
-    def download(cls, start=None, end=None, inseason=False, vars='ALL',
-                 stns=260, interval='daily'):
+    def download(
+        cls,
+        start=None,
+        end=None,
+        inseason=False,
+        vars="ALL",
+        stns=260,
+        interval="daily",
+    ):
         """Downloads data from the KNMI-server.
 
         Parameters
@@ -170,23 +200,37 @@ class KnmiStation:
         https://www.knmi.nl/kennis-en-datacentrum/achtergrond/data-ophalen-vanuit-een-script
         """
         self = cls()
-        self._download(start=start, end=end, inseason=inseason, vars=vars,
-                       stns=stns, interval=interval)
+        self._download(
+            start=start,
+            end=end,
+            inseason=inseason,
+            vars=vars,
+            stns=stns,
+            interval=interval,
+        )
         return self
 
-    def _download(self, start=None, end=None, inseason=False, vars='ALL',
-                  stns=260, interval='daily'):
+    def _download(
+        self,
+        start=None,
+        end=None,
+        inseason=False,
+        vars="ALL",
+        stns=260,
+        interval="daily",
+    ):
         # Import the necessary modules (optional and not included in the
         # installation of pastas).
         try:
             import requests
         except ImportError:
             raise ImportError(
-                'The module requests could not be imported. '
-                'Please install through:'
-                '>>> pip install requests'
-                'or:'
-                '>>> conda install requests')
+                "The module requests could not be imported. "
+                "Please install through:"
+                ">>> pip install requests"
+                "or:"
+                ">>> conda install requests"
+            )
 
         from io import StringIO
 
@@ -213,40 +257,41 @@ class KnmiStation:
         # convert possible integers to string
         stns = [str(i) for i in stns]
 
-        if interval.startswith('hour') and 'RD' in vars:
-            message = 'Interval can not be hourly for rainfall-stations'
+        if interval.startswith("hour") and "RD" in vars:
+            message = "Interval can not be hourly for rainfall-stations"
             raise (ValueError(message))
-        if 'RD' in vars and len(vars) > 1:
-            message = 'Only daily precipitation can be downloaded from ' \
-                      'rainfall-stations'
+        if "RD" in vars and len(vars) > 1:
+            message = (
+                "Only daily precipitation can be downloaded from " "rainfall-stations"
+            )
             raise (ValueError(message))
 
-        if interval.startswith('hour'):
+        if interval.startswith("hour"):
             # hourly data from meteorological stations
-            url = 'https://www.daggegevens.knmi.nl/klimatologie/uurgegevens'
-        elif 'RD' in vars:
+            url = "https://www.daggegevens.knmi.nl/klimatologie/uurgegevens"
+        elif "RD" in vars:
             # daily data from rainfall-stations
-            url = 'https://www.daggegevens.knmi.nl/klimatologie/monv/reeksen'
+            url = "https://www.daggegevens.knmi.nl/klimatologie/monv/reeksen"
         else:
             # daily data from meteorological stations
-            url = 'https://www.daggegevens.knmi.nl/klimatologie/daggegevens'
+            url = "https://www.daggegevens.knmi.nl/klimatologie/daggegevens"
 
         vars = ":".join(vars)
         stns = ":".join(stns)
-        if interval.startswith('hour'):
+        if interval.startswith("hour"):
             data = {
-                'start': start.strftime('%Y%m%d') + '01',
-                'end': end.strftime('%Y%m%d') + '24',
-                'vars': vars,
-                'stns': stns,
+                "start": start.strftime("%Y%m%d") + "01",
+                "end": end.strftime("%Y%m%d") + "24",
+                "vars": vars,
+                "stns": stns,
             }
         else:
             data = {
-                'start': start.strftime('%Y%m%d'),
-                'end': end.strftime('%Y%m%d'),
-                'inseason': str(int(inseason)),
-                'vars': vars,
-                'stns': stns,
+                "start": start.strftime("%Y%m%d"),
+                "end": end.strftime("%Y%m%d"),
+                "inseason": str(int(inseason)),
+                "vars": vars,
+                "stns": stns,
             }
         result = requests.get(url, params=data).text
 
@@ -259,52 +304,52 @@ class KnmiStation:
 
         isLocations = False
         line = f.readline()
-        isMeteo = line.startswith('# ')
+        isMeteo = line.startswith("# ")
 
         # Process the header information (Everything < 'STN,')
-        while 'STN,' not in line and line != "":
+        while "STN," not in line and line != "":
             # Pre-format the line
-            line = line.strip('\n')
-            line = line.lstrip('# ')
+            line = line.strip("\n")
+            line = line.lstrip("# ")
 
             # If line is empty, skipline
-            if line.strip() == '':
+            if line.strip() == "":
                 pass
             # If line contains station info (can only happen for meteorological stations)
-            elif isMeteo and line.startswith('STN '):
+            elif isMeteo and line.startswith("STN "):
                 isLocations = True
                 line = line.strip()
                 titels = line.split()
-                titels = [x.replace('(', '_') for x in titels]
-                titels = [x.replace(r')', '') for x in titels]
+                titels = [x.replace("(", "_") for x in titels]
+                titels = [x.replace(r")", "") for x in titels]
 
                 # Create pd.DataFrame for station data
                 self.stations = DataFrame(columns=titels)
-                self.stations.set_index(['STN'], inplace=True)
+                self.stations.set_index(["STN"], inplace=True)
 
             # If line contains variables
-            elif ' = ' in line or ' : ' in line:
+            elif " = " in line or " : " in line:
                 isLocations = False
-                if ' = ' in line:
-                    varDes = line.split(' = ')
+                if " = " in line:
+                    varDes = line.split(" = ")
                 else:
-                    varDes = line.split(' : ')
+                    varDes = line.split(" : ")
                 self.variables[varDes[0].strip()] = varDes[1].strip()
             # If location data is recognized in the previous line
             elif isLocations:
                 # Format line. Ensure delimiter is two spaces to read the
                 # location correctly
                 line = line.strip()
-                line = line.replace(':', '')
-                line = line.replace('         ', '  ')
-                line = line.replace('        ', '  ')
-                line = line.replace('       ', '  ')
-                line = line.replace('      ', '  ')
-                line = line.replace('     ', '  ')
-                line = line.replace('    ', '  ')
-                line = line.replace('   ', '  ')
+                line = line.replace(":", "")
+                line = line.replace("         ", "  ")
+                line = line.replace("        ", "  ")
+                line = line.replace("       ", "  ")
+                line = line.replace("      ", "  ")
+                line = line.replace("     ", "  ")
+                line = line.replace("    ", "  ")
+                line = line.replace("   ", "  ")
                 # Add station location data
-                line = line.split('  ')
+                line = line.split("  ")
                 stn = int(line[0])
 
                 def maybe_float(s):
@@ -320,97 +365,96 @@ class KnmiStation:
             line = f.readline()
 
         # The header information of the datablock
-        line = line.strip('\n')
-        line = line.lstrip('# ')
-        header = line.split(',')
+        line = line.strip("\n")
+        line = line.lstrip("# ")
+        header = line.split(",")
         header = [item.lstrip().rstrip() for item in header]
         pos = f.tell()
         line = f.readline()  # Skip empty line after header
-        if line not in ["\n", "\r\n", "# \n", '# \r\n']:
+        if line not in ["\n", "\r\n", "# \n", "# \r\n"]:
             # sometimes there is no empty line between the header and the data
             f.seek(pos)
 
         # Process the datablock
-        data = read_csv(f, header=None, names=header, na_values='     ')
+        data = read_csv(f, header=None, names=header, na_values="     ")
 
         # Close file
         f.close()
 
         if data.empty:
-            warnings.warn('No KNMI data found')
+            warnings.warn("No KNMI data found")
             self.data = data
             return
 
-        data.set_index(to_datetime(data.YYYYMMDD, format='%Y%m%d'),
-                       inplace=True)
-        data = data.drop('YYYYMMDD', axis=1)
+        data.set_index(to_datetime(data.YYYYMMDD, format="%Y%m%d"), inplace=True)
+        data = data.drop("YYYYMMDD", axis=1)
 
         # convert the hours if provided
-        if 'HH' in data.keys():
+        if "HH" in data.keys():
             # hourly data, Hourly division 05 runs from 04.00 UT to 5.00 UT
-            data.index = data.index + to_timedelta(data['HH'], unit='h')
-            data.pop('HH')
-        elif 'H' in data.keys():
+            data.index = data.index + to_timedelta(data["HH"], unit="h")
+            data.pop("HH")
+        elif "H" in data.keys():
             # hourly data, Hourly division 05 runs from 04.00 UT to 5.00 UT
-            data.index = data.index + to_timedelta(data['H'], unit='h')
-            data.pop('H')
+            data.index = data.index + to_timedelta(data["H"], unit="h")
+            data.pop("H")
         else:
             # daily data
-            if 'RD' in data.keys():
+            if "RD" in data.keys():
                 # daily precipitation amount in 0.1 mm over the period 08.00
                 # preceding day - 08.00 UTC present day
-                data.index = data.index + Timedelta(8, unit='h')
+                data.index = data.index + Timedelta(8, unit="h")
             else:
                 # add a full day for meteorological data, so that the
                 # timestamp is at the end of the period in the data
-                data.index = data.index + Timedelta(1, unit='d')
+                data.index = data.index + Timedelta(1, unit="d")
 
         # from UT to UT+1 (standard-time in the Netherlands)
-        data.index = data.index + Timedelta(1, unit='h')
+        data.index = data.index + Timedelta(1, unit="h")
 
         # Delete empty columns
-        if '' in data.columns:
-            data.drop('', axis=1, inplace=True)
+        if "" in data.columns:
+            data.drop("", axis=1, inplace=True)
 
         # Adjust the unit of the measurements
         for key, value in self.variables.items():
             # test if key exists in data
             if key not in data.keys():
-                if key == 'YYYYMMDD' or key == 'HH':
+                if key == "YYYYMMDD" or key == "HH":
                     pass
-                elif key == 'T10N':
+                elif key == "T10N":
                     self.variables.pop(key)
-                    key = 'T10'
+                    key = "T10"
                 else:
-                    raise NameError(key + ' does not exist in data')
-            if ' (-1 for <0.05 mm)' in value or ' (-1 voor <0.05 mm)' in value:
+                    raise NameError(key + " does not exist in data")
+            if " (-1 for <0.05 mm)" in value or " (-1 voor <0.05 mm)" in value:
                 # set 0.025 mm where data == -1
                 data.loc[data[key] == -1, key] = 0.25  # unit is still 0.1 mm
-                value = value.replace(' (-1 for <0.05 mm)', '')
-                value = value.replace(' (-1 voor <0.05 mm)', '')
-            if '0.1 ' in value:
+                value = value.replace(" (-1 for <0.05 mm)", "")
+                value = value.replace(" (-1 voor <0.05 mm)", "")
+            if "0.1 " in value:
                 # transform 0.1 to 1
                 data[key] = data[key] * 0.1
-                value = value.replace('0.1 ', '')
-            if ' tiende ' in value:
+                value = value.replace("0.1 ", "")
+            if " tiende " in value:
                 # transform 0.1 to 1
                 data[key] = data[key] * 0.1
-                value = value.replace(' tiende ', ' ')
-            if ' mm' in value:
+                value = value.replace(" tiende ", " ")
+            if " mm" in value:
                 # transform mm to m
                 data[key] = data[key] * 0.001
-                value = value.replace(' mm', ' m')
-            if ' millimeters' in value:
+                value = value.replace(" mm", " m")
+            if " millimeters" in value:
                 # transform mm to m
                 data[key] = data[key] * 0.001
-                value = value.replace(' millimeters', ' m')
-            if '(in percents)' in value:
+                value = value.replace(" millimeters", " m")
+            if "(in percents)" in value:
                 # do not adjust (yet)
                 pass
-            if 'hPa' in value:
+            if "hPa" in value:
                 # do not adjust (yet)
                 pass
-            if 'J/cm2' in value:
+            if "J/cm2" in value:
                 # do not adjust (yet)
                 pass
             # Store new variable
