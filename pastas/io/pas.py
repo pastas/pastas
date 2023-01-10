@@ -9,8 +9,8 @@ import json
 from collections import OrderedDict
 from logging import getLogger
 
-from pandas import (DataFrame, Series, Timedelta, Timestamp, isna, read_json,
-                    to_numeric)
+from pandas import DataFrame, Series, Timedelta, Timestamp, isna, read_json, to_numeric
+
 from pastas import TimeSeries
 
 logger = getLogger(__name__)
@@ -30,7 +30,7 @@ def pastas_hook(obj: dict):
             obj[key] = val
         elif key == "series":
             try:
-                obj[key] = read_json(value, typ='series', orient="split")
+                obj[key] = read_json(value, typ="series", orient="split")
             except:
                 try:
                     obj[key] = TimeSeries(**value)
@@ -40,7 +40,7 @@ def pastas_hook(obj: dict):
                 obj[key].index = obj[key].index.tz_localize(None)
         elif key in ["time_offset", "warmup"]:
             if isinstance(value, int) or isinstance(value, float):
-                obj[key] = Timedelta(value, 'd')
+                obj[key] = Timedelta(value, "d")
             else:
                 obj[key] = Timedelta(value)
         elif key in ["parameters", "pcov"]:
@@ -57,7 +57,7 @@ def pastas_hook(obj: dict):
 
 
 def dump(fname: str, data: dict) -> None:
-    json.dump(data, open(fname, 'w'), indent=4, cls=PastasEncoder)
+    json.dump(data, open(fname, "w"), indent=4, cls=PastasEncoder)
     logger.info("%s file successfully exported", fname)
 
 

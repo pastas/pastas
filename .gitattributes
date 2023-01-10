@@ -1,0 +1,7 @@
+# linguist settings based on linguist overrides.md
+# controls the GitHub language
+
+# ignore .pas files since they are recognized as Pascal
+*.pas linguist-vendored
+# count Jupyter Notebooks as Python files
+*.ipynb linguist-language=Python

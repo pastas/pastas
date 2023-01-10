@@ -1,15 +1,17 @@
 # Type hinting for Pastas library
 # Typing
-from typing import Union, Any, TypeVar, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, TypeVar, Union
 
 # External libraries
-# Pandas
-from pandas import Timestamp
 # Matplotlib
 from matplotlib.axes._base import _AxesBase
 from matplotlib.figure import FigureBase
+
 # Numpy
 from numpy.typing import ArrayLike as NumpyArrayLike
+
+# Pandas
+from pandas import Timestamp
 
 # External Types
 Axes = TypeVar("Axes", bound=_AxesBase)  # Matplotlib Axes
@@ -24,7 +26,9 @@ if TYPE_CHECKING:  # https://mypy.readthedocs.io/en/latest/runtime_troubles.html
 TimestampType = TypeVar("TimestampType", bound=Union[str, Timestamp])  # Tmin or Tmax
 Model = TypeVar("Model", bound="ps.Model")  # Model
 TimeSeries = TypeVar("TimeSeries", bound="ps.TimeSeries")  # Time Series
-StressModel = TypeVar("StressModel", bound="ps.stressmodels.StressModelBase")  # Stress Model
+StressModel = TypeVar(
+    "StressModel", bound="ps.stressmodels.StressModelBase"
+)  # Stress Model
 NoiseModel = TypeVar("NoiseModel", bound="ps.noisemodels.NoiseModelBase")  # Noise Model
 Solver = TypeVar("Solver", bound="ps.solver.BaseSolver")  # Base Solver
 Recharge = TypeVar("Recharge", bound="ps.recharge.RechargeBase")  # Recharge Base
