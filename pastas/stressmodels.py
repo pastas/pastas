@@ -25,7 +25,7 @@ from pandas import DataFrame, Series, Timedelta, Timestamp, concat, date_range
 from scipy import __version__ as scipyversion
 from scipy.signal import fftconvolve
 
-from pastas.typing import ArrayLike, Model, Recharge, Reservoir, RFunc, TimestampType
+from pastas.typing import ArrayLike, Model, Recharge, RFunc, TimestampType
 
 from .decorators import njit, set_parameter
 from .recharge import Linear
@@ -44,7 +44,6 @@ __all__ = [
     "WellModel",
     "TarsoModel",
     "ChangeModel",
-    "StressModel2",
 ]
 
 

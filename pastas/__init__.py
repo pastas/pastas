@@ -30,7 +30,6 @@ from .stressmodels import (
     Constant,
     LinearTrend,
     RechargeModel,
-    ReservoirModel,
     StepModel,
     StressModel,
     StressModel2,
