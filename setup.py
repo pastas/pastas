@@ -30,7 +30,6 @@ setup(
         "Intended Audience :: Science/Research",
         "Intended Audience :: Other Audience",
         "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -40,7 +39,7 @@ setup(
     install_requires=['numpy>=1.17, <1.24',
                       'matplotlib>=3.1',
                       'pandas>=1.1',
-                      'scipy>=1.3'],
+                      'scipy>=1.8'],
     packages=find_packages(exclude=[]),
     extras_require={
         "full": ["numba>=0.51", "lmfit>=1.0.0"],
