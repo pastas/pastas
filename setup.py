@@ -39,7 +39,7 @@ setup(
     install_requires=['numpy>=1.17, <1.24',
                       'matplotlib>=3.1',
                       'pandas>=1.1',
-                      'scipy>=1.3'],
+                      'scipy>=1.8'],
     packages=find_packages(exclude=[]),
     extras_require={
         "full": ["numba>=0.51", "lmfit>=1.0.0"],
