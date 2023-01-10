@@ -22,9 +22,8 @@ from .stressmodels import (Constant, LinearTrend, RechargeModel, StepModel,
 from .timeseries import TimeSeries
 from .transform import ThresholdTransform
 from .utils import initialize_logger, set_log_level, show_versions
-from .version import get_pastas_version
+from .version import __version__
 
-__version__ = get_pastas_version()
 
 logger = logging.getLogger(__name__)
 initialize_logger(logger)
