@@ -1,3 +1,8 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+
 [project]
 name = "pastas"
 version = "0.22.0b"
@@ -48,8 +53,6 @@ tqdm = ["tqdm"]
 rtd = ["nbsphinx", "Ipython", "ipykernel", "pydata-sphinx-theme", "sphinx-gallery", "sphinx>=3.1, <6.0", "sphinxcontrib-bibtex", "requests"]
 ci = ["corner", "emcee"]
 
-[build-system]
-requires = ["setuptools"]
 
 [tool.black]
 line-length = 88
