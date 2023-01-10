@@ -13,14 +13,15 @@ noise = False
 fit_constant = False
 
 # read observations and create the time series model
-obs = pd.read_csv("data/head_nb1.csv", index_col=0,
-                  parse_dates=True).squeeze("columns")
+obs = pd.read_csv("data/head_nb1.csv", index_col=0, parse_dates=True).squeeze("columns")
 
 # read weather data
-rain = pd.read_csv("data/rain_nb1.csv", index_col=0,
-                   parse_dates=True).squeeze("columns")
-evap = pd.read_csv("data/evap_nb1.csv", index_col=0,
-                   parse_dates=True).squeeze("columns")
+rain = pd.read_csv("data/rain_nb1.csv", index_col=0, parse_dates=True).squeeze(
+    "columns"
+)
+evap = pd.read_csv("data/evap_nb1.csv", index_col=0, parse_dates=True).squeeze(
+    "columns"
+)
 
 # Solve with a Exponential response function
 ml1 = ps.Model(obs, name="Exp")

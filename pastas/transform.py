@@ -6,11 +6,11 @@ nonlinear effects.
 import numpy as np
 from pandas import DataFrame, Series
 
-from .decorators import set_parameter
-from .utils import validate_name
-
 # Type Hinting
 from pastas.typing import ArrayLike, Model
+
+from .decorators import set_parameter
+from .utils import validate_name
 
 
 class ThresholdTransform:
@@ -39,21 +39,23 @@ class ThresholdTransform:
     of the larger storage of the lake, the (groundwater) level then rises
     slower when it rains.
     """
+
     _name = "ThresholdTransform"
 
-    def __init__(self,
-                 value: float = np.nan,
-                 vmin: float = np.nan,
-                 vmax: float = np.nan,
-                 name: str = 'ThresholdTransform',
-                 nparam: int = 2) -> None:
+    def __init__(
+        self,
+        value: float = np.nan,
+        vmin: float = np.nan,
+        vmax: float = np.nan,
+        name: str = "ThresholdTransform",
+        nparam: int = 2,
+    ) -> None:
         self.value = value
         self.vmin = vmin
         self.vmax = vmax
         self.name = validate_name(name)
         self.nparam = nparam
-        self.parameters = DataFrame(
-            columns=['initial', 'pmin', 'pmax', 'vary', 'name'])
+        self.parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
 
     def set_model(self, ml: Model) -> None:
         obs = ml.observations()
@@ -66,11 +68,15 @@ class ThresholdTransform:
         self.set_init_parameters()
 
     def set_init_parameters(self) -> None:
-        self.parameters.loc[self.name + '_1'] = (
-            self.value, self.vmin, self.vmax, True, self.name)
+        self.parameters.loc[self.name + "_1"] = (
+            self.value,
+            self.vmin,
+            self.vmax,
+            True,
+            self.name,
+        )
         if self.nparam == 2:
-            self.parameters.loc[self.name + '_2'] = (
-                0.5, 0., 1., True, self.name)
+            self.parameters.loc[self.name + "_2"] = (0.5, 0.0, 1.0, True, self.name)
 
     @set_parameter
     def _set_initial(self, name: str, value: float) -> None:
@@ -80,7 +86,7 @@ class ThresholdTransform:
         -----
         The preferred method for parameter setting is through the model.
         """
-        self.parameters.loc[name, 'initial'] = value
+        self.parameters.loc[name, "initial"] = value
 
     @set_parameter
     def _set_pmin(self, name: str, value: float) -> None:
@@ -90,7 +96,7 @@ class ThresholdTransform:
         -----
         The preferred method for parameter setting is through the model.
         """
-        self.parameters.loc[name, 'pmin'] = value
+        self.parameters.loc[name, "pmin"] = value
 
     @set_parameter
     def _set_pmax(self, name: str, value: float) -> None:
@@ -100,7 +106,7 @@ class ThresholdTransform:
         -----
         The preferred method for parameter setting is through the model.
         """
-        self.parameters.loc[name, 'pmax'] = value
+        self.parameters.loc[name, "pmax"] = value
 
     @set_parameter
     def _set_vary(self, name: str, value: float) -> None:
@@ -111,7 +117,7 @@ class ThresholdTransform:
         -----
         The preferred method for parameter setting is through the model.
         """
-        self.parameters.loc[name, 'vary'] = bool(value)
+        self.parameters.loc[name, "vary"] = bool(value)
 
     def simulate(self, h: Series, p: ArrayLike) -> Series:
         if self.nparam == 1:
@@ -122,7 +128,7 @@ class ThresholdTransform:
             mask = h > p[0]
             h[mask] = p[0] + p[1] * (h[mask] - p[0])
         else:
-            raise ValueError('Not yet implemented yet')
+            raise ValueError("Not yet implemented yet")
         return h
 
     def to_dict(self) -> dict:
@@ -132,6 +138,6 @@ class ThresholdTransform:
             "vmin": self.vmin,
             "vmax": self.vmax,
             "name": self.name,
-            'nparam': self.nparam
+            "nparam": self.nparam,
         }
         return data

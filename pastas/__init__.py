@@ -11,14 +11,32 @@ from .modelcompare import CompareModels
 from .noisemodels import ArmaModel, NoiseModel
 from .plots import TrackSolve
 from .rcparams import rcParams
-from .read import (read_dino, read_dino_level_gauge, read_knmi, read_meny,
-                   read_waterbase)
-from .rfunc import (DoubleExponential, Exponential, FourParam, Gamma, Hantush,
-                    HantushWellModel, Kraijenhoff, One, Polder, Spline)
+from .read import read_dino, read_dino_level_gauge, read_knmi, read_meny, read_waterbase
+from .rfunc import (
+    DoubleExponential,
+    Exponential,
+    FourParam,
+    Gamma,
+    Hantush,
+    HantushWellModel,
+    Kraijenhoff,
+    One,
+    Polder,
+    Spline,
+)
 from .solver import LeastSquares, LmfitSolve
-from .stressmodels import (Constant, LinearTrend, RechargeModel, StepModel,
-                           StressModel, TarsoModel, WellModel, ChangeModel,
-                           ReservoirModel, StressModel2)
+from .stressmodels import (
+    ChangeModel,
+    Constant,
+    LinearTrend,
+    RechargeModel,
+    ReservoirModel,
+    StepModel,
+    StressModel,
+    StressModel2,
+    TarsoModel,
+    WellModel,
+)
 from .timeseries import TimeSeries
 from .transform import ThresholdTransform
 from .utils import initialize_logger, set_log_level, show_versions

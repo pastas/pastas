@@ -5,17 +5,27 @@ from datetime import datetime, timedelta
 from logging import handlers
 from platform import platform
 
+# Type Hinting
+from typing import Any, Optional, Tuple
+
 import numpy as np
 from packaging import version
-from pandas import Series, Timedelta, Timestamp, date_range, to_datetime, Index, DatetimeIndex
+from pandas import (
+    DatetimeIndex,
+    Index,
+    Series,
+    Timedelta,
+    Timestamp,
+    date_range,
+    to_datetime,
+)
 from pandas.tseries.frequencies import to_offset
 from scipy import __version__ as sc_version
 from scipy import interpolate
 
-# Type Hinting
-from typing import Optional, Tuple, Any
-from pastas.typing import ArrayLike, TimestampType
+from pastas.typing import ArrayLike
 from pastas.typing import Model as ModelType
+from pastas.typing import TimestampType
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +62,7 @@ def frequency_is_supported(freq: str) -> str:
     TODO: Rename to get_frequency_string and change Returns-documentation
     """
     offset = to_offset(freq)
-    if not hasattr(offset, 'delta'):
+    if not hasattr(offset, "delta"):
         msg = "Frequency {} not supported.".format(freq)
         logger.error(msg)
         raise KeyError(msg)
@@ -86,34 +96,34 @@ def _get_stress_dt(freq: str) -> float:
     """
     # Get the frequency string and multiplier
     offset = to_offset(freq)
-    if hasattr(offset, 'delta'):
+    if hasattr(offset, "delta"):
         dt = offset.delta / Timedelta(1, "D")
     else:
         num = offset.n
         freq = offset.name
-        if freq in ['A', 'Y', 'AS', 'YS', 'BA', 'BY', 'BAS', 'BYS']:
+        if freq in ["A", "Y", "AS", "YS", "BA", "BY", "BAS", "BYS"]:
             # year
             dt = num * 365
-        elif freq in ['BQ', 'BQS', 'Q', 'QS']:
+        elif freq in ["BQ", "BQS", "Q", "QS"]:
             # quarter
             dt = num * 90
-        elif freq in ['BM', 'BMS', 'CBM', 'CBMS', 'M', 'MS']:
+        elif freq in ["BM", "BMS", "CBM", "CBMS", "M", "MS"]:
             # month
             dt = num * 30
-        elif freq in ['SM', 'SMS']:
+        elif freq in ["SM", "SMS"]:
             # semi-month
             dt = num * 15
-        elif freq in ['W']:
+        elif freq in ["W"]:
             # week
             dt = num * 7
-        elif freq in ['B', 'C']:
+        elif freq in ["B", "C"]:
             # day
             dt = num
-        elif freq in ['BH', 'CBH']:
+        elif freq in ["BH", "CBH"]:
             # hour
             dt = num * 1 / 24
         else:
-            raise (ValueError('freq of {} not supported'.format(freq)))
+            raise (ValueError("freq of {} not supported".format(freq)))
 
     return dt
 
@@ -179,9 +189,13 @@ def get_sample(tindex: Index, ref_tindex: Index) -> Index:
     if len(tindex) == 1:
         return tindex
     else:
-        f = interpolate.interp1d(tindex.asi8, np.arange(0, tindex.size),
-                                 kind='nearest', bounds_error=False,
-                                 fill_value='extrapolate')
+        f = interpolate.interp1d(
+            tindex.asi8,
+            np.arange(0, tindex.size),
+            kind="nearest",
+            bounds_error=False,
+            fill_value="extrapolate",
+        )
         ind = np.unique(f(ref_tindex.asi8).astype(int))
         return tindex[ind]
 
@@ -280,8 +294,7 @@ def timestep_weighted_resample_fast(series0: Series, freq: str) -> Series:
     series[1:] = series[1:] * dt
 
     # get a new index
-    index = date_range(series.index[0].floor(freq), series.index[-1],
-                       freq=freq)
+    index = date_range(series.index[0].floor(freq), series.index[-1], freq=freq)
 
     # calculate the cumulative sum
     series = series.cumsum()
@@ -290,20 +303,20 @@ def timestep_weighted_resample_fast(series0: Series, freq: str) -> Series:
     series = series.combine_first(Series(np.NaN, index=index))
 
     # interpolate these NaN's, only keep values at index
-    series = series.interpolate('time')[index]
+    series = series.interpolate("time")[index]
 
     # calculate the diff again (inverse of cumsum)
     series[1:] = series.diff()[1:]
 
     # drop nan's at the beginning
-    series = series[series.first_valid_index():]
+    series = series[series.first_valid_index() :]
 
     return series
 
 
-def get_equidistant_series(series: Series,
-                           freq: str,
-                           minimize_data_loss: bool = False) -> Series:
+def get_equidistant_series(
+    series: Series, freq: str, minimize_data_loss: bool = False
+) -> Series:
     """Get equidistant timeseries using nearest reindexing.
 
     This method will shift observations to the nearest equidistant timestep to
@@ -338,22 +351,28 @@ def get_equidistant_series(series: Series,
     """
 
     # build new equidistant index
-    idx = date_range(series.index[0].floor(freq),
-                     series.index[-1].ceil(freq),
-                     freq=freq)
+    idx = date_range(
+        series.index[0].floor(freq), series.index[-1].ceil(freq), freq=freq
+    )
 
     # get linear interpolated index from original series
-    fl = interpolate.interp1d(series.index.asi8,
-                              np.arange(0, series.index.size),
-                              kind='linear', bounds_error=False,
-                              fill_value='extrapolate')
+    fl = interpolate.interp1d(
+        series.index.asi8,
+        np.arange(0, series.index.size),
+        kind="linear",
+        bounds_error=False,
+        fill_value="extrapolate",
+    )
     ind_linear = fl(idx.asi8)
 
     # get nearest index from original series
-    f = interpolate.interp1d(series.index.asi8,
-                             np.arange(0, series.index.size),
-                             kind='nearest', bounds_error=False,
-                             fill_value='extrapolate')
+    f = interpolate.interp1d(
+        series.index.asi8,
+        np.arange(0, series.index.size),
+        kind="nearest",
+        bounds_error=False,
+        fill_value="extrapolate",
+    )
     ind = f(idx.asi8).astype(int)
 
     # create a new equidistant series
@@ -412,7 +431,7 @@ def to_daily_unit(series: Series, method: bool = True) -> Series:
     the values of the timeseries, and does not alter the frequency.
     """
     if method is True or method == "divide":
-        dt = series.index.to_series().diff() / Timedelta(1, 'D')
+        dt = series.index.to_series().diff() / Timedelta(1, "D")
         dt[:-1] = dt[1:]
         dt[-1] = np.NaN
         if not ((dt == 1.0) | dt.isna()).all():
@@ -433,7 +452,7 @@ def excel2datetime(tindex: DatetimeIndex, freq="D") -> DatetimeIndex:
     -------
     datetimes: pandas.datetimeindex
     """
-    datetimes = to_datetime('1899-12-30') + Timedelta(tindex, freq)
+    datetimes = to_datetime("1899-12-30") + Timedelta(tindex, freq)
     return datetimes
 
 
@@ -450,9 +469,10 @@ def datenum_to_datetime(datenum: float) -> datetime:
     datetime :
         Datetime object corresponding to datenum.
     """
-    days = datenum % 1.
-    return datetime.fromordinal(int(datenum)) \
-        + timedelta(days=days) - timedelta(days=366)
+    days = datenum % 1.0
+    return (
+        datetime.fromordinal(int(datenum)) + timedelta(days=days) - timedelta(days=366)
+    )
 
 
 def datetime2matlab(tindex: DatetimeIndex) -> ArrayLike:
@@ -464,6 +484,7 @@ def datetime2matlab(tindex: DatetimeIndex) -> ArrayLike:
 def get_stress_tmin_tmax(ml: ModelType) -> Tuple[TimestampType, TimestampType]:
     """Get the minimum and maximum time that all of the stresses have data."""
     from pastas import Model
+
     tmin = Timestamp.min
     tmax = Timestamp.max
     if isinstance(ml, Model):
@@ -472,12 +493,13 @@ def get_stress_tmin_tmax(ml: ModelType) -> Tuple[TimestampType, TimestampType]:
                 tmin = max((tmin, st.series_original.index.min()))
                 tmax = min((tmax, st.series_original.index.max()))
     else:
-        raise (TypeError('Unknown type {}'.format(type(ml))))
+        raise (TypeError("Unknown type {}".format(type(ml))))
     return tmin, tmax
 
 
-def initialize_logger(logger: Optional[Any] = None,
-                      level: Optional[Any] = logging.INFO) -> None:
+def initialize_logger(
+    logger: Optional[Any] = None, level: Optional[Any] = logging.INFO
+) -> None:
     """Internal method to create a logger instance to log program output.
 
     Parameters
@@ -488,16 +510,18 @@ def initialize_logger(logger: Optional[Any] = None,
         and packages.
     """
     if logger is None:
-        logger = logging.getLogger('pastas')
+        logger = logging.getLogger("pastas")
     logger.setLevel(level)
     remove_file_handlers(logger)
     set_console_handler(logger)
     # add_file_handlers(logger)
 
 
-def set_console_handler(logger: Optional[Any] = None,
-                        level: Optional[Any] = logging.INFO,
-                        fmt: str = "%(levelname)s: %(message)s") -> None:
+def set_console_handler(
+    logger: Optional[Any] = None,
+    level: Optional[Any] = logging.INFO,
+    fmt: str = "%(levelname)s: %(message)s",
+) -> None:
     """Method to add a console handler to the logger of Pastas.
 
     Parameters
@@ -508,7 +532,7 @@ def set_console_handler(logger: Optional[Any] = None,
         and packages.
     """
     if logger is None:
-        logger = logging.getLogger('pastas')
+        logger = logging.getLogger("pastas")
     remove_console_handler(logger)
     ch = logging.StreamHandler()
     ch.setLevel(level)
@@ -547,21 +571,22 @@ def remove_console_handler(logger: Optional[Any] = None) -> None:
         and packages.
     """
     if logger is None:
-        logger = logging.getLogger('pastas')
+        logger = logging.getLogger("pastas")
     for handler in logger.handlers:
         if isinstance(handler, logging.StreamHandler):
             logger.removeHandler(handler)
 
 
 def add_file_handlers(
-        logger: Optional[Any] = None,
-        filenames: Tuple[str] = ('info.log', 'errors.log'),
-        levels: Tuple[Any] = (logging.INFO, logging.ERROR),
-        maxBytes: int = 10485760,
-        backupCount: int = 20,
-        encoding: str = 'utf8',
-        fmt: str = '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt: str = '%y-%m-%d %H:%M') -> None:
+    logger: Optional[Any] = None,
+    filenames: Tuple[str] = ("info.log", "errors.log"),
+    levels: Tuple[Any] = (logging.INFO, logging.ERROR),
+    maxBytes: int = 10485760,
+    backupCount: int = 20,
+    encoding: str = "utf8",
+    fmt: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt: str = "%y-%m-%d %H:%M",
+) -> None:
     """Method to add file handlers in the logger of Pastas.
 
     Parameters
@@ -572,15 +597,15 @@ def add_file_handlers(
         and packages.
     """
     if logger is None:
-        logger = logging.getLogger('pastas')
+        logger = logging.getLogger("pastas")
     # create formatter
     formatter = logging.Formatter(fmt=fmt, datefmt=datefmt)
 
     # create file handlers, set the level & formatter, and add it to the logger
     for filename, level in zip(filenames, levels):
-        fh = handlers.RotatingFileHandler(filename, maxBytes=maxBytes,
-                                          backupCount=backupCount,
-                                          encoding=encoding)
+        fh = handlers.RotatingFileHandler(
+            filename, maxBytes=maxBytes, backupCount=backupCount, encoding=encoding
+        )
         fh.setLevel(level)
         fh.setFormatter(formatter)
         logger.addHandler(fh)
@@ -597,7 +622,7 @@ def remove_file_handlers(logger: Optional[logging.Logger] = None) -> None:
         and packages.
     """
     if logger is None:
-        logger = logging.getLogger('pastas')
+        logger = logging.getLogger("pastas")
     for handler in logger.handlers:
         if isinstance(handler, handlers.RotatingFileHandler):
             logger.removeHandler(handler)
@@ -618,12 +643,27 @@ def validate_name(name: str, raise_error: bool = False) -> str:
     -------
     name: str
         Unchanged name string
-
     """
     ilchar = ["/", "\\", " ", ".", "'", '"', "`"]
-    if 'windows' in platform().lower():
-        ilchar += ["#", "%", "&", "@", "{", "}", "|", "$",
-                   "*", "<", ">", "?", "!", ":", "=", "+"]
+    if "windows" in platform().lower():
+        ilchar += [
+            "#",
+            "%",
+            "&",
+            "@",
+            "{",
+            "}",
+            "|",
+            "$",
+            "*",
+            "<",
+            ">",
+            "?",
+            "!",
+            ":",
+            "=",
+            "+",
+        ]
 
     name = str(name)
     for char in ilchar:
@@ -667,9 +707,11 @@ def show_versions(lmfit: bool = False, numba: bool = False) -> None:
 
     if lmfit:
         from lmfit import __version__ as lm_version
+
         msg = msg + f"\nlmfit version: {lm_version}"
     if numba:
         from numba import __version__ as nb_version
+
         msg = msg + f"\nnumba version: {nb_version}"
 
     return print(msg)
@@ -679,8 +721,10 @@ def check_numba() -> None:
     try:
         from numba import njit
     except ImportError:
-        logger.warning("Numba is not installed. Installing Numba is "
-                       "recommended for significant speed-ups.")
+        logger.warning(
+            "Numba is not installed. Installing Numba is "
+            "recommended for significant speed-ups."
+        )
 
 
 def check_numba_scipy():
