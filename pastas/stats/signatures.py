@@ -1,24 +1,45 @@
 """This module contains methods to compute the groundwater signatures."""
-import pandas as pd
-from pandas import Timedelta, DatetimeIndex, cut, Series
-from numpy import diff, sqrt, log, arange, nan
-
-import pastas as ps
-from scipy.stats import linregress
-
 # Type Hinting
 from typing import Optional, Tuple
 
+import pandas as pd
+from numpy import arange, diff, log, nan, sqrt
+from pandas import DatetimeIndex, Series, Timedelta, cut
+from scipy.stats import linregress
 
-__all__ = ["cv_period_mean", "cv_date_min", "cv_fall_rate", "cv_rise_rate",
-           "parde_seasonality", "avg_seasonal_fluctuation", "magnitude",
-           "interannual_variation", "low_pulse_count", "high_pulse_count",
-           "low_pulse_duration", "high_pulse_duration", "amplitude_range",
-           "bimodality_coefficient", "mean_annual_maximum", "rise_rate",
-           "fall_rate", "reversals_avg", "reversals_cv", "colwell_contingency",
-           "colwell_constancy", "recession_constant", "recovery_constant",
-           "duration_curve_slope", "duration_curve_range", "baseflow_index",
-           "richards_pathlength", "richards_baker_index", "baseflow_stability"]
+import pastas as ps
+
+__all__ = [
+    "cv_period_mean",
+    "cv_date_min",
+    "cv_fall_rate",
+    "cv_rise_rate",
+    "parde_seasonality",
+    "avg_seasonal_fluctuation",
+    "magnitude",
+    "interannual_variation",
+    "low_pulse_count",
+    "high_pulse_count",
+    "low_pulse_duration",
+    "high_pulse_duration",
+    "amplitude_range",
+    "bimodality_coefficient",
+    "mean_annual_maximum",
+    "rise_rate",
+    "fall_rate",
+    "reversals_avg",
+    "reversals_cv",
+    "colwell_contingency",
+    "colwell_constancy",
+    "recession_constant",
+    "recovery_constant",
+    "duration_curve_slope",
+    "duration_curve_range",
+    "baseflow_index",
+    "richards_pathlength",
+    "richards_baker_index",
+    "baseflow_stability",
+]
 
 
 def _normalize(series: Series) -> Series:
@@ -50,7 +71,6 @@ def cv_period_mean(series: Series, freq: str = "M") -> float:
     .. [hughes_1989] Hughes, J., & James, B. (1989). A hydrological
        regionalization of streams in Victoria, Australia, with implications
        for stream Ecology. Marine and Freshwater Research, 40(3), 303–326.
-
     """
     series = series.resample(freq).mean()
     cv = series.std() / series.mean()
@@ -80,7 +100,6 @@ def cv_date_min(series: Series) -> float:
     .. [richter_1996] Richter, B. D. (1996). A method for assessing hydrologic
        alteration within ecosystems. Society for Conservation Biology, 10(4),
        1163–1174.
-
     """
     data = series.groupby(series.index.year).idxmin().dropna().values
     data = DatetimeIndex(data).dayofyear.to_numpy(float)
@@ -112,7 +131,6 @@ def parde_seasonality(series: Series, normalize: bool = True) -> float:
     References
     ----------
     .. [parde_1933] Pardé, M. (1933). Fleuves et rivieres.
-
     """
     coefficients = parde_coefficients(series=series, normalize=normalize)
     return coefficients.max() - coefficients.min()
@@ -142,7 +160,6 @@ def parde_coefficients(series: Series, normalize: bool = True) -> float:
     References
     ----------
     .. [parde_1933] Pardé, M. (1933). Fleuves et rivieres.
-
     """
     if normalize:
         series = _normalize(series)
@@ -153,8 +170,8 @@ def parde_coefficients(series: Series, normalize: bool = True) -> float:
 
 
 def _martens(series: Series, normalize: bool = True) -> Tuple[Series, Series]:
-    """Functions for the Martens average seasonal fluctuation and
-    interanual fluctuation.
+    """Functions for the Martens average seasonal fluctuation and interanual
+    fluctuation.
 
     Parameters
     ----------
@@ -175,10 +192,8 @@ def _martens(series: Series, normalize: bool = True) -> Tuple[Series, Series]:
         series = _normalize(series)
 
     s = series.resample("M")
-    hl = s.min().groupby(s.min().index.year).nsmallest(3).groupby(
-        level=0).mean()
-    hw = s.max().groupby(s.max().index.year).nlargest(3).groupby(
-        level=0).mean()
+    hl = s.min().groupby(s.min().index.year).nsmallest(3).groupby(level=0).mean()
+    hw = s.max().groupby(s.max().index.year).nlargest(3).groupby(level=0).mean()
 
     return hl, hw
 
@@ -214,7 +229,6 @@ def avg_seasonal_fluctuation(series: Series, normalize: bool = True) -> float:
        K. (2013). Groundwater dynamics converted to a groundwater
        classification as a tool for nature development programs in the
        dunes. Journal of Hydrology, 499, 236–246.
-
     """
 
     hl, hw = _martens(series, normalize=normalize)
@@ -255,7 +269,6 @@ def interannual_variation(series: Series, normalize: bool = True) -> float:
        K. (2013). Groundwater dynamics converted to a groundwater
        classification as a tool for nature development programs in the
        dunes. Journal of Hydrology, 499, 236–246.
-
     """
 
     hl, hw = _martens(series, normalize=normalize)
@@ -263,11 +276,13 @@ def interannual_variation(series: Series, normalize: bool = True) -> float:
     return (hw.max() - hw.min()) + (hl.max() - hl.min()) / 2
 
 
-def colwell_components(series: Series,
-                       bins: int = 11,
-                       freq: str = "M",
-                       method: str = "mean",
-                       normalize: bool = True) -> Tuple[float, float, float]:
+def colwell_components(
+    series: Series,
+    bins: int = 11,
+    freq: str = "M",
+    method: str = "mean",
+    normalize: bool = True,
+) -> Tuple[float, float, float]:
     """Colwell predictability, constant, and contingency [colwell_1974]_.
 
     Parameters
@@ -300,7 +315,6 @@ def colwell_components(series: Series,
     ----------
     .. [colwell_1974] Colwell, R. K. (1974). Predictability Constancy and
        Contingency of periodic phenomena. Ecology, 55(5), 1148–1153.
-
     """
     # Prepare data and pivot table
     if normalize:
@@ -312,13 +326,13 @@ def colwell_components(series: Series,
         raise NotImplementedError
 
     series.name = "head"
-    binned = cut(series, bins=bins, right=False, include_lowest=True,
-                 labels=range(bins))
+    binned = cut(
+        series, bins=bins, right=False, include_lowest=True, labels=range(bins)
+    )
     df = pd.DataFrame(binned)
     df["time"] = df.index.month
     df["values"] = 1
-    df = df.pivot_table(columns="head", index="time", aggfunc="sum",
-                        values="values")
+    df = df.pivot_table(columns="head", index="time", aggfunc="sum", values="values")
 
     # Count of rows and column items
     x = df.sum(axis=1)  # Time
@@ -326,8 +340,8 @@ def colwell_components(series: Series,
     z = series.size  # Total number of observations
 
     hx = -(x / z * log(x / z)).sum()
-    hy = - (y / z * log(y / z)).sum()
-    hxy = - (df / z * log(df / z, where=df != 0)).sum().sum()
+    hy = -(y / z * log(y / z)).sum()
+    hxy = -(df / z * log(df / z, where=df != 0)).sum().sum()
 
     # Compute final components
     p = 1 - (hxy - hy) / log(bins)  # Predictability
@@ -336,11 +350,13 @@ def colwell_components(series: Series,
     return p, c, m
 
 
-def colwell_constancy(series: Series,
-                      bins: int = 11,
-                      freq: str = "M",
-                      method: str = "mean",
-                      normalize: bool = True) -> Tuple[float, float, float]:
+def colwell_constancy(
+    series: Series,
+    bins: int = 11,
+    freq: str = "M",
+    method: str = "mean",
+    normalize: bool = True,
+) -> Tuple[float, float, float]:
     """Colwells constancy index after [colwell_1974]_.
 
     Parameters
@@ -370,20 +386,19 @@ def colwell_constancy(series: Series,
     ----------
     .. [colwell_1974] Colwell, R. K. (1974). Predictability Constancy and
        Contingency of periodic phenomena. Ecology, 55(5), 1148–1153.
-
     """
-    return colwell_components(series=series,
-                              bins=bins,
-                              freq=freq,
-                              method=method,
-                              normalize=normalize)[1]
+    return colwell_components(
+        series=series, bins=bins, freq=freq, method=method, normalize=normalize
+    )[1]
 
 
-def colwell_contingency(series: Series,
-                        bins: int = 11,
-                        freq: str = "M",
-                        method: str = "mean",
-                        normalize: bool = True) -> Tuple[float, float, float]:
+def colwell_contingency(
+    series: Series,
+    bins: int = 11,
+    freq: str = "M",
+    method: str = "mean",
+    normalize: bool = True,
+) -> Tuple[float, float, float]:
     """Colwell contingency [colwell_1974]_
 
     Parameters
@@ -416,13 +431,10 @@ def colwell_contingency(series: Series,
     ----------
     .. [colwell_1974] Colwell, R. K. (1974). Predictability Constancy and
        Contingency of periodic phenomena. Ecology, 55(5), 1148–1153.
-
     """
-    return colwell_components(series=series,
-                              bins=bins,
-                              freq=freq,
-                              method=method,
-                              normalize=normalize)[2]
+    return colwell_components(
+        series=series, bins=bins, freq=freq, method=method, normalize=normalize
+    )[2]
 
 
 def low_pulse_count(series: Series, quantile: float = 0.2) -> int:
@@ -451,7 +463,6 @@ def low_pulse_count(series: Series, quantile: float = 0.2) -> int:
     .. [richter_1996] Richter, B. D. (1996). A method for assessing hydrologic
        alteration within ecosystems. Society for Conservation Biology, 10(4),
        1163–1174.
-
     """
     h = series < series.quantile(quantile)
     return (h.astype(int).diff() > 0).sum()
@@ -483,7 +494,6 @@ def high_pulse_count(series: Series, quantile: float = 0.8) -> int:
     .. [richter_1996] Richter, B. D. (1996). A method for assessing hydrologic
        alteration within ecosystems. Society for Conservation Biology, 10(4),
        1163–1174.
-
     """
     h = series > series.quantile(quantile)
     return (h.astype(int).diff() > 0).sum()
@@ -513,7 +523,6 @@ def low_pulse_duration(series: Series, quantile: float = 0.8) -> float:
     .. [richter_1996] Richter, B. D. (1996). A method for assessing hydrologic
        alteration within ecosystems. Society for Conservation Biology, 10(4),
        1163–1174. https://doi.org/10.1046/j.1523‐1739.1996.10041163.x
-
     """
     h = series < series.quantile(quantile)
     sel = h.astype(int).diff().replace(0.0, nan).shift(-1).dropna().index
@@ -545,7 +554,6 @@ def high_pulse_duration(series: Series, quantile: float = 0.8) -> float:
     .. [richter_1996] Richter, B. D. (1996). A method for assessing hydrologic
        alteration within ecosystems. Society for Conservation Biology, 10(4),
        1163–1174. https://doi.org/10.1046/j.1523‐1739.1996.10041163.x
-
     """
     h = series > series.quantile(quantile)
     sel = h.astype(int).diff().replace(0.0, nan).shift(-1).dropna().index
@@ -567,7 +575,6 @@ def amplitude_range(series: Series) -> float:
     Notes
     -----
     Range of unscaled groundwater head.
-
     """
     return series.max() - series.min()
 
@@ -595,7 +602,6 @@ def rise_rate(series: Series, normalize: bool = False) -> float:
     .. [richter_1996] Richter, B. D. (1996). A method for assessing hydrologic
        alteration within ecosystems. Society for Conservation Biology, 10(4),
        1163–1174. https://doi.org/10.1046/j.1523‐1739.1996.10041163.x
-
     """
     if normalize:
         series = _normalize(series)
@@ -629,7 +635,6 @@ def fall_rate(series: Series, normalize: bool = False) -> float:
     .. [richter_1996] Richter, B. D. (1996). A method for assessing hydrologic
        alteration within ecosystems. Society for Conservation Biology, 10(4),
        1163–1174. https://doi.org/10.1046/j.1523‐1739.1996.10041163.x
-
     """
     if normalize:
         series = _normalize(series)
@@ -662,7 +667,6 @@ def cv_rise_rate(series: Series, normalize: bool = False) -> float:
     .. [richter_1996] Richter, B. D. (1996). A method for assessing hydrologic
        alteration within ecosystems. Society for Conservation Biology, 10(4),
        1163–1174. https://doi.org/10.1046/j.1523‐1739.1996.10041163.x
-
     """
     if normalize:
         series = _normalize(series)
@@ -695,7 +699,6 @@ def cv_fall_rate(series: Series, normalize: bool = False) -> float:
     .. [richter_1996] Richter, B. D. (1996). A method for assessing hydrologic
        alteration within ecosystems. Society for Conservation Biology, 10(4),
        1163–1174. https://doi.org/10.1046/j.1523‐1739.1996.10041163.x
-
     """
     if normalize:
         series = _normalize(series)
@@ -728,7 +731,6 @@ def magnitude(series: Series) -> float:
     .. [hannah_2000] Hannah, D. M., Smith, B. P. G., Gurnell, A. M.,
        & McGregor, G. R. (2000). An approach to hydrograph classification.
        Hydrological Processes, 14(2), 317–338.
-
     """
 
     return (series.max() - series.min()) / series.min()
@@ -756,7 +758,6 @@ def reversals_avg(series: Series) -> float:
     .. [richter_1996] Richter, B. D. (1996). A method for assessing hydrologic
        alteration within ecosystems. Society for Conservation Biology, 10(4),
        1163–1174.
-
     """
     reversals = (series.diff() > 0).astype(int).diff().replace(-1, 1)
     return reversals.resample("A").sum().mean()
@@ -783,10 +784,10 @@ def reversals_cv(series: Series) -> float:
     .. [richter_1996] Richter, B. D. (1996). A method for assessing hydrologic
        alteration within ecosystems. Society for Conservation Biology, 10(4),
        1163–1174.
-
     """
-    reversals = (series.diff() > 0).astype(int).diff().replace(-1, 1) \
-        .resample("A").sum()
+    reversals = (
+        (series.diff() > 0).astype(int).diff().replace(-1, 1).resample("A").sum()
+    )
     return reversals.std() / reversals.mean()
 
 
@@ -812,7 +813,6 @@ def mean_annual_maximum(series: Series, normalize: bool = False) -> float:
     .. [clausen_2000] Clausen, B., & Biggs, B. J. F. (2000). Flow variables
        for ecological studies in temperate streams—Groupings based on
        covariance. Journal of Hydrology, 237(3‐4), 184–197.
-
     """
     if normalize:
         series = _normalize(series)
@@ -848,29 +848,31 @@ def bimodality_coefficient(series: Series, normalize: bool = False) -> float:
     .. [Ellison_1987] Ellison, A. M. (1987). Effect of seed dimorphism on the
        density‐dependent dynamics of experimental populations of atriplex
        triangularis. American Journal of Botany, 74(8), 1280–1288.
-
     """
     if normalize:
         series = _normalize(series)
     series = series.dropna()
     n = series.size
     # Compute the skew for a finite sample
-    skew = (1 / n) * sum((series - series.mean()) ** 3) / \
-           (((1 / n) * sum((series - series.mean()) ** 2)) ** 1.5)
+    skew = (
+        (1 / n)
+        * sum((series - series.mean()) ** 3)
+        / (((1 / n) * sum((series - series.mean()) ** 2)) ** 1.5)
+    )
     skew *= (sqrt(n * (n - 1))) / (n - 2)
 
     # Compute the kurtosis for a finite sample
-    kurt = (1 / n) * sum((series - series.mean()) ** 4) / \
-           (((1 / n) * sum((series - series.mean()) ** 2)) ** 2) - 3
+    kurt = (1 / n) * sum((series - series.mean()) ** 4) / (
+        ((1 / n) * sum((series - series.mean()) ** 2)) ** 2
+    ) - 3
     kurt = ((n - 1) * ((n + 1) * kurt - 3 * (n - 1)) / ((n - 2) * (n - 3))) + 3
 
-    return ((skew ** 2) + 1) / \
-           (kurt + ((3 * ((n - 1) ** 2)) / ((n - 2) * (n - 3))))
+    return ((skew**2) + 1) / (kurt + ((3 * ((n - 1) ** 2)) / ((n - 2) * (n - 3))))
 
 
-def recession_constant(series: Series,
-                       bins: int = 20,
-                       normalize: bool = False) -> float:
+def recession_constant(
+    series: Series, bins: int = 20, normalize: bool = False
+) -> float:
     """Recession constant after [kirchner_2009]_.
 
     Parameters
@@ -896,7 +898,6 @@ def recession_constant(series: Series,
     .. [kirchner_2009] Kirchner, J. W. (2009). Catchments as simple dynamical
        systems: Catchment characterization, rainfall‐runoff modeling, and doing
        hydrology backward. Water Resources Research, 45, W02429.
-
     """
     if normalize:
         series = _normalize(series)
@@ -915,9 +916,7 @@ def recession_constant(series: Series,
     return fit.slope
 
 
-def recovery_constant(series: Series,
-                      bins: int = 20,
-                      normalize: bool = False) -> float:
+def recovery_constant(series: Series, bins: int = 20, normalize: bool = False) -> float:
     """Recovery constant after [kirchner_2009]_.
 
     Parameters
@@ -943,8 +942,6 @@ def recovery_constant(series: Series,
     .. [kirchner_2009] Kirchner, J. W. (2009). Catchments as simple dynamical
        systems: Catchment characterization, rainfall‐runoff modeling, and doing
        hydrology backward. Water Resources Research, 45, W02429.
-
-
     """
     if normalize:
         series = _normalize(series)
@@ -963,10 +960,9 @@ def recovery_constant(series: Series,
     return fit.slope
 
 
-def duration_curve_slope(series: Series,
-                         l: float = 0.1,
-                         u: float = 0.9,
-                         normalize: bool = True) -> float:
+def duration_curve_slope(
+    series: Series, l: float = 0.1, u: float = 0.9, normalize: bool = True
+) -> float:
     """Slope of the duration curve between percentile l and u.
 
     Parameters
@@ -994,21 +990,20 @@ def duration_curve_slope(series: Series,
     .. [oudin_2010] Oudin, L., Kay, A., Andréassian, V., & Perrin, C. (2010).
        Are seemingly physically similar catchments truly hydrologically
        similar? Water Resources Research, 46, W11558.
-
     """
     if normalize:
         series = _normalize(series)
 
-    s = series[(series.quantile(l) > series) & (series < series.quantile(
-        u))].sort_values()
+    s = series[
+        (series.quantile(l) > series) & (series < series.quantile(u))
+    ].sort_values()
     s.index = arange(s.size) / s.size
     return linregress(s.index, s.values).slope
 
 
-def duration_curve_range(series: Series,
-                         l: float = 0.1,
-                         u: float = 0.9,
-                         normalize: bool = True) -> float:
+def duration_curve_range(
+    series: Series, l: float = 0.1, u: float = 0.9, normalize: bool = True
+) -> float:
     """Range of the duration curve between the percentile l and u.
 
     Parameters
@@ -1035,7 +1030,6 @@ def duration_curve_range(series: Series,
     .. [richards_1990] Richards, R. P. (1990). Measures of Flow Variability
        and a New Flow‐Based Classification of Great Lakes Tributaries.
        Journal of Great Lakes Research, 16(1), 53–70.
-
     """
     if normalize:
         series = _normalize(series)
@@ -1068,7 +1062,6 @@ def richards_pathlength(series: Series, normalize: bool = True) -> float:
        J. W. (2004). A new flashiness index: Characteristics and applications
        to midwestern rivers and streams. Journal of the American Water
        Resources Association, 40(2), 503–522.
-
     """
     if normalize:
         series = _normalize(series)
@@ -1077,7 +1070,7 @@ def richards_pathlength(series: Series, normalize: bool = True) -> float:
     dt = diff(series.index.to_numpy()) / Timedelta("1D")
     dh = series.diff().dropna()
     # sum(dt) is more fair with irregular time series
-    return sum(sqrt(dh ** 2 + dt ** 2)) / sum(dt)
+    return sum(sqrt(dh**2 + dt**2)) / sum(dt)
 
 
 def richards_baker_index(series: Series, normalize: bool = True) -> float:
@@ -1106,7 +1099,6 @@ def richards_baker_index(series: Series, normalize: bool = True) -> float:
        J. W. (2004). A new flashiness index: Characteristics and applications
        to midwestern rivers and streams. Journal of the American Water
        Resources Association, 40(2), 503–522.
-
     """
     if normalize:
         series = _normalize(series)
@@ -1115,7 +1107,7 @@ def richards_baker_index(series: Series, normalize: bool = True) -> float:
 
 
 def _baseflow(series: Series, normalize: bool = True) -> Tuple[Series, Series]:
-    """Baseflow function for the baseflow index and stability
+    """Baseflow function for the baseflow index and stability.
 
     Parameters
     ----------
@@ -1150,8 +1142,7 @@ def _baseflow(series: Series, normalize: bool = True) -> Tuple[Series, Series]:
     ht = ht.resample("D").interpolate()
 
     # E. Assign a base head to each day
-    ht[ht > series.resample("D").mean().loc[ht.index]] = \
-        series.resample("D").mean()
+    ht[ht > series.resample("D").mean().loc[ht.index]] = series.resample("D").mean()
 
     return series, ht
 
@@ -1181,7 +1172,6 @@ def baseflow_index(series: Series, normalize: bool = True) -> float:
     ----------
     .. [wmo_2008] WMO (2008). Manual on Low‐Flow Estimation and Prediction.
        Geneva, Switzerland: World Meteorological Organization.
-
     """
 
     series, ht = _baseflow(series, normalize=normalize)
@@ -1216,7 +1206,6 @@ def baseflow_stability(series: Series, normalize: bool = True) -> float:
     .. [heudorfer_2019] Heudorfer, B., Haaf, E., Stahl, K., & Barthel, R.
        (2019). Index‐based characterization and quantification of groundwater
        dynamics. Water Resources Research, 55, 5575–5592.
-
     """
 
     series, ht = _baseflow(series, normalize=normalize)
@@ -1241,7 +1230,6 @@ def hurst_exponent(series: Series):
     .. [wang_2006] Wang, X., Smith, K., & Hyndman, R. (2006).
        Characteristic‐based clustering for time series data. Data Mining and
        Knowledge Discovery, 13(3), 335–364.
-
     """
     return NotImplementedError
 
@@ -1261,13 +1249,13 @@ def autocorr(series: Series, freq: str = "w"):
     .. [wang_2006] Wang, X., Smith, K., & Hyndman, R. (2006).
        Characteristic‐based clustering for time series data. Data Mining and
        Knowledge Discovery, 13(3), 335–364.
-
     """
     return NotImplementedError
 
 
 def lyapunov_exponent(series: Series):
-    """The exponential rate of divergence of nearby data points
+    """The exponential rate of divergence of nearby data points.
+
     [hilborn_1994]_.
 
     Returns
@@ -1284,7 +1272,6 @@ def lyapunov_exponent(series: Series):
     .. [hilborn_1994] Hilborn, R. C. (1994). Chaos and Nonlinear Dynamics: An
        Introduction for Scientists and Engineers. New York: Oxford University
        Press.
-
     """
     return NotImplementedError
 
@@ -1306,7 +1293,6 @@ def peak_timescale(series: Series):
        Viglione, A., & Blöschl, G. (2012). Flood timescales: Understanding
        the interplay of climate and catchment processes through comparative
        hydrology. Water Resources Research, 48, W04511.
-
     """
     return NotImplementedError
 
@@ -1327,7 +1313,6 @@ def excess_mass(series: Series):
     ----------
     .. [hartigan_1985] Hartigan, J. A., & Hartigan, P. M. (1985). The dip
        test of unimodality. The Annals of Statistics, 13(1), 70–84.
-
     """
     return NotImplementedError
 
@@ -1349,7 +1334,6 @@ def critical_bandwidth(series: Series):
     .. [silverman_1981] Silverman, B. W. (1981). Using kernel density
        estimates to investigate multimodality. Journal of The Royal
        Statistical Society Series B‐ Statistical Methodology, 43(1), 97–99.
-
     """
     return NotImplementedError
 
@@ -1370,7 +1354,6 @@ def peak_base_time(series: Series):
        (2019). Index‐based characterization and quantification of groundwater
        dynamics. Water Resources Research, 55, 5575–5592.
        https://doi.org/10.1029/2018WR024418
-
     """
     return NotImplementedError
 
@@ -1395,7 +1378,6 @@ def summary(series: Series, signatures: Optional[list] = None) -> Series:
     idx = pd.date_range("2000", "2010")
     head = pd.Series(index=idx, data=np.random.rand(len(idx)), dtype=float)
     ps.stats.signatures.summary(head)
-
     """
     if signatures is None:
         signatures = __all__

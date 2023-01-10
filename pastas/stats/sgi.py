@@ -18,7 +18,6 @@ def sgi(series: Series) -> Series:
     sgi_series: pandas.Series
         Pandas time series of the groundwater levels. Time series index
         should be a pandas DatetimeIndex.
-
     """
     series = series.copy()  # Create a copy to ensure series is untouched.
 

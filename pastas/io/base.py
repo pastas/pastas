@@ -3,11 +3,12 @@
 from importlib import import_module
 from logging import getLogger
 from os import path
-from packaging import version
+
 from numpy import log
+from packaging import version
+from pandas import to_numeric
 
 import pastas as ps
-from pandas import to_numeric
 
 # Type Hinting
 from pastas.typing import Model
@@ -113,18 +114,21 @@ def _load_model(data: dict) -> Model:
             ts.pop("up")
 
         # Deal with old parameter value b in HantushWellModel: b_new = np.log(b_old)
-        if ((ts["stressmodel"] == "WellModel") and
-            (version.parse(data["file_info"]["pastas_version"]) <
-             version.parse("0.22.0"))):
-            logger.warning("The value of parameter 'b' in HantushWellModel"
-                           "was modified in 0.22.0: b_new = log(b_old). The value of "
-                           "'b' is automatically updated on load.")
+        if (ts["stressmodel"] == "WellModel") and (
+            version.parse(data["file_info"]["pastas_version"]) < version.parse("0.22.0")
+        ):
+            logger.warning(
+                "The value of parameter 'b' in HantushWellModel"
+                "was modified in 0.22.0: b_new = log(b_old). The value of "
+                "'b' is automatically updated on load."
+            )
             wnam = ts["name"]
             for pcol in ["initial", "optimal", "pmin", "pmax"]:
                 if wnam + "_b" in data["parameters"].index:
                     if data["parameters"].loc[wnam + "_b", pcol] > 0:
-                        data["parameters"].loc[wnam + "_b", pcol] = \
-                            log(data["parameters"].loc[wnam + "_b", pcol])
+                        data["parameters"].loc[wnam + "_b", pcol] = log(
+                            data["parameters"].loc[wnam + "_b", pcol]
+                        )
 
         stressmodel = getattr(ps.stressmodels, ts["stressmodel"])
         ts.pop("stressmodel")
@@ -137,8 +141,7 @@ def _load_model(data: dict) -> Model:
             recharge_kwargs = {}
             if "recharge_kwargs" in ts:
                 recharge_kwargs = ts.pop("recharge_kwargs")
-            ts["recharge"] = getattr(
-                ps.recharge, ts["recharge"])(**recharge_kwargs)
+            ts["recharge"] = getattr(ps.recharge, ts["recharge"])(**recharge_kwargs)
         if "stress" in ts.keys():
             for i, stress in enumerate(ts["stress"]):
                 ts["stress"][i] = ps.TimeSeries(**stress)
