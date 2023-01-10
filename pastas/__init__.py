@@ -42,7 +42,6 @@ from .transform import ThresholdTransform
 from .utils import initialize_logger, set_log_level, show_versions
 from .version import __version__
 
-
 logger = logging.getLogger(__name__)
 initialize_logger(logger)
 
