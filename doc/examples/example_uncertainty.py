@@ -29,12 +29,12 @@ print('percentage inside:', np.count_nonzero(inside) / len(inside) * 100)
 # # Plot some results
 axes = ml.plots.results(tmin="2010", tmax="2015", figsize=(10, 6))
 axes[0].fill_between(df.index, df.iloc[:, 0], df.iloc[:, 1], color="gray",
-                     zorder=-1, alpha=0.5, label="95% Prediction interval")
+                    zorder=-1, alpha=0.5, label="95% Prediction interval")
 axes[0].legend(ncol=3)
 df = ml.fit.ci_contribution("recharge", tmin="2010", tmax="2015")
 axes[2].fill_between(df.index, df.iloc[:, 0], df.iloc[:, 1], color="gray",
-                     zorder=-1, alpha=0.5, label="95% confidence")
+                    zorder=-1, alpha=0.5, label="95% confidence")
 
 df = ml.fit.ci_step_response("recharge", alpha=0.05, n=1000)
 axes[3].fill_between(df.index, df.iloc[:, 0], df.iloc[:, 1], color="gray",
-                     zorder=-1, alpha=0.5, label="95% confidence")
+                    zorder=-1, alpha=0.5, label="95% confidence")

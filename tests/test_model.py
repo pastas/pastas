@@ -1,5 +1,6 @@
 import pastas as ps
 from pandas import read_csv
+from pandas.testing import assert_series_equal
 
 rain = read_csv("tests/data/rain.csv", index_col=0,
                 parse_dates=True).squeeze("columns")
@@ -202,3 +203,12 @@ def test_get_output_series_arguments():
     ml.add_stressmodel(sm)
     ml.get_output_series(split=False, add_contributions=False)
     return None
+
+
+def test_load_old_wellmodel():
+    # model with new parameter b_new = np.log(b_old)
+    ml_new = ps.io.load("./tests/data/wellmodel_new.pas")
+    # model with old parameter b_old
+    ml_old = ps.io.load("./tests/data/wellmodel_old.pas")
+    assert_series_equal(ml_new.simulate(), ml_old.simulate())
+    return

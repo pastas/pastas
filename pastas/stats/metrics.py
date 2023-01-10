@@ -16,6 +16,9 @@ from logging import getLogger
 
 from numpy import abs, average, log, nan, sqrt
 from pastas.stats.core import _get_weights, mean, std, var
+from pandas import Series
+# Type Hinting
+from typing import Optional
 
 __all__ = ["rmse", "sse", "mae", "nse", "evp", "rsq", "bic", "aic",
            "pearsonr", "kge_2012"]
@@ -24,8 +27,13 @@ logger = getLogger(__name__)
 
 # Absolute Error Metrics
 
-def mae(obs=None, sim=None, res=None, missing="drop", weighted=False,
-        max_gap=30):
+
+def mae(obs: Optional[Series] = None,
+        sim: Optional[Series] = None,
+        res: Optional[Series] = None,
+        missing: str = "drop",
+        weighted: bool = False,
+        max_gap: int = 30) -> float:
     """Compute the (weighted) Mean Absolute Error (MAE).
 
     Parameters
@@ -72,8 +80,12 @@ def mae(obs=None, sim=None, res=None, missing="drop", weighted=False,
     return (w * abs(res.to_numpy())).sum()
 
 
-def rmse(obs=None, sim=None, res=None, missing="drop", weighted=False,
-         max_gap=30):
+def rmse(obs: Optional[Series] = None,
+         sim: Optional[Series] = None,
+         res: Optional[Series] = None,
+         missing: str = "drop",
+         weighted: bool = False,
+         max_gap: int = 30) -> float:
     """Compute the (weighted) Root Mean Squared Error (RMSE).
 
     Parameters
@@ -119,7 +131,10 @@ def rmse(obs=None, sim=None, res=None, missing="drop", weighted=False,
     return sqrt((w * res.to_numpy() ** 2).sum())
 
 
-def sse(obs=None, sim=None, res=None, missing="drop"):
+def sse(obs: Optional[Series] = None,
+        sim: Optional[Series] = None,
+        res: Optional[Series] = None,
+        missing: str = "drop") -> float:
     """Compute the Sum of the Squared Errors (SSE).
 
     Parameters
@@ -159,7 +174,12 @@ def sse(obs=None, sim=None, res=None, missing="drop"):
 
 # Percentage Error Metrics
 
-def pearsonr(obs, sim, missing="drop", weighted=False, max_gap=30):
+
+def pearsonr(obs: Series,
+             sim: Series,
+             missing: str = "drop",
+             weighted: bool = False,
+             max_gap: int = 30) -> float:
     """Compute the (weighted) Pearson correlation (r).
 
     Parameters
@@ -211,7 +231,12 @@ def pearsonr(obs, sim, missing="drop", weighted=False, max_gap=30):
     return r
 
 
-def evp(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30):
+def evp(obs: Series,
+        sim: Optional[Series] = None,
+        res: Optional[Series] = None,
+        missing: str = "drop",
+        weighted: bool = False,
+        max_gap: int = 30) -> float:
     """Compute the (weighted) Explained Variance Percentage (EVP).
 
     Parameters
@@ -265,7 +290,12 @@ def evp(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30):
                          var(obs, weighted=weighted, max_gap=max_gap))) * 100
 
 
-def nse(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30):
+def nse(obs: Series,
+        sim: Optional[Series] = None,
+        res: Optional[Series] = None,
+        missing: str = "drop",
+        weighted: bool = False,
+        max_gap: int = 30) -> float:
     """Compute the (weighted) Nash-Sutcliffe Efficiency (NSE).
 
     Parameters
@@ -310,11 +340,16 @@ def nse(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30):
     mu = average(obs.to_numpy(), weights=w)
 
     return 1 - (w * res.to_numpy() ** 2).sum() / \
-           (w * (obs.to_numpy() - mu) ** 2).sum()
+        (w * (obs.to_numpy() - mu) ** 2).sum()
 
 
-def rsq(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30,
-        nparam=None):
+def rsq(obs: Series,
+        sim: Optional[Series] = None,
+        res: Optional[Series] = None,
+        missing: str = "drop",
+        weighted: bool = False,
+        max_gap: int = 30,
+        nparam: Optional[int] = None) -> float:
     """Compute R-squared, possibly adjusted for the number of free parameters.
 
     Parameters
@@ -373,7 +408,11 @@ def rsq(obs, sim=None, res=None, missing="drop", weighted=False, max_gap=30,
         return 1.0 - rss / tss
 
 
-def bic(obs=None, sim=None, res=None, missing="drop", nparam=1):
+def bic(obs: Optional[Series] = None,
+        sim: Optional[Series] = None,
+        res: Optional[Series] = None,
+        missing: str = "drop",
+        nparam: int = 1) -> float:
     """Compute the Bayesian Information Criterium (BIC).
 
     Parameters
@@ -417,7 +456,11 @@ def bic(obs=None, sim=None, res=None, missing="drop", nparam=1):
             nparam * log(res.index.size))
 
 
-def aic(obs=None, sim=None, res=None, missing="drop", nparam=1):
+def aic(obs: Optional[Series] = None,
+        sim: Optional[Series] = None,
+        res: Optional[Series] = None,
+        missing: str = "drop",
+        nparam: int = 1) -> float:
     """Compute the Akaike Information Criterium (AIC).
 
     Parameters
@@ -462,8 +505,11 @@ def aic(obs=None, sim=None, res=None, missing="drop", nparam=1):
 
 
 # Forecast Error Metrics
-
-def kge_2012(obs, sim, missing="drop", weighted=False, max_gap=30):
+def kge_2012(obs: Series,
+             sim: Series,
+             missing: str = "drop",
+             weighted: bool = False,
+             max_gap: int = 30) -> float:
     """Compute the (weighted) Kling-Gupta Efficiency (KGE).
 
     Parameters

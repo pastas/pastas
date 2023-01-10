@@ -1,27 +1,37 @@
-"""This module contains the Model class in Pastas."""
+#  This module contains the Model class in Pastas.
 
+# Python Dependencies
 from collections import OrderedDict
 from itertools import combinations
 from logging import getLogger
 from os import getlogin
 
+# External Dependencies
 import numpy as np
 from pandas import (DataFrame, Series, Timedelta, Timestamp,
-                    date_range, concat, to_timedelta)
+                    date_range, concat, to_timedelta, DatetimeIndex)
 
-from .decorators import get_stressmodel
-from .io.base import _load_model, dump
-from .modelstats import Statistics
-from .noisemodels import NoiseModel
-from .modelplots import Plotting
-from .solver import LeastSquares
-from .stressmodels import Constant
-from .timeseries import TimeSeries
-from .utils import (_get_dt, _get_time_offset, frequency_is_supported,
-                    get_sample, validate_name)
-from .version import get_pastas_version
+# Internal Pastas
+from pastas.decorators import get_stressmodel
+from pastas.io.base import _load_model, dump
+from pastas.modelstats import Statistics
+from pastas.noisemodels import NoiseModel
+from pastas.modelplots import Plotting
+from pastas.solver import LeastSquares
+from pastas.stressmodels import Constant
+from pastas.timeseries import TimeSeries
+from pastas.transform import ThresholdTransform
+from pastas.utils import (_get_dt, _get_time_offset, frequency_is_supported,
+                          get_sample, validate_name)
+from pastas.version import __version__
 
-__version__ = get_pastas_version()
+# Type Hinting
+from typing import Union, Optional, Tuple, List
+from pastas.typing import StressModel, Solver, TimestampType, ArrayLike
+from pastas.typing import NoiseModel as NoiseModelType
+from pastas.typing import TimeSeries as TimeSeriesType
+from pastas.typing import Model as ModelType
+
 
 class Model:
     """Class that initiates a Pastas time series model.
@@ -60,8 +70,9 @@ class Model:
     >>> ml = Model(oseries)
     """
 
-    def __init__(self, oseries, constant=True, noisemodel=True, name=None,
-                 metadata=None, freq="D"):
+    def __init__(self, oseries: Union[Series, TimeSeriesType], constant: bool = True,
+                 noisemodel: bool = True, name: Optional[str] = None,
+                 metadata: Optional[dict] = None, freq: str = "D") -> None:
 
         self.logger = getLogger(__name__)
 
@@ -90,8 +101,11 @@ class Model:
             "tmin": None,
             "tmax": None,
             "freq": freq,
-            "warmup": (3650 * to_timedelta(freq) if freq[0].isdigit()
-                       else Timedelta(3650, freq)),
+            "warmup": (
+                Timedelta(3650, "D") / Timedelta(freq) * to_timedelta(freq)
+                if freq[0].isdigit()
+                else Timedelta(3650, freq)
+            ),
             "time_offset": Timedelta(0),
             "noise": noisemodel,
             "solver": None,
@@ -131,7 +145,9 @@ class Model:
                                const=not self.constant is None,
                                noise=not self.noisemodel is None)
 
-    def add_stressmodel(self, stressmodel, replace=False):
+    def add_stressmodel(self,
+                        stressmodel: StressModel,
+                        replace: bool = False) -> None:
         """Add a stressmodel to the main model.
 
         Parameters
@@ -185,7 +201,7 @@ class Model:
                                     "overlap with ml.oseries.")
         self._check_stressmodel_compatibility()
 
-    def add_constant(self, constant):
+    def add_constant(self, constant: Constant) -> None:
         """Add a Constant to the time series Model.
 
         Parameters
@@ -202,7 +218,7 @@ class Model:
         self.parameters = self.get_init_parameters(initial=False)
         self._check_stressmodel_compatibility()
 
-    def add_transform(self, transform):
+    def add_transform(self, transform: ThresholdTransform):
         """Add a Transform to the time series Model.
 
         Parameters
@@ -224,7 +240,7 @@ class Model:
         self.parameters = self.get_init_parameters(initial=False)
         self._check_stressmodel_compatibility()
 
-    def add_noisemodel(self, noisemodel):
+    def add_noisemodel(self, noisemodel: NoiseModelType) -> None:
         """Adds a noisemodel to the time series Model.
 
         Parameters
@@ -249,7 +265,7 @@ class Model:
         self.parameters = self.get_init_parameters(initial=False)
 
     @get_stressmodel
-    def del_stressmodel(self, name):
+    def del_stressmodel(self, name: str):
         """Method to safely delete a stress model from the Model.
 
         Parameters
@@ -266,7 +282,7 @@ class Model:
         self.stressmodels.pop(name, None)
         self.parameters = self.get_init_parameters(initial=False)
 
-    def del_constant(self):
+    def del_constant(self) -> None:
         """Method to safely delete the Constant from the Model."""
         if self.constant is None:
             self.logger.warning("No constant is present in this model.")
@@ -274,7 +290,7 @@ class Model:
             self.constant = None
             self.parameters = self.get_init_parameters(initial=False)
 
-    def del_transform(self):
+    def del_transform(self) -> None:
         """Method to safely delete the transform from the Model."""
         if self.transform is None:
             self.logger.warning("No transform is present in this model.")
@@ -282,7 +298,7 @@ class Model:
             self.transform = None
             self.parameters = self.get_init_parameters(initial=False)
 
-    def del_noisemodel(self):
+    def del_noisemodel(self) -> None:
         """Method to safely delete the noise model from the Model."""
         if self.noisemodel is None:
             self.logger.warning("No noisemodel is present in this model.")
@@ -290,8 +306,13 @@ class Model:
             self.noisemodel = None
             self.parameters = self.get_init_parameters(initial=False)
 
-    def simulate(self, p=None, tmin=None, tmax=None, freq=None, warmup=None,
-                 return_warmup=False):
+    def simulate(self,
+                 p: Optional[ArrayLike] = None,
+                 tmin: Optional[TimestampType] = None,
+                 tmax: Optional[TimestampType] = None,
+                 freq: Optional[str] = None,
+                 warmup: Optional[float] = None,
+                 return_warmup: bool = False) -> Series:
         """Method to simulate the time series model.
 
         Parameters
@@ -310,7 +331,7 @@ class Model:
             String with the frequency the stressmodels are simulated. Must
             be one of the following: (D, h, m, s, ms, us, ns) or a multiple of
             that e.g. "7D".
-        warmup: float or int, optional
+        warmup: float, optional
             Warmup period (in Days).
         return_warmup: bool, optional
             Return the simulation including the the warmup period or not,
@@ -367,7 +388,7 @@ class Model:
             istart += 1
         if self.transform:
             sim = self.transform.simulate(sim, p[istart:istart +
-                                                        self.transform.nparam])
+                                                 self.transform.nparam])
 
         # Respect provided tmin/tmax at this point, since warmup matters for
         # simulation but should not be returned, unless return_warmup=True.
@@ -381,7 +402,12 @@ class Model:
         sim.name = 'Simulation'
         return sim
 
-    def residuals(self, p=None, tmin=None, tmax=None, freq=None, warmup=None):
+    def residuals(self,
+                  p: Optional[ArrayLike] = None,
+                  tmin: Optional[TimestampType] = None,
+                  tmax: Optional[TimestampType] = None,
+                  freq: Optional[str] = None,
+                  warmup: Optional[float] = None) -> Series:
         """Method to calculate the residual series.
 
         Parameters
@@ -400,7 +426,7 @@ class Model:
             String with the frequency the stressmodels are simulated. Must
             be one of the following: (D, h, m, s, ms, us, ns) or a multiple of
             that e.g. "7D".
-        warmup: float or int, optional
+        warmup: float, optional
             Warmup period (in Days).
 
         Returns
@@ -450,7 +476,12 @@ class Model:
         res.name = "Residuals"
         return res
 
-    def noise(self, p=None, tmin=None, tmax=None, freq=None, warmup=None):
+    def noise(self,
+              p: Optional[ArrayLike] = None,
+              tmin: Optional[TimestampType] = None,
+              tmax: Optional[TimestampType] = None,
+              freq: Optional[str] = None,
+              warmup: Optional[float] = None) -> Series:
         """Method to simulate the noise when a noisemodel is present.
 
         Parameters
@@ -507,8 +538,12 @@ class Model:
         noise = self.noisemodel.simulate(res, p)
         return noise
 
-    def noise_weights(self, p=None, tmin=None, tmax=None, freq=None,
-                      warmup=None):
+    def noise_weights(self,
+                      p: Optional[list] = None,
+                      tmin: Optional[TimestampType] = None,
+                      tmax: Optional[TimestampType] = None,
+                      freq: Optional[str] = None,
+                      warmup: Optional[float] = None) -> ArrayLike:
         """Internal method to calculate the noise weights."""
         # Get parameters if none are provided
         if p is None:
@@ -522,8 +557,11 @@ class Model:
 
         return weights
 
-    def observations(self, tmin=None, tmax=None, freq=None,
-                     update_observations=False):
+    def observations(self,
+                     tmin: Optional[TimestampType] = None,
+                     tmax: Optional[TimestampType] = None,
+                     freq: Optional[str] = None,
+                     update_observations: bool = False) -> Series:
         """Method that returns the observations series used for calibration.
 
         Parameters
@@ -584,8 +622,15 @@ class Model:
             oseries_calib = self.oseries_calib
         return oseries_calib
 
-    def initialize(self, tmin=None, tmax=None, freq=None, warmup=None,
-                   noise=None, weights=None, initial=True, fit_constant=True):
+    def initialize(self,
+                   tmin: Optional[TimestampType] = None,
+                   tmax: Optional[TimestampType] = None,
+                   freq: Optional[str] = None,
+                   warmup: Optional[float] = None,
+                   noise: Optional[bool] = None,
+                   weights: Optional[Series] = None,
+                   initial: bool = True,
+                   fit_constant: bool = True) -> None:
         """Method to initialize the model.
 
         This method is called by the solve-method, but can also be
@@ -639,9 +684,18 @@ class Model:
             self.parameters.loc["constant_d", "initial"] = 0.0
             self.normalize_residuals = True
 
-    def solve(self, tmin=None, tmax=None, freq=None, warmup=None, noise=True,
-              solver=None, report=True, initial=True, weights=None,
-              fit_constant=True, **kwargs):
+    def solve(self,
+              tmin: Optional[TimestampType] = None,
+              tmax: Optional[TimestampType] = None,
+              freq: Optional[str] = None,
+              warmup: Optional[float] = None,
+              noise: bool = True,
+              solver: Optional[Solver] = None,
+              report: bool = True,
+              initial: bool = True,
+              weights: Optional[Series] = None,
+              fit_constant: bool = True,
+              **kwargs) -> None:
         """Method to solve the time series model.
 
         Parameters
@@ -656,13 +710,13 @@ class Model:
             String with the frequency the stressmodels are simulated. Must
             be one of the following (D, h, m, s, ms, us, ns) or a multiple of
             that e.g. "7D".
-        warmup: float or int, optional
+        warmup: float, optional
             Warmup period (in Days) for which the simulation is calculated,
             but not used for the calibration period.
         noise: bool, optional
             Argument that determines if a noisemodel is used (only if
             present). The default is noise=True.
-        solver: pastas.solver.BaseSolver class, optional
+        solver: pastas.solver.Solver class, optional
             Class used to solve the model. Options are: ps.LeastSquares
             (default) or ps.LmfitSolve. A class is needed, not an instance
             of the class!
@@ -742,8 +796,14 @@ class Model:
                 output = None
             print(self.fit_report(output=output))
 
-    def set_parameter(self, name, initial=None, vary=None, pmin=None,
-                      pmax=None, optimal=None, move_bounds=False):
+    def set_parameter(self,
+                      name: str,
+                      initial: Optional[float] = None,
+                      vary: Optional[bool] = None,
+                      pmin: Optional[float] = None,
+                      pmax: Optional[float] = None,
+                      optimal: Optional[float] = None,
+                      move_bounds: bool = False) -> None:
         """Method to change the parameter properties.
 
         Parameters
@@ -822,7 +882,7 @@ class Model:
         if optimal is not None:
             self.parameters.loc[name, "optimal"] = optimal
 
-    def _get_time_offset(self, freq):
+    def _get_time_offset(self, freq: str) -> Timedelta:
         """Internal method to get the time offsets from the stressmodels.
 
         Parameters
@@ -856,7 +916,12 @@ class Model:
         else:
             return Timedelta(0)
 
-    def _get_sim_index(self, tmin, tmax, freq, warmup, update_sim_index=False):
+    def _get_sim_index(self,
+                       tmin: Timestamp,
+                       tmax: Timestamp,
+                       freq: str,
+                       warmup: Timedelta,
+                       update_sim_index: bool = False) -> DatetimeIndex:
         """Internal method to get the simulation index, including the warmup.
 
         Parameters
@@ -890,13 +955,18 @@ class Model:
                 break
 
         if self.sim_index is None or update_sim_index:
+            # TODO: sort out what to do for freq > "D"
             tmin = (tmin - warmup).floor(freq) + self.settings["time_offset"]
+            # tmin = (tmin - warmup) + self.settings["time_offset"]
             sim_index = date_range(tmin, tmax, freq=freq)
         else:
             sim_index = self.sim_index
         return sim_index
 
-    def get_tmin(self, tmin=None, use_oseries=True, use_stresses=False):
+    def get_tmin(self,
+                 tmin: Optional[TimestampType] = None,
+                 use_oseries: bool = True,
+                 use_stresses: bool = False) -> Timestamp:
         """Method that checks and returns valid values for tmin.
 
         Parameters
@@ -954,7 +1024,10 @@ class Model:
 
         return tmin
 
-    def get_tmax(self, tmax=None, use_oseries=True, use_stresses=False):
+    def get_tmax(self,
+                 tmax: Optional[TimestampType] = None,
+                 use_oseries: bool = True,
+                 use_stresses: bool = False) -> Timestamp:
         """Method that checks and returns valid values for tmax.
 
         Parameters
@@ -1015,7 +1088,9 @@ class Model:
 
         return tmax
 
-    def get_init_parameters(self, noise=None, initial=True):
+    def get_init_parameters(self,
+                            noise: Optional[bool] = None,
+                            initial: bool = True) -> DataFrame:
         """Method to get all initial parameters from the individual objects.
 
         Parameters
@@ -1055,7 +1130,7 @@ class Model:
 
         return parameters
 
-    def get_parameters(self, name=None):
+    def get_parameters(self, name: Optional[str] = None) -> ArrayLike:
         """Method to obtain the parameters needed for calculation.
 
         This method is used by the simulation, residuals and the noise
@@ -1068,8 +1143,8 @@ class Model:
 
         Returns
         -------
-        p: numpy.ndarray
-            Numpy array with the parameters used in the time series model.
+        p: array_like
+            NumPy array with the parameters used in the time series model.
         """
         if name:
             p = self.parameters.loc[self.parameters.name == name]
@@ -1085,12 +1160,12 @@ class Model:
 
         return parameters.to_numpy(dtype=float)
 
-    def get_stressmodel_names(self):
+    def get_stressmodel_names(self) -> List[str]:
         """Returns list of stressmodel names."""
         return list(self.stressmodels.keys())
 
     @get_stressmodel
-    def get_stressmodel_settings(self, name):
+    def get_stressmodel_settings(self, name: str) -> Union[dict, None]:
         """Method to obtain the time series settings for a stress model.
 
         Parameters
@@ -1112,9 +1187,15 @@ class Model:
         return settings
 
     @get_stressmodel
-    def get_contribution(self, name, tmin=None, tmax=None, freq=None,
-                         warmup=None, istress=None, return_warmup=False,
-                         p=None):
+    def get_contribution(self,
+                         name: str,
+                         tmin: Optional[TimestampType] = None,
+                         tmax: Optional[TimestampType] = None,
+                         freq: Optional[str] = None,
+                         warmup: Optional[float] = None,
+                         istress: Optional[int] = None,
+                         return_warmup: bool = False,
+                         p: Optional[ArrayLike] = None) -> Series:
         """Method to get the contribution of a stressmodel.
 
         Parameters
@@ -1165,7 +1246,7 @@ class Model:
         # use warmup
         if tmin:
             tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + \
-                        self.settings["time_offset"]
+                self.settings["time_offset"]
         else:
             tmin_warm = None
 
@@ -1183,7 +1264,7 @@ class Model:
 
         return contrib
 
-    def get_contributions(self, split=True, **kwargs):
+    def get_contributions(self, split: bool = True, **kwargs) -> List[Series]:
         """Method to get contributions of all stressmodels.
 
         Parameters
@@ -1216,7 +1297,10 @@ class Model:
                 contribs.append(contrib)
         return contribs
 
-    def get_transform_contribution(self, tmin=None, tmax=None):
+    def get_transform_contribution(
+            self,
+            tmin: Optional[TimestampType] = None,
+            tmax: Optional[TimestampType] = None) -> Series:
         """Method to get the contribution of a transform.
 
         Parameters
@@ -1240,8 +1324,11 @@ class Model:
         sim_org = ml.simulate(tmin=tmin, tmax=tmax)
         return sim - sim_org
 
-    def get_output_series(self, tmin=None, tmax=None, add_contributions=True,
-                          split=True):
+    def get_output_series(self,
+                          tmin: Optional[TimestampType] = None,
+                          tmax: Optional[TimestampType] = None,
+                          add_contributions: bool = True,
+                          split: bool = True) -> DataFrame:
         """Method to get all the modeled output time series from the Model.
 
         Parameters
@@ -1284,15 +1371,21 @@ class Model:
         df = [obs, sim, res, noise]
 
         if add_contributions:
-            contribs = self.get_contributions(tmin=tmin, tmax=tmax, split=split)
+            contribs = self.get_contributions(
+                tmin=tmin, tmax=tmax, split=split)
             for contrib in contribs:
                 df.append(contrib)
 
         df = concat(df, axis=1)
         return df
 
-    def _get_response(self, block_or_step, name, p=None, dt=None, add_0=False,
-                      **kwargs):
+    def _get_response(self,
+                      block_or_step: str,
+                      name: str,
+                      p: Optional[ArrayLike] = None,
+                      dt: Optional[float] = None,
+                      add_0: bool = False,
+                      **kwargs) -> Series:
         """Internal method to compute the block and step response.
 
         Parameters
@@ -1309,7 +1402,7 @@ class Model:
             timestep for the response function.
         add_0: bool, optional
             Add a zero at t=0.
-        kwargs
+        kwargs: dict: passed to rfunc.step() or rfunc.block()
 
         Returns
         -------
@@ -1347,7 +1440,12 @@ class Model:
         return response
 
     @get_stressmodel
-    def get_block_response(self, name, p=None, add_0=False, dt=None, **kwargs):
+    def get_block_response(self,
+                           name: str,
+                           p: Optional[ArrayLike] = None,
+                           add_0: bool = False,
+                           dt: Optional[float] = None,
+                           **kwargs) -> Series:
         """Method to obtain the block response for a stressmodel.
 
         The optimal parameters are used when available, initial otherwise.
@@ -1364,6 +1462,7 @@ class Model:
             Adds 0 at t=0 at the start of the response, defaults to False.
         dt: float, optional
             timestep for the response function.
+        kwargs: dict
 
         Returns
         -------
@@ -1375,7 +1474,12 @@ class Model:
                                   p=p, add_0=add_0, **kwargs)
 
     @get_stressmodel
-    def get_step_response(self, name, p=None, add_0=False, dt=None, **kwargs):
+    def get_step_response(self,
+                          name,
+                          p: Optional[ArrayLike] = None,
+                          add_0: bool = False,
+                          dt: Optional[float] = None,
+                          **kwargs) -> Series:
         """Method to obtain the step response for a stressmodel.
 
         The optimal parameters are used when available, initial otherwise.
@@ -1403,7 +1507,10 @@ class Model:
                                   p=p, add_0=add_0, **kwargs)
 
     @get_stressmodel
-    def get_response_tmax(self, name, p=None, cutoff=0.999):
+    def get_response_tmax(self,
+                          name: str,
+                          p: ArrayLike = None,
+                          cutoff: float = 0.999) -> float:
         """Method to get the tmax used for the response function.
 
         Parameters
@@ -1427,7 +1534,7 @@ class Model:
         >>> ml.get_response_tmax("recharge", cutoff=0.99)
         >>> 703
 
-        This means that after 1053 days, 99% of the response of the
+        This means that after 703 days, 99% of the response of the
         groundwater levels to a recharge pulse has taken place.
         """
         if self.stressmodels[name].rfunc is None:
@@ -1440,8 +1547,16 @@ class Model:
             return tmax
 
     @get_stressmodel
-    def get_stress(self, name, tmin=None, tmax=None, freq=None, warmup=None,
-                   istress=None, return_warmup=False, p=None):
+    def get_stress(
+            self,
+            name: str,
+            tmin: Optional[TimestampType] = None,
+            tmax: Optional[TimestampType] = None,
+            freq: Optional[str] = None,
+            warmup: Optional[float] = None,
+            istress: Optional[int] = None,
+            return_warmup: bool = False,
+            p: Optional[ArrayLike] = None) -> Union[Series, List[Series]]:
         """Method to obtain the stress(es) from the stressmodel.
 
         Parameters
@@ -1458,7 +1573,7 @@ class Model:
             String with the frequency the stressmodels are simulated. Must
             be one of the following: (D, h, m, s, ms, us, ns) or a multiple of
             that e.g. "7D".
-        warmup: float or int, optional
+        warmup: float, optional
             Warmup period (in Days).
         istress: int, optional
             When multiple stresses are present in a stressmodel, this keyword
@@ -1493,7 +1608,7 @@ class Model:
         # use warmup
         if tmin:
             tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + \
-                        self.settings["time_offset"]
+                self.settings["time_offset"]
         else:
             tmin_warm = None
 
@@ -1507,7 +1622,7 @@ class Model:
 
         return stress
 
-    def _get_file_info(self):
+    def _get_file_info(self) -> dict:
         """Internal method to get the file information.
 
         Returns
@@ -1531,7 +1646,10 @@ class Model:
 
         return file_info
 
-    def fit_report(self, output="basic", warnings=True, warnbounds=None):
+    def fit_report(self,
+                   output: str = "basic",
+                   warnings: bool = True,
+                   warnbounds: Optional[bool] = None) -> str:
         """Method that reports on the fit after a model is optimized.
 
         Parameters
@@ -1668,9 +1786,9 @@ class Model:
             # create message
             if len(msg) > 0:
                 msg = [
-                          f"\n\nWarnings! ({len(msg)})\n"
-                          f"{string.format('', fill='=', align='>', width=width)}"
-                      ] + msg
+                    f"\n\nWarnings! ({len(msg)})\n"
+                    f"{string.format('', fill='=', align='>', width=width)}"
+                ] + msg
                 warnings = "\n".join(msg)
             else:
                 warnings = ""
@@ -1681,7 +1799,7 @@ class Model:
 
         return report
 
-    def _check_response_tmax(self, cutoff=None):
+    def _check_response_tmax(self, cutoff: Optional[float] = None) -> DataFrame:
         """Internal method to check whether response tmax is smaller than
         calibration period.
 
@@ -1715,7 +1833,7 @@ class Model:
 
         return check
 
-    def _check_parameters_bounds(self):
+    def _check_parameters_bounds(self) -> Tuple[Series, Series]:
         """Internal method to check if the optimal parameters are close to pmin
         or pmax.
 
@@ -1759,7 +1877,7 @@ class Model:
 
         return lowerhit, upperhit
 
-    def to_dict(self, series=True, file_info=True):
+    def to_dict(self, series: bool = True, file_info: bool = True) -> dict:
         """Method to export a model to a dictionary.
 
         Parameters
@@ -1809,7 +1927,7 @@ class Model:
 
         return data
 
-    def to_file(self, fname, series=True, **kwargs):
+    def to_file(self, fname: str, series: Union[bool, str] = True, **kwargs) -> None:
         """Method to save the Pastas model to a file.
 
         Parameters
@@ -1837,7 +1955,7 @@ class Model:
         # Write the dicts to a file
         return dump(fname, data, **kwargs)
 
-    def copy(self, name=None):
+    def copy(self, name: Optional[str] = None) -> ModelType:
         """Method to copy a model.
 
         Parameters
@@ -1861,7 +1979,7 @@ class Model:
         ml.name = name
         return ml
 
-    def _check_stressmodel_compatibility(self):
+    def _check_stressmodel_compatibility(self) -> None:
         """Internal method to check if the stressmodels are compatible with the
         model."""
         for sm in self.stressmodels.values():

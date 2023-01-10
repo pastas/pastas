@@ -26,19 +26,23 @@ from pandas import DataFrame, Series, Timedelta
 from .decorators import njit, set_parameter
 from .utils import check_numba
 
+# Type Hinting
+from typing import Optional
+from pastas.typing import ArrayLike
+
 __all__ = ["NoiseModel", "ArmaModel"]
 
 
 class NoiseModelBase:
     _name = "NoiseModelBase"
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.nparam = 1
         self.name = "noise"
         self.parameters = DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "name"])
 
-    def set_init_parameters(self, oseries=None):
+    def set_init_parameters(self, oseries: Optional[Series] = None) -> None:
         if oseries is not None:
             pinit = np.diff(oseries.index.to_numpy()) / Timedelta("1D")
             pinit = np.median(pinit)
@@ -48,7 +52,7 @@ class NoiseModelBase:
                                               "noise")
 
     @set_parameter
-    def _set_initial(self, name, value):
+    def _set_initial(self, name: str, value: float) -> None:
         """Internal method to set the initial parameter value.
 
         Notes
@@ -58,7 +62,7 @@ class NoiseModelBase:
         self.parameters.loc[name, "initial"] = value
 
     @set_parameter
-    def _set_pmin(self, name, value):
+    def _set_pmin(self, name: str, value: float) -> None:
         """Internal method to set the minimum value of the noisemodel.
 
         Notes
@@ -68,7 +72,7 @@ class NoiseModelBase:
         self.parameters.loc[name, "pmin"] = value
 
     @set_parameter
-    def _set_pmax(self, name, value):
+    def _set_pmax(self, name: str, value: float) -> None:
         """Internal method to set the maximum parameter values.
 
         Notes
@@ -78,7 +82,7 @@ class NoiseModelBase:
         self.parameters.loc[name, "pmax"] = value
 
     @set_parameter
-    def _set_vary(self, name, value):
+    def _set_vary(self, name: str, value: float) -> None:
         """Internal method to set if the parameter is varied.
 
         Notes
@@ -87,11 +91,11 @@ class NoiseModelBase:
         """
         self.parameters.loc[name, "vary"] = value
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         return {"type": self._name}
 
     @staticmethod
-    def weights(res, p):
+    def weights(res, p) -> int:
         return 1
 
 
@@ -126,14 +130,14 @@ class NoiseModel(NoiseModelBase):
     """
     _name = "NoiseModel"
 
-    def __init__(self, norm=True):
+    def __init__(self, norm: bool = True) -> None:
         NoiseModelBase.__init__(self)
         self.norm = norm
         self.nparam = 1
         self.set_init_parameters()
 
     @staticmethod
-    def simulate(res, p):
+    def simulate(res: Series, p: ArrayLike) -> Series:
         """Simulate noise from the residuals.
 
         Parameters
@@ -155,7 +159,7 @@ class NoiseModel(NoiseModelBase):
                       * res.values[:-1])
         return Series(data=v, index=res.index, name="Noise")
 
-    def weights(self, res, p):
+    def weights(self, res: Series, p: ArrayLike) -> Series:
         """Method to calculate the weights for the noise.
 
         Parameters
@@ -163,8 +167,8 @@ class NoiseModel(NoiseModelBase):
         res: pandas.Series
             Pandas Series with the residuals to compute the weights for. The
             Series index must be a DatetimeIndex.
-        p: numpy.ndarray
-            numpy array with the parameters used in the noise model.
+        p: array_like
+            NumPy array with the parameters used in the noise model.
 
         Returns
         -------
@@ -178,7 +182,7 @@ class NoiseModel(NoiseModelBase):
         .. math:: w = 1 / sqrt((1 - exp(-2 \\Delta t / \\alpha)))
 
         which are then normalized so that sum(w) = len(res).
-Ò
+
         """
         alpha = p[0]
         # large for first measurement
@@ -214,13 +218,13 @@ class ArmaModel(NoiseModelBase):
     """
     _name = "ArmaModel"
 
-    def __init__(self):
+    def __init__(self) -> None:
         check_numba()
         NoiseModelBase.__init__(self)
         self.nparam = 2
         self.set_init_parameters()
 
-    def set_init_parameters(self, oseries=None):
+    def set_init_parameters(self, oseries: Series = None) -> None:
         if oseries is not None:
             pinit = np.diff(oseries.index.to_numpy()) / Timedelta("1D")
             pinit = np.median(pinit)
@@ -231,7 +235,7 @@ class ArmaModel(NoiseModelBase):
         self.parameters.loc["noise_beta"] = (1., -np.inf, np.inf, True,
                                              "noise")
 
-    def simulate(self, res, p):
+    def simulate(self, res: Series, p: ArrayLike) -> Series:
         alpha = p[0]
         beta = p[1]
 
@@ -242,7 +246,8 @@ class ArmaModel(NoiseModelBase):
 
     @staticmethod
     @njit
-    def calculate_noise(res, odelt, alpha, beta):
+    def calculate_noise(res: ArrayLike, odelt: ArrayLike, alpha: float,
+                        beta: float) -> ArrayLike:
         # Create an array to store the noise
         a = np.zeros_like(res)
         a[0] = res[0]
@@ -255,5 +260,5 @@ class ArmaModel(NoiseModelBase):
         # We have to loop through each value
         for i in range(1, res.size):
             a[i] = res[i] - res[i - 1] * np.exp(-odelt[i - 1] / alpha) - \
-                   a[i - 1] * pm * np.exp(-odelt[i - 1] / np.abs(beta))
+                a[i - 1] * pm * np.exp(-odelt[i - 1] / np.abs(beta))
         return a

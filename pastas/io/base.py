@@ -3,14 +3,19 @@
 from importlib import import_module
 from logging import getLogger
 from os import path
+from packaging import version
+from numpy import log
 
 import pastas as ps
 from pandas import to_numeric
 
+# Type Hinting
+from pastas.typing import Model
+
 logger = getLogger(__name__)
 
 
-def load(fname, **kwargs):
+def load(fname: str, **kwargs) -> Model:
     """Method to load a Pastas Model from file.
 
     Parameters
@@ -42,14 +47,18 @@ def load(fname, **kwargs):
 
     ml = _load_model(data)
 
-    logger.info("Pastas Model from file %s successfully loaded. This file "
-                "was created with Pastas %s. Your current version of Pastas "
-                "is: %s", fname, data["file_info"]["pastas_version"],
-                ps.__version__)
+    logger.info(
+        "Pastas Model from file %s successfully loaded. This file "
+        "was created with Pastas %s. Your current version of Pastas "
+        "is: %s",
+        fname,
+        data["file_info"]["pastas_version"],
+        ps.__version__,
+    )
     return ml
 
 
-def _load_model(data):
+def _load_model(data: dict) -> Model:
     """Internal method to create a model from a dictionary."""
     # Create model
     oseries = ps.TimeSeries(**data["oseries"])
@@ -74,8 +83,9 @@ def _load_model(data):
     else:
         noise = False
 
-    ml = ps.Model(oseries, constant=constant, noisemodel=noise, name=name,
-                  metadata=metadata)
+    ml = ps.Model(
+        oseries, constant=constant, noisemodel=noise, name=name, metadata=metadata
+    )
 
     if "settings" in data.keys():
         ml.settings.update(data["settings"])
@@ -86,19 +96,35 @@ def _load_model(data):
     for name, ts in data["stressmodels"].items():
         # Deal with old StressModel2 files for version 0.22.0. Remove in 0.23.0.
         if ts["stressmodel"] == "StressModel2":
-            logger.warning("StressModel2 is removed since Pastas 0.22.0 and "
-                           "is replaced by the RechargeModel using a Linear "
-                           "recharge model. Make sure to save this file "
-                           "again using Pastas version 0.22.0 as this file "
-                           "cannot be loaded in newer Pastas versions. This "
-                           "will automatically update your model to the newer "
-                           "RechargeModel stress model.")
+            logger.warning(
+                "StressModel2 is removed since Pastas 0.22.0 and "
+                "is replaced by the RechargeModel using a Linear "
+                "recharge model. Make sure to save this file "
+                "again using Pastas version 0.22.0 as this file "
+                "cannot be loaded in newer Pastas versions. This "
+                "will automatically update your model to the newer "
+                "RechargeModel stress model."
+            )
             ts["stressmodel"] = "RechargeModel"
             ts["recharge"] = "Linear"
             ts["prec"] = ts["stress"][0]
             ts["evap"] = ts["stress"][1]
             ts.pop("stress")
             ts.pop("up")
+
+        # Deal with old parameter value b in HantushWellModel: b_new = np.log(b_old)
+        if ((ts["stressmodel"] == "WellModel") and
+            (version.parse(data["file_info"]["pastas_version"]) <
+             version.parse("0.22.0"))):
+            logger.warning("The value of parameter 'b' in HantushWellModel"
+                           "was modified in 0.22.0: b_new = log(b_old). The value of "
+                           "'b' is automatically updated on load.")
+            wnam = ts["name"]
+            for pcol in ["initial", "optimal", "pmin", "pmax"]:
+                if wnam + "_b" in data["parameters"].index:
+                    if data["parameters"].loc[wnam + "_b", pcol] > 0:
+                        data["parameters"].loc[wnam + "_b", pcol] = \
+                            log(data["parameters"].loc[wnam + "_b", pcol])
 
         stressmodel = getattr(ps.stressmodels, ts["stressmodel"])
         ts.pop("stressmodel")
@@ -109,7 +135,7 @@ def _load_model(data):
             ts["rfunc"] = getattr(ps.rfunc, ts["rfunc"])(**rfunc_kwargs)
         if "recharge" in ts.keys():
             recharge_kwargs = {}
-            if 'recharge_kwargs' in ts:
+            if "recharge_kwargs" in ts:
                 recharge_kwargs = ts.pop("recharge_kwargs")
             ts["recharge"] = getattr(
                 ps.recharge, ts["recharge"])(**recharge_kwargs)
@@ -155,7 +181,7 @@ def _load_model(data):
     return ml
 
 
-def dump(fname, data, **kwargs):
+def dump(fname: str, data: dict, **kwargs):
     """Method to save a pastas-model to a file.
 
     Parameters

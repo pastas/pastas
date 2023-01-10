@@ -16,9 +16,9 @@ from .read import (read_dino, read_dino_level_gauge, read_knmi, read_meny,
 from .rfunc import (DoubleExponential, Exponential, FourParam, Gamma, Hantush,
                     HantushWellModel, Kraijenhoff, One, Polder, Spline)
 from .solver import LeastSquares, LmfitSolve
-from .stressmodels import (ChangeModel, Constant, LinearTrend, RechargeModel,
-                           ReservoirModel, StepModel, StressModel,
-                           TarsoModel, WellModel)
+from .stressmodels import (Constant, LinearTrend, RechargeModel, StepModel,
+                           StressModel, TarsoModel, WellModel, ChangeModel,
+                           ReservoirModel, StressModel2)
 from .timeseries import TimeSeries
 from .transform import ThresholdTransform
 from .utils import initialize_logger, set_log_level, show_versions

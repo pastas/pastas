@@ -14,19 +14,23 @@ To be added
 
 import numpy as np
 from numpy import float64
-from scipy.integrate import solve_ivp # only used in simulateold
-from pandas import DataFrame
+# from scipy.integrate import solve_ivp  # only used in simulateold
+from pandas import DataFrame, Series
 from pastas.decorators import njit
+
+# Type Hinting
+from pastas.typing import ArrayLike
+
 
 class ReservoirBase:
     """Base class for reservoir classes."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.temp = False
         self.nparam = 0
 
     @staticmethod
-    def get_init_parameters(name="recharge"):
+    def get_init_parameters(name: str = "recharge") -> DataFrame:
         """Method to obtain the initial parameters.
 
         Parameters
@@ -43,7 +47,12 @@ class ReservoirBase:
             columns=["initial", "pmin", "pmax", "vary", "name"])
         return parameters
 
-    def simulate(self, prec, evap, p, dt=1.0, **kwargs):
+    def simulate(self,
+                 prec: Series,
+                 evap: Series,
+                 p: ArrayLike,
+                 dt: float = 1.0,
+                 **kwargs) -> ArrayLike:
         pass
 
 
@@ -60,28 +69,28 @@ class Reservoir1(ReservoirBase):
     """
     _name = "Reservoir1"
 
-    def __init__(self, initialhead):
+    def __init__(self, initialhead: float) -> None:
         ReservoirBase.__init__(self)
         self.nparam = 4
         self.initialhead = initialhead
 
-    def get_init_parameters(self, name="reservoir"):
+    def get_init_parameters(self, name: str = "reservoir") -> DataFrame:
         parameters = DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "name"])
         parameters.loc[name + "_S"] = (0.1, 0.001, 1, True, name)
         parameters.loc[name + "_c"] = (100, 1, 5000, True, name)
         dmean = self.initialhead
-        parameters.loc[name + "_d"] = (dmean, dmean - 10, 
+        parameters.loc[name + "_d"] = (dmean, dmean - 10,
                                        dmean + 10, True, name)
         parameters.loc[name + "_f"] = (-1.0, -2.0, 0.0, True, name)
         return parameters
-    
-    def simulate(self, prec, evap, p):
+
+    def simulate(self, prec: Series, evap: Series, p: ArrayLike) -> ArrayLike:
         return self.simulatehead(prec.values, evap.values, p)
 
     @staticmethod
     @njit
-    def simulatehead(prec, evap, p):
+    def simulatehead(prec: ArrayLike, evap: ArrayLike, p: ArrayLike) -> ArrayLike:
         """Simulate the head in the reservoir
 
         Parameters
@@ -109,7 +118,7 @@ class Reservoir1(ReservoirBase):
         return h[1:]
 
 #     def simulateold(self, prec, evap, p, **kwargs):
-#         """Implementation using solve_ivp - too slow and 
+#         """Implementation using solve_ivp - too slow and
 
 #         Parameters
 #         ----------
@@ -129,11 +138,11 @@ class Reservoir1(ReservoirBase):
 #         tmax = len(prec)
 #         eps = 1e-6
 #         t = np.linspace(1 + eps, tmax - eps, tmax)
-#         path2 = solve_ivp(self.dhdt, (0, t[-1]), y0=[d], t_eval=t, rtol=1e-4, 
+#         path2 = solve_ivp(self.dhdt, (0, t[-1]), y0=[d], t_eval=t, rtol=1e-4,
 #                           max_step=1, method='RK23', args=(prec, evap, p))
 #         h = path2.y[0]
 #         return h
-    
+
 #     def dhdt(self, t, h, prec, evap, p):
 #         S, c, d, f = p
 #         #print(t, int(t), int(t))
@@ -141,6 +150,7 @@ class Reservoir1(ReservoirBase):
 #         rv = R / S - (h[0] - d) / (c * S)
 #         #rv += -expit(100 * (h[0] - 19.6)) * (h[0] - 19.6) / 20
 #         return rv
+
 
 class Reservoir2(ReservoirBase):
     """Single reservoir with outflow at two heights
@@ -155,30 +165,30 @@ class Reservoir2(ReservoirBase):
     """
     _name = "Reservoir2"
 
-    def __init__(self, initialhead):
+    def __init__(self, initialhead: float) -> None:
         ReservoirBase.__init__(self)
         self.nparam = 6
         self.initialhead = initialhead
 
-    def get_init_parameters(self, name="reservoir"):
+    def get_init_parameters(self, name: str = "reservoir") -> DataFrame:
         parameters = DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "name"])
         parameters.loc[name + "_S"] = (0.1, 0.001, 1, True, name)
         parameters.loc[name + "_c"] = (100, 1, 5000, True, name)
         dmean = self.initialhead
-        parameters.loc[name + "_d"] = (dmean, dmean - 10, 
+        parameters.loc[name + "_d"] = (dmean, dmean - 10,
                                        dmean + 10, True, name)
         parameters.loc[name + "_f"] = (-1.0, -2.0, 0.0, True, name)
         parameters.loc[name + "_c2"] = (100, 1, 1000, True, name)
         parameters.loc[name + "_deld"] = (0.01, 0.001, 10, True, name)
         return parameters
-    
-    def simulate(self, prec, evap, p):
+
+    def simulate(self, prec: Series, evap: Series, p: ArrayLike) -> ArrayLike:
         return self.simulatehead(prec.values, evap.values, p)
 
     @staticmethod
     @njit
-    def simulatehead(prec, evap, p):
+    def simulatehead(prec: ArrayLike, evap: ArrayLike, p: ArrayLike) -> ArrayLike:
         """Simulate the head in the reservoir
 
         Parameters
