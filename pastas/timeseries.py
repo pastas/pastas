@@ -26,35 +26,33 @@ class TimeSeries:
 
     Parameters
     ----------
-    series: pandas.Series or pastas.timeseries.TimeSeries
-        Pandas Series with time indices and values or a Pastas.TimeSeries
-        instance. If the latter is provided, a new TimeSeries.
+    series: pandas.Series
+        pandas.Series with pandas.DatetimeIndex.
     name: str, optional
-        String with the name of the time series, if None is provided,
-        pastas will try to derive the name from the series.
+        String with the name of the time series, if None is provided, pastas will try
+        to derive the name from the series.
     settings: str or dict, optional
-        String with the name of one of the predefined settings (obtained
-        through ps.TimeSeries._predefined_settings.) or a dictionary with the
-        settings to be applied. This does not have to include all the
-        settings arguments.
+        String with the name of one of the predefined settings (obtained through
+        ps.TimeSeries._predefined_settings.) or a dictionary with the settings to be
+        applied. This does not have to include all the settings arguments.
     metadata: dict, optional
         Dictionary with metadata of the time series.
     freq_original: str, optional
-        By providing a frequency string here, a frequency can be forced on the
-        time series if it can not be inferred with pd.infer_freq.
+        By providing a frequency string here, a frequency can be forced on the time
+        series if it can not be inferred with pd.infer_freq.
     **kwargs: optional
-        Any keyword arguments that are provided but are not listed will be
-        passed as additional settings.
+        Any keyword arguments that are provided but are not listed will be passed as
+        additional settings.
 
     Returns
     -------
-    series: pastas.timeseries.TimeSeries
+    series: pastas.TimeSeries
         Returns a pastas.TimeSeries object.
 
     Examples
     --------
-    To obtain the predefined TimeSeries settings, you can run the following
-    line of code:
+    To obtain the predefined TimeSeries settings, you can run the following line of
+    code:
 
     >>> ps.rcParams["timeseries"]
 
@@ -76,6 +74,11 @@ class TimeSeries:
         **kwargs,
     ) -> None:
         if isinstance(series, TimeSeries):
+
+            logger.warning("TimeSeries are no longer allowed as input for to create "
+                           "new TimeSeries objects. Please use the original "
+                           "pandas.Series object and provide the settings and name.")
+
             # Copy all the series
             self._series_original = series.series_original.copy()
             self._series_validated = series.series_validated.copy()
@@ -191,9 +194,8 @@ class TimeSeries:
     @series.setter
     def series(self, value):
         raise AttributeError(
-            "You cannot set series by yourself, as it is "
-            "calculated from series_original. Please set "
-            "series_original to update the series."
+            "You cannot set series by yourself, as it is calculated from "
+            "series_original. Please set series_original to update the series."
         )
 
     @property
@@ -203,9 +205,8 @@ class TimeSeries:
     @series_validated.setter
     def series_validated(self, value):
         raise AttributeError(
-            "You cannot set series_validated by yourself, as"
-            " it is calculated from series_original. Please"
-            " set series_original to update the series."
+            "You cannot set series_validated by yourself, as it is calculated from "
+            "series_original. Please set series_original to update the series."
         )
 
     def update_series(self, force_update: bool = False, **kwargs) -> None:
@@ -214,47 +215,42 @@ class TimeSeries:
         Parameters
         ----------
         force_update: bool, optional
-            argument that is used to force an update, even when no changes
-            are found. Internally used by the __init__ method. Default is
-            False.
+            argument that is used to force an update, even when no changes are found.
+            Internally used by the __init__ method. Default is False.
         freq: str, optional
-            String representing the desired frequency of the time series. Must
-            be one of the following: (D, h, m, s, ms, us, ns) or a multiple of
-            that e.g. "7D".
+            String representing the desired frequency of the time series. Must be one
+            of the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
         sample_up: str or float, optional
-            String with the method to use when the frequency is increased (
-            e.g. Weekly to daily). Possible values are: "backfill", "bfill",
-            "pad", "ffill", "mean", "interpolate", "divide" or a float value
-            to fill the gaps.
+            String with the method to use when the frequency is increased (e.g.,
+            Weekly to daily). Possible values are: "backfill", "bfill", "pad",
+            "ffill", "mean", "interpolate", "divide" or a float value to fill the gaps.
         sample_down: str, optional
-            String with the method to use when the frequency decreases
-            (e.g. from daily to weekly values). Possible values are: "mean",
-            "drop", "sum", "min", "max".
+            String with the method to use when the frequency decreases (e.g., from
+            daily to weekly values). Possible values are: "mean", "drop", "sum",
+            "min", "max".
         fill_nan: str or float, optional
-            Method to use when there ar nan-values in the time series.
-            Possible values are: "mean", "drop", "interpolate" (default) or a
-            float value.
+            Method to use when there ar nan-values in the time series. Possible
+            values are: "mean", "drop", "interpolate" (default) or a float value.
         fill_before: str or float, optional
             Method used to extend a time series before any measurements are
             available. possible values are: "mean" or a float value.
         fill_after: str or float, optional
-            Method used to extend a time series after any measurements are
-            available. Possible values are: "mean" or a float value.
+            Method used to extend a time series after any measurements are available.
+            Possible values are: "mean" or a float value.
         tmin: str or pandas.Timestamp, optional
-            String that can be converted to, or a Pandas Timestamp with the
-            minimum time of the series.
+            String that can be converted to, or a Pandas Timestamp with the minimum
+            time of the series.
         tmax: str or pandas.Timestamp, optional
-            String that can be converted to, or a Pandas Timestamp with the
-            maximum time of the series.
+            String that can be converted to, or a Pandas Timestamp with the maximum
+            time of the series.
         norm: str or float, optional
-            String with the method to normalize the time series with.
-            Possible values are: "mean" or "median", "min", "max" or a float
-            value.
+            String with the method to normalize the time series with. Possible values
+            are: "mean" or "median", "min", "max" or a float value.
 
         Notes
         -----
-        The method will validate if any of the settings is changed to
-        determine if the series need to be updated.
+        The method will validate if any of the settings is changed to determine if
+        the series need to be updated.
         """
         if self._update_settings(**kwargs) or force_update:
             tmin = self.settings["tmin"]
@@ -291,12 +287,12 @@ class TimeSeries:
         Parameters
         ----------
         series: pandas.Series
-            Pandas.series object containing the series time series.
+            Pandas.Series object containing the series time series.
 
         Returns
         -------
         series: pandas.Series
-            The validated series as pd.Series
+            The validated series as pd.Series.
 
         Notes
         -----
@@ -320,35 +316,35 @@ class TimeSeries:
         if not pd.api.types.is_datetime64_dtype(series.index):
             series.index = pd.to_datetime(series.index)
             logger.info(
-                "Time series index for %s updated to dtype " "datetime64.", self.name
+                "Time series index for %s updated to dtype datetime64.", self.name
             )
 
         # 3. Make sure the index is increasing (also works for irregular dt)
         if not series.index.is_monotonic_increasing:
             series = series.sort_index()
             logger.info(
-                "Time series index for %s sorted to have time " "increasing.", self.name
+                "Time series index for %s sorted to have time increasing.", self.name
             )
 
         # 4. Drop nan-values at the beginning and end of the time series
         if series.first_valid_index() != series.index[0]:
             series = series.loc[series.first_valid_index() :].copy(deep=True)
             logger.info(
-                "Nan-values were removed at the start of the time " "series %s.",
+                "Nan-values were removed at the start of the time series %s.",
                 self.name,
             )
 
         if series.last_valid_index() != series.index[-1]:
             series = series.loc[: series.last_valid_index()].copy(deep=True)
             logger.info(
-                "Nan-values were removed at the end of the time " "series %s.",
+                "Nan-values were removed at the end of the time series %s.",
                 self.name,
             )
 
         # 5. Find the frequency of the time series, always report a message
         if self.freq_original:
             logger.info(
-                "User provided frequency for time series %s: freq=" "%s",
+                "User provided frequency for time series %s: freq=%s",
                 self.name,
                 self.freq_original,
             )
@@ -361,23 +357,22 @@ class TimeSeries:
             )
         elif self.settings["fill_nan"] != "drop":
             logger.info(
-                "Cannot determine frequency of series %s: freq=None. "
-                "Resample settings are ignored and "
-                "timestep_weighted_resample is used.",
+                "Cannot determine frequency of series %s: freq=None. Resample "
+                "settings are ignored and timestep_weighted_resample is used.",
                 self.name,
             )
         else:
             logger.info(
-                "Cannot determine frequency of series %s: freq=None. "
-                "The time series is irregular.",
+                "Cannot determine frequency of series %s: freq=None. The time series "
+                "is irregular.",
                 self.name,
             )
 
         # 6. Handle duplicate indices
         if not series.index.is_unique:
             logger.warning(
-                "duplicate time-indexes were found in the time "
-                "series %s. Values were averaged.",
+                "duplicate time-indexes were found in the time series %s. Values were "
+                "averaged.",
                 self.name,
             )
             grouped = series.groupby(level=0)
@@ -446,8 +441,8 @@ class TimeSeries:
         return series
 
     def _sample_up(self, series: Series) -> Series:
-        """Resample the time series when the frequency increases (e.g. from
-        weekly to daily values)."""
+        """Resample the time series when the frequency increases (e.g. from weekly to
+        daily values)."""
         method = self.settings["sample_up"]
         freq = self.settings["freq"]
 
@@ -471,8 +466,8 @@ class TimeSeries:
                 series.fillna(method, inplace=True)
             else:
                 logger.warning(
-                    "Time Series %s: User-defined option for  "
-                    "sample_up %s is not supported",
+                    "Time Series %s: User-defined option for sample_up %s is not "
+                    "supported",
                     self.name,
                     method,
                 )
@@ -482,13 +477,13 @@ class TimeSeries:
         return series
 
     def _sample_down(self, series: Series) -> Series:
-        """Resample the time series when the frequency decreases (e.g. from
-        daily to weekly values).
+        """Resample the time series when the frequency decreases (e.g. from daily to
+        weekly values).
 
         Notes
         -----
-        make sure the labels are still at the end of each period, and
-        data at the right side of the bucket is included (see
+        make sure the labels are still at the end of each period, and data at the
+        right-side of the bucket is included (see
         http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.resample.html)
         """
         method = self.settings["sample_down"]
@@ -520,8 +515,8 @@ class TimeSeries:
             series = series.resample(freq, **kwargs).max()
         else:
             logger.warning(
-                "Time Series %s: User-defined option for sample "
-                "down %s is not supported",
+                "Time Series %s: User-defined option for sample down %s is not "
+                "supported",
                 self.name,
                 method,
             )
@@ -577,8 +572,8 @@ class TimeSeries:
                 series.fillna(method, inplace=True)
             else:
                 logger.warning(
-                    "Time Series %s: User-defined option for "
-                    "fill_nan %s is not supported.",
+                    "Time Series %s: User-defined option for fill_nan %s is not "
+                    "supported.",
                     self.name,
                     method,
                 )
@@ -588,8 +583,7 @@ class TimeSeries:
             series = series.dropna()
         if n > 0:
             logger.info(
-                "Time Series %s: %s nan-value(s) was/were found and "
-                "filled with: %s.",
+                "Time Series %s: %s nan-value(s) was/were found and filled with: %s.",
                 self.name,
                 n,
                 method,
@@ -671,16 +665,16 @@ class TimeSeries:
             elif isinstance(method, float):
                 series.fillna(method, inplace=True)
                 logger.info(
-                    "Time Series %s was extended in the future to %s "
-                    "by adding %s values.",
+                    "Time Series %s was extended in the future to %s by adding %s "
+                    "values.",
                     self.name,
                     series.index.max(),
                     method,
                 )
             else:
                 logger.info(
-                    "Time Series %s: User-defined option for "
-                    "fill_after %s is not supported",
+                    "Time Series %s: User-defined option for fill_after %s is not "
+                    "supported",
                     self.name,
                     method,
                 )
@@ -705,8 +699,8 @@ class TimeSeries:
             series = series.subtract(method)
         else:
             logger.warning(
-                "Time Series %s: Selected method %s to normalize "
-                "the time series is not supported",
+                "Time Series %s: Selected method %s to normalize the time series is "
+                "not supported",
                 self.name,
                 method,
             )
@@ -763,3 +757,80 @@ class TimeSeries:
         else:
             ax = self.series.plot(**kwargs)
         return ax
+
+
+def validate_timeseries(series):
+    """Method to validate user-provided input time series.
+
+    Parameters
+    ----------
+    series: pandas.Series
+        Pandas.Series object containing the series time series.
+
+    Notes
+    -----
+    The Series are validated for the following cases:
+
+    1. Make sure the values are floats
+    2. Make sure the index is a DatetimeIndex
+    3. Make sure the indices are datetime64
+    4. Make sure the index is monotonically increasing
+    5. Make sure the time series has equidistant time steps
+    6. Make sure there are no duplicate indices
+    7. Make sure the time series has no nan-values
+
+    If any of these checks are not passed the method will throw an error that needs
+    to be fixed by the user.
+
+    Examples
+    --------
+
+    >>> ps.validate_timeseries(series)
+
+    """
+    name = series.name
+
+    # 1. Make sure the values are floats
+    if not pd.api.types.is_float_dtype(series):
+        logger.error("Values of time series %s are not dtype=float.", name)
+
+    # 2. Make sure the index is a DatetimeIndex
+    if not isinstance(series.index, pd.DatetimeIndex):
+        logger.error("Index os series %s is not a pandas.DatetimeIndex.", name)
+
+    # 3. Make sure the indices are datetime64
+    if not pd.api.types.is_datetime64_dtype(series.index):
+        logger.error("Indices os series %s are not datetime64.", name)
+
+    # 4. Make sure the index is monotonically increasing
+    if not series.index.is_monotonic_increasing:
+        logger.error(
+            "The time-indices of series %s are not monotonically "
+            "increasing. Try to use `series.sort_index()` to fix it.",
+            name,
+        )
+
+    # 5. Make sure the time series has equidistant time steps
+    if not pd.infer_freq(series.index):
+        logger.error(
+            "The frequency of the index of time series %s could not be "
+            "inferred. Make sure the time series has regular time steps.",
+            name,
+        )
+
+    # 6. Make sure there are no duplicate indices
+    if not series.index.is_unique:
+        logger.error(
+            "duplicate time-indexes were found in the time series %s. Make "
+            "sure there are no dubplicate indices. For example by "
+            "`grouped = series.groupby(level=0); series = grouped.mean()`",
+            name,
+        )
+
+    # 7. Make sure the time series has no nan-values
+    if series.hasnans:
+        logger.error(
+            "The time series %s has nan-values. Please fill or remove all "
+            "the nan-values from the time series. For example by using "
+            "series.fillna(0.0)."
+        )
