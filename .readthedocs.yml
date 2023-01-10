@@ -29,7 +29,9 @@ sphinx:
 python:
   system_packages: true
   install:
-    - requirements: requirements.rtd.txt
-    - requirements: requirements.ci.txt
     - method: pip
       path: .
+      extra_requirements:
+        - rtd
+        - ci
+
