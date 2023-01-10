@@ -18,7 +18,7 @@ import re
 import requests
 from datetime import date
 from matplotlib import use
-from pastas.version import get_pastas_version
+from pastas.version import __version__
 
 from dataclasses import dataclass, field
 # sphinx
@@ -29,8 +29,6 @@ import sphinxcontrib.bibtex.plugin
 year = date.today().strftime("%Y")
 
 use('agg')
-
-__version__ = get_pastas_version()
 
 
 # If extensions (or modules to document with autodoc) are in another directory,
