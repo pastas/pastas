@@ -27,14 +27,14 @@ inside = (obs > df.loc[obs.index, 0.025]) & (obs < df.loc[obs.index, 0.975])
 print('percentage inside:', np.count_nonzero(inside) / len(inside) * 100)
 
 # # Plot some results
-axs = ml.plots.results(tmin="2010", tmax="2015", figsize=(10, 6))
-axs[0].fill_between(df.index, df.iloc[:, 0], df.iloc[:, 1], color="gray",
+axes = ml.plots.results(tmin="2010", tmax="2015", figsize=(10, 6))
+axes[0].fill_between(df.index, df.iloc[:, 0], df.iloc[:, 1], color="gray",
                     zorder=-1, alpha=0.5, label="95% Prediction interval")
-axs[0].legend(ncol=3)
+axes[0].legend(ncol=3)
 df = ml.fit.ci_contribution("recharge", tmin="2010", tmax="2015")
-axs[2].fill_between(df.index, df.iloc[:, 0], df.iloc[:, 1], color="gray",
+axes[2].fill_between(df.index, df.iloc[:, 0], df.iloc[:, 1], color="gray",
                     zorder=-1, alpha=0.5, label="95% confidence")
 
 df = ml.fit.ci_step_response("recharge", alpha=0.05, n=1000)
-axs[3].fill_between(df.index, df.iloc[:, 0], df.iloc[:, 1], color="gray",
+axes[3].fill_between(df.index, df.iloc[:, 0], df.iloc[:, 1], color="gray",
                     zorder=-1, alpha=0.5, label="95% confidence")
