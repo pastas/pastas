@@ -20,15 +20,16 @@ See Also
 pastas.model.Model.add_noisemodel
 """
 
+# Type Hinting
+from typing import Optional
+
 import numpy as np
 from pandas import DataFrame, Series, Timedelta
 
+from pastas.typing import ArrayLike
+
 from .decorators import njit, set_parameter
 from .utils import check_numba
-
-# Type Hinting
-from typing import Optional
-from pastas.typing import ArrayLike
 
 __all__ = ["NoiseModel", "ArmaModel"]
 
@@ -39,8 +40,7 @@ class NoiseModelBase:
     def __init__(self) -> None:
         self.nparam = 1
         self.name = "noise"
-        self.parameters = DataFrame(
-            columns=["initial", "pmin", "pmax", "vary", "name"])
+        self.parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
 
     def set_init_parameters(self, oseries: Optional[Series] = None) -> None:
         if oseries is not None:
@@ -48,8 +48,7 @@ class NoiseModelBase:
             pinit = np.median(pinit)
         else:
             pinit = 14.0
-        self.parameters.loc["noise_alpha"] = (pinit, 1e-5, 5000.0, True,
-                                              "noise")
+        self.parameters.loc["noise_alpha"] = (pinit, 1e-5, 5000.0, True, "noise")
 
     @set_parameter
     def _set_initial(self, name: str, value: float) -> None:
@@ -126,8 +125,8 @@ class NoiseModel(NoiseModelBase):
     the noise is the residual ($v(t=0=r(t=0)$). First weight is
     1 / sig_residuals (i.e., delt = infty). Normalization of weights as in
     :cite:t:`von_asmuth_modeling_2005`, optional.
-
     """
+
     _name = "NoiseModel"
 
     def __init__(self, norm: bool = True) -> None:
@@ -155,8 +154,9 @@ class NoiseModel(NoiseModelBase):
         """
         alpha = p[0]
         odelt = np.diff(res.index.to_numpy()) / Timedelta("1D")
-        v = np.append(res.values[0], res.values[1:] - np.exp(-odelt / alpha)
-                      * res.values[:-1])
+        v = np.append(
+            res.values[0], res.values[1:] - np.exp(-odelt / alpha) * res.values[:-1]
+        )
         return Series(data=v, index=res.index, name="Noise")
 
     def weights(self, res: Series, p: ArrayLike) -> Series:
@@ -182,12 +182,10 @@ class NoiseModel(NoiseModelBase):
         .. math:: w = 1 / sqrt((1 - exp(-2 \\Delta t / \\alpha)))
 
         which are then normalized so that sum(w) = len(res).
-
         """
         alpha = p[0]
         # large for first measurement
-        odelt = np.append(1e12, np.diff(res.index.to_numpy()) /
-                          Timedelta("1D"))
+        odelt = np.append(1e12, np.diff(res.index.to_numpy()) / Timedelta("1D"))
         exp = np.exp(-2.0 / alpha * odelt)  # Twice as fast as 2*odelt/alpha
         w = 1 / np.sqrt(1.0 - exp)  # weights of noise, not noise^2
         if self.norm:
@@ -214,8 +212,8 @@ class ArmaModel(NoiseModelBase):
     --------
     This model has only been tested on regular time steps and should not be
     used for irregular time steps yet.
-
     """
+
     _name = "ArmaModel"
 
     def __init__(self) -> None:
@@ -230,10 +228,8 @@ class ArmaModel(NoiseModelBase):
             pinit = np.median(pinit)
         else:
             pinit = 14.0
-        self.parameters.loc["noise_alpha"] = (pinit, 1e-9, 5000.0, True,
-                                              "noise")
-        self.parameters.loc["noise_beta"] = (1., -np.inf, np.inf, True,
-                                             "noise")
+        self.parameters.loc["noise_alpha"] = (pinit, 1e-9, 5000.0, True, "noise")
+        self.parameters.loc["noise_beta"] = (1.0, -np.inf, np.inf, True, "noise")
 
     def simulate(self, res: Series, p: ArrayLike) -> Series:
         alpha = p[0]
@@ -246,8 +242,9 @@ class ArmaModel(NoiseModelBase):
 
     @staticmethod
     @njit
-    def calculate_noise(res: ArrayLike, odelt: ArrayLike, alpha: float,
-                        beta: float) -> ArrayLike:
+    def calculate_noise(
+        res: ArrayLike, odelt: ArrayLike, alpha: float, beta: float
+    ) -> ArrayLike:
         # Create an array to store the noise
         a = np.zeros_like(res)
         a[0] = res[0]
@@ -259,6 +256,9 @@ class ArmaModel(NoiseModelBase):
 
         # We have to loop through each value
         for i in range(1, res.size):
-            a[i] = res[i] - res[i - 1] * np.exp(-odelt[i - 1] / alpha) - \
-                a[i - 1] * pm * np.exp(-odelt[i - 1] / np.abs(beta))
+            a[i] = (
+                res[i]
+                - res[i - 1] * np.exp(-odelt[i - 1] / alpha)
+                - a[i - 1] * pm * np.exp(-odelt[i - 1] / np.abs(beta))
+            )
         return a

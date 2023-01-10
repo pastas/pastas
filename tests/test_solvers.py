@@ -1,17 +1,20 @@
-import pastas as ps
 from pandas import read_csv
+
+import pastas as ps
 
 
 def create_model():
-    obs = read_csv("tests/data/obs.csv", index_col=0,
-                   parse_dates=True).squeeze("columns")
-    rain = read_csv("tests/data/rain.csv", index_col=0,
-                    parse_dates=True).squeeze("columns")
-    evap = read_csv("tests/data/evap.csv", index_col=0,
-                    parse_dates=True).squeeze("columns")
+    obs = read_csv("tests/data/obs.csv", index_col=0, parse_dates=True).squeeze(
+        "columns"
+    )
+    rain = read_csv("tests/data/rain.csv", index_col=0, parse_dates=True).squeeze(
+        "columns"
+    )
+    evap = read_csv("tests/data/evap.csv", index_col=0, parse_dates=True).squeeze(
+        "columns"
+    )
     ml = ps.Model(obs, name="Test_Model")
-    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential,
-                          name='recharge')
+    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential, name="recharge")
     ml.add_stressmodel(sm)
     return ml
 

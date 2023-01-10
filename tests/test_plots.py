@@ -1,18 +1,16 @@
 from pandas import read_csv
-from pastas.plots import TrackSolve, compare
-import pastas as ps
 
-rain = read_csv("tests/data/rain.csv", index_col=0,
-                parse_dates=True).squeeze("columns")
-evap = read_csv("tests/data/evap.csv", index_col=0,
-                parse_dates=True).squeeze("columns")
-obs = read_csv("tests/data/obs.csv", index_col=0,
-               parse_dates=True).squeeze("columns")
+import pastas as ps
+from pastas.plots import TrackSolve, compare
+
+rain = read_csv("tests/data/rain.csv", index_col=0, parse_dates=True).squeeze("columns")
+evap = read_csv("tests/data/evap.csv", index_col=0, parse_dates=True).squeeze("columns")
+obs = read_csv("tests/data/obs.csv", index_col=0, parse_dates=True).squeeze("columns")
 
 
 def create_model():
     ml = ps.Model(obs, name="Test_Model")
-    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, name='rch')
+    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, name="rch")
     ml.add_stressmodel(sm)
     return ml
 

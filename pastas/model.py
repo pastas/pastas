@@ -6,31 +6,46 @@ from itertools import combinations
 from logging import getLogger
 from os import getlogin
 
+# Type Hinting
+from typing import List, Optional, Tuple, Union
+
 # External Dependencies
 import numpy as np
-from pandas import (DataFrame, Series, Timedelta, Timestamp,
-                    date_range, concat, to_timedelta, DatetimeIndex)
+from pandas import (
+    DataFrame,
+    DatetimeIndex,
+    Series,
+    Timedelta,
+    Timestamp,
+    concat,
+    date_range,
+    to_timedelta,
+)
 
 # Internal Pastas
 from pastas.decorators import get_stressmodel
 from pastas.io.base import _load_model, dump
+from pastas.modelplots import Plotting
 from pastas.modelstats import Statistics
 from pastas.noisemodels import NoiseModel
-from pastas.modelplots import Plotting
 from pastas.solver import LeastSquares
 from pastas.stressmodels import Constant
 from pastas.timeseries import TimeSeries
 from pastas.transform import ThresholdTransform
-from pastas.utils import (_get_dt, _get_time_offset, frequency_is_supported,
-                          get_sample, validate_name)
-from pastas.version import __version__
-
-# Type Hinting
-from typing import Union, Optional, Tuple, List
-from pastas.typing import StressModel, Solver, TimestampType, ArrayLike
-from pastas.typing import NoiseModel as NoiseModelType
-from pastas.typing import TimeSeries as TimeSeriesType
+from pastas.typing import ArrayLike
 from pastas.typing import Model as ModelType
+from pastas.typing import NoiseModel as NoiseModelType
+from pastas.typing import Solver, StressModel
+from pastas.typing import TimeSeries as TimeSeriesType
+from pastas.typing import TimestampType
+from pastas.utils import (
+    _get_dt,
+    _get_time_offset,
+    frequency_is_supported,
+    get_sample,
+    validate_name,
+)
+from pastas.version import __version__
 
 
 class Model:
@@ -70,25 +85,30 @@ class Model:
     >>> ml = Model(oseries)
     """
 
-    def __init__(self, oseries: Union[Series, TimeSeriesType], constant: bool = True,
-                 noisemodel: bool = True, name: Optional[str] = None,
-                 metadata: Optional[dict] = None, freq: str = "D") -> None:
+    def __init__(
+        self,
+        oseries: Union[Series, TimeSeriesType],
+        constant: bool = True,
+        noisemodel: bool = True,
+        name: Optional[str] = None,
+        metadata: Optional[dict] = None,
+        freq: str = "D",
+    ) -> None:
 
         self.logger = getLogger(__name__)
 
         # Construct the different model components
-        self.oseries = TimeSeries(oseries, settings="oseries",
-                                  metadata=metadata)
+        self.oseries = TimeSeries(oseries, settings="oseries", metadata=metadata)
 
         if name is None and self.oseries.name is not None:
             name = self.oseries.name
         elif name is None and self.oseries.name is None:
-            name = 'Observations'
+            name = "Observations"
         self.name = validate_name(name)
 
         self.parameters = DataFrame(
-            columns=["initial", "name", "optimal", "pmin", "pmax", "vary",
-                     "stderr"])
+            columns=["initial", "name", "optimal", "pmin", "pmax", "vary", "stderr"]
+        )
 
         # Define the model components
         self.stressmodels = OrderedDict()
@@ -113,8 +133,7 @@ class Model:
         }
 
         if constant:
-            constant = Constant(initial=self.oseries.series.mean(),
-                                name="constant")
+            constant = Constant(initial=self.oseries.series.mean(), name="constant")
             self.add_constant(constant)
         if noisemodel:
             self.add_noisemodel(NoiseModel())
@@ -137,17 +156,18 @@ class Model:
 
     def __repr__(self):
         """Prints a simple string representation of the model."""
-        template = ('{cls}(oseries={os}, name={name}, constant={const}, '
-                    'noisemodel={noise})')
-        return template.format(cls=self.__class__.__name__,
-                               os=self.oseries.name,
-                               name=self.name,
-                               const=not self.constant is None,
-                               noise=not self.noisemodel is None)
+        template = (
+            "{cls}(oseries={os}, name={name}, constant={const}, " "noisemodel={noise})"
+        )
+        return template.format(
+            cls=self.__class__.__name__,
+            os=self.oseries.name,
+            name=self.name,
+            const=not self.constant is None,
+            noise=not self.noisemodel is None,
+        )
 
-    def add_stressmodel(self,
-                        stressmodel: StressModel,
-                        replace: bool = False) -> None:
+    def add_stressmodel(self, stressmodel: StressModel, replace: bool = False) -> None:
         """Add a stressmodel to the main model.
 
         Parameters
@@ -186,19 +206,23 @@ class Model:
             for sm in stressmodel:
                 self.add_stressmodel(sm)
         elif (stressmodel.name in self.stressmodels.keys()) and not replace:
-            self.logger.error("The name for the stressmodel you are trying "
-                              "to add already exists for this model. Select "
-                              "another name.")
+            self.logger.error(
+                "The name for the stressmodel you are trying "
+                "to add already exists for this model. Select "
+                "another name."
+            )
         else:
             self.stressmodels[stressmodel.name] = stressmodel
             self.parameters = self.get_init_parameters(initial=False)
             stressmodel.update_stress(freq=self.settings["freq"])
 
             # Check if stress overlaps with oseries, if not give a warning
-            if (stressmodel.tmin > self.oseries.series.index.max()) or \
-                    (stressmodel.tmax < self.oseries.series.index.min()):
-                self.logger.warning("The stress of the stressmodel has no "
-                                    "overlap with ml.oseries.")
+            if (stressmodel.tmin > self.oseries.series.index.max()) or (
+                stressmodel.tmax < self.oseries.series.index.min()
+            ):
+                self.logger.warning(
+                    "The stress of the stressmodel has no " "overlap with ml.oseries."
+                )
         self._check_stressmodel_compatibility()
 
     def add_constant(self, constant: Constant) -> None:
@@ -306,13 +330,15 @@ class Model:
             self.noisemodel = None
             self.parameters = self.get_init_parameters(initial=False)
 
-    def simulate(self,
-                 p: Optional[ArrayLike] = None,
-                 tmin: Optional[TimestampType] = None,
-                 tmax: Optional[TimestampType] = None,
-                 freq: Optional[str] = None,
-                 warmup: Optional[float] = None,
-                 return_warmup: bool = False) -> Series:
+    def simulate(
+        self,
+        p: Optional[ArrayLike] = None,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+        freq: Optional[str] = None,
+        warmup: Optional[float] = None,
+        return_warmup: bool = False,
+    ) -> Series:
         """Method to simulate the time series model.
 
         Parameters
@@ -351,12 +377,12 @@ class Model:
         parameters and no calibration.
         """
         # Default options when tmin, tmax, freq and warmup are not provided.
-        if tmin is None and self.settings['tmin']:
-            tmin = self.settings['tmin']
+        if tmin is None and self.settings["tmin"]:
+            tmin = self.settings["tmin"]
         else:
             tmin = self.get_tmin(tmin, use_oseries=False, use_stresses=True)
-        if tmax is None and self.settings['tmax']:
-            tmax = self.settings['tmax']
+        if tmax is None and self.settings["tmax"]:
+            tmax = self.settings["tmax"]
         else:
             tmax = self.get_tmax(tmax, use_oseries=False, use_stresses=True)
         if freq is None:
@@ -374,21 +400,24 @@ class Model:
         if p is None:
             p = self.get_parameters()
 
-        sim = Series(data=np.zeros(sim_index.size, dtype=float),
-                     index=sim_index, fastpath=True)
+        sim = Series(
+            data=np.zeros(sim_index.size, dtype=float), index=sim_index, fastpath=True
+        )
 
         istart = 0  # Track parameters index to pass to stressmodel object
         for sm in self.stressmodels.values():
-            contrib = sm.simulate(p[istart: istart + sm.nparam],
-                                  sim_index.min(), tmax, freq, dt)
+            contrib = sm.simulate(
+                p[istart : istart + sm.nparam], sim_index.min(), tmax, freq, dt
+            )
             sim = sim.add(contrib)
             istart += sm.nparam
         if self.constant:
             sim = sim + self.constant.simulate(p[istart])
             istart += 1
         if self.transform:
-            sim = self.transform.simulate(sim, p[istart:istart +
-                                                 self.transform.nparam])
+            sim = self.transform.simulate(
+                sim, p[istart : istart + self.transform.nparam]
+            )
 
         # Respect provided tmin/tmax at this point, since warmup matters for
         # simulation but should not be returned, unless return_warmup=True.
@@ -397,17 +426,19 @@ class Model:
 
         if sim.hasnans:
             sim = sim.dropna()
-            self.logger.warning('Nan-values were removed from the simulation.')
+            self.logger.warning("Nan-values were removed from the simulation.")
 
-        sim.name = 'Simulation'
+        sim.name = "Simulation"
         return sim
 
-    def residuals(self,
-                  p: Optional[ArrayLike] = None,
-                  tmin: Optional[TimestampType] = None,
-                  tmax: Optional[TimestampType] = None,
-                  freq: Optional[str] = None,
-                  warmup: Optional[float] = None) -> Series:
+    def residuals(
+        self,
+        p: Optional[ArrayLike] = None,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+        freq: Optional[str] = None,
+        warmup: Optional[float] = None,
+    ) -> Series:
         """Method to calculate the residual series.
 
         Parameters
@@ -436,9 +467,9 @@ class Model:
         """
         # Default options when tmin, tmax, freq and warmup are not provided.
         if tmin is None:
-            tmin = self.settings['tmin']
+            tmin = self.settings["tmin"]
         if tmax is None:
-            tmax = self.settings['tmax']
+            tmax = self.settings["tmax"]
         if freq is None:
             freq = self.settings["freq"]
 
@@ -452,13 +483,16 @@ class Model:
         if self.interpolate_simulation is None:
             if oseries_calib.index.difference(sim.index).size != 0:
                 self.interpolate_simulation = True
-                self.logger.info('There are observations between the '
-                                 'simulation timesteps. Linear interpolation '
-                                 'between simulated values is used.')
+                self.logger.info(
+                    "There are observations between the "
+                    "simulation timesteps. Linear interpolation "
+                    "between simulated values is used."
+                )
         if self.interpolate_simulation:
             # interpolate simulation to times of observations
-            sim_interpolated = np.interp(oseries_calib.index.asi8,
-                                         sim.index.asi8, sim.values)
+            sim_interpolated = np.interp(
+                oseries_calib.index.asi8, sim.index.asi8, sim.values
+            )
         else:
             # all of the observation indexes are in the simulation
             sim_interpolated = sim.reindex(oseries_calib.index)
@@ -468,7 +502,7 @@ class Model:
 
         if res.hasnans:
             res = res.dropna()
-            self.logger.warning('Nan-values were removed from the residuals.')
+            self.logger.warning("Nan-values were removed from the residuals.")
 
         if self.normalize_residuals:
             res = res.subtract(res.values.mean())
@@ -476,12 +510,14 @@ class Model:
         res.name = "Residuals"
         return res
 
-    def noise(self,
-              p: Optional[ArrayLike] = None,
-              tmin: Optional[TimestampType] = None,
-              tmax: Optional[TimestampType] = None,
-              freq: Optional[str] = None,
-              warmup: Optional[float] = None) -> Series:
+    def noise(
+        self,
+        p: Optional[ArrayLike] = None,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+        freq: Optional[str] = None,
+        warmup: Optional[float] = None,
+    ) -> Series:
         """Method to simulate the noise when a noisemodel is present.
 
         Parameters
@@ -521,9 +557,11 @@ class Model:
         This method returns None is no noise model is added to the model.
         """
         if self.noisemodel is None or self.settings["noise"] is False:
-            self.logger.error("Noise cannot be calculated if there is no "
-                              "noisemodel present or is not used during "
-                              "parameter estimation.")
+            self.logger.error(
+                "Noise cannot be calculated if there is no "
+                "noisemodel present or is not used during "
+                "parameter estimation."
+            )
             return None
 
         # Get parameters if none are provided
@@ -532,18 +570,20 @@ class Model:
 
         # Calculate the residuals
         res = self.residuals(p, tmin, tmax, freq, warmup)
-        p = p[-self.noisemodel.nparam:]
+        p = p[-self.noisemodel.nparam :]
 
         # Calculate the noise
         noise = self.noisemodel.simulate(res, p)
         return noise
 
-    def noise_weights(self,
-                      p: Optional[list] = None,
-                      tmin: Optional[TimestampType] = None,
-                      tmax: Optional[TimestampType] = None,
-                      freq: Optional[str] = None,
-                      warmup: Optional[float] = None) -> ArrayLike:
+    def noise_weights(
+        self,
+        p: Optional[list] = None,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+        freq: Optional[str] = None,
+        warmup: Optional[float] = None,
+    ) -> ArrayLike:
         """Internal method to calculate the noise weights."""
         # Get parameters if none are provided
         if p is None:
@@ -553,15 +593,17 @@ class Model:
         res = self.residuals(p, tmin, tmax, freq, warmup)
 
         # Calculate the weights
-        weights = self.noisemodel.weights(res, p[-self.noisemodel.nparam:])
+        weights = self.noisemodel.weights(res, p[-self.noisemodel.nparam :])
 
         return weights
 
-    def observations(self,
-                     tmin: Optional[TimestampType] = None,
-                     tmax: Optional[TimestampType] = None,
-                     freq: Optional[str] = None,
-                     update_observations: bool = False) -> Series:
+    def observations(
+        self,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+        freq: Optional[str] = None,
+        update_observations: bool = False,
+    ) -> Series:
         """Method that returns the observations series used for calibration.
 
         Parameters
@@ -592,12 +634,12 @@ class Model:
         a selection of the oseries. in the residuals method, the simulation is
         interpolated to the observation-timestamps.
         """
-        if tmin is None and self.settings['tmin']:
-            tmin = self.settings['tmin']
+        if tmin is None and self.settings["tmin"]:
+            tmin = self.settings["tmin"]
         else:
             tmin = self.get_tmin(tmin, use_oseries=False, use_stresses=True)
-        if tmax is None and self.settings['tmax']:
-            tmax = self.settings['tmax']
+        if tmax is None and self.settings["tmax"]:
+            tmax = self.settings["tmax"]
         else:
             tmax = self.get_tmax(tmax, use_oseries=False, use_stresses=True)
         if freq is None:
@@ -613,8 +655,7 @@ class Model:
             # sample measurements, so that frequency is not higher than model
             # keep the original timestamps, as they will be used during
             # interpolation of the simulation
-            sim_index = self._get_sim_index(tmin, tmax, freq,
-                                            self.settings["warmup"])
+            sim_index = self._get_sim_index(tmin, tmax, freq, self.settings["warmup"])
             if not oseries_calib.empty:
                 index = get_sample(oseries_calib.index, sim_index)
                 oseries_calib = oseries_calib.loc[index]
@@ -622,15 +663,17 @@ class Model:
             oseries_calib = self.oseries_calib
         return oseries_calib
 
-    def initialize(self,
-                   tmin: Optional[TimestampType] = None,
-                   tmax: Optional[TimestampType] = None,
-                   freq: Optional[str] = None,
-                   warmup: Optional[float] = None,
-                   noise: Optional[bool] = None,
-                   weights: Optional[Series] = None,
-                   initial: bool = True,
-                   fit_constant: bool = True) -> None:
+    def initialize(
+        self,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+        freq: Optional[str] = None,
+        warmup: Optional[float] = None,
+        noise: Optional[bool] = None,
+        weights: Optional[Series] = None,
+        initial: bool = True,
+        fit_constant: bool = True,
+    ) -> None:
         """Method to initialize the model.
 
         This method is called by the solve-method, but can also be
@@ -640,8 +683,10 @@ class Model:
         if noise is None and self.noisemodel:
             noise = True
         elif noise is True and self.noisemodel is None:
-            self.logger.warning("Warning, solving with noise=True while no "
-                                "noisemodel is present. noise set to False")
+            self.logger.warning(
+                "Warning, solving with noise=True while no "
+                "noisemodel is present. noise set to False"
+            )
             noise = False
 
         self.settings["noise"] = noise
@@ -656,23 +701,26 @@ class Model:
             self.settings["warmup"] = Timedelta(warmup, "D")
 
         # Set time offset from the frequency and the series in the stressmodels
-        self.settings["time_offset"] = \
-            self._get_time_offset(self.settings["freq"])
+        self.settings["time_offset"] = self._get_time_offset(self.settings["freq"])
 
         # Set tmin and tmax
         self.settings["tmin"] = self.get_tmin(tmin)
         self.settings["tmax"] = self.get_tmax(tmax)
 
         # make sure calibration data is renewed
-        self.sim_index = self._get_sim_index(self.settings["tmin"],
-                                             self.settings["tmax"],
-                                             self.settings["freq"],
-                                             self.settings["warmup"],
-                                             update_sim_index=True)
-        self.oseries_calib = self.observations(tmin=self.settings["tmin"],
-                                               tmax=self.settings["tmax"],
-                                               freq=self.settings["freq"],
-                                               update_observations=True)
+        self.sim_index = self._get_sim_index(
+            self.settings["tmin"],
+            self.settings["tmax"],
+            self.settings["freq"],
+            self.settings["warmup"],
+            update_sim_index=True,
+        )
+        self.oseries_calib = self.observations(
+            tmin=self.settings["tmin"],
+            tmax=self.settings["tmax"],
+            freq=self.settings["freq"],
+            update_observations=True,
+        )
         self.interpolate_simulation = None
 
         # Initialize parameters
@@ -684,18 +732,20 @@ class Model:
             self.parameters.loc["constant_d", "initial"] = 0.0
             self.normalize_residuals = True
 
-    def solve(self,
-              tmin: Optional[TimestampType] = None,
-              tmax: Optional[TimestampType] = None,
-              freq: Optional[str] = None,
-              warmup: Optional[float] = None,
-              noise: bool = True,
-              solver: Optional[Solver] = None,
-              report: bool = True,
-              initial: bool = True,
-              weights: Optional[Series] = None,
-              fit_constant: bool = True,
-              **kwargs) -> None:
+    def solve(
+        self,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+        freq: Optional[str] = None,
+        warmup: Optional[float] = None,
+        noise: bool = True,
+        solver: Optional[Solver] = None,
+        report: bool = True,
+        initial: bool = True,
+        weights: Optional[Series] = None,
+        fit_constant: bool = True,
+        **kwargs,
+    ) -> None:
         """Method to solve the time series model.
 
         Parameters
@@ -756,12 +806,13 @@ class Model:
         """
 
         # Initialize the model
-        self.initialize(tmin, tmax, freq, warmup, noise, weights, initial,
-                        fit_constant)
+        self.initialize(tmin, tmax, freq, warmup, noise, weights, initial, fit_constant)
 
         if self.oseries_calib.empty:
-            raise ValueError("Calibration series 'oseries_calib' is empty! "
-                             "Check 'tmin' or 'tmax'.")
+            raise ValueError(
+                "Calibration series 'oseries_calib' is empty! "
+                "Check 'tmin' or 'tmax'."
+            )
 
         # Store the solve instance
         if solver is None:
@@ -773,13 +824,13 @@ class Model:
         self.settings["solver"] = self.fit._name
 
         # Solve model
-        success, optimal, stderr = self.fit.solve(noise=self.settings["noise"],
-                                                  weights=weights, **kwargs)
+        success, optimal, stderr = self.fit.solve(
+            noise=self.settings["noise"], weights=weights, **kwargs
+        )
         if not success:
-            self.logger.warning("Model parameters could not be estimated "
-                                "well.")
+            self.logger.warning("Model parameters could not be estimated " "well.")
 
-        if self.settings['fit_constant'] is False:
+        if self.settings["fit_constant"] is False:
             # Determine the residuals and set the constant to their mean
             self.normalize_residuals = False
             res = self.residuals(optimal).mean()
@@ -796,14 +847,16 @@ class Model:
                 output = None
             print(self.fit_report(output=output))
 
-    def set_parameter(self,
-                      name: str,
-                      initial: Optional[float] = None,
-                      vary: Optional[bool] = None,
-                      pmin: Optional[float] = None,
-                      pmax: Optional[float] = None,
-                      optimal: Optional[float] = None,
-                      move_bounds: bool = False) -> None:
+    def set_parameter(
+        self,
+        name: str,
+        initial: Optional[float] = None,
+        vary: Optional[bool] = None,
+        pmin: Optional[float] = None,
+        pmax: Optional[float] = None,
+        optimal: Optional[float] = None,
+        move_bounds: bool = False,
+    ) -> None:
         """Method to change the parameter properties.
 
         Parameters
@@ -860,11 +913,12 @@ class Model:
         # Move pmin and pmax based on the initial
         if move_bounds and initial:
             if pmin or pmax:
-                raise KeyError("Either pmin/pmax or move_bounds must "
-                               "be provided, but not both.")
-            factor = initial / self.parameters.loc[name, 'initial']
-            pmin = self.parameters.loc[name, 'pmin'] * factor
-            pmax = self.parameters.loc[name, 'pmax'] * factor
+                raise KeyError(
+                    "Either pmin/pmax or move_bounds must " "be provided, but not both."
+                )
+            factor = initial / self.parameters.loc[name, "initial"]
+            pmin = self.parameters.loc[name, "pmin"] * factor
+            pmax = self.parameters.loc[name, "pmax"] * factor
 
         # Set the parameter properties
         if initial is not None:
@@ -907,8 +961,10 @@ class Model:
                     if np.any(mask):
                         time_offsets.add(_get_time_offset(t[mask][0], freq))
         if len(time_offsets) > 1:
-            msg = "The time-offset with the frequency is not the same for " \
-                  "all stresses."
+            msg = (
+                "The time-offset with the frequency is not the same for "
+                "all stresses."
+            )
             self.logger.error(msg)
             raise (Exception(msg))
         if len(time_offsets) == 1:
@@ -916,12 +972,14 @@ class Model:
         else:
             return Timedelta(0)
 
-    def _get_sim_index(self,
-                       tmin: Timestamp,
-                       tmax: Timestamp,
-                       freq: str,
-                       warmup: Timedelta,
-                       update_sim_index: bool = False) -> DatetimeIndex:
+    def _get_sim_index(
+        self,
+        tmin: Timestamp,
+        tmax: Timestamp,
+        freq: str,
+        warmup: Timedelta,
+        update_sim_index: bool = False,
+    ) -> DatetimeIndex:
         """Internal method to get the simulation index, including the warmup.
 
         Parameters
@@ -948,8 +1006,9 @@ class Model:
             which the model is simulated.
         """
         # Check if any of the settings are updated
-        for key, setting in zip([tmin, tmax, freq, warmup],
-                                ["tmin", "tmax", "freq", "warmup"]):
+        for key, setting in zip(
+            [tmin, tmax, freq, warmup], ["tmin", "tmax", "freq", "warmup"]
+        ):
             if key != self.settings[setting]:
                 update_sim_index = True
                 break
@@ -963,10 +1022,12 @@ class Model:
             sim_index = self.sim_index
         return sim_index
 
-    def get_tmin(self,
-                 tmin: Optional[TimestampType] = None,
-                 use_oseries: bool = True,
-                 use_stresses: bool = False) -> Timestamp:
+    def get_tmin(
+        self,
+        tmin: Optional[TimestampType] = None,
+        use_oseries: bool = True,
+        use_stresses: bool = False,
+    ) -> Timestamp:
         """Method that checks and returns valid values for tmin.
 
         Parameters
@@ -1024,10 +1085,12 @@ class Model:
 
         return tmin
 
-    def get_tmax(self,
-                 tmax: Optional[TimestampType] = None,
-                 use_oseries: bool = True,
-                 use_stresses: bool = False) -> Timestamp:
+    def get_tmax(
+        self,
+        tmax: Optional[TimestampType] = None,
+        use_oseries: bool = True,
+        use_stresses: bool = False,
+    ) -> Timestamp:
         """Method that checks and returns valid values for tmax.
 
         Parameters
@@ -1088,9 +1151,9 @@ class Model:
 
         return tmax
 
-    def get_init_parameters(self,
-                            noise: Optional[bool] = None,
-                            initial: bool = True) -> DataFrame:
+    def get_init_parameters(
+        self, noise: Optional[bool] = None, initial: bool = True
+    ) -> DataFrame:
         """Method to get all initial parameters from the individual objects.
 
         Parameters
@@ -1107,7 +1170,7 @@ class Model:
             pandas.Dataframe with the parameters.
         """
         if noise is None:
-            noise = self.settings['noise']
+            noise = self.settings["noise"]
 
         frames = [DataFrame(columns=self.parameters.columns)]
 
@@ -1152,8 +1215,9 @@ class Model:
             p = self.parameters
 
         if p.optimal.hasnans:
-            self.logger.warning("Model is not optimized yet, initial "
-                                "parameters are used.")
+            self.logger.warning(
+                "Model is not optimized yet, initial " "parameters are used."
+            )
             parameters = p.initial
         else:
             parameters = p.optimal
@@ -1187,15 +1251,17 @@ class Model:
         return settings
 
     @get_stressmodel
-    def get_contribution(self,
-                         name: str,
-                         tmin: Optional[TimestampType] = None,
-                         tmax: Optional[TimestampType] = None,
-                         freq: Optional[str] = None,
-                         warmup: Optional[float] = None,
-                         istress: Optional[int] = None,
-                         return_warmup: bool = False,
-                         p: Optional[ArrayLike] = None) -> Series:
+    def get_contribution(
+        self,
+        name: str,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+        freq: Optional[str] = None,
+        warmup: Optional[float] = None,
+        istress: Optional[int] = None,
+        return_warmup: bool = False,
+        p: Optional[ArrayLike] = None,
+    ) -> Series:
         """Method to get the contribution of a stressmodel.
 
         Parameters
@@ -1233,9 +1299,9 @@ class Model:
             p = self.get_parameters(name)
 
         if tmin is None:
-            tmin = self.settings['tmin']
+            tmin = self.settings["tmin"]
         if tmax is None:
-            tmax = self.settings['tmax']
+            tmax = self.settings["tmax"]
         if freq is None:
             freq = self.settings["freq"]
         if warmup is None:
@@ -1245,16 +1311,17 @@ class Model:
 
         # use warmup
         if tmin:
-            tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + \
-                self.settings["time_offset"]
+            tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + self.settings[
+                "time_offset"
+            ]
         else:
             tmin_warm = None
 
         dt = _get_dt(freq)
 
-        kwargs = {'tmin': tmin_warm, 'tmax': tmax, 'freq': freq, 'dt': dt}
+        kwargs = {"tmin": tmin_warm, "tmax": tmax, "freq": freq, "dt": dt}
         if istress is not None:
-            kwargs['istress'] = istress
+            kwargs["istress"] = istress
         contrib = self.stressmodels[name].simulate(p, **kwargs)
 
         # Respect provided tmin/tmax at this point, since warmup matters for
@@ -1289,8 +1356,7 @@ class Model:
             nsplit = self.stressmodels[name].get_nsplit()
             if split and nsplit > 1:
                 for istress in range(nsplit):
-                    contrib = self.get_contribution(name, istress=istress,
-                                                    **kwargs)
+                    contrib = self.get_contribution(name, istress=istress, **kwargs)
                     contribs.append(contrib)
             else:
                 contrib = self.get_contribution(name, **kwargs)
@@ -1298,9 +1364,8 @@ class Model:
         return contribs
 
     def get_transform_contribution(
-            self,
-            tmin: Optional[TimestampType] = None,
-            tmax: Optional[TimestampType] = None) -> Series:
+        self, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None
+    ) -> Series:
         """Method to get the contribution of a transform.
 
         Parameters
@@ -1324,11 +1389,13 @@ class Model:
         sim_org = ml.simulate(tmin=tmin, tmax=tmax)
         return sim - sim_org
 
-    def get_output_series(self,
-                          tmin: Optional[TimestampType] = None,
-                          tmax: Optional[TimestampType] = None,
-                          add_contributions: bool = True,
-                          split: bool = True) -> DataFrame:
+    def get_output_series(
+        self,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+        add_contributions: bool = True,
+        split: bool = True,
+    ) -> DataFrame:
         """Method to get all the modeled output time series from the Model.
 
         Parameters
@@ -1371,21 +1438,22 @@ class Model:
         df = [obs, sim, res, noise]
 
         if add_contributions:
-            contribs = self.get_contributions(
-                tmin=tmin, tmax=tmax, split=split)
+            contribs = self.get_contributions(tmin=tmin, tmax=tmax, split=split)
             for contrib in contribs:
                 df.append(contrib)
 
         df = concat(df, axis=1)
         return df
 
-    def _get_response(self,
-                      block_or_step: str,
-                      name: str,
-                      p: Optional[ArrayLike] = None,
-                      dt: Optional[float] = None,
-                      add_0: bool = False,
-                      **kwargs) -> Series:
+    def _get_response(
+        self,
+        block_or_step: str,
+        name: str,
+        p: Optional[ArrayLike] = None,
+        dt: Optional[float] = None,
+        add_0: bool = False,
+        **kwargs,
+    ) -> Series:
         """Internal method to compute the block and step response.
 
         Parameters
@@ -1412,8 +1480,7 @@ class Model:
             self.logger.warning("Stressmodel %s has no rfunc.", name)
             return None
         else:
-            block_or_step = getattr(self.stressmodels[name].rfunc,
-                                    block_or_step)
+            block_or_step = getattr(self.stressmodels[name].rfunc, block_or_step)
 
         if p is None:
             p = self.get_parameters(name)
@@ -1440,12 +1507,14 @@ class Model:
         return response
 
     @get_stressmodel
-    def get_block_response(self,
-                           name: str,
-                           p: Optional[ArrayLike] = None,
-                           add_0: bool = False,
-                           dt: Optional[float] = None,
-                           **kwargs) -> Series:
+    def get_block_response(
+        self,
+        name: str,
+        p: Optional[ArrayLike] = None,
+        add_0: bool = False,
+        dt: Optional[float] = None,
+        **kwargs,
+    ) -> Series:
         """Method to obtain the block response for a stressmodel.
 
         The optimal parameters are used when available, initial otherwise.
@@ -1470,16 +1539,19 @@ class Model:
             Pandas.Series with the block response. The index is based on the
             frequency that is present in the model.settings.
         """
-        return self._get_response(block_or_step="block", name=name, dt=dt,
-                                  p=p, add_0=add_0, **kwargs)
+        return self._get_response(
+            block_or_step="block", name=name, dt=dt, p=p, add_0=add_0, **kwargs
+        )
 
     @get_stressmodel
-    def get_step_response(self,
-                          name,
-                          p: Optional[ArrayLike] = None,
-                          add_0: bool = False,
-                          dt: Optional[float] = None,
-                          **kwargs) -> Series:
+    def get_step_response(
+        self,
+        name,
+        p: Optional[ArrayLike] = None,
+        add_0: bool = False,
+        dt: Optional[float] = None,
+        **kwargs,
+    ) -> Series:
         """Method to obtain the step response for a stressmodel.
 
         The optimal parameters are used when available, initial otherwise.
@@ -1503,14 +1575,14 @@ class Model:
             Pandas.Series with the step response. The index is based on the
             frequency that is present in the model.settings.
         """
-        return self._get_response(block_or_step="step", name=name, dt=dt,
-                                  p=p, add_0=add_0, **kwargs)
+        return self._get_response(
+            block_or_step="step", name=name, dt=dt, p=p, add_0=add_0, **kwargs
+        )
 
     @get_stressmodel
-    def get_response_tmax(self,
-                          name: str,
-                          p: ArrayLike = None,
-                          cutoff: float = 0.999) -> float:
+    def get_response_tmax(
+        self, name: str, p: ArrayLike = None, cutoff: float = 0.999
+    ) -> float:
         """Method to get the tmax used for the response function.
 
         Parameters
@@ -1548,15 +1620,16 @@ class Model:
 
     @get_stressmodel
     def get_stress(
-            self,
-            name: str,
-            tmin: Optional[TimestampType] = None,
-            tmax: Optional[TimestampType] = None,
-            freq: Optional[str] = None,
-            warmup: Optional[float] = None,
-            istress: Optional[int] = None,
-            return_warmup: bool = False,
-            p: Optional[ArrayLike] = None) -> Union[Series, List[Series]]:
+        self,
+        name: str,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+        freq: Optional[str] = None,
+        warmup: Optional[float] = None,
+        istress: Optional[int] = None,
+        return_warmup: bool = False,
+        p: Optional[ArrayLike] = None,
+    ) -> Union[Series, List[Series]]:
         """Method to obtain the stress(es) from the stressmodel.
 
         Parameters
@@ -1595,9 +1668,9 @@ class Model:
             p = self.get_parameters(name)
 
         if tmin is None:
-            tmin = self.settings['tmin']
+            tmin = self.settings["tmin"]
         if tmax is None:
-            tmax = self.settings['tmax']
+            tmax = self.settings["tmax"]
         if freq is None:
             freq = self.settings["freq"]
         if warmup is None:
@@ -1607,8 +1680,9 @@ class Model:
 
         # use warmup
         if tmin:
-            tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + \
-                self.settings["time_offset"]
+            tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + self.settings[
+                "time_offset"
+            ]
         else:
             tmin_warm = None
 
@@ -1646,10 +1720,12 @@ class Model:
 
         return file_info
 
-    def fit_report(self,
-                   output: str = "basic",
-                   warnings: bool = True,
-                   warnbounds: Optional[bool] = None) -> str:
+    def fit_report(
+        self,
+        output: str = "basic",
+        warnings: bool = True,
+        warnbounds: Optional[bool] = None,
+    ) -> str:
         """Method that reports on the fit after a model is optimized.
 
         Parameters
@@ -1690,7 +1766,7 @@ class Model:
             "tmax": str(self.settings["tmax"]),
             "freq": self.settings["freq"],
             "warmup": str(self.settings["warmup"]),
-            "solver": self.settings["solver"]
+            "solver": self.settings["solver"],
         }
 
         fit = {
@@ -1705,11 +1781,11 @@ class Model:
         }
 
         if warnbounds:
-            DeprecationWarning("The 'warnbounds' argument is deprecated. "
-                               "Use warnings=True instead.")
+            DeprecationWarning(
+                "The 'warnbounds' argument is deprecated. " "Use warnings=True instead."
+            )
 
-        parameters = self.parameters.loc[:, ["optimal", "stderr",
-                                             "initial", "vary"]]
+        parameters = self.parameters.loc[:, ["optimal", "stderr", "initial", "vary"]]
         stderr = parameters.loc[:, "stderr"] / parameters.loc[:, "optimal"]
         parameters.loc[:, "stderr"] = stderr.abs().apply("±{:.2%}".format)
 
@@ -1731,15 +1807,14 @@ class Model:
         len_val4 = max([len(v) for v in fit.values()])
         wspace = width - (8 + 23 + 9 + len_val4)
         for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
-            basic += (
-                f"{val1:<8}{val2:<23}{val3:<9}"
-                f"{val4:>{wspace + len_val4}}\n"
-            )
+            basic += f"{val1:<8}{val2:<23}{val3:<9}" f"{val4:>{wspace + len_val4}}\n"
 
         # Create the parameters block
-        params = f"\nParameters ({parameters.vary.sum()} optimized)\n" \
-                 f"{string.format('', fill='=', align='>', width=width)}\n" \
-                 f"{parameters.to_string()}"
+        params = (
+            f"\nParameters ({parameters.vary.sum()} optimized)\n"
+            f"{string.format('', fill='=', align='>', width=width)}\n"
+            f"{parameters.to_string()}"
+        )
 
         if output == "full":
             cor = DataFrame(columns=["value"])
@@ -1747,9 +1822,11 @@ class Model:
                 if np.abs(self.fit.pcor.loc[idx, col]) > 0.5:
                     cor.loc[f"{idx} {col}"] = self.fit.pcor.loc[idx, col]
 
-            corr = f"\n\nParameter correlations |rho| > 0.5\n" \
-                   f"{string.format('', fill='=', align='>', width=width)}" \
-                   f"\n{cor.to_string(float_format='%.2f', header=False)}"
+            corr = (
+                f"\n\nParameter correlations |rho| > 0.5\n"
+                f"{string.format('', fill='=', align='>', width=width)}"
+                f"\n{cor.to_string(float_format='%.2f', header=False)}"
+            )
         else:
             corr = ""
 
@@ -1780,8 +1857,7 @@ class Model:
             if (~response_tmax_check["check_ok"]).any():
                 mask = ~response_tmax_check["check_ok"]
                 for i in response_tmax_check.loc[mask].index:
-                    msg.append(f"Response tmax for '{i}' > "
-                               "than calibration period")
+                    msg.append(f"Response tmax for '{i}' > " "than calibration period")
 
             # create message
             if len(msg) > 0:
@@ -1816,18 +1892,18 @@ class Model:
             for each stressmodel, and check result
         """
 
-        len_oseries_calib = (self.settings["tmax"] -
-                             self.settings["tmin"]).days
+        len_oseries_calib = (self.settings["tmax"] - self.settings["tmin"]).days
 
-        check = DataFrame(index=self.stressmodels.keys(),
-                          columns=["len_oseries_calib",
-                                   "response_tmax",
-                                   "check_ok"])
+        check = DataFrame(
+            index=self.stressmodels.keys(),
+            columns=["len_oseries_calib", "response_tmax", "check_ok"],
+        )
         check["len_oseries_calib"] = len_oseries_calib
 
         for sm_name in self.stressmodels:
             check.loc[sm_name, "response_tmax"] = self.get_response_tmax(
-                sm_name, cutoff=cutoff)
+                sm_name, cutoff=cutoff
+            )
 
         check["check_ok"] = check["response_tmax"] < check["len_oseries_calib"]
 
@@ -1858,8 +1934,7 @@ class Model:
             if pmin == 0.0 or np.isnan(pmin):
                 atol = 1e-8
             else:
-                atol = np.min(
-                    [1e-8, 10 ** (np.floor(np.log10(np.abs(pmin))) - 1)])
+                atol = np.min([1e-8, 10 ** (np.floor(np.log10(np.abs(pmin))) - 1)])
 
             # deal with NaNs in parameter bounds
             if np.isnan(pmax):
@@ -1869,11 +1944,11 @@ class Model:
 
             # determine hits
             upperhit.loc[p] = np.allclose(
-                self.parameters.loc[p, "optimal"], pmax,
-                atol=atol, rtol=1e-5)
+                self.parameters.loc[p, "optimal"], pmax, atol=atol, rtol=1e-5
+            )
             lowerhit.loc[p] = np.allclose(
-                self.parameters.loc[p, "optimal"], pmin,
-                atol=atol, rtol=1e-5)
+                self.parameters.loc[p, "optimal"], pmin, atol=atol, rtol=1e-5
+            )
 
         return lowerhit, upperhit
 
@@ -1895,11 +1970,13 @@ class Model:
         """
 
         # Create a dictionary to store all data
-        data = {"name": self.name,
-                "oseries": self.oseries.to_dict(series=series),
-                "parameters": self.parameters,
-                "settings": self.settings,
-                "stressmodels": dict()}
+        data = {
+            "name": self.name,
+            "oseries": self.oseries.to_dict(series=series),
+            "parameters": self.parameters,
+            "settings": self.settings,
+            "stressmodels": dict(),
+        }
 
         # Stressmodels
         for name, sm in self.stressmodels.items():
@@ -1983,5 +2060,5 @@ class Model:
         """Internal method to check if the stressmodels are compatible with the
         model."""
         for sm in self.stressmodels.values():
-            if hasattr(sm, '_check_stressmodel_compatibility'):
+            if hasattr(sm, "_check_stressmodel_compatibility"):
                 sm._check_stressmodel_compatibility(self)

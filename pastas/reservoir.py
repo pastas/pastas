@@ -14,8 +14,10 @@ To be added
 
 import numpy as np
 from numpy import float64
+
 # from scipy.integrate import solve_ivp  # only used in simulateold
 from pandas import DataFrame, Series
+
 from pastas.decorators import njit
 
 # Type Hinting
@@ -43,16 +45,12 @@ class ReservoirBase:
         parameters: pandas.DataFrame
             Pandas DataFrame with the parameters.
         """
-        parameters = DataFrame(
-            columns=["initial", "pmin", "pmax", "vary", "name"])
+        parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
         return parameters
 
-    def simulate(self,
-                 prec: Series,
-                 evap: Series,
-                 p: ArrayLike,
-                 dt: float = 1.0,
-                 **kwargs) -> ArrayLike:
+    def simulate(
+        self, prec: Series, evap: Series, p: ArrayLike, dt: float = 1.0, **kwargs
+    ) -> ArrayLike:
         pass
 
 
@@ -67,6 +65,7 @@ class Reservoir1(ReservoirBase):
     ----------
     None
     """
+
     _name = "Reservoir1"
 
     def __init__(self, initialhead: float) -> None:
@@ -75,13 +74,11 @@ class Reservoir1(ReservoirBase):
         self.initialhead = initialhead
 
     def get_init_parameters(self, name: str = "reservoir") -> DataFrame:
-        parameters = DataFrame(
-            columns=["initial", "pmin", "pmax", "vary", "name"])
+        parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
         parameters.loc[name + "_S"] = (0.1, 0.001, 1, True, name)
         parameters.loc[name + "_c"] = (100, 1, 5000, True, name)
         dmean = self.initialhead
-        parameters.loc[name + "_d"] = (dmean, dmean - 10,
-                                       dmean + 10, True, name)
+        parameters.loc[name + "_d"] = (dmean, dmean - 10, dmean + 10, True, name)
         parameters.loc[name + "_f"] = (-1.0, -2.0, 0.0, True, name)
         return parameters
 
@@ -91,7 +88,7 @@ class Reservoir1(ReservoirBase):
     @staticmethod
     @njit
     def simulatehead(prec: ArrayLike, evap: ArrayLike, p: ArrayLike) -> ArrayLike:
-        """Simulate the head in the reservoir
+        """Simulate the head in the reservoir.
 
         Parameters
         ----------
@@ -116,6 +113,7 @@ class Reservoir1(ReservoirBase):
             rech = prec[i - 1] + f * evap[i - 1]
             h[i] = h[i - 1] + delt * (rech / S - (h[i - 1] - d) / (c * S))
         return h[1:]
+
 
 #     def simulateold(self, prec, evap, p, **kwargs):
 #         """Implementation using solve_ivp - too slow and
@@ -153,7 +151,7 @@ class Reservoir1(ReservoirBase):
 
 
 class Reservoir2(ReservoirBase):
-    """Single reservoir with outflow at two heights
+    """Single reservoir with outflow at two heights.
 
     Notes
     -----
@@ -163,6 +161,7 @@ class Reservoir2(ReservoirBase):
     ----------
     None
     """
+
     _name = "Reservoir2"
 
     def __init__(self, initialhead: float) -> None:
@@ -171,13 +170,11 @@ class Reservoir2(ReservoirBase):
         self.initialhead = initialhead
 
     def get_init_parameters(self, name: str = "reservoir") -> DataFrame:
-        parameters = DataFrame(
-            columns=["initial", "pmin", "pmax", "vary", "name"])
+        parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
         parameters.loc[name + "_S"] = (0.1, 0.001, 1, True, name)
         parameters.loc[name + "_c"] = (100, 1, 5000, True, name)
         dmean = self.initialhead
-        parameters.loc[name + "_d"] = (dmean, dmean - 10,
-                                       dmean + 10, True, name)
+        parameters.loc[name + "_d"] = (dmean, dmean - 10, dmean + 10, True, name)
         parameters.loc[name + "_f"] = (-1.0, -2.0, 0.0, True, name)
         parameters.loc[name + "_c2"] = (100, 1, 1000, True, name)
         parameters.loc[name + "_deld"] = (0.01, 0.001, 10, True, name)
@@ -189,7 +186,7 @@ class Reservoir2(ReservoirBase):
     @staticmethod
     @njit
     def simulatehead(prec: ArrayLike, evap: ArrayLike, p: ArrayLike) -> ArrayLike:
-        """Simulate the head in the reservoir
+        """Simulate the head in the reservoir.
 
         Parameters
         ----------

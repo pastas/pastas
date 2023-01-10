@@ -8,8 +8,8 @@ from typing import Optional
 
 
 class ExceededMaxSolveTime(Exception):
-    """Custom Exception when model optimization exceeds threshold.
-    """
+    """Custom Exception when model optimization exceeds threshold."""
+
     pass
 
 
@@ -40,10 +40,7 @@ class SolveTimer(tqdm):
     be updated quite as nicely.
     """
 
-    def __init__(self,
-                 max_time: Optional[float] = None,
-                 *args,
-                 **kwargs) -> None:
+    def __init__(self, max_time: Optional[float] = None, *args, **kwargs) -> None:
         """Initialize SolveTimer.
 
         Parameters
@@ -54,18 +51,18 @@ class SolveTimer(tqdm):
             ExceededMaxSolveTime Exception.
         """
         if "total" not in kwargs:
-            kwargs['total'] = None
+            kwargs["total"] = None
         if "desc" not in kwargs:
             kwargs["desc"] = "Optimization progress"
         self.max_time = max_time
         super(SolveTimer, self).__init__(*args, **kwargs)
 
     def timer(self, _, n: int = 1):
-        """Callback method for ps.Model.solve().
-        """
+        """Callback method for ps.Model.solve()."""
         displayed = super(SolveTimer, self).update(n)
         if self.max_time is not None:
             if self.format_dict["elapsed"] > self.max_time:
-                raise ExceededMaxSolveTime("Model solve time exceeded"
-                                           f" {self.max_time} seconds!")
+                raise ExceededMaxSolveTime(
+                    "Model solve time exceeded" f" {self.max_time} seconds!"
+                )
         return displayed

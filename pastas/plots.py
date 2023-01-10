@@ -1,28 +1,23 @@
-"""This module contains all the plotting methods in Pastas.
-
-
-"""
+"""This module contains all the plotting methods in Pastas."""
 
 import logging
 
+# Type Hinting
+from typing import List, Optional, Tuple
+
 import matplotlib.pyplot as plt
 import numpy as np
-from pandas import Series, DataFrame, Timestamp
+from pandas import DataFrame, Series, Timestamp
 from scipy.stats import gaussian_kde, norm, probplot
 
 from pastas.modelcompare import CompareModels
 from pastas.stats.core import acf as get_acf
 from pastas.stats.metrics import evp, rmse
-
-# Type Hinting
-from typing import Optional, List, Tuple
-from pastas.typing import ArrayLike, Axes, Figure, TimestampType, Model
-
+from pastas.typing import ArrayLike, Axes, Figure, Model, TimestampType
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["compare", "series", "acf", "diagnostics", "cum_frequency",
-           "TrackSolve"]
+__all__ = ["compare", "series", "acf", "diagnostics", "cum_frequency", "TrackSolve"]
 
 
 def compare(models: List[Model], adjust_height: bool = True, **kwargs) -> Axes:
@@ -66,7 +61,8 @@ def series(
     tmin: Optional[TimestampType] = None,
     tmax: Optional[TimestampType] = None,
     labels: Optional[List[str]] = None,
-    figsize: tuple = (10, 5)) -> Axes:
+    figsize: tuple = (10, 5),
+) -> Axes:
     """Plot all the input time Series in a single plot.
 
     Parameters
@@ -111,8 +107,14 @@ def series(
         sharex = False
         gridspec_kw["width_ratios"] = (3, 1, 1)
         cols = 3
-    _, axes = plt.subplots(rows, cols, figsize=figsize, sharex=sharex,
-                           sharey="row", gridspec_kw=gridspec_kw)
+    _, axes = plt.subplots(
+        rows,
+        cols,
+        figsize=figsize,
+        sharex=sharex,
+        sharey="row",
+        gridspec_kw=gridspec_kw,
+    )
     if rows == 1 and cols == 1:
         axes = np.array([[axes]])
     elif rows == 1:
@@ -131,33 +133,49 @@ def series(
         if labels is not None:
             axes[0, 0].set_ylabel(labels[0])
         if hist and kde is False:
-            head.hist(ax=axes[0, 1], orientation="horizontal", color="k",
-                      weights=np.ones(len(head)) / len(head) * 100,
-                      bins=int(np.ceil(1 + np.log2(len(head)))), grid=False)
+            head.hist(
+                ax=axes[0, 1],
+                orientation="horizontal",
+                color="k",
+                weights=np.ones(len(head)) / len(head) * 100,
+                bins=int(np.ceil(1 + np.log2(len(head)))),
+                grid=False,
+            )
         if kde and hist:
-            head.hist(ax=axes[0, 1], orientation="horizontal", color="k",
-                      bins=int(np.ceil(1 + np.log2(len(head)))),
-                      grid=False, density=True)
+            head.hist(
+                ax=axes[0, 1],
+                orientation="horizontal",
+                color="k",
+                bins=int(np.ceil(1 + np.log2(len(head)))),
+                grid=False,
+                density=True,
+            )
         if kde:
-            gkde = gaussian_kde(head, bw_method='scott')
+            gkde = gaussian_kde(head, bw_method="scott")
             sample_range = np.max(head) - np.min(head)
-            ind = np.linspace(np.min(head) - 0.1 * sample_range,
-                              np.max(head) + 0.1 * sample_range, 1000)
+            ind = np.linspace(
+                np.min(head) - 0.1 * sample_range,
+                np.max(head) + 0.1 * sample_range,
+                1000,
+            )
             if hist:
-                colour = 'C1'
+                colour = "C1"
             else:
-                colour = 'k'
+                colour = "k"
             axes[0, 1].plot(gkde.evaluate(ind), ind, color=colour)
         if hist or kde:
             # stats table
-            head_stats = [["Count", f"{head.count():0.0f}"],
-                          ["Mean", f"{head.mean():0.2f}"],
-                          ["Max", f"{head.max():0.2f}"],
-                          ["Min", f"{head.min():0.2f}"],
-                          ["Skew", f"{head.skew():0.2f}"],
-                          ["Kurtosis", f"{head.kurtosis():0.2f}"]]
-            axes[0, 2].table(bbox=(0.0, 0.0, 1, 1), colWidths=(1.5, 1),
-                             cellText=head_stats)
+            head_stats = [
+                ["Count", f"{head.count():0.0f}"],
+                ["Mean", f"{head.mean():0.2f}"],
+                ["Max", f"{head.max():0.2f}"],
+                ["Min", f"{head.min():0.2f}"],
+                ["Skew", f"{head.skew():0.2f}"],
+                ["Kurtosis", f"{head.kurtosis():0.2f}"],
+            ]
+            axes[0, 2].table(
+                bbox=(0.0, 0.0, 1, 1), colWidths=(1.5, 1), cellText=head_stats
+            )
             axes[0, 2].axis("off")
 
     if stresses is not None:
@@ -170,34 +188,49 @@ def series(
                 axes[i, 0].set_ylabel(labels[i])
             if hist:
                 # histogram
-                stress.hist(ax=axes[i, 1], orientation="horizontal", color="k",
-                            weights=np.ones(len(stress)) / len(stress) * 100,
-                            bins=int(np.ceil(1 + np.log2(len(stress)))),
-                            grid=False)
+                stress.hist(
+                    ax=axes[i, 1],
+                    orientation="horizontal",
+                    color="k",
+                    weights=np.ones(len(stress)) / len(stress) * 100,
+                    bins=int(np.ceil(1 + np.log2(len(stress)))),
+                    grid=False,
+                )
             if kde and hist:
-                stress.hist(ax=axes[i, 1], orientation="horizontal", color="k",
-                            bins=int(np.ceil(1 + np.log2(len(stress)))),
-                            grid=False, density=True)
+                stress.hist(
+                    ax=axes[i, 1],
+                    orientation="horizontal",
+                    color="k",
+                    bins=int(np.ceil(1 + np.log2(len(stress)))),
+                    grid=False,
+                    density=True,
+                )
             if kde:
-                gkde = gaussian_kde(stress, bw_method='scott')
+                gkde = gaussian_kde(stress, bw_method="scott")
                 sample_range = np.max(stress) - np.min(stress)
-                ind = np.linspace(np.min(stress) - 0.1 * sample_range,
-                                  np.min(stress) + 0.1 * sample_range, 1000)
+                ind = np.linspace(
+                    np.min(stress) - 0.1 * sample_range,
+                    np.min(stress) + 0.1 * sample_range,
+                    1000,
+                )
                 if hist:
-                    colour = 'C1'
+                    colour = "C1"
                 else:
-                    colour = 'k'
+                    colour = "k"
                 axes[i, 1].plot(gkde.evaluate(ind), ind, color=colour)
             if hist or kde:
                 if i > 0:
                     axes[i, 0].sharex(axes[0, 0])
                 # stats table
-                stress_stats = [["Count", f"{stress.count():0.0f}"],
-                                ["Mean", f"{stress.mean():0.2f}"],
-                                ["Skew", f"{stress.skew():0.2f}"],
-                                ["Kurtosis", f"{stress.kurtosis():0.2f}"]]
-                axes[i, 2].table(bbox=(0, 0, 1, 1), colWidths=(1.5, 1),
-                                 cellText=stress_stats)
+                stress_stats = [
+                    ["Count", f"{stress.count():0.0f}"],
+                    ["Mean", f"{stress.mean():0.2f}"],
+                    ["Skew", f"{stress.skew():0.2f}"],
+                    ["Kurtosis", f"{stress.kurtosis():0.2f}"],
+                ]
+                axes[i, 2].table(
+                    bbox=(0, 0, 1, 1), colWidths=(1.5, 1), cellText=stress_stats
+                )
                 axes[i, 2].axis("off")
     axes[0, 0].set_xlim([tmin, tmax])
     axes[0, 0].minorticks_off()
@@ -206,14 +239,16 @@ def series(
     return axes
 
 
-def acf(series: Series,
-        alpha: float = 0.05,
-        lags: int = 365,
-        acf_options: Optional[dict] = None,
-        smooth_conf: bool = True,
-        color: str = "k",
-        ax: Optional[Axes] = None,
-        figsize: tuple = (5, 2)) -> Axes:
+def acf(
+    series: Series,
+    alpha: float = 0.05,
+    lags: int = 365,
+    acf_options: Optional[dict] = None,
+    smooth_conf: bool = True,
+    color: str = "k",
+    ax: Optional[Axes] = None,
+    figsize: tuple = (5, 2),
+) -> Axes:
     """Plot of the autocorrelation function of a time series.
 
     Parameters
@@ -254,13 +289,14 @@ def acf(series: Series,
     # Plot the autocorrelation
     if acf_options is None:
         acf_options = {}
-    r = get_acf(series, full_output=True, alpha=alpha, lags=lags,
-                **acf_options)
+    r = get_acf(series, full_output=True, alpha=alpha, lags=lags, **acf_options)
 
     if r.empty:
-        raise ValueError("The computed autocorrelation function has no "
-                         "values. Changing the input arguments ('acf_options')"
-                         " for calculating ACF may help.")
+        raise ValueError(
+            "The computed autocorrelation function has no "
+            "values. Changing the input arguments ('acf_options')"
+            " for calculating ACF may help."
+        )
 
     if smooth_conf:
         conf = r.stderr.rolling(10, min_periods=1).mean().values
@@ -272,22 +308,24 @@ def acf(series: Series,
 
     ax.set_xlabel("Lag [Days]")
     ax.set_xlim(0, r.index.days.max())
-    ax.set_ylabel('Autocorrelation [-]')
+    ax.set_ylabel("Autocorrelation [-]")
     ax.set_title("Autocorrelation plot")
 
     ax.grid(True)
     return ax
 
 
-def diagnostics(series: Series,
-                sim: Optional[Series] = None,
-                alpha: float = 0.05,
-                bins: int = 50,
-                acf_options: Optional[dict] = None,
-                figsize: tuple = (10, 5),
-                fig: Optional[Figure] = None,
-                heteroscedasicity: bool = True,
-                **kwargs) -> Axes:
+def diagnostics(
+    series: Series,
+    sim: Optional[Series] = None,
+    alpha: float = 0.05,
+    bins: int = 50,
+    acf_options: Optional[dict] = None,
+    figsize: tuple = (10, 5),
+    fig: Optional[Figure] = None,
+    heteroscedasicity: bool = True,
+    **kwargs,
+) -> Axes:
     """Plot that helps in diagnosing basic model assumptions.
 
     Parameters
@@ -341,8 +379,10 @@ def diagnostics(series: Series,
 
     if heteroscedasicity:
         if sim is None:
-            msg = "A simulated time series has to be provided to make plots " \
-                  "to diagnose heteroscedasticity. Provide 'sim' argument."
+            msg = (
+                "A simulated time series has to be provided to make plots "
+                "to diagnose heteroscedasticity. Provide 'sim' argument."
+            )
             logger.error(msg=msg)
             raise KeyError(msg)
 
@@ -361,12 +401,13 @@ def diagnostics(series: Series,
     series.plot(ax=ax)
     ax.set_ylabel(series.name)
     ax.set_xlim(series.index.min(), series.index.max())
-    ax.set_title(f"{series.name} (n={series.size :.0f}, $\\mu$"
-                 f"={series.mean() :.2f})")
+    ax.set_title(
+        f"{series.name} (n={series.size :.0f}, $\\mu$" f"={series.mean() :.2f})"
+    )
     ax.grid()
-    ax.tick_params(axis='x', labelrotation=0)
+    ax.tick_params(axis="x", labelrotation=0)
     for label in ax.get_xticklabels():
-        label.set_horizontalalignment('center')
+        label.set_horizontalalignment("center")
 
     # Plot the autocorrelation
     acf(series, alpha=alpha, acf_options=acf_options, ax=ax1)
@@ -375,7 +416,7 @@ def diagnostics(series: Series,
     # Plot the histogram for normality and add a 'best fit' line
     _, bins, _ = ax2.hist(series.values, bins=bins, density=True)
     y = norm.pdf(bins, series.mean(), series.std())
-    ax2.plot(bins, y, 'k--')
+    ax2.plot(bins, y, "k--")
     ax2.set_ylabel("Probability density")
     ax2.set_title("Histogram")
 
@@ -386,7 +427,7 @@ def diagnostics(series: Series,
     ax3.get_lines()[1].set_color("k")
 
     # Plot R2 here because probplot has suboptimal positioning
-    ax3.text(0.5, 0.1, "$R^2={:.2f}$".format(r ** 2), transform=ax3.transAxes)
+    ax3.text(0.5, 0.1, "$R^2={:.2f}$".format(r**2), transform=ax3.transAxes)
 
     if heteroscedasicity and sim is not None:
         # Plot residuals vs. simulation
@@ -398,8 +439,9 @@ def diagnostics(series: Series,
         ax4.set_ylabel("Residuals")
 
         # Plot residuals vs. simulation
-        ax5.plot(sim, np.sqrt(series.abs()), marker=".", linestyle=" ",
-                 color=c, alpha=0.7)
+        ax5.plot(
+            sim, np.sqrt(series.abs()), marker=".", linestyle=" ", color=c, alpha=0.7
+        )
         ax5.set_xlabel("Simulated values")
         ax5.set_ylabel("$\\sqrt{|Residuals|}$")
         ax5.grid()
@@ -407,10 +449,12 @@ def diagnostics(series: Series,
     return fig.axes
 
 
-def cum_frequency(obs: Series,
-                  sim: Optional[Series] = None,
-                  ax: Optional[Axes] = None,
-                  figsize: tuple = (5, 2)) -> Axes:
+def cum_frequency(
+    obs: Series,
+    sim: Optional[Series] = None,
+    ax: Optional[Axes] = None,
+    figsize: tuple = (5, 2),
+) -> Axes:
     """Plot of the cumulative frequency of a time Series.
 
     Parameters
@@ -439,8 +483,13 @@ def cum_frequency(obs: Series,
     if ax is None:
         _, ax = plt.subplots(1, 1, figsize=figsize)
 
-    ax.plot(obs.sort_values(), np.arange(0, obs.size) / obs.size * 100,
-            color="k", marker=".", linestyle=" ")
+    ax.plot(
+        obs.sort_values(),
+        np.arange(0, obs.size) / obs.size * 100,
+        color="k",
+        marker=".",
+        linestyle=" ",
+    )
     if sim is not None:
         ax.plot(sim.sort_values(), np.arange(0, sim.size) / sim.size * 100)
     ax.legend(["Observations", "Simulation"])
@@ -513,21 +562,26 @@ class TrackSolve:
     Access the resulting figure through `track.fig`.
     """
 
-    def __init__(self,
-                 ml: Model,
-                 tmin: Optional[TimestampType] = None,
-                 tmax: Optional[TimestampType] = None,
-                 update_iter: Optional[int] = None) -> None:
+    def __init__(
+        self,
+        ml: Model,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+        update_iter: Optional[int] = None,
+    ) -> None:
 
-        logger.warning("TrackSolve feature under development. If you find any "
-                       "bugs please post an issue on GitHub: "
-                       "https://github.com/pastas/pastas/issues")
+        logger.warning(
+            "TrackSolve feature under development. If you find any "
+            "bugs please post an issue on GitHub: "
+            "https://github.com/pastas/pastas/issues"
+        )
 
         self.ml = ml
         self.viewlim = 75  # no of iterations on axes by default
         if update_iter is None:
             self.update_iter = len(
-                self.ml.parameters.loc[self.ml.parameters.vary].index)
+                self.ml.parameters.loc[self.ml.parameters.vary].index
+            )
         else:
             self.update_iter = update_iter  # update plot every update_iter
 
@@ -584,8 +638,7 @@ class TrackSolve:
         self.itercount += 1
 
         # add parameters to DataFrame
-        self.parameters.loc[self.itercount,
-                            self.ml.parameters.index] = params.copy()
+        self.parameters.loc[self.itercount, self.ml.parameters.index] = params.copy()
 
         # calculate new RMSE values
         r_res = self._residuals(params)
@@ -622,9 +675,7 @@ class TrackSolve:
         noise: array_like
             array containing noise
         """
-        noise = self.ml.noise(p=params,
-                              tmin=self.tmin,
-                              tmax=self.tmax)
+        noise = self.ml.noise(p=params, tmin=self.tmin, tmax=self.tmax)
         return noise
 
     def _residuals(self, params: ArrayLike) -> ArrayLike:
@@ -640,9 +691,7 @@ class TrackSolve:
         res: array_like
             array containing residuals
         """
-        res = self.ml.residuals(p=params,
-                                tmin=self.tmin,
-                                tmax=self.tmax)
+        res = self.ml.residuals(p=params, tmin=self.tmin, tmax=self.tmax)
         return res
 
     def _simulate(self) -> Series:
@@ -653,14 +702,17 @@ class TrackSolve:
         sim: pd.Series
             Series containing model evaluation
         """
-        sim = self.ml.simulate(p=self.parameters.iloc[-1, :].values,
-                               tmin=self.tmin, tmax=self.tmax,
-                               freq=self.ml.settings["freq"])
+        sim = self.ml.simulate(
+            p=self.parameters.iloc[-1, :].values,
+            tmin=self.tmin,
+            tmax=self.tmax,
+            freq=self.ml.settings["freq"],
+        )
         return sim
 
-    def initialize_figure(self,
-                          figsize: Tuple[int] = (10, 8),
-                          dpi: int = 100) -> Figure:
+    def initialize_figure(
+        self, figsize: Tuple[int] = (10, 8), dpi: int = 100
+    ) -> Figure:
         """Initialize figure for plotting optimization progress.
 
         Parameters
@@ -683,17 +735,23 @@ class TrackSolve:
         self.ax1.get_shared_x_axes().join(self.ax1, self.ax2)
 
         # plot oseries
-        self.ax0.plot(self.obs.index, self.obs,
-                      marker=".", ls="none", label="observations",
-                      color="k", ms=4)
+        self.ax0.plot(
+            self.obs.index,
+            self.obs,
+            marker=".",
+            ls="none",
+            label="observations",
+            color="k",
+            ms=4,
+        )
 
         # plot simulation
         sim = self._simulate()
-        self.simplot, = self.ax0.plot(sim.index, sim, label="simulation")
+        (self.simplot,) = self.ax0.plot(sim.index, sim, label="simulation")
         self.ax0.set_ylabel("head")
         self.ax0.set_title(
-            "Iteration: {0} (EVP: {1:.2f}%)".format(self.itercount,
-                                                    self.evp[-1]))
+            "Iteration: {0} (EVP: {1:.2f}%)".format(self.itercount, self.evp[-1])
+        )
         self.ax0.legend(loc=(0, 1), frameon=False, ncol=2)
         omax = self.obs.max()
         omin = self.obs.min()
@@ -704,26 +762,29 @@ class TrackSolve:
         plt.sca(self.ax1)
         plt.yscale("log")
         legend_handles = []
-        self.r_rmse_plot_line, = self.ax1.plot(
-            [0], self.rmse_res[0:1], c="k", ls="solid", label="residuals")
-        self.r_rmse_plot_dot, = self.ax1.plot(
-            self.itercount, self.rmse_res[-1], c="k", marker="o", ls="none")
+        (self.r_rmse_plot_line,) = self.ax1.plot(
+            [0], self.rmse_res[0:1], c="k", ls="solid", label="residuals"
+        )
+        (self.r_rmse_plot_dot,) = self.ax1.plot(
+            self.itercount, self.rmse_res[-1], c="k", marker="o", ls="none"
+        )
         legend_handles.append(self.r_rmse_plot_line)
         self.ax1.set_xlim(0, self.viewlim)
         self.ax1.set_ylim(1e-2, 2 * self.rmse_res[-1])
         self.ax1.set_ylabel("RMSE")
 
         if self.ml.settings["noise"] and self.ml.noisemodel is not None:
-            self.n_rmse_plot_line, = self.ax1.plot(
-                [0], self.rmse_noise[0:1], c="C0", ls="solid",
-                label="noise")
-            self.n_rmse_plot_dot, = self.ax1.plot(
-                self.itercount, self.rmse_res[-1], c="C0", marker="o",
-                ls="none")
+            (self.n_rmse_plot_line,) = self.ax1.plot(
+                [0], self.rmse_noise[0:1], c="C0", ls="solid", label="noise"
+            )
+            (self.n_rmse_plot_dot,) = self.ax1.plot(
+                self.itercount, self.rmse_res[-1], c="C0", marker="o", ls="none"
+            )
             legend_handles.append(self.n_rmse_plot_line)
         legend_labels = [i.get_label() for i in legend_handles]
-        self.ax1.legend(legend_handles, legend_labels, loc=(0, 1),
-                        frameon=False, ncol=2)
+        self.ax1.legend(
+            legend_handles, legend_labels, loc=(0, 1), frameon=False, ncol=2
+        )
 
         # plot parameters values on semilogy
         plt.sca(self.ax2)
@@ -732,21 +793,21 @@ class TrackSolve:
         legend_handles = []
         for pname, row in self.ml.parameters.iterrows():
             if pname.startswith("noise"):
-                if (not self.ml.settings["noise"] or
-                        self.ml.noisemodel is None):
+                if not self.ml.settings["noise"] or self.ml.noisemodel is None:
                     continue
-            pa, = self.ax2.plot(
-                [0], np.abs(row.initial), marker=".",
-                ls="none", label=pname)
-            pb, = self.ax2.plot([0],
-                                np.abs(row.initial), ls="solid",
-                                c=pa.get_color())
+            (pa,) = self.ax2.plot(
+                [0], np.abs(row.initial), marker=".", ls="none", label=pname
+            )
+            (pb,) = self.ax2.plot(
+                [0], np.abs(row.initial), ls="solid", c=pa.get_color()
+            )
             self.param_plot_handles.append((pa, pb))
             legend_handles.append(pa)
 
         legend_labels = [i.get_label() for i in legend_handles]
-        self.ax2.legend(legend_handles, legend_labels, loc=(0, 1),
-                        ncol=6, frameon=False)
+        self.ax2.legend(
+            legend_handles, legend_labels, loc=(0, 1), ncol=6, frameon=False
+        )
         self.ax2.set_xlim(0, self.viewlim)
         self.ax2.set_ylim(1e-3, 1e4)
         self.ax2.set_ylabel("Parameter values")
@@ -793,28 +854,32 @@ class TrackSolve:
 
         # update rmse residuals
         self.r_rmse_plot_line.set_data(
-            range(self.itercount + 1), np.array(self.rmse_res))
+            range(self.itercount + 1), np.array(self.rmse_res)
+        )
         self.r_rmse_plot_dot.set_data(
-            np.array([self.itercount]), np.array(self.rmse_res[-1]))
+            np.array([self.itercount]), np.array(self.rmse_res[-1])
+        )
 
         if self.ml.settings["noise"] and self.ml.noisemodel is not None:
             # update rmse noise
             self.n_rmse_plot_line.set_data(
-                range(self.itercount + 1), np.array(self.rmse_noise))
+                range(self.itercount + 1), np.array(self.rmse_noise)
+            )
             self.n_rmse_plot_dot.set_data(
-                np.array([self.itercount]), np.array(self.rmse_noise[-1]))
+                np.array([self.itercount]), np.array(self.rmse_noise[-1])
+            )
 
         # update parameter plots
         for j, (p1, p2) in enumerate(self.param_plot_handles):
-            p1.set_data(np.array([self.itercount]),
-                        np.abs(self.parameters.iloc[-1, j]))
-            p2.set_data(range(self.itercount + 1),
-                        self.parameters.iloc[:, j].abs().values)
+            p1.set_data(np.array([self.itercount]), np.abs(self.parameters.iloc[-1, j]))
+            p2.set_data(
+                range(self.itercount + 1), self.parameters.iloc[:, j].abs().values
+            )
 
         # update title
         self.ax0.set_title(
-            "Iteration: {0} (EVP: {1:.2f}%)".format(self.itercount,
-                                                    self.evp[-1]))
+            "Iteration: {0} (EVP: {1:.2f}%)".format(self.itercount, self.evp[-1])
+        )
         plt.pause(1e-10)
         self.fig.canvas.draw()
 
@@ -861,7 +926,7 @@ def _table_formatter_params(s: float) -> str:
         float formatted as str
     """
     if np.isnan(s):
-        return ''
+        return ""
     elif np.floor(np.log10(np.abs(s))) <= -2:
         return f"{s:.2e}"
     elif np.floor(np.log10(np.abs(s))) > 5:
@@ -884,7 +949,7 @@ def _table_formatter_stderr(s: float) -> str:
         float formatted as str
     """
     if np.isnan(s):
-        return ''
+        return ""
     elif np.floor(np.log10(np.abs(s))) <= -4:
         return f"{s * 100.:.2e}%"
     elif np.floor(np.log10(np.abs(s))) > 3:

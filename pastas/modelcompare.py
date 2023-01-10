@@ -1,14 +1,13 @@
 from itertools import combinations
+from typing import List, Optional, Tuple
+from warnings import warn
 
 import matplotlib.pyplot as plt
 import numpy as np
 from pandas import DataFrame, concat
 
 import pastas as ps
-from warnings import warn
-
-from typing import Optional, Tuple, List
-from pastas.typing import Model, Axes
+from pastas.typing import Axes, Model
 
 
 class CompareModels:
@@ -73,10 +72,12 @@ class CompareModels:
         self.adjust_height = False
         self.smdict = None
 
-    def initialize_figure(self,
-                          mosaic: Optional[List[List[str]]] = None,
-                          figsize: Tuple[int] = (10, 8),
-                          cmap: str = "tab10") -> None:
+    def initialize_figure(
+        self,
+        mosaic: Optional[List[List[str]]] = None,
+        figsize: Tuple[int] = (10, 8),
+        cmap: str = "tab10",
+    ) -> None:
         """initialize a custom figure based on a mosaic.
 
         Parameters
@@ -97,12 +98,13 @@ class CompareModels:
         self.axes = axes
         self.cmap = plt.get_cmap(cmap)
 
-    def initialize_adjust_height_figure(self,
-                                        mosaic: Optional[List[
-                                            List[str]]] = None,
-                                        figsize: Tuple[int] = (10, 8),
-                                        cmap: str = "tab10",
-                                        smdict: Optional[dict] = None) -> None:
+    def initialize_adjust_height_figure(
+        self,
+        mosaic: Optional[List[List[str]]] = None,
+        figsize: Tuple[int] = (10, 8),
+        cmap: str = "tab10",
+        smdict: Optional[dict] = None,
+    ) -> None:
         """initialize subplots based on a mosaic with equal vertical scales.
 
         The height of each subplot is calculated based on the y-data limits in
@@ -132,8 +134,7 @@ class CompareModels:
 
         if smdict is None and self.smdict is None:
             self.smdict = {
-                i: [smn]
-                for i, smn in enumerate(self.get_unique_stressmodels())
+                i: [smn] for i, smn in enumerate(self.get_unique_stressmodels())
             }
         elif smdict is not None and self.smdict is None:
             self.smdict = smdict
@@ -148,12 +149,8 @@ class CompareModels:
             # get sim min/max
             sim = ml.simulate()
             o = ml.observations()
-            sim_minmax[0] = np.nanmin(
-                [np.nanmin([sim.min(), o.min()]), sim_minmax[0]]
-            )
-            sim_minmax[1] = np.nanmax(
-                [np.nanmax([sim.max(), o.max()]), sim_minmax[1]]
-            )
+            sim_minmax[0] = np.nanmin([np.nanmin([sim.min(), o.min()]), sim_minmax[0]])
+            sim_minmax[1] = np.nanmax([np.nanmax([sim.max(), o.max()]), sim_minmax[1]])
 
             # get res min/max
             res = ml.residuals()
@@ -195,9 +192,7 @@ class CompareModels:
         # sum of scaled dy
         hsum = np.sum(list(heights.values()))
         # total height ratio of scaled dy subplots
-        hratio = 1.0 - np.sum(
-            [mosfrac[ky] for ky in mosfrac if ky not in heights]
-        )
+        hratio = 1.0 - np.sum([mosfrac[ky] for ky in mosfrac if ky not in heights])
         heights_list = []  # collect heights
         for ky in mosfrac:
             nrows = dfmos.value_counts().loc[ky]
@@ -236,14 +231,13 @@ class CompareModels:
 
         sm_unique = []
         for ml in models:
-            sm_unique += [x for x in ml.get_stressmodel_names()
-                          if x not in sm_unique]
+            sm_unique += [x for x in ml.get_stressmodel_names() if x not in sm_unique]
 
         return sm_unique
 
-    def get_default_mosaic(self,
-                           n_stressmodels: Optional[int] = None
-                          ) -> List[List[str]]:
+    def get_default_mosaic(
+        self, n_stressmodels: Optional[int] = None
+    ) -> List[List[str]]:
         """Get default mosaic for matplotlib.subplot_mosaic().
 
         Parameters
@@ -258,9 +252,7 @@ class CompareModels:
             list of lists containing axes labels
         """
         if n_stressmodels is None:
-            n_stressmodels = len(
-                self.get_unique_stressmodels(models=self.models)
-            )
+            n_stressmodels = len(self.get_unique_stressmodels(models=self.models))
 
         mosaic = [
             ["sim", "sim", "met"],
@@ -292,9 +284,11 @@ class CompareModels:
 
         return tmintmax
 
-    def get_metrics(self,
-                    models: Optional[List[Model]] = None,
-                    metric_selection: Optional[List[str]] = None) -> DataFrame:
+    def get_metrics(
+        self,
+        models: Optional[List[Model]] = None,
+        metric_selection: Optional[List[str]] = None,
+    ) -> DataFrame:
         """get metrics of all models in a DataFrame.
 
         Parameters
@@ -323,10 +317,11 @@ class CompareModels:
         return metrics
 
     def get_parameters(
-            self,
-            models: Optional[List[Model]] = None,
-            param_col: str = "optimal",
-            param_selection: Optional[List[str]] = None) -> DataFrame:
+        self,
+        models: Optional[List[Model]] = None,
+        param_col: str = "optimal",
+        param_selection: Optional[List[str]] = None,
+    ) -> DataFrame:
         """get parameter values of all models in a DataFrame.
 
         Parameters
@@ -346,24 +341,20 @@ class CompareModels:
         if models is None:
             models = self.models
 
-        params = concat(
-            [ml.parameters[param_col] for ml in models], axis=1, sort=False
-        )
+        params = concat([ml.parameters[param_col] for ml in models], axis=1, sort=False)
         params.columns = [x.name for x in models]
 
         if param_selection:
             sel = np.array([])
             for sub in param_selection:
-                sel = np.append(
-                    sel, [idx for idx in params.index if sub in idx]
-                )
+                sel = np.append(sel, [idx for idx in params.index if sub in idx])
             return params.loc[sel].sort_index()
         else:
             return params
 
-    def get_diagnostics(self,
-                        models: Optional[List[Model]] = None,
-                        diag_col: str = "P-value") -> DataFrame:
+    def get_diagnostics(
+        self, models: Optional[List[Model]] = None, diag_col: str = "P-value"
+    ) -> DataFrame:
         """Get p-values of statistical tests in a DataFrame.
 
         Parameters
@@ -483,10 +474,9 @@ class CompareModels:
                     color=f"C{i}",
                 )
 
-    def plot_response(self,
-                      smdict: Optional[dict] = None,
-                      axn: str = "rf{i}",
-                      response: str = "step") -> None:
+    def plot_response(
+        self, smdict: Optional[dict] = None, axn: str = "rf{i}", response: str = "step"
+    ) -> None:
         """plot step or block responses.
 
         Parameters
@@ -514,8 +504,7 @@ class CompareModels:
 
         if smdict is None and self.smdict is None:
             self.smdict = {
-                i: [smn]
-                for i, smn in enumerate(self.get_unique_stressmodels())
+                i: [smn] for i, smn in enumerate(self.get_unique_stressmodels())
             }
         elif smdict is not None and self.smdict is None:
             self.smdict = smdict
@@ -543,10 +532,12 @@ class CompareModels:
                             color=self.cmap(i),
                         )
 
-    def plot_contribution(self,
-                          smdict: Optional[dict] = None,
-                          axn: str = "con{i}",
-                          normalized: bool = False) -> None:
+    def plot_contribution(
+        self,
+        smdict: Optional[dict] = None,
+        axn: str = "con{i}",
+        normalized: bool = False,
+    ) -> None:
         """plot stressmodel contributions.
 
         Parameters
@@ -579,8 +570,7 @@ class CompareModels:
                     "`initialize_adjust_height_figure()` for best results."
                 )
             self.smdict = {
-                i: [smn]
-                for i, smn in enumerate(self.get_unique_stressmodels())
+                i: [smn] for i, smn in enumerate(self.get_unique_stressmodels())
             }
         elif smdict is not None and self.smdict is None:
             self.smdict = smdict
@@ -607,9 +597,9 @@ class CompareModels:
                                 color=self.cmap(i),
                             )
 
-    def plot_stress(self,
-                    axn: str = "stress",
-                    names: Optional[List[str]] = None) -> None:
+    def plot_stress(
+        self, axn: str = "stress", names: Optional[List[str]] = None
+    ) -> None:
         """plot stresses time series.
 
         Parameters
@@ -667,10 +657,8 @@ class CompareModels:
                 label=label,
             )
 
-    def plot_table(self,
-                   axn: str = "table",
-                   df: Optional[DataFrame] = None) -> None:
-        """plot dataframe as table
+    def plot_table(self, axn: str = "table", df: Optional[DataFrame] = None) -> None:
+        """Plot dataframe as table.
 
         Parameters
         ----------
@@ -696,10 +684,12 @@ class CompareModels:
         self.axes[axn].set_xticks([])
         self.axes[axn].set_yticks([])
 
-    def plot_table_params(self,
-                          axn: str = "tab",
-                          param_col: str = "optimal",
-                          param_selection: Optional[List[str]] = None) -> None:
+    def plot_table_params(
+        self,
+        axn: str = "tab",
+        param_col: str = "optimal",
+        param_selection: Optional[List[str]] = None,
+    ) -> None:
         """plot model parameters table.
 
         Parameters
@@ -727,9 +717,8 @@ class CompareModels:
         self.plot_table(axn=axn, df=params[cols])
 
     def plot_table_metrics(
-            self,
-            axn: str = "met",
-            metric_selection: Optional[List[str]] = None) -> None:
+        self, axn: str = "met", metric_selection: Optional[List[str]] = None
+    ) -> None:
         """plot metrics table.
 
         Parameters
@@ -746,9 +735,7 @@ class CompareModels:
         if metric_selection is None:
             metric_selection = ["rsq", "aic"]
 
-        metrics = self.get_metrics(
-            self.models, metric_selection=metric_selection
-        )
+        metrics = self.get_metrics(self.models, metric_selection=metric_selection)
         for met in ["aic", "bic"]:
             if met in metrics.index:
                 metrics.loc[met] -= metrics.loc[met].min()
@@ -763,9 +750,9 @@ class CompareModels:
         cols = metrics.columns.to_list()[-1:] + metrics.columns.to_list()[:-1]
         self.plot_table(axn=axn, df=metrics[cols].round(2))
 
-    def plot_table_diagnostics(self,
-                               axn: str = "diag",
-                               diag_col: str = "P-value") -> None:
+    def plot_table_diagnostics(
+        self, axn: str = "diag", diag_col: str = "P-value"
+    ) -> None:
         """plot diagnostics table.
 
         Parameters
@@ -857,8 +844,7 @@ class CompareModels:
         if self.axes is None and not self.adjust_height:
             self.initialize_figure(figsize=figsize)
         if self.axes is None and self.adjust_height:
-            self.initialize_adjust_height_figure(
-                smdict=smdict, figsize=figsize)
+            self.initialize_adjust_height_figure(smdict=smdict, figsize=figsize)
 
         # sim
         self.plot_oseries()
@@ -883,8 +869,7 @@ class CompareModels:
                         legend_kwargs = {}
                     _, l = self.axes[axn].get_legend_handles_labels()
                     self.axes[axn].legend(
-                        ncol=legend_kwargs.pop(
-                            "ncol", max([int(np.ceil(len(l))), 4])),
+                        ncol=legend_kwargs.pop("ncol", max([int(np.ceil(len(l))), 4])),
                         loc=legend_kwargs.pop("loc", (0, 1)),
                         frameon=legend_kwargs.pop("frameon", False),
                         markerscale=legend_kwargs.pop("markerscale", 1.0),
