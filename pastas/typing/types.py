@@ -35,4 +35,5 @@ Recharge = TypeVar("Recharge", bound="ps.recharge.RechargeBase")  # Recharge Bas
 Reservoir = TypeVar("Reservoir", bound="ps.reservoir.ReservoirBase")  # Reservoir Base
 CallBack = TypeVar("CallBack", bound=Any)  # Callback
 Function = TypeVar("Function", bound=Any)  # Function (e.g. Objective Function)
+Decorator = TypeVar("Decorator", bound=Any)  # Decorator
 RFunc = TypeVar("RFunc", bound="ps.rfunc.RfuncBase")  # rFunc Base
