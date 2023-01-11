@@ -750,7 +750,7 @@ class WellModel(StressModelBase):
             p=p, tmin=tmin, tmax=tmax, freq=freq, istress=istress, squeeze=False
         )
         h = Series(data=0, index=self.stress[0].series.index, name=self.name)
-        for name, r in distances.iteritems():
+        for name, r in distances.items():
             stress = stress_df.loc[:, name]
             npoints = stress.index.size
             p_with_r = np.concatenate([p, np.array([r])])
@@ -1025,7 +1025,7 @@ class RechargeModel(StressModelBase):
         rfunc: Optional[RFunc] = None,
         name: str = "recharge",
         recharge: Optional[Recharge] = None,
-        temp: Series = None,
+        temp: Optional[Series] = None,
         cutoff: float = 0.999,
         settings: Tuple[Union[str, dict], Union[str, dict], Union[str, dict]] = (
             "prec",
