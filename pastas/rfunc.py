@@ -882,6 +882,7 @@ class Polder(RfuncBase):
         return A * t ** (-1.5) * np.exp(-t / a - b / t)
 
     @staticmethod
+    @latexfun
     def polder_function(x: float, y: float) -> float:
         s = 0.5 * np.exp(2 * x) * erfc(x / y + y) + 0.5 * np.exp(-2 * x) * erfc(
             x / y - y
