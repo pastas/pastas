@@ -21,8 +21,7 @@ def load(fname: str, **kwargs) -> Model:
     Parameters
     ----------
     fname: str
-        string with the name of the file to be imported including the file
-        extension.
+        string with the name of the file to be imported including the file extension.
     kwargs:
         extension specific keyword arguments
 
@@ -48,9 +47,8 @@ def load(fname: str, **kwargs) -> Model:
     ml = _load_model(data)
 
     logger.info(
-        "Pastas Model from file %s successfully loaded. This file "
-        "was created with Pastas %s. Your current version of Pastas "
-        "is: %s",
+        "Pastas Model from file %s successfully loaded. This file was created with "
+        "Pastas %s. Your current version of Pastas is: %s",
         fname,
         data["file_info"]["pastas_version"],
         ps.__version__,
@@ -61,31 +59,13 @@ def load(fname: str, **kwargs) -> Model:
 def _load_model(data: dict) -> Model:
     """Internal method to create a model from a dictionary."""
     # Create model
-
-    # TODO Deal with all TimeSeries format for pastas 0.23, remove support in 1.0
-    if "freq_original" in data["oseries"].keys():
-        raise NotImplementedError("Working on this, hang tight!")
-        # Deal with old format here
-        # Validate and fix series the old way, then continue with validated ts.
-        # series = validate_series_old_style(series.series_original.copy())
-        # settings = series.settings.copy()
-        #
-        # for key in ["fill_nan"]:
-        #     settings.drop(key)
-        #
-        # metadata = series.metadata.copy()
-    else:
-        oseries = ps.TimeSeries(**data["oseries"])
+    oseries = data["oseries"]["series"]
+    metadata = data["oseries"]["metadata"]
 
     if "constant" in data.keys():
         constant = data["constant"]
     else:
         constant = False
-
-    if "metadata" in data.keys():
-        metadata = data["metadata"]
-    else:
-        metadata = None
 
     if "name" in data.keys():
         name = data["name"]
@@ -98,7 +78,11 @@ def _load_model(data: dict) -> Model:
         noise = False
 
     ml = ps.Model(
-        oseries, constant=constant, noisemodel=noise, name=name, metadata=metadata
+        oseries=oseries,
+        constant=constant,
+        noisemodel=noise,
+        name=name,
+        metadata=metadata,
     )
 
     if "settings" in data.keys():
@@ -107,63 +91,9 @@ def _load_model(data: dict) -> Model:
         ml.file_info.update(data["file_info"])
 
     # Add stressmodels
-    for name, ts in data["stressmodels"].items():
-        # Deal with old StressModel2 files for version 0.22.0. Remove in 0.23.0.
-        if ts["stressmodel"] == "StressModel2":
-            logger.warning(
-                "StressModel2 is removed since Pastas 0.22.0 and "
-                "is replaced by the RechargeModel using a Linear "
-                "recharge model. Make sure to save this file "
-                "again using Pastas version 0.22.0 as this file "
-                "cannot be loaded in newer Pastas versions. This "
-                "will automatically update your model to the newer "
-                "RechargeModel stress model."
-            )
-            ts["stressmodel"] = "RechargeModel"
-            ts["recharge"] = "Linear"
-            ts["prec"] = ts["stress"][0]
-            ts["evap"] = ts["stress"][1]
-            ts.pop("stress")
-            ts.pop("up")
-
-        # Deal with old parameter value b in HantushWellModel: b_new = np.log(b_old)
-        if ((ts["stressmodel"] == "WellModel") and
-            (version.parse(data["file_info"]["pastas_version"]) <
-             version.parse("0.22.0"))):
-            logger.warning("The value of parameter 'b' in HantushWellModel"
-                           "was modified in 0.22.0: b_new = log(b_old). The value of "
-                           "'b' is automatically updated on load.")
-            wnam = ts["name"]
-            for pcol in ["initial", "optimal", "pmin", "pmax"]:
-                if wnam + "_b" in data["parameters"].index:
-                    if data["parameters"].loc[wnam + "_b", pcol] > 0:
-                        data["parameters"].loc[wnam + "_b", pcol] = \
-                            log(data["parameters"].loc[wnam + "_b", pcol])
-
-        stressmodel = getattr(ps.stressmodels, ts["stressmodel"])
-        ts.pop("stressmodel")
-        if "rfunc" in ts.keys():
-            rfunc_kwargs = {}
-            if "rfunc_kwargs" in ts:
-                rfunc_kwargs = ts.pop("rfunc_kwargs")
-            ts["rfunc"] = getattr(ps.rfunc, ts["rfunc"])(**rfunc_kwargs)
-        if "recharge" in ts.keys():
-            recharge_kwargs = {}
-            if "recharge_kwargs" in ts:
-                recharge_kwargs = ts.pop("recharge_kwargs")
-            ts["recharge"] = getattr(
-                ps.recharge, ts["recharge"])(**recharge_kwargs)
-        if "stress" in ts.keys():
-            for i, stress in enumerate(ts["stress"]):
-                ts["stress"][i] = ps.TimeSeries(**stress)
-        if "prec" in ts.keys():
-            ts["prec"] = ps.TimeSeries(**ts["prec"])
-        if "evap" in ts.keys():
-            ts["evap"] = ps.TimeSeries(**ts["evap"])
-        if "temp" in ts.keys() and ts["temp"] is not None:
-            ts["temp"] = ps.TimeSeries(**ts["temp"])
-        stressmodel = stressmodel(**ts)
-        ml.add_stressmodel(stressmodel)
+    for name, smdata in data["stressmodels"].items():
+        sm = _load_stressmodel(smdata, data)
+        ml.add_stressmodel(sm)
 
     # Add transform
     if "transform" in data.keys():
@@ -193,6 +123,104 @@ def _load_model(data: dict) -> Model:
         ml.set_parameter(name=param, initial=value)
 
     return ml
+
+
+def _load_stressmodel(ts, data):
+    # TODO Deal with old StressModel2 files for version 0.22.0. Remove in 0.23.0.
+    if ts["stressmodel"] == "StressModel2":
+        msg = (
+            "StressModel2 is removed since Pastas 0.22.0 and is replaced by the "
+            "RechargeModel using a Linear recharge model. Make sure to save "
+            "this file first using Pastas version 0.22.0 as this file cannot be "
+            "loaded in newer Pastas versions. This will automatically update "
+            "your model to the newer RechargeModel stress model."
+        )
+        logger.error(msg=msg)
+        raise NotImplementedError(msg)
+
+    # TODO Deal with old parameter value b in HantushWellModel: b_new = np.log(b_old)
+    if (ts["stressmodel"] == "WellModel") and (
+        version.parse(data["file_info"]["pastas_version"]) < version.parse("0.22.0")
+    ):
+        logger.warning(
+            "The value of parameter 'b' in HantushWellModel was modified in 0.22.0: "
+            "b_new = log(b_old). The value of 'b' is automatically updated on load."
+        )
+        wnam = ts["name"]
+        for pcol in ["initial", "optimal", "pmin", "pmax"]:
+            if wnam + "_b" in data["parameters"].index:
+                if data["parameters"].loc[wnam + "_b", pcol] > 0:
+                    data["parameters"].loc[wnam + "_b", pcol] = log(
+                        data["parameters"].loc[wnam + "_b", pcol]
+                    )
+
+    # Create and add stress model
+    stressmodel = getattr(ps.stressmodels, ts["stressmodel"])
+    ts.pop("stressmodel")
+    if "rfunc" in ts.keys():
+        rfunc_kwargs = {}
+        if "rfunc_kwargs" in ts:
+            rfunc_kwargs = ts.pop("rfunc_kwargs")
+        ts["rfunc"] = getattr(ps.rfunc, ts["rfunc"])(**rfunc_kwargs)
+    if "recharge" in ts.keys():
+        recharge_kwargs = {}
+        if "recharge_kwargs" in ts:
+            recharge_kwargs = ts.pop("recharge_kwargs")
+        ts["recharge"] = getattr(ps.recharge, ts["recharge"])(**recharge_kwargs)
+
+    metadata = []
+    settings = []
+
+    # Unpack the stress time series
+    if "stress" in ts.keys():
+        for i, stress in enumerate(ts["stress"]):
+            series, meta, setting = _unpack_series(**stress)
+            ts["stress"][i] = series
+            metadata.append(meta)
+            settings.append(setting)
+
+    if "prec" in ts.keys():
+        series, meta, setting = _unpack_series(**ts["prec"])
+        ts["prec"] = series
+        metadata.append(meta)
+        settings.append(setting)
+
+    if "evap" in ts.keys():
+        series, meta, setting = _unpack_series(**ts["evap"])
+        ts["evap"] = series
+        metadata.append(meta)
+        settings.append(setting)
+
+    if "temp" in ts.keys() and ts["temp"] is not None:
+        series, meta, setting = _unpack_series(**ts["temp"])
+        ts["temp"] = series
+        metadata.append(meta)
+        settings.append(setting)
+
+    if metadata:
+        ts["metadata"] = metadata if len(metadata) > 1 else metadata[0]
+    if settings:
+        ts["settings"] = settings if len(settings) > 1 else settings[0]
+
+    sm = stressmodel(**ts)
+    return sm
+
+
+def _unpack_series(**kwargs):
+    series = kwargs["series"]
+    metadata = kwargs["metadata"]
+    settings = kwargs["settings"]
+
+    if "freq_original" in kwargs.keys():
+        print("Whoops, looks like an old pas-file. Working on it")
+
+        # Here the old time series validation will occur.
+        #series = old_timeseries_validation(series, settings)
+
+        settings.pop("fill_nan")
+        kwargs.pop("freq_original")
+
+    return series, metadata, settings
 
 
 def dump(fname: str, data: dict, **kwargs):

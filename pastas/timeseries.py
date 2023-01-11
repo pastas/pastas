@@ -66,7 +66,7 @@ class TimeSeries:
         **kwargs,  # TODO remove in Pastas 1.0
     ) -> None:
         # First, deal with all deprecated features and raise errors
-        check_input(series, settings, metadata, **kwargs)
+        check_input(series, settings, **kwargs)
 
         # Make sure we have a workable Pandas Series, depends on type of time series
         if settings == "oseries":
@@ -527,14 +527,13 @@ class TimeSeries:
         return ax
 
 
-def check_input(series, settings, metadata, **kwargs):
+def check_input(series, settings, **kwargs):
     """Method to check input data for Pastas version 0.23 and raise errors.
 
     Parameters
     ----------
     series: pandas.Series
     settings: dict
-    metadata: dict
 
     Returns
     -------
