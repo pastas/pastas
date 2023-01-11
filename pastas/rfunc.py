@@ -303,7 +303,7 @@ class Gamma(RfuncBase):
         return s
 
     @staticmethod
-    @latexfun(identifiers={"impulse":"theta", "gamma": "Gamma"})
+    @latexfun(identifiers={"impulse": "theta", "gamma": "Gamma"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         A, n, a = p
         return A * t ** (n - 1) * np.exp(-t / a) / (a**n * gamma(n))
@@ -876,18 +876,16 @@ class Polder(RfuncBase):
         return s
 
     @staticmethod
-    @latexfun(identifiers={"impulse":"theta"})
+    @latexfun(identifiers={"impulse": "theta"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         A, a, b = p
         return A * t ** (-1.5) * np.exp(-t / a - b / t)
 
     @staticmethod
-    @latexfun
+    @latexfun(use_raw_function_name=True)
     def polder_function(x: float, y: float) -> float:
-        s = 0.5 * np.exp(2 * x) * erfc(x / y + y) + 0.5 * np.exp(-2 * x) * erfc(
-            x / y - y
-        )
-        return s
+        return 0.5 * np.exp(2 * x) * erfc(x / y + y) + 0.5 * np.exp(
+            -2 * x) * erfc(x / y - y)
 
 
 class One(RfuncBase):

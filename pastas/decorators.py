@@ -88,17 +88,22 @@ def njit(function: Optional[Function] = None,
     return njit_decorator
 
 
-def latexfun(function: Optional[Function] = None,
-             identifiers: Dict[str, str] = None,
-             use_math_symbols: bool = True) -> Decorator:
+def latexfun(
+    function: Optional[Function] = None,
+    identifiers: Dict[str, str] = None,
+    use_math_symbols: bool = True,
+    use_raw_function_name: bool = False,
+) -> Decorator:
 
     def latexify_decorator(f: Function):
         try:
             import latexify
 
-            flatex = latexify.function(f,
-                                       identifiers=identifiers,
-                                       use_math_symbols=use_math_symbols)
+            flatex = latexify.function(
+                f,
+                identifiers=identifiers,
+                use_math_symbols=use_math_symbols,
+                use_raw_function_name=use_raw_function_name)
             return flatex
         except ImportError:
             return f
