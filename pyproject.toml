@@ -47,6 +47,7 @@ repository = "https://github.com/pastas/pastas"
 documentation = "https://pastas.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
+full = ["numba >= 0.51", "lmfit >= 1.0.0"]
 ci = [
     "pastas[full]",
     "jupyter",
@@ -57,7 +58,6 @@ ci = [
     "emcee",
     "tqdm",
 ]
-full = ["numba >= 0.51", "lmfit >= 1.0.0"]
 rtd = [
     "nbsphinx",
     "Ipython",
@@ -68,7 +68,7 @@ rtd = [
     "sphinxcontrib-bibtex",
     "requests",
 ]
-develop = ["pastas[full]", "pastas[ci]", "numba-scipy >= 0.3.1"]
+numbascipy = ["numba-scipy >= 0.3.1"]
 
 [tool.black]
 line-length = 88
