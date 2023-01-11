@@ -574,6 +574,7 @@ def validate_stress(series: Series):
     -----
     The Series are validated for the following cases:
 
+    0. Make sure the series is a Pandas.Series
     1. Make sure the values are floats
     2. Make sure the index is a DatetimeIndex
     3. Make sure the indices are datetime64
@@ -606,6 +607,7 @@ def validate_oseries(series: Series):
     -----
     The Series are validated for the following cases:
 
+    0. Make sure the series is a Pandas.Series
     1. Make sure the values are floats
     2. Make sure the index is a DatetimeIndex
     3. Make sure the indices are datetime64
@@ -643,52 +645,65 @@ def _validate_series(series: Series, equidistant: bool = True):
     """
     # 0. Make sure it is a Series and not something else (e.g., DataFrame)
     if not isinstance(series, pd.Series):
-        logger.error("Expected a Pandas Series, got %s", type(series))
+        msg = "Expected a Pandas Series, got %s"
+        logger.error(msg, type(series))
+        raise ValueError(msg, type(series))
 
     name = series.name  # Only Series have a name, DateFrame do not
 
     # 1. Make sure the values are floats
     if not pd.api.types.is_float_dtype(series):
-        logger.error("Values of time series %s are not dtype=float.", name)
+        msg = "Values of time series %s are not dtype=float."
+        logger.error(msg, name)
+        raise ValueError(msg, name)
 
     # 2. Make sure the index is a DatetimeIndex
     if not isinstance(series.index, pd.DatetimeIndex):
-        logger.error("Index os series %s is not a pandas.DatetimeIndex.", name)
+        msg = "Index os series %s is not a pandas.DatetimeIndex."
+        logger.error(msg, name)
+        raise ValueError(msg, name)
 
     # 3. Make sure the indices are datetime64
     if not pd.api.types.is_datetime64_dtype(series.index):
-        logger.error("Indices os series %s are not datetime64.", name)
+        msg = "Indices os series %s are not datetime64."
+        logger.error(msg, name)
+        raise ValueError(msg, name)
 
     # 4. Make sure the index is monotonically increasing
     if not series.index.is_monotonic_increasing:
-        logger.error(
-            "The time-indices of series %s are not monotonically "
-            "increasing. Try to use `series.sort_index()` to fix it.",
-            name,
+        msg = (
+            "The time-indices of series %s are not monotonically increasing. Try to "
+            "use `series.sort_index()` to fix it."
         )
+        logger.error(msg, name)
+        raise ValueError(msg, name)
 
     # 6. Make sure there are no duplicate indices
     if not series.index.is_unique:
-        logger.error(
-            "duplicate time-indexes were found in the time series %s. Make "
-            "sure there are no duplicate indices. For example by "
-            "`grouped = series.groupby(level=0); series = grouped.mean()`",
-            name,
+        msg = (
+            "duplicate time-indexes were found in the time series %s. Make sure "
+            "there are no duplicate indices. For example by "
+            "`grouped = series.groupby(level=0); series = grouped.mean()`"
         )
+        logger.error(msg, name)
+        raise ValueError(msg, name)
 
     # 7. Make sure the time series has no nan-values
     if series.hasnans:
-        logger.error(
+        msg = (
             "The time series %s has nan-values. Please fill or remove all "
-            "the nan-values from the time series. For example by using "
+            "the nan-values from the time series. For example by using  "
             "series.fillna(0.0)."
         )
+        logger.error(msg, name)
+        raise ValueError(msg, name)
 
     # 5. Make sure the time series has equidistant time steps
     if equidistant:
         if not pd.infer_freq(series.index):
-            logger.error(
-                "The frequency of the index of time series %s could not be "
-                "inferred. Please provide a time series with a regular time step.",
-                name,
+            msg = (
+                "The frequency of the index of time series %s could not be inferred. "
+                "Please provide a time series with a regular time step."
             )
+            logger.error(msg, name)
+            raise ValueError(msg, name)
