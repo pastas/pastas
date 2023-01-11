@@ -66,7 +66,7 @@ class TimeSeries:
         **kwargs,  # TODO remove in Pastas 1.0
     ) -> None:
         # First, deal with all deprecated features and raise errors
-        check_input(series, settings, **kwargs)
+        check_input(series, settings, **kwargs)  # TODO remove in Pastas 1.0
 
         # Make sure we have a workable Pandas Series, depends on type of time series
         if settings == "oseries":
@@ -86,7 +86,6 @@ class TimeSeries:
             "fill_after": None,
             "tmin": series.index.min(),
             "tmax": series.index.max(),
-            "norm": None,
             "time_offset": pd.Timedelta(0),
         }
         self.metadata = {"x": 0.0, "y": 0.0, "z": 0.0, "projection": None}
@@ -122,6 +121,7 @@ class TimeSeries:
             f"{self.__class__.__name__}"
             f"(name={self.name}, "
             f"freq={self.settings['freq']}, "
+            f"freq_original={self.freq_original}, "
             f"tmin={self.settings['tmin']}, "
             f"tmax={self.settings['tmax']})"
         )
@@ -211,7 +211,6 @@ class TimeSeries:
             series = self._change_frequency(series)
             series = self._fill_before(series)
             series = self._fill_after(series)
-            series = self._normalize(series)
             series.name = self._series_original.name
 
             self._series = series
@@ -451,34 +450,6 @@ class TimeSeries:
 
         return series
 
-    def _normalize(self, series: Series) -> Series:
-        """Method to normalize the time series."""
-        method = self.settings["norm"]
-
-        if method is None:
-            pass
-        elif method == "mean":
-            series = series.subtract(series.mean())
-        elif method == "median":
-            series = series.subtract(series.median())
-        elif method == "min":
-            series = series.subtract(series.min())
-        elif method == "max":
-            series = series.subtract(series.max())
-        elif isinstance(method, float):
-            series = series.subtract(method)
-        else:
-            logger.warning(
-                "Time Series %s: Selected method %s to normalize the time series is "
-                "not supported",
-                self.name,
-                method,
-            )
-        if method:
-            logger.info("Time series %s is normalized with the %s", self.name, method)
-
-        return series
-
     def to_dict(self, series: Optional[bool] = True) -> dict:
         """Method to export the Time Series to a json format.
 
@@ -554,7 +525,7 @@ def check_input(series, settings, **kwargs):
 
     if isinstance(settings, dict):
         for key in settings.keys():
-            if key in []:
+            if key in ["norm", "fill_nan"]:
                 raise DeprecationWarning(
                     "Key %s is no longer supported. Please remove this keyword from "
                     "the settings dictionary."

@@ -11,6 +11,7 @@ from pandas import to_numeric
 
 # Type Hinting
 from pastas.typing import Model
+from .timeseries_legacy import TimeSeriesOld
 
 logger = getLogger(__name__)
 
@@ -207,17 +208,41 @@ def _load_stressmodel(ts, data):
 
 
 def _unpack_series(**kwargs):
+    """
+
+    Parameters
+    ----------
+    kwargs
+
+    Returns
+    -------
+
+    """
     series = kwargs["series"]
     metadata = kwargs["metadata"]
     settings = kwargs["settings"]
 
+    # Deal with pas-files from Pastas version 0.22. Pastas 0.22.0 was very loose on
+    # the input data and would internally fix a lot. Here we choose to recreate the
+    # old TimeSeries object, and use the TimeSeries.series.
+
     if "freq_original" in kwargs.keys():
-        print("Whoops, looks like an old pas-file. Working on it")
+        msg = (
+            "Whoops, looks like an old pas-file using the old TimeSeries format. "
+            "Pastas will convert to the new TimeSeries format. However, it can not "
+            "be guaranteed that the conversion will result in the exact same "
+            "results. If you have the Python scripts used to generate this "
+            "pas-file, it is highly recommended to rerun the script using a newer "
+            "Pastas version (0.23 or higher). "
+        )
+        logger.warning(msg)
 
-        # Here the old time series validation will occur.
-        #series = old_timeseries_validation(series, settings)
+        # Create an old TimeSeries object
+        series = TimeSeriesOld(**kwargs).series
 
+        # Remove deprecated keywords
         settings.pop("fill_nan")
+        settings.pop("norm")
         kwargs.pop("freq_original")
 
     return series, metadata, settings
