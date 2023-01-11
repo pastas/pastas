@@ -30,14 +30,13 @@ from .stressmodels import (
     Constant,
     LinearTrend,
     RechargeModel,
-    ReservoirModel,
     StepModel,
     StressModel,
     StressModel2,
     TarsoModel,
     WellModel,
 )
-from .timeseries import TimeSeries, validate_timeseries
+from .timeseries import TimeSeries, validate_stress, validate_oseries
 from .transform import ThresholdTransform
 from .utils import initialize_logger, set_log_level, show_versions
 from .version import __version__

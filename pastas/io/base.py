@@ -61,7 +61,21 @@ def load(fname: str, **kwargs) -> Model:
 def _load_model(data: dict) -> Model:
     """Internal method to create a model from a dictionary."""
     # Create model
-    oseries = ps.TimeSeries(**data["oseries"])
+
+    # TODO Deal with all TimeSeries format for pastas 0.23, remove support in 1.0
+    if "freq_original" in data["oseries"].keys():
+        raise NotImplementedError("Working on this, hang tight!")
+        # Deal with old format here
+        # Validate and fix series the old way, then continue with validated ts.
+        # series = validate_series_old_style(series.series_original.copy())
+        # settings = series.settings.copy()
+        #
+        # for key in ["fill_nan"]:
+        #     settings.drop(key)
+        #
+        # metadata = series.metadata.copy()
+    else:
+        oseries = ps.TimeSeries(**data["oseries"])
 
     if "constant" in data.keys():
         constant = data["constant"]

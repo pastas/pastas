@@ -1032,20 +1032,6 @@ class RechargeModel(StressModelBase):
         self.prec = TimeSeries(prec, settings=settings[0], metadata=metadata[0])
         self.evap = TimeSeries(evap, settings=settings[1], metadata=metadata[1])
 
-        # Check if both series have a regular time step
-        if self.prec.freq_original is None:
-            msg = (
-                "Frequency of the precipitation series could not be determined. "
-                "Please provide a time series with a regular time step."
-            )
-            raise IndexError(msg)
-        if self.evap.freq_original is None:
-            msg = (
-                "Frequency of the evaporation series could not be determined. Please "
-                "provide a time series with a regular time step."
-            )
-            raise IndexError(msg)
-
         # Store recharge object
         self.recharge = recharge
 

@@ -32,7 +32,7 @@ ml.add_stressmodel(rm)
 well = (
     pd.read_csv("data_notebook_5/well_wellex.csv", index_col="Date", parse_dates=True)
     / 1e6
-)
+).squeeze("columns")
 sm = ps.StressModel(well, rfunc=ps.Exponential, name="well", up=False)
 ml.add_stressmodel(sm)
 
