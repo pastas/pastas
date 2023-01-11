@@ -5,11 +5,13 @@ logger = getLogger(__name__)
 
 
 def set_parameter(function):
+
     @wraps(function)
     def _set_parameter(self, name, value, **kwargs):
         if name not in self.parameters.index:
             logger.error(
-                "Parameter name %s does not exist, please choose " "from %s",
+                "Parameter name %s does not exist, please choose "
+                "from %s",
                 name,
                 self.parameters.index,
             )
@@ -20,6 +22,7 @@ def set_parameter(function):
 
 
 def get_stressmodel(function):
+
     @wraps(function)
     def _get_stressmodel(self, name, **kwargs):
         if name not in self.stressmodels.keys():
@@ -36,6 +39,7 @@ def get_stressmodel(function):
 
 
 def model_tmin_tmax(function):
+
     @wraps(function)
     def _model_tmin_tmax(self, tmin=None, tmax=None, *args, **kwargs):
         if tmin is None:
@@ -49,18 +53,18 @@ def model_tmin_tmax(function):
 
 
 def PastasDeprecationWarning(function):
+
     @wraps(function)
     def _function(*args, **kwargs):
-        logger.warning(
-            "Deprecation warning: method is deprecated and will "
-            "be removed in version 0.23.0."
-        )
+        logger.warning("Deprecation warning: method is deprecated and will "
+                       "be removed in version 0.23.0.")
         return function(*args, **kwargs)
 
     return _function
 
 
 def njit(function=None, parallel=False):
+
     def njit_decorator(f):
         try:
             from numba import njit
@@ -74,3 +78,22 @@ def njit(function=None, parallel=False):
         return njit_decorator(function)
 
     return njit_decorator
+
+
+def latexfun(function=None, identifiers=None, use_math_symbols=True):
+
+    def latexify_decorator(f):
+        try:
+            import latexify
+
+            flatex = latexify.function(f,
+                                       identifiers=identifiers,
+                                       use_math_symbols=use_math_symbols)
+            return flatex
+        except ImportError:
+            return f
+
+    if function:
+        return latexify_decorator(function)
+
+    return latexify_decorator
