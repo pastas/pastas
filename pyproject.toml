@@ -7,17 +7,17 @@ build-backend = "setuptools.build_meta"
 name = "pastas"
 version = "0.22.0b"
 description = "Python package to perform time series analysis of hydrological time series."
-license = { file="LICENSE" }
+license = { file = "LICENSE" }
 readme = "README.rst"
-authors = [ { name = "Collenteur et al. 2019" } ]
+authors = [{ name = "Collenteur et al. 2019" }]
 maintainers = [
-{name="R.A. Collenteur", email="raoulcollenteur@gmail.com"},
-{name="M. Bakker", email="markbak@gmail.com"},
-{name="R. Calje", email="r.calje@artesia-water.nl"},
-{name="F. Schaars", email="f.schaars@artesia-water.nl"},
-{name="D.A. Brakenhoff", email="d.brakenhoff@artesia-water.nl"},
-{name="O. Ebbens", email="o.ebbens@artesia-water.nl"},
-{name="M.A. Vonk", email="m.vonk@artesia-water.nl"}
+    { name = "R.A. Collenteur", email = "raoulcollenteur@gmail.com" },
+    { name = "M. Bakker", email = "markbak@gmail.com" },
+    { name = "R. Calje", email = "r.calje@artesia-water.nl" },
+    { name = "F. Schaars", email = "f.schaars@artesia-water.nl" },
+    { name = "D.A. Brakenhoff", email = "d.brakenhoff@artesia-water.nl" },
+    { name = "O. Ebbens", email = "o.ebbens@artesia-water.nl" },
+    { name = "M.A. Vonk", email = "m.vonk@artesia-water.nl" },
 ]
 
 requires-python = ">= 3.7"
@@ -25,7 +25,7 @@ dependencies = [
     "numpy >= 1.17, < 1.24",
     "matplotlib >= 3.1",
     "pandas >= 1.1",
-    "scipy >= 1.3"
+    "scipy >= 1.3",
 ]
 
 keywords = ["hydrology", "groundwater", "timeseries", "analysis"]
@@ -47,10 +47,17 @@ repository = "https://github.com/pastas/pastas"
 documentation = "https://pastas.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
-full = [
-    "numba >= 0.51",
-    "lmfit >= 1.0.0",
-    ]
+ci = [
+    "pastas[full]",
+    "jupyter",
+    "pytest",
+    "pytest-cov",
+    "codacy-coverage",
+    "corner",
+    "emcee",
+    "tqdm",
+]
+full = ["numba >= 0.51", "lmfit >= 1.0.0"]
 rtd = [
     "nbsphinx",
     "Ipython",
@@ -61,21 +68,7 @@ rtd = [
     "sphinxcontrib-bibtex",
     "requests",
 ]
-ci = [
-    "pastas[full]"
-    "jupyter",
-    "pytest",
-    "pytest-cov",
-    "codacy-coverage",
-    "corner",
-    "emcee",
-    "tqdm",
-]
-develop = [
-    "pastas[full]",
-    "pastas[ci]",
-    "numba-scipy >= 0.3.1"
-]
+develop = ["pastas[full]", "pastas[ci]", "numba-scipy >= 0.3.1"]
 
 [tool.black]
 line-length = 88
