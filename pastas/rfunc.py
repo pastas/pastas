@@ -19,7 +19,7 @@ from scipy.special import (
     lambertw,
 )
 
-from .decorators import njit
+from .decorators import njit, latexfun
 from .utils import check_numba, check_numba_scipy
 
 try:
@@ -29,7 +29,6 @@ except ModuleNotFoundError:
 
 # Type Hinting
 from typing import Optional, Union
-
 from pastas.typing import ArrayLike
 
 logger = getLogger(__name__)
@@ -303,10 +302,11 @@ class Gamma(RfuncBase):
         s = p[0] * gammainc(p[1], t / p[2])
         return s
 
-    def impulse(self, t: ArrayLike, p: ArrayLike) -> ArrayLike:
+    @staticmethod
+    @latexfun(identifiers={"impulse":"theta", "gamma": "Gamma"})
+    def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         A, n, a = p
-        ir = A * t ** (n - 1) * np.exp(-t / a) / (a**n * gamma(n))
-        return ir
+        return A * t ** (n - 1) * np.exp(-t / a) / (a**n * gamma(n))
 
 
 class Exponential(RfuncBase):
@@ -387,10 +387,11 @@ class Exponential(RfuncBase):
         s = p[0] * (1.0 - np.exp(-t / p[1]))
         return s
 
-    def impulse(self, t: ArrayLike, p: ArrayLike) -> ArrayLike:
+    @staticmethod
+    @latexfun(identifiers={"impulse": "theta"})
+    def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         A, a = p
-        ir = A / a * np.exp(-t / a)
-        return ir
+        return A / a * np.exp(-t / a)
 
 
 class HantushWellModel(RfuncBase):
@@ -803,10 +804,11 @@ class Hantush(RfuncBase):
             else:  # otherwise numpy is faster
                 return self.numpy_step(A, a, b, t)
 
-    def impulse(self, t: ArrayLike, p: ArrayLike) -> ArrayLike:
+    @staticmethod
+    @latexfun(identifiers={"impulse": "theta", "k0": "K_0"})
+    def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         A, a, b = p
-        ir = A / (2 * t * k0(2 * np.sqrt(b))) * np.exp(-t / a - a * b / t)
-        return ir
+        return A / (2 * t * k0(2 * np.sqrt(b))) * np.exp(-t / a - a * b / t)
 
 
 class Polder(RfuncBase):
@@ -873,10 +875,11 @@ class Polder(RfuncBase):
             s = -s
         return s
 
-    def impulse(self, t: ArrayLike, p: ArrayLike) -> ArrayLike:
+    @staticmethod
+    @latexfun(identifiers={"impulse":"theta"})
+    def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         A, a, b = p
-        ir = A * t ** (-1.5) * np.exp(-t / a - b / t)
-        return ir
+        return A * t ** (-1.5) * np.exp(-t / a - b / t)
 
     @staticmethod
     def polder_function(x: float, y: float) -> float:
