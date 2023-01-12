@@ -4,20 +4,23 @@ groundwater time series in the Netherlands.
 .. codeauthor:: R. Calje, T. van Steijn and R. Collenteur
 """
 
-from numpy import nan
-from pandas import Series, Timedelta, concat, date_range
-from pastas.utils import get_sample
-
 # Type Hinting
 from typing import Optional, Union
+
+from numpy import nan
+from pandas import Series, Timedelta, concat, date_range
+
 from pastas.typing import Function, TimestampType
+from pastas.utils import get_sample
 
 
-def q_ghg(series: Series,
-          tmin: Optional[TimestampType] = None,
-          tmax: Optional[TimestampType] = None,
-          q: float = 0.94,
-          by_year: bool = True) -> Series:
+def q_ghg(
+    series: Series,
+    tmin: Optional[TimestampType] = None,
+    tmax: Optional[TimestampType] = None,
+    q: float = 0.94,
+    by_year: bool = True,
+) -> Series:
     """Gemiddeld Hoogste Grondwaterstand (GHG) also called MHGL (Mean High
     Groundwater Level).
 
@@ -41,11 +44,13 @@ def q_ghg(series: Series,
     return _q_gxg(series, q, tmin=tmin, tmax=tmax, by_year=by_year)
 
 
-def q_glg(series: Series,
-          tmin: Optional[TimestampType] = None,
-          tmax: Optional[TimestampType] = None,
-          q: float = 0.06,
-          by_year: bool = True) -> Series:
+def q_glg(
+    series: Series,
+    tmin: Optional[TimestampType] = None,
+    tmax: Optional[TimestampType] = None,
+    q: float = 0.06,
+    by_year: bool = True,
+) -> Series:
     """Gemiddeld Laagste Grondwaterstand (GLG) also called MLGL (Mean Low
     Groundwater Level).
 
@@ -69,10 +74,12 @@ def q_glg(series: Series,
     return _q_gxg(series, q, tmin=tmin, tmax=tmax, by_year=by_year)
 
 
-def q_gvg(series: Series,
-          tmin: Optional[TimestampType] = None,
-          tmax: Optional[TimestampType] = None,
-          by_year: bool = True) -> Series:
+def q_gvg(
+    series: Series,
+    tmin: Optional[TimestampType] = None,
+    tmax: Optional[TimestampType] = None,
+    by_year: bool = True,
+) -> Series:
     """Gemiddeld Voorjaarsgrondwaterstand (GVG) also called MSGL (Mean Spring
     Groundwater Level).
 
@@ -95,31 +102,28 @@ def q_gvg(series: Series,
         series = series.loc[tmin:]
     if tmax is not None:
         series = series.loc[:tmax]
-    series = series.resample('d').median()
+    series = series.resample("d").median()
     inspring = _in_spring(series)
     if any(inspring):
         if by_year:
-            return (series
-                    .loc[inspring]
-                    .resample('a')
-                    .median()
-                    .mean()
-                    )
+            return series.loc[inspring].resample("a").median().mean()
         else:
             return series.loc[inspring].median()
     else:
         return nan
 
 
-def ghg(series: Series,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
-        fill_method: str = 'nearest',
-        limit: int = 0,
-        output: str = 'mean',
-        min_n_meas: int = 16,
-        min_n_years: int = 8,
-        year_offset: str = 'a-mar') -> Union[Series, float]:
+def ghg(
+    series: Series,
+    tmin: Optional[TimestampType] = None,
+    tmax: Optional[TimestampType] = None,
+    fill_method: str = "nearest",
+    limit: int = 0,
+    output: str = "mean",
+    min_n_meas: int = 16,
+    min_n_years: int = 8,
+    year_offset: str = "a-mar",
+) -> Union[Series, float]:
     """Calculate the 'Gemiddelde Hoogste Grondwaterstand' (Average High
     Groundwater Level)
 
@@ -174,7 +178,8 @@ def ghg(series: Series,
 
     def mean_high(s, min_n_meas):
         return highs(s, min_n_meas).mean()
-    if output in ['mean', 'yearly']:
+
+    if output in ["mean", "yearly"]:
         f_agg = mean_high
     elif output == "g3":
         f_agg = highs
@@ -183,21 +188,31 @@ def ghg(series: Series,
     else:
         raise ValueError(f"Unrecognized option for output: {output}")
 
-    return _gxg(series, f_agg, tmin=tmin, tmax=tmax,
-                fill_method=fill_method, limit=limit, output=output,
-                min_n_meas=min_n_meas, min_n_years=min_n_years,
-                year_offset=year_offset)
+    return _gxg(
+        series,
+        f_agg,
+        tmin=tmin,
+        tmax=tmax,
+        fill_method=fill_method,
+        limit=limit,
+        output=output,
+        min_n_meas=min_n_meas,
+        min_n_years=min_n_years,
+        year_offset=year_offset,
+    )
 
 
-def glg(series: Series,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
-        fill_method: str = 'nearest',
-        limit: int = 0,
-        output: str = 'mean',
-        min_n_meas: int = 16,
-        min_n_years: int = 8,
-        year_offset: str = 'a-mar') -> Union[Series, float]:
+def glg(
+    series: Series,
+    tmin: Optional[TimestampType] = None,
+    tmax: Optional[TimestampType] = None,
+    fill_method: str = "nearest",
+    limit: int = 0,
+    output: str = "mean",
+    min_n_meas: int = 16,
+    min_n_years: int = 8,
+    year_offset: str = "a-mar",
+) -> Union[Series, float]:
     """Calculate the 'Gemiddelde Laagste Grondwaterstand' (Average Low
     Groundwater Level).
 
@@ -253,7 +268,7 @@ def glg(series: Series,
     def mean_low(s, min_n_meas):
         return lows(s, min_n_meas).mean()
 
-    if output in ['mean', 'yearly']:
+    if output in ["mean", "yearly"]:
         f_agg = mean_low
     elif output == "g3":
         f_agg = lows
@@ -262,21 +277,31 @@ def glg(series: Series,
     else:
         raise ValueError(f"Unrecognized option for output: {output}")
 
-    return _gxg(series, f_agg, tmin=tmin, tmax=tmax,
-                fill_method=fill_method, limit=limit, output=output,
-                min_n_meas=min_n_meas, min_n_years=min_n_years,
-                year_offset=year_offset)
+    return _gxg(
+        series,
+        f_agg,
+        tmin=tmin,
+        tmax=tmax,
+        fill_method=fill_method,
+        limit=limit,
+        output=output,
+        min_n_meas=min_n_meas,
+        min_n_years=min_n_years,
+        year_offset=year_offset,
+    )
 
 
-def gvg(series: Series,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
-        fill_method: str = 'linear',
-        limit: int = 8,
-        output: str = 'mean',
-        min_n_meas: int = 2,
-        min_n_years: int = 8,
-        year_offset: str = 'a') -> Union[Series, float]:
+def gvg(
+    series: Series,
+    tmin: Optional[TimestampType] = None,
+    tmax: Optional[TimestampType] = None,
+    fill_method: str = "linear",
+    limit: int = 8,
+    output: str = "mean",
+    min_n_meas: int = 2,
+    min_n_years: int = 8,
+    year_offset: str = "a",
+) -> Union[Series, float]:
     """Calculate the 'Gemiddelde Voorjaars Grondwaterstand' (Average Spring
     Groundwater Level).
 
@@ -316,10 +341,11 @@ def gvg(series: Series,
     Classic method resampling the series to every 14th and 28th of the
     month. Taking the mean of the values on March 14, March 28 and April 14.
     """
+
     def _mean_spring(s, min_n_meas):
         return _get_spring(s, min_n_meas).mean()
 
-    if output in ['mean', 'yearly']:
+    if output in ["mean", "yearly"]:
         f_agg = _mean_spring
     elif output == "g3":
         f_agg = _get_spring
@@ -328,21 +354,31 @@ def gvg(series: Series,
     else:
         raise ValueError(f"Unrecognized option for output: {output}")
 
-    return _gxg(series, f_agg, tmin=tmin, tmax=tmax,
-                fill_method=fill_method, limit=limit, output=output,
-                min_n_meas=min_n_meas, min_n_years=min_n_years,
-                year_offset=year_offset)
+    return _gxg(
+        series,
+        f_agg,
+        tmin=tmin,
+        tmax=tmax,
+        fill_method=fill_method,
+        limit=limit,
+        output=output,
+        min_n_meas=min_n_meas,
+        min_n_years=min_n_years,
+        year_offset=year_offset,
+    )
 
 
-def gg(series: Series,
-       tmin: Optional[TimestampType] = None,
-       tmax: Optional[TimestampType] = None,
-       fill_method: str = 'nearest',
-       limit: int = 0,
-       output: str = 'mean',
-       min_n_meas: int = 16,
-       min_n_years: int = 8,
-       year_offset: str = 'a-mar') -> Union[Series, float]:
+def gg(
+    series: Series,
+    tmin: Optional[TimestampType] = None,
+    tmax: Optional[TimestampType] = None,
+    fill_method: str = "nearest",
+    limit: int = 0,
+    output: str = "mean",
+    min_n_meas: int = 16,
+    min_n_years: int = 8,
+    year_offset: str = "a-mar",
+) -> Union[Series, float]:
     """Calculate the 'Gemiddelde Grondwaterstand' (Average Groundwater Level)
 
     Parameters
@@ -389,13 +425,22 @@ def gg(series: Series,
         else:
             return s.mean()
 
-    return _gxg(series, mean_all, tmin=tmin, tmax=tmax,
-                fill_method=fill_method, limit=limit, output=output,
-                min_n_meas=min_n_meas, min_n_years=min_n_years,
-                year_offset=year_offset)
+    return _gxg(
+        series,
+        mean_all,
+        tmin=tmin,
+        tmax=tmax,
+        fill_method=fill_method,
+        limit=limit,
+        output=output,
+        min_n_meas=min_n_meas,
+        min_n_years=min_n_years,
+        year_offset=year_offset,
+    )
 
 
 # Helper functions
+
 
 def _get_spring(series: Series, min_n_meas: int) -> float:
     """Internal method to get values of timeseries values in spring.
@@ -433,15 +478,25 @@ def _in_spring(series: Series) -> Series:
     pd.Series
         Boolean series with datetimeindex
     """
-    def isinspring(x): return (((x.month == 3) and (x.day >= 14)) or
-                               ((x.month == 4) and (x.day < 15)))
+
+    def isinspring(x):
+        return ((x.month == 3) and (x.day >= 14)) or ((x.month == 4) and (x.day < 15))
+
     return Series(series.index.map(isinspring), index=series.index)
 
 
-def _gxg(series: Series, year_agg: Function, tmin: Optional[TimestampType],
-         tmax: Optional[TimestampType], fill_method: str,
-         limit: Union[int, None], output: str, min_n_meas: int,
-         min_n_years: int, year_offset: str) -> Union[Series, float]:
+def _gxg(
+    series: Series,
+    year_agg: Function,
+    tmin: Optional[TimestampType],
+    tmax: Optional[TimestampType],
+    fill_method: str,
+    limit: Union[int, None],
+    output: str,
+    min_n_meas: int,
+    min_n_years: int,
+    year_offset: str,
+) -> Union[Series, float]:
     """Internal method for classic GXG statistics. Resampling the series to
     every 14th and 28th of the month. Taking the mean of aggregated values per
     year.
@@ -501,33 +556,31 @@ def _gxg(series: Series, year_agg: Function, tmin: Optional[TimestampType],
     if tmax is not None:
         series = series.loc[:tmax]
     if series.empty:
-        if output.startswith('year'):
+        if output.startswith("year"):
             return Series()
-        elif output == 'mean':
+        elif output == "mean":
             return nan
         else:
-            ValueError('{output:} is not a valid output option'.format(
-                output=output))
+            ValueError("{output:} is not a valid output option".format(output=output))
 
     # resample the series to values at the 14th and 28th of every month
     # first generate a daily series by averaging multiple measurements during the day
-    series = series.resample('d').mean()
+    series = series.resample("d").mean()
     select14or28 = True
     if fill_method is None:
         series = series.dropna()
-    elif fill_method == 'ffill':
+    elif fill_method == "ffill":
         series = series.ffill(limit=limit)
-    elif fill_method == 'bfill':
+    elif fill_method == "bfill":
         series = series.bfill(limit=limit)
-    elif fill_method == 'nearest':
+    elif fill_method == "nearest":
         if limit == 0:
             # limit=0 is a trick to only use each measurements once
             # only keep days with measurements
             series = series.dropna()
             # generate an index at the 14th and 28th of every month
-            buf = Timedelta(8, 'd')
-            ref_index = date_range(series.index.min() - buf,
-                                   series.index.max() + buf)
+            buf = Timedelta(8, "d")
+            ref_index = date_range(series.index.min() - buf, series.index.max() + buf)
             mask = [(x.day == 14) or (x.day == 28) for x in ref_index]
             ref_index = ref_index[mask]
             # only keep the days that are closest to series.index
@@ -538,11 +591,13 @@ def _gxg(series: Series, year_agg: Function, tmin: Optional[TimestampType],
             select14or28 = False
         else:
             # with a large limit (larger than 6) it is possible that one measurement is used more than once
-            series = series.dropna().reindex(series.index, method=fill_method,
-                                             limit=limit)
+            series = series.dropna().reindex(
+                series.index, method=fill_method, limit=limit
+            )
     else:
-        series = series.interpolate(method=fill_method, limit=limit,
-                                    limit_direction='both')
+        series = series.interpolate(
+            method=fill_method, limit=limit, limit_direction="both"
+        )
 
     # and select the 14th and 28th of each month (if needed still)
     if select14or28:
@@ -556,8 +611,7 @@ def _gxg(series: Series, year_agg: Function, tmin: Optional[TimestampType],
     if output == "semimonthly":
         return series
     elif output in ["yearly", "mean"]:
-        yearly = series.resample(year_offset).apply(year_agg,
-                                                    min_n_meas=min_n_meas)
+        yearly = series.resample(year_offset).apply(year_agg, min_n_meas=min_n_meas)
     elif output == "g3":
         yearly = series.resample(year_offset)
         collect = {}
@@ -569,25 +623,27 @@ def _gxg(series: Series, year_agg: Function, tmin: Optional[TimestampType],
         yearly = concat(collect)
 
     # return statements
-    if output.startswith('year'):
+    if output.startswith("year"):
         return yearly
     elif output == "g3":
         return yearly
-    elif output == 'mean':
+    elif output == "mean":
         if yearly.notna().sum() < min_n_years:
             return nan
         else:
             return yearly.mean()
     else:
-        msg = '{} is not a valid output option'.format(output)
+        msg = "{} is not a valid output option".format(output)
         raise (ValueError(msg))
 
 
-def _q_gxg(series: Series,
-           q: float,
-           tmin: Optional[TimestampType] = None,
-           tmax: Optional[TimestampType] = None,
-           by_year: bool = True) -> Series:
+def _q_gxg(
+    series: Series,
+    q: float,
+    tmin: Optional[TimestampType] = None,
+    tmax: Optional[TimestampType] = None,
+    by_year: bool = True,
+) -> Series:
     """Dutch groundwater statistics GHG and GLG approximated by taking
     quantiles of the timeseries values per year and taking the mean of the
     quantiles.
@@ -609,12 +665,8 @@ def _q_gxg(series: Series,
         series = series.loc[tmin:]
     if tmax is not None:
         series = series.loc[:tmax]
-    series = series.resample('d').median()
+    series = series.resample("d").median()
     if by_year:
-        return (series
-                .resample('a')
-                .apply(lambda s: s.quantile(q))
-                .mean()
-                )
+        return series.resample("a").apply(lambda s: s.quantile(q)).mean()
     else:
         return series.quantile(q)

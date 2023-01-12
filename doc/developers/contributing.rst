@@ -30,16 +30,17 @@ GitHub repository `here <https://help.github
 -------------
 After you forked Pastas, you can start making changes to the code or add new
 features to it. To ensure high quality code that is easy to read and maintain
-we follow `Python PEP8 <https://www.python.org/dev/peps/pep-0008/>`_
-standard. Check out the :ref:`Pastas Code Style` section to learn more.
+we follow the `Black <https://black.readthedocs.io/en/stable/index.html>`_ code
+formatting standard. Check out the :ref:`Pastas Code Style` section to learn
+more.
 
 4. Test Code
 ------------
 The ensure a proper functioning of the Pastas, it is important to supply
 tests in the test-suite (`see here <https://github
 .com/pastas/pastas/tree/master/tests>`_). The ensure a proper functioning of
-the Pastas, the software is automatically tested using Travis when changes
-are made. Pastas uses pytest to run tests.
+the Pastas, the software is automatically tested using Github Actions when changes
+are made. Pastas uses `pytest <https://docs.pytest.org/en/stable/>`_ to run tests.
 
 5. Document Code
 ----------------
@@ -54,13 +55,7 @@ A Jupyter Notebook explaining the use of your new code can be added the to
 examples folder. This Notebook will also be automatically converted and
 placed on the Examples page on this website.
 
-6. Document API changes in Release Notes
-----------------------------------------
-Add a description of any changes in the API in the release_notes.rst file in
-the doc-folder. Especially of the PR introduces backward incompatible
-changes this should be clearly noted in this section.
-
-7. Create a pull request
+6. Create a pull request
 ------------------------
 Once you have written, tested, and documented your code you can start a pull
 request on the development branch (dev) of Pastas. Pull requests can only

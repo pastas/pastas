@@ -6,14 +6,13 @@ TODO: Get rid of filternummer en opmerking in self.series
 
 import warnings
 
-
 import numpy as np
 from pandas import Series, read_csv
 
 from ..timeseries import TimeSeries
 
 
-def read_dino(fname, variable='Stand_cm_tov_NAP', factor=0.01):
+def read_dino(fname, variable="Stand_cm_tov_NAP", factor=0.01):
     """This method can be used to import files from Dinoloket that contain
     groundwater level measurements (https://www.dinoloket.nl/)
 
@@ -30,7 +29,9 @@ def read_dino(fname, variable='Stand_cm_tov_NAP', factor=0.01):
         returns a Pastas TimeSeries object or a list of objects.
     """
     warnings.warn(
-        "The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io", DeprecationWarning)
+        "The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io",
+        DeprecationWarning,
+    )
 
     # Read the file
     dino = DinoGrondwaterstand(fname)
@@ -38,29 +39,36 @@ def read_dino(fname, variable='Stand_cm_tov_NAP', factor=0.01):
 
     if variable not in dino.data.keys():
         raise (
-            ValueError("variable %s is not in this dataset. Please use one of "
-                       "the following keys: %s" % (
-                           variable, dino.data.keys())))
+            ValueError(
+                "variable %s is not in this dataset. Please use one of "
+                "the following keys: %s" % (variable, dino.data.keys())
+            )
+        )
     series = dino.data[variable] * factor  # To make it meters)
     if len(dino.meta) > 0:
         metadata = dino.meta[-1]
     else:
         metadata = None
 
-    metadata['x'] = dino.x
-    metadata['y'] = dino.y
-    metadata['z'] = np.mean((dino.bovenkant_filter, dino.onderkant_filter))
-    metadata['projection'] = 'epsg:28992'
+    metadata["x"] = dino.x
+    metadata["y"] = dino.y
+    metadata["z"] = np.mean((dino.bovenkant_filter, dino.onderkant_filter))
+    metadata["projection"] = "epsg:28992"
 
-    ts.append(TimeSeries(series,
-                         name=dino.locatie + '_' + str(dino.filternummer),
-                         metadata=metadata, settings='oseries'))
+    ts.append(
+        TimeSeries(
+            series,
+            name=dino.locatie + "_" + str(dino.filternummer),
+            metadata=metadata,
+            settings="oseries",
+        )
+    )
     if len(ts) == 1:
         ts = ts[0]
     return ts
 
 
-def read_dino_level_gauge(fname, variable='Stand_cm_tov_NAP', factor=0.01):
+def read_dino_level_gauge(fname, variable="Stand_cm_tov_NAP", factor=0.01):
     """This method can be used to import files from Dinoloket that contain
     surface water level measurements (https://www.dinoloket.nl/)
 
@@ -80,7 +88,9 @@ def read_dino_level_gauge(fname, variable='Stand_cm_tov_NAP', factor=0.01):
         returns a Pastas TimeSeries object or a list of objects.
     """
     warnings.warn(
-        "The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io", DeprecationWarning)
+        "The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io",
+        DeprecationWarning,
+    )
 
     # Read the file
     dino = DinoPeilschaal(fname)
@@ -88,24 +98,25 @@ def read_dino_level_gauge(fname, variable='Stand_cm_tov_NAP', factor=0.01):
 
     if variable not in dino.data.keys():
         raise (
-            ValueError("variable %s is not in this dataset. Please use one of "
-                       "the following keys: %s" % (
-                           variable, dino.data.keys())))
+            ValueError(
+                "variable %s is not in this dataset. Please use one of "
+                "the following keys: %s" % (variable, dino.data.keys())
+            )
+        )
     series = dino.data[variable] * factor  # To make it meters)
     if len(dino.meta) > 0:
         metadata = dino.meta[-1]
     else:
         metadata = None
 
-    metadata['x'] = dino.x
-    metadata['y'] = dino.y
-    metadata['z'] = np.nan
-    metadata['projection'] = 'epsg:28992'
+    metadata["x"] = dino.x
+    metadata["y"] = dino.y
+    metadata["z"] = np.nan
+    metadata["projection"] = "epsg:28992"
 
-    ts.append(TimeSeries(series,
-                         name=dino.locatie,
-                         metadata=metadata,
-                         settings='oseries'))
+    ts.append(
+        TimeSeries(series, name=dino.locatie, metadata=metadata, settings="oseries")
+    )
     if len(ts) == 1:
         ts = ts[0]
     return ts
@@ -114,33 +125,34 @@ def read_dino_level_gauge(fname, variable='Stand_cm_tov_NAP', factor=0.01):
 class DinoGrondwaterstand:
     def __init__(self, fname):
         warnings.warn(
-            "The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io", DeprecationWarning)
-        with open(fname, 'r') as f:
+            "The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io",
+            DeprecationWarning,
+        )
+        with open(fname, "r") as f:
             # lees de header
             line = f.readline()
             header = dict()
-            while line not in ['\n', '', '\r\n']:
-                propval = line.split(',')
+            while line not in ["\n", "", "\r\n"]:
+                propval = line.split(",")
                 prop = propval[0]
-                prop = prop.replace(':', '')
+                prop = prop.replace(":", "")
                 prop = prop.strip()
                 val = propval[1]
-                if propval[2] != '':
-                    val = val + ' ' + propval[2].replace(':', '') + ' ' + \
-                        propval[3]
+                if propval[2] != "":
+                    val = val + " " + propval[2].replace(":", "") + " " + propval[3]
                 header[prop] = val
                 line = f.readline()
 
             # lees gat
-            while (line == '\n') or (line == '\r\n'):
+            while (line == "\n") or (line == "\r\n"):
                 line = f.readline()
 
             # lees referentieniveaus
             ref = dict()
-            while line not in ['\n', '', '\r\n']:
-                propval = line.split(',')
+            while line not in ["\n", "", "\r\n"]:
+                propval = line.split(",")
                 prop = propval[0]
-                prop = prop.replace(':', '')
+                prop = prop.replace(":", "")
                 prop = prop.strip()
                 if len(propval) > 1:
                     val = propval[1]
@@ -148,34 +160,34 @@ class DinoGrondwaterstand:
                 line = f.readline()
 
             # lees gat
-            while (line == '\n') or (line == '\r\n'):
+            while (line == "\n") or (line == "\r\n"):
                 line = f.readline()
 
             # lees meta-informatie
             metaList = list()
             line = line.strip()
-            properties = line.split(',')
+            properties = line.split(",")
             line = f.readline()
-            while line not in ['\n', '', '\r\n']:
+            while line not in ["\n", "", "\r\n"]:
                 meta = dict()
                 line = line.strip()
-                values = line.split(',')
+                values = line.split(",")
                 for i, value in enumerate(values):
                     meta[properties[i]] = value
                 metaList.append(meta)
                 line = f.readline()
 
             # lees gat
-            while (line == '\n') or (line == '\r\n'):
+            while (line == "\n") or (line == "\r\n"):
                 line = f.readline()
 
             line = line.strip()
-            titel = line.split(',')
-            while '' in titel:
-                titel.remove('')
+            titel = line.split(",")
+            while "" in titel:
+                titel.remove("")
 
             # lees reeksen
-            if line != '':
+            if line != "":
                 # Validate if titles are valid names
                 validator = np.lib._iotools.NameValidator()
                 titel = validator(titel)
@@ -183,18 +195,22 @@ class DinoGrondwaterstand:
                 dtype[0] = "S11"
                 dtype[1] = np.int32
                 dtype[2] = "S10"
-                dtype[titel.index('Bijzonderheid')] = object
-                dtype[titel.index('Opmerking')] = object
+                dtype[titel.index("Bijzonderheid")] = object
+                dtype[titel.index("Opmerking")] = object
                 dtype = list(zip(titel, dtype))
 
                 usecols = range(0, len(titel))
                 # # usecols.remove(2)
-                measurements = read_csv(f, header=None, names=titel,
-                                        parse_dates=['Peildatum'],
-                                        index_col='Peildatum',
-                                        dayfirst=True,
-                                        usecols=usecols)
-                ts = measurements['Stand_cm_tov_NAP']
+                measurements = read_csv(
+                    f,
+                    header=None,
+                    names=titel,
+                    parse_dates=["Peildatum"],
+                    index_col="Peildatum",
+                    dayfirst=True,
+                    usecols=usecols,
+                )
+                ts = measurements["Stand_cm_tov_NAP"]
             else:
                 measurements = None
                 ts = Series()
@@ -202,35 +218,35 @@ class DinoGrondwaterstand:
             # %% kies welke invoer opgeslagen wordt
             self.meta = metaList
             if self.meta:
-                self.locatie = self.meta[-1]['Locatie']
-                self.filternummer = int(float(self.meta[-1]['Filternummer']))
-                self.x = float(self.meta[-1]['X-coordinaat'])
-                self.y = float(self.meta[-1]['Y-coordinaat'])
-                meetpunt = self.meta[-1]['Meetpunt (cm t.o.v. NAP)']
-                if meetpunt == '':
+                self.locatie = self.meta[-1]["Locatie"]
+                self.filternummer = int(float(self.meta[-1]["Filternummer"]))
+                self.x = float(self.meta[-1]["X-coordinaat"])
+                self.y = float(self.meta[-1]["Y-coordinaat"])
+                meetpunt = self.meta[-1]["Meetpunt (cm t.o.v. NAP)"]
+                if meetpunt == "":
                     self.meetpunt = np.nan
                 else:
                     self.meetpunt = float(meetpunt) / 100
-                maaiveld = self.meta[-1]['Maaiveld (cm t.o.v. NAP)']
-                if maaiveld == '':
+                maaiveld = self.meta[-1]["Maaiveld (cm t.o.v. NAP)"]
+                if maaiveld == "":
                     self.maaiveld = np.nan
                 else:
                     self.maaiveld = float(maaiveld) / 100
-                bovenkant_filter = self.meta[-1][
-                    'Bovenkant filter (cm t.o.v. NAP)']
-                if bovenkant_filter == '':
+                bovenkant_filter = self.meta[-1]["Bovenkant filter (cm t.o.v. NAP)"]
+                if bovenkant_filter == "":
                     self.bovenkant_filter = np.nan
                 else:
                     self.bovenkant_filter = float(bovenkant_filter) / 100
                 self.onderkant_filter = self.meta[-1][
-                    'Onderkant filter (cm t.o.v. NAP)']
-                if self.onderkant_filter == '':
+                    "Onderkant filter (cm t.o.v. NAP)"
+                ]
+                if self.onderkant_filter == "":
                     self.onderkant_filter = np.nan
                 else:
                     self.onderkant_filter = float(self.onderkant_filter) / 100
             else:
                 # de metadata is leeg
-                self.locatie = ''
+                self.locatie = ""
                 self.filternummer = np.nan
                 self.x = np.nan
                 self.y = np.nan
@@ -247,57 +263,58 @@ class DinoGrondwaterstand:
 class DinoPeilschaal:
     def __init__(self, fname):
         warnings.warn(
-            "The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io", DeprecationWarning)
+            "The read module of pastas is deprecated please use hydropandas instead -> https://hydropandas.readthedocs.io",
+            DeprecationWarning,
+        )
 
-        with open(fname, 'r') as f:
+        with open(fname, "r") as f:
             # lees de header
             line = f.readline()
             header = dict()
-            while line not in ['\n', '', '\r\n']:
-                propval = line.split(',')
+            while line not in ["\n", "", "\r\n"]:
+                propval = line.split(",")
                 prop = propval[0]
-                prop = prop.replace(':', '')
+                prop = prop.replace(":", "")
                 prop = prop.strip()
                 val = propval[1]
-                if (len(propval) > 2) and (propval[2] != ''):
-                    val = val + ' ' + propval[2].replace(':', '') + ' ' + \
-                        propval[3]
+                if (len(propval) > 2) and (propval[2] != ""):
+                    val = val + " " + propval[2].replace(":", "") + " " + propval[3]
                 header[prop] = val
                 line = f.readline()
 
             # lees gat
-            while (line == '\n') or (line == '\r\n'):
+            while (line == "\n") or (line == "\r\n"):
                 line = f.readline()
 
             # lees gat
-            while (line == '\n') or (line == '\r\n'):
+            while (line == "\n") or (line == "\r\n"):
                 line = f.readline()
 
             # lees meta-informatie
             metaList = list()
             line = line.strip()
-            properties = line.split(',')
+            properties = line.split(",")
             line = f.readline()
-            while line not in ['\n', '', '\r\n']:
+            while line not in ["\n", "", "\r\n"]:
                 meta = dict()
                 line = line.strip()
-                values = line.split(',')
+                values = line.split(",")
                 for i, value in enumerate(values[:-1]):
                     meta[properties[i]] = value
                 metaList.append(meta)
                 line = f.readline()
 
             # lees gat
-            while (line == '\n') or (line == '\r\n'):
+            while (line == "\n") or (line == "\r\n"):
                 line = f.readline()
 
             line = line.strip()
-            titel = line.split(',')
-            while '' in titel:
-                titel.remove('')
+            titel = line.split(",")
+            while "" in titel:
+                titel.remove("")
 
             # lees reeksen
-            if line != '':
+            if line != "":
                 # Validate if titles are valid names
                 validator = np.lib._iotools.NameValidator()
                 titel = validator(titel)
@@ -305,17 +322,21 @@ class DinoPeilschaal:
                 dtype[0] = "S11"
                 dtype[1] = np.int32
                 dtype[2] = "S10"
-                dtype[titel.index('Bijzonderheid')] = object
+                dtype[titel.index("Bijzonderheid")] = object
                 dtype = list(zip(titel, dtype))
 
                 usecols = range(0, len(titel))
                 # # usecols.remove(2)
-                measurements = read_csv(f, header=None, names=titel,
-                                        parse_dates=['Peildatum'],
-                                        index_col='Peildatum',
-                                        dayfirst=True,
-                                        usecols=usecols)
-                ts = measurements['Stand_cm_tov_NAP']
+                measurements = read_csv(
+                    f,
+                    header=None,
+                    names=titel,
+                    parse_dates=["Peildatum"],
+                    index_col="Peildatum",
+                    dayfirst=True,
+                    usecols=usecols,
+                )
+                ts = measurements["Stand_cm_tov_NAP"]
             else:
                 measurements = None
                 ts = Series()
@@ -323,12 +344,12 @@ class DinoPeilschaal:
             # %% kies welke invoer opgeslagen wordt
             self.meta = metaList
             if self.meta:
-                self.locatie = self.meta[-1]['Locatie']
-                self.x = float(self.meta[-1]['X-coordinaat'])
-                self.y = float(self.meta[-1]['Y-coordinaat'])
+                self.locatie = self.meta[-1]["Locatie"]
+                self.x = float(self.meta[-1]["X-coordinaat"])
+                self.y = float(self.meta[-1]["Y-coordinaat"])
             else:
                 # de metadata is leeg
-                self.locatie = ''
+                self.locatie = ""
                 self.x = np.nan
                 self.y = np.nan
             self.data = measurements

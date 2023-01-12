@@ -5,27 +5,43 @@ These methods are 'special' in the sense that they are able to deal with
 irregular time steps often observed in hydrological time series.
 """
 
-from numpy import (append, arange, array, average, corrcoef, diff, empty_like,
-                   exp, inf, nan, ones, pi, sqrt)
-from pandas import Series, DataFrame, Timedelta, TimedeltaIndex
+# Type Hinting
+from typing import Tuple, Union
+
+from numpy import (
+    append,
+    arange,
+    array,
+    average,
+    corrcoef,
+    diff,
+    empty_like,
+    exp,
+    inf,
+    nan,
+    ones,
+    pi,
+    sqrt,
+)
+from pandas import DataFrame, Series, Timedelta, TimedeltaIndex
 from scipy.stats import norm
+
+from pastas.typing import ArrayLike
 
 from ..decorators import njit
 from ..utils import check_numba
 
-# Type Hinting
-from typing import Union, Tuple
-from pastas.typing import ArrayLike
 
-
-def acf(x: Series,
-        lags: ArrayLike = 365,
-        bin_method: str = 'rectangle',
-        bin_width: float = 0.5,
-        max_gap: float = inf,
-        min_obs: int = 20,
-        full_output: bool = False,
-        alpha: float = 0.05) -> Union[Series, DataFrame]:
+def acf(
+    x: Series,
+    lags: ArrayLike = 365,
+    bin_method: str = "rectangle",
+    bin_width: float = 0.5,
+    max_gap: float = inf,
+    min_obs: int = 20,
+    full_output: bool = False,
+    alpha: float = 0.05,
+) -> Union[Series, DataFrame]:
     """Calculate the autocorrelation function for irregular time steps.
 
     Parameters
@@ -85,9 +101,17 @@ def acf(x: Series,
     pastas.stats.ccf
     statsmodels.api.tsa.acf
     """
-    c = ccf(x=x, y=x, lags=lags, bin_method=bin_method, bin_width=bin_width,
-            max_gap=max_gap, min_obs=min_obs, full_output=full_output,
-            alpha=alpha)
+    c = ccf(
+        x=x,
+        y=x,
+        lags=lags,
+        bin_method=bin_method,
+        bin_width=bin_width,
+        max_gap=max_gap,
+        min_obs=min_obs,
+        full_output=full_output,
+        alpha=alpha,
+    )
     c.name = "ACF"
     if full_output:
         return c.rename(columns={"ccf": "acf"})
@@ -95,15 +119,17 @@ def acf(x: Series,
         return c
 
 
-def ccf(x: Series,
-        y: Series,
-        lags: ArrayLike = 365,
-        bin_method: str = 'rectangle',
-        bin_width: float = 0.5,
-        max_gap: float = inf,
-        min_obs: int = 20,
-        full_output: bool = False,
-        alpha: float = 0.05) -> Union[Series, DataFrame]:
+def ccf(
+    x: Series,
+    y: Series,
+    lags: ArrayLike = 365,
+    bin_method: str = "rectangle",
+    bin_width: float = 0.5,
+    max_gap: float = inf,
+    min_obs: int = 20,
+    full_output: bool = False,
+    alpha: float = 0.05,
+) -> Union[Series, DataFrame]:
     """Method to compute the cross-correlation for irregular time series.
 
     Parameters
@@ -153,8 +179,10 @@ def ccf(x: Series,
     if x.index.inferred_freq and y.index.inferred_freq:
         bin_method = "regular"
     elif bin_method == "regular":
-        raise Warning("time series does not have regular time steps, "
-                      "choose different bin_method")
+        raise Warning(
+            "time series does not have regular time steps, "
+            "choose different bin_method"
+        )
 
     x, t_x, dt_x_mu = _preprocess(x, max_gap=max_gap)
     y, t_y, dt_y_mu = _preprocess(y, max_gap=max_gap)
@@ -182,9 +210,11 @@ def ccf(x: Series,
     else:
         raise NotImplementedError
 
-    std = norm.ppf(1 - alpha / 2.) / sqrt(b)
-    result = DataFrame(data={"ccf": c, "stderr": std, "n": b},
-                       index=TimedeltaIndex(lags, unit="D", name="Lags"))
+    std = norm.ppf(1 - alpha / 2.0) / sqrt(b)
+    result = DataFrame(
+        data={"ccf": c, "stderr": std, "n": b},
+        index=TimedeltaIndex(lags, unit="D", name="Lags"),
+    )
 
     result = result.where(result.n > min_obs).dropna()
 
@@ -208,12 +238,13 @@ def _preprocess(x: Series, max_gap: int) -> Tuple[Series, float, float]:
 
 @njit
 def _compute_ccf_rectangle(
-        lags: ArrayLike,
-        t_x: ArrayLike,
-        x: ArrayLike,
-        t_y: ArrayLike,
-        y: ArrayLike,
-        bin_width: float = 0.5) -> Tuple[ArrayLike, ArrayLike]:
+    lags: ArrayLike,
+    t_x: ArrayLike,
+    x: ArrayLike,
+    t_y: ArrayLike,
+    y: ArrayLike,
+    bin_width: float = 0.5,
+) -> Tuple[ArrayLike, ArrayLike]:
     """Internal numba-optimized method to compute the ccf."""
     c = empty_like(lags)
     b = empty_like(lags)
@@ -221,15 +252,15 @@ def _compute_ccf_rectangle(
     n = len(t_x)
 
     for k in range(l):
-        cl = 0.
-        b_sum = 0.
+        cl = 0.0
+        b_sum = 0.0
         for i in range(n):
             for j in range(n):
                 d = abs(t_x[i] - t_y[j]) - lags[k]
                 if abs(d) <= bin_width:
                     cl += x[i] * y[j]
                     b_sum += 1
-        if b_sum == 0.:
+        if b_sum == 0.0:
             c[k] = nan
             b[k] = 0.01  # Prevent division by zero error
         else:
@@ -240,32 +271,33 @@ def _compute_ccf_rectangle(
 
 @njit
 def _compute_ccf_gaussian(
-        lags: ArrayLike,
-        t_x: ArrayLike,
-        x: ArrayLike,
-        t_y: ArrayLike,
-        y: ArrayLike,
-        bin_width: float = 0.5) -> Tuple[ArrayLike, ArrayLike]:
+    lags: ArrayLike,
+    t_x: ArrayLike,
+    x: ArrayLike,
+    t_y: ArrayLike,
+    y: ArrayLike,
+    bin_width: float = 0.5,
+) -> Tuple[ArrayLike, ArrayLike]:
     """Internal numba-optimized method to compute the ccf."""
     c = empty_like(lags)
     b = empty_like(lags)
     l = len(lags)
     n = len(t_x)
 
-    den1 = -2 * bin_width ** 2  # denominator 1
+    den1 = -2 * bin_width**2  # denominator 1
     den2 = sqrt(2 * pi * bin_width)  # denominator 2
 
     for k in range(l):
-        cl = 0.
-        b_sum = 0.
+        cl = 0.0
+        b_sum = 0.0
 
         for i in range(n):
             for j in range(n):
                 d = t_x[i] - t_y[j] - lags[k]
-                d = exp(d ** 2 / den1) / den2
+                d = exp(d**2 / den1) / den2
                 cl += x[i] * y[j] * d
                 b_sum += d
-        if b_sum == 0.:
+        if b_sum == 0.0:
             c[k] = nan
             b[k] = 0.01  # Prevent division by zero error
         else:
@@ -274,11 +306,12 @@ def _compute_ccf_gaussian(
     return c, b
 
 
-def _compute_ccf_regular(lags: ArrayLike, x: ArrayLike,
-                         y: ArrayLike) -> Tuple[ArrayLike, ArrayLike]:
+def _compute_ccf_regular(
+    lags: ArrayLike, x: ArrayLike, y: ArrayLike
+) -> Tuple[ArrayLike, ArrayLike]:
     c = empty_like(lags)
     for i, lag in enumerate(lags):
-        c[i] = corrcoef(x[:-int(lag)], y[int(lag):])[0, 1]
+        c[i] = corrcoef(x[: -int(lag)], y[int(lag) :])[0, 1]
     b = len(x) - lags
     return c, b
 
@@ -365,6 +398,7 @@ def std(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
 
 
 # Helper functions
+
 
 def _get_weights(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
     """Helper method to compute the weights as the time step between obs.

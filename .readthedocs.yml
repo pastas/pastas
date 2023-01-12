@@ -5,8 +5,6 @@
 # Required
 version: 2
 
-
-
 build:
   os: ubuntu-22.04
   tools:
@@ -29,7 +27,8 @@ sphinx:
 python:
   system_packages: true
   install:
-    - requirements: requirements.rtd.txt
-    - requirements: requirements.ci.txt
     - method: pip
       path: .
+      extra_requirements:
+        - ci
+        - rtd
