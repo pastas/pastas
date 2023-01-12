@@ -189,9 +189,6 @@ class TimeSeries:
         tmax: str or pandas.Timestamp, optional
             String that can be converted to, or a Pandas Timestamp with the maximum
             time of the series.
-        norm: str or float, optional
-            String with the method to normalize the time series with. Possible values
-            are: "mean" or "median", "min", "max" or a float value.
 
         Notes
         -----

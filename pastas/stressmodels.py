@@ -130,8 +130,7 @@ class StressModelBase:
 
     @set_parameter
     def _set_vary(self, name: str, value: float) -> None:
-        """Internal method to set if the parameter is varied during
-        optimization.
+        """Internal method to set if the parameter is varied during optimization.
 
         Notes
         -----
@@ -140,12 +139,24 @@ class StressModelBase:
         self.parameters.loc[name, "vary"] = bool(value)
 
     def update_stress(self, **kwargs) -> None:
-        """Method to update the settings of the individual TimeSeries.
+        """Method to update the settings of the all stresses in the stressmodel.
+
+        Parameters
+        ----------
+        freq: str, optional
+            String representing the desired frequency of the time series. Must be one
+            of the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
+        tmin: str or pandas.Timestamp, optional
+            String that can be converted to, or a Pandas Timestamp with the minimum
+            time of the series.
+        tmax: str or pandas.Timestamp, optional
+            String that can be converted to, or a Pandas Timestamp with the maximum
+            time of the series.
 
         Notes
         -----
-        For the individual options for the different settings please refer to
-        the docstring from the TimeSeries.update_series() method.
+        For the individual options for the different settings please refer to the
+        docstring from the TimeSeries.update_series() method.
 
         See Also
         --------
@@ -242,6 +253,24 @@ class StressModelBase:
             maxtmax = None
         b = self.rfunc.block(p, dt, maxtmax=maxtmax)
         return b
+
+    def get_settings(self) -> dict:
+        """Method to obtain the settings of the stresses.
+
+        Returns
+        -------
+        settings: dict
+
+        Notes
+        -----
+        To update the settings of the time series, use the `update_stress` method.
+
+        """
+        if len(self.stress) == 0:
+            settings = None
+        else:
+            settings = {stress.name: stress.settings for stress in self.stress}
+        return settings
 
 
 class StressModel(StressModelBase):
@@ -1043,9 +1072,7 @@ class RechargeModel(StressModelBase):
             raise TypeError(msg)
         if temp is not None:
             if len(settings) < 3 or len(metadata) < 3:
-                msg = (
-                    "Number of values for the settings and/or metadata is incorrect."
-                )
+                msg = "Number of values for the settings and/or metadata is incorrect."
                 raise TypeError(msg)
             else:
                 self.temp = TimeSeries(temp, settings=settings[2], metadata=metadata[2])
@@ -1283,7 +1310,7 @@ class RechargeModel(StressModelBase):
         else:
             temp = None
         df = self.recharge.get_water_balance(
-            prec=prec, evap=evap, temp=temp, p=p[-self.recharge.nparam:]
+            prec=prec, evap=evap, temp=temp, p=p[-self.recharge.nparam :]
         )
         df.index = self.prec.series.index
         return df

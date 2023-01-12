@@ -53,8 +53,8 @@ class Model:
 
     Parameters
     ----------
-    oseries: pandas.Series or pastas.TimeSeries
-        pandas Series object containing the dependent time series. The
+    oseries: pandas.Series
+        pandas.Series object containing the dependent time series. The
         observation can be non-equidistant.
     constant: bool, optional
         Add a constant to the model (Default=True).
@@ -64,7 +64,7 @@ class Model:
     name: str, optional
         String with the name of the model, used in plotting and saving.
     metadata: dict, optional
-        Dictionary containing metadata of the oseries, passed on the to
+        Dictionary containing metadata of the oseries, passed on to the
         oseries when creating a pastas TimeSeries object. hence,
         ml.oseries.metadata will give you the metadata.
     freq: str, optional
@@ -1240,14 +1240,11 @@ class Model:
         Returns
         -------
         dict or None
-            Dictionary with the settings or "None" of no stress are present,
-            e.g., for a step model that uses no stress.
+            Dictionary with the settings or "None" of no stress are present, e.g.,
+            for a step model that uses no stress.
         """
         sm = self.stressmodels[name]
-        if len(sm.stress) == 0:
-            settings = None
-        else:
-            settings = {stress.name: stress.settings for stress in sm.stress}
+        settings = sm.get_settings()
         return settings
 
     @get_stressmodel

@@ -151,10 +151,11 @@ def _load_stressmodel(ts, data):
         wnam = ts["name"]
         for pcol in ["initial", "optimal", "pmin", "pmax"]:
             if wnam + "_b" in data["parameters"].index:
-                 if data["parameters"].loc[wnam + "_b", pcol] > 0:
-                     data["parameters"].loc[wnam + "_b", pcol] = \
-                         log(data["parameters"].loc[wnam + "_b", pcol])
-                             
+                if data["parameters"].loc[wnam + "_b", pcol] > 0:
+                    data["parameters"].loc[wnam + "_b", pcol] = log(
+                        data["parameters"].loc[wnam + "_b", pcol]
+                    )
+
     # Create and add stress model
     stressmodel = getattr(ps.stressmodels, ts["stressmodel"])
     ts.pop("stressmodel")
