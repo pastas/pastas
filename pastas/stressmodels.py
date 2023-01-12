@@ -77,7 +77,7 @@ class StressModelBase:
         if rfunc is not None:
             if inspect.isclass(rfunc):
                 DeprecationWarning(
-                    "Response functions should be added to a stress-model as an "
+                    "Response functions should be added to a stress model as an "
                     "instance, and not as a class. This will raise an error from "
                     "Pastas version 0.23."
                 )
@@ -138,8 +138,13 @@ class StressModelBase:
         """
         self.parameters.loc[name, "vary"] = bool(value)
 
-    def update_stress(self, **kwargs) -> None:
-        """Method to update the settings of the all stresses in the stressmodel.
+    def update_stress(
+        self,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+        freq: Optional[str] = None,
+    ) -> None:
+        """Method to update the settings of the all stresses in the stress model.
 
         Parameters
         ----------
@@ -163,12 +168,12 @@ class StressModelBase:
         ps.timeseries.TimeSeries.update_series
         """
         for stress in self.stress:
-            stress.update_series(**kwargs)
+            stress.update_series(freq=freq, tmin=tmin, tmax=tmax)
 
-        if "freq" in kwargs:
-            self.freq = kwargs["freq"]
+        if freq:
+            self.freq = freq
 
-    def dump_stress(self, series: bool = True) -> dict:
+    def dump_stress(self, series: bool = True) -> list:
         """Method to dump all stresses in the stresses list.
 
         Parameters
@@ -225,8 +230,8 @@ class StressModelBase:
         Returns
         -------
         data: dict
-            dictionary with all necessary information to reconstruct the
-            StressModel object.
+            dictionary with all necessary information to reconstruct the StressModel
+            object.
         """
         data = {
             "stressmodel": self._name,
@@ -1125,8 +1130,25 @@ class RechargeModel(StressModelBase):
             ]
         )
 
-    def update_stress(self, **kwargs) -> None:
-        """Method to update the settings of the individual TimeSeries.
+    def update_stress(
+        self,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+        freq: Optional[str] = None,
+    ) -> None:
+        """Method to update the settings of the all stresses in the stress model.
+
+        Parameters
+        ----------
+        freq: str, optional
+            String representing the desired frequency of the time series. Must be one
+            of the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
+        tmin: str or pandas.Timestamp, optional
+            String that can be converted to, or a Pandas Timestamp with the minimum
+            time of the series.
+        tmax: str or pandas.Timestamp, optional
+            String that can be converted to, or a Pandas Timestamp with the maximum
+            time of the series.
 
         Notes
         -----
@@ -1137,13 +1159,13 @@ class RechargeModel(StressModelBase):
         --------
         ps.timeseries.TimeSeries.update_series
         """
-        self.prec.update_series(**kwargs)
-        self.evap.update_series(**kwargs)
+        self.prec.update_series(freq=freq, tmin=tmin, tmax=tmax)
+        self.evap.update_series(freq=freq, tmin=tmin, tmax=tmax)
         if self.temp is not None:
-            self.temp.update_series(**kwargs)
+            self.temp.update_series(freq=freq, tmin=tmin, tmax=tmax)
 
-        if "freq" in kwargs:
-            self.freq = kwargs["freq"]
+        if freq:
+            self.freq = freq
 
     def simulate(
         self,
