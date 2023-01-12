@@ -248,7 +248,7 @@ class TimeSeries:
         # 2. If new frequency is required (only up or down sampling allowed)
         else:
             dt_new = _get_dt(freq)
-            dt_org = _get_stress_dt(self.freq_original)
+            dt_org = _get_dt(self.freq_original)
 
             # If new frequency is lower than its original
             if dt_new < dt_org:

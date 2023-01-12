@@ -10,7 +10,6 @@ from pandas.tseries.frequencies import to_offset
 from pastas.rcparams import rcParams
 from pastas.utils import (
     _get_dt,
-    _get_stress_dt,
     _get_time_offset,
     timestep_weighted_resample,
     validate_name,
@@ -682,3 +681,57 @@ class TimeSeriesOld:
             logger.info("Time series %s is normalized with the %s", self.name, method)
 
         return series
+
+
+def _get_stress_dt(freq: str) -> float:
+    """Internal method to obtain a timestep in days from a frequency string.
+
+    Parameters
+    ----------
+    freq: str
+
+    Returns
+    -------
+    dt: float
+        Approximate timestep in number of days.
+
+    Notes
+    -----
+    Used for comparison to determine if a time series needs to be up or
+    down sampled.
+
+    See http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
+    for the offset_aliases supported by Pandas.
+    """
+    # Get the frequency string and multiplier
+    offset = to_offset(freq)
+    if hasattr(offset, "delta"):
+        dt = offset.delta / pd.Timedelta(1, "D")
+    else:
+        num = offset.n
+        freq = offset.name
+        if freq in ["A", "Y", "AS", "YS", "BA", "BY", "BAS", "BYS"]:
+            # year
+            dt = num * 365
+        elif freq in ["BQ", "BQS", "Q", "QS"]:
+            # quarter
+            dt = num * 90
+        elif freq in ["BM", "BMS", "CBM", "CBMS", "M", "MS"]:
+            # month
+            dt = num * 30
+        elif freq in ["SM", "SMS"]:
+            # semi-month
+            dt = num * 15
+        elif freq in ["W"]:
+            # week
+            dt = num * 7
+        elif freq in ["B", "C"]:
+            # day
+            dt = num
+        elif freq in ["BH", "CBH"]:
+            # hour
+            dt = num * 1 / 24
+        else:
+            raise (ValueError("freq of {} not supported".format(freq)))
+
+    return dt
