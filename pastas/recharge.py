@@ -46,7 +46,7 @@ from pandas import DataFrame
 from pastas.typing import ArrayLike
 
 from .decorators import njit
-from .utils import check_numba
+from .version import check_numba
 
 logger = getLogger(__name__)
 

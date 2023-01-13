@@ -29,7 +29,7 @@ from scipy.stats import norm
 from pastas.typing import ArrayLike
 
 from ..decorators import njit
-from ..utils import check_numba
+from ..version import check_numba
 
 
 def acf(
