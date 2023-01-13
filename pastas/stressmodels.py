@@ -293,7 +293,7 @@ class StressModel(StressModelBase):
         True if response function is positive (default), False if negative. None if
         you don't want to define if response is positive or negative.
     cutoff: float, optional
-        float between 0 and 1 to determine how long the response is (default is 99%
+        float between 0 and 1 to determine how long the response is (default is 99.9%
         of the actual response time). Used to reduce computation times.
     settings: dict or str, optional
         The settings of the stress. This can be a string referring to a predefined
@@ -533,8 +533,8 @@ class LinearTrend(StressModelBase):
     Notes
     -----
     While possible, it is not recommended to vary the parameters for the start and
-    end time of the linear trend. These parameters are usually hard to impossible to
-    estimate from the data.
+    end time of the linear trend. These parameters are usually hard or even impossible 
+    to estimate from the data.
     """
 
     _name = "LinearTrend"
@@ -667,7 +667,7 @@ class WellModel(StressModelBase):
     -----
     This class implements convolution of multiple series with the same response
     function. This can be applied when dealing with multiple wells in a time series
-    model. The distance(s) from the pumping well(s) to the monitoring well has to be
+    model. The distance(s) from the pumping well(s) to the monitoring well have to be
     provided for each stress.
 
     Warnings
