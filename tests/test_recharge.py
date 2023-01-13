@@ -16,7 +16,11 @@ evap = (
     .loc["2005":]
     * 1e3
 )
-obs = read_csv("tests/data/obs.csv", index_col=0, parse_dates=True).squeeze("columns").dropna()
+obs = (
+    read_csv("tests/data/obs.csv", index_col=0, parse_dates=True)
+    .squeeze("columns")
+    .dropna()
+)
 temp = Series(index=evap.index, data=sin(arange(evap.size) / 365 * 6), dtype=float)
 
 
