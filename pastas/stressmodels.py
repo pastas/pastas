@@ -687,6 +687,7 @@ class WellModel(StressModelBase):
         cutoff: float = 0.999,
         settings: str = "well",
         sort_wells: bool = True,
+        metadata: Optional[list] = None,
     ) -> None:
         if not (
             isinstance(rfunc, HantushWellModel) or issubclass(rfunc, HantushWellModel)
