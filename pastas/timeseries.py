@@ -12,7 +12,6 @@ from pastas.typing import Axes
 from .rcparams import rcParams
 from .utils import (
     _get_dt,
-    _get_stress_dt,
     _get_time_offset,
     validate_name,
 )
@@ -66,7 +65,14 @@ class TimeSeries:
         **kwargs,  # TODO remove in Pastas 1.0
     ) -> None:
         # First, deal with all deprecated features and raise errors
-        check_input(series, settings, **kwargs)  # TODO remove in Pastas 1.0
+        check_deprecated_input(series, settings, **kwargs)  # TODO remove in Pastas 1.0
+
+        # Make sure we have a Pandas Series and not a 1D-DataFrame
+        if isinstance(series, pd.DataFrame):
+            if len(series.columns) == 1:
+                series = series.iloc[:, 0]
+                logger.info("1D-DataFrame was provided, automatically transformed to "
+                            "pandas.Series.")
 
         # Make sure we have a workable Pandas Series, depends on type of time series
         if settings == "oseries":
@@ -495,7 +501,7 @@ class TimeSeries:
         return ax
 
 
-def check_input(series, settings, **kwargs):
+def check_deprecated_input(series, settings, **kwargs):
     """Method to check input data for Pastas version 0.23 and raise errors.
 
     Parameters
@@ -503,14 +509,11 @@ def check_input(series, settings, **kwargs):
     series: pandas.Series
     settings: dict
 
-    Returns
-    -------
-
     """
     if "freq_original" in kwargs.keys():
         raise DeprecationWarning(
-            "Freq_original is not supported and used anymore. Please "
-            "provide an equidistant time series."
+            "Freq_original is no longer supported. Please provide an equidistant "
+            "time series."
         )
 
     if isinstance(series, TimeSeries):
@@ -610,67 +613,72 @@ def _validate_series(series: Series, equidistant: bool = True):
     to be fixed by the user.
 
     """
+    # Because we are friendly and allow 1D DataFrames
+    if isinstance(series, pd.DataFrame):
+        if len(series.columns) == 1:
+            series = series.iloc[:, 0]
+
     # 0. Make sure it is a Series and not something else (e.g., DataFrame)
     if not isinstance(series, pd.Series):
-        msg = "Expected a Pandas Series, got %s"
-        logger.error(msg, type(series))
-        raise ValueError(msg, type(series))
+        msg = "Expected a Pandas Series, got {}".format(type(series))
+        logger.error(msg)
+        raise ValueError(msg)
 
     name = series.name  # Only Series have a name, DateFrame do not
 
     # 1. Make sure the values are floats
     if not pd.api.types.is_float_dtype(series):
-        msg = "Values of time series %s are not dtype=float."
-        logger.error(msg, name)
-        raise ValueError(msg, name)
+        msg = "Values of time series {} are not dtype=float.".format(name)
+        logger.error(msg)
+        raise ValueError(msg)
 
     # 2. Make sure the index is a DatetimeIndex
     if not isinstance(series.index, pd.DatetimeIndex):
-        msg = "Index os series %s is not a pandas.DatetimeIndex."
-        logger.error(msg, name)
-        raise ValueError(msg, name)
+        msg = "Index os series {} is not a pandas.DatetimeIndex.".format(name)
+        logger.error(msg)
+        raise ValueError(msg)
 
     # 3. Make sure the indices are datetime64
     if not pd.api.types.is_datetime64_dtype(series.index):
-        msg = "Indices os series %s are not datetime64."
-        logger.error(msg, name)
-        raise ValueError(msg, name)
+        msg = "Indices os series {} are not datetime64.".format(name)
+        logger.error(msg)
+        raise ValueError(msg)
 
     # 4. Make sure the index is monotonically increasing
     if not series.index.is_monotonic_increasing:
         msg = (
-            "The time-indices of series %s are not monotonically increasing. Try to "
-            "use `series.sort_index()` to fix it."
+            "The time-indices of series {} are not monotonically increasing. Try to "
+            "use `series.sort_index()` to fix it.".format(name)
         )
-        logger.error(msg, name)
-        raise ValueError(msg, name)
+        logger.error(msg)
+        raise ValueError(msg)
 
     # 6. Make sure there are no duplicate indices
     if not series.index.is_unique:
         msg = (
-            "duplicate time-indexes were found in the time series %s. Make sure "
+            "duplicate time-indexes were found in the time series {}. Make sure "
             "there are no duplicate indices. For example by "
-            "`grouped = series.groupby(level=0); series = grouped.mean()`"
+            "`grouped = series.groupby(level=0); series = grouped.mean()`".format(name)
         )
-        logger.error(msg, name)
-        raise ValueError(msg, name)
+        logger.error(msg)
+        raise ValueError(msg)
 
     # 7. Make sure the time series has no nan-values
     if series.hasnans:
         msg = (
-            "The time series %s has nan-values. Please fill or remove all "
+            "The time series {} has nan-values. Please fill or remove all "
             "the nan-values from the time series. For example by using  "
-            "series.fillna(0.0)."
+            "series.fillna(0.0).".format(name)
         )
-        logger.error(msg, name)
-        raise ValueError(msg, name)
+        logger.error(msg)
+        raise ValueError(msg)
 
     # 5. Make sure the time series has equidistant time steps
     if equidistant:
         if not pd.infer_freq(series.index):
             msg = (
-                "The frequency of the index of time series %s could not be inferred. "
-                "Please provide a time series with a regular time step."
+                "The frequency of the index of time series {} could not be inferred. "
+                "Please provide a time series with a regular time step.".format(name)
             )
-            logger.error(msg, name)
-            raise ValueError(msg, name)
+            logger.error(msg)
+            raise ValueError(msg)
