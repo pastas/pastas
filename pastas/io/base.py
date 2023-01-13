@@ -202,27 +202,28 @@ def _load_stressmodel(ts, data):
     return sm
 
 
-def _unpack_series(**kwargs):
+def _unpack_series(data: dict):
     """
 
     Parameters
     ----------
-    kwargs
+    data: dict
+        Dictionary defining the TimeSeries
 
     Returns
     -------
     series, metadata, setings: dict
 
     """
-    series = kwargs["series"]
-    metadata = kwargs["metadata"]
-    settings = kwargs["settings"]
+    series = data["series"]
+    metadata = data["metadata"]
+    settings = data["settings"]
 
     # Deal with pas-files from Pastas version 0.22. Pastas 0.22.0 was very loose on
     # the input data and would internally fix a lot. Here we choose to recreate the
     # old TimeSeries object, and use the TimeSeries.series.
 
-    if "freq_original" in kwargs.keys():
+    if "freq_original" in data.keys():
         msg = (
             "Whoops, looks like an old pas-file using the old TimeSeries format. "
             "Pastas will convert to the new TimeSeries format. However, it can not "
@@ -234,12 +235,12 @@ def _unpack_series(**kwargs):
         logger.warning(msg)
 
         # Create an old TimeSeries object
-        series = TimeSeriesOld(**kwargs).series
+        series = TimeSeriesOld(**data).series
 
         # Remove deprecated keywords
         settings.pop("fill_nan")
         settings.pop("norm")
-        kwargs.pop("freq_original")
+        data.pop("freq_original")
 
     return series, metadata, settings
 
