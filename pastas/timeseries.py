@@ -167,17 +167,6 @@ class TimeSeries:
             "series_original. Please set series_original to update the series."
         )
 
-    # @property
-    # def settings(self) -> dict:
-    #     return self._settings
-    #
-    # @settings.setter
-    # def settings(self, value):
-    #     raise AttributeError(
-    #         "You cannot set series by yourself, as it is calculated from "
-    #         "series_original. Please set series_original to update the series."
-    #     )
-
     @property
     def series_validated(self):
         raise DeprecationWarning(

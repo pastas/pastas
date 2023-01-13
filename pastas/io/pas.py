@@ -11,8 +11,6 @@ from logging import getLogger
 
 from pandas import DataFrame, Series, Timedelta, Timestamp, isna, read_json, to_numeric
 
-from pastas import TimeSeries
-
 logger = getLogger(__name__)
 
 
