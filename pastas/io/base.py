@@ -238,7 +238,6 @@ def _unpack_series(data: dict):
         series = TimeSeriesOld(**data).series
 
         # Remove deprecated keywords
-        settings.pop("fill_nan")
         settings.pop("norm")
         data.pop("freq_original")
 

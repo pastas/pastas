@@ -80,6 +80,13 @@ class TimeSeries:
         if settings == "oseries":
             validate_oseries(series)
         else:
+            if settings is not None:
+                if settings["fill_nan"] == "drop":
+                    raise UserWarning(
+                        "The fill_nan setting 'drop' for a stress is "
+                        "not allowed because the stress time series "
+                        "need to be equidistant. Please change this."
+                    )
             validate_stress(series)
 
         # Store a copy of the original series
@@ -90,6 +97,7 @@ class TimeSeries:
             "freq": None,
             "sample_up": None,
             "sample_down": None,
+            "fill_nan": "interpolate",
             "fill_before": None,
             "fill_after": None,
             "tmin": series.index.min(),
@@ -159,6 +167,17 @@ class TimeSeries:
             "series_original. Please set series_original to update the series."
         )
 
+    # @property
+    # def settings(self) -> dict:
+    #     return self._settings
+    #
+    # @settings.setter
+    # def settings(self, value):
+    #     raise AttributeError(
+    #         "You cannot set series by yourself, as it is calculated from "
+    #         "series_original. Please set series_original to update the series."
+    #     )
+
     @property
     def series_validated(self):
         raise DeprecationWarning(
@@ -185,6 +204,10 @@ class TimeSeries:
             String with the method to use when the frequency decreases (e.g., from
             daily to weekly values). Possible values are: "mean", "drop", "sum",
             "min", "max".
+        fill_nan: str or float, optional
+            Method to use when there ar nan-values in the time series.
+            Possible values are: "mean", "drop", "interpolate" (default) or a
+            float value.
         fill_before: str or float, optional
             Method used to extend a time series before any measurements are
             available. possible values are: "mean" or a float value.
@@ -211,6 +234,7 @@ class TimeSeries:
 
             # Get the original series to start with
             series = self._series_original.copy(deep=True)
+            series = self._fill_nan(series)
 
             # Update the series with the new settings
             series = self._change_frequency(series)
@@ -362,6 +386,39 @@ class TimeSeries:
             freq,
             method,
         )
+
+        return series
+
+    def _fill_nan(self, series: Series) -> Series:
+        """Fill up the nan-values when present."""
+
+        method = self.settings["fill_nan"]
+
+        n = series.isnull().values.sum()
+        if n == 0:
+            pass
+        elif method == "drop":
+            series = series.dropna()
+        elif method == "mean":
+            series = series.fillna(series.mean())
+        elif method == "interpolate":
+            series = series.interpolate(method="time")
+        elif isinstance(method, float):
+            series = series.fillna(method)
+        else:
+            logger.warning(
+                "Time Series %s: User-defined option for fill_nan %s is not supported.",
+                self.name,
+                method,
+            )
+
+        if n > 0:
+            logger.info(
+                "Time Series %s: %s nan-value(s) was/were found and filled with: %s.",
+                self.name,
+                n,
+                method,
+            )
 
         return series
 
@@ -527,7 +584,7 @@ def check_deprecated_input(series, settings, **kwargs):
 
     if isinstance(settings, dict):
         for key in settings.keys():
-            if key in ["norm", "fill_nan"]:
+            if key in ["norm"]:
                 raise DeprecationWarning(
                     "Key %s is no longer supported. Please remove this keyword from "
                     "the settings dictionary."
@@ -622,7 +679,7 @@ def _validate_series(series: Series, equidistant: bool = True):
 
     # 0. Make sure it is a Series and not something else (e.g., DataFrame)
     if not isinstance(series, pd.Series):
-        msg = "Expected a Pandas Series, got {}".format(type(series))
+        msg = f"Expected a Pandas Series, got {type(series)}"
         logger.error(msg)
         raise ValueError(msg)
 
@@ -630,57 +687,55 @@ def _validate_series(series: Series, equidistant: bool = True):
 
     # 1. Make sure the values are floats
     if not pd.api.types.is_float_dtype(series):
-        msg = "Values of time series {} are not dtype=float.".format(name)
+        msg = f"Values of time series {name} are not dtype=float."
         logger.error(msg)
         raise ValueError(msg)
 
     # 2. Make sure the index is a DatetimeIndex
     if not isinstance(series.index, pd.DatetimeIndex):
-        msg = "Index os series {} is not a pandas.DatetimeIndex.".format(name)
+        msg = f"Index os series {name} is not a pandas.DatetimeIndex."
         logger.error(msg)
         raise ValueError(msg)
 
     # 3. Make sure the indices are datetime64
     if not pd.api.types.is_datetime64_dtype(series.index):
-        msg = "Indices os series {} are not datetime64.".format(name)
+        msg = f"Indices os series {name} are not datetime64."
         logger.error(msg)
         raise ValueError(msg)
 
     # 4. Make sure the index is monotonically increasing
     if not series.index.is_monotonic_increasing:
         msg = (
-            "The time-indices of series {} are not monotonically increasing. Try to "
-            "use `series.sort_index()` to fix it.".format(name)
+            f"The time-indices of series {name} are not monotonically increasing. Try "
+            f"to use `series.sort_index()` to fix it."
         )
         logger.error(msg)
         raise ValueError(msg)
 
-    # 6. Make sure there are no duplicate indices
+    # 5. Make sure there are no duplicate indices
     if not series.index.is_unique:
         msg = (
-            "duplicate time-indexes were found in the time series {}. Make sure "
-            "there are no duplicate indices. For example by "
-            "`grouped = series.groupby(level=0); series = grouped.mean()`".format(name)
+            f"duplicate time-indexes were found in the time series {name}. Make sure "
+            f"there are no duplicate indices. For example by "
+            f"`grouped = series.groupby(level=0); series = grouped.mean()`"
         )
         logger.error(msg)
         raise ValueError(msg)
 
-    # 7. Make sure the time series has no nan-values
+    # 6. Make sure the time series has no nan-values
     if series.hasnans:
         msg = (
-            "The time series {} has nan-values. Please fill or remove all "
-            "the nan-values from the time series. For example by using  "
-            "series.fillna(0.0).".format(name)
+            "The time series %s has nan-values. Pastas will use the fill_nan "
+            "settings to fill up the nan-values."
         )
-        logger.error(msg)
-        raise ValueError(msg)
+        logger.warning(msg, name)
 
-    # 5. Make sure the time series has equidistant time steps
+    # 7. Make sure the time series has equidistant time steps
     if equidistant:
         if not pd.infer_freq(series.index):
             msg = (
-                "The frequency of the index of time series {} could not be inferred. "
-                "Please provide a time series with a regular time step.".format(name)
+                f"The frequency of the index of time series {name} could not be "
+                f"inferred. Please provide a time series with a regular time step."
             )
             logger.error(msg)
             raise ValueError(msg)
