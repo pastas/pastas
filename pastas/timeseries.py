@@ -71,8 +71,10 @@ class TimeSeries:
         if isinstance(series, pd.DataFrame):
             if len(series.columns) == 1:
                 series = series.iloc[:, 0]
-                logger.info("1D-DataFrame was provided, automatically transformed to "
-                            "pandas.Series.")
+                logger.info(
+                    "1D-DataFrame was provided, automatically transformed to "
+                    "pandas.Series."
+                )
 
         # Make sure we have a workable Pandas Series, depends on type of time series
         if settings == "oseries":

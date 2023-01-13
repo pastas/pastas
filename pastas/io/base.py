@@ -212,7 +212,7 @@ def _unpack_series(**kwargs):
     Returns
     -------
     series, metadata, setings: dict
-        
+
     """
     series = kwargs["series"]
     metadata = kwargs["metadata"]

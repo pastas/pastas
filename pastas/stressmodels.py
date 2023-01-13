@@ -533,7 +533,7 @@ class LinearTrend(StressModelBase):
     Notes
     -----
     While possible, it is not recommended to vary the parameters for the start and
-    end time of the linear trend. These parameters are usually hard or even impossible 
+    end time of the linear trend. These parameters are usually hard or even impossible
     to estimate from the data.
     """
 
