@@ -295,18 +295,15 @@ class TimeSeries:
             pass
         else:
             if method == "mean":
-                series = series.asfreq(freq)
-                series.fillna(series.mean(), inplace=True)
+                series = series.asfreq(freq).fillna(series.mean())
             elif method == "interpolate":
-                series = series.asfreq(freq)
-                series.interpolate(method="time", inplace=True)
+                series = series.asfreq(freq).interpolate(method="time")
             elif method == "divide":
                 dt = series.index.to_series().diff() / to_offset(freq).delta
                 series = series / dt
                 series = series.asfreq(freq, method="bfill")
             elif isinstance(method, float):
-                series = series.asfreq(freq)
-                series.fillna(method, inplace=True)
+                series = series.asfreq(freq).fillna(method)
             else:
                 logger.warning(
                     "Time Series %s: User-defined option for sample_up %s is not "
@@ -429,7 +426,7 @@ class TimeSeries:
 
             if method == "mean":
                 mean_value = series.mean()
-                series.fillna(mean_value, inplace=True)  # Default option
+                series = series.fillna(mean_value)  # Default option
                 logger.info(
                     "Time Series %s was extended in the past to %s with the mean "
                     "value (%.2g) of the time series.",
@@ -438,7 +435,7 @@ class TimeSeries:
                     mean_value,
                 )
             elif isinstance(method, float):
-                series.fillna(method, inplace=True)
+                series = series.fillna(method)
                 logger.info(
                     "Time Series %s was extended in the past to %s by adding %s "
                     "values.",
@@ -474,7 +471,7 @@ class TimeSeries:
 
             if method == "mean":
                 mean_value = series.mean()
-                series.fillna(mean_value, inplace=True)  # Default option
+                series = series.fillna(mean_value)  # Default option
                 logger.info(
                     "Time Series %s was extended in the future to %s with the mean "
                     "value (%.2g) of the time series.",
@@ -483,7 +480,7 @@ class TimeSeries:
                     mean_value,
                 )
             elif isinstance(method, float):
-                series.fillna(method, inplace=True)
+                series = series.fillna(method)
                 logger.info(
                     "Time Series %s was extended in the future to %s by adding %s "
                     "values.",
@@ -530,23 +527,10 @@ class TimeSeries:
         return data
 
     def plot(self, original: bool = False, **kwargs) -> Axes:
-        """Method to plot the TimeSeries object. Plots the edited series by default.
-
-        Parameters
-        ----------
-        original: bool, optional
-            Also plot the original series.
-
-        Returns
-        -------
-        matplotlib.Axes
-        """
-
-        if original:
-            ax = self.series_original.plot()
-        else:
-            ax = self.series.plot(**kwargs)
-        return ax
+        raise DeprecationWarning(
+            "The plot method is deprecated since 0.23 and will be removed in Pastas "
+            "1.0. Use the series.plot function from Pandas instead."
+        )
 
 
 def check_deprecated_input(series, settings, **kwargs):
