@@ -99,8 +99,7 @@ def _load_model(data: dict) -> Model:
 
     # Add transform
     if "transform" in data.keys():
-        transform = getattr(ps.transform, data["transform"]["transform"])
-        data["transform"].pop("transform")
+        transform = getattr(ps.transform, data["transform"].pop("transform"))
         transform = transform(**data["transform"])
         ml.add_transform(transform)
 
@@ -111,8 +110,7 @@ def _load_model(data: dict) -> Model:
 
     # Add fit object to the model
     if "fit" in data.keys():
-        fit = getattr(ps.solver, data["fit"]["name"])
-        data["fit"].pop("name")
+        fit = getattr(ps.solver, data["fit"].pop("name"))
         ml.fit = fit(ml=ml, **data["fit"])
 
     # Add parameters, use update to maintain correct order
@@ -160,14 +158,10 @@ def _load_stressmodel(ts, data):
     stressmodel = getattr(ps.stressmodels, ts["stressmodel"])
     ts.pop("stressmodel")
     if "rfunc" in ts.keys():
-        rfunc_kwargs = {}
-        if "rfunc_kwargs" in ts:
-            rfunc_kwargs = ts.pop("rfunc_kwargs")
+        rfunc_kwargs = ts.pop("rfunc_kwargs", {})
         ts["rfunc"] = getattr(ps.rfunc, ts["rfunc"])(**rfunc_kwargs)
     if "recharge" in ts.keys():
-        recharge_kwargs = {}
-        if "recharge_kwargs" in ts:
-            recharge_kwargs = ts.pop("recharge_kwargs")
+        recharge_kwargs = ts.pop("recharge_kwargs", {})
         ts["recharge"] = getattr(ps.recharge, ts["recharge"])(**recharge_kwargs)
 
     metadata = []
@@ -217,7 +211,8 @@ def _unpack_series(**kwargs):
 
     Returns
     -------
-
+    series, metadata, setings: dict
+        
     """
     series = kwargs["series"]
     metadata = kwargs["metadata"]
