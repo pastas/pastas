@@ -16,13 +16,13 @@ pastas.model.Model.add_stressmodel
 
 import inspect
 from logging import getLogger
+from importlib.metadata import version
 
 # Type Hinting
 from typing import List, Optional, Tuple, Union
 
 import numpy as np
 from pandas import DataFrame, Series, Timedelta, Timestamp, concat, date_range
-from scipy import __version__ as scipyversion
 from scipy.signal import fftconvolve
 
 from pastas.typing import ArrayLike, Model, Recharge, RFunc, TimestampType
@@ -31,7 +31,8 @@ from .decorators import njit, set_parameter
 from .recharge import Linear
 from .rfunc import Exponential, HantushWellModel, One
 from .timeseries import TimeSeries
-from .utils import check_numba, validate_name
+from .utils import validate_name
+from .version import check_numba
 
 logger = getLogger(__name__)
 
@@ -696,10 +697,7 @@ class WellModel(StressModelBase):
                 "WellModel only supports the rfunc " "HantushWellModel!"
             )
 
-        # Check if scipy < 1.8
-        from packaging import version
-
-        if version.parse(scipyversion) < version.parse("1.8.0"):
+        if version("scipy") < "1.8.0":
             logger.warning(
                 "It is recommended to use LmfitSolve as the solver "
                 "or update to scipy>=1.8.0 when implementing WellModel."

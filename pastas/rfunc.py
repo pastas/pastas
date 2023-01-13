@@ -20,7 +20,7 @@ from scipy.special import (
 )
 
 from .decorators import njit
-from .utils import check_numba, check_numba_scipy
+from .version import check_numba, check_numba_scipy
 
 try:
     from numba import prange

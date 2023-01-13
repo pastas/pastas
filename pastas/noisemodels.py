@@ -29,7 +29,7 @@ from pandas import DataFrame, Series, Timedelta
 from pastas.typing import ArrayLike
 
 from .decorators import njit, set_parameter
-from .utils import check_numba
+from .version import check_numba
 
 __all__ = ["NoiseModel", "ArmaModel"]
 

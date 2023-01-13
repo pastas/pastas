@@ -9,7 +9,6 @@ from platform import platform
 from typing import Any, Optional, Tuple
 
 import numpy as np
-from packaging import version
 from pandas import (
     DatetimeIndex,
     Index,
@@ -20,7 +19,6 @@ from pandas import (
     to_datetime,
 )
 from pandas.tseries.frequencies import to_offset
-from scipy import __version__ as sc_version
 from scipy import interpolate
 
 from pastas.typing import ArrayLike
@@ -620,69 +618,3 @@ def validate_name(name: str, raise_error: bool = False) -> str:
                 logger.warning(msg)
 
     return name
-
-
-def show_versions(lmfit: bool = False, numba: bool = False) -> None:
-    """Method to print the version of dependencies.
-
-    Parameters
-    ----------
-    lmfit: bool, optional
-        Print the version of lmfit. Needs to be installed.
-    numba: bool, optional
-        Print the version of numba. Needs to be installed.
-    """
-    from sys import version as os_version
-
-    from matplotlib import __version__ as mpl_version
-    from numpy import __version__ as np_version
-    from pandas import __version__ as pd_version
-
-    from pastas import __version__ as ps_version
-
-    msg = (
-        f"Python version: {os_version}\n"
-        f"NumPy version: {np_version}\n"
-        f"SciPy version: {sc_version}\n"
-        f"Pandas version: {pd_version}\n"
-        f"Pastas version: {ps_version}\n"
-        f"Matplotlib version: {mpl_version}"
-    )
-
-    if lmfit:
-        from lmfit import __version__ as lm_version
-
-        msg = msg + f"\nlmfit version: {lm_version}"
-    if numba:
-        from numba import __version__ as nb_version
-
-        msg = msg + f"\nnumba version: {nb_version}"
-
-    return print(msg)
-
-
-def check_numba() -> None:
-    try:
-        from numba import njit
-    except ImportError:
-        logger.warning(
-            "Numba is not installed. Installing Numba is "
-            "recommended for significant speed-ups."
-        )
-
-
-def check_numba_scipy():
-    try:
-        import numba_scipy as _
-    except ImportError:
-        logger.warning(
-            "numba_scipy is not installed, defaulting to numpy implementation."
-        )
-        return False
-
-    if version.parse(sc_version) > version.parse("1.7.3"):
-        logger.warning(
-            "numba_scipy supports scipy<=1.7.3, found {0}".format(sc_version)
-        )
-        return False
-    return True
