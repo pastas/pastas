@@ -170,25 +170,25 @@ def _load_stressmodel(ts, data):
     # Unpack the stress time series
     if "stress" in ts.keys():
         for i, stress in enumerate(ts["stress"]):
-            series, meta, setting = _unpack_series(**stress)
+            series, meta, setting = _unpack_series(stress)
             ts["stress"][i] = series
             metadata.append(meta)
             settings.append(setting)
 
     if "prec" in ts.keys():
-        series, meta, setting = _unpack_series(**ts["prec"])
+        series, meta, setting = _unpack_series(ts["prec"])
         ts["prec"] = series
         metadata.append(meta)
         settings.append(setting)
 
     if "evap" in ts.keys():
-        series, meta, setting = _unpack_series(**ts["evap"])
+        series, meta, setting = _unpack_series(ts["evap"])
         ts["evap"] = series
         metadata.append(meta)
         settings.append(setting)
 
     if "temp" in ts.keys() and ts["temp"] is not None:
-        series, meta, setting = _unpack_series(**ts["temp"])
+        series, meta, setting = _unpack_series(ts["temp"])
         ts["temp"] = series
         metadata.append(meta)
         settings.append(setting)
