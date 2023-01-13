@@ -80,12 +80,12 @@ class TimeSeries:
         if settings == "oseries":
             validate_oseries(series)
         else:
-            if settings is not None:
+            if settings is not None and isinstance(settings, str):
                 if settings["fill_nan"] == "drop":
                     raise UserWarning(
-                        "The fill_nan setting 'drop' for a stress is "
-                        "not allowed because the stress time series "
-                        "need to be equidistant. Please change this."
+                        "The fill_nan setting 'drop' for a stress is not allowed "
+                        "because the stress time series  need to be equidistant. "
+                        "Please change this."
                     )
             validate_stress(series)
 
