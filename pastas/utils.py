@@ -613,7 +613,7 @@ def validate_name(name: str, raise_error: bool = False) -> str:
     for char in ilchar:
         if char in name:
             msg = f"User-provided name '{name}' contains illegal character."
-            msg += f"Please remove {char} from name."
+            msg += f"Please remove '{char}' from name."
             if raise_error:
                 raise Exception(msg)
             else:
