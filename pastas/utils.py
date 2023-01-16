@@ -37,7 +37,7 @@ def frequency_is_supported(freq: str) -> str:
 
     Returns
     -------
-    freq
+    freq: str
         String with the simulation frequency
 
     Notes
@@ -70,60 +70,6 @@ def frequency_is_supported(freq: str) -> str:
         else:
             freq = str(offset.n) + offset.name
     return freq
-
-
-def _get_stress_dt(freq: str) -> float:
-    """Internal method to obtain a timestep in days from a frequency string.
-
-    Parameters
-    ----------
-    freq: str
-
-    Returns
-    -------
-    dt: float
-        Approximate timestep in number of days.
-
-    Notes
-    -----
-    Used for comparison to determine if a time series needs to be up or
-    downsampled.
-
-    See http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
-    for the offset_aliases supported by Pandas.
-    """
-    # Get the frequency string and multiplier
-    offset = to_offset(freq)
-    if hasattr(offset, "delta"):
-        dt = offset.delta / Timedelta(1, "D")
-    else:
-        num = offset.n
-        freq = offset.name
-        if freq in ["A", "Y", "AS", "YS", "BA", "BY", "BAS", "BYS"]:
-            # year
-            dt = num * 365
-        elif freq in ["BQ", "BQS", "Q", "QS"]:
-            # quarter
-            dt = num * 90
-        elif freq in ["BM", "BMS", "CBM", "CBMS", "M", "MS"]:
-            # month
-            dt = num * 30
-        elif freq in ["SM", "SMS"]:
-            # semi-month
-            dt = num * 15
-        elif freq in ["W"]:
-            # week
-            dt = num * 7
-        elif freq in ["B", "C"]:
-            # day
-            dt = num
-        elif freq in ["BH", "CBH"]:
-            # hour
-            dt = num * 1 / 24
-        else:
-            raise (ValueError("freq of {} not supported".format(freq)))
-
-    return dt
 
 
 def _get_dt(freq: str) -> float:
@@ -503,9 +449,8 @@ def initialize_logger(
     Parameters
     -------
     logger : logging.Logger
-        A Logger-instance. Use ps.logger to initialise the Logging instance
-        that handles all logging throughout pastas,  including all sub modules
-        and packages.
+        A Logger-instance. Use ps.logger to initialise the Logging instance that
+        handles all logging throughout pastas,  including all submodules and packages.
     """
     if logger is None:
         logger = logging.getLogger("pastas")
@@ -525,9 +470,8 @@ def set_console_handler(
     Parameters
     -------
     logger : logging.Logger
-        A Logger-instance. Use ps.logger to initialise the Logging instance
-        that handles all logging throughout pastas,  including all sub modules
-        and packages.
+        A Logger-instance. Use ps.logger to initialise the Logging instance that
+        handles all logging throughout pastas,  including all submodules and packages.
     """
     if logger is None:
         logger = logging.getLogger("pastas")
@@ -616,7 +560,7 @@ def remove_file_handlers(logger: Optional[logging.Logger] = None) -> None:
     -------
     logger : logging.Logger
         A Logger-instance. Use ps.logger to initialise the Logging instance
-        that handles all logging throughout pastas,  including all sub modules
+        that handles all logging throughout pastas,  including all submodules
         and packages.
     """
     if logger is None:
@@ -667,7 +611,7 @@ def validate_name(name: str, raise_error: bool = False) -> str:
     for char in ilchar:
         if char in name:
             msg = f"User-provided name '{name}' contains illegal character."
-            msg += f"Please remove {char} from name."
+            msg += f"Please remove '{char}' from name."
             if raise_error:
                 raise Exception(msg)
             else:

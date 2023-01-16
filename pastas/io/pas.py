@@ -11,8 +11,6 @@ from logging import getLogger
 
 from pandas import DataFrame, Series, Timedelta, Timestamp, isna, read_json, to_numeric
 
-from pastas import TimeSeries
-
 logger = getLogger(__name__)
 
 
@@ -32,10 +30,7 @@ def pastas_hook(obj: dict):
             try:
                 obj[key] = read_json(value, typ="series", orient="split")
             except:
-                try:
-                    obj[key] = TimeSeries(**value)
-                except:
-                    obj[key] = value
+                obj[key] = value
             if isinstance(obj[key], Series):
                 obj[key].index = obj[key].index.tz_localize(None)
         elif key in ["time_offset", "warmup"]:

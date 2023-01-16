@@ -4,8 +4,10 @@ import pastas as ps
 
 
 def create_model():
-    obs = read_csv("tests/data/obs.csv", index_col=0, parse_dates=True).squeeze(
-        "columns"
+    obs = (
+        read_csv("tests/data/obs.csv", index_col=0, parse_dates=True)
+        .squeeze("columns")
+        .dropna()
     )
     rain = read_csv("tests/data/rain.csv", index_col=0, parse_dates=True).squeeze(
         "columns"
