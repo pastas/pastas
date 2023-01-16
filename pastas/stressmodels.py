@@ -1602,24 +1602,15 @@ class ChangeModel(StressModelBase):
             tmin=stress.series.index.min(),
             tmax=stress.series.index.max(),
         )
-        if inspect.isclass(rfunc1):
-            DeprecationWarning(
-                "Response functions should be added to a "
-                "stress-model as an instance, and not as a "
-                "class. This will raise an error from "
-                "Pastas version 0.23."
+        if inspect.isclass(rfunc1) or inspect.isclass(rfunc2):
+            raise DeprecationWarning(
+                "Response functions should be provided as an instance (e.g., ps.One()),"
+                " not as a class (e.g., ps.One). Please provide an instance."
             )
-            rfunc1 = rfunc1()
+
         rfunc1._set_init_parameter_settings(up=up, cutoff=cutoff)
         self.rfunc1 = rfunc1
-        if inspect.isclass(rfunc2):
-            DeprecationWarning(
-                "Response functions should be added to a "
-                "stress-model as an instance, and not as a "
-                "class. This will raise an error from "
-                "Pastas version 0.23."
-            )
-            rfunc2 = rfunc2()
+
         rfunc2._set_init_parameter_settings(up=up, cutoff=cutoff)
         self.rfunc2 = rfunc2
         self.tchange = Timestamp(tchange)
@@ -1674,10 +1665,11 @@ class ChangeModel(StressModelBase):
         stress = self.stress[0].series
         npoints = stress.index.size
         t = np.linspace(0, 1, npoints)
-        beta = p[-2] * npoints
+        beta = p[-2]
 
         sigma = stress.index.get_loc(Timestamp.fromordinal(int(p[-1]))) / npoints
         omega = 1 / (np.exp(beta * (t - sigma)) + 1)
+
         h1 = Series(
             data=fftconvolve(stress, rfunc1, "full")[:npoints],
             index=stress.index,
