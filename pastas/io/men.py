@@ -11,7 +11,7 @@ from numpy import NaN, array, vstack, zeros
 from pandas import Timestamp
 from scipy.io import loadmat, savemat
 
-from ..utils import datetime2matlab
+from ..utils import datetime_to_matlab
 
 
 def load(fname: str) -> NotImplementedError:
@@ -54,7 +54,7 @@ def dump(fname: str, data: dict, version: int = 3, verbose: bool = True) -> None
         elif field in ["Project", "layercode", "LoggerSerial", "area", "datlog_serial"]:
             Hdict[field] = ""
         elif field == "values":
-            date = array([datetime2matlab(x) for x in data["oseries"]["series"].index])
+            date = array([datetime_to_matlab(x) for x in data["oseries"]["series"].index])
             vals = data["oseries"]["series"].values
             Hdict[field] = [vstack((date, vals)).transpose()]
         elif field == "filtnr":
@@ -84,7 +84,7 @@ def dump(fname: str, data: dict, version: int = 3, verbose: bool = True) -> None
             else:
                 Hdict[field] = NaN
         elif field == "date":
-            Hdict[field] = datetime2matlab(Timestamp.now())
+            Hdict[field] = datetime_to_matlab(Timestamp.now())
         elif field == "comment":
             # Hdict[field] = [np.array(['',''])]
             obj_arr = zeros((2,), dtype=object)
@@ -182,7 +182,7 @@ def dump(fname: str, data: dict, version: int = 3, verbose: bool = True) -> None
                 elif field in ["LoggerSerial", "datlog_serial"]:
                     INdict[field] = ""
                 elif field == "values":
-                    date = array([datetime2matlab(x) for x in stress["series"].index])
+                    date = array([datetime_to_matlab(x) for x in stress["series"].index])
                     vals = stress["series"].values
                     INdict[field] = [vstack((date, vals)).transpose()]
                 elif field == "filtnr":
@@ -194,7 +194,7 @@ def dump(fname: str, data: dict, version: int = 3, verbose: bool = True) -> None
                 elif field == "ycoord":
                     INdict[field] = NaN
                 elif field == "date":
-                    INdict[field] = datetime2matlab(Timestamp.now())
+                    INdict[field] = datetime_to_matlab(Timestamp.now())
                 elif field == "Meta":
                     # TODO: has to be a matlab-table
                     INdict[field] = ""

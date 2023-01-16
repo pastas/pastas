@@ -14,7 +14,7 @@ from pandas import DataFrame, Series, date_range, infer_freq
 from scipy.stats import chi2, norm, normaltest, shapiro
 
 from pastas.stats.core import acf as get_acf
-from pastas.utils import _get_time_offset, get_equidistant_series
+from pastas.ts_processing import _get_time_offset, get_equidistant_series
 
 logger = getLogger(__name__)
 __all__ = [

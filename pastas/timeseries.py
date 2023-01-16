@@ -10,11 +10,11 @@ from pandas.tseries.frequencies import to_offset
 from pastas.typing import Axes
 
 from .rcparams import rcParams
-from .utils import (
+from .ts_processing import (
     _get_dt,
     _get_time_offset,
-    validate_name,
 )
+from .utils import validate_name
 
 logger = getLogger(__name__)
 

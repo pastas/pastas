@@ -11,7 +11,7 @@ from numpy import nan
 from pandas import Series, Timedelta, concat, date_range
 
 from pastas.typing import Function, TimestampType
-from pastas.utils import get_sample
+from pastas.ts_processing import get_sample
 
 
 def q_ghg(

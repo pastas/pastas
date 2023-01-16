@@ -38,13 +38,14 @@ from pastas.typing import NoiseModel as NoiseModelType
 from pastas.typing import Solver, StressModel
 from pastas.typing import TimeSeries as TimeSeriesType
 from pastas.typing import TimestampType
-from pastas.utils import (
+from pastas.ts_processing import (
     _get_dt,
     _get_time_offset,
     frequency_is_supported,
     get_sample,
-    validate_name,
 )
+from pastas.utils import validate_name
+
 from pastas.version import __version__
 
 
