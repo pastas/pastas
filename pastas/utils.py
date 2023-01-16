@@ -1,14 +1,14 @@
 """This module contains utility functions for working with Pastas models."""
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from logging import handlers
 from platform import platform
 
 # Type Hinting
 from typing import Any, Optional, Tuple
 
-from pandas import DatetimeIndex, Timedelta, Timestamp, to_datetime
+from pandas import DatetimeIndex, Timestamp
 
 from pastas.typing import ArrayLike
 from pastas.typing import Model as ModelType
