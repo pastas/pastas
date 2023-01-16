@@ -14,7 +14,7 @@ obs = (
 
 def create_model():
     ml = ps.Model(obs, name="Test_Model")
-    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, name="rch")
+    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma(), name="rch")
     ml.add_stressmodel(sm)
     return ml
 

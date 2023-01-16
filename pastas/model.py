@@ -188,13 +188,13 @@ class Model:
 
         Examples
         --------
-        >>> sm = ps.StressModel(stress, rfunc=ps.Gamma, name="stress")
+        >>> sm = ps.StressModel(stress, rfunc=ps.Gamma(), name="stress")
         >>> ml.add_stressmodel(sm)
 
         To add multiple stress models at once you can do the following:
 
-        >>> sm1 = ps.StressModel(stress, rfunc=ps.Gamma, name="stress1")
-        >>> sm1 = ps.StressModel(stress, rfunc=ps.Gamma, name="stress2")
+        >>> sm1 = ps.StressModel(stress, rfunc=ps.Gamma(), name="stress1")
+        >>> sm1 = ps.StressModel(stress, rfunc=ps.Gamma(), name="stress2")
         >>> ml.add_stressmodel([sm1, sm2])
 
         See Also

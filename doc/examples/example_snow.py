@@ -25,7 +25,7 @@ sm = ps.RechargeModel(
     prec,
     evap,
     recharge=ps.rch.FlexModel(snow=True),
-    rfunc=ps.Gamma,
+    rfunc=ps.Gamma(),
     name="rch",
     temp=temp,
 )

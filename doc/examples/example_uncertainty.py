@@ -16,7 +16,7 @@ rain = pd.read_csv("data/rain_nb1.csv", index_col=0, parse_dates=True).squeeze(
 evap = pd.read_csv("data/evap_nb1.csv", index_col=0, parse_dates=True).squeeze(
     "columns"
 )
-sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential, name="recharge")
+sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential(), name="recharge")
 ml.add_stressmodel(sm)
 
 # Solve
