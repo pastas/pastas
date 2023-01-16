@@ -452,11 +452,11 @@ def pandas_equidistant_asfreq(series: Series, freq: str) -> Series:
 
 
 def to_daily_unit():
-    DeprecationWarning("This function is deprecated and will be removed in v1.0")
+    raise DeprecationWarning("This function is deprecated and will be removed in v1.0")
 
 
 def timestep_weighted_resample_fast():
-    DeprecationWarning(
+    raise DeprecationWarning(
         "This function is deprecated and will be removed in v1.0."
-        "Method is merged into timestep_weighted_resample."
+        "Method is merged into `timestep_weighted_resample()`."
     )
