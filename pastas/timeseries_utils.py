@@ -1,30 +1,14 @@
 """This module contains utility functions for working with time series."""
 
 import logging
-from datetime import datetime, timedelta
-from logging import handlers
-from platform import platform
 
 # Type Hinting
-from typing import Any, Optional, Tuple
+from typing import Optional
 
 import numpy as np
-from pandas import (
-    DatetimeIndex,
-    Index,
-    Series,
-    Timedelta,
-    Timestamp,
-    date_range,
-    to_datetime,
-)
+from pandas import Index, Series, Timedelta, Timestamp, date_range
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
-
-from pastas.typing import ArrayLike
-from pastas.typing import Model as ModelType
-from pastas.typing import TimestampType
-
 
 logger = logging.getLogger(__name__)
 
@@ -465,3 +449,14 @@ def pandas_equidistant_asfreq(series: Series, freq: str) -> Series:
         .squeeze()
     )
     return spandas
+
+
+def to_daily_unit():
+    DeprecationWarning("This function is deprecated and will be removed in v1.0")
+
+
+def timestep_weighted_resample_fast():
+    DeprecationWarning(
+        "This function is deprecated and will be removed in v1.0."
+        "Method is merged into timestep_weighted_resample."
+    )

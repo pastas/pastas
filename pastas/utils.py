@@ -18,45 +18,15 @@ logger = logging.getLogger(__name__)
 
 
 def excel_to_datetime(tindex: DatetimeIndex, freq="D") -> DatetimeIndex:
-    """Method to convert excel datetime to pandas timetime objects.
-
-    Parameters
-    ----------
-    tindex: datetime index
-        can be a datetime object or a pandas datetime index.
-    freq: str
-
-    Returns
-    -------
-    datetimes: pandas.datetimeindex
-    """
-    datetimes = to_datetime("1899-12-30") + Timedelta(tindex, freq)
-    return datetimes
+    DeprecationWarning("This function is deprecated and will be removed in v1.0.")
 
 
-def datenum_to_datetime(datenum: float) -> datetime:
-    """Convert Matlab datenum into Python datetime.
-
-    Parameters
-    ----------
-    datenum: float
-        date in datenum format
-
-    Returns
-    -------
-    datetime :
-        Datetime object corresponding to datenum.
-    """
-    days = datenum % 1.0
-    return (
-        datetime.fromordinal(int(datenum)) + timedelta(days=days) - timedelta(days=366)
-    )
+def matlab_datenum_to_datetime(datenum: float) -> datetime:
+    DeprecationWarning("This function is deprecated and will be removed in v1.0.")
 
 
-def datetime_to_matlab(tindex: DatetimeIndex) -> ArrayLike:
-    mdn = tindex + Timedelta(days=366)
-    frac = (tindex - tindex.round("D")).seconds / (24.0 * 60.0 * 60.0)
-    return mdn.toordinal() + frac
+def datetime_to_matlab_datenum(tindex: DatetimeIndex) -> ArrayLike:
+    DeprecationWarning("This function is deprecated and will be removed in v1.0.")
 
 
 def get_stress_tmin_tmax(ml: ModelType) -> Tuple[TimestampType, TimestampType]:
@@ -252,3 +222,24 @@ def validate_name(name: str, raise_error: bool = False) -> str:
                 logger.warning(msg)
 
     return name
+
+
+def get_sample(tindex, ref_tindex):
+    DeprecationWarning("This method was moved to `pastas.ts.get_sample()`!")
+
+
+def timestep_weighted_resample(series0, tindex):
+    DeprecationWarning(
+        "This method was moved to `pastas.ts.timestep_weighted_resample()`!"
+    )
+
+
+def timestep_weighted_resample_fase(series0, tindex):
+    DeprecationWarning(
+        "This method is deprecated and merged into "
+        "`pastas.ts.timestep_weighted_resample()`!"
+    )
+
+
+def get_equidistant_series(series, freq, minimize_data_loss=False):
+    DeprecationWarning("This method was moved to `pastas.ts.get_equidistant_series()`!")
