@@ -54,7 +54,9 @@ def dump(fname: str, data: dict, version: int = 3, verbose: bool = True) -> None
         elif field in ["Project", "layercode", "LoggerSerial", "area", "datlog_serial"]:
             Hdict[field] = ""
         elif field == "values":
-            date = array([datetime_to_matlab(x) for x in data["oseries"]["series"].index])
+            date = array(
+                [datetime_to_matlab(x) for x in data["oseries"]["series"].index]
+            )
             vals = data["oseries"]["series"].values
             Hdict[field] = [vstack((date, vals)).transpose()]
         elif field == "filtnr":
@@ -182,7 +184,9 @@ def dump(fname: str, data: dict, version: int = 3, verbose: bool = True) -> None
                 elif field in ["LoggerSerial", "datlog_serial"]:
                     INdict[field] = ""
                 elif field == "values":
-                    date = array([datetime_to_matlab(x) for x in stress["series"].index])
+                    date = array(
+                        [datetime_to_matlab(x) for x in stress["series"].index]
+                    )
                     vals = stress["series"].values
                     INdict[field] = [vstack((date, vals)).transpose()]
                 elif field == "filtnr":
