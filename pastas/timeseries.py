@@ -10,7 +10,7 @@ from pandas.tseries.frequencies import to_offset
 from pastas.typing import Axes
 
 from .rcparams import rcParams
-from .ts_processing import (
+from .timeseries_utils import (
     _get_dt,
     _get_time_offset,
 )

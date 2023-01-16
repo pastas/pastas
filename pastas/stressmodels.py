@@ -660,7 +660,7 @@ class WellModel(StressModelBase):
         float between 0 and 1 to determine how long the response is (default is 99.9%
         of the actual response time). Used to reduce computation times.
     settings: str, list of dict, optional
-        settings of the timeseries, by default "well".
+        settings of the time series, by default "well".
     sort_wells: bool, optional
         sort wells from closest to furthest, by default True.
 

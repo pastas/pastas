@@ -11,7 +11,7 @@ from numpy import nan
 from pandas import Series, Timedelta, concat, date_range
 
 from pastas.typing import Function, TimestampType
-from pastas.ts_processing import get_sample
+from pastas.timeseries_utils import get_sample
 
 
 def q_ghg(
@@ -37,7 +37,7 @@ def q_ghg(
 
     Notes
     -----
-    Approximated by taking quantiles of the timeseries values per year and
+    Approximated by taking quantiles of the time series values per year and
     calculating the mean of the quantiles. The series is first resampled to
     daily values.
     """
@@ -67,7 +67,7 @@ def q_glg(
 
     Notes
     -----
-    Approximated by taking quantiles of the timeseries values per year and
+    Approximated by taking quantiles of the time series values per year and
     calculating the mean of the quantiles. The series is first resampled to
     daily values.
     """
@@ -443,7 +443,7 @@ def gg(
 
 
 def _get_spring(series: Series, min_n_meas: int) -> float:
-    """Internal method to get values of timeseries values in spring.
+    """Internal method to get values of time series values in spring.
 
     Part of year aggregator function for gvg method.
 
@@ -465,7 +465,7 @@ def _get_spring(series: Series, min_n_meas: int) -> float:
 
 
 def _in_spring(series: Series) -> Series:
-    """Internal method to test if timeseries index is between 14 March and 15
+    """Internal method to test if time series index is between 14 March and 15
     April.
 
     Parameters
@@ -645,7 +645,7 @@ def _q_gxg(
     by_year: bool = True,
 ) -> Series:
     """Dutch groundwater statistics GHG and GLG approximated by taking
-    quantiles of the timeseries values per year and taking the mean of the
+    quantiles of the time series values per year and taking the mean of the
     quantiles.
 
     The series is first resampled to daily values.

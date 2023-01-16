@@ -80,7 +80,7 @@ class Plotting:
         -------
         ax: matplotlib.axes.Axes
             matplotlib axes with the simulated and optionally the observed
-            timeseries.
+            time series.
 
         Examples
         --------
@@ -879,7 +879,7 @@ class Plotting:
                 ax = axes[i - 1]
                 del ax.lines[0]  # delete existing line
 
-                contrib = [c[1] for c in contributions]  # get timeseries
+                contrib = [c[1] for c in contributions]  # get time series
                 vstack = concat(contrib, axis=1, sort=False)
                 names = [c[0] for c in contributions]  # get names
                 ax.stackplot(vstack.index, vstack.values.T, labels=names)

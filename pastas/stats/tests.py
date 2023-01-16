@@ -14,7 +14,7 @@ from pandas import DataFrame, Series, date_range, infer_freq
 from scipy.stats import chi2, norm, normaltest, shapiro
 
 from pastas.stats.core import acf as get_acf
-from pastas.ts_processing import _get_time_offset, get_equidistant_series
+from pastas.timeseries_utils import _get_time_offset, get_equidistant_series
 
 logger = getLogger(__name__)
 __all__ = [
@@ -313,7 +313,7 @@ def stoffer_toloi(
     snap_to_equidistant_timestamps : bool, optional
         if False (default), a sample is taken from series with equidistant
         timesteps using pandas' reindex. Only values are kept that lie on
-        those equidistant timestamps. If True, an equidistant timeseries is
+        those equidistant timestamps. If True, an equidistant time series is
         created taking as many values as possible from the original series
         which are then snapped to the nearest equidistant timestamp.
 
@@ -370,12 +370,12 @@ def stoffer_toloi(
     pastas.utils.get_equidistant_series
     """
     if snap_to_equidistant_timestamps:
-        # create equidistant timeseries snapping values from the original
+        # create equidistant time series snapping values from the original
         # series to the nearest equidistant timestamp. No values
         # are duplicated and data loss is minimized.
         s = get_equidistant_series(series, freq, minimize_data_loss=True)
     else:
-        # get equidistant sample from original timeseries, checks which
+        # get equidistant sample from original time series, checks which
         # time offset is the most common to maximize the number of values
         # taken from the original series.
         t_offset = _get_time_offset(series.index, freq).value_counts().idxmax()

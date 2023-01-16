@@ -5,7 +5,7 @@ from pandas.plotting import register_matplotlib_converters
 import pastas.plots as plots
 import pastas.recharge as rch
 import pastas.stats as stats
-import pastas.ts_processing as ts
+import pastas.timeseries_utils as ts
 
 from .model import Model
 from .modelcompare import CompareModels
