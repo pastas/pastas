@@ -293,15 +293,14 @@ def acf(
 
     if r.empty:
         raise ValueError(
-            "The computed autocorrelation function has no "
-            "values. Changing the input arguments ('acf_options')"
-            " for calculating ACF may help."
+            "The computed autocorrelation function has no values. Changing the input "
+            "arguments ('acf_options') for calculating ACF may help."
         )
 
     if smooth_conf:
-        conf = r.stderr.rolling(10, min_periods=1).mean().values
+        conf = r.conf.rolling(10, min_periods=1).mean().values
     else:
-        conf = r.stderr.values
+        conf = r.conf.values
 
     ax.fill_between(r.index.days, conf, -conf, alpha=0.3)
     ax.vlines(r.index.days, [0], r.loc[:, "acf"].values, color=color)
