@@ -25,13 +25,13 @@ evap = pd.read_csv("data/evap_nb1.csv", index_col=0, parse_dates=True).squeeze(
 
 # Solve with a Exponential response function
 ml1 = ps.Model(obs, name="Exp")
-sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential)
+sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential())
 ml1.add_stressmodel(sm)
 ml1.solve(noise=noise, fit_constant=fit_constant)
 
 # Solve with a Gamma response function
 ml2 = ps.Model(obs, name="Gamma")
-sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma)
+sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma())
 ml2.add_stressmodel(sm)
 ml2.solve(noise=noise, fit_constant=fit_constant)
 

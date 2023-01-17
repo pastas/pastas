@@ -19,22 +19,22 @@ def test_create_model():
 
 def test_add_stressmodel():
     ml = ps.Model(obs, name="Test_Model")
-    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, name="rch")
+    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma(), name="rch")
     ml.add_stressmodel(sm)
     return None
 
 
 def test_add_stressmodels():
     ml = ps.Model(obs, name="Test_Model")
-    sm1 = ps.StressModel(rain, rfunc=ps.Exponential, name="prec")
-    sm2 = ps.StressModel(evap, rfunc=ps.Exponential, name="evap")
+    sm1 = ps.StressModel(rain, rfunc=ps.Exponential(), name="prec")
+    sm2 = ps.StressModel(evap, rfunc=ps.Exponential(), name="evap")
     ml.add_stressmodel([sm1, sm2])
     return None
 
 
 def test_del_stressmodel():
     ml = ps.Model(obs, name="Test_Model")
-    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, name="rch")
+    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma(), name="rch")
     ml.add_stressmodel(sm)
     ml.del_stressmodel("rch")
     return None
@@ -73,7 +73,7 @@ def test_del_noisemodel():
 
 def test_solve_model():
     ml = ps.Model(obs, name="Test_Model")
-    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, name="rch")
+    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma(), name="rch")
     ml.add_stressmodel(sm)
     ml.solve()
     return None
@@ -81,7 +81,7 @@ def test_solve_model():
 
 def test_solve_empty_model():
     ml = ps.Model(obs, name="Test_Model")
-    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, name="rch")
+    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma(), name="rch")
     ml.add_stressmodel(sm)
     try:
         ml.solve(tmin="2016")
@@ -94,7 +94,7 @@ def test_solve_empty_model():
 
 def test_save_model():
     ml = ps.Model(obs, name="Test_Model")
-    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, name="rch")
+    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma(), name="rch")
     ml.add_stressmodel(sm)
     ml.to_file("test.pas")
     return None
@@ -102,7 +102,7 @@ def test_save_model():
 
 def test_load_model():
     ml = ps.Model(obs, name="Test_Model")
-    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, name="rch")
+    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma(), name="rch")
     ml.add_stressmodel(sm)
     ml.solve()
     # add some fictitious tiny value for testing float precision
@@ -131,7 +131,7 @@ def test_model_copy():
 
 def test_get_block():
     ml = ps.Model(obs, name="Test_Model")
-    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, name="rch")
+    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma(), name="rch")
     ml.add_stressmodel(sm)
     ml.get_block_response("rch")
     return None
@@ -139,7 +139,7 @@ def test_get_block():
 
 def test_get_step():
     ml = ps.Model(obs, name="Test_Model")
-    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, name="rch")
+    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma(), name="rch")
     ml.add_stressmodel(sm)
     ml.get_step_response("rch")
     return None
@@ -147,7 +147,7 @@ def test_get_step():
 
 def test_get_contribution():
     ml = ps.Model(obs, name="Test_Model")
-    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, name="rch")
+    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma(), name="rch")
     ml.add_stressmodel(sm)
     ml.get_contribution("rch")
     return None
@@ -155,7 +155,7 @@ def test_get_contribution():
 
 def test_get_stress():
     ml = ps.Model(obs, name="Test_Model")
-    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, name="rch")
+    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma(), name="rch")
     ml.add_stressmodel(sm)
     ml.get_stress("rch")
     return None
@@ -163,7 +163,7 @@ def test_get_stress():
 
 def test_simulate():
     ml = ps.Model(obs, name="Test_Model")
-    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, name="rch")
+    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma(), name="rch")
     ml.add_stressmodel(sm)
     ml.simulate()
     return None
@@ -171,7 +171,7 @@ def test_simulate():
 
 def test_residuals():
     ml = ps.Model(obs, name="Test_Model")
-    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, name="rch")
+    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma(), name="rch")
     ml.add_stressmodel(sm)
     ml.residuals()
     return None
@@ -179,7 +179,7 @@ def test_residuals():
 
 def test_noise():
     ml = ps.Model(obs, name="Test_Model")
-    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, name="rch")
+    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma(), name="rch")
     ml.add_stressmodel(sm)
     ml.noise()
     return None
@@ -193,7 +193,7 @@ def test_observations():
 
 def test_get_output_series():
     ml = ps.Model(obs, name="Test_Model")
-    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, name="rch")
+    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma(), name="rch")
     ml.add_stressmodel(sm)
     ml.get_output_series()
     return None
@@ -201,7 +201,7 @@ def test_get_output_series():
 
 def test_get_output_series_arguments():
     ml = ps.Model(obs, name="Test_Model")
-    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, name="rch")
+    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma(), name="rch")
     ml.add_stressmodel(sm)
     ml.get_output_series(split=False, add_contributions=False)
     return None

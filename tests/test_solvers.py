@@ -16,7 +16,7 @@ def create_model():
         "columns"
     )
     ml = ps.Model(obs, name="Test_Model")
-    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential, name="recharge")
+    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential(), name="recharge")
     ml.add_stressmodel(sm)
     return ml
 
