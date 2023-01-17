@@ -521,8 +521,8 @@ class TrackSolve:
     Interactive plotting of optimization progress requires a matplotlib backend that
     supports interactive plotting, e.g. `mpl.use("TkAgg")` and `mpl.interactive(
     True)`. Some possible speedups on the matplotlib side include:
-        - mpl.style.use("fast")
-        - mpl.rcParams['path.simplify_threshold'] = 1.0
+    - mpl.style.use("fast")
+    - mpl.rcParams['path.simplify_threshold'] = 1.0
 
     Examples
     --------

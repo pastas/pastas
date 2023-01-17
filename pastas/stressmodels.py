@@ -1026,8 +1026,8 @@ class RechargeModel(StressModelBase):
     >>>                       recharge=ps.rch.FlexModel(), name="rch")
     >>> ml.add_stressmodel(sm)
 
-    Warning
-    -------
+    Warnings
+    --------
     We recommend not to store a RechargeModel is a variable named `rm`. This name is
     already reserved in IPython to remove files and will cause problems later.
     """
@@ -1304,8 +1304,8 @@ class RechargeModel(StressModelBase):
         states. All ingoing fluxes have a positive sign (e.g., precipitation) and all
         outgoing fluxes have negative sign (e.g., recharge).
 
-        Warning
-        -------
+        Warnings
+        --------
         This is an experimental method and may change in the future.
 
         Examples

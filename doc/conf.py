@@ -71,7 +71,7 @@ language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ["_build", "**.ipynb_checkpoints"]
+exclude_patterns = ["_build", "**groundwater_paper", "**.ipynb_checkpoints"]
 
 add_function_parentheses = False
 add_module_names = False
