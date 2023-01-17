@@ -1010,10 +1010,13 @@ class FourParam(RfuncBase):
         parameters.loc[name + "_a"] = (10, 0.01, 5000, True, name)
         parameters.loc[name + "_b"] = (10, 1e-6, 25, True, name)
         return parameters
-
+    
     @staticmethod
-    def function(t: float, p: ArrayLike) -> float:
-        return (t ** (p[1] - 1)) * np.exp(-t / p[2] - p[2] * p[3] / t)
+    @latexfun(identifiers={"impulse": "theta", "k0": "K_0"})
+    def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
+        # impulse for A=1
+        A, n, a, b = p
+        return (t ** (n - 1)) * np.exp(-t / a - a * b / t)
 
     def get_tmax(self, p: ArrayLike, cutoff: Optional[float] = None) -> float:
         if cutoff is None:
@@ -1022,10 +1025,10 @@ class FourParam(RfuncBase):
         if self.quad:
             x = np.arange(1, 10000, 1)
             y = np.zeros_like(x)
-            func = self.function(x, p)
-            func_half = self.function(x[:-1] + 1 / 2, p)
+            func = self.impulse(x, p)
+            func_half = self.impulse(x[:-1] + 1 / 2, p)
             y[1:] = y[0] + np.cumsum(1 / 6 * (func[:-1] + 4 * func_half + func[1:]))
-            y = y / quad(self.function, 0, np.inf, args=p)[0]
+            y = y / quad(self.impulse, 0, np.inf, args=p)[0]
             return np.searchsorted(y, cutoff)
 
         else:
@@ -1038,15 +1041,15 @@ class FourParam(RfuncBase):
 
             x = np.arange(1, 10000, 1)
             y = np.zeros_like(x)
-            func = self.function(x, p)
-            func_half = self.function(x[:-1] + 1 / 2, p)
+            func = self.impulse(x, p)
+            func_half = self.impulse(x[:-1] + 1 / 2, p)
             y[0] = 0.5 * (
-                w1 * self.function(0.5 * t1 + 0.5, p)
-                + w2 * self.function(0.5 * t2 + 0.5, p)
-                + w3 * self.function(0.5 * t3 + 0.5, p)
+                w1 * self.impulse(0.5 * t1 + 0.5, p)
+                + w2 * self.impulse(0.5 * t2 + 0.5, p)
+                + w3 * self.impulse(0.5 * t3 + 0.5, p)
             )
             y[1:] = y[0] + np.cumsum(1 / 6 * (func[:-1] + 4 * func_half + func[1:]))
-            y = y / quad(self.function, 0, np.inf, args=p)[0]
+            y = y / quad(self.impulse, 0, np.inf, args=p)[0]
             return np.searchsorted(y, cutoff)
 
     @staticmethod
@@ -1059,15 +1062,15 @@ class FourParam(RfuncBase):
         dt: float = 1.0,
         cutoff: Optional[float] = None,
         maxtmax: Optional[int] = None,
-    ) -> ArrayLike:
+        ) -> ArrayLike:
 
         if self.quad:
             t = self.get_t(p, dt, cutoff, maxtmax)
             s = np.zeros_like(t)
-            s[0] = quad(self.function, 0, dt, args=p)[0]
+            s[0] = quad(self.impulse, 0, dt, args=p)[0]
             for i in range(1, len(t)):
-                s[i] = s[i - 1] + quad(self.function, t[i - 1], t[i], args=p)[0]
-            s = s * (p[0] / (quad(self.function, 0, np.inf, args=p))[0])
+                s[i] = s[i - 1] + quad(self.impulse, t[i - 1], t[i], args=p)[0]
+            s = s * (p[0] / (quad(self.impulse, 0, np.inf, args=p))[0])
             return s
 
         else:
@@ -1087,18 +1090,18 @@ class FourParam(RfuncBase):
 
                 # for interval [0,dt] :
                 s[0] = (step / 2) * (
-                    w1 * self.function((step / 2) * t1 + (step / 2), p)
-                    + w2 * self.function((step / 2) * t2 + (step / 2), p)
-                    + w3 * self.function((step / 2) * t3 + (step / 2), p)
+                    w1 * self.impulse((step / 2) * t1 + (step / 2), p)
+                    + w2 * self.impulse((step / 2) * t2 + (step / 2), p)
+                    + w3 * self.impulse((step / 2) * t3 + (step / 2), p)
                 )
 
                 # for interval [dt,tmax]:
-                func = self.function(t, p)
-                func_half = self.function(t[:-1] + step / 2, p)
+                func = self.impulse(t, p)
+                func_half = self.impulse(t[:-1] + step / 2, p)
                 s[1:] = s[0] + np.cumsum(
                     step / 6 * (func[:-1] + 4 * func_half + func[1:])
                 )
-                s = s * (p[0] / quad(self.function, 0, np.inf, args=p)[0])
+                s = s * (p[0] / quad(self.impulse, 0, np.inf, args=p)[0])
                 return s[int(dt / step - 1) :: int(dt / step)]
             else:
                 t = self.get_t(p, dt, cutoff, maxtmax)
@@ -1106,18 +1109,18 @@ class FourParam(RfuncBase):
 
                 # for interval [0,dt] Gaussian quadrate:
                 s[0] = (dt / 2) * (
-                    w1 * self.function((dt / 2) * t1 + (dt / 2), p)
-                    + w2 * self.function((dt / 2) * t2 + (dt / 2), p)
-                    + w3 * self.function((dt / 2) * t3 + (dt / 2), p)
+                    w1 * self.impulse((dt / 2) * t1 + (dt / 2), p)
+                    + w2 * self.impulse((dt / 2) * t2 + (dt / 2), p)
+                    + w3 * self.impulse((dt / 2) * t3 + (dt / 2), p)
                 )
 
                 # for interval [dt,tmax] Simpson integration:
-                func = self.function(t, p)
-                func_half = self.function(t[:-1] + dt / 2, p)
+                func = self.impulse(t, p)
+                func_half = self.impulse(t[:-1] + dt / 2, p)
                 s[1:] = s[0] + np.cumsum(
                     dt / 6 * (func[:-1] + 4 * func_half + func[1:])
                 )
-                s = s * (p[0] / quad(self.function, 0, np.inf, args=p)[0])
+                s = s * (p[0] / quad(self.impulse, 0, np.inf, args=p)[0])
                 return s
 
 
@@ -1191,6 +1194,12 @@ class DoubleExponential(RfuncBase):
 
     def gain(self, p: ArrayLike) -> float:
         return p[0]
+    
+    @staticmethod
+    @latexfun(identifiers={"impulse": "theta"})
+    def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
+        A, f, a, b = p
+        return A * ((1 - f) / a * np.exp(-t / a) + f / b * np.exp(-t / b))
 
     def step(
         self,
@@ -1198,7 +1207,7 @@ class DoubleExponential(RfuncBase):
         dt: float = 1.0,
         cutoff: Optional[float] = None,
         maxtmax: Optional[int] = None,
-    ) -> ArrayLike:
+        ) -> ArrayLike:
         t = self.get_t(p, dt, cutoff, maxtmax)
         s = p[0] * (1 - ((1 - p[1]) * np.exp(-t / p[2]) + p[1] * np.exp(-t / p[3])))
         return s
@@ -1246,11 +1255,17 @@ class Edelman(RfuncBase):
     def get_tmax(self, p: ArrayLike, cutoff: Optional[float] = None) -> float:
         if cutoff is None:
             cutoff = self.cutoff
-        return 1.0 / (p[0] * erfcinv(cutoff * erfc(0))) ** 2
+        return 1.0 / (p[0] * erfcinv(cutoff)) ** 2
 
     @staticmethod
     def gain(p: ArrayLike) -> float:
         return 1.0
+    
+    @staticmethod
+    @latexfun(identifiers={"impulse": "theta"})
+    def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
+        a, = p
+        return 1 / (np.sqrt(np.pi) * a * t ** 1.5) * np.exp(-1 / (a ** 2 * t))
 
     def step(
         self,
