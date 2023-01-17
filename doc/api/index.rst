@@ -22,6 +22,7 @@ left-hand menu you will find the different categories of the API documentation.
     rfunc
     solver
     utils
+    timeseries_utils
     plots
     stats
 
