@@ -31,7 +31,7 @@ GitHub repository `here <https://help.github
 After you forked Pastas, you can start making changes to the code or add new
 features to it. To ensure high quality code that is easy to read and maintain
 we follow the `Black <https://black.readthedocs.io/en/stable/index.html>`_ code
-formatting standard. Check out the :ref:`Pastas Code Style` section to learn
+formatting standard. Check out the Pastas Code Style section to learn
 more.
 
 4. Test Code
@@ -71,7 +71,7 @@ has a good code style.
 .. figure:: automated_tests.png
     :figwidth: 400px
 
-After you have create a Pull Request the :ref:`Core Development Team` will
+After you have create a Pull Request the Core Development Team will
 review your code and discuss potential improvements on GitHub before merging
 your code into the development branch. After a successful Pull Request your
 code will be included in the next release!

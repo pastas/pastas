@@ -13,14 +13,14 @@ left-hand menu you will find the different categories of the API documentation.
     :recursive:
 
     model.Model
-    modelplots.Plotting
-    timeseries.TimeSeries
     stressmodels
-    recharge
     noisemodels
     transform
     rfunc
+    recharge
     solver
+    modelplots.Plotting
+    timeseries.TimeSeries
     utils
     plots
     stats
