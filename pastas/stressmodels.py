@@ -689,9 +689,7 @@ class WellModel(StressModelBase):
         sort_wells: bool = True,
         metadata: Optional[list] = None,
     ) -> None:
-        if not (
-            isinstance(rfunc, HantushWellModel) or issubclass(rfunc, HantushWellModel)
-        ):
+        if not isinstance(rfunc, HantushWellModel):
             raise NotImplementedError(
                 "WellModel only supports the rfunc HantushWellModel!"
             )
@@ -1420,7 +1418,7 @@ class TarsoModel(RechargeModel):
             raise (Exception(msg))
         if rfunc is None:
             rfunc = Exponential()
-        if not (isinstance(rfunc, Exponential) or issubclass(rfunc, Exponential)):
+        if not isinstance(rfunc, Exponential):
             raise NotImplementedError("TarsoModel only supports rfunc Exponential!")
         self.dmin = dmin
         self.dmax = dmax
