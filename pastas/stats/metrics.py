@@ -1,5 +1,5 @@
-"""The following methods may be used to describe the fit between the model
-simulation and the observations.
+"""The following methods may be used to describe the fit between the model simulation
+and the observations.
 
 Examples
 ========
@@ -7,7 +7,7 @@ These methods may be used as follows:
 
 >>> ps.stats.rmse(sim, obs)
 
-or
+or directly from a Pastas model:
 
 >>> ml.stats.rmse()
 """
@@ -55,25 +55,24 @@ def mae(
     sim: pandas.Series
         Series with the simulated values.
     obs: pandas.Series
-        Series with the observed values.
+        The Series with the observed values.
     res: pandas.Series
-        Series with the residual values. If time series for the residuals
-        are provided, the sim and obs arguments are ignored.
+        The Series with the residual values. If time series for the residuals are
+        provided, the sim and obs arguments are ignored.
     missing: str, optional
-        string with the rule to deal with missing values. Only "drop" is
-        supported now.
+        string with the rule to deal with missing values. Only "drop" is supported now.
     weighted: bool, optional
-        Weight the values by the normalized time step to account for
-        irregular time series. Default is True.
+        Weight the values by the normalized time step to account for irregular time
+        series. Default is True.
     max_gap: int, optional
-        maximum allowed gap period in days to use for the computation of the
-        weights. All time steps larger than max_gap are replace with the
-        max_gap value. Default value is 30 days.
+        maximum allowed gap period in days to use for the computation of the weights.
+        All time steps larger than max_gap are replace with the max_gap value.
+        Default value is 30 days.
 
     Notes
     -----
-    The Mean Absolute Error (MAE) between two time series x and y is
-    computed as follows:
+    The Mean Absolute Error (MAE) between two time series x and y is computed as
+    follows:
 
     .. math:: \\text{MAE} = \\sum_{i=1}^{N} w_i |x_i - y_i|
 
@@ -109,20 +108,19 @@ def rmse(
     sim: pandas.Series
         Series with the simulated values.
     obs: pandas.Series
-        Series with the observed values.
+        The Series with the observed values.
     res: pandas.Series
-        Series with the residual values. If time series for the residuals
-        are provided, the sim and obs arguments are ignored.
+        The Series with the residual values. If time series for the residuals are
+        provided, the sim and obs arguments are ignored.
     missing: str, optional
-        string with the rule to deal with missing values. Only "drop" is
-        supported now.
+        string with the rule to deal with missing values. Only "drop" is supported now.
     weighted: bool, optional
-        Weight the values by the normalized time step to account for
-        irregular time series. Default is False.
+        Weight the values by the normalized time step to account for irregular time
+        series. Default is False.
     max_gap: int, optional
-        maximum allowed gap period in days to use for the computation of the
-        weights. All time steps larger than max_gap are replace with the
-        max_gap value. Default value is 30 days.
+        maximum allowed gap period in days to use for the computation of the weights.
+        All time steps larger than max_gap are replace with the max_gap value.
+        Default value is 30 days.
 
     Notes
     -----
@@ -160,13 +158,12 @@ def sse(
     sim: pandas.Series
         Series with the simulated values.
     obs: pandas.Series
-        Series with the observed values.
+        The Series with the observed values.
     res: pandas.Series
-        Series with the residual values. If time series for the residuals
-        are provided, the sim and obs arguments are ignored.
+        The Series with the residual values. If time series for the residuals are
+        provided, the sim and obs arguments are ignored.
     missing: str, optional
-        string with the rule to deal with missing values. Only "drop" is
-        supported now.
+        string with the rule to deal with missing values. Only "drop" is supported now.
 
     Notes
     -----
@@ -174,7 +171,7 @@ def sse(
 
     .. math:: \\text{SSE} = \\sum(r^2)
 
-    Where :math:`r` are the residuals.
+    where :math:`r` are the residuals.
     """
     if res is None:
         res = sim - obs
@@ -205,19 +202,19 @@ def pearsonr(
     Parameters
     ----------
     sim: pandas.Series
-        Series with the simulated values.
+        The Series with the simulated values.
     obs: pandas.Series
-        Series with the observed values.
+        The Series with the observed values.
     missing: str, optional
-        string with the rule to deal with missing values in the
-        observed series. Only "drop" is supported now.
+        string with the rule to deal with missing values in the observed series. Only
+        "drop" is supported now.
     weighted: bool, optional
-        Weight the values by the normalized time step to account for
-        irregular time series. Default is False.
+        Weight the values by the normalized time step to account for irregular time
+        series. Default is False.
     max_gap: int, optional
-        maximum allowed gap period in days to use for the computation of the
-        weights. All time steps larger than max_gap are replace with the
-        max_gap value. Default value is 30 days.
+        maximum allowed gap period in days to use for the computation of the weights.
+        All time steps larger than max_gap are replace with the max_gap value.
+        Default value is 30 days.
 
     Notes
     -----
@@ -227,9 +224,8 @@ def pearsonr(
         {\\sqrt{\\sum_{i=1}^{N} w_i(x_i-\\bar{x})^2 \\sum_{i=1}^{N}
         w_i(y_i-\\bar{y})^2}}
 
-    Where :math:`x` is is observed time series, :math:`y` the simulated
-    time series, and :math:`N` the number of observations in the observed
-    time series.
+    Where :math:`x` is observed time series, :math:`y` the simulated time series,
+    and :math:`N` the number of observations in the observed time series.
     """
     if missing == "drop":
         obs = obs.dropna()
@@ -265,32 +261,31 @@ def evp(
     obs: pandas.Series
         Series with the observed values.
     sim: pandas.Series
-        Series with the simulated values.
+        The Series with the simulated values.
     res: pandas.Series
-        Series with the residual values. If time series for the residuals
-        are provided, the sim and obs arguments are ignored.
+        The Series with the residual values. If time series for the residuals are
+        provided, the sim and obs arguments are ignored.
     missing: str, optional
-        string with the rule to deal with missing values. Only "drop" is
-        supported now.
+        string with the rule to deal with missing values. Only "drop" is supported now.
     weighted: bool, optional
-        If weighted is True, the variances are computed using the time
-        step between observations as weights. Default is False.
+        If weighted is True, the variances are computed using the time step between
+        observations as weights. Default is False.
     max_gap: int, optional
-        maximum allowed gap period in days to use for the computation of the
-        weights. All time steps larger than max_gap are replace with the
-        max_gap value. Default value is 30 days.
+        maximum allowed gap period in days to use for the computation of the weights.
+        All time steps larger than max_gap are replace with the max_gap value.
+        Default value is 30 days.
 
     Notes
     -----
-    Commonly used goodness-of-fit metric groundwater level models as
-    computed in :cite:t:`von_asmuth_groundwater_2012`.
+    Commonly used goodness-of-fit metric groundwater level models as computed in
+    :cite:t:`von_asmuth_groundwater_2012`.
 
     .. math:: \\text{EVP} = \\frac{\\sigma_h^2 - \\sigma_r^2}{\\sigma_h^2}
         * 100
 
     where :math:`\\sigma_h^2` is the variance of the observations and
-    :math:`\\sigma_r^2` is the variance of the residuals. The returned value
-    is bounded between 0% and 100%.
+    :math:`\\sigma_r^2` is the variance of the residuals. The returned value is
+    bounded between 0% and 100%.
     """
     if res is None:
         res = sim - obs
@@ -334,20 +329,19 @@ def nse(
     obs: pandas.Series
         Series with the observed values.
     sim: pandas.Series
-        Series with the simulated values.
+        The Series with the simulated values.
     res: pandas.Series
-        Series with the residual values. If time series for the residuals
-        are provided, the sim and obs arguments are ignored.
+        The Series with the residual values. If time series for the residuals are
+        provided, the sim and obs arguments are ignored.
     missing: str, optional
-        string with the rule to deal with missing values. Only "drop" is
-        supported now.
+        string with the rule to deal with missing values. Only "drop" is supported now.
     weighted: bool, optional
-        If weighted is True, the variances are computed using the time
-        step between observations as weights. Default is False.
+        If weighted is True, the variances are computed using the time step between
+        observations as weights. Default is False.
     max_gap: int, optional
-        maximum allowed gap period in days to use for the computation of the
-        weights. All time steps larger than max_gap are replace with the
-        max_gap value. Default value is 30 days.
+        maximum allowed gap period in days to use for the computation of the weights.
+        All time steps larger than max_gap are replace with the max_gap value.
+        Default value is 30 days.
 
     Notes
     -----
@@ -388,20 +382,19 @@ def rsq(
     obs: pandas.Series
         Series with the observed values.
     sim: pandas.Series
-        Series with the simulated values.
+        The Series with the simulated values.
     res: pandas.Series
-        Series with the residual values. If time series for the residuals
-        are provided, the sim and obs arguments are ignored.
+        The Series with the residual values. If time series for the residuals are
+        provided, the sim and obs arguments are ignored.
     missing: str, optional
-        string with the rule to deal with missing values. Only "drop" is
-        supported now.
+        string with the rule to deal with missing values. Only "drop" is supported now.
     weighted: bool, optional
-        If weighted is True, the variances are computed using the time
-        step between observations as weights. Default is False.
+        If weighted is True, the variances are computed using the time step between
+        observations as weights. Default is False.
     max_gap: int, optional
-        maximum allowed gap period in days to use for the computation of the
-        weights. All time steps larger than max_gap are replace with the
-        max_gap value. Default value is 30 days.
+        maximum allowed gap period in days to use for the computation of the weights.
+        All time steps larger than max_gap are replace with the max_gap value.
+        Default value is 30 days.
     nparam: int, optional
         number of calibrated parameters.
 
@@ -409,12 +402,12 @@ def rsq(
     -----
     .. math:: \\rho_{adj} = 1-  \\frac{n-1}{n-n_{param}}*\\frac{rss}{tss}
 
-    Where n is the number of observations, :math:`n_{param}` the number of
-    free parameters, rss the sum of the squared residuals, and tss the total
-    sum of squared residuals.
+    Where n is the number of observations, :math:`n_{param}` the number of free
+    parameters, rss the sum of the squared residuals, and tss the total sum of
+    squared residuals.
 
-    When nparam is provided, the :math:`\\rho` is
-    adjusted for the number of calibration parameters.
+    When nparam is provided, the :math:`\\rho` is adjusted for the number of
+    calibration parameters.
     """
     if res is None:
         res = sim - obs
@@ -452,20 +445,19 @@ def bic(
     obs: pandas.Series
         Series with the observed values.
     sim: pandas.Series
-        Series with the simulated values.
+        The Series with the simulated values.
     res: pandas.Series
-        Series with the residual values. If time series for the residuals
-        are provided, the sim and obs arguments are ignored.
+        The Series with the residual values. If time series for the residuals are
+        provided, the sim and obs arguments are ignored.
     nparam: int, optional
         number of calibrated parameters.
     missing: str, optional
-        string with the rule to deal with missing values. Only "drop" is
-        supported now.
+        string with the rule to deal with missing values. Only "drop" is supported now.
 
     Notes
     -----
-    The Bayesian Information Criterium (BIC) :cite:t:`akaike_bayesian_1979`
-    is computed as follows:
+    The Bayesian Information Criterium (BIC) :cite:p:`akaike_bayesian_1979` is
+    computed as follows:
 
     .. math:: \\text{BIC} = -2 log(L) + n_{param} * log(N)
 
@@ -501,25 +493,24 @@ def aic(
     obs: pandas.Series
         Series with the observed values.
     sim: pandas.Series
-        Series with the simulated values.
+        The Series with the simulated values.
     res: pandas.Series
-        Series with the residual values. If time series for the residuals
-        are provided, the sim and obs arguments are ignored.
+        The Series with the residual values. If time series for the residuals are
+        provided, the sim and obs arguments are ignored.
     nparam: int, optional
         number of calibrated parameters.
     missing: str, optional
-        string with the rule to deal with missing values. Only "drop" is
-        supported now.
+        string with the rule to deal with missing values. Only "drop" is supported now.
 
     Notes
     -----
-    The Akaike Information Criterium (AIC) :cite:t:`akaike_new_1970` is
-    computed as follows:
+    The Akaike Information Criterium (AIC) :cite:p:`akaike_new_1974` is computed as
+    follows:
 
     .. math:: \\text{AIC} = -2 log(L) + 2 nparam
 
-    where :math:`n_{param}` is the number of calibration parameters and L is
-    the likelihood function for the model.
+    where :math:`n_{param}` is the number of calibration parameters and L is the
+    likelihood function for the model.
     """
     if res is None:
         res = sim - obs

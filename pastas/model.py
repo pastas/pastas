@@ -860,8 +860,8 @@ class Model:
         >>> ml.set_parameter(name="constant_d", initial=10, vary=True,
         >>>                  pmin=-10, pmax=20)
 
-        Note
-        ----
+        Notes
+        -----
         It is highly recommended to use this method to set parameter properties.
         Changing the parameter properties directly in the parameter `DataFrame` may
         not work as expected.
@@ -1178,7 +1178,7 @@ class Model:
 
         Returns
         -------
-        p: array_like
+        p : array_like
             NumPy array with the parameters used in the time series model.
         """
         if name:
@@ -1253,7 +1253,7 @@ class Model:
             used to obtain the contribution of an individual stress.
         return_warmup: bool, optional
             Include warmup in contribution calculation or not.
-        p: array_like, optional
+        p : array_like, optional
             array_like object with the values as floats representing the model
             parameters. See Model.get_parameters() for more info if parameters is None.
 
@@ -1428,7 +1428,7 @@ class Model:
             String with "step" or "block"
         name: str
             string with the name of the stressmodel
-        p: array_like, optional
+        p : array_like, optional
             array_like object with the values as floats representing the model
             parameters. See Model.get_parameters() for more info if parameters is None.
         dt: float, optional
@@ -1565,8 +1565,8 @@ class Model:
             A float with the number of days. None is return if stressmodels has no
             response function.
 
-        Example
-        -------
+        Examples
+        --------
         >>> ml.get_response_tmax("recharge", cutoff=0.99)
         >>> 703
 

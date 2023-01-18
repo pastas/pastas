@@ -1,5 +1,5 @@
-pastas.io / read
-================
+pastas.io
+=========
 
 This section lists all the read methods that are available in Pastas to
 import time series and the input/output methods to store and load Pastas
@@ -14,21 +14,6 @@ IO Methods
    :toctree: ./generated
 
    load
-
-Read Methods
-------------
-
-.. currentmodule:: pastas.read
-
-.. autosummary::
-   :nosignatures:
-   :toctree: ./generated
-
-   read_dino
-   read_meny
-   read_knmi
-   read_waterbase
-   read_dino_level_gauge
 
 Using Pandas
 ------------

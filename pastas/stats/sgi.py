@@ -7,7 +7,8 @@ from scipy.stats import norm
 
 
 def sgi(series: Series) -> Series:
-    """Method to compute the Standardized Groundwater Index [sgi_2013]_.
+    """Method to compute the Standardized Groundwater Index
+    :cite:t:`bloomfield_analysis_2013`.
 
     Parameters
     ----------

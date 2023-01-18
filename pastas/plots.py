@@ -23,22 +23,21 @@ __all__ = ["compare", "series", "acf", "diagnostics", "cum_frequency", "TrackSol
 def compare(models: List[Model], adjust_height: bool = True, **kwargs) -> Axes:
     """Plot multiple Pastas models in one figure to visually compare models.
 
-    Note
-    ----
-    The models must have the same stressmodel names, otherwise the
-    contributions will not be plotted, and parameters table will not
-    display nicely.
+    Notes
+    -----
+    The models must have the same stressmodel names, otherwise the contributions will
+    not be plotted, and parameters table will not display nicely.
 
     Parameters
     ----------
     models: list
-        List of pastas Models, works for N models, but certain
-        things might not display nicely if the list gets too long.
+        List of pastas Models, works for N models, but certain things might not
+        display nicely if the list gets too long.
     adjust_height: bool, optional
-        Adjust the height of the graphs, so that the vertical scale of all
-        the subplots on the left is equal. Default is False, in which case the
-        axes are not rescaled to include all data, so certain data might
-        not be visible. Set to False to ensure you can see all data.
+        Adjust the height of the graphs, so that the vertical scale of all the
+        subplots on the left is equal. Default is False, in which case the axes are
+        not rescaled to include all data, so certain data might not be visible. Set
+        to False to ensure you can see all data.
     **kwargs
         Kwargs are passed to the CompareModels.plot() function.
 
@@ -72,12 +71,12 @@ def series(
     stresses: List of pd.Series
         List with Pandas time series with DatetimeIndex.
     hist: bool
-        Histogram for the series. The number of bins is determined with Sturges
-        rule. Returns the number of observations, mean, skew and kurtosis.
+        Histogram for the series. The number of bins is determined with Sturges rule.
+        Returns the number of observations, mean, skew and kurtosis.
     kde: bool
         Kernel density estimate for the series. The kde is obtained from
-        scipy.gaussian_kde using scott to calculate the estimator bandwidth.
-        Returns the number of observations, mean, skew and kurtosis.
+        scipy.gaussian_kde using scott to calculate the estimator bandwidth. Returns
+        the number of observations, mean, skew and kurtosis.
     titles: bool
         Set the titles or not. Taken from the name attribute of the series.
     tmin: str or pd.Timestamp
@@ -256,22 +255,22 @@ def acf(
     series: pandas.Series
         Residual series to plot the autocorrelation function for.
     alpha: float, optional
-        Significance level to calculate the (1-alpha)-confidence intervals.
-        For 95% confidence intervals, alpha should be 0.05.
+        Significance level to calculate the (1-alpha)-confidence intervals. For 95%
+        confidence intervals, alpha should be 0.05.
     lags: int, optional
         Maximum number of lags (in days) to compute the autocorrelation for.
     acf_options: dict, optional
         Dictionary with keyword arguments passed on to pastas.stats.acf.
     smooth_conf: bool, optional
-        For irregular time series the confidence interval may be
+        For irregular time series the confidence interval may be.
     color: str, optional
         Color of the vertical autocorrelation lines.
     ax: matplotlib.axes.Axes, optional
-        Matplotlib Axes instance to plot the ACF on. A new Figure and Axes
-        is created when no value for ax is provided.
+        Matplotlib Axes instance to plot the ACF on. A new Figure and Axes is created
+        when no value for ax is provided.
     figsize: Tuple, optional
-        2-D Tuple to determine the size of the figure created. Ignored if ax
-        is also provided.
+        2-D Tuple to determine the size of the figure created. Ignored if ax is also
+        provided.
 
     Returns
     -------
@@ -345,8 +344,8 @@ def diagnostics(
     fig: Matplotib.Figure instance, optional
         Optionally provide a Matplotib.Figure instance to plot onto.
     heteroscedasicity: bool, optional
-        Create two additional subplots to check for heteroscedasticity. If
-        true, a simulated time series has to be provided with the sim argument.
+        Create two additional subplots to check for heteroscedasticity. If true,
+        a simulated time series has to be provided with the sim argument.
     **kwargs: dict, optional
         Optional keyword arguments, passed on to plt.figure.
 
@@ -360,10 +359,10 @@ def diagnostics(
     >>>                 data=np.random.normal(0, 1, 1000))
     >>> ps.stats.plot_diagnostics(res)
 
-    Note
-    ----
-    The two right-hand side plots assume that the noise or residuals follow a
-    Normal distribution.
+    Notes
+    -----
+    The two right-hand side plots assume that the noise or residuals follow a Normal
+    distribution.
 
     See Also
     --------
@@ -379,8 +378,8 @@ def diagnostics(
     if heteroscedasicity:
         if sim is None:
             msg = (
-                "A simulated time series has to be provided to make plots "
-                "to diagnose heteroscedasticity. Provide 'sim' argument."
+                "A simulated time series has to be provided to make plots to "
+                "diagnose heteroscedasticity. Provide 'sim' argument."
             )
             logger.error(msg=msg)
             raise KeyError(msg)
@@ -461,13 +460,13 @@ def cum_frequency(
     sim: pandas.Series
         Series with the simulated values.
     obs: pandas.Series
-        Series with the observed values.
+        The pandas Series with the observed values.
     ax: matplotlib.axes.Axes, optional
-        Matplotlib Axes instance to create the plot on. A new Figure and Axes
-        is created when no value for ax is provided.
+        Matplotlib Axes instance to create the plot on. A new Figure and Axes is
+        created when no value for ax is provided.
     figsize: Tuple, optional
-        2-D Tuple to determine the size of the figure created. Ignored if ax
-        is also provided.
+        2-D Tuple to determine the size of the figure created. Ignored if ax is also
+        provided.
 
     Returns
     -------
@@ -505,31 +504,29 @@ class TrackSolve:
 
     Parameters
     ----------
-    ml : pastas.Model
+    ml : pastas.model.Model
         pastas Model to track
     tmin : str or pandas.Timestamp, optional
-        start time for simulation, by default None which
-        defaults to first index in ml.oseries.Series
+        start time for simulation, by default None which defaults to first index in
+        ml.oseries.series
     tmax : str or pandas.Timestamp, optional
-        end time for simulation, by default None which
-        defaults to last index in ml.oseries.Series
+        end time for simulation, by default None which defaults to last index in
+        ml.oseries.series
     update_iter : int, optional
         if visualizing optimization progress, update plot every update_iter
         iterations, by default nparam
 
     Notes
     -----
-    Interactive plotting of optimization progress requires a matplotlib
-    backend that supports interactive plotting, e.g. `mpl.use("TkAgg")` and
-    `mpl.interactive(True)`. Some possible speedups on the matplotlib side
-    include:
-        - mpl.style.use("fast")
-        - mpl.rcParams['path.simplify_threshold'] = 1.0
+    Interactive plotting of optimization progress requires a matplotlib backend that
+    supports interactive plotting, e.g. `mpl.use("TkAgg")` and `mpl.interactive(
+    True)`. Some possible speedups on the matplotlib side include:
+    - mpl.style.use("fast")
+    - mpl.rcParams['path.simplify_threshold'] = 1.0
 
     Examples
     --------
-    Set matplotlib backend and interactive mode (put this at the top
-    of your script)::
+    Set matplotlib backend and interactive mode (put this at the top of your script)::
 
         import matplotlib as mpl
         mpl.use("TkAgg")
@@ -548,10 +545,9 @@ class TrackSolve:
 
         track.parameters
 
-    Other stored statistics include `track.evp` (explained variance
-    percentage), `track.rmse_res` (root-mean-squared error of the residuals),
-    `track.rmse_noise` (root mean squared error of the noise, only if
-    noise=True).
+    Other stored statistics include `track.evp` (explained variance percentage),
+    `track.rmse_res` (root-mean-squared error of the residuals), `track.rmse_noise` (
+    root mean squared error of the noise, only if noise=True).
 
     To interactively plot model optimization progress while solving pass
     `track.plot_track_solve` as callback function::
@@ -570,9 +566,8 @@ class TrackSolve:
     ) -> None:
 
         logger.warning(
-            "TrackSolve feature under development. If you find any "
-            "bugs please post an issue on GitHub: "
-            "https://github.com/pastas/pastas/issues"
+            "TrackSolve feature under development. If you find any bugs please post "
+            "an issue on GitHub: https://github.com/pastas/pastas/issues"
         )
 
         self.ml = ml
@@ -627,7 +622,7 @@ class TrackSolve:
         Parameters
         ----------
         params : array_like
-            array containing parameters
+            array containing parameters.
         """
         # update tmin/tmax and freq once after starting solve
         if self.itercount == 0:
@@ -667,12 +662,12 @@ class TrackSolve:
         Parameters
         ----------
         params: array_like
-            array containing parameters
+            array containing parameters.
 
         Returns
         -------
         noise: array_like
-            array containing noise
+            array containing noise.
         """
         noise = self.ml.noise(p=params, tmin=self.tmin, tmax=self.tmax)
         return noise
@@ -683,12 +678,12 @@ class TrackSolve:
         Parameters
         ----------
         params: np.array
-            array containing parameters
+            array containing parameters.
 
         Returns
         -------
         res: array_like
-            array containing residuals
+            array containing residuals.
         """
         res = self.ml.residuals(p=params, tmin=self.tmin, tmax=self.tmax)
         return res
@@ -699,7 +694,7 @@ class TrackSolve:
         Returns
         -------
         sim: pd.Series
-            Series containing model evaluation
+            Series containing model evaluation.
         """
         sim = self.ml.simulate(
             p=self.parameters.iloc[-1, :].values,
@@ -717,14 +712,14 @@ class TrackSolve:
         Parameters
         ----------
         figsize : tuple, optional
-            figure size, passed to plt.subplots(), by default (10, 8)
+            figure size, passed to plt.subplots(), by default (10, 8).
         dpi : int, optional
-            dpi of the figure passed to plt.subplots(), by default 100
+            dpi of the figure passed to plt.subplots(), by default 100.
 
         Returns
         -------
         fig : matplotlib.pyplot.Figure
-            handle to the figure
+            handle to the figure.
         """
         # create plot
         self.fig, self.axes = plt.subplots(3, 1, figsize=figsize, dpi=dpi)
@@ -821,16 +816,21 @@ class TrackSolve:
         return self.fig
 
     def plot_track_solve(self, params: ArrayLike) -> None:
-        """Method to plot model simulation while model is being solved. Pass
-        this method to ml.solve(), e.g.:
-
-        >>> track = TrackSolve(ml)
-        >>> ml.solve(callback=track.plot_track_solve)
+        """Method to plot model simulation while model is being solved.
 
         Parameters
         ----------
         params : array_like
             array containing parameters
+
+        Examples
+        --------
+        Pass
+        this method to ml.solve(), e.g.:
+
+        >>> track = TrackSolve(ml)
+        >>> ml.solve(callback=track.plot_track_solve)
+
         """
         if not hasattr(self, "fig"):
             self.initialize_figure()
@@ -888,13 +888,13 @@ class TrackSolve:
         Parameters
         ----------
         fig : matplotlib.pyplot.Figure, optional
-            figure handle, by default None, which constructs a new
-            figure with `self.initialize_figure()`
+            figure handle, by default None, which constructs a new figure with
+            `self.initialize_figure()`.
 
         Returns
         -------
         axes : list of matplotlib.pyplot.Axes
-            list of axes handles in figure
+            list of axes handles in figure.
         """
 
         if fig is None:
@@ -917,12 +917,12 @@ def _table_formatter_params(s: float) -> str:
     Parameters
     ----------
     s : float
-        value to format
+        value to format.
 
     Returns
     -------
     str
-        float formatted as str
+        float formatted as str.
     """
     if np.isnan(s):
         return ""
@@ -940,12 +940,12 @@ def _table_formatter_stderr(s: float) -> str:
     Parameters
     ----------
     s : float
-        value to format
+        value to format.
 
     Returns
     -------
     str
-        float formatted as str
+        float formatted as str.
     """
     if np.isnan(s):
         return ""

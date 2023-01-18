@@ -86,8 +86,6 @@ def acf(
     slotting technique. Different methods (kernels) to bin the data are available.
     Method here is based on :cite:t:`rehfeld_comparison_2011`.
 
-    Tip
-    ---
     If the time series have regular time step we recommend to use the acf method from
     the Statsmodels package.
 
@@ -170,8 +168,8 @@ def ccf(
         alpha), and the number of samples n used to compute these, respectively. If
         full_output=False, only the CCF is returned.
 
-    Tip
-    ---
+    Notes
+    -----
     This method will be significantly faster when Numba is installed. Check out the [
     Numba project here](https://numba.pydata.org)
 
