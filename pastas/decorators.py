@@ -15,7 +15,6 @@ def set_use_numba(b: bool) -> None:
 
 
 def set_parameter(function: Function) -> Decorator:
-
     @wraps(function)
     def _set_parameter(self, name: str, value: float, **kwargs):
         if name not in self.parameters.index:
@@ -31,7 +30,6 @@ def set_parameter(function: Function) -> Decorator:
 
 
 def get_stressmodel(function: Function):
-
     @wraps(function)
     def _get_stressmodel(self, name: str, **kwargs):
         if name not in self.stressmodels.keys():
@@ -47,13 +45,14 @@ def get_stressmodel(function: Function):
 
 
 def model_tmin_tmax(function: Function) -> Decorator:
-
     @wraps(function)
-    def _model_tmin_tmax(self,
-                         tmin: Optional[TimestampType] = None,
-                         tmax: Optional[TimestampType] = None,
-                         *args,
-                         **kwargs):
+    def _model_tmin_tmax(
+        self,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+        *args,
+        **kwargs
+    ):
         if tmin is None:
             tmin = self.ml.settings["tmin"]
         if tmax is None:
@@ -65,7 +64,6 @@ def model_tmin_tmax(function: Function) -> Decorator:
 
 
 def PastasDeprecationWarning(function: Function) -> Decorator:
-
     @wraps(function)
     def _function(*args, **kwargs):
         logger.warning(
@@ -77,9 +75,7 @@ def PastasDeprecationWarning(function: Function) -> Decorator:
     return _function
 
 
-def njit(function: Optional[Function] = None,
-         parallel: bool = False) -> Decorator:
-
+def njit(function: Optional[Function] = None, parallel: bool = False) -> Decorator:
     def njit_decorator(f: Function):
         try:
             if not USE_NUMBA:
@@ -100,11 +96,10 @@ def njit(function: Optional[Function] = None,
 
 def latexfun(
     function: Optional[Function] = None,
-    identifiers: Dict[str, str] = None,
+    identifiers: Optional[Dict[str, str]] = None,
     use_math_symbols: bool = True,
     use_raw_function_name: bool = False,
 ) -> Decorator:
-
     def latexify_decorator(f: Function):
         try:
             import latexify
@@ -113,7 +108,8 @@ def latexfun(
                 f,
                 identifiers=identifiers,
                 use_math_symbols=use_math_symbols,
-                use_raw_function_name=use_raw_function_name)
+                use_raw_function_name=use_raw_function_name,
+            )
             return flatex
         except ImportError:
             return f
