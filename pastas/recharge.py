@@ -339,9 +339,6 @@ class FlexModel(RechargeBase):
         pe: array_like
             Incoming infiltration flux in mm/d.
 
-        Notes
-        -----
-        If Numba is available, this method is significantly faster.
         """
         n = pe.size
         # Create empty arrays to store the fluxes and states

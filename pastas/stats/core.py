@@ -167,11 +167,6 @@ def ccf(
         alpha), and the number of samples n used to compute these, respectively. If
         full_output=False, only the CCF is returned.
 
-    Notes
-    -----
-    This method will be significantly faster when Numba is installed. Check out the [
-    Numba project here](https://numba.pydata.org)
-
     Examples
     --------
     >>> ccf = ps.stats.ccf(x, y, bin_method="gaussian")
