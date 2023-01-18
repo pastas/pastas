@@ -18,6 +18,7 @@ from scipy.special import (
     k1,
     lambertw,
 )
+from numpy import pi
 
 from .decorators import njit, latexfun
 from .utils import check_numba, check_numba_scipy
@@ -879,13 +880,14 @@ class Polder(RfuncBase):
     @latexfun(identifiers={"impulse": "theta"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         A, a, b = p
-        return A * np.sqrt(a * b / np.pi) * t ** (-1.5) * np.exp(- t / a - a * b / t)
+        return A * np.sqrt(a * b / pi) * t ** (-1.5) * np.exp(-t / a - a * b / t)
 
     @staticmethod
     @latexfun(use_raw_function_name=True)
     def polder_function(x: float, y: float) -> float:
-        return 0.5 * np.exp(2 * x) * erfc(x / y + y) + 0.5 * np.exp(
-            -2 * x) * erfc(x / y - y)
+        return 0.5 * np.exp(2 * x) * erfc(x / y + y) + 0.5 * np.exp(-2 * x) * erfc(
+            x / y - y
+        )
 
 
 class One(RfuncBase):
@@ -1010,7 +1012,7 @@ class FourParam(RfuncBase):
         parameters.loc[name + "_a"] = (10, 0.01, 5000, True, name)
         parameters.loc[name + "_b"] = (10, 1e-6, 25, True, name)
         return parameters
-    
+
     @staticmethod
     @latexfun(identifiers={"impulse": "theta", "k0": "K_0"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
@@ -1062,7 +1064,7 @@ class FourParam(RfuncBase):
         dt: float = 1.0,
         cutoff: Optional[float] = None,
         maxtmax: Optional[int] = None,
-        ) -> ArrayLike:
+    ) -> ArrayLike:
 
         if self.quad:
             t = self.get_t(p, dt, cutoff, maxtmax)
@@ -1194,7 +1196,7 @@ class DoubleExponential(RfuncBase):
 
     def gain(self, p: ArrayLike) -> float:
         return p[0]
-    
+
     @staticmethod
     @latexfun(identifiers={"impulse": "theta"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
@@ -1207,7 +1209,7 @@ class DoubleExponential(RfuncBase):
         dt: float = 1.0,
         cutoff: Optional[float] = None,
         maxtmax: Optional[int] = None,
-        ) -> ArrayLike:
+    ) -> ArrayLike:
         t = self.get_t(p, dt, cutoff, maxtmax)
         s = p[0] * (1 - ((1 - p[1]) * np.exp(-t / p[2]) + p[1] * np.exp(-t / p[3])))
         return s
@@ -1260,12 +1262,12 @@ class Edelman(RfuncBase):
     @staticmethod
     def gain(p: ArrayLike) -> float:
         return 1.0
-    
+
     @staticmethod
     @latexfun(identifiers={"impulse": "theta"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
-        a, = p
-        return 1 / (np.sqrt(np.pi) * a * t ** 1.5) * np.exp(-1 / (a ** 2 * t))
+        (a,) = p
+        return 1 / (np.sqrt(pi) * a * t**1.5) * np.exp(-1 / (a**2 * t))
 
     def step(
         self,
@@ -1374,11 +1376,30 @@ class Kraijenhoff(RfuncBase):
             h += (
                 (-1) ** n
                 / (2 * n + 1) ** 3
-                * np.cos((2 * n + 1) * np.pi * p[2])
+                * np.cos((2 * n + 1) * pi * p[2])
                 * np.exp(-((2 * n + 1) ** 2) * t / p[1])
             )
-        s = p[0] * (1 - (8 / (np.pi**3 * (1 / 4 - p[2] ** 2)) * h))
+        s = p[0] * (1 - (8 / (pi**3 * (1 / 4 - p[2] ** 2)) * h))
         return s
+
+    @staticmethod
+    @latexfun(identifiers={"impulse": "theta"})
+    def impulse_bruggeman(t: ArrayLike, p: ArrayLike) -> ArrayLike:
+        pass
+
+    @staticmethod
+    @latexfun(identifiers={"impulse_kraijenhoff": "theta"})
+    def impulse_kraijenhoff(t: ArrayLike, p: ArrayLike) -> ArrayLike:
+        A, a, b = p
+        nterms = 100
+        b = b + 1 / 2
+        return A * sum(
+            1
+            / (2 * n + 1)
+            * np.exp((-((2 * n + 1) ** 2) * t / a))
+            * np.sin((2 * n + 1) * pi * b)
+            for n in range(nterms)
+        )
 
 
 class Spline(RfuncBase):
