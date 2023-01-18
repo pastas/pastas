@@ -45,7 +45,6 @@ from pandas import DataFrame
 from pastas.typing import ArrayLike
 
 from .decorators import njit
-from .version import check_numba
 
 logger = getLogger(__name__)
 
@@ -184,7 +183,6 @@ class FlexModel(RechargeBase):
     def __init__(
         self, interception: bool = True, snow: bool = False, gw_uptake: bool = False
     ):
-        check_numba()
         RechargeBase.__init__(self)
         self.snow = snow
         self.interception = interception
@@ -341,9 +339,6 @@ class FlexModel(RechargeBase):
         pe: array_like
             Incoming infiltration flux in mm/d.
 
-        Notes
-        -----
-        If Numba is available, this method is significantly faster.
         """
         n = pe.size
         # Create empty arrays to store the fluxes and states
@@ -563,7 +558,6 @@ class Berendrecht(RechargeBase):
     _name = "Berendrecht"
 
     def __init__(self) -> None:
-        check_numba()
         RechargeBase.__init__(self)
         self.nparam = 7
 
@@ -715,7 +709,6 @@ class Peterson(RechargeBase):
     _name = "Peterson"
 
     def __init__(self) -> None:
-        check_numba()
         RechargeBase.__init__(self)
         self.nparam = 5
 

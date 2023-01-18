@@ -6,16 +6,6 @@ __version__ = metadata.version("pastas")
 logger = logging.getLogger(__name__)
 
 
-def check_numba() -> None:
-    try:
-        import_module("numba")
-    except ModuleNotFoundError:
-        logger.warning(
-            "Numba is not installed. Installing Numba is "
-            "recommended for significant speed-ups."
-        )
-
-
 def check_numba_scipy() -> bool:
     try:
         import_module("numba_scipy")
@@ -36,15 +26,13 @@ def check_numba_scipy() -> bool:
     return True
 
 
-def show_versions(lmfit: bool = True, numba: bool = True) -> None:
+def show_versions(lmfit: bool = True) -> None:
     """Method to print the version of dependencies.
 
     Parameters
     ----------
     lmfit: bool, optional
         Print the version of LMfit. Needs to be installed.
-    numba: bool, optional
-        Print the version of Numba. Needs to be installed.
     """
 
     msg = (
@@ -52,7 +40,8 @@ def show_versions(lmfit: bool = True, numba: bool = True) -> None:
         f"NumPy version: {metadata.version('numpy')}\n"
         f"Pandas version: {metadata.version('pandas')}\n"
         f"SciPy version: {metadata.version('scipy')}\n"
-        f"Matplotlib version: {metadata.version('matplotlib')}"
+        f"Matplotlib version: {metadata.version('matplotlib')}\n"
+        f"Numba version: {metadata.version('numba')}"
     )
 
     if lmfit:
@@ -60,14 +49,6 @@ def show_versions(lmfit: bool = True, numba: bool = True) -> None:
         try:
             import_module("lmfit")
             msg += f"{metadata.version('lmfit')}"
-        except ModuleNotFoundError:
-            msg += "Not Installed"
-
-    if numba:
-        msg += "\nNumba version: "
-        try:
-            import_module("numba")
-            msg += f"{metadata.version('numba')}"
         except ModuleNotFoundError:
             msg += "Not Installed"
 

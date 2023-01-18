@@ -3,6 +3,13 @@ from logging import getLogger
 
 logger = getLogger(__name__)
 
+USE_NUMBA = True
+
+
+def set_use_numba(b: bool) -> None:
+    global USE_NUMBA
+    USE_NUMBA = b
+
 
 def set_parameter(function):
     @wraps(function)
@@ -62,10 +69,13 @@ def PastasDeprecationWarning(function):
 def njit(function=None, parallel=False):
     def njit_decorator(f):
         try:
-            from numba import njit
+            if not USE_NUMBA:
+                return f
+            else:
+                from numba import njit
 
-            fnumba = njit(f, parallel=parallel)
-            return fnumba
+                fnumba = njit(f, parallel=parallel)
+                return fnumba
         except ImportError:
             return f
 

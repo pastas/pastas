@@ -20,7 +20,7 @@ from scipy.special import (
 )
 
 from .decorators import njit
-from .version import check_numba, check_numba_scipy
+from .version import check_numba_scipy
 
 try:
     from numba import prange
@@ -431,7 +431,6 @@ class HantushWellModel(RfuncBase):
         self.quad = quad  # if quad=True, implicitly uses numba
         # check numba and numba_scipy installation
         if self.quad or self.use_numba:
-            check_numba()
             # turn off use_numba if numba_scipy is not available
             # or there is a version conflict
             if self.use_numba:
@@ -685,7 +684,6 @@ class Hantush(RfuncBase):
         self.quad = quad
         # check numba and numba_scipy installation
         if self.quad or self.use_numba:
-            check_numba()
             # turn off use_numba if numba_scipy is not available
             # or there is a version conflict
             if self.use_numba:
