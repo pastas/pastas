@@ -879,7 +879,7 @@ class Polder(RfuncBase):
     @latexfun(identifiers={"impulse": "theta"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         A, a, b = p
-        return A * t ** (-1.5) * np.exp(-t / a - b / t)
+        return A * np.sqrt(a * b / np.pi) * t ** (-1.5) * np.exp(- t / a - a * b / t)
 
     @staticmethod
     @latexfun(use_raw_function_name=True)
