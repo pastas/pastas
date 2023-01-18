@@ -32,7 +32,6 @@ from .recharge import Linear
 from .rfunc import Exponential, HantushWellModel, One
 from .timeseries import TimeSeries
 from .utils import validate_name
-from .version import check_numba
 
 logger = getLogger(__name__)
 

@@ -6,6 +6,7 @@ import pastas.plots as plots
 import pastas.recharge as rch
 import pastas.stats as stats
 
+from .decorators import set_use_numba
 from .model import Model
 from .modelcompare import CompareModels
 from .noisemodels import ArmaModel, NoiseModel
