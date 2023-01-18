@@ -21,7 +21,7 @@ from scipy.special import (
 from numpy import pi
 
 from .decorators import njit, latexfun
-from .utils import check_numba, check_numba_scipy
+from .utils import check_numba_scipy
 
 try:
     from numba import prange
@@ -75,13 +75,13 @@ class RfuncBase:
 
         Parameters
         ----------
-        name :  str
-            Name of the stressmodel
+        name: str
+            Name of the stressmodel.
 
         Returns
         -------
-        parameters : pandas DataFrame
-            The initial parameters and parameter bounds used by the solver
+        parameters: pandas DataFrame
+            The initial parameters and parameter bounds used by the solver.
         """
         pass
 
@@ -91,8 +91,8 @@ class RfuncBase:
         Parameters
         ----------
         p: array_like
-            array_like object with the values as floats representing the
-            model parameters.
+            array_like object with the values as floats representing the model
+            parameters.
         cutoff: float, optional
             float between 0 and 1.
 
@@ -116,10 +116,10 @@ class RfuncBase:
         Parameters
         ----------
         p: array_like
-            array_like object with the values as floats representing the
-            model parameters.
+            array_like object with the values as floats representing the model
+            parameters.
         dt: float
-            timestep as a multiple of of day.
+            timestep as a multiple of one day.
         cutoff: float, optional
             float between 0 and 1.
         maxtmax: int, optional
@@ -144,10 +144,10 @@ class RfuncBase:
         Parameters
         ----------
         p: array_like
-            array_like object with the values as floats representing the
-            model parameters.
+            array_like object with the values as floats representing the model
+            parameters.
         dt: float
-            timestep as a multiple of of day.
+            timestep as a multiple of one day.
         cutoff: float, optional
             float between 0 and 1.
         maxtmax: int, optional
@@ -167,10 +167,10 @@ class RfuncBase:
         Parameters
         ----------
         p: array_like
-            array_like object with the values as floats representing the
-            model parameters.
+            array_like object with the values as floats representing the model
+            parameters.
         dt: float
-            timestep as a multiple of of day.
+            timestep as a multiple of one day.
         cutoff: float, optional
             float between 0 and 1.
         maxtmax: int, optional
@@ -181,8 +181,8 @@ class RfuncBase:
         s: array_like
             Array with the impulse response.
 
-        Note
-        ----
+        Notes
+        -----
         Only used for internal consistency checks
         """
         pass
@@ -190,27 +190,26 @@ class RfuncBase:
     def get_t(
         self, p: ArrayLike, dt: float, cutoff: float, maxtmax: Optional[int] = None
     ) -> ArrayLike:
-        """Internal method to determine the times at which to evaluate the
-        step-response, from t=0.
+        """Internal method to determine the times at which to evaluate the step
+        response, from t=0.
 
         Parameters
         ----------
         p: array_like
-            array_like object with the values as floats representing the
-            model parameters.
+            array_like object with the values as floats representing the model
+            parameters.
         dt: float
-            timestep as a multiple of of day.
+            timestep as a multiple of one day.
         cutoff: float
-            float between 0 and 1, that determines which part of the step-
-            response is taken into account.
+            A float between 0 and 1, that determines which part of the step response
+            is taken into account.
         maxtmax: float, optional
-            The maximum time of the response, usually set to the simulation
-            length.
+            The maximum time of the response, usually set to the simulation length.
 
         Returns
         -------
         t: array_like
-            Array with the times
+            Array with the times.
         """
         if isinstance(dt, np.ndarray):
             return dt
@@ -228,11 +227,11 @@ class Gamma(RfuncBase):
     Parameters
     ----------
     up: bool or None, optional
-        indicates whether a positive stress will cause the head to go up
-        (True, default) or down (False), if None the head can go both ways.
+        indicates whether a positive stress will cause the head to go up (True,
+        default) or down (False), if None the head can go both ways.
     meanstress: float
-        mean value of the stress, used to set the initial value such that
-        the final step times the mean stress equals 1
+        mean value of the stress, used to set the initial value such that the final
+        step times the mean stress equals 1.
     cutoff: float
         proportion after which the step function is cut off. default is 0.999.
 
@@ -242,8 +241,8 @@ class Gamma(RfuncBase):
 
     .. math:: \\theta(t) = At^{n-1} e^{-t/a} / (a^n Gamma(n))
 
-    where A, a, and n are parameters. The Gamma function is equal to the
-    Exponential function when n=1.
+    where A, a, and n are parameters. The Gamma function is equal to the Exponential
+    function when n=1.
     """
 
     _name = "Gamma"
@@ -316,11 +315,11 @@ class Exponential(RfuncBase):
     Parameters
     ----------
     up: bool or None, optional
-        indicates whether a positive stress will cause the head to go up
-        (True, default) or down (False), if None the head can go both ways.
+        indicates whether a positive stress will cause the head to go up (True,
+        default) or down (False), if None the head can go both ways.
     meanstress: float
-        mean value of the stress, used to set the initial value such that
-        the final step times the mean stress equals 1
+        mean value of the stress, used to set the initial value such that the final
+        step times the mean stress equals 1.
     cutoff: float
         proportion after which the step function is cut off. default is 0.999.
 
@@ -396,17 +395,16 @@ class Exponential(RfuncBase):
 
 
 class HantushWellModel(RfuncBase):
-    """An implementation of the Hantush well function for multiple pumping
-    wells.
+    """An implementation of the Hantush well function for multiple pumping wells.
 
     Parameters
     ----------
     up: bool, optional
-        indicates whether a positive stress will cause the head to go up
-        (True, default) or down (False)
+        indicates whether a positive stress will cause the head to go up (True,
+        default) or down (False).
     meanstress: float
-        mean value of the stress, used to set the initial value such that
-        the final step times the mean stress equals 1
+        mean value of the stress, used to set the initial value such that the final
+        step times the mean stress equals 1.
     cutoff: float
         proportion after which the step function is cut off. Default is 0.999.
 
@@ -416,9 +414,9 @@ class HantushWellModel(RfuncBase):
 
     .. math:: \\theta(r, t) = \\frac{A}{2t} \\exp(-t/a - abr^2/t)
 
-    where r is the distance from the pumping well to the observation point
-    and must be specified. A, a, and b are parameters, which are slightly
-    different from the Hantush response function. The gain is defined as:
+    where r is the distance from the pumping well to the observation point and must
+    be specified. A, a, and b are parameters, which are slightly different from the
+    Hantush response function. The gain is defined as:
 
     :math:`\\text{gain} = A K_0 \\left( 2r \\sqrt(b) \\right)`
 
@@ -435,7 +433,6 @@ class HantushWellModel(RfuncBase):
         self.quad = quad  # if quad=True, implicitly uses numba
         # check numba and numba_scipy installation
         if self.quad or self.use_numba:
-            check_numba()
             # turn off use_numba if numba_scipy is not available
             # or there is a version conflict
             if self.use_numba:
@@ -448,8 +445,8 @@ class HantushWellModel(RfuncBase):
         if self.distances is None:
             raise (
                 Exception(
-                    "distances is None. Set using method"
-                    " set_distances() or use Hantush."
+                    "distances is None. Set using method set_distances() or use "
+                    "Hantush."
                 )
             )
         parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
@@ -492,7 +489,7 @@ class HantushWellModel(RfuncBase):
     def _get_distance_from_params(p: ArrayLike) -> float:
         if len(p) == 3:
             r = 1.0
-            logger.info("No distance passed to HantushWellModel, " "assuming r=1.0.")
+            logger.info("No distance passed to HantushWellModel, assuming r=1.0.")
         else:
             r = p[3]
         return r
@@ -603,39 +600,37 @@ class HantushWellModel(RfuncBase):
     ) -> Union[float, ArrayLike]:
         """Calculate variance of the gain from parameters A and b.
 
-        Variance of the gain is calculated based on propagation of
-        uncertainty using optimal values, the variances of A and b
-        and the covariance between A and b.
+        Variance of the gain is calculated based on propagation of uncertainty using
+        optimal values, the variances of A and b and the covariance between A and b.
 
-        Note
-        ----
+        Notes
+        -----
         Estimated variance can be biased for non-linear functions as it uses
         truncated series expansion.
 
         Parameters
         ----------
         A : float
-            optimal value of parameter A, (e.g. ml.parameters.optimal)
+            optimal value of parameter A, (e.g. ml.parameters.optimal).
         b : float
-            optimal value of parameter b, (e.g. ml.parameters.optimal)
+            optimal value of parameter b, (e.g. ml.parameters.optimal).
         var_A : float
-            variance of parameter A, can be obtained from the diagonal of
-            the covariance matrix (e.g. ml.fit.pcov)
+            variance of parameter A, can be obtained from the diagonal of the
+            covariance matrix (e.g. ml.fit.pcov).
         var_b : float
-            variance of parameter A, can be obtained from the diagonal of
-            the covariance matrix (e.g. ml.fit.pcov)
+            variance of parameter A, can be obtained from the diagonal of the
+            covariance matrix (e.g. ml.fit.pcov).
         cov_Ab : float
-            covariance between A and b, can be obtained from the covariance
-            matrix (e.g. ml.fit.pcov)
+            covariance between A and b, can be obtained from the covariance matrix (
+            e.g. ml.fit.pcov).
         r : float or array_like, optional
-            distance(s) between observation well and stress(es),
-            default value is 1.0
+            distance(s) between observation well and stress(es), default value is 1.0.
 
         Returns
         -------
         var_gain : float or array_like
-            variance of the gain calculated based on propagation of uncertainty
-            of parameters A and b.
+            variance of the gain calculated based on propagation of uncertainty of
+            parameters A and b.
 
         See Also
         --------
@@ -661,11 +656,11 @@ class Hantush(RfuncBase):
     Parameters
     ----------
     up: bool or None, optional
-        indicates whether a positive stress will cause the head to go up
-        (True, default) or down (False), if None the head can go both ways.
+        indicates whether a positive stress will cause the head to go up (True,
+        default) or down (False), if None the head can go both ways.
     meanstress: float
-        mean value of the stress, used to set the initial value such that
-        the final step times the mean stress equals 1
+        mean value of the stress, used to set the initial value such that the final
+        step times the mean stress equals 1.
     cutoff: float
         proportion after which the step function is cut off. default is 0.999.
 
@@ -680,11 +675,6 @@ class Hantush(RfuncBase):
 
     The implementation used here is explained in  :cite:t:`veling_hantush_2010`.
 
-    References
-    ----------
-
-    .. [veling_2010] Veling, E. J. M., & Maas, C. (2010). Hantush well function
-       revisited. Journal of hydrology, 393(3), 381-388.
     """
 
     _name = "Hantush"
@@ -696,7 +686,6 @@ class Hantush(RfuncBase):
         self.quad = quad
         # check numba and numba_scipy installation
         if self.quad or self.use_numba:
-            check_numba()
             # turn off use_numba if numba_scipy is not available
             # or there is a version conflict
             if self.use_numba:
@@ -818,8 +807,8 @@ class Polder(RfuncBase):
     Notes
     -----
     The Polder function is explained in Eq. 123.32 in
-    :cite:t:`bruggeman_analytical_1999`. The impulse response function may be
-    written as:
+    :cite:t:`bruggeman_analytical_1999`. The impulse response function may be written
+    as:
 
     .. math:: \\theta(t) = \\exp(-\\sqrt(4b)) \\frac{A}{t^{-3/2}}
        \\exp(-t/a -b/t)
@@ -896,11 +885,11 @@ class One(RfuncBase):
     Parameters
     ----------
     up: bool or None, optional
-        indicates whether a positive stress will cause the head to go up
-        (True) or down (False), if None (default) the head can go both ways.
+        indicates whether a positive stress will cause the head to go up (True) or
+        down (False), if None (default) the head can go both ways.
     meanstress: float
-        mean value of the stress, used to set the initial value such that
-        the final step times the mean stress equals 1
+        mean value of the stress, used to set the initial value such that the final
+        step times the mean stress equals 1.
     cutoff: float
         proportion after which the step function is cut off. default is 0.999.
     """
@@ -955,11 +944,11 @@ class FourParam(RfuncBase):
     Parameters
     ----------
     up: bool or None, optional
-        indicates whether a positive stress will cause the head to go up
-        (True, default) or down (False), if None the head can go both ways.
+        indicates whether a positive stress will cause the head to go up (True,
+        default) or down (False), if None the head can go both ways.
     meanstress: float
-        mean value of the stress, used to set the initial value such that
-        the final step times the mean stress equals 1
+        mean value of the stress, used to set the initial value such that the final
+        step times the mean stress equals 1.
     cutoff: float
         proportion after which the step function is cut off. default is 0.999.
 
@@ -970,8 +959,8 @@ class FourParam(RfuncBase):
     .. math:: \\theta(t) = At^{n-1} e^{-t/a -ab/t}
 
     If Fourparam.quad is set to True, this response function uses np.quad to
-    integrate the Four Parameter response function, which requires more
-    calculation time.
+    integrate the Four Parameter response function, which requires more calculation
+    time.
     """
 
     _name = "FourParam"
@@ -1127,17 +1116,16 @@ class FourParam(RfuncBase):
 
 
 class DoubleExponential(RfuncBase):
-    """Double Exponential response function with 4 parameters A, alpha, a1 and
-    a2.
+    """Double Exponential response function with 4 parameters A, alpha, a1 and a2.
 
     Parameters
     ----------
     up: bool or None, optional
-        indicates whether a positive stress will cause the head to go up
-        (True, default) or down (False), if None the head can go both ways.
+        indicates whether a positive stress will cause the head to go up (True,
+        default) or down (False), if None the head can go both ways.
     meanstress: float
-        mean value of the stress, used to set the initial value such that
-        the final step times the mean stress equals 1
+        mean value of the stress, used to set the initial value such that the final
+        step times the mean stress equals 1
     cutoff: float
         proportion after which the step function is cut off. default is 0.999.
 
@@ -1222,18 +1210,18 @@ class Edelman(RfuncBase):
     Parameters
     ----------
     up: bool or None, optional
-        indicates whether a positive stress will cause the head to go up
-        (True, default) or down (False), if None the head can go both ways.
+        indicates whether a positive stress will cause the head to go up (True,
+        default) or down (False), if None the head can go both ways.
     meanstress: float
-        mean value of the stress, used to set the initial value such that
-        the final step times the mean stress equals 1
+        mean value of the stress, used to set the initial value such that the final
+        step times the mean stress equals 1.
     cutoff: float
         proportion after which the step function is cut off. default is 0.999.
 
     Notes
     -----
-    The Edelman function is explained in :cite:t:`edelman_over_1947`. The
-    impulse response function may be written as:
+    The Edelman function is explained in :cite:t:`edelman_over_1947`. The impulse
+    response function may be written as:
 
     .. math:: \\text{unknown}
 
@@ -1287,33 +1275,34 @@ class Kraijenhoff(RfuncBase):
     Parameters
     ----------
     up: bool or None, optional
-        indicates whether a positive stress will cause the head to go up
-        (True, default) or down (False), if None the head can go both ways.
+        indicates whether a positive stress will cause the head to go up (True,
+        default) or down (False), if None the head can go both ways.
     meanstress: float
-        mean value of the stress, used to set the initial value such that
-        the final step times the mean stress equals 1
+        mean value of the stress, used to set the initial value such that the final
+        step times the mean stress equals 1.
     cutoff: float
         proportion after which the step function is cut off. default is 0.999.
 
     Notes
     -----
     The Kraijenhoff van de Leur function is explained in
-    :cite:t:`van_de_leur_study_1958`. The impulse response function may be
-    written as:
+    :cite:t:`van_de_leur_study_1958`. The impulse response function may be written as:
 
-    .. math:: \\theta(t) = \\frac{4}{\pi S} \sum_{n=1,3,5...}^\infty \\frac{1}{n} e^{-n^2\\frac{t}{j}} \sin (\\frac{n\pi x}{L})
+    .. math:: \\theta(t) = \\frac{4}{\\pi S} \\sum_{n=1,3,5...}^\\infty \\frac{1}{n}e^{-n^2\\frac{t}{j}} \\sin (\\frac{n\\pi x}{L})
 
-    The function describes the response of a domain between two drainage
-    channels. The function gives the same outcome as equation 133.15 in
-    :cite:t:`bruggeman_analytical_1999`. This is the response that
-    is actually calculated with this function.
+    The function describes the response of a domain between two drainage channels.
+    The function gives the same outcome as equation 133.15 in
+    :cite:t:`bruggeman_analytical_1999`. This is the response that is actually
+    calculated with this function.
 
-    The response function has three parameters: A, a and b.
-    A is the gain (scaled),
-    a is the reservoir coefficient (j in :cite:t:`van_de_leur_study_1958`),
-    b is the location in the domain with the origin in the middle. This means
-    that b=0 is in the middle and b=1/2 is at the drainage channel. At b=1/4
-    the response function is most similar to the exponential response function.
+    The response function has three parameters A, a and b:
+
+    - A is the gain (scaled),
+    - a is the reservoir coefficient (j in :cite:t:`van_de_leur_study_1958`),
+    - b is the location in the domain with the origin in the middle. This means that
+      b=0 is in the middle and b=1/2 is at the drainage channel. At b=1/4 the
+      response function is most similar to the exponential response function.
+
     """
 
     _name = "Kraijenhoff"
@@ -1408,29 +1397,27 @@ class Spline(RfuncBase):
     Parameters
     ----------
     up: bool or None, optional
-        indicates whether a positive stress will cause the head to go up
-        (True, default) or down (False), if None the head can go both ways.
+        indicates whether a positive stress will cause the head to go up (True,
+        default) or down (False), if None the head can go both ways.
     meanstress: float
-        mean value of the stress, used to set the initial value such that
-        the final step times the mean stress equals 1
+        mean value of the stress, used to set the initial value such that the final
+        step times the mean stress equals 1.
     cutoff: float
-        proportion after which the step function is cut off. default is 0.999.
-        this parameter is ignored by Points
+        proportion after which the step function is cut off. default is 0.999. this
+        parameter is ignored by Points.
     kind: string
-        see scipy.interpolate.interp1d. Most useful for a smooth response
-        function are 'quadratic' and 'cubic'.
+        see scipy.interpolate.interp1d. Most useful for a smooth response function
+        are 'quadratic' and 'cubic'.
     t: list
         times at which the response function is defined
 
-
     Notes
     -----
-    The spline response function generates a response function from factors at
-    t = 1, 2, 4, 8, 16, 32, 64, 128, 256, 512 and 1024 days by default. This
-    response function is more data-driven than existing response functions and
-    has no physical background. Therefore it can primarily be used to compare
-    to other more physical response functions, that probably describe the
-    groundwater system better.
+    The spline response function generates a response function from factors at t = 1,
+    2, 4, 8, 16, 32, 64, 128, 256, 512 and 1024 days by default. This response
+    function is more data-driven than existing response functions and has no physical
+    background. Therefore, it can primarily be used to compare to other more physical
+    response functions, that probably describe the groundwater system better.
     """
 
     _name = "Spline"

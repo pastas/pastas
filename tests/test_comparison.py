@@ -6,14 +6,14 @@ rain = read_csv("tests/data/rain.csv", index_col=0, parse_dates=True).squeeze("c
 evap = read_csv("tests/data/evap.csv", index_col=0, parse_dates=True).squeeze("columns")
 obs = read_csv("tests/data/obs.csv", index_col=0, parse_dates=True).squeeze("columns")
 
-ml1 = ps.Model(obs, name="Test_Model")
-sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma, name="rch")
+ml1 = ps.Model(obs.dropna(), name="Test_Model")
+sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma(), name="rch")
 ml1.add_stressmodel(sm)
 ml1.solve(report=False)
 
-ml2 = ps.Model(obs, name="Test_Model")
-sm1 = ps.StressModel(rain, rfunc=ps.Exponential, name="prec")
-sm2 = ps.StressModel(evap, rfunc=ps.Exponential, name="evap")
+ml2 = ps.Model(obs.dropna(), name="Test_Model")
+sm1 = ps.StressModel(rain, rfunc=ps.Exponential(), name="prec")
+sm2 = ps.StressModel(evap, rfunc=ps.Exponential(), name="evap")
 ml2.add_stressmodel([sm1, sm2])
 ml2.solve(report=False)
 

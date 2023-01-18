@@ -184,8 +184,8 @@ class CompareModels:
                 smnames = self.smdict[int(ky[3:])]  # index is after 'con'
                 # fmt: off
                 heights[ky] = (
-                    np.nanmax(contrib_minmax.loc[smnames, "max"]) -
-                    np.nanmin(contrib_minmax.loc[smnames, "min"])
+                        np.nanmax(contrib_minmax.loc[smnames, "max"]) -
+                        np.nanmin(contrib_minmax.loc[smnames, "min"])
                 )
                 # fmt: on
 
@@ -644,7 +644,7 @@ class CompareModels:
             else:
                 r = ps.stats.core.acf(ml.residuals(), full_output=True)
                 label = "Autocorrelation Residuals"
-            conf = r.stderr.rolling(10, min_periods=1).mean().values
+            conf = r.conf.rolling(10, min_periods=1).mean().values
 
             self.axes[axn].fill_between(
                 r.index.days, conf, -conf, alpha=0.3, color=self.cmap(i)
@@ -664,8 +664,8 @@ class CompareModels:
         ----------
         axn : str, optional
             name of labeled axes to plot table on, by default "table"
-        df : pandas DataFrame
-            Pandas Dataframe to plot. Note that the first column is the index
+        df : pandas.DataFrame
+            The Pandas.Dataframe to plot. Note that the first column is the index
             column that is shown.
         """
         if self.axes is None:

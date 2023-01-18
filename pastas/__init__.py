@@ -6,6 +6,7 @@ import pastas.plots as plots
 import pastas.recharge as rch
 import pastas.stats as stats
 
+from .decorators import set_use_numba
 from .model import Model
 from .modelcompare import CompareModels
 from .noisemodels import ArmaModel, NoiseModel
@@ -37,10 +38,10 @@ from .stressmodels import (
     TarsoModel,
     WellModel,
 )
-from .timeseries import TimeSeries
+from .timeseries import validate_stress, validate_oseries
 from .transform import ThresholdTransform
-from .utils import initialize_logger, set_log_level, show_versions
-from .version import __version__
+from .utils import initialize_logger, set_log_level
+from .version import __version__, show_versions
 
 logger = logging.getLogger(__name__)
 initialize_logger(logger)

@@ -6,6 +6,13 @@ from pastas.typing import Function, Decorator, TimestampType
 
 logger = getLogger(__name__)
 
+USE_NUMBA = True
+
+
+def set_use_numba(b: bool) -> None:
+    global USE_NUMBA
+    USE_NUMBA = b
+
 
 def set_parameter(function: Function) -> Decorator:
 
@@ -13,8 +20,7 @@ def set_parameter(function: Function) -> Decorator:
     def _set_parameter(self, name: str, value: float, **kwargs):
         if name not in self.parameters.index:
             logger.error(
-                "Parameter name %s does not exist, please choose "
-                "from %s",
+                "Parameter name %s does not exist, please choose from %s",
                 name,
                 self.parameters.index,
             )
@@ -30,9 +36,8 @@ def get_stressmodel(function: Function):
     def _get_stressmodel(self, name: str, **kwargs):
         if name not in self.stressmodels.keys():
             logger.error(
-                "The stressmodel name you provided is not in the "
-                "stressmodels dict. Please select from the "
-                "following list: %s",
+                "The stressmodel name you provided is not in the stressmodels dict. "
+                "Please select from the following list: %s",
                 self.stressmodels.keys(),
             )
         else:
@@ -63,8 +68,10 @@ def PastasDeprecationWarning(function: Function) -> Decorator:
 
     @wraps(function)
     def _function(*args, **kwargs):
-        logger.warning("Deprecation warning: method is deprecated and will "
-                       "be removed in version 0.23.0.")
+        logger.warning(
+            "Deprecation warning: method is deprecated and will be removed in version "
+            "1.0."
+        )
         return function(*args, **kwargs)
 
     return _function
@@ -75,10 +82,13 @@ def njit(function: Optional[Function] = None,
 
     def njit_decorator(f: Function):
         try:
-            from numba import njit
+            if not USE_NUMBA:
+                return f
+            else:
+                from numba import njit
 
-            fnumba = njit(f, parallel=parallel)
-            return fnumba
+                fnumba = njit(f, parallel=parallel)
+                return fnumba
         except ImportError:
             return f
 

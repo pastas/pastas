@@ -16,17 +16,13 @@ import os
 import re
 import sys
 from datetime import date
-
 import requests
 
 year = date.today().strftime("%Y")
 
-from matplotlib import use
-
-use("agg")
+os.environ["MPLBACKEND"] = "Agg"
 
 from dataclasses import dataclass, field
-
 import sphinxcontrib.bibtex.plugin
 from sphinxcontrib.bibtex.style.referencing import BracketStyle
 from sphinxcontrib.bibtex.style.referencing.author_year import AuthorYearReferenceStyle
@@ -42,18 +38,15 @@ sys.path.insert(0, os.path.abspath("."))
 
 extensions = [
     "sphinx.ext.autodoc",
-    "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
-    "sphinx.ext.todo",
-    "sphinx.ext.coverage",
     "sphinx.ext.mathjax",
     "sphinx.ext.ifconfig",
     "sphinx.ext.viewcode",
     "IPython.sphinxext.ipython_console_highlighting",  # lowercase didn't work
-    "sphinx.ext.autosectionlabel",
     "nbsphinx",
+    "numpydoc",
     "sphinx_gallery.load_style",
     "sphinxcontrib.bibtex",
 ]
@@ -78,34 +71,15 @@ language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ["_build", "**.ipynb_checkpoints"]
+exclude_patterns = ["_build", "**groundwater_paper", "**.ipynb_checkpoints"]
 
-# The reST default role (used for this markup: `text`) to use for all
-# documents.
-# default_role = None
-
-# If true, '()' will be appended to :func: etc. cross-reference text.
 add_function_parentheses = False
-
-# If true, the current module name will be prepended to all description
-# unit titles (such as .. function::).
 add_module_names = False
+show_authors = False  # section and module author directives will not be shown
 
-# If true, sectionauthor and moduleauthor directives will be shown in the
-# output. They are ignored by default.
-show_authors = False
+pygments_style = "sphinx"  # The name of the Pygments (syntax highlighting) style to use
 
-# The name of the Pygments (syntax highlighting) style to use.
-pygments_style = "sphinx"
-
-# A list of ignored prefixes for module index sorting.
-# modindex_common_prefix = []
-
-# If true, keep warnings as "system message" paragraphs in the built documents.
-# keep_warnings = False
-
-# If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = False
+todo_include_todos = False  # Do not show TODOs in docs
 
 # -- Options for HTML output ----------------------------------------------
 
@@ -119,6 +93,7 @@ html_show_sphinx = True
 html_show_copyright = True
 htmlhelp_basename = "Pastasdoc"  # Output file base name for HTML help builder.
 html_use_smartypants = True
+html_show_sourcelink = True
 
 html_theme_options = {
     "github_url": "https://github.com/pastas/pastas",
@@ -132,8 +107,15 @@ html_context = {
     "doc_path": "doc",
 }
 
+napoleon_use_param = True
+napoleon_type_aliases = {
+    "array-like": ":term:`array-like <array_like>`",
+    "array_like": ":term:`array_like`",
+}
+autodoc_typehints = "description"
+autodoc_typehints_format = "short"
 autosummary_generate = True
-numpydoc_show_class_members = False
+numpydoc_class_members_toctree = False
 
 
 # If true, links to the reST sources are added to the pages.
@@ -261,11 +243,11 @@ texinfo_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    "matplotlib": ("https://matplotlib.org/", None),
-    "numpy": ("https://numpy.org/doc/stable/", None),
-    "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
     "python": ("https://docs.python.org/3/", None),
+    "numpy": ("https://numpy.org/devdocs/", None),
+    "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
     "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
+    "matplotlib": ("https://matplotlib.org/", None),
 }
 
 # Allow errors in notebooks, so we can see the error online

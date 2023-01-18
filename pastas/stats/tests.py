@@ -75,11 +75,6 @@ def durbin_watson(series: Series) -> float:
       Statistics to Time-Series-Based Regression Models. CHEMICAL ENGINEERING
       EDUCATION, 38(1), 22-25.
 
-    TODO
-    ----
-    Compare calculated statistic to critical values, which are problematic
-    to calculate and should probably come from a predefined table.
-
     Examples
     --------
     >>> data = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
@@ -533,20 +528,18 @@ def diagnostics(
 
 def plot_acf():
     raise DeprecationWarning(
-        "The method plot_acf is deprecated. Use " "'ps.plot.acf' instead."
+        "The method plot_acf is deprecated. Use 'ps.plot.acf' instead."
     )
 
 
 def plot_diagnostics():
     raise DeprecationWarning(
-        "The method plot_diagnostics is deprecated."
-        " Use 'ps.plot.diagnostics' instead."
+        "The method plot_diagnostics is deprecated. Use 'ps.plot.diagnostics' instead."
     )
 
 
 def plot_cum_frequency():
     raise DeprecationWarning(
-        "The method plot_cum_frequency is "
-        "deprecated. Use 'ps.plot.cum_frequency' "
+        "The method plot_cum_frequency is deprecated. Use 'ps.plot.cum_frequency' "
         "instead."
     )

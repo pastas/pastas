@@ -9,7 +9,6 @@ from platform import platform
 from typing import Any, Optional, Tuple
 
 import numpy as np
-from packaging import version
 from pandas import (
     DatetimeIndex,
     Index,
@@ -20,7 +19,6 @@ from pandas import (
     to_datetime,
 )
 from pandas.tseries.frequencies import to_offset
-from scipy import __version__ as sc_version
 from scipy import interpolate
 
 from pastas.typing import ArrayLike
@@ -39,7 +37,7 @@ def frequency_is_supported(freq: str) -> str:
 
     Returns
     -------
-    freq
+    freq: str
         String with the simulation frequency
 
     Notes
@@ -72,60 +70,6 @@ def frequency_is_supported(freq: str) -> str:
         else:
             freq = str(offset.n) + offset.name
     return freq
-
-
-def _get_stress_dt(freq: str) -> float:
-    """Internal method to obtain a timestep in days from a frequency string.
-
-    Parameters
-    ----------
-    freq: str
-
-    Returns
-    -------
-    dt: float
-        Approximate timestep in number of days.
-
-    Notes
-    -----
-    Used for comparison to determine if a time series needs to be up or
-    downsampled.
-
-    See http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
-    for the offset_aliases supported by Pandas.
-    """
-    # Get the frequency string and multiplier
-    offset = to_offset(freq)
-    if hasattr(offset, "delta"):
-        dt = offset.delta / Timedelta(1, "D")
-    else:
-        num = offset.n
-        freq = offset.name
-        if freq in ["A", "Y", "AS", "YS", "BA", "BY", "BAS", "BYS"]:
-            # year
-            dt = num * 365
-        elif freq in ["BQ", "BQS", "Q", "QS"]:
-            # quarter
-            dt = num * 90
-        elif freq in ["BM", "BMS", "CBM", "CBMS", "M", "MS"]:
-            # month
-            dt = num * 30
-        elif freq in ["SM", "SMS"]:
-            # semi-month
-            dt = num * 15
-        elif freq in ["W"]:
-            # week
-            dt = num * 7
-        elif freq in ["B", "C"]:
-            # day
-            dt = num
-        elif freq in ["BH", "CBH"]:
-            # hour
-            dt = num * 1 / 24
-        else:
-            raise (ValueError("freq of {} not supported".format(freq)))
-
-    return dt
 
 
 def _get_dt(freq: str) -> float:
@@ -503,11 +447,10 @@ def initialize_logger(
     """Internal method to create a logger instance to log program output.
 
     Parameters
-    -------
+    ----------
     logger : logging.Logger
-        A Logger-instance. Use ps.logger to initialise the Logging instance
-        that handles all logging throughout pastas,  including all sub modules
-        and packages.
+        A Logger-instance. Use ps.logger to initialise the Logging instance that
+        handles all logging throughout pastas,  including all submodules and packages.
     """
     if logger is None:
         logger = logging.getLogger("pastas")
@@ -525,11 +468,10 @@ def set_console_handler(
     """Method to add a console handler to the logger of Pastas.
 
     Parameters
-    -------
+    ----------
     logger : logging.Logger
-        A Logger-instance. Use ps.logger to initialise the Logging instance
-        that handles all logging throughout pastas,  including all sub modules
-        and packages.
+        A Logger-instance. Use ps.logger to initialise the Logging instance that
+        handles all logging throughout pastas,  including all submodules and packages.
     """
     if logger is None:
         logger = logging.getLogger("pastas")
@@ -564,7 +506,7 @@ def remove_console_handler(logger: Optional[Any] = None) -> None:
     """Method to remove the console handler to the logger of Pastas.
 
     Parameters
-    -------
+    ----------
     logger : logging.Logger
         A Logger-instance. Use ps.logger to initialise the Logging instance
         that handles all logging throughout pastas,  including all sub modules
@@ -590,7 +532,7 @@ def add_file_handlers(
     """Method to add file handlers in the logger of Pastas.
 
     Parameters
-    -------
+    ----------
     logger : logging.Logger
         A Logger-instance. Use ps.logger to initialise the Logging instance
         that handles all logging throughout pastas,  including all sub modules
@@ -615,10 +557,10 @@ def remove_file_handlers(logger: Optional[logging.Logger] = None) -> None:
     """Method to remove any file handlers in the logger of Pastas.
 
     Parameters
-    -------
+    ----------
     logger : logging.Logger
         A Logger-instance. Use ps.logger to initialise the Logging instance
-        that handles all logging throughout pastas,  including all sub modules
+        that handles all logging throughout pastas,  including all submodules
         and packages.
     """
     if logger is None:
@@ -669,76 +611,10 @@ def validate_name(name: str, raise_error: bool = False) -> str:
     for char in ilchar:
         if char in name:
             msg = f"User-provided name '{name}' contains illegal character."
-            msg += f"Please remove {char} from name."
+            msg += f"Please remove '{char}' from name."
             if raise_error:
                 raise Exception(msg)
             else:
                 logger.warning(msg)
 
     return name
-
-
-def show_versions(lmfit: bool = False, numba: bool = False) -> None:
-    """Method to print the version of dependencies.
-
-    Parameters
-    ----------
-    lmfit: bool, optional
-        Print the version of lmfit. Needs to be installed.
-    numba: bool, optional
-        Print the version of numba. Needs to be installed.
-    """
-    from sys import version as os_version
-
-    from matplotlib import __version__ as mpl_version
-    from numpy import __version__ as np_version
-    from pandas import __version__ as pd_version
-
-    from pastas import __version__ as ps_version
-
-    msg = (
-        f"Python version: {os_version}\n"
-        f"NumPy version: {np_version}\n"
-        f"SciPy version: {sc_version}\n"
-        f"Pandas version: {pd_version}\n"
-        f"Pastas version: {ps_version}\n"
-        f"Matplotlib version: {mpl_version}"
-    )
-
-    if lmfit:
-        from lmfit import __version__ as lm_version
-
-        msg = msg + f"\nlmfit version: {lm_version}"
-    if numba:
-        from numba import __version__ as nb_version
-
-        msg = msg + f"\nnumba version: {nb_version}"
-
-    return print(msg)
-
-
-def check_numba() -> None:
-    try:
-        from numba import njit
-    except ImportError:
-        logger.warning(
-            "Numba is not installed. Installing Numba is "
-            "recommended for significant speed-ups."
-        )
-
-
-def check_numba_scipy():
-    try:
-        import numba_scipy as _
-    except ImportError:
-        logger.warning(
-            "numba_scipy is not installed, defaulting to numpy implementation."
-        )
-        return False
-
-    if version.parse(sc_version) > version.parse("1.7.3"):
-        logger.warning(
-            "numba_scipy supports scipy<=1.7.3, found {0}".format(sc_version)
-        )
-        return False
-    return True

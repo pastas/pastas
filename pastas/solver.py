@@ -1,9 +1,8 @@
 """This module contains the different solvers that are available for Pastas.
 
-All solvers inherit from the BaseSolver class, which contains general method
-for selecting the correct time series to misfit and options to weight the
-residuals or noise series.
-
+All solvers inherit from the BaseSolver class, which contains general method for
+selecting the correct time series to misfit and options to weight the residuals or
+noise series.
 
 To solve a model the following syntax can be used:
 
@@ -442,22 +441,21 @@ class LeastSquares(BaseSolver):
         nfev: Optional[int] = None,
         **kwargs,
     ) -> None:
-        """Solver based on Scipy's least_squares method [scipy_ref]_.
+        """Solver based on Scipy's least_squares method :cite:p:`virtanen_scipy_2020`.
 
         Notes
         -----
         This class is the default solve method called by the pastas Model solve
-        method. All kwargs provided to the Model.solve() method are forwarded
-        to the solver. From there, they are forwarded to Scipy least_squares
-        solver.
+        method. All kwargs provided to the Model.solve() method are forwarded to the
+        solver. From there, they are forwarded to Scipy least_squares solver.
 
         Examples
         --------
 
         >>> ml.solve(solver=ps.LeastSquares)
 
-        Notes
-        -----
+        References
+        ----------
         https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
         """
         BaseSolver.__init__(self, ml=ml, pcov=pcov, nfev=nfev, **kwargs)
@@ -529,7 +527,6 @@ class LeastSquares(BaseSolver):
         pcov: array_like
             array with the covariance matrix.
 
-
         Notes
         -----
         This method is copied from Scipy, please refer to:
@@ -574,10 +571,11 @@ class LmfitSolve(BaseSolver):
         nfev: Optional[int] = None,
         **kwargs,
     ) -> None:
-        """Solving the model using the LmFit solver [LM]_.
+        """Solving the model using the LmFit solver
+        :cite:p:`newville_lmfitlmfit-py_2019`.
 
-         This is basically a wrapper around the scipy solvers, adding some
-         cool functionality for boundary conditions.
+         This is basically a wrapper around the scipy solvers, adding some cool
+         functionality for boundary conditions.
 
         Notes
         -----

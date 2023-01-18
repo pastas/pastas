@@ -421,7 +421,7 @@ class Plotting:
             set_axes_properties = True
         else:
             if len(axes) != nrows:
-                msg = "Makes sure the number of axes equals the number of " "series"
+                msg = "Makes sure the number of axes equals the number of series"
                 raise Exception(msg)
             fig = axes[0].figure
             o_label = ""
@@ -527,8 +527,8 @@ class Plotting:
         --------
         >>> axes = ml.plots.diagnostics()
 
-        Note
-        ----
+        Notes
+        -----
         This plot assumed that the noise or residuals follow a Normal
         distribution.
 

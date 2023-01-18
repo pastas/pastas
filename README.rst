@@ -12,8 +12,8 @@ Pastas: Analysis of Groundwater Time Series
 .. image:: https://img.shields.io/pypi/l/pastas.svg
    :target: https://mit-license.org/
 .. image:: https://img.shields.io/pypi/pyversions/pastas
-   :target: https://pypi.python.org/pypi/pastas      
-.. image:: https://api.codacy.com/project/badge/Grade/952f41c453854064ba0ee1fa0a0b4434    
+   :target: https://pypi.python.org/pypi/pastas
+.. image:: https://api.codacy.com/project/badge/Grade/952f41c453854064ba0ee1fa0a0b4434
    :target: https://www.codacy.com/gh/pastas/pastas
 .. image:: https://api.codacy.com/project/badge/Coverage/952f41c453854064ba0ee1fa0a0b4434
    :target: https://www.codacy.com/gh/pastas/pastas
@@ -26,7 +26,7 @@ Pastas: Analysis of Groundwater Time Series
 
 Pastas: what is it?
 ~~~~~~~~~~~~~~~~~~~
-Pastas is an open source python package for processing, simulating and analyzing 
+Pastas is an open source python package for processing, simulating and analyzing
 groundwater time series. The object oriented structure allows for the quick
 implementation of new model components. Time series models can be created,
 calibrated, and analysed with just a few lines of python code with the
@@ -66,8 +66,8 @@ Update
 ------
 To update pastas, use::
 
-  pip install pastas --upgrade  
-  
+  pip install pastas --upgrade
+
 Developers
 ----------
 To get the latest development version, use::
@@ -76,7 +76,7 @@ To get the latest development version, use::
 
 Related packages
 ~~~~~~~~~~~~~~~~
-- `Pastastore <https://github.com/pastas/pastastore>`_ is a Python package for managing multiple timeseries and pastas models 
+- `Pastastore <https://github.com/pastas/pastastore>`_ is a Python package for managing multiple timeseries and pastas models
 - `Hydropandas <https://github.com/ArtesiaWater/hydropandas/blob/master/examples/03_hydropandas_and_pastas.ipynb>`_ can be used to obtain Dutch timeseries (KNMI, Dinoloket, ..)
 - `PyEt <https://github.com/phydrus/pyet>`_ can be used to compute potential evaporation from meteorological variables.
 
@@ -91,10 +91,9 @@ Pastas
 - matplotlib>=3.1
 - pandas>=1.1
 - scipy>=1.3
+- numba>=0.51
 
-Apart from this, is is highly recommended to install Numba (>0.51) to
-gain significant speed-ups. To install Numba (and another optional 
-dependency LmFit) at the same time with Pastas use::
+To install the most important optional dependencies (solvers such as LmFit) at the same time with Pastas use::
 
    pip install pastas[full]
 

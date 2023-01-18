@@ -1,8 +1,0 @@
-nbsphinx
-Ipython
-ipykernel
-pydata-sphinx-theme
-sphinx-gallery
-sphinx>=3.1, <6.0
-sphinxcontrib-bibtex
-requests

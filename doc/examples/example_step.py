@@ -25,12 +25,12 @@ evap = pd.read_csv("data/evap_nb1.csv", index_col=0, parse_dates=True).squeeze(
 
 # create stress
 sm = ps.RechargeModel(
-    rain, evap, rfunc=ps.Exponential, recharge=ps.rch.Linear(), name="recharge"
+    rain, evap, rfunc=ps.Exponential(), recharge=ps.rch.Linear(), name="recharge"
 )
 ml.add_stressmodel(sm)
 
 # add a stepmodel with an exponential response
-sm = ps.stressmodels.StepModel("2007", "Step", rfunc=ps.One)
+sm = ps.stressmodels.StepModel("2007", "Step", rfunc=ps.One())
 ml.add_stressmodel(sm)
 
 # solve

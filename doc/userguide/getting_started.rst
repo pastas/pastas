@@ -46,21 +46,22 @@ Dependencies
 Pastas depends on a number of Python packages, of which all of the necessary are
 automatically installed when using the pip install manager. To summarize, the
 following packages are necessary for a minimal function installation of
-Pastas:
+Pastas::
 
-.. include:: ../../requirements.ci.txt
-    :literal:
-
-Other optional dependencies include::
-
+    numpy
+    scipy
+    pandas
+    matplotlib
     numba  #(large speed-up, highly recommended)
-    lmfit  #(alternative solver)
-    requests  #(downloading data from the web)
 
+Other optional, but recommended dependencies include::
+
+    jupyter  #(for running notebooks)
+    lmfit  #(alternative solver)
 
 .. tip::
-    Installing Numba is highly recommended when using Pastas. Not only this
-    package, but also pandas makes use of Numba. Since Pastas partly
+    Numba is highly recommended when using Pastas. Not only this
+    package, but also Pandas makes use of Numba. Since Pastas partly
     depends on Pandas, installing Numba will also speed up Pastas.
 
 
