@@ -1405,7 +1405,6 @@ class TarsoModel(RechargeModel):
         rfunc: Optional[RFunc] = Exponential(),
         **kwargs,
     ) -> None:
-        check_numba()
         if oseries is not None:
             if dmin is not None or dmax is not None:
                 msg = "Please specify either oseries or dmin and dmax"
