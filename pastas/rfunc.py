@@ -98,7 +98,6 @@ class RfuncBase:
         parameters: pandas DataFrame
             The initial parameters and parameter bounds used by the solver.
         """
-        pass
 
     def get_tmax(self, p: ArrayLike, cutoff: Optional[float] = None) -> float:
         """Method to get the response time for a certain cutoff.
@@ -117,7 +116,6 @@ class RfuncBase:
             Number of days when 99.9% of the response has effectuated, when the
             cutoff is chosen at 0.999.
         """
-        pass
 
     def step(
         self,
@@ -145,7 +143,6 @@ class RfuncBase:
         s: array_like
             Array with the step response.
         """
-        pass
 
     def block(
         self,
@@ -200,7 +197,6 @@ class RfuncBase:
         -----
         Only used for internal consistency checks
         """
-        pass
 
     def get_t(
         self, p: ArrayLike, dt: float, cutoff: float, maxtmax: Optional[int] = None
