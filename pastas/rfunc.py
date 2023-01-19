@@ -21,7 +21,7 @@ from scipy.special import (
 from numpy import pi
 
 from .decorators import njit, latexfun
-from .utils import check_numba_scipy
+from .version import check_numba_scipy
 
 try:
     from numba import prange
@@ -52,10 +52,12 @@ __all__ = [
 class RfuncBase:
     _name = "RfuncBase"
 
-    def __init__(self, **kwargs) -> None:
-        self.up = True
-        self.meanstress = 1
-        self.cutoff = 0.999
+    def __init__(
+        self, up: bool = True, meanstress: float = 1.0, cutoff: float = 0.999, **kwargs
+    ) -> None:
+        self.up = up
+        self.meanstress = meanstress
+        self.cutoff = cutoff
         self.kwargs = kwargs
 
     def _set_init_parameter_settings(
@@ -247,8 +249,10 @@ class Gamma(RfuncBase):
 
     _name = "Gamma"
 
-    def __init__(self) -> None:
-        RfuncBase.__init__(self)
+    def __init__(
+        self, up: bool = True, meanstress: float = 1.0, cutoff: float = 0.999, **kwargs
+    ) -> None:
+        RfuncBase.__init__(self, up=up, meanstress=meanstress, cutoff=cutoff, **kwargs)
         self.nparam = 3
 
     def get_init_parameters(self, name: str) -> DataFrame:
@@ -334,8 +338,10 @@ class Exponential(RfuncBase):
 
     _name = "Exponential"
 
-    def __init__(self) -> None:
-        RfuncBase.__init__(self)
+    def __init__(
+        self, up: bool = True, meanstress: float = 1.0, cutoff: float = 0.999, **kwargs
+    ) -> None:
+        RfuncBase.__init__(self, up=up, meanstress=meanstress, cutoff=cutoff, **kwargs)
         self.nparam = 2
 
     def get_init_parameters(self, name: str) -> DataFrame:
@@ -420,13 +426,21 @@ class HantushWellModel(RfuncBase):
 
     :math:`\\text{gain} = A K_0 \\left( 2r \\sqrt(b) \\right)`
 
-    The implementation used here is explained in  :cite:t:`veling_hantush_2010`.
+    The implementation used here is explained in :cite:t:`veling_hantush_2010`.
     """
 
     _name = "HantushWellModel"
 
-    def __init__(self, use_numba: bool = False, quad: bool = False) -> None:
-        RfuncBase.__init__(self, use_numba=use_numba, quad=quad)
+    def __init__(
+        self,
+        up: bool = True,
+        meanstress: float = 1.0,
+        cutoff: float = 0.999,
+        use_numba: bool = False,
+        quad: bool = False,
+        **kwargs,
+    ) -> None:
+        RfuncBase.__init__(self, up=up, meanstress=meanstress, cutoff=cutoff, **kwargs)
         self.distances = None
         self.nparam = 3
         self.use_numba = use_numba  # requires numba_scipy for real speedups
@@ -671,16 +685,23 @@ class Hantush(RfuncBase):
     .. math:: \\theta(t) = \\frac{A}{2t \\text{K}_0\\left(2\\sqrt{b} \\right)}
               \\exp(-t/a - ab/t)
 
-    where A, a, and b are parameters.
-
-    The implementation used here is explained in  :cite:t:`veling_hantush_2010`.
+    where A, a, and b are parameters. The implementation used here is explained in
+    :cite:t:`veling_hantush_2010`.
 
     """
 
     _name = "Hantush"
 
-    def __init__(self, use_numba: bool = False, quad: bool = False) -> None:
-        RfuncBase.__init__(self, use_numba=use_numba, quad=quad)
+    def __init__(
+        self,
+        up: bool = True,
+        meanstress: float = 1.0,
+        cutoff: float = 0.999,
+        use_numba: bool = False,
+        quad: bool = False,
+        **kwargs,
+    ) -> None:
+        RfuncBase.__init__(self, up=up, meanstress=meanstress, cutoff=cutoff, **kwargs)
         self.nparam = 3
         self.use_numba = use_numba
         self.quad = quad
@@ -810,8 +831,7 @@ class Polder(RfuncBase):
     :cite:t:`bruggeman_analytical_1999`. The impulse response function may be written
     as:
 
-    .. math:: \\theta(t) = \\exp(-\\sqrt(4b)) \\frac{A}{t^{-3/2}}
-       \\exp(-t/a -b/t)
+    .. math:: \\theta(t) = \\exp(-\\sqrt(4b)) \\frac{A}{t^{-3/2}}\\exp(-t/a -b/t)
     .. math:: p[0] = A = \\exp(-x/\\lambda)
     .. math:: p[1] = a = \\sqrt{\\frac{1}{cS}}
     .. math:: p[2] = b = x^2 / (4 \\lambda^2)
@@ -821,8 +841,10 @@ class Polder(RfuncBase):
 
     _name = "Polder"
 
-    def __init__(self) -> None:
-        RfuncBase.__init__(self)
+    def __init__(
+        self, up: bool = True, meanstress: float = 1.0, cutoff: float = 0.999, **kwargs
+    ) -> None:
+        RfuncBase.__init__(self, up=up, meanstress=meanstress, cutoff=cutoff, **kwargs)
         self.nparam = 3
 
     def get_init_parameters(self, name) -> DataFrame:
@@ -896,8 +918,10 @@ class One(RfuncBase):
 
     _name = "One"
 
-    def __init__(self) -> None:
-        RfuncBase.__init__(self)
+    def __init__(
+        self, up: bool = True, meanstress: float = 1.0, cutoff: float = 0.999, **kwargs
+    ) -> None:
+        RfuncBase.__init__(self, up=up, meanstress=meanstress, cutoff=cutoff, **kwargs)
         self.nparam = 1
 
     def get_init_parameters(self, name: str) -> DataFrame:
@@ -965,8 +989,15 @@ class FourParam(RfuncBase):
 
     _name = "FourParam"
 
-    def __init__(self, quad: bool = False) -> None:
-        RfuncBase.__init__(self, quad=quad)
+    def __init__(
+        self,
+        up: bool = True,
+        meanstress: float = 1.0,
+        cutoff: float = 0.999,
+        quad: bool = False,
+        **kwargs,
+    ) -> None:
+        RfuncBase.__init__(self, up=up, meanstress=meanstress, cutoff=cutoff, **kwargs)
         self.nparam = 4
         self.quad = quad
 
@@ -1138,8 +1169,10 @@ class DoubleExponential(RfuncBase):
 
     _name = "DoubleExponential"
 
-    def __init__(self) -> None:
-        RfuncBase.__init__(self)
+    def __init__(
+        self, up: bool = True, meanstress: float = 1.0, cutoff: float = 0.999, **kwargs
+    ) -> None:
+        RfuncBase.__init__(self, up=up, meanstress=meanstress, cutoff=cutoff, **kwargs)
         self.nparam = 4
 
     def get_init_parameters(self, name: str) -> DataFrame:
@@ -1232,8 +1265,10 @@ class Edelman(RfuncBase):
 
     _name = "Edelman"
 
-    def __init__(self) -> None:
-        RfuncBase.__init__(self)
+    def __init__(
+        self, up: bool = True, meanstress: float = 1.0, cutoff: float = 0.999, **kwargs
+    ) -> None:
+        RfuncBase.__init__(self, up=up, meanstress=meanstress, cutoff=cutoff, **kwargs)
         self.nparam = 1
 
     def get_init_parameters(self, name: str) -> DataFrame:
@@ -1307,8 +1342,15 @@ class Kraijenhoff(RfuncBase):
 
     _name = "Kraijenhoff"
 
-    def __init__(self, n_terms: int = 10) -> None:
-        RfuncBase.__init__(self, n_terms=n_terms)
+    def __init__(
+        self,
+        up: bool = True,
+        meanstress: float = 1.0,
+        cutoff: float = 0.999,
+        n_terms: int = 10,
+        **kwargs,
+    ) -> None:
+        RfuncBase.__init__(self, up=up, meanstress=meanstress, cutoff=cutoff, **kwargs)
         self.nparam = 3
         self.n_terms = n_terms
 
@@ -1409,7 +1451,7 @@ class Spline(RfuncBase):
         see scipy.interpolate.interp1d. Most useful for a smooth response function
         are 'quadratic' and 'cubic'.
     t: list
-        times at which the response function is defined
+        times at which the response function is defined.
 
     Notes
     -----
@@ -1422,8 +1464,16 @@ class Spline(RfuncBase):
 
     _name = "Spline"
 
-    def __init__(self, kind: str = "quadratic", t: Optional[list] = None) -> None:
-        RfuncBase.__init__(self, kind=kind, t=t)
+    def __init__(
+        self,
+        up: bool = True,
+        meanstress: float = 1.0,
+        cutoff: float = 0.999,
+        kind: str = "quadratic",
+        t: Optional[list] = None,
+        **kwargs,
+    ) -> None:
+        RfuncBase.__init__(self, up=up, meanstress=meanstress, cutoff=cutoff, **kwargs)
         self.kind = kind
         if t is None:
             t = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
