@@ -38,6 +38,7 @@ sys.path.insert(0, os.path.abspath("."))
 
 extensions = [
     "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
@@ -97,7 +98,7 @@ html_show_sourcelink = True
 
 html_theme_options = {
     "github_url": "https://github.com/pastas/pastas",
-    "use_edit_page_button": False,
+    "use_edit_page_button": True,
 }
 
 html_context = {
@@ -115,8 +116,10 @@ napoleon_type_aliases = {
 autodoc_typehints = "description"
 autodoc_typehints_format = "short"
 autosummary_generate = True
-numpydoc_class_members_toctree = False
 
+numpydoc_class_members_toctree = True
+numpydoc_show_class_members = False
+autoclass_content = "class"
 
 # If true, links to the reST sources are added to the pages.
 # html_show_sourcelink = True
