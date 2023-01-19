@@ -173,20 +173,19 @@ class RfuncBase:
         s = self.step(p, dt, cutoff, maxtmax)
         return np.append(s[0], np.subtract(s[1:], s[:-1]))
 
-    def impulse(self, t: ArrayLike, p: ArrayLike) -> ArrayLike:
+    def impulse(self, t: ArrayLike, p: ArrayLike, **kwargs) -> ArrayLike:
         """Method to return the impulse response function.
 
         Parameters
         ----------
+        t: array_like
+            array_like object with the times at which to evaluate the impulse
+            response, can be obtained with get_t() method
         p: array_like
             array_like object with the values as floats representing the model
             parameters.
-        dt: float
-            timestep as a multiple of one day.
-        cutoff: float, optional
-            proportion after which the step function is cut off.
-        maxtmax: int, optional
-            Maximum timestep to compute the block response for.
+        kwargs: dict
+            optional arguments
 
         Returns
         -------
@@ -1065,7 +1064,7 @@ class FourParam(RfuncBase):
     @latexfun(identifiers={"impulse": "theta", "k0": "K_0"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         # impulse for A=1
-        A, n, a, b = p
+        _, n, a, b = p
         return (t ** (n - 1)) * np.exp(-t / a - a * b / t)
 
     def get_tmax(self, p: ArrayLike, cutoff: Optional[float] = None) -> float:
