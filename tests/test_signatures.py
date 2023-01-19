@@ -22,7 +22,7 @@ def test_colwell_components():
     y = [1] * n + [2] * n + [3] * n
     obs = pd.Series(y, index=pd.to_datetime(x))
     ps.stats.signatures.colwell_components(obs, freq="4M", bins=3)
-    return obs
+    return
 
 
 def test_colwell_predictability():

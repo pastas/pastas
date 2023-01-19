@@ -24,7 +24,6 @@ def create_model():
 def test_least_squares():
     ml = create_model()
     ml.solve(solver=ps.LeastSquares)
-    return ml
 
 
 def test_fit_constant():
