@@ -1446,13 +1446,13 @@ class Kraijenhoff(RfuncBase):
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         A, a, b = p
         nterms = 10
-        n = np.arange(nterms)
         return A * 8 / (pi ** 3 * ((1 / 4) - b**2)) * sum(
                     (-1) ** n
                     / (a * (2 * n + 1))
                     * np.cos((2 * n + 1) * pi * b)
                     * np.exp(-((2 * n + 1) ** 2 * t) / a)
-                )
+                    for n in range(nterms)
+        )
 
     @staticmethod
     @latexfun(identifiers={"impulse_kraijenhoff": "theta"})
