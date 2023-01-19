@@ -177,22 +177,28 @@ class RfuncBase:
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         """Method to return the impulse response function.
 
-        Parameters
-        ----------
-        t: array_like
-            array_like object with the times at which to evaluate the impulse
-            response, can be obtained with get_t() method
-        p: array_like
-            array_like object with the values as floats representing the model
-            parameters.
+            Parameters
+            ----------
+            t: array_like
+                array_like object with the times at which to evaluate the impulse
+                response, can be obtained with get_t() method
+            p: array_like
+                array_like object with the values as floats representing the model
+                parameters.
 
-        Returns
-        -------
-        s: array_like
-            Array with the impulse response.
+            Returns
+            -------
+            s: array_like
+                Array with the impulse response.
 
         Notes
         -----
+        The impulse response function for each response function class can be viewed on the
+        Documentation website or using `latexify` by running the following code in a
+        Jupyter notebook environment::
+
+            ps.RfuncName.impulse
+
         Only used for internal consistency checks
         """
 
@@ -336,11 +342,12 @@ class Exponential(RfuncBase):
 
     Notes
     -----
-    The impulse response function is:
+    The impulse response function for this class can be viewed on the Documentation
+    website or using `latexify` by running the following code in a Jupyter notebook
+    environment::
 
-    .. math:: \\theta(t) = A / a * e^{-t/a}
+        ps.Exponential.impulse
 
-    where A and a are parameters.
     """
 
     _name = "Exponential"
@@ -427,9 +434,11 @@ class HantushWellModel(RfuncBase):
 
     Notes
     -----
-    The impulse response function is:
+    The impulse response function for this class can be viewed on the Documentation
+    website or using `latexify` by running the following code in a Jupyter notebook
+    environment::
 
-    .. math:: \\theta(r, t) = \\frac{A}{2t} \\exp(-t/a - abr^2/t)
+        ps.HantushWellModel.impulse
 
     where r is the distance from the pumping well to the observation point and must
     be specified. A, a, and b are parameters, which are slightly different from the
@@ -695,13 +704,15 @@ class Hantush(RfuncBase):
 
     Notes
     -----
-    The impulse response function is:
+    Notes
+    -----
+    The impulse response function for this class can be viewed on the Documentation
+    website or using `latexify` by running the following code in a Jupyter notebook
+    environment::
 
-    .. math:: \\theta(t) = \\frac{A}{2t \\text{K}_0\\left(2\\sqrt{b} \\right)}
-              \\exp(-t/a - ab/t)
+        ps.Hantush.impulse
 
-    where A, a, and b are parameters. The implementation used here is explained in
-    :cite:t:`veling_hantush_2010`.
+    The implementation used here is explained in :cite:t:`veling_hantush_2010`.
 
     """
 
@@ -853,16 +864,14 @@ class Polder(RfuncBase):
 
     Notes
     -----
-    The Polder function is explained in Eq. 123.32 in
-    :cite:t:`bruggeman_analytical_1999`. The impulse response function may be written
-    as:
+    The impulse response function for this class can be viewed on the Documentation
+    website or using `latexify` by running the following code in a Jupyter notebook
+    environment::
 
-    .. math:: \\theta(t) = \\exp(-\\sqrt(4b)) \\frac{A}{t^{-3/2}}\\exp(-t/a -b/t)
-    .. math:: p[0] = A = \\exp(-x/\\lambda)
-    .. math:: p[1] = a = \\sqrt{\\frac{1}{cS}}
-    .. math:: p[2] = b = x^2 / (4 \\lambda^2)
+        ps.Polder.impulse
 
-    where :math:`\\lambda = \\sqrt{kDc}`
+    The function is explained in Eq. 123.32 in:cite:t:`bruggeman_analytical_1999`.
+
     """
 
     _name = "Polder"
@@ -1008,9 +1017,13 @@ class FourParam(RfuncBase):
 
     Notes
     -----
-    The impulse response function may be written as:
+    Notes
+    -----
+    The impulse response function for this class can be viewed on the Documentation
+    website or using `latexify` by running the following code in a Jupyter notebook
+    environment::
 
-    .. math:: \\theta(t) = At^{n-1} e^{-t/a -ab/t}
+        ps.FourParam.impulse
 
     """
 
@@ -1198,9 +1211,12 @@ class DoubleExponential(RfuncBase):
 
     Notes
     -----
-    The impulse response function may be written as:
+    The impulse response function for this class can be viewed on the Documentation
+    website or using `latexify` by running the following code in a Jupyter notebook
+    environment::
 
-    .. math:: \\theta(t) = A (1 - \\alpha) e^{-t/a_1} + A \\alpha e^{-t/a_2}
+        ps.DoubleExponential.impulse
+
     """
 
     _name = "DoubleExponential"
@@ -1289,14 +1305,15 @@ class Edelman(RfuncBase):
 
     Notes
     -----
-    The Edelman function is explained in :cite:t:`edelman_over_1947`. The impulse
-    response function may be written as:
+    The Edelman function is explained in :cite:t:`edelman_over_1947`.
 
-    .. math:: \\text{unknown}
+    The impulse response function for this class can be viewed on the Documentation
+    website or using `latexify` by running the following code in a Jupyter notebook
+    environment::
 
-    It's parameters are:
+        ps.Edelman.impulse
 
-    .. math:: p[0] = \\beta = \\frac{\\sqrt{\\frac{4kD}{S}}}{x}
+
     """
 
     _name = "Edelman"
@@ -1357,9 +1374,13 @@ class Kraijenhoff(RfuncBase):
     Notes
     -----
     The Kraijenhoff van de Leur function is explained in
-    :cite:t:`van_de_leur_study_1958`. The impulse response function may be written as:
+    :cite:t:`van_de_leur_study_1958`.
 
-    .. math:: \\theta(t) = \\frac{4}{\\pi S} \\sum_{n=1,3,5...}^\\infty \\frac{1}{n}e^{-n^2\\frac{t}{j}} \\sin (\\frac{n\\pi x}{L})
+    The impulse response function for this class can be viewed on the Documentation
+    website or using `latexify` by running the following code in a Jupyter notebook
+    environment::
+
+        ps.Kraijenhoff.impulse
 
     The function describes the response of a domain between two drainage channels.
     The function gives the same outcome as equation 133.15 in

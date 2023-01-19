@@ -246,11 +246,11 @@ texinfo_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/3/", None),
-    "numpy": ("https://numpy.org/devdocs/", None),
-    "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
-    "scipy": ("https://docs.scipy.org/doc/scipy/objects.inv", None),
-    "matplotlib": ("https://matplotlib.org/stable/objects.inv", None),
+    "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://numpy.org/devdocs", None),
+    "pandas": ("https://pandas.pydata.org/pandas-docs/stable", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy", None),
+    "matplotlib": ("https://matplotlib.org/stable", None),
 }
 
 # Allow errors in notebooks, so we can see the error online
