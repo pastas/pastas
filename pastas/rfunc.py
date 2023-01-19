@@ -170,10 +170,11 @@ class RfuncBase:
         s: array_like
             Array with the block response.
         """
-        s = self.step(p, dt, cutoff, maxtmax)
+        s = self.step(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
         return np.append(s[0], np.subtract(s[1:], s[:-1]))
 
-    def impulse(self, t: ArrayLike, p: ArrayLike) -> ArrayLike:
+    @staticmethod
+    def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         """Method to return the impulse response function.
 
         Parameters
@@ -244,12 +245,13 @@ class Gamma(RfuncBase):
 
     Notes
     -----
-    The impulse response function is:
+    The impulse response function for this class can be viewed on the
+    Documentation website or using `latexify` by running the following code in a
+    Jupyter notebook environment::
 
-    .. math:: \\theta(t) = At^{n-1} e^{-t/a} / (a^n Gamma(n))
+        ps.Gamma.impulse
 
-    where A, a, and n are parameters. The Gamma function is equal to the Exponential
-    function when n=1.
+    The Gamma function is equal to the Exponential function when n=1.
     """
 
     _name = "Gamma"
@@ -307,7 +309,7 @@ class Gamma(RfuncBase):
         cutoff: Optional[float] = None,
         maxtmax: Optional[int] = None,
     ) -> ArrayLike:
-        t = self.get_t(p, dt, cutoff, maxtmax)
+        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
         s = p[0] * gammainc(p[1], t / p[2])
         return s
 
@@ -394,7 +396,7 @@ class Exponential(RfuncBase):
         cutoff: Optional[float] = None,
         maxtmax: Optional[float] = None,
     ) -> ArrayLike:
-        t = self.get_t(p, dt, cutoff, maxtmax)
+        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
         s = p[0] * (1.0 - np.exp(-t / p[1]))
         return s
 
@@ -601,7 +603,7 @@ class HantushWellModel(RfuncBase):
     ) -> ArrayLike:
         A, a, b = p[:3]
         r = self._get_distance_from_params(p)
-        t = self.get_t(p, dt, cutoff, maxtmax)
+        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
 
         if self.quad:
             return self.quad_step(A, a, b, r, t)
@@ -817,7 +819,7 @@ class Hantush(RfuncBase):
         maxtmax: Optional[int] = None,
     ) -> ArrayLike:
         A, a, b = p
-        t = self.get_t(p, dt, cutoff, maxtmax)
+        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
 
         if self.quad:
             return self.quad_step(A, a, b, t)
@@ -903,7 +905,7 @@ class Polder(RfuncBase):
         cutoff: Optional[float] = None,
         maxtmax: Optional[int] = None,
     ) -> ArrayLike:
-        t = self.get_t(p, dt, cutoff, maxtmax)
+        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
         A, a, b = p
         s = A * self.polder_function(np.sqrt(b), np.sqrt(t / a))
         # / np.exp(-2 * np.sqrt(b))
@@ -1061,13 +1063,17 @@ class FourParam(RfuncBase):
     @staticmethod
     @latexfun(identifiers={"impulse": "theta", "k0": "K_0"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
-        # impulse for A=1
         A, n, a, b = p
         return (t ** (n - 1)) * np.exp(-t / a - a * b / t)
 
     def get_tmax(self, p: ArrayLike, cutoff: Optional[float] = None) -> float:
         if cutoff is None:
             cutoff = self.cutoff
+
+        # Because Model.get_response_tmax() provides parameters for the stressmodel,
+        # not only the response functions
+        if len(p) > 4:
+            p = p[:4]
 
         if self.quad:
             x = np.arange(1, 10000, 1)
@@ -1111,8 +1117,13 @@ class FourParam(RfuncBase):
         maxtmax: Optional[int] = None,
     ) -> ArrayLike:
 
+        # Because Model.get_response_tmax() provides parameters for the stressmodel,
+        # not only the response functions
+        if len(p) > 4:
+            p = p[:4]
+
         if self.quad:
-            t = self.get_t(p, dt, cutoff, maxtmax)
+            t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
             s = np.zeros_like(t)
             s[0] = quad(self.impulse, 0, dt, args=p)[0]
             for i in range(1, len(t)):
@@ -1131,7 +1142,7 @@ class FourParam(RfuncBase):
 
             if dt > 0.1:
                 step = 0.1  # step size for numerical integration
-                tmax = max(self.get_tmax(p, cutoff), 3 * dt)
+                tmax = max(self.get_tmax(p=p, cutoff=cutoff), 3 * dt)
                 t = np.arange(step, tmax, step)
                 s = np.zeros_like(t)
 
@@ -1151,7 +1162,7 @@ class FourParam(RfuncBase):
                 s = s * (p[0] / quad(self.impulse, 0, np.inf, args=p)[0])
                 return s[int(dt / step - 1) :: int(dt / step)]
             else:
-                t = self.get_t(p, dt, cutoff, maxtmax)
+                t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
                 s = np.zeros_like(t)
 
                 # for interval [0,dt] Gaussian quadrate:
@@ -1256,7 +1267,7 @@ class DoubleExponential(RfuncBase):
         cutoff: Optional[float] = None,
         maxtmax: Optional[int] = None,
     ) -> ArrayLike:
-        t = self.get_t(p, dt, cutoff, maxtmax)
+        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
         s = p[0] * (1 - ((1 - p[1]) * np.exp(-t / p[2]) + p[1] * np.exp(-t / p[3])))
         return s
 
@@ -1324,7 +1335,7 @@ class Edelman(RfuncBase):
         cutoff: Optional[float] = None,
         maxtmax: Optional[int] = None,
     ) -> ArrayLike:
-        t = self.get_t(p, dt, cutoff, maxtmax)
+        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
         s = erfc(1 / (p[0] * np.sqrt(t)))
         return s
 
@@ -1426,7 +1437,7 @@ class Kraijenhoff(RfuncBase):
         cutoff: Optional[float] = None,
         maxtmax: Optional[int] = None,
     ) -> ArrayLike:
-        t = self.get_t(p, dt, cutoff, maxtmax)
+        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
         h = 0
         for n in range(self.n_terms):
             h += (
@@ -1555,6 +1566,6 @@ class Spline(RfuncBase):
         maxtmax: Optional[int] = None,
     ) -> ArrayLike:
         f = interp1d(self.t, p[1 : len(self.t) + 1], kind=self.kind)
-        t = self.get_t(p, dt, cutoff, maxtmax)
+        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
         s = p[0] * f(t)
         return s
