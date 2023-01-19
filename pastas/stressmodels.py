@@ -81,9 +81,7 @@ class StressModelBase:
                     "instance (e.g., ps.One()), and not as a class (e.g., ps.One). "
                     "Please provide an instance of the response function."
                 )
-            rfunc._update_rfunc_settings(
-                up=up, meanstress=meanstress, cutoff=cutoff
-            )
+            rfunc._update_rfunc_settings(up=up, meanstress=meanstress, cutoff=cutoff)
         self.rfunc = rfunc
 
         self.parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
