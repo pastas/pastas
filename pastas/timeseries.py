@@ -254,7 +254,7 @@ class TimeSeries:
                     pass
                 else:
                     value = pd.Timestamp(value)
-            if value != self.settings[key]:
+            if (value != self.settings[key]) and (value is not None):
                 self.settings[key] = value
                 update = True
         return update
