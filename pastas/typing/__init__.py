@@ -2,7 +2,6 @@ from .types import (
     ArrayLike,
     Axes,
     CallBack,
-    Decorator,
     Figure,
     Function,
     Model,

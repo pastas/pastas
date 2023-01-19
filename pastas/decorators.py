@@ -2,7 +2,7 @@ from functools import wraps
 from logging import getLogger
 
 from typing import Optional, Dict
-from pastas.typing import Function, Decorator, TimestampType
+from pastas.typing import Function, TimestampType
 
 logger = getLogger(__name__)
 
@@ -14,7 +14,7 @@ def set_use_numba(b: bool) -> None:
     USE_NUMBA = b
 
 
-def set_parameter(function: Function) -> Decorator:
+def set_parameter(function: Function) -> Function:
     @wraps(function)
     def _set_parameter(self, name: str, value: float, **kwargs):
         if name not in self.parameters.index:
@@ -29,7 +29,7 @@ def set_parameter(function: Function) -> Decorator:
     return _set_parameter
 
 
-def get_stressmodel(function: Function):
+def get_stressmodel(function: Function) -> Function:
     @wraps(function)
     def _get_stressmodel(self, name: str, **kwargs):
         if name not in self.stressmodels.keys():
@@ -44,7 +44,7 @@ def get_stressmodel(function: Function):
     return _get_stressmodel
 
 
-def model_tmin_tmax(function: Function) -> Decorator:
+def model_tmin_tmax(function: Function) -> Function:
     @wraps(function)
     def _model_tmin_tmax(
         self,
@@ -63,7 +63,7 @@ def model_tmin_tmax(function: Function) -> Decorator:
     return _model_tmin_tmax
 
 
-def PastasDeprecationWarning(function: Function) -> Decorator:
+def PastasDeprecationWarning(function: Function) -> Function:
     @wraps(function)
     def _function(*args, **kwargs):
         logger.warning(
@@ -75,7 +75,7 @@ def PastasDeprecationWarning(function: Function) -> Decorator:
     return _function
 
 
-def njit(function: Optional[Function] = None, parallel: bool = False) -> Decorator:
+def njit(function: Optional[Function] = None, parallel: bool = False) -> Function:
     def njit_decorator(f: Function):
         try:
             if not USE_NUMBA:
@@ -99,8 +99,8 @@ def latexfun(
     identifiers: Optional[Dict[str, str]] = None,
     use_math_symbols: bool = True,
     use_raw_function_name: bool = False,
-) -> Decorator:
-    def latexify_decorator(f: Function):
+) -> Function:
+    def latexify_decorator(f: Function) -> Function:
         try:
             import latexify
 

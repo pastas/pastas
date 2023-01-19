@@ -177,19 +177,19 @@ class RfuncBase:
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         """Method to return the impulse response function.
 
-            Parameters
-            ----------
-            t: array_like
-                array_like object with the times at which to evaluate the impulse
-                response, can be obtained with get_t() method
-            p: array_like
-                array_like object with the values as floats representing the model
-                parameters.
+        Parameters
+        ----------
+        t: array_like
+            array_like object with the times at which to evaluate the impulse
+            response, can be obtained with get_t() method
+        p: array_like
+            array_like object with the values as floats representing the model
+            parameters.
 
-            Returns
-            -------
-            s: array_like
-                Array with the impulse response.
+        Returns
+        -------
+        s: array_like
+            Array with the impulse response.
 
         Notes
         -----
