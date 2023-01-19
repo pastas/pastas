@@ -23,6 +23,7 @@ from .rfunc import (
     Kraijenhoff,
     One,
     Polder,
+    Edelman,
     Spline,
 )
 from .solver import LeastSquares, LmfitSolve

@@ -93,7 +93,7 @@ Pastas
 - scipy>=1.3
 - numba>=0.51
 
-To install the most important optional dependencies (solvers such as LmFit) at the same time with Pastas use::
+To install the most important optional dependencies (solver LmFit and function visualisation Latexify) at the same time with Pastas use::
 
    pip install pastas[full]
 

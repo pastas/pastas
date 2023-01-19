@@ -81,9 +81,7 @@ class StressModelBase:
                     "instance (e.g., ps.One()), and not as a class (e.g., ps.One). "
                     "Please provide an instance of the response function."
                 )
-            rfunc._set_init_parameter_settings(
-                up=up, meanstress=meanstress, cutoff=cutoff
-            )
+            rfunc._update_rfunc_settings(up=up, meanstress=meanstress, cutoff=cutoff)
         self.rfunc = rfunc
 
         self.parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
@@ -1427,7 +1425,7 @@ class TarsoModel(RechargeModel):
         p0 = self.rfunc.get_init_parameters(self.name)
         one = One()
         meanstress = self.dmin + 0.5 * (self.dmax - self.dmin)
-        one._set_init_parameter_settings(meanstress=meanstress)
+        one._update_rfunc_settings(meanstress=meanstress)
         pd0 = one.get_init_parameters(self.name).squeeze()
         p0.loc[f"{self.name}_d"] = pd0
         p0.index = [f"{x}0" for x in p0.index]
@@ -1603,10 +1601,10 @@ class ChangeModel(StressModelBase):
                 " not as a class (e.g., ps.One). Please provide an instance."
             )
 
-        rfunc1._set_init_parameter_settings(up=up, cutoff=cutoff)
+        rfunc1._update_rfunc_settings(up=up, cutoff=cutoff)
         self.rfunc1 = rfunc1
 
-        rfunc2._set_init_parameter_settings(up=up, cutoff=cutoff)
+        rfunc2._update_rfunc_settings(up=up, cutoff=cutoff)
         self.rfunc2 = rfunc2
         self.tchange = Timestamp(tchange)
 
