@@ -11,7 +11,7 @@ def test_summary():
     ps.stats.signatures.summary(head)
 
 
-def test_colwell_components():
+def collwell_data():
     """Example Tree C from the publication."""
     n = 9
     x = (
@@ -21,26 +21,31 @@ def test_colwell_components():
     )
     y = [1] * n + [2] * n + [3] * n
     obs = pd.Series(y, index=pd.to_datetime(x))
-    ps.stats.signatures.colwell_components(obs, freq="4M", bins=3)
     return obs
+
+
+def test_colwell_components():
+    obs = collwell_data()
+    ps.stats.signatures.colwell_components(obs, freq="4M", bins=3)
+    return
 
 
 def test_colwell_predictability():
     """Example Tree C from the publication."""
-    obs = test_colwell_components()
+    obs = collwell_data()
     p = ps.stats.signatures.colwell_components(obs, freq="4M", bins=3)[0]
     assert p.round(2) == 1.0
 
 
 def test_colwell_constancy():
     """Example Tree C from the publication."""
-    obs = test_colwell_components()
+    obs = collwell_data()
     c = ps.stats.signatures.colwell_components(obs, freq="4M", bins=3)[1]
     assert c.round(2) == 0.42
 
 
 def test_colwell_contingency():
     """Example Tree C from the publication."""
-    obs = test_colwell_components()
+    obs = collwell_data()
     m = ps.stats.signatures.colwell_components(obs, freq="4M", bins=3)[2]
     assert m.round(2) == 0.58
