@@ -173,7 +173,7 @@ class RfuncBase:
         s = self.step(p, dt, cutoff, maxtmax)
         return np.append(s[0], np.subtract(s[1:], s[:-1]))
 
-    def impulse(self, t: ArrayLike, p: ArrayLike, **kwargs) -> ArrayLike:
+    def impulse(self, t: ArrayLike, p: ArrayLike) -> ArrayLike:
         """Method to return the impulse response function.
 
         Parameters
@@ -184,8 +184,6 @@ class RfuncBase:
         p: array_like
             array_like object with the values as floats representing the model
             parameters.
-        kwargs: dict
-            optional arguments
 
         Returns
         -------
@@ -1064,7 +1062,8 @@ class FourParam(RfuncBase):
     @latexfun(identifiers={"impulse": "theta", "k0": "K_0"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         # impulse for A=1
-        _, n, a, b = p
+        n, a, b = p
+        A = 1
         return (t ** (n - 1)) * np.exp(-t / a - a * b / t)
 
     def get_tmax(self, p: ArrayLike, cutoff: Optional[float] = None) -> float:
@@ -1442,8 +1441,9 @@ class Kraijenhoff(RfuncBase):
 
     @staticmethod
     @latexfun(identifiers={"impulse": "theta"})
-    def impulse(t: ArrayLike, p: ArrayLike, nterms: int = 10) -> ArrayLike:
+    def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         A, a, b = p
+        nterms = 10
         return (
             A
             * 8
