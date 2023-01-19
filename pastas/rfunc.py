@@ -1074,7 +1074,7 @@ class FourParam(RfuncBase):
         return parameters
 
     @staticmethod
-    @latexfun(identifiers={"impulse": "theta", "k0": "K_0"})
+    @latexfun(identifiers={"impulse": "theta"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         A, n, a, b = p
         return (t ** (n - 1)) * np.exp(-t / a - a * b / t)
