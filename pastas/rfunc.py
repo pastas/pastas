@@ -60,13 +60,21 @@ class RfuncBase:
         self.cutoff = cutoff
         self.kwargs = kwargs
 
-    def _set_init_parameter_settings(
+    def _update_rfunc_settings(
         self, up: bool = True, meanstress: float = 1.0, cutoff: float = 0.999
     ) -> None:
+        """Internal method to set the settings of the response function.
+
+        Parameters
+        ----------
+        up
+        meanstress
+        cutoff
+
+        """
         self.up = up
-        # Completely arbitrary number to prevent division by zero
         if 1e-8 > meanstress > 0:
-            meanstress = 1e-8
+            meanstress = 1e-8  # arbitrary number to prevent division by zero
         elif meanstress < 0 and up is True:
             meanstress = meanstress * -1
         self.meanstress = meanstress
