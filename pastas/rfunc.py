@@ -67,9 +67,14 @@ class RfuncBase:
 
         Parameters
         ----------
-        up
-        meanstress
-        cutoff
+        up: bool or None, optional
+            indicates whether a positive stress will cause the head to go up (True,
+            default) or down (False), if None the head can go both ways.
+        meanstress: float, optional
+            mean value of the stress, used to set the initial value such that the final
+            step times the mean stress equals 1.
+        cutoff: float, optional
+            proportion after which the step function is cut off. default is 0.999.
 
         """
         self.up = up
@@ -104,7 +109,7 @@ class RfuncBase:
             array_like object with the values as floats representing the model
             parameters.
         cutoff: float, optional
-            float between 0 and 1.
+            proportion after which the step function is cut off. default is 0.999.
 
         Returns
         -------
@@ -131,7 +136,7 @@ class RfuncBase:
         dt: float
             timestep as a multiple of one day.
         cutoff: float, optional
-            float between 0 and 1.
+            proportion after which the step function is cut off. default is 0.999.
         maxtmax: int, optional
             Maximum timestep to compute the block response for.
 
@@ -159,7 +164,7 @@ class RfuncBase:
         dt: float
             timestep as a multiple of one day.
         cutoff: float, optional
-            float between 0 and 1.
+            proportion after which the step function is cut off.
         maxtmax: int, optional
             Maximum timestep to compute the block response for.
 
@@ -182,7 +187,7 @@ class RfuncBase:
         dt: float
             timestep as a multiple of one day.
         cutoff: float, optional
-            float between 0 and 1.
+            proportion after which the step function is cut off.
         maxtmax: int, optional
             Maximum timestep to compute the block response for.
 
@@ -211,8 +216,7 @@ class RfuncBase:
         dt: float
             timestep as a multiple of one day.
         cutoff: float
-            A float between 0 and 1, that determines which part of the step response
-            is taken into account.
+            proportion after which the step function is cut off.
         maxtmax: float, optional
             The maximum time of the response, usually set to the simulation length.
 
@@ -239,11 +243,11 @@ class Gamma(RfuncBase):
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
-    meanstress: float
+    meanstress: float, optional
         mean value of the stress, used to set the initial value such that the final
         step times the mean stress equals 1.
-    cutoff: float
-        proportion after which the step function is cut off. default is 0.999.
+    cutoff: float, optional
+        proportion after which the step function is cut off.
 
     Notes
     -----
@@ -329,11 +333,11 @@ class Exponential(RfuncBase):
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
-    meanstress: float
+    meanstress: float, optional
         mean value of the stress, used to set the initial value such that the final
         step times the mean stress equals 1.
-    cutoff: float
-        proportion after which the step function is cut off. default is 0.999.
+    cutoff: float, optional
+        proportion after which the step function is cut off.
 
     Notes
     -----
@@ -416,11 +420,15 @@ class HantushWellModel(RfuncBase):
     up: bool, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False).
-    meanstress: float
+    meanstress: float, optional
         mean value of the stress, used to set the initial value such that the final
         step times the mean stress equals 1.
-    cutoff: float
-        proportion after which the step function is cut off. Default is 0.999.
+    cutoff: float, optional
+        proportion after which the step function is cut off.
+    use_numba: bool, optional
+        Use the method 'numba_step' to compute the step_response.
+    quad: bool, optional
+        Use the method 'numba_quad' to compute the step_response.
 
     Notes
     -----
@@ -680,11 +688,15 @@ class Hantush(RfuncBase):
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
-    meanstress: float
+    meanstress: float, optional
         mean value of the stress, used to set the initial value such that the final
         step times the mean stress equals 1.
-    cutoff: float
-        proportion after which the step function is cut off. default is 0.999.
+    cutoff: float, optional
+        proportion after which the step function is cut off.
+    use_numba: bool, optional
+        Use the method 'numba_step' to compute the step_response.
+    quad: bool, optional
+        Use the method 'numba_quad' to compute the step_response.
 
     Notes
     -----
@@ -833,6 +845,17 @@ class Hantush(RfuncBase):
 class Polder(RfuncBase):
     """The Polder function, using the standard A, a, b parameters.
 
+    Parameters
+    ----------
+    up: bool or None, optional
+        indicates whether a positive stress will cause the head to go up (True,
+        default) or down (False), if None the head can go both ways.
+    meanstress: float, optional
+        mean value of the stress, used to set the initial value such that the final
+        step times the mean stress equals 1.
+    cutoff: float, optional
+        proportion after which the step function is cut off.
+
     Notes
     -----
     The Polder function is explained in Eq. 123.32 in
@@ -917,11 +940,12 @@ class One(RfuncBase):
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True) or
         down (False), if None (default) the head can go both ways.
-    meanstress: float
+    meanstress: float, optional
         mean value of the stress, used to set the initial value such that the final
         step times the mean stress equals 1.
-    cutoff: float
-        proportion after which the step function is cut off. default is 0.999.
+    cutoff: float, optional
+        proportion after which the step function is cut off. Has no influence for
+        this response function.
     """
 
     _name = "One"
@@ -978,11 +1002,14 @@ class FourParam(RfuncBase):
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
-    meanstress: float
+    meanstress: float, optional
         mean value of the stress, used to set the initial value such that the final
         step times the mean stress equals 1.
-    cutoff: float
-        proportion after which the step function is cut off. default is 0.999.
+    cutoff: float, optional
+        proportion after which the step function is cut off.
+    quad: bool, optional
+        If true, use the 'quad' method from scipy.integrate to integrate the impulse
+        response function. This may be more accurate but increases computation times.
 
     Notes
     -----
@@ -990,9 +1017,6 @@ class FourParam(RfuncBase):
 
     .. math:: \\theta(t) = At^{n-1} e^{-t/a -ab/t}
 
-    If Fourparam.quad is set to True, this response function uses np.quad to
-    integrate the Four Parameter response function, which requires more calculation
-    time.
     """
 
     _name = "FourParam"
@@ -1162,11 +1186,11 @@ class DoubleExponential(RfuncBase):
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
-    meanstress: float
+    meanstress: float, optional
         mean value of the stress, used to set the initial value such that the final
-        step times the mean stress equals 1
-    cutoff: float
-        proportion after which the step function is cut off. default is 0.999.
+        step times the mean stress equals 1.
+    cutoff: float, optional
+        proportion after which the step function is cut off.
 
     Notes
     -----
@@ -1253,11 +1277,11 @@ class Edelman(RfuncBase):
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
-    meanstress: float
+    meanstress: float, optional
         mean value of the stress, used to set the initial value such that the final
         step times the mean stress equals 1.
-    cutoff: float
-        proportion after which the step function is cut off. default is 0.999.
+    cutoff: float, optional
+        proportion after which the step function is cut off.
 
     Notes
     -----
@@ -1320,11 +1344,11 @@ class Kraijenhoff(RfuncBase):
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
-    meanstress: float
+    meanstress: float, optional
         mean value of the stress, used to set the initial value such that the final
         step times the mean stress equals 1.
-    cutoff: float
-        proportion after which the step function is cut off. default is 0.999.
+    cutoff: float, optional
+        proportion after which the step function is cut off.
 
     Notes
     -----
@@ -1464,16 +1488,16 @@ class Spline(RfuncBase):
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
-    meanstress: float
+    meanstress: float, optional
         mean value of the stress, used to set the initial value such that the final
         step times the mean stress equals 1.
-    cutoff: float
+    cutoff: float, optional
         proportion after which the step function is cut off. default is 0.999. this
-        parameter is ignored by Points.
-    kind: string
+        parameter has no influence for this response function.
+    kind: string, optional
         see scipy.interpolate.interp1d. Most useful for a smooth response function
         are 'quadratic' and 'cubic'.
-    t: list
+    t: list, optional
         times at which the response function is defined.
 
     Notes
