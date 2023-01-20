@@ -10,6 +10,8 @@ from pandas import Index, Series, Timedelta, Timestamp, date_range
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
 
+from .decorators import njit
+
 logger = logging.getLogger(__name__)
 
 
@@ -188,64 +190,102 @@ def get_sample(tindex: Index, ref_tindex: Index) -> Index:
         return tindex[ind]
 
 
-def timestep_weighted_resample(series0: Series, tindex: Index) -> Series:
-    """Resample a time series to a new time index, using an overlapping period
-    weighted average.
+def timestep_weighted_resample(s: Series, index: Index, fast: bool = True) -> Series:
+    """Resample a time series to a new time index, using an overlapping period weighted
+    average.
 
-    The original series and the new tindex do not have to be equidistant. Also,
-    the timestep-edges of the new tindex do not have to overlap with the
-    original series.
+    The original series and the new index do not have to be equidistant. Also, the
+    timestep-edges of the new index do not have to overlap with the original series.
 
-    It is assumed the series consists of measurements that describe a flux
-    intensity at the end of the period for which they apply. Therefore, when
-    upsampling, the values are uniformly spread over the new timestep (like
-    bfill).
+    It is assumed the series consists of measurements that describe a flux intensity
+    that for each record starts at the previous index and ends at its own index. So the
+    index of the Series describe the end of the period that each measurements descibes.
+
+    When upsampling, the values are uniformly spread over the new timestep (like bfill).
+    When downsampling, the values are aggregated to the new index. When the start and
+    end of the new index do not overlap with the series (eg: resample pecipitation from
+    9:00 to 0:00), new values are calculated by combining original measurements.
 
     Compared to the resample methods in Pandas, this method is more accurate for
-    non-equidistant series. It is much slower however.
+    non-equidistant series.
 
     Parameters
     ----------
-    series0 : pandas.Series
+    s : pandas.Series
         The original series to be resampled
-    tindex : pandas.index
+    index : pandas.index
         The index to which to resample the series
 
     Returns
     -------
-    series : pandas.Series
+    s_new : pandas.Series
         The resampled series
     """
+    dt = _get_dt_array(s.index)
 
-    # determine some arrays for the input-series
-    t0e = np.array(series0.index)
-    dt0 = np.diff(t0e)
-    dt0 = np.hstack((dt0[0], dt0))
-    t0s = t0e - dt0
-    v0 = series0.values
+    if fast:
+        if s.isna().any():
+            raise Exception("s cannot contain NaN values when fast=True")
 
-    # determine some arrays for the output-series
-    t1e = np.array(tindex)
-    dt1 = np.diff(t1e)
-    dt1 = np.hstack((dt1[0], dt1))
-    t1s = t1e - dt1
-    v1 = []
-    for t1si, t1ei in zip(t1s, t1e):
+        # first mutiply by the timestep
+        s_new = s * dt
+
+        # calculate the cumulative sum
+        s_new = s_new.cumsum()
+
+        # add NaNs at none-existing values in series at index
+        s_new = s_new.combine_first(Series(np.NaN, index))
+
+        # interpolate these NaN's, only keep values at index
+        s_new = s_new.interpolate("time")[index]
+
+        # calculate the diff again (inverse of cumsum)
+        s_new = s_new.diff()
+
+        # devide by the timestep again
+        s_new = s_new / _get_dt_array(s_new.index)
+
+        # set values after the end of the original series to NaN
+        s_new[s_new.index > s.index[-1]] = np.NaN
+    else:
+        t_e = s.index.asi8
+        t_s = t_e - dt
+        v = s.values
+        t_new = index.asi8
+        v_new = _ts_resample_slow(t_s, t_e, v, t_new)
+        s_new = Series(v_new, index)
+
+    return s_new
+
+
+def _get_dt_array(index):
+    dt = np.diff(index.asi8)
+    # assume the first value has an equal timestep as the second value
+    dt = np.hstack((dt[0], dt))
+    return dt
+
+
+@njit
+def _ts_resample_slow(t_s, t_e, v, t_new):
+    v_new = np.full(t_new.shape, np.NaN)
+    for i in range(1, len(t_new)):
+        t_s_new = t_new[i - 1]
+        t_e_new = t_new[i]
+        if t_s_new < t_s[0] or t_e_new > t_e[-1]:
+            continue
         # determine which periods within the series are within the new tindex
-        mask = (t0e > t1si) & (t0s < t1ei)
-        if np.any(mask):
-            # cut by the timestep-edges
-            ts = t0s[mask]
-            te = t0e[mask]
-            ts[ts < t1si] = t1si
-            te[te > t1ei] = t1ei
-            # determine timestep
-            dt = (te - ts).astype(float)
-            # determine timestep-weighted value
-            v1.append(np.sum(dt * v0[mask]) / np.sum(dt))
-    # replace all values in the series
-    series = Series(v1, index=tindex)
-    return series
+        mask = (t_e > t_s_new) & (t_s < t_e_new)
+        if not np.any(mask):
+            continue
+        ts = t_s[mask]
+        te = t_e[mask]
+        ts[ts < t_s_new] = t_s_new
+        te[te > t_e_new] = t_e_new
+        # determine timestep
+        dt = te - ts
+        # determine timestep-weighted value
+        v_new[i] = np.sum(dt * v[mask]) / np.sum(dt)
+    return v_new
 
 
 def get_equidistant_series(
