@@ -24,26 +24,26 @@ obs = (
 temp = Series(index=evap.index, data=sin(arange(evap.size) / 365 * 6), dtype=float)
 
 
-def test_create_rechargemodel():
+def create_rechargemodel():
     rm = ps.RechargeModel(prec=rain, evap=evap)
     return rm
 
 
-def test_default_model():
+def default_model():
     ml = ps.Model(obs, name="rch_model")
-    rm = test_create_rechargemodel()
+    rm = create_rechargemodel()
     ml.add_stressmodel(rm)
     return ml
 
 
 def test_model_solve():
-    ml = test_default_model()
+    ml = default_model()
     ml.solve()
     return
 
 
 def test_model_copy():
-    ml = test_default_model()
+    ml = default_model()
     ml.copy()
     return
 

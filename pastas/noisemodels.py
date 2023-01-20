@@ -29,7 +29,6 @@ from pandas import DataFrame, Series, Timedelta
 from pastas.typing import ArrayLike
 
 from .decorators import njit, set_parameter
-from .version import check_numba
 
 __all__ = ["NoiseModel", "ArmaModel"]
 
@@ -217,7 +216,6 @@ class ArmaModel(NoiseModelBase):
     _name = "ArmaModel"
 
     def __init__(self) -> None:
-        check_numba()
         NoiseModelBase.__init__(self)
         self.nparam = 2
         self.set_init_parameters()

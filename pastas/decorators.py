@@ -1,12 +1,22 @@
 from functools import wraps
 from logging import getLogger
 
+from typing import Optional, Dict
+from pastas.typing import Function, TimestampType
+
 logger = getLogger(__name__)
 
+USE_NUMBA = True
 
-def set_parameter(function):
+
+def set_use_numba(b: bool) -> None:
+    global USE_NUMBA
+    USE_NUMBA = b
+
+
+def set_parameter(function: Function) -> Function:
     @wraps(function)
-    def _set_parameter(self, name, value, **kwargs):
+    def _set_parameter(self, name: str, value: float, **kwargs):
         if name not in self.parameters.index:
             logger.error(
                 "Parameter name %s does not exist, please choose from %s",
@@ -19,9 +29,9 @@ def set_parameter(function):
     return _set_parameter
 
 
-def get_stressmodel(function):
+def get_stressmodel(function: Function) -> Function:
     @wraps(function)
-    def _get_stressmodel(self, name, **kwargs):
+    def _get_stressmodel(self, name: str, **kwargs):
         if name not in self.stressmodels.keys():
             logger.error(
                 "The stressmodel name you provided is not in the stressmodels dict. "
@@ -34,9 +44,15 @@ def get_stressmodel(function):
     return _get_stressmodel
 
 
-def model_tmin_tmax(function):
+def model_tmin_tmax(function: Function) -> Function:
     @wraps(function)
-    def _model_tmin_tmax(self, tmin=None, tmax=None, *args, **kwargs):
+    def _model_tmin_tmax(
+        self,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+        *args,
+        **kwargs
+    ):
         if tmin is None:
             tmin = self.ml.settings["tmin"]
         if tmax is None:
@@ -47,7 +63,7 @@ def model_tmin_tmax(function):
     return _model_tmin_tmax
 
 
-def PastasDeprecationWarning(function):
+def PastasDeprecationWarning(function: Function) -> Function:
     @wraps(function)
     def _function(*args, **kwargs):
         logger.warning(
@@ -59,13 +75,16 @@ def PastasDeprecationWarning(function):
     return _function
 
 
-def njit(function=None, parallel=False):
-    def njit_decorator(f):
+def njit(function: Optional[Function] = None, parallel: bool = False) -> Function:
+    def njit_decorator(f: Function):
         try:
-            from numba import njit
+            if not USE_NUMBA:
+                return f
+            else:
+                from numba import njit
 
-            fnumba = njit(f, parallel=parallel)
-            return fnumba
+                fnumba = njit(f, parallel=parallel)
+                return fnumba
         except ImportError:
             return f
 
@@ -73,3 +92,29 @@ def njit(function=None, parallel=False):
         return njit_decorator(function)
 
     return njit_decorator
+
+
+def latexfun(
+    function: Optional[Function] = None,
+    identifiers: Optional[Dict[str, str]] = None,
+    use_math_symbols: bool = True,
+    use_raw_function_name: bool = False,
+) -> Function:
+    def latexify_decorator(f: Function) -> Function:
+        try:
+            import latexify
+
+            flatex = latexify.function(
+                f,
+                identifiers=identifiers,
+                use_math_symbols=use_math_symbols,
+                use_raw_function_name=use_raw_function_name,
+            )
+            return flatex
+        except ImportError:
+            return f
+
+    if function:
+        return latexify_decorator(function)
+
+    return latexify_decorator

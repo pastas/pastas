@@ -26,6 +26,7 @@ dependencies = [
     "matplotlib >= 3.1",
     "pandas >= 1.1",
     "scipy >= 1.8",
+    "numba >= 0.51",
 ]
 
 keywords = ["hydrology", "groundwater", "timeseries", "analysis"]
@@ -47,7 +48,7 @@ repository = "https://github.com/pastas/pastas"
 documentation = "https://pastas.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
-full = ["numba >= 0.51", "lmfit >= 1.0.0"]
+full = ["lmfit >= 1.0.0", "latexify-py"]
 ci = [
     "pastas[full]",
     "jupyter",

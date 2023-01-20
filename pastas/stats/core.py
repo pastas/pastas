@@ -29,7 +29,6 @@ from scipy.stats import norm
 from pastas.typing import ArrayLike
 
 from ..decorators import njit
-from ..version import check_numba
 
 
 def acf(
@@ -168,11 +167,6 @@ def ccf(
         alpha), and the number of samples n used to compute these, respectively. If
         full_output=False, only the CCF is returned.
 
-    Notes
-    -----
-    This method will be significantly faster when Numba is installed. Check out the [
-    Numba project here](https://numba.pydata.org)
-
     Examples
     --------
     >>> ccf = ps.stats.ccf(x, y, bin_method="gaussian")
@@ -199,12 +193,10 @@ def ccf(
     if bin_method == "rectangle":
         if bin_width is None:
             bin_width = 0.5 * dt_mu
-        check_numba()
         c, b = _compute_ccf_rectangle(lags, t_x, x, t_y, y, bin_width)
     elif bin_method == "gaussian":
         if bin_width is None:
             bin_width = 0.25 * dt_mu
-        check_numba()
         c, b = _compute_ccf_gaussian(lags, t_x, x, t_y, y, bin_width)
     elif bin_method == "regular":
         c, b = _compute_ccf_regular(arange(1.0, len(lags) + 1), x, y)
