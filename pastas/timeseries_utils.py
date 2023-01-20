@@ -190,21 +190,21 @@ def get_sample(tindex: Index, ref_tindex: Index) -> Index:
         return tindex[ind]
 
 
-def timestep_weighted_resample(s: Series, index: Index, fast: bool = True) -> Series:
-    """Resample a time series to a new time index, using an overlapping period weighted
-    average.
+def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> Series:
+    """Resample a time series to a new time index, using an overlapping period
+    weighted average.
 
     The original series and the new index do not have to be equidistant. Also, the
     timestep-edges of the new index do not have to overlap with the original series.
 
     It is assumed the series consists of measurements that describe a flux intensity
     that for each record starts at the previous index and ends at its own index. So the
-    index of the Series describe the end of the period that each measurements descibes.
+    index of the series describes the end of the period for a given measurement.
 
     When upsampling, the values are uniformly spread over the new timestep (like bfill).
     When downsampling, the values are aggregated to the new index. When the start and
-    end of the new index do not overlap with the series (eg: resample pecipitation from
-    9:00 to 0:00), new values are calculated by combining original measurements.
+    end of the new index do not overlap with the series (eg: resampling pecipitation
+    from 9:00 to 0:00), new values are calculated by combining original measurements.
 
     Compared to the resample methods in Pandas, this method is more accurate for
     non-equidistant series.
@@ -215,6 +215,8 @@ def timestep_weighted_resample(s: Series, index: Index, fast: bool = True) -> Se
         The original series to be resampled
     index : pandas.index
         The index to which to resample the series
+    fast : bool, optional
+        use fast implementation, default is False
 
     Returns
     -------
@@ -288,7 +290,7 @@ def _ts_resample_slow(t_s, t_e, v, t_new):
     return v_new
 
 
-def get_equidistant_series(
+def get_equidistant_series_nearest(
     series: Series, freq: str, minimize_data_loss: bool = False
 ) -> Series:
     """Get equidistant time series using nearest reindexing.
@@ -398,7 +400,8 @@ def get_equidistant_series(
 
 
 def pandas_equidistant_sample(series: Series, freq: str) -> Series:
-    """Create equidistant time series creating a new DateTimeIndex with pandas.reindex.
+    """Create equidistant time series creating a new DateTimeIndex with
+    pandas.reindex.
 
     Note: function attempts to pick an offset relative to freq such that the maximum
     number of observations is included in the sample.
@@ -430,9 +433,11 @@ def pandas_equidistant_sample(series: Series, freq: str) -> Series:
 def pandas_equidistant_nearest(
     series: Series, freq: str, tolerance: Optional[str] = None
 ) -> Series:
-    """Create equidistant time series using pandas.reindex with method='nearest'.
+    """Create equidistant time series using pandas.reindex with
+    method='nearest'.
 
-    Note: this method can introduce duplicate observations.
+    Note: this method will shift observations in time and can introduce duplicate
+    observations.
 
     Parameters
     ----------
@@ -460,10 +465,12 @@ def pandas_equidistant_nearest(
 
 
 def pandas_equidistant_asfreq(series: Series, freq: str) -> Series:
-    """Create equidistant time series by rounding timestamps and dropping duplicates.
+    """Create equidistant time series by rounding timestamps and dropping
+    duplicates.
 
     Note: this method rounds all timestamps down to the nearest "freq" then drops
-    duplicates by keeping the first entry.
+    duplicates by keeping the first entry. This means observations are shifted in
+    time.
 
     Parameters
     ----------
