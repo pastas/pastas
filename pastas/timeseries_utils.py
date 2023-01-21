@@ -6,7 +6,7 @@ import logging
 from typing import Optional
 
 import numpy as np
-from pandas import Index, Series, Timedelta, Timestamp, date_range
+from pandas import Index, Series, Timedelta, Timestamp, date_range, api
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
 
@@ -228,6 +228,8 @@ def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> S
     if fast:
         if s.isna().any():
             raise Exception("s cannot contain NaN values when fast=True")
+        if not api.types.is_float_dtype(s):
+            raise Exception("s must be of dtype float")
 
         # first mutiply by the timestep
         s_new = s * dt
