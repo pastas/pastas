@@ -712,6 +712,9 @@ class Model:
 
         # Prepare model if not fitting the constant as a parameter
         if self.settings["fit_constant"] is False:
+            if self.transform is not None:
+                msg = "fit_constant needs to be True (for now) when a transform is used"
+                raise Exception(msg)
             self.parameters.loc["constant_d", "vary"] = False
             self.parameters.loc["constant_d", "initial"] = 0.0
             self.normalize_residuals = True
