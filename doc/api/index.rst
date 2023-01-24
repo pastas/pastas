@@ -10,7 +10,6 @@ left-hand menu you will find the different categories of the API documentation.
 .. autosummary::
     :toctree: ./generated
     :nosignatures:
-    :recursive:
 
     model.Model
     stressmodels

@@ -20,7 +20,9 @@ import requests
 
 year = date.today().strftime("%Y")
 
-os.environ["MPLBACKEND"] = "Agg"
+from matplotlib import use
+
+use("agg")
 
 from dataclasses import dataclass, field
 import sphinxcontrib.bibtex.plugin
@@ -120,6 +122,7 @@ autosummary_generate = True
 numpydoc_class_members_toctree = True
 numpydoc_show_class_members = False
 autoclass_content = "class"
+
 
 # If true, links to the reST sources are added to the pages.
 # html_show_sourcelink = True

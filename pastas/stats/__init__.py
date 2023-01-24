@@ -1,5 +1,18 @@
 """The stats sub-package contains statistical methods for Pastas.
 
+.. currentmodule:: pastas.stats
+
+.. autosummary::
+    :toctree: ./generated
+    :nosignatures:
+
+    core
+    metrics
+    dutch
+    sgi
+    signatures
+    tests
+
 """
 
 import pastas.stats.metrics as metrics
