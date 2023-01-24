@@ -8,12 +8,12 @@ from pandas import Series
 from pandas.tseries.frequencies import to_offset
 
 from pastas.rcparams import rcParams
-from pastas.utils import (
+from pastas.timeseries_utils import (
     _get_dt,
     _get_time_offset,
     timestep_weighted_resample,
-    validate_name,
 )
+from pastas.utils import validate_name
 
 logger = getLogger(__name__)
 
