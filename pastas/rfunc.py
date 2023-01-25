@@ -655,7 +655,7 @@ class HantushWellModel(RfuncBase):
         var_A: float,
         var_b: float,
         cov_Ab: float,
-        r: Optional[float] = 1.0,
+        r: float = 1.0,
     ) -> Union[float, ArrayLike]:
         """Calculate variance of the gain from parameters A and b.
 
