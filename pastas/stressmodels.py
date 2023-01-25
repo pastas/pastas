@@ -1,7 +1,7 @@
 """This module contains all the stress models available in Pastas.
 
-Stress models are used to translate an input time series into a
-contribution that explains (part of) the output series.
+Stress models are used to translate an input time series into contribution that
+explains (part of) the output series.
 
 Examples
 --------
@@ -67,7 +67,7 @@ class StressModelBase:
         tmax: TimestampType,
         rfunc: Optional[RFunc] = None,
         up: bool = True,
-        meanstress: float = 1.0,
+        gain_scale_factor: float = 1.0,
         cutoff: float = 0.999,
     ) -> None:
         self.name = validate_name(name)
@@ -81,7 +81,9 @@ class StressModelBase:
                     "instance (e.g., ps.One()), and not as a class (e.g., ps.One). "
                     "Please provide an instance of the response function."
                 )
-            rfunc._update_rfunc_settings(up=up, meanstress=meanstress, cutoff=cutoff)
+            rfunc._update_rfunc_settings(
+                up=up, gain_scale_factor=gain_scale_factor, cutoff=cutoff
+            )
         self.rfunc = rfunc
 
         self.parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
@@ -299,9 +301,9 @@ class StressModel(StressModelBase):
     metadata: dict, optional
         dictionary containing metadata about the stress. This is passed onto the
         TimeSeries object.
-    meanstress: float, optional
-        The mean stress determines the initial parameters of rfunc. The initial
-        parameters are chosen in such a way that the gain of meanstress is 1.
+    gain_scale_factor: float, optional
+        the scale factor is used to set the initial value and the bounds of the gain
+        parameter, computed as 1 / gain_scale_factor.
 
     Examples
     --------
@@ -327,7 +329,7 @@ class StressModel(StressModelBase):
         cutoff: float = 0.999,
         settings: Optional[Union[dict, str]] = None,
         metadata: Optional[dict] = None,
-        meanstress: Optional[float] = None,
+        gain_scale_factor: Optional[float] = None,
     ) -> None:
 
         if isinstance(stress, list):
@@ -335,8 +337,8 @@ class StressModel(StressModelBase):
 
         stress = TimeSeries(stress, settings=settings, metadata=metadata)
 
-        if meanstress is None:
-            meanstress = stress.series.std()
+        if gain_scale_factor is None:
+            gain_scale_factor = stress.series.std()
 
         StressModelBase.__init__(
             self,
@@ -345,7 +347,7 @@ class StressModel(StressModelBase):
             tmax=stress.series.index.max(),
             rfunc=rfunc,
             up=up,
-            meanstress=meanstress,
+            gain_scale_factor=gain_scale_factor,
             cutoff=cutoff,
         )
         self.freq = stress.settings["freq"]
@@ -399,8 +401,8 @@ class StressModel(StressModelBase):
         Returns
         -------
         data: dict
-            dictionary with all necessary information to reconstruct the
-            StressModel object.
+            dictionary with all necessary information to reconstruct the StressModel
+            object.
         """
         data = {
             "stressmodel": self._name,
@@ -733,7 +735,7 @@ class WellModel(StressModelBase):
                 index=[s.name for s in stress], data=distances, name="distances"
             )
 
-        meanstress = np.max([s.series.std() for s in stress])
+        gain_scale_factor = np.max([s.series.std() for s in stress])
 
         tmin = np.min([s.series.index.min() for s in stress])
         tmax = np.max([s.series.index.max() for s in stress])
@@ -745,7 +747,7 @@ class WellModel(StressModelBase):
             tmax=tmax,
             rfunc=rfunc,
             up=up,
-            meanstress=meanstress,
+            gain_scale_factor=gain_scale_factor,
             cutoff=cutoff,
         )
         self.rfunc.set_distances(self.distances.values)
@@ -1089,7 +1091,7 @@ class RechargeModel(StressModelBase):
 
         # Calculate initial recharge estimation for initial rfunc parameters
         p = self.recharge.get_init_parameters().initial.values
-        meanstress = self.get_stress(
+        gain_scale_factor = self.get_stress(
             p=p, tmin=index.min(), tmax=index.max(), freq=self.prec.settings["freq"]
         ).std()
 
@@ -1100,7 +1102,7 @@ class RechargeModel(StressModelBase):
             tmax=index.max(),
             rfunc=rfunc,
             up=True,
-            meanstress=meanstress,
+            gain_scale_factor=gain_scale_factor,
             cutoff=cutoff,
         )
 
@@ -1424,8 +1426,8 @@ class TarsoModel(RechargeModel):
         # parameters for the first drainage level
         p0 = self.rfunc.get_init_parameters(self.name)
         one = One()
-        meanstress = self.dmin + 0.5 * (self.dmax - self.dmin)
-        one._update_rfunc_settings(meanstress=meanstress)
+        gain_scale_factor = self.dmin + 0.5 * (self.dmax - self.dmin)
+        one._update_rfunc_settings(gain_scale_factor=gain_scale_factor)
         pd0 = one.get_init_parameters(self.name).squeeze()
         p0.loc[f"{self.name}_d"] = pd0
         p0.index = [f"{x}0" for x in p0.index]

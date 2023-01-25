@@ -53,15 +53,26 @@ class RfuncBase:
     _name = "RfuncBase"
 
     def __init__(
-        self, up: bool = True, meanstress: float = 1.0, cutoff: float = 0.999, **kwargs
+        self,
+        up: bool = True,
+        gain_scale_factor: float = 1.0,
+        cutoff: float = 0.999,
+        **kwargs,
     ) -> None:
         self.up = up
-        self.meanstress = meanstress
+        if "gain_scale_factor" in kwargs.keys():
+            logger.warning(
+                "The gain_scale_factor argument is deprecated and will throw an error "
+                "in Pastas 1.0. Please use the `gain_scale_factor` argument instead."
+            )
+            gain_scale_factor = kwargs["gain_scale_factor"]
+
+        self.gain_scale_factor = gain_scale_factor
         self.cutoff = cutoff
         self.kwargs = kwargs
 
     def _update_rfunc_settings(
-        self, up: bool = True, meanstress: float = 1.0, cutoff: float = 0.999
+        self, up: bool = True, gain_scale_factor: float = 1.0, cutoff: float = 0.999
     ) -> None:
         """Internal method to set the settings of the response function.
 
@@ -70,19 +81,19 @@ class RfuncBase:
         up: bool or None, optional
             indicates whether a positive stress will cause the head to go up (True,
             default) or down (False), if None the head can go both ways.
-        meanstress: float, optional
-            mean value of the stress, used to set the initial value such that the final
-            step times the mean stress equals 1.
+        gain_scale_factor: float, optional
+            the scale factor is used to set the initial value and the bounds of the gain
+            parameter, computed as 1 / gain_scale_factor.
         cutoff: float, optional
             proportion after which the step function is cut off. default is 0.999.
 
         """
         self.up = up
-        if 1e-8 > meanstress > 0:
-            meanstress = 1e-8  # arbitrary number to prevent division by zero
-        elif meanstress < 0 and up is True:
-            meanstress = meanstress * -1
-        self.meanstress = meanstress
+        if 1e-8 > gain_scale_factor > 0:
+            gain_scale_factor = 1e-8  # arbitrary number to prevent division by zero
+        elif gain_scale_factor < 0 and up is True:
+            gain_scale_factor = gain_scale_factor * -1
+        self.gain_scale_factor = gain_scale_factor
         self.cutoff = cutoff
 
     def get_init_parameters(self, name: str) -> DataFrame:
@@ -193,8 +204,8 @@ class RfuncBase:
 
         Notes
         -----
-        The impulse response function for each response function class can be viewed on the
-        Documentation website or using `latexify` by running the following code in a
+        The impulse response function for each response function class can be viewed on
+        the Documentation website or using `latexify` by running the following code in a
         Jupyter notebook environment::
 
             ps.RfuncName.impulse
@@ -243,7 +254,7 @@ class Gamma(RfuncBase):
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
-    meanstress: float, optional
+    gain_scale_factor: float, optional
         mean value of the stress, used to set the initial value such that the final
         step times the mean stress equals 1.
     cutoff: float, optional
@@ -263,32 +274,38 @@ class Gamma(RfuncBase):
     _name = "Gamma"
 
     def __init__(
-        self, up: bool = True, meanstress: float = 1.0, cutoff: float = 0.999, **kwargs
+        self,
+        up: bool = True,
+        gain_scale_factor: float = 1.0,
+        cutoff: float = 0.999,
+        **kwargs,
     ) -> None:
-        RfuncBase.__init__(self, up=up, meanstress=meanstress, cutoff=cutoff, **kwargs)
+        RfuncBase.__init__(
+            self, up=up, gain_scale_factor=gain_scale_factor, cutoff=cutoff, **kwargs
+        )
         self.nparam = 3
 
     def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
         if self.up:
             parameters.loc[name + "_A"] = (
-                1 / self.meanstress,
+                1 / self.gain_scale_factor,
                 1e-5,
-                100 / self.meanstress,
+                100 / self.gain_scale_factor,
                 True,
                 name,
             )
         elif self.up is False:
             parameters.loc[name + "_A"] = (
-                -1 / self.meanstress,
-                -100 / self.meanstress,
+                -1 / self.gain_scale_factor,
+                -100 / self.gain_scale_factor,
                 -1e-5,
                 True,
                 name,
             )
         else:
             parameters.loc[name + "_A"] = (
-                1 / self.meanstress,
+                1 / self.gain_scale_factor,
                 np.nan,
                 np.nan,
                 True,
@@ -334,9 +351,9 @@ class Exponential(RfuncBase):
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
-    meanstress: float, optional
-        mean value of the stress, used to set the initial value such that the final
-        step times the mean stress equals 1.
+    gain_scale_factor: float, optional
+        the scale factor is used to set the initial value and the bounds of the gain
+        parameter, computed as 1 / gain_scale_factor.
     cutoff: float, optional
         proportion after which the step function is cut off.
 
@@ -353,32 +370,38 @@ class Exponential(RfuncBase):
     _name = "Exponential"
 
     def __init__(
-        self, up: bool = True, meanstress: float = 1.0, cutoff: float = 0.999, **kwargs
+        self,
+        up: bool = True,
+        gain_scale_factor: float = 1.0,
+        cutoff: float = 0.999,
+        **kwargs,
     ) -> None:
-        RfuncBase.__init__(self, up=up, meanstress=meanstress, cutoff=cutoff, **kwargs)
+        RfuncBase.__init__(
+            self, up=up, gain_scale_factor=gain_scale_factor, cutoff=cutoff, **kwargs
+        )
         self.nparam = 2
 
     def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
         if self.up:
             parameters.loc[name + "_A"] = (
-                1 / self.meanstress,
+                1 / self.gain_scale_factor,
                 1e-5,
-                100 / self.meanstress,
+                100 / self.gain_scale_factor,
                 True,
                 name,
             )
         elif self.up is False:
             parameters.loc[name + "_A"] = (
-                -1 / self.meanstress,
-                -100 / self.meanstress,
+                -1 / self.gain_scale_factor,
+                -100 / self.gain_scale_factor,
                 -1e-5,
                 True,
                 name,
             )
         else:
             parameters.loc[name + "_A"] = (
-                1 / self.meanstress,
+                1 / self.gain_scale_factor,
                 np.nan,
                 np.nan,
                 True,
@@ -422,9 +445,9 @@ class HantushWellModel(RfuncBase):
     up: bool, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False).
-    meanstress: float, optional
-        mean value of the stress, used to set the initial value such that the final
-        step times the mean stress equals 1.
+    gain_scale_factor: float, optional
+        the scale factor is used to set the initial value and the bounds of the gain
+        parameter, computed as 1 / gain_scale_factor.
     cutoff: float, optional
         proportion after which the step function is cut off.
     use_numba: bool, optional
@@ -454,13 +477,15 @@ class HantushWellModel(RfuncBase):
     def __init__(
         self,
         up: bool = True,
-        meanstress: float = 1.0,
+        gain_scale_factor: float = 1.0,
         cutoff: float = 0.999,
         use_numba: bool = False,
         quad: bool = False,
         **kwargs,
     ) -> None:
-        RfuncBase.__init__(self, up=up, meanstress=meanstress, cutoff=cutoff, **kwargs)
+        RfuncBase.__init__(
+            self, up=up, gain_scale_factor=gain_scale_factor, cutoff=cutoff, **kwargs
+        )
         self.distances = None
         self.nparam = 3
         self.use_numba = use_numba  # requires numba_scipy for real speedups
@@ -487,7 +512,7 @@ class HantushWellModel(RfuncBase):
         if self.up:
             # divide by k0(2) to get same initial value as ps.Hantush
             parameters.loc[name + "_A"] = (
-                1 / (self.meanstress * k0(2)),
+                1 / (self.gain_scale_factor * k0(2)),
                 0,
                 np.nan,
                 True,
@@ -496,7 +521,7 @@ class HantushWellModel(RfuncBase):
         elif self.up is False:
             # divide by k0(2) to get same initial value as ps.Hantush
             parameters.loc[name + "_A"] = (
-                -1 / (self.meanstress * k0(2)),
+                -1 / (self.gain_scale_factor * k0(2)),
                 np.nan,
                 0,
                 True,
@@ -504,7 +529,7 @@ class HantushWellModel(RfuncBase):
             )
         else:
             parameters.loc[name + "_A"] = (
-                1 / self.meanstress,
+                1 / self.gain_scale_factor,
                 np.nan,
                 np.nan,
                 True,
@@ -692,9 +717,9 @@ class Hantush(RfuncBase):
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
-    meanstress: float, optional
-        mean value of the stress, used to set the initial value such that the final
-        step times the mean stress equals 1.
+    gain_scale_factor: float, optional
+        the scale factor is used to set the initial value and the bounds of the gain
+        parameter, computed as 1 / gain_scale_factor.
     cutoff: float, optional
         proportion after which the step function is cut off.
     use_numba: bool, optional
@@ -721,13 +746,15 @@ class Hantush(RfuncBase):
     def __init__(
         self,
         up: bool = True,
-        meanstress: float = 1.0,
+        gain_scale_factor: float = 1.0,
         cutoff: float = 0.999,
         use_numba: bool = False,
         quad: bool = False,
         **kwargs,
     ) -> None:
-        RfuncBase.__init__(self, up=up, meanstress=meanstress, cutoff=cutoff, **kwargs)
+        RfuncBase.__init__(
+            self, up=up, gain_scale_factor=gain_scale_factor, cutoff=cutoff, **kwargs
+        )
         self.nparam = 3
         self.use_numba = use_numba
         self.quad = quad
@@ -741,12 +768,24 @@ class Hantush(RfuncBase):
     def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
         if self.up:
-            parameters.loc[name + "_A"] = (1 / self.meanstress, 0, np.nan, True, name)
+            parameters.loc[name + "_A"] = (
+                1 / self.gain_scale_factor,
+                0,
+                np.nan,
+                True,
+                name,
+            )
         elif self.up is False:
-            parameters.loc[name + "_A"] = (-1 / self.meanstress, np.nan, 0, True, name)
+            parameters.loc[name + "_A"] = (
+                -1 / self.gain_scale_factor,
+                np.nan,
+                0,
+                True,
+                name,
+            )
         else:
             parameters.loc[name + "_A"] = (
-                1 / self.meanstress,
+                1 / self.gain_scale_factor,
                 np.nan,
                 np.nan,
                 True,
@@ -856,9 +895,9 @@ class Polder(RfuncBase):
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
-    meanstress: float, optional
-        mean value of the stress, used to set the initial value such that the final
-        step times the mean stress equals 1.
+    gain_scale_factor: float, optional
+        the scale factor is used to set the initial value and the bounds of the gain
+        parameter, computed as 1 / gain_scale_factor.
     cutoff: float, optional
         proportion after which the step function is cut off.
 
@@ -877,9 +916,15 @@ class Polder(RfuncBase):
     _name = "Polder"
 
     def __init__(
-        self, up: bool = True, meanstress: float = 1.0, cutoff: float = 0.999, **kwargs
+        self,
+        up: bool = True,
+        gain_scale_factor: float = 1.0,
+        cutoff: float = 0.999,
+        **kwargs,
     ) -> None:
-        RfuncBase.__init__(self, up=up, meanstress=meanstress, cutoff=cutoff, **kwargs)
+        RfuncBase.__init__(
+            self, up=up, gain_scale_factor=gain_scale_factor, cutoff=cutoff, **kwargs
+        )
         self.nparam = 3
 
     def get_init_parameters(self, name) -> DataFrame:
@@ -944,9 +989,9 @@ class One(RfuncBase):
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True) or
         down (False), if None (default) the head can go both ways.
-    meanstress: float, optional
-        mean value of the stress, used to set the initial value such that the final
-        step times the mean stress equals 1.
+    gain_scale_factor: float, optional
+        the scale factor is used to set the initial value and the bounds of the gain
+        parameter, computed as 1 / gain_scale_factor.
     cutoff: float, optional
         proportion after which the step function is cut off. Has no influence for
         this response function.
@@ -955,19 +1000,43 @@ class One(RfuncBase):
     _name = "One"
 
     def __init__(
-        self, up: bool = True, meanstress: float = 1.0, cutoff: float = 0.999, **kwargs
+        self,
+        up: bool = True,
+        gain_scale_factor: float = 1.0,
+        cutoff: float = 0.999,
+        **kwargs,
     ) -> None:
-        RfuncBase.__init__(self, up=up, meanstress=meanstress, cutoff=cutoff, **kwargs)
+        RfuncBase.__init__(
+            self, up=up, gain_scale_factor=gain_scale_factor, cutoff=cutoff, **kwargs
+        )
         self.nparam = 1
 
     def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
         if self.up:
-            parameters.loc[name + "_d"] = (self.meanstress, 0, np.nan, True, name)
+            parameters.loc[name + "_d"] = (
+                self.gain_scale_factor,
+                0,
+                np.nan,
+                True,
+                name,
+            )
         elif self.up is False:
-            parameters.loc[name + "_d"] = (-self.meanstress, np.nan, 0, True, name)
+            parameters.loc[name + "_d"] = (
+                -self.gain_scale_factor,
+                np.nan,
+                0,
+                True,
+                name,
+            )
         else:
-            parameters.loc[name + "_d"] = (self.meanstress, np.nan, np.nan, True, name)
+            parameters.loc[name + "_d"] = (
+                self.gain_scale_factor,
+                np.nan,
+                np.nan,
+                True,
+                name,
+            )
         return parameters
 
     def get_tmax(self, p: ArrayLike, cutoff: Optional[float] = None) -> float:
@@ -1006,9 +1075,9 @@ class FourParam(RfuncBase):
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
-    meanstress: float, optional
-        mean value of the stress, used to set the initial value such that the final
-        step times the mean stress equals 1.
+    gain_scale_factor: float, optional
+        the scale factor is used to set the initial value and the bounds of the gain
+        parameter, computed as 1 / gain_scale_factor.
     cutoff: float, optional
         proportion after which the step function is cut off.
     quad: bool, optional
@@ -1032,12 +1101,14 @@ class FourParam(RfuncBase):
     def __init__(
         self,
         up: bool = True,
-        meanstress: float = 1.0,
+        gain_scale_factor: float = 1.0,
         cutoff: float = 0.999,
         quad: bool = False,
         **kwargs,
     ) -> None:
-        RfuncBase.__init__(self, up=up, meanstress=meanstress, cutoff=cutoff, **kwargs)
+        RfuncBase.__init__(
+            self, up=up, gain_scale_factor=gain_scale_factor, cutoff=cutoff, **kwargs
+        )
         self.nparam = 4
         self.quad = quad
 
@@ -1045,23 +1116,23 @@ class FourParam(RfuncBase):
         parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
         if self.up:
             parameters.loc[name + "_A"] = (
-                1 / self.meanstress,
+                1 / self.gain_scale_factor,
                 0,
-                100 / self.meanstress,
+                100 / self.gain_scale_factor,
                 True,
                 name,
             )
         elif self.up is False:
             parameters.loc[name + "_A"] = (
-                -1 / self.meanstress,
-                -100 / self.meanstress,
+                -1 / self.gain_scale_factor,
+                -100 / self.gain_scale_factor,
                 0,
                 True,
                 name,
             )
         else:
             parameters.loc[name + "_A"] = (
-                1 / self.meanstress,
+                1 / self.gain_scale_factor,
                 np.nan,
                 np.nan,
                 True,
@@ -1203,9 +1274,9 @@ class DoubleExponential(RfuncBase):
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
-    meanstress: float, optional
-        mean value of the stress, used to set the initial value such that the final
-        step times the mean stress equals 1.
+    gain_scale_factor: float, optional
+        the scale factor is used to set the initial value and the bounds of the gain
+        parameter, computed as 1 / gain_scale_factor.
     cutoff: float, optional
         proportion after which the step function is cut off.
 
@@ -1222,32 +1293,38 @@ class DoubleExponential(RfuncBase):
     _name = "DoubleExponential"
 
     def __init__(
-        self, up: bool = True, meanstress: float = 1.0, cutoff: float = 0.999, **kwargs
+        self,
+        up: bool = True,
+        gain_scale_factor: float = 1.0,
+        cutoff: float = 0.999,
+        **kwargs,
     ) -> None:
-        RfuncBase.__init__(self, up=up, meanstress=meanstress, cutoff=cutoff, **kwargs)
+        RfuncBase.__init__(
+            self, up=up, gain_scale_factor=gain_scale_factor, cutoff=cutoff, **kwargs
+        )
         self.nparam = 4
 
     def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
         if self.up:
             parameters.loc[name + "_A"] = (
-                1 / self.meanstress,
+                1 / self.gain_scale_factor,
                 0,
-                100 / self.meanstress,
+                100 / self.gain_scale_factor,
                 True,
                 name,
             )
         elif self.up is False:
             parameters.loc[name + "_A"] = (
-                -1 / self.meanstress,
-                -100 / self.meanstress,
+                -1 / self.gain_scale_factor,
+                -100 / self.gain_scale_factor,
                 0,
                 True,
                 name,
             )
         else:
             parameters.loc[name + "_A"] = (
-                1 / self.meanstress,
+                1 / self.gain_scale_factor,
                 np.nan,
                 np.nan,
                 True,
@@ -1297,9 +1374,9 @@ class Edelman(RfuncBase):
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
-    meanstress: float, optional
-        mean value of the stress, used to set the initial value such that the final
-        step times the mean stress equals 1.
+    gain_scale_factor: float, optional
+        the scale factor is used to set the initial value and the bounds of the gain
+        parameter, computed as 1 / gain_scale_factor.
     cutoff: float, optional
         proportion after which the step function is cut off.
 
@@ -1313,15 +1390,20 @@ class Edelman(RfuncBase):
 
         ps.Edelman.impulse
 
-
     """
 
     _name = "Edelman"
 
     def __init__(
-        self, up: bool = True, meanstress: float = 1.0, cutoff: float = 0.999, **kwargs
+        self,
+        up: bool = True,
+        gain_scale_factor: float = 1.0,
+        cutoff: float = 0.999,
+        **kwargs,
     ) -> None:
-        RfuncBase.__init__(self, up=up, meanstress=meanstress, cutoff=cutoff, **kwargs)
+        RfuncBase.__init__(
+            self, up=up, gain_scale_factor=gain_scale_factor, cutoff=cutoff, **kwargs
+        )
         self.nparam = 1
 
     def get_init_parameters(self, name: str) -> DataFrame:
@@ -1365,9 +1447,9 @@ class Kraijenhoff(RfuncBase):
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
-    meanstress: float, optional
-        mean value of the stress, used to set the initial value such that the final
-        step times the mean stress equals 1.
+    gain_scale_factor: float, optional
+        the scale factor is used to set the initial value and the bounds of the gain
+        parameter, computed as 1 / gain_scale_factor.
     cutoff: float, optional
         proportion after which the step function is cut off.
 
@@ -1402,12 +1484,14 @@ class Kraijenhoff(RfuncBase):
     def __init__(
         self,
         up: bool = True,
-        meanstress: float = 1.0,
+        gain_scale_factor: float = 1.0,
         cutoff: float = 0.999,
         n_terms: int = 10,
         **kwargs,
     ) -> None:
-        RfuncBase.__init__(self, up=up, meanstress=meanstress, cutoff=cutoff, **kwargs)
+        RfuncBase.__init__(
+            self, up=up, gain_scale_factor=gain_scale_factor, cutoff=cutoff, **kwargs
+        )
         self.nparam = 3
         self.n_terms = n_terms
 
@@ -1415,23 +1499,23 @@ class Kraijenhoff(RfuncBase):
         parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
         if self.up:
             parameters.loc[name + "_A"] = (
-                1 / self.meanstress,
+                1 / self.gain_scale_factor,
                 1e-5,
-                100 / self.meanstress,
+                100 / self.gain_scale_factor,
                 True,
                 name,
             )
         elif self.up is False:
             parameters.loc[name + "_A"] = (
-                -1 / self.meanstress,
-                -100 / self.meanstress,
+                -1 / self.gain_scale_factor,
+                -100 / self.gain_scale_factor,
                 -1e-5,
                 True,
                 name,
             )
         else:
             parameters.loc[name + "_A"] = (
-                1 / self.meanstress,
+                1 / self.gain_scale_factor,
                 np.nan,
                 np.nan,
                 True,
@@ -1497,9 +1581,9 @@ class Spline(RfuncBase):
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
-    meanstress: float, optional
-        mean value of the stress, used to set the initial value such that the final
-        step times the mean stress equals 1.
+    gain_scale_factor: float, optional
+        the scale factor is used to set the initial value and the bounds of the gain
+        parameter, computed as 1 / gain_scale_factor.
     cutoff: float, optional
         proportion after which the step function is cut off. default is 0.999. this
         parameter has no influence for this response function.
@@ -1523,13 +1607,15 @@ class Spline(RfuncBase):
     def __init__(
         self,
         up: bool = True,
-        meanstress: float = 1.0,
+        gain_scale_factor: float = 1.0,
         cutoff: float = 0.999,
         kind: str = "quadratic",
         t: Optional[list] = None,
         **kwargs,
     ) -> None:
-        RfuncBase.__init__(self, up=up, meanstress=meanstress, cutoff=cutoff, **kwargs)
+        RfuncBase.__init__(
+            self, up=up, gain_scale_factor=gain_scale_factor, cutoff=cutoff, **kwargs
+        )
         self.kind = kind
         if t is None:
             t = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
@@ -1540,23 +1626,23 @@ class Spline(RfuncBase):
         parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
         if self.up:
             parameters.loc[name + "_A"] = (
-                1 / self.meanstress,
+                1 / self.gain_scale_factor,
                 1e-5,
-                100 / self.meanstress,
+                100 / self.gain_scale_factor,
                 True,
                 name,
             )
         elif self.up is False:
             parameters.loc[name + "_A"] = (
-                -1 / self.meanstress,
-                -100 / self.meanstress,
+                -1 / self.gain_scale_factor,
+                -100 / self.gain_scale_factor,
                 -1e-5,
                 True,
                 name,
             )
         else:
             parameters.loc[name + "_A"] = (
-                1 / self.meanstress,
+                1 / self.gain_scale_factor,
                 np.nan,
                 np.nan,
                 True,
