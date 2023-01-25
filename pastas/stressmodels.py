@@ -67,13 +67,14 @@ class StressModelBase:
         tmax: TimestampType,
         rfunc: Optional[RFunc] = None,
         up: bool = True,
-        gain_scale_factor: float = 1.0,
+        gain_scale_factor: Optional[float] = None,
         cutoff: float = 0.999,
     ) -> None:
         self.name = validate_name(name)
         self.tmin = tmin
         self.tmax = tmax
         self.freq = None
+
         if rfunc is not None:
             if inspect.isclass(rfunc):
                 raise DeprecationWarning(
@@ -304,6 +305,8 @@ class StressModel(StressModelBase):
     gain_scale_factor: float, optional
         the scale factor is used to set the initial value and the bounds of the gain
         parameter, computed as 1 / gain_scale_factor.
+    meanstress: float, optional
+        This argument is deprecated since 0.23. Use `gain_scale_factor` instead.
 
     Examples
     --------
@@ -330,7 +333,13 @@ class StressModel(StressModelBase):
         settings: Optional[Union[dict, str]] = None,
         metadata: Optional[dict] = None,
         gain_scale_factor: Optional[float] = None,
+        meanstress: Optional[float] = None,
     ) -> None:
+        if meanstress is not None:
+            raise DeprecationWarning(
+                "The argument `meanstress` is deprecated since Pastas 0.23. Please "
+                "use the new argument `gain_scale_factor` instead."
+            )
 
         if isinstance(stress, list):
             stress = stress[0]  # TODO Temporary fix Raoul, 2017-10-24
@@ -350,6 +359,8 @@ class StressModel(StressModelBase):
             gain_scale_factor=gain_scale_factor,
             cutoff=cutoff,
         )
+
+        self.gain_scale_factor = gain_scale_factor
         self.freq = stress.settings["freq"]
         self.stress = [stress]
         self.set_init_parameters()
@@ -412,6 +423,7 @@ class StressModel(StressModelBase):
             "up": self.rfunc.up,
             "cutoff": self.rfunc.cutoff,
             "stress": self.dump_stress(series),
+            "gain_scale_factor": self.gain_scale_factor,
         }
         return data
 
@@ -750,6 +762,7 @@ class WellModel(StressModelBase):
             gain_scale_factor=gain_scale_factor,
             cutoff=cutoff,
         )
+
         self.rfunc.set_distances(self.distances.values)
 
         self.stress = stress
