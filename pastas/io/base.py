@@ -111,7 +111,8 @@ def _load_model(data: dict) -> Model:
     # Add fit object to the model
     if "fit" in data.keys():
         fit = getattr(ps.solver, data["fit"].pop("name"))
-        ml.fit = fit(ml=ml, **data["fit"])
+        ml.fit = fit(**data["fit"])
+        ml.fit.set_model(ml)
 
     # Add parameters, use update to maintain correct order
     ml.parameters = ml.get_init_parameters(noise=ml.settings["noise"])
