@@ -360,7 +360,6 @@ class StressModel(StressModelBase):
             cutoff=cutoff,
         )
 
-        self.gain_scale_factor = gain_scale_factor
         self.freq = stress.settings["freq"]
         self.stress = [stress]
         self.set_init_parameters()
@@ -423,7 +422,6 @@ class StressModel(StressModelBase):
             "up": self.rfunc.up,
             "cutoff": self.rfunc.cutoff,
             "stress": self.dump_stress(series),
-            "gain_scale_factor": self.gain_scale_factor,
         }
         return data
 
