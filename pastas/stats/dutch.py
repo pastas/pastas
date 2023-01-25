@@ -21,15 +21,13 @@ def q_ghg(
     q: float = 0.94,
     by_year: bool = True,
 ) -> Series:
-    """Gemiddeld Hoogste Grondwaterstand (GHG) also called MHGL (Mean High
-    Groundwater Level).
+    """Gemiddeld Hoogste Grondwaterstand (GHG) also called MHGL (Mean High GW Level).
 
     Parameters
     ----------
     series: pandas.Series
         Series to calculate the GHG for.
-    tmin: pandas.Timestamp, optional
-    tmax: pandas.Timestamp, optional
+    tmin, tmax: pandas.Timestamp, optional
     q : float, optional
         quantile fraction of exceedance (default 0.94)
     by_year: bool, optional
@@ -38,8 +36,8 @@ def q_ghg(
     Notes
     -----
     Approximated by taking quantiles of the time series values per year and
-    calculating the mean of the quantiles. The series is first resampled to
-    daily values.
+    calculating the mean of the quantiles. The series is first resampled to daily
+    values.
     """
     return _q_gxg(series, q, tmin=tmin, tmax=tmax, by_year=by_year)
 
@@ -58,8 +56,7 @@ def q_glg(
     ----------
     series: pandas.Series
         Series to calculate the GLG for.
-    tmin: pandas.Timestamp, optional
-    tmax: pandas.Timestamp, optional
+    tmin, tmax: pandas.Timestamp, optional
     q : float, optional
         quantile, fraction of exceedance (default 0.06)
     by_year: bool, optional
@@ -68,8 +65,8 @@ def q_glg(
     Notes
     -----
     Approximated by taking quantiles of the time series values per year and
-    calculating the mean of the quantiles. The series is first resampled to
-    daily values.
+    calculating the mean of the quantiles. The series is first resampled to daily
+    values.
     """
     return _q_gxg(series, q, tmin=tmin, tmax=tmax, by_year=by_year)
 
@@ -80,23 +77,21 @@ def q_gvg(
     tmax: Optional[TimestampType] = None,
     by_year: bool = True,
 ) -> Series:
-    """Gemiddeld Voorjaarsgrondwaterstand (GVG) also called MSGL (Mean Spring
-    Groundwater Level).
+    """Gemiddeld Voorjaarsgrondwaterstand (GVG) also called MSGL (Mean Spring GW Level).
 
     Parameters
     ----------
     series: pandas.Series
         Series to calculate the GVG for.
-    tmin: pandas.Timestamp, optional
-    tmax: pandas.Timestamp, optional
+    tmin, tmax: pandas.Timestamp, optional
     by_year: bool, optional
         Take average over quantiles per year (default True)
 
     Notes
     -----
-    Approximated by taking the median of the values in the period between 14
-    March and 15 April (after resampling to daily values). This function
-    does not care about series length!
+    Approximated by taking the median of the values in the period between 14 March
+    and 15 April (after resampling to daily values). This function does not care
+    about series length!
     """
     if tmin is not None:
         series = series.loc[tmin:]
@@ -130,38 +125,37 @@ def ghg(
     Parameters
     ----------
     series: pandas.Series with a DatetimeIndex
-        The pandas Series of which the statistic is determined
+        The pandas Series of which the statistic is determined.
     tmin: pandas.Timestamp, optional
-        The lowest index to take into account
+        The lowest index to take into account.
     tmax: pandas.Timestamp, optional
-        The highest index to take into account
+        The highest index to take into account.
     fill_method : str
         see .. :mod: pastas.stats.__gxg__
     limit : int or None, optional
-        Maximum number of days to fill using fill method, use None to
-        fill nothing
+        Maximum number of days to fill using fill method, use None to fill nothing.
     output : str, optional
         output type
-        * 'mean' (default) : for mean of yearly values
-        * 'yearly': for series of yearly values
-        * 'g3': for series with selected data for calculating statistic
-        * 'semimonthly': for series with all data points (14th, 28th of each month)
+        * 'mean' (default) : for mean of yearly values.
+        * 'yearly': for series of yearly values.
+        * 'g3': for series with selected data for calculating statistic.
+        * 'semimonthly': for series with all data points (14th, 28th of each month).
     min_n_meas: int, optional
         Minimum number of measurements per year (at maximum 24).
     min_n_years: int, optional
-        Minimum number of years
+        Minimum number of years.
     year_offset: resampling offset. Use 'a' for calendar years
-        (jan 1 to dec 31) and 'a-mar' for hydrological years (apr 1 to mar 31)
+        (jan 1 to dec 31) and 'a-mar' for hydrological years (apr 1 to mar 31).
 
     Returns
     -------
     pd.Series or scalar
-        Series of yearly values or mean of yearly values
+        Series of yearly values or mean of yearly values.
 
     Notes
     -----
-    Classic method resampling the series to every 14th and 28th of the
-    month. Taking the mean of the mean of three highest values per year.
+    Classic method resampling the series to every 14th and 28th of the month. Taking
+    the mean of the mean of three highest values per year.
     """
 
     # mean_high = lambda s: s.nlargest(3).mean()
@@ -213,44 +207,42 @@ def glg(
     min_n_years: int = 8,
     year_offset: str = "a-mar",
 ) -> Union[Series, float]:
-    """Calculate the 'Gemiddelde Laagste Grondwaterstand' (Average Low
-    Groundwater Level).
+    """Calculate the 'Gemiddelde Laagste Grondwaterstand' (Average Low GW Level).
 
     Parameters
     ----------
     series: pandas.Series with a DatetimeIndex
-        The pandas Series of which the statistic is determined
+        The pandas Series of which the statistic is determined.
     tmin: pandas.Timestamp, optional
-        The lowest index to take into account
+        The lowest index to take into account.
     tmax: pandas.Timestamp, optional
-        The highest index to take into account
+        The highest index to take into account.
     fill_method : str, optional
         see .. :mod: pastas.stats.__gxg__
     limit : int or None, optional
-        Maximum number of days to fill using fill method, use None to
-        fill nothing.
+        Maximum number of days to fill using fill method, use None to fill nothing.
     output : str, optional
         output type
-        * 'mean' (default) : for mean of yearly values
-        * 'yearly': for series of yearly values
-        * 'g3': for series with selected data for calculating statistic
-        * 'semimonthly': for series with all data points (14th, 28th of each month)
+        * 'mean' (default) : for mean of yearly values.
+        * 'yearly': for series of yearly values.
+        * 'g3': for series with selected data for calculating statistic.
+        * 'semimonthly': for series with all data points (14th, 28th of each month).
     min_n_meas: int, optional
-        Minimum number of measurements per year (at maximum 24)
+        Minimum number of measurements per year (at maximum 24).
     min_n_years: int, optional
-        Minimum number of years
+        Minimum number of years.
     year_offset: resampling offset. Use 'a' for calendar years
-        (jan 1 to dec 31) and 'a-mar' for hydrological years (apr 1 to mar 31)
+        (jan 1 to dec 31) and 'a-mar' for hydrological years (apr 1 to mar 31).
 
     Returns
     -------
     pd.Series or scalar
-        Series of yearly values or mean of yearly values
+        Series of yearly values or mean of yearly values.
 
     Notes
     -----
-    Classic method resampling the series to every 14th and 28th of
-    the month. Taking the mean of the mean of three lowest values per year.
+    Classic method resampling the series to every 14th and 28th of the month. Taking
+    the mean of the mean of three lowest values per year.
     """
 
     # mean_low = lambda s: s.nsmallest(3).mean()
@@ -302,44 +294,42 @@ def gvg(
     min_n_years: int = 8,
     year_offset: str = "a",
 ) -> Union[Series, float]:
-    """Calculate the 'Gemiddelde Voorjaars Grondwaterstand' (Average Spring
-    Groundwater Level).
+    """Calculate the 'Gemiddelde Voorjaars Grondwaterstand' (Average Spring GW Level).
 
     Parameters
     ----------
     series: pandas.Series with a DatetimeIndex
-        The pandas Series of which the statistic is determined
+        The pandas Series of which the statistic is determined.
     tmin: pandas.Timestamp, optional
-        The lowest index to take into account
+        The lowest index to take into account.
     tmax: pandas.Timestamp, optional
-        The highest index to take into account
+        The highest index to take into account.
     fill_method : str, optional
         see .. :mod: pastas.stats.__gxg__
     limit : int or None, optional
-        Maximum number of days to fill using fill method, use None to
-        fill nothing
+        Maximum number of days to fill using fill method, use None to fill nothing.
     output : str, optional
         output type
-        * 'mean' (default) : for mean of yearly values
-        * 'yearly': for series of yearly values
-        * 'g3': for series with selected data for calculating statistic
-        * 'semimonthly': for series with all data points (14th, 28th of each month)
+        * 'mean' (default) : for mean of yearly values.
+        * 'yearly': for series of yearly values.
+        * 'g3': for series with selected data for calculating statistic.
+        * 'semimonthly': for series with all data points (14th, 28th of each month).
     min_n_meas: int, optional
-        Minimum number of measurements per year (at maximum 3)
+        Minimum number of measurements per year (at maximum 3).
     min_n_years: int, optional
-        Minimum number of years
+        Minimum number of years.
     year_offset: resampling offset. Use 'a' for calendar years
-        (jan 1 to dec 31) and 'a-mar' for hydrological years (apr 1 to mar 31)
+        (jan 1 to dec 31) and 'a-mar' for hydrological years (apr 1 to mar 31).
 
     Returns
     -------
     pandas.Series or scalar
-        Series of yearly values or mean of yearly values
+        Series of yearly values or mean of yearly values.
 
     Notes
     -----
-    Classic method resampling the series to every 14th and 28th of the
-    month. Taking the mean of the values on March 14, March 28 and April 14.
+    Classic method resampling the series to every 14th and 28th of the month. Taking
+    the mean of the values on March 14, March 28 and April 14.
     """
 
     def _mean_spring(s, min_n_meas):
@@ -379,43 +369,41 @@ def gg(
     min_n_years: int = 8,
     year_offset: str = "a-mar",
 ) -> Union[Series, float]:
-    """Calculate the 'Gemiddelde Grondwaterstand' (Average Groundwater Level)
+    """Calculate the 'Gemiddelde Grondwaterstand' (Average Groundwater Level).
 
     Parameters
     ----------
     series: pandas.Series with a DatetimeIndex
-        The pandas Series of which the statistic is determined
+        The pandas Series of which the statistic is determined.
     tmin: pandas.Timestamp, optional
-        The lowest index to take into account
+        The lowest index to take into account.
     tmax: pandas.Timestamp, optional
-        The highest index to take into account
+        The highest index to take into account.
     fill_method : str, optional
         see .. :mod: pastas.stats.__gxg__
     limit : int or None, optional
-        Maximum number of days to fill using fill method, use None to
-        fill nothing.
+        Maximum number of days to fill using fill method, use None to fill nothing.
     output : str, optional
         output type
-        * 'mean' (default) : for mean of yearly values
-        * 'yearly': for series of yearly values
-        * 'g3': for series with selected data for calculating statistic
-        * 'semimonthly': for series with all data points (14th, 28th of each month)
+        * 'mean' (default) : for mean of yearly values.
+        * 'yearly': for series of yearly values.
+        * 'g3': for series with selected data for calculating statistic.
+        * 'semimonthly': for series with all data points (14th, 28th of each month).
     min_n_meas: int, optional
-        Minimum number of measurements per year (at maximum 24)
+        Minimum number of measurements per year (at maximum 24).
     min_n_years: int, optional
-        Minimum number of years
-    year_offset: resampling offset. Use 'a' for calendar years
-        (jan 1 to dec 31) and 'a-mar' for hydrological years (apr 1 to mar 31)
+        Minimum number of years.
+    year_offset: resampling offset. Use 'a' for calendar years (jan 1 to dec 31) and
+    'a-mar' for hydrological years (apr 1 to mar 31).
 
     Returns
     -------
     pd.Series or scalar
-        series of yearly values or mean of yearly values
+        series of yearly values or mean of yearly values.
 
     Notes
     -----
-    Classic method resampling the series to every 14th and 28th of
-    the month.
+    Classic method resampling the series to every 14th and 28th of the month.
     """
 
     # mean_low = lambda s: s.nsmallest(3).mean()
@@ -450,12 +438,12 @@ def _get_spring(series: Series, min_n_meas: int) -> float:
     Parameters
     ----------
     series : pandas.Series
-        series with datetime index
+        series with datetime index.
 
     Returns
     -------
     float
-        values of series in spring, or NaN if no values in spring
+        values of series in spring, or NaN if no values in spring.
     """
     inspring = _in_spring(series)
     if inspring.sum() < min_n_meas:
@@ -465,18 +453,17 @@ def _get_spring(series: Series, min_n_meas: int) -> float:
 
 
 def _in_spring(series: Series) -> Series:
-    """Internal method to test if time series index is between 14 March and 15
-    April.
+    """Internal method to test if time series index is between 14 March and 15 April.
 
     Parameters
     ----------
     series : pd.Series
-        series with datetime index
+        series with datetime index.
 
     Returns
     -------
     pd.Series
-        Boolean series with datetimeindex
+        Boolean series with datetimeindex.
     """
 
     def isinspring(x):
@@ -497,25 +484,23 @@ def _gxg(
     min_n_years: int,
     year_offset: str,
 ) -> Union[Series, float]:
-    """Internal method for classic GXG statistics. Resampling the series to
-    every 14th and 28th of the month. Taking the mean of aggregated values per
-    year.
+    """Internal method for classic GXG statistics. Resampling the series to every
+    14th and 28th of the month. Taking the mean of aggregated values per year.
 
     Parameters
     ----------
     series: pandas.Series with a DatetimeIndex
-        The pandas Series of which the statistic is determined
+        The pandas Series of which the statistic is determined.
     year_agg : function series -> scalar
-        Aggregator function to one value per year
+        Aggregator function to one value per year.
     tmin: pandas.Timestamp, optional
-        The lowest index to take into account
+        The lowest index to take into account.
     tmax: pandas.Timestamp, optional
-        The highest index to take into account
+        The highest index to take into account.
     fill_method : str
-        see notes below
+        see notes below.
     limit : int or None, optional
-        Maximum number of days to fill using fill method, use None to
-        fill nothing
+        Maximum number of days to fill using fill method, use None to fill nothing.
     output : str
         output type
         * 'mean' (default) : for mean of yearly values
@@ -523,23 +508,23 @@ def _gxg(
         * 'g3': for series with selected data for calculating statistic
         * 'semimonthly': for series with all data points (14th, 28th of each month)
     min_n_meas: int, optional
-        Minimum number of measurements per year
+        Minimum number of measurements per year.
     min_n_years: int
         Minimum number of years.
     year_offset: string
-        resampling offset. Use 'a' for calendar years (jan 1 to dec 31)
-        and 'a-mar' for hydrological years (apr 1 to mar 31)
+        resampling offset. Use 'a' for calendar years (jan 1 to dec 31) and 'a-mar'
+        for hydrological years (apr 1 to mar 31)
 
 
     Returns
     -------
     pandas.Series or scalar
-        Series of yearly values or mean of yearly values
+        Series of yearly values or mean of yearly values.
 
     Raises
     ------
     ValueError
-        When output argument is unknown
+        When output argument is unknown.
 
     Notes
     -----
@@ -590,7 +575,8 @@ def _gxg(
             series = series.reindex(ref_index, method=fill_method)
             select14or28 = False
         else:
-            # with a large limit (larger than 6) it is possible that one measurement is used more than once
+            # with a large limit (larger than 6) it is possible that one measurement
+            # is used more than once
             series = series.dropna().reindex(
                 series.index, method=fill_method, limit=limit
             )
@@ -644,9 +630,8 @@ def _q_gxg(
     tmax: Optional[TimestampType] = None,
     by_year: bool = True,
 ) -> Series:
-    """Dutch groundwater statistics GHG and GLG approximated by taking
-    quantiles of the time series values per year and taking the mean of the
-    quantiles.
+    """Dutch groundwater statistics GHG and GLG approximated by taking quantiles of
+    the time series values per year and taking the mean of the quantiles.
 
     The series is first resampled to daily values.
 
@@ -655,11 +640,11 @@ def _q_gxg(
     series: pandas.Series
         Series to calculate the GXG for.
     q: float
-        quantile fraction of exceedance
+        quantile fraction of exceedance.
     tmin: pandas.Timestamp, optional
     tmax: pandas.Timestamp, optional
     by_year: bool, optional
-        Take average over quantiles per year (default True)
+        Take average over quantiles per year (default True).
     """
     if tmin is not None:
         series = series.loc[tmin:]

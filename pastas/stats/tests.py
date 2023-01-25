@@ -1,7 +1,5 @@
-"""The following methods may be used for the diagnostic checking of the
-residual time series of a calibrated (Pastas) model.
+"""The following methods may be used for the diagnostic checking of the residual time series of a calibrated (Pastas) model.
 
-.. codeauthor:: R.A Collenteur
 """
 
 from logging import getLogger
@@ -34,7 +32,7 @@ def durbin_watson(series: Series) -> float:
     Parameters
     ----------
     series: pandas.Series, optional
-        residuals series
+        residuals series.
 
     Returns
     -------
@@ -44,18 +42,18 @@ def durbin_watson(series: Series) -> float:
     Notes
     -----
     The Durban Watson statistic ([durbin_1951]_, [Fahidy_2004]_) tests the
-    null-hypothesis that the correlation between the noise values at lag one
-    equals zero. The formula to calculate the Durbin-Watson statistic (DW) is:
+    null-hypothesis that the correlation between the noise values at lag one equals
+    zero. The formula to calculate the Durbin-Watson statistic (DW) is:
 
     .. math::
         DW = \\frac{\\sum_{t=2}^{n}(\\upsilon_t-\\upsilon_{t-1}^2)}
         {\\sum_{t=1}^{n}\\upsilon_t^2}
 
-    where $n$ is the number of values in the noise series. The test-statistic
-    has a range :math:`0 \\geq DW \\leq 4`, where values of $DW < 2$ indicate a
-    positive correlation and values of $DW > 2$ indicates negative
-    autocorrelation. The Durbin-Watson test requires a constant time interval
-    of the noise series and tests for autocorrelation at a lag of 1 time step.
+    where $n$ is the number of values in the noise series. The test-statistic has a
+    range :math:`0 \\geq DW \\leq 4`, where values of $DW < 2$ indicate a positive
+    correlation and values of $DW > 2$ indicates negative autocorrelation. The
+    Durbin-Watson test requires a constant time interval of the noise series and
+    tests for autocorrelation at a lag of 1 time step.
 
     **Considerations for this test:**
 
@@ -68,8 +66,7 @@ def durbin_watson(series: Series) -> float:
     References
     ----------
     .. [durbin_1951] Durbin, J., & Watson, G. S. (1951). Testing for serial
-      correlation in least squares regression. II. Biometrika, 38(1/2),
-      159-177.
+       correlation in least squares regression. II. Biometrika, 38(1/2), 159-177.
 
     .. [Fahidy_2004] Fahidy, T. Z. (2004). On the Application of Durbin-Watson
       Statistics to Time-Series-Based Regression Models. CHEMICAL ENGINEERING
@@ -83,8 +80,8 @@ def durbin_watson(series: Series) -> float:
     """
     if not infer_freq(series.index):
         logger.warning(
-            "Caution: The Durbin-Watson test should only be used "
-            "for time series with equidistant time steps."
+            "The Durbin-Watson test should only be used for time series with "
+            "equidistant time steps."
         )
 
     rho = series.autocorr(lag=1)  # Take the first value of the ACF
@@ -102,8 +99,7 @@ def ljung_box(
     Parameters
     ----------
     series: pandas.Series, optional
-        series to calculate the autocorrelation for that is used in the
-        Ljung-Box test.
+        series to calculate the autocorrelation for that is used in the Ljung-Box test.
     lags: int, optional
         The maximum lag to compute the Ljung-Box test statistic for.
     nparam: int, optional
@@ -120,35 +116,34 @@ def ljung_box(
 
     Notes
     -----
-    The Ljung-Box test [Ljung_1978]_ tests the null-hypothesis that a time
-    series are independently distributed up to a desired time lag $k$ and is
-    computed as follows:
+    The Ljung-Box test [Ljung_1978]_ tests the null-hypothesis that a time series are
+    independently distributed up to a desired time lag $k$ and is computed as follows:
 
     .. math::
         Q(k) = n (n + 2) \\sum_{k=1}^{h} \\frac{\\rho^2(k)}{n - k}
 
-    where :math:`\\rho_k` is the autocorrelation at lag $k$, $h$ is the
-    maximum lag used for calculation, and $n$ is the number of values in the
-    noise series. The computed $Q$-statistic is then compared to a critical
-    value computed from a :math:`\\chi^2_{\\alpha, h-p}` distribution with a
-    significance level :math:`\\alpha` and $h-p$ degrees of freedom, where $h$
-    is the number of lags and $p$ the number of the noise model parameters.
+    where :math:`\\rho_k` is the autocorrelation at lag $k$, $h$ is the maximum lag
+    used for calculation, and $n$ is the number of values in the noise series. The
+    computed $Q$-statistic is then compared to a critical value computed from a
+    :math:`\\chi^2_{\\alpha, h-p}` distribution with a significance level
+    :math:`\\alpha` and $h-p$ degrees of freedom, where $h$ is the number of lags and
+    $p$ the number of the noise model parameters.
 
     **Considerations for this test:**
 
     - The time series should have equidistant time steps. An adapted version
       of the Ljung-Box test is available through ps.stats.stoffer_toloi.
-    - A potential problem of the Ljung-Box test is the low power of the test
-      when testing for a large number of lags using a small sample size $n$.
-      It has been suggested that suggested that :math:`k \\leq n/4` but also
-      as low as :math:`k \\leq n/20`. If we are using daily groundwater levels
-      observations, and we want to test for autocorrelation for lags up to one
-      year (365 days) this means that we need between 4 and ten years of data.
+    - A potential problem of the Ljung-Box test is the low power of the test when
+      testing for a large number of lags using a small sample size $n$. It has been
+      suggested that suggested that :math:`k \\leq n/4` but also as low as :math:`k
+      \\leq n/20`. If we are using daily groundwater levels observations, and we want
+      to test for autocorrelation for lags up to one year (365 days) this means that
+      we need between 4 and ten years of data.
 
     References
     ----------
-    .. [Ljung_1978] Ljung, G. and Box, G. (1978). On a Measure of Lack of Fit
-      in Time Series Models, Biometrika, 65, 297-303.
+    .. [Ljung_1978] Ljung, G. and Box, G. (1978). On a Measure of Lack of Fit in Time
+       Series Models, Biometrika, 65, 297-303.
 
     Examples
     --------
@@ -170,9 +165,8 @@ def ljung_box(
     """
     if not infer_freq(series.index):
         logger.warning(
-            "Caution: The Ljung-Box test should only be used "
-            "for time series with equidistant time steps. "
-            "Consider using ps.stats.stoffer_toloi instead."
+            "Caution: The Ljung-Box test should only be used for time series with "
+            "equidistant time steps. Consider using ps.stats.stoffer_toloi instead."
         )
 
     acf = get_acf(series, lags=lags, bin_method="regular")
@@ -212,21 +206,20 @@ def runs_test(series: Series, cutoff: str = "median") -> Tuple[float, float]:
 
     Notes
     -----
-    Wald and Wolfowitz developed [wald_1943]_ developed a distribution free
-    test (i.e., no normal distribution is assumed) to test for
-    autocorrelation. This test is also appropriate for non-equidistant
-    time steps in the residuals time series. The Null-hypothesis is that the
-    residual time series is a random sequence of positive and negative values.
-    The alternative hypothesis is that they are non-random. The test statistic
-    is computed as follows:
+    Wald and Wolfowitz developed [wald_1943]_ developed a distribution free test (
+    i.e., no normal distribution is assumed) to test for autocorrelation. This test
+    is also appropriate for non-equidistant time steps in the residuals time series.
+    The Null-hypothesis is that the residual time series is a random sequence of
+    positive and negative values. The alternative hypothesis is that they are
+    non-random. The test statistic is computed as follows:
 
     .. math::
         Z = \\frac{R-\\bar{R}}{\\sigma_R}
 
-    where $R$ is the number of runs, :math:`\\bar{R}` the expected number of
-    runs and :math:`\\sigma_R` the standard deviation of the number of runs.
-    A run is defined as the number of sequences of exclusively postitive and
-    negative values in the time series.
+    where $R$ is the number of runs, :math:`\\bar{R}` the expected number of runs and
+    :math:`\\sigma_R` the standard deviation of the number of runs. A run is defined
+    as the number of sequences of exclusively postitive and negative values in the
+    time series.
 
     **Considerations for this test:**
 
@@ -234,9 +227,9 @@ def runs_test(series: Series, cutoff: str = "median") -> Tuple[float, float]:
 
     References
     ----------
-    .. [wald_1943] Wald, A., & Wolfowitz, J. (1943). An exact test for
-       randomness in the non-parametric case based on serial correlation.
-       The Annals of Mathematical Statistics, 14(4), 378-388.
+    .. [wald_1943] Wald, A., & Wolfowitz, J. (1943). An exact test for randomness in
+       the non-parametric case based on serial correlation. The Annals of
+       Mathematical Statistics, 14(4), 378-388.
 
     Examples
     --------
@@ -299,18 +292,18 @@ def stoffer_toloi(
     series: pandas.Series
         Time series to compute the adapted Ljung-Box statistic for.
     lags: int, optional
-        the number of lags to compute the statistic for. Only lags for which
-        a correlation is computed are used.
+        the number of lags to compute the statistic for. Only lags for which a
+        correlation is computed are used.
     nparam: int, optional
         Number of parameters of the noisemodel.
     freq: str, optional
         String with the frequency to resample the time series to.
     snap_to_equidistant_timestamps : bool, optional
-        if False (default), a sample is taken from series with equidistant
-        timesteps using pandas' reindex. Only values are kept that lie on
-        those equidistant timestamps. If True, an equidistant time series is
-        created taking as many values as possible from the original series
-        which are then snapped to the nearest equidistant timestamp.
+        if False (default), a sample is taken from series with equidistant timesteps
+        using pandas' reindex. Only values are kept that lie on those equidistant
+        timestamps. If True, an equidistant time series is created taking as many
+        values as possible from the original series which are then snapped to the
+        nearest equidistant timestamp.
 
     Returns
     -------
@@ -321,27 +314,26 @@ def stoffer_toloi(
 
     Notes
     -----
-    Stoffer and Toloi [stoffer_1992]_ extended the Ljung-Box test to also work
-    with missing data. The test statistic is computed as follows:
+    Stoffer and Toloi [stoffer_1992]_ extended the Ljung-Box test to also work with
+    missing data. The test statistic is computed as follows:
 
     .. math ::
         Q_k = n^2 \\sum_{k=1}^{h} \\frac{\\hat{\\rho}_k^2}{n-k}
 
     where :math:`\\hat{\\rho}_k` is the autocorrelation for lag $k$. When the
-    residual time series have non-equidistant time steps it is recommended to
-    use this test over the original Ljung-Box test.
+    residual time series have non-equidistant time steps it is recommended to use
+    this test over the original Ljung-Box test.
 
-    The Stoffer-Toloi test is strictly an adapted version of the Ljung-Box
-    test to deal with missing data in a time series and not a time series with
-    non-equidistant time steps. This means that the time series is updated
-    to an equidistant time series by filling nan-values.
+    The Stoffer-Toloi test is strictly an adapted version of the Ljung-Box test to
+    deal with missing data in a time series and not a time series with
+    non-equidistant time steps. This means that the time series is updated to an
+    equidistant time series by filling nan-values.
 
     **Considerations for this test:**
 
     - Test is also applicable to irregular time series.
-    - The time step has to be chosen (e.g., Days). This should not be smaller
-      than the smallest time step or the test will most likely fail to
-      reject $H_0$ anyway.
+    - The time step has to be chosen (e.g., Days). This should not be smaller than
+      the smallest time step or the test will most likely fail to reject $H_0$ anyway.
 
     References
     ----------
@@ -365,14 +357,14 @@ def stoffer_toloi(
     pastas.timeseries_utils.get_equidistant_series_nearest
     """
     if snap_to_equidistant_timestamps:
-        # create equidistant time series snapping values from the original
-        # series to the nearest equidistant timestamp. No values
-        # are duplicated and data loss is minimized.
+        # create equidistant time series snapping values from the original series to
+        # the nearest equidistant timestamp. No values are duplicated and data loss
+        # is minimized.
         s = get_equidistant_series_nearest(series, freq, minimize_data_loss=True)
     else:
-        # get equidistant sample from original time series, checks which
-        # time offset is the most common to maximize the number of values
-        # taken from the original series.
+        # get equidistant sample from original time series, checks which time offset
+        # is the most common to maximize the number of values taken from the original
+        # series.
         t_offset = _get_time_offset(series.index, freq).value_counts().idxmax()
         new_idx = date_range(
             series.index[0].floor(freq) + t_offset,
@@ -383,9 +375,9 @@ def stoffer_toloi(
         # warn if more than 10% of data is lost in sample
         if s.dropna().index.size < (0.9 * series.dropna().index.size):
             msg = (
-                "While selecting equidistant values from series with "
-                "`as_freq` more than 10 %% of values were dropped. "
-                "Consider setting `make_equidistant` to True."
+                "While selecting equidistant values from series with `as_freq` more "
+                "than 10 %% of values were dropped. Consider setting "
+                "`make_equidistant` to True."
             )
             logger.warning(msg)
 
@@ -447,8 +439,7 @@ def diagnostics(
     nparam: int, optional
         Number of parameters of the noisemodel.
     lags: int, optional
-        Maximum number of lags (in days) to compute the autocorrelation
-        tests for.
+        Maximum number of lags (in days) to compute the autocorrelation tests for.
     stats: tuple, optional
         Tuple with the diagnostic checks to perform. Not implemented yet.
     float_fmt: str
@@ -457,16 +448,16 @@ def diagnostics(
     Returns
     -------
     df: Pandas.DataFrame
-        DataFrame with the information for the diagnostics checks. The final
-        column in this DataFrame report whether or not the Null-Hypothesis
-        is rejected. If H0 is not rejected (=False) the data is in agreement
-        with one of the properties of white noise (e.g., normally distributed).
+        DataFrame with the information for the diagnostics checks. The final column
+        in this DataFrame report if the Null-Hypothesis is rejected. If H0 is not
+        rejected (=False) the data is in agreement with one of the properties of
+        white noise (e.g., normally distributed).
 
     Notes
     -----
-    Different tests are computed depending on the regularity of the time
-    step of the provided time series. pd.infer_freq is used to
-    determined whether or not the time steps are regular.
+    Different tests are computed depending on the regularity of the time step of the
+    provided time series. pd.infer_freq is used to determined if the time steps are
+    regular.
 
     Examples
     --------
@@ -481,8 +472,8 @@ def diagnostics(
     Durbin-Watson  Autocorr.      2.02     nan      False
     Ljung-Box      Autocorr.      5.67    1.00      False
 
-    In this example, the Null-hypothesis is not rejected and the data may be
-    assumed to be white noise.
+    In this example, the Null-hypothesis is not rejected and the data may be assumed
+    to be white noise.
     """
 
     cols = ["Checks", "Statistic", "P-value"]
@@ -528,18 +519,20 @@ def diagnostics(
 
 def plot_acf():
     raise DeprecationWarning(
-        "The method plot_acf is deprecated. Use 'ps.plot.acf' instead."
+        "The method plot_acf is deprecated since 0.23 and will be removed "
+        "in Pastas 1.0. Use 'ps.plots.acf' instead."
     )
 
 
 def plot_diagnostics():
     raise DeprecationWarning(
-        "The method plot_diagnostics is deprecated. Use 'ps.plot.diagnostics' instead."
+        "The method plot_diagnostics is deprecated since 0.23 and will be removed "
+        "in Pastas 1.0. Use 'ps.plots.diagnostics' instead."
     )
 
 
 def plot_cum_frequency():
     raise DeprecationWarning(
-        "The method plot_cum_frequency is deprecated. Use 'ps.plot.cum_frequency' "
-        "instead."
+        "The method plot_cum_frequency is deprecated since 0.23 and will be removed "
+        "in Pastas 1.0. Use 'ps.plots.cum_frequency' instead."
     )

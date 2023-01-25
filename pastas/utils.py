@@ -30,7 +30,7 @@ def datetime_to_matlab_datenum(tindex: DatetimeIndex) -> ArrayLike:
 
 
 def get_stress_tmin_tmax(ml: ModelType) -> Tuple[TimestampType, TimestampType]:
-    """Get the minimum and maximum time that all of the stresses have data."""
+    """Get the minimum and maximum time that all the stresses have data."""
     from pastas import Model
 
     tmin = Timestamp.min
@@ -94,8 +94,8 @@ def set_log_level(level: str) -> None:
     Parameters
     ----------
     level: str
-        String with the level to log messages to the screen for. Options
-        are: "INFO", "WARNING", and "ERROR".
+        String with the level to log messages to the screen for. Options are: "INFO",
+        "WARNING", and "ERROR".
 
     Examples
     --------
@@ -112,9 +112,8 @@ def remove_console_handler(logger: Optional[Any] = None) -> None:
     Parameters
     ----------
     logger : logging.Logger
-        A Logger-instance. Use ps.logger to initialise the Logging instance
-        that handles all logging throughout pastas,  including all sub modules
-        and packages.
+        A Logger-instance. Use ps.logger to initialise the Logging instance that
+        handles all logging throughout pastas, including all sub modules and packages.
     """
     if logger is None:
         logger = logging.getLogger("pastas")
@@ -138,9 +137,8 @@ def add_file_handlers(
     Parameters
     ----------
     logger : logging.Logger
-        A Logger-instance. Use ps.logger to initialise the Logging instance
-        that handles all logging throughout pastas,  including all sub modules
-        and packages.
+        A Logger-instance. Use ps.logger to initialise the Logging instance that
+        handles all logging throughout pastas, including all sub modules and packages.
     """
     if logger is None:
         logger = logging.getLogger("pastas")
@@ -163,9 +161,8 @@ def remove_file_handlers(logger: Optional[logging.Logger] = None) -> None:
     Parameters
     ----------
     logger : logging.Logger
-        A Logger-instance. Use ps.logger to initialise the Logging instance
-        that handles all logging throughout pastas,  including all submodules
-        and packages.
+        A Logger-instance. Use ps.logger to initialise the Logging instance that
+        handles all logging throughout pastas, including all submodules and packages.
     """
     if logger is None:
         logger = logging.getLogger("pastas")
@@ -182,13 +179,13 @@ def validate_name(name: str, raise_error: bool = False) -> str:
     name: str
         String with the name to check for illegal characters.
     raise_error: bool
-        raise Exception error if illegal character is found, default
-        is False which only logs a warning
+        raise Exception error if illegal character is found, default is False which
+        only logs a warning.
 
     Returns
     -------
     name: str
-        Unchanged name string
+        Unchanged name string.
     """
     ilchar = ["/", "\\", " ", ".", "'", '"', "`"]
     if "windows" in platform().lower():
@@ -214,8 +211,10 @@ def validate_name(name: str, raise_error: bool = False) -> str:
     name = str(name)
     for char in ilchar:
         if char in name:
-            msg = f"User-provided name '{name}' contains illegal character."
-            msg += f"Please remove '{char}' from name."
+            msg = (
+                f"User-provided name '{name}' contains illegal character. Please "
+                f"remove '{char}' from name."
+            )
             if raise_error:
                 raise Exception(msg)
             else:

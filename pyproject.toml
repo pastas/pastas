@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pastas"
-version = "0.22.0b"
+version = "0.22.0"
 description = "Python package to perform time series analysis of hydrological time series."
 license = { file = "LICENSE" }
 readme = "README.rst"

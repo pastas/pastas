@@ -29,10 +29,9 @@ class Plotting:
     """Class that contains all plotting methods for Pastas models.
 
     Pastas models come with a number of predefined plotting methods to quickly
-    visualize a Model. All of these methods are contained in the `plot`
-    attribute of a model. For example, if we stored a
-    :class:`pastas.model.Model` instance in the variable `ml`, the plot
-    methods are available as follows::
+    visualize a Model. All of these methods are contained in the `plot` attribute of
+    a model. For example, if we stored a :class:`pastas.model.Model` instance in the
+    variable `ml`, the plot methods are available as follows::
 
     >>> ml.plot.results()
     """
@@ -42,8 +41,7 @@ class Plotting:
 
     def __repr__(self) -> str:
         msg = (
-            "This module contains all the built-in plotting options that "
-            "are available."
+            "This module contains all the built-in plotting options that are available."
         )
         return msg
 
@@ -79,8 +77,7 @@ class Plotting:
         Returns
         -------
         ax: matplotlib.axes.Axes
-            matplotlib axes with the simulated and optionally the observed
-            time series.
+            matplotlib axes with the simulated and optionally the observed time series.
 
         Examples
         --------
@@ -136,11 +133,10 @@ class Plotting:
         figsize: tuple, optional
             tuple of size 2 to determine the figure size in inches.
         split: bool, optional
-            Split the stresses in multiple stresses when possible. Default is
-            False.
+            Split the stresses in multiple stresses when possible. Default is False.
         adjust_height: bool, optional
-            Adjust the height of the graphs, so that the vertical scale of all
-            the subplots on the left is equal. Default is True.
+            Adjust the height of the graphs, so that the vertical scale of all the
+            subplots on the left is equal. Default is True.
         return_warmup: bool, optional
             Show the warmup-period. Default is false.
         block_or_step: str, optional
@@ -346,11 +342,9 @@ class Plotting:
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
         ytick_base: Boolean or float, optional
-            Make the ytick-base constant if True, set this base to float if
-            float.
+            Make the ytick-base constant if True, set this base to float if a float.
         split: bool, optional
-            Split the stresses in multiple stresses when possible. Default is
-            True.
+            Split the stresses in multiple stresses when possible. Default is True.
         axes: matplotlib.axes.Axes instance, optional
             Matplotlib Axes instance to plot the figure on to.
         figsize: tuple, optional
@@ -510,8 +504,7 @@ class Plotting:
         bins: int optional
             number of bins used for the histogram. 50 is default.
         acf_options: dict, optional
-            dictionary with keyword arguments that are passed on to
-            pastas.stats.acf.
+            dictionary with keyword arguments that are passed on to pastas.stats.acf.
         fig: Matplotib.Figure instance, optional
             Optionally provide a Matplotib.Figure instance to plot onto.
         alpha: float, optional
@@ -529,8 +522,7 @@ class Plotting:
 
         Notes
         -----
-        This plot assumed that the noise or residuals follow a Normal
-        distribution.
+        This plot assumed that the noise or residuals follow a Normal distribution.
 
         See Also
         --------
@@ -583,7 +575,7 @@ class Plotting:
         figsize: tuple, optional
             Tuple with the height and width of the figure in inches.
         **kwargs:
-            Passed on to plot_cum_frequency
+            Passed on to plot_cum_frequency.
 
         Returns
         -------
@@ -753,22 +745,22 @@ class Plotting:
         tmin: str or pandas.Timestamp, optional.
         tmax: str or pandas.Timestamp, optional.
         ax: matplotlib.axes, optional
-            Axes to plot the pie chart on. A new figure and axes will be
-            created of not providided.
+            Axes to plot the pie chart on. A new figure and axes will be created of
+            not provided.
         figsize: tuple, optional
             tuple of size 2 to determine the figure size in inches.
         split: bool, optional
             Split the stresses in multiple stresses when possible.
         partition : str
-            statistic to use to determine contribution of stress, either
-            'sum' or 'std' (default).
+            statistic to use to determine contribution of stress, either 'sum' or
+            'std' (default).
         wedgeprops: dict, optional, default None
-            dict containing pie chart wedge properties, default is None,
-            which sets edgecolor to white.
+            dict containing pie chart wedge properties, default is None, which sets
+            edgecolor to white.
         startangle: float
-            at which angle to start drawing wedges
+            at which angle to start drawing wedges.
         autopct: str
-            format string to add percentages to pie chart
+            format string to add percentages to pie chart.
         kwargs: dict, optional
             The keyword arguments are passed on to plt.pie.
 
@@ -824,10 +816,8 @@ class Plotting:
         **kwargs,
     ) -> Axes:
         """Create a results plot, similar to `ml.plots.results()`, in which the
-        individual contributions of stresses (in stressmodels with multiple
-        stresses) are stacked.
-
-        Note: does not plot the individual contributions of StressModel2
+        individual contributions of stresses (in stressmodels with multiple stresses)
+        are stacked.
 
         Parameters
         ----------

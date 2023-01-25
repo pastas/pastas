@@ -36,10 +36,10 @@ def _frequency_is_supported(freq: str) -> str:
     -----
     Possible frequency-offsets are listed in:
     http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
-    The frequency can be a multiple of these offsets, like '7D'. Because of the
-    use in convolution, only frequencies with an equidistant offset are
-    allowed. This means monthly ('M'), yearly ('Y') or even weekly ('W')
-    frequencies are not allowed. Use '7D' for a weekly simulation.
+    The frequency can be a multiple of these offsets, like '7D'. Because of the use
+    in convolution, only frequencies with an equidistant offset are allowed. This
+    means monthly ('M'), yearly ('Y') or even weekly ('W') frequencies are not
+    allowed. Use '7D' for a weekly simulation.
 
     D   calendar day frequency
     H   hourly frequency
@@ -49,7 +49,6 @@ def _frequency_is_supported(freq: str) -> str:
     U, us       microseconds
     N   nanoseconds
 
-    TODO: Rename to get_frequency_string and change Returns-documentation
     """
     offset = to_offset(freq)
     if not hasattr(offset, "delta"):
@@ -78,8 +77,7 @@ def _get_stress_dt(freq: str) -> float:
 
     Notes
     -----
-    Used for comparison to determine if a time series needs to be up or
-    downsampled.
+    Used for comparison to determine if a time series needs to be up or downsampled.
 
     See http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
     for the offset_aliases supported by Pandas.
@@ -128,7 +126,7 @@ def _get_dt(freq: str) -> float:
     Returns
     -------
     dt: float
-        Number of days
+        Number of days.
     """
     # Get the frequency string and multiplier
     dt = to_offset(freq).delta / Timedelta(1, "D")
@@ -163,9 +161,9 @@ def get_sample(tindex: Index, ref_tindex: Index) -> Index:
     Parameters
     ----------
     tindex: pandas.index
-        Pandas index object
+        Pandas index object.
     ref_tindex: pandas.index
-        Pandas index object
+        Pandas index object.
 
     Returns
     -------
@@ -297,22 +295,20 @@ def get_equidistant_series_nearest(
 ) -> Series:
     """Get equidistant time series using nearest reindexing.
 
-    This method will shift observations to the nearest equidistant timestep to
-    create an equidistant time series, if necessary. Each observation is
-    guaranteed to only be used once in the equidistant time series.
+    This method will shift observations to the nearest equidistant timestep to create
+    an equidistant time series, if necessary. Each observation is guaranteed to only
+    be used once in the equidistant time series.
 
     Parameters
     ----------
     series : pandas.Series
         original (non-equidistant) time series
     freq : str
-        frequency of the new equidistant time series
-        (i.e. "H", "D", "7D", etc.)
+        frequency of the new equidistant time series (i.e. "H", "D", "7D", etc.)
     minimize_data_loss : bool, optional
-        if set to True, method will attempt use any unsampled
-        points from original time series to fill some remaining
-        NaNs in the new equidistant time series. Default is False.
-        This only happens in rare cases.
+        if set to True, method will attempt use any unsampled points from original
+        time series to fill some remaining NaNs in the new equidistant time series.
+        Default is False. This only happens in rare cases.
 
     Returns
     -------
@@ -321,11 +317,11 @@ def get_equidistant_series_nearest(
 
     Notes
     -----
-    This method creates an equidistant time series with specified freq
-    using nearest sampling (meaning observations can be shifted in time),
-    with additional filling logic that ensures each original measurement
-    is only included once in the new time series. Values are filled as close
-    as possible to their original timestamp in the new equidistant time series.
+    This method creates an equidistant time series with specified freq using nearest
+    sampling (meaning observations can be shifted in time), with additional filling
+    logic that ensures each original measurement is only included once in the new
+    time series. Values are filled as close as possible to their original timestamp
+    in the new equidistant time series.
     """
 
     # build new equidistant index
@@ -402,8 +398,7 @@ def get_equidistant_series_nearest(
 
 
 def pandas_equidistant_sample(series: Series, freq: str) -> Series:
-    """Create equidistant time series creating a new DateTimeIndex with
-    pandas.reindex.
+    """Create equidistant time series creating a new DateTimeIndex with pandas.reindex.
 
     Note: function attempts to pick an offset relative to freq such that the maximum
     number of observations is included in the sample.
@@ -435,8 +430,7 @@ def pandas_equidistant_sample(series: Series, freq: str) -> Series:
 def pandas_equidistant_nearest(
     series: Series, freq: str, tolerance: Optional[str] = None
 ) -> Series:
-    """Create equidistant time series using pandas.reindex with
-    method='nearest'.
+    """Create equidistant time series using pandas.reindex with method='nearest'.
 
     Note: this method will shift observations in time and can introduce duplicate
     observations.
@@ -467,24 +461,22 @@ def pandas_equidistant_nearest(
 
 
 def pandas_equidistant_asfreq(series: Series, freq: str) -> Series:
-    """Create equidistant time series by rounding timestamps and dropping
-    duplicates.
+    """Create equidistant time series by rounding timestamps and dropping duplicates.
 
     Note: this method rounds all timestamps down to the nearest "freq" then drops
-    duplicates by keeping the first entry. This means observations are shifted in
-    time.
+    duplicates by keeping the first entry. This means observations are shifted in time.
 
     Parameters
     ----------
     series : pandas Series
-        time series
+        time series.
     freq : str
-        frequency string
+        frequency string.
 
     Returns
     -------
     Series
-        equidistant time series with frequency 'freq'
+        equidistant time series with frequency 'freq'.
     """
     series = series.copy()
     # round to the nearest freq

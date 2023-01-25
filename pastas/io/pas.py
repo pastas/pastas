@@ -61,8 +61,7 @@ class PastasEncoder(json.JSONEncoder):
 
     Notes
     -----
-    Currently supported formats are: DataFrame, Series,
-    Timedelta, Timestamps.
+    Currently supported formats are: DataFrame, Series, Timedelta, Timestamps.
 
     see: https://docs.python.org/3/library/json.html
     """

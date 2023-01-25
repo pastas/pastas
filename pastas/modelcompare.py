@@ -13,17 +13,16 @@ from pastas.typing import Axes, Model
 class CompareModels:
     """Class for visually comparing pastas Models.
 
-    This is a versatile class for constructing visual model comparison plots.
-    The default `CompareModels.plot()` method mimics `ml.plots.results()` but
-    allows multiple models to be included in the figure. Instead of parameter
-    uncertainties, by default only optimal values are shown for each model and
-    a table containing fit metrics is included in the top right of the figure.
+    This is a versatile class for constructing visual model comparison plots. The
+    default `CompareModels.plot()` method mimics `ml.plots.results()` but allows
+    multiple models to be included in the figure. Instead of parameter uncertainties,
+    by default only optimal values are shown for each model and a table containing
+    fit metrics is included in the top right of the figure.
 
-    The visualization of each component (i.e. time series, a table) is
-    controlled by separate functions allowing users to easily customize their
-    figure. The layout of the figure is controlled by a so-called "mosaic",
-    which is essentially a 2D array (in the form of nested lists) containing
-    labels that refer to specific axes::
+    The visualization of each component (i.e. time series, a table) is controlled by
+    separate functions allowing users to easily customize their figure. The layout of
+    the figure is controlled by a so-called "mosaic", which is essentially a 2D array
+    (in the form of nested lists) containing labels that refer to specific axes::
 
         mosaic = [
             ["sim", "sim", "met"],   # oseries+simulation, and metrics
@@ -32,15 +31,13 @@ class CompareModels:
             ["con0", "con0", "rf0"]  # contributions and step response
         ]
 
-    In this example, the "sim" axis will be 2x2 in the top left portion of the
-    figure (with total dimensions (4x3)), while the "met" axis will be 1x1 in
-    the top right. Users can either use the default mosaic or provide their
-    own.
+    In this example, the "sim" axis will be 2x2 in the top left portion of the figure
+    (with total dimensions (4x3)), while the "met" axis will be 1x1 in the top right.
+    Users can either use the default mosaic or provide their own.
 
-    Additional logic is available to control plotting of multiple contributions
-    of stresses on the same set of axes. Additionally some helper methods are
-    defined to obtain relevant information from the models passed to
-    CompareModels.
+    Additional logic is available to control plotting of multiple contributions of
+    stresses on the same set of axes. Additionally some helper methods are defined to
+    obtain relevant information from the models passed to CompareModels.
 
     Example usage::
 
@@ -61,7 +58,7 @@ class CompareModels:
         Parameters
         ----------
         models : list of ps.Model, optional
-            list of models to compare
+            list of models to compare.
         """
         self.models = models
         # attributes that are set and used later
@@ -75,7 +72,7 @@ class CompareModels:
     def initialize_figure(
         self,
         mosaic: Optional[List[List[str]]] = None,
-        figsize: Tuple[int] = (10, 8),
+        figsize: Tuple[int, int] = (10, 8),
         cmap: str = "tab10",
     ) -> None:
         """initialize a custom figure based on a mosaic.
@@ -85,9 +82,9 @@ class CompareModels:
         mosaic : list, optional
             subplot mosaic, by default None which uses the default mosaic.
         figsize : tuple, optional
-            figure size, by default (10, 8)
+            figure size, by default (10, 8).
         cmap : str, optional
-            colormap, by default "tab10"
+            colormap, by default "tab10".
         """
         if mosaic is None:
             mosaic = self.get_default_mosaic()
@@ -107,9 +104,9 @@ class CompareModels:
     ) -> None:
         """initialize subplots based on a mosaic with equal vertical scales.
 
-        The height of each subplot is calculated based on the y-data limits in
-        each subplot. This is calculation is performed on the first column of
-        axes in the mosaic.
+        The height of each subplot is calculated based on the y-data limits in each
+        subplot. This is calculation is performed on the first column of axes in the
+        mosaic.
 
         Parameters
         ----------
@@ -120,12 +117,11 @@ class CompareModels:
         cmap : str, optional
             colormap, by default "tab10"
         smdict : dict, optional
-            Dictionary with integers (index) as keys and list of stressmodel
-            names as values that have to be in each subplot. For example, `{0:
-            ['prec', 'evap'], 1: ['rech']}` where stressmodels 'prec' and
-            'evap' are plotted in the first respons function window and 'rech'
-            in the second. By default None, which creates a separate subplot
-            for each stressmodel.
+            Dictionary with integers (index) as keys and list of stressmodel names as
+            values that have to be in each subplot. For example, `{0: ['prec',
+            'evap'], 1: ['rech']}` where stressmodels 'prec' and 'evap' are plotted
+            in the first respons function window and 'rech' in the second. By
+            default, None, which creates a separate subplot for each stressmodel.
         """
         self.adjust_height = True
 
@@ -243,13 +239,13 @@ class CompareModels:
         Parameters
         ----------
         n_stressmodels : None, optional
-            number of stressmodel plots to include in mosaic by default None
-            which uses the numberof unique stressmodels in all models
+            number of stressmodel plots to include in mosaic by default None which
+            uses the number of unique stressmodels in all models.
 
         Returns
         -------
         mosaic : list
-            list of lists containing axes labels
+            list of lists containing axes labels.
         """
         if n_stressmodels is None:
             n_stressmodels = len(self.get_unique_stressmodels(models=self.models))
@@ -270,7 +266,7 @@ class CompareModels:
         Parameters
         ----------
         models : list of ps.Model, optional
-            list of models to get tmin/tmax for, by default None
+            list of models to get tmin/tmax for, by default None.
         """
         if models is None:
             models = self.models
@@ -294,14 +290,14 @@ class CompareModels:
         Parameters
         ----------
         models : list of ps.Model, optional
-            list of models to calculate metrics for, by default None
+            list of models to calculate metrics for, by default None.
         metric_selection : list of str, optional
-            names of metrics to calculate, by default None
+            names of metrics to calculate, by default None.
 
         Returns
         -------
         metrics : pd.DataFrame
-            DataFrame containing calculated metrics
+            DataFrame containing calculated metrics.
         """
         if models is None:
             models = self.models
@@ -327,16 +323,16 @@ class CompareModels:
         Parameters
         ----------
         models : list of ps.Model, optional
-            list of models to get parameters for, by default None
+            list of models to get parameters for, by default None.
         param_col : str, optional
-            name of parameter column to obtain, by default "optimal"
+            name of parameter column to obtain, by default "optimal".
         param_selection : list of str, optional
-            string to filter parameter selection, by default None
+            string to filter parameter selection, by default None.
 
         Returns
         -------
         params : pd.DataFrame
-            parameter DataFrame containing parameters for each model
+            parameter DataFrame containing parameters for each model.
         """
         if models is None:
             models = self.models
@@ -360,9 +356,9 @@ class CompareModels:
         Parameters
         ----------
         models : list of ps.Model, optional
-            list of models to calculate diagnostics for
+            list of models to calculate diagnostics for.
         diag_col : str, optional
-            name of diagnostics column to obtain, by default "P-value"
+            name of diagnostics column to obtain, by default "P-value".
         """
         if models is None:
             models = self.models
@@ -380,7 +376,7 @@ class CompareModels:
         Parameters
         ----------
         axn : str, optional
-            name of labeled axes to plot oseries on, by default "sim"
+            name of labeled axes to plot oseries on, by default "sim".
         """
         if self.axes is None:
             self.initialize_figure(mosaic=[[axn]], figsize=(10, 3))
@@ -417,7 +413,7 @@ class CompareModels:
         Parameters
         ----------
         axn : str, optional
-            name of labeled axes to plot model simulations on, by default "sim"
+            name of labeled axes to plot model simulations on, by default "sim".
         """
         if self.axes is None:
             self.initialize_figure(mosaic=[[axn]], figsize=(10, 3))
@@ -438,7 +434,7 @@ class CompareModels:
         Parameters
         ----------
         axn : str, optional
-            name of labeled axes to plot residuals on, by default "res"
+            name of labeled axes to plot residuals on, by default "res".
         """
         if self.axes is None:
             self.initialize_figure(mosaic=[[axn]], figsize=(10, 3))
@@ -458,7 +454,7 @@ class CompareModels:
         Parameters
         ----------
         axn : str, optional
-            name of labeled axes to plot noise on, by default "res"
+            name of labeled axes to plot noise on, by default "res".
         """
         if self.axes is None:
             self.initialize_figure(mosaic=[[axn]], figsize=(10, 3))
@@ -482,22 +478,19 @@ class CompareModels:
         Parameters
         ----------
         smdict : dict, optional
-            Dictionary with integers (index) as keys and list of stressmodel
-            names as values that have to be in each subplot. For example, `{0:
-            ['prec', 'evap'], 1: ['rech']}` where stressmodels 'prec' and
-            'evap' are plotted in the first respons function window and 'rech'
-            in the second. By default None, which creates a separate subplot
-            for each stressmodel.
+            Dictionary with integers (index) as keys and list of stressmodel names as
+            values that have to be in each subplot. For example, `{0: ['prec',
+            'evap'], 1: ['rech']}` where stressmodels 'prec' and 'evap' are plotted
+            in the first respons function window and 'rech' in the second. By
+            default, None, which creates a separate subplot for each stressmodel.
         axn : str, optional
-            name of labeled axes to plot response functions on, by default
-            "rf{i}". If smdict is not None, keys of that dictionary are used to
-            fill in axes label, e.g. key 0 indicates the response functions
-            will be plotted on axes with label 'rf0'. Otherwise each response
-            function will be plotted on a separate subplot (i.e. 'rf0',
-            'rf1', ...).
+            name of labeled axes to plot response functions on, by default "rf{i}".
+            If smdict is not None, keys of that dictionary are used to fill in axes
+            label, e.g. key 0 indicates the response functions will be plotted on
+            axes with label 'rf0'. Otherwise, each response function will be plotted
+            on a separate subplot (i.e. 'rf0', 'rf1', ...).
         response : str, optional
-            type of response to plot, either "step" or "block", by default
-            "step"
+            type of response to plot, either "step" or "block", by default "step".
         """
         if self.axes is None:
             self.initialize_figure(mosaic=[[axn]], figsize=(5, 3))
@@ -543,21 +536,20 @@ class CompareModels:
         Parameters
         ----------
         smdict : dict, optional
-            Dictionary with integers (index) as keys and list of stressmodel
-            names as values that have to be in each subplot. For example, `{0:
-            ['prec', 'evap'], 1: ['rech']}` where stressmodels 'prec' and
-            'evap' are plotted in the first contribution window and 'rech' in
-            the second. By default None, which creates a separate subplot for
-            each stressmodel.
+            Dictionary with integers (index) as keys and list of stressmodel names as
+            values that have to be in each subplot. For example, `{0: ['prec',
+            'evap'], 1: ['rech']}` where stressmodels 'prec' and 'evap' are plotted
+            in the first contribution window and 'rech' in the second. By default,
+            None, which creates a separate subplot for each stressmodel.
         axn : str, optional
-            name of labeled axes to plot contributions on, by default "con{i}".
-            If smdict is not None, keys of that dictionary are used to fill in
-            axes label, e.g. key 0 indicates the contributions will be plotted
-            on axes with label 'con0'. Otherwise each contribution will be
-            plotted on a separate subplot (i.e. 'con0', 'con1', ...).
+            name of labeled axes to plot the contributions on, by default "con{i}". If
+            smdict is not None, keys of that dictionary are used to fill in axes
+            label, e.g. key 0 indicates the contributions will be plotted on axes
+            with label 'con0'. Otherwise, each contribution will be plotted on a
+            separate subplot (i.e. 'con0', 'con1', ...).
         normalized : bool, optional
-            normalize contributions with min/max depending on mean value, by
-            default False
+            normalize contributions with min/max depending on mean value, by default
+            False.
         """
         if self.axes is None:
             self.initialize_figure(mosaic=[[axn]], figsize=(10, 3))
@@ -565,8 +557,8 @@ class CompareModels:
         if smdict is None and self.smdict is None:
             if self.adjust_height:
                 warn(
-                    "When combining stressmodels into one subplot in "
-                    "combination with 'adjust_height', provide 'smdict' to "
+                    "When combining stressmodels into one subplot in combination "
+                    "with 'adjust_height', provide 'smdict' to "
                     "`initialize_adjust_height_figure()` for best results."
                 )
             self.smdict = {
@@ -605,9 +597,9 @@ class CompareModels:
         Parameters
         ----------
         axn : str, optional
-            name of labeled axes to plot stresses on, by default "stress"
+            name of labeled axes to plot stresses on, by default "stress".
         names : list of str, optional
-            names of stresses to plot, by default None
+            names of stresses to plot, by default None.
         """
         if self.axes is None:
             self.initialize_figure(mosaic=[[axn]], figsize=(10, 3))
@@ -632,7 +624,7 @@ class CompareModels:
         Parameters
         ----------
         axn : str, optional
-            name of labeled axes to plot ACF on, by default "acf"
+            name of labeled axes to plot ACF on, by default "acf".
         """
         if self.axes is None:
             self.initialize_figure(mosaic=[[axn]], figsize=(10, 3))
@@ -663,8 +655,8 @@ class CompareModels:
         Parameters
         ----------
         axn : str, optional
-            name of labeled axes to plot table on, by default "table"
-        df : pandas.DataFrame
+            name of labeled axes to plot table on, by default "table".
+        df : pandas.DataFrame, optional
             The Pandas.Dataframe to plot. Note that the first column is the index
             column that is shown.
         """
@@ -699,8 +691,8 @@ class CompareModels:
         param_col : str, optional
             name of parameter column to include, by default "optimal"
         param_selection : list of str, optional
-            string to filter parameter names that are included in table, by
-            default None
+            string to filter parameter names that are included in table, by default
+            None.
         """
         if self.axes is None:
             self.initialize_figure(mosaic=[[axn]], figsize=(6, 4))
@@ -726,8 +718,8 @@ class CompareModels:
         axn : str, optional
             name of labeled axes to plot table on, by default "met"
         metric_selection : list, optional
-            list of str describing which metrics to include, by default None
-            which uses ["rsq", "aic"]
+            list of str describing which metrics to include, by default None which
+            uses ["rsq", "aic"].
         """
         if self.axes is None:
             self.initialize_figure(mosaic=[[axn]], figsize=(6, 4))
@@ -758,9 +750,9 @@ class CompareModels:
         Parameters
         ----------
         axn : str, optional
-            name of labeled axis to plot table on, by default "diag"
+            name of labeled axis to plot table on, by default "diag".
         diag_col : str, optional
-            name of diagnostics column to obtain, by default "P-value"
+            name of diagnostics column to obtain, by default "P-value".
         """
         if self.axes is None:
             self.initialize_figure(mosaic=[[axn]], figsize=(6, 4))
@@ -777,7 +769,7 @@ class CompareModels:
         Parameters
         ----------
         axes : list of matplotlib.Axes
-            list of axes objects
+            list of axes objects.
         """
         for i, iax in enumerate(axes):
             if i < (len(axes) - 1):
@@ -791,7 +783,7 @@ class CompareModels:
         Parameters
         ----------
         axes : list of matplotlib.Axes
-            list of axes objects
+            list of axes objects.
         """
         for iax in axes[1:]:
             iax.sharey(axes[0])
@@ -814,31 +806,29 @@ class CompareModels:
         Parameters
         ----------
         smdict : dict, optional
-            dictionary with integers (index) as keys and list of stressmodel
-            names as values that have to be in each subplot. For example, `{0:
-            ['prec', 'evap'], 1: ['rech']}` where stressmodels 'prec' and
-            'evap' are plotted in the first contribution/response function
-            window and 'rech' in the second. By default None, which creates a
-            separate subplot for each stressmodel.
+            dictionary with integers (index) as keys and list of stressmodel names as
+            values that have to be in each subplot. For example, `{0: ['prec',
+            'evap'], 1: ['rech']}` where stressmodels 'prec' and 'evap' are plotted
+            in the first contribution/response function window and 'rech' in the
+            second. By default, None, which creates a separate subplot for each
+            stressmodel.
         normalized : bool, optional
-            normalize contributions such that minimum or maximum value is equal
-            to zero, by default False
+            normalize contributions such that minimum or maximum value is equal to
+            zero, by default False.
         param_selection : list, optional
-            list of (sub)strings of which parameters to show in table, by
-            default None
+            list of (sub)strings of which parameters to show in table, by default None.
         figsize : tuple, optional
-            figure size, by default (10, 8)
+            figure size, by default (10, 8).
         grid : bool, optional
-            grid in each subplots, by default True
+            grid in each subplots, by default True.
         legend : bool, optional
-            add legend in each subplot, by default True
+            add legend in each subplot, by default True.
         adjust_height : bool, optional
-            adjust the height of the graphs, so that the vertical scale of all
-            the subplots on the left is equal. Default is False. When combining
-            stress contributions in one subplot, please also provide smdict for
-            best results.
+            adjust the height of the graphs, so that the vertical scale of all the
+            subplots on the left is equal. Default is False. When combining stress
+            contributions in one subplot, please also provide smdict for best results.
         legend_kwargs : dict, optional
-            pass legend keyword arguments to plots
+            pass legend keyword arguments to plots.
         """
         self.adjust_height = adjust_height
         if self.axes is None and not self.adjust_height:

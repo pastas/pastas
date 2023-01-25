@@ -18,13 +18,13 @@ class ThresholdTransform:
     Parameters
     ----------
     value : float, optional
-        The starting value above which the simulation is lowered
+        The starting value above which the simulation is lowered.
     vmin : float, optional
-        The minimum value above which the simulation is lowered
+        The minimum value above which the simulation is lowered.
     vmin : float, optional
-        The maximum value above which the simulation is lowered
+        The maximum value above which the simulation is lowered.
     name: str, optional
-        Name of the transform
+        Name of the transform.
     nparam : int, optional
         The number of parameters. Default is nparam=2. The first parameter then is
         the threshold, and the second parameter is the factor with which the

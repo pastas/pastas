@@ -18,8 +18,7 @@ class SolveTimer(tqdm):
 
     Usage
     -----
-    Print timer and number of iterations in console while running
-    `ml.solve()`::
+    Print timer and number of iterations in console while running `ml.solve()`::
 
         with SolveTimer() as t:
             ml.solve(callback=t.timer)
@@ -36,8 +35,8 @@ class SolveTimer(tqdm):
 
     Note
     ----
-    If the logger is also printing messages to the console the timer will not
-    be updated quite as nicely.
+    If the logger is also printing messages to the console the timer will not be
+    updated quite as nicely.
     """
 
     def __init__(self, max_time: Optional[float] = None, *args, **kwargs) -> None:

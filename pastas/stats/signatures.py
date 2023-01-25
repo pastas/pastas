@@ -152,8 +152,7 @@ def parde_coefficients(series: Series, normalize: bool = True) -> float:
 
 
 def _martens(series: Series, normalize: bool = True) -> Tuple[Series, Series]:
-    """Functions for the Martens average seasonal fluctuation and inter annual
-    fluctuation.
+    """Functions for the average seasonal fluctuation and inter annual fluctuation.
 
     Parameters
     ----------
@@ -168,6 +167,11 @@ def _martens(series: Series, normalize: bool = True) -> Tuple[Series, Series]:
         Lowest heads
     hw: pandas.Series
         Largest heads
+
+    Notes
+    -----
+    According to :cite:t:`martens_groundwater_2013`.
+
     """
 
     if normalize:

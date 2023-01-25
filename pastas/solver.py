@@ -520,7 +520,7 @@ class LeastSquares(BaseSolver):
         jacobian: array_like
         cost: float
         absolute_sigma: bool
-            Default is False
+            Default is False.
 
         Returns
         -------

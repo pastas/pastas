@@ -1,5 +1,5 @@
-"""The following methods may be used to describe the fit between the model
-simulation and the observations.
+"""The following methods may be used to describe the fit between the model simulation
+and the observations.
 
 .. currentmodule:: pastas.modelstats.Statistics
 
@@ -66,8 +66,9 @@ class Statistics:
         self.ml = ml
 
     def __repr__(self):
-        msg = """This module contains all the statistical functions that are
-included in Pastas. To obtain a list of all statistics that are included type:
+        msg = """This module contains all the statistical functions included in Pastas. 
+        
+        To obtain a list of all statistics that are included type:
 
     >>> print(ml.stats.ops)"""
         return msg
@@ -87,8 +88,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
         weighted: bool, optional
-            If weighted is True, the variances are computed using the time
-            step between observations as weights. Default is False.
+            If weighted is True, the variances are computed using the time step
+            between observations as weights. Default is False.
 
         See Also
         --------
@@ -112,8 +113,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
         weighted: bool, optional
-            If weighted is True, the variances are computed using the time
-            step between observations as weights. Default is False.
+            If weighted is True, the variances are computed using the time step
+            between observations as weights. Default is False.
 
         Returns
         -------
@@ -163,8 +164,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
         weighted: bool, optional
-            If weighted is True, the variances are computed using the time
-            step between observations as weights. Default is False.
+            If weighted is True, the variances are computed using the time step
+            between observations as weights. Default is False.
 
         See Also
         --------
@@ -188,8 +189,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
         weighted: bool, optional
-            If weighted is True, the variances are computed using the time
-            step between observations as weights. Default is False.
+            If weighted is True, the variances are computed using the time step
+            between observations as weights. Default is False.
 
         See Also
         --------
@@ -214,8 +215,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
         weighted: bool, optional
-            If weighted is True, the variances are computed using the time
-            step between observations as weights. Default is False.
+            If weighted is True, the variances are computed using the time step
+            between observations as weights. Default is False.
 
         See Also
         --------
@@ -240,8 +241,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
         weighted: bool, optional
-            If weighted is True, the variances are computed using the time
-            step between observations as weights. Default is False.
+            If weighted is True, the variances are computed using the time step
+            between observations as weights. Default is False.
 
         See Also
         --------
@@ -266,8 +267,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
         weighted: bool, optional
-            If weighted is True, the variances are computed using the time
-            step between observations as weights. Default is False.
+            If weighted is True, the variances are computed using the time step
+            between observations as weights. Default is False.
 
         See Also
         --------
@@ -292,8 +293,8 @@ included in Pastas. To obtain a list of all statistics that are included type:
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
         weighted: bool, optional
-            If weighted is True, the variances are computed using the time
-            step between observations as weights. Default is False.
+            If weighted is True, the variances are computed using the time step
+            between observations as weights. Default is False.
 
         See Also
         --------
@@ -366,13 +367,13 @@ included in Pastas. To obtain a list of all statistics that are included type:
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
         stats: list, optional
-            list of statistics that need to be calculated. If nothing is
-            provided, all statistics are returned.
+            list of statistics that need to be calculated. If nothing is provided,
+            all statistics are returned.
 
         Returns
         -------
         stats : Pandas.DataFrame
-            single-column DataFrame with calculated statistics
+            single-column DataFrame with calculated statistics.
 
         Examples
         --------

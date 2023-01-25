@@ -227,10 +227,10 @@ def _unpack_series(data: dict):
         msg = (
             "Whoops, looks like an old pas-file using the old TimeSeries format. "
             "Pastas will convert to the new TimeSeries format. However, it can not "
-            "be guaranteed that the conversion will result in the exact same "
-            "results. If you have the Python scripts used to generate this "
-            "pas-file, it is highly recommended to rerun the script using a newer "
-            "Pastas version (0.23 or higher). "
+            "be guaranteed that the conversion will result in the exact same results. "
+            "If you have the Python scripts used to generate this pas-file, it is "
+            "highly recommended to rerun the script using a newer Pastas version ("
+            "0.23 or higher). "
         )
         logger.warning(msg)
 
@@ -250,8 +250,8 @@ def dump(fname: str, data: dict, **kwargs):
     Parameters
     ----------
     fname: str
-        string with the name of the file, including a supported
-        file-extension. Currently supported extension are: .pas.
+        string with the name of the file, including a supported file-extension.
+        Currently supported extension are: .pas.
     data: dict
         dictionary with the information to store.
     kwargs:
@@ -264,8 +264,8 @@ def dump(fname: str, data: dict, **kwargs):
 
     Notes
     -----
-    The specific dump-module is automatically chosen based on the provided
-    file extension.
+    The specific dump-module is automatically chosen based on the provided file
+    extension.
     """
     ext = path.splitext(fname)[1]
     dump_mod = import_module("pastas.io" + ext)

@@ -1,12 +1,12 @@
 """This module contains the noise models available in Pastas.
 
-A Noise model may be used to transform the residual series into a noise
-series that better represents white noise.
+A Noise model may be used to transform the residual series into a noise series that
+better represents white noise.
 
 Examples
 --------
-By default, a noise model is added to a Pastas model. It is possible to
-replace the default model with different models as follows:
+By default, a noise model is added to a Pastas model. It is possible to replace the
+default model with different models as follows:
 
 >>> n = ps.ArmaModel()
 >>> ml.add_noisemodel(n)
@@ -103,8 +103,8 @@ class NoiseModel(NoiseModelBase):
     Parameters
     ----------
     norm: boolean, optional
-        Boolean to indicate whether weights are normalized according to
-        the Von Asmuth and Bierkens (2005) paper. Default is True.
+        Boolean to indicate whether weights are normalized according to the Von
+        Asmuth and Bierkens (2005) paper. Default is True.
 
     Notes
     -----
@@ -120,10 +120,10 @@ class NoiseModel(NoiseModelBase):
 
         w = 1 / \\sqrt{(1 - \\exp(-2 \\Delta t / \\alpha))}
 
-    The units of the alpha parameter is always in days. The first value of
-    the noise is the residual ($v(t=0=r(t=0)$). First weight is
-    1 / sig_residuals (i.e., delt = infty). Normalization of weights as in
-    :cite:t:`von_asmuth_modeling_2005`, optional.
+    The units of the alpha parameter is always in days. The first value of the noise
+    is the residual ($v(t=0=r(t=0)$). First weight is 1 / sig_residuals (i.e.,
+    delt = infty). Normalization of weights as in :cite:t:`von_asmuth_modeling_2005`,
+    optional.
     """
 
     _name = "NoiseModel"
@@ -143,8 +143,8 @@ class NoiseModel(NoiseModelBase):
         res: pandas.Series
             The residual series.
         p: array_like
-            array_like object with the values as floats representing the
-            model parameters. Here, Alpha parameter used by the noisemodel.
+            array_like object with the values as floats representing the model
+            parameters. Here, Alpha parameter used by the noisemodel.
 
         Returns
         -------
@@ -164,8 +164,8 @@ class NoiseModel(NoiseModelBase):
         Parameters
         ----------
         res: pandas.Series
-            Pandas Series with the residuals to compute the weights for. The
-            Series index must be a DatetimeIndex.
+            Pandas Series with the residuals to compute the weights for. The Series
+            index must be a DatetimeIndex.
         p: array_like
             NumPy array with the parameters used in the noise model.
 
@@ -193,8 +193,7 @@ class NoiseModel(NoiseModelBase):
 
 
 class ArmaModel(NoiseModelBase):
-    """ARMA(1,1) Noise model to simulate the noise as defined in.
-
+    """ARMA(1,1) Noise model to simulate the noise as defined in
     :cite:t:`collenteur_estimation_2021`.
 
     Notes
@@ -209,8 +208,8 @@ class ArmaModel(NoiseModelBase):
 
     Warnings
     --------
-    This model has only been tested on regular time steps and should not be
-    used for irregular time steps yet.
+    This model has only been tested on regular time steps and should not be used for
+    irregular time steps yet.
     """
 
     _name = "ArmaModel"
