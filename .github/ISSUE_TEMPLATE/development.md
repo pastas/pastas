@@ -1,7 +1,7 @@
 ---
 name: Development
 about: Suggest new features to implement into Pastas
-title: "[Development]"
+title: "[DEVELOPMENT]"
 labels: development
 assignees: ''
 
