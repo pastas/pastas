@@ -67,7 +67,7 @@ class StressModelBase:
         tmax: TimestampType,
         rfunc: Optional[RFunc] = None,
         up: bool = True,
-        gain_scale_factor: Optional[float] = None,
+        gain_scale_factor: Optional[float] = 1.0,
         cutoff: float = 0.999,
     ) -> None:
         self.name = validate_name(name)
