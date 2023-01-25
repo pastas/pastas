@@ -459,7 +459,7 @@ class LeastSquares(BaseSolver):
         Examples
         --------
 
-        >>> ml.solve(solver=ps.LeastSquares)
+        >>> ml.solve(solver=ps.LeastSquares())
 
         References
         ----------
