@@ -797,21 +797,22 @@ class Model:
                 "Calibration series 'oseries_calib' is empty! Check 'tmin' or 'tmax'."
             )
 
-        # Store the solver instance
-        if solver is None:
-            # Create the default solver is None is provided or already present
-            if self.fit is None:
-                self.fit = LeastSquares()
-        else:
+        # If a solver is provided, use that one
+        if solver is not None:
             # Check if a solver instance is provided, not a class
             if inspect.isclass(solver):
                 raise DeprecationWarning(
                     "As of Pastas 0.23, Solvers should be provided as an instance "
-                    "(e.g., ps.LeastSquares()), and not as a class "
-                    "(e.g., ps.LeastSquares). Please provide an instance of the solver."
+                    "(e.g., ps.LeastSquares()), and not as a class (e.g., "
+                    "ps.LeastSquares). Please provide an instance of the solver."
                 )
             self.fit = solver
-        self.fit.set_model(self)
+            self.fit.set_model(self)
+        # Create the default solver is None is provided or already present
+        elif self.fit is None:
+            self.fit = LeastSquares()
+            self.fit.set_model(self)
+
         self.settings["solver"] = self.fit._name
 
         # Solve model
