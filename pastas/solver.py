@@ -69,11 +69,11 @@ class BaseSolver:
 
         """
         if self.ml is not None:
-            raise UserWarning("This solver instance is already used by another model. "
-                              "Please create a separate solver instance for each "
-                              "Pastas Model.")
+            raise UserWarning(
+                "This solver instance is already used by another model. Please create "
+                "a separate solver instance for each Pastas Model."
+            )
         self.ml = ml
-
 
     def misfit(
         self,
