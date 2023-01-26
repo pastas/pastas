@@ -1351,8 +1351,7 @@ class RechargeModel(StressModelBase):
             "rfunc": self.rfunc._name,
             "rfunc_kwargs": self.rfunc.kwargs,
             "name": self.name,
-            "recharge": self.recharge._name,
-            "recharge_kwargs": self.recharge.kwargs,
+            "recharge": self.recharge.to_dict(),
             "cutoff": self.rfunc.cutoff,
             "temp": self.temp.to_dict() if self.temp else None,
         }

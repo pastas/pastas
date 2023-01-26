@@ -52,10 +52,11 @@ logger = getLogger(__name__)
 class RechargeBase:
     """Base class for classes that calculate the recharge."""
 
+    _name = "RechargeBase"
+
     def __init__(self) -> None:
         self.snow = False
         self.nparam = 0
-        self.kwargs = {}
 
     @staticmethod
     def get_init_parameters(name: str = "recharge") -> DataFrame:
@@ -76,6 +77,20 @@ class RechargeBase:
 
     def simulate(self, prec, evap, p, dt=1.0, return_full=False, **kwargs):
         pass
+
+    def to_dict(self):
+        """Method to export the recharge model object.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct the StressModel
+            object.
+        """
+        data = {
+            "class": self._name,
+        }
+        return data
 
 
 class Linear(RechargeBase):
@@ -531,6 +546,23 @@ class FlexModel(RechargeBase):
         sr, r, ea, q, pe = self.get_root_zone_balance(prec, evap)
         error = sr[0] - sr[-1] + (r + ea + q + pe).sum()
         return error
+
+    def to_dict(self):
+        """Method to export the recharge model object.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct the recharge
+            object.
+        """
+        data = {
+            "class": self._name,
+            "interception": self.interception,
+            "snow": self.snow,
+            "gw_uptake": self.gw_uptake,
+        }
+        return data
 
 
 class Berendrecht(RechargeBase):
