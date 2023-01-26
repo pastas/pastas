@@ -184,9 +184,16 @@ def _load_stressmodel(ts, data):
 
     # Unpack the stress time series
     if "stress" in ts.keys():
-        for i, stress in enumerate(ts["stress"]):
-            series, meta, setting = _unpack_series(stress)
-            ts["stress"][i] = series
+        # Only in the case of the wellmodel stresses are a list
+        if isinstance(ts["stress"], list):
+            for i, stress in enumerate(ts["stress"]):
+                series, meta, setting = _unpack_series(stress)
+                ts["stress"][i] = series
+                metadata.append(meta)
+                settings.append(setting)
+        else:
+            series, meta, setting = _unpack_series(ts["stress"])
+            ts["stress"] = series
             metadata.append(meta)
             settings.append(setting)
 
