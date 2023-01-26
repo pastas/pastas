@@ -48,11 +48,12 @@ def load(fname: str, **kwargs) -> Model:
 
     ml = _load_model(data)
 
+    file_version = data["file_info"]["pastas_version"]
     logger.info(
         "Pastas Model from file %s successfully loaded. This file was created with "
         "Pastas %s. Your current version of Pastas is: %s",
         fname,
-        data["file_info"]["pastas_version"],
+        file_version,
         ps.__version__,
     )
     return ml
@@ -156,6 +157,12 @@ def _load_stressmodel(ts, data):
 
     # Deal with old-style response functions (TODO remove in 1.0)
     if version.parse(data["file_info"]["pastas_version"]) < version.parse("0.23.0"):
+        if "rfunc" in ts.keys():
+            rfunc_kwargs = ts.pop("rfunc_kwargs", {})
+            rfunc_kwargs["class"] = ts["rfunc"]
+            if "cutoff" in ts.keys():
+                rfunc_kwargs["cutoff"] = ts.pop("cutoff")
+            ts["rfunc"] = rfunc_kwargs
         if "recharge" in ts.keys():
             recharge_kwargs = ts.pop("recharge_kwargs", {})
             recharge_kwargs["class"] = ts["recharge"]
@@ -165,8 +172,9 @@ def _load_stressmodel(ts, data):
     stressmodel = getattr(ps.stressmodels, ts["stressmodel"])
     ts.pop("stressmodel")
     if "rfunc" in ts.keys():
-        rfunc_kwargs = ts.pop("rfunc_kwargs", {})
-        ts["rfunc"] = getattr(ps.rfunc, ts["rfunc"])(**rfunc_kwargs)
+        rfunc_class = ts["rfunc"].pop("class")  # Determine response class
+        ts["rfunc"] = getattr(ps.rfunc, rfunc_class)(**ts["rfunc"])
+
     if "recharge" in ts.keys():
         recharge_class = ts["recharge"].pop("class")
         ts["recharge"] = getattr(ps.recharge, recharge_class)(**ts["recharge"])
