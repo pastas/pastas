@@ -219,21 +219,8 @@ class StressModelBase:
 
         return self.stress[0].series
 
-    def to_dict(self, series: bool = True) -> dict:
-        """Method to export the StressModel object.
-
-        Returns
-        -------
-        data: dict
-            dictionary with all necessary information to reconstruct the StressModel
-            object.
-        """
-        data = {
-            "stressmodel": self._name,
-            "name": validate_name(self.name, raise_error=True),
-            "stress": self.dump_stress(series),
-        }
-        return data
+    def to_dict(self, **kwargs):
+        """Method to export the stress model object."""
 
     def get_nsplit(self) -> int:
         """Determine in how many time series the contribution can be split."""
