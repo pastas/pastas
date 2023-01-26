@@ -68,7 +68,6 @@ class StressModelBase:
         rfunc: Optional[RFunc] = None,
         up: bool = True,
         gain_scale_factor: float = 1.0,
-        cutoff: float = 0.999,
     ) -> None:
         self.name = validate_name(name)
         self.tmin = tmin
@@ -82,9 +81,7 @@ class StressModelBase:
                     "instance (e.g., ps.One()), and not as a class (e.g., ps.One). "
                     "Please provide an instance of the response function."
                 )
-            rfunc._update_rfunc_settings(
-                up=up, gain_scale_factor=gain_scale_factor, cutoff=cutoff
-            )
+            rfunc._update_rfunc_settings(up=up, gain_scale_factor=gain_scale_factor)
         self.rfunc = rfunc
 
         self.parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
@@ -204,11 +201,9 @@ class StressModelBase:
         istress: Optional[int] = None,
         **kwargs,
     ) -> DataFrame:
-        """Returns the stress or stresses of the time series object as a pandas
-        DataFrame.
+        """Returns the stress(es) of the time series object as a pandas DataFrame.
 
-        If the time series object has multiple stresses each column
-        represents a stress.
+        If the time series object has multiple stresses each column represents a stress.
 
         Returns
         -------
@@ -293,8 +288,8 @@ class StressModel(StressModelBase):
         True if response function is positive (default), False if negative. None if
         you don't want to define if response is positive or negative.
     cutoff: float, optional
-        float between 0 and 1 to determine how long the response is (default is 99.9%
-        of the actual response time). Used to reduce computation times.
+        This argument is deprecated since 0.23. Directly provide this to directly to
+        the response function instance (e.g., ps.Gamma(cutoff=0.999).
     settings: dict or str, optional
         The settings of the stress. This can be a string referring to a predefined
         settings dict, or a dict with the settings to apply. Refer to the docstring
@@ -329,17 +324,14 @@ class StressModel(StressModelBase):
         rfunc: RFunc,
         name: str,
         up: bool = True,
-        cutoff: float = 0.999,
+        cutoff=None,
         settings: Optional[Union[dict, str]] = None,
         metadata: Optional[dict] = None,
         gain_scale_factor: Optional[float] = None,
         meanstress: Optional[float] = None,
     ) -> None:
-        if meanstress is not None:
-            raise DeprecationWarning(
-                "The argument `meanstress` is deprecated since Pastas 0.23. Please "
-                "use the new argument `gain_scale_factor` instead."
-            )
+
+        raise_deprecations(meanstress=meanstress, cutoff=cutoff)
 
         if isinstance(stress, list):
             stress = stress[0]  # TODO Temporary fix Raoul, 2017-10-24
@@ -357,7 +349,6 @@ class StressModel(StressModelBase):
             rfunc=rfunc,
             up=up,
             gain_scale_factor=gain_scale_factor,
-            cutoff=cutoff,
         )
 
         self.freq = stress.settings["freq"]
@@ -420,7 +411,6 @@ class StressModel(StressModelBase):
             "rfunc_kwargs": self.rfunc.kwargs,
             "name": self.name,
             "up": self.rfunc.up,
-            "cutoff": self.rfunc.cutoff,
             "stress": self.dump_stress(series),
         }
         return data
@@ -443,8 +433,8 @@ class StepModel(StressModelBase):
     up: bool, optional
         Force a direction of the step. Default is None.
     cutoff: float, optional
-        float between 0 and 1 to determine how long the response is (default is 99.9%
-        of the actual response time). Used to reduce computation times.
+        This argument is deprecated since 0.23. Directly provide this to directly to
+        the response function instance (e.g., ps.Gamma(cutoff=0.999).
 
     Notes
     -----
@@ -461,8 +451,10 @@ class StepModel(StressModelBase):
         name: str,
         rfunc: Optional[RFunc] = None,
         up: bool = True,
-        cutoff: float = 0.999,
+        cutoff=None,
     ) -> None:
+        raise_deprecations(cutoff=cutoff)
+
         if rfunc is None:
             rfunc = One()
         StressModelBase.__init__(
@@ -472,7 +464,6 @@ class StepModel(StressModelBase):
             tmax=Timestamp.max,
             rfunc=rfunc,
             up=up,
-            cutoff=cutoff,
         )
         self.tstart = Timestamp(tstart)
         self.set_init_parameters()
@@ -665,8 +656,8 @@ class WellModel(StressModelBase):
         by default False, in which case positive stress lowers e.g., the groundwater
         level.
     cutoff: float, optional
-        float between 0 and 1 to determine how long the response is (default is 99.9%
-        of the actual response time). Used to reduce computation times.
+        This argument is deprecated since 0.23. Directly provide this to directly to
+        the response function instance (e.g., ps.Gamma(cutoff=0.999).
     settings: str, list of dict, optional
         settings of the time series, by default "well".
     sort_wells: bool, optional
@@ -693,11 +684,12 @@ class WellModel(StressModelBase):
         name: str,
         distances: ArrayLike,
         up: bool = False,
-        cutoff: float = 0.999,
+        cutoff=None,
         settings: str = "well",
         sort_wells: bool = True,
         metadata: Optional[list] = None,
     ) -> None:
+        raise_deprecations(cutoff=cutoff)
         if not isinstance(rfunc, HantushWellModel):
             raise NotImplementedError(
                 "WellModel only supports the rfunc HantushWellModel!"
@@ -758,7 +750,6 @@ class WellModel(StressModelBase):
             rfunc=rfunc,
             up=up,
             gain_scale_factor=gain_scale_factor,
-            cutoff=cutoff,
         )
 
         self.rfunc.set_distances(self.distances.values)
@@ -923,7 +914,6 @@ class WellModel(StressModelBase):
             "name": self.name,
             "up": True if self.rfunc.up else False,
             "distances": self.distances.to_list(),
-            "cutoff": self.rfunc.cutoff,
             "stress": self.dump_stress(series),
             "sort_wells": self.sort_wells,
         }
@@ -1005,8 +995,8 @@ class RechargeModel(StressModelBase):
         pandas.Series with pandas.DatetimeIndex containing the temperature series.
         It depends on the recharge model is this argument is required or not.
     cutoff: float, optional
-        float between 0 and 1 to determine how long the response is (default is
-        99.9% of the actual response time). Used to reduce computation times.
+        This argument is deprecated since 0.23. Directly provide this to directly to
+        the response function instance (e.g., ps.Gamma(cutoff=0.999).
     settings: list of dicts or str, optional
         The settings of the precipitation and evaporation time series, in this order.
         This can be a string referring to a predefined settings dict, or a dict with
@@ -1052,7 +1042,7 @@ class RechargeModel(StressModelBase):
         name: str = "recharge",
         recharge: Optional[Recharge] = None,
         temp: Optional[Series] = None,
-        cutoff: float = 0.999,
+        cutoff=None,
         settings: Tuple[Union[str, dict], Union[str, dict], Union[str, dict]] = (
             "prec",
             "evap",
@@ -1060,7 +1050,7 @@ class RechargeModel(StressModelBase):
         ),
         metadata: Optional[Tuple[dict, dict, dict]] = (None, None, None),
     ) -> None:
-
+        raise_deprecations(cutoff=cutoff)
         if rfunc is None:
             rfunc = Exponential()
 
@@ -1114,7 +1104,6 @@ class RechargeModel(StressModelBase):
             rfunc=rfunc,
             up=True,
             gain_scale_factor=gain_scale_factor,
-            cutoff=cutoff,
         )
 
         self.stress = [self.prec, self.evap]
@@ -1353,7 +1342,6 @@ class RechargeModel(StressModelBase):
             "name": self.name,
             "recharge": self.recharge._name,
             "recharge_kwargs": self.recharge.kwargs,
-            "cutoff": self.rfunc.cutoff,
             "temp": self.temp.to_dict() if self.temp else None,
         }
         return data
@@ -1567,8 +1555,8 @@ class ChangeModel(StressModelBase):
         True if response function is positive (default), False if negative. None if
         you don't want to define if response is positive or negative.
     cutoff: float, optional
-        float between 0 and 1 to determine how long the response is (default is 99%
-        of the actual response time). Used to reduce computation times.
+        This argument is deprecated since 0.23. Directly provide this to directly to
+        the response function instance (e.g., ps.Gamma(cutoff=0.999).
     settings: dict or str, optional
         the settings of the stress. This can be a string referring to a predefined
         settings dict, or a dict with the settings to apply. Refer to the docstring
@@ -1590,12 +1578,14 @@ class ChangeModel(StressModelBase):
         rfunc1: RFunc,
         rfunc2: RFunc,
         name: str,
-        tchange: str,
+        tchange: Union[str, TimestampType],
         up: bool = True,
-        cutoff: float = 0.999,
+        cutoff=None,
         settings: Optional[Union[dict, str]] = None,
         metadata: Optional[dict] = None,
     ) -> None:
+        raise_deprecations(cutoff=cutoff)
+
         if isinstance(stress, list):
             stress = stress[0]  # TODO Temporary fix Raoul, 2017-10-24
 
@@ -1614,15 +1604,15 @@ class ChangeModel(StressModelBase):
                 " not as a class (e.g., ps.One). Please provide an instance."
             )
 
-        rfunc1._update_rfunc_settings(up=up, cutoff=cutoff)
+        rfunc1._update_rfunc_settings(up=up)
         self.rfunc1 = rfunc1
 
-        rfunc2._update_rfunc_settings(up=up, cutoff=cutoff)
+        rfunc2._update_rfunc_settings(up=up)
         self.rfunc2 = rfunc2
         self.tchange = Timestamp(tchange)
 
         self.freq = stress.settings["freq"]
-        self.stress = [stress]
+        self.stress.append(stress)
         self.set_init_parameters()
 
     def set_init_parameters(self) -> None:
@@ -1700,3 +1690,16 @@ def StressModel2(*args, **kwargs):
         "the same stress model in future codes."
     )
     logger.error(msg)
+
+
+def raise_deprecations(meanstress=None, cutoff=None):
+    if meanstress is not None:
+        raise DeprecationWarning(
+            "The argument `meanstress` is deprecated since Pastas 0.23. Please "
+            "use the new argument `gain_scale_factor` instead."
+        )
+    if cutoff is not None:
+        raise DeprecationWarning(
+            "The argument `cutoff` is deprecated since Pastas 0.23. Please "
+            "apply this directly to the response function (e.g., ps.Gamma(cutoff=0.99))"
+        )
