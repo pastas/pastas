@@ -330,16 +330,12 @@ class StressModel(StressModelBase):
         gain_scale_factor: Optional[float] = None,
         meanstress: Optional[float] = None,
     ) -> None:
-
         raise_deprecations(meanstress=meanstress, cutoff=cutoff)
 
         if isinstance(stress, list):
             stress = stress[0]  # TODO Temporary fix Raoul, 2017-10-24
 
         stress = TimeSeries(stress, settings=settings, metadata=metadata)
-
-        if gain_scale_factor is None:
-            gain_scale_factor = stress.series.std()
 
         StressModelBase.__init__(
             self,
@@ -348,9 +344,12 @@ class StressModel(StressModelBase):
             tmax=stress.series.index.max(),
             rfunc=rfunc,
             up=up,
-            gain_scale_factor=gain_scale_factor,
+            gain_scale_factor=stress.series.std()
+            if gain_scale_factor is None
+            else gain_scale_factor,
         )
 
+        self.gain_scale_factor = gain_scale_factor
         self.freq = stress.settings["freq"]
         self.stress = [stress]
         self.set_init_parameters()
@@ -404,6 +403,11 @@ class StressModel(StressModelBase):
         data: dict
             dictionary with all necessary information to reconstruct the StressModel
             object.
+
+        Notes
+        -----
+        Settings and metadata are exported with the stress.
+
         """
         data = {
             "stressmodel": self._name,
@@ -411,6 +415,7 @@ class StressModel(StressModelBase):
             "name": self.name,
             "up": self.rfunc.up,
             "stress": self.dump_stress(series),
+            "gain_scale_factor": self.gain_scale_factor,
         }
         return data
 
@@ -504,13 +509,21 @@ class StepModel(StressModelBase):
         )
         return h
 
-    def to_dict(self, series: bool = True) -> dict:
+    def to_dict(self, **kwargs) -> dict:
+        """Method to export the StepModel object.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct object.
+
+        """
         data = {
             "stressmodel": self._name,
             "tstart": self.tstart,
             "name": self.name,
-            "up": self.rfunc.up,
             "rfunc": self.rfunc.to_dict(),
+            "up": self.rfunc.up,
         }
         return data
 
@@ -592,7 +605,18 @@ class LinearTrend(StressModelBase):
         trend = trend.cumsum() * p[0]
         return trend.rename(self.name)
 
-    def to_dict(self, series: bool = True) -> dict:
+    def to_dict(self, **kwargs) -> dict:
+        """Method to export a dictionary to reconstruct the stressmodel.
+
+        Parameters
+        ----------
+        kwargs
+
+        Returns
+        -------
+        data: dict
+
+        """
         data = {
             "stressmodel": self._name,
             "start": self.start,
@@ -635,6 +659,22 @@ class Constant(StressModelBase):
     @staticmethod
     def simulate(p: Optional[float] = None) -> float:
         return p
+
+    def to_dict(self, **kwargs):
+        """Method to export the StressModel object.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct the StressModel
+            object.
+        """
+        data = {
+            "stressmodel": self._name,
+            "name": self.name,
+            "initial": self.initial,
+        }
+        return data
 
 
 class WellModel(StressModelBase):
@@ -908,11 +948,11 @@ class WellModel(StressModelBase):
         """
         data = {
             "stressmodel": self._name,
+            "stress": self.dump_stress(series),
             "rfunc": self.rfunc.to_dict(),
             "name": self.name,
-            "up": True if self.rfunc.up else False,
             "distances": self.distances.to_list(),
-            "stress": self.dump_stress(series),
+            "up": True if self.rfunc.up else False,
             "sort_wells": self.sort_wells,
         }
         return data
@@ -1331,6 +1371,18 @@ class RechargeModel(StressModelBase):
         return df
 
     def to_dict(self, series: bool = True) -> dict:
+        """Method to export the RechargeModel object.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct the object.
+
+        Notes
+        -----
+        Settings and metadata are exported with the stress.
+
+        """
         data = {
             "stressmodel": self._name,
             "prec": self.prec.to_dict(series=series),
@@ -1413,6 +1465,7 @@ class TarsoModel(RechargeModel):
             rfunc = Exponential()
         if not isinstance(rfunc, Exponential):
             raise NotImplementedError("TarsoModel only supports rfunc Exponential!")
+        self.oseries = oseries
         self.dmin = dmin
         self.dmax = dmax
         super().__init__(prec=prec, evap=evap, rfunc=rfunc, **kwargs)
@@ -1462,9 +1515,22 @@ class TarsoModel(RechargeModel):
         return sim
 
     def to_dict(self, series: bool = True) -> dict:
+        """Method to export the TarsoModel object.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct the object.
+
+        Notes
+        -----
+        Settings and metadata are exported with the stress.
+
+        """
         data = super().to_dict(series)
         data["dmin"] = self.dmin
         data["dmax"] = self.dmax
+        data["oseries"] = self.oseries
         return data
 
     @staticmethod
@@ -1677,6 +1743,29 @@ class ChangeModel(StressModelBase):
         h = omega * h1 + (1 - omega) * h2
 
         return h
+
+    def to_dict(self, series: Optional[bool] = True):
+        """Method to export the ChangeModel object.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct the object.
+
+        Notes
+        -----
+        Settings and metadata are exported with the stress.
+
+        """
+        data = {
+            "stress": self.dump_stress(series=series),
+            "rfunc1": self.rfunc1.to_dict(),
+            "rfunc2": self.rfunc2.to_dict(),
+            "name": self.name,
+            "tchange": self.tchange,
+            "up": self.rfunc1.up,
+        }
+        return data
 
 
 def StressModel2(*args, **kwargs):
