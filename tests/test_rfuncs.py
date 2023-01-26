@@ -13,6 +13,7 @@ def test_rfunc(rfunc_name):
         rfunc.block(p)
         rfunc.step(p)
 
+
 @pytest.mark.parametrize("rfunc_name", ps.rfunc.__all__)
 def test_to_dict_rfuncs(rfunc_name):
     rfunc1 = getattr(ps.rfunc, rfunc_name)(cutoff=0.5)
