@@ -1337,8 +1337,7 @@ class RechargeModel(StressModelBase):
             "evap": self.evap.to_dict(series=series),
             "rfunc": self.rfunc.to_dict(),
             "name": self.name,
-            "recharge": self.recharge._name,
-            "recharge_kwargs": self.recharge.kwargs,
+            "recharge": self.recharge.to_dict(),
             "temp": self.temp.to_dict() if self.temp else None,
         }
         return data

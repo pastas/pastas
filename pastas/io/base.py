@@ -163,6 +163,10 @@ def _load_stressmodel(ts, data):
             if "cutoff" in ts.keys():
                 rfunc_kwargs["cutoff"] = ts.pop("cutoff")
             ts["rfunc"] = rfunc_kwargs
+        if "recharge" in ts.keys():
+            recharge_kwargs = ts.pop("recharge_kwargs", {})
+            recharge_kwargs["class"] = ts["recharge"]
+            ts["recharge"] = recharge_kwargs
 
     # Create and add stress model
     stressmodel = getattr(ps.stressmodels, ts["stressmodel"])
@@ -172,8 +176,8 @@ def _load_stressmodel(ts, data):
         ts["rfunc"] = getattr(ps.rfunc, rfunc_class)(**ts["rfunc"])
 
     if "recharge" in ts.keys():
-        recharge_kwargs = ts.pop("recharge_kwargs", {})
-        ts["recharge"] = getattr(ps.recharge, ts["recharge"])(**recharge_kwargs)
+        recharge_class = ts["recharge"].pop("class")
+        ts["recharge"] = getattr(ps.recharge, recharge_class)(**ts["recharge"])
 
     metadata = []
     settings = []
