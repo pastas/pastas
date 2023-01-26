@@ -170,28 +170,6 @@ class StressModelBase:
         if freq:
             self.freq = freq
 
-    def dump_stress(self, series: bool = True) -> list:
-        """Method to dump all stresses in the stresses list.
-
-        Parameters
-        ----------
-        series: bool, optional
-            True if time series are to be exported, False if only the name
-            of the time series are needed. Settings are always exported.
-
-        Returns
-        -------
-        data: dict
-            dictionary with the dump of the stresses.
-        """
-        data = []
-
-        for stress in self.stress:
-            stress.name = validate_name(stress.name, raise_error=True)
-            data.append(stress.to_dict(series=series))
-
-        return data
-
     def get_stress(
         self,
         p: Optional[ArrayLike] = None,
@@ -320,7 +298,11 @@ class StressModel(StressModelBase):
         raise_deprecations(meanstress=meanstress, cutoff=cutoff)
 
         if isinstance(stress, list):
-            stress = stress[0]  # TODO Temporary fix Raoul, 2017-10-24
+            logger.warning(
+                "providing a stress as list is deprecated and will results "
+                "in an Error in Pastas 1.0."
+            )
+            stress = stress[0]  # TODO Remove in Pastas 1.0
 
         stress = TimeSeries(stress, settings=settings, metadata=metadata)
 
@@ -338,7 +320,7 @@ class StressModel(StressModelBase):
 
         self.gain_scale_factor = gain_scale_factor
         self.freq = stress.settings["freq"]
-        self.stress = [stress]
+        self.stress.append(stress)
         self.set_init_parameters()
 
     def set_init_parameters(self) -> None:
@@ -401,7 +383,7 @@ class StressModel(StressModelBase):
             "rfunc": self.rfunc.to_dict(),
             "name": self.name,
             "up": self.rfunc.up,
-            "stress": self.dump_stress(series),
+            "stress": self.stress[0].to_dict(series=series),
             "gain_scale_factor": self.gain_scale_factor,
         }
         return data
@@ -923,6 +905,28 @@ class WellModel(StressModelBase):
         else:
             p_with_r = np.r_[p, distances]
         return p_with_r
+
+    def dump_stress(self, series: bool = True) -> list:
+        """Method to dump all stresses in the stresses list.
+
+        Parameters
+        ----------
+        series: bool, optional
+            True if time series are to be exported, False if only the name
+            of the time series are needed. Settings are always exported.
+
+        Returns
+        -------
+        data: dict
+            dictionary with the dump of the stresses.
+        """
+        data = []
+
+        for stress in self.stress:
+            stress.name = validate_name(stress.name, raise_error=True)
+            data.append(stress.to_dict(series=series))
+
+        return data
 
     def to_dict(self, series: bool = True) -> dict:
         """Method to export the WellModel object.
@@ -1636,7 +1640,11 @@ class ChangeModel(StressModelBase):
         raise_deprecations(cutoff=cutoff)
 
         if isinstance(stress, list):
-            stress = stress[0]  # TODO Temporary fix Raoul, 2017-10-24
+            logger.warning(
+                "providing a stress as list is deprecated and will results "
+                "in an Error in Pastas 1.0."
+            )
+            stress = stress[0]  # TODO Remove in Pastas 1.0
 
         stress = TimeSeries(stress, settings=settings, metadata=metadata)
 
@@ -1745,7 +1753,7 @@ class ChangeModel(StressModelBase):
 
         """
         data = {
-            "stress": self.dump_stress(series=series),
+            "stress": self.stress[0].to_dict(series=series),
             "rfunc1": self.rfunc1.to_dict(),
             "rfunc2": self.rfunc2.to_dict(),
             "name": self.name,
