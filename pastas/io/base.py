@@ -156,12 +156,10 @@ def _load_stressmodel(ts, data):
 
     # Deal with old-style response functions (TODO remove in 1.0)
     if version.parse(data["file_info"]["pastas_version"]) < version.parse("0.23.0"):
-        recharge_kwargs = ts.pop("recharge_kwargs", {})
-        recharge_kwargs["class"] = ts["recharge"]
-        ts["recharge"] = recharge_kwargs
-
-        recharge_kwargs = ts.pop("recharge_kwargs", {})
-        ts["recharge"] = getattr(ps.recharge, ts["recharge"])(**recharge_kwargs)
+        if "recharge" in ts.keys():
+            recharge_kwargs = ts.pop("recharge_kwargs", {})
+            recharge_kwargs["class"] = ts["recharge"]
+            ts["recharge"] = recharge_kwargs
 
     # Create and add stress model
     stressmodel = getattr(ps.stressmodels, ts["stressmodel"])
