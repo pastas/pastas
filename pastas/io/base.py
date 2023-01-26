@@ -157,11 +157,12 @@ def _load_stressmodel(ts, data):
 
     # Deal with old-style response functions (TODO remove in 1.0)
     if version.parse(data["file_info"]["pastas_version"]) < version.parse("0.23.0"):
-        rfunc_kwargs = ts.pop("rfunc_kwargs", {})
-        rfunc_kwargs["class"] = ts["rfunc"]
-        if "cutoff" in ts.keys():
-            rfunc_kwargs["cutoff"] = ts.pop("cutoff")
-        ts["rfunc"] = rfunc_kwargs
+        if "rfunc" in ts.keys():
+            rfunc_kwargs = ts.pop("rfunc_kwargs", {})
+            rfunc_kwargs["class"] = ts["rfunc"]
+            if "cutoff" in ts.keys():
+                rfunc_kwargs["cutoff"] = ts.pop("cutoff")
+            ts["rfunc"] = rfunc_kwargs
 
     # Create and add stress model
     stressmodel = getattr(ps.stressmodels, ts["stressmodel"])
