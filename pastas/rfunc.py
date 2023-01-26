@@ -1555,7 +1555,7 @@ class Kraijenhoff(RfuncBase):
         parameter, computed as 1 / gain_scale_factor.
     cutoff: float, optional
         proportion after which the step function is cut off.
-    n_term: int, optional
+    n_terms: int, optional
         Number of terms.
 
     Notes
