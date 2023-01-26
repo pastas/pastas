@@ -100,18 +100,30 @@ def _load_model(data: dict) -> Model:
 
     # Add transform
     if "transform" in data.keys():
-        transform = getattr(ps.transform, data["transform"].pop("transform"))
+        # Todo Deal with old files. Remove in pastas 1.0
+        if "transform" in data["transform"].keys():
+            data["transform"]["class"] = data["transform"].pop("transform")
+
+        transform = getattr(ps.transform, data["transform"].pop("class"))
         transform = transform(**data["transform"])
         ml.add_transform(transform)
 
     # Add noisemodel if present
     if "noisemodel" in data.keys():
-        n = getattr(ps.noisemodels, data["noisemodel"]["type"])()
+        # Todo Deal with old files. Remove in pastas 1.0
+        if "type" in data["noisemodel"].keys():
+            data["noisemodel"]["class"] = data["noisemodel"].pop("type")
+
+        n = getattr(ps.noisemodels, data["noisemodel"].pop("class"))()
         ml.add_noisemodel(n)
 
     # Add fit object to the model
     if "fit" in data.keys():
-        fit = getattr(ps.solver, data["fit"].pop("name"))
+        # Todo Deal with old files. Remove in pastas 1.0
+        if "name" in data["fit"].keys():
+            data["fit"]["class"] = data["fit"].pop("name")
+
+        fit = getattr(ps.solver, data["fit"].pop("class"))
         ml.fit = fit(ml=ml, **data["fit"])
 
     # Add parameters, use update to maintain correct order
@@ -127,8 +139,12 @@ def _load_model(data: dict) -> Model:
 
 
 def _load_stressmodel(ts, data):
+    # Todo Deal with old files. Remove in pastas 1.0
+    if "stressmodel" in ts.keys():
+        ts["class"] = ts.pop("stressmodel")
+
     # TODO Deal with old StressModel2 files for version 0.22.0. Remove in 0.23.0.
-    if ts["stressmodel"] == "StressModel2":
+    if ts["class"] == "StressModel2":
         msg = (
             "StressModel2 is removed since Pastas 0.22.0 and is replaced by the "
             "RechargeModel using a Linear recharge model. Make sure to save "
@@ -140,7 +156,7 @@ def _load_stressmodel(ts, data):
         raise NotImplementedError(msg)
 
     # TODO Deal with old parameter value b in HantushWellModel: b_new = np.log(b_old)
-    if (ts["stressmodel"] == "WellModel") and (
+    if (ts["class"] == "WellModel") and (
         version.parse(data["file_info"]["pastas_version"]) < version.parse("0.22.0")
     ):
         logger.warning(
@@ -169,8 +185,8 @@ def _load_stressmodel(ts, data):
             ts["recharge"] = recharge_kwargs
 
     # Create and add stress model
-    stressmodel = getattr(ps.stressmodels, ts["stressmodel"])
-    ts.pop("stressmodel")
+    stressmodel = getattr(ps.stressmodels, ts.pop("class"))
+
     if "rfunc" in ts.keys():
         rfunc_class = ts["rfunc"].pop("class")  # Determine response class
         ts["rfunc"] = getattr(ps.rfunc, rfunc_class)(**ts["rfunc"])
