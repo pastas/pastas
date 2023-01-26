@@ -1731,7 +1731,7 @@ class ChangeModel(StressModelBase):
 
         return h
 
-    def to_dict(self, series: Optional[bool] = True):
+    def to_dict(self, series: bool = True):
         """Method to export the ChangeModel object.
 
         Returns
