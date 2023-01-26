@@ -158,8 +158,14 @@ def _load_stressmodel(ts, data):
     stressmodel = getattr(ps.stressmodels, ts["stressmodel"])
     ts.pop("stressmodel")
     if "rfunc" in ts.keys():
-        rfunc_kwargs = ts.pop("rfunc_kwargs", {})
-        ts["rfunc"] = getattr(ps.rfunc, ts["rfunc"])(**rfunc_kwargs)
+        # Deal with old-style messy response functions (TODO remove in 1.0)
+        if "rfunc_kwargs" in ts.keys():
+            rfunc_kwargs = ts.pop("rfunc_kwargs", {})
+            ts["rfunc"] = getattr(ps.rfunc, ts["rfunc"])(**rfunc_kwargs)
+        else:
+            rfunc_class = ts["rfunc"].pop("class")  # Determine response class
+            ts["rfunc"] = getattr(ps.rfunc, rfunc_class)(**ts["rfunc"])
+
     if "recharge" in ts.keys():
         recharge_kwargs = ts.pop("recharge_kwargs", {})
         ts["recharge"] = getattr(ps.recharge, ts["recharge"])(**recharge_kwargs)

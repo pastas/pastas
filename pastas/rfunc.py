@@ -259,7 +259,7 @@ class RfuncBase:
 
         """
         data = {
-            "name": self._name,
+            "class": self._name,
             "up": self.up,
             "gain_scale_factor": self.gain_scale_factor,
             "cutoff": self.cutoff,
@@ -744,7 +744,7 @@ class HantushWellModel(RfuncBase):
 
         """
         data = {
-            "name": self._name,
+            "class": self._name,
             "up": self.up,
             "gain_scale_factor": self.gain_scale_factor,
             "cutoff": self.cutoff,
@@ -946,7 +946,7 @@ class Hantush(RfuncBase):
 
         """
         data = {
-            "name": self._name,
+            "class": self._name,
             "up": self.up,
             "gain_scale_factor": self.gain_scale_factor,
             "cutoff": self.cutoff,
@@ -1347,7 +1347,7 @@ class FourParam(RfuncBase):
 
         """
         data = {
-            "name": self._name,
+            "class": self._name,
             "up": self.up,
             "gain_scale_factor": self.gain_scale_factor,
             "cutoff": self.cutoff,
@@ -1679,7 +1679,7 @@ class Kraijenhoff(RfuncBase):
 
         """
         data = {
-            "name": self._name,
+            "class": self._name,
             "up": self.up,
             "gain_scale_factor": self.gain_scale_factor,
             "cutoff": self.cutoff,
@@ -1807,7 +1807,7 @@ class Spline(RfuncBase):
 
         """
         data = {
-            "name": self._name,
+            "class": self._name,
             "up": self.up,
             "gain_scale_factor": self.gain_scale_factor,
             "cutoff": self.cutoff,

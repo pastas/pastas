@@ -407,8 +407,7 @@ class StressModel(StressModelBase):
         """
         data = {
             "stressmodel": self._name,
-            "rfunc": self.rfunc._name,
-            "rfunc_kwargs": self.rfunc.kwargs,
+            "rfunc": self.rfunc.to_dict(),
             "name": self.name,
             "up": self.rfunc.up,
             "stress": self.dump_stress(series),
@@ -511,7 +510,7 @@ class StepModel(StressModelBase):
             "tstart": self.tstart,
             "name": self.name,
             "up": self.rfunc.up,
-            "rfunc": self.rfunc._name,
+            "rfunc": self.rfunc.to_dict(),
         }
         return data
 
@@ -909,8 +908,7 @@ class WellModel(StressModelBase):
         """
         data = {
             "stressmodel": self._name,
-            "rfunc": self.rfunc._name,
-            "rfunc_kwargs": self.rfunc.kwargs,
+            "rfunc": self.rfunc.to_dict(),
             "name": self.name,
             "up": True if self.rfunc.up else False,
             "distances": self.distances.to_list(),
@@ -1337,8 +1335,7 @@ class RechargeModel(StressModelBase):
             "stressmodel": self._name,
             "prec": self.prec.to_dict(series=series),
             "evap": self.evap.to_dict(series=series),
-            "rfunc": self.rfunc._name,
-            "rfunc_kwargs": self.rfunc.kwargs,
+            "rfunc": self.rfunc.to_dict(),
             "name": self.name,
             "recharge": self.recharge._name,
             "recharge_kwargs": self.recharge.kwargs,
