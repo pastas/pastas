@@ -72,7 +72,10 @@ class RfuncBase:
         self.kwargs = kwargs
 
     def _update_rfunc_settings(
-        self, up: bool = True, gain_scale_factor: float = 1.0, cutoff: float = 0.999
+        self,
+        up: Optional[bool] = "nochange",
+        gain_scale_factor: Optional[float] = None,
+        cutoff: Optional[float] = None,
     ) -> None:
         """Internal method to set the settings of the response function.
 
@@ -85,16 +88,25 @@ class RfuncBase:
             the scale factor is used to set the initial value and the bounds of the gain
             parameter, computed as 1 / gain_scale_factor.
         cutoff: float, optional
-            proportion after which the step function is cut off. default is 0.999.
+            proportion after which the step function is cut off.
+
+        Notes
+        -----
+        Only change the settings if values are provided!
 
         """
-        self.up = up
-        if 1e-8 > gain_scale_factor > 0:
-            gain_scale_factor = 1e-8  # arbitrary number to prevent division by zero
-        elif gain_scale_factor < 0 and up is True:
-            gain_scale_factor = gain_scale_factor * -1
-        self.gain_scale_factor = gain_scale_factor
-        self.cutoff = cutoff
+        if up != "nochange":
+            self.up = up
+
+        if gain_scale_factor is not None:
+            if 1e-8 > gain_scale_factor > 0:
+                gain_scale_factor = 1e-8  # arbitrary number to prevent division by zero
+            elif gain_scale_factor < 0 and up is True:
+                gain_scale_factor = gain_scale_factor * -1
+            self.gain_scale_factor = gain_scale_factor
+
+        if cutoff is not None:
+            self.cutoff = cutoff
 
     def get_init_parameters(self, name: str) -> DataFrame:
         """Get initial parameters and bounds. It is called by the stressmodel.
