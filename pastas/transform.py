@@ -129,7 +129,7 @@ class ThresholdTransform:
 
     def to_dict(self) -> dict:
         data = {
-            "transform": self._name,
+            "class": self._name,
             "value": self.value,
             "vmin": self.vmin,
             "vmax": self.vmax,

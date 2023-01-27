@@ -379,7 +379,7 @@ class StressModel(StressModelBase):
 
         """
         data = {
-            "stressmodel": self._name,
+            "class": self._name,
             "rfunc": self.rfunc.to_dict(),
             "name": self.name,
             "up": self.rfunc.up,
@@ -488,7 +488,7 @@ class StepModel(StressModelBase):
 
         """
         data = {
-            "stressmodel": self._name,
+            "class": self._name,
             "tstart": self.tstart,
             "name": self.name,
             "rfunc": self.rfunc.to_dict(),
@@ -587,7 +587,7 @@ class LinearTrend(StressModelBase):
 
         """
         data = {
-            "stressmodel": self._name,
+            "class": self._name,
             "start": self.start,
             "end": self.end,
             "name": self.name,
@@ -639,7 +639,7 @@ class Constant(StressModelBase):
             object.
         """
         data = {
-            "stressmodel": self._name,
+            "class": self._name,
             "name": self.name,
             "initial": self.initial,
         }
@@ -931,7 +931,7 @@ class WellModel(StressModelBase):
             object.
         """
         data = {
-            "stressmodel": self._name,
+            "class": self._name,
             "stress": self.dump_stress(series),
             "rfunc": self.rfunc.to_dict(),
             "name": self.name,
@@ -1368,7 +1368,7 @@ class RechargeModel(StressModelBase):
 
         """
         data = {
-            "stressmodel": self._name,
+            "class": self._name,
             "prec": self.prec.to_dict(series=series),
             "evap": self.evap.to_dict(series=series),
             "rfunc": self.rfunc.to_dict(),

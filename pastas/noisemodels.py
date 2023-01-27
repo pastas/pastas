@@ -90,7 +90,9 @@ class NoiseModelBase:
         self.parameters.loc[name, "vary"] = value
 
     def to_dict(self) -> dict:
-        return {"type": self._name}
+        """Method to return a dict to store the noise model"""
+        data = {"class": self._name, "norm": self.norm}
+        return data
 
     @staticmethod
     def weights(res, p) -> int:
@@ -190,6 +192,11 @@ class NoiseModel(NoiseModelBase):
         if self.norm:
             w *= np.exp(1.0 / (2.0 * odelt.size) * np.sum(np.log(1.0 - exp)))
         return Series(data=w, index=res.index, name="noise_weights")
+
+    def to_dict(self) -> dict:
+        """Method to return a dict to store the noise model"""
+        data = {"class": self._name, "norm": self.norm}
+        return data
 
 
 class ArmaModel(NoiseModelBase):
