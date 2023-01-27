@@ -703,13 +703,6 @@ class WellModel(StressModelBase):
                 "WellModel only supports the rfunc HantushWellModel!"
             )
 
-        if version("scipy") < "1.8.0":
-            logger.warning(
-                "It is recommended to use LmfitSolve as the solver "
-                "or update to scipy>=1.8.0 when implementing WellModel."
-                " See https://github.com/pastas/pastas/issues/177."
-            )
-
         # sort wells by distance
         self.sort_wells = sort_wells
         if self.sort_wells:
