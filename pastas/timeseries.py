@@ -666,7 +666,7 @@ def _validate_series(series: Series, equidistant: bool = True):
 
     # 2. Make sure the index is a DatetimeIndex
     if not isinstance(series.index, pd.DatetimeIndex):
-        msg = f"Index os series {name} is not a pandas.DatetimeIndex."
+        msg = f"Index of series {name} is not a pandas.DatetimeIndex."
         logger.error(msg)
         raise ValueError(msg)
 
