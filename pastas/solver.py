@@ -436,7 +436,7 @@ class BaseSolver:
 
     def to_dict(self) -> dict:
         data = {
-            "name": self._name,
+            "class": self._name,
             "pcov": self.pcov,
             "nfev": self.nfev,
             "obj_func": self.obj_func,

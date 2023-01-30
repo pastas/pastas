@@ -48,11 +48,12 @@ def load(fname: str, **kwargs) -> Model:
 
     ml = _load_model(data)
 
+    file_version = data["file_info"]["pastas_version"]
     logger.info(
         "Pastas Model from file %s successfully loaded. This file was created with "
         "Pastas %s. Your current version of Pastas is: %s",
         fname,
-        data["file_info"]["pastas_version"],
+        file_version,
         ps.__version__,
     )
     return ml
@@ -99,19 +100,31 @@ def _load_model(data: dict) -> Model:
 
     # Add transform
     if "transform" in data.keys():
-        transform = getattr(ps.transform, data["transform"].pop("transform"))
+        # Todo Deal with old files. Remove in pastas 1.0
+        if "transform" in data["transform"].keys():
+            data["transform"]["class"] = data["transform"].pop("transform")
+
+        transform = getattr(ps.transform, data["transform"].pop("class"))
         transform = transform(**data["transform"])
         ml.add_transform(transform)
 
     # Add noisemodel if present
     if "noisemodel" in data.keys():
-        n = getattr(ps.noisemodels, data["noisemodel"]["type"])()
+        # Todo Deal with old files. Remove in pastas 1.0
+        if "type" in data["noisemodel"].keys():
+            data["noisemodel"]["class"] = data["noisemodel"].pop("type")
+
+        n = getattr(ps.noisemodels, data["noisemodel"].pop("class"))()
         ml.add_noisemodel(n)
 
     # Add fit object to the model
     if "fit" in data.keys():
-        fit = getattr(ps.solver, data["fit"].pop("name"))
-        ml.fit = fit(**data["fit"])
+        # Todo Deal with old files. Remove in pastas 1.0
+        if "name" in data["fit"].keys():
+            data["fit"]["class"] = data["fit"].pop("name")
+
+        solver = getattr(ps.solver, data["fit"].pop("class"))
+        ml.fit = solver(**data["fit"])
         ml.fit.set_model(ml)
 
     # Add parameters, use update to maintain correct order
@@ -127,8 +140,12 @@ def _load_model(data: dict) -> Model:
 
 
 def _load_stressmodel(ts, data):
+    # Todo Deal with old files. Remove in pastas 1.0
+    if "stressmodel" in ts.keys():
+        ts["class"] = ts.pop("stressmodel")
+
     # TODO Deal with old StressModel2 files for version 0.22.0. Remove in 0.23.0.
-    if ts["stressmodel"] == "StressModel2":
+    if ts["class"] == "StressModel2":
         msg = (
             "StressModel2 is removed since Pastas 0.22.0 and is replaced by the "
             "RechargeModel using a Linear recharge model. Make sure to save "
@@ -140,7 +157,7 @@ def _load_stressmodel(ts, data):
         raise NotImplementedError(msg)
 
     # TODO Deal with old parameter value b in HantushWellModel: b_new = np.log(b_old)
-    if (ts["stressmodel"] == "WellModel") and (
+    if (ts["class"] == "WellModel") and (
         version.parse(data["file_info"]["pastas_version"]) < version.parse("0.22.0")
     ):
         logger.warning(
@@ -155,24 +172,45 @@ def _load_stressmodel(ts, data):
                         data["parameters"].loc[wnam + "_b", pcol]
                     )
 
+    # Deal with old-style response functions (TODO remove in 1.0)
+    if version.parse(data["file_info"]["pastas_version"]) < version.parse("0.23.0"):
+        if "rfunc" in ts.keys():
+            rfunc_kwargs = ts.pop("rfunc_kwargs", {})
+            rfunc_kwargs["class"] = ts["rfunc"]
+            if "cutoff" in ts.keys():
+                rfunc_kwargs["cutoff"] = ts.pop("cutoff")
+            ts["rfunc"] = rfunc_kwargs
+        if "recharge" in ts.keys():
+            recharge_kwargs = ts.pop("recharge_kwargs", {})
+            recharge_kwargs["class"] = ts["recharge"]
+            ts["recharge"] = recharge_kwargs
+
     # Create and add stress model
-    stressmodel = getattr(ps.stressmodels, ts["stressmodel"])
-    ts.pop("stressmodel")
+    stressmodel = getattr(ps.stressmodels, ts.pop("class"))
+
     if "rfunc" in ts.keys():
-        rfunc_kwargs = ts.pop("rfunc_kwargs", {})
-        ts["rfunc"] = getattr(ps.rfunc, ts["rfunc"])(**rfunc_kwargs)
+        rfunc_class = ts["rfunc"].pop("class")  # Determine response class
+        ts["rfunc"] = getattr(ps.rfunc, rfunc_class)(**ts["rfunc"])
+
     if "recharge" in ts.keys():
-        recharge_kwargs = ts.pop("recharge_kwargs", {})
-        ts["recharge"] = getattr(ps.recharge, ts["recharge"])(**recharge_kwargs)
+        recharge_class = ts["recharge"].pop("class")
+        ts["recharge"] = getattr(ps.recharge, recharge_class)(**ts["recharge"])
 
     metadata = []
     settings = []
 
     # Unpack the stress time series
     if "stress" in ts.keys():
-        for i, stress in enumerate(ts["stress"]):
-            series, meta, setting = _unpack_series(stress)
-            ts["stress"][i] = series
+        # Only in the case of the wellmodel stresses are a list
+        if isinstance(ts["stress"], list):
+            for i, stress in enumerate(ts["stress"]):
+                series, meta, setting = _unpack_series(stress)
+                ts["stress"][i] = series
+                metadata.append(meta)
+                settings.append(setting)
+        else:
+            series, meta, setting = _unpack_series(ts["stress"])
+            ts["stress"] = series
             metadata.append(meta)
             settings.append(setting)
 

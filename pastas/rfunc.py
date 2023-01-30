@@ -60,19 +60,22 @@ class RfuncBase:
         **kwargs,
     ) -> None:
         self.up = up
-        if "gain_scale_factor" in kwargs.keys():
+        if "meanstress" in kwargs.keys():
             logger.warning(
                 "The gain_scale_factor argument is deprecated and will throw an error "
                 "in Pastas 1.0. Please use the `gain_scale_factor` argument instead."
             )
-            gain_scale_factor = kwargs["gain_scale_factor"]
+            gain_scale_factor = kwargs["meanstress"]
 
         self.gain_scale_factor = gain_scale_factor
         self.cutoff = cutoff
         self.kwargs = kwargs
 
     def _update_rfunc_settings(
-        self, up: bool = True, gain_scale_factor: float = 1.0, cutoff: float = 0.999
+        self,
+        up: Optional[bool] = "nochange",
+        gain_scale_factor: Optional[float] = None,
+        cutoff: Optional[float] = None,
     ) -> None:
         """Internal method to set the settings of the response function.
 
@@ -85,16 +88,25 @@ class RfuncBase:
             the scale factor is used to set the initial value and the bounds of the gain
             parameter, computed as 1 / gain_scale_factor.
         cutoff: float, optional
-            proportion after which the step function is cut off. default is 0.999.
+            proportion after which the step function is cut off.
+
+        Notes
+        -----
+        Only change the settings if values are provided!
 
         """
-        self.up = up
-        if 1e-8 > gain_scale_factor > 0:
-            gain_scale_factor = 1e-8  # arbitrary number to prevent division by zero
-        elif gain_scale_factor < 0 and up is True:
-            gain_scale_factor = gain_scale_factor * -1
-        self.gain_scale_factor = gain_scale_factor
-        self.cutoff = cutoff
+        if up != "nochange":
+            self.up = up
+
+        if gain_scale_factor is not None:
+            if 1e-8 > gain_scale_factor > 0:
+                gain_scale_factor = 1e-8  # arbitrary number to prevent division by zero
+            elif gain_scale_factor < 0 and up is True:
+                gain_scale_factor = gain_scale_factor * -1
+            self.gain_scale_factor = gain_scale_factor
+
+        if cutoff is not None:
+            self.cutoff = cutoff
 
     def get_init_parameters(self, name: str) -> DataFrame:
         """Get initial parameters and bounds. It is called by the stressmodel.
@@ -244,6 +256,28 @@ class RfuncBase:
                 tmax = min(tmax, maxtmax)
             tmax = max(tmax, 3 * dt)
             return np.arange(dt, tmax, dt)
+
+    def to_dict(self):
+        """Method to export the response function to a dictionary.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct the rfunc object.
+
+        Notes
+        -----
+        The exported dictionary should exactly match the input arguments of __init__.
+
+        """
+        data = {
+            "class": self._name,
+            "up": self.up,
+            "gain_scale_factor": self.gain_scale_factor,
+            "cutoff": self.cutoff,
+            "kwargs": self.kwargs,
+        }
+        return data
 
 
 class Gamma(RfuncBase):
@@ -708,6 +742,30 @@ class HantushWellModel(RfuncBase):
         )
         return var_gain
 
+    def to_dict(self):
+        """Method to export the response function to a dictionary.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct the rfunc object.
+
+        Notes
+        -----
+        The exported dictionary should exactly match the input arguments of __init__.
+
+        """
+        data = {
+            "class": self._name,
+            "up": self.up,
+            "gain_scale_factor": self.gain_scale_factor,
+            "cutoff": self.cutoff,
+            "use_numba": self.use_numba,
+            "quad": self.quad,
+            "kwargs": self.kwargs,
+        }
+        return data
+
 
 class Hantush(RfuncBase):
     """The Hantush well function, using the standard A, a, b parameters.
@@ -885,6 +943,30 @@ class Hantush(RfuncBase):
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         A, a, b = p
         return A / (2 * t * k0(2 * np.sqrt(b))) * np.exp(-t / a - a * b / t)
+
+    def to_dict(self):
+        """Method to export the response function to a dictionary.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct the rfunc object.
+
+        Notes
+        -----
+        The exported dictionary should exactly match the input arguments of __init__.
+
+        """
+        data = {
+            "class": self._name,
+            "up": self.up,
+            "gain_scale_factor": self.gain_scale_factor,
+            "cutoff": self.cutoff,
+            "use_numba": self.use_numba,
+            "quad": self.quad,
+            "kwargs": self.kwargs,
+        }
+        return data
 
 
 class Polder(RfuncBase):
@@ -1086,8 +1168,6 @@ class FourParam(RfuncBase):
 
     Notes
     -----
-    Notes
-    -----
     The impulse response function for this class can be viewed on the Documentation
     website or using `latexify` by running the following code in a Jupyter notebook
     environment::
@@ -1264,6 +1344,29 @@ class FourParam(RfuncBase):
                 )
                 s = s * (p[0] / quad(self.impulse, 0, np.inf, args=p)[0])
                 return s
+
+    def to_dict(self):
+        """Method to export the response function to a dictionary.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct the rfunc object.
+
+        Notes
+        -----
+        The exported dictionary should exactly match the input arguments of __init__.
+
+        """
+        data = {
+            "class": self._name,
+            "up": self.up,
+            "gain_scale_factor": self.gain_scale_factor,
+            "cutoff": self.cutoff,
+            "quad": self.quad,
+            "kwargs": self.kwargs,
+        }
+        return data
 
 
 class DoubleExponential(RfuncBase):
@@ -1452,6 +1555,8 @@ class Kraijenhoff(RfuncBase):
         parameter, computed as 1 / gain_scale_factor.
     cutoff: float, optional
         proportion after which the step function is cut off.
+    n_terms: int, optional
+        Number of terms.
 
     Notes
     -----
@@ -1572,6 +1677,29 @@ class Kraijenhoff(RfuncBase):
             )
         )
 
+    def to_dict(self):
+        """Method to export the response function to a dictionary.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct the rfunc object.
+
+        Notes
+        -----
+        The exported dictionary should exactly match the input arguments of __init__.
+
+        """
+        data = {
+            "class": self._name,
+            "up": self.up,
+            "gain_scale_factor": self.gain_scale_factor,
+            "cutoff": self.cutoff,
+            "n_terms": self.n_terms,
+            "kwargs": self.kwargs,
+        }
+        return data
+
 
 class Spline(RfuncBase):
     """Spline response function with parameters: A and a factor for every t.
@@ -1676,3 +1804,27 @@ class Spline(RfuncBase):
         t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
         s = p[0] * f(t)
         return s
+
+    def to_dict(self):
+        """Method to export the response function to a dictionary.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct the rfunc object.
+
+        Notes
+        -----
+        The exported dictionary should exactly match the input arguments of __init__.
+
+        """
+        data = {
+            "class": self._name,
+            "up": self.up,
+            "gain_scale_factor": self.gain_scale_factor,
+            "cutoff": self.cutoff,
+            "kind": self.kind,
+            "t": self.t,
+            "kwargs": self.kwargs,
+        }
+        return data

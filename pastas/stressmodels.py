@@ -68,7 +68,6 @@ class StressModelBase:
         rfunc: Optional[RFunc] = None,
         up: bool = True,
         gain_scale_factor: float = 1.0,
-        cutoff: float = 0.999,
     ) -> None:
         self.name = validate_name(name)
         self.tmin = tmin
@@ -82,9 +81,7 @@ class StressModelBase:
                     "instance (e.g., ps.One()), and not as a class (e.g., ps.One). "
                     "Please provide an instance of the response function."
                 )
-            rfunc._update_rfunc_settings(
-                up=up, gain_scale_factor=gain_scale_factor, cutoff=cutoff
-            )
+            rfunc._update_rfunc_settings(up=up, gain_scale_factor=gain_scale_factor)
         self.rfunc = rfunc
 
         self.parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
@@ -173,28 +170,6 @@ class StressModelBase:
         if freq:
             self.freq = freq
 
-    def dump_stress(self, series: bool = True) -> list:
-        """Method to dump all stresses in the stresses list.
-
-        Parameters
-        ----------
-        series: bool, optional
-            True if time series are to be exported, False if only the name
-            of the time series are needed. Settings are always exported.
-
-        Returns
-        -------
-        data: dict
-            dictionary with the dump of the stresses.
-        """
-        data = []
-
-        for stress in self.stress:
-            stress.name = validate_name(stress.name, raise_error=True)
-            data.append(stress.to_dict(series=series))
-
-        return data
-
     def get_stress(
         self,
         p: Optional[ArrayLike] = None,
@@ -204,11 +179,9 @@ class StressModelBase:
         istress: Optional[int] = None,
         **kwargs,
     ) -> DataFrame:
-        """Returns the stress or stresses of the time series object as a pandas
-        DataFrame.
+        """Returns the stress(es) of the time series object as a pandas DataFrame.
 
-        If the time series object has multiple stresses each column
-        represents a stress.
+        If the time series object has multiple stresses each column represents a stress.
 
         Returns
         -------
@@ -224,21 +197,8 @@ class StressModelBase:
 
         return self.stress[0].series
 
-    def to_dict(self, series: bool = True) -> dict:
-        """Method to export the StressModel object.
-
-        Returns
-        -------
-        data: dict
-            dictionary with all necessary information to reconstruct the StressModel
-            object.
-        """
-        data = {
-            "stressmodel": self._name,
-            "name": validate_name(self.name, raise_error=True),
-            "stress": self.dump_stress(series),
-        }
-        return data
+    def to_dict(self, **kwargs):
+        """Method to export the stress model object."""
 
     def get_nsplit(self) -> int:
         """Determine in how many time series the contribution can be split."""
@@ -293,8 +253,8 @@ class StressModel(StressModelBase):
         True if response function is positive (default), False if negative. None if
         you don't want to define if response is positive or negative.
     cutoff: float, optional
-        float between 0 and 1 to determine how long the response is (default is 99.9%
-        of the actual response time). Used to reduce computation times.
+        This argument is deprecated since 0.23. Directly provide this to directly to
+        the response function instance (e.g., ps.Gamma(cutoff=0.999).
     settings: dict or str, optional
         The settings of the stress. This can be a string referring to a predefined
         settings dict, or a dict with the settings to apply. Refer to the docstring
@@ -329,25 +289,22 @@ class StressModel(StressModelBase):
         rfunc: RFunc,
         name: str,
         up: bool = True,
-        cutoff: float = 0.999,
+        cutoff=None,
         settings: Optional[Union[dict, str]] = None,
         metadata: Optional[dict] = None,
         gain_scale_factor: Optional[float] = None,
         meanstress: Optional[float] = None,
     ) -> None:
-        if meanstress is not None:
-            raise DeprecationWarning(
-                "The argument `meanstress` is deprecated since Pastas 0.23. Please "
-                "use the new argument `gain_scale_factor` instead."
-            )
+        raise_deprecations(meanstress=meanstress, cutoff=cutoff)
 
         if isinstance(stress, list):
-            stress = stress[0]  # TODO Temporary fix Raoul, 2017-10-24
+            logger.warning(
+                "providing a stress as list is deprecated and will results "
+                "in an Error in Pastas 1.0."
+            )
+            stress = stress[0]  # TODO Remove in Pastas 1.0
 
         stress = TimeSeries(stress, settings=settings, metadata=metadata)
-
-        if gain_scale_factor is None:
-            gain_scale_factor = stress.series.std()
 
         StressModelBase.__init__(
             self,
@@ -356,12 +313,14 @@ class StressModel(StressModelBase):
             tmax=stress.series.index.max(),
             rfunc=rfunc,
             up=up,
-            gain_scale_factor=gain_scale_factor,
-            cutoff=cutoff,
+            gain_scale_factor=stress.series.std()
+            if gain_scale_factor is None
+            else gain_scale_factor,
         )
 
+        self.gain_scale_factor = gain_scale_factor
         self.freq = stress.settings["freq"]
-        self.stress = [stress]
+        self.stress.append(stress)
         self.set_init_parameters()
 
     def set_init_parameters(self) -> None:
@@ -413,15 +372,19 @@ class StressModel(StressModelBase):
         data: dict
             dictionary with all necessary information to reconstruct the StressModel
             object.
+
+        Notes
+        -----
+        Settings and metadata are exported with the stress.
+
         """
         data = {
-            "stressmodel": self._name,
-            "rfunc": self.rfunc._name,
-            "rfunc_kwargs": self.rfunc.kwargs,
+            "class": self._name,
+            "rfunc": self.rfunc.to_dict(),
             "name": self.name,
             "up": self.rfunc.up,
-            "cutoff": self.rfunc.cutoff,
-            "stress": self.dump_stress(series),
+            "stress": self.stress[0].to_dict(series=series),
+            "gain_scale_factor": self.gain_scale_factor,
         }
         return data
 
@@ -443,8 +406,8 @@ class StepModel(StressModelBase):
     up: bool, optional
         Force a direction of the step. Default is None.
     cutoff: float, optional
-        float between 0 and 1 to determine how long the response is (default is 99.9%
-        of the actual response time). Used to reduce computation times.
+        This argument is deprecated since 0.23. Directly provide this to directly to
+        the response function instance (e.g., ps.Gamma(cutoff=0.999).
 
     Notes
     -----
@@ -461,8 +424,10 @@ class StepModel(StressModelBase):
         name: str,
         rfunc: Optional[RFunc] = None,
         up: bool = True,
-        cutoff: float = 0.999,
+        cutoff=None,
     ) -> None:
+        raise_deprecations(cutoff=cutoff)
+
         if rfunc is None:
             rfunc = One()
         StressModelBase.__init__(
@@ -472,7 +437,6 @@ class StepModel(StressModelBase):
             tmax=Timestamp.max,
             rfunc=rfunc,
             up=up,
-            cutoff=cutoff,
         )
         self.tstart = Timestamp(tstart)
         self.set_init_parameters()
@@ -514,13 +478,21 @@ class StepModel(StressModelBase):
         )
         return h
 
-    def to_dict(self, series: bool = True) -> dict:
+    def to_dict(self, **kwargs) -> dict:
+        """Method to export the StepModel object.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct object.
+
+        """
         data = {
-            "stressmodel": self._name,
+            "class": self._name,
             "tstart": self.tstart,
             "name": self.name,
+            "rfunc": self.rfunc.to_dict(),
             "up": self.rfunc.up,
-            "rfunc": self.rfunc._name,
         }
         return data
 
@@ -602,9 +574,20 @@ class LinearTrend(StressModelBase):
         trend = trend.cumsum() * p[0]
         return trend.rename(self.name)
 
-    def to_dict(self, series: bool = True) -> dict:
+    def to_dict(self, **kwargs) -> dict:
+        """Method to export a dictionary to reconstruct the stressmodel.
+
+        Parameters
+        ----------
+        kwargs
+
+        Returns
+        -------
+        data: dict
+
+        """
         data = {
-            "stressmodel": self._name,
+            "class": self._name,
             "start": self.start,
             "end": self.end,
             "name": self.name,
@@ -646,6 +629,22 @@ class Constant(StressModelBase):
     def simulate(p: Optional[float] = None) -> float:
         return p
 
+    def to_dict(self, **kwargs):
+        """Method to export the StressModel object.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct the StressModel
+            object.
+        """
+        data = {
+            "class": self._name,
+            "name": self.name,
+            "initial": self.initial,
+        }
+        return data
+
 
 class WellModel(StressModelBase):
     """Convolution of one or more stresses with a single scaled response function.
@@ -665,8 +664,8 @@ class WellModel(StressModelBase):
         by default False, in which case positive stress lowers e.g., the groundwater
         level.
     cutoff: float, optional
-        float between 0 and 1 to determine how long the response is (default is 99.9%
-        of the actual response time). Used to reduce computation times.
+        This argument is deprecated since 0.23. Directly provide this to directly to
+        the response function instance (e.g., ps.Gamma(cutoff=0.999).
     settings: str, list of dict, optional
         settings of the time series, by default "well".
     sort_wells: bool, optional
@@ -693,21 +692,15 @@ class WellModel(StressModelBase):
         name: str,
         distances: ArrayLike,
         up: bool = False,
-        cutoff: float = 0.999,
+        cutoff=None,
         settings: str = "well",
         sort_wells: bool = True,
         metadata: Optional[list] = None,
     ) -> None:
+        raise_deprecations(cutoff=cutoff)
         if not isinstance(rfunc, HantushWellModel):
             raise NotImplementedError(
                 "WellModel only supports the rfunc HantushWellModel!"
-            )
-
-        if version("scipy") < "1.8.0":
-            logger.warning(
-                "It is recommended to use LmfitSolve as the solver "
-                "or update to scipy>=1.8.0 when implementing WellModel."
-                " See https://github.com/pastas/pastas/issues/177."
             )
 
         # sort wells by distance
@@ -758,7 +751,6 @@ class WellModel(StressModelBase):
             rfunc=rfunc,
             up=up,
             gain_scale_factor=gain_scale_factor,
-            cutoff=cutoff,
         )
 
         self.rfunc.set_distances(self.distances.values)
@@ -907,6 +899,28 @@ class WellModel(StressModelBase):
             p_with_r = np.r_[p, distances]
         return p_with_r
 
+    def dump_stress(self, series: bool = True) -> list:
+        """Method to dump all stresses in the stresses list.
+
+        Parameters
+        ----------
+        series: bool, optional
+            True if time series are to be exported, False if only the name
+            of the time series are needed. Settings are always exported.
+
+        Returns
+        -------
+        data: dict
+            dictionary with the dump of the stresses.
+        """
+        data = []
+
+        for stress in self.stress:
+            stress.name = validate_name(stress.name, raise_error=True)
+            data.append(stress.to_dict(series=series))
+
+        return data
+
     def to_dict(self, series: bool = True) -> dict:
         """Method to export the WellModel object.
 
@@ -917,14 +931,12 @@ class WellModel(StressModelBase):
             object.
         """
         data = {
-            "stressmodel": self._name,
-            "rfunc": self.rfunc._name,
-            "rfunc_kwargs": self.rfunc.kwargs,
-            "name": self.name,
-            "up": True if self.rfunc.up else False,
-            "distances": self.distances.to_list(),
-            "cutoff": self.rfunc.cutoff,
+            "class": self._name,
             "stress": self.dump_stress(series),
+            "rfunc": self.rfunc.to_dict(),
+            "name": self.name,
+            "distances": self.distances.to_list(),
+            "up": True if self.rfunc.up else False,
             "sort_wells": self.sort_wells,
         }
         return data
@@ -1005,8 +1017,8 @@ class RechargeModel(StressModelBase):
         pandas.Series with pandas.DatetimeIndex containing the temperature series.
         It depends on the recharge model is this argument is required or not.
     cutoff: float, optional
-        float between 0 and 1 to determine how long the response is (default is
-        99.9% of the actual response time). Used to reduce computation times.
+        This argument is deprecated since 0.23. Directly provide this to directly to
+        the response function instance (e.g., ps.Gamma(cutoff=0.999).
     settings: list of dicts or str, optional
         The settings of the precipitation and evaporation time series, in this order.
         This can be a string referring to a predefined settings dict, or a dict with
@@ -1052,7 +1064,7 @@ class RechargeModel(StressModelBase):
         name: str = "recharge",
         recharge: Optional[Recharge] = None,
         temp: Optional[Series] = None,
-        cutoff: float = 0.999,
+        cutoff=None,
         settings: Tuple[Union[str, dict], Union[str, dict], Union[str, dict]] = (
             "prec",
             "evap",
@@ -1060,7 +1072,7 @@ class RechargeModel(StressModelBase):
         ),
         metadata: Optional[Tuple[dict, dict, dict]] = (None, None, None),
     ) -> None:
-
+        raise_deprecations(cutoff=cutoff)
         if rfunc is None:
             rfunc = Exponential()
 
@@ -1114,7 +1126,6 @@ class RechargeModel(StressModelBase):
             rfunc=rfunc,
             up=True,
             gain_scale_factor=gain_scale_factor,
-            cutoff=cutoff,
         )
 
         self.stress = [self.prec, self.evap]
@@ -1344,16 +1355,25 @@ class RechargeModel(StressModelBase):
         return df
 
     def to_dict(self, series: bool = True) -> dict:
+        """Method to export the RechargeModel object.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct the object.
+
+        Notes
+        -----
+        Settings and metadata are exported with the stress.
+
+        """
         data = {
-            "stressmodel": self._name,
+            "class": self._name,
             "prec": self.prec.to_dict(series=series),
             "evap": self.evap.to_dict(series=series),
-            "rfunc": self.rfunc._name,
-            "rfunc_kwargs": self.rfunc.kwargs,
+            "rfunc": self.rfunc.to_dict(),
             "name": self.name,
-            "recharge": self.recharge._name,
-            "recharge_kwargs": self.recharge.kwargs,
-            "cutoff": self.rfunc.cutoff,
+            "recharge": self.recharge.to_dict(),
             "temp": self.temp.to_dict() if self.temp else None,
         }
         return data
@@ -1429,6 +1449,7 @@ class TarsoModel(RechargeModel):
             rfunc = Exponential()
         if not isinstance(rfunc, Exponential):
             raise NotImplementedError("TarsoModel only supports rfunc Exponential!")
+        self.oseries = oseries
         self.dmin = dmin
         self.dmax = dmax
         super().__init__(prec=prec, evap=evap, rfunc=rfunc, **kwargs)
@@ -1478,9 +1499,22 @@ class TarsoModel(RechargeModel):
         return sim
 
     def to_dict(self, series: bool = True) -> dict:
+        """Method to export the TarsoModel object.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct the object.
+
+        Notes
+        -----
+        Settings and metadata are exported with the stress.
+
+        """
         data = super().to_dict(series)
         data["dmin"] = self.dmin
         data["dmax"] = self.dmax
+        data["oseries"] = self.oseries
         return data
 
     @staticmethod
@@ -1567,8 +1601,8 @@ class ChangeModel(StressModelBase):
         True if response function is positive (default), False if negative. None if
         you don't want to define if response is positive or negative.
     cutoff: float, optional
-        float between 0 and 1 to determine how long the response is (default is 99%
-        of the actual response time). Used to reduce computation times.
+        This argument is deprecated since 0.23. Directly provide this to directly to
+        the response function instance (e.g., ps.Gamma(cutoff=0.999).
     settings: dict or str, optional
         the settings of the stress. This can be a string referring to a predefined
         settings dict, or a dict with the settings to apply. Refer to the docstring
@@ -1590,14 +1624,20 @@ class ChangeModel(StressModelBase):
         rfunc1: RFunc,
         rfunc2: RFunc,
         name: str,
-        tchange: str,
+        tchange: Union[str, TimestampType],
         up: bool = True,
-        cutoff: float = 0.999,
+        cutoff=None,
         settings: Optional[Union[dict, str]] = None,
         metadata: Optional[dict] = None,
     ) -> None:
+        raise_deprecations(cutoff=cutoff)
+
         if isinstance(stress, list):
-            stress = stress[0]  # TODO Temporary fix Raoul, 2017-10-24
+            logger.warning(
+                "providing a stress as list is deprecated and will results "
+                "in an Error in Pastas 1.0."
+            )
+            stress = stress[0]  # TODO Remove in Pastas 1.0
 
         stress = TimeSeries(stress, settings=settings, metadata=metadata)
 
@@ -1614,15 +1654,15 @@ class ChangeModel(StressModelBase):
                 " not as a class (e.g., ps.One). Please provide an instance."
             )
 
-        rfunc1._update_rfunc_settings(up=up, cutoff=cutoff)
+        rfunc1._update_rfunc_settings(up=up)
         self.rfunc1 = rfunc1
 
-        rfunc2._update_rfunc_settings(up=up, cutoff=cutoff)
+        rfunc2._update_rfunc_settings(up=up)
         self.rfunc2 = rfunc2
         self.tchange = Timestamp(tchange)
 
         self.freq = stress.settings["freq"]
-        self.stress = [stress]
+        self.stress.append(stress)
         self.set_init_parameters()
 
     def set_init_parameters(self) -> None:
@@ -1692,6 +1732,29 @@ class ChangeModel(StressModelBase):
 
         return h
 
+    def to_dict(self, series: bool = True):
+        """Method to export the ChangeModel object.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct the object.
+
+        Notes
+        -----
+        Settings and metadata are exported with the stress.
+
+        """
+        data = {
+            "stress": self.stress[0].to_dict(series=series),
+            "rfunc1": self.rfunc1.to_dict(),
+            "rfunc2": self.rfunc2.to_dict(),
+            "name": self.name,
+            "tchange": self.tchange,
+            "up": self.rfunc1.up,
+        }
+        return data
+
 
 def StressModel2(*args, **kwargs):
     msg = (
@@ -1700,3 +1763,16 @@ def StressModel2(*args, **kwargs):
         "the same stress model in future codes."
     )
     logger.error(msg)
+
+
+def raise_deprecations(meanstress=None, cutoff=None):
+    if meanstress is not None:
+        raise DeprecationWarning(
+            "The argument `meanstress` is deprecated since Pastas 0.23. Please "
+            "use the new argument `gain_scale_factor` instead."
+        )
+    if cutoff is not None:
+        raise DeprecationWarning(
+            "The argument `cutoff` is deprecated since Pastas 0.23. Please "
+            "apply this directly to the response function (e.g., ps.Gamma(cutoff=0.99))"
+        )
