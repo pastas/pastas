@@ -52,10 +52,12 @@ def load(fname: str, **kwargs) -> Model:
 
     # A single catch for old pas-files, no longer supported
     if version.parse(file_version) < version.parse("0.23.0"):
-        raise UserWarning("This file was created with a Pastas version prior to 0.23 "
-                          "and cannot be loaded with Pastas >= 1.0. Please load and "
-                          "save the file with Pastas 0.23 first to update the file "
-                          "format.")
+        raise UserWarning(
+            "This file was created with a Pastas version prior to 0.23 "
+            "and cannot be loaded with Pastas >= 1.0. Please load and "
+            "save the file with Pastas 0.23 first to update the file "
+            "format."
+        )
 
     logger.info(
         "Pastas Model from file %s successfully loaded. This file was created with "
@@ -136,7 +138,6 @@ def _load_model(data: dict) -> Model:
 
 
 def _load_stressmodel(ts, data):
-
     # Create and add stress model
     stressmodel = getattr(ps.stressmodels, ts.pop("class"))
 
