@@ -62,14 +62,13 @@ class RfuncBase:
         self.up = up
         if "meanstress" in kwargs.keys():
             logger.warning(
-                "The gain_scale_factor argument is deprecated and will throw an error "
+                "The mean_stress argument is deprecated and will throw an error "
                 "in Pastas 1.0. Please use the `gain_scale_factor` argument instead."
             )
             gain_scale_factor = kwargs["meanstress"]
 
         self.gain_scale_factor = gain_scale_factor
         self.cutoff = cutoff
-        self.kwargs = kwargs
 
     def _update_rfunc_settings(
         self,
@@ -276,7 +275,6 @@ class RfuncBase:
             "up": self.up,
             "gain_scale_factor": self.gain_scale_factor,
             "cutoff": self.cutoff,
-            "kwargs": self.kwargs,
         }
         return data
 
@@ -763,7 +761,6 @@ class HantushWellModel(RfuncBase):
             "cutoff": self.cutoff,
             "use_numba": self.use_numba,
             "quad": self.quad,
-            "kwargs": self.kwargs,
         }
         return data
 
@@ -965,7 +962,6 @@ class Hantush(RfuncBase):
             "cutoff": self.cutoff,
             "use_numba": self.use_numba,
             "quad": self.quad,
-            "kwargs": self.kwargs,
         }
         return data
 
@@ -1365,7 +1361,6 @@ class FourParam(RfuncBase):
             "gain_scale_factor": self.gain_scale_factor,
             "cutoff": self.cutoff,
             "quad": self.quad,
-            "kwargs": self.kwargs,
         }
         return data
 
@@ -1697,7 +1692,6 @@ class Kraijenhoff(RfuncBase):
             "gain_scale_factor": self.gain_scale_factor,
             "cutoff": self.cutoff,
             "n_terms": self.n_terms,
-            "kwargs": self.kwargs,
         }
         return data
 
@@ -1826,6 +1820,5 @@ class Spline(RfuncBase):
             "cutoff": self.cutoff,
             "kind": self.kind,
             "t": self.t,
-            "kwargs": self.kwargs,
         }
         return data

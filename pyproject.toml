@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "pastas"
 version = "0.23.0"
-description = "Python package to perform time series analysis of hydrological time series."
+description = "Pastas is an open-source Python framework for the analysis of groundwater time series."
 license = { file = "LICENSE" }
 readme = "README.rst"
 authors = [{ name = "Collenteur et al. 2019" }]
@@ -20,7 +20,7 @@ maintainers = [
     { name = "M.A. Vonk", email = "m.vonk@artesia-water.nl" },
 ]
 
-requires-python = ">= 3.7"
+requires-python = ">= 3.8"
 dependencies = [
     "numpy >= 1.17, < 1.24",
     "matplotlib >= 3.1",
