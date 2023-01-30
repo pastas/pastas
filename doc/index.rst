@@ -5,24 +5,24 @@ series. The objective of Pastas is twofold: to provide a scientific
 framework to develop and test new methods, and to provide a reliable
 ready‐to‐use software tool for groundwater practitioners. All code is
 available from the `Pastas GitHub <https://github.com/pastas/pastas>`_. Want
-to contribute to the project? Check out the :doc:`developers` section.
+to contribute to the project? Check out the :doc:`Developers <developers/index>` section.
 
 .. grid::
 
     .. grid-item-card:: User Guide
-        :link: user-guide
+        :link: userguide/index
         :link-type: doc
 
         User guide on the basic concepts of Pastas.
 
     .. grid-item-card:: Examples
-        :link: examples/example-gallery
+        :link: examples/index
         :link-type: doc
 
         Examples of Pastas usage.
 
     .. grid-item-card:: Code Reference
-        :link: api
+        :link: api/index
         :link-type: doc
 
         Pastas code reference.
@@ -31,7 +31,7 @@ to contribute to the project? Check out the :doc:`developers` section.
 .. grid::
 
     .. grid-item-card:: Contribute
-        :link: developers
+        :link: developers/index
         :link-type: doc
 
         Want to contribute to Pastas? Find resources and guides for developers here.
@@ -54,6 +54,8 @@ Quick Example
 .. tab-set::
 
     .. tab-item:: Python
+
+        In this example a head time series from Kingstown (USA) is modelled in just a few lines of Python code.
 
         .. code-block:: python
 
