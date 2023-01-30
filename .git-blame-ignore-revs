@@ -1,0 +1,5 @@
+# .git-blame-ignore-revs
+# apply isort, black and docformatter to code base
+6a9346b581883b4f29982c8ef1102a4b1a102664
+# apply isort, black, docformatter to submodules in pastas
+9f58ed52e0151a525e7ad67e14bfd9217f4aa773

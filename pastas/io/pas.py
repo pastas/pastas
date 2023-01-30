@@ -9,19 +9,17 @@ import json
 from collections import OrderedDict
 from logging import getLogger
 
-from pandas import (DataFrame, Series, Timedelta, Timestamp, isna, read_json,
-                    to_numeric)
-from pastas import TimeSeries
+from pandas import DataFrame, Series, Timedelta, Timestamp, isna, read_json, to_numeric
 
 logger = getLogger(__name__)
 
 
-def load(fname):
+def load(fname: str) -> dict:
     data = json.load(open(fname), object_hook=pastas_hook)
     return data
 
 
-def pastas_hook(obj):
+def pastas_hook(obj: dict):
     for key, value in obj.items():
         if key in ["tmin", "tmax", "date_modified", "date_created"]:
             val = Timestamp(value)
@@ -30,17 +28,14 @@ def pastas_hook(obj):
             obj[key] = val
         elif key == "series":
             try:
-                obj[key] = read_json(value, typ='series', orient="split")
+                obj[key] = read_json(value, typ="series", orient="split")
             except:
-                try:
-                    obj[key] = TimeSeries(**value)
-                except:
-                    obj[key] = value
+                obj[key] = value
             if isinstance(obj[key], Series):
                 obj[key].index = obj[key].index.tz_localize(None)
         elif key in ["time_offset", "warmup"]:
             if isinstance(value, int) or isinstance(value, float):
-                obj[key] = Timedelta(value, 'd')
+                obj[key] = Timedelta(value, "d")
             else:
                 obj[key] = Timedelta(value)
         elif key in ["parameters", "pcov"]:
@@ -56,8 +51,8 @@ def pastas_hook(obj):
     return obj
 
 
-def dump(fname, data):
-    json.dump(data, open(fname, 'w'), indent=4, cls=PastasEncoder)
+def dump(fname: str, data: dict) -> None:
+    json.dump(data, open(fname, "w"), indent=4, cls=PastasEncoder)
     logger.info("%s file successfully exported", fname)
 
 
@@ -66,8 +61,7 @@ class PastasEncoder(json.JSONEncoder):
 
     Notes
     -----
-    Currently supported formats are: DataFrame, Series,
-    Timedelta, TimeStamps.
+    Currently supported formats are: DataFrame, Series, Timedelta, Timestamps.
 
     see: https://docs.python.org/3/library/json.html
     """

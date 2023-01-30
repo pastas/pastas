@@ -3,10 +3,13 @@ try:
 except ModuleNotFoundError:
     raise ModuleNotFoundError("SolveTimer requires 'tqdm' to be installed.")
 
+# Type Hinting
+from typing import Optional
+
 
 class ExceededMaxSolveTime(Exception):
-    """Custom Exception when model optimization exceeds threshold.
-    """
+    """Custom Exception when model optimization exceeds threshold."""
+
     pass
 
 
@@ -14,9 +17,8 @@ class SolveTimer(tqdm):
     """Progress indicator for model optimization.
 
     Usage
-    ----- 
-    Print timer and number of iterations in console while running
-    `ml.solve()`::
+    -----
+    Print timer and number of iterations in console while running `ml.solve()`::
 
         with SolveTimer() as t:
             ml.solve(callback=t.timer)
@@ -25,7 +27,7 @@ class SolveTimer(tqdm):
 
         Optimization progress: 73it [00:01, 67.68it/s]
 
-    Set maximum allowable time (in seconds) for solve, otherwise raise 
+    Set maximum allowable time (in seconds) for solve, otherwise raise
     ExceededMaxSolveTime exception::
 
         with SolveTimer(max_time=60) as t:
@@ -33,11 +35,11 @@ class SolveTimer(tqdm):
 
     Note
     ----
-    If the logger is also printing messages to the console the timer will not
-    be updated quite as nicely.
+    If the logger is also printing messages to the console the timer will not be
+    updated quite as nicely.
     """
 
-    def __init__(self, max_time=None, *args, **kwargs):
+    def __init__(self, max_time: Optional[float] = None, *args, **kwargs) -> None:
         """Initialize SolveTimer.
 
         Parameters
@@ -48,18 +50,18 @@ class SolveTimer(tqdm):
             ExceededMaxSolveTime Exception.
         """
         if "total" not in kwargs:
-            kwargs['total'] = None
+            kwargs["total"] = None
         if "desc" not in kwargs:
             kwargs["desc"] = "Optimization progress"
         self.max_time = max_time
         super(SolveTimer, self).__init__(*args, **kwargs)
 
-    def timer(self, _, n=1):
-        """Callback method for ps.Model.solve().
-        """
+    def timer(self, _, n: int = 1):
+        """Callback method for ps.Model.solve()."""
         displayed = super(SolveTimer, self).update(n)
         if self.max_time is not None:
             if self.format_dict["elapsed"] > self.max_time:
-                raise ExceededMaxSolveTime("Model solve time exceeded"
-                                           f" {self.max_time} seconds!")
+                raise ExceededMaxSolveTime(
+                    "Model solve time exceeded" f" {self.max_time} seconds!"
+                )
         return displayed

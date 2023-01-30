@@ -1,23 +1,34 @@
 import pandas as pd
+
 import pastas as ps
 
 ps.set_log_level("WARNING")
 
-head = pd.read_csv("data/heby_head.csv", index_col=0,
-                   parse_dates=True).squeeze("columns")
-evap = pd.read_csv("data/heby_evap.csv", index_col=0,
-                   parse_dates=True).squeeze("columns")
-prec = pd.read_csv("data/heby_prec.csv", index_col=0,
-                   parse_dates=True).squeeze("columns")
-temp = pd.read_csv("data/heby_temp.csv", index_col=0,
-                   parse_dates=True).squeeze("columns")
+head = pd.read_csv("data/heby_head.csv", index_col=0, parse_dates=True).squeeze(
+    "columns"
+)
+evap = pd.read_csv("data/heby_evap.csv", index_col=0, parse_dates=True).squeeze(
+    "columns"
+)
+prec = pd.read_csv("data/heby_prec.csv", index_col=0, parse_dates=True).squeeze(
+    "columns"
+)
+temp = pd.read_csv("data/heby_temp.csv", index_col=0, parse_dates=True).squeeze(
+    "columns"
+)
 
 tmin = "1985"  # Needs warmup
 tmax = "2018"
 
 ml = ps.Model(head)
-sm = ps.RechargeModel(prec, evap, recharge=ps.rch.FlexModel(snow=True),
-                      rfunc=ps.Gamma, name="rch", temp=temp)
+sm = ps.RechargeModel(
+    prec,
+    evap,
+    recharge=ps.rch.FlexModel(snow=True),
+    rfunc=ps.Gamma(),
+    name="rch",
+    temp=temp,
+)
 ml.add_stressmodel(sm)
 
 # In case of the non-linear model, change some parameter settings

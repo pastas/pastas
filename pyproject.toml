@@ -1,0 +1,83 @@
+[build-system]
+requires = ["setuptools>=64.0.0", "wheel", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "pastas"
+version = "0.23.0"
+description = "Pastas is an open-source Python framework for the analysis of groundwater time series."
+license = { file = "LICENSE" }
+readme = "README.rst"
+authors = [{ name = "Collenteur et al. 2019" }]
+maintainers = [
+    { name = "R.A. Collenteur", email = "raoulcollenteur@gmail.com" },
+    { name = "M. Bakker", email = "markbak@gmail.com" },
+    { name = "R. Calje", email = "r.calje@artesia-water.nl" },
+    { name = "F. Schaars", email = "f.schaars@artesia-water.nl" },
+    { name = "D.A. Brakenhoff", email = "d.brakenhoff@artesia-water.nl" },
+    { name = "O. Ebbens", email = "o.ebbens@artesia-water.nl" },
+    { name = "M.A. Vonk", email = "m.vonk@artesia-water.nl" },
+]
+
+requires-python = ">= 3.8"
+dependencies = [
+    "numpy >= 1.17, < 1.24",
+    "matplotlib >= 3.1",
+    "pandas >= 1.1",
+    "scipy >= 1.8",
+    "numba >= 0.51",
+]
+
+keywords = ["hydrology", "groundwater", "timeseries", "analysis"]
+classifiers = [
+    'Development Status :: 4 - Beta',
+    'Intended Audience :: Science/Research',
+    'Intended Audience :: Other Audience',
+    'License :: OSI Approved :: MIT License',
+    'Programming Language :: Python :: 3 :: Only',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Topic :: Scientific/Engineering :: Hydrology',
+]
+
+[project.urls]
+homepage = "https://pastas.dev"
+repository = "https://github.com/pastas/pastas"
+documentation = "https://pastas.readthedocs.io/en/latest/"
+
+[project.optional-dependencies]
+full = ["lmfit >= 1.0.0", "latexify-py"]
+ci = [
+    "pastas[full]",
+    "jupyter",
+    "pytest",
+    "pytest-cov",
+    "codacy-coverage",
+    "corner",
+    "emcee",
+    "tqdm",
+]
+rtd = [
+    "nbsphinx",
+    "Ipython",
+    "ipykernel",
+    "pydata-sphinx-theme",
+    "sphinx-gallery >= 0.6, <0.11",
+    "sphinx>=3.1, <6.0",
+    "sphinxcontrib-bibtex",
+    "requests",
+    "numpydoc",
+]
+numbascipy = ["numba-scipy >= 0.3.1"]
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers --durations=0 --cov-report xml:coverage.xml --cov pastas"
+markers = ["notebooks: run notebooks"]
