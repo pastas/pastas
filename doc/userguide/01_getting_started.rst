@@ -63,11 +63,3 @@ Other optional, but recommended dependencies include::
     Numba is highly recommended when using Pastas. Not only this
     package, but also Pandas makes use of Numba. Since Pastas partly
     depends on Pandas, installing Numba will also speed up Pastas.
-
-
-.. toctree::
-    :maxdepth: 4
-    :hidden:
-    :glob:
-
-    ./*

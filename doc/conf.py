@@ -52,6 +52,8 @@ extensions = [
     "numpydoc",
     "sphinx_gallery.load_style",
     "sphinxcontrib.bibtex",
+    "sphinx_design",
+    "sphinx.ext.autosectionlabel",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -123,7 +125,7 @@ numpydoc_class_members_toctree = True
 numpydoc_show_class_members = False
 autoclass_content = "class"
 nitpicky = True
-
+autosectionlabel_prefix_document = True
 
 # If true, links to the reST sources are added to the pages.
 # html_show_sourcelink = True

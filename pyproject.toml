@@ -69,6 +69,7 @@ rtd = [
     "sphinxcontrib-bibtex",
     "requests",
     "numpydoc",
+    "sphinx-design",
 ]
 numbascipy = ["numba-scipy >= 0.3.1"]
 
