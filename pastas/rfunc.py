@@ -166,6 +166,7 @@ class RfuncBase:
         s: array_like
             Array with the step response.
         """
+        return
 
     def block(
         self,
@@ -1227,7 +1228,7 @@ class FourParam(RfuncBase):
     @staticmethod
     @latexfun(identifiers={"impulse": "theta"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
-        A, n, a, b = p
+        _A, n, a, b = p
         return (t ** (n - 1)) * np.exp(-t / a - a * b / t)
 
     def get_tmax(self, p: ArrayLike, cutoff: Optional[float] = None) -> float:
