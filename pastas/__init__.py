@@ -43,7 +43,7 @@ from .transform import ThresholdTransform
 from .utils import initialize_logger, set_log_level
 from .version import show_versions
 
-__version__ = "0.23.0"
+__version__ = "1.0.0b"
 
 logger = logging.getLogger(__name__)
 initialize_logger(logger)
