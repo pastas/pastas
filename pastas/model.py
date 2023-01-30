@@ -799,13 +799,6 @@ class Model:
 
         # If a solver is provided, use that one
         if solver is not None:
-            # Check if a solver instance is provided, not a class
-            if inspect.isclass(solver):
-                raise DeprecationWarning(
-                    "As of Pastas 0.23, Solvers should be provided as an instance "
-                    "(e.g., ps.LeastSquares()), and not as a class (e.g., "
-                    "ps.LeastSquares). Please provide an instance of the solver."
-                )
             self.fit = solver
             self.fit.set_model(self)
         # Create the default solver is None is provided or already present
@@ -1700,7 +1693,6 @@ class Model:
         self,
         output: str = "basic",
         warnings: bool = True,
-        warnbounds: Optional[bool] = None,
     ) -> str:
         """Method that reports on the fit after a model is optimized.
 
@@ -1712,8 +1704,6 @@ class Model:
         warnings : bool, optional
             print warnings in case of optimization failure, parameters hitting
             bounds, or length of responses exceeding calibration period.
-        warnbounds: bool, optional
-            Deprecated.
 
         Returns
         -------
@@ -1754,11 +1744,6 @@ class Model:
             "___": "",
             "Interp.": "Yes" if self.interpolate_simulation else "No",
         }
-
-        if warnbounds:
-            raise KeyError(
-                "The 'warnbounds' argument is deprecated. Use warnings=True instead."
-            )
 
         parameters = self.parameters.loc[:, ["optimal", "stderr", "initial", "vary"]]
         stderr = parameters.loc[:, "stderr"] / parameters.loc[:, "optimal"]
