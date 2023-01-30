@@ -1,11 +1,12 @@
 #  This module contains the Model class in Pastas.
 
 # Python Dependencies
+import inspect
 from collections import OrderedDict
+from importlib.metadata import version
 from itertools import combinations
 from logging import getLogger
 from os import getlogin
-import inspect
 
 # Type Hinting
 from typing import List, Optional, Tuple, Union
@@ -32,21 +33,18 @@ from pastas.noisemodels import NoiseModel
 from pastas.solver import LeastSquares
 from pastas.stressmodels import Constant
 from pastas.timeseries import TimeSeries
+from pastas.timeseries_utils import (
+    _frequency_is_supported,
+    _get_dt,
+    _get_time_offset,
+    get_sample,
+)
 from pastas.transform import ThresholdTransform
 from pastas.typing import ArrayLike
 from pastas.typing import Model as ModelType
 from pastas.typing import NoiseModel as NoiseModelType
-from pastas.typing import Solver, StressModel
-from pastas.typing import TimestampType
-from pastas.timeseries_utils import (
-    _get_dt,
-    _get_time_offset,
-    _frequency_is_supported,
-    get_sample,
-)
+from pastas.typing import Solver, StressModel, TimestampType
 from pastas.utils import validate_name
-
-from pastas.version import __version__
 
 
 class Model:
@@ -1687,7 +1685,7 @@ class Model:
             file_info = {"date_created": Timestamp.now()}
 
         file_info["date_modified"] = Timestamp.now()
-        file_info["pastas_version"] = __version__
+        file_info["pastas_version"] = version("pastas")
 
         try:
             file_info["owner"] = getlogin()
