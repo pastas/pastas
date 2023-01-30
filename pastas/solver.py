@@ -6,7 +6,7 @@ noise series.
 
 To solve a model the following syntax can be used:
 
->>> ml.solve(solver=ps.LeastSquares)
+>>> ml.solve(solver=ps.LeastSquares())
 """
 
 from logging import getLogger
@@ -30,7 +30,6 @@ class BaseSolver:
 
     Attributes
     ----------
-    model: pastas.Model instance
     pcov: pandas.DataFrame
         Pandas DataFrame with the correlation between the optimized parameters.
     pcor: pandas.DataFrame
@@ -46,13 +45,12 @@ class BaseSolver:
 
     def __init__(
         self,
-        ml: Model,
         pcov: Optional[DataFrame] = None,
         nfev: Optional[int] = None,
         obj_func: Optional[Function] = None,
         **kwargs,
     ) -> None:
-        self.ml = ml
+        self.ml = None
         self.pcov = pcov  # Covariances of the parameters
         if pcov is None:
             self.pcor = None  # Correlation between parameters
@@ -61,6 +59,21 @@ class BaseSolver:
         self.nfev = nfev  # number of function evaluations
         self.obj_func = obj_func
         self.result = None  # Object returned by the optimization method
+
+    def set_model(self, ml: Model):
+        """Method to set the Pastas Model instance.
+
+        Parameters
+        ----------
+        ml: pastas.Model instance
+
+        """
+        if self.ml is not None:
+            raise UserWarning(
+                "This solver instance is already used by another model. Please create "
+                "a separate solver instance for each Pastas Model."
+            )
+        self.ml = ml
 
     def misfit(
         self,
@@ -436,7 +449,6 @@ class LeastSquares(BaseSolver):
 
     def __init__(
         self,
-        ml: Model,
         pcov: Optional[DataFrame] = None,
         nfev: Optional[int] = None,
         **kwargs,
@@ -452,13 +464,13 @@ class LeastSquares(BaseSolver):
         Examples
         --------
 
-        >>> ml.solve(solver=ps.LeastSquares)
+        >>> ml.solve(solver=ps.LeastSquares())
 
         References
         ----------
         https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
         """
-        BaseSolver.__init__(self, ml=ml, pcov=pcov, nfev=nfev, **kwargs)
+        BaseSolver.__init__(self, pcov=pcov, nfev=nfev, **kwargs)
 
     def solve(
         self,
@@ -566,13 +578,11 @@ class LmfitSolve(BaseSolver):
 
     def __init__(
         self,
-        ml: Model,
         pcov: Optional[DataFrame] = None,
         nfev: Optional[int] = None,
         **kwargs,
     ) -> None:
-        """Solving the model using the LmFit solver
-        :cite:p:`newville_lmfitlmfit-py_2019`.
+        """Solving the model using the LmFit :cite:p:`newville_lmfitlmfit-py_2019`.
 
          This is basically a wrapper around the scipy solvers, adding some cool
          functionality for boundary conditions.
@@ -587,7 +597,7 @@ class LmfitSolve(BaseSolver):
         except ImportError:
             msg = "lmfit not installed. Please install lmfit first."
             raise ImportError(msg)
-        BaseSolver.__init__(self, ml=ml, pcov=pcov, nfev=nfev, **kwargs)
+        BaseSolver.__init__(self, pcov=pcov, nfev=nfev, **kwargs)
 
     def solve(
         self,

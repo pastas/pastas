@@ -123,8 +123,9 @@ def _load_model(data: dict) -> Model:
         if "name" in data["fit"].keys():
             data["fit"]["class"] = data["fit"].pop("name")
 
-        fit = getattr(ps.solver, data["fit"].pop("class"))
-        ml.fit = fit(ml=ml, **data["fit"])
+        solver = getattr(ps.solver, data["fit"].pop("class"))
+        ml.fit = solver(**data["fit"])
+        ml.fit.set_model(ml)
 
     # Add parameters, use update to maintain correct order
     ml.parameters = ml.get_init_parameters(noise=ml.settings["noise"])
