@@ -22,12 +22,10 @@ ask you to cite the Pastas article published in Groundwater journal as follows:
     :maxdepth: 2
     :hidden:
 
-    User Guide <userguide/getting_started>
-    Concepts <concepts/index>
+    User Guide <userguide/index>
     Examples <examples/index>
+    Reference <api/index>
     Development <developers/index>
-    API Docs <api/index>
-    Release Notes <releases/index>
     Publications <publications>
     References <references>
 

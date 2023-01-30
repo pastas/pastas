@@ -122,6 +122,7 @@ autosummary_generate = True
 numpydoc_class_members_toctree = True
 numpydoc_show_class_members = False
 autoclass_content = "class"
+nitpicky = True
 
 
 # If true, links to the reST sources are added to the pages.
