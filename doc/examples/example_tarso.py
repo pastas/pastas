@@ -2,7 +2,7 @@
 import pastas as pt
 
 # load a model with precipitation, evaporation and a well
-ml = pt.io.load("data/B28H1808_2_pastas-0-22-0.pas")
+ml = pt.io.load("data/B28H1808_2_pastas-0-23-0.pas")
 
 # first solve and plot to see the model-performance
 ml.solve(noise=False)
