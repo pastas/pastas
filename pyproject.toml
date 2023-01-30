@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pastas"
-version = "0.23.0"
+version = "1.0.0b"
 description = "Pastas is an open-source Python framework for the analysis of groundwater time series."
 license = { file = "LICENSE" }
 readme = "README.rst"
