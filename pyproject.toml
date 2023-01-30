@@ -1,11 +1,11 @@
 [build-system]
-requires = ["setuptools>=64.0.0", "wheel", "setuptools-scm"]
+requires = ["setuptools>=64.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 
 [project]
 name = "pastas"
-version = "0.23.0"
+dynamic = ["version"]
 description = "Pastas is an open-source Python framework for the analysis of groundwater time series."
 license = { file = "LICENSE" }
 readme = "README.rst"
@@ -19,7 +19,6 @@ maintainers = [
     { name = "O. Ebbens", email = "o.ebbens@artesia-water.nl" },
     { name = "M.A. Vonk", email = "m.vonk@artesia-water.nl" },
 ]
-
 requires-python = ">= 3.8"
 dependencies = [
     "numpy >= 1.17, < 1.24",
@@ -28,7 +27,6 @@ dependencies = [
     "scipy >= 1.8",
     "numba >= 0.51",
 ]
-
 keywords = ["hydrology", "groundwater", "timeseries", "analysis"]
 classifiers = [
     'Development Status :: 4 - Beta',
@@ -71,6 +69,10 @@ rtd = [
     "numpydoc",
 ]
 numbascipy = ["numba-scipy >= 0.3.1"]
+
+
+[tool.setuptools.dynamic]
+version = { attr = "pastas.__version__" }
 
 [tool.black]
 line-length = 88

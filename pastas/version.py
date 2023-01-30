@@ -2,7 +2,6 @@ import logging
 from platform import python_version
 from importlib import import_module, metadata
 
-__version__ = metadata.version("pastas")
 logger = logging.getLogger(__name__)
 
 

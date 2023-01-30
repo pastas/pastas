@@ -41,7 +41,9 @@ from .stressmodels import (
 from .timeseries import validate_stress, validate_oseries
 from .transform import ThresholdTransform
 from .utils import initialize_logger, set_log_level
-from .version import __version__, show_versions
+from .version import show_versions
+
+__version__ = "0.23.0"
 
 logger = logging.getLogger(__name__)
 initialize_logger(logger)
