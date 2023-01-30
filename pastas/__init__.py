@@ -7,6 +7,7 @@ import pastas.recharge as rch
 import pastas.stats as stats
 import pastas.timeseries_utils as ts
 
+from ._version import __version__
 from .decorators import set_use_numba
 from .model import Model
 from .modelcompare import CompareModels
@@ -38,12 +39,10 @@ from .stressmodels import (
     TarsoModel,
     WellModel,
 )
-from .timeseries import validate_stress, validate_oseries
+from .timeseries import validate_oseries, validate_stress
 from .transform import ThresholdTransform
 from .utils import initialize_logger, set_log_level
 from .version import show_versions
-
-__version__ = "1.0.0b"
 
 logger = logging.getLogger(__name__)
 initialize_logger(logger)

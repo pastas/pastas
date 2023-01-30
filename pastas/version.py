@@ -1,6 +1,8 @@
 import logging
-from platform import python_version
 from importlib import import_module, metadata
+from platform import python_version
+
+from ._version import __version__
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +53,6 @@ def show_versions(lmfit: bool = True) -> None:
         except ModuleNotFoundError:
             msg += "Not Installed"
 
-    msg += f"\nPastas version: {metadata.version('pastas')}"
+    msg += f"\nPastas version: {__version__}"
 
     return print(msg)

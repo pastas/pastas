@@ -25,6 +25,7 @@ from pandas import (
 )
 
 # Internal Pastas
+from pastas._version import __version__
 from pastas.decorators import get_stressmodel
 from pastas.io.base import _load_model, dump
 from pastas.modelplots import Plotting
@@ -1685,7 +1686,7 @@ class Model:
             file_info = {"date_created": Timestamp.now()}
 
         file_info["date_modified"] = Timestamp.now()
-        file_info["pastas_version"] = version("pastas")
+        file_info["pastas_version"] = __version__
 
         try:
             file_info["owner"] = getlogin()
