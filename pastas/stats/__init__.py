@@ -26,9 +26,6 @@ from .tests import (
     diagnostics,
     durbin_watson,
     ljung_box,
-    plot_acf,
-    plot_cum_frequency,
-    plot_diagnostics,
     runs_test,
     stoffer_toloi,
 )
