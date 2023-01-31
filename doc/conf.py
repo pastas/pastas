@@ -163,7 +163,7 @@ url = "https://api.zotero.org/groups/4846685/collections/8UG7PVLY/items/"
 params = {"format": "bibtex", "style": "apa", "limit": 100}
 
 r = requests.get(url=url, params=params)
-with open("about/references.bib", mode="w") as file:
+with open("about/references.bib", mode="w", encoding="utf-8") as file:
     file.write(r.text)
 
 # Get a Bibtex reference file from the Zotero group for publications list
@@ -171,7 +171,7 @@ url = "https://api.zotero.org/groups/4846685/collections/Q4F7R59G/items/"
 params = {"format": "bibtex", "style": "apa", "limit": 100}
 
 r = requests.get(url=url, params=params)
-with open("about/publications.bib", mode="w") as file:
+with open("about/publications.bib", mode="w", encoding="utf-8") as file:
     # Replace citation key to prevent duplicate labels and article now shown
     text = re.sub(r"(@([a-z]*){)", r"\1X_", r.text)
     file.write(text)
