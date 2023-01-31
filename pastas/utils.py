@@ -1,32 +1,18 @@
 """This module contains utility functions for working with Pastas models."""
 
 import logging
-from datetime import datetime
 from logging import handlers
 from platform import platform
 
 # Type Hinting
 from typing import Any, Optional, Tuple
 
-from pandas import DatetimeIndex, Timestamp
+from pandas import Timestamp
 
-from pastas.typing import ArrayLike
 from pastas.typing import Model as ModelType
 from pastas.typing import TimestampType
 
 logger = logging.getLogger(__name__)
-
-
-def excel_to_datetime(tindex: DatetimeIndex, freq="D") -> DatetimeIndex:
-    raise DeprecationWarning("This function is deprecated and will be removed in v1.0.")
-
-
-def matlab_datenum_to_datetime(datenum: float) -> datetime:
-    raise DeprecationWarning("This function is deprecated and will be removed in v1.0.")
-
-
-def datetime_to_matlab_datenum(tindex: DatetimeIndex) -> ArrayLike:
-    raise DeprecationWarning("This function is deprecated and will be removed in v1.0.")
 
 
 def get_stress_tmin_tmax(ml: ModelType) -> Tuple[TimestampType, TimestampType]:
@@ -221,26 +207,3 @@ def validate_name(name: str, raise_error: bool = False) -> str:
                 logger.warning(msg)
 
     return name
-
-
-def get_sample(tindex, ref_tindex):
-    raise DeprecationWarning("This method was moved to `pastas.ts.get_sample()`!")
-
-
-def timestep_weighted_resample(series0, tindex):
-    raise DeprecationWarning(
-        "This method was moved to `pastas.ts.timestep_weighted_resample()`!"
-    )
-
-
-def timestep_weighted_resample_fase(series0, tindex):
-    raise DeprecationWarning(
-        "This method is deprecated and merged into "
-        "`pastas.ts.timestep_weighted_resample()`!"
-    )
-
-
-def get_equidistant_series(series, freq, minimize_data_loss=False):
-    raise DeprecationWarning(
-        "This method was moved to `pastas.ts.get_equidistant_series()`!"
-    )

@@ -49,7 +49,7 @@ class Statistics:
     ]
 
     def __init__(self, ml: Model):
-        """This class provides statistics to to pastas Model class.
+        """This class provides statistics to pastas Model class.
 
         Parameters
         ----------
