@@ -1,7 +1,7 @@
 from functools import wraps
 from logging import getLogger
+from typing import Dict, Optional
 
-from typing import Optional, Dict
 from pastas.typing import Function, TimestampType
 
 logger = getLogger(__name__)

@@ -6,7 +6,7 @@ import logging
 from typing import Optional
 
 import numpy as np
-from pandas import Index, Series, Timedelta, Timestamp, date_range, api
+from pandas import Index, Series, Timedelta, Timestamp, api, date_range
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
 

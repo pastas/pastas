@@ -10,8 +10,8 @@ from typing import Optional, Union
 from numpy import nan
 from pandas import Series, Timedelta, concat, date_range
 
-from pastas.typing import Function, TimestampType
 from pastas.timeseries_utils import get_sample
+from pastas.typing import Function, TimestampType
 
 
 def q_ghg(

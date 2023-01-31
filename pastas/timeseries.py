@@ -10,10 +10,7 @@ from pandas.tseries.frequencies import to_offset
 from pastas.typing import Axes
 
 from .rcparams import rcParams
-from .timeseries_utils import (
-    _get_dt,
-    _get_time_offset,
-)
+from .timeseries_utils import _get_dt, _get_time_offset
 from .utils import validate_name
 
 logger = getLogger(__name__)
