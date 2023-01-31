@@ -7,8 +7,7 @@ on the `examples directory on GitHub <https://github.com/pastas/pastas/tree/mast
 
 .. toctree::
     :maxdepth: 2
-    :numbered:
-    :hidden:
+
 
 Basics
 -------
@@ -26,6 +25,7 @@ Basics
 .. _Not-fitting parameters: 02_fix_parameters.ipynb
 .. _Calibration: 09_calibration_options.ipynb
 
+
 Stressmodels
 -------
 
@@ -33,7 +33,7 @@ Stressmodels
 
 `Adding wells`_
 
-`Multiple wells`
+`Multiple wells`_
 
 `Adding trends`_
 
@@ -60,7 +60,6 @@ Nonlinear (Recharge) Models
 .. _Non-linear recharge models: 07_non_linear.ipynb
 .. _Estimating recharge: 14_recharge_estimation.ipynb
 .. _Snow: 18_snowmodel.ipynb
-
 
 
 Model Evaluation
