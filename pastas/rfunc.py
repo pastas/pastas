@@ -563,7 +563,7 @@ class HantushWellModel(RfuncBase):
             )
         parameters.loc[name + "_a"] = (100, 1e-3, 1e4, True, name)
         # set initial and bounds for b taking into account distances
-        # note log transform to avoid extremely small values for b
+        # note log transform to avoid tiny values for b
         binit = np.log(1.0 / np.mean(self.distances) ** 2)
         bmin = np.log(1e-6 / np.max(self.distances) ** 2)
         bmax = np.log(25.0 / np.min(self.distances) ** 2)

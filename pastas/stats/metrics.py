@@ -544,7 +544,7 @@ def kge_2012(
     sim: pandas.Series
         Series with the simulated values.
     obs: pandas.Series
-        Series with the observed values.
+        The Series with the observed values.
     missing: str, optional
         string with the rule to deal with missing values. Only "drop" is
         supported now.

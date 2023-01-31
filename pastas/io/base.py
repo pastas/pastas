@@ -4,7 +4,6 @@ from importlib import import_module
 from logging import getLogger
 from os import path
 
-from numpy import log
 from packaging import version
 from pandas import to_numeric
 

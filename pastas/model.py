@@ -244,7 +244,7 @@ class Model:
 
         Parameters
         ----------
-        transform: pastas.transform instance
+        transform: ps.ThresholdTransform
             An instance of a pastas.transform class.
 
         Examples
@@ -616,7 +616,7 @@ class Model:
         -----
         This method makes sure the simulation is compared to the nearest observation.
         It finds the index closest to sim_index, and then returns a selection of the
-        oseries. in the residuals method, the simulation is interpolated to the
+        oseries. In the `residuals` method, the simulation is interpolated to the
         observation-timestamps.
         """
         if tmin is None and self.settings["tmin"]:

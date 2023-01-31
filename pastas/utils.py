@@ -39,8 +39,8 @@ def initialize_logger(
     Parameters
     ----------
     logger : logging.Logger
-        A Logger-instance. Use ps.logger to initialise the Logging instance that
-        handles all logging throughout pastas,  including all submodules and packages.
+        A Logger-instance. Use pastas.logger to initialise the Logging instance that
+        handles all logging throughout pastas, including all submodules and packages.
     """
     if logger is None:
         logger = logging.getLogger("pastas")
@@ -99,7 +99,7 @@ def remove_console_handler(logger: Optional[Any] = None) -> None:
     ----------
     logger : logging.Logger
         A Logger-instance. Use ps.logger to initialise the Logging instance that
-        handles all logging throughout pastas, including all sub modules and packages.
+        handles all logging throughout pastas, including all submodules and packages.
     """
     if logger is None:
         logger = logging.getLogger("pastas")
@@ -124,7 +124,7 @@ def add_file_handlers(
     ----------
     logger : logging.Logger
         A Logger-instance. Use ps.logger to initialise the Logging instance that
-        handles all logging throughout pastas, including all sub modules and packages.
+        handles all logging throughout pastas, including all submodules and packages.
     """
     if logger is None:
         logger = logging.getLogger("pastas")

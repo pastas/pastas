@@ -21,8 +21,6 @@ __all__ = [
     "runs_test",
     "stoffer_toloi",
     "diagnostics",
-    "plot_acf",
-    "plot_diagnostics",
 ]
 
 
