@@ -14,7 +14,6 @@ from .modelcompare import CompareModels
 from .noisemodels import ArmaModel, NoiseModel
 from .plots import TrackSolve
 from .rcparams import rcParams
-from .read import read_dino, read_dino_level_gauge, read_knmi, read_meny, read_waterbase
 from .rfunc import (
     DoubleExponential,
     Exponential,
