@@ -4,6 +4,7 @@
 from logging import getLogger
 
 import numpy as np
+from numpy import pi
 from pandas import DataFrame
 from scipy.integrate import quad
 from scipy.interpolate import interp1d
@@ -18,7 +19,6 @@ from scipy.special import (
     k1,
     lambertw,
 )
-from numpy import pi
 
 from .decorators import njit, latexfun
 from .version import check_numba_scipy
@@ -60,13 +60,6 @@ class RfuncBase:
         **kwargs,
     ) -> None:
         self.up = up
-        if "meanstress" in kwargs.keys():
-            logger.warning(
-                "The mean_stress argument is deprecated and will throw an error "
-                "in Pastas 1.0. Please use the `gain_scale_factor` argument instead."
-            )
-            gain_scale_factor = kwargs["meanstress"]
-
         self.gain_scale_factor = gain_scale_factor
         self.cutoff = cutoff
 

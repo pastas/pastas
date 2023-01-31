@@ -7,6 +7,7 @@ import pastas.recharge as rch
 import pastas.stats as stats
 import pastas.timeseries_utils as ts
 
+
 from ._version import __version__
 from .decorators import set_use_numba
 from .model import Model
@@ -34,7 +35,6 @@ from .stressmodels import (
     RechargeModel,
     StepModel,
     StressModel,
-    StressModel2,
     TarsoModel,
     WellModel,
 )
