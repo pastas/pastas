@@ -4,6 +4,7 @@
 from logging import getLogger
 
 import numpy as np
+from numpy import pi
 from pandas import DataFrame
 from scipy.integrate import quad
 from scipy.interpolate import interp1d
@@ -18,7 +19,6 @@ from scipy.special import (
     k1,
     lambertw,
 )
-from numpy import pi
 
 from .decorators import njit, latexfun
 from .version import check_numba_scipy
@@ -60,16 +60,8 @@ class RfuncBase:
         **kwargs,
     ) -> None:
         self.up = up
-        if "meanstress" in kwargs.keys():
-            logger.warning(
-                "The gain_scale_factor argument is deprecated and will throw an error "
-                "in Pastas 1.0. Please use the `gain_scale_factor` argument instead."
-            )
-            gain_scale_factor = kwargs["meanstress"]
-
         self.gain_scale_factor = gain_scale_factor
         self.cutoff = cutoff
-        self.kwargs = kwargs
 
     def _update_rfunc_settings(
         self,
@@ -166,6 +158,7 @@ class RfuncBase:
         s: array_like
             Array with the step response.
         """
+        return
 
     def block(
         self,
@@ -275,7 +268,6 @@ class RfuncBase:
             "up": self.up,
             "gain_scale_factor": self.gain_scale_factor,
             "cutoff": self.cutoff,
-            "kwargs": self.kwargs,
         }
         return data
 
@@ -762,7 +754,6 @@ class HantushWellModel(RfuncBase):
             "cutoff": self.cutoff,
             "use_numba": self.use_numba,
             "quad": self.quad,
-            "kwargs": self.kwargs,
         }
         return data
 
@@ -964,7 +955,6 @@ class Hantush(RfuncBase):
             "cutoff": self.cutoff,
             "use_numba": self.use_numba,
             "quad": self.quad,
-            "kwargs": self.kwargs,
         }
         return data
 
@@ -1227,7 +1217,7 @@ class FourParam(RfuncBase):
     @staticmethod
     @latexfun(identifiers={"impulse": "theta"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
-        A, n, a, b = p
+        _A, n, a, b = p
         return (t ** (n - 1)) * np.exp(-t / a - a * b / t)
 
     def get_tmax(self, p: ArrayLike, cutoff: Optional[float] = None) -> float:
@@ -1364,7 +1354,6 @@ class FourParam(RfuncBase):
             "gain_scale_factor": self.gain_scale_factor,
             "cutoff": self.cutoff,
             "quad": self.quad,
-            "kwargs": self.kwargs,
         }
         return data
 
@@ -1696,7 +1685,6 @@ class Kraijenhoff(RfuncBase):
             "gain_scale_factor": self.gain_scale_factor,
             "cutoff": self.cutoff,
             "n_terms": self.n_terms,
-            "kwargs": self.kwargs,
         }
         return data
 
@@ -1825,6 +1813,5 @@ class Spline(RfuncBase):
             "cutoff": self.cutoff,
             "kind": self.kind,
             "t": self.t,
-            "kwargs": self.kwargs,
         }
         return data

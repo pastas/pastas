@@ -5,6 +5,7 @@ from collections import OrderedDict
 from itertools import combinations
 from logging import getLogger
 from os import getlogin
+import inspect
 
 # Type Hinting
 from typing import List, Optional, Tuple, Union
@@ -754,8 +755,9 @@ class Model:
             Argument that determines if a noisemodel is used (only if present). The
             default is noise=True.
         solver: Class pastas.solver.Solver, optional
-            Class used to solve the model. Options are: ps.LeastSquares (default) or
-            ps.LmfitSolve. A class is needed, not an instance of the class!
+            Instance of a pastas Solver class used to solve the model. Options are:
+            ps.LeastSquares() (default) or ps.LmfitSolve(). An instance is needed as
+            of Pastas 0.23, not a class!
         report: bool, optional
             Print a report to the screen after optimization finished. This can also
             be manually triggered after optimization by calling print(ml.fit_report(
@@ -775,10 +777,10 @@ class Model:
 
         Notes
         -----
-        - The solver object including some results are stored as ml.fit. From here
+        - The solver instance including some results are stored as ml.fit. From here
           one can access the covariance (ml.fit.pcov) and correlation matrix (
           ml.fit.pcor).
-        - Each solver return a number of results after optimization. These solver
+        - Each solver returns a number of results after optimization. These solver
           specific results are stored in ml.fit.result and can be accessed from there.
 
         See Also
@@ -795,12 +797,21 @@ class Model:
                 "Calibration series 'oseries_calib' is empty! Check 'tmin' or 'tmax'."
             )
 
-        # Store the solver instance
-        if solver is None:
-            if self.fit is None:
-                self.fit = LeastSquares(ml=self)
-        elif not issubclass(solver, self.fit.__class__):
-            self.fit = solver(ml=self)
+        # If a solver is provided, use that one
+        if solver is not None:
+            # Check if a solver instance is provided, not a class
+            if inspect.isclass(solver):
+                raise DeprecationWarning(
+                    "As of Pastas 0.23, Solvers should be provided as an instance "
+                    "(e.g., ps.LeastSquares()), and not as a class (e.g., "
+                    "ps.LeastSquares). Please provide an instance of the solver."
+                )
+            self.fit = solver
+            self.fit.set_model(self)
+        # Create the default solver is None is provided or already present
+        elif self.fit is None:
+            self.fit = LeastSquares()
+            self.fit.set_model(self)
 
         self.settings["solver"] = self.fit._name
 

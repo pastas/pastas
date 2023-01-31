@@ -66,7 +66,7 @@ class Statistics:
         self.ml = ml
 
     def __repr__(self):
-        msg = """This module contains all the statistical functions included in Pastas. 
+        msg = """This module contains all the statistical functions included in Pastas.
         
         To obtain a list of all statistics that are included type:
 

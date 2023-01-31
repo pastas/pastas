@@ -62,11 +62,7 @@ class TimeSeries:
         name: Optional[str] = None,
         settings: Optional[Union[str, dict]] = None,
         metadata: Optional[dict] = None,
-        **kwargs,  # TODO remove in Pastas 1.0
     ) -> None:
-        # First, deal with all deprecated features and raise errors
-        check_deprecated_input(series, settings, **kwargs)  # TODO remove in Pastas 1.0
-
         # Make sure we have a Pandas Series and not a 1D-DataFrame
         if isinstance(series, pd.DataFrame):
             if len(series.columns) == 1:
@@ -167,13 +163,6 @@ class TimeSeries:
             "series_original. Please set series_original to update the series."
         )
 
-    @property
-    def series_validated(self):
-        raise DeprecationWarning(
-            "TimeSeries objects no longer have a validated time series. Use the "
-            "_series_original instead."
-        )
-
     def update_series(self, force_update: bool = False, **kwargs) -> None:
         """Method to update the series with new options.
 
@@ -232,12 +221,6 @@ class TimeSeries:
             series.name = self._series_original.name
 
             self._series = series
-
-    def multiply(self, other: float) -> None:
-        raise DeprecationWarning(
-            "TimeSeries objects no longer have the multiply method. Provide a new "
-            "_series_original that is multiplied instead."
-        )
 
     def _update_settings(self, **kwargs) -> bool:
         """Internal method that check if an update is actually necessary.
@@ -526,43 +509,6 @@ class TimeSeries:
 
         return data
 
-    def plot(self, original: bool = False, **kwargs) -> Axes:
-        raise DeprecationWarning(
-            "The plot method is deprecated since 0.23 and will be removed in Pastas "
-            "1.0. Use the series.plot function from Pandas instead."
-        )
-
-
-def check_deprecated_input(series, settings, **kwargs):
-    """Method to check input data for Pastas version 0.23 and raise errors.
-
-    Parameters
-    ----------
-    series: pandas.Series
-    settings: dict
-
-    """
-    if "freq_original" in kwargs.keys():
-        raise DeprecationWarning(
-            "Freq_original is no longer supported. Please provide an equidistant "
-            "time series."
-        )
-
-    if isinstance(series, TimeSeries):
-        raise DeprecationWarning(
-            "TimeSeries are no longer allowed as input for to create new "
-            "TimeSeries objects. Please use the original pandas.Series object "
-            "and provide the settings and name."
-        )
-
-    if isinstance(settings, dict):
-        for key in settings.keys():
-            if key in ["norm"]:
-                raise DeprecationWarning(
-                    "Key %s is no longer supported. Please remove this keyword from "
-                    "the settings dictionary."
-                )
-
 
 def validate_stress(series: Series):
     """Method to validate user-provided stress input time series.
@@ -666,7 +612,7 @@ def _validate_series(series: Series, equidistant: bool = True):
 
     # 2. Make sure the index is a DatetimeIndex
     if not isinstance(series.index, pd.DatetimeIndex):
-        msg = f"Index os series {name} is not a pandas.DatetimeIndex."
+        msg = f"Index of series {name} is not a pandas.DatetimeIndex."
         logger.error(msg)
         raise ValueError(msg)
 
