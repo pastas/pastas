@@ -1,8 +1,8 @@
 # %%
-import pastas as pt
+import pastas as ps
 
 # load a model with precipitation, evaporation and a well
-ml = pt.io.load("data/B28H1808_2_pastas-0-22-0.pas")
+ml = ps.io.load("data/B28H1808_2_pastas-0-23-0.pas")
 
 # first solve and plot to see the model-performance
 ml.solve(noise=False)
@@ -19,7 +19,7 @@ ml.del_stressmodel("Extraction")
 ml.del_constant()
 
 # then add a TarsoModel
-sm = pt.TarsoModel(
+sm = ps.TarsoModel(
     prec, evap, dmin=ml.oseries.series.min(), dmax=ml.oseries.series.max()
 )
 ml.add_stressmodel(sm)

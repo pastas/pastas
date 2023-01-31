@@ -490,14 +490,3 @@ def pandas_equidistant_asfreq(series: Series, freq: str) -> Series:
         .squeeze()
     )
     return spandas
-
-
-def to_daily_unit():
-    raise DeprecationWarning("This function is deprecated and will be removed in v1.0")
-
-
-def timestep_weighted_resample_fast():
-    raise DeprecationWarning(
-        "This function is deprecated and will be removed in v1.0."
-        "Method is merged into `timestep_weighted_resample()`."
-    )
