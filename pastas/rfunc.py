@@ -20,7 +20,7 @@ from scipy.special import (
     lambertw,
 )
 
-from .decorators import njit, latexfun
+from .decorators import latexfun, njit
 from .version import check_numba_scipy
 
 try:
@@ -30,6 +30,7 @@ except ModuleNotFoundError:
 
 # Type Hinting
 from typing import Optional, Union
+
 from pastas.typing import ArrayLike
 
 logger = getLogger(__name__)
