@@ -2,7 +2,7 @@
 import pastas as ps
 
 # load a model with precipitation, evaporation and a well
-ml = ps.io.load("data/B28H1808_2_pastas-0-22-0.pas")
+ml = ps.io.load("data/B28H1808_2_pastas-0-23-0.pas")
 if ml.transform is not None:
     ml.del_transform()
 
