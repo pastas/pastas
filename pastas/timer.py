@@ -16,8 +16,8 @@ class ExceededMaxSolveTime(Exception):
 class SolveTimer(tqdm):
     """Progress indicator for model optimization.
 
-    Usage
-    -----
+    Examples
+    --------
     Print timer and number of iterations in console while running `ml.solve()`::
 
         with SolveTimer() as t:
@@ -33,8 +33,8 @@ class SolveTimer(tqdm):
         with SolveTimer(max_time=60) as t:
             ml.solve(callback=t.timer)
 
-    Note
-    ----
+    Notes
+    -----
     If the logger is also printing messages to the console the timer will not be
     updated quite as nicely.
     """
