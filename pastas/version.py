@@ -27,13 +27,16 @@ def check_numba_scipy() -> bool:
     return True
 
 
-def show_versions(lmfit: bool = True) -> None:
+def show_versions(lmfit: bool = True, latexify: bool = True) -> None:
     """Method to print the version of dependencies.
 
     Parameters
     ----------
     lmfit: bool, optional
-        Print the version of LMfit. Needs to be installed.
+        Print the version of LMfit if installed.
+    latexify: bool, optional
+        Print the version of Latexify if installed.
+
     """
 
     msg = (
@@ -50,6 +53,14 @@ def show_versions(lmfit: bool = True) -> None:
         try:
             import_module("lmfit")
             msg += f"{metadata.version('lmfit')}"
+        except ModuleNotFoundError:
+            msg += "Not Installed"
+
+    if latexify:
+        msg += "\nLatexify version: "
+        try:
+            import_module("latexify-py")
+            msg += f"{metadata.version('latexify-py')}"
         except ModuleNotFoundError:
             msg += "Not Installed"
 
