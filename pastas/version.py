@@ -2,9 +2,9 @@ import logging
 from importlib import import_module, metadata
 from platform import python_version
 
-from ._version import __version__
-
 logger = logging.getLogger(__name__)
+
+__version__ = "1.0.0b"
 
 
 def check_numba_scipy() -> bool:

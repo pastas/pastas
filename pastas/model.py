@@ -25,7 +25,6 @@ from pandas import (
 )
 
 # Internal Pastas
-from pastas._version import __version__
 from pastas.decorators import get_stressmodel
 from pastas.io.base import _load_model, dump
 from pastas.modelplots import Plotting
@@ -46,6 +45,7 @@ from pastas.typing import Model as ModelType
 from pastas.typing import NoiseModel as NoiseModelType
 from pastas.typing import Solver, StressModel, TimestampType
 from pastas.utils import validate_name
+from pastas.version import __version__
 
 
 class Model:
