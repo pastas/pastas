@@ -1,5 +1,6 @@
 Introduction
 ============
+
 Pastas is an open source Python package to analyse hydro(geo)logical time
 series. The objective of Pastas is twofold: to provide a scientific
 framework to develop and test new methods, and to provide a reliable
@@ -37,7 +38,7 @@ to contribute to the project? Check out the :doc:`Developers <developers/index>`
         Want to contribute to Pastas? Find resources and guides for developers here.
 
     .. grid-item-card:: Publications
-        :link: publications
+        :link: about/publications
         :link-type: doc
 
         Find an overview of scientific peer-reviewed studies that used Pastas.
@@ -86,10 +87,11 @@ ask you to cite the Pastas article published in Groundwater journal as follows:
     :maxdepth: 2
     :hidden:
 
+    About <about/index>
     User Guide <userguide/index>
     Examples <examples/index>
-    Reference <api/index>
-    Development <developers/index>
-    Publications <publications>
-    References <references>
+    API Docs <api/index>
+    Benchmarks <benchmarks/index>
+    Developers <developers/index>
+
 

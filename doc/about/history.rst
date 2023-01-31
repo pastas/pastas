@@ -1,5 +1,6 @@
 History
 =======
+
 The Development of Pastas started in the spring of 2016 at the TU Delft (The
 Netherlands) and Artesia (The Netherlands). The main goal was to create a
 framework that could support future research on time series analysis of
@@ -20,3 +21,4 @@ being developed by the TU Delft, Artesia, and the University of Graz
 .. figure:: ./../_static/Art_logo.jpg
     :figwidth: 200px
     :target: http://www.artesia-water.nl
+

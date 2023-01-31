@@ -16,6 +16,7 @@ import os
 import re
 import sys
 from datetime import date
+
 import requests
 
 year = date.today().strftime("%Y")
@@ -76,7 +77,12 @@ language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ["_build", "**groundwater_paper", "**.ipynb_checkpoints"]
+exclude_patterns = [
+    "_build",
+    "**groundwater_paper",
+    "**.ipynb_checkpoints",
+    "**benchmarks",
+]
 
 add_function_parentheses = False
 add_module_names = False
@@ -124,6 +130,7 @@ autoclass_content = "class"
 nitpicky = True
 autosectionlabel_prefix_document = True
 
+
 # If true, links to the reST sources are added to the pages.
 # html_show_sourcelink = True
 
@@ -156,7 +163,7 @@ url = "https://api.zotero.org/groups/4846685/collections/8UG7PVLY/items/"
 params = {"format": "bibtex", "style": "apa", "limit": 100}
 
 r = requests.get(url=url, params=params)
-with open("references.bib", mode="w") as file:
+with open("about/references.bib", mode="w") as file:
     file.write(r.text)
 
 # Get a Bibtex reference file from the Zotero group for publications list
@@ -164,13 +171,13 @@ url = "https://api.zotero.org/groups/4846685/collections/Q4F7R59G/items/"
 params = {"format": "bibtex", "style": "apa", "limit": 100}
 
 r = requests.get(url=url, params=params)
-with open("publications.bib", mode="w") as file:
+with open("about/publications.bib", mode="w") as file:
     # Replace citation key to prevent duplicate labels and article now shown
     text = re.sub(r"(@([a-z]*){)", r"\1X_", r.text)
     file.write(text)
 
 # Add some settings for bibtex
-bibtex_bibfiles = ["references.bib", "publications.bib"]
+bibtex_bibfiles = ["about/references.bib", "about/publications.bib"]
 bibtex_reference_style = "author_year_round"
 
 # -- Options for LaTeX output ---------------------------------------------
