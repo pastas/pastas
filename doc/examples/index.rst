@@ -3,22 +3,20 @@ Example Gallery
 
 Below you can find examples of how Pastas models are used for the analysis
 of groundwater levels. Examples in the form of Python scripts can also be found
-on the `examples directory on GitHub <https://github
-.com/pastas/pastas/tree/master/examples>`_.
+on the `examples directory on GitHub <https://github.com/pastas/pastas/tree/master/examples>`_.
 
 .. toctree::
     :maxdepth: 2
     :numbered:
     :hidden:
 
-.. tip::
-    The latest versions of the Jupyter Notebooks can be found in the
-    examples folder on GitHub!
+Basic
+-------
+
+`Preprocessing user-provided time series`_.
+
+`A basic model`_.
 
 
-.. nbgallery::
-    :caption: Click on one of the examples below:
-    :name: rst-gallery
-    :glob:
-
-    ./*
+.. _Preprocessing user-provided time series: 00_prepare_timeseries.ipynb
+.. _A basic model: 01_basic_model.ipynb
