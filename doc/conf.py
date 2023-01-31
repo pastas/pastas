@@ -81,9 +81,6 @@ exclude_patterns = ["_build", "**groundwater_paper", "**.ipynb_checkpoints"]
 add_function_parentheses = False
 add_module_names = False
 show_authors = False  # section and module author directives will not be shown
-
-pygments_style = "sphinx"  # The name of the Pygments (syntax highlighting) style to use
-
 todo_include_todos = False  # Do not show TODOs in docs
 
 # -- Options for HTML output ----------------------------------------------
