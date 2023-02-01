@@ -16,6 +16,7 @@ examples/notebooks/.ipynb_checkpoints/
 gui/settings
 build
 dist
+.tox
 
 .idea/.name
 .cache/v/cache/lastfailed
