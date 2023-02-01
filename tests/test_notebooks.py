@@ -21,7 +21,7 @@ os.mkdir(os.path.join(pathname, testdir))
 
 @pytest.mark.notebooks
 @pytest.mark.parametrize("file", files)
-def test_notebook(file):
+def test_notebook(file) -> None:
     cwd = os.getcwd()
 
     os.chdir(pathname)

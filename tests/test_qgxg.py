@@ -12,46 +12,46 @@ import pastas as ps
 
 
 class TestQGXG(object):
-    def test_q_ghg(self):
+    def test_q_ghg(self) -> None:
         n = 101
         idx = pd.date_range("20160101", freq="d", periods=n)
         s = pd.Series(np.arange(n), index=idx)
         v = ps.stats.q_ghg(s, q=0.94)
         assert v == 94.0
 
-    def test_q_glg(self):
+    def test_q_glg(self) -> None:
         n = 101
         idx = pd.date_range("20160101", freq="d", periods=n)
         s = pd.Series(np.arange(n), index=idx)
         v = ps.stats.q_glg(s, q=0.06)
         assert v == 6.0
 
-    def test_q_ghg_nan(self):
+    def test_q_ghg_nan(self) -> None:
         idx = pd.date_range("20160101", freq="d", periods=4)
         s = pd.Series([1, np.nan, 3, np.nan], index=idx)
         v = ps.stats.q_ghg(s, q=0.5)
         assert v == 2.0
 
-    def test_q_gvg(self):
+    def test_q_gvg(self) -> None:
         idx = pd.to_datetime(["20160320", "20160401", "20160420"])
         s = pd.Series([0, 5, 10], index=idx)
         v = ps.stats.q_gvg(s)
         assert v == 2.5
 
-    def test_q_gvg_nan(self):
+    def test_q_gvg_nan(self) -> None:
         idx = pd.to_datetime(["20160820", "20160901", "20161120"])
         s = pd.Series([0, 5, 10], index=idx)
         v = ps.stats.q_gvg(s)
         assert np.isnan(v)
 
-    def test_q_glg_tmin(self):
+    def test_q_glg_tmin(self) -> None:
         tmin = "20160301"
         idx = pd.date_range("20160101", "20160331", freq="d")
         s = pd.Series(np.arange(len(idx)), index=idx)
         v = ps.stats.q_glg(s, q=0.06, tmin=tmin)
         assert v == 61.8
 
-    def test_q_ghg_tmax(self):
+    def test_q_ghg_tmax(self) -> None:
         n = 101
         tmax = "20160301"
         idx = pd.date_range("20160101", freq="d", periods=n)
@@ -59,7 +59,7 @@ class TestQGXG(object):
         v = ps.stats.q_ghg(s, q=0.94, tmax=tmax)
         assert v == 56.4
 
-    def test_q_gvg_tmin_tmax(self):
+    def test_q_gvg_tmin_tmax(self) -> None:
         tmin = "20170301"
         tmax = "20170401"
         idx = pd.to_datetime(["20160401", "20170401", "20180401"])
@@ -67,7 +67,7 @@ class TestQGXG(object):
         v = ps.stats.q_gvg(s, tmin=tmin, tmax=tmax)
         assert v == 5
 
-    def test_q_gxg_series(self):
+    def test_q_gxg_series(self) -> None:
         s = pd.read_csv(
             "tests/data/hseries_gxg.csv",
             index_col=0,

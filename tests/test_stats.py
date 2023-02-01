@@ -13,7 +13,7 @@ def acf_func(**kwargs):
     return acf, acf_true
 
 
-def test_acf_rectangle():
+def test_acf_rectangle() -> None:
     acf, acf_true = acf_func(bin_method="rectangle")
     assert abs((acf - acf_true)).max() < 0.05
 
