@@ -1,7 +1,5 @@
 import matplotlib as mpl
-from pandas import read_csv
 
-import pastas as ps
 from pastas.plots import TrackSolve, compare
 
 from .fixtures import ml

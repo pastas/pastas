@@ -2,7 +2,7 @@ from pandas import read_csv
 
 import pastas as ps
 
-from .fixtures import ml, ml_empty, sm_prec, sm_evap
+from .fixtures import ml, ml_empty, sm_evap, sm_prec
 
 obs = (
     read_csv("tests/data/obs.csv", index_col=0, parse_dates=True)

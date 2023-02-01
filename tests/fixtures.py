@@ -1,5 +1,5 @@
 import pytest
-from pandas import read_csv, Series, to_datetime
+from pandas import Series, read_csv, to_datetime
 
 import pastas as ps
 from pastas.typing.types import StressModel

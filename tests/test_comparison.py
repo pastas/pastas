@@ -1,5 +1,3 @@
-from pandas import read_csv
-
 import pastas as ps
 
 from .fixtures import ml, ml_sm
