@@ -81,7 +81,7 @@ exclude_patterns = [
     "_build",
     "**groundwater_paper",
     "**.ipynb_checkpoints",
-    "**benchmarks",
+    "**benchmarks/**.ipynb",
 ]
 
 add_function_parentheses = False
@@ -106,7 +106,7 @@ html_show_sourcelink = True
 html_theme_options = {
     "github_url": "https://github.com/pastas/pastas",
     "use_edit_page_button": True,
-    "header_links_before_dropdown": 4,
+    "header_links_before_dropdown": 6,
 }
 
 html_context = {

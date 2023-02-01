@@ -1,11 +1,11 @@
 Citing and logo
 ===============
 
-If you find Pastas useful in your work, please cite the Pastas article published in Groundwater journal:
+If you find Pastas useful in your work, please cite the `Pastas article published in Groundwater journal <https://doi.org/10.1111/gwat.12925>`_:
 
 Collenteur, R., Caljé, R., Klop, S., Schaars, F., & Bakker, M. (2019). Pastas: open source software for the analysis of groundwater time series. Groundwater, 57. https://doi.org/10.1111/gwat.12925
 
-.. code::
+.. code-block:: text
 
     @article{Collenteur_Pastas_open_source_2019,
       author        = {Collenteur, R.A. and
@@ -21,7 +21,10 @@ Collenteur, R., Caljé, R., Klop, S., Schaars, F., & Bakker, M. (2019). Pastas: 
       year          = {2019}
     }
 
-For a specific version, you can cite on of the releases on Zenodo::
+To cite a specific version of Pastas, you can cite `one of the releases on Zenodo <https://doi.org/10.5281/zenodo
+.7585471>`_:
+
+.. code-block:: text
 
     @software{raoul_collenteur_2023_7585471,
       author        = {Raoul Collenteur and
@@ -53,21 +56,18 @@ Logo
 Color
 -----
 
-Pastas blue is
+.. raw:: html
 
-hex-code is : #02A4D3
-rgb code : (1,64,83)
-
-<table class="table">
-    <tr>
-        <td style="text-align: center;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
-                <circle cx="50" cy="50" r="50" fill="#02A4D3"/>
-            </svg>
-            <br/>
-            <b style="color: #02A4D3;">Blue</b><br/>
-            RGB: R1 G64 B83<br/>
-            HEX: #02A4D3
-        </td>
-    </tr>
-</table>
+    <table class="table">
+        <tr>
+            <td style="text-align: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+                    <circle cx="50" cy="50" r="50" fill="#009BE0"/>
+                </svg>
+                <br/>
+                <b style="color: #009BE0;">Pastas Blue</b><br/>
+                RGB: R0 G155 B224<br/>
+                HEX: #009BE0
+            </td>
+        </tr>
+    </table>

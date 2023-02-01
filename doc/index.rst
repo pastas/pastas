@@ -38,7 +38,7 @@ to contribute to the project? Check out the :doc:`Developers <developers/index>`
         Want to contribute to Pastas? Find resources and guides for developers here.
 
     .. grid-item-card:: Publications
-        :link: about/publications
+        :link: about/05_publications
         :link-type: doc
 
         Find an overview of scientific peer-reviewed studies that used Pastas.

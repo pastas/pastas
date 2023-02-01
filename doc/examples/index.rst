@@ -57,12 +57,12 @@ Non-linear (Recharge) Models
 
 `Estimating recharge`_
 
-`Snow`_
+`Modeling snow`_
 
 .. _Threshold non-linearities: 09_threshold_non_linear.ipynb
 .. _Non-linear recharge models: 10_non_linear.ipynb
 .. _Estimating recharge: 11_recharge_estimation.ipynb
-.. _Snow: 12_snowmodel.ipynb
+.. _Modeling snow: 12_snowmodel.ipynb
 
 
 Model Evaluation
