@@ -16,6 +16,7 @@ import os
 import re
 import sys
 from datetime import date
+
 import requests
 
 year = date.today().strftime("%Y")
@@ -25,6 +26,7 @@ from matplotlib import use
 use("agg")
 
 from dataclasses import dataclass, field
+
 import sphinxcontrib.bibtex.plugin
 from sphinxcontrib.bibtex.style.referencing import BracketStyle
 from sphinxcontrib.bibtex.style.referencing.author_year import AuthorYearReferenceStyle
