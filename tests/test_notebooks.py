@@ -28,7 +28,6 @@ def test_notebook(file) -> None:
     if file not in [
         "00_prepare_timeseries.ipynb",
         "12_emcee_uncertainty.ipynb",
-        "19_reservoir.ipynb",
     ]:
         try:
             # run autotest on each notebook
