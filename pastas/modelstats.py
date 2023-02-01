@@ -79,7 +79,7 @@ class Statistics:
         tmin: Optional[TimestampType] = None,
         tmax: Optional[TimestampType] = None,
         weighted: bool = False,
-        **kwargs
+        **kwargs,
     ) -> float:
         """Root mean squared error of the residuals.
 
@@ -104,7 +104,7 @@ class Statistics:
         tmin: Optional[TimestampType] = None,
         tmax: Optional[TimestampType] = None,
         weighted: bool = False,
-        **kwargs
+        **kwargs,
     ) -> float:
         """Root mean squared error of the noise.
 
@@ -155,7 +155,7 @@ class Statistics:
         tmin: Optional[TimestampType] = None,
         tmax: Optional[TimestampType] = None,
         weighted: bool = False,
-        **kwargs
+        **kwargs,
     ) -> float:
         """Mean Absolute Error (MAE) of the residuals.
 
@@ -180,7 +180,7 @@ class Statistics:
         tmin: Optional[TimestampType] = None,
         tmax: Optional[TimestampType] = None,
         weighted: bool = False,
-        **kwargs
+        **kwargs,
     ) -> float:
         """Nash-Sutcliffe coefficient for model fit .
 
@@ -206,7 +206,7 @@ class Statistics:
         tmin: Optional[TimestampType] = None,
         tmax: Optional[TimestampType] = None,
         weighted: bool = False,
-        **kwargs
+        **kwargs,
     ) -> float:
         """Compute the (weighted) Pearson correlation (r).
 
@@ -232,7 +232,7 @@ class Statistics:
         tmin: Optional[TimestampType] = None,
         tmax: Optional[TimestampType] = None,
         weighted: bool = False,
-        **kwargs
+        **kwargs,
     ) -> float:
         """Explained variance percentage.
 
@@ -258,7 +258,7 @@ class Statistics:
         tmin: Optional[TimestampType] = None,
         tmax: Optional[TimestampType] = None,
         weighted: bool = False,
-        **kwargs
+        **kwargs,
     ) -> float:
         """R-squared.
 
@@ -284,7 +284,7 @@ class Statistics:
         tmin: Optional[TimestampType] = None,
         tmax: Optional[TimestampType] = None,
         weighted: bool = False,
-        **kwargs
+        **kwargs,
     ) -> float:
         """Kling-Gupta Efficiency.
 

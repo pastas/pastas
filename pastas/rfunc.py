@@ -1277,7 +1277,6 @@ class FourParam(RfuncBase):
         cutoff: Optional[float] = None,
         maxtmax: Optional[int] = None,
     ) -> ArrayLike:
-
         # Because Model.get_response_tmax() provides parameters for the stressmodel,
         # not only the response functions
         if len(p) > 4:
@@ -1293,7 +1292,6 @@ class FourParam(RfuncBase):
             return s
 
         else:
-
             t1 = -np.sqrt(3 / 5)
             t2 = 0
             t3 = np.sqrt(3 / 5)

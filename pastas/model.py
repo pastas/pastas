@@ -95,7 +95,6 @@ class Model:
         metadata: Optional[dict] = None,
         freq: str = "D",
     ) -> None:
-
         self.logger = getLogger(__name__)
 
         # Construct the different model components
