@@ -13,76 +13,57 @@ on:
       - dev
 
 jobs:
-  
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.9
-          cache: 'pip'
-          cache-dependency-path: pyproject.toml
-
-      - name: Install Python dependencies
-        run: |
-          pip install .
-          pip install ".[lint]"
-      
-      - name: Run black
-        uses: psf/black@stable
-        with:
-          options: "--check --diff"
-          jupyter: true
-      
-      - name : Run isort
-        run: |
-          isort --check --diff --profile=black ./pastas
-
-      - name : Run flake8
-        run: |
-          flake8 --count --show-source --exit-zero --max-line-length=88 ./pastas
-          flake8 --count --exit-zero --max-line-length=88 --statistics ./pastas
-
   test:
-    name: Tests
-    runs-on: ubuntu-latest
-    needs: lint
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ['3.8', '3.9', '3.10']
-    steps:
-      - uses: actions/checkout@v3
+        include:
+        - name: Test suite with py38-ubuntu
+          python: '3.8'
+          os: ubuntu-latest
+          toxenv: py38
+        - name: Test suite with py39-ubuntu
+          python: '3.9'
+          os: ubuntu-latest
+          toxenv: py39
+        - name: Test suite with py310-ubuntu
+          python: '3.10'
+          os: ubuntu-latest
+          toxenv: py310
+        - name: Formatting with black + isort
+          python: '3.9'
+          os: ubuntu-latest
+          toxenv: format
+        - name: Linting with flake8
+          python: '3.9'
+          os: ubuntu-latest
+          toxenv: lint
+        - name: Test suite for Jupyter Notebooks
+          python: '3.9'
+          os: ubuntu-latest
+          toxenv: notebooks
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-          cache-dependency-path: pyproject.toml
-      
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .[ci]
-                  
-      - name: Run tests and notebooks
-        if: ${{ github.event_name == 'pull_request' }}
-        run: |
-          py.test ./tests
-      
-      - name: Run tests only
-        if: ${{ github.event_name == 'push' }}
-        run: |
-          py.test ./tests -m "not notebooks"
-      
-      - name: Run codacy-coverage-reporter
-        if: github.repository == 'pastas/pastas'
-        uses: codacy/codacy-coverage-reporter-action@master
-        with:
-          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
-          coverage-reports: coverage.xml
+  name: ${{ matrix.name }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python }}
+        check-latest: true
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install tox tox-gh-actions
+    - name: Test with tox
+      run: tox
+      env:
+        PLATFORM: ${{ matrix.platform }}
+
+    - name: Run codacy-coverage-reporter
+      if: github.repository == 'pastas/pastas'
+      uses: codacy/codacy-coverage-reporter-action@master
+      with:
+        project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+        coverage-reports: coverage.xml

@@ -47,12 +47,12 @@ documentation = "https://pastas.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
 full = ["lmfit >= 1.0.0", "latexify-py"]
-lint = ["isort", "flake8"]
+formatting = ["isort", "black[jupyter]"]
+linting = ["flake8"]
+pytesting = ["pytest>=7", "pytest-cov", "pytest-sugar"]
 ci = [
-    "pastas[full]",
+    "pastas[full,pytesting]",
     "jupyter",
-    "pytest",
-    "pytest-cov",
     "codacy-coverage",
     "corner",
     "emcee",
@@ -69,6 +69,7 @@ rtd = [
     "requests",
     "numpydoc",
 ]
+dev = ["pastas[formatting,linting,ci,rtd]"]
 numbascipy = ["numba-scipy >= 0.3.1"]
 
 
@@ -84,3 +85,45 @@ profile = "black"
 [tool.pytest.ini_options]
 addopts = "--strict-markers --durations=0 --cov-report xml:coverage.xml --cov pastas"
 markers = ["notebooks: run notebooks"]
+
+[tool.tox]
+legacy_tox_ini = """
+    [tox]
+    requires = tox>=4
+    env_list = format, lint, notebooks, py{38,39,310}
+
+    [gh-actions]
+    python =
+        3.8: py38
+        3.9: py39, format, lint, notebooks
+        3.10: py310
+
+    [testenv]
+    description = run unit tests
+    extras = pytesting,ci
+    commands =
+            pytest {posargs:tests} -m "not notebooks"
+
+    [testenv:notebooks]
+    description = run unit tests
+    extras = pytesting,ci
+    commands =
+            pytest {posargs:tests} -m "notebooks"
+
+    [testenv:format]
+    description = run formatters
+    basepython = python3.9
+    extras = formatting
+    commands =
+            black {posargs:pastas} --diff --check
+            isort . --check --diff --profile=black
+
+    [testenv:lint]
+    description = run linters
+    basepython = python3.9
+    extras = linting
+    commands =
+            flake8 --count --show-source --exit-zero --max-line-length=88 ./pastas
+            flake8 --count --exit-zero --max-line-length=88 --statistics ./pastas
+
+"""
