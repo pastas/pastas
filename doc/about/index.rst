@@ -10,7 +10,7 @@ available from the `Pastas GitHub <https://github.com/pastas/pastas>`_.
 Mission
 -------
 
-
+Our mission is to provide a
 
 
 Supporting organizations

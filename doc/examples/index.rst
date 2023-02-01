@@ -1,5 +1,5 @@
 Examples
-===============
+========
 
 Below you can find examples of how Pastas models are used for the analysis
 of groundwater levels. Examples in the form of Python scripts can also be found
@@ -13,7 +13,7 @@ on the `examples directory on GitHub <https://github.com/pastas/pastas/tree/mast
     ./*
 
 Basics
--------
+------
 
 `Preprocessing user-provided time series`_
 
@@ -30,7 +30,7 @@ Basics
 
 
 Stressmodels
--------
+------------
 
 `Adding surface water levels`_
 
@@ -49,7 +49,7 @@ Stressmodels
 .. _Changing response functions: 08_changing_responses.ipynb
 
 Non-linear (Recharge) Models
-~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 `Threshold non-linearities`_
 
@@ -66,7 +66,7 @@ Non-linear (Recharge) Models
 
 
 Model Evaluation
--------
+----------------
 
 `Comparing models visually`_
 
@@ -86,7 +86,7 @@ Model Evaluation
 
 
 Applications
--------
+------------
 
 `Standardized Groundwater Index`_
 

@@ -668,9 +668,6 @@ class Berendrecht(RechargeBase):
     ) -> Tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
         """Internal method used for the recharge calculation.
 
-        Notes
-        -----
-        If Numba is available, this method is significantly faster.
         """
         n = prec.size
         # Create an empty arrays to store the fluxes and states
@@ -807,9 +804,6 @@ class Peterson(RechargeBase):
     ) -> Tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
         """Internal method used for the recharge calculation.
 
-        Notes
-        -----
-        If Numba is available, this method is significantly faster.
         """
         n = len(prec)
         # Create an empty arrays to store the fluxes and states
