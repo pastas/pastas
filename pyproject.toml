@@ -47,6 +47,7 @@ documentation = "https://pastas.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
 full = ["lmfit >= 1.0.0", "latexify-py"]
+lint = ["isort", "flake8"]
 ci = [
     "pastas[full]",
     "jupyter",

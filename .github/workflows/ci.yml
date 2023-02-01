@@ -13,7 +13,43 @@ on:
       - dev
 
 jobs:
+  
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+          cache: 'pip'
+          cache-dependency-path: pyproject.toml
+
+      - name: Install Python dependencies
+        run: |
+          pip install .
+          pip install ".[lint]"
+      
+      - name: Run black
+        uses: psf/black@stable
+        with:
+          options: "--check --diff"
+          jupyter: true
+      
+      - name : Run isort
+        run: |
+          isort --check --diff --profile=black ./pastas
+
+      - name : Run flake8
+        run: |
+          flake8 --count --show-source --exit-zero --max-line-length=88 ./pastas
+          flake8 --count --exit-zero --max-line-length=88 --statistics ./pastas
+
   test:
+    name: Tests
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -25,18 +61,14 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+          cache-dependency-path: pyproject.toml
       
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e .[ci]
-      
-      - name: Lint with black
-        uses: psf/black@stable
-        with:
-          options: "--check"
-          jupyter: true
-            
+                  
       - name: Run tests and notebooks
         if: ${{ github.event_name == 'pull_request' }}
         run: |
