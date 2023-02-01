@@ -36,6 +36,7 @@ jobs:
         with:
           options: "--check"
           jupyter: true
+          version: "23.1.0"
             
       - name: Run tests and notebooks
         if: ${{ github.event_name == 'pull_request' }}
