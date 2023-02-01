@@ -60,7 +60,6 @@ jobs:
       run: tox
       env:
         PLATFORM: ${{ matrix.platform }}
-
     - name: Run codacy-coverage-reporter
       if: github.repository == 'pastas/pastas'
       uses: codacy/codacy-coverage-reporter-action@master
