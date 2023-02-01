@@ -663,7 +663,6 @@ class WellModel(StressModelBase):
         sort_wells: bool = True,
         metadata: Optional[list] = None,
     ) -> None:
-
         if not isinstance(rfunc, HantushWellModel):
             raise NotImplementedError(
                 "WellModel only supports the rfunc HantushWellModel!"

@@ -12,6 +12,7 @@ from matplotlib.ticker import LogFormatter, MultipleLocator
 from pandas import Series, concat
 
 from pastas.typing import Axes, Figure, Model, TimestampType
+
 from .decorators import model_tmin_tmax
 from .plots import (
     _table_formatter_params,
@@ -843,7 +844,6 @@ class Plotting:
 
         # loop over axes showing stressmodel contributions
         for i, sm in zip(range(3, 3 + 2 * nsm, 2), self.ml.stressmodels.keys()):
-
             # Get the contributions for StressModels with multiple stresses
             contributions = []
             sml = self.ml.stressmodels[sm]

@@ -607,7 +607,6 @@ class LmfitSolve(BaseSolver):
         method: Optional[str] = "leastsq",
         **kwargs,
     ) -> Tuple[bool, ArrayLike, ArrayLike]:
-
         # Deal with the parameters
         parameters = lmfit.Parameters()
         p = self.ml.parameters.loc[:, ["initial", "pmin", "pmax", "vary"]]

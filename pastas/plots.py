@@ -564,7 +564,6 @@ class TrackSolve:
         tmax: Optional[TimestampType] = None,
         update_iter: Optional[int] = None,
     ) -> None:
-
         logger.warning(
             "TrackSolve feature under development. If you find any bugs please post "
             "an issue on GitHub: https://github.com/pastas/pastas/issues"
