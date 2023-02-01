@@ -6,7 +6,7 @@ import logging
 from typing import Optional
 
 import numpy as np
-from pandas import Index, Series, Timedelta, Timestamp, date_range, api
+from pandas import Index, Series, Timedelta, Timestamp, api, date_range
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
 
@@ -160,14 +160,14 @@ def get_sample(tindex: Index, ref_tindex: Index) -> Index:
 
     Parameters
     ----------
-    tindex: pandas.index
+    tindex: pandas.Index
         Pandas index object.
-    ref_tindex: pandas.index
+    ref_tindex: pandas.Index
         Pandas index object.
 
     Returns
     -------
-    series: pandas.index
+    series: pandas.Index
 
     Notes
     -----
@@ -211,7 +211,7 @@ def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> S
     ----------
     s : pandas.Series
         The original series to be resampled
-    index : pandas.index
+    index : pandas.Index
         The index to which to resample the series
     fast : bool, optional
         use fast implementation, default is False
@@ -317,7 +317,7 @@ def get_equidistant_series_nearest(
 
     Notes
     -----
-    This method creates an equidistant time series with specified freq using nearest
+    This method creates an equidistant time series with specified freq using the nearest
     sampling (meaning observations can be shifted in time), with additional filling
     logic that ensures each original measurement is only included once in the new
     time series. Values are filled as close as possible to their original timestamp
@@ -339,7 +339,7 @@ def get_equidistant_series_nearest(
     )
     ind_linear = fl(idx.asi8)
 
-    # get nearest index from original series
+    # get the nearest index from original series
     f = interpolate.interp1d(
         series.index.asi8,
         np.arange(0, series.index.size),
@@ -352,7 +352,7 @@ def get_equidistant_series_nearest(
     # create a new equidistant series
     s = Series(index=idx, data=np.nan)
 
-    # fill in nearest value for each timestamp in equidistant series
+    # fill in the nearest value for each timestamp in equidistant series
     s.loc[idx] = series.values[ind]
 
     # remove duplicates, each observation can only be used once
@@ -360,7 +360,7 @@ def get_equidistant_series_nearest(
     # mask all duplicates and set to NaN
     s.loc[mask] = np.nan
 
-    # look through duplicates which equidistant timestamp is closest
+    # look through duplicates which equidistant timestamp is the closest
     # then fill value from original series for closest timestamp
     for i in np.unique(ind[mask]):
         # mask duplicates
@@ -490,14 +490,3 @@ def pandas_equidistant_asfreq(series: Series, freq: str) -> Series:
         .squeeze()
     )
     return spandas
-
-
-def to_daily_unit():
-    raise DeprecationWarning("This function is deprecated and will be removed in v1.0")
-
-
-def timestep_weighted_resample_fast():
-    raise DeprecationWarning(
-        "This function is deprecated and will be removed in v1.0."
-        "Method is merged into `timestep_weighted_resample()`."
-    )

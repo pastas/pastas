@@ -12,7 +12,6 @@ from matplotlib.ticker import LogFormatter, MultipleLocator
 from pandas import Series, concat
 
 from pastas.typing import Axes, Figure, Model, TimestampType
-
 from .decorators import model_tmin_tmax
 from .plots import (
     _table_formatter_params,
@@ -67,7 +66,7 @@ class Plotting:
             True to plot the observed time series.
         simulation: bool, optional
             True to plot the simulated time series.
-        ax: Matplotlib.axes instance, optional
+        ax: matplotlib.axes.Axes, optional
             Axes to add the plot to.
         figsize: tuple, optional
             Tuple with the height and width of the figure in inches.
@@ -141,10 +140,10 @@ class Plotting:
             Show the warmup-period. Default is false.
         block_or_step: str, optional
             Plot the block- or step-response on the right. Default is 'step'.
-        fig: Matplotib.Figure instance, optional
-            Optionally provide a Matplotib.Figure instance to plot onto.
+        fig: matplotib.Figure instance, optional
+            Optionally provide a matplotib.Figure instance to plot onto.
         **kwargs: dict, optional
-            Optional arguments, passed on to the plt.figure method.
+            Optional arguments, passed on to the matplotlib.pyplot.figure method.
 
         Returns
         -------
@@ -356,7 +355,7 @@ class Plotting:
         min_ylim_diff: float, optional
             Float with the difference in the ylimits. Default is None
         **kwargs: dict, optional
-            Optional arguments, passed on to the plt.subplots method.
+            Optional arguments, passed on to the matplotlib.pyplot.subplots method.
 
         Returns
         -------
@@ -505,12 +504,12 @@ class Plotting:
             number of bins used for the histogram. 50 is default.
         acf_options: dict, optional
             dictionary with keyword arguments that are passed on to pastas.stats.acf.
-        fig: Matplotib.Figure instance, optional
-            Optionally provide a Matplotib.Figure instance to plot onto.
+        fig: matplotlib.pyplot.Figure, optional
+            Optionally provide a matplotlib.pyplot.Figure instance to plot onto.
         alpha: float, optional
             Significance level to calculate the (1-alpha)-confidence intervals.
         **kwargs: dict, optional
-            Optional keyword arguments, passed on to plt.figure.
+            Optional keyword arguments, passed on to matplotlib.pyplot.figure method.
 
         Returns
         -------
@@ -570,7 +569,7 @@ class Plotting:
         ----------
         tmin: str or pandas.Timestamp, optional
         tmax: str or pandas.Timestamp, optional
-        ax: Matplotlib.axes instance, optional
+        ax: matplotlib.axes.Axes, optional
             Axes to add the plot to.
         figsize: tuple, optional
             Tuple with the height and width of the figure in inches.
@@ -602,7 +601,7 @@ class Plotting:
         ----------
         stressmodels: list, optional
             List with the stressmodels to plot the block response for.
-        ax: Matplotlib.axes instance, optional
+        ax: matplotlib.axes.Axes, optional
             Axes to add the plot to.
         figsize: tuple, optional
             Tuple with the height and width of the figure in inches.
@@ -705,7 +704,7 @@ class Plotting:
         stresses = _get_stress_series(self.ml, split=split)
 
         rows = len(stresses)
-        rows = -(-rows // cols)  # round up with out additional import
+        rows = -(-rows // cols)  # round up without additional import
 
         fig, axes = plt.subplots(rows, cols, sharex=sharex, figsize=figsize, **kwargs)
 
@@ -744,8 +743,8 @@ class Plotting:
         ----------
         tmin: str or pandas.Timestamp, optional.
         tmax: str or pandas.Timestamp, optional.
-        ax: matplotlib.axes, optional
-            Axes to plot the pie chart on. A new figure and axes will be created of
+        ax: matplotlib.axes.Axes, optional
+            The Axes to plot the pie chart on. A new figure and axes will be created of
             not provided.
         figsize: tuple, optional
             tuple of size 2 to determine the figure size in inches.
@@ -766,7 +765,7 @@ class Plotting:
 
         Returns
         -------
-        ax: matplotlib.axes
+        ax: matplotlib.axes.Axes
         """
         if ax is None:
             _, ax = plt.subplots(figsize=figsize)
@@ -921,7 +920,7 @@ class Plotting:
 
         Returns
         -------
-        matplotlib.Axes
+        matplotlib.axes.Axes
         """
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
         stresses = _get_stress_series(self.ml, split=split)
@@ -955,7 +954,7 @@ class Plotting:
 
         Returns
         -------
-        fig: matplotlib.Figure instance
+        fig: matplotlib.pyplot.Figure instance
         """
         if fname is None:
             fname = "{}.pdf".format(self.ml.name)

@@ -13,7 +13,6 @@ from .modelcompare import CompareModels
 from .noisemodels import ArmaModel, NoiseModel
 from .plots import TrackSolve
 from .rcparams import rcParams
-from .read import read_dino, read_dino_level_gauge, read_knmi, read_meny, read_waterbase
 from .rfunc import (
     DoubleExponential,
     Exponential,
@@ -34,11 +33,10 @@ from .stressmodels import (
     RechargeModel,
     StepModel,
     StressModel,
-    StressModel2,
     TarsoModel,
     WellModel,
 )
-from .timeseries import validate_stress, validate_oseries
+from .timeseries import validate_oseries, validate_stress
 from .transform import ThresholdTransform
 from .utils import initialize_logger, set_log_level
 from .version import __version__, show_versions
