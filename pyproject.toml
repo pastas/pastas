@@ -69,7 +69,7 @@ rtd = [
     "requests",
     "numpydoc",
 ]
-dev = ["pastas[formatting,linting,ci,rtd]"]
+dev = ["tox", "pastas[formatting,linting,ci,rtd]"]
 numbascipy = ["numba-scipy >= 0.3.1"]
 
 
@@ -100,30 +100,30 @@ legacy_tox_ini = """
 
     [testenv]
     description = run unit tests
-    extras = pytesting,ci
+    extras = ci
     commands =
-            pytest {posargs:tests} -m "not notebooks"
+            pytest {posargs:tests -m "not notebooks"}
 
     [testenv:notebooks]
     description = run unit tests
-    extras = pytesting,ci
+    extras = ci
     commands =
-            pytest {posargs:tests} -m "notebooks"
+            pytest {posargs:tests -m "notebooks"}
 
     [testenv:format]
     description = run formatters
     basepython = python3.9
     extras = formatting
     commands =
-            black {posargs:pastas} --diff --check
-            isort . --check --diff --profile=black
+            black {posargs:pastas --diff}
+            isort {posargs:pastas --diff --profile=black}
 
     [testenv:lint]
     description = run linters
     basepython = python3.9
     extras = linting
     commands =
-            flake8 --count --show-source --exit-zero --max-line-length=88 ./pastas
-            flake8 --count --exit-zero --max-line-length=88 --statistics ./pastas
+            flake8 {posargs:pastas --count --show-source --exit-zero --max-line-length=88}
+            flake8 {posargs:pastas --count --exit-zero --max-line-length=88 --statistics}
 
 """
