@@ -92,38 +92,32 @@ legacy_tox_ini = """
     requires = tox>=4
     env_list = format, lint, notebooks, py{38,39,310}
 
-    [gh-actions]
-    python =
-        3.8: py38
-        3.9: py39, format, lint, notebooks
-        3.10: py310
-
     [testenv]
     description = run unit tests
     extras = ci
     commands =
-            pytest {posargs:tests -m "not notebooks"}
+            pytest tests -m "not notebooks"
 
     [testenv:notebooks]
     description = run unit tests
     extras = ci
     commands =
-            pytest {posargs:tests -m "notebooks"}
+            pytest tests -m "notebooks"
 
     [testenv:format]
     description = run formatters
     basepython = python3.9
     extras = formatting
     commands =
-            black {posargs:pastas --diff}
-            isort {posargs:pastas --diff --profile=black}
+            black pastas --diff
+            isort pastas --diff --profile=black
 
     [testenv:lint]
     description = run linters
     basepython = python3.9
     extras = linting
     commands =
-            flake8 {posargs:pastas --count --show-source --exit-zero --max-line-length=88}
-            flake8 {posargs:pastas --count --exit-zero --max-line-length=88 --statistics}
+            flake8 pastas --count --show-source --exit-zero --max-line-length=88
+            flake8 pastas --count --exit-zero --max-line-length=88 --statistics
 
 """
