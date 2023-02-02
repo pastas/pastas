@@ -83,8 +83,6 @@ jobs:
         uses: actions/setup-python@v4
         with:
           check-latest: true
-          cache: "pip"
-          cache-dependency-path: pyproject.toml
 
       - name: Get coverage
         uses: actions/download-artifact@v3
@@ -92,7 +90,7 @@ jobs:
           name: coverage
 
       - name: Run codacy-coverage-reporter
-        if: ${{ github.repository == 'pastas/pastas' }}
+        if: ${{ github.repository == 'pastas/pastas' && success() }}
         uses: codacy/codacy-coverage-reporter-action@master
         with:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
