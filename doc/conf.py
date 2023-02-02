@@ -16,6 +16,7 @@ import os
 import re
 import sys
 from datetime import date
+
 import requests
 
 year = date.today().strftime("%Y")
@@ -128,6 +129,7 @@ autoclass_content = "class"
 # html_show_sourcelink = True
 
 # -- Generating references and publications lists -------------------------
+
 
 # support Round brackets
 def bracket_style() -> BracketStyle:
