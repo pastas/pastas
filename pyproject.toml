@@ -109,8 +109,8 @@ legacy_tox_ini = """
     basepython = python3.9
     extras = formatting
     commands =
-            black pastas --diff
-            isort pastas --diff --profile=black
+            black pastas --check --diff
+            isort pastas --check --diff --profile=black
 
     [testenv:lint]
     description = run linters
