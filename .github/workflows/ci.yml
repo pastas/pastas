@@ -68,8 +68,13 @@ jobs:
       - name: Test
         run: tox -e ${{ matrix.toxenv }} --skip-pkg-install
 
+      - run:|
+          echo "GitHub repo: ${{ github.repository }}"
+          echo "Tox env: ${{ matrix.toxenv == 'notebooks' }}"
+          echo "If statement: (${{ github.repository == 'pastas/pastas' }} && ${{ matrix.toxenv == 'notebooks' }})"
+
       - name: Run codacy-coverage-reporter
-        if: (${{ github.repository == 'pastas/pastas' }} && ${{ matrix.toxenv == 'notebooks'}})
+        if: (${{ github.repository == 'pastas/pastas' }} && ${{ matrix.toxenv == 'notebooks' }})
         uses: codacy/codacy-coverage-reporter-action@master
         with:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
