@@ -1,12 +1,11 @@
 History
 =======
 
-The Development of Pastas started in the spring of 2016 at the TU Delft (The Netherlands) and Artesia (The
-Netherlands). Researchers at the TU Delft required a flexible framework that could support future research on time
-series analysis of groundwater data. Consulting company `Artesia <https://www.artesia-water.nl>`_ on the other hand,
-needed a tool that allowed them to perform more complex analyses in a scripted environment. As such, Pastas was
-developed under a strong partnership between academia and private industry, a collaboration that continues until this
-day.
+The Development of Pastas started in the spring of 2016 at the TU Delft and Artesia in the Netherlands. Researchers
+at the TU Delft required a flexible framework that could support future research on time series analysis of
+groundwater data. Consulting company `Artesia <https://www.artesia-water.nl>`_ on the other hand, needed a tool
+that allowed them to perform more complex analyses in a scripted environment. As such, Pastas was developed under
+a fruitful partnership between academia and private industry, a collaboration that continues to this day.
 
 .. figure:: ./../_static/history_initial.jpg
     :figwidth: 600px
@@ -16,7 +15,7 @@ day.
 Python was chosen as the programming language for Pastas, being a flexible and open-source language that allows for
 quick prototyping. Moreover, many if not most hydrologists learn Python during their education, making the software
 available to many. From the start, all code was made completely open-source under MIT license, embracing open science
-and FAIR data practices.
+and FAIR (Findability, Accessibility, Interoperability, and Reuse) data practices.
 
 International use of Pastas and research grew substantially after the publication of the Pastas article in the
 international journal Groundwater :cite:p:`collenteur_pastas_2019`. In addition, the University of Graz in Austria
@@ -29,9 +28,9 @@ Pastas 1.0
 ----------
 
 In february 2023, Pastas version 1.0 was released, the celebration of 7 years of research and development of Pastas.
-Although Pastas was already operational for a couple of years, the application programming interface (API) was still
-changing sporadically and older (unused) model code was mounting. This made maintenance harder and harder. In Pastas
-1.0 all of the unused code was removed, the API was unified, and improved documentation was written to help new users
-. With version 1.0, Pastas is ready for further future developments!
+Pastas was already operational for a couple of years, but the a lot of features were still changing. In Pastas 1.0
+focus lies on Pastas main goal: time series analysis on groundwater levels. This was done by improving the
+documentation, removing unused features, unifying the API and relying more on high quality Python packages such as
+Pandas, NumPy and Numba. With version 1.0, Pastas is ready for further future developments!
 
 

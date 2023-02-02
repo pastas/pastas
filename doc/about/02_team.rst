@@ -2,9 +2,11 @@ Pastas Team
 ===========
 
 
-
-Maintainers
+Active maintainers
 -----------
+
+Core team
+~~~~~~~~~~~
 The following people are part of the core team of Pastas and can merge pull requests on the Pastas GitHub.
 
 
@@ -44,19 +46,11 @@ The following people are part of the core team of Pastas and can merge pull requ
             (Artesia)
 
 Developers
-----------
+~~~~~~~~~~~
 
 The following people are part of the development team of Pastas and help develop new features.
 
 .. grid:: 1 2 3 4
-
-    .. grid-item::
-        .. figure:: https://avatars.githubusercontent.com/u/66305055?v=4
-            :figwidth: 120px
-            :target: https://github.com/martinvonk
-
-            Martin Vonk
-            (Artesia)
 
     .. grid-item::
         .. figure:: https://avatars.githubusercontent.com/u/10562903?v=4
@@ -65,6 +59,18 @@ The following people are part of the development team of Pastas and help develop
 
             Onno Ebbens
             (Artesia)
+
+    .. grid-item::
+        .. figure:: https://avatars.githubusercontent.com/u/66305055?v=4
+            :figwidth: 120px
+            :target: https://github.com/martinvonk
+
+            Martin Vonk
+            (Artesia & TU Delft)
+
+All the people who have contributed code to the Pastas project can be found on `GitHub Contributor list <https://github
+.com/pastas/pastas/graphs/contributors>`_.
+
 
 Institutional partners
 ----------------------
@@ -103,17 +109,3 @@ The following institutions have employed maintainers in the past or past maintai
         .. figure:: ./../_static/logo_graz.png
             :figwidth: 150px
             :target: https://erdwissenschaften.uni-graz.at/en/
-
-Contributors
-------------
-The following people have contributed code to the Pastas project. Please notify us when contributors are missing from
-this list. For the most up-to-date list of contributors, please check the `GitHub Contributor list <https://github
-.com/pastas/pastas/graphs/contributors>`_.
-
-- `Onno Ebbens <https://github.com/OnnoEbbens>`_
-- `Martin Vonk <https://github.com/martinvonk>`_
-- `Stijn Klop <https://github.com/saklop>`_
-- `Tom van Steijn <https://github.com/tomvansteijn>`_
-- `Hugo van de Berg <https://github.com/Hugovdberg>`_
-- `Eit van der Meulen <https://github.com/EitvanderMeulen>`_
-- `Pytrik Graafstra <https://github.com/pgraafstra>`_
