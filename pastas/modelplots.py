@@ -843,7 +843,6 @@ class Plotting:
 
         # loop over axes showing stressmodel contributions
         for i, sm in zip(range(3, 3 + 2 * nsm, 2), self.ml.stressmodels.keys()):
-
             # Get the contributions for StressModels with multiple stresses
             contributions = []
             sml = self.ml.stressmodels[sm]

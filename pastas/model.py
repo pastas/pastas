@@ -1,9 +1,7 @@
 #  This module contains the Model class in Pastas.
 
 # Python Dependencies
-import inspect
 from collections import OrderedDict
-from importlib.metadata import version
 from itertools import combinations
 from logging import getLogger
 from os import getlogin
@@ -193,7 +191,7 @@ class Model:
         To add multiple stress models at once you can do the following:
 
         >>> sm1 = ps.StressModel(stress, rfunc=ps.Gamma(), name="stress1")
-        >>> sm1 = ps.StressModel(stress, rfunc=ps.Gamma(), name="stress2")
+        >>> sm2 = ps.StressModel(stress, rfunc=ps.Gamma(), name="stress2")
         >>> ml.add_stressmodel([sm1, sm2])
 
         See Also

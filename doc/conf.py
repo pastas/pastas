@@ -16,6 +16,7 @@ import os
 import re
 import sys
 from datetime import date
+
 import requests
 
 year = date.today().strftime("%Y")

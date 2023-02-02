@@ -55,7 +55,7 @@ def load(fname: str, **kwargs) -> Model:
             "save the file with Pastas 0.23 first to update the file "
             "format."
         )
-    
+
     ml = _load_model(data)
 
     logger.info(
