@@ -1,3 +1,4 @@
+# flake8: noqa
 import logging
 
 from pandas.plotting import register_matplotlib_converters
