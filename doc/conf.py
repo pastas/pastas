@@ -130,6 +130,7 @@ autoclass_content = "class"
 
 # -- Generating references and publications lists -------------------------
 
+
 # support Round brackets
 def bracket_style() -> BracketStyle:
     return BracketStyle(
