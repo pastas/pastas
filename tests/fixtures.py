@@ -2,7 +2,6 @@ import pytest
 from pandas import Series, read_csv, to_datetime
 
 import pastas as ps
-from pastas.typing.types import StressModel
 
 rain = read_csv("tests/data/rain.csv", index_col=0, parse_dates=True).squeeze("columns")
 evap = read_csv("tests/data/evap.csv", index_col=0, parse_dates=True).squeeze("columns")
