@@ -87,11 +87,11 @@ ask you to cite the Pastas article published in Groundwater journal as follows:
     :maxdepth: 2
     :hidden:
 
-    About <about/index>
     User Guide <userguide/index>
     Examples <examples/index>
     API Docs <api/index>
     Benchmarks <benchmarks/index>
     Developers <developers/index>
+    About <about/index>
 
 
