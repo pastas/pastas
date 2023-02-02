@@ -45,7 +45,7 @@ jobs:
       # Tox
       PY_COLORS: 1
       # Pytest
-      PYTEST_ADDOPTS: --color=yes
+      PYTEST_ADDOPTS: "--color=yes"
     steps:
       - uses: actions/checkout@v3
 
