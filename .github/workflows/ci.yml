@@ -14,9 +14,10 @@ on:
 
 jobs:
   test:
+    name: ${{ matrix.name }}
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         include:
           - name: Test suite with py38-ubuntu
@@ -37,8 +38,6 @@ jobs:
           - name: Test suite for Jupyter Notebooks
             python: "3.9"
             toxenv: notebooks
-
-    name: ${{ matrix.name }}
     env:
       # Color Output
       # Rich (pip)
@@ -49,22 +48,28 @@ jobs:
       PYTEST_ADDOPTS: --color=yes
     steps:
       - uses: actions/checkout@v3
+      
       - name: Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
           check-latest: true
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
+      
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install tox
+      
       - name: Setup tox environment
         run: tox -e ${{ matrix.toxenv }} --notest
+      
       - name: Test
         run: tox -e ${{ matrix.toxenv }} --skip-pkg-install
+
       - name: Run codacy-coverage-reporter
-        if: |
-          (github.repository == 'pastas/pastas' && ${{ matrix.toxenv }} == notebooks)
+        if: (${{ github.repository == 'pastas/pastas' }} && ${{ matrix.toxenv == notebooks}})
         uses: codacy/codacy-coverage-reporter-action@master
         with:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
