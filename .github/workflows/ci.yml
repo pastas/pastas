@@ -71,10 +71,17 @@ jobs:
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
-    needs: Notebooks
+    needs: test
     steps:
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v4
+        with:
+          check-latest: true
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
+      
       - name: Run codacy-coverage-reporter
-        if: (${{ github.repository == 'pastas/pastas' }} && ${{ matrix.toxenv == 'notebooks' }})
+        if: ${{ github.repository == 'pastas/pastas' }}
         uses: codacy/codacy-coverage-reporter-action@master
         with:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
