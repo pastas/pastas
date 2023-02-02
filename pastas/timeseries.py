@@ -410,9 +410,8 @@ class TimeSeries:
             pass
         elif pd.Timestamp(tmin) > series.index.max():
             logger.error(
-                "The Tmin is later than the last value of the time series. "
-                "Pastas does not support this. Please extend time series "
-                "manually."
+                "The tmin is later than the last value of the time series. Pastas "
+                "does not support this. Please extend time series manually."
             )
         elif pd.Timestamp(tmin) >= series.index.min():
             series = series.loc[pd.Timestamp(tmin) :]
@@ -461,9 +460,8 @@ class TimeSeries:
             pass
         elif pd.Timestamp(tmax) <= series.index.min():
             logger.error(
-                "The Tmin is later than the last value of the time series. "
-                "Pastas does not support this. Please extend time series "
-                "manually."
+                "The tmax is before the first value of the time series. Pastas does "
+                "not support this. Please extend time series manually."
             )
         elif pd.Timestamp(tmax) <= series.index.max():
             series = series.loc[: pd.Timestamp(tmax)]
