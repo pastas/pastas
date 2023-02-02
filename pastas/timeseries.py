@@ -7,8 +7,6 @@ import pandas as pd
 from pandas import Series
 from pandas.tseries.frequencies import to_offset
 
-from pastas.typing import Axes
-
 from .rcparams import rcParams
 from .timeseries_utils import _get_dt, _get_time_offset
 from .utils import validate_name
@@ -87,7 +85,7 @@ class TimeSeries:
         self._series = None  #
         self.freq_original = pd.infer_freq(self._series_original.index)
         self.settings = {
-            "freq": None,
+            "freq": self.freq_original,
             "sample_up": None,
             "sample_down": None,
             "fill_nan": "interpolate",
@@ -180,9 +178,8 @@ class TimeSeries:
             daily to weekly values). Possible values are: "mean", "drop", "sum",
             "min", "max".
         fill_nan: str or float, optional
-            Method to use when there ar nan-values in the time series.
-            Possible values are: "mean", "drop", "interpolate" (default) or a
-            float value.
+            Method to use when there ar nan-values in the time series. Possible
+            values are: "mean", "drop", "interpolate" (default) or a float value.
         fill_before: str or float, optional
             Method used to extend a time series before any measurements are
             available. possible values are: "mean" or a float value.

@@ -47,11 +47,12 @@ documentation = "https://pastas.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
 full = ["lmfit >= 1.0.0", "latexify-py"]
+formatting = ["isort", "black[jupyter]"]
+linting = ["flake8"]
+pytesting = ["pytest>=7", "pytest-cov", "pytest-sugar"]
 ci = [
-    "pastas[full]",
+    "pastas[full,pytesting]",
     "jupyter",
-    "pytest",
-    "pytest-cov",
     "codacy-coverage",
     "corner",
     "emcee",
@@ -68,6 +69,7 @@ rtd = [
     "requests",
     "numpydoc",
 ]
+dev = ["tox", "pastas[formatting,linting,ci,rtd]"]
 numbascipy = ["numba-scipy >= 0.3.1"]
 
 
@@ -83,3 +85,39 @@ profile = "black"
 [tool.pytest.ini_options]
 addopts = "--strict-markers --durations=0 --cov-report xml:coverage.xml --cov pastas"
 markers = ["notebooks: run notebooks"]
+
+[tool.tox]
+legacy_tox_ini = """
+    [tox]
+    requires = tox>=4
+    env_list = format, lint, notebooks, py{38,39,310}
+
+    [testenv]
+    description = run unit tests
+    extras = ci
+    commands =
+            pytest tests -m "not notebooks"
+
+    [testenv:notebooks]
+    description = run unit tests
+    extras = ci
+    commands =
+            pytest tests
+
+    [testenv:format]
+    description = run formatters
+    basepython = python3.9
+    extras = formatting
+    commands =
+            black pastas --check --diff
+            isort pastas --diff --profile=black
+
+    [testenv:lint]
+    description = run linters
+    basepython = python3.9
+    extras = linting
+    commands =
+            flake8 pastas --count --show-source --exit-zero --max-line-length=88
+            flake8 pastas --count --exit-zero --max-line-length=88 --statistics
+
+"""

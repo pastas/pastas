@@ -1,3 +1,4 @@
+# flake8: noqa
 # Type hinting for Pastas library
 # Typing
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union
