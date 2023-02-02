@@ -35,7 +35,7 @@ jobs:
           - name: Linting with flake8
             python: "3.9"
             toxenv: lint
-          - name: Test suite for Jupyter Notebooks
+          - name: Notebooks
             python: "3.9"
             toxenv: notebooks
     env:
@@ -68,11 +68,11 @@ jobs:
       - name: Test
         run: tox -e ${{ matrix.toxenv }} --skip-pkg-install
 
-      - run:|
-          echo "GitHub repo: ${{ github.repository }}"
-          echo "Tox env: ${{ matrix.toxenv == 'notebooks' }}"
-          echo "If statement: (${{ github.repository == 'pastas/pastas' }} && ${{ matrix.toxenv == 'notebooks' }})"
-
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    needs: Notebooks
+    steps:
       - name: Run codacy-coverage-reporter
         if: (${{ github.repository == 'pastas/pastas' }} && ${{ matrix.toxenv == 'notebooks' }})
         uses: codacy/codacy-coverage-reporter-action@master
