@@ -719,7 +719,7 @@ class WellModel(StressModelBase):
 
             distances = np.sort(distances)
 
-        if settings is None or isinstance(settings, str):
+        if settings is None or isinstance(settings, str) or isinstance(settings, dict):
             settings = len(stress) * [settings]
 
         # convert stresses to TimeSeries if necessary

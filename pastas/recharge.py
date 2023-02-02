@@ -235,7 +235,7 @@ class FlexModel(RechargeBase):
         p: ArrayLike,
         dt: float = 1.0,
         return_full: bool = False,
-        **kwargs
+        **kwargs,
     ) -> ArrayLike:
         """Simulate the soil water balance model.
 
@@ -498,7 +498,7 @@ class FlexModel(RechargeBase):
         temp: ArrayLike,
         p: ArrayLike,
         dt: float = 1.0,
-        **kwargs
+        **kwargs,
     ) -> DataFrame:
         data = self.simulate(
             prec=prec, evap=evap, temp=temp, p=p, dt=dt, return_full=True, **kwargs
@@ -611,7 +611,7 @@ class Berendrecht(RechargeBase):
         p: ArrayLike,
         dt: ArrayLike = 1.0,
         return_full: bool = False,
-        **kwargs
+        **kwargs,
     ) -> Union[ArrayLike, Tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]]:
         """Simulate the recharge flux.
 
@@ -760,7 +760,7 @@ class Peterson(RechargeBase):
         p: ArrayLike,
         dt: float = 1.0,
         return_full: bool = False,
-        **kwargs
+        **kwargs,
     ) -> Union[ArrayLike, Tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]]:
         """Simulate the recharge flux.
 
