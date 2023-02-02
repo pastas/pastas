@@ -69,7 +69,7 @@ jobs:
         run: tox -e ${{ matrix.toxenv }} --skip-pkg-install
 
       - name: Run codacy-coverage-reporter
-        if: (${{ github.repository == 'pastas/pastas' }} && ${{ matrix.toxenv == notebooks}})
+        if: (${{ github.repository == 'pastas/pastas' }} && ${{ matrix.toxenv == 'notebooks'}})
         uses: codacy/codacy-coverage-reporter-action@master
         with:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
