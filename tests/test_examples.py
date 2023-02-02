@@ -15,7 +15,7 @@ files = [f for f in os.listdir(pathname) if f.endswith(".py")]
 
 
 @pytest.mark.parametrize("file", files)
-def test_example(file):
+def test_example(file) -> None:
     cwd = os.getcwd()
     os.chdir(pathname)
     try:

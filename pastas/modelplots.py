@@ -12,6 +12,7 @@ from matplotlib.ticker import LogFormatter, MultipleLocator
 from pandas import Series, concat
 
 from pastas.typing import Axes, Figure, Model, TimestampType
+
 from .decorators import model_tmin_tmax
 from .plots import (
     _table_formatter_params,
