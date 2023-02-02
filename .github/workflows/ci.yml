@@ -19,33 +19,33 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - name: Test suite with py38-ubuntu
-          python: '3.8'
-          os: ubuntu-latest
-          toxenv: py38
-        - name: Test suite with py39-ubuntu
-          python: '3.9'
-          os: ubuntu-latest
-          toxenv: py39
-        - name: Test suite with py310-ubuntu
-          python: '3.10'
-          os: ubuntu-latest
-          toxenv: py310
-        - name: Formatting with black + isort
-          python: '3.9'
-          os: ubuntu-latest
-          toxenv: format
-        - name: Linting with flake8
-          python: '3.9'
-          os: ubuntu-latest
-          toxenv: lint
-        - name: Test suite for Jupyter Notebooks
-          python: '3.9'
-          os: ubuntu-latest
-          toxenv: notebooks
+          - name: Test suite with py38-ubuntu
+            python: "3.8"
+            os: ubuntu-latest
+            toxenv: py38
+          - name: Test suite with py39-ubuntu
+            python: "3.9"
+            os: ubuntu-latest
+            toxenv: py39
+          - name: Test suite with py310-ubuntu
+            python: "3.10"
+            os: ubuntu-latest
+            toxenv: py310
+          - name: Formatting with black + isort
+            python: "3.9"
+            os: ubuntu-latest
+            toxenv: format
+          - name: Linting with flake8
+            python: "3.9"
+            os: ubuntu-latest
+            toxenv: lint
+          - name: Test suite for Jupyter Notebooks
+            python: "3.9"
+            os: ubuntu-latest
+            toxenv: notebooks
 
-  name: ${{ matrix.name }}
-  env:
+    name: ${{ matrix.name }}
+    env:
       # Color Output
       # Rich (pip)
       FORCE_COLOR: 1
@@ -54,23 +54,23 @@ jobs:
       # Pytest
       PYTEST_ADDOPTS: --color=yes
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python }}
-        check-latest: true
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install tox
-    - name: Setup tox environment
-      run: tox -e ${{ matrix.toxenv }} --notest
-    - name: Test
-      run: tox -e ${{ matrix.toxenv }} --skip-pkg-install
-    - name: Run codacy-coverage-reporter
-      if: github.repository == 'pastas/pastas'
-      uses: codacy/codacy-coverage-reporter-action@master
-      with:
-        project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
-        coverage-reports: coverage.xml
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+          check-latest: true
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install tox
+      - name: Setup tox environment
+        run: tox -e ${{ matrix.toxenv }} --notest
+      - name: Test
+        run: tox -e ${{ matrix.toxenv }} --skip-pkg-install
+      - name: Run codacy-coverage-reporter
+        if: github.repository == 'pastas/pastas'
+        uses: codacy/codacy-coverage-reporter-action@master
+        with:
+          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          coverage-reports: coverage.xml
