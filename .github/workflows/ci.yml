@@ -73,6 +73,7 @@ jobs:
         with:
           name: coverage
           path: coverage.xml
+          if-no-files-found: ignore
 
   coverage:
     name: Coverage
