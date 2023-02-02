@@ -58,8 +58,8 @@ def mae(
         The Series with the observed values.
     res: pandas.Series, optional
         The Series with the residual values. If time series for the residuals are
-        provided, the sim and obs arguments are ignored. Note that the residuals are
-        expected to be computed as `obs - sim` here.
+        provided, the sim and obs arguments are ignored. Note that the residuals 
+        must be computed as `obs - sim` here.
     missing: str, optional
         string with the rule to deal with missing values. Only "drop" is supported now.
     weighted: bool, optional
@@ -108,8 +108,8 @@ def rmse(
         The Series with the observed values.
     res: pandas.Series, optional
         The Series with the residual values. If time series for the residuals are
-        provided, the sim and obs arguments are ignored. Note that the residuals are
-        expected to be computed as `obs - sim` here.
+        provided, the sim and obs arguments are ignored. Note that the residuals
+        must be computed as `obs - sim` here.
     missing: str, optional
         string with the rule to deal with missing values. Only "drop" is supported now.
     weighted: bool, optional
@@ -155,8 +155,8 @@ def sse(
         The Series with the observed values.
     res: pandas.Series, optional
         The Series with the residual values. If time series for the residuals are
-        provided, the sim and obs arguments are ignored. Note that the residuals are
-        expected to be computed as `obs - sim` here.
+        provided, the sim and obs arguments are ignored. Note that the residuals 
+        must be computed as `obs - sim` here.
     missing: str, optional
         string with the rule to deal with missing values. Only "drop" is supported now.
 
@@ -255,8 +255,8 @@ def evp(
         The Series with the simulated values.
     res: pandas.Series, optional
         The Series with the residual values. If time series for the residuals are
-        provided, the sim and obs arguments are ignored. Note that the residuals are
-        expected to be computed as `obs - sim` here.
+        provided, the sim and obs arguments are ignored. Note that the residuals
+        must be computed as `obs - sim` here.
     missing: str, optional
         string with the rule to deal with missing values. Only "drop" is supported now.
     weighted: bool, optional
@@ -320,8 +320,8 @@ def nse(
         The Series with the simulated values.
     res: pandas.Series, optional
         The Series with the residual values. If time series for the residuals are
-        provided, the sim and obs arguments are ignored. Note that the residuals are
-        expected to be computed as `obs - sim` here.
+        provided, the sim and obs arguments are ignored. Note that the residuals
+        must be computed as `obs - sim` here.
     missing: str, optional
         string with the rule to deal with missing values. Only "drop" is supported now.
     weighted: bool, optional
@@ -370,8 +370,8 @@ def rsq(
         The Series with the simulated values.
     res: pandas.Series, optional
         The Series with the residual values. If time series for the residuals are
-        provided, the sim and obs arguments are ignored. Note that the residuals are
-        expected to be computed as `obs - sim` here.
+        provided, the sim and obs arguments are ignored. Note that the residuals
+        must be computed as `obs - sim` here.
     missing: str, optional
         string with the rule to deal with missing values. Only "drop" is supported now.
     weighted: bool, optional
@@ -430,8 +430,8 @@ def bic(
         The Series with the simulated values.
     res: pandas.Series, optional
         The Series with the residual values. If time series for the residuals are
-        provided, the sim and obs arguments are ignored. Note that the residuals are
-        expected to be computed as `obs - sim` here.
+        provided, the sim and obs arguments are ignored. Note that the residuals
+        must be computed as `obs - sim` here.
     nparam: int, optional
         number of calibrated parameters.
     missing: str, optional
@@ -475,8 +475,8 @@ def aic(
         The Series with the simulated values.
     res: pandas.Series, optional
         The Series with the residual values. If time series for the residuals are
-        provided, the sim and obs arguments are ignored. Note that the residuals are
-        expected to be computed as `obs - sim` here.
+        provided, the sim and obs arguments are ignored. Note that the residuals
+        must be computed as `obs - sim` here.
     nparam: int, optional
         number of calibrated parameters.
     missing: str, optional
@@ -585,8 +585,8 @@ def _compute_err(
         The Series with the observed values.
     res: pandas.Series, optional
         The Series with the residual values. If time series for the residuals are
-        provided, the sim and obs arguments are ignored. Note that the residuals are
-        expected to be computed as `obs - sim` here.
+        provided, the sim and obs arguments are ignored. Note that the residuals
+        must be computed as `obs - sim` here.
     missing: str, optional
         string with the rule to deal with missing values. Only "drop" is supported now.
 
