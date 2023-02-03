@@ -1,8 +1,9 @@
+import pytest
 from pandas import read_csv
 
 import pastas as ps
 
-from .fixtures import ml, ml_empty, sm_evap, sm_prec
+from .fixtures import ml, ml_empty, ml_no_settings, sm_evap, sm_prec
 
 obs = (
     read_csv("tests/data/obs.csv", index_col=0, parse_dates=True)
@@ -128,3 +129,8 @@ def test_get_output_series(ml) -> None:
 
 def test_get_output_series_arguments(ml) -> None:
     ml.get_output_series(split=False, add_contributions=False)
+
+
+def test_model_sim_w_nans_error(ml_no_settings):
+    with pytest.raises(ValueError) as e_info:
+        ml_no_settings.solve()
