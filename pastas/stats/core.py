@@ -27,7 +27,6 @@ from pandas import DataFrame, Series, Timedelta, TimedeltaIndex
 from scipy.stats import norm
 
 from pastas.typing import ArrayLike
-
 from ..decorators import njit
 
 
@@ -50,16 +49,12 @@ def acf(
         The index has to be a Pandas.DatetimeIndex.
     lags: array_like, optional
         numpy array containing the lags in days for which the cross-correlation if
-        calculated. [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 30, 61, 90, 120, 150,
-        180, 210, 240, 270, 300, 330, 365].
+        calculated. Defaults is all lags from 1 to 365 days.
     bin_method: str, optional
         method to determine the type of bin. Options are "rectangle" (default),
-        and  "gaussian".
+        "gaussian" and "regular" (for regular timesteps).
     bin_width: float, optional
         number of days used as the width for the bin to calculate the correlation.
-        By default, these values are chosen based on the bin_method and the average
-        time step (dt_mu). That is 0.5dt_mu when bin_method="rectangle" and 0.25dt_mu
-        when bin_method="gaussian".
     max_gap: float, optional
         Maximum time step gap in the data. All time steps above this gap value are
         not used for calculating the average time step. This can be helpful when
@@ -68,7 +63,7 @@ def acf(
         Minimum number of observations in a bin to determine the correlation.
     full_output: bool, optional
         If True, also estimated uncertainties are returned. Default is False.
-    alpha: float
+    alpha: float, optional
         alpha level to compute the confidence interval (e.g., 1-alpha).
 
     Returns
@@ -138,16 +133,12 @@ def ccf(
         The index has to be a Pandas.DatetimeIndex.
     lags: array_like, optional
         numpy array containing the lags in days for which the cross-correlation is
-        calculated. Default [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 30, 61, 90,
-        120, 150, 180, 210, 240, 270, 300, 330, 365].
+        calculated. Defaults is all lags from 1 to 365 days.
     bin_method: str, optional
         method to determine the type of bin. Options are "rectangle" (default),
         "gaussian" and "regular" (for regular timesteps).
     bin_width: float, optional
-        number of days used as the width for the bin to calculate the correlation. By
-        default, these values are chosen based on the bin_method and the average time
-        step (dt_mu). That is 0.5dt_mu when bin_method="rectangle" and 0.25dt_mu when
-        bin_method="gaussian".
+        number of days used as the width for the bin to calculate the correlation.
     max_gap: float, optional
         Maximum timestep gap in the data. All timesteps above this gap value are not
         used for calculating the average timestep. This can be helpful when there is
@@ -191,12 +182,8 @@ def ccf(
         lags = array(lags, dtype=float)
 
     if bin_method == "rectangle":
-        if bin_width is None:
-            bin_width = 0.5 * dt_mu
         c, b = _compute_ccf_rectangle(lags, t_x, x, t_y, y, bin_width)
     elif bin_method == "gaussian":
-        if bin_width is None:
-            bin_width = 0.25 * dt_mu
         c, b = _compute_ccf_gaussian(lags, t_x, x, t_y, y, bin_width)
     elif bin_method == "regular":
         c, b = _compute_ccf_regular(arange(1.0, len(lags) + 1), x, y)
@@ -206,6 +193,7 @@ def ccf(
     conf = norm.ppf(1 - alpha / 2.0) / sqrt(b)
     result = DataFrame(
         data={"ccf": c, "conf": conf, "n": b},
+        dtype=float,
         index=TimedeltaIndex(lags, unit="D", name="Lags"),
     )
 
