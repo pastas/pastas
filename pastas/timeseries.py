@@ -206,7 +206,10 @@ class TimeSeries:
 
             # Get the original series to start with
             series = self._series_original.copy(deep=True)
-            series = self._fill_nan(series)
+
+            # Only fill_nans if necessary
+            if series.hasnans:
+                series = self._fill_nan(series)
 
             # Update the series with the new settings
             series = self._change_frequency(series)
@@ -243,7 +246,10 @@ class TimeSeries:
         # 1. If no freq string is present or is provided (e.g. Oseries)
         if not freq:
             return series
-        # 2. If new frequency is required (only up or down sampling allowed)
+        # 2. If new frequency is the same
+        elif freq == self.freq_original:
+            return series
+        # 3. If new frequency is required (only up or down sampling allowed)
         else:
             dt_new = _get_dt(freq)
             dt_org = _get_dt(self.freq_original)
@@ -255,10 +261,10 @@ class TimeSeries:
             elif dt_new > dt_org:
                 series = self._sample_down(series)
 
-        # Drop nan-values at the beginning and end of the time series
-        series = series.loc[series.first_valid_index() : series.last_valid_index()]
+            # Drop nan-values at the beginning and end of the time series
+            series = series.loc[series.first_valid_index() : series.last_valid_index()]
 
-        return series
+            return series
 
     def _sample_up(self, series: Series) -> Series:
         """Resample the time series when the frequency increases (e.g. from weekly to
@@ -266,10 +272,11 @@ class TimeSeries:
         method = self.settings["sample_up"]
         freq = self.settings["freq"]
 
+        success = True
         if method in ["backfill", "bfill", "pad", "ffill"]:
             series = series.asfreq(freq, method=method)
         elif method is None:
-            pass
+            success = False
         else:
             if method == "mean":
                 series = series.asfreq(freq).fillna(series.mean())
@@ -282,14 +289,17 @@ class TimeSeries:
             elif isinstance(method, float):
                 series = series.asfreq(freq).fillna(method)
             else:
-                logger.warning(
-                    "Time Series %s: User-defined option for sample_up %s is not "
-                    "supported",
-                    self.name,
-                    method,
-                )
+                success = False
 
-        logger.info("Time Series %s were sampled up using %s.", self.name, method)
+        if success:
+            logger.info("Time Series %s were sampled up using %s.", self.name, method)
+        else:
+            logger.warning(
+                "Time Series %s: User-defined option for sample_up %s is not "
+                "supported",
+                self.name,
+                method,
+            )
 
         return series
 
@@ -320,6 +330,7 @@ class TimeSeries:
         # Provide some standard pandas arguments for all options
         kwargs = {"label": "right", "closed": "right"}
 
+        success = True
         if method == "mean":
             series = series.resample(freq, **kwargs).mean()
         elif method == "drop":
@@ -331,6 +342,21 @@ class TimeSeries:
         elif method == "max":
             series = series.resample(freq, **kwargs).max()
         else:
+            success = False
+
+        # TODO: replace by adding offset to resample method with pandas 1.1.0
+        if self.settings["time_offset"] > pd.Timedelta(0):
+            # The offset is removed by the resample-method, so we add it again
+            series = series.shift(1, freq=self.settings["time_offset"])
+
+        if success:
+            logger.info(
+                "Time Series %s was sampled down to freq %s with method " "%s.",
+                self.name,
+                freq,
+                method,
+            )
+        else:
             logger.warning(
                 "Time Series %s: User-defined option for sample down %s is not "
                 "supported",
@@ -338,29 +364,16 @@ class TimeSeries:
                 method,
             )
 
-        # TODO: replace by adding offset to resample method with pandas 1.1.0
-        if self.settings["time_offset"] > pd.Timedelta(0):
-            # The offset is removed by the resample-method, so we add it again
-            series = series.shift(1, freq=self.settings["time_offset"])
-
-        logger.info(
-            "Time Series %s was sampled down to freq %s with method " "%s.",
-            self.name,
-            freq,
-            method,
-        )
-
         return series
 
     def _fill_nan(self, series: Series) -> Series:
         """Fill up the nan-values when present."""
 
         method = self.settings["fill_nan"]
-
         n = series.isnull().values.sum()
-        if n == 0:
-            pass
-        elif method == "drop":
+
+        success = True
+        if method == "drop":
             series = series.dropna()
         elif method == "mean":
             series = series.fillna(series.mean())
@@ -369,17 +382,19 @@ class TimeSeries:
         elif isinstance(method, float):
             series = series.fillna(method)
         else:
-            logger.warning(
-                "Time Series %s: User-defined option for fill_nan %s is not supported.",
-                self.name,
-                method,
-            )
+            success = False
 
-        if n > 0:
+        if success:
             logger.info(
                 "Time Series %s: %s nan-value(s) was/were found and filled with: %s.",
                 self.name,
                 n,
+                method,
+            )
+        else:
+            logger.warning(
+                "Time Series %s: User-defined option for fill_nan %s is not supported.",
+                self.name,
                 method,
             )
 
@@ -393,6 +408,11 @@ class TimeSeries:
 
         if tmin is None or method is None:
             pass
+        elif pd.Timestamp(tmin) > series.index.max():
+            logger.error(
+                "The tmin is later than the last value of the time series. Pastas "
+                "does not support this. Please extend time series manually."
+            )
         elif pd.Timestamp(tmin) >= series.index.min():
             series = series.loc[pd.Timestamp(tmin) :]
         else:
@@ -438,6 +458,11 @@ class TimeSeries:
 
         if tmax is None or method is None:
             pass
+        elif pd.Timestamp(tmax) <= series.index.min():
+            logger.error(
+                "The tmax is before the first value of the time series. Pastas does "
+                "not support this. Please extend time series manually."
+            )
         elif pd.Timestamp(tmax) <= series.index.max():
             series = series.loc[: pd.Timestamp(tmax)]
         else:
