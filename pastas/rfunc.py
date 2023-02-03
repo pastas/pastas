@@ -1218,7 +1218,7 @@ class FourParam(RfuncBase):
     @staticmethod
     @latexfun(identifiers={"impulse": "theta"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
-        _A, n, a, b = p
+        _, n, a, b = p
         return (t ** (n - 1)) * np.exp(-t / a - a * b / t)
 
     def get_tmax(self, p: ArrayLike, cutoff: Optional[float] = None) -> float:

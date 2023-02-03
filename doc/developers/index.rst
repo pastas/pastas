@@ -3,8 +3,8 @@ Development
 As an open source software project, Pastas depends on the open source community for
 maintaining and developing the software. Any help in maintaining the code, developing
 new features, or writing and updating documentation is more than welcome. This section
-serves to help you in contributing code to the Pastas software. Additionally, this section
-serves to document code conventions and quick how-to's for a maintainers and developers.
+serves to help you in contributing code to Pastas. Additionally, this section
+serves to document code conventions and quick how-to's for maintainers and developers.
 
 .. toctree::
     :maxdepth: 1
@@ -27,7 +27,7 @@ answer questions here and help each other!
 
 Release Cycle
 -------------
-Pastas does not have a fixed regular release cycle but it is tried to release a new
-version every three months. You can check when a new release is approximately scheduled at
+Pastas does not have a fixed regular release cycle but we strive to release a new
+version every three months. You can check when a new release is approximately scheduled on
 the `GitHub Milestones page <https://github.com/pastas/pastas/milestones>`_.
 
