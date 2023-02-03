@@ -59,7 +59,7 @@ def show_versions(lmfit: bool = True, latexify: bool = True) -> None:
     if latexify:
         msg += "\nLatexify version: "
         try:
-            import_module("latexify-py")
+            import_module("latexify")
             msg += f"{metadata.version('latexify-py')}"
         except ModuleNotFoundError:
             msg += "Not Installed"
