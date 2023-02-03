@@ -1,10 +1,10 @@
 Development
 ===========
-
-As an open source project, Pastas depends on the open source community for
-maintaining and developing the software. Any help in maintaining the code,
-writing or updating documentation is more than welcome. This section serves
-to help you in contributing code to the Pastas software.
+As an open source software project, Pastas depends on the open source community for
+maintaining and developing the software. Any help in maintaining the code, developing
+new features, or writing and updating documentation is more than welcome. This section
+serves to help you in contributing code to the Pastas software. Additionally, this section
+serves to document code conventions and quick how-to's for a maintainers and developers.
 
 .. toctree::
     :maxdepth: 1
@@ -15,14 +15,19 @@ to help you in contributing code to the Pastas software.
 
 Bug reports / Feature requests
 ------------------------------
-If you have found a bug in Pastas, or if you would like to suggest
-an improvement or enhancement, please `submit a new Issue <https://github
-.com/pastas/pastas/issues>`_ through the Github Issue tracker.
+If you have found a bug in Pastas, or if you would like to suggest an improvement or
+enhancement, please `submit a new Issue <https://github.com/pastas/pastas/issues>`_
+through the Github Issue tracker.
+
+User questions
+--------------
+If you have question about the use of Pastas, feel free to ask questions in the
+`GitHub Discussions <https://github.com/pastas/pastas/discussions>`_. Also feel free to
+answer questions here and help each other!
 
 Release Cycle
 -------------
-Pastas does not have a fixed release cycle but it is tried to release a new
-version every three months. You can check when a new release is
-approximately scheduled at the `GitHub Milestones page <https://github
-.com/pastas/pastas/milestones>`_.
+Pastas does not have a fixed regular release cycle but it is tried to release a new
+version every three months. You can check when a new release is approximately scheduled at
+the `GitHub Milestones page <https://github.com/pastas/pastas/milestones>`_.
 
