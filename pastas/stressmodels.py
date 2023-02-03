@@ -245,8 +245,9 @@ class StressModel(StressModelBase):
         you don't want to define if response is positive or negative.
     settings: dict or str, optional
         The settings of the stress. This can be a string referring to a predefined
-        settings dict, or a dict with the settings to apply. Refer to the docstring
-        of pastas.Timeseries for further information.
+        settings dict (defined in ps.rcParams["timeseries"]), or a dict with the
+        settings to apply. Refer to the docs of pastas.Timeseries for further
+        information.
     metadata: dict, optional
         dictionary containing metadata about the stress. This is passed onto the
         TimeSeries object.
@@ -633,7 +634,10 @@ class WellModel(StressModelBase):
         by default False, in which case positive stress lowers e.g., the groundwater
         level.
     settings: str, list of dict, optional
-        settings of the time series, by default "well".
+        The settings of the stress. This can be a string referring to a predefined
+        settings dict (defined in ps.rcParams["timeseries"]), or a dict with the
+        settings to apply. Refer to the docs of pastas.Timeseries for further
+        information.
     sort_wells: bool, optional
         sort wells from closest to furthest, by default True.
 
@@ -982,9 +986,9 @@ class RechargeModel(StressModelBase):
         It depends on the recharge model is this argument is required or not.
     settings: list of dicts or str, optional
         The settings of the precipitation and evaporation time series, in this order.
-        This can be a string referring to a predefined settings dict, or a dict with
-        the settings to apply. Refer to the docstring of pastas.Timeseries for
-        further information. Default is ("prec", "evap").
+        This can be a string referring to a predefined settings dict (defined in
+        ps.rcParams["timeseries"]), or a dict with the settings to apply. Refer to
+        the docs of pastas.Timeseries for further information.
     metadata: tuple of dicts or list of dicts, optional
         dictionary containing metadata about the stress. This is passed onto the
         TimeSeries object.
@@ -1565,9 +1569,10 @@ class ChangeModel(StressModelBase):
         True if response function is positive (default), False if negative. None if
         you don't want to define if response is positive or negative.
     settings: dict or str, optional
-        the settings of the stress. This can be a string referring to a predefined
-        settings dict, or a dict with the settings to apply. Refer to the docstring
-        of pastas.Timeseries for further information.
+        The settings of the stress. This can be a string referring to a predefined
+        settings dict (defined in ps.rcParams["timeseries"]), or a dict with the
+        settings to apply. Refer to the docs of pastas.Timeseries for further
+        information.
     metadata: dict, optional
         dictionary containing metadata about the stress. This is passed onto the
         TimeSeries object.
