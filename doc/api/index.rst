@@ -19,11 +19,11 @@ left-hand menu you will find the different categories of the API documentation.
     recharge
     solver
     modelplots.Plotting
-    modelcompare
+    modelcompare.CompareModels
     timeseries.TimeSeries
     timeseries_utils
     utils
-    timer
+    timer.SolveTimer
     plots
     stats
 
