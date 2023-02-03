@@ -26,7 +26,6 @@ Pastas: Analysis of Groundwater Time Series
 .. image:: https://mybinder.org/badge_logo.svg
    :target: https://mybinder.org/v2/gh/pastas/pastas/master?filepath=examples%2Fnotebooks%2F1_basic_model.ipynb
 
-
 Pastas: what is it?
 ~~~~~~~~~~~~~~~~~~~
 Pastas is an open source python package for processing, simulating and analyzing
@@ -37,10 +36,10 @@ built-in optimization, visualisation, and statistical analysis tools.
 
 Documentation & Examples
 ~~~~~~~~~~~~~~~~~~~~~~~~
-- Documentation is provided on a dedicated website: http://pastas.readthedocs.io/
+- Documentation is provided on the dedicated website `pastas.dev <http://www.pastas.dev/>`_
 - Examples can be found on the `examples directory on the documentation website <https://pastas.readthedocs.io/en/dev/examples/index.html>`_
 - View and edit a working example notebook of a Pastas model in `MyBinder <https://mybinder.org/v2/gh/pastas/pastas/master?filepath=examples%2Fnotebooks%2F1_basic_model.ipynb>`_
-- A list of Publications that used Pastas is available in a `dedicated GitHub repo <https://github.com/pastas/pastas_research>`_
+- A list of publications that use Pastas is available in a `dedicated Zotero group <https://www.zotero.org/groups/4846685/pastas/items/32FS5PTW/item-list>`_
 
 Get in Touch
 ~~~~~~~~~~~~
