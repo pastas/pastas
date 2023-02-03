@@ -56,14 +56,24 @@ Quick Example
 
     .. tab-item:: Python
 
-        In this example a head time series from Kingstown (USA) is modelled in just a few lines of Python code.
+        In this example a head time series is modelled in just a few lines of Python code.
 
         .. code-block:: python
 
-            ml = ps.Model(obs.loc[::14], name="Kingstown")
-            rm = ps.RechargeModel(rain, evap, name="recharge", rfunc=ps.Gamma())
-            ml.add_stressmodel(rm)
-            ml.solve(tmax="2014")
+            # Import python packages
+            import pandas as pd
+            import pastas as ps
+
+            # Read head and stress data
+            obs = pd.read_csv("head.csv", index_col=0, parse_dates=True).squeeze("columns")
+            rain = pd.read_csv("rain.csv", index_col=0, parse_dates=True).squeeze("columns")
+            evap = pd.read_csv("evap.csv", index_col=0, parse_dates=True).squeeze("columns")
+
+            # Create and calibrate model
+            ml = ps.Model(obs, name="head")
+            sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential(), name="recharge")
+            ml.add_stressmodel(sm)
+            ml.solve()
             ml.plots.results()
 
     .. tab-item:: Result
