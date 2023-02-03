@@ -212,8 +212,8 @@ def pearsonr(
     The Pearson correlation (r) is computed as follows:
 
     .. math:: r = \\frac{\\sum_{i=1}^{N}w_i (y_{o,i} - \\bar{y_o})(y_{s,i} - \\bar{
-    y_s})} {\\sqrt{\\sum_{i=1}^{N} w_i(y_{o,i}-\\bar{y_o})^2 \\sum_{i=1}^{N}w_i(y_{s,
-    i} -\\bar{y_s})^2}}
+        y_s})} {\\sqrt{\\sum_{i=1}^{N} w_i(y_{o,i}-\\bar{y_o})^2 \\sum_{i=1}^{N}w_i(
+        y_{s,i} -\\bar{y_s})^2}}
 
     Where :math:`y_o` is observed time series, :math:`y_s` the simulated time series,
     and :math:`N` the number of observations in the observed time series.

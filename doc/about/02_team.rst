@@ -1,12 +1,11 @@
 Pastas Team
 ===========
 
-
 Active maintainers
------------
+------------------
 
 Core team
-~~~~~~~~~~~
+~~~~~~~~~
 The following people are part of the core team of Pastas and can merge pull requests on the Pastas GitHub.
 
 
@@ -46,7 +45,7 @@ The following people are part of the core team of Pastas and can merge pull requ
             (Artesia)
 
 Developers
-~~~~~~~~~~~
+~~~~~~~~~~
 
 The following people are part of the development team of Pastas and help develop new features.
 
