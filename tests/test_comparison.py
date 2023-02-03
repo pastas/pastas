@@ -1,31 +1,19 @@
-from pandas import read_csv
-
 import pastas as ps
 
-rain = read_csv("tests/data/rain.csv", index_col=0, parse_dates=True).squeeze("columns")
-evap = read_csv("tests/data/evap.csv", index_col=0, parse_dates=True).squeeze("columns")
-obs = read_csv("tests/data/obs.csv", index_col=0, parse_dates=True).squeeze("columns")
-
-ml1 = ps.Model(obs.dropna(), name="Test_Model")
-sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma(), name="rch")
-ml1.add_stressmodel(sm)
-ml1.solve(report=False)
-
-ml2 = ps.Model(obs.dropna(), name="Test_Model")
-sm1 = ps.StressModel(rain, rfunc=ps.Exponential(), name="prec")
-sm2 = ps.StressModel(evap, rfunc=ps.Exponential(), name="evap")
-ml2.add_stressmodel([sm1, sm2])
-ml2.solve(report=False)
+from .fixtures import ml, ml_sm
 
 
-def test_comparison_plot():
-    mc = ps.CompareModels(models=[ml1, ml2])
-    mc.plot(legend_kwargs={"ncol": 2})
-    return
+def test_comparison_plot(ml, ml_sm) -> None:
+    ml.solve()
+    ml_sm.solve()
+    mc = ps.CompareModels(models=[ml, ml_sm])
+    _ = mc.plot(legend_kwargs={"ncol": 2})
 
 
-def test_comparison_plot_custom():
-    mc = ps.CompareModels(models=[ml1, ml2])
+def test_comparison_plot_custom(ml, ml_sm) -> None:
+    ml.solve()
+    ml_sm.solve()
+    mc = ps.CompareModels(models=[ml, ml_sm])
     mosaic = [
         ["ose", "ose", "met"],
         ["sim", "sim", "tab"],
@@ -56,4 +44,3 @@ def test_comparison_plot_custom():
             mc.axes["con1"],
         ]
     )
-    return

@@ -1,6 +1,7 @@
+# flake8: noqa
 # Type hinting for Pastas library
 # Typing
-from typing import TYPE_CHECKING, Any, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union
 
 # External libraries
 # Matplotlib
@@ -34,5 +35,5 @@ Solver = TypeVar("Solver", bound="ps.solver.BaseSolver")  # Base Solver
 Recharge = TypeVar("Recharge", bound="ps.recharge.RechargeBase")  # Recharge Base
 Reservoir = TypeVar("Reservoir", bound="ps.reservoir.ReservoirBase")  # Reservoir Base
 CallBack = TypeVar("CallBack", bound=Any)  # Callback
-Function = TypeVar("Function", bound=Any)  # Function (e.g. Objective Function)
+Function = Callable[..., Any]  # Function (e.g. Objective Function)
 RFunc = TypeVar("RFunc", bound="ps.rfunc.RfuncBase")  # rFunc Base

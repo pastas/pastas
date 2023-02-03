@@ -1,7 +1,7 @@
 from functools import wraps
 from logging import getLogger
+from typing import Dict, Optional
 
-from typing import Optional, Dict
 from pastas.typing import Function, TimestampType
 
 logger = getLogger(__name__)
@@ -51,7 +51,7 @@ def model_tmin_tmax(function: Function) -> Function:
         tmin: Optional[TimestampType] = None,
         tmax: Optional[TimestampType] = None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         if tmin is None:
             tmin = self.ml.settings["tmin"]

@@ -21,8 +21,6 @@ __all__ = [
     "runs_test",
     "stoffer_toloi",
     "diagnostics",
-    "plot_acf",
-    "plot_diagnostics",
 ]
 
 
@@ -515,24 +513,3 @@ def diagnostics(
     )
 
     return df
-
-
-def plot_acf():
-    raise DeprecationWarning(
-        "The method plot_acf is deprecated since 0.23 and will be removed "
-        "in Pastas 1.0. Use 'ps.plots.acf' instead."
-    )
-
-
-def plot_diagnostics():
-    raise DeprecationWarning(
-        "The method plot_diagnostics is deprecated since 0.23 and will be removed "
-        "in Pastas 1.0. Use 'ps.plots.diagnostics' instead."
-    )
-
-
-def plot_cum_frequency():
-    raise DeprecationWarning(
-        "The method plot_cum_frequency is deprecated since 0.23 and will be removed "
-        "in Pastas 1.0. Use 'ps.plots.cum_frequency' instead."
-    )

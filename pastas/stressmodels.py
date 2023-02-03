@@ -662,7 +662,6 @@ class WellModel(StressModelBase):
         sort_wells: bool = True,
         metadata: Optional[list] = None,
     ) -> None:
-
         if not isinstance(rfunc, HantushWellModel):
             raise NotImplementedError(
                 "WellModel only supports the rfunc HantushWellModel!"
@@ -1392,16 +1391,15 @@ class TarsoModel(RechargeModel):
         oseries: Optional[Series] = None,
         dmin: Optional[float] = None,
         dmax: Optional[float] = None,
-        rfunc: Optional[RFunc] = Exponential(),
+        rfunc: Optional[RFunc] = None,
         **kwargs,
     ) -> None:
         if oseries is not None:
             if dmin is not None or dmax is not None:
                 msg = "Please specify either oseries or dmin and dmax"
                 raise (Exception(msg))
-            o = TimeSeries(oseries).series
-            dmin = o.min()
-            dmax = o.max()
+            dmin = oseries.min()
+            dmax = oseries.max()
         elif dmin is None or dmax is None:
             msg = "Please specify either oseries or dmin and dmax"
             raise (Exception(msg))
@@ -1417,10 +1415,16 @@ class TarsoModel(RechargeModel):
     def set_init_parameters(self) -> None:
         # parameters for the first drainage level
         p0 = self.rfunc.get_init_parameters(self.name)
-        one = One()
-        gain_scale_factor = self.dmin + 0.5 * (self.dmax - self.dmin)
-        one._update_rfunc_settings(gain_scale_factor=gain_scale_factor)
-        pd0 = one.get_init_parameters(self.name).squeeze()
+        initial = self.dmin + 0.5 * (self.dmax - self.dmin)
+        pd0 = Series(
+            {
+                "initial": initial,
+                "pmin": np.NaN,
+                "pmax": np.NaN,
+                "vary": True,
+                "name": self.name,
+            }
+        )
         p0.loc[f"{self.name}_d"] = pd0
         p0.index = [f"{x}0" for x in p0.index]
 

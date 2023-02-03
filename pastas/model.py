@@ -5,7 +5,6 @@ from collections import OrderedDict
 from itertools import combinations
 from logging import getLogger
 from os import getlogin
-import inspect
 
 # Type Hinting
 from typing import List, Optional, Tuple, Union
@@ -32,20 +31,18 @@ from pastas.noisemodels import NoiseModel
 from pastas.solver import LeastSquares
 from pastas.stressmodels import Constant
 from pastas.timeseries import TimeSeries
+from pastas.timeseries_utils import (
+    _frequency_is_supported,
+    _get_dt,
+    _get_time_offset,
+    get_sample,
+)
 from pastas.transform import ThresholdTransform
 from pastas.typing import ArrayLike
 from pastas.typing import Model as ModelType
 from pastas.typing import NoiseModel as NoiseModelType
-from pastas.typing import Solver, StressModel
-from pastas.typing import TimestampType
-from pastas.timeseries_utils import (
-    _get_dt,
-    _get_time_offset,
-    _frequency_is_supported,
-    get_sample,
-)
+from pastas.typing import Solver, StressModel, TimestampType
 from pastas.utils import validate_name
-
 from pastas.version import __version__
 
 
@@ -95,7 +92,6 @@ class Model:
         metadata: Optional[dict] = None,
         freq: str = "D",
     ) -> None:
-
         self.logger = getLogger(__name__)
 
         # Construct the different model components
@@ -194,7 +190,7 @@ class Model:
         To add multiple stress models at once you can do the following:
 
         >>> sm1 = ps.StressModel(stress, rfunc=ps.Gamma(), name="stress1")
-        >>> sm1 = ps.StressModel(stress, rfunc=ps.Gamma(), name="stress2")
+        >>> sm2 = ps.StressModel(stress, rfunc=ps.Gamma(), name="stress2")
         >>> ml.add_stressmodel([sm1, sm2])
 
         See Also
@@ -246,7 +242,7 @@ class Model:
 
         Parameters
         ----------
-        transform: pastas.transform instance
+        transform: ps.ThresholdTransform
             An instance of a pastas.transform class.
 
         Examples
@@ -618,7 +614,7 @@ class Model:
         -----
         This method makes sure the simulation is compared to the nearest observation.
         It finds the index closest to sim_index, and then returns a selection of the
-        oseries. in the residuals method, the simulation is interpolated to the
+        oseries. In the `residuals` method, the simulation is interpolated to the
         observation-timestamps.
         """
         if tmin is None and self.settings["tmin"]:
@@ -799,13 +795,6 @@ class Model:
 
         # If a solver is provided, use that one
         if solver is not None:
-            # Check if a solver instance is provided, not a class
-            if inspect.isclass(solver):
-                raise DeprecationWarning(
-                    "As of Pastas 0.23, Solvers should be provided as an instance "
-                    "(e.g., ps.LeastSquares()), and not as a class (e.g., "
-                    "ps.LeastSquares). Please provide an instance of the solver."
-                )
             self.fit = solver
             self.fit.set_model(self)
         # Create the default solver is None is provided or already present
@@ -1700,7 +1689,6 @@ class Model:
         self,
         output: str = "basic",
         warnings: bool = True,
-        warnbounds: Optional[bool] = None,
     ) -> str:
         """Method that reports on the fit after a model is optimized.
 
@@ -1712,8 +1700,6 @@ class Model:
         warnings : bool, optional
             print warnings in case of optimization failure, parameters hitting
             bounds, or length of responses exceeding calibration period.
-        warnbounds: bool, optional
-            Deprecated.
 
         Returns
         -------
@@ -1754,11 +1740,6 @@ class Model:
             "___": "",
             "Interp.": "Yes" if self.interpolate_simulation else "No",
         }
-
-        if warnbounds:
-            raise KeyError(
-                "The 'warnbounds' argument is deprecated. Use warnings=True instead."
-            )
 
         parameters = self.parameters.loc[:, ["optimal", "stderr", "initial", "vary"]]
         stderr = parameters.loc[:, "stderr"] / parameters.loc[:, "optimal"]

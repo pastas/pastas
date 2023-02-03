@@ -20,7 +20,7 @@ from scipy.special import (
     lambertw,
 )
 
-from .decorators import njit, latexfun
+from .decorators import latexfun, njit
 from .version import check_numba_scipy
 
 try:
@@ -30,6 +30,7 @@ except ModuleNotFoundError:
 
 # Type Hinting
 from typing import Optional, Union
+
 from pastas.typing import ArrayLike
 
 logger = getLogger(__name__)
@@ -563,7 +564,7 @@ class HantushWellModel(RfuncBase):
             )
         parameters.loc[name + "_a"] = (100, 1e-3, 1e4, True, name)
         # set initial and bounds for b taking into account distances
-        # note log transform to avoid extremely small values for b
+        # note log transform to avoid tiny values for b
         binit = np.log(1.0 / np.mean(self.distances) ** 2)
         bmin = np.log(1e-6 / np.max(self.distances) ** 2)
         bmax = np.log(25.0 / np.min(self.distances) ** 2)
@@ -1270,7 +1271,6 @@ class FourParam(RfuncBase):
         cutoff: Optional[float] = None,
         maxtmax: Optional[int] = None,
     ) -> ArrayLike:
-
         # Because Model.get_response_tmax() provides parameters for the stressmodel,
         # not only the response functions
         if len(p) > 4:
@@ -1286,7 +1286,6 @@ class FourParam(RfuncBase):
             return s
 
         else:
-
             t1 = -np.sqrt(3 / 5)
             t2 = 0
             t3 = np.sqrt(3 / 5)

@@ -10,8 +10,8 @@ from typing import Optional, Union
 from numpy import nan
 from pandas import Series, Timedelta, concat, date_range
 
-from pastas.typing import Function, TimestampType
 from pastas.timeseries_utils import get_sample
+from pastas.typing import Function, TimestampType
 
 
 def q_ghg(
@@ -560,7 +560,7 @@ def _gxg(
         series = series.bfill(limit=limit)
     elif fill_method == "nearest":
         if limit == 0:
-            # limit=0 is a trick to only use each measurements once
+            # limit=0 is a trick to only use each measurement once
             # only keep days with measurements
             series = series.dropna()
             # generate an index at the 14th and 28th of every month

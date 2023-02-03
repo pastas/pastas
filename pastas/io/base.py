@@ -4,7 +4,6 @@ from importlib import import_module
 from logging import getLogger
 from os import path
 
-from numpy import log
 from packaging import version
 from pandas import to_numeric
 
@@ -46,8 +45,6 @@ def load(fname: str, **kwargs) -> Model:
     # Get dicts for all data sources
     data = load_mod.load(fname, **kwargs)
 
-    ml = _load_model(data)
-
     file_version = data["file_info"]["pastas_version"]
 
     # A single catch for old pas-files, no longer supported
@@ -58,6 +55,8 @@ def load(fname: str, **kwargs) -> Model:
             "save the file with Pastas 0.23 first to update the file "
             "format."
         )
+
+    ml = _load_model(data)
 
     logger.info(
         "Pastas Model from file %s successfully loaded. This file was created with "

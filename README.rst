@@ -13,16 +13,19 @@ Pastas: Analysis of Groundwater Time Series
    :target: https://mit-license.org/
 .. image:: https://img.shields.io/pypi/pyversions/pastas
    :target: https://pypi.python.org/pypi/pastas
+.. image:: https://img.shields.io/pypi/dm/pastas
+   :target: https://pypi.org/project/pastas/
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1465866.svg
+   :target: https://doi.org/10.5281/zenodo.1465866
 .. image:: https://api.codacy.com/project/badge/Grade/952f41c453854064ba0ee1fa0a0b4434
    :target: https://www.codacy.com/gh/pastas/pastas
 .. image:: https://api.codacy.com/project/badge/Coverage/952f41c453854064ba0ee1fa0a0b4434
    :target: https://www.codacy.com/gh/pastas/pastas
-.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1465866.svg
-   :target: https://doi.org/10.5281/zenodo.1465866
-.. image:: https://mybinder.org/badge_logo.svg
-   :target: https://mybinder.org/v2/gh/pastas/pastas/master?filepath=examples%2Fnotebooks%2F1_basic_model.ipynb
 .. image:: https://readthedocs.org/projects/pastas/badge/?version=latest
    :target: https://pastas.readthedocs.io/en/latest/?badge=latest
+.. image:: https://mybinder.org/badge_logo.svg
+   :target: https://mybinder.org/v2/gh/pastas/pastas/master?filepath=examples%2Fnotebooks%2F1_basic_model.ipynb
+
 
 Pastas: what is it?
 ~~~~~~~~~~~~~~~~~~~

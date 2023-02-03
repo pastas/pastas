@@ -21,14 +21,13 @@ os.mkdir(os.path.join(pathname, testdir))
 
 @pytest.mark.notebooks
 @pytest.mark.parametrize("file", files)
-def test_notebook(file):
+def test_notebook(file) -> None:
     cwd = os.getcwd()
 
     os.chdir(pathname)
     if file not in [
         "00_prepare_timeseries.ipynb",
         "12_emcee_uncertainty.ipynb",
-        "19_reservoir.ipynb",
     ]:
         try:
             # run autotest on each notebook

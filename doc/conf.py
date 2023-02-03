@@ -26,11 +26,12 @@ from matplotlib import use
 use("agg")
 
 from dataclasses import dataclass, field
+
 import sphinxcontrib.bibtex.plugin
 from sphinxcontrib.bibtex.style.referencing import BracketStyle
 from sphinxcontrib.bibtex.style.referencing.author_year import AuthorYearReferenceStyle
 
-from pastas.version import __version__
+from pastas import __version__
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -136,6 +137,7 @@ autosectionlabel_prefix_document = True
 # html_show_sourcelink = True
 
 # -- Generating references and publications lists -------------------------
+
 
 # support Round brackets
 def bracket_style() -> BracketStyle:

@@ -1,3 +1,4 @@
+# flake8: noqa
 import logging
 
 from pandas.plotting import register_matplotlib_converters
@@ -6,6 +7,7 @@ import pastas.plots as plots
 import pastas.recharge as rch
 import pastas.stats as stats
 import pastas.timeseries_utils as ts
+
 from .decorators import set_use_numba
 from .model import Model
 from .modelcompare import CompareModels
@@ -35,7 +37,7 @@ from .stressmodels import (
     TarsoModel,
     WellModel,
 )
-from .timeseries import validate_stress, validate_oseries
+from .timeseries import validate_oseries, validate_stress
 from .transform import ThresholdTransform
 from .utils import initialize_logger, set_log_level
 from .version import __version__, show_versions
