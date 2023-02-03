@@ -5,9 +5,12 @@ Pastas is built on numerous scientific works. This section contains a number of 
 
 .. toctree::
     :maxdepth: 1
-    :glob:
 
-    ./*
+    check_response_functions
+    pastas_synthetic
+    autocorrelation
+    noisemodel
+    armamodel
 
 .. note::
     The benchmark notebooks are currently not included in the continuous integration and are thus not
