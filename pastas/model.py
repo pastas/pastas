@@ -417,7 +417,9 @@ class Model:
 
         if sim.hasnans:
             sim = sim.dropna()
-            self.logger.warning("Nan-values were removed from the simulation.")
+            msg = "Simulation contains Nan-values. Check stresses time series settings!"
+            self.logger.error(msg)
+            raise ValueError(msg)
 
         sim.name = "Simulation"
         return sim
