@@ -1,4 +1,4 @@
-Getting Started with Pastas
+Getting started with Pastas
 ===========================
 On this page you will find all the information to get started with Pastas.
 A basic knowledge of programming in Python is assumed, but nothing more than
