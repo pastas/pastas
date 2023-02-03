@@ -29,10 +29,19 @@ def ml() -> ps.Model:
 @pytest.fixture
 def ml_sm() -> ps.Model:
     ml_sm = ps.Model(obs.dropna(), name="Test_Model")
-    sm1 = ps.StressModel(rain, rfunc=ps.Exponential(), name="prec")
-    sm2 = ps.StressModel(evap, rfunc=ps.Exponential(), name="evap")
+    sm1 = ps.StressModel(rain, rfunc=ps.Exponential(), name="prec", settings="prec")
+    sm2 = ps.StressModel(evap, rfunc=ps.Exponential(), name="evap", settings="evap")
     ml_sm.add_stressmodel([sm1, sm2])
     return ml_sm
+
+
+@pytest.fixture
+def ml_no_settings() -> ps.Model:
+    ml_no_settings = ps.Model(obs.dropna(), name="Test_Model")
+    sm1 = ps.StressModel(rain, rfunc=ps.Exponential(), name="prec")
+    sm2 = ps.StressModel(evap, rfunc=ps.Exponential(), name="evap")
+    ml_no_settings.add_stressmodel([sm1, sm2])
+    return ml_no_settings
 
 
 @pytest.fixture
