@@ -1442,7 +1442,9 @@ class DoubleExponential(RfuncBase):
     @latexfun(identifiers={"impulse": "theta"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         A, alpha, a_1, a_2 = p
-        return A * ((1 - alpha) / a_1 * np.exp(-t / a_1) + alpha / a_2 * np.exp(-t / a_2))
+        return A * (
+            (1 - alpha) / a_1 * np.exp(-t / a_1) + alpha / a_2 * np.exp(-t / a_2)
+        )
 
     def step(
         self,
