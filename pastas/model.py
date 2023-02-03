@@ -417,10 +417,9 @@ class Model:
 
         if sim.hasnans:
             sim = sim.dropna()
-            self.logger.error("Simulation contains Nan-values.")
-            raise ValueError(
-                "Simulation contains NaNs. Check stresses time series settings!"
-            )
+            msg = "Simulation contains Nan-values. Check stresses time series settings!"
+            self.logger.error(msg)
+            raise ValueError(msg)
 
         sim.name = "Simulation"
         return sim
