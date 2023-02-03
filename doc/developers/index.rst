@@ -31,3 +31,8 @@ Pastas does not have a fixed regular release cycle but we strive to release a ne
 version every three months. You can check when a new release is approximately scheduled on
 the `GitHub Milestones page <https://github.com/pastas/pastas/milestones>`_.
 
+Release Notes
+-------------
+Release notes for all Pastas version can be found on the
+`Github Release page <https://github.com/pastas/pastas/releases>`_. We do not maintain
+release notes on the documentation website here.
