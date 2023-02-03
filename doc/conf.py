@@ -52,7 +52,6 @@ extensions = [
     "IPython.sphinxext.ipython_console_highlighting",  # lowercase didn't work
     "nbsphinx",
     "numpydoc",
-    "sphinx_gallery.load_style",
     "sphinxcontrib.bibtex",
     "sphinx_design",
     "sphinx.ext.autosectionlabel",
@@ -82,7 +81,6 @@ exclude_patterns = [
     "_build",
     "**groundwater_paper",
     "**.ipynb_checkpoints",
-    "**benchmarks/**.ipynb",
 ]
 
 add_function_parentheses = False
@@ -121,6 +119,7 @@ napoleon_use_param = True
 napoleon_type_aliases = {
     "array-like": ":term:`array-like <array_like>`",
     "array_like": ":term:`array_like`",
+    "ps": "pastas",
 }
 autodoc_typehints = "description"
 autodoc_typehints_format = "short"
@@ -240,7 +239,7 @@ man_pages = [(master_doc, "pastas", "Pastas Documentation", [author], 1)]
 # man_show_urls = False
 
 
-# -- Options for Texinfo output -------------------------------------------
+# -- Options for Texinfo output -------------------------------------------------------
 
 # Grouping the document tree into Texinfo files. List of tuples
 # (source start file, target name, title, author,
@@ -266,5 +265,7 @@ intersphinx_mapping = {
     "matplotlib": ("https://matplotlib.org/stable", None),
 }
 
-# Allow errors in notebooks, so we can see the error online
-nbsphinx_allow_errors = True
+# -- nbsphinx options---------- -------------------------------------------------------
+
+nbsphinx_allow_errors = True  # Allow errors in notebooks, to see the error online
+nbsphinx_execute = "auto"
