@@ -406,7 +406,7 @@ class TimeSeries:
         method = self.settings["fill_before"]
         tmin = self.settings["tmin"]
 
-        if tmin is None or method is None:
+        if tmin is None:
             pass
         elif pd.Timestamp(tmin) > series.index.max():
             logger.error(
@@ -442,7 +442,7 @@ class TimeSeries:
                 )
             else:
                 logger.info(
-                    "Time Series %s: User-defined option for fill_before %s is not "
+                    "Time Series %s: User-defined option for fill_before '%s' is not "
                     "supported.",
                     self.name,
                     method,
@@ -456,7 +456,7 @@ class TimeSeries:
         method = self.settings["fill_after"]
         tmax = self.settings["tmax"]
 
-        if tmax is None or method is None:
+        if tmax is None:
             pass
         elif pd.Timestamp(tmax) <= series.index.min():
             logger.error(
@@ -492,7 +492,7 @@ class TimeSeries:
                 )
             else:
                 logger.info(
-                    "Time Series %s: User-defined option for fill_after %s is not "
+                    "Time Series %s: User-defined option for fill_after '%s' is not "
                     "supported",
                     self.name,
                     method,
