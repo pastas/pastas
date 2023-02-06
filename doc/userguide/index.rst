@@ -9,7 +9,7 @@ In this section the basic concepts of analyzing and modeling hydraulic head time
 
     getting_started
     time_series
-    pastas_modelling
+    pastas_modeling
     response_functions
     stressmodels
     post_processing
