@@ -63,11 +63,11 @@ rtd = [
     "Ipython",
     "ipykernel",
     "pydata-sphinx-theme",
-    "sphinx-gallery >= 0.6, <0.11",
     "sphinx>=3.1, <6.0",
     "sphinxcontrib-bibtex",
     "requests",
     "numpydoc",
+    "sphinx-design",
 ]
 dev = ["tox", "pastas[formatting,linting,ci,rtd]"]
 numbascipy = ["numba-scipy >= 0.3.1"]

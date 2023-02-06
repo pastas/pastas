@@ -1218,7 +1218,7 @@ class FourParam(RfuncBase):
     @staticmethod
     @latexfun(identifiers={"impulse": "theta"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
-        _A, n, a, b = p
+        _, n, a, b = p
         return (t ** (n - 1)) * np.exp(-t / a - a * b / t)
 
     def get_tmax(self, p: ArrayLike, cutoff: Optional[float] = None) -> float:
@@ -1441,8 +1441,10 @@ class DoubleExponential(RfuncBase):
     @staticmethod
     @latexfun(identifiers={"impulse": "theta"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
-        A, f, a, b = p
-        return A * ((1 - f) / a * np.exp(-t / a) + f / b * np.exp(-t / b))
+        A, alpha, a_1, a_2 = p
+        return A * (
+            (1 - alpha) / a_1 * np.exp(-t / a_1) + alpha / a_2 * np.exp(-t / a_2)
+        )
 
     def step(
         self,

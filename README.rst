@@ -26,7 +26,6 @@ Pastas: Analysis of Groundwater Time Series
 .. image:: https://mybinder.org/badge_logo.svg
    :target: https://mybinder.org/v2/gh/pastas/pastas/master?filepath=examples%2Fnotebooks%2F1_basic_model.ipynb
 
-
 Pastas: what is it?
 ~~~~~~~~~~~~~~~~~~~
 Pastas is an open source python package for processing, simulating and analyzing
@@ -37,10 +36,10 @@ built-in optimization, visualisation, and statistical analysis tools.
 
 Documentation & Examples
 ~~~~~~~~~~~~~~~~~~~~~~~~
-- Documentation is provided on a dedicated website: http://pastas.readthedocs.io/
+- Documentation is provided on the dedicated website `pastas.dev <http://www.pastas.dev/>`_
 - Examples can be found on the `examples directory on the documentation website <https://pastas.readthedocs.io/en/dev/examples/index.html>`_
 - View and edit a working example notebook of a Pastas model in `MyBinder <https://mybinder.org/v2/gh/pastas/pastas/master?filepath=examples%2Fnotebooks%2F1_basic_model.ipynb>`_
-- A list of Publications that used Pastas is available in a `dedicated GitHub repo <https://github.com/pastas/pastas_research>`_
+- A list of publications that use Pastas is available in a `dedicated Zotero group <https://www.zotero.org/groups/4846685/pastas/items/32FS5PTW/item-list>`_
 
 Get in Touch
 ~~~~~~~~~~~~
@@ -53,7 +52,7 @@ Get in Touch
 
 Quick installation guide
 ~~~~~~~~~~~~~~~~~~~~~~~~
-To install Pastas, a working version of Python 3.7, 3.8 or 3.9 has to be
+To install Pastas, a working version of Python 3.8, 3.9 or 3.10 has to be
 installed on your computer. We recommend using the `Anaconda Distribution
 <https://www.continuum.io/downloads>`_ as it includes most of the python
 package dependencies and the Jupyter Notebook software to run the notebooks.
@@ -93,7 +92,7 @@ Pastas
 - numpy>=1.7
 - matplotlib>=3.1
 - pandas>=1.1
-- scipy>=1.3
+- scipy>=1.8
 - numba>=0.51
 
 To install the most important optional dependencies (solver LmFit and function visualisation Latexify) at the same time with Pastas use::

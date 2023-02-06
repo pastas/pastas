@@ -1,4 +1,4 @@
-FAQS (Frequently Asked Questions)
+FAQs (Frequently Asked Questions)
 =================================
 
 This section contains a list of frequently asked questions.
@@ -22,6 +22,6 @@ DOI proivded through Zenodo for every major release of the software.
 
 .. rubric:: What does "Pastas" stand for?
 
-Pastas is not an acronym for something. However we like a good Pasta every
-once in a while, and as that name was already taken in the Python Packaging
-Index, we chose for Pastas as the name of the package.
+Pastas is not an acronym for something. That is why it is not written as PASTAS.
+However, we like a good pasta every once in a while, and as that name was already
+taken in the Python Packaging Index, we chose for Pastas as the name of the package.

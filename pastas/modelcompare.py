@@ -1,3 +1,5 @@
+"""This module contains tools for visually comparing multiple models.
+"""
 from itertools import combinations
 from typing import List, Optional, Tuple
 from warnings import warn
@@ -883,3 +885,14 @@ class CompareModels:
         self.plot_table_params(param_selection=param_selection)
 
         self.figure.tight_layout(pad=0.0)
+
+
+""" Our mission is to improve the analysis and modeling of groundwater time
+series through research and development of new methods and accompanying
+computer code. We strive to maximize what we can learn from the information
+contained in groundwater time series. We believe in the power of open science,
+FAIR data and open software to achieve this, making code open and available to
+all. With the development of Pastas, we attempt to bridge the gap between
+science and practice and shorten the time between scientific discoveries can
+and their real-world applications.
+"""

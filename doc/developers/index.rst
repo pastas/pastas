@@ -1,10 +1,10 @@
 Development
 ===========
-
-As an open source project, Pastas depends on the open source community for
-maintaining and developing the software. Any help in maintaining the code,
-writing or updating documentation is more than welcome. This section serves
-to help you in contributing code to the Pastas software.
+As an open source software project, Pastas depends on the open source community for
+maintaining and developing the software. Any help in maintaining the code, developing
+new features, or writing and updating documentation is more than welcome. This section
+serves to help you in contributing code to Pastas. Additionally, this section
+serves to document code conventions and quick how-to's for maintainers and developers.
 
 .. toctree::
     :maxdepth: 1
@@ -15,60 +15,24 @@ to help you in contributing code to the Pastas software.
 
 Bug reports / Feature requests
 ------------------------------
-If you have found a bug in Pastas, or if you would like to suggest
-an improvement or enhancement, please `submit a new Issue <https://github
-.com/pastas/pastas/issues>`_ through the Github Issue tracker.
+If you have found a bug in Pastas, or if you would like to suggest an improvement or
+enhancement, please `submit a new Issue <https://github.com/pastas/pastas/issues>`_
+through the Github Issue tracker.
+
+User questions
+--------------
+If you have question about the use of Pastas, feel free to ask questions in the
+`GitHub Discussions <https://github.com/pastas/pastas/discussions>`_. Also feel free to
+answer questions here and help each other!
 
 Release Cycle
 -------------
-Pastas does not have a fixed release cycle but it is tried to release a new
-version every three months. You can check when a new release is
-approximately scheduled at the `GitHub Milestones page <https://github
-.com/pastas/pastas/milestones>`_.
+Pastas does not have a fixed regular release cycle but we strive to release a new
+version every three months. You can check when a new release is approximately scheduled on
+the `GitHub Milestones page <https://github.com/pastas/pastas/milestones>`_.
 
-Core Development Team
----------------------
-The following people are part of the core development team of Pastas and can
-merge pull requests on the Pastas GitHub.
-
-
-.. figure:: https://avatars2.githubusercontent.com/u/12051167?s=460&u=ad0baaa3520ab942c93af44ea8e296b44ea459ac&v=4
-    :figwidth: 150px
-    :target: https://github.com/raoulcollenteur
-
-    Raoul Collenteur.
-    `Uni Graz <https://www.uni-graz.at>`_
-
-.. figure:: https://avatars3.githubusercontent.com/u/1363400?s=460&u=8d34d0824bd0f43a63f29c0b71fbfae435a15565&v=4
-    :figwidth: 150px
-    :target: https://github.com/mbakker7
-
-    Mark Bakker.
-    `TU Delft <https://www.tudelft.nl>`_
-
-.. figure:: https://avatars3.githubusercontent.com/u/18527362?s=460&u=3e1faab416c86e141ff0860017a5a02133830b08&v=4
-    :figwidth: 150px
-    :target: https://github.com/rubencalje
-
-    Ruben Caljé.
-    `Artesia. <http://www.artesia-water.nl>`_
-
-.. figure:: https://avatars1.githubusercontent.com/u/6552225?s=460&u=ba73dc4a63fe3d5707a2da9276143d16672ad413&v=4
-    :figwidth: 150px
-    :target: https://github.com/dbrakenhoff
-
-    Davíd Brakenhoff.
-    `Artesia <http://www.artesia-water.nl>`_.
-
-Contributors
-------------
-The following people have contributed code to the Pastas project. Please
-notify us when contributors are missing from this list.
-
-- `Onno Ebbens <https://github.com/OnnoEbbens>`_
-- `Martin Vonk <https://github.com/martinvonk>`_
-- `Stijn Klop <https://github.com/saklop>`_
-- `Tom van Steijn <https://github.com/tomvansteijn>`_
-- `Hugo van de Berg <https://github.com/Hugovdberg>`_
-- `Eit van der Meulen <https://github.com/EitvanderMeulen>`_
-- `Pytrik Graafstra <https://github.com/pgraafstra>`_
+Release Notes
+-------------
+Release notes for all Pastas version can be found on the
+`Github Release page <https://github.com/pastas/pastas/releases>`_. We do not maintain
+release notes on the documentation website here.
