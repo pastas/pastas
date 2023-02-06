@@ -4,7 +4,6 @@ from importlib import import_module
 from logging import getLogger
 from os import path
 
-from numpy import log
 from packaging import version
 from pandas import to_numeric
 
@@ -12,7 +11,6 @@ import pastas as ps
 
 # Type Hinting
 from pastas.typing import Model
-from .timeseries_legacy import TimeSeriesOld
 
 logger = getLogger(__name__)
 
@@ -36,6 +34,7 @@ def load(fname: str, **kwargs) -> Model:
     --------
     >>> import pastas as ps
     >>> ml = ps.io.load("model.pas")
+
     """
     if not path.exists(fname):
         logger.error("File not found: %s", fname)
@@ -46,9 +45,19 @@ def load(fname: str, **kwargs) -> Model:
     # Get dicts for all data sources
     data = load_mod.load(fname, **kwargs)
 
+    file_version = data["file_info"]["pastas_version"]
+
+    # A single catch for old pas-files, no longer supported
+    if version.parse(file_version) < version.parse("0.23.0"):
+        raise UserWarning(
+            "This file was created with a Pastas version prior to 0.23 "
+            "and cannot be loaded with Pastas >= 1.0. Please load and "
+            "save the file with Pastas 0.23 first to update the file "
+            "format."
+        )
+
     ml = _load_model(data)
 
-    file_version = data["file_info"]["pastas_version"]
     logger.info(
         "Pastas Model from file %s successfully loaded. This file was created with "
         "Pastas %s. Your current version of Pastas is: %s",
@@ -100,29 +109,17 @@ def _load_model(data: dict) -> Model:
 
     # Add transform
     if "transform" in data.keys():
-        # Todo Deal with old files. Remove in pastas 1.0
-        if "transform" in data["transform"].keys():
-            data["transform"]["class"] = data["transform"].pop("transform")
-
         transform = getattr(ps.transform, data["transform"].pop("class"))
         transform = transform(**data["transform"])
         ml.add_transform(transform)
 
     # Add noisemodel if present
     if "noisemodel" in data.keys():
-        # Todo Deal with old files. Remove in pastas 1.0
-        if "type" in data["noisemodel"].keys():
-            data["noisemodel"]["class"] = data["noisemodel"].pop("type")
-
         n = getattr(ps.noisemodels, data["noisemodel"].pop("class"))()
         ml.add_noisemodel(n)
 
     # Add fit object to the model
     if "fit" in data.keys():
-        # Todo Deal with old files. Remove in pastas 1.0
-        if "name" in data["fit"].keys():
-            data["fit"]["class"] = data["fit"].pop("name")
-
         solver = getattr(ps.solver, data["fit"].pop("class"))
         ml.fit = solver(**data["fit"])
         ml.fit.set_model(ml)
@@ -140,51 +137,6 @@ def _load_model(data: dict) -> Model:
 
 
 def _load_stressmodel(ts, data):
-    # Todo Deal with old files. Remove in pastas 1.0
-    if "stressmodel" in ts.keys():
-        ts["class"] = ts.pop("stressmodel")
-
-    # TODO Deal with old StressModel2 files for version 0.22.0. Remove in 0.23.0.
-    if ts["class"] == "StressModel2":
-        msg = (
-            "StressModel2 is removed since Pastas 0.22.0 and is replaced by the "
-            "RechargeModel using a Linear recharge model. Make sure to save "
-            "this file first using Pastas version 0.22.0 as this file cannot be "
-            "loaded in newer Pastas versions. This will automatically update "
-            "your model to the newer RechargeModel stress model."
-        )
-        logger.error(msg=msg)
-        raise NotImplementedError(msg)
-
-    # TODO Deal with old parameter value b in HantushWellModel: b_new = np.log(b_old)
-    if (ts["class"] == "WellModel") and (
-        version.parse(data["file_info"]["pastas_version"]) < version.parse("0.22.0")
-    ):
-        logger.warning(
-            "The value of parameter 'b' in HantushWellModel was modified in 0.22.0: "
-            "b_new = log(b_old). The value of 'b' is automatically updated on load."
-        )
-        wnam = ts["name"]
-        for pcol in ["initial", "optimal", "pmin", "pmax"]:
-            if wnam + "_b" in data["parameters"].index:
-                if data["parameters"].loc[wnam + "_b", pcol] > 0:
-                    data["parameters"].loc[wnam + "_b", pcol] = log(
-                        data["parameters"].loc[wnam + "_b", pcol]
-                    )
-
-    # Deal with old-style response functions (TODO remove in 1.0)
-    if version.parse(data["file_info"]["pastas_version"]) < version.parse("0.23.0"):
-        if "rfunc" in ts.keys():
-            rfunc_kwargs = ts.pop("rfunc_kwargs", {})
-            rfunc_kwargs["class"] = ts["rfunc"]
-            if "cutoff" in ts.keys():
-                rfunc_kwargs["cutoff"] = ts.pop("cutoff")
-            ts["rfunc"] = rfunc_kwargs
-        if "recharge" in ts.keys():
-            recharge_kwargs = ts.pop("recharge_kwargs", {})
-            recharge_kwargs["class"] = ts["recharge"]
-            ts["recharge"] = recharge_kwargs
-
     # Create and add stress model
     stressmodel = getattr(ps.stressmodels, ts.pop("class"))
 
@@ -257,28 +209,6 @@ def _unpack_series(data: dict):
     series = data["series"]
     metadata = data["metadata"]
     settings = data["settings"]
-
-    # Deal with pas-files from Pastas version 0.22. Pastas 0.22.0 was very loose on
-    # the input data and would internally fix a lot. Here we choose to recreate the
-    # old TimeSeries object, and use the TimeSeries.series.
-
-    if "freq_original" in data.keys():
-        msg = (
-            "Whoops, looks like an old pas-file using the old TimeSeries format. "
-            "Pastas will convert to the new TimeSeries format. However, it can not "
-            "be guaranteed that the conversion will result in the exact same results. "
-            "If you have the Python scripts used to generate this pas-file, it is "
-            "highly recommended to rerun the script using a newer Pastas version ("
-            "0.23 or higher). "
-        )
-        logger.warning(msg)
-
-        # Create an old TimeSeries object
-        series = TimeSeriesOld(**data).series
-
-        # Remove deprecated keywords
-        settings.pop("norm")
-        data.pop("freq_original")
 
     return series, metadata, settings
 

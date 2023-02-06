@@ -4,6 +4,7 @@
 from logging import getLogger
 
 import numpy as np
+from numpy import pi
 from pandas import DataFrame
 from scipy.integrate import quad
 from scipy.interpolate import interp1d
@@ -18,9 +19,8 @@ from scipy.special import (
     k1,
     lambertw,
 )
-from numpy import pi
 
-from .decorators import njit, latexfun
+from .decorators import latexfun, njit
 from .version import check_numba_scipy
 
 try:
@@ -30,6 +30,7 @@ except ModuleNotFoundError:
 
 # Type Hinting
 from typing import Optional, Union
+
 from pastas.typing import ArrayLike
 
 logger = getLogger(__name__)
@@ -60,13 +61,6 @@ class RfuncBase:
         **kwargs,
     ) -> None:
         self.up = up
-        if "meanstress" in kwargs.keys():
-            logger.warning(
-                "The mean_stress argument is deprecated and will throw an error "
-                "in Pastas 1.0. Please use the `gain_scale_factor` argument instead."
-            )
-            gain_scale_factor = kwargs["meanstress"]
-
         self.gain_scale_factor = gain_scale_factor
         self.cutoff = cutoff
 
@@ -570,7 +564,7 @@ class HantushWellModel(RfuncBase):
             )
         parameters.loc[name + "_a"] = (100, 1e-3, 1e4, True, name)
         # set initial and bounds for b taking into account distances
-        # note log transform to avoid extremely small values for b
+        # note log transform to avoid tiny values for b
         binit = np.log(1.0 / np.mean(self.distances) ** 2)
         bmin = np.log(1e-6 / np.max(self.distances) ** 2)
         bmax = np.log(25.0 / np.min(self.distances) ** 2)
@@ -1224,7 +1218,7 @@ class FourParam(RfuncBase):
     @staticmethod
     @latexfun(identifiers={"impulse": "theta"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
-        _A, n, a, b = p
+        _, n, a, b = p
         return (t ** (n - 1)) * np.exp(-t / a - a * b / t)
 
     def get_tmax(self, p: ArrayLike, cutoff: Optional[float] = None) -> float:
@@ -1447,8 +1441,10 @@ class DoubleExponential(RfuncBase):
     @staticmethod
     @latexfun(identifiers={"impulse": "theta"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
-        A, f, a, b = p
-        return A * ((1 - f) / a * np.exp(-t / a) + f / b * np.exp(-t / b))
+        A, alpha, a_1, a_2 = p
+        return A * (
+            (1 - alpha) / a_1 * np.exp(-t / a_1) + alpha / a_2 * np.exp(-t / a_2)
+        )
 
     def step(
         self,

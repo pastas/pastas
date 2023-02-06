@@ -14,9 +14,7 @@ See Also
 pastas.model.Model.add_stressmodel
 """
 
-import inspect
 from logging import getLogger
-from importlib.metadata import version
 
 # Type Hinting
 from typing import List, Optional, Tuple, Union
@@ -26,7 +24,6 @@ from pandas import DataFrame, Series, Timedelta, Timestamp, concat, date_range
 from scipy.signal import fftconvolve
 
 from pastas.typing import ArrayLike, Model, Recharge, RFunc, TimestampType
-
 from .decorators import njit, set_parameter
 from .recharge import Linear
 from .rfunc import Exponential, HantushWellModel, One
@@ -75,12 +72,6 @@ class StressModelBase:
         self.freq = None
 
         if rfunc is not None:
-            if inspect.isclass(rfunc):
-                raise DeprecationWarning(
-                    "Response functions should be added to a stress model as an "
-                    "instance (e.g., ps.One()), and not as a class (e.g., ps.One). "
-                    "Please provide an instance of the response function."
-                )
             rfunc._update_rfunc_settings(up=up, gain_scale_factor=gain_scale_factor)
         self.rfunc = rfunc
 
@@ -252,21 +243,17 @@ class StressModel(StressModelBase):
     up: bool or None, optional
         True if response function is positive (default), False if negative. None if
         you don't want to define if response is positive or negative.
-    cutoff: float, optional
-        This argument is deprecated since 0.23. Directly provide this to directly to
-        the response function instance (e.g., ps.Gamma(cutoff=0.999).
     settings: dict or str, optional
         The settings of the stress. This can be a string referring to a predefined
-        settings dict, or a dict with the settings to apply. Refer to the docstring
-        of pastas.Timeseries for further information.
+        settings dict (defined in ps.rcParams["timeseries"]), or a dict with the
+        settings to apply. Refer to the docs of pastas.Timeseries for further
+        information.
     metadata: dict, optional
         dictionary containing metadata about the stress. This is passed onto the
         TimeSeries object.
     gain_scale_factor: float, optional
         the scale factor is used to set the initial value and the bounds of the gain
         parameter, computed as 1 / gain_scale_factor.
-    meanstress: float, optional
-        This argument is deprecated since 0.23. Use `gain_scale_factor` instead.
 
     Examples
     --------
@@ -289,21 +276,10 @@ class StressModel(StressModelBase):
         rfunc: RFunc,
         name: str,
         up: bool = True,
-        cutoff=None,
         settings: Optional[Union[dict, str]] = None,
         metadata: Optional[dict] = None,
         gain_scale_factor: Optional[float] = None,
-        meanstress: Optional[float] = None,
     ) -> None:
-        raise_deprecations(meanstress=meanstress, cutoff=cutoff)
-
-        if isinstance(stress, list):
-            logger.warning(
-                "providing a stress as list is deprecated and will results "
-                "in an Error in Pastas 1.0."
-            )
-            stress = stress[0]  # TODO Remove in Pastas 1.0
-
         stress = TimeSeries(stress, settings=settings, metadata=metadata)
 
         StressModelBase.__init__(
@@ -405,9 +381,6 @@ class StepModel(StressModelBase):
         ps.rfunc.One(), an instant effect.
     up: bool, optional
         Force a direction of the step. Default is None.
-    cutoff: float, optional
-        This argument is deprecated since 0.23. Directly provide this to directly to
-        the response function instance (e.g., ps.Gamma(cutoff=0.999).
 
     Notes
     -----
@@ -424,10 +397,7 @@ class StepModel(StressModelBase):
         name: str,
         rfunc: Optional[RFunc] = None,
         up: bool = True,
-        cutoff=None,
     ) -> None:
-        raise_deprecations(cutoff=cutoff)
-
         if rfunc is None:
             rfunc = One()
         StressModelBase.__init__(
@@ -663,11 +633,11 @@ class WellModel(StressModelBase):
         whether a positive stress has an increasing or decreasing effect on the model,
         by default False, in which case positive stress lowers e.g., the groundwater
         level.
-    cutoff: float, optional
-        This argument is deprecated since 0.23. Directly provide this to directly to
-        the response function instance (e.g., ps.Gamma(cutoff=0.999).
     settings: str, list of dict, optional
-        settings of the time series, by default "well".
+        The settings of the stress. This can be a string referring to a predefined
+        settings dict (defined in ps.rcParams["timeseries"]), or a dict with the
+        settings to apply. Refer to the docs of pastas.Timeseries for further
+        information.
     sort_wells: bool, optional
         sort wells from closest to furthest, by default True.
 
@@ -692,12 +662,10 @@ class WellModel(StressModelBase):
         name: str,
         distances: ArrayLike,
         up: bool = False,
-        cutoff=None,
         settings: str = "well",
         sort_wells: bool = True,
         metadata: Optional[list] = None,
     ) -> None:
-        raise_deprecations(cutoff=cutoff)
         if not isinstance(rfunc, HantushWellModel):
             raise NotImplementedError(
                 "WellModel only supports the rfunc HantushWellModel!"
@@ -1016,14 +984,11 @@ class RechargeModel(StressModelBase):
     temp: pandas.Series, optional
         pandas.Series with pandas.DatetimeIndex containing the temperature series.
         It depends on the recharge model is this argument is required or not.
-    cutoff: float, optional
-        This argument is deprecated since 0.23. Directly provide this to directly to
-        the response function instance (e.g., ps.Gamma(cutoff=0.999).
     settings: list of dicts or str, optional
         The settings of the precipitation and evaporation time series, in this order.
-        This can be a string referring to a predefined settings dict, or a dict with
-        the settings to apply. Refer to the docstring of pastas.Timeseries for
-        further information. Default is ("prec", "evap").
+        This can be a string referring to a predefined settings dict (defined in
+        ps.rcParams["timeseries"]), or a dict with the settings to apply. Refer to
+        the docs of pastas.Timeseries for further information.
     metadata: tuple of dicts or list of dicts, optional
         dictionary containing metadata about the stress. This is passed onto the
         TimeSeries object.
@@ -1064,7 +1029,6 @@ class RechargeModel(StressModelBase):
         name: str = "recharge",
         recharge: Optional[Recharge] = None,
         temp: Optional[Series] = None,
-        cutoff=None,
         settings: Tuple[Union[str, dict], Union[str, dict], Union[str, dict]] = (
             "prec",
             "evap",
@@ -1072,7 +1036,6 @@ class RechargeModel(StressModelBase):
         ),
         metadata: Optional[Tuple[dict, dict, dict]] = (None, None, None),
     ) -> None:
-        raise_deprecations(cutoff=cutoff)
         if rfunc is None:
             rfunc = Exponential()
 
@@ -1432,16 +1395,15 @@ class TarsoModel(RechargeModel):
         oseries: Optional[Series] = None,
         dmin: Optional[float] = None,
         dmax: Optional[float] = None,
-        rfunc: Optional[RFunc] = Exponential(),
+        rfunc: Optional[RFunc] = None,
         **kwargs,
     ) -> None:
         if oseries is not None:
             if dmin is not None or dmax is not None:
                 msg = "Please specify either oseries or dmin and dmax"
                 raise (Exception(msg))
-            o = TimeSeries(oseries).series
-            dmin = o.min()
-            dmax = o.max()
+            dmin = oseries.min()
+            dmax = oseries.max()
         elif dmin is None or dmax is None:
             msg = "Please specify either oseries or dmin and dmax"
             raise (Exception(msg))
@@ -1457,10 +1419,16 @@ class TarsoModel(RechargeModel):
     def set_init_parameters(self) -> None:
         # parameters for the first drainage level
         p0 = self.rfunc.get_init_parameters(self.name)
-        one = One()
-        gain_scale_factor = self.dmin + 0.5 * (self.dmax - self.dmin)
-        one._update_rfunc_settings(gain_scale_factor=gain_scale_factor)
-        pd0 = one.get_init_parameters(self.name).squeeze()
+        initial = self.dmin + 0.5 * (self.dmax - self.dmin)
+        pd0 = Series(
+            {
+                "initial": initial,
+                "pmin": np.NaN,
+                "pmax": np.NaN,
+                "vary": True,
+                "name": self.name,
+            }
+        )
         p0.loc[f"{self.name}_d"] = pd0
         p0.index = [f"{x}0" for x in p0.index]
 
@@ -1600,13 +1568,11 @@ class ChangeModel(StressModelBase):
     up: bool or None, optional
         True if response function is positive (default), False if negative. None if
         you don't want to define if response is positive or negative.
-    cutoff: float, optional
-        This argument is deprecated since 0.23. Directly provide this to directly to
-        the response function instance (e.g., ps.Gamma(cutoff=0.999).
     settings: dict or str, optional
-        the settings of the stress. This can be a string referring to a predefined
-        settings dict, or a dict with the settings to apply. Refer to the docstring
-        of pastas.Timeseries for further information.
+        The settings of the stress. This can be a string referring to a predefined
+        settings dict (defined in ps.rcParams["timeseries"]), or a dict with the
+        settings to apply. Refer to the docs of pastas.Timeseries for further
+        information.
     metadata: dict, optional
         dictionary containing metadata about the stress. This is passed onto the
         TimeSeries object.
@@ -1626,19 +1592,9 @@ class ChangeModel(StressModelBase):
         name: str,
         tchange: Union[str, TimestampType],
         up: bool = True,
-        cutoff=None,
         settings: Optional[Union[dict, str]] = None,
         metadata: Optional[dict] = None,
     ) -> None:
-        raise_deprecations(cutoff=cutoff)
-
-        if isinstance(stress, list):
-            logger.warning(
-                "providing a stress as list is deprecated and will results "
-                "in an Error in Pastas 1.0."
-            )
-            stress = stress[0]  # TODO Remove in Pastas 1.0
-
         stress = TimeSeries(stress, settings=settings, metadata=metadata)
 
         StressModelBase.__init__(
@@ -1648,11 +1604,6 @@ class ChangeModel(StressModelBase):
             tmin=stress.series.index.min(),
             tmax=stress.series.index.max(),
         )
-        if inspect.isclass(rfunc1) or inspect.isclass(rfunc2):
-            raise DeprecationWarning(
-                "Response functions should be provided as an instance (e.g., ps.One()),"
-                " not as a class (e.g., ps.One). Please provide an instance."
-            )
 
         rfunc1._update_rfunc_settings(up=up)
         self.rfunc1 = rfunc1
@@ -1754,25 +1705,3 @@ class ChangeModel(StressModelBase):
             "up": self.rfunc1.up,
         }
         return data
-
-
-def StressModel2(*args, **kwargs):
-    msg = (
-        "StressModel2 is removed in Pastas 0.23 and replaced by the RechargeModel "
-        "stress model. Use ps.RechargeModel(prec, evap, recharge=ps.rch.Linear) for "
-        "the same stress model in future codes."
-    )
-    logger.error(msg)
-
-
-def raise_deprecations(meanstress=None, cutoff=None):
-    if meanstress is not None:
-        raise DeprecationWarning(
-            "The argument `meanstress` is deprecated since Pastas 0.23. Please "
-            "use the new argument `gain_scale_factor` instead."
-        )
-    if cutoff is not None:
-        raise DeprecationWarning(
-            "The argument `cutoff` is deprecated since Pastas 0.23. Please "
-            "apply this directly to the response function (e.g., ps.Gamma(cutoff=0.99))"
-        )

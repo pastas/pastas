@@ -1,3 +1,22 @@
+"""This module contains a timer for model optimization.
+
+The timer prints the time elapsed and number of iterations. Optionally, a maximum solve
+time can be specified, to abort long optimizations. This class is not automatically
+imported in pastas and requires the tqdm module (pip install tqdm).
+
+Usage::
+
+    from pastas.timer import SolveTimer
+
+    with SolveTimer(max_time=60) as t:  # max time in seconds
+        ml.solve(callback=t.timer)
+
+This will print the following to the console::
+
+    Optimization progress: 73it [00:01, 67.68it/s]
+
+"""
+
 try:
     from tqdm.auto import tqdm
 except ModuleNotFoundError:
@@ -16,8 +35,8 @@ class ExceededMaxSolveTime(Exception):
 class SolveTimer(tqdm):
     """Progress indicator for model optimization.
 
-    Usage
-    -----
+    Examples
+    --------
     Print timer and number of iterations in console while running `ml.solve()`::
 
         with SolveTimer() as t:
@@ -33,8 +52,8 @@ class SolveTimer(tqdm):
         with SolveTimer(max_time=60) as t:
             ml.solve(callback=t.timer)
 
-    Note
-    ----
+    Notes
+    -----
     If the logger is also printing messages to the console the timer will not be
     updated quite as nicely.
     """

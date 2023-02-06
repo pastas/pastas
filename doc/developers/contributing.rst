@@ -11,7 +11,7 @@ to commit code changes to GitHub open source projects. Let's start!
 ------------------------
 Before you start you can start a GitHub Issue describing the changes you
 propose to make and why these are necessary. This is an easy way to inform
-the Pastas communnity in an early stage of any issues that needs to be solved
+the Pastas community in an early stage of any issues that needs to be solved
 and allows others to help you work out a solution.
 
 2. Fork Pastas
@@ -32,7 +32,7 @@ After you forked Pastas, you can start making changes to the code or add new
 features to it. To ensure high quality code that is easy to read and maintain
 we follow the `Black <https://black.readthedocs.io/en/stable/index.html>`_ code
 formatting standard. Check out the Pastas Code Style section to learn
-more.
+more about the formatting of code and docstrings.
 
 4. Test Code
 ------------
@@ -49,7 +49,8 @@ before the new code will be pulled into the dev branch. Documentation is
 created using `Sphinxdoc <http://www.sphinx-doc.org>`_. Docstrings within
 the method or class need to be written in `NumPy docformat <https://numpydoc
 .readthedocs.io/en/latest/format.html#docstring-standard>`_ to enable
-automatic documentation on this website.
+automatic documentation on this website. In the case of a new module, the module
+needs to be added to `index.rst` in the api-folder.
 
 A Jupyter Notebook explaining the use of your new code can be added the to
 examples folder. This Notebook will also be automatically converted and
@@ -65,13 +66,11 @@ checklist to go through to check if your PR is up to standards. Pastas will
 run automatic code tests to ensure that the code works, is documented and
 has a good code style.
 
-.. figure:: checklist.png
-    :figwidth: 300px
-
-.. figure:: automated_tests.png
-    :figwidth: 400px
-
+7. Share and enjoy your work!
+-----------------------------
 After you have create a Pull Request the Core Development Team will
 review your code and discuss potential improvements on GitHub before merging
 your code into the development branch. After a successful Pull Request your
-code will be included in the next release!
+code will be included in the next release of Pastas when the master-branch is
+updated. Congratulations, you are now officially a contributor to the Pastas
+project!

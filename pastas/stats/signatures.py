@@ -363,7 +363,7 @@ def colwell_contingency(
     method: str = "mean",
     normalize: bool = True,
 ) -> Tuple[float, float, float]:
-    """Colwell contingency :cite:t:`colwell_predictability_1974`
+    """Colwell's contingency :cite:t:`colwell_predictability_1974`
 
     Parameters
     ----------
@@ -852,7 +852,7 @@ def duration_curve_slope(
     series: pandas.Series
         Pandas Series with DatetimeIndex and head values.
     l: float
-        lower percentile, a float between 0 and 1, lower than u
+        lower percentile, a float between 0 and 1, lower than u.
     u: float, optional
         upper percentile, a float between 0 and 1, higher than l.
     normalize: bool, optional
@@ -889,7 +889,7 @@ def duration_curve_range(
     series: pandas.Series
         Pandas Series with DatetimeIndex and head values.
     l: float
-        lower percentile, a float between 0 and 1, lower than u
+        lower percentile, a float between 0 and 1, lower than u.
     u: float, optional
         upper percentile, a float between 0 and 1, higher than l.
     normalize: bool, optional
@@ -987,10 +987,10 @@ def _baseflow(series: Series, normalize: bool = True) -> Tuple[Series, Series]:
     if normalize:
         series = _normalize(series)
 
-    # A/B. Selecting minima hm over 5 day periods
+    # A/B. Selecting minima hm over 5-day periods
     hm = series.resample("5D").min().dropna()
 
-    # C. define the turning points ht (0.9 * head < adjacent heads)
+    # C. define the turning point ht (0.9 * head < adjacent heads)
     ht = pd.Series(dtype=float)
     for i, h in enumerate(hm.iloc[1:-1], start=1):
         if (h < hm.iloc[i - 1]) & (h < hm.iloc[i + 1]):

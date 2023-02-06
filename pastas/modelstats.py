@@ -29,7 +29,6 @@ from numpy import nan
 from pandas import DataFrame
 
 from pastas.typing import Model, TimestampType
-
 from .decorators import model_tmin_tmax
 from .stats import diagnostics, metrics
 
@@ -49,7 +48,7 @@ class Statistics:
     ]
 
     def __init__(self, ml: Model):
-        """This class provides statistics to to pastas Model class.
+        """This class provides statistics to pastas Model class.
 
         Parameters
         ----------

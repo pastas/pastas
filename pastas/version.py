@@ -1,9 +1,10 @@
 import logging
-from platform import python_version
 from importlib import import_module, metadata
+from platform import python_version
 
-__version__ = metadata.version("pastas")
 logger = logging.getLogger(__name__)
+
+__version__ = "1.0.0"
 
 
 def check_numba_scipy() -> bool:
@@ -26,13 +27,16 @@ def check_numba_scipy() -> bool:
     return True
 
 
-def show_versions(lmfit: bool = True) -> None:
+def show_versions(lmfit: bool = True, latexify: bool = True) -> None:
     """Method to print the version of dependencies.
 
     Parameters
     ----------
     lmfit: bool, optional
-        Print the version of LMfit. Needs to be installed.
+        Print the version of LMfit if installed.
+    latexify: bool, optional
+        Print the version of Latexify if installed.
+
     """
 
     msg = (
@@ -52,6 +56,14 @@ def show_versions(lmfit: bool = True) -> None:
         except ModuleNotFoundError:
             msg += "Not Installed"
 
-    msg += f"\nPastas version: {metadata.version('pastas')}"
+    if latexify:
+        msg += "\nLatexify version: "
+        try:
+            import_module("latexify")
+            msg += f"{metadata.version('latexify-py')}"
+        except ModuleNotFoundError:
+            msg += "Not Installed"
+
+    msg += f"\nPastas version: {__version__}"
 
     return print(msg)

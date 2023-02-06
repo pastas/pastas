@@ -43,7 +43,6 @@ from numpy import add, exp, float64, multiply, nan_to_num, power, vstack, where,
 from pandas import DataFrame
 
 from pastas.typing import ArrayLike
-
 from .decorators import njit
 
 logger = getLogger(__name__)
@@ -666,12 +665,7 @@ class Berendrecht(RechargeBase):
         ks: float = 50.0,
         dt: float = 1.0,
     ) -> Tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
-        """Internal method used for the recharge calculation.
-
-        Notes
-        -----
-        If Numba is available, this method is significantly faster.
-        """
+        """Internal method used for the recharge calculation."""
         n = prec.size
         # Create an empty arrays to store the fluxes and states
         pe = fi * prec  # Effective precipitation flux
@@ -805,12 +799,7 @@ class Peterson(RechargeBase):
         gamma: float = 1.0,
         dt: float = 1.0,
     ) -> Tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
-        """Internal method used for the recharge calculation.
-
-        Notes
-        -----
-        If Numba is available, this method is significantly faster.
-        """
+        """Internal method used for the recharge calculation."""
         n = len(prec)
         # Create an empty arrays to store the fluxes and states
         pe = zeros(n, dtype=float64)  # Effective precipitation flux

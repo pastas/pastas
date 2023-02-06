@@ -1,3 +1,5 @@
+"""This module contains tools for visually comparing multiple models.
+"""
 from itertools import combinations
 from typing import List, Optional, Tuple
 from warnings import warn
@@ -36,7 +38,7 @@ class CompareModels:
     Users can either use the default mosaic or provide their own.
 
     Additional logic is available to control plotting of multiple contributions of
-    stresses on the same set of axes. Additionally some helper methods are defined to
+    stresses on the same set of axes. Additionally, some helper methods are defined to
     obtain relevant information from the models passed to CompareModels.
 
     Example usage::
@@ -542,7 +544,7 @@ class CompareModels:
             in the first contribution window and 'rech' in the second. By default,
             None, which creates a separate subplot for each stressmodel.
         axn : str, optional
-            name of labeled axes to plot the contributions on, by default "con{i}". If
+            name of labeled axes to plot the contributions to, by default "con{i}". If
             smdict is not None, keys of that dictionary are used to fill in axes
             label, e.g. key 0 indicates the contributions will be plotted on axes
             with label 'con0'. Otherwise, each contribution will be plotted on a
@@ -820,7 +822,7 @@ class CompareModels:
         figsize : tuple, optional
             figure size, by default (10, 8).
         grid : bool, optional
-            grid in each subplots, by default True.
+            grid in each subplot, by default True.
         legend : bool, optional
             add legend in each subplot, by default True.
         adjust_height : bool, optional

@@ -7,13 +7,8 @@ import pandas as pd
 from pandas import Series
 from pandas.tseries.frequencies import to_offset
 
-from pastas.typing import Axes
-
 from .rcparams import rcParams
-from .timeseries_utils import (
-    _get_dt,
-    _get_time_offset,
-)
+from .timeseries_utils import _get_dt, _get_time_offset
 from .utils import validate_name
 
 logger = getLogger(__name__)
@@ -62,11 +57,7 @@ class TimeSeries:
         name: Optional[str] = None,
         settings: Optional[Union[str, dict]] = None,
         metadata: Optional[dict] = None,
-        **kwargs,  # TODO remove in Pastas 1.0
     ) -> None:
-        # First, deal with all deprecated features and raise errors
-        check_deprecated_input(series, settings, **kwargs)  # TODO remove in Pastas 1.0
-
         # Make sure we have a Pandas Series and not a 1D-DataFrame
         if isinstance(series, pd.DataFrame):
             if len(series.columns) == 1:
@@ -94,7 +85,7 @@ class TimeSeries:
         self._series = None  #
         self.freq_original = pd.infer_freq(self._series_original.index)
         self.settings = {
-            "freq": None,
+            "freq": self.freq_original,
             "sample_up": None,
             "sample_down": None,
             "fill_nan": "interpolate",
@@ -167,13 +158,6 @@ class TimeSeries:
             "series_original. Please set series_original to update the series."
         )
 
-    @property
-    def series_validated(self):
-        raise DeprecationWarning(
-            "TimeSeries objects no longer have a validated time series. Use the "
-            "_series_original instead."
-        )
-
     def update_series(self, force_update: bool = False, **kwargs) -> None:
         """Method to update the series with new options.
 
@@ -194,9 +178,8 @@ class TimeSeries:
             daily to weekly values). Possible values are: "mean", "drop", "sum",
             "min", "max".
         fill_nan: str or float, optional
-            Method to use when there ar nan-values in the time series.
-            Possible values are: "mean", "drop", "interpolate" (default) or a
-            float value.
+            Method to use when there ar nan-values in the time series. Possible
+            values are: "mean", "drop", "interpolate" (default) or a float value.
         fill_before: str or float, optional
             Method used to extend a time series before any measurements are
             available. possible values are: "mean" or a float value.
@@ -223,7 +206,10 @@ class TimeSeries:
 
             # Get the original series to start with
             series = self._series_original.copy(deep=True)
-            series = self._fill_nan(series)
+
+            # Only fill_nans if necessary
+            if series.hasnans:
+                series = self._fill_nan(series)
 
             # Update the series with the new settings
             series = self._change_frequency(series)
@@ -232,12 +218,6 @@ class TimeSeries:
             series.name = self._series_original.name
 
             self._series = series
-
-    def multiply(self, other: float) -> None:
-        raise DeprecationWarning(
-            "TimeSeries objects no longer have the multiply method. Provide a new "
-            "_series_original that is multiplied instead."
-        )
 
     def _update_settings(self, **kwargs) -> bool:
         """Internal method that check if an update is actually necessary.
@@ -266,7 +246,10 @@ class TimeSeries:
         # 1. If no freq string is present or is provided (e.g. Oseries)
         if not freq:
             return series
-        # 2. If new frequency is required (only up or down sampling allowed)
+        # 2. If new frequency is the same
+        elif freq == self.freq_original:
+            return series
+        # 3. If new frequency is required (only up or down sampling allowed)
         else:
             dt_new = _get_dt(freq)
             dt_org = _get_dt(self.freq_original)
@@ -278,10 +261,10 @@ class TimeSeries:
             elif dt_new > dt_org:
                 series = self._sample_down(series)
 
-        # Drop nan-values at the beginning and end of the time series
-        series = series.loc[series.first_valid_index() : series.last_valid_index()]
+            # Drop nan-values at the beginning and end of the time series
+            series = series.loc[series.first_valid_index() : series.last_valid_index()]
 
-        return series
+            return series
 
     def _sample_up(self, series: Series) -> Series:
         """Resample the time series when the frequency increases (e.g. from weekly to
@@ -289,10 +272,11 @@ class TimeSeries:
         method = self.settings["sample_up"]
         freq = self.settings["freq"]
 
+        success = True
         if method in ["backfill", "bfill", "pad", "ffill"]:
             series = series.asfreq(freq, method=method)
         elif method is None:
-            pass
+            success = False
         else:
             if method == "mean":
                 series = series.asfreq(freq).fillna(series.mean())
@@ -305,14 +289,17 @@ class TimeSeries:
             elif isinstance(method, float):
                 series = series.asfreq(freq).fillna(method)
             else:
-                logger.warning(
-                    "Time Series %s: User-defined option for sample_up %s is not "
-                    "supported",
-                    self.name,
-                    method,
-                )
+                success = False
 
-        logger.info("Time Series %s were sampled up using %s.", self.name, method)
+        if success:
+            logger.info("Time Series %s were sampled up using %s.", self.name, method)
+        else:
+            logger.warning(
+                "Time Series %s: User-defined option for sample_up %s is not "
+                "supported",
+                self.name,
+                method,
+            )
 
         return series
 
@@ -343,6 +330,7 @@ class TimeSeries:
         # Provide some standard pandas arguments for all options
         kwargs = {"label": "right", "closed": "right"}
 
+        success = True
         if method == "mean":
             series = series.resample(freq, **kwargs).mean()
         elif method == "drop":
@@ -354,6 +342,21 @@ class TimeSeries:
         elif method == "max":
             series = series.resample(freq, **kwargs).max()
         else:
+            success = False
+
+        # TODO: replace by adding offset to resample method with pandas 1.1.0
+        if self.settings["time_offset"] > pd.Timedelta(0):
+            # The offset is removed by the resample-method, so we add it again
+            series = series.shift(1, freq=self.settings["time_offset"])
+
+        if success:
+            logger.info(
+                "Time Series %s was sampled down to freq %s with method " "%s.",
+                self.name,
+                freq,
+                method,
+            )
+        else:
             logger.warning(
                 "Time Series %s: User-defined option for sample down %s is not "
                 "supported",
@@ -361,29 +364,16 @@ class TimeSeries:
                 method,
             )
 
-        # TODO: replace by adding offset to resample method with pandas 1.1.0
-        if self.settings["time_offset"] > pd.Timedelta(0):
-            # The offset is removed by the resample-method, so we add it again
-            series = series.shift(1, freq=self.settings["time_offset"])
-
-        logger.info(
-            "Time Series %s was sampled down to freq %s with method " "%s.",
-            self.name,
-            freq,
-            method,
-        )
-
         return series
 
     def _fill_nan(self, series: Series) -> Series:
         """Fill up the nan-values when present."""
 
         method = self.settings["fill_nan"]
-
         n = series.isnull().values.sum()
-        if n == 0:
-            pass
-        elif method == "drop":
+
+        success = True
+        if method == "drop":
             series = series.dropna()
         elif method == "mean":
             series = series.fillna(series.mean())
@@ -392,17 +382,19 @@ class TimeSeries:
         elif isinstance(method, float):
             series = series.fillna(method)
         else:
-            logger.warning(
-                "Time Series %s: User-defined option for fill_nan %s is not supported.",
-                self.name,
-                method,
-            )
+            success = False
 
-        if n > 0:
+        if success:
             logger.info(
                 "Time Series %s: %s nan-value(s) was/were found and filled with: %s.",
                 self.name,
                 n,
+                method,
+            )
+        else:
+            logger.warning(
+                "Time Series %s: User-defined option for fill_nan %s is not supported.",
+                self.name,
                 method,
             )
 
@@ -414,8 +406,13 @@ class TimeSeries:
         method = self.settings["fill_before"]
         tmin = self.settings["tmin"]
 
-        if tmin is None or method is None:
+        if tmin is None:
             pass
+        elif pd.Timestamp(tmin) > series.index.max():
+            logger.error(
+                "The tmin is later than the last value of the time series. Pastas "
+                "does not support this. Please extend time series manually."
+            )
         elif pd.Timestamp(tmin) >= series.index.min():
             series = series.loc[pd.Timestamp(tmin) :]
         else:
@@ -445,7 +442,7 @@ class TimeSeries:
                 )
             else:
                 logger.info(
-                    "Time Series %s: User-defined option for fill_before %s is not "
+                    "Time Series %s: User-defined option for fill_before '%s' is not "
                     "supported.",
                     self.name,
                     method,
@@ -459,8 +456,13 @@ class TimeSeries:
         method = self.settings["fill_after"]
         tmax = self.settings["tmax"]
 
-        if tmax is None or method is None:
+        if tmax is None:
             pass
+        elif pd.Timestamp(tmax) <= series.index.min():
+            logger.error(
+                "The tmax is before the first value of the time series. Pastas does "
+                "not support this. Please extend time series manually."
+            )
         elif pd.Timestamp(tmax) <= series.index.max():
             series = series.loc[: pd.Timestamp(tmax)]
         else:
@@ -490,7 +492,7 @@ class TimeSeries:
                 )
             else:
                 logger.info(
-                    "Time Series %s: User-defined option for fill_after %s is not "
+                    "Time Series %s: User-defined option for fill_after '%s' is not "
                     "supported",
                     self.name,
                     method,
@@ -525,43 +527,6 @@ class TimeSeries:
         data["metadata"] = self.metadata
 
         return data
-
-    def plot(self, original: bool = False, **kwargs) -> Axes:
-        raise DeprecationWarning(
-            "The plot method is deprecated since 0.23 and will be removed in Pastas "
-            "1.0. Use the series.plot function from Pandas instead."
-        )
-
-
-def check_deprecated_input(series, settings, **kwargs):
-    """Method to check input data for Pastas version 0.23 and raise errors.
-
-    Parameters
-    ----------
-    series: pandas.Series
-    settings: dict
-
-    """
-    if "freq_original" in kwargs.keys():
-        raise DeprecationWarning(
-            "Freq_original is no longer supported. Please provide an equidistant "
-            "time series."
-        )
-
-    if isinstance(series, TimeSeries):
-        raise DeprecationWarning(
-            "TimeSeries are no longer allowed as input for to create new "
-            "TimeSeries objects. Please use the original pandas.Series object "
-            "and provide the settings and name."
-        )
-
-    if isinstance(settings, dict):
-        for key in settings.keys():
-            if key in ["norm"]:
-                raise DeprecationWarning(
-                    "Key %s is no longer supported. Please remove this keyword from "
-                    "the settings dictionary."
-                )
 
 
 def validate_stress(series: Series):

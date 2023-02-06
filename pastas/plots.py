@@ -37,9 +37,9 @@ def compare(models: List[Model], adjust_height: bool = True, **kwargs) -> Axes:
         Adjust the height of the graphs, so that the vertical scale of all the
         subplots on the left is equal. Default is False, in which case the axes are
         not rescaled to include all data, so certain data might not be visible. Set
-        to False to ensure you can see all data.
+        False to ensure you can see all data.
     **kwargs
-        Kwargs are passed to the CompareModels.plot() function.
+        The kwargs are passed to the CompareModels.plot() function.
 
     Returns
     -------
