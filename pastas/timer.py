@@ -2,7 +2,7 @@
 
 The timer prints the time elapsed and number of iterations. Optionally, a maximum solve
 time can be specified, to abort long optimizations. This class is not automatically
-imported in pastas and requires the tqdm module (pip install tqdm). 
+imported in pastas and requires the tqdm module (pip install tqdm).
 
 Usage::
 

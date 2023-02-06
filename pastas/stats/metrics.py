@@ -601,11 +601,10 @@ def _compute_err(
     elif res is not None:
         err = -res
     else:
-        logger.error(
-            "Either the residuals, or the simulation and observations have to be "
-            "provided. Please provide one of these two input options."
-        )
-        return
+        msg = ("Either the residuals, or the simulation and observations have to be "
+            "provided. Please provide one of these two input options.")
+        logger.error(msg)
+        raise ValueError(msg)
 
     if missing == "drop":
         err = err.dropna()
