@@ -33,7 +33,7 @@ class Plotting:
     a model. For example, if we stored a :class:`pastas.model.Model` instance in the
     variable `ml`, the plot methods are available as follows::
 
-    >>> ml.plot.results()
+    >>> ml.plots.results()
     """
 
     def __init__(self, ml: Model) -> None:
