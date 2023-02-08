@@ -69,9 +69,9 @@ rtd = [
     "numpydoc",
     "sphinx-design",
 ]
-dev = ["tox", "pastas[formatting,linting,ci,rtd]"]
+workshop = ["pastas[full]", "hydropandas>=0.7.0", "jupyterlab"]
+dev = ["tox", "pastas[formatting,linting,ci,rtd,full]"]
 numbascipy = ["numba-scipy >= 0.3.1"]
-
 
 [tool.setuptools.dynamic]
 version = { attr = "pastas.version.__version__" }
