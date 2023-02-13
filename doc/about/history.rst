@@ -22,7 +22,7 @@ international journal Groundwater :cite:p:`collenteur_pastas_2019`. In addition,
 and now the Swiss research institute Eawag employed one of the maintainers, further pushing the international use and
 development of Pastas. Since its inception, Pastas has been applied in over a dozen countries worldwide. Supporting
 international research continues to be an important goal of Pastas. For a list of peer-reviewed publications using
-Pastas please see the :doc:`Publications page <05_publications>`.
+Pastas please see the :doc:`Publications page <publications>`.
 
 Pastas 1.0
 ----------
