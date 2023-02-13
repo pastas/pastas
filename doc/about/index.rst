@@ -23,6 +23,7 @@ and their real-world applications.
 
     history
     team
+    organisation
     citing
     courses
     publications
