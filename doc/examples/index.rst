@@ -94,3 +94,15 @@ Applications
 
 .. _Standardized Groundwater Index: 18_sgi_example.ipynb
 .. _Groundwater signatures: 19_signatures.ipynb
+
+
+STOWA Manual (Dutch only)
+-------------------------
+
+In 2021 the STOWA published a manual on time series analysis. This manual has
+some general notebooks on preprocessing data, model structure, calibration and
+assessment with Pastas. There are also more case-specific notebooks available
+on determining stresses, characteristics, system analysis and predicting. The
+notebooks (currently Dutch only) can be found `here
+<https://github.com/ArtesiaWater/stowa_handleiding_tijdreeksanalyse>`_.
+
