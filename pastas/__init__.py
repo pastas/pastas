@@ -26,7 +26,7 @@ from .rfunc import (
     Polder,
     Spline,
 )
-from .solver import LeastSquares, LmfitSolve, DREAMSolve
+from .solver import LeastSquares, LmfitSolve, SpotpySolve
 from .stressmodels import (
     ChangeModel,
     Constant,

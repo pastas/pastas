@@ -17,11 +17,7 @@ from typing import Optional, Tuple, Union
 import numpy as np
 from pandas import DataFrame, Series
 from scipy.linalg import svd
-import spotpy
 from scipy.optimize import least_squares
-from spotpy.parameter import Uniform, Normal
-from spotpy.likelihoods import logLikelihood, gaussianLikelihoodMeasErrorOut
-from spotpy.objectivefunctions import rmse
 
 from pastas.typing import ArrayLike, CallBack, Function, Model
 
@@ -663,94 +659,122 @@ class LmfitSolve(BaseSolver):
         return self.misfit(p=p, noise=noise, weights=weights, callback=callback)
 
 
-class spot_setup(object):
-    def __init__(self, ml, params, obj_func=None):
-        # Just a way to keep this example flexible and applicable to various examples
-        self.ml = ml
-        self.obj_func = obj_func
-        self.params = params
-
-    def parameters(self):
-        pars = []
-        for par in self.params.index:
-            pars.append(
-                Normal(par, mean=self.params.loc[par, "optimal"],
-                           stddev=self.params.loc[par, "stderr"]))
-        return spotpy.parameter.generate(pars)
-
-    def simulation(self, x):
-        # Here the model is actualy started with a unique parameter combination that it gets from spotpy for each time the model is called
-        prs = [x[0], x[1], x[2], x[3], x[4]]
-        return self.ml.simulate(prs)
-
-    def evaluation(self):
-        return self.ml.observations()
-
-    def objectivefunction(self, simulation, evaluation):
-        if self.obj_func is not None:
-            like = self.obj_func(evaluation, simulation.loc[evaluation.index])
-        else:
-            like = -rmse(evaluation, simulation.loc[evaluation.index])
-
-        return like
-
-class DREAMSolve(BaseSolver):
-    _name = "DREAMSolve"
+class SpotpySolve(BaseSolver):
+    _name = "SpotpySolve"
 
     def __init__(
-        self, params
-    ) -> None:
-        """Solving the model using the DREAM.
+        self, algorithm=None, obj_func=None, dbformat="csv", dbname="spotpy", **kwargs
+    ):
+        """Solver based on Spotpy :cite:p:`houska_spotting_2015`.
 
-         This is basically a wrapper around the scipy solvers, adding some cool
-         functionality for boundary conditions.
+        Parameters
+        ----------
+        algorithm
+        obj_func
+        **kwargs
 
         Notes
         -----
-        https://github.com/lmfit/lmfit-py/
+
+
+        Examples
+        --------
+
+        >>> ml.solve(solver=ps.SpotpySolve())
+
+        References
+        ----------
+        https://spotpy.readthedocs.io/en/latest/
+
         """
+        # Check if spotpy is installed, if not, return error
         try:
-            global lmfit
-            import lmfit as lmfit  # Import Lmfit here, so it is no dependency
+            global spotpy
+            import spotpy as spotpy  # Import spotpy here, so it is no dependency
         except ImportError:
-            msg = "lmfit not installed. Please install lmfit first."
+            msg = "spotpy not installed. Please install spotpy first."
             raise ImportError(msg)
         BaseSolver.__init__(self)
-        self.params = params
+
+        BaseSolver.__init__(self, pcov=None, nfev=None, **kwargs)
+        self.objective_function = obj_func
+        self.obj_func = np.nan
+        self.nfev = np.nan
+        self.dbformat = dbformat
+        self.dbname = dbname
+        self.sampler = None
+
+        # Set the algorithm
+        if algorithm is None:
+            algorithm = spotpy.algorithms.dream
+
+        self.algorithm = algorithm
 
     def solve(
         self,
         noise: bool = True,
         weights: Optional[Series] = None,
         callback: Optional[CallBack] = None,
-        method: Optional[str] = "DREAM",
         **kwargs,
     ) -> Tuple[bool, ArrayLike, ArrayLike]:
-        # Select number of maximum repetitions
-        rep = 50000
 
-        # Select five chains and set the Gelman-Rubin convergence limit
-        nChains = 7
-        convergence_limit = 1.2
+        if callback is not None:
+            logger.error("Callback is not (yet) supported with this solver.")
 
-        # Other possible settings to modify the DREAM algorithm, for details see Vrugt (2016)
-        nCr = 3
-        eps = 10e-6
-        runs_after_convergence = 1000
-        acceptance_test_option = 6
-        sampler = spotpy.algorithms.dream(spot_setup(self.ml, self.params), dbname="dream",
-                                          dbformat="csv", save_sim=False)
-        r_hat = sampler.sample(rep,
-                               runs_after_convergence=runs_after_convergence)
+        # Set all optimization attributes
+
+        # Create sampler
+        self.sampler = self.algorithm(
+            self, dbname=self.dbname, dbformat=self.dbformat, save_sim=False
+        )
+
+        # Sample
+        _ = self.sampler.sample(**kwargs)
+
         # Import results
-        results = spotpy.analyser.load_csv_results('dream')[-1000:]
+        self.result = spotpy.analyser.load_csv_results(self.dbname)[-1000:]
+
         # Get Optimal Values
-        opt = list(results[results["like1"].argmax()])[1:-1]
-        self.ml.simulate(opt)
-        success = True
+        opt = list(self.result[self.result["like1"].argmax()])[1:-1]
+
+        if hasattr(self.result, "success"):
+            success = self.result.success
+        else:
+            success = True
+
         # Get Standard Deviation
         std_err = []
-        for name in results.dtype.names[1:-1]:
-            std_err.append(results[name].std())
+        for name in self.result.dtype.names[1:-1]:
+            std_err.append(self.result[name].std())
         return success, np.array(opt), np.array(std_err)
 
+    def parameters(self):
+        """Method required for SpotPy."""
+        pars = []
+        for par in self.ml.parameters.index:
+            pars.append(
+                spotpy.parameter.Normal(
+                    par,
+                    mean=self.ml.parameters.loc[par, "optimal"],
+                    stddev=self.ml.parameters.loc[par, "stderr"],
+                )
+            )
+        return spotpy.parameter.generate(pars)
+
+    def simulation(self, p):
+        """Method required for SpotPy."""
+        return self.ml.simulate(p)
+
+    def evaluation(self):
+        """Method required for SpotPy."""
+        return self.ml.observations()
+
+    def objectivefunction(self, simulation, evaluation):
+        """Method required for SpotPy."""
+        if self.objective_function is not None:
+            like = self.objective_function(evaluation, simulation.loc[evaluation.index])
+        else:
+            rmse = spotpy.objectivefunctions.rmse
+            like = -rmse(evaluation, simulation.loc[evaluation.index])
+
+        return like

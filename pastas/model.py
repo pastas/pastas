@@ -1167,6 +1167,7 @@ class Model:
         if not initial:
             parameters.initial.update(self.parameters.optimal)
             parameters.optimal.update(self.parameters.optimal)
+            parameters.stderr.update(self.parameters.stderr)
 
         return parameters
 
