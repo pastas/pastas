@@ -882,7 +882,7 @@ class Plotting:
 
                 # add stacked plot to correct axes
                 ax = axes[i - 1]
-                del ax.lines[0]  # delete existing line
+                ax.lines[0].remove()  # delete existing line
 
                 contrib = [c[1] for c in contributions]  # get time series
                 vstack = concat(contrib, axis=1, sort=False)
