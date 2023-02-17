@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import LogFormatter, MultipleLocator
-from pandas import Series, concat
+from pandas import Series, concat, Timestamp
 
 from pastas.typing import Axes, Figure, Model, TimestampType
 
@@ -102,6 +102,11 @@ class Plotting:
             sim.plot(ax=ax, label=f"{sim.name} ($R^2$ = {r2}%)")
 
         # Dress up the plot
+        # temporary fix, as set_xlim currently does not work with strings mpl=3.6.1
+        if tmin is not None:
+            tmin = Timestamp(tmin)
+        if tmax is not None:
+            tmax = Timestamp(tmax)
         ax.set_xlim(tmin, tmax)
         ax.set_ylabel("Groundwater levels [meter]")
         ax.set_title("Results of {}".format(self.ml.name))
@@ -282,6 +287,12 @@ class Plotting:
 
         # xlim sets minorticks back after plots:
         ax1.minorticks_off()
+
+        # temporary fix, as set_xlim currently does not work with strings mpl=3.6.1
+        if tmin is not None:
+            tmin = Timestamp(tmin)
+        if tmax is not None:
+            tmax = Timestamp(tmax)
 
         if return_warmup:
             ax1.set_xlim(tmin - self.ml.settings["warmup"], tmax)
@@ -474,6 +485,11 @@ class Plotting:
             ax.grid(True)
             ax.minorticks_off()
         if set_axes_properties:
+            # temporary fix, as set_xlim currently does not work with strings mpl=3.6.1
+            if tmin is not None:
+                tmin = Timestamp(tmin)
+            if tmax is not None:
+                tmax = Timestamp(tmax)
             axes[0].set_xlim(tmin, tmax)
         fig.tight_layout(pad=0.0)
 
