@@ -431,6 +431,16 @@ class TimeSeries:
                     series.index.min(),
                     mean_value,
                 )
+            elif method == "bfill":
+                first_value = series.loc[series.first_valid_index()]
+                series = series.fillna(method="bfill")  # Default option
+                logger.info(
+                    "Time Series %s was extended in the past to %s with the first "
+                    "value (%.2g) of the time series.",
+                    self.name,
+                    series.index.min(),
+                    first_value,
+                )
             elif isinstance(method, float):
                 series = series.fillna(method)
                 logger.info(
@@ -480,6 +490,16 @@ class TimeSeries:
                     self.name,
                     series.index.max(),
                     mean_value,
+                )
+            elif method == "ffill":
+                last_value = series.loc[series.last_valid_index()]
+                series = series.fillna(method="ffill")
+                logger.info(
+                    "Time Series %s was extended in the future to %s with the last "
+                    "value (%.2g) of the time series.",
+                    self.name,
+                    series.index.max(),
+                    last_value,
                 )
             elif isinstance(method, float):
                 series = series.fillna(method)
