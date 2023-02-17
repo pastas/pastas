@@ -6,7 +6,7 @@ import logging
 from typing import Optional
 
 import numpy as np
-from pandas import Index, Series, Timedelta, Timestamp, api, date_range
+from pandas import Index, Series, Timedelta, Timestamp, api, date_range, infer_freq
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
 
@@ -82,13 +82,15 @@ def _get_stress_dt(freq: str) -> float:
     See http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
     for the offset_aliases supported by Pandas.
     """
+    if freq is None:
+        return None
     # Get the frequency string and multiplier
     offset = to_offset(freq)
     if hasattr(offset, "delta"):
         dt = offset.delta / Timedelta(1, "D")
     else:
         num = offset.n
-        freq = offset.name
+        freq = offset._prefix
         if freq in ["A", "Y", "AS", "YS", "BA", "BY", "BAS", "BYS"]:
             # year
             dt = num * 365
@@ -152,6 +154,34 @@ def _get_time_offset(t: Timestamp, freq: str) -> Timedelta:
         raise TypeError("frequency is None")
 
     return t - t.floor(freq)
+
+
+def _infer_fixed_freq(tindex: Index) -> str:
+    """Internal method to get the frequency string.
+
+    This methods avoids returning anchored offsets, e.g.
+    'W-TUE' will return 7D.
+
+    Parameters
+    ----------
+    tindex : Index
+        DateTimeIndex
+
+    Returns
+    -------
+    str
+        frequency string
+    """
+    freq = infer_freq(tindex)
+    if freq is None:
+        return freq
+    else:
+        offset = to_offset(freq)
+        if to_offset(offset.rule_code).is_anchored():
+            dt = _get_stress_dt(freq)
+            return f"{dt}D"
+        else:
+            return freq
 
 
 def get_sample(tindex: Index, ref_tindex: Index) -> Index:
