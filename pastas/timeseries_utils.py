@@ -355,9 +355,7 @@ def get_equidistant_series_nearest(
     """
 
     # build new equidistant index
-    idx = date_range(
-        series.index[0].floor(freq), series.index[-1].ceil(freq), freq=freq
-    )
+    idx = date_range(series.index[0], series.index[-1], freq=freq)
 
     # get linear interpolated index from original series
     fl = interpolate.interp1d(
