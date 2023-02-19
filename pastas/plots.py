@@ -56,6 +56,7 @@ def series(
     stresses: Optional[List[Series]] = None,
     hist: bool = True,
     kde: bool = False,
+    table: bool = False,
     titles: bool = True,
     tmin: Optional[TimestampType] = None,
     tmax: Optional[TimestampType] = None,
@@ -72,11 +73,13 @@ def series(
         List with Pandas time series with DatetimeIndex.
     hist: bool
         Histogram for the series. The number of bins is determined with Sturges rule.
-        Returns the number of observations, mean, skew and kurtosis.
     kde: bool
         Kernel density estimate for the series. The kde is obtained from
         scipy.gaussian_kde using scott to calculate the estimator bandwidth. Returns
         the number of observations, mean, skew and kurtosis.
+    table: bool
+        Show table with some basic statistics such as the number of
+        observations, mean, skew and kurtosis.
     titles: bool
         Set the titles or not. Taken from the name attribute of the series.
     tmin: str or pd.Timestamp
@@ -102,11 +105,16 @@ def series(
     sharex = True
     gridspec_kw = {}
     cols = 1
+    if table == True and hist == False or kde == False:
+        hist = True
     if hist or kde:
         sharex = False
-        gridspec_kw["width_ratios"] = (3, 1, 1)
-        cols = 3
-    _, axes = plt.subplots(
+        gridspec_kw["width_ratios"] = [3, 1]
+        cols += 1
+        if table:
+            cols += 1
+            gridspec_kw["width_ratios"].append(1)
+    fig, axes = plt.subplots(
         rows,
         cols,
         figsize=figsize,
@@ -162,7 +170,7 @@ def series(
             else:
                 colour = "k"
             axes[0, 1].plot(gkde.evaluate(ind), ind, color=colour)
-        if hist or kde:
+        if table:
             # stats table
             head_stats = [
                 ["Count", f"{head.count():0.0f}"],
@@ -217,7 +225,7 @@ def series(
                 else:
                     colour = "k"
                 axes[i, 1].plot(gkde.evaluate(ind), ind, color=colour)
-            if hist or kde:
+            if table:
                 if i > 0:
                     axes[i, 0].sharex(axes[0, 0])
                 # stats table
@@ -234,7 +242,7 @@ def series(
     axes[0, 0].set_xlim([tmin, tmax])
     axes[0, 0].minorticks_off()
 
-    plt.tight_layout()
+    fig.tight_layout()
     return axes
 
 
