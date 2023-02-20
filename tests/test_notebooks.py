@@ -26,8 +26,8 @@ def test_notebook(file) -> None:
 
     os.chdir(pathname)
     if file not in [
-        "00_prepare_timeseries.ipynb",
-        "12_emcee_uncertainty.ipynb",
+        "prepare_timeseries.ipynb",
+        "emcee_uncertainty.ipynb",
     ]:
         try:
             # run autotest on each notebook
