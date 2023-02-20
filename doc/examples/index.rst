@@ -24,7 +24,7 @@ on the `examples directory on GitHub <https://github.com/pastas/pastas/tree/mast
     recharge_estimation
     snowmodel
     comparing_models
-    diagnostics_checking
+    diagnostic_checking
     timestep_analysis
     uncertainty
     uncertainty_emcee
@@ -90,7 +90,7 @@ Model Evaluation
 
 `Comparing models visually`_
 
-`Diagnostics checking`_
+`Diagnostic checking`_
 
 `Reducing autocorrelation`_
 
