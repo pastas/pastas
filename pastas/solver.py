@@ -663,7 +663,14 @@ class SpotpySolve(BaseSolver):
     _name = "SpotpySolve"
 
     def __init__(
-        self, algorithm=None, obj_func=None, dbformat="csv", dbname="spotpy", **kwargs
+        self,
+        algorithm=None,
+        obj_func=None,
+        dbformat="csv",
+        dbname="spotpy",
+        parallel=True,
+        maximize=True,
+        **kwargs,
     ):
         """Solver based on Spotpy :cite:p:`houska_spotting_2015`.
 
@@ -703,6 +710,8 @@ class SpotpySolve(BaseSolver):
         self.dbformat = dbformat
         self.dbname = dbname
         self.sampler = None
+        self.maximize = maximize
+        self.parallel = parallel
 
         # Set the algorithm
         if algorithm is None:
@@ -717,11 +726,11 @@ class SpotpySolve(BaseSolver):
         callback: Optional[CallBack] = None,
         **kwargs,
     ) -> Tuple[bool, ArrayLike, ArrayLike]:
-
         if callback is not None:
             logger.error("Callback is not (yet) supported with this solver.")
 
-        # Set all optimization attributes
+        self.vary = self.ml.parameters.vary.values.astype(bool)
+        self.initial = self.ml.parameters.initial.values.copy()
 
         # Create sampler
         self.sampler = self.algorithm(
@@ -729,29 +738,32 @@ class SpotpySolve(BaseSolver):
         )
 
         # Sample
-        _ = self.sampler.sample(**kwargs)
+        self.r_hat = self.sampler.sample(**kwargs)
 
         # Import results
-        self.result = spotpy.analyser.load_csv_results(self.dbname)[-1000:]
+        self.result = self.sampler.getdata()
 
-        # Get Optimal Values
-        opt = list(self.result[self.result["like1"].argmax()])[1:-1]
+        # Get Optimal Values and Standard Deviations
+        optimal = self.initial
 
-        if hasattr(self.result, "success"):
-            success = self.result.success
+        if self.maximize:
+            optimal[self.vary] = list(self.result[self.result["like1"].argmax()])[1:-1]
         else:
-            success = True
+            optimal[self.vary] = list(self.result[self.result["like1"].argmin()])[1:-1]
 
-        # Get Standard Deviation
         std_err = []
         for name in self.result.dtype.names[1:-1]:
             std_err.append(self.result[name].std())
-        return success, np.array(opt), np.array(std_err)
+        stderr = np.zeros(len(optimal)) * np.nan
+        stderr[self.vary] = np.array(std_err)
+
+        success = True
+        return success, optimal, stderr
 
     def parameters(self):
         """Method required for SpotPy."""
         pars = []
-        for par in self.ml.parameters.index:
+        for par in self.ml.parameters.index[self.vary]:
             pars.append(
                 spotpy.parameter.Normal(
                     par,
@@ -763,7 +775,9 @@ class SpotpySolve(BaseSolver):
 
     def simulation(self, p):
         """Method required for SpotPy."""
-        return self.ml.simulate(p)
+        par = self.initial
+        par[self.vary] = p
+        return self.ml.simulate(par)
 
     def evaluation(self):
         """Method required for SpotPy."""
