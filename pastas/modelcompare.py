@@ -512,6 +512,8 @@ class CompareModels:
                         continue
                     if response == "step":
                         step = ml.get_step_response(smn, add_0=True)
+                        if step is None:
+                            continue
                         self.axes[axn.format(i=j)].plot(
                             step.index,
                             step.values,
@@ -520,6 +522,8 @@ class CompareModels:
                         )
                     elif response == "block":
                         block = ml.get_block_response(smn)
+                        if block is None:
+                            continue
                         self.axes[axn.format(i=j)].semilogx(
                             block.index,
                             block.values,
