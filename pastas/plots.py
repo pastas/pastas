@@ -231,6 +231,12 @@ def series(
                     bbox=(0, 0, 1, 1), colWidths=(1.5, 1), cellText=stress_stats
                 )
                 axes[i, 2].axis("off")
+
+    # temporary fix, as set_xlim currently does not work with strings mpl=3.6.1
+    if tmin is not None:
+        tmin = Timestamp(tmin)
+    if tmax is not None:
+        tmax = Timestamp(tmax)
     axes[0, 0].set_xlim([tmin, tmax])
     axes[0, 0].minorticks_off()
 
