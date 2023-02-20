@@ -45,6 +45,7 @@ project? Check out the :doc:`Developers <developers/index>` section.
 
     .. grid-item-card:: More Pastas
         :link: about/organisation
+        :link-type: doc
 
         Find out more useful resources developed by the Pastas community!
 
