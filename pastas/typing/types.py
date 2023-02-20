@@ -26,14 +26,13 @@ if TYPE_CHECKING:  # https://mypy.readthedocs.io/en/latest/runtime_troubles.html
 # Internal Types
 TimestampType = TypeVar("TimestampType", bound=Union[str, Timestamp])  # Tmin or Tmax
 Model = TypeVar("Model", bound="ps.Model")  # Model
-TimeSeries = TypeVar("TimeSeries", bound="ps.TimeSeries")  # Time Series
+TimeSeries = TypeVar("TimeSeries", bound="ps.timeseries.TimeSeries")  # Time Series
 StressModel = TypeVar(
     "StressModel", bound="ps.stressmodels.StressModelBase"
 )  # Stress Model
 NoiseModel = TypeVar("NoiseModel", bound="ps.noisemodels.NoiseModelBase")  # Noise Model
 Solver = TypeVar("Solver", bound="ps.solver.BaseSolver")  # Base Solver
 Recharge = TypeVar("Recharge", bound="ps.recharge.RechargeBase")  # Recharge Base
-Reservoir = TypeVar("Reservoir", bound="ps.reservoir.ReservoirBase")  # Reservoir Base
 CallBack = TypeVar("CallBack", bound=Any)  # Callback
 Function = Callable[..., Any]  # Function (e.g. Objective Function)
 RFunc = TypeVar("RFunc", bound="ps.rfunc.RfuncBase")  # rFunc Base
