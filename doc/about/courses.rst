@@ -1,5 +1,5 @@
 Courses
-===============
+=======
 
 Every now and then (on-site) Pastas courses and workshops are held. Please check the `GitHub Discussion <https://github
 .com/pastas/pastas/discussions>`_ page for announcements of any public Pastas courses to be held. We can also provide
