@@ -26,5 +26,6 @@ and their real-world applications.
     organisation
     citing
     courses
+    users
     publications
     references

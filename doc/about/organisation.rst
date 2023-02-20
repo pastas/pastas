@@ -23,3 +23,9 @@ While Pastas can only do univariate time series analysis, `Metran
 analysis using a technique called dynamic factor modelling. It can be used to
 describe the variation among many variables in terms of a few underlying but
 unobserved variables called factors.
+
+Related packages
+----------------
+
+There are also `related packages <related.rst>`_  which are not part of the
+Pastas organisation but depend on Pastas can be of interest for users.
