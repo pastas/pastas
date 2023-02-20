@@ -7,7 +7,6 @@ import pastas.plots as plots
 import pastas.recharge as rch
 import pastas.stats as stats
 import pastas.timeseries_utils as ts
-
 from .decorators import set_use_numba
 from .model import Model
 from .modelcompare import CompareModels
@@ -26,7 +25,7 @@ from .rfunc import (
     Polder,
     Spline,
 )
-from .solver import LeastSquares, LmfitSolve
+from .solver import LeastSquares, LmfitSolve, EmceeSolve
 from .stressmodels import (
     ChangeModel,
     Constant,

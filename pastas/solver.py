@@ -657,3 +657,246 @@ class LmfitSolve(BaseSolver):
     ) -> ArrayLike:
         p = np.array([p.value for p in parameters.values()])
         return self.misfit(p=p, noise=noise, weights=weights, callback=callback)
+
+
+class EmceeSolve(BaseSolver):
+    _name = "EmceeSolve"
+
+    def __init__(
+        self,
+        obj_func=None,
+        nwalkers=20,
+        backend=None,
+        moves=None,
+        parallel=False,
+        progress_bar=True,
+        **kwargs,
+    ):
+        """Solver based on Spotpy :cite:p:`foreman-mackey_emcee_2013`.
+
+        Parameters
+        ----------
+        obj_func: func
+            NotImplemented Yet!
+        nparam: int
+            Number of parameters added by the likelihood function.
+        nwalkers: int, optional
+            Number of walkers to use.
+        backend: emcee.backend
+            One of the Backend from Emcee.
+        moves: emcee.moves
+            One of the Moves class from Emcee.
+        parallel: bool, optional
+            Run the sampler in parallel or not.
+        progress_bar: bool, optional
+            Show the progress bar or not. Requires the `tqdm` package to be installed.
+        **kwargs
+
+        Notes
+        -----
+
+
+        Examples
+        --------
+
+        >>> ml.solve(solver=ps.SpotpySolve())
+
+        References
+        ----------
+        https://emcee.readthedocs.io/en/stable/
+
+        """
+        # Check if emcee is installed, if not, return error
+        try:
+            global emcee
+            import emcee as emcee  # Import emcee here, so it is no dependency
+        except ImportError:
+            msg = "emcee not installed. Please install emcee first."
+            raise ImportError(msg)
+
+        BaseSolver.__init__(self, pcov=None, nfev=None, **kwargs)
+
+        # Set Attributes
+        self.obj_func = np.nan
+        self.nfev = np.nan
+
+        # Set sampler properties
+        self.sampler = None
+        self.parallel = parallel
+        self.backend = backend
+        self.moves = moves
+        self.progress_bar = progress_bar
+        self.nwalkers = nwalkers
+
+        # First attempt to make a customizable likelihood function
+        if obj_func is None:
+            obj_func = self.default_likelihood
+        self.objective_function = obj_func
+
+    def solve(
+        self,
+        noise: bool = True,
+        weights: Optional[Series] = None,
+        steps=5000,
+        callback: Optional[CallBack] = None,
+        **kwargs,
+    ) -> Tuple[bool, ArrayLike, ArrayLike]:
+        # Store initial parameters and bounds
+        self.vary = self.ml.parameters.vary.values.astype(bool)
+        self.initial = self.ml.parameters.initial.values.copy()
+
+        lb = np.append(self.ml.parameters[self.vary].pmin.values, 0)
+        ub = np.append(self.ml.parameters[self.vary].pmax.values, 10)
+        self.bounds = np.vstack([lb, ub]).T
+
+        # Add the parameter of the likelihood function here?
+        pinit = np.append(self.ml.parameters[self.vary].optimal.values, 0.001)
+        ndim = pinit.size
+        pinit = pinit + 1e-2 * np.random.randn(self.nwalkers, ndim)
+
+        # Create sampler
+
+        # Sample
+        if self.parallel:
+            logger.info("Going into the parallel universe")
+            from multiprocessing import get_context
+
+            with get_context("fork").Pool(16) as pool:
+                self.sampler = emcee.EnsembleSampler(
+                    nwalkers=self.nwalkers,
+                    ndim=ndim,
+                    log_prob_fn=self.log_probability,
+                    moves=self.moves,
+                    backend=self.backend,
+                    pool=pool,
+                    args=(noise, weights, callback),
+                )
+
+                self.sampler.run_mcmc(
+                    pinit, steps, progress=self.progress_bar, **kwargs
+                )
+        else:
+            self.sampler = emcee.EnsembleSampler(
+                nwalkers=self.nwalkers,
+                ndim=ndim,
+                log_prob_fn=self.log_probability,
+                moves=self.moves,
+                backend=self.backend,
+                pool=None,
+                args=(noise, weights, callback),
+            )
+
+            self.sampler.run_mcmc(pinit, steps, progress=self.progress_bar, **kwargs)
+
+        # Import results
+        self.result = self.sampler.get_chain()
+
+        # Get Optimal Values and Standard Deviations
+        optimal = self.initial.copy()
+        chains = self.sampler.get_chain(discard=0, flat=True, thin=1)
+        optimal[self.vary] = chains[self.sampler.get_log_prob().argmax()][:-1]
+
+        # Don't estimate stderr for now
+        stderr = np.zeros(len(self.vary)) * np.nan
+
+        success = True
+        return success, optimal, stderr
+
+    def log_probability(self, p, noise, weights, callback):
+        """Full log-probability
+
+        Parameters
+        ----------
+        p
+        noise
+        weights
+        callback
+
+        Returns
+        -------
+
+        """
+        lp = self.log_prior(p)
+
+        # This will occur if the parameters are outside the boundaries
+        if not np.isfinite(lp):
+            return -np.inf
+
+        return lp + self.log_likelihood(
+            p, noise=noise, weights=weights, callback=callback
+        )
+
+    def log_likelihood(
+        self, p: ArrayLike, noise: bool, weights: Series, callback: CallBack
+    ) -> ArrayLike:
+        """Log-likelihood function called by Emcee.
+
+        Parameters
+        ----------
+        p
+        noise
+        weights
+        callback
+
+        Returns
+        -------
+        lnlike: float
+            The log-likelihood for the parameters.
+
+        Notes
+        -----
+        This method is always called by emcee.
+
+
+        """
+        par = self.initial
+        par[self.vary] = p[:-1]
+        rv = self.misfit(p=par, noise=noise, weights=weights, callback=callback)
+
+        lnlike = self.objective_function(rv, p)
+
+        return lnlike
+
+    def log_prior(self, p):
+        """Probability of parameter set given the priors.
+
+        Parameters
+        ----------
+        p: numpy.Array
+            Numpy array with the parameters
+
+        Returns
+        -------
+        lp: float
+            Probability of parameter set given the priors
+
+        Notes
+        -----
+        Two cases exist:
+
+        - If any of the parameters touch the boundary, -np.inf is returned. This
+          basically tells the algorithm that the parameter set is very unlikely.
+        - Otherwise, the probability of each parameter given its prior is computed.
+
+        """
+        if np.any(p < self.bounds[:, 0]) or np.any(p > self.bounds[:, 1]):
+            lp = -np.inf
+        else:
+            sigma = p[-1]
+            # Compute probability of p given the prior
+            # for i in
+
+            lp = (
+                np.log(1.0 / (np.sqrt(2 * np.pi) * sigma))
+                # - 0.5 * (params[i] - mu) ** 2 / sigma**2
+            )
+        return lp
+
+    def default_likelihood(self, rv, p):
+        sigma = p[-1]
+        SSQ = sum(rv**2)
+        N = rv.size
+        lnlike = (
+            -0.5 * np.log(2 * np.pi) - N * np.log(sigma) - 1 / (2 * sigma**2) * SSQ
+        )
+        return lnlike
