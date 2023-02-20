@@ -24,6 +24,7 @@ from pandas import DataFrame, Series, Timedelta, Timestamp, concat, date_range
 from scipy.signal import fftconvolve
 
 from pastas.typing import ArrayLike, Model, Recharge, RFunc, TimestampType
+
 from .decorators import njit, set_parameter
 from .recharge import Linear
 from .rfunc import Exponential, HantushWellModel, One
