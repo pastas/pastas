@@ -29,6 +29,7 @@ from numpy import nan
 from pandas import DataFrame
 
 from pastas.typing import Model, TimestampType
+
 from .decorators import model_tmin_tmax
 from .stats import diagnostics, metrics
 
