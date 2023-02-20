@@ -20,15 +20,15 @@ on the `examples directory on GitHub <https://github.com/pastas/pastas/tree/mast
     adding_trends
     changing_responses
     threshold_non_linear
-    non_linear
+    non_linear_recharge
     recharge_estimation
     snowmodel
     comparing_models
     diagnostics_checking
     timestep_analysis
     uncertainty
-    emcee_uncertainty
-    sgi_example
+    uncertainty_emcee
+    standardized_groundwater_index
     signatures
 
 
@@ -80,7 +80,7 @@ Non-linear (Recharge) Models
 `Modeling snow`_
 
 .. _Threshold non-linearities: threshold_non_linear.ipynb
-.. _Non-linear recharge models: non_linear.ipynb
+.. _Non-linear recharge models: non_linear_recharge.ipynb
 .. _Estimating recharge: recharge_estimation.ipynb
 .. _Modeling snow: snowmodel.ipynb
 
@@ -99,10 +99,10 @@ Model Evaluation
 `MCMC uncertainty`_
 
 .. _Comparing models visually: comparing_models.ipynb
-.. _Diagnostics checking: diagnostics_checking.ipynb
+.. _Diagnostic checking: diagnostic_checking.ipynb
 .. _`Reducing autocorrelation`: timestep_analysis.ipynb
 .. _Uncertainty quantification: uncertainty.ipynb
-.. _MCMC uncertainty: emcee_uncertainty.ipynb
+.. _MCMC uncertainty: uncertainty_emcee.ipynb
 
 
 Applications
@@ -112,7 +112,7 @@ Applications
 
 `Groundwater signatures`_
 
-.. _Standardized Groundwater Index: sgi_example.ipynb
+.. _Standardized Groundwater Index: standardized_groundwater_index.ipynb
 .. _Groundwater signatures: signatures.ipynb
 
 
