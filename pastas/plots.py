@@ -105,7 +105,7 @@ def series(
     sharex = True
     gridspec_kw = {}
     cols = 1
-    if table == True and hist == False or kde == False:
+    if table and not hist and kde:
         hist = True
     if hist or kde:
         sharex = False
