@@ -8,10 +8,12 @@ serves to document code conventions and quick how-to's for maintainers and devel
 
 .. toctree::
     :maxdepth: 1
-    :glob:
     :hidden:
 
-    ./*
+    code_style
+    contributing
+    new_release
+    roadmap
 
 Bug reports / Feature requests
 ------------------------------
