@@ -672,7 +672,7 @@ class EmceeSolve(BaseSolver):
         progress_bar=True,
         **kwargs,
     ):
-        """Solver based on Spotpy :cite:p:`foreman-mackey_emcee_2013`.
+        """Solver based on MCMC approach in emcee :cite:p:`foreman-mackey_emcee_2013`.
 
         Parameters
         ----------
@@ -683,9 +683,12 @@ class EmceeSolve(BaseSolver):
         nwalkers: int, optional
             Number of walkers to use.
         backend: emcee.backend
-            One of the Backend from Emcee.
+            One of the Backends from Emcee. See Emcee documentation for more
+            information.
         moves: emcee.moves
-            One of the Moves class from Emcee.
+            The moves argument determines how the next step for a walker is chosen in
+            the MCMC approach. One of the Moves classes from Emcee has to be provided.
+            See Emcee documentation for more information.
         parallel: bool, optional
             Run the sampler in parallel or not.
         progress_bar: bool, optional
@@ -732,6 +735,7 @@ class EmceeSolve(BaseSolver):
         if obj_func is None:
             obj_func = self.default_likelihood
         self.objective_function = obj_func
+        self.parameters = self.objective_function.get_init_parameters("ln")
 
     def solve(
         self,
@@ -745,12 +749,16 @@ class EmceeSolve(BaseSolver):
         self.vary = self.ml.parameters.vary.values.astype(bool)
         self.initial = self.ml.parameters.initial.values.copy()
 
-        lb = np.append(self.ml.parameters[self.vary].pmin.values, 0)
-        ub = np.append(self.ml.parameters[self.vary].pmax.values, 10)
+        lb = np.append(self.ml.parameters[self.vary].pmin.values,
+                       self.parameters.pmin.values)
+        ub = np.append(self.ml.parameters[self.vary].pmax.values,
+                       self.parameters.pmax.values)
         self.bounds = np.vstack([lb, ub]).T
 
         # Add the parameter of the likelihood function here?
-        pinit = np.append(self.ml.parameters[self.vary].optimal.values, 0.001)
+
+        pinit = np.append(self.ml.parameters[self.vary].optimal.values,
+                          self.parameters.initial.values)
         ndim = pinit.size
         pinit = pinit + 1e-2 * np.random.randn(self.nwalkers, ndim)
 
@@ -794,7 +802,8 @@ class EmceeSolve(BaseSolver):
         # Get Optimal Values and Standard Deviations
         optimal = self.initial.copy()
         chains = self.sampler.get_chain(discard=0, flat=True, thin=1)
-        optimal[self.vary] = chains[self.sampler.get_log_prob().argmax()][:-1]
+        optimal[self.vary] = chains[self.sampler.get_log_prob().argmax()][
+                             :-self.objective_function.nparam]
 
         # Don't estimate stderr for now
         stderr = np.zeros(len(self.vary)) * np.nan
@@ -850,10 +859,10 @@ class EmceeSolve(BaseSolver):
 
         """
         par = self.initial
-        par[self.vary] = p[:-1]
+        par[self.vary] = p[:-self.objective_function.nparam]
         rv = self.misfit(p=par, noise=noise, weights=weights, callback=callback)
 
-        lnlike = self.objective_function(rv, p)
+        lnlike = self.objective_function.compute(rv, p)
 
         return lnlike
 
@@ -891,12 +900,3 @@ class EmceeSolve(BaseSolver):
                 # - 0.5 * (params[i] - mu) ** 2 / sigma**2
             )
         return lp
-
-    def default_likelihood(self, rv, p):
-        sigma = p[-1]
-        SSQ = sum(rv**2)
-        N = rv.size
-        lnlike = (
-            -0.5 * np.log(2 * np.pi) - N * np.log(sigma) - 1 / (2 * sigma**2) * SSQ
-        )
-        return lnlike

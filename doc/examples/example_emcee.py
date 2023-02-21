@@ -31,14 +31,16 @@ ml.add_stressmodel(rm)
 ml.solve(noise=True, tmin="1990")
 
 # Now run with spotpy
-s = ps.EmceeSolve(moves=emcee.moves.DEMove(), progress_bar=True, parallel=True)
-ml.solve(solver=s, initial=False, noise=True, tmin="1990", steps=500, tune=True)
+s = ps.EmceeSolve(moves=emcee.moves.DEMove(),
+                  obj_func=ps.objfunc.GaussianLikelihoodAr1(),
+                  progress_bar=True, parallel=False)
+ml.solve(solver=s, initial=False, noise=False, tmin="1990", steps=500, tune=True)
 ml.plot()
 
 fig = plt.figure(figsize=(10,10))
 
 labels = list(ml.parameters.index[ml.parameters.vary])
-labels.append("$\sigma$")
+labels = labels + list(ml.fit.parameters.index.values)
 
 axes = corner.corner(
     ml.fit.sampler.get_chain(flat=True),

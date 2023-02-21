@@ -26,6 +26,7 @@ from .rfunc import (
     Spline,
 )
 from .solver import LeastSquares, LmfitSolve, EmceeSolve
+import pastas.objective_functions as objfunc
 from .stressmodels import (
     ChangeModel,
     Constant,
