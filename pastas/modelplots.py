@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import LogFormatter, MultipleLocator
-from pandas import Series, concat, Timestamp
+from pandas import Series, Timestamp, concat
 
 from pastas.typing import Axes, Figure, Model, TimestampType
 
