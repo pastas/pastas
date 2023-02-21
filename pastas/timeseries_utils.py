@@ -175,13 +175,13 @@ def _infer_fixed_freq(tindex: Index) -> str:
     freq = infer_freq(tindex)
     if freq is None:
         return freq
-    else:
-        offset = to_offset(freq)
-        if to_offset(offset.rule_code).is_anchored():
-            dt = _get_stress_dt(freq)
-            return f"{dt}D"
-        else:
-            return freq
+    
+    offset = to_offset(freq)
+    if to_offset(offset.rule_code).is_anchored():
+        dt = _get_stress_dt(freq)
+        return f"{dt}D"
+    
+    return freq
 
 
 def get_sample(tindex: Index, ref_tindex: Index) -> Index:
