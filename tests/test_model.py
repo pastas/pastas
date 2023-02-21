@@ -134,3 +134,8 @@ def test_get_output_series_arguments(ml) -> None:
 def test_model_sim_w_nans_error(ml_no_settings):
     with pytest.raises(ValueError) as e_info:
         ml_no_settings.solve()
+
+
+def test_modelstats(ml) -> None:
+    ml.solve()
+    ml.stats.summary()

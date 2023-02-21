@@ -8,7 +8,6 @@ from .types import (
     Model,
     NoiseModel,
     Recharge,
-    Reservoir,
     RFunc,
     Solver,
     StressModel,
