@@ -19,6 +19,7 @@ from pandas import DataFrame, Series
 from scipy.linalg import svd
 from scipy.optimize import least_squares
 
+from pastas.objective_functions import GaussianLikelihood
 from pastas.typing import ArrayLike, CallBack, Function, Model
 
 logger = getLogger(__name__)
@@ -664,7 +665,7 @@ class EmceeSolve(BaseSolver):
 
     def __init__(
         self,
-        obj_func=None,
+        objective_function=None,
         nwalkers=20,
         backend=None,
         moves=None,
@@ -676,7 +677,7 @@ class EmceeSolve(BaseSolver):
 
         Parameters
         ----------
-        obj_func: func
+        objective_function: func
             NotImplemented Yet!
         nparam: int
             Number of parameters added by the likelihood function.
@@ -697,12 +698,21 @@ class EmceeSolve(BaseSolver):
 
         Notes
         -----
+        The arguments provided here are mostly passed on to the
+        `emcee.EnsembleSampler` and determine how that instance is created. Arguments
+        you want to pass on to `run_mcmc` (and indirectly the `sample` method),
+        can be passed on to `Model.solve`, like:
 
+        >>> ml.solve(solver=ps.EmceeSolve(), thin_by=2)
 
         Examples
         --------
 
-        >>> ml.solve(solver=ps.SpotpySolve())
+        >>> ml.solve(solver=ps.EmceeSolve(), steps=5000)
+
+        To obtain the MCMC chains, use:
+
+        >>> ml.fit.sampler.get_chain(flat=True, discard=3000)
 
         References
         ----------
@@ -732,10 +742,13 @@ class EmceeSolve(BaseSolver):
         self.nwalkers = nwalkers
 
         # First attempt to make a customizable likelihood function
-        if obj_func is None:
-            obj_func = self.default_likelihood
-        self.objective_function = obj_func
+        if objective_function is None:
+            objective_function = GaussianLikelihood()
+        self.objective_function = objective_function
         self.parameters = self.objective_function.get_init_parameters("ln")
+
+        self.sampler = None
+
 
     def solve(
         self,
@@ -745,10 +758,11 @@ class EmceeSolve(BaseSolver):
         callback: Optional[CallBack] = None,
         **kwargs,
     ) -> Tuple[bool, ArrayLike, ArrayLike]:
-        # Store initial parameters and bounds
+        # Store initial parameters
         self.vary = self.ml.parameters.vary.values.astype(bool)
         self.initial = self.ml.parameters.initial.values.copy()
 
+        # Store parameter bounds
         lb = np.append(self.ml.parameters[self.vary].pmin.values,
                        self.parameters.pmin.values)
         ub = np.append(self.ml.parameters[self.vary].pmax.values,
@@ -756,19 +770,14 @@ class EmceeSolve(BaseSolver):
         self.bounds = np.vstack([lb, ub]).T
 
         # Add the parameter of the likelihood function here?
-
-        pinit = np.append(self.ml.parameters[self.vary].optimal.values,
+        pinit = np.append(self.ml.parameters[self.vary].initial.values,
                           self.parameters.initial.values)
         ndim = pinit.size
         pinit = pinit + 1e-2 * np.random.randn(self.nwalkers, ndim)
-
-        # Create sampler
-
-        # Sample
+        # Create sampler and run mcmc
         if self.parallel:
             logger.info("Going into the parallel universe")
             from multiprocessing import get_context
-
             with get_context("fork").Pool(16) as pool:
                 self.sampler = emcee.EnsembleSampler(
                     nwalkers=self.nwalkers,
@@ -796,14 +805,12 @@ class EmceeSolve(BaseSolver):
 
             self.sampler.run_mcmc(pinit, steps, progress=self.progress_bar, **kwargs)
 
-        # Import results
-        self.result = self.sampler.get_chain()
-
         # Get Optimal Values and Standard Deviations
         optimal = self.initial.copy()
         chains = self.sampler.get_chain(discard=0, flat=True, thin=1)
-        optimal[self.vary] = chains[self.sampler.get_log_prob().argmax()][
-                             :-self.objective_function.nparam]
+        best_chain = chains[self.sampler.get_log_prob().argmax()]
+        optimal[self.vary] = best_chain[:-self.objective_function.nparam]
+        self.parameters.loc[:, "optimal"] = best_chain[-self.objective_function.nparam:]
 
         # Don't estimate stderr for now
         stderr = np.zeros(len(self.vary)) * np.nan
