@@ -27,6 +27,7 @@ from pandas import DataFrame, Series, Timedelta, TimedeltaIndex
 from scipy.stats import norm
 
 from pastas.typing import ArrayLike
+
 from ..decorators import njit
 
 
