@@ -53,7 +53,7 @@ pytesting = ["pytest>=7", "pytest-cov", "pytest-sugar"]
 ci = [
     "pastas[full,pytesting]",
     "jupyter",
-    "codacy-coverage",
+    "coverage",
     "corner",
     "emcee",
     "tqdm",
@@ -83,7 +83,7 @@ line-length = 88
 profile = "black"
 
 [tool.pytest.ini_options]
-addopts = "--strict-markers --durations=0 --cov-report xml:coverage.xml --cov pastas"
+addopts = "--strict-markers --durations=0"
 markers = ["notebooks: run notebooks"]
 
 [tool.tox]
@@ -99,10 +99,11 @@ legacy_tox_ini = """
             pytest tests -m "not notebooks"
 
     [testenv:notebooks]
-    description = run unit tests
+    description = run all unit tests and obtain coverage
     extras = ci
     commands =
-            pytest tests
+            coverage run -m pytest tests
+            coverage xml
 
     [testenv:format]
     description = run formatters
@@ -117,7 +118,7 @@ legacy_tox_ini = """
     basepython = python3.9
     extras = linting
     commands =
-            flake8 pastas --count --show-source --exit-zero --max-line-length=88
+            flake8 pastas --count --exit-zero --max-line-length=88 --show-source
             flake8 pastas --count --exit-zero --max-line-length=88 --statistics
 
 """
