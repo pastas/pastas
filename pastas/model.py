@@ -118,11 +118,7 @@ class Model:
             "tmin": None,
             "tmax": None,
             "freq": freq,
-            "warmup": (
-                Timedelta(3650, "D") / Timedelta(freq) * to_timedelta(freq)
-                if freq[0].isdigit()
-                else Timedelta(3650, freq)
-            ),
+            "warmup": Timedelta(3650, "D"),
             "time_offset": Timedelta(0),
             "noise": noisemodel,
             "solver": None,
