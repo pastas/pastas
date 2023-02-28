@@ -17,8 +17,8 @@ from logging import getLogger
 # Type Hinting
 from typing import Optional
 
-from numpy import average, log, nan, sqrt
 from numpy import abs as npabs
+from numpy import average, log, nan, sqrt
 from pandas import Series
 
 from pastas.stats.core import _get_weights, mean, std, var

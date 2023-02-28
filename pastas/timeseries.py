@@ -8,7 +8,7 @@ from pandas import Series
 from pandas.tseries.frequencies import to_offset
 
 from .rcparams import rcParams
-from .timeseries_utils import _get_dt, _get_time_offset
+from .timeseries_utils import _get_dt, _get_time_offset, _infer_fixed_freq
 from .utils import validate_name
 
 logger = getLogger(__name__)
@@ -82,8 +82,8 @@ class TimeSeries:
 
         # Store a copy of the original series
         self._series_original = series.copy()  # copy of the original series
-        self._series = None  #
-        self.freq_original = pd.infer_freq(self._series_original.index)
+        self._series = None
+        self.freq_original = _infer_fixed_freq(self._series_original.index)
         self.settings = {
             "freq": self.freq_original,
             "sample_up": None,
