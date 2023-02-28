@@ -43,11 +43,13 @@ Basics
 
 `Calibration`_
 
+`Modeling with different timesteps`_
+
 .. _Preprocessing user-provided time series: prepare_timeseries.ipynb
 .. _A basic model: basic_model.ipynb
 .. _Fixating parameters while fitting: fix_parameters.ipynb
 .. _Calibration: calibration_options.ipynb
-
+.. _Modeling with different timesteps: modeling_timestep.ipynb
 
 Stressmodels
 ------------
