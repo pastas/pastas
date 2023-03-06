@@ -1,5 +1,6 @@
+import numpy as np
 import pytest
-from pandas import read_csv
+from pandas import Series, Timedelta, date_range, read_csv
 
 import pastas as ps
 
@@ -10,6 +11,24 @@ obs = (
     .squeeze("columns")
     .dropna()
 )
+prec = read_csv("tests/data/rain.csv", index_col=[0], parse_dates=True).squeeze() * 1e-3
+evap = read_csv("tests/data/evap.csv", index_col=[0], parse_dates=True).squeeze() * 1e-3
+
+
+def generate_synthetic_heads(input, rfunc, params, const=10.0, cutoff=0.9999, dt=1.0):
+    # Generate the head
+    step = rfunc.block(params, cutoff=cutoff, dt=dt)
+
+    h = const * np.ones(len(input) + step.size)
+
+    for i in range(len(input)):
+        h[i : i + step.size] += input[i] * step
+
+    head = Series(
+        index=input.index,
+        data=h[: len(input)],
+    )
+    return head
 
 
 def test_create_model() -> None:
@@ -134,3 +153,60 @@ def test_get_output_series_arguments(ml) -> None:
 def test_model_sim_w_nans_error(ml_no_settings):
     with pytest.raises(ValueError) as e_info:
         ml_no_settings.solve()
+
+
+def test_modelstats(ml) -> None:
+    ml.solve()
+    ml.stats.summary()
+
+
+def test_model_freq_geq_daily() -> None:
+    rf_rch = ps.Exponential()
+    A_rch = 800
+    a_rch = 50
+    f_rch = -1.3
+    constant = 20
+
+    stress = prec + f_rch * evap
+    head = generate_synthetic_heads(stress, rf_rch, (A_rch, a_rch), const=constant)
+
+    models = []
+    freqs = ["1D", "7D", "14D", "28D"]
+    for freq in freqs:
+        iml = ps.Model(head, name=freq, noisemodel=False)
+        rm = ps.RechargeModel(prec, evap, rfunc=rf_rch, name="recharge")
+        iml.add_stressmodel(rm)
+        iml.solve(freq=freq, noise=False, report=False)
+        models.append(iml)
+
+    comparison = ps.CompareModels(models)
+    assert (comparison.get_metrics(metric_selection=["rsq"]).squeeze() > 0.99).all()
+
+
+def test_model_freq_h():
+    rf_tide = ps.Exponential()
+    A_tide = 1.0
+    a_tide = 0.15
+
+    # sine with period 12 hrs 25 minutes and amplitude 1.5 m
+    tidx = date_range(obs.index[0], obs.index[-1] + Timedelta(hours=23), freq="H")
+    tides = Series(
+        index=tidx,
+        data=1.5 * np.sin(2 * np.pi * np.arange(tidx.size) / (0.517375)),
+    )
+
+    ht = generate_synthetic_heads(tides, rf_tide, (A_tide, a_tide), dt=1 / 24.0)
+
+    # model with hourly timestep
+    ml_h = ps.Model(ht, name="tidal_model", freq="H")
+    sm = ps.StressModel(
+        tides,
+        rfunc=ps.Exponential(),
+        name="tide",
+        settings="waterlevel",
+    )
+    ml_h.add_stressmodel(sm)
+    ml_h.solve(noise=False, report=False)
+
+    assert ml_h.simulate().index.freq == "H"
+    assert ml_h.stats.rsq() > 0.99999

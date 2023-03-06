@@ -17,7 +17,8 @@ from logging import getLogger
 # Type Hinting
 from typing import Optional
 
-from numpy import abs, average, log, nan, sqrt
+from numpy import abs as npabs
+from numpy import average, log, nan, sqrt
 from pandas import Series
 
 from pastas.stats.core import _get_weights, mean, std, var
@@ -87,7 +88,7 @@ def mae(
         return nan
 
     w = _get_weights(err, weighted=weighted, max_gap=max_gap)
-    return (w * abs(err.to_numpy())).sum()
+    return (w * npabs(err.to_numpy())).sum()
 
 
 def rmse(

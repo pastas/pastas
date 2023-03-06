@@ -27,10 +27,10 @@ class CompareModels:
     (in the form of nested lists) containing labels that refer to specific axes::
 
         mosaic = [
-            ["sim", "sim", "met"],   # oseries+simulation, and metrics
-            ["sim", "sim", "tab"],   # oseries+simulation and parameters
-            ["res", "res", "tab"],   # residuals+noise and parameters
-            ["con0", "con0", "rf0"]  # contributions and step response
+            ["sim", "sim", "met"],   # oseries+simulation (2x2), metrics       (1x1)
+            ["sim", "sim", "tab"],   # oseries+simulation (2x2), parameters    (2x1)
+            ["res", "res", "tab"],   # residuals+noise    (1x2), parameters    (2x1)
+            ["con0", "con0", "rf0"]  # contributions      (1x2), step response (1x1)
         ]
 
     In this example, the "sim" axis will be 2x2 in the top left portion of the figure
@@ -76,6 +76,7 @@ class CompareModels:
         mosaic: Optional[List[List[str]]] = None,
         figsize: Tuple[int, int] = (10, 8),
         cmap: str = "tab10",
+        return_ax: bool = False,
     ) -> None:
         """initialize a custom figure based on a mosaic.
 
@@ -91,11 +92,15 @@ class CompareModels:
         if mosaic is None:
             mosaic = self.get_default_mosaic()
 
-        self.mosaic = mosaic
-        figure, axes = plt.subplot_mosaic(self.mosaic, figsize=figsize)
+        self.cmap = plt.get_cmap(cmap)
+
+        figure, axes = plt.subplot_mosaic(mosaic, figsize=figsize)
+        if return_ax:
+            return axes
+
         self.figure = figure
         self.axes = axes
-        self.cmap = plt.get_cmap(cmap)
+        self.mosaic = mosaic
 
     def initialize_adjust_height_figure(
         self,
@@ -381,14 +386,18 @@ class CompareModels:
             name of labeled axes to plot oseries on, by default "sim".
         """
         if self.axes is None:
-            self.initialize_figure(mosaic=[[axn]], figsize=(10, 3))
+            axs = self.initialize_figure(
+                mosaic=[[axn]], figsize=(10, 3), return_ax=True
+            )
+        else:
+            axs = self.axes
 
         oseries = [ml.oseries.series for ml in self.models]
         equals = np.array([])
         for pair in combinations(oseries, 2):
             equals = np.append(equals, np.array_equal(pair[0], pair[1]))
         if equals.all():
-            self.axes[axn].plot(
+            axs[axn].plot(
                 oseries[0].index,
                 oseries[0].values,
                 label=oseries[0].name,
@@ -399,7 +408,7 @@ class CompareModels:
             )
         else:
             for i, oseries in enumerate(oseries):
-                self.axes[axn].scatter(
+                axs[axn].scatter(
                     oseries.index,
                     oseries.values,
                     label=oseries.name,
@@ -408,6 +417,7 @@ class CompareModels:
                     edgecolor="k",
                     linewidth=0.5,
                 )
+        return axs[axn]
 
     def plot_simulation(self, axn: str = "sim") -> None:
         """plot model simulation.
@@ -418,17 +428,23 @@ class CompareModels:
             name of labeled axes to plot model simulations on, by default "sim".
         """
         if self.axes is None:
-            self.initialize_figure(mosaic=[[axn]], figsize=(10, 3))
+            axs = self.initialize_figure(
+                mosaic=[[axn]], figsize=(10, 3), return_ax=True
+            )
+        else:
+            axs = self.axes
 
         for i, ml in enumerate(self.models):
             simulation = ml.simulate()
-            self.axes[axn].plot(
+            axs[axn].plot(
                 simulation.index,
                 simulation.values,
                 label=ml.name,
                 linestyle="-",
                 color=self.cmap(i),
             )
+
+        return axs[axn]
 
     def plot_residuals(self, axn: str = "res") -> None:
         """plot residuals.
@@ -439,16 +455,21 @@ class CompareModels:
             name of labeled axes to plot residuals on, by default "res".
         """
         if self.axes is None:
-            self.initialize_figure(mosaic=[[axn]], figsize=(10, 3))
+            axs = self.initialize_figure(
+                mosaic=[[axn]], figsize=(10, 3), return_ax=True
+            )
+        else:
+            axs = self.axes
 
         for i, ml in enumerate(self.models):
             residuals = ml.residuals()
-            self.axes[axn].plot(
+            axs[axn].plot(
                 residuals.index,
                 residuals.values,
                 label="Residuals",
                 color=self.cmap(i),
             )
+        return axs[axn]
 
     def plot_noise(self, axn: str = "res") -> None:
         """plot noise.
@@ -459,18 +480,23 @@ class CompareModels:
             name of labeled axes to plot noise on, by default "res".
         """
         if self.axes is None:
-            self.initialize_figure(mosaic=[[axn]], figsize=(10, 3))
+            axs = self.initialize_figure(
+                mosaic=[[axn]], figsize=(10, 3), return_ax=True
+            )
+        else:
+            axs = self.axes
 
         for i, ml in enumerate(self.models):
             noise = ml.noise()
             if noise is not None:
-                self.axes[axn].plot(
+                axs[axn].plot(
                     noise.index,
                     noise.values,
                     label="Noise",
                     linestyle="--",
                     color=f"C{i}",
                 )
+        return axs[axn]
 
     def plot_response(
         self, smdict: Optional[dict] = None, axn: str = "rf{i}", response: str = "step"
@@ -495,7 +521,9 @@ class CompareModels:
             type of response to plot, either "step" or "block", by default "step".
         """
         if self.axes is None:
-            self.initialize_figure(mosaic=[[axn]], figsize=(5, 3))
+            axs = self.initialize_figure(
+                mosaic=[[axn.format(i=0)]], figsize=(5, 3), return_ax=True
+            )
 
         if smdict is None and self.smdict is None:
             self.smdict = {
@@ -514,22 +542,38 @@ class CompareModels:
                         step = ml.get_step_response(smn, add_0=True)
                         if step is None:
                             continue
-                        self.axes[axn.format(i=j)].plot(
-                            step.index,
-                            step.values,
-                            label=f"{smn}",
-                            color=self.cmap(i),
-                        )
+                        if self.axes is None:
+                            axs[axn.format(i=0)].plot(
+                                step.index,
+                                step.values,
+                                label=f"{smn}",
+                            )
+                        else:
+                            self.axes[axn.format(i=j)].plot(
+                                step.index,
+                                step.values,
+                                label=f"{smn}",
+                                color=self.cmap(i),
+                            )
                     elif response == "block":
                         block = ml.get_block_response(smn)
                         if block is None:
                             continue
-                        self.axes[axn.format(i=j)].semilogx(
-                            block.index,
-                            block.values,
-                            label=f"{smn}",
-                            color=self.cmap(i),
-                        )
+                        if self.axes is None:
+                            axs[axn.format(i=0)].semilogx(
+                                block.index,
+                                block.values,
+                                label=f"{smn}",
+                            )
+                        else:
+                            self.axes[axn.format(i=j)].semilogx(
+                                block.index,
+                                block.values,
+                                label=f"{smn}",
+                                color=self.cmap(i),
+                            )
+        if self.axes is None:
+            return axs[axn.format(i=0)]
 
     def plot_contribution(
         self,
@@ -558,7 +602,9 @@ class CompareModels:
             False.
         """
         if self.axes is None:
-            self.initialize_figure(mosaic=[[axn]], figsize=(10, 3))
+            axs = self.initialize_figure(
+                mosaic=[[axn.format(i=0)]], figsize=(10, 3), return_ax=True
+            )
 
         if smdict is None and self.smdict is None:
             if self.adjust_height:
@@ -587,13 +633,21 @@ class CompareModels:
                                     con -= con.max()
                                 else:
                                     con -= con.min()
-
-                            self.axes[axn.format(i=j)].plot(
-                                con.index,
-                                con.values,
-                                label=label,
-                                color=self.cmap(i),
-                            )
+                            if self.axes is None:
+                                axs[axn.format(i=0)].plot(
+                                    con.index,
+                                    con.values,
+                                    label=label,
+                                )
+                            else:
+                                self.axes[axn.format(i=j)].plot(
+                                    con.index,
+                                    con.values,
+                                    label=label,
+                                    color=self.cmap(i),
+                                )
+        if self.axes is None:
+            return axs[axn.format(i=0)]
 
     def plot_stress(
         self, axn: str = "stress", names: Optional[List[str]] = None
@@ -608,7 +662,11 @@ class CompareModels:
             names of stresses to plot, by default None.
         """
         if self.axes is None:
-            self.initialize_figure(mosaic=[[axn]], figsize=(10, 3))
+            axs = self.initialize_figure(
+                mosaic=[[axn]], figsize=(10, 3), return_ax=True
+            )
+        else:
+            axs = self.axes
 
         if names is None:
             names = self.get_unique_stressmodels()
@@ -617,12 +675,13 @@ class CompareModels:
             for smn in names:
                 if smn in ml.get_stressmodel_names():
                     stress = ml.get_stress(smn)
-                    self.axes[axn].plot(
+                    axs[axn].plot(
                         stress.index,
                         stress.values,
                         label=f"{smn}",
                         color=self.cmap(i),
                     )
+        return axs[axn]
 
     def plot_acf(self, axn: str = "acf") -> None:
         """plot autocorrelation plot.
@@ -633,7 +692,11 @@ class CompareModels:
             name of labeled axes to plot ACF on, by default "acf".
         """
         if self.axes is None:
-            self.initialize_figure(mosaic=[[axn]], figsize=(10, 3))
+            axs = self.initialize_figure(
+                mosaic=[[axn]], figsize=(10, 3), return_ax=True
+            )
+        else:
+            axs = self.axes
 
         for i, ml in enumerate(self.models):
             if ml.noise() is not None:
@@ -644,16 +707,17 @@ class CompareModels:
                 label = "Autocorrelation Residuals"
             conf = r.conf.rolling(10, min_periods=1).mean().values
 
-            self.axes[axn].fill_between(
+            axs[axn].fill_between(
                 r.index.days, conf, -conf, alpha=0.3, color=self.cmap(i)
             )
-            self.axes[axn].vlines(
+            axs[axn].vlines(
                 r.index.days,
                 [0],
                 r.loc[:, "acf"].values,
                 color=self.cmap(i),
                 label=label,
             )
+        return axs[axn]
 
     def plot_table(self, axn: str = "table", df: Optional[DataFrame] = None) -> None:
         """Plot dataframe as table.
@@ -667,20 +731,23 @@ class CompareModels:
             column that is shown.
         """
         if self.axes is None:
-            self.initialize_figure(mosaic=[[axn]], figsize=(6, 4))
+            axs = self.initialize_figure(mosaic=[[axn]], figsize=(6, 4), return_ax=True)
+        else:
+            axs = self.axes
 
         if df is None:
             df = DataFrame(["empty"])
 
-        self.axes[axn].table(
+        axs[axn].table(
             df.values.tolist(),
             colLabels=df.columns,
             colColours=[(1.0, 1.0, 1.0, 1.0)]
             + [self.cmap(i, alpha=0.75) for i in range(len(df.columns) - 1)],
             bbox=(0.0, 0.0, 1.0, 1.0),
         )
-        self.axes[axn].set_xticks([])
-        self.axes[axn].set_yticks([])
+        axs[axn].set_xticks([])
+        axs[axn].set_yticks([])
+        return axs[axn]
 
     def plot_table_params(
         self,
@@ -700,9 +767,6 @@ class CompareModels:
             string to filter parameter names that are included in table, by default
             None.
         """
-        if self.axes is None:
-            self.initialize_figure(mosaic=[[axn]], figsize=(6, 4))
-
         params = self.get_parameters(
             self.models,
             param_selection=param_selection,
@@ -712,7 +776,7 @@ class CompareModels:
         # add seperate column with parameter names
         params.loc[:, "Parameters"] = params.index
         cols = params.columns.to_list()[-1:] + params.columns.to_list()[:-1]
-        self.plot_table(axn=axn, df=params[cols])
+        return self.plot_table(axn=axn, df=params[cols])
 
     def plot_table_metrics(
         self, axn: str = "met", metric_selection: Optional[List[str]] = None
@@ -727,9 +791,6 @@ class CompareModels:
             list of str describing which metrics to include, by default None which
             uses ["rsq", "aic"].
         """
-        if self.axes is None:
-            self.initialize_figure(mosaic=[[axn]], figsize=(6, 4))
-
         if metric_selection is None:
             metric_selection = ["rsq", "aic"]
 
@@ -746,7 +807,7 @@ class CompareModels:
         # add seperate column with parameter names
         metrics.loc[:, "Metrics"] = metrics.index
         cols = metrics.columns.to_list()[-1:] + metrics.columns.to_list()[:-1]
-        self.plot_table(axn=axn, df=metrics[cols].round(2))
+        return self.plot_table(axn=axn, df=metrics[cols].round(2))
 
     def plot_table_diagnostics(
         self, axn: str = "diag", diag_col: str = "P-value"
@@ -760,14 +821,11 @@ class CompareModels:
         diag_col : str, optional
             name of diagnostics column to obtain, by default "P-value".
         """
-        if self.axes is None:
-            self.initialize_figure(mosaic=[[axn]], figsize=(6, 4))
-
         # add seperate column with parameter names
         diags = self.get_diagnostics(self.models, diag_col=diag_col)
         diags.loc[:, f"Test\n{diag_col}"] = diags.index
         cols = diags.columns.to_list()[-1:] + diags.columns.to_list()[:-1]
-        self.plot_table(axn=axn, df=diags[cols])
+        return self.plot_table(axn=axn, df=diags[cols])
 
     def share_xaxes(self, axes: List[Axes]) -> None:
         """share x-axes.
@@ -843,16 +901,16 @@ class CompareModels:
             self.initialize_adjust_height_figure(smdict=smdict, figsize=figsize)
 
         # sim
-        self.plot_oseries()
-        self.plot_simulation()
+        _ = self.plot_oseries()
+        _ = self.plot_simulation()
 
         # res
-        self.plot_residuals()
-        self.plot_noise()
+        _ = self.plot_residuals()
+        _ = self.plot_noise()
 
         # smn, rfn
-        self.plot_contribution(smdict=smdict, normalized=normalized)
-        self.plot_response(smdict=smdict)
+        _ = self.plot_contribution(smdict=smdict, normalized=normalized)
+        _ = self.plot_response(smdict=smdict)
 
         # share x-axes
         xshare_left = []
@@ -883,9 +941,9 @@ class CompareModels:
             self.share_xaxes(xshare_right)
 
         # met
-        self.plot_table_metrics()
+        _ = self.plot_table_metrics()
 
         # tab
-        self.plot_table_params(param_selection=param_selection)
+        _ = self.plot_table_params(param_selection=param_selection)
 
         self.figure.tight_layout(pad=0.0)

@@ -1412,7 +1412,6 @@ class TarsoModel(RechargeModel):
             rfunc = Exponential()
         if not isinstance(rfunc, Exponential):
             raise NotImplementedError("TarsoModel only supports rfunc Exponential!")
-        self.oseries = oseries
         self.dmin = dmin
         self.dmax = dmax
         super().__init__(prec=prec, evap=evap, rfunc=rfunc, **kwargs)
@@ -1483,7 +1482,6 @@ class TarsoModel(RechargeModel):
         data = super().to_dict(series)
         data["dmin"] = self.dmin
         data["dmax"] = self.dmax
-        data["oseries"] = self.oseries
         return data
 
     @staticmethod
