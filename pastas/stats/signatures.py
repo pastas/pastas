@@ -3,7 +3,7 @@
 from typing import Optional, Tuple
 
 import pandas as pd
-from numpy import arange, diff, log, nan, sqrt
+from numpy import arange, diff, log, nan, isnan, sqrt, ndarray, where, split
 from pandas import DatetimeIndex, Series, Timedelta, cut
 from scipy.stats import linregress
 
@@ -35,10 +35,10 @@ __all__ = [
     "recovery_constant",
     "duration_curve_slope",
     "duration_curve_range",
-    "baseflow_index",
+    "baselevel_index",
     "richards_pathlength",
     "richards_baker_index",
-    "baseflow_stability",
+    "baselevel_stability",
 ]
 
 
@@ -516,7 +516,7 @@ def amplitude_range(series: Series) -> float:
     return series.max() - series.min()
 
 
-def rise_rate(series: Series, normalize: bool = False) -> float:
+def rise_rate(series: Series, normalize: bool = True) -> float:
     """Mean of positive head changes from one day to the next.
 
     Parameters
@@ -543,7 +543,7 @@ def rise_rate(series: Series, normalize: bool = False) -> float:
     return rises.mean()
 
 
-def fall_rate(series: Series, normalize: bool = False) -> float:
+def fall_rate(series: Series, normalize: bool = True) -> float:
     """Mean negative head changes from one day to the next.
 
     Parameters
@@ -571,7 +571,7 @@ def fall_rate(series: Series, normalize: bool = False) -> float:
     return falls.mean()
 
 
-def cv_rise_rate(series: Series, normalize: bool = False) -> float:
+def cv_rise_rate(series: Series, normalize: bool = True) -> float:
     """Coefficient of Variation in rise rate.
 
     Parameters
@@ -598,7 +598,7 @@ def cv_rise_rate(series: Series, normalize: bool = False) -> float:
     return rises.std() / rises.mean()
 
 
-def cv_fall_rate(series: Series, normalize: bool = False) -> float:
+def cv_fall_rate(series: Series, normalize: bool = True) -> float:
     """Coefficient of Variation in fall rate.
 
     Parameters
@@ -695,7 +695,7 @@ def reversals_cv(series: Series) -> float:
     return reversals.std() / reversals.mean()
 
 
-def mean_annual_maximum(series: Series, normalize: bool = False) -> float:
+def mean_annual_maximum(series: Series, normalize: bool = True) -> float:
     """Mean of annual maximum after :cite:t:`clausen_flow_2000`.
 
     Parameters
@@ -716,7 +716,7 @@ def mean_annual_maximum(series: Series, normalize: bool = False) -> float:
     return series.resample("A").max().mean()
 
 
-def bimodality_coefficient(series: Series, normalize: bool = False) -> float:
+def bimodality_coefficient(series: Series, normalize: bool = True) -> float:
     """Bimodality coefficient after :cite:t:`ellison_effect_1987`.
 
     Parameters
@@ -762,7 +762,7 @@ def bimodality_coefficient(series: Series, normalize: bool = False) -> float:
 
 
 def recession_constant(
-    series: Series, bins: int = 20, normalize: bool = False
+    series: Series, bins: int = 20, normalize: bool = True
 ) -> float:
     """Recession constant after :cite:t:`kirchner_catchments_2009`.
 
@@ -788,13 +788,21 @@ def recession_constant(
     if normalize:
         series = _normalize(series)
 
-    series.name = "diff"
-    df = pd.DataFrame(series.diff().loc[series.diff() < 0], columns=["diff"])
-    df["head"] = series.loc[df.index]
+    series.name = "difference"
+
+    h = series.copy()
+    h[h.diff() > 0] = nan
+
+    events = split(h, where(isnan(h.values))[0])
+    events = [ev[~isnan(ev.values)] for ev in events if not isinstance(ev, ndarray)]
+    events = [ev.reset_index().loc[:, "difference"] for ev in events if not ev.empty]
+    events = pd.concat(events, axis=1)
+
+    data = (events-events.iloc[0, :])
 
     binned = pd.Series(dtype=float)
-    for g in df.groupby(pd.cut(df["head"], bins=bins)):
-        binned[g[0].mid] = g[1]["diff"].mean()
+    for g in data.groupby(pd.cut(data.index, bins=bins).sort_values()):
+        binned[g[0].mid] = g[1]["difference"].dropna(axis=1).mean()[0]
 
     binned = binned.dropna()
     fit = linregress(log(binned.index), log(-binned.values))
@@ -802,7 +810,7 @@ def recession_constant(
     return fit.slope
 
 
-def recovery_constant(series: Series, bins: int = 20, normalize: bool = False) -> float:
+def recovery_constant(series: Series, bins: int = 20, normalize: bool = True) -> float:
     """Recovery constant after :cite:t:`kirchner_catchments_2009`.
 
     Parameters
@@ -827,13 +835,21 @@ def recovery_constant(series: Series, bins: int = 20, normalize: bool = False) -
     if normalize:
         series = _normalize(series)
 
-    series.name = "diff"
-    df = pd.DataFrame(series.diff().loc[series.diff() > 0], columns=["diff"])
-    df["head"] = series.loc[df.index]
+    series.name = "difference"
+
+    h = series.copy()
+    h[h.diff() < 0] = nan
+
+    events = split(h, where(isnan(h.values))[0])
+    events = [ev[~isnan(ev.values)] for ev in events if not isinstance(ev, ndarray)]
+    events = [ev.reset_index().loc[:, "difference"] for ev in events if not ev.empty]
+    events = pd.concat(events, axis=1)
+
+    data = (events-events.iloc[0, :])
 
     binned = pd.Series(dtype=float)
-    for g in df.groupby(pd.cut(df["head"], bins=bins)):
-        binned[g[0].mid] = g[1]["diff"].mean()
+    for g in data.groupby(pd.cut(data.index, bins=bins).sort_values()):
+        binned[g[0].mid] = g[1]["difference"].dropna(axis=1).mean()[0]
 
     binned = binned.dropna()
     fit = linregress(log(binned.index), log(binned.values))
@@ -967,8 +983,8 @@ def richards_baker_index(series: Series, normalize: bool = True) -> float:
     return series.diff().dropna().abs().sum() / series.sum()
 
 
-def _baseflow(series: Series, normalize: bool = True) -> Tuple[Series, Series]:
-    """Baseflow function for the baseflow index and stability.
+def _baselevel(series: Series, normalize: bool = True) -> Tuple[Series, Series]:
+    """Baselevel function for the baseflow index and stability.
 
     Parameters
     ----------
@@ -1008,8 +1024,8 @@ def _baseflow(series: Series, normalize: bool = True) -> Tuple[Series, Series]:
     return series, ht
 
 
-def baseflow_index(series: Series, normalize: bool = True) -> float:
-    """Baseflow index according to :cite:t:`organization_manual_2008`.
+def baselevel_index(series: Series, normalize: bool = True) -> float:
+    """Base level index according to :cite:t:`organization_manual_2008`.
 
     Parameters
     ----------
@@ -1031,13 +1047,13 @@ def baseflow_index(series: Series, normalize: bool = True) -> float:
 
     """
 
-    series, ht = _baseflow(series, normalize=normalize)
+    series, ht = _baselevel(series, normalize=normalize)
 
     return series.resample("D").mean().sum() / ht.sum()
 
 
-def baseflow_stability(series: Series, normalize: bool = True) -> float:
-    """Baseflow stability after :cite:t:`heudorfer_index-based_2019`.
+def baselevel_stability(series: Series, normalize: bool = True) -> float:
+    """Baselevel stability after :cite:t:`heudorfer_index-based_2019`.
 
     Parameters
     ----------
@@ -1060,7 +1076,7 @@ def baseflow_stability(series: Series, normalize: bool = True) -> float:
 
     """
 
-    series, ht = _baseflow(series, normalize=normalize)
+    series, ht = _baselevel(series, normalize=normalize)
 
     return ht.resample("A").mean().max() - ht.resample("A").mean().min()
 
