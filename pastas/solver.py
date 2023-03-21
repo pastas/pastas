@@ -9,6 +9,7 @@ To solve a model the following syntax can be used:
 >>> ml.solve(solver=ps.LeastSquares())
 """
 
+import importlib
 from logging import getLogger
 
 # Type Hinting
@@ -18,6 +19,7 @@ import numpy as np
 from pandas import DataFrame, Series
 from scipy.linalg import svd
 from scipy.optimize import least_squares
+
 
 from pastas.objective_functions import GaussianLikelihood
 from pastas.typing import ArrayLike, CallBack, Function, Model
@@ -740,15 +742,15 @@ class EmceeSolve(BaseSolver):
         self.moves = moves
         self.progress_bar = progress_bar
         self.nwalkers = nwalkers
+        self.priors = None
 
-        # First attempt to make a customizable likelihood function
+        # Set objective function
         if objective_function is None:
             objective_function = GaussianLikelihood()
         self.objective_function = objective_function
         self.parameters = self.objective_function.get_init_parameters("ln")
 
         self.sampler = None
-
 
     def solve(
         self,
@@ -762,22 +764,30 @@ class EmceeSolve(BaseSolver):
         self.vary = self.ml.parameters.vary.values.astype(bool)
         self.initial = self.ml.parameters.initial.values.copy()
 
-        # Store parameter bounds
-        lb = np.append(self.ml.parameters[self.vary].pmin.values,
-                       self.parameters.pmin.values)
-        ub = np.append(self.ml.parameters[self.vary].pmax.values,
-                       self.parameters.pmax.values)
+        # Set bounds
+        lb = np.append(
+            self.ml.parameters[self.vary].pmin.values, self.parameters.pmin.values
+        )
+        ub = np.append(
+            self.ml.parameters[self.vary].pmax.values, self.parameters.pmax.values
+        )
         self.bounds = np.vstack([lb, ub]).T
 
+        # Set priors
+        self.set_priors()
+
         # Add the parameter of the likelihood function here?
-        pinit = np.append(self.ml.parameters[self.vary].initial.values,
-                          self.parameters.initial.values)
+        pinit = np.append(
+            self.ml.parameters[self.vary].initial.values, self.parameters.initial.values
+        )
         ndim = pinit.size
         pinit = pinit + 1e-2 * np.random.randn(self.nwalkers, ndim)
+
         # Create sampler and run mcmc
         if self.parallel:
             logger.info("Going into the parallel universe")
             from multiprocessing import get_context
+
             with get_context("fork").Pool(16) as pool:
                 self.sampler = emcee.EnsembleSampler(
                     nwalkers=self.nwalkers,
@@ -809,8 +819,10 @@ class EmceeSolve(BaseSolver):
         optimal = self.initial.copy()
         chains = self.sampler.get_chain(discard=0, flat=True, thin=1)
         best_chain = chains[self.sampler.get_log_prob().argmax()]
-        optimal[self.vary] = best_chain[:-self.objective_function.nparam]
-        self.parameters.loc[:, "optimal"] = best_chain[-self.objective_function.nparam:]
+        optimal[self.vary] = best_chain[: -self.objective_function.nparam]
+        self.parameters.loc[:, "optimal"] = best_chain[
+            -self.objective_function.nparam :
+        ]
 
         # Don't estimate stderr for now
         stderr = np.zeros(len(self.vary)) * np.nan
@@ -819,7 +831,7 @@ class EmceeSolve(BaseSolver):
         return success, optimal, stderr
 
     def log_probability(self, p, noise, weights, callback):
-        """Full log-probability
+        """Full log-probability called by Emcee.
 
         Parameters
         ----------
@@ -837,15 +849,15 @@ class EmceeSolve(BaseSolver):
         # This will occur if the parameters are outside the boundaries
         if not np.isfinite(lp):
             return -np.inf
-
-        return lp + self.log_likelihood(
-            p, noise=noise, weights=weights, callback=callback
-        )
+        else:
+            return lp + self.log_likelihood(
+                p, noise=noise, weights=weights, callback=callback
+            )
 
     def log_likelihood(
         self, p: ArrayLike, noise: bool, weights: Series, callback: CallBack
     ) -> ArrayLike:
-        """Log-likelihood function called by Emcee.
+        """Log-likelihood function.
 
         Parameters
         ----------
@@ -863,10 +875,9 @@ class EmceeSolve(BaseSolver):
         -----
         This method is always called by emcee.
 
-
         """
         par = self.initial
-        par[self.vary] = p[:-self.objective_function.nparam]
+        par[self.vary] = p[: -self.objective_function.nparam]
         rv = self.misfit(p=par, noise=noise, weights=weights, callback=callback)
 
         lnlike = self.objective_function.compute(rv, p)
@@ -895,15 +906,70 @@ class EmceeSolve(BaseSolver):
         - Otherwise, the probability of each parameter given its prior is computed.
 
         """
+        # Check if parameters are within the boundaries
         if np.any(p < self.bounds[:, 0]) or np.any(p > self.bounds[:, 1]):
             lp = -np.inf
+        # If not, compute the probability of each parameter given its prior
         else:
-            sigma = p[-1]
-            # Compute probability of p given the prior
-            # for i in
-
-            lp = (
-                np.log(1.0 / (np.sqrt(2 * np.pi) * sigma))
-                # - 0.5 * (params[i] - mu) ** 2 / sigma**2
-            )
+            lp = 0.0
+            for param, prior in zip(p, self.priors):
+                lp += prior.logpdf(param)
         return lp
+
+    def set_priors(self):
+        """Set the priors for the parameters."""
+        self.priors = []
+
+        # Set the priors for the parameters that are varied from the model
+        for _, (loc, scale, dist) in self.ml.parameters.loc[
+            self.vary, ["initial", "stderr", "dist"]
+        ].iterrows():
+            self.priors.append(self.get_prior(dist, loc, scale))
+
+        # Set the priors for the parameters that are varied from the objective function
+        for _, (loc, scale, dist) in self.parameters.loc[
+            self.parameters.vary, ["initial", "stderr", "dist"]
+        ].iterrows():
+            self.priors.append(self.get_prior(dist, loc, scale))
+
+    def get_prior(self, dist, loc, scale):
+        """Set the prior for a parameter.
+
+        Parameters
+        ----------
+        dist: str
+            Name of the distribution. Must be a scipy.stats distribution.
+        loc: float
+            Location parameter. For example, the mean for a normal distribution.
+        scale: float
+            Scale parameter. For example, the standard deviation for a normal distribution.
+
+        Returns
+        -------
+        dist: scipy.stats distribution
+
+        """
+        mod = importlib.import_module("scipy.stats")
+        dist = getattr(mod, dist)
+        return dist(loc=loc, scale=scale)
+
+    def plot(self, **kwargs):
+        """Plot the results of the MCMC analysis.
+
+        Parameters
+        ----------
+        kwargs
+
+        Returns
+        -------
+
+        """
+        import corner
+
+        fig = corner.corner(
+            self.sampler.get_chain(discard=0, flat=True, thin=1),
+            labels=self.ml.parameters[self.vary].name.values,
+            **kwargs,
+        )
+
+        return fig

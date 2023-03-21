@@ -31,16 +31,27 @@ ml.add_stressmodel(rm)
 
 ml.solve(noise=True, tmin="1990")
 
+for name in ml.parameters.index:
+    ml.set_parameter(name, dist="norm")
+
 # Create the EmceeSolver with some settings
 s = ps.EmceeSolve(
     moves=emcee.moves.DEMove(),
     objective_function=ps.objfunc.GaussianLikelihoodAr1(),
     progress_bar=True,
-    parallel=False,
+    parallel=True,
 )
 
 # Use the solver to run MCMC
-ml.solve(solver=s, initial=False, noise=False, tmin="1990", steps=5000, tune=True)
+ml.solve(
+    solver=s,
+    initial=False,
+    fit_constant=False,
+    noise=False,
+    tmin="1990",
+    steps=5000,
+    tune=True,
+)
 
 # Plot results and uncertainty
 ax = ml.plot()
@@ -50,7 +61,7 @@ inds = np.random.randint(len(chain), size=100)
 for ind in inds:
     params = chain[ind]
     p = ml.parameters.optimal.copy().values
-    p[ml.parameters.vary == True] = params[:-ml.fit.objective_function.nparam]
+    p[ml.parameters.vary == True] = params[: -ml.fit.objective_function.nparam]
     ml.simulate(p, tmin="1990").plot(c="gray", alpha=0.1, zorder=-1)
 
 # Corner plot of the results
@@ -60,7 +71,7 @@ labels = list(ml.parameters.index[ml.parameters.vary])
 labels = labels + list(ml.fit.parameters.index.values)
 
 axes = corner.corner(
-    ml.fit.sampler.get_chain(flat=True, discard=4000),
+    ml.fit.sampler.get_chain(flat=True, discard=3000),
     quantiles=[0.025, 0.975],
     labelpad=0.1,
     show_titles=True,
