@@ -75,7 +75,7 @@ class RfuncBase:
 
     def update_rfunc_settings(
         self,
-        up: Optional[bool] = None,
+        up: Optional[bool] = "nochange",
         gain_scale_factor: Optional[float] = None,
         cutoff: Optional[float] = None,
     ) -> None:
@@ -97,7 +97,8 @@ class RfuncBase:
         Only change the settings if values are provided!
 
         """
-        self.up = up
+        if up != "nochange":
+            self.up = up
 
         if gain_scale_factor is not None:
             if 1e-8 > gain_scale_factor > 0:
