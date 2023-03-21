@@ -6,6 +6,9 @@ from pandas import DataFrame
 
 
 class GaussianLikelihood:
+    """
+
+    """
     def __init__(self):
         self.nparam = 1
 
@@ -17,15 +20,19 @@ class GaussianLikelihood:
         return parameters
 
     def compute(self, rv, p):
-        """
+        """Compute the log-likelihood.
 
         Parameters
         ----------
-        rv
-        p
+        rv: array
+            Residuals of the model
+        p: array or list
+            Parameters of the noise model
 
         Returns
         -------
+        ln: float
+            Log-likelihood
 
         """
         sigma = p[-1]
@@ -35,6 +42,9 @@ class GaussianLikelihood:
 
 
 class GaussianLikelihoodAr1:
+    """
+
+    """
     def __init__(self):
         self.nparam = 2
 

@@ -31,8 +31,9 @@ ml.add_stressmodel(rm)
 
 ml.solve(noise=True, tmin="1990")
 
-for name in ml.parameters.index:
-    ml.set_parameter(name, dist="norm")
+# Set the initial parameters to a normal distribution
+# for name in ml.parameters.index:
+#     ml.set_parameter(name, dist="norm")
 
 # Create the EmceeSolver with some settings
 s = ps.EmceeSolve(
@@ -49,7 +50,7 @@ ml.solve(
     fit_constant=False,
     noise=False,
     tmin="1990",
-    steps=5000,
+    steps=15000,
     tune=True,
 )
 
@@ -71,7 +72,7 @@ labels = list(ml.parameters.index[ml.parameters.vary])
 labels = labels + list(ml.fit.parameters.index.values)
 
 axes = corner.corner(
-    ml.fit.sampler.get_chain(flat=True, discard=3000),
+    ml.fit.sampler.get_chain(flat=True, discard=4000),
     quantiles=[0.025, 0.975],
     labelpad=0.1,
     show_titles=True,

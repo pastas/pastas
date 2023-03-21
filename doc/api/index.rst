@@ -18,6 +18,7 @@ left-hand menu you will find the different categories of the API documentation.
     rfunc
     recharge
     solver
+    objective_functions
     modelplots.Plotting
     modelcompare.CompareModels
     timeseries.TimeSeries

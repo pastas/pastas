@@ -955,6 +955,12 @@ class EmceeSolve(BaseSolver):
         if dist == "uniform":
             loc = pmin
             scale = pmax - pmin
+
+        if np.isnan(loc) or np.isnan(scale):
+            msg = "Location and/or scale parameter is NaN."
+            logger.error(msg=msg)
+            raise ValueError(msg)
+
         return getattr(mod, dist)(loc=loc, scale=scale)
 
     def plot(self, **kwargs):

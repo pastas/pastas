@@ -313,7 +313,9 @@ class Gamma(RfuncBase):
         self.nparam = 3
 
     def get_init_parameters(self, name: str) -> DataFrame:
-        parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name", "dist"])
+        parameters = DataFrame(
+            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
+        )
         if self.up:
             parameters.loc[name + "_A"] = (
                 1 / self.gain_scale_factor,
@@ -412,7 +414,9 @@ class Exponential(RfuncBase):
         self.nparam = 2
 
     def get_init_parameters(self, name: str) -> DataFrame:
-        parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name", "dist"])
+        parameters = DataFrame(
+            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
+        )
         if self.up:
             parameters.loc[name + "_A"] = (
                 1 / self.gain_scale_factor,
@@ -541,7 +545,9 @@ class HantushWellModel(RfuncBase):
                     "Hantush."
                 )
             )
-        parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name", "dist"])
+        parameters = DataFrame(
+            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
+        )
         if self.up:
             # divide by k0(2) to get same initial value as ps.Hantush
             parameters.loc[name + "_A"] = (
@@ -825,7 +831,9 @@ class Hantush(RfuncBase):
                 self.use_numba = check_numba_scipy()
 
     def get_init_parameters(self, name: str) -> DataFrame:
-        parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name", "dist"])
+        parameters = DataFrame(
+            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
+        )
         if self.up:
             parameters.loc[name + "_A"] = (
                 1 / self.gain_scale_factor,
@@ -1013,7 +1021,9 @@ class Polder(RfuncBase):
         self.nparam = 3
 
     def get_init_parameters(self, name) -> DataFrame:
-        parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name", "dist"])
+        parameters = DataFrame(
+            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
+        )
         parameters.loc[name + "_A"] = (1, 0, 2, True, name, "uniform")
         parameters.loc[name + "_a"] = (10, 0.01, 1000, True, name, "uniform")
         parameters.loc[name + "_b"] = (1, 1e-6, 25, True, name, "uniform")
@@ -1097,7 +1107,9 @@ class One(RfuncBase):
         self.nparam = 1
 
     def get_init_parameters(self, name: str) -> DataFrame:
-        parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name", "dist"])
+        parameters = DataFrame(
+            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
+        )
         if self.up:
             parameters.loc[name + "_d"] = (
                 self.gain_scale_factor,
@@ -1105,7 +1117,7 @@ class One(RfuncBase):
                 np.nan,
                 True,
                 name,
-                 "uniform",
+                "uniform",
             )
         elif self.up is False:
             parameters.loc[name + "_d"] = (
@@ -1199,7 +1211,9 @@ class FourParam(RfuncBase):
         self.quad = quad
 
     def get_init_parameters(self, name: str) -> DataFrame:
-        parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name", "dist"])
+        parameters = DataFrame(
+            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
+        )
         if self.up:
             parameters.loc[name + "_A"] = (
                 1 / self.gain_scale_factor,
@@ -1414,7 +1428,9 @@ class DoubleExponential(RfuncBase):
         self.nparam = 4
 
     def get_init_parameters(self, name: str) -> DataFrame:
-        parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name", "dist"])
+        parameters = DataFrame(
+            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
+        )
         if self.up:
             parameters.loc[name + "_A"] = (
                 1 / self.gain_scale_factor,
@@ -1521,7 +1537,9 @@ class Edelman(RfuncBase):
         self.nparam = 1
 
     def get_init_parameters(self, name: str) -> DataFrame:
-        parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name", "dist"])
+        parameters = DataFrame(
+            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
+        )
         beta_init = 1.0
         parameters.loc[name + "_beta"] = (beta_init, 0, 1000, True, name, "uniform")
         return parameters
@@ -1612,7 +1630,9 @@ class Kraijenhoff(RfuncBase):
         self.n_terms = n_terms
 
     def get_init_parameters(self, name: str) -> DataFrame:
-        parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name", "dist"])
+        parameters = DataFrame(
+            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
+        )
         if self.up:
             parameters.loc[name + "_A"] = (
                 1 / self.gain_scale_factor,
@@ -1764,7 +1784,9 @@ class Spline(RfuncBase):
         self.nparam = len(t) + 1
 
     def get_init_parameters(self, name: str) -> DataFrame:
-        parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name", "dist"])
+        parameters = DataFrame(
+            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
+        )
         if self.up:
             parameters.loc[name + "_A"] = (
                 1 / self.gain_scale_factor,
