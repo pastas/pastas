@@ -44,8 +44,7 @@ project? Check out the :doc:`Developers <developers/index>` section.
         Find an overview of scientific peer-reviewed studies that used Pastas.
 
     .. grid-item-card:: More Pastas
-        :link: about/organisation
-        :link-type: doc
+        :link: https://github.com/pastas/
 
         Find out more useful resources developed by the Pastas community!
 
