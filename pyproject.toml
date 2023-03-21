@@ -118,7 +118,7 @@ legacy_tox_ini = """
     basepython = python3.9
     extras = linting
     commands =
-            flake8 pastas --count --exit-zero --max-line-length=88 --show-source
-            flake8 pastas --count --exit-zero --max-line-length=88 --statistics
+            flake8 pastas --count --show-source --exit-zero --max-line-length=88 --ignore=E203,W503,W504
+            flake8 pastas --count --exit-zero --max-line-length=88 --statistics --ignore=E203,W503,W504
 
 """
