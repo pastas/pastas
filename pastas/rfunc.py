@@ -59,6 +59,16 @@ class RfuncBase:
         **kwargs,
     ) -> None:
         self.cutoff = cutoff
+        if "up" in kwargs:
+            raise TypeError(
+                "keyword argument 'up' is not supported in init. "
+                "Set with update_rfunc_settings()."
+            )
+        if "gain_scale_factor" in kwargs:
+            raise TypeError(
+                "keyword argument 'gain_scale_factor' is not supported in "
+                "init. Set with update_rfunc_settings()."
+            )
         # initialize attributes, these can be set with update_rfunc_settings()
         self.up = None
         self.gain_scale_factor = 1.0
