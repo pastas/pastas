@@ -55,18 +55,17 @@ class RfuncBase:
 
     def __init__(
         self,
-        up: bool = True,
-        gain_scale_factor: float = 1.0,
         cutoff: float = 0.999,
         **kwargs,
     ) -> None:
-        self.up = up
-        self.gain_scale_factor = gain_scale_factor
         self.cutoff = cutoff
+        # initialize attributes, these can be set with update_rfunc_settings()
+        self.up = None
+        self.gain_scale_factor = 1.0
 
-    def _update_rfunc_settings(
+    def update_rfunc_settings(
         self,
-        up: Optional[bool] = "nochange",
+        up: Optional[bool] = None,
         gain_scale_factor: Optional[float] = None,
         cutoff: Optional[float] = None,
     ) -> None:
@@ -88,8 +87,7 @@ class RfuncBase:
         Only change the settings if values are provided!
 
         """
-        if up != "nochange":
-            self.up = up
+        self.up = up
 
         if gain_scale_factor is not None:
             if 1e-8 > gain_scale_factor > 0:
@@ -302,14 +300,10 @@ class Gamma(RfuncBase):
 
     def __init__(
         self,
-        up: bool = True,
-        gain_scale_factor: float = 1.0,
         cutoff: float = 0.999,
         **kwargs,
     ) -> None:
-        RfuncBase.__init__(
-            self, up=up, gain_scale_factor=gain_scale_factor, cutoff=cutoff, **kwargs
-        )
+        RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
         self.nparam = 3
 
     def get_init_parameters(self, name: str) -> DataFrame:
@@ -398,14 +392,10 @@ class Exponential(RfuncBase):
 
     def __init__(
         self,
-        up: bool = True,
-        gain_scale_factor: float = 1.0,
         cutoff: float = 0.999,
         **kwargs,
     ) -> None:
-        RfuncBase.__init__(
-            self, up=up, gain_scale_factor=gain_scale_factor, cutoff=cutoff, **kwargs
-        )
+        RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
         self.nparam = 2
 
     def get_init_parameters(self, name: str) -> DataFrame:
@@ -503,16 +493,12 @@ class HantushWellModel(RfuncBase):
 
     def __init__(
         self,
-        up: bool = True,
-        gain_scale_factor: float = 1.0,
         cutoff: float = 0.999,
         use_numba: bool = False,
         quad: bool = False,
         **kwargs,
     ) -> None:
-        RfuncBase.__init__(
-            self, up=up, gain_scale_factor=gain_scale_factor, cutoff=cutoff, **kwargs
-        )
+        RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
         self.distances = None
         self.nparam = 3
         self.use_numba = use_numba  # requires numba_scipy for real speedups
@@ -795,16 +781,12 @@ class Hantush(RfuncBase):
 
     def __init__(
         self,
-        up: bool = True,
-        gain_scale_factor: float = 1.0,
         cutoff: float = 0.999,
         use_numba: bool = False,
         quad: bool = False,
         **kwargs,
     ) -> None:
-        RfuncBase.__init__(
-            self, up=up, gain_scale_factor=gain_scale_factor, cutoff=cutoff, **kwargs
-        )
+        RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
         self.nparam = 3
         self.use_numba = use_numba
         self.quad = quad
@@ -990,14 +972,10 @@ class Polder(RfuncBase):
 
     def __init__(
         self,
-        up: bool = True,
-        gain_scale_factor: float = 1.0,
         cutoff: float = 0.999,
         **kwargs,
     ) -> None:
-        RfuncBase.__init__(
-            self, up=up, gain_scale_factor=gain_scale_factor, cutoff=cutoff, **kwargs
-        )
+        RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
         self.nparam = 3
 
     def get_init_parameters(self, name) -> DataFrame:
@@ -1074,14 +1052,10 @@ class One(RfuncBase):
 
     def __init__(
         self,
-        up: bool = True,
-        gain_scale_factor: float = 1.0,
         cutoff: float = 0.999,
         **kwargs,
     ) -> None:
-        RfuncBase.__init__(
-            self, up=up, gain_scale_factor=gain_scale_factor, cutoff=cutoff, **kwargs
-        )
+        RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
         self.nparam = 1
 
     def get_init_parameters(self, name: str) -> DataFrame:
@@ -1171,15 +1145,11 @@ class FourParam(RfuncBase):
 
     def __init__(
         self,
-        up: bool = True,
-        gain_scale_factor: float = 1.0,
         cutoff: float = 0.999,
         quad: bool = False,
         **kwargs,
     ) -> None:
-        RfuncBase.__init__(
-            self, up=up, gain_scale_factor=gain_scale_factor, cutoff=cutoff, **kwargs
-        )
+        RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
         self.nparam = 4
         self.quad = quad
 
@@ -1385,14 +1355,10 @@ class DoubleExponential(RfuncBase):
 
     def __init__(
         self,
-        up: bool = True,
-        gain_scale_factor: float = 1.0,
         cutoff: float = 0.999,
         **kwargs,
     ) -> None:
-        RfuncBase.__init__(
-            self, up=up, gain_scale_factor=gain_scale_factor, cutoff=cutoff, **kwargs
-        )
+        RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
         self.nparam = 4
 
     def get_init_parameters(self, name: str) -> DataFrame:
@@ -1489,14 +1455,10 @@ class Edelman(RfuncBase):
 
     def __init__(
         self,
-        up: bool = True,
-        gain_scale_factor: float = 1.0,
         cutoff: float = 0.999,
         **kwargs,
     ) -> None:
-        RfuncBase.__init__(
-            self, up=up, gain_scale_factor=gain_scale_factor, cutoff=cutoff, **kwargs
-        )
+        RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
         self.nparam = 1
 
     def get_init_parameters(self, name: str) -> DataFrame:
@@ -1578,15 +1540,11 @@ class Kraijenhoff(RfuncBase):
 
     def __init__(
         self,
-        up: bool = True,
-        gain_scale_factor: float = 1.0,
         cutoff: float = 0.999,
         n_terms: int = 10,
         **kwargs,
     ) -> None:
-        RfuncBase.__init__(
-            self, up=up, gain_scale_factor=gain_scale_factor, cutoff=cutoff, **kwargs
-        )
+        RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
         self.nparam = 3
         self.n_terms = n_terms
 
@@ -1723,16 +1681,12 @@ class Spline(RfuncBase):
 
     def __init__(
         self,
-        up: bool = True,
-        gain_scale_factor: float = 1.0,
         cutoff: float = 0.999,
         kind: str = "quadratic",
         t: Optional[list] = None,
         **kwargs,
     ) -> None:
-        RfuncBase.__init__(
-            self, up=up, gain_scale_factor=gain_scale_factor, cutoff=cutoff, **kwargs
-        )
+        RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
         self.kind = kind
         if t is None:
             t = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]

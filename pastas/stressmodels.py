@@ -73,7 +73,7 @@ class StressModelBase:
         self.freq = None
 
         if rfunc is not None:
-            rfunc._update_rfunc_settings(up=up, gain_scale_factor=gain_scale_factor)
+            rfunc.update_rfunc_settings(up=up, gain_scale_factor=gain_scale_factor)
         self.rfunc = rfunc
 
         self.parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
@@ -1604,10 +1604,10 @@ class ChangeModel(StressModelBase):
             tmax=stress.series.index.max(),
         )
 
-        rfunc1._update_rfunc_settings(up=up)
+        rfunc1.update_rfunc_settings(up=up)
         self.rfunc1 = rfunc1
 
-        rfunc2._update_rfunc_settings(up=up)
+        rfunc2.update_rfunc_settings(up=up)
         self.rfunc2 = rfunc2
         self.tchange = Timestamp(tchange)
 
