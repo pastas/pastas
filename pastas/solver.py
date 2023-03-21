@@ -921,18 +921,18 @@ class EmceeSolve(BaseSolver):
         self.priors = []
 
         # Set the priors for the parameters that are varied from the model
-        for _, (loc, scale, dist) in self.ml.parameters.loc[
-            self.vary, ["initial", "stderr", "dist"]
+        for _, (loc, pmin, pmax, scale, dist) in self.ml.parameters.loc[
+            self.vary, ["initial", "pmin", "pmax", "stderr", "dist"]
         ].iterrows():
-            self.priors.append(self.get_prior(dist, loc, scale))
+            self.priors.append(self.get_prior(dist, loc, scale, pmin, pmax))
 
         # Set the priors for the parameters that are varied from the objective function
-        for _, (loc, scale, dist) in self.parameters.loc[
-            self.parameters.vary, ["initial", "stderr", "dist"]
+        for _, (loc, pmin, pmax, scale, dist) in self.parameters.loc[
+            self.parameters.vary, ["initial", "pmin", "pmax", "stderr", "dist"]
         ].iterrows():
-            self.priors.append(self.get_prior(dist, loc, scale))
+            self.priors.append(self.get_prior(dist, loc, scale, pmin, pmax))
 
-    def get_prior(self, dist, loc, scale):
+    def get_prior(self, dist, loc, scale, pmin, pmax):
         """Set the prior for a parameter.
 
         Parameters
@@ -949,9 +949,13 @@ class EmceeSolve(BaseSolver):
         dist: scipy.stats distribution
 
         """
+        # Import the distribution
         mod = importlib.import_module("scipy.stats")
-        dist = getattr(mod, dist)
-        return dist(loc=loc, scale=scale)
+        # Return the distribution
+        if dist == "uniform":
+            loc = pmin
+            scale = pmax - pmin
+        return getattr(mod, dist)(loc=loc, scale=scale)
 
     def plot(self, **kwargs):
         """Plot the results of the MCMC analysis.
