@@ -624,21 +624,25 @@ class WellModel(StressModelBase):
     ----------
     stress: list
         list containing the stresses time series.
-    rfunc: pastas.rfunc instance
-        this model only works with the HantushWellModel response function.
     name: str
-        Name of the stressmodel.
+        name of the stressmodel.
     distances: array_like
-        list of distances to oseries, must be ordered the same as the stresses.
+        array_like of distances between the stresses (wells) and the oseries
+        (monitoring well), must be in the same order as the stresses. This
+        distance is used to scale the HantushWellModel response function for
+        each stress.
+    rfunc: pastas.rfunc instance, optional
+        this model only works with the HantushWellModel response function, default is
+        None which will initialize a HantushWellModel response function.
     up: bool, optional
         whether a positive stress has an increasing or decreasing effect on the model,
         by default False, in which case positive stress lowers e.g., the groundwater
         level.
     settings: str, list of dict, optional
-        The settings of the stress. This can be a string referring to a predefined
-        settings dict (defined in ps.rcParams["timeseries"]), or a dict with the
-        settings to apply. Refer to the docs of pastas.Timeseries for further
-        information.
+        The settings of the stress. By default this is "well". This can be a string
+        referring to a predefined settings dict (defined in
+        ps.rcParams["timeseries"]), or a dict with the settings to apply. Refer
+        to the docs of pastas.Timeseries for further information.
     sort_wells: bool, optional
         sort wells from closest to furthest, by default True.
 
@@ -649,9 +653,7 @@ class WellModel(StressModelBase):
     model. The distance(s) from the pumping well(s) to the monitoring well have to be
     provided for each stress.
 
-    Warnings
-    --------
-    This model only works with the HantushWellModel response function.
+    Only works with the HantushWellModel response function.
     """
 
     _name = "WellModel"
@@ -659,42 +661,23 @@ class WellModel(StressModelBase):
     def __init__(
         self,
         stress: List[Series],
-        rfunc: RFunc,
         name: str,
         distances: ArrayLike,
+        rfunc: Optional[RFunc] = None,
         up: bool = False,
         settings: str = "well",
         sort_wells: bool = True,
         metadata: Optional[list] = None,
     ) -> None:
-        if not isinstance(rfunc, HantushWellModel):
+        # check response function
+        if rfunc is None:
+            rfunc = HantushWellModel()
+        elif not isinstance(rfunc, HantushWellModel):
             raise NotImplementedError(
                 "WellModel only supports the rfunc HantushWellModel!"
             )
 
-        # sort wells by distance
-        self.sort_wells = sort_wells
-        if self.sort_wells:
-            stress = [
-                s for _, s in sorted(zip(distances, stress), key=lambda pair: pair[0])
-            ]
-            if isinstance(settings, list):
-                settings = [
-                    s
-                    for _, s in sorted(
-                        zip(distances, settings), key=lambda pair: pair[0]
-                    )
-                ]
-
-            distances = np.sort(distances)
-
-        if settings is None or isinstance(settings, str) or isinstance(settings, dict):
-            settings = len(stress) * [settings]
-
-        # convert stresses to TimeSeries if necessary
-        stress = self._handle_stress(stress, settings)
-
-        # Check if number of stresses and distances match
+        # check if number of stresses and distances match
         if len(stress) != len(distances):
             msg = (
                 "The number of stresses does not match the number of distances "
@@ -707,6 +690,22 @@ class WellModel(StressModelBase):
                 index=[s.name for s in stress], data=distances, name="distances"
             )
 
+        # parse settings input
+        if settings is None or isinstance(settings, str) or isinstance(settings, dict):
+            settings = len(stress) * [settings]
+
+        # parse stresses input
+        stress = self._handle_stress(stress, settings)
+
+        # sort wells by distance
+        self.sort_wells = sort_wells
+        if self.sort_wells:
+            stress = [
+                s for _, s in sorted(zip(distances, stress), key=lambda pair: pair[0])
+            ]
+            distances = np.sort(distances)
+
+        # estimate gain_scale_factor w/ max of stresses stdev
         gain_scale_factor = np.max([s.series.std() for s in stress])
 
         tmin = np.min([s.series.index.min() for s in stress])
@@ -778,7 +777,7 @@ class WellModel(StressModelBase):
         Returns
         -------
         stress: list
-            return a list with the stresses transformed to pastas.TimeSeries.
+            return a list with the stresses transformed to pastas TimeSeries.
         """
         data = []
 
@@ -791,7 +790,10 @@ class WellModel(StressModelBase):
             for i, value in enumerate(stress):
                 data.append(TimeSeries(value, settings=settings[i]))
         else:
-            logger.error("Stress format is unknown. Provide a Series, dict or list.")
+            msg = "Cannot parse 'stress' input. Provide a Series, dict or list."
+            logger.error(msg)
+            raise TypeError(msg)
+
         return data
 
     def get_stress(
