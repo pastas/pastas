@@ -739,7 +739,9 @@ class TrackSolve:
         self.ax0, self.ax1, self.ax2 = self.axes
 
         # share x-axes between 2nd and 3rd axes
-        self.ax1.get_shared_x_axes().join(self.ax1, self.ax2)
+        self.ax1.sharex(self.ax2)
+        for t in self.ax1.get_xticklabels():
+            t.set_visible(False)
 
         # plot oseries
         self.ax0.plot(
@@ -869,7 +871,7 @@ class TrackSolve:
             range(self.itercount + 1), np.array(self.rmse_res)
         )
         self.r_rmse_plot_dot.set_data(
-            np.array([self.itercount]), np.array(self.rmse_res[-1])
+            np.array([self.itercount]), np.array([self.rmse_res[-1]])
         )
 
         if self.ml.settings["noise"] and self.ml.noisemodel is not None:
@@ -878,12 +880,14 @@ class TrackSolve:
                 range(self.itercount + 1), np.array(self.rmse_noise)
             )
             self.n_rmse_plot_dot.set_data(
-                np.array([self.itercount]), np.array(self.rmse_noise[-1])
+                np.array([self.itercount]), np.array([self.rmse_noise[-1]])
             )
 
         # update parameter plots
         for j, (p1, p2) in enumerate(self.param_plot_handles):
-            p1.set_data(np.array([self.itercount]), np.abs(self.parameters.iloc[-1, j]))
+            p1.set_data(
+                np.array([self.itercount]), np.abs([self.parameters.iloc[-1, j]])
+            )
             p2.set_data(
                 range(self.itercount + 1), self.parameters.iloc[:, j].abs().values
             )
