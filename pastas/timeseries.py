@@ -598,9 +598,10 @@ def validate_oseries(series: Series):
     1. Make sure the values are floats
     2. Make sure the index is a DatetimeIndex
     3. Make sure the indices are datetime64
-    4. Make sure the index is monotonically increasing
-    5. Make sure there are no duplicate indices
-    6. Make sure the time series has no nan-values
+    4. Make sure the index has no NaT-values
+    5. Make sure the index is monotonically increasing
+    6. Make sure there are no duplicate indices
+    7. Make sure the time series has no nan-values
 
     If any of these checks are not passed the method will throw an error that needs
     to be fixed by the user.
@@ -634,6 +635,11 @@ def _validate_series(series: Series, equidistant: bool = True):
     if isinstance(series, pd.DataFrame):
         if len(series.columns) == 1:
             series = series.iloc[:, 0]
+        elif len(series.columns) > 1:
+            # helpful specific message for multi-column DataFrames
+            msg = "DataFrame with multiple columns. Please select one."
+            logger.error(msg)
+            raise ValueError(msg)
 
     # 0. Make sure it is a Series and not something else (e.g., DataFrame)
     if not isinstance(series, pd.Series):
@@ -661,7 +667,16 @@ def _validate_series(series: Series, equidistant: bool = True):
         logger.error(msg)
         raise ValueError(msg)
 
-    # 4. Make sure the index is monotonically increasing
+    # 4. Make sure there are no NaT in index
+    if series.index.hasnans:
+        msg = (
+            f"The index of series {name} contains NaNs. "
+            "Try to remove these with `series.loc[series.index.dropna()]`."
+        )
+        logger.error(msg)
+        raise ValueError(msg)
+
+    # 5. Make sure the index is monotonically increasing
     if not series.index.is_monotonic_increasing:
         msg = (
             f"The time-indices of series {name} are not monotonically increasing. Try "
@@ -670,7 +685,7 @@ def _validate_series(series: Series, equidistant: bool = True):
         logger.error(msg)
         raise ValueError(msg)
 
-    # 5. Make sure there are no duplicate indices
+    # 6. Make sure there are no duplicate indices
     if not series.index.is_unique:
         msg = (
             f"duplicate time-indexes were found in the time series {name}. Make sure "
@@ -680,7 +695,7 @@ def _validate_series(series: Series, equidistant: bool = True):
         logger.error(msg)
         raise ValueError(msg)
 
-    # 6. Make sure the time series has no nan-values
+    # 7. Make sure the time series has no nan-values
     if series.hasnans:
         msg = (
             "The time series %s has nan-values. Pastas will use the fill_nan "
@@ -688,7 +703,7 @@ def _validate_series(series: Series, equidistant: bool = True):
         )
         logger.warning(msg, name)
 
-    # 7. Make sure the time series has equidistant time steps
+    # 8. Make sure the time series has equidistant time steps
     if equidistant:
         if not pd.infer_freq(series.index):
             msg = (
