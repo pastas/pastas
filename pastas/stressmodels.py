@@ -695,7 +695,7 @@ class WellModel(StressModelBase):
             settings = len(stress) * [settings]
 
         # parse stresses input
-        stress = self._handle_stress(stress, settings)
+        stress = self._handle_stress(stress, settings, metadata)
 
         # sort wells by distance
         self.sort_wells = sort_wells
@@ -764,7 +764,7 @@ class WellModel(StressModelBase):
         return h
 
     @staticmethod
-    def _handle_stress(stress, settings):
+    def _handle_stress(stress, settings, metadata):
         """Internal method to handle user provided stress in init.
 
         Parameters
@@ -773,6 +773,8 @@ class WellModel(StressModelBase):
             stress or collection of stresses.
         settings: dict or iterable
             settings dictionary.
+        metadata : dict or list of dict
+            metadata dictionaries corresponding to stress
 
         Returns
         -------
@@ -782,13 +784,23 @@ class WellModel(StressModelBase):
         data = []
 
         if isinstance(stress, Series):
-            data.append(TimeSeries(stress, settings=settings))
+            data.append(TimeSeries(stress, settings=settings, metadata=metadata))
         elif isinstance(stress, dict):
             for i, (name, value) in enumerate(stress.items()):
-                data.append(TimeSeries(value, name=name, settings=settings[i]))
+                if metadata is not None:
+                    imeta = metadata[i]
+                else:
+                    imeta = None
+                data.append(
+                    TimeSeries(value, name=name, settings=settings[i], metadata=imeta)
+                )
         elif isinstance(stress, list):
             for i, value in enumerate(stress):
-                data.append(TimeSeries(value, settings=settings[i]))
+                if metadata is not None:
+                    imeta = metadata[i]
+                else:
+                    imeta = None
+                data.append(TimeSeries(value, settings=settings[i], metadata=imeta))
         else:
             msg = "Cannot parse 'stress' input. Provide a Series, dict or list."
             logger.error(msg)
