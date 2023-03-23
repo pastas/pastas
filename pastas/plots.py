@@ -924,7 +924,7 @@ class TrackSolve:
         return fig.axes
 
 
-def _table_formatter_params(s: float) -> str:
+def _table_formatter_params(s: float, na_rep: str = "") -> str:
     """Internal method for formatting parameters in tables in Pastas plots.
 
     Parameters
@@ -938,7 +938,7 @@ def _table_formatter_params(s: float) -> str:
         float formatted as str.
     """
     if np.isnan(s):
-        return ""
+        return na_rep
     elif np.floor(np.log10(np.abs(s))) <= -2:
         return f"{s:.2e}"
     elif np.floor(np.log10(np.abs(s))) > 5:
@@ -947,7 +947,7 @@ def _table_formatter_params(s: float) -> str:
         return f"{s:.2f}"
 
 
-def _table_formatter_stderr(s: float) -> str:
+def _table_formatter_stderr(s: float, na_rep: str = "") -> str:
     """Internal method for formatting stderrs in tables in Pastas plots.
 
     Parameters
@@ -961,7 +961,7 @@ def _table_formatter_stderr(s: float) -> str:
         float formatted as str.
     """
     if np.isnan(s):
-        return ""
+        return na_rep
     elif np.floor(np.log10(np.abs(s))) <= -4:
         return f"{s * 100.:.2e}%"
     elif np.floor(np.log10(np.abs(s))) > 3:
