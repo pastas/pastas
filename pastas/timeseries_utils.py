@@ -7,6 +7,7 @@ from typing import Optional
 
 import numpy as np
 from pandas import Index, Series, Timedelta, Timestamp, api, date_range, infer_freq
+from pandas.core.resample import Resampler
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
 
@@ -518,3 +519,35 @@ def pandas_equidistant_asfreq(series: Series, freq: str) -> Series:
         .squeeze()
     )
     return spandas
+
+
+def resample(
+    series: Series, freq: str, closed: str = "right", label: str = "right", **kwargs
+) -> Resampler:
+    """Wrapper around the pandas resample function with logical some Pastas defaults.
+       In Pastas, we assume the timestamp is at the end of the period that
+       belongs to each measurement. For more information on this read the
+       example notebook on preprocessing time series.
+
+    Parameters
+    ----------
+    series : Series
+        time series
+    freq : str
+        frequency string
+    closed: str, default 'right'
+        which side/end of bin interval is closed
+    label: str, default 'right'
+        which bin edge label to label bucket with
+    **kwargs: dict
+
+    Returns
+    -------
+    Resampler
+        pandas Resampler object which can be manipulated using methods such as:
+        '.interpolate()', '.mean()', '.max()' etc. For all options see:
+        https://pandas.pydata.org/docs/reference/resampling.html
+
+    """
+
+    return series.copy().resample(freq, closed=closed, label=label, **kwargs)
