@@ -554,4 +554,4 @@ def resample(
 
     """
 
-    return series.copy().resample(freq, closed=closed, label=label, **kwargs)
+    return series.resample(freq, closed=closed, label=label, **kwargs)
