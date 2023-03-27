@@ -467,9 +467,9 @@ def pandas_equidistant_nearest(
     Parameters
     ----------
     series : str
-        _description_
+        time series.
     freq : str
-        _description_
+        frequency string.
     tolerance : str, optional
         frequency type string (e.g. '7D') specifying maximum distance between original
         and new labels for inexact matches.
