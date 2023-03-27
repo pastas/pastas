@@ -524,21 +524,25 @@ def pandas_equidistant_asfreq(series: Series, freq: str) -> Series:
 def resample(
     series: Series, freq: str, closed: str = "right", label: str = "right", **kwargs
 ) -> Resampler:
-    """Wrapper around the pandas resample function with logical some Pastas defaults.
-       In Pastas, we assume the timestamp is at the end of the period that
-       belongs to each measurement. For more information on this read the
-       example notebook on preprocessing time series.
+    """Resample time-series data.
+
+    Convenience method for frequency conversion and resampling of time series.
+    This function is a wrapper around Pandas' resample function with some
+    logical Pastas defaults. In Pastas, we assume the timestamp is at the end
+    of the period that belongs to each measurement. For more information on
+    this read the example notebook on preprocessing time series.
 
     Parameters
     ----------
-    series : Series
-        time series
+    series : pandas Series
+        Time series. The index must be a datetime-like index
+        (`DatetimeIndex`, `PeriodIndex`, or `TimedeltaIndex`).
     freq : str
-        frequency string
+        Frequency string.
     closed: str, default 'right'
-        which side/end of bin interval is closed
+        Which side/end of bin interval is closed.
     label: str, default 'right'
-        which bin edge label to label bucket with
+        Which bin edge label to label bucket with.
     **kwargs: dict
 
     Returns
