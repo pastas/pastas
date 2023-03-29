@@ -1,8 +1,6 @@
 name: pastas
 
 on:
-  # Trigger the workflow on push or pull request on master,
-  # and also on dev branch
   push:
     branches:
       - master
@@ -35,9 +33,9 @@ jobs:
           - name: Linting with flake8
             python: "3.9"
             toxenv: lint
-          - name: Test suite for Jupyter Notebooks
+          - name: Test suite for all unit tests including Notebooks
             python: "3.9"
-            toxenv: notebooks
+            toxenv: all
     env:
       # Color Output
       # Rich (pip)
@@ -69,7 +67,7 @@ jobs:
         run: tox -e ${{ matrix.toxenv }} --skip-pkg-install
 
       - name: Run codacy-coverage-reporter
-        if: ${{ matrix.toxenv == 'notebooks' && github.repository == 'pastas/pastas' && success() }}
+        if: ${{ matrix.toxenv == 'all' && github.repository == 'pastas/pastas' && success() }}
         uses: codacy/codacy-coverage-reporter-action@master
         with:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}

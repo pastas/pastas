@@ -98,8 +98,8 @@ legacy_tox_ini = """
     commands =
             pytest tests -m "not notebooks"
 
-    [testenv:notebooks]
-    description = run all unit tests and obtain coverage
+    [testenv:all]
+    description = run all unit tests (including Notebooks) and obtain coverage
     extras = ci
     commands =
             coverage run -m pytest tests
