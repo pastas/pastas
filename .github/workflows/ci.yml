@@ -1,4 +1,4 @@
-name: pastas
+name: CI
 
 on:
   push:
