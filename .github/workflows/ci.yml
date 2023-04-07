@@ -29,6 +29,9 @@ jobs:
           - name: Test suite with py310-ubuntu
             python: "3.10"
             toxenv: py310
+          - name: Test suite with py311-ubuntu
+            python: "3.11"
+            toxenv: py311
           - name: Formatting with black + isort
             python: "3.9"
             toxenv: format
