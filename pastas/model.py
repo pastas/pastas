@@ -19,7 +19,6 @@ from pandas import (
     Timestamp,
     concat,
     date_range,
-    to_timedelta,
 )
 
 # Internal Pastas
@@ -160,7 +159,9 @@ class Model:
             noise=True if self.noisemodel else False,
         )
 
-    def add_stressmodel(self, stressmodel: StressModel, replace: bool = False) -> None:
+    def add_stressmodel(
+        self, stressmodel: Union[StressModel, List[StressModel]], replace: bool = False
+    ) -> None:
         """Add a stressmodel to the main model.
 
         Parameters

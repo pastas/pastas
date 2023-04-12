@@ -84,7 +84,7 @@ profile = "black"
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers --durations=0"
-markers = ["notebooks: run notebooks"]
+markers = ["notebooks: run notebooks", "bnotebooks: run benchmark notebooks"]
 
 [tool.tox]
 legacy_tox_ini = """
@@ -98,12 +98,18 @@ legacy_tox_ini = """
     commands =
             pytest tests -m "not notebooks"
 
-    [testenv:notebooks]
-    description = run all unit tests and obtain coverage
+    [testenv:all]
+    description = run all unit tests (including Notebooks) and obtain coverage
     extras = ci
     commands =
-            coverage run -m pytest tests
+            coverage run -m pytest tests -m "not bnotebooks"
             coverage xml
+
+    [testenv:notebooks]
+    description = run the benchmark notebooks
+    extras = ci
+    commands =
+            pytest tests -m "bnotebooks"
 
     [testenv:format]
     description = run formatters
