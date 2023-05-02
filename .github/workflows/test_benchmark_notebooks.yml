@@ -1,0 +1,47 @@
+name: CI NB
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  test:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Test suite for benchmark Notebooks
+            python: "3.9"
+            toxenv: notebooks
+    env:
+      # Color Output
+      # Rich (pip)
+      FORCE_COLOR: 1
+      # Tox
+      PY_COLORS: 1
+      # Pytest
+      PYTEST_ADDOPTS: "--color=yes"
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+          check-latest: true
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install tox
+
+      - name: Setup tox environment
+        run: tox -e ${{ matrix.toxenv }} --notest
+
+      - name: Test
+        run: tox -e ${{ matrix.toxenv }} --skip-pkg-install

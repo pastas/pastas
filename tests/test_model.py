@@ -4,8 +4,6 @@ from pandas import Series, Timedelta, date_range, read_csv
 
 import pastas as ps
 
-from .fixtures import ml, ml_empty, ml_no_settings, sm_evap, sm_prec
-
 obs = (
     read_csv("tests/data/obs.csv", index_col=0, parse_dates=True)
     .squeeze("columns")
@@ -35,27 +33,29 @@ def test_create_model() -> None:
     ml = ps.Model(obs, name="Test_Model")
 
 
-def test_add_stressmodel(ml_empty, sm_prec) -> None:
+def test_add_stressmodel(ml_empty: ps.Model, sm_prec) -> None:
     ml_empty.add_stressmodel(sm_prec)
 
 
-def test_add_stressmodels(ml_empty, sm_prec, sm_evap) -> None:
+def test_add_stressmodels(
+    ml_empty: ps.Model, sm_prec: ps.StressModel, sm_evap: ps.StressModel
+) -> None:
     ml_empty.add_stressmodel([sm_prec, sm_evap])
 
 
-def test_del_stressmodel(ml) -> None:
+def test_del_stressmodel(ml: ps.Model) -> None:
     ml.del_stressmodel("rch")
 
 
-def test_add_constant(ml_empty) -> None:
+def test_add_constant(ml_empty: ps.Model) -> None:
     ml_empty.add_constant(ps.Constant())
 
 
-def test_del_constant(ml_empty) -> None:
+def test_del_constant(ml_empty: ps.Model) -> None:
     ml_empty.del_constant()
 
 
-def test_add_noisemodel(ml_empty) -> None:
+def test_add_noisemodel(ml_empty: ps.Model) -> None:
     ml_empty.add_noisemodel(ps.NoiseModel())
 
 
@@ -65,15 +65,15 @@ def test_armamodel() -> None:
     ml.solve()
 
 
-def test_del_noisemodel(ml_empty) -> None:
+def test_del_noisemodel(ml_empty: ps.Model) -> None:
     ml_empty.del_noisemodel()
 
 
-def test_solve_model(ml) -> None:
+def test_solve_model(ml: ps.Model) -> None:
     ml.solve()
 
 
-def test_solve_empty_model(ml) -> None:
+def test_solve_empty_model(ml: ps.Model) -> None:
     try:
         ml.solve(tmin="2016")
     except ValueError as e:
@@ -83,11 +83,11 @@ def test_solve_empty_model(ml) -> None:
             raise e
 
 
-def test_save_model(ml) -> None:
+def test_save_model(ml: ps.Model) -> None:
     ml.to_file("test.pas")
 
 
-def test_load_model(ml) -> None:
+def test_load_model(ml: ps.Model) -> None:
     ml.solve()
     # add some fictitious tiny value for testing float precision
     ml.parameters.loc["rch_f", "pmax"] = 1.23456789e-10
@@ -106,56 +106,56 @@ def test_load_model(ml) -> None:
     assert ml.fit.pcov.equals(ml2.fit.pcov)
 
 
-def test_model_copy(ml_empty) -> None:
+def test_model_copy(ml_empty: ps.Model) -> None:
     ml_empty.copy()
 
 
-def test_get_block(ml) -> None:
+def test_get_block(ml: ps.Model) -> None:
     ml.get_block_response("rch")
 
 
-def test_get_step(ml) -> None:
+def test_get_step(ml: ps.Model) -> None:
     ml.get_step_response("rch")
 
 
-def test_get_contribution(ml) -> None:
+def test_get_contribution(ml: ps.Model) -> None:
     ml.get_contribution("rch")
 
 
-def test_get_stress(ml) -> None:
+def test_get_stress(ml: ps.Model) -> None:
     ml.get_stress("rch")
 
 
-def test_simulate(ml) -> None:
+def test_simulate(ml: ps.Model) -> None:
     ml.simulate()
 
 
-def test_residuals(ml) -> None:
+def test_residuals(ml: ps.Model) -> None:
     ml.residuals()
 
 
-def test_noise(ml) -> None:
+def test_noise(ml: ps.Model) -> None:
     ml.noise()
 
 
-def test_observations(ml_empty) -> None:
+def test_observations(ml_empty: ps.Model) -> None:
     ml_empty.observations()
 
 
-def test_get_output_series(ml) -> None:
+def test_get_output_series(ml: ps.Model) -> None:
     ml.get_output_series()
 
 
-def test_get_output_series_arguments(ml) -> None:
+def test_get_output_series_arguments(ml: ps.Model) -> None:
     ml.get_output_series(split=False, add_contributions=False)
 
 
 def test_model_sim_w_nans_error(ml_no_settings):
-    with pytest.raises(ValueError) as e_info:
+    with pytest.raises(ValueError) as _:
         ml_no_settings.solve()
 
 
-def test_modelstats(ml) -> None:
+def test_modelstats(ml: ps.Model) -> None:
     ml.solve()
     ml.stats.summary()
 
