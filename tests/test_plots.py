@@ -44,7 +44,6 @@ def test_contributions_pie(ml: Model) -> None:
 
 def test_compare(ml: Model) -> None:
     ml2 = ml.copy()
-    ml2.name = "Test_Model2"
     models = [ml, ml2]
     _ = compare(models)
 
