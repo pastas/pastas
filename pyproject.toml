@@ -17,7 +17,7 @@ maintainers = [
     { name = "F. Schaars", email = "f.schaars@artesia-water.nl" },
     { name = "D.A. Brakenhoff", email = "d.brakenhoff@artesia-water.nl" },
     { name = "O. Ebbens", email = "o.ebbens@artesia-water.nl" },
-    { name = "M.A. Vonk", email = "m.vonk@artesia-water.nl" },
+    { name = "M.A. Vonk", email = "vonk.mart@gmail.com" },
 ]
 requires-python = ">= 3.8"
 dependencies = [
@@ -37,6 +37,7 @@ classifiers = [
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
     'Topic :: Scientific/Engineering :: Hydrology',
 ]
 
@@ -46,12 +47,14 @@ repository = "https://github.com/pastas/pastas"
 documentation = "https://pastas.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
-full = ["lmfit >= 1.0.0", "latexify-py"]
+solvers = ["lmfit >= 1.0.0"]
+latexify = ["latexify-py"]
+full = ["pastas[latexify,solvers]"]
 formatting = ["isort", "black[jupyter]"]
 linting = ["flake8"]
 pytesting = ["pytest>=7", "pytest-cov", "pytest-sugar"]
 ci = [
-    "pastas[full,pytesting]",
+    "pastas[solvers,pytesting]",
     "jupyter",
     "coverage",
     "corner",
@@ -90,13 +93,13 @@ markers = ["notebooks: run notebooks", "bnotebooks: run benchmark notebooks"]
 legacy_tox_ini = """
     [tox]
     requires = tox>=4
-    env_list = format, lint, notebooks, py{38,39,310}
+    env_list = format, lint, notebooks, py{38,39,310,311}
 
     [testenv]
     description = run unit tests
     extras = ci
     commands =
-            pytest tests -m "not notebooks"
+            pytest tests -m "not notebooks" -m "not bnotebooks"
 
     [testenv:all]
     description = run all unit tests (including Notebooks) and obtain coverage
