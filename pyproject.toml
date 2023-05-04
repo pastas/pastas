@@ -59,7 +59,6 @@ ci = [
     "tqdm",
 ]
 rtd = [
-    "setuptools",
     "nbsphinx",
     "Ipython",
     "ipykernel",
