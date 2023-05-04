@@ -689,8 +689,9 @@ def _validate_series(series: Series, equidistant: bool = True):
     if not series.index.is_unique:
         msg = (
             f"duplicate time-indexes were found in the time series {name}. Make sure "
-            f"there are no duplicate indices. For example by "
-            f"`grouped = series.groupby(level=0); series = grouped.mean()`"
+            "there are no duplicate indices. For example by "
+            "`grouped = series.groupby(level=0); series = grouped.mean()`"
+            "or `series = series.loc[~series.index.duplicated(keep='first/last')]`"
         )
         logger.error(msg)
         raise ValueError(msg)
