@@ -687,7 +687,9 @@ class WellModel(StressModelBase):
             raise ValueError(msg)
         else:
             self.distances = Series(
-                index=[s.squeeze().name for s in stress], data=distances, name="distances"
+                index=[s.squeeze().name for s in stress],
+                data=distances,
+                name="distances",
             )
 
         # parse settings input
