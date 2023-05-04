@@ -687,12 +687,16 @@ class WellModel(StressModelBase):
             raise ValueError(msg)
         else:
             self.distances = Series(
-                index=[s.name for s in stress], data=distances, name="distances"
+                index=[s.squeeze().name for s in stress], data=distances, name="distances"
             )
 
         # parse settings input
         if settings is None or isinstance(settings, str) or isinstance(settings, dict):
             settings = len(stress) * [settings]
+
+        # if metadata is passed as dict -> convert to list
+        if metadata is not None and isinstance(metadata, dict):
+            metadata = [metadata]
 
         # parse stresses input
         stress = self._handle_stress(stress, settings, metadata)
