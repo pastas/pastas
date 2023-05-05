@@ -48,7 +48,6 @@ documentation = "https://pastas.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
 rtd = [
-    "setuptools<58.3.0",
     "nbsphinx",
     "Ipython",
     "ipykernel",
@@ -65,14 +64,7 @@ full = ["pastas[latexify,solvers]"]
 formatting = ["isort", "black[jupyter]"]
 linting = ["flake8"]
 pytesting = ["pytest>=7", "pytest-cov", "pytest-sugar"]
-ci = [
-    "pastas[solvers,pytesting]",
-    "jupyter",
-    "coverage",
-    "corner",
-    "emcee",
-    "tqdm",
-]
+ci = ["pastas[pytesting]", "jupyter", "coverage", "corner", "emcee", "tqdm"]
 dev = ["tox", "pastas[formatting,linting,ci,rtd]"]
 numbascipy = ["numba-scipy >= 0.3.1"]
 
