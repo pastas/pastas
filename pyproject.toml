@@ -48,6 +48,7 @@ documentation = "https://pastas.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
 rtd = [
+    "future",
     "nbsphinx",
     "Ipython",
     "ipykernel",
