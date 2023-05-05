@@ -48,7 +48,7 @@ documentation = "https://pastas.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
 rtd = [
-    "setuptools==0.64",
+    "setuptools<58.3.0",
     "nbsphinx",
     "Ipython",
     "ipykernel",
