@@ -46,6 +46,18 @@ repository = "https://github.com/pastas/pastas"
 documentation = "https://pastas.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
+rtd = [
+    "setuptools==0.64",
+    "nbsphinx",
+    "Ipython",
+    "ipykernel",
+    "pydata-sphinx-theme",
+    "sphinx>=3.1, <6.0",
+    "sphinxcontrib-bibtex",
+    "requests",
+    "numpydoc",
+    "sphinx-design",
+]
 full = ["lmfit >= 1.0.0", "latexify-py"]
 formatting = ["isort", "black[jupyter]"]
 linting = ["flake8"]
@@ -57,17 +69,6 @@ ci = [
     "corner",
     "emcee",
     "tqdm",
-]
-rtd = [
-    "nbsphinx",
-    "Ipython",
-    "ipykernel",
-    "pydata-sphinx-theme",
-    "sphinx>=3.1, <6.0",
-    "sphinxcontrib-bibtex",
-    "requests",
-    "numpydoc",
-    "sphinx-design",
 ]
 dev = ["tox", "pastas[formatting,linting,ci,rtd]"]
 numbascipy = ["numba-scipy >= 0.3.1"]
