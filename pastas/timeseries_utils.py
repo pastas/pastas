@@ -7,6 +7,7 @@ from typing import Optional
 
 import numpy as np
 from pandas import Index, Series, Timedelta, Timestamp, api, date_range, infer_freq
+from pandas.core.resample import Resampler
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
 
@@ -466,9 +467,9 @@ def pandas_equidistant_nearest(
     Parameters
     ----------
     series : str
-        _description_
+        time series.
     freq : str
-        _description_
+        frequency string.
     tolerance : str, optional
         frequency type string (e.g. '7D') specifying maximum distance between original
         and new labels for inexact matches.
@@ -518,3 +519,39 @@ def pandas_equidistant_asfreq(series: Series, freq: str) -> Series:
         .squeeze()
     )
     return spandas
+
+
+def resample(
+    series: Series, freq: str, closed: str = "right", label: str = "right", **kwargs
+) -> Resampler:
+    """Resample time-series data.
+
+    Convenience method for frequency conversion and resampling of time series.
+    This function is a wrapper around Pandas' resample function with some
+    logical Pastas defaults. In Pastas, we assume the timestamp is at the end
+    of the period that belongs to each measurement. For more information on
+    this read the example notebook on preprocessing time series.
+
+    Parameters
+    ----------
+    series : pandas Series
+        Time series. The index must be a datetime-like index
+        (`DatetimeIndex`, `PeriodIndex`, or `TimedeltaIndex`).
+    freq : str
+        Frequency string.
+    closed: str, default 'right'
+        Which side/end of bin interval is closed.
+    label: str, default 'right'
+        Which bin edge label to label bucket with.
+    **kwargs: dict
+
+    Returns
+    -------
+    Resampler
+        pandas Resampler object which can be manipulated using methods such as:
+        '.interpolate()', '.mean()', '.max()' etc. For all options see:
+        https://pandas.pydata.org/docs/reference/resampling.html
+
+    """
+
+    return series.resample(freq, closed=closed, label=label, **kwargs)

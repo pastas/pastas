@@ -8,7 +8,7 @@ from pandas import Series
 from pandas.tseries.frequencies import to_offset
 
 from .rcparams import rcParams
-from .timeseries_utils import _get_dt, _get_time_offset, _infer_fixed_freq
+from .timeseries_utils import _get_dt, _get_time_offset, _infer_fixed_freq, resample
 from .utils import validate_name
 
 logger = getLogger(__name__)
@@ -327,20 +327,17 @@ class TimeSeries:
         if self.settings["time_offset"] > pd.Timedelta(0):
             series = series.shift(-1, freq=self.settings["time_offset"])
 
-        # Provide some standard pandas arguments for all options
-        kwargs = {"label": "right", "closed": "right"}
-
         success = True
         if method == "mean":
-            series = series.resample(freq, **kwargs).mean()
+            series = resample(series, freq).mean()
         elif method == "drop":
-            series = series.resample(freq, **kwargs).mean().dropna()
+            series = resample(series, freq).mean().dropna()
         elif method == "sum":
-            series = series.resample(freq, **kwargs).sum()
+            series = resample(series, freq).sum()
         elif method == "min":
-            series = series.resample(freq, **kwargs).min()
+            series = resample(series, freq).min()
         elif method == "max":
-            series = series.resample(freq, **kwargs).max()
+            series = resample(series, freq).max()
         else:
             success = False
 
