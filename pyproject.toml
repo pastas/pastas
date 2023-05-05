@@ -48,7 +48,8 @@ documentation = "https://pastas.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
 rtd = [
-    "future",
+    "future==0.18.2",
+    "pastas[solvers]",
     "nbsphinx",
     "Ipython",
     "ipykernel",
