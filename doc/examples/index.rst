@@ -13,6 +13,7 @@ on the `examples directory on GitHub <https://github.com/pastas/pastas/tree/mast
     prepare_timeseries
     basic_model
     fix_parameters
+    calibration_options
     adding_rivers
     adding_wells
     multiple_wells
@@ -20,6 +21,7 @@ on the `examples directory on GitHub <https://github.com/pastas/pastas/tree/mast
     changing_responses
     threshold_non_linear
     non_linear_recharge
+    recharge_estimation
     snowmodel
     comparing_models
     diagnostic_checking
@@ -46,6 +48,7 @@ Basics
 .. _Preprocessing user-provided time series: prepare_timeseries.ipynb
 .. _A basic model: basic_model.ipynb
 .. _Fixating parameters while fitting: fix_parameters.ipynb
+.. _Calibration: calibration_options.ipynb
 .. _Modeling with different timesteps: modeling_timestep.ipynb
 
 Stressmodels
@@ -80,6 +83,7 @@ Non-linear (Recharge) Models
 
 .. _Threshold non-linearities: threshold_non_linear.ipynb
 .. _Non-linear recharge models: non_linear_recharge.ipynb
+.. _Estimating recharge: recharge_estimation.ipynb
 .. _Modeling snow: snowmodel.ipynb
 
 
