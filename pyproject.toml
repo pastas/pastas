@@ -47,8 +47,21 @@ repository = "https://github.com/pastas/pastas"
 documentation = "https://pastas.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
+solvers = ["lmfit >= 1.0.0"]
+latexify = ["latexify-py"]
+full = ["pastas[latexify,solvers]"]
+formatting = ["isort", "black[jupyter]"]
+linting = ["flake8"]
+pytesting = ["pytest>=7", "pytest-cov", "pytest-sugar"]
+ci = [
+    "pastas[pytesting,solvers]",
+    "jupyter",
+    "coverage",
+    "corner",
+    "emcee",
+    "tqdm",
+]
 rtd = [
-    "future==0.18.2",
     "pastas[solvers]",
     "nbsphinx",
     "Ipython",
@@ -60,13 +73,6 @@ rtd = [
     "numpydoc",
     "sphinx-design",
 ]
-solvers = ["lmfit >= 1.0.0"]
-latexify = ["latexify-py"]
-full = ["pastas[latexify,solvers]"]
-formatting = ["isort", "black[jupyter]"]
-linting = ["flake8"]
-pytesting = ["pytest>=7", "pytest-cov", "pytest-sugar"]
-ci = ["pastas[pytesting]", "jupyter", "coverage", "corner", "emcee", "tqdm"]
 dev = ["tox", "pastas[formatting,linting,ci,rtd]"]
 numbascipy = ["numba-scipy >= 0.3.1"]
 
