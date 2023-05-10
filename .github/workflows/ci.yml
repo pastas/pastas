@@ -79,7 +79,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         if: ${{ matrix.toxenv == 'all' && github.repository == 'pastas/pastas' && success() }}
         with:
-          name: notebooks-for-${{ github.sha }}
+          name: notebooks-for-${{ github.ref }}
           path: doc/examples/build
 
       - name: Trigger RTDs build
@@ -88,4 +88,4 @@ jobs:
         with:
           webhook_url: ${{ secrets.RTDS_WEBHOOK_URL }}
           webhook_token: ${{ secrets.RTDS_WEBHOOK_TOKEN }}
-          commit_ref: ${{ github.sha }}
+          commit_ref: ${{ github.ref }}
