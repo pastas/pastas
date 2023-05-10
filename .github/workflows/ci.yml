@@ -36,7 +36,7 @@ jobs:
           - name: Linting with flake8
             python: "3.9"
             toxenv: lint
-          - name: Test suite for all unit tests including Notebooks
+          - name: Test suite for all unit tests, notebooks, coverage and readthedocs build
             python: "3.9"
             toxenv: all
     env:
@@ -80,7 +80,7 @@ jobs:
         if: ${{ matrix.toxenv == 'all' && github.repository == 'pastas/pastas' && success() }}
         with:
           name: notebooks-for-${{ github.sha }}
-          path: docs/examples/build
+          path: doc/examples/build
 
       - name: Trigger RTDs build
         if: ${{ matrix.toxenv == 'all' && github.repository == 'pastas/pastas' && success() }}
