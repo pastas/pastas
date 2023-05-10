@@ -76,7 +76,7 @@ jobs:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
           coverage-reports: coverage.xml
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: ${{ matrix.toxenv == 'all' && github.repository == 'pastas/pastas' && success() }}
         with:
           name: notebooks-for-${{ github.sha }}
