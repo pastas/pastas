@@ -35,7 +35,7 @@ extensions = [
     "sphinx.ext.ifconfig",
     "sphinx.ext.viewcode",
     "IPython.sphinxext.ipython_console_highlighting",  # lowercase didn't work
-    # "nbsphinx",
+    "nbsphinx",
     "numpydoc",
     "sphinxcontrib.bibtex",
     "sphinx_design",
