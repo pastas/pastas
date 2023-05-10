@@ -20,7 +20,6 @@ def test_notebook(file) -> None:
 
     os.chdir(pathname)
     if file not in [
-        "prepare_timeseries.ipynb",
         "emcee_uncertainty.ipynb",
     ]:
         try:
