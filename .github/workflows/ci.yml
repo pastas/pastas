@@ -84,7 +84,7 @@ jobs:
 
       - name: Trigger RTDs build
         if: ${{ matrix.toxenv == 'all' && github.repository == 'pastas/pastas' && success() }}
-        uses: dfm/rtds-action@v1
+        uses: dfm/rtds-action@v1.0.3
         with:
           webhook_url: ${{ secrets.RTDS_WEBHOOK_URL }}
           webhook_token: ${{ secrets.RTDS_WEBHOOK_TOKEN }}
