@@ -71,6 +71,7 @@ rtd = [
     "requests",
     "numpydoc",
     "sphinx-design",
+    "rtds-action",
 ]
 dev = ["tox", "pastas[formatting,linting,ci,rtd]"]
 numbascipy = ["numba-scipy >= 0.3.1"]
