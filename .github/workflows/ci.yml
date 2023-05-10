@@ -75,3 +75,17 @@ jobs:
         with:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
           coverage-reports: coverage.xml
+
+      - uses: actions/upload-artifact@v2
+        if: ${{ matrix.toxenv == 'all' && github.repository == 'pastas/pastas' && success() }}
+        with:
+          name: notebooks-for-${{ github.sha }}
+          path: docs/examples/build
+
+      - name: Trigger RTDs build
+        if: ${{ matrix.toxenv == 'all' && github.repository == 'pastas/pastas' && success() }}
+        uses: dfm/rtds-action@v1
+        with:
+          webhook_url: ${{ secrets.RTDS_WEBHOOK_URL }}
+          webhook_token: ${{ secrets.RTDS_WEBHOOK_TOKEN }}
+          commit_ref: ${{ github.ref }}

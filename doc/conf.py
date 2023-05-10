@@ -35,11 +35,12 @@ extensions = [
     "sphinx.ext.ifconfig",
     "sphinx.ext.viewcode",
     "IPython.sphinxext.ipython_console_highlighting",  # lowercase didn't work
-    "nbsphinx",
+    # "nbsphinx",
     "numpydoc",
     "sphinxcontrib.bibtex",
     "sphinx_design",
     "sphinx.ext.autosectionlabel",
+    "rtds_action",
 ]
 
 # -- General configuration ------------------------------------------------------------
@@ -172,5 +173,25 @@ intersphinx_mapping = {
 
 # -- nbsphinx options---------- -------------------------------------------------------
 
-nbsphinx_allow_errors = True  # Allow errors in notebooks, to see the error online
-nbsphinx_execute = "auto"
+nbsphinx_execute = "never"
+# nbsphinx_allow_errors = True  # Allow errors in notebooks, to see the error online
+
+
+# -- RTDS action options---------- ----------------------------------------------------
+
+# The name of your GitHub repository
+rtds_action_github_repo = "pastas/pastas"
+
+# The path where the artifact should be extracted
+# Note: this is relative to the conf.py file!
+rtds_action_path = "examples"
+
+# The "prefix" used in the `upload-artifact` step of the action
+rtds_action_artifact_prefix = "notebooks-for-"
+
+# A GitHub personal access token is required, more info below
+rtds_action_github_token = os.environ.get("GITHUB_RTDS_TOKEN", None)
+
+# Whether or not to raise an error on Read the Docs if the
+# artifact containing the notebooks can't be downloaded (optional)
+rtds_action_error_if_missing = True
