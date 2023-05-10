@@ -79,7 +79,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         if: ${{ matrix.toxenv == 'all' && github.repository == 'pastas/pastas' && success() }}
         with:
-          name: notebooks-for-${{ github.ref }}
+          name: notebooks-for-${{ github.sha }}
           path: doc/examples/build
 
       - name: Trigger RTDs build
