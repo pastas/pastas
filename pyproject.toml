@@ -2,7 +2,6 @@
 requires = ["setuptools>=64.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
-
 [project]
 name = "pastas"
 dynamic = ["version"]
@@ -75,7 +74,6 @@ rtd = [
 ]
 dev = ["tox", "pastas[formatting,linting,ci,rtd]"]
 numbascipy = ["numba-scipy >= 0.3.1"]
-
 
 [tool.setuptools.dynamic]
 version = { attr = "pastas.version.__version__" }
