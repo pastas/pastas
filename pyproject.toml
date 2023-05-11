@@ -2,7 +2,6 @@
 requires = ["setuptools>=64.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
-
 [project]
 name = "pastas"
 dynamic = ["version"]
@@ -54,7 +53,7 @@ formatting = ["isort", "black[jupyter]"]
 linting = ["flake8"]
 pytesting = ["pytest>=7", "pytest-cov", "pytest-sugar"]
 ci = [
-    "pastas[solvers,pytesting]",
+    "pastas[pytesting,solvers]",
     "jupyter",
     "coverage",
     "corner",
@@ -62,6 +61,7 @@ ci = [
     "tqdm",
 ]
 rtd = [
+    "pastas[solvers]",
     "nbsphinx",
     "Ipython",
     "ipykernel",
@@ -74,7 +74,6 @@ rtd = [
 ]
 dev = ["tox", "pastas[formatting,linting,ci,rtd]"]
 numbascipy = ["numba-scipy >= 0.3.1"]
-
 
 [tool.setuptools.dynamic]
 version = { attr = "pastas.version.__version__" }

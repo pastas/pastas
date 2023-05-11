@@ -496,8 +496,8 @@ class CompareModels:
             axs = self.axes
 
         for i, ml in enumerate(self.models):
-            noise = ml.noise()
-            if noise is not None:
+            if ml.settings["noise"]:
+                noise = ml.noise()
                 axs[axn].plot(
                     noise.index,
                     noise.values,
