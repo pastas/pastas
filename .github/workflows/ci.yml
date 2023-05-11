@@ -5,10 +5,12 @@ on:
     branches:
       - master
       - dev
+      - rtd_ghactions
   pull_request:
     branches:
       - master
       - dev
+      - rtd_ghactions
 
 jobs:
   test:
@@ -70,20 +72,23 @@ jobs:
         run: tox -e ${{ matrix.toxenv }} --skip-pkg-install
 
       - name: Run codacy-coverage-reporter
-        if: ${{ matrix.toxenv == 'all' && github.repository == 'pastas/pastas' && success() }}
+        if: 
+          ${{ matrix.toxenv == 'all' && github.repository == 'pastas/pastas' && success() }}
         uses: codacy/codacy-coverage-reporter-action@master
         with:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
           coverage-reports: coverage.xml
 
       - uses: actions/upload-artifact@v3
-        if: ${{ matrix.toxenv == 'all' && github.repository == 'pastas/pastas' && success() }}
+        if: 
+          ${{ matrix.toxenv == 'all' && github.repository == 'pastas/pastas' && success()  && github.event_name == 'push'}}
         with:
           name: notebooks-for-${{ github.sha }}
           path: doc/examples/build
 
       - name: Trigger RTDs build
-        if: ${{ matrix.toxenv == 'all' && github.repository == 'pastas/pastas' && success() }}
+        if: 
+          ${{ matrix.toxenv == 'all' && github.repository == 'pastas/pastas' && success()  && github.event_name == 'push'}}
         uses: dfm/rtds-action@v1.0.3
         with:
           webhook_url: ${{ secrets.RTDS_WEBHOOK_URL }}
