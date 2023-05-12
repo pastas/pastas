@@ -519,7 +519,7 @@ class TimeSeries:
             elif method is None:
                 msg = (
                     f"Time Series '{self.name}': cannot be extended into future to"
-                    f" {series.index.min()} as 'fill_after' method is 'None'. "
+                    f" {series.index.max()} as 'fill_after' method is 'None'. "
                     "Provide settings to stress model, e.g. "
                     "`ps.StressModel(stress, settings='prec')`."
                 )

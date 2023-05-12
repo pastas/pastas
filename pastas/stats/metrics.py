@@ -406,7 +406,7 @@ def rsq(
     w = _get_weights(err, weighted=weighted, max_gap=max_gap)
     if len(w) != obs.index.size:
         raise ValueError(
-            "weights and observations series have different lengths! "
+            "Weights and observations time series have different lengths! "
             "Check oseries and stresses settings."
         )
     mu = average(obs.to_numpy(), weights=w)
