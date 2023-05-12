@@ -52,7 +52,7 @@ Get in Touch
 
 Quick installation guide
 ~~~~~~~~~~~~~~~~~~~~~~~~
-To install Pastas, a working version of Python 3.8, 3.9 or 3.10 has to be
+To install Pastas, a working version of Python 3.8, 3.9, 3.10, 3.11 has to be
 installed on your computer. We recommend using the `Anaconda Distribution
 <https://www.continuum.io/downloads>`_ as it includes most of the python
 package dependencies and the Jupyter Notebook software to run the notebooks.
@@ -79,6 +79,7 @@ To get the latest development version, use::
 Related packages
 ~~~~~~~~~~~~~~~~
 - `Pastastore <https://github.com/pastas/pastastore>`_ is a Python package for managing multiple timeseries and pastas models
+- `Metran <https://github.com/pastas/metran>`_ is a Python package to perform multivariate timeseries analysis using a technique called dynamic factor modelling.
 - `Hydropandas <https://github.com/ArtesiaWater/hydropandas/blob/master/examples/03_hydropandas_and_pastas.ipynb>`_ can be used to obtain Dutch timeseries (KNMI, Dinoloket, ..)
 - `PyEt <https://github.com/phydrus/pyet>`_ can be used to compute potential evaporation from meteorological variables.
 

@@ -19,8 +19,8 @@ This will print the following to the console::
 
 try:
     from tqdm.auto import tqdm
-except ModuleNotFoundError:
-    raise ModuleNotFoundError("SolveTimer requires 'tqdm' to be installed.")
+except ModuleNotFoundError as e:
+    raise e("SolveTimer requires 'tqdm' to be installed.")
 
 # Type Hinting
 from typing import Optional
@@ -28,8 +28,6 @@ from typing import Optional
 
 class ExceededMaxSolveTime(Exception):
     """Custom Exception when model optimization exceeds threshold."""
-
-    pass
 
 
 class SolveTimer(tqdm):
@@ -73,11 +71,11 @@ class SolveTimer(tqdm):
         if "desc" not in kwargs:
             kwargs["desc"] = "Optimization progress"
         self.max_time = max_time
-        super(SolveTimer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def timer(self, _, n: int = 1):
         """Callback method for ps.Model.solve()."""
-        displayed = super(SolveTimer, self).update(n)
+        displayed = super().update(n)
         if self.max_time is not None:
             if self.format_dict["elapsed"] > self.max_time:
                 raise ExceededMaxSolveTime(

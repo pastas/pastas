@@ -8,7 +8,7 @@ from pandas import Series
 from pandas.tseries.frequencies import to_offset
 
 from .rcparams import rcParams
-from .timeseries_utils import _get_dt, _get_time_offset
+from .timeseries_utils import _get_dt, _get_time_offset, _infer_fixed_freq, resample
 from .utils import validate_name
 
 logger = getLogger(__name__)
@@ -82,8 +82,8 @@ class TimeSeries:
 
         # Store a copy of the original series
         self._series_original = series.copy()  # copy of the original series
-        self._series = None  #
-        self.freq_original = pd.infer_freq(self._series_original.index)
+        self._series = None
+        self.freq_original = _infer_fixed_freq(self._series_original.index)
         self.settings = {
             "freq": self.freq_original,
             "sample_up": None,
@@ -327,20 +327,17 @@ class TimeSeries:
         if self.settings["time_offset"] > pd.Timedelta(0):
             series = series.shift(-1, freq=self.settings["time_offset"])
 
-        # Provide some standard pandas arguments for all options
-        kwargs = {"label": "right", "closed": "right"}
-
         success = True
         if method == "mean":
-            series = series.resample(freq, **kwargs).mean()
+            series = resample(series, freq).mean()
         elif method == "drop":
-            series = series.resample(freq, **kwargs).mean().dropna()
+            series = resample(series, freq).mean().dropna()
         elif method == "sum":
-            series = series.resample(freq, **kwargs).sum()
+            series = resample(series, freq).sum()
         elif method == "min":
-            series = series.resample(freq, **kwargs).min()
+            series = resample(series, freq).min()
         elif method == "max":
-            series = series.resample(freq, **kwargs).max()
+            series = resample(series, freq).max()
         else:
             success = False
 
@@ -431,6 +428,16 @@ class TimeSeries:
                     series.index.min(),
                     mean_value,
                 )
+            elif method == "bfill":
+                first_value = series.loc[series.first_valid_index()]
+                series = series.fillna(method="bfill")  # Default option
+                logger.info(
+                    "Time Series %s was extended in the past to %s with the first "
+                    "value (%.2g) of the time series.",
+                    self.name,
+                    series.index.min(),
+                    first_value,
+                )
             elif isinstance(method, float):
                 series = series.fillna(method)
                 logger.info(
@@ -480,6 +487,16 @@ class TimeSeries:
                     self.name,
                     series.index.max(),
                     mean_value,
+                )
+            elif method == "ffill":
+                last_value = series.loc[series.last_valid_index()]
+                series = series.fillna(method="ffill")
+                logger.info(
+                    "Time Series %s was extended in the future to %s with the last "
+                    "value (%.2g) of the time series.",
+                    self.name,
+                    series.index.max(),
+                    last_value,
                 )
             elif isinstance(method, float):
                 series = series.fillna(method)
@@ -578,9 +595,10 @@ def validate_oseries(series: Series):
     1. Make sure the values are floats
     2. Make sure the index is a DatetimeIndex
     3. Make sure the indices are datetime64
-    4. Make sure the index is monotonically increasing
-    5. Make sure there are no duplicate indices
-    6. Make sure the time series has no nan-values
+    4. Make sure the index has no NaT-values
+    5. Make sure the index is monotonically increasing
+    6. Make sure there are no duplicate indices
+    7. Make sure the time series has no nan-values
 
     If any of these checks are not passed the method will throw an error that needs
     to be fixed by the user.
@@ -614,6 +632,11 @@ def _validate_series(series: Series, equidistant: bool = True):
     if isinstance(series, pd.DataFrame):
         if len(series.columns) == 1:
             series = series.iloc[:, 0]
+        elif len(series.columns) > 1:
+            # helpful specific message for multi-column DataFrames
+            msg = "DataFrame with multiple columns. Please select one."
+            logger.error(msg)
+            raise ValueError(msg)
 
     # 0. Make sure it is a Series and not something else (e.g., DataFrame)
     if not isinstance(series, pd.Series):
@@ -641,7 +664,16 @@ def _validate_series(series: Series, equidistant: bool = True):
         logger.error(msg)
         raise ValueError(msg)
 
-    # 4. Make sure the index is monotonically increasing
+    # 4. Make sure there are no NaT in index
+    if series.index.hasnans:
+        msg = (
+            f"The index of series {name} contains NaNs. "
+            "Try to remove these with `series.loc[series.index.dropna()]`."
+        )
+        logger.error(msg)
+        raise ValueError(msg)
+
+    # 5. Make sure the index is monotonically increasing
     if not series.index.is_monotonic_increasing:
         msg = (
             f"The time-indices of series {name} are not monotonically increasing. Try "
@@ -650,17 +682,18 @@ def _validate_series(series: Series, equidistant: bool = True):
         logger.error(msg)
         raise ValueError(msg)
 
-    # 5. Make sure there are no duplicate indices
+    # 6. Make sure there are no duplicate indices
     if not series.index.is_unique:
         msg = (
             f"duplicate time-indexes were found in the time series {name}. Make sure "
-            f"there are no duplicate indices. For example by "
-            f"`grouped = series.groupby(level=0); series = grouped.mean()`"
+            "there are no duplicate indices. For example by "
+            "`grouped = series.groupby(level=0); series = grouped.mean()`"
+            "or `series = series.loc[~series.index.duplicated(keep='first/last')]`"
         )
         logger.error(msg)
         raise ValueError(msg)
 
-    # 6. Make sure the time series has no nan-values
+    # 7. Make sure the time series has no nan-values
     if series.hasnans:
         msg = (
             "The time series %s has nan-values. Pastas will use the fill_nan "
@@ -668,7 +701,7 @@ def _validate_series(series: Series, equidistant: bool = True):
         )
         logger.warning(msg, name)
 
-    # 7. Make sure the time series has equidistant time steps
+    # 8. Make sure the time series has equidistant time steps
     if equidistant:
         if not pd.infer_freq(series.index):
             msg = (

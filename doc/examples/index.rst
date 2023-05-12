@@ -10,7 +10,27 @@ on the `examples directory on GitHub <https://github.com/pastas/pastas/tree/mast
     :hidden:
     :glob:
 
-    ./*
+    prepare_timeseries
+    basic_model
+    fix_parameters
+    calibration_options
+    adding_rivers
+    adding_wells
+    multiple_wells
+    adding_trends
+    changing_responses
+    threshold_non_linear
+    non_linear_recharge
+    recharge_estimation
+    snowmodel
+    comparing_models
+    diagnostic_checking
+    timestep_analysis
+    uncertainty
+    uncertainty_emcee
+    standardized_groundwater_index
+    signatures
+
 
 Basics
 ------
@@ -23,11 +43,13 @@ Basics
 
 `Calibration`_
 
-.. _Preprocessing user-provided time series: 00_prepare_timeseries.ipynb
-.. _A basic model: 01_basic_model.ipynb
-.. _Fixating parameters while fitting: 02_fix_parameters.ipynb
-.. _Calibration: 03_calibration_options.ipynb
+`Modeling with different timesteps`_
 
+.. _Preprocessing user-provided time series: prepare_timeseries.ipynb
+.. _A basic model: basic_model.ipynb
+.. _Fixating parameters while fitting: fix_parameters.ipynb
+.. _Calibration: calibration_options.ipynb
+.. _Modeling with different timesteps: modeling_timestep.ipynb
 
 Stressmodels
 ------------
@@ -42,11 +64,11 @@ Stressmodels
 
 `Changing response functions`_
 
-.. _Adding surface water levels: 04_adding_rivers.ipynb
-.. _Adding pumping wells: 05_adding_wells.ipynb
-.. _Adding multiple wells: 06_multiple_wells.ipynb
-.. _Adding trends: 07_adding_trends.ipynb
-.. _Changing response functions: 08_changing_responses.ipynb
+.. _Adding surface water levels: adding_rivers.ipynb
+.. _Adding pumping wells: adding_wells.ipynb
+.. _Adding multiple wells: multiple_wells.ipynb
+.. _Adding trends: adding_trends.ipynb
+.. _Changing response functions: changing_responses.ipynb
 
 Non-linear (Recharge) Models
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -59,10 +81,10 @@ Non-linear (Recharge) Models
 
 `Modeling snow`_
 
-.. _Threshold non-linearities: 09_threshold_non_linear.ipynb
-.. _Non-linear recharge models: 10_non_linear.ipynb
-.. _Estimating recharge: 11_recharge_estimation.ipynb
-.. _Modeling snow: 12_snowmodel.ipynb
+.. _Threshold non-linearities: threshold_non_linear.ipynb
+.. _Non-linear recharge models: non_linear_recharge.ipynb
+.. _Estimating recharge: recharge_estimation.ipynb
+.. _Modeling snow: snowmodel.ipynb
 
 
 Model Evaluation
@@ -70,7 +92,7 @@ Model Evaluation
 
 `Comparing models visually`_
 
-`Diagnostics checking`_
+`Diagnostic checking`_
 
 `Reducing autocorrelation`_
 
@@ -78,11 +100,11 @@ Model Evaluation
 
 `MCMC uncertainty`_
 
-.. _Comparing models visually: 13_comparing_models.ipynb
-.. _Diagnostics checking: 14_diagnostics_checking.ipynb
-.. _`Reducing autocorrelation`: 15_timestep_analysis.ipynb
-.. _Uncertainty quantification: 16_uncertainty.ipynb
-.. _MCMC uncertainty: 17_emcee_uncertainty.ipynb
+.. _Comparing models visually: comparing_models.ipynb
+.. _Diagnostic checking: diagnostic_checking.ipynb
+.. _`Reducing autocorrelation`: timestep_analysis.ipynb
+.. _Uncertainty quantification: uncertainty.ipynb
+.. _MCMC uncertainty: uncertainty_emcee.ipynb
 
 
 Applications
@@ -92,5 +114,17 @@ Applications
 
 `Groundwater signatures`_
 
-.. _Standardized Groundwater Index: 18_sgi_example.ipynb
-.. _Groundwater signatures: 19_signatures.ipynb
+.. _Standardized Groundwater Index: standardized_groundwater_index.ipynb
+.. _Groundwater signatures: signatures.ipynb
+
+
+STOWA Manual (Dutch only)
+-------------------------
+
+In 2021 the STOWA published a manual on time series analysis. This manual has
+some general notebooks on preprocessing data, model structure, calibration and
+assessment with Pastas. There are also more case-specific notebooks available
+on determining stresses, characteristics, system analysis and predicting. The
+notebooks (currently Dutch only) can be found `here
+<https://github.com/ArtesiaWater/stowa_handleiding_tijdreeksanalyse>`_.
+

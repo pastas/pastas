@@ -6,7 +6,8 @@ import logging
 from typing import Optional
 
 import numpy as np
-from pandas import Index, Series, Timedelta, Timestamp, api, date_range
+from pandas import Index, Series, Timedelta, Timestamp, api, date_range, infer_freq
+from pandas.core.resample import Resampler
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
 
@@ -82,13 +83,15 @@ def _get_stress_dt(freq: str) -> float:
     See http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
     for the offset_aliases supported by Pandas.
     """
+    if freq is None:
+        return None
     # Get the frequency string and multiplier
     offset = to_offset(freq)
     if hasattr(offset, "delta"):
         dt = offset.delta / Timedelta(1, "D")
     else:
         num = offset.n
-        freq = offset.name
+        freq = offset._prefix
         if freq in ["A", "Y", "AS", "YS", "BA", "BY", "BAS", "BYS"]:
             # year
             dt = num * 365
@@ -152,6 +155,34 @@ def _get_time_offset(t: Timestamp, freq: str) -> Timedelta:
         raise TypeError("frequency is None")
 
     return t - t.floor(freq)
+
+
+def _infer_fixed_freq(tindex: Index) -> str:
+    """Internal method to get the frequency string.
+
+    This methods avoids returning anchored offsets, e.g.
+    'W-TUE' will return 7D.
+
+    Parameters
+    ----------
+    tindex : Index
+        DateTimeIndex
+
+    Returns
+    -------
+    str
+        frequency string
+    """
+    freq = infer_freq(tindex)
+    if freq is None:
+        return freq
+
+    offset = to_offset(freq)
+    if to_offset(offset.rule_code).is_anchored():
+        dt = _get_stress_dt(freq)
+        return f"{dt}D"
+
+    return freq
 
 
 def get_sample(tindex: Index, ref_tindex: Index) -> Index:
@@ -325,9 +356,7 @@ def get_equidistant_series_nearest(
     """
 
     # build new equidistant index
-    idx = date_range(
-        series.index[0].floor(freq), series.index[-1].ceil(freq), freq=freq
-    )
+    idx = date_range(series.index[0], series.index[-1], freq=freq)
 
     # get linear interpolated index from original series
     fl = interpolate.interp1d(
@@ -438,9 +467,9 @@ def pandas_equidistant_nearest(
     Parameters
     ----------
     series : str
-        _description_
+        time series.
     freq : str
-        _description_
+        frequency string.
     tolerance : str, optional
         frequency type string (e.g. '7D') specifying maximum distance between original
         and new labels for inexact matches.
@@ -490,3 +519,39 @@ def pandas_equidistant_asfreq(series: Series, freq: str) -> Series:
         .squeeze()
     )
     return spandas
+
+
+def resample(
+    series: Series, freq: str, closed: str = "right", label: str = "right", **kwargs
+) -> Resampler:
+    """Resample time-series data.
+
+    Convenience method for frequency conversion and resampling of time series.
+    This function is a wrapper around Pandas' resample function with some
+    logical Pastas defaults. In Pastas, we assume the timestamp is at the end
+    of the period that belongs to each measurement. For more information on
+    this read the example notebook on preprocessing time series.
+
+    Parameters
+    ----------
+    series : pandas Series
+        Time series. The index must be a datetime-like index
+        (`DatetimeIndex`, `PeriodIndex`, or `TimedeltaIndex`).
+    freq : str
+        Frequency string.
+    closed: str, default 'right'
+        Which side/end of bin interval is closed.
+    label: str, default 'right'
+        Which bin edge label to label bucket with.
+    **kwargs: dict
+
+    Returns
+    -------
+    Resampler
+        pandas Resampler object which can be manipulated using methods such as:
+        '.interpolate()', '.mean()', '.max()' etc. For all options see:
+        https://pandas.pydata.org/docs/reference/resampling.html
+
+    """
+
+    return series.resample(freq, closed=closed, label=label, **kwargs)

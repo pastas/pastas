@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Jun  3 12:10:05 2019
-
-@author: Artesia
-"""
 import os
 
 import matplotlib.pyplot as plt

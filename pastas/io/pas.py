@@ -9,7 +9,16 @@ import json
 from collections import OrderedDict
 from logging import getLogger
 
-from pandas import DataFrame, Series, Timedelta, Timestamp, isna, read_json, to_numeric
+from pandas import (
+    DataFrame,
+    Series,
+    Timedelta,
+    Timestamp,
+    isna,
+    read_json,
+    to_numeric,
+    to_timedelta,
+)
 
 logger = getLogger(__name__)
 
@@ -67,7 +76,7 @@ class PastasEncoder(json.JSONEncoder):
     """
 
     def default(self, o):
-        if isinstance(o, Timestamp) or isinstance(o, datetime.datetime):
+        if isinstance(o, (Timestamp, datetime.datetime)):
             return o.isoformat()
         elif isinstance(o, Series):
             return o.to_json(date_format="iso", orient="split")
@@ -75,7 +84,9 @@ class PastasEncoder(json.JSONEncoder):
             # Necessary to maintain order when using the JSON format!
             # Do not use o.to_json() because of float precision
             return json.dumps(o.to_dict(orient="index"), indent=0)
-        elif isinstance(o, Timedelta):
+        elif isinstance(o, (Timedelta, datetime.timedelta)):
+            if isinstance(o, datetime.timedelta):
+                o = to_timedelta(o)
             return o.to_timedelta64().__str__()
         elif isna(o):
             return None

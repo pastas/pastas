@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Jun  3 12:10:05 2019
-
-@author: Artesia
-"""
 import os
 import shutil
 
@@ -26,8 +20,8 @@ def test_notebook(file) -> None:
 
     os.chdir(pathname)
     if file not in [
-        "00_prepare_timeseries.ipynb",
-        "12_emcee_uncertainty.ipynb",
+        "prepare_timeseries.ipynb",
+        "emcee_uncertainty.ipynb",
     ]:
         try:
             # run autotest on each notebook

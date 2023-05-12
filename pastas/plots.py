@@ -56,6 +56,7 @@ def series(
     stresses: Optional[List[Series]] = None,
     hist: bool = True,
     kde: bool = False,
+    table: bool = False,
     titles: bool = True,
     tmin: Optional[TimestampType] = None,
     tmax: Optional[TimestampType] = None,
@@ -72,11 +73,13 @@ def series(
         List with Pandas time series with DatetimeIndex.
     hist: bool
         Histogram for the series. The number of bins is determined with Sturges rule.
-        Returns the number of observations, mean, skew and kurtosis.
     kde: bool
         Kernel density estimate for the series. The kde is obtained from
         scipy.gaussian_kde using scott to calculate the estimator bandwidth. Returns
         the number of observations, mean, skew and kurtosis.
+    table: bool
+        Show table with some basic statistics such as the number of
+        observations, mean, skew and kurtosis.
     titles: bool
         Set the titles or not. Taken from the name attribute of the series.
     tmin: str or pd.Timestamp
@@ -102,11 +105,16 @@ def series(
     sharex = True
     gridspec_kw = {}
     cols = 1
+    if table and not hist and kde:
+        hist = True
     if hist or kde:
         sharex = False
-        gridspec_kw["width_ratios"] = (3, 1, 1)
-        cols = 3
-    _, axes = plt.subplots(
+        gridspec_kw["width_ratios"] = [3, 1]
+        cols += 1
+        if table:
+            cols += 1
+            gridspec_kw["width_ratios"].append(1)
+    fig, axes = plt.subplots(
         rows,
         cols,
         figsize=figsize,
@@ -162,7 +170,7 @@ def series(
             else:
                 colour = "k"
             axes[0, 1].plot(gkde.evaluate(ind), ind, color=colour)
-        if hist or kde:
+        if table:
             # stats table
             head_stats = [
                 ["Count", f"{head.count():0.0f}"],
@@ -217,7 +225,7 @@ def series(
                 else:
                     colour = "k"
                 axes[i, 1].plot(gkde.evaluate(ind), ind, color=colour)
-            if hist or kde:
+            if table:
                 if i > 0:
                     axes[i, 0].sharex(axes[0, 0])
                 # stats table
@@ -231,10 +239,16 @@ def series(
                     bbox=(0, 0, 1, 1), colWidths=(1.5, 1), cellText=stress_stats
                 )
                 axes[i, 2].axis("off")
+
+    # temporary fix, as set_xlim currently does not work with strings mpl=3.6.1
+    if tmin is not None:
+        tmin = Timestamp(tmin)
+    if tmax is not None:
+        tmax = Timestamp(tmax)
     axes[0, 0].set_xlim([tmin, tmax])
     axes[0, 0].minorticks_off()
 
-    plt.tight_layout()
+    fig.tight_layout()
     return axes
 
 
@@ -725,7 +739,9 @@ class TrackSolve:
         self.ax0, self.ax1, self.ax2 = self.axes
 
         # share x-axes between 2nd and 3rd axes
-        self.ax1.get_shared_x_axes().join(self.ax1, self.ax2)
+        self.ax1.sharex(self.ax2)
+        for t in self.ax1.get_xticklabels():
+            t.set_visible(False)
 
         # plot oseries
         self.ax0.plot(
@@ -855,7 +871,7 @@ class TrackSolve:
             range(self.itercount + 1), np.array(self.rmse_res)
         )
         self.r_rmse_plot_dot.set_data(
-            np.array([self.itercount]), np.array(self.rmse_res[-1])
+            np.array([self.itercount]), np.array([self.rmse_res[-1]])
         )
 
         if self.ml.settings["noise"] and self.ml.noisemodel is not None:
@@ -864,12 +880,14 @@ class TrackSolve:
                 range(self.itercount + 1), np.array(self.rmse_noise)
             )
             self.n_rmse_plot_dot.set_data(
-                np.array([self.itercount]), np.array(self.rmse_noise[-1])
+                np.array([self.itercount]), np.array([self.rmse_noise[-1]])
             )
 
         # update parameter plots
         for j, (p1, p2) in enumerate(self.param_plot_handles):
-            p1.set_data(np.array([self.itercount]), np.abs(self.parameters.iloc[-1, j]))
+            p1.set_data(
+                np.array([self.itercount]), np.abs([self.parameters.iloc[-1, j]])
+            )
             p2.set_data(
                 range(self.itercount + 1), self.parameters.iloc[:, j].abs().values
             )
@@ -910,7 +928,7 @@ class TrackSolve:
         return fig.axes
 
 
-def _table_formatter_params(s: float) -> str:
+def _table_formatter_params(s: float, na_rep: str = "") -> str:
     """Internal method for formatting parameters in tables in Pastas plots.
 
     Parameters
@@ -924,7 +942,7 @@ def _table_formatter_params(s: float) -> str:
         float formatted as str.
     """
     if np.isnan(s):
-        return ""
+        return na_rep
     elif np.floor(np.log10(np.abs(s))) <= -2:
         return f"{s:.2e}"
     elif np.floor(np.log10(np.abs(s))) > 5:
@@ -933,7 +951,7 @@ def _table_formatter_params(s: float) -> str:
         return f"{s:.2f}"
 
 
-def _table_formatter_stderr(s: float) -> str:
+def _table_formatter_stderr(s: float, na_rep: str = "") -> str:
     """Internal method for formatting stderrs in tables in Pastas plots.
 
     Parameters
@@ -947,7 +965,7 @@ def _table_formatter_stderr(s: float) -> str:
         float formatted as str.
     """
     if np.isnan(s):
-        return ""
+        return na_rep
     elif np.floor(np.log10(np.abs(s))) <= -4:
         return f"{s * 100.:.2e}%"
     elif np.floor(np.log10(np.abs(s))) > 3:
