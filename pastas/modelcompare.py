@@ -317,13 +317,16 @@ class CompareModels:
         """
         if models is None:
             models = self.models
+            modelnames = self.modelnames
+        else:
+            modelnames = [iml.model for iml in models]
 
         metrics = concat(
             [ml.stats.summary(stats=metric_selection) for ml in models],
             axis=1,
             sort=False,
         )
-        metrics.columns = self.modelnames
+        metrics.columns = modelnames
         metrics.index.name = None
 
         return metrics
@@ -352,9 +355,12 @@ class CompareModels:
         """
         if models is None:
             models = self.models
+            modelnames = self.modelnames
+        else:
+            modelnames = [iml.model for iml in models]
 
         params = concat([ml.parameters[param_col] for ml in models], axis=1, sort=False)
-        params.columns = self.modelnames
+        params.columns = modelnames
 
         if param_selection:
             sel = np.array([])
@@ -378,11 +384,14 @@ class CompareModels:
         """
         if models is None:
             models = self.models
+            modelnames = self.modelnames
+        else:
+            modelnames = [iml.model for iml in models]
 
-        diags = DataFrame(index=self.modelnames)
+        diags = DataFrame(index=modelnames)
         for i, ml in enumerate(models):
             mldiag = ml.stats.diagnostics()
-            diags.loc[self.modelnames[i], mldiag.index] = mldiag[diag_col].values
+            diags.loc[modelnames[i], mldiag.index] = mldiag[diag_col].values
 
         return diags.transpose()
 
@@ -811,7 +820,7 @@ class CompareModels:
                     index={met: f"\N{GREEK CAPITAL LETTER DELTA}{met.upper()}"}
                 )
         if "rsq" in metrics.index:
-            metrics = metrics.rename(index={"rsq": f"R\N{SUPERSCRIPT TWO}"})
+            metrics = metrics.rename(index={"rsq": "R\N{SUPERSCRIPT TWO}"})
 
         # add seperate column with parameter names
         metrics.loc[:, "Metrics"] = metrics.index
@@ -930,9 +939,11 @@ class CompareModels:
                 if legend and not axn.startswith("rf"):
                     if legend_kwargs is None:
                         legend_kwargs = {}
-                    _, l = self.axes[axn].get_legend_handles_labels()
+                    _, labels = self.axes[axn].get_legend_handles_labels()
                     self.axes[axn].legend(
-                        ncol=legend_kwargs.pop("ncol", max([int(np.ceil(len(l))), 4])),
+                        ncol=legend_kwargs.pop(
+                            "ncol", max([int(np.ceil(len(labels))), 4])
+                        ),
                         loc=legend_kwargs.pop("loc", (0, 1)),
                         frameon=legend_kwargs.pop("frameon", False),
                         markerscale=legend_kwargs.pop("markerscale", 1.0),
