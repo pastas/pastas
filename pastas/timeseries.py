@@ -75,7 +75,7 @@ class TimeSeries:
                 if settings["fill_nan"] == "drop":
                     raise UserWarning(
                         "The fill_nan setting 'drop' for a stress is not allowed "
-                        "because the stress time series  need to be equidistant. "
+                        "because the stress time series need to be equidistant. "
                         "Please change this."
                     )
             validate_stress(series)
@@ -91,8 +91,8 @@ class TimeSeries:
             "fill_nan": "interpolate",
             "fill_before": None,
             "fill_after": None,
-            "tmin": series.index.min(),
-            "tmax": series.index.max(),
+            "tmin": series.first_valid_index(),
+            "tmax": series.last_valid_index(),
             "time_offset": pd.Timedelta(0),
         }
         self.metadata = {"x": 0.0, "y": 0.0, "z": 0.0, "projection": None}
@@ -292,10 +292,10 @@ class TimeSeries:
                 success = False
 
         if success:
-            logger.info("Time Series %s were sampled up using %s.", self.name, method)
+            logger.info("Time Series '%s' were sampled up using %s.", self.name, method)
         else:
             logger.warning(
-                "Time Series %s: User-defined option for sample_up %s is not "
+                "Time Series '%s': User-defined option for sample_up %s is not "
                 "supported",
                 self.name,
                 method,
@@ -348,14 +348,14 @@ class TimeSeries:
 
         if success:
             logger.info(
-                "Time Series %s was sampled down to freq %s with method " "%s.",
+                "Time Series '%s' was sampled down to freq %s with method " "%s.",
                 self.name,
                 freq,
                 method,
             )
         else:
             logger.warning(
-                "Time Series %s: User-defined option for sample down %s is not "
+                "Time Series '%s': User-defined option for sample down %s is not "
                 "supported",
                 self.name,
                 method,
@@ -383,14 +383,14 @@ class TimeSeries:
 
         if success:
             logger.info(
-                "Time Series %s: %s nan-value(s) was/were found and filled with: %s.",
+                "Time Series '%s': %s nan-value(s) was/were found and filled with: %s.",
                 self.name,
                 n,
                 method,
             )
         else:
             logger.warning(
-                "Time Series %s: User-defined option for fill_nan %s is not supported.",
+                "Time Series '%s': User-defined option for fill_nan %s is not supported.",
                 self.name,
                 method,
             )
@@ -422,7 +422,7 @@ class TimeSeries:
                 mean_value = series.mean()
                 series = series.fillna(mean_value)  # Default option
                 logger.info(
-                    "Time Series %s was extended in the past to %s with the mean "
+                    "Time Series '%s' was extended in the past to %s with the mean "
                     "value (%.2g) of the time series.",
                     self.name,
                     series.index.min(),
@@ -432,7 +432,7 @@ class TimeSeries:
                 first_value = series.loc[series.first_valid_index()]
                 series = series.fillna(method="bfill")  # Default option
                 logger.info(
-                    "Time Series %s was extended in the past to %s with the first "
+                    "Time Series '%s' was extended in the past to %s with the first "
                     "value (%.2g) of the time series.",
                     self.name,
                     series.index.min(),
@@ -441,15 +441,24 @@ class TimeSeries:
             elif isinstance(method, float):
                 series = series.fillna(method)
                 logger.info(
-                    "Time Series %s was extended in the past to %s by adding %s "
+                    "Time Series '%s' was extended in the past to %s by adding %s "
                     "values.",
                     self.name,
                     series.index.min(),
                     method,
                 )
+            elif method is None:
+                msg = (
+                    f"Time Series '{self.name}': cannot be extended into past to"
+                    f" {series.index.min()} as 'fill_before' method is 'None'. "
+                    "Provide settings to stress model, e.g. "
+                    "`ps.StressModel(stress, settings='prec')`."
+                )
+                logger.error(msg)
+                raise ValueError(msg)
             else:
                 logger.info(
-                    "Time Series %s: User-defined option for fill_before '%s' is not "
+                    "Time Series '%s': User-defined option for fill_before '%s' is not "
                     "supported.",
                     self.name,
                     method,
@@ -482,7 +491,7 @@ class TimeSeries:
                 mean_value = series.mean()
                 series = series.fillna(mean_value)  # Default option
                 logger.info(
-                    "Time Series %s was extended in the future to %s with the mean "
+                    "Time Series '%s' was extended in the future to %s with the mean "
                     "value (%.2g) of the time series.",
                     self.name,
                     series.index.max(),
@@ -492,7 +501,7 @@ class TimeSeries:
                 last_value = series.loc[series.last_valid_index()]
                 series = series.fillna(method="ffill")
                 logger.info(
-                    "Time Series %s was extended in the future to %s with the last "
+                    "Time Series '%s' was extended in the future to %s with the last "
                     "value (%.2g) of the time series.",
                     self.name,
                     series.index.max(),
@@ -501,15 +510,24 @@ class TimeSeries:
             elif isinstance(method, float):
                 series = series.fillna(method)
                 logger.info(
-                    "Time Series %s was extended in the future to %s by adding %s "
+                    "Time Series '%s' was extended in the future to %s by adding %s "
                     "values.",
                     self.name,
                     series.index.max(),
                     method,
                 )
+            elif method is None:
+                msg = (
+                    f"Time Series '{self.name}': cannot be extended into future to"
+                    f" {series.index.min()} as 'fill_after' method is 'None'. "
+                    "Provide settings to stress model, e.g. "
+                    "`ps.StressModel(stress, settings='prec')`."
+                )
+                logger.error(msg)
+                raise ValueError(msg)
             else:
-                logger.info(
-                    "Time Series %s: User-defined option for fill_after '%s' is not "
+                logger.warning(
+                    "Time Series '%s': User-defined option for fill_after '%s' is not "
                     "supported",
                     self.name,
                     method,
@@ -696,7 +714,7 @@ def _validate_series(series: Series, equidistant: bool = True):
     # 7. Make sure the time series has no nan-values
     if series.hasnans:
         msg = (
-            "The time series %s has nan-values. Pastas will use the fill_nan "
+            "The Time Series '%s' has nan-values. Pastas will use the fill_nan "
             "settings to fill up the nan-values."
         )
         logger.warning(msg, name)

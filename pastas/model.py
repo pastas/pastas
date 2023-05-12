@@ -414,7 +414,11 @@ class Model:
 
         if sim.hasnans:
             sim = sim.dropna()
-            msg = "Simulation contains Nan-values. Check stresses time series settings!"
+            msg = (
+                "Simulation contains Nan-values. Check if time series settings " 
+                "are provided for each stress model "
+                "(e.g. `ps.StressModel(stress, settings='prec')`!"
+            )
             self.logger.error(msg)
             raise ValueError(msg)
 
