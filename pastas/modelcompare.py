@@ -319,7 +319,7 @@ class CompareModels:
             models = self.models
             modelnames = self.modelnames
         else:
-            modelnames = [iml.model for iml in models]
+            modelnames = [iml.name for iml in models]
 
         metrics = concat(
             [ml.stats.summary(stats=metric_selection) for ml in models],
@@ -357,7 +357,7 @@ class CompareModels:
             models = self.models
             modelnames = self.modelnames
         else:
-            modelnames = [iml.model for iml in models]
+            modelnames = [iml.name for iml in models]
 
         params = concat([ml.parameters[param_col] for ml in models], axis=1, sort=False)
         params.columns = modelnames
@@ -386,7 +386,7 @@ class CompareModels:
             models = self.models
             modelnames = self.modelnames
         else:
-            modelnames = [iml.model for iml in models]
+            modelnames = [iml.name for iml in models]
 
         diags = DataFrame(index=modelnames)
         for i, ml in enumerate(models):
