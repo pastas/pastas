@@ -229,7 +229,12 @@ class RfuncBase:
         """
 
     def get_t(
-        self, p: ArrayLike, dt: float, cutoff: float, maxtmax: Optional[int] = None
+        self,
+        p: ArrayLike,
+        dt: float,
+        cutoff: float,
+        maxtmax: Optional[int] = None,
+        warn: bool = True,
     ) -> ArrayLike:
         """Internal method to determine the times at which to evaluate the step
         response, from t=0.
@@ -245,6 +250,9 @@ class RfuncBase:
             proportion after which the step function is cut off.
         maxtmax: float, optional
             The maximum time of the response, usually set to the simulation length.
+        warn : bool, optional
+            only used for HantushWellModel, whether to warn when r is set to 1.0
+            for calculations.
 
         Returns
         -------
@@ -254,7 +262,10 @@ class RfuncBase:
         if isinstance(dt, np.ndarray):
             return dt
         else:
-            tmax = self.get_tmax(p, cutoff)
+            if self._name == "HantushWellModel":
+                tmax = self.get_tmax(p, cutoff, warn=warn)
+            else:
+                tmax = self.get_tmax(p, cutoff)
             if maxtmax is not None:
                 tmax = min(tmax, maxtmax)
             tmax = max(tmax, 3 * dt)
@@ -569,16 +580,19 @@ class HantushWellModel(RfuncBase):
         return parameters
 
     @staticmethod
-    def _get_distance_from_params(p: ArrayLike) -> float:
+    def _get_distance_from_params(p: ArrayLike, warn: bool = True) -> float:
         if len(p) == 3:
             r = 1.0
-            logger.info("No distance passed to HantushWellModel, assuming r=1.0.")
+            if warn:
+                logger.info("No distance passed to HantushWellModel, assuming r=1.0.")
         else:
             r = p[3]
         return r
 
-    def get_tmax(self, p: ArrayLike, cutoff: Optional[float] = None) -> float:
-        r = self._get_distance_from_params(p)
+    def get_tmax(
+        self, p: ArrayLike, cutoff: Optional[float] = None, warn: bool = True
+    ) -> float:
+        r = self._get_distance_from_params(p, warn=warn)
         # approximate formula for tmax
         if cutoff is None:
             cutoff = self.cutoff
@@ -658,10 +672,11 @@ class HantushWellModel(RfuncBase):
         dt: float = 1.0,
         cutoff: Optional[float] = None,
         maxtmax: Optional[int] = None,
+        warn: bool = True,
     ) -> ArrayLike:
         A, a, b = p[:3]
-        r = self._get_distance_from_params(p)
-        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
+        r = self._get_distance_from_params(p, warn=warn)
+        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, warn=warn)
 
         if self.quad:
             return self.quad_step(A, a, b, r, t)
