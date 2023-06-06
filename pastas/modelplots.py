@@ -265,10 +265,10 @@ class Plotting:
                 i = i + 1
 
             # plot the step response
-            if self.ml.stressmodels[sm_name].rfunc._name == "HantushWellModel":
-                rkwargs = {"warn": False}
-            else:
-                rkwargs = {}
+            rkwargs = {}
+            if self.ml.stressmodels[sm_name].rfunc is not None:
+                if self.ml.stressmodels[sm_name].rfunc._name == "HantushWellModel":
+                    rkwargs = {"warn": False}
             response = self.ml._get_response(
                 block_or_step=block_or_step, name=sm_name, add_0=True, **rkwargs
             )
