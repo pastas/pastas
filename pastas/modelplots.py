@@ -891,10 +891,10 @@ class Plotting:
                 if stacklegend:
                     if stacklegend_kws is None:
                         stacklegend_kws = {}
-                    else:
-                        ncol = stacklegend_kws.pop("ncol", 5)
-                        fontsize = stacklegend_kws.pop("fontsize", 6)
-                        loc = stacklegend_kws.pop("loc", "best")
+                    ncol = stacklegend_kws.pop("ncol", 5)
+                    fontsize = stacklegend_kws.pop("fontsize", 6)
+                    loc = stacklegend_kws.pop("loc", "best")
+                    
                     ax.legend(loc=loc, ncol=ncol, fontsize=fontsize, **stacklegend_kws)
 
                 # y-scale does not show 0
