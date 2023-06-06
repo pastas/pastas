@@ -142,7 +142,11 @@ def _load_stressmodel(ts, data):
 
     if "rfunc" in ts.keys():
         rfunc_class = ts["rfunc"].pop("class")  # Determine response class
-        ts["rfunc"] = getattr(ps.rfunc, rfunc_class)(**ts["rfunc"])
+        rfunc_up = ts["rfunc"].pop("up", None)  # get up value
+        rfunc_gsf = ts["rfunc"].pop("gain_scale_factor", None)  # get gain_scale_factor
+        rfunc = getattr(ps.rfunc, rfunc_class)(**ts["rfunc"])
+        rfunc.update_rfunc_settings(up=rfunc_up, gain_scale_factor=rfunc_gsf)
+        ts["rfunc"] = rfunc
 
     if "recharge" in ts.keys():
         recharge_class = ts["recharge"].pop("class")

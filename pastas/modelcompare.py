@@ -1,6 +1,7 @@
 """This module contains tools for visually comparing multiple models.
 """
 from itertools import combinations
+from logging import getLogger
 from typing import List, Optional, Tuple
 from warnings import warn
 
@@ -10,6 +11,8 @@ from pandas import DataFrame, concat
 
 import pastas as ps
 from pastas.typing import Axes, Model
+
+logger = getLogger(__name__)
 
 
 class CompareModels:
@@ -63,6 +66,12 @@ class CompareModels:
             list of models to compare.
         """
         self.models = models
+        # ensure unique model names
+        modelnames = [iml.name for iml in self.models]
+        if len(set(modelnames)) < len(modelnames):
+            logger.warning("Duplicate model names, appending a suffix.")
+            modelnames = [f"{iml.name}_{i}" for i, iml in enumerate(self.models)]
+        self.modelnames = modelnames
         # attributes that are set and used later
         self.figure = None
         self.axes = None
@@ -308,13 +317,16 @@ class CompareModels:
         """
         if models is None:
             models = self.models
+            modelnames = self.modelnames
+        else:
+            modelnames = [iml.name for iml in models]
 
         metrics = concat(
             [ml.stats.summary(stats=metric_selection) for ml in models],
             axis=1,
             sort=False,
         )
-        metrics.columns = [ml.name for ml in models]
+        metrics.columns = modelnames
         metrics.index.name = None
 
         return metrics
@@ -343,9 +355,12 @@ class CompareModels:
         """
         if models is None:
             models = self.models
+            modelnames = self.modelnames
+        else:
+            modelnames = [iml.name for iml in models]
 
         params = concat([ml.parameters[param_col] for ml in models], axis=1, sort=False)
-        params.columns = [x.name for x in models]
+        params.columns = modelnames
 
         if param_selection:
             sel = np.array([])
@@ -369,11 +384,14 @@ class CompareModels:
         """
         if models is None:
             models = self.models
+            modelnames = self.modelnames
+        else:
+            modelnames = [iml.name for iml in models]
 
-        diags = DataFrame(index=[x.name for x in models])
-        for ml in models:
+        diags = DataFrame(index=modelnames)
+        for i, ml in enumerate(models):
             mldiag = ml.stats.diagnostics()
-            diags.loc[f"{ml.name}", mldiag.index] = mldiag[diag_col].values
+            diags.loc[modelnames[i], mldiag.index] = mldiag[diag_col].values
 
         return diags.transpose()
 
@@ -487,8 +505,8 @@ class CompareModels:
             axs = self.axes
 
         for i, ml in enumerate(self.models):
-            noise = ml.noise()
-            if noise is not None:
+            if ml.settings["noise"]:
+                noise = ml.noise()
                 axs[axn].plot(
                     noise.index,
                     noise.values,
@@ -773,7 +791,7 @@ class CompareModels:
             param_col=param_col,
         ).applymap(ps.plots._table_formatter_params)
 
-        # add seperate column with parameter names
+        # add separate column with parameter names
         params.loc[:, "Parameters"] = params.index
         cols = params.columns.to_list()[-1:] + params.columns.to_list()[:-1]
         return self.plot_table(axn=axn, df=params[cols])
@@ -802,7 +820,7 @@ class CompareModels:
                     index={met: f"\N{GREEK CAPITAL LETTER DELTA}{met.upper()}"}
                 )
         if "rsq" in metrics.index:
-            metrics = metrics.rename(index={"rsq": f"R\N{SUPERSCRIPT TWO}"})
+            metrics = metrics.rename(index={"rsq": "R\N{SUPERSCRIPT TWO}"})
 
         # add seperate column with parameter names
         metrics.loc[:, "Metrics"] = metrics.index
@@ -921,9 +939,11 @@ class CompareModels:
                 if legend and not axn.startswith("rf"):
                     if legend_kwargs is None:
                         legend_kwargs = {}
-                    _, l = self.axes[axn].get_legend_handles_labels()
+                    _, labels = self.axes[axn].get_legend_handles_labels()
                     self.axes[axn].legend(
-                        ncol=legend_kwargs.pop("ncol", max([int(np.ceil(len(l))), 4])),
+                        ncol=legend_kwargs.pop(
+                            "ncol", max([int(np.ceil(len(labels))), 4])
+                        ),
                         loc=legend_kwargs.pop("loc", (0, 1)),
                         frameon=legend_kwargs.pop("frameon", False),
                         markerscale=legend_kwargs.pop("markerscale", 1.0),
