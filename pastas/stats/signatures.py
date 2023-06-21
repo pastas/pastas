@@ -2,27 +2,26 @@
 # Type Hinting
 from typing import Optional, Tuple
 
-import pandas as pd
-from numpy import arange, diff, log, nan, isnan, sqrt, ndarray, where, split
-from pandas import DatetimeIndex, Series, Timedelta, cut
+from numpy import arange, diff, log, nan, isnan, sqrt, ndarray, where, split, linspace
+from pandas import DataFrame, DatetimeIndex, Series, Timedelta, cut, concat, to_datetime
 from scipy.stats import linregress
 
 import pastas as ps
+from logging import getLogger
 
 __all__ = [
     "cv_period_mean",
     "cv_date_min",
+    "cv_date_max",
     "cv_fall_rate",
     "cv_rise_rate",
     "parde_seasonality",
     "avg_seasonal_fluctuation",
-    "magnitude",
     "interannual_variation",
     "low_pulse_count",
     "high_pulse_count",
     "low_pulse_duration",
     "high_pulse_duration",
-    "amplitude_range",
     "bimodality_coefficient",
     "mean_annual_maximum",
     "rise_rate",
@@ -34,41 +33,62 @@ __all__ = [
     "recession_constant",
     "recovery_constant",
     "duration_curve_slope",
-    "duration_curve_range",
+    "duration_curve_ratio",
     "baselevel_index",
     "richards_pathlength",
     "richards_baker_index",
     "baselevel_stability",
 ]
 
+logger = getLogger(__name__)
+
 
 def _normalize(series: Series) -> Series:
+    """Normalize the time series by subtracting the mean and dividing over the range.
+
+    Parameters
+    ----------
+    series: pandas.Series
+        Pandas Series to be normalized.
+
+    Returns
+    -------
+    series: pandas.Series
+        Pandas Series scaled by subtracting the mean and dividing over the range of the
+        values. This results in a time series with values between zero and one.
+
+    """
     series = (series - series.min()) / (series.max() - series.min())
     return series
 
 
-def cv_period_mean(series: Series, freq: str = "M") -> float:
-    """Coefficient of variation of mean head over a period (default monthly).
+def cv_period_mean(series: Series, normalize: bool = False, freq: str = "M") -> float:
+    """Coefficient of variation of the mean head over a period (default monthly).
 
     Parameters
     ----------
     series: pandas.Series
         Pandas Series with DatetimeIndex and head values.
+    normalize: bool, optional
+        normalize the time series to values between zero and one.
     freq: str, optional
         frequency to resample the series to by averaging.
 
     Returns
     -------
     cv: float
-        Coefficient of variation of mean head over a period (default monthly).
+        Coefficient of variation of mean head resampled over a period (default monthly).
 
     Notes
     -----
     Coefficient of variation of mean monthly heads :cite:t:`hughes_hydrological_1989`.
 
     """
+    if normalize:
+        series = _normalize(series)
+
     series = series.resample(freq).mean()
-    cv = series.std() / series.mean()
+    cv = series.std(ddof=1) / series.mean()  # ddof=1 = > sample std
     return cv
 
 
@@ -87,13 +107,42 @@ def cv_date_min(series: Series) -> float:
 
     Notes
     -----
-    Coefficient of variation of the date of annual minimum groundwater head
-    according to :cite:t:`richter_method_1996`.
+    Coefficient of variation of the date of annual minimum groundwater head adapted
+    from :cite:t:`richter_method_1996`. Instead of the Julian date, the day the year is
+    used. If there are multiple dates with the same minimum head, the first date is
+    chosen.
 
     """
     data = series.groupby(series.index.year).idxmin().dropna().values
     data = DatetimeIndex(data).dayofyear.to_numpy(float)
-    cv = data.std() / data.mean()
+    cv = data.std(ddof=1) / data.mean()
+    return cv
+
+
+def cv_date_max(series: Series) -> float:
+    """Coefficient of variation of the date of annual maximum head.
+
+    Parameters
+    ----------
+    series: pandas.Series
+        Pandas Series with DatetimeIndex and head values.
+
+    Returns
+    -------
+    cv: float
+        Coefficient of variation of the date of annual maximum head.
+
+    Notes
+    -----
+    Coefficient of variation of the date of annual maximum head adapted from
+    :cite:t:`richter_method_1996`. Instead of the Julian date, the day the year is
+    used. If there are multiple dates with the same maximum head, the first date is
+    chosen.
+
+    """
+    data = series.groupby(series.index.year).idxmax().dropna().values
+    data = DatetimeIndex(data).dayofyear.to_numpy(float)
+    cv = data.std(ddof=1) / data.mean()
     return cv
 
 
@@ -109,12 +158,13 @@ def parde_seasonality(series: Series, normalize: bool = True) -> float:
 
     Returns
     -------
+    float: Parde seasonality.
 
     Notes
     -----
     Pardé seasonality is the difference between the maximum and minimum Pardé
     coefficient. A Pardé series consists of 12 Pardé coefficients, corresponding to
-    12 months. Pardé coefficient for, for example, January is its long‐term monthly
+    12 months. Pardé coefficient for, for example, January is its long-term monthly
     mean groundwater head divided by the overall mean groundwater head.
 
     """
@@ -122,7 +172,7 @@ def parde_seasonality(series: Series, normalize: bool = True) -> float:
     return coefficients.max() - coefficients.min()
 
 
-def parde_coefficients(series: Series, normalize: bool = True) -> float:
+def parde_coefficients(series: Series, normalize: bool = True) -> Series:
     """Parde coefficients for each month :cite:t:`parde_fleuves_1933`.
 
     Parameters
@@ -134,12 +184,14 @@ def parde_coefficients(series: Series, normalize: bool = True) -> float:
 
     Returns
     -------
+    coefficients: pandas.Series
+        Parde coefficients for each month.
 
     Notes
     -----
     Pardé seasonality is the difference between the maximum and minimum Pardé
     coefficient. A Pardé series consists of 12 Pardé coefficients, corresponding to
-    12 months. Pardé coefficient for, for example, January is its long‐term monthly
+    12 months. Pardé coefficient for, for example, January is its long-term monthly
     mean groundwater head divided by the overall mean groundwater head.
 
     """
@@ -151,7 +203,7 @@ def parde_coefficients(series: Series, normalize: bool = True) -> float:
     return coefficients
 
 
-def _martens(series: Series, normalize: bool = True) -> Tuple[Series, Series]:
+def _martens(series: Series, normalize: bool = False) -> Tuple[Series, Series]:
     """Functions for the average seasonal fluctuation and inter annual fluctuation.
 
     Parameters
@@ -164,13 +216,15 @@ def _martens(series: Series, normalize: bool = True) -> Tuple[Series, Series]:
     Returns
     -------
     hl: pandas.Series
-        Lowest heads
+        Lowest heads in a year.
     hw: pandas.Series
-        Largest heads
+        Largest heads in a year.
 
     Notes
     -----
-    According to :cite:t:`martens_groundwater_2013`.
+    According to :cite:t:`martens_groundwater_2013`. The average of the three lowest
+    and three highest heads in three different months for each year is computed. The
+    average is then taken over all years.
 
     """
 
@@ -184,7 +238,7 @@ def _martens(series: Series, normalize: bool = True) -> Tuple[Series, Series]:
     return hl, hw
 
 
-def avg_seasonal_fluctuation(series: Series, normalize: bool = True) -> float:
+def avg_seasonal_fluctuation(series: Series, normalize: bool = False) -> float:
     """Classification according to :cite:t:`martens_groundwater_2013`.
 
     Parameters
@@ -196,8 +250,8 @@ def avg_seasonal_fluctuation(series: Series, normalize: bool = True) -> float:
 
     Returns
     -------
-
-    float
+    float:
+        Average seasonal fluctuation (s).
 
     Notes
     -----
@@ -211,11 +265,10 @@ def avg_seasonal_fluctuation(series: Series, normalize: bool = True) -> float:
     """
 
     hl, hw = _martens(series, normalize=normalize)
+    return (hw - hl).mean()
 
-    return hw.mean() - hl.mean()
 
-
-def interannual_variation(series: Series, normalize: bool = True) -> float:
+def interannual_variation(series: Series, normalize: bool = False) -> float:
     """Interannual variation after :cite:t:`martens_groundwater_2013`.
 
     Parameters
@@ -228,6 +281,7 @@ def interannual_variation(series: Series, normalize: bool = True) -> float:
     Returns
     -------
     float
+        Interannual variation (y).
 
     Notes
     -----
@@ -238,20 +292,19 @@ def interannual_variation(series: Series, normalize: bool = True) -> float:
 
         y = ((max_HW - min_HW) + (max_LW - min_LW)) / 2
 
-    Warning: In this formulating the water table is references to a certain datum and
+    Warning: In this formulating the water table is referenced to a certain datum and
     positive, not as depth below the surface!
 
     """
 
     hl, hw = _martens(series, normalize=normalize)
-
-    return (hw.max() - hw.min()) + (hl.max() - hl.min()) / 2
+    return ((hw.max() - hw.min()) + (hl.max() - hl.min())) / 2
 
 
 def colwell_components(
     series: Series,
     bins: int = 11,
-    freq: str = "M",
+    freq: str = "W",
     method: str = "mean",
     normalize: bool = True,
 ) -> Tuple[float, float, float]:
@@ -265,7 +318,7 @@ def colwell_components(
     bins: int
         number of bins to determine the states of the groundwater.
     freq: str, optional
-        frequency to resample the series to.
+        frequency to resample the series to. Possible options are "D", "W", or "M".
     method: str, optional
         Method to use for resampling. Only "mean" is allowed now.
     normalize: bool, optional
@@ -297,9 +350,20 @@ def colwell_components(
     binned = cut(
         series, bins=bins, right=False, include_lowest=True, labels=range(bins)
     )
-    df = pd.DataFrame(binned)
-    df["time"] = df.index.month
-    df["values"] = 1
+    df = DataFrame(binned, dtype=float)
+
+    if freq == "M":
+        df["time"] = df.index.isocalendar().month
+    elif freq == "W":
+        df["time"] = df.index.isocalendar().week
+    elif freq == "D":
+        df["time"] = df.index.isocalendar().day
+    else:
+        msg = "freq %s is not a supported option."
+        logger.error(msg, freq)
+        raise ValueError(msg)
+
+    df["values"] = 1.0
     df = df.pivot_table(columns="head", index="time", aggfunc="sum", values="values")
 
     # Count of rows and column items
@@ -312,8 +376,8 @@ def colwell_components(
     hxy = -(df / z * log(df / z, where=df != 0)).sum().sum()
 
     # Compute final components
-    p = 1 - (hxy - hy) / log(bins)  # Predictability
-    c = 1 - hx / log(bins)  # Constancy
+    p = 1 - (hxy - hx) / log(bins)  # Predictability
+    c = 1 - hy / log(bins)  # Constancy
     m = (hx + hy - hxy) / log(bins)  # Contingency
     return p, c, m
 
@@ -321,7 +385,7 @@ def colwell_components(
 def colwell_constancy(
     series: Series,
     bins: int = 11,
-    freq: str = "M",
+    freq: str = "W",
     method: str = "mean",
     normalize: bool = True,
 ) -> Tuple[float, float, float]:
@@ -359,7 +423,7 @@ def colwell_constancy(
 def colwell_contingency(
     series: Series,
     bins: int = 11,
-    freq: str = "M",
+    freq: str = "W",
     method: str = "mean",
     normalize: bool = True,
 ) -> Tuple[float, float, float]:
@@ -396,8 +460,8 @@ def colwell_contingency(
     )[2]
 
 
-def low_pulse_count(series: Series, quantile: float = 0.2) -> int:
-    """Number of times the series drops below a certain threshold.
+def low_pulse_count(series: Series, quantile: float = 0.2) -> float:
+    """Average number of times the series exceeds a certain threshold per year.
 
     Parameters
     ----------
@@ -408,8 +472,8 @@ def low_pulse_count(series: Series, quantile: float = 0.2) -> int:
 
     Returns
     -------
-    int:
-        Number of times the series exceeds a certain threshold.
+    float:
+        Average number of times the series exceeds a certain threshold per year.
 
     Notes
     -----
@@ -417,38 +481,27 @@ def low_pulse_count(series: Series, quantile: float = 0.2) -> int:
     The threshold is defined as the 20th percentile of non-exceedance
     :cite:t:`richter_method_1996`.
 
+    Warning
+    -------
+    This method is sensitive to measurement noise, e.g., every change is sign in the
+    differences is counted as a pulse. Therefore, it is recommended to smooth the time
+    series first.
+
     """
     h = series < series.quantile(quantile)
-    return (h.astype(int).diff() > 0).sum()
+    sel = h.astype(int).diff().replace(0.0, nan).shift(-1).dropna().index
+
+    # Deal with pulses in the beginning and end of the time series
+    if h[0]:
+        sel = sel.append(series.index[:1]).sort_values()
+    if h[-1]:
+        sel = sel.append(series.index[-1:]).sort_values()
+
+    return sel.size / 2 / series.index.year.unique().size
 
 
-def high_pulse_count(series: Series, quantile: float = 0.8) -> int:
-    """Number of times the series exceeds a certain threshold.
-
-    Parameters
-    ----------
-    series: pandas.Series
-        Pandas Series with DatetimeIndex and head values.
-    quantile: float, optional
-        Quantile used as a threshold.
-
-    Returns
-    -------
-    h: int
-        Number of times the series exceeds a certain threshold.
-
-    Notes
-    -----
-    Number of times during which the groundwater head exceeds a certain threshold.
-    The threshold is defined as the 80th percentile of non-exceedance.
-
-    """
-    h = series > series.quantile(quantile)
-    return (h.astype(int).diff() > 0).sum()
-
-
-def low_pulse_duration(series: Series, quantile: float = 0.8) -> float:
-    """Average duration of pulses where the head is below a certain threshold.
+def high_pulse_count(series: Series, quantile: float = 0.8) -> float:
+    """Average number of times the series exceeds a certain threshold per year.
 
     Parameters
     ----------
@@ -460,15 +513,65 @@ def low_pulse_duration(series: Series, quantile: float = 0.8) -> float:
     Returns
     -------
     float
+        Average number of times the series exceeds a certain threshold per year.
 
     Notes
     -----
-    Average duration of pulses where the groundwater head drops below a certain
-    threshold. The threshold is defined as the 20th percentile of non-exceedance.
+    Number of times during which the groundwater head exceeds a certain threshold.
+    The threshold is defined as the 80th percentile of non-exceedance.
+
+    Warning
+    -------
+    This method is sensitive to measurement noise, e.g., every change is sign in the
+    differences is counted as a pulse. Therefore, it is recommended to smooth the time
+    series first.
+
+    """
+    h = series > series.quantile(quantile)
+    sel = h.astype(int).diff().replace(0.0, nan).shift(-1).dropna().index
+    if h[0]:
+        sel = sel.append(series.index[:1]).sort_values()
+    if h[-1]:
+        sel = sel.append(series.index[-1:]).sort_values()
+    return sel.size / 2 / series.index.year.unique().size
+
+
+def low_pulse_duration(series: Series, quantile: float = 0.2) -> float:
+    """Average duration of pulses where the head is below a certain threshold.
+
+    Parameters
+    ----------
+    series: pandas.Series
+        Pandas Series with DatetimeIndex and head values.
+    quantile: float, optional
+        Quantile used as a threshold.
+
+    Returns
+    -------
+    float:
+        Average duration (in days) of pulses where the groundwater head drops below
+        a certain threshold.
+
+    Notes
+    -----
+    Average duration of pulses (in days) where the groundwater head drops below a
+    certain threshold.
+
+    Warning
+    -------
+    This method is sensitive to measurement noise, e.g., every change is sign in the
+    differences is counted as a pulse. Therefore, it is recommended to smooth the time
+    series first.
 
     """
     h = series < series.quantile(quantile)
     sel = h.astype(int).diff().replace(0.0, nan).shift(-1).dropna().index
+
+    if h[0]:
+        sel = sel.append(series.index[:1]).sort_values()
+    if h[-1]:
+        sel = sel.append(series.index[-1:]).sort_values()
+
     return (diff(sel.to_numpy()) / Timedelta("1D"))[::2].mean()
 
 
@@ -484,39 +587,64 @@ def high_pulse_duration(series: Series, quantile: float = 0.8) -> float:
 
     Returns
     -------
-    float
+    float:
+        Average duration (in days) of pulses where the groundwater head drops below
+        a certain threshold.
 
     Notes
     -----
     Average duration of pulses where the groundwater head drops exceeds a certain
     threshold. The threshold is defined as the 80th percentile of non-exceedance.
 
+    Warning
+    -------
+    This method is sensitive to measurement noise, e.g., every change is sign in the
+    differences is counted as a pulse. Therefore, it is recommended to smooth the time
+    series first.
+
     """
     h = series > series.quantile(quantile)
     sel = h.astype(int).diff().replace(0.0, nan).shift(-1).dropna().index
+
+    if h[0]:
+        sel = sel.append(series.index[:1]).sort_values()
+    if h[-1]:
+        sel = sel.append(series.index[-1:]).sort_values()
+
     return (diff(sel.to_numpy()) / Timedelta("1D"))[::2].mean()
 
 
-def amplitude_range(series: Series) -> float:
-    """Range of unscaled groundwater head.
+def _get_differences(series: Series, normalize: bool = False) -> Series:
+    """Get the changes in the time series.
 
     Parameters
     ----------
     series: pandas.Series
         Pandas Series with DatetimeIndex and head values.
+    normalize: bool, optional
+        normalize the time series to values between zero and one.
 
     Returns
     -------
-    float
+    differences: pandas.Series
+        Differences in the time series.
 
     Notes
     -----
-    Range of unscaled groundwater head.
+    Get the differences in the time series, and divide by the time step to get the rate
+    of change. If normalize is True, the time series is normalized to values between
+    zero and one.
+
     """
-    return series.max() - series.min()
+    if normalize:
+        series = _normalize(series)
+
+    dt = diff(series.index.to_numpy()) / Timedelta("1D")
+    differences = series.diff().iloc[1:] / dt
+    return differences
 
 
-def rise_rate(series: Series, normalize: bool = True) -> float:
+def rise_rate(series: Series, normalize: bool = False) -> float:
     """Mean of positive head changes from one day to the next.
 
     Parameters
@@ -528,22 +656,21 @@ def rise_rate(series: Series, normalize: bool = True) -> float:
 
     Returns
     -------
-    float
+    float:
+        Mean of positive head changes from one day to the next.
 
     Notes
     -----
     Mean rate of positive changes in head from one day to the next.
 
     """
-    if normalize:
-        series = _normalize(series)
+    differences = _get_differences(series, normalize=normalize)
+    rises = differences[differences > 0]
 
-    difference = series.diff()
-    rises = difference[difference > 0]
     return rises.mean()
 
 
-def fall_rate(series: Series, normalize: bool = True) -> float:
+def fall_rate(series: Series, normalize: bool = False) -> float:
     """Mean negative head changes from one day to the next.
 
     Parameters
@@ -563,11 +690,9 @@ def fall_rate(series: Series, normalize: bool = True) -> float:
     :cite:t:`richter_method_1996`.
 
     """
-    if normalize:
-        series = _normalize(series)
+    differences = _get_differences(series, normalize=normalize)
+    falls = differences[differences < 0]
 
-    difference = series.diff()
-    falls = difference[difference < 0]
     return falls.mean()
 
 
@@ -590,15 +715,13 @@ def cv_rise_rate(series: Series, normalize: bool = True) -> float:
     Coefficient of Variation in rise rate :cite:p:`richter_method_1996`.
 
     """
-    if normalize:
-        series = _normalize(series)
+    differences = _get_differences(series, normalize=normalize)
+    rises = differences[differences > 0]
 
-    difference = series.diff()
-    rises = difference[difference > 0]
-    return rises.std() / rises.mean()
+    return rises.std(ddof=1) / rises.mean()
 
 
-def cv_fall_rate(series: Series, normalize: bool = True) -> float:
+def cv_fall_rate(series: Series, normalize: bool = False) -> float:
     """Coefficient of Variation in fall rate.
 
     Parameters
@@ -617,12 +740,10 @@ def cv_fall_rate(series: Series, normalize: bool = True) -> float:
     Coefficient of Variation in fall rate :cite:p:`richter_method_1996`.
 
     """
-    if normalize:
-        series = _normalize(series)
+    differences = _get_differences(series, normalize=normalize)
+    falls = differences[differences < 0]
 
-    difference = series.diff()
-    falls = difference[difference < 0]
-    return falls.std() / falls.mean()
+    return falls.std(ddof=1) / falls.mean()
 
 
 def magnitude(series: Series) -> float:
@@ -667,7 +788,9 @@ def reversals_avg(series: Series) -> float:
     :cite:p:`richter_method_1996`.
 
     """
-    reversals = (series.diff() > 0).astype(int).diff().replace(-1, 1)
+    reversals = (
+        (series.diff()[series.diff() != 0.0] > 0).astype(int).diff().replace(-1, 1)
+    )
     return reversals.resample("A").sum().mean()
 
 
@@ -690,9 +813,11 @@ def reversals_cv(series: Series) -> float:
 
     """
     reversals = (
-        (series.diff() > 0).astype(int).diff().replace(-1, 1).resample("A").sum()
+        (series.diff()[series.diff() != 0.0] > 0).astype(int).diff().replace(-1, 1)
     )
-    return reversals.std() / reversals.mean()
+    return (
+        reversals.resample("A").sum().std(ddof=1) / reversals.resample("A").sum().mean()
+    )
 
 
 def mean_annual_maximum(series: Series, normalize: bool = True) -> float:
@@ -728,7 +853,7 @@ def bimodality_coefficient(series: Series, normalize: bool = True) -> float:
 
     Returns
     -------
-    float
+    float: Bimodality coefficient.
 
     Notes
     -----
@@ -761,8 +886,70 @@ def bimodality_coefficient(series: Series, normalize: bool = True) -> float:
     return ((skew**2) + 1) / (kurt + ((3 * ((n - 1) ** 2)) / ((n - 2) * (n - 3))))
 
 
+def _get_events_binned(
+    series: Series, normalize: bool = False, up: bool = True, bins: int = 20
+) -> Series:
+    """Get the recession or recovery events and bin them.
+
+    Parameters
+    ----------
+    series : Series
+        Pandas Series with DatetimeIndex and head values.
+    normalize : bool, optional
+        normalize the time series to values between zero and one.
+    up : bool, optional
+        If True, get the recovery events, if False, get the recession events.
+    bins : int, optional
+        Number of bins to bin the data to.
+
+    Returns
+    -------
+    Series
+        Binned events.
+
+    """
+    if normalize:
+        series = _normalize(series)
+
+    series.name = "difference"
+
+    # Get the negative differences
+    h = series.dropna().copy()
+
+    # Set the negative differences to nan if up is True, and the positive differences
+    # to nan if up is False (down).
+    if up:
+        h[h.diff() < 0] = nan
+    else:
+        h[h.diff() > 0] = nan
+
+    # Split the data into events
+    events = split(h, where(isnan(h.values))[0])
+    events = [ev[~isnan(ev.values)] for ev in events if not isinstance(ev, ndarray)]
+    events = [
+        ev.reset_index().loc[:, "difference"]
+        for ev in events
+        if not ev.empty and ev.size > 1
+    ]
+    events = concat(events, axis=1)
+
+    # Subtract the absolute value of the first day of each event
+    data = events - events.iloc[0, :]
+    data = data.loc[:, data.sum() != 0.0]  # Drop columns with only zeros (no events)
+
+    # Bin the data and compute the mean
+    binned = Series(dtype=float)
+    for g in data.groupby(
+        cut(data.index, bins=min(bins, data.index.max())).sort_values()
+    ):
+        binned[g[0].mid] = g[1]["difference"].dropna(axis=1).mean()[0]
+
+    binned = binned[binned != 0].dropna()
+    return binned
+
+
 def recession_constant(
-    series: Series, bins: int = 20, normalize: bool = True
+    series: Series, bins: int = 20, normalize: bool = False
 ) -> float:
     """Recession constant after :cite:t:`kirchner_catchments_2009`.
 
@@ -777,40 +964,22 @@ def recession_constant(
 
     Returns
     -------
-    float
+    float: Recession constant.
 
     Notes
     -----
-    Slope of the linear model fitted to percentile‐wise binned means in a log‐log
+    Slope of the linear model fitted to percentile-wise binned means in a log-log
     plot of negative head versus negative head one time step ahead.
 
     """
-    if normalize:
-        series = _normalize(series)
+    binned = _get_events_binned(series, normalize=normalize, up=False, bins=bins)
 
-    series.name = "difference"
-
-    h = series.copy()
-    h[h.diff() > 0] = nan
-
-    events = split(h, where(isnan(h.values))[0])
-    events = [ev[~isnan(ev.values)] for ev in events if not isinstance(ev, ndarray)]
-    events = [ev.reset_index().loc[:, "difference"] for ev in events if not ev.empty]
-    events = pd.concat(events, axis=1)
-
-    data = (events-events.iloc[0, :])
-
-    binned = pd.Series(dtype=float)
-    for g in data.groupby(pd.cut(data.index, bins=bins).sort_values()):
-        binned[g[0].mid] = g[1]["difference"].dropna(axis=1).mean()[0]
-
-    binned = binned.dropna()
+    # Fit the linear model to the binned data and return the slope
     fit = linregress(log(binned.index), log(-binned.values))
-
     return fit.slope
 
 
-def recovery_constant(series: Series, bins: int = 20, normalize: bool = True) -> float:
+def recovery_constant(series: Series, bins: int = 20, normalize: bool = False) -> float:
     """Recovery constant after :cite:t:`kirchner_catchments_2009`.
 
     Parameters
@@ -828,39 +997,21 @@ def recovery_constant(series: Series, bins: int = 20, normalize: bool = True) ->
 
     Notes
     -----
-    Slope of the linear model fitted to percentile‐wise binned means in a log‐log
+    Slope of the linear model fitted to percentile-wise binned means in a log-log
     plot of positive head versus positive head one time step ahead.
 
     """
-    if normalize:
-        series = _normalize(series)
+    binned = _get_events_binned(series, normalize=normalize, up=True, bins=bins)
 
-    series.name = "difference"
-
-    h = series.copy()
-    h[h.diff() < 0] = nan
-
-    events = split(h, where(isnan(h.values))[0])
-    events = [ev[~isnan(ev.values)] for ev in events if not isinstance(ev, ndarray)]
-    events = [ev.reset_index().loc[:, "difference"] for ev in events if not ev.empty]
-    events = pd.concat(events, axis=1)
-
-    data = (events-events.iloc[0, :])
-
-    binned = pd.Series(dtype=float)
-    for g in data.groupby(pd.cut(data.index, bins=bins).sort_values()):
-        binned[g[0].mid] = g[1]["difference"].dropna(axis=1).mean()[0]
-
-    binned = binned.dropna()
+    # Fit the linear model to the binned data and return the slope
     fit = linregress(log(binned.index), log(binned.values))
-
     return fit.slope
 
 
 def duration_curve_slope(
-    series: Series, l: float = 0.1, u: float = 0.9, normalize: bool = True
+    series: Series, l: float = 0.1, u: float = 0.9, normalize: bool = False
 ) -> float:
-    """Slope of the duration curve between percentile l and u after
+    """Slope of the head duration curve between percentile l and u after
     :cite:t:`oudin_are_2010`.
 
     Parameters
@@ -880,24 +1031,28 @@ def duration_curve_slope(
 
     Notes
     -----
-    Slope of the duration curve (analogue flow duration curve for streamflow) between
-    percentile l and u.
+    Slope of the head duration curve between percentile l and u.
 
     """
     if normalize:
         series = _normalize(series)
 
     s = series[
-        (series.quantile(l) > series) & (series < series.quantile(u))
-    ].sort_values()
-    s.index = arange(s.size) / s.size
+        (series > series.quantile(l)) & (series < series.quantile(u))
+    ].sort_values(ascending=False)
+
+    # Deal with the case that s is empty
+    if s.empty:
+        return nan
+
+    s.index = linspace(0, 1, s.size)
     return linregress(s.index, s.values).slope
 
 
-def duration_curve_range(
+def duration_curve_ratio(
     series: Series, l: float = 0.1, u: float = 0.9, normalize: bool = True
 ) -> float:
-    """Range of the duration curve between the percentile l and u after
+    """Ratio of the head duration curve between the percentile l and u after
     :cite:t:`richards_measures_1990`.
 
     Parameters
@@ -917,13 +1072,13 @@ def duration_curve_range(
 
     Notes
     -----
-    Range of the duration curve between the percentile l and u.
+    ratio of the duration curve between the percentile l and u.
 
     """
     if normalize:
         series = _normalize(series)
 
-    return series.quantile(u) - series.quantile(l)
+    return series.quantile(l) / series.quantile(u)
 
 
 def richards_pathlength(series: Series, normalize: bool = True) -> float:
@@ -973,17 +1128,17 @@ def richards_baker_index(series: Series, normalize: bool = True) -> float:
 
     Notes
     -----
-    Sum of absolute values of day‐to‐day changes in head divided by the sum of scaled
+    Sum of absolute values of day-to-day changes in head divided by the sum of scaled
     daily head. Equivalent the Richards Pathlength without the time component.
 
     """
     if normalize:
         series = _normalize(series)
 
-    return series.diff().dropna().abs().sum() / series.sum()
+    return series.diff().dropna().abs().sum()
 
 
-def _baselevel(series: Series, normalize: bool = True) -> Tuple[Series, Series]:
+def _baselevel(series: Series, normalize: bool = False) -> Tuple[Series, Series]:
     """Baselevel function for the baseflow index and stability.
 
     Parameters
@@ -1004,27 +1159,31 @@ def _baselevel(series: Series, normalize: bool = True) -> Tuple[Series, Series]:
         series = _normalize(series)
 
     # A/B. Selecting minima hm over 5-day periods
-    hm = series.resample("5D").min().dropna()
+    hm = series.resample("21D").min().dropna()
 
     # C. define the turning point ht (0.9 * head < adjacent heads)
-    ht = pd.Series(dtype=float)
+    ht = Series(dtype=float)
+    ht[hm.index[0]] = hm.iloc[0]
+
     for i, h in enumerate(hm.iloc[1:-1], start=1):
-        if (h < hm.iloc[i - 1]) & (h < hm.iloc[i + 1]):
+        if (1 * h < hm.iloc[i - 1]) & (1 * h < hm.iloc[i + 1]):
             ht[hm.index[i]] = h
 
+    ht[hm.index[-1]] = hm.iloc[-1]
+
     # ensure that index is a DatetimeIndex
-    ht.index = pd.to_datetime(ht.index)
+    ht.index = to_datetime(ht.index)
 
     # D. Interpolate
     ht = ht.resample("D").interpolate()
 
     # E. Assign a base head to each day
-    ht[ht > series.resample("D").mean().loc[ht.index]] = series.resample("D").mean()
+    # ht[ht > series.resample("D").mean().loc[ht.index]] = series.resample("D").mean()
 
     return series, ht
 
 
-def baselevel_index(series: Series, normalize: bool = True) -> float:
+def baselevel_index(series: Series, normalize: bool = False) -> float:
     """Base level index according to :cite:t:`organization_manual_2008`.
 
     Parameters
@@ -1036,23 +1195,22 @@ def baselevel_index(series: Series, normalize: bool = True) -> float:
 
     Returns
     -------
-    float
+    float: Base level index.
 
     Notes
     -----
-    Adapted analogously to its application in streamflow. Here, a baseflow time
-    series is separated from a 5‐day minimum groundwater head in a moving window. BFI
+    Adapted analogously to its application in streamflow. Here, a baselevel time
+    series is separated from a 5-day minimum groundwater head in a moving window. BLI
     equals the total sum of heads of original time series divided by the total sum of
     heads from the baseflow type of time series.
 
     """
 
     series, ht = _baselevel(series, normalize=normalize)
+    return ht.sum() / series.sum()
 
-    return series.resample("D").mean().sum() / ht.sum()
 
-
-def baselevel_stability(series: Series, normalize: bool = True) -> float:
+def baselevel_stability(series: Series, normalize: bool = False) -> float:
     """Baselevel stability after :cite:t:`heudorfer_index-based_2019`.
 
     Parameters
@@ -1064,19 +1222,19 @@ def baselevel_stability(series: Series, normalize: bool = True) -> float:
 
     Returns
     -------
-    float
+    float: Base level stability.
 
     Notes
     -----
     Originally developed for streamflow, here the Base Flow Index algorithm is
     analogously adapted to groundwater time series as a filter to separate the slow
-    component (“baseflow”) of the time series. Then, the mean annual baseflow is
-    calculated. Base Flow Stability is the difference of maximum and minimum annual
-    baseflow.
+    component (“base level") of the time series. Then, the mean annual base level is
+    calculated. Base Level Stability is the difference of maximum and minimum annual
+    base level.
 
     """
 
-    series, ht = _baselevel(series, normalize=normalize)
+    _, ht = _baselevel(series, normalize=normalize)
 
     return ht.resample("A").mean().max() - ht.resample("A").mean().min()
 
@@ -1111,9 +1269,16 @@ def autocorr(series: Series, freq: str = "w"):
     return NotImplementedError
 
 
-def lyapunov_exponent(series: Series):
+def lyapunov_exponent(series: Series, normalize: bool = True):
     """The exponential rate of divergence of nearby data points after
     :cite:t:`hilborn_chaos_2000`.
+
+    Parameters
+    ----------
+    series: pandas.Series
+        Pandas Series with DatetimeIndex and head values.
+    normalize: bool, optional
+        normalize the time series to values between zero and one.
 
     Returns
     -------
@@ -1207,14 +1372,14 @@ def summary(series: Series, signatures: Optional[list] = None) -> Series:
 
     Examples
     --------
-    >>> idx = pd.date_range("2000", "2010")
-    >>> head = pd.Series(index=idx, data=np.random.rand(len(idx)), dtype=float)
+    >>> idx = date_range("2000", "2010")
+    >>> head = Series(index=idx, data=np.random.rand(len(idx)), dtype=float)
     >>> ps.stats.signatures.summary(head)
     """
     if signatures is None:
         signatures = __all__
 
-    data = pd.Series(index=signatures, dtype=float)
+    data = Series(index=signatures, dtype=float)
 
     for signature in signatures:
         func = getattr(ps.stats.signatures, signature)
