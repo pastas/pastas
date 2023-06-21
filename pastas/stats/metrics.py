@@ -407,7 +407,7 @@ def rsq(
     if len(w) != obs.index.size:
         raise ValueError(
             "Weights and observations time series have different lengths! "
-            "Check oseries and stresses settings."
+            "Check observation and simulation time series."
         )
     mu = average(obs.to_numpy(), weights=w)
     rss = (w * err.to_numpy() ** 2.0).sum()
