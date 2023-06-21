@@ -6,7 +6,7 @@ from pandas import DataFrame
 
 
 class GaussianLikelihood:
-    """
+    """ Gaussian likelihood function.
 
     """
     def __init__(self):

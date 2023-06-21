@@ -32,15 +32,15 @@ ml.add_stressmodel(rm)
 ml.solve(noise=True, tmin="1990")
 
 # Set the initial parameters to a normal distribution
-# for name in ml.parameters.index:
-#     ml.set_parameter(name, dist="norm")
+for name in ml.parameters.index:
+    ml.set_parameter(name, dist="norm")
 
 # Create the EmceeSolver with some settings
 s = ps.EmceeSolve(
     moves=emcee.moves.DEMove(),
     objective_function=ps.objfunc.GaussianLikelihoodAr1(),
     progress_bar=True,
-    parallel=True,
+    parallel=False,
 )
 
 # Use the solver to run MCMC
@@ -57,7 +57,9 @@ ml.solve(
 # Plot results and uncertainty
 ax = ml.plot()
 
+# Get the chain and plot the results
 chain = ml.fit.sampler.get_chain(flat=True, discard=3000)
+
 inds = np.random.randint(len(chain), size=100)
 for ind in inds:
     params = chain[ind]

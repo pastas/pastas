@@ -680,11 +680,9 @@ class EmceeSolve(BaseSolver):
         Parameters
         ----------
         objective_function: func
-            NotImplemented Yet!
-        nparam: int
-            Number of parameters added by the likelihood function.
+            An objective function to be minimized. If not provided, the GaussianLikelihood is used. See the pastas.objective_functions module for more information.
         nwalkers: int, optional
-            Number of walkers to use.
+            Number of walkers to use. Default is 20.
         backend: emcee.backend
             One of the Backends from Emcee. See Emcee documentation for more
             information.
@@ -693,17 +691,14 @@ class EmceeSolve(BaseSolver):
             the MCMC approach. One of the Moves classes from Emcee has to be provided.
             See Emcee documentation for more information.
         parallel: bool, optional
-            Run the sampler in parallel or not.
+            Run the sampler in parallel or not. This requires the `emcee` package to
         progress_bar: bool, optional
             Show the progress bar or not. Requires the `tqdm` package to be installed.
         **kwargs
 
         Notes
         -----
-        The arguments provided here are mostly passed on to the
-        `emcee.EnsembleSampler` and determine how that instance is created. Arguments
-        you want to pass on to `run_mcmc` (and indirectly the `sample` method),
-        can be passed on to `Model.solve`, like:
+        The arguments provided here are mostly passed on to the `emcee.EnsembleSampler` and determine how that instance is created. Arguments you want to pass on to `run_mcmc` (and indirectly the `sample` method), can be passed on to `Model.solve`, like:
 
         >>> ml.solve(solver=ps.EmceeSolve(), thin_by=2)
 
@@ -719,6 +714,13 @@ class EmceeSolve(BaseSolver):
         References
         ----------
         https://emcee.readthedocs.io/en/stable/
+
+        See Also
+        --------
+        emcee.EnsembleSampler
+        emcee.moves
+        emcee.backend
+        pastas.objectivefunctions
 
         """
         # Check if emcee is installed, if not, return error
@@ -756,7 +758,7 @@ class EmceeSolve(BaseSolver):
         self,
         noise: bool = True,
         weights: Optional[Series] = None,
-        steps=5000,
+        steps: int = 5000,
         callback: Optional[CallBack] = None,
         **kwargs,
     ) -> Tuple[bool, ArrayLike, ArrayLike]:
@@ -786,9 +788,13 @@ class EmceeSolve(BaseSolver):
         # Create sampler and run mcmc
         if self.parallel:
             logger.info("Going into the parallel universe")
-            from multiprocessing import get_context
+            import os
 
-            with get_context("fork").Pool(16) as pool:
+            os.environ["OMP_NUM_THREADS"] = "1"
+
+            from multiprocessing import get_context, cpu_count
+
+            with get_context("fork").Pool(cpu_count()) as pool:
                 self.sampler = emcee.EnsembleSampler(
                     nwalkers=self.nwalkers,
                     ndim=ndim,
@@ -842,6 +848,7 @@ class EmceeSolve(BaseSolver):
 
         Returns
         -------
+        log_probability: float
 
         """
         lp = self.log_prior(p)
@@ -962,6 +969,57 @@ class EmceeSolve(BaseSolver):
             raise ValueError(msg)
 
         return getattr(mod, dist)(loc=loc, scale=scale)
+
+    def set_parameter(
+        self,
+        name: str,
+        initial: Optional[float] = None,
+        vary: Optional[bool] = None,
+        pmin: Optional[float] = None,
+        pmax: Optional[float] = None,
+        optimal: Optional[float] = None,
+        dist: Optional[str] = None,
+        move_bounds: bool = False,
+    ) -> None:
+        """Method to change the parameter properties.
+
+        Parameters
+        ----------
+        name: str
+            name of the parameter to update. This has to be a single variable.
+        initial: float, optional
+            parameters value to use as initial estimate.
+        vary: bool, optional
+            boolean to vary a parameter (True) or not (False).
+        pmin: float, optional
+            minimum value for the parameter.
+        pmax: float, optional
+            maximum value for the parameter.
+        optimal: float, optional
+            optimal value for the parameter.
+        dist: str, optional
+            Distribution of the parameters.
+        move_bounds: bool, optional
+            Reset pmin/pmax based on new initial value. Of move_bounds=True, pmin and
+            pmax must be None.
+
+        Examples
+        --------
+        >>> ml.set_parameter(name="constant_d", initial=10, vary=True,
+        >>>                  pmin=-10, pmax=20)
+
+        Notes
+        -----
+        It is highly recommended to use this method to set parameter properties.
+        Changing the parameter properties directly in the parameter `DataFrame` may
+        not work as expected.
+        """
+        if name not in self.parameters.index:
+            msg = "parameter %s is not present in the model"
+            self.logger.error(msg, name)
+            raise KeyError(msg, name)
+
+
 
     def plot(self, **kwargs):
         """Plot the results of the MCMC analysis.
