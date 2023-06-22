@@ -72,7 +72,9 @@ class RechargeBase:
         parameters: pandas.DataFrame
             Pandas DataFrame with the parameters.
         """
-        parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name", "dist"])
+        parameters = DataFrame(
+            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
+        )
         return parameters
 
     def simulate(self, prec, evap, p, dt=1.0, return_full=False, **kwargs):
@@ -113,7 +115,9 @@ class Linear(RechargeBase):
         self.nparam = 1
 
     def get_init_parameters(self, name: str = "recharge") -> DataFrame:
-        parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name", "dist"])
+        parameters = DataFrame(
+            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
+        )
         parameters.loc[name + "_f"] = (-1.0, -2.0, 0.0, True, name, "uniform")
         return parameters
 
@@ -211,7 +215,9 @@ class FlexModel(RechargeBase):
             self.nparam += 2
 
     def get_init_parameters(self, name: str = "recharge") -> DataFrame:
-        parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name", "dist"])
+        parameters = DataFrame(
+            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
+        )
         parameters.loc[name + "_srmax"] = (250.0, 1e-5, 1e3, True, name, "uniform")
         parameters.loc[name + "_lp"] = (0.25, 1e-5, 1, False, name, "uniform")
         parameters.loc[name + "_ks"] = (100.0, 1e-5, 1e4, True, name, "uniform")
@@ -594,7 +600,9 @@ class Berendrecht(RechargeBase):
         self.nparam = 7
 
     def get_init_parameters(self, name: str = "recharge") -> DataFrame:
-        parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name", "dist"])
+        parameters = DataFrame(
+            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
+        )
         parameters.loc[name + "_fi"] = (0.9, 0.7, 1.3, False, name, "uniform")
         parameters.loc[name + "_fc"] = (1.0, 0.7, 1.3, False, name, "uniform")
         parameters.loc[name + "_sr"] = (0.25, 1e-5, 1.0, False, name, "uniform")
@@ -740,7 +748,9 @@ class Peterson(RechargeBase):
         self.nparam = 5
 
     def get_init_parameters(self, name: str = "recharge") -> DataFrame:
-        parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name", "dist"])
+        parameters = DataFrame(
+            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
+        )
         parameters.loc[name + "_scap"] = (1.5, 0.5, 3.0, True, name, "uniform")
         parameters.loc[name + "_alpha"] = (1.0, 0.0, 1.5, True, name, "uniform")
         parameters.loc[name + "_ksat"] = (1.0, 0.0, 3.0, True, name, "uniform")

@@ -43,4 +43,4 @@ def test_ci_contribution(ml: ps.Model):
 
 
 def test_emcee(ml: ps.Model):
-    ml.solve(solver=ps.EmceeSolver())
+    ml.solve(solver=ps.EmceeSolve())
