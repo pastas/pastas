@@ -37,3 +37,10 @@ def test_ci_step_response(ml: ps.Model):
 def test_ci_contribution(ml: ps.Model):
     ml.solve(solver=ps.LeastSquares())
     ml.fit.ci_contribution(name="rch", n=10)
+
+
+# Test the EmceeSolver
+
+
+def test_emcee(ml: ps.Model):
+    ml.solve(solver=ps.EmceeSolver())

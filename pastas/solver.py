@@ -668,25 +668,27 @@ class EmceeSolve(BaseSolver):
     def __init__(
         self,
         objective_function=None,
-        nwalkers=20,
+        nwalkers: int = 20,
         backend=None,
         moves=None,
-        parallel=False,
-        progress_bar=True,
+        parallel: bool = False,
+        progress_bar: bool = True,
         **kwargs,
-    ):
+    ) -> None:
         """Solver based on MCMC approach in emcee :cite:p:`foreman-mackey_emcee_2013`.
 
         Parameters
         ----------
-        objective_function: func
-            An objective function to be minimized. If not provided, the GaussianLikelihood is used. See the pastas.objective_functions module for more information.
+        objective_function: func, optional
+            An objective function to be minimized. If not provided, the
+            GaussianLikelihood is used. See the pastas.objective_functions module for
+            more information.
         nwalkers: int, optional
             Number of walkers to use. Default is 20.
-        backend: emcee.backend
+        backend: emcee.backend, optional
             One of the Backends from Emcee. See Emcee documentation for more
             information.
-        moves: emcee.moves
+        moves: emcee.moves, optional
             The moves argument determines how the next step for a walker is chosen in
             the MCMC approach. One of the Moves classes from Emcee has to be provided.
             See Emcee documentation for more information.
@@ -694,11 +696,15 @@ class EmceeSolve(BaseSolver):
             Run the sampler in parallel or not. This requires the `emcee` package to
         progress_bar: bool, optional
             Show the progress bar or not. Requires the `tqdm` package to be installed.
-        **kwargs
+        **kwargs, optional
+            All other keyword arguments are passed on to the BaseSolver class.
 
         Notes
         -----
-        The arguments provided here are mostly passed on to the `emcee.EnsembleSampler` and determine how that instance is created. Arguments you want to pass on to `run_mcmc` (and indirectly the `sample` method), can be passed on to `Model.solve`, like:
+        The arguments provided here are mostly passed on to the `emcee.EnsembleSampler`
+        and determine how that instance is created. Arguments you want to pass on to
+        `run_mcmc` (and indirectly the `sample` method), can be passed on to
+        `Model.solve`, like:
 
         >>> ml.solve(solver=ps.EmceeSolve(), thin_by=2)
 
@@ -763,24 +769,31 @@ class EmceeSolve(BaseSolver):
         **kwargs,
     ) -> Tuple[bool, ArrayLike, ArrayLike]:
         # Store initial parameters
-        self.vary = self.ml.parameters.vary.values.astype(bool)
-        self.initial = self.ml.parameters.initial.values.copy()
+        self.initial = np.append(
+            self.ml.parameters.initial.values, self.parameters.initial.values
+        )
+        self.vary = np.append(
+            self.ml.parameters.vary.values, self.parameters.vary.values
+        )
 
-        # Set bounds
+        # Set lower and upper bounds
         lb = np.append(
-            self.ml.parameters[self.vary].pmin.values, self.parameters.pmin.values
+            self.ml.parameters[self.ml.parameters.vary].pmin.values,
+            self.parameters[self.parameters.vary].pmin.values,
         )
         ub = np.append(
-            self.ml.parameters[self.vary].pmax.values, self.parameters.pmax.values
+            self.ml.parameters[self.ml.parameters.vary].pmax.values,
+            self.parameters[self.parameters.vary].pmax.values,
         )
         self.bounds = np.vstack([lb, ub]).T
 
         # Set priors
         self.set_priors()
 
-        # Add the parameter of the likelihood function here?
+        # Set initial positions of the walkers
         pinit = np.append(
-            self.ml.parameters[self.vary].initial.values, self.parameters.initial.values
+            self.ml.parameters[self.ml.parameters.vary].initial.values,
+            self.parameters[self.parameters.vary].initial.values,
         )
         ndim = pinit.size
         pinit = pinit + 1e-2 * np.random.randn(self.nwalkers, ndim)
@@ -788,13 +801,10 @@ class EmceeSolve(BaseSolver):
         # Create sampler and run mcmc
         if self.parallel:
             logger.info("Going into the parallel universe")
-            import os
 
-            os.environ["OMP_NUM_THREADS"] = "1"
+            from multiprocessing import Pool
 
-            from multiprocessing import get_context, cpu_count
-
-            with get_context("fork").Pool(cpu_count()) as pool:
+            with Pool() as pool:
                 self.sampler = emcee.EnsembleSampler(
                     nwalkers=self.nwalkers,
                     ndim=ndim,
@@ -821,28 +831,35 @@ class EmceeSolve(BaseSolver):
 
             self.sampler.run_mcmc(pinit, steps, progress=self.progress_bar, **kwargs)
 
-        # Get Optimal Values and Standard Deviations
+        # Get optimal values
         optimal = self.initial.copy()
         chains = self.sampler.get_chain(discard=0, flat=True, thin=1)
-        best_chain = chains[self.sampler.get_log_prob().argmax()]
-        optimal[self.vary] = best_chain[: -self.objective_function.nparam]
-        self.parameters.loc[:, "optimal"] = best_chain[
-            -self.objective_function.nparam :
-        ]
+        optimal[self.vary] = chains[self.sampler.get_log_prob().argmax()]
+
+        # Set the optimal values for the objective function parameters
+        self.parameters.loc[:, "optimal"] = optimal[-self.objective_function.nparam :]
 
         # Don't estimate stderr for now
-        stderr = np.zeros(len(self.vary)) * np.nan
+        optimal = optimal[: -self.objective_function.nparam]
+        stderr = np.zeros(len(optimal)) * np.nan
 
         success = True
         return success, optimal, stderr
 
-    def log_probability(self, p, noise, weights, callback):
+    def log_probability(
+        self,
+        p: ArrayLike,
+        noise: bool,
+        weights: Optional[Series] = None,
+        callback: Optional[CallBack] = None,
+    ) -> float:
         """Full log-probability called by Emcee.
 
         Parameters
         ----------
-        p
-        noise
+        p: numpy.Array
+            Numpy array with the parameters.
+        noise: bool
         weights
         callback
 
@@ -862,14 +879,20 @@ class EmceeSolve(BaseSolver):
             )
 
     def log_likelihood(
-        self, p: ArrayLike, noise: bool, weights: Series, callback: CallBack
-    ) -> ArrayLike:
+        self,
+        p: ArrayLike,
+        noise: bool,
+        weights: Optional[Series] = None,
+        callback: Optional[CallBack] = None,
+    ) -> float:
         """Log-likelihood function.
 
         Parameters
         ----------
-        p
-        noise
+        p: numpy.Array
+            Numpy array with the parameters.
+        noise: bool
+
         weights
         callback
 
@@ -884,14 +907,24 @@ class EmceeSolve(BaseSolver):
 
         """
         par = self.initial
-        par[self.vary] = p[: -self.objective_function.nparam]
-        rv = self.misfit(p=par, noise=noise, weights=weights, callback=callback)
 
-        lnlike = self.objective_function.compute(rv, p)
+        # Set the parameters that are varied from the model and objective function
+        par[self.vary] = p
+
+        rv = self.misfit(
+            p=par[: -self.objective_function.nparam],
+            noise=noise,
+            weights=weights,
+            callback=callback,
+        )
+
+        lnlike = self.objective_function.compute(
+            rv, par[-self.objective_function.nparam :]
+        )
 
         return lnlike
 
-    def log_prior(self, p):
+    def log_prior(self, p: ArrayLike) -> float:
         """Probability of parameter set given the priors.
 
         Parameters
@@ -923,13 +956,13 @@ class EmceeSolve(BaseSolver):
                 lp += prior.logpdf(param)
         return lp
 
-    def set_priors(self):
+    def set_priors(self) -> None:
         """Set the priors for the parameters."""
         self.priors = []
 
         # Set the priors for the parameters that are varied from the model
         for _, (loc, pmin, pmax, scale, dist) in self.ml.parameters.loc[
-            self.vary, ["initial", "pmin", "pmax", "stderr", "dist"]
+            self.ml.parameters.vary, ["initial", "pmin", "pmax", "stderr", "dist"]
         ].iterrows():
             self.priors.append(self.get_prior(dist, loc, scale, pmin, pmax))
 
@@ -939,7 +972,7 @@ class EmceeSolve(BaseSolver):
         ].iterrows():
             self.priors.append(self.get_prior(dist, loc, scale, pmin, pmax))
 
-    def get_prior(self, dist, loc, scale, pmin, pmax):
+    def get_prior(self, dist: str, loc: float, scale: float, pmin: float, pmax: float):
         """Set the prior for a parameter.
 
         Parameters
@@ -979,7 +1012,6 @@ class EmceeSolve(BaseSolver):
         pmax: Optional[float] = None,
         optimal: Optional[float] = None,
         dist: Optional[str] = None,
-        move_bounds: bool = False,
     ) -> None:
         """Method to change the parameter properties.
 
@@ -998,46 +1030,50 @@ class EmceeSolve(BaseSolver):
         optimal: float, optional
             optimal value for the parameter.
         dist: str, optional
-            Distribution of the parameters.
-        move_bounds: bool, optional
-            Reset pmin/pmax based on new initial value. Of move_bounds=True, pmin and
-            pmax must be None.
+            Distribution of the parameters. Must be a scipy.stats distribution.
 
         Examples
         --------
-        >>> ml.set_parameter(name="constant_d", initial=10, vary=True,
-        >>>                  pmin=-10, pmax=20)
+        >>> s = ps.EmceeSolve()
+        >>> s.set_parameter(name="ln_sigma", initial=0.1, vary=True, pmin=0.01, pmax=1)
 
         Notes
         -----
         It is highly recommended to use this method to set parameter properties.
         Changing the parameter properties directly in the parameter `DataFrame` may
         not work as expected.
+
         """
+        # Check if the parameter is present in the solver
         if name not in self.parameters.index:
-            msg = "parameter %s is not present in the model"
+            msg = "parameter %s is not present in the solver."
             self.logger.error(msg, name)
             raise KeyError(msg, name)
 
+        # Set the initial value
+        if initial is not None:
+            self.parameters.loc[name, "initial"] = float(initial)
 
+        # Set the vary property
+        if vary is not None:
+            self.parameters.loc[name, "vary"] = bool(vary)
 
-    def plot(self, **kwargs):
-        """Plot the results of the MCMC analysis.
+        # Set the minimum value
+        if pmin is not None:
+            self.parameters.loc[name, "pmin"] = float(pmin)
 
-        Parameters
-        ----------
-        kwargs
+        # Set the maximum value
+        if pmax is not None:
+            self.parameters.loc[name, "pmax"] = float(pmax)
 
-        Returns
-        -------
+        # Set the optimal value
+        if optimal is not None:
+            self.parameters.loc[name, "optimal"] = float(optimal)
 
-        """
-        import corner
+        # Set the distribution
+        if dist is not None:
+            self.parameters.loc[name, "dist"] = str(dist)
 
-        fig = corner.corner(
-            self.sampler.get_chain(discard=0, flat=True, thin=1),
-            labels=self.ml.parameters[self.vary].name.values,
-            **kwargs,
-        )
-
-        return fig
+    def to_dict(self) -> dict:
+        msg = "The EmceeSolve class does not support to_dict() yet."
+        raise NotImplementedError(msg)
