@@ -810,7 +810,7 @@ class EmceeSolve(BaseSolver):
                     moves=self.moves,
                     backend=self.backend,
                     pool=pool,
-                    # args=(noise, weights, callback),
+                    args=(noise, weights, callback),
                 )
 
                 self.sampler.run_mcmc(
