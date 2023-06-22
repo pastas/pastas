@@ -691,7 +691,19 @@ class EmceeSolve(BaseSolver):
 
     Notes
     -----
-    The arguments provided here are mostly passed on to the `emcee.EnsembleSampler`
+    The EmceeSolve solver uses the emcee package to perform a Markov Chain Monte Carlo
+    (MCMC) approach to find the optimal parameter values. The solver can be used as
+    follows:
+
+    >>> solver = ps.EmceeSolve(
+    ...     nwalkers=20,
+    ...     backend=ps.backends.HDFBackend("test.h5"),
+    ...     moves=ps.moves.StretchMove(),
+    ...     progress_bar=True,
+    ...     )
+    >>> ml.solve(solver=solver)
+
+    The arguments provided are mostly passed on to the `emcee.EnsembleSampler`
     and determine how that instance is created. Arguments you want to pass on to
     `run_mcmc` (and indirectly the `sample` method), can be passed on to
     `Model.solve`, like:
@@ -1079,5 +1091,12 @@ class EmceeSolve(BaseSolver):
             self.parameters.loc[name, "dist"] = str(dist)
 
     def to_dict(self) -> dict:
-        msg = "The EmceeSolve class does not support to_dict() yet."
+        """This method is not supported for this solver.
+
+        Raises
+        ------
+        NotImplementedError
+
+        """
+        msg = "The EmceeSolve class does not support to_dict() and cannot be saved."
         raise NotImplementedError(msg)

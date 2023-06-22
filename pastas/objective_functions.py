@@ -17,7 +17,9 @@ class GaussianLikelihood:
         \\frac{\\sum_{i=1}^N - \\epsilon_i^2}{2\\sigma^2}
 
     where :math:`N` is the number of observations, :math:`\\sigma^2` is the variance of
-    the residuals, and :math:`\\epsilpon_i` is the residual at time :math:`i`.
+    the residuals, and :math:`\\epsilon_i` is the residual at time :math:`i`. The
+    parameter :math:`\\sigma^2` need to be estimated.
+
 
     """
 
@@ -77,14 +79,14 @@ class GaussianLikelihoodAr1:
 
     .. math::
         \\log(L) = -\\frac{N-1}{2}\\log(2\\pi\\sigma^2) +
-        \\frac{\\sum_{i=1}^N - (\\epsilon_i - \\theta \\epsilon_{i-\\Delta t})^2}
+        \\frac{\\sum_{i=1}^N - (\\epsilon_i - \\phi \\epsilon_{i-\\Delta t})^2}
         {2\\sigma^2}
 
     where :math:`N` is the number of observations, :math:`\\sigma^2` is the
     variance of the residuals, :math:`\\epsilon_i` is the residual at time
     :math:`i` and :math:`\\mu` is the mean of the residuals. :math:`\\Delta t` is
-    the time step between the observations. :math:`\\theta` is the correlation between
-    the residuals at time :math:`i` and :math:`i-\\Delta t`.
+    the time step between the observations. :math:`\\phi` is the autoregressive
+    parameter. The parameters :math:`\\phi` and :math:`\\sigma^2` need to be estimated.
 
     """
 
