@@ -758,11 +758,9 @@ class EmceeSolve(BaseSolver):
         self.objective_function = objective_function
         self.parameters = self.objective_function.get_init_parameters("ln")
 
-        self.sampler = None
-
     def solve(
         self,
-        noise: bool = True,
+        noise: bool = False,
         weights: Optional[Series] = None,
         steps: int = 5000,
         callback: Optional[CallBack] = None,
@@ -788,7 +786,7 @@ class EmceeSolve(BaseSolver):
         self.bounds = np.vstack([lb, ub]).T
 
         # Set priors
-        self.set_priors()
+        self._set_priors()
 
         # Set initial positions of the walkers
         pinit = np.append(
@@ -812,7 +810,7 @@ class EmceeSolve(BaseSolver):
                     moves=self.moves,
                     backend=self.backend,
                     pool=pool,
-                    args=(noise, weights, callback),
+                    # args=(noise, weights, callback),
                 )
 
                 self.sampler.run_mcmc(
@@ -849,7 +847,7 @@ class EmceeSolve(BaseSolver):
     def log_probability(
         self,
         p: ArrayLike,
-        noise: bool,
+        noise: Optional[bool] = False,
         weights: Optional[Series] = None,
         callback: Optional[CallBack] = None,
     ) -> float:
@@ -859,9 +857,12 @@ class EmceeSolve(BaseSolver):
         ----------
         p: numpy.Array
             Numpy array with the parameters.
-        noise: bool
-        weights
-        callback
+        noise: bool, optional
+            If True, the noise model is applied to the residuals.
+        weights: pandas.Series, optional
+            Series with weights for the residuals.
+        callback: callable, optional
+            Callback function that will be called after each iteration of the solver.
 
         Returns
         -------
@@ -956,7 +957,7 @@ class EmceeSolve(BaseSolver):
                 lp += prior.logpdf(param)
         return lp
 
-    def set_priors(self) -> None:
+    def _set_priors(self) -> None:
         """Set the priors for the parameters."""
         self.priors = []
 
@@ -964,15 +965,15 @@ class EmceeSolve(BaseSolver):
         for _, (loc, pmin, pmax, scale, dist) in self.ml.parameters.loc[
             self.ml.parameters.vary, ["initial", "pmin", "pmax", "stderr", "dist"]
         ].iterrows():
-            self.priors.append(self.get_prior(dist, loc, scale, pmin, pmax))
+            self.priors.append(self._get_prior(dist, loc, scale, pmin, pmax))
 
         # Set the priors for the parameters that are varied from the objective function
         for _, (loc, pmin, pmax, scale, dist) in self.parameters.loc[
             self.parameters.vary, ["initial", "pmin", "pmax", "stderr", "dist"]
         ].iterrows():
-            self.priors.append(self.get_prior(dist, loc, scale, pmin, pmax))
+            self.priors.append(self._get_prior(dist, loc, scale, pmin, pmax))
 
-    def get_prior(self, dist: str, loc: float, scale: float, pmin: float, pmax: float):
+    def _get_prior(self, dist: str, loc: float, scale: float, pmin: float, pmax: float):
         """Set the prior for a parameter.
 
         Parameters
