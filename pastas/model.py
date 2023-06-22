@@ -19,13 +19,12 @@ from pandas import (
     Timestamp,
     concat,
     date_range,
-    to_timedelta,
 )
 
 # Internal Pastas
 from pastas.decorators import get_stressmodel
 from pastas.io.base import _load_model, dump
-from pastas.modelplots import Plotting
+from pastas.modelplots import Plotting, _table_formatter_stderr
 from pastas.modelstats import Statistics
 from pastas.noisemodels import NoiseModel
 from pastas.solver import LeastSquares
@@ -127,11 +126,7 @@ class Model:
             "tmin": None,
             "tmax": None,
             "freq": freq,
-            "warmup": (
-                Timedelta(3650, "D") / Timedelta(freq) * to_timedelta(freq)
-                if freq[0].isdigit()
-                else Timedelta(3650, freq)
-            ),
+            "warmup": Timedelta(3650, "D"),
             "time_offset": Timedelta(0),
             "noise": noisemodel,
             "solver": None,
@@ -173,7 +168,9 @@ class Model:
             noise=True if self.noisemodel else False,
         )
 
-    def add_stressmodel(self, stressmodel: StressModel, replace: bool = False) -> None:
+    def add_stressmodel(
+        self, stressmodel: Union[StressModel, List[StressModel]], replace: bool = False
+    ) -> None:
         """Add a stressmodel to the main model.
 
         Parameters
@@ -808,7 +805,7 @@ class Model:
         if solver is not None:
             self.fit = solver
             self.fit.set_model(self)
-        # Create the default solver is None is provided or already present
+        # Create the default solver if None is provided or already present
         elif self.fit is None:
             self.fit = LeastSquares()
             self.fit.set_model(self)
@@ -1761,7 +1758,9 @@ class Model:
 
         parameters = self.parameters.loc[:, ["optimal", "stderr", "initial", "vary"]]
         stderr = parameters.loc[:, "stderr"] / parameters.loc[:, "optimal"]
-        parameters.loc[:, "stderr"] = stderr.abs().apply("±{:.2%}".format)
+        parameters.loc[:, "stderr"] = "±" + stderr.abs().apply(
+            _table_formatter_stderr, na_rep="nan"
+        )
 
         # Determine the width of the fit_report based on the parameters
         width = len(parameters.to_string().split("\n")[1])

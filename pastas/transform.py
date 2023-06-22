@@ -18,10 +18,10 @@ class ThresholdTransform:
     Parameters
     ----------
     value : float, optional
-        The starting value above which the simulation is lowered.
+        The initial starting value above which the simulation is lowered.
     vmin : float, optional
         The minimum value above which the simulation is lowered.
-    vmin : float, optional
+    vmax : float, optional
         The maximum value above which the simulation is lowered.
     name: str, optional
         Name of the transform.

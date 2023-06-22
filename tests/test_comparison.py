@@ -1,16 +1,14 @@
 import pastas as ps
 
-from .fixtures import ml, ml_sm
 
-
-def test_comparison_plot(ml, ml_sm) -> None:
+def test_comparison_plot(ml: ps.Model, ml_sm: ps.Model) -> None:
     ml.solve()
     ml_sm.solve()
     mc = ps.CompareModels(models=[ml, ml_sm])
     _ = mc.plot(legend_kwargs={"ncol": 2})
 
 
-def test_comparison_plot_custom(ml, ml_sm) -> None:
+def test_comparison_plot_custom(ml: ps.Model, ml_sm: ps.Model) -> None:
     ml.solve()
     ml_sm.solve()
     mc = ps.CompareModels(models=[ml, ml_sm])

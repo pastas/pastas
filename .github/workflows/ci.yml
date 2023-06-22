@@ -1,8 +1,6 @@
-name: pastas
+name: CI
 
 on:
-  # Trigger the workflow on push or pull request on master,
-  # and also on dev branch
   push:
     branches:
       - master
@@ -29,15 +27,18 @@ jobs:
           - name: Test suite with py310-ubuntu
             python: "3.10"
             toxenv: py310
+          - name: Test suite with py311-ubuntu
+            python: "3.11"
+            toxenv: py311
           - name: Formatting with black + isort
             python: "3.9"
             toxenv: format
           - name: Linting with flake8
             python: "3.9"
             toxenv: lint
-          - name: Test suite for Jupyter Notebooks
+          - name: Test suite for all unit tests including Notebooks
             python: "3.9"
-            toxenv: notebooks
+            toxenv: all
     env:
       # Color Output
       # Rich (pip)
@@ -68,30 +69,8 @@ jobs:
       - name: Test
         run: tox -e ${{ matrix.toxenv }} --skip-pkg-install
 
-      - name: Store coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: coverage
-          path: coverage.xml
-          if-no-files-found: ignore
-
-  coverage:
-    name: Coverage
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v4
-        with:
-          check-latest: true
-
-      - name: Get coverage
-        uses: actions/download-artifact@v3
-        with:
-          name: coverage
-
       - name: Run codacy-coverage-reporter
-        if: ${{ github.repository == 'pastas/pastas' && success() }}
+        if: ${{ matrix.toxenv == 'all' && github.repository == 'pastas/pastas' && success() }}
         uses: codacy/codacy-coverage-reporter-action@master
         with:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}

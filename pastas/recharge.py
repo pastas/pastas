@@ -43,6 +43,7 @@ from numpy import add, exp, float64, multiply, nan_to_num, power, vstack, where,
 from pandas import DataFrame
 
 from pastas.typing import ArrayLike
+
 from .decorators import njit
 
 logger = getLogger(__name__)

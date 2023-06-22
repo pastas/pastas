@@ -19,7 +19,12 @@ and their real-world applications.
 
 .. toctree::
     :hidden:
-    :maxdepth: 4
-    :glob:
+    :maxdepth: 1
 
-    ./*
+    history
+    team
+    related
+    citing
+    courses
+    publications
+    references
