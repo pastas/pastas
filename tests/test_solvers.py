@@ -43,4 +43,11 @@ def test_ci_contribution(ml: ps.Model):
 
 
 def test_emcee(ml: ps.Model):
-    ml.solve(solver=ps.EmceeSolve())
+    ml.solve(solver=ps.LeastSquares())
+    ml.solve(
+        solver=ps.EmceeSolve(nwalkers=20),
+        initial=False,
+        fit_constant=False,
+        noise=False,
+        steps=10,
+    )
