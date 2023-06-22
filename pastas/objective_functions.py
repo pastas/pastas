@@ -6,17 +6,44 @@ from pandas import DataFrame
 
 
 class GaussianLikelihood:
-    """ Gaussian likelihood function.
+    _name = "GaussianLikelihood"
 
-    """
     def __init__(self):
+        """Gaussian likelihood function.
+
+        Notes
+        -----
+        The Gaussian log-likelihood function is defined as:
+
+        .. math::
+            \\log(L) = -\\frac{N}{2}\\log(2\\pi\\sigma^2) +
+            \\frac{\\sum_{i=1}^N - \\epsilon_i^2}{2\\sigma^2}
+
+        where :math:`N` is the number of observations, :math:`\\sigma^2` is the
+        variance of the residuals, :math:`r_i` is the residual at time :math:`i` and
+        :math:`\\mu` is the mean of the residuals.
+
+        """
         self.nparam = 1
 
     def get_init_parameters(self, name: str) -> DataFrame:
+        """Get the initial parameters for the log-likelihood function.
+
+        Parameters
+        ----------
+        name : str
+            Name of the log-likelihood function.
+
+        Returns
+        -------
+        DataFrame
+            Initial parameters for the log-likelihood function.
+
+        """
         parameters = DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "stderr", "name", "dist"]
         )
-        parameters.loc[name + "_sigma"] = (0.05, 1e-10, 1, True, nan, name, "uniform")
+        parameters.loc[name + "_sigma"] = (0.05, 1e-10, 1, True, 0.01, name, "uniform")
         return parameters
 
     def compute(self, rv, p):
@@ -42,18 +69,47 @@ class GaussianLikelihood:
 
 
 class GaussianLikelihoodAr1:
-    """
+    _name = "GaussianLikelihoodAr1"
 
-    """
     def __init__(self):
+        """Gaussian likelihood function with an AR(1) noise model.
+
+        Notes
+        -----
+        The Gaussian log-likelihood function with an AR(1) noise model is defined as:
+
+        .. math::
+            \\log(L) = -\\frac{N-1}{2}\\log(2\\pi\\sigma^2) +
+            \\frac{\\sum_{i=1}^N - (\\epsilon_i - \\theta \\epsilon_{i-\\Delta t})^2}
+            {2\\sigma^2}
+
+        where :math:`N` is the number of observations, :math:`\\sigma^2` is the
+        variance of the residuals, :math:`r_i` is the residual at time :math:`i` and
+        :math:`\\mu` is the mean of the residuals. :math:`\\Delta t` is the time step
+        between the observations.
+
+        """
         self.nparam = 2
 
     def get_init_parameters(self, name: str) -> DataFrame:
+        """Get the initial parameters for the log-likelihood function.
+
+        Parameters
+        ----------
+        name : str
+            Name of the log-likelihood function.
+
+        Returns
+        -------
+        DataFrame
+            Initial parameters for the log-likelihood function.
+
+        """
         parameters = DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "stderr", "name", "dist"]
         )
         parameters.loc[name + "_sigma"] = (0.05, 1e-10, 1, True, 0.01, name, "uniform")
-        parameters.loc[name + "_alpha"] = (
+        parameters.loc[name + "_theta"] = (
             0.5,
             1e-10,
             0.99999,
@@ -65,10 +121,11 @@ class GaussianLikelihoodAr1:
         return parameters
 
     def compute(self, rv, p):
+        """Compute the log-likelihood."""
         sigma = p[-2]
-        alpha = p[-1]
+        theta = p[-1]
         N = rv.size
         ln = -(N - 1) / 2 * log(2 * pi * sigma) + sum(
-            -((rv[1:] - alpha * rv[0:-1]) ** 2) / (2 * sigma)
+            -((rv[1:] - theta * rv[0:-1]) ** 2) / (2 * sigma)
         )
         return ln
