@@ -1,29 +1,29 @@
 """This module contains the objective functions.
 
 """
-from numpy import pi, log, nan
+from numpy import pi, log
 from pandas import DataFrame
 
 
 class GaussianLikelihood:
+    """Gaussian likelihood function.
+
+    Notes
+    -----
+    The Gaussian log-likelihood function is defined as:
+
+    .. math::
+        \\log(L) = -\\frac{N}{2}\\log(2\\pi\\sigma^2) +
+        \\frac{\\sum_{i=1}^N - \\epsilon_i^2}{2\\sigma^2}
+
+    where :math:`N` is the number of observations, :math:`\\sigma^2` is the variance of
+    the residuals, and :math:`\\epsilpon_i` is the residual at time :math:`i`.
+
+    """
+
     _name = "GaussianLikelihood"
 
     def __init__(self):
-        """Gaussian likelihood function.
-
-        Notes
-        -----
-        The Gaussian log-likelihood function is defined as:
-
-        .. math::
-            \\log(L) = -\\frac{N}{2}\\log(2\\pi\\sigma^2) +
-            \\frac{\\sum_{i=1}^N - \\epsilon_i^2}{2\\sigma^2}
-
-        where :math:`N` is the number of observations, :math:`\\sigma^2` is the
-        variance of the residuals, :math:`r_i` is the residual at time :math:`i` and
-        :math:`\\mu` is the mean of the residuals.
-
-        """
         self.nparam = 1
 
     def get_init_parameters(self, name: str) -> DataFrame:
@@ -31,12 +31,12 @@ class GaussianLikelihood:
 
         Parameters
         ----------
-        name : str
+        name: str
             Name of the log-likelihood function.
 
         Returns
         -------
-        DataFrame
+        parameters: DataFrame
             Initial parameters for the log-likelihood function.
 
         """
@@ -52,9 +52,9 @@ class GaussianLikelihood:
         Parameters
         ----------
         rv: array
-            Residuals of the model
+            Residuals of the model.
         p: array or list
-            Parameters of the noise model
+            Parameters of the log-likelihood function.
 
         Returns
         -------
@@ -69,26 +69,28 @@ class GaussianLikelihood:
 
 
 class GaussianLikelihoodAr1:
+    """Gaussian likelihood function with AR1 autocorrelated residuals.
+
+    Notes
+    -----
+    The Gaussian log-likelihood function with AR1 autocorrelated residual is defined as:
+
+    .. math::
+        \\log(L) = -\\frac{N-1}{2}\\log(2\\pi\\sigma^2) +
+        \\frac{\\sum_{i=1}^N - (\\epsilon_i - \\theta \\epsilon_{i-\\Delta t})^2}
+        {2\\sigma^2}
+
+    where :math:`N` is the number of observations, :math:`\\sigma^2` is the
+    variance of the residuals, :math:`\\epsilon_i` is the residual at time
+    :math:`i` and :math:`\\mu` is the mean of the residuals. :math:`\\Delta t` is
+    the time step between the observations. :math:`\\theta` is the correlation between
+    the residuals at time :math:`i` and :math:`i-\\Delta t`.
+
+    """
+
     _name = "GaussianLikelihoodAr1"
 
     def __init__(self):
-        """Gaussian likelihood function with an AR(1) noise model.
-
-        Notes
-        -----
-        The Gaussian log-likelihood function with an AR(1) noise model is defined as:
-
-        .. math::
-            \\log(L) = -\\frac{N-1}{2}\\log(2\\pi\\sigma^2) +
-            \\frac{\\sum_{i=1}^N - (\\epsilon_i - \\theta \\epsilon_{i-\\Delta t})^2}
-            {2\\sigma^2}
-
-        where :math:`N` is the number of observations, :math:`\\sigma^2` is the
-        variance of the residuals, :math:`r_i` is the residual at time :math:`i` and
-        :math:`\\mu` is the mean of the residuals. :math:`\\Delta t` is the time step
-        between the observations.
-
-        """
         self.nparam = 2
 
     def get_init_parameters(self, name: str) -> DataFrame:
@@ -96,12 +98,12 @@ class GaussianLikelihoodAr1:
 
         Parameters
         ----------
-        name : str
+        name: str
             Name of the log-likelihood function.
 
         Returns
         -------
-        DataFrame
+        parameters: DataFrame
             Initial parameters for the log-likelihood function.
 
         """
@@ -121,7 +123,21 @@ class GaussianLikelihoodAr1:
         return parameters
 
     def compute(self, rv, p):
-        """Compute the log-likelihood."""
+        """Compute the log-likelihood.
+
+        Parameters
+        ----------
+        rv: array
+            Residuals of the model.
+        p: array or list
+            Parameters of the log-likelihood function.
+
+        Returns
+        -------
+        ln: float
+            Log-likelihood.
+
+        """
         sigma = p[-2]
         theta = p[-1]
         N = rv.size

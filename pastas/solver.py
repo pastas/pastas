@@ -448,6 +448,24 @@ class BaseSolver:
 
 
 class LeastSquares(BaseSolver):
+    """Solver based on Scipy's least_squares method :cite:p:`virtanen_scipy_2020`.
+
+    Notes
+    -----
+    This class is the default solve method called by the pastas Model solve
+    method. All kwargs provided to the Model.solve() method are forwarded to the
+    solver. From there, they are forwarded to Scipy least_squares solver.
+
+    Examples
+    --------
+
+    >>> ml.solve(solver=ps.LeastSquares())
+
+    References
+    ----------
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
+    """
+
     _name = "LeastSquares"
 
     def __init__(
@@ -456,23 +474,6 @@ class LeastSquares(BaseSolver):
         nfev: Optional[int] = None,
         **kwargs,
     ) -> None:
-        """Solver based on Scipy's least_squares method :cite:p:`virtanen_scipy_2020`.
-
-        Notes
-        -----
-        This class is the default solve method called by the pastas Model solve
-        method. All kwargs provided to the Model.solve() method are forwarded to the
-        solver. From there, they are forwarded to Scipy least_squares solver.
-
-        Examples
-        --------
-
-        >>> ml.solve(solver=ps.LeastSquares())
-
-        References
-        ----------
-        https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
-        """
         BaseSolver.__init__(self, pcov=pcov, nfev=nfev, **kwargs)
 
     def solve(
@@ -577,6 +578,16 @@ class LeastSquares(BaseSolver):
 
 
 class LmfitSolve(BaseSolver):
+    """Solving the model using the LmFit :cite:p:`newville_lmfitlmfit-py_2019`.
+
+        This is basically a wrapper around the scipy solvers, adding some cool
+        functionality for boundary conditions.
+
+    Notes
+    -----
+    https://github.com/lmfit/lmfit-py/
+    """
+
     _name = "LmfitSolve"
 
     def __init__(
@@ -585,15 +596,6 @@ class LmfitSolve(BaseSolver):
         nfev: Optional[int] = None,
         **kwargs,
     ) -> None:
-        """Solving the model using the LmFit :cite:p:`newville_lmfitlmfit-py_2019`.
-
-         This is basically a wrapper around the scipy solvers, adding some cool
-         functionality for boundary conditions.
-
-        Notes
-        -----
-        https://github.com/lmfit/lmfit-py/
-        """
         try:
             global lmfit
             import lmfit as lmfit  # Import Lmfit here, so it is no dependency
@@ -663,6 +665,61 @@ class LmfitSolve(BaseSolver):
 
 
 class EmceeSolve(BaseSolver):
+    """Solver based on MCMC approach in emcee :cite:p:`foreman-mackey_emcee_2013`.
+
+    Parameters
+    ----------
+    objective_function: func, optional
+        An objective function to be minimized. If not provided, the
+        GaussianLikelihood is used. See the pastas.objective_functions module for
+        more information.
+    nwalkers: int, optional
+        Number of walkers to use. Default is 20.
+    backend: emcee.backend, optional
+        One of the Backends from Emcee. See Emcee documentation for more
+        information.
+    moves: emcee.moves, optional
+        The moves argument determines how the next step for a walker is chosen in
+        the MCMC approach. One of the Moves classes from Emcee has to be provided.
+        See Emcee documentation for more information.
+    parallel: bool, optional
+        Run the sampler in parallel or not. This requires the `emcee` package to
+    progress_bar: bool, optional
+        Show the progress bar or not. Requires the `tqdm` package to be installed.
+    **kwargs, optional
+        All other keyword arguments are passed on to the BaseSolver class.
+
+    Notes
+    -----
+    The arguments provided here are mostly passed on to the `emcee.EnsembleSampler`
+    and determine how that instance is created. Arguments you want to pass on to
+    `run_mcmc` (and indirectly the `sample` method), can be passed on to
+    `Model.solve`, like:
+
+    >>> ml.solve(solver=ps.EmceeSolve(), thin_by=2)
+
+    Examples
+    --------
+
+    >>> ml.solve(solver=ps.EmceeSolve(), steps=5000)
+
+    To obtain the MCMC chains, use:
+
+    >>> ml.fit.sampler.get_chain(flat=True, discard=3000)
+
+    References
+    ----------
+    https://emcee.readthedocs.io/en/stable/
+
+    See Also
+    --------
+    emcee.EnsembleSampler
+    emcee.moves
+    emcee.backend
+    pastas.objectivefunctions
+
+    """
+
     _name = "EmceeSolve"
 
     def __init__(
@@ -675,60 +732,6 @@ class EmceeSolve(BaseSolver):
         progress_bar: bool = True,
         **kwargs,
     ) -> None:
-        """Solver based on MCMC approach in emcee :cite:p:`foreman-mackey_emcee_2013`.
-
-        Parameters
-        ----------
-        objective_function: func, optional
-            An objective function to be minimized. If not provided, the
-            GaussianLikelihood is used. See the pastas.objective_functions module for
-            more information.
-        nwalkers: int, optional
-            Number of walkers to use. Default is 20.
-        backend: emcee.backend, optional
-            One of the Backends from Emcee. See Emcee documentation for more
-            information.
-        moves: emcee.moves, optional
-            The moves argument determines how the next step for a walker is chosen in
-            the MCMC approach. One of the Moves classes from Emcee has to be provided.
-            See Emcee documentation for more information.
-        parallel: bool, optional
-            Run the sampler in parallel or not. This requires the `emcee` package to
-        progress_bar: bool, optional
-            Show the progress bar or not. Requires the `tqdm` package to be installed.
-        **kwargs, optional
-            All other keyword arguments are passed on to the BaseSolver class.
-
-        Notes
-        -----
-        The arguments provided here are mostly passed on to the `emcee.EnsembleSampler`
-        and determine how that instance is created. Arguments you want to pass on to
-        `run_mcmc` (and indirectly the `sample` method), can be passed on to
-        `Model.solve`, like:
-
-        >>> ml.solve(solver=ps.EmceeSolve(), thin_by=2)
-
-        Examples
-        --------
-
-        >>> ml.solve(solver=ps.EmceeSolve(), steps=5000)
-
-        To obtain the MCMC chains, use:
-
-        >>> ml.fit.sampler.get_chain(flat=True, discard=3000)
-
-        References
-        ----------
-        https://emcee.readthedocs.io/en/stable/
-
-        See Also
-        --------
-        emcee.EnsembleSampler
-        emcee.moves
-        emcee.backend
-        pastas.objectivefunctions
-
-        """
         # Check if emcee is installed, if not, return error
         try:
             global emcee
