@@ -404,6 +404,11 @@ def rsq(
         return nan
 
     w = _get_weights(err, weighted=weighted, max_gap=max_gap)
+    if len(w) != obs.index.size:
+        raise ValueError(
+            "Weights and observations time series have different lengths! "
+            "Check observation and simulation time series."
+        )
     mu = average(obs.to_numpy(), weights=w)
     rss = (w * err.to_numpy() ** 2.0).sum()
     tss = (w * (obs.to_numpy() - mu) ** 2.0).sum()
