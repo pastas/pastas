@@ -512,7 +512,7 @@ class CompareModels:
                     noise.values,
                     label="Noise",
                     linestyle="--",
-                    color=f"C{i}",
+                    color=self.cmap(i),
                 )
         return axs[axn]
 
