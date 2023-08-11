@@ -35,8 +35,8 @@ extensions = [
     "sphinx.ext.ifconfig",
     "sphinx.ext.viewcode",
     "IPython.sphinxext.ipython_console_highlighting",  # lowercase didn't work
-    "nbsphinx",
-    "numpydoc",
+    # "nbsphinx",
+    "myst_nb",
     "sphinxcontrib.bibtex",
     "sphinx_design",
     "sphinx.ext.autosectionlabel",
@@ -174,3 +174,8 @@ intersphinx_mapping = {
 
 nbsphinx_allow_errors = True  # Allow errors in notebooks, to see the error online
 nbsphinx_execute = "auto"
+
+# -- myst_nb options ------------------------------------------------------------------
+
+nb_execution_mode = "auto"
+nb_execution_allow_errors = True
