@@ -35,7 +35,7 @@ extensions = [
     "sphinx.ext.ifconfig",
     "sphinx.ext.viewcode",
     "IPython.sphinxext.ipython_console_highlighting",  # lowercase didn't work
-    # "nbsphinx",
+    "numpydoc",
     "myst_nb",
     "sphinxcontrib.bibtex",
     "sphinx_design",
@@ -52,7 +52,7 @@ master_doc = "index"  # The master toctree document.
 
 # General information about the project.
 project = "Pastas"
-copyright = "{}, R.A. Collenteur, M. Bakker, R. Calje, F. Schaars".format(year)
+copyright = "{}, The Pastas Team".format(year)
 author = "R.A. Collenteur, M. Bakker, R. Calje, F. Schaars"
 
 # The version.
@@ -170,12 +170,7 @@ intersphinx_mapping = {
     "matplotlib": ("https://matplotlib.org/stable", None),
 }
 
-# -- nbsphinx options---------- -------------------------------------------------------
-
-nbsphinx_allow_errors = True  # Allow errors in notebooks, to see the error online
-nbsphinx_execute = "auto"
-
 # -- myst_nb options ------------------------------------------------------------------
 
+nb_execution_allow_errors = True  # Allow errors in notebooks, to see the error online
 nb_execution_mode = "auto"
-nb_execution_allow_errors = True
