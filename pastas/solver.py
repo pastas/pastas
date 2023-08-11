@@ -676,14 +676,14 @@ class EmceeSolve(BaseSolver):
     nwalkers: int, optional
         Number of walkers to use. Default is 20.
     backend: emcee.backend, optional
-        One of the Backends from Emcee. See Emcee documentation for more
-        information.
+        One of the Backends from Emcee used to store MCMC results. See Emcee
+        for more information.
     moves: emcee.moves, optional
         The moves argument determines how the next step for a walker is chosen in
         the MCMC approach. One of the Moves classes from Emcee has to be provided.
         See Emcee documentation for more information.
     parallel: bool, optional
-        Run the sampler in parallel or not. This requires the `emcee` package to
+        Run the sampler in parallel or not.
     progress_bar: bool, optional
         Show the progress bar or not. Requires the `tqdm` package to be installed.
     **kwargs, optional
@@ -697,8 +697,6 @@ class EmceeSolve(BaseSolver):
 
     >>> solver = ps.EmceeSolve(
     ...     nwalkers=20,
-    ...     backend=ps.backends.HDFBackend("test.h5"),
-    ...     moves=ps.moves.StretchMove(),
     ...     progress_bar=True,
     ...     )
     >>> ml.solve(solver=solver)
@@ -728,7 +726,7 @@ class EmceeSolve(BaseSolver):
     emcee.EnsembleSampler
     emcee.moves
     emcee.backend
-    pastas.objectivefunctions
+    pastas.objective_functions
 
     """
 

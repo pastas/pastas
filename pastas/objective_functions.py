@@ -1,4 +1,5 @@
-"""This module contains the objective functions.
+"""This module contains the objective functions that can be used with the pastas 
+`EmceeSolve` solver.   
 
 """
 from numpy import pi, log
@@ -19,7 +20,6 @@ class GaussianLikelihood:
     where :math:`N` is the number of observations, :math:`\\sigma^2` is the variance of
     the residuals, and :math:`\\epsilon_i` is the residual at time :math:`i`. The
     parameter :math:`\\sigma^2` need to be estimated.
-
 
     """
 
