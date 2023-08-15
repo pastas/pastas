@@ -1567,7 +1567,11 @@ class Model:
 
     @get_stressmodel
     def get_response_tmax(
-        self, name: str, p: ArrayLike = None, cutoff: float = 0.999
+        self,
+        name: str,
+        p: ArrayLike = None,
+        cutoff: float = 0.999,
+        warn: bool = True,
     ) -> Union[float, None]:
         """Method to get the tmax used for the response function.
 
@@ -1601,7 +1605,11 @@ class Model:
         else:
             if p is None:
                 p = self.get_parameters(name)
-            tmax = self.stressmodels[name].rfunc.get_tmax(p=p, cutoff=cutoff)
+            if self.stressmodels[name].rfunc._name == "HantushWellModel":
+                kwargs = {"warn": warn}
+            else:
+                kwargs = {}
+            tmax = self.stressmodels[name].rfunc.get_tmax(p=p, cutoff=cutoff, **kwargs)
             return tmax
 
     @get_stressmodel
@@ -1877,8 +1885,12 @@ class Model:
         check["len_oseries_calib"] = len_oseries_calib
 
         for sm_name in self.stressmodels:
+            if self.stressmodels[sm_name].rfunc._name == "HantushWellModel":
+                kwargs = {"warn": False}
+            else:
+                kwargs = {}
             check.loc[sm_name, "response_tmax"] = self.get_response_tmax(
-                sm_name, cutoff=cutoff
+                sm_name, cutoff=cutoff, **kwargs
             )
 
         check["check_ok"] = check["response_tmax"] < check["len_oseries_calib"]

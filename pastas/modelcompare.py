@@ -557,7 +557,11 @@ class CompareModels:
                     if smn not in ml.stressmodels:
                         continue
                     if response == "step":
-                        step = ml.get_step_response(smn, add_0=True)
+                        kwargs = {}
+                        if ml.stressmodels[smn].rfunc is not None:
+                            if ml.stressmodels[smn].rfunc._name == "HantushWellModel":
+                                kwargs = {"warn": False}
+                        step = ml.get_step_response(smn, add_0=True, **kwargs)
                         if step is None:
                             continue
                         if self.axes is None:
@@ -574,7 +578,11 @@ class CompareModels:
                                 color=self.cmap(i),
                             )
                     elif response == "block":
-                        block = ml.get_block_response(smn)
+                        kwargs = {}
+                        if ml.stressmodels[smn].rfunc is not None:
+                            if ml.stressmodels[smn].rfunc._name == "HantushWellModel":
+                                kwargs = {"warn": False}
+                        block = ml.get_block_response(smn, **kwargs)
                         if block is None:
                             continue
                         if self.axes is None:
