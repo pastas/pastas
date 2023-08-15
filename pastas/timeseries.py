@@ -572,6 +572,11 @@ def validate_stress(series: Series):
     series: pandas.Series
         Pandas.Series object containing the series time series.
 
+    Returns
+    -------
+    bool:
+        True if the series is valid. If not, an error is raised.
+
     Notes
     -----
     The Series are validated for the following cases:
@@ -594,7 +599,7 @@ def validate_stress(series: Series):
     >>> ps.validate_stress(series)
 
     """
-    _validate_series(series, equidistant=True)
+    return _validate_series(series, equidistant=True)
 
 
 def validate_oseries(series: Series):
@@ -604,6 +609,11 @@ def validate_oseries(series: Series):
     ----------
     series: pandas.Series
         Pandas.Series object containing the series time series.
+
+    Returns
+    -------
+    bool:
+        True if the series is valid. If not, an error is raised.
 
     Notes
     -----
@@ -627,7 +637,7 @@ def validate_oseries(series: Series):
     >>> ps.validate_oseries(series)
 
     """
-    _validate_series(series, equidistant=False)
+    return _validate_series(series, equidistant=False)
 
 
 def _validate_series(series: Series, equidistant: bool = True):
@@ -639,6 +649,11 @@ def _validate_series(series: Series, equidistant: bool = True):
         Pandas.Series object containing the series time series.
     equidistant: bool, optional
         Whether the time series should have equidistant time step or not.
+
+    Returns
+    -------
+    bool:
+        True if the series is valid. If not, an error is raised.
 
     Notes
     -----
@@ -728,3 +743,6 @@ def _validate_series(series: Series, equidistant: bool = True):
             )
             logger.error(msg)
             raise ValueError(msg)
+
+    # If all checks are passed, return True
+    return True
