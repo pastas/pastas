@@ -39,7 +39,9 @@ class NoiseModelBase:
     def __init__(self) -> None:
         self.nparam = 1
         self.name = "noise"
-        self.parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
+        self.parameters = DataFrame(
+            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
+        )
 
     def set_init_parameters(self, oseries: Optional[Series] = None) -> None:
         if oseries is not None:
@@ -47,7 +49,14 @@ class NoiseModelBase:
             pinit = np.median(pinit)
         else:
             pinit = 14.0
-        self.parameters.loc["noise_alpha"] = (pinit, 1e-5, 5000.0, True, "noise")
+        self.parameters.loc["noise_alpha"] = (
+            pinit,
+            1e-5,
+            5000.0,
+            True,
+            "noise",
+            "uniform",
+        )
 
     @set_parameter
     def _set_initial(self, name: str, value: float) -> None:
@@ -88,6 +97,16 @@ class NoiseModelBase:
         The preferred method for parameter setting is through the model.
         """
         self.parameters.loc[name, "vary"] = value
+
+    @set_parameter
+    def _set_dist(self, name: str, value: str) -> None:
+        """Internal method to set distribution of prior of the parameter.
+
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
+        """
+        self.parameters.loc[name, "dist"] = str(value)
 
     def to_dict(self) -> dict:
         """Method to return a dict to store the noise model"""
@@ -201,22 +220,22 @@ class NoiseModel(NoiseModelBase):
 
 class ArmaModel(NoiseModelBase):
     """ARMA(1,1) Noise model to simulate the noise as defined in
-    :cite:t:`collenteur_estimation_2021`.
+        :cite:t:`collenteur_estimation_2021`.
 
-    Notes
-    -----
-    Calculates the noise according to:
+        Notes
+        -----
+        Calculates the noise according to:
+    F
+        .. math::
+            \\upsilon_t = r_t - r_{t-1} e^{-\\Delta t/\\alpha} - \\upsilon_{t-1}
+            e^{-\\Delta t/\\beta}
 
-    .. math::
-        \\upsilon_t = r_t - r_{t-1} e^{-\\Delta t/\\alpha} - \\upsilon_{t-1}
-        e^{-\\Delta t/\\beta}
+        The units of the alpha and beta parameters are always in days.
 
-    The units of the alpha and beta parameters are always in days.
-
-    Warnings
-    --------
-    This model has only been tested on regular time steps and should not be used for
-    irregular time steps yet.
+        Warnings
+        --------
+        This model has only been tested on regular time steps and should not be used for
+        irregular time steps yet.
     """
 
     _name = "ArmaModel"
@@ -232,8 +251,22 @@ class ArmaModel(NoiseModelBase):
             pinit = np.median(pinit)
         else:
             pinit = 14.0
-        self.parameters.loc["noise_alpha"] = (pinit, 1e-9, 5000.0, True, "noise")
-        self.parameters.loc["noise_beta"] = (1.0, -np.inf, np.inf, True, "noise")
+        self.parameters.loc["noise_alpha"] = (
+            pinit,
+            1e-9,
+            5000.0,
+            True,
+            "noise",
+            "uniform",
+        )
+        self.parameters.loc["noise_beta"] = (
+            1.0,
+            -np.inf,
+            np.inf,
+            True,
+            "noise",
+            "uniform",
+        )
 
     def simulate(self, res: Series, p: ArrayLike) -> Series:
         alpha = p[0]

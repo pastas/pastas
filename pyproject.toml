@@ -46,7 +46,7 @@ repository = "https://github.com/pastas/pastas"
 documentation = "https://pastas.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
-solvers = ["lmfit >= 1.0.0"]
+solvers = ["lmfit >= 1.0.0", "emcee >= 3.0"]
 latexify = ["latexify-py"]
 full = ["pastas[latexify,solvers]"]
 formatting = ["isort", "black[jupyter]"]

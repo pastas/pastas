@@ -103,7 +103,16 @@ class Model:
         self.name = validate_name(name)
 
         self.parameters = DataFrame(
-            columns=["initial", "name", "optimal", "pmin", "pmax", "vary", "stderr"]
+            columns=[
+                "initial",
+                "name",
+                "optimal",
+                "pmin",
+                "pmax",
+                "vary",
+                "stderr",
+                "dist",
+            ]
         )
 
         # Define the model components
@@ -839,6 +848,7 @@ class Model:
         pmin: Optional[float] = None,
         pmax: Optional[float] = None,
         optimal: Optional[float] = None,
+        dist: Optional[str] = None,
         move_bounds: bool = False,
     ) -> None:
         """Method to change the parameter properties.
@@ -857,6 +867,8 @@ class Model:
             maximum value for the parameter.
         optimal: float, optional
             optimal value for the parameter.
+        dist: str, optional
+            Distribution of the parameters.
         move_bounds: bool, optional
             Reset pmin/pmax based on new initial value. Of move_bounds=True, pmin and
             pmax must be None.
@@ -917,6 +929,9 @@ class Model:
         if pmax is not None:
             obj._set_pmax(name, pmax)
             self.parameters.loc[name, "pmax"] = pmax
+        if dist is not None:
+            obj._set_dist(name, dist)
+            self.parameters.loc[name, "dist"] = dist
         if optimal is not None:
             self.parameters.loc[name, "optimal"] = optimal
 
@@ -1168,6 +1183,7 @@ class Model:
         if not initial:
             parameters.initial.update(self.parameters.optimal)
             parameters.optimal.update(self.parameters.optimal)
+            parameters.stderr.update(self.parameters.stderr)
 
         return parameters
 

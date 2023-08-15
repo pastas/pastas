@@ -115,6 +115,16 @@ class ThresholdTransform:
         """
         self.parameters.loc[name, "vary"] = bool(value)
 
+    @set_parameter
+    def _set_dist(self, name: str, value: str) -> None:
+        """Internal method to set distribution of prior of the parameter.
+
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
+        """
+        self.parameters.loc[name, "dist"] = str(value)
+
     def simulate(self, h: Series, p: ArrayLike) -> Series:
         if self.nparam == 1:
             # value above a threshold p[0] are equal to the threshold
