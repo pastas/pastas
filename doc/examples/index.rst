@@ -45,11 +45,11 @@ Basics
 
 `Modeling with different timesteps`_
 
-.. _Preprocessing user-provided time series: prepare_timeseries.ipynb
-.. _A basic model: basic_model.ipynb
-.. _Fixating parameters while fitting: fix_parameters.ipynb
-.. _Calibration: calibration_options.ipynb
-.. _Modeling with different timesteps: modeling_timestep.ipynb
+.. _Preprocessing user-provided time series: prepare_timeseries
+.. _A basic model: basic_model
+.. _Fixating parameters while fitting: fix_parameters
+.. _Calibration: calibration_options
+.. _Modeling with different timesteps: modeling_timestep
 
 Stressmodels
 ------------
@@ -64,11 +64,11 @@ Stressmodels
 
 `Changing response functions`_
 
-.. _Adding surface water levels: adding_rivers.ipynb
-.. _Adding pumping wells: adding_wells.ipynb
-.. _Adding multiple wells: multiple_wells.ipynb
-.. _Adding trends: adding_trends.ipynb
-.. _Changing response functions: changing_responses.ipynb
+.. _Adding surface water levels: adding_rivers
+.. _Adding pumping wells: adding_wells
+.. _Adding multiple wells: multiple_wells
+.. _Adding trends: adding_trends
+.. _Changing response functions: changing_responses
 
 Non-linear (Recharge) Models
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -81,10 +81,10 @@ Non-linear (Recharge) Models
 
 `Modeling snow`_
 
-.. _Threshold non-linearities: threshold_non_linear.ipynb
-.. _Non-linear recharge models: non_linear_recharge.ipynb
-.. _Estimating recharge: recharge_estimation.ipynb
-.. _Modeling snow: snowmodel.ipynb
+.. _Threshold non-linearities: threshold_non_linear
+.. _Non-linear recharge models: non_linear_recharge
+.. _Estimating recharge: recharge_estimation
+.. _Modeling snow: snowmodel
 
 
 Model Evaluation
@@ -100,11 +100,11 @@ Model Evaluation
 
 `MCMC uncertainty`_
 
-.. _Comparing models visually: comparing_models.ipynb
-.. _Diagnostic checking: diagnostic_checking.ipynb
-.. _`Reducing autocorrelation`: timestep_analysis.ipynb
-.. _Uncertainty quantification: uncertainty.ipynb
-.. _MCMC uncertainty: uncertainty_emcee.ipynb
+.. _Comparing models visually: comparing_models
+.. _Diagnostic checking: diagnostic_checking
+.. _`Reducing autocorrelation`: timestep_analysis
+.. _Uncertainty quantification: uncertainty
+.. _MCMC uncertainty: uncertainty_emcee
 
 
 Applications
@@ -114,8 +114,8 @@ Applications
 
 `Groundwater signatures`_
 
-.. _Standardized Groundwater Index: standardized_groundwater_index.ipynb
-.. _Groundwater signatures: signatures.ipynb
+.. _Standardized Groundwater Index: standardized_groundwater_index
+.. _Groundwater signatures: signatures
 
 
 STOWA Manual (Dutch only)
