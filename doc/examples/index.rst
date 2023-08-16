@@ -45,7 +45,7 @@ Basics
 
 `Modeling with different timesteps`_
 
-.. _Preprocessing user-provided time series: prepare_timeseries
+.. _Preprocessing user-provided time series: prepare_timeseries.html
 .. _A basic model: basic_model.html
 .. _Fixating parameters while fitting: fix_parameters.html
 .. _Calibration: calibration_options.html
