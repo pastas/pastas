@@ -265,8 +265,12 @@ class Plotting:
                 i = i + 1
 
             # plot the step response
+            rkwargs = {}
+            if self.ml.stressmodels[sm_name].rfunc is not None:
+                if self.ml.stressmodels[sm_name].rfunc._name == "HantushWellModel":
+                    rkwargs = {"warn": False}
             response = self.ml._get_response(
-                block_or_step=block_or_step, name=sm_name, add_0=True
+                block_or_step=block_or_step, name=sm_name, add_0=True, **rkwargs
             )
 
             if response is not None:
@@ -891,10 +895,10 @@ class Plotting:
                 if stacklegend:
                     if stacklegend_kws is None:
                         stacklegend_kws = {}
-                    else:
-                        ncol = stacklegend_kws.pop("ncol", 5)
-                        fontsize = stacklegend_kws.pop("fontsize", 6)
-                        loc = stacklegend_kws.pop("loc", "best")
+                    ncol = stacklegend_kws.pop("ncol", 5)
+                    fontsize = stacklegend_kws.pop("fontsize", 6)
+                    loc = stacklegend_kws.pop("loc", "best")
+
                     ax.legend(loc=loc, ncol=ncol, fontsize=fontsize, **stacklegend_kws)
 
                 # y-scale does not show 0
