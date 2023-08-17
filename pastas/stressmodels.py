@@ -1036,7 +1036,7 @@ class RechargeModel(StressModelBase):
         These can be accessed through ps.rch. Default is ps.rch.Linear().
     temp: pandas.Series, optional
         pandas.Series with pandas.DatetimeIndex containing the temperature series.
-        It depends on the recharge model is this argument is required or not. The
+        It depends on the recharge model if this argument is required or not. The
         temperature series should be provided in degrees Celsius.
     settings: list of dicts or str, optional
         The settings of the precipitation and evaporation time series, in this order.
@@ -1075,7 +1075,7 @@ class RechargeModel(StressModelBase):
 
     Raises
     ------
-    A warning if the maximum value of the precipitation series is smaller than 12 and a
+    A warning if the the maximum annual precipitation is smaller than 12 and a
     nonlinear recharge model is applied. This is likely an indication that the units of
     the precipitation series are in m/d instead of mm/d. Please check the units of the
     precipitation series.
@@ -1171,8 +1171,8 @@ class RechargeModel(StressModelBase):
 
             if prec.resample("A").sum().max() < 12:
                 msg = (
-                    "The maximum value of the precipitation series is smaller than 12. "
-                    "Please double-check if the stresses are in mm/d and not in m/d."
+                    "The maximum annual precipitation is smaller than 12 m/d. Please "
+                    "double-check if the stresses are in mm/d and not in m/d."
                 )
                 logger.warning(msg)
 
