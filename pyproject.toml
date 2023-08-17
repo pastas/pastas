@@ -62,7 +62,6 @@ ci = [
 ]
 rtd = [
     "pastas[solvers]",
-    "nbsphinx",
     "Ipython",
     "ipykernel",
     "pydata-sphinx-theme",
@@ -71,6 +70,7 @@ rtd = [
     "requests",
     "numpydoc",
     "sphinx-design",
+    "myst_nb",
 ]
 dev = ["tox", "pastas[formatting,linting,ci,rtd]"]
 numbascipy = ["numba-scipy >= 0.3.1"]
