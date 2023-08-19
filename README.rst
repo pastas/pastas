@@ -10,7 +10,7 @@ Pastas: Analysis of Groundwater Time Series
 .. image:: https://img.shields.io/pypi/v/pastas.svg
    :target: https://pypi.python.org/pypi/pastas
 .. image:: https://img.shields.io/pypi/l/pastas.svg
-   :target: https://mit-license.org/
+   :target: https://github.com/pastas/pastas/blob/master/LICENSE
 .. image:: https://img.shields.io/pypi/pyversions/pastas
    :target: https://pypi.python.org/pypi/pastas
 .. image:: https://img.shields.io/pypi/dm/pastas
