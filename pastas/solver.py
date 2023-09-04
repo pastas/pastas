@@ -715,7 +715,7 @@ class EmceeSolve(BaseSolver):
 
     To obtain the MCMC chains, use:
 
-    >>> ml.fit.sampler.get_chain(flat=True, discard=3000)
+    >>> ml.solver.sampler.get_chain(flat=True, discard=3000)
 
     References
     ----------

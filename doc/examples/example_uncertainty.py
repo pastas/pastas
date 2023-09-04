@@ -22,7 +22,7 @@ ml.add_stressmodel(sm)
 # Solve
 ml.solve()
 #
-df = ml.fit.prediction_interval()
+df = ml.solver.prediction_interval()
 inside = (obs > df.loc[obs.index, 0.025]) & (obs < df.loc[obs.index, 0.975])
 print("percentage inside:", np.count_nonzero(inside) / len(inside) * 100)
 
@@ -38,7 +38,7 @@ axes[0].fill_between(
     label="95% Prediction interval",
 )
 axes[0].legend(ncol=3)
-df = ml.fit.ci_contribution("recharge", tmin="2010", tmax="2015")
+df = ml.solver.ci_contribution("recharge", tmin="2010", tmax="2015")
 axes[2].fill_between(
     df.index,
     df.iloc[:, 0],
@@ -49,7 +49,7 @@ axes[2].fill_between(
     label="95% confidence",
 )
 
-df = ml.fit.ci_step_response("recharge", alpha=0.05, n=1000)
+df = ml.solver.ci_step_response("recharge", alpha=0.05, n=1000)
 axes[3].fill_between(
     df.index,
     df.iloc[:, 0],
