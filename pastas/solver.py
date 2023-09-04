@@ -601,7 +601,7 @@ class LmfitSolve(BaseSolver):
             import lmfit as lmfit  # Import Lmfit here, so it is no dependency
         except ImportError:
             msg = "lmfit not installed. Please install lmfit first."
-            raise ImportError(msg)
+            raise ImportError(msg) from None
         BaseSolver.__init__(self, pcov=pcov, nfev=nfev, **kwargs)
 
     def solve(
@@ -748,7 +748,7 @@ class EmceeSolve(BaseSolver):
             import emcee as emcee  # Import emcee here, so it is no dependency
         except ImportError:
             msg = "emcee not installed. Please install emcee first."
-            raise ImportError(msg)
+            raise ImportError(msg) from None
 
         BaseSolver.__init__(self, pcov=None, nfev=None, **kwargs)
 
