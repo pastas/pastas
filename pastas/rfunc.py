@@ -25,7 +25,7 @@ from .version import check_numba_scipy
 
 try:
     from numba import prange
-except ModuleNotFoundError:
+except ImportError:
     prange = range
 
 # Type Hinting
