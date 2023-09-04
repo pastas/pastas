@@ -1994,7 +1994,7 @@ class Model:
 
         # Solver object
         if self.solver:
-            data["fit"] = self.solver.to_dict()
+            data["solver"] = self.solver.to_dict()
 
         # Update and save file information
         if file_info:
