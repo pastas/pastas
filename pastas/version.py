@@ -10,7 +10,7 @@ __version__ = "1.3.0b"
 def check_numba_scipy() -> bool:
     try:
         import_module("numba_scipy")
-    except ModuleNotFoundError:
+    except ImportError:
         logger.warning(
             "numba_scipy is not installed, defaulting to numpy implementation."
         )
@@ -53,7 +53,7 @@ def show_versions(lmfit: bool = True, latexify: bool = True) -> None:
         try:
             import_module("lmfit")
             msg += f"{metadata.version('lmfit')}"
-        except ModuleNotFoundError:
+        except ImportError:
             msg += "Not Installed"
 
     if latexify:
@@ -61,7 +61,7 @@ def show_versions(lmfit: bool = True, latexify: bool = True) -> None:
         try:
             import_module("latexify")
             msg += f"{metadata.version('latexify-py')}"
-        except ModuleNotFoundError:
+        except ImportError:
             msg += "Not Installed"
 
     msg += f"\nPastas version: {__version__}"
