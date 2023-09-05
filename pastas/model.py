@@ -131,6 +131,7 @@ class Model:
             "noise": noisemodel,
             "solver": None,
             "fit_constant": True,
+            "freq_obs": None,
         }
 
         if constant:
@@ -599,6 +600,7 @@ class Model:
         tmin: Optional[TimestampType] = None,
         tmax: Optional[TimestampType] = None,
         freq: Optional[str] = None,
+        freq_obs: Optional[str] = None,
         update_observations: bool = False,
     ) -> Series:
         """Method that returns the observations series used for calibration.
@@ -639,7 +641,10 @@ class Model:
             tmax = self.get_tmax(tmax, use_oseries=False, use_stresses=True)
         if freq is None:
             freq = self.settings["freq"]
-
+        if freq_obs is None:
+            freq_obs = self.settings["freq_obs"]
+        if freq_obs is not None:
+            freq = freq_obs
         for key, setting in zip([tmin, tmax, freq], ["tmin", "tmax", "freq"]):
             if key != self.settings[setting]:
                 update_observations = True
@@ -668,6 +673,7 @@ class Model:
         weights: Optional[Series] = None,
         initial: bool = True,
         fit_constant: bool = True,
+        freq_obs: Optional[str] = None,
     ) -> None:
         """Method to initialize the model.
 
@@ -686,6 +692,7 @@ class Model:
         self.settings["noise"] = noise
         self.settings["weights"] = weights
         self.settings["fit_constant"] = fit_constant
+        self.settings["freq_obs"] = freq_obs
 
         # Set the frequency & warmup
         if freq:
@@ -713,6 +720,7 @@ class Model:
             tmin=self.settings["tmin"],
             tmax=self.settings["tmax"],
             freq=self.settings["freq"],
+            freq_obs=self.settings["freq_obs"],
             update_observations=True,
         )
         self.interpolate_simulation = None
@@ -741,6 +749,7 @@ class Model:
         initial: bool = True,
         weights: Optional[Series] = None,
         fit_constant: bool = True,
+        freq_obs: Optional[str] = None,
         **kwargs,
     ) -> None:
         """Method to solve the time series model.
@@ -798,7 +807,9 @@ class Model:
         """
 
         # Initialize the model
-        self.initialize(tmin, tmax, freq, warmup, noise, weights, initial, fit_constant)
+        self.initialize(
+            tmin, tmax, freq, warmup, noise, weights, initial, fit_constant, freq_obs
+        )
 
         if self.oseries_calib.empty:
             raise ValueError(
