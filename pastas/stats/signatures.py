@@ -872,7 +872,7 @@ def duration_curve_slope(
         series = _normalize(series)
 
     s = series[
-        (series.quantile(l) > series) & (series < series.quantile(u))
+        (series > series.quantile(l)) & (series < series.quantile(u))
     ].sort_values()
     s.index = arange(s.size) / s.size
     return linregress(s.index, s.values).slope
