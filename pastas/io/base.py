@@ -120,6 +120,11 @@ def _load_model(data: dict) -> Model:
 
     # Add solver object to the model from pas-files < 1.3.0  TODO Deprecate
     if "fit" in data.keys():
+        logger.warning(
+            "The solver object is stored in the model.solver attribute since Pastas "
+            "1.3. Please update your pas-file to the new format by loading and saving "
+            "the file with Pastas 1.3."
+        )
         solver = getattr(ps.solver, data["fit"].pop("class"))
         ml.solver = solver(**data["fit"])
         ml.solver.set_model(ml)
