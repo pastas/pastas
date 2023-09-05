@@ -20,9 +20,9 @@ maintainers = [
 ]
 requires-python = ">= 3.8"
 dependencies = [
-    "numpy >= 1.17, < 1.24",
+    "numpy >= 1.17",
     "matplotlib >= 3.1",
-    "pandas >= 1.1",
+    "pandas >= 1.1, < 2.1",
     "scipy >= 1.8",
     "numba >= 0.51",
 ]
@@ -46,7 +46,7 @@ repository = "https://github.com/pastas/pastas"
 documentation = "https://pastas.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
-solvers = ["lmfit >= 1.0.0"]
+solvers = ["lmfit >= 1.0.0", "emcee >= 3.0"]
 latexify = ["latexify-py"]
 full = ["pastas[latexify,solvers]"]
 formatting = ["isort", "black[jupyter]"]
@@ -62,7 +62,6 @@ ci = [
 ]
 rtd = [
     "pastas[solvers]",
-    "nbsphinx",
     "Ipython",
     "ipykernel",
     "pydata-sphinx-theme",
@@ -71,6 +70,7 @@ rtd = [
     "requests",
     "numpydoc",
     "sphinx-design",
+    "myst_nb",
 ]
 dev = ["tox", "pastas[formatting,linting,ci,rtd]"]
 numbascipy = ["numba-scipy >= 0.3.1"]

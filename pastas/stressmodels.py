@@ -76,7 +76,9 @@ class StressModelBase:
             rfunc.update_rfunc_settings(up=up, gain_scale_factor=gain_scale_factor)
         self.rfunc = rfunc
 
-        self.parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
+        self.parameters = DataFrame(
+            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
+        )
 
         self.stress = []
 
@@ -126,6 +128,16 @@ class StressModelBase:
         The preferred method for parameter setting is through the model.
         """
         self.parameters.loc[name, "vary"] = bool(value)
+
+    @set_parameter
+    def _set_dist(self, name: str, value: str) -> None:
+        """Internal method to set distribution of prior of the parameter.
+
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
+        """
+        self.parameters.loc[name, "dist"] = str(value)
 
     def update_stress(
         self,
@@ -424,6 +436,7 @@ class StepModel(StressModelBase):
             tmax,
             False,
             self.name,
+            "uniform",
         )
 
     def simulate(
@@ -508,15 +521,30 @@ class LinearTrend(StressModelBase):
         tmin = Timestamp.min.toordinal()
         tmax = Timestamp.max.toordinal()
 
-        self.parameters.loc[self.name + "_a"] = (0.0, -np.inf, np.inf, True, self.name)
+        self.parameters.loc[self.name + "_a"] = (
+            0.0,
+            -np.inf,
+            np.inf,
+            True,
+            self.name,
+            "uniform",
+        )
         self.parameters.loc[self.name + "_tstart"] = (
             start,
             tmin,
             tmax,
             False,
             self.name,
+            "uniform",
         )
-        self.parameters.loc[self.name + "_tend"] = (end, tmin, tmax, False, self.name)
+        self.parameters.loc[self.name + "_tend"] = (
+            end,
+            tmin,
+            tmax,
+            False,
+            self.name,
+            "uniform",
+        )
 
     def simulate(
         self,
@@ -594,6 +622,7 @@ class Constant(StressModelBase):
             np.nan,
             True,
             self.name,
+            "uniform",
         )
 
     @staticmethod
@@ -709,7 +738,7 @@ class WellModel(StressModelBase):
             stress = [
                 s for _, s in sorted(zip(distances, stress), key=lambda pair: pair[0])
             ]
-            distances = np.sort(distances)
+            self.distances.sort_values(inplace=True)
 
         # estimate gain_scale_factor w/ max of stresses stdev
         gain_scale_factor = np.max([s.series.std() for s in stress])
@@ -991,9 +1020,12 @@ class RechargeModel(StressModelBase):
     ----------
     prec: pandas.Series
         pandas.Series with pandas.DatetimeIndex containing the precipitation series.
+        The precipitation series should be provided in mm/day when a nonlinear model is
+        used.
     evap: pandas.Series
         pandas.Series with pandas.DatetimeIndex containing the potential evaporation
-        series.
+        series. The evaporation series should be provided in mm/day when a nonlinear
+        model is used.
     rfunc: pastas.rfunc instance, optional
         Instance of the response function used in the convolution with the stress.
         Default is ps.Exponential().
@@ -1004,7 +1036,8 @@ class RechargeModel(StressModelBase):
         These can be accessed through ps.rch. Default is ps.rch.Linear().
     temp: pandas.Series, optional
         pandas.Series with pandas.DatetimeIndex containing the temperature series.
-        It depends on the recharge model is this argument is required or not.
+        It depends on the recharge model if this argument is required or not. The
+        temperature series should be provided in degrees Celsius.
     settings: list of dicts or str, optional
         The settings of the precipitation and evaporation time series, in this order.
         This can be a string referring to a predefined settings dict (defined in
@@ -1026,7 +1059,8 @@ class RechargeModel(StressModelBase):
     evaporation in two steps. In the first step a recharge flux is computed by a
     model determined by the input argument `recharge`. In the second step this
     recharge flux is convoluted with a response function to obtain the contribution
-    of recharge to the groundwater levels.
+    of recharge to the groundwater levels. If a nonlinear recharge model is used, the
+    precipitation should be in mm/d.
 
     Examples
     --------
@@ -1038,6 +1072,14 @@ class RechargeModel(StressModelBase):
     --------
     We recommend not to store a RechargeModel is a variable named `rm`. This name is
     already reserved in IPython to remove files and will cause problems later.
+
+    Raises
+    ------
+    A warning if the the maximum annual precipitation is smaller than 12 and a
+    nonlinear recharge model is applied. This is likely an indication that the units of
+    the precipitation series are in m/d instead of mm/d. Please check the units of the
+    precipitation series.
+
     """
 
     _name = "RechargeModel"
@@ -1121,6 +1163,18 @@ class RechargeModel(StressModelBase):
             self.nsplit = 2
         else:
             self.nsplit = 1
+
+            # Check if precipitation is likely in mm/d and not m/d. If the maximum
+            # value of the annual sums is smaller than 12 (m/d), the highest annual
+            # precipitation in the world, then the precipitation is very likely in m/d
+            # and not in mm/d. In this case a warning is given for nonlinear models.
+
+            if prec.resample("A").sum().max() < 12:
+                msg = (
+                    "The maximum annual precipitation is smaller than 12 m/d. Please "
+                    "double-check if the stresses are in mm/d and not in m/d."
+                )
+                logger.warning(msg)
 
     def set_init_parameters(self) -> None:
         """Internal method to set the initial parameters."""
@@ -1447,6 +1501,7 @@ class TarsoModel(RechargeModel):
                 "pmax": np.NaN,
                 "vary": True,
                 "name": self.name,
+                "dist": "uniform",
             }
         )
         p0.loc[f"{self.name}_d"] = pd0
@@ -1462,6 +1517,7 @@ class TarsoModel(RechargeModel):
                 "pmax": self.dmax,
                 "vary": True,
                 "name": self.name,
+                "dist": "uniform",
             }
         )
         p1.loc[f"{self.name}_d"] = pd1
@@ -1654,6 +1710,7 @@ class ChangeModel(StressModelBase):
             np.inf,
             True,
             self.name,
+            "uniform",
         )
         self.parameters.loc[self.name + "_tchange"] = (
             tchange,
@@ -1661,6 +1718,7 @@ class ChangeModel(StressModelBase):
             tmax,
             False,
             self.name,
+            "uniform",
         )
         self.parameters.name = self.name
 
