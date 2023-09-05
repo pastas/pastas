@@ -94,6 +94,7 @@ class TimeSeries:
             "tmin": series.first_valid_index(),
             "tmax": series.last_valid_index(),
             "time_offset": pd.Timedelta(0),
+            "normalize": False,
         }
         self.metadata = {"x": 0.0, "y": 0.0, "z": 0.0, "projection": None}
 
@@ -102,6 +103,7 @@ class TimeSeries:
             name = series.name
         self.name = validate_name(name)
         self._series_original.name = validate_name(name)
+        self._fill_before_value = None
 
         if metadata is not None:
             self.metadata.update(metadata)
@@ -192,6 +194,8 @@ class TimeSeries:
         tmax: str or pandas.Timestamp, optional
             String that can be converted to, or a Pandas Timestamp with the maximum
             time of the series.
+        normalize: bool, optional
+            When True, normalize the series by the fill_before value.
 
         Notes
         -----
@@ -215,6 +219,7 @@ class TimeSeries:
             series = self._change_frequency(series)
             series = self._fill_before(series)
             series = self._fill_after(series)
+            series = self._normalize(series)
             series.name = self._series_original.name
 
             self._series = series
@@ -399,8 +404,8 @@ class TimeSeries:
 
     def _fill_before(self, series: Series) -> Series:
         """Method to add a period in front of the available time series."""
+        self._fill_before_value = None
         freq = self.settings["freq"]
-        method = self.settings["fill_before"]
         tmin = self.settings["tmin"]
 
         if tmin is None:
@@ -418,53 +423,51 @@ class TimeSeries:
             )
             series = series.reindex(series.index.union(index_extend[:-1]))
 
-            if method == "mean":
-                mean_value = series.mean()
-                series = series.fillna(mean_value)  # Default option
-                logger.info(
-                    "Time Series '%s' was extended in the past to %s with the mean "
-                    "value (%.2g) of the time series.",
-                    self.name,
-                    series.index.min(),
-                    mean_value,
-                )
-            elif method == "bfill":
-                first_value = series.loc[series.first_valid_index()]
-                series = series.fillna(method="bfill")  # Default option
-                logger.info(
-                    "Time Series '%s' was extended in the past to %s with the first "
-                    "value (%.2g) of the time series.",
-                    self.name,
-                    series.index.min(),
-                    first_value,
-                )
-            elif isinstance(method, float):
-                series = series.fillna(method)
-                logger.info(
-                    "Time Series '%s' was extended in the past to %s by adding %s "
-                    "values.",
-                    self.name,
-                    series.index.min(),
-                    method,
-                )
-            elif method is None:
-                msg = (
-                    f"Time Series '{self.name}': cannot be extended into past to"
-                    f" {series.index.min()} as 'fill_before' method is 'None'. "
-                    "Provide settings to stress model, e.g. "
-                    "`ps.StressModel(stress, settings='prec')`."
-                )
-                logger.error(msg)
-                raise ValueError(msg)
-            else:
-                logger.info(
-                    "Time Series '%s': User-defined option for fill_before '%s' is not "
-                    "supported.",
-                    self.name,
-                    method,
-                )
+            self._fill_before_value = self._get_fill_before_value(series)
+            if self._fill_before_value is not None:
+                series = series.fillna(self._fill_before_value)
 
         return series
+
+    def _get_fill_before_value(self, series: Series) -> Series:
+        method = self.settings["fill_before"]
+        if method == "mean":
+            value = series.mean()
+            msg = (
+                "Time Series '%s' was extended in the past to %s with the mean "
+                "value (%.2g) of the time series."
+            )
+        elif method == "bfill":
+            value = series.loc[series.first_valid_index()]
+            msg = (
+                "Time Series '%s' was extended in the past to %s with the first "
+                "value (%.2g) of the time series."
+            )
+        elif isinstance(method, float):
+            value = method
+            msg = (
+                "Time Series '%s' was extended in the past to %s by adding %s "
+                "values."
+            )
+        elif method is None:
+            msg = (
+                f"Time Series '{self.name}': cannot be extended into past to"
+                f" {series.index.min()} as 'fill_before' method is 'None'. "
+                "Provide settings to stress model, e.g. "
+                "`ps.StressModel(stress, settings='prec')`."
+            )
+            logger.error(msg)
+            raise ValueError(msg)
+        else:
+            logger.info(
+                "Time Series '%s': User-defined option for fill_before '%s' is not "
+                "supported.",
+                self.name,
+                method,
+            )
+            return None
+        logger.info(msg, self.name, series.index.min(), value)
+        return value
 
     def _fill_after(self, series: Series) -> Series:
         """Method to add a period in front of the available time series."""
@@ -533,6 +536,14 @@ class TimeSeries:
                     method,
                 )
 
+        return series
+
+    def _normalize(self, series):
+        """Method to normalize a time series by the fill-before value"""
+        if self.settings["normalize"]:
+            if self._fill_before_value is None:
+                self._fill_before_value = self._get_fill_before_value(series)
+            series = series - self._fill_before_value
         return series
 
     def to_dict(self, series: Optional[bool] = True) -> dict:

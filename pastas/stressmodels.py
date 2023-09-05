@@ -144,6 +144,7 @@ class StressModelBase:
         tmin: Optional[TimestampType] = None,
         tmax: Optional[TimestampType] = None,
         freq: Optional[str] = None,
+        normalize: bool = False,
     ) -> None:
         """Method to update the settings of the all stresses in the stress model.
 
@@ -169,7 +170,7 @@ class StressModelBase:
         ps.timeseries.TimeSeries.update_series
         """
         for stress in self.stress:
-            stress.update_series(freq=freq, tmin=tmin, tmax=tmax)
+            stress.update_series(freq=freq, tmin=tmin, tmax=tmax, normalize=normalize)
 
         if freq:
             self.freq = freq
@@ -181,6 +182,7 @@ class StressModelBase:
         tmax: Optional[TimestampType] = None,
         freq: Optional[str] = None,
         istress: Optional[int] = None,
+        normalize: bool = False,
         **kwargs,
     ) -> DataFrame:
         """Returns the stress(es) of the time series object as a pandas DataFrame.
@@ -197,7 +199,7 @@ class StressModelBase:
         if tmax is None:
             tmax = self.tmax
 
-        self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
+        self.update_stress(tmin=tmin, tmax=tmax, freq=freq, normalize=normalize)
 
         return self.stress[0].series
 
@@ -323,6 +325,7 @@ class StressModel(StressModelBase):
         tmax: Optional[TimestampType] = None,
         freq: Optional[str] = None,
         dt: float = 1.0,
+        normalize_stresses: Optional[bool] = False,
     ) -> Series:
         """Simulates the head contribution.
 
@@ -341,7 +344,9 @@ class StressModel(StressModelBase):
         pandas.Series
             The simulated head contribution.
         """
-        self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
+        self.update_stress(
+            tmin=tmin, tmax=tmax, freq=freq, normalize=normalize_stresses
+        )
         b = self._get_block(p, dt, tmin, tmax)
         stress = self.stress[0].series
         npoints = stress.index.size
@@ -351,6 +356,8 @@ class StressModel(StressModelBase):
             name=self.name,
             fastpath=True,
         )
+        if normalize_stresses:
+            h = h + self.rfunc.gain(p) * self.stress[0]._fill_before_value
         return h
 
     def to_dict(self, series: bool = True) -> dict:
@@ -446,6 +453,7 @@ class StepModel(StressModelBase):
         tmax: Optional[TimestampType] = None,
         freq: Optional[str] = None,
         dt: float = 1.0,
+        normalize_stresses: bool = False,
     ) -> Series:
         tstart = Timestamp.fromordinal(int(p[-1]))
         tindex = date_range(tmin, tmax, freq=freq)
@@ -553,6 +561,7 @@ class LinearTrend(StressModelBase):
         tmax: Optional[TimestampType] = None,
         freq: Optional[str] = None,
         dt: float = 1.0,
+        normalize_stresses: bool = False,
     ) -> Series:
         """Simulate the trend."""
         tindex = date_range(tmin, tmax, freq=freq)
@@ -773,11 +782,18 @@ class WellModel(StressModelBase):
         freq: Optional[str] = None,
         dt: float = 1.0,
         istress: Optional[int] = None,
+        normalize_stresses: bool = False,
         **kwargs,
     ) -> Series:
         distances = self.get_distances(istress=istress)
         stress_df = self.get_stress(
-            p=p, tmin=tmin, tmax=tmax, freq=freq, istress=istress, squeeze=False
+            p=p,
+            tmin=tmin,
+            tmax=tmax,
+            freq=freq,
+            istress=istress,
+            normalize=normalize_stresses,
+            squeeze=False,
         )
         h = Series(data=0, index=self.stress[0].series.index, name=self.name)
         for name, r in distances.items():
@@ -851,6 +867,7 @@ class WellModel(StressModelBase):
         freq: Optional[str] = None,
         istress: Optional[int] = None,
         squeeze: bool = True,
+        normalize: bool = False,
         **kwargs,
     ) -> DataFrame:
         if tmin is None:
@@ -858,7 +875,7 @@ class WellModel(StressModelBase):
         if tmax is None:
             tmax = self.tmax
 
-        self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
+        self.update_stress(tmin=tmin, tmax=tmax, freq=freq, normalize=normalize)
 
         if istress is None:
             df = DataFrame.from_dict({s.name: s.series for s in self.stress})
@@ -1190,6 +1207,7 @@ class RechargeModel(StressModelBase):
         tmin: Optional[TimestampType] = None,
         tmax: Optional[TimestampType] = None,
         freq: Optional[str] = None,
+        normalize: bool = False,
     ) -> None:
         """Method to update the settings of the all stresses in the stress model.
 
@@ -1214,10 +1232,12 @@ class RechargeModel(StressModelBase):
         --------
         ps.timeseries.TimeSeries.update_series
         """
-        self.prec.update_series(freq=freq, tmin=tmin, tmax=tmax)
-        self.evap.update_series(freq=freq, tmin=tmin, tmax=tmax)
+        self.prec.update_series(freq=freq, tmin=tmin, tmax=tmax, normalize=normalize)
+        self.evap.update_series(freq=freq, tmin=tmin, tmax=tmax, normalize=normalize)
         if self.temp is not None:
-            self.temp.update_series(freq=freq, tmin=tmin, tmax=tmax)
+            self.temp.update_series(
+                freq=freq, tmin=tmin, tmax=tmax, normalize=normalize
+            )
 
         if freq:
             self.freq = freq
@@ -1230,6 +1250,7 @@ class RechargeModel(StressModelBase):
         freq: Optional[str] = None,
         dt: float = 1.0,
         istress: Optional[int] = None,
+        normalize_stresses: bool = False,
         **kwargs,
     ) -> Series:
         """Method to simulate the contribution of recharge to the head.
@@ -1251,11 +1272,20 @@ class RechargeModel(StressModelBase):
         -------
         pandas.Series
         """
+        if normalize_stresses and not isinstance(self.recharge, Linear):
+            raise (
+                Exception("normalize_stresses is only supported for Linear Recharge")
+            )
         if p is None:
             p = self.parameters.initial.values
         b = self._get_block(p[: self.rfunc.nparam], dt, tmin, tmax)
         stress = self.get_stress(
-            p=p, tmin=tmin, tmax=tmax, freq=freq, istress=istress
+            p=p,
+            tmin=tmin,
+            tmax=tmax,
+            freq=freq,
+            istress=istress,
+            normalize=normalize_stresses,
         ).values
         name = self.name
 
@@ -1266,12 +1296,17 @@ class RechargeModel(StressModelBase):
             if self.stress[istress].name is not None:
                 name = f"{self.name} ({self.stress[istress].name})"
 
-        return Series(
+        h = Series(
             data=fftconvolve(stress, b, "full")[: stress.size],
             index=self.prec.series.index,
             name=name,
             fastpath=True,
         )
+        if normalize_stresses:
+            h = h + self.rfunc.gain(p[: self.rfunc.nparam]) * (
+                self.prec._fill_before_value - p[-1] * self.evap._fill_before_value
+            )
+        return h
 
     def get_stress(
         self,
@@ -1280,6 +1315,7 @@ class RechargeModel(StressModelBase):
         tmax: Optional[TimestampType] = None,
         freq: Optional[str] = None,
         istress: Optional[int] = None,
+        normalize: bool = False,
         **kwargs,
     ) -> Series:
         """Method to obtain the recharge stress calculated by the model.
@@ -1308,7 +1344,7 @@ class RechargeModel(StressModelBase):
         if tmax is None:
             tmax = self.tmax
 
-        self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
+        self.update_stress(tmin=tmin, tmax=tmax, freq=freq, normalize=normalize)
 
         if istress is None:
             prec = self.prec.series.values
@@ -1319,7 +1355,10 @@ class RechargeModel(StressModelBase):
             if p is None:
                 p = self.parameters.initial.values
             stress = self.recharge.simulate(
-                prec=prec, evap=evap, p=p[-self.recharge.nparam :], **{"temp": temp}
+                prec=prec,
+                evap=evap,
+                p=p[-self.recharge.nparam :],
+                **{"temp": temp},
             )
             return Series(
                 data=stress,
@@ -1536,8 +1575,13 @@ class TarsoModel(RechargeModel):
         tmax: Optional[TimestampType] = None,
         freq=None,
         dt: float = 1.0,
+        normalize_stresses: bool = False,
     ) -> Series:
-        stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq)
+        if normalize_stresses:
+            raise (Exception("normalize_stresses is not supported for TarsoModel yet"))
+        stress = self.get_stress(
+            p=p, tmin=tmin, tmax=tmax, freq=freq, normalize=normalize_stresses
+        )
         h = self.tarso(p[: -self.recharge.nparam], stress.values, dt)
         sim = Series(h, name=self.name, index=stress.index)
         return sim
@@ -1729,7 +1773,10 @@ class ChangeModel(StressModelBase):
         tmax: Optional[TimestampType] = None,
         freq: Optional[str] = None,
         dt: float = 1.0,
+        normalize_stresses: bool = False,
     ) -> Series:
+        if normalize_stresses:
+            raise (Exception("normalize_stresses is not supported for ChangeModel"))
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
         rfunc1 = self.rfunc1.block(p[: self.rfunc1.nparam])
         rfunc2 = self.rfunc2.block(

@@ -131,6 +131,7 @@ class Model:
             "noise": noisemodel,
             "solver": None,
             "fit_constant": True,
+            "normalize_stresses": False,
         }
 
         if constant:
@@ -339,6 +340,7 @@ class Model:
         freq: Optional[str] = None,
         warmup: Optional[float] = None,
         return_warmup: bool = False,
+        normalize_stresses: Optional[bool] = None,
     ) -> Series:
         """Method to simulate the time series model.
 
@@ -388,6 +390,8 @@ class Model:
             warmup = self.settings["warmup"]
         elif not isinstance(warmup, Timedelta):
             warmup = Timedelta(warmup, "D")
+        if normalize_stresses is None:
+            normalize_stresses = self.settings["normalize_stresses"]
 
         # Get the simulation index and the time step
         sim_index = self._get_sim_index(tmin, tmax, freq, warmup)
@@ -404,7 +408,12 @@ class Model:
         istart = 0  # Track parameters index to pass to stressmodel object
         for sm in self.stressmodels.values():
             contrib = sm.simulate(
-                p[istart : istart + sm.nparam], sim_index.min(), tmax, freq, dt
+                p[istart : istart + sm.nparam],
+                sim_index.min(),
+                tmax,
+                freq,
+                dt,
+                normalize_stresses=normalize_stresses,
             )
             sim = sim.add(contrib)
             istart += sm.nparam
@@ -668,6 +677,7 @@ class Model:
         weights: Optional[Series] = None,
         initial: bool = True,
         fit_constant: bool = True,
+        normalize_stresses: bool = False,
     ) -> None:
         """Method to initialize the model.
 
@@ -686,6 +696,7 @@ class Model:
         self.settings["noise"] = noise
         self.settings["weights"] = weights
         self.settings["fit_constant"] = fit_constant
+        self.settings["normalize_stresses"] = normalize_stresses
 
         # Set the frequency & warmup
         if freq:
@@ -741,6 +752,7 @@ class Model:
         initial: bool = True,
         weights: Optional[Series] = None,
         fit_constant: bool = True,
+        normalize_stresses: bool = False,
         **kwargs,
     ) -> None:
         """Method to solve the time series model.
@@ -798,7 +810,17 @@ class Model:
         """
 
         # Initialize the model
-        self.initialize(tmin, tmax, freq, warmup, noise, weights, initial, fit_constant)
+        self.initialize(
+            tmin,
+            tmax,
+            freq,
+            warmup,
+            noise,
+            weights,
+            initial,
+            fit_constant,
+            normalize_stresses,
+        )
 
         if self.oseries_calib.empty:
             raise ValueError(
@@ -1252,6 +1274,7 @@ class Model:
         istress: Optional[int] = None,
         return_warmup: bool = False,
         p: Optional[ArrayLike] = None,
+        normalize_stresses: Optional[bool] = None,
     ) -> Series:
         """Method to get the contribution of a stressmodel.
 
@@ -1297,6 +1320,8 @@ class Model:
             warmup = self.settings["warmup"]
         else:
             warmup = Timedelta(warmup, "D")
+        if normalize_stresses is None:
+            normalize_stresses = self.settings["normalize_stresses"]
 
         # use warmup
         if tmin:
@@ -1308,7 +1333,13 @@ class Model:
 
         dt = _get_dt(freq)
 
-        kwargs = {"tmin": tmin_warm, "tmax": tmax, "freq": freq, "dt": dt}
+        kwargs = {
+            "tmin": tmin_warm,
+            "tmax": tmax,
+            "freq": freq,
+            "dt": dt,
+            "normalize_stresses": normalize_stresses,
+        }
         if istress is not None:
             kwargs["istress"] = istress
         contrib = self.stressmodels[name].simulate(p, **kwargs)
