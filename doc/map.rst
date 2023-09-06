@@ -1,2 +1,2 @@
 .. raw:: html
-   :file: https://pastas.github.io/worldtour/index.html
+    <iframe src="https://pastas.github.io/worldtour/index.html"></iframe>
