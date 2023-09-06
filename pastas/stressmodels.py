@@ -265,7 +265,7 @@ class StressModel(StressModelBase):
     settings: dict or str, optional
         The settings of the stress. This can be a string referring to a predefined
         settings dictionary (defined in ps.rcParams["timeseries"]), or a dictionary with
-        the settings to apply. For more information refer to Time series settings 
+        the settings to apply. For more information refer to Time series settings
         section below.
     metadata: dict, optional
         dictionary containing metadata about the stress. This is passed onto the
