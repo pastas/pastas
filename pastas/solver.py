@@ -20,7 +20,6 @@ from pandas import DataFrame, Series
 from scipy.linalg import svd
 from scipy.optimize import least_squares
 
-
 from pastas.objective_functions import GaussianLikelihood
 from pastas.typing import ArrayLike, CallBack, Function, Model
 
