@@ -729,13 +729,13 @@ class HantushWellModel(RfuncBase):
             optimal value of parameter b, (e.g. ml.parameters.optimal).
         var_A : float
             variance of parameter A, can be obtained from the diagonal of the
-            covariance matrix (e.g. ml.fit.pcov).
+            covariance matrix (e.g. ml.solver.pcov).
         var_b : float
             variance of parameter A, can be obtained from the diagonal of the
-            covariance matrix (e.g. ml.fit.pcov).
+            covariance matrix (e.g. ml.solver.pcov).
         cov_Ab : float
             covariance between A and b, can be obtained from the covariance matrix (
-            e.g. ml.fit.pcov).
+            e.g. ml.solver.pcov).
         r : float or array_like, optional
             distance(s) between observation well and stress(es), default value is 1.0.
 

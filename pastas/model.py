@@ -147,7 +147,7 @@ class Model:
         self.oseries_calib = None
         self.interpolate_simulation = None
         self.normalize_residuals = False
-        self.fit = None
+        self.solver = None
         self._solve_success = False
 
         # Load other modules
@@ -785,11 +785,11 @@ class Model:
 
         Notes
         -----
-        - The solver instance including some results are stored as ml.fit. From here
-          one can access the covariance (ml.fit.pcov) and correlation matrix (
-          ml.fit.pcor).
+        - The solver instance including some results are stored as ml.solver. From here
+          one can access the covariance (ml.solver.pcov) and correlation matrix (
+          ml.solver.pcor).
         - Each solver returns a number of results after optimization. These solver
-          specific results are stored in ml.fit.result and can be accessed from there.
+          specific results are stored in ml.solver.result and can be accessed from there.
 
         See Also
         --------
@@ -807,17 +807,17 @@ class Model:
 
         # If a solver is provided, use that one
         if solver is not None:
-            self.fit = solver
-            self.fit.set_model(self)
+            self.solver = solver
+            self.solver.set_model(self)
         # Create the default solver if None is provided or already present
-        elif self.fit is None:
-            self.fit = LeastSquares()
-            self.fit.set_model(self)
+        elif self.solver is None:
+            self.solver = LeastSquares()
+            self.solver.set_model(self)
 
-        self.settings["solver"] = self.fit._name
+        self.settings["solver"] = self.solver._name
 
         # Solve model
-        success, optimal, stderr = self.fit.solve(
+        success, optimal, stderr = self.solver.solve(
             noise=self.settings["noise"], weights=weights, **kwargs
         )
         if not success:
@@ -839,6 +839,17 @@ class Model:
             else:
                 output = None
             print(self.fit_report(output=output))
+
+    @property
+    def fit(self):
+        """Deprecated attribute, use ml.solver instead."""
+        msg = (
+            "Attribute 'fit' is deprecated and will be removed in a future version. "
+            "Use 'solver' instead."
+        )
+        self.logger.warning(msg)
+
+        return self.solver
 
     def set_parameter(
         self,
@@ -1747,7 +1758,7 @@ class Model:
         compared to using ml.simulate() and ml.observations().
         """
         model = {
-            "nfev": self.fit.nfev,
+            "nfev": self.solver.nfev,
             "nobs": self.observations().index.size,
             "noise": str(self.settings["noise"]),
             "tmin": str(self.settings["tmin"]),
@@ -1763,7 +1774,7 @@ class Model:
             "RMSE": f"{self.stats.rmse():.2f}",
             "AIC": f"{self.stats.aic():.2f}",
             "BIC": f"{self.stats.bic():.2f}",
-            "Obj": f"{self.fit.obj_func:.2f}",
+            "Obj": f"{self.solver.obj_func:.2f}",
             "___": "",
             "Interp.": "Yes" if self.interpolate_simulation else "No",
         }
@@ -1803,9 +1814,9 @@ class Model:
 
         if output == "full":
             cor = DataFrame(columns=["value"])
-            for idx, col in combinations(self.fit.pcor, 2):
-                if np.abs(self.fit.pcor.loc[idx, col]) > 0.5:
-                    cor.loc[f"{idx} {col}"] = self.fit.pcor.loc[idx, col]
+            for idx, col in combinations(self.solver.pcor, 2):
+                if np.abs(self.solver.pcor.loc[idx, col]) > 0.5:
+                    cor.loc[f"{idx} {col}"] = self.solver.pcor.loc[idx, col]
 
             corr = (
                 f"\n\nParameter correlations |rho| > 0.5\n"
@@ -1982,8 +1993,8 @@ class Model:
             data["noisemodel"] = self.noisemodel.to_dict()
 
         # Solver object
-        if self.fit:
-            data["fit"] = self.fit.to_dict()
+        if self.solver:
+            data["solver"] = self.solver.to_dict()
 
         # Update and save file information
         if file_info:

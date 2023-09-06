@@ -987,19 +987,19 @@ class WellModel(StressModelBase):
         --------
         pastas.HantushWellModel.variance_gain
         """
-        if model.fit is None:
+        if model.solver is None:
             raise AttributeError("Model not optimized! Run solve() first!")
         if self.rfunc._name != "HantushWellModel":
             raise ValueError("Response function must be HantushWellModel!")
-        if model.fit.pcov.isna().all(axis=None):
+        if model.solver.pcov.isna().all(axis=None):
             model.logger.warning("Covariance matrix contains only NaNs!")
 
         # get parameters and (co)variances
         A = model.parameters.loc[self.name + "_A", "optimal"]
         b = model.parameters.loc[self.name + "_b", "optimal"]
-        var_A = model.fit.pcov.loc[self.name + "_A", self.name + "_A"]
-        var_b = model.fit.pcov.loc[self.name + "_b", self.name + "_b"]
-        cov_Ab = model.fit.pcov.loc[self.name + "_A", self.name + "_b"]
+        var_A = model.solver.pcov.loc[self.name + "_A", self.name + "_A"]
+        var_b = model.solver.pcov.loc[self.name + "_b", self.name + "_b"]
+        cov_Ab = model.solver.pcov.loc[self.name + "_A", self.name + "_b"]
 
         if istress is None and r is None:
             r = np.asarray(self.distances)
