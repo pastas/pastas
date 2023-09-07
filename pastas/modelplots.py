@@ -492,6 +492,8 @@ class Plotting:
             # temporary fix, as set_xlim currently does not work with strings mpl=3.6.1
             if tmin is not None:
                 tmin = Timestamp(tmin)
+            if return_warmup:
+                tmin = tmin - self.ml.settings["warmup"]
             if tmax is not None:
                 tmax = Timestamp(tmax)
             axes[0].set_xlim(tmin, tmax)
