@@ -1311,7 +1311,7 @@ class RechargeModel(StressModelBase):
                 h += gain * p[-1] * self.evap._fill_before_value
             else:
                 h += gain * (
-                    self.prec._fill_before_value - p[-1] * self.evap._fill_before_value
+                    self.prec._fill_before_value + p[-1] * self.evap._fill_before_value
                 )
         return h
 
