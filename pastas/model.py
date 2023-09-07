@@ -790,7 +790,14 @@ class Model:
             index-based. Must have the same indices as the oseries.
         fit_constant: bool, optional
             Argument that determines if the constant is fitted as a parameter. If it
-            is set to False, the constant is set equal to the mean of the residuals.
+            is set to False, the constant is set equal to the mean of the residuals. The
+            default is True.
+        normalize_stresses: bool, optional
+            When True, the stresses are normalised by subtracting the fill_before value
+            from every stress-series. Later the gain of the response function times the
+            fill_before value is added to the simulation of the StressModel. The
+            influence of the warmup period is less when this option is used. The default
+            is False.
         **kwargs: dict, optional
             All keyword arguments will be passed onto minimization method from the
             solver. It depends on the solver used which arguments can be used.
