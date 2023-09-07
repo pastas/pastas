@@ -1116,7 +1116,7 @@ class RechargeModel(StressModelBase):
         if self.recharge.snow is True and temp is None:
             msg = (
                 "Recharge model requires a temperature series. No temperature series "
-                "were provided"
+                "were provided."
             )
             raise TypeError(msg)
         if temp is not None:
@@ -1169,7 +1169,7 @@ class RechargeModel(StressModelBase):
             # precipitation in the world, then the precipitation is very likely in m/d
             # and not in mm/d. In this case a warning is given for nonlinear models.
 
-            if prec.resample("A").sum().max() < 12:
+            if self.prec.series.resample("A").sum().max() < 12:
                 msg = (
                     "The maximum annual precipitation is smaller than 12 m/d. Please "
                     "double-check if the stresses are in mm/d and not in m/d."
