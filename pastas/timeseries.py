@@ -423,9 +423,15 @@ class TimeSeries:
             )
             series = series.reindex(series.index.union(index_extend[:-1]))
 
-            self._fill_before_value = self._get_fill_before_value(series)
-            if self._fill_before_value is not None:
-                series = series.fillna(self._fill_before_value)
+            value, method_msg = self._get_fill_before_value(series)
+            if value is not None:
+                series = series.fillna(value)
+                msg = "Time Series '%s' was extended in the past to %s with %s."
+                logger.info(msg, self.name, series.index.min(), method_msg)
+
+                # store the fill_before value which can be used in _normalize
+                self._fill_before_value = value
+                self._fill_before_msg = method_msg
 
         return series
 
@@ -433,22 +439,13 @@ class TimeSeries:
         method = self.settings["fill_before"]
         if method == "mean":
             value = series.mean()
-            msg = (
-                "Time Series '%s' was extended in the past to %s with the mean "
-                "value (%.2g) of the time series."
-            )
+            msg = f"the mean value ({value:.2g}) of the time series"
         elif method == "bfill":
             value = series.loc[series.first_valid_index()]
-            msg = (
-                "Time Series '%s' was extended in the past to %s with the first "
-                "value (%.2g) of the time series."
-            )
+            msg = f"the first value ({value:.2g}) of the time series"
         elif isinstance(method, float):
             value = method
-            msg = (
-                "Time Series '%s' was extended in the past to %s by adding %s "
-                "values."
-            )
+            msg = f"a value of {value}"
         elif method is None:
             msg = (
                 f"Time Series '{self.name}': cannot be extended into past to"
@@ -459,15 +456,14 @@ class TimeSeries:
             logger.error(msg)
             raise ValueError(msg)
         else:
-            logger.info(
+            value = None
+            msg = (
                 "Time Series '%s': User-defined option for fill_before '%s' is not "
-                "supported.",
-                self.name,
-                method,
+                "supported."
             )
-            return None
-        logger.info(msg, self.name, series.index.min(), value)
-        return value
+            logger.info(msg, self.name, method)
+
+        return value, msg
 
     def _fill_after(self, series: Series) -> Series:
         """Method to add a period in front of the available time series."""
@@ -542,8 +538,15 @@ class TimeSeries:
         """Method to normalize a time series by the fill-before value"""
         if self.settings["normalize"]:
             if self._fill_before_value is None:
-                self._fill_before_value = self._get_fill_before_value(series)
+                value, msg = self._get_fill_before_value(series)
+                if value is None:
+                    logger.error(msg)
+                    raise ValueError(msg)
+                self._fill_before_value = value
+                self._fill_before_message = msg
             series = series - self._fill_before_value
+            msg = "Time Series '%s' was normalized by subtracting the fill_before value: %s."
+            logger.info(msg, self.name, self._fill_before_message)
         return series
 
     def to_dict(self, series: Optional[bool] = True) -> dict:
