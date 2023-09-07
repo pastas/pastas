@@ -1,0 +1,1 @@
+from pastas.extensions.accessor import register_model_accessor

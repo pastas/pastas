@@ -207,3 +207,13 @@ def validate_name(name: str, raise_error: bool = False) -> str:
                 logger.warning(msg)
 
     return name
+
+
+def register_plotly_extension():
+    from pastas.plotting.plotly import Plotly
+
+    logger.info(
+        "Registered plotly plotting methods in Model class, e.g. `ml.plotly.plot()`."
+    )
+
+

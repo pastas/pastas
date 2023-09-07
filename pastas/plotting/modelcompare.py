@@ -9,8 +9,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from pandas import DataFrame, concat
 
-import pastas as ps
-from pastas.typing import Axes, Model
+from ..stats.core import acf
+from ..typing import Axes, Model
 
 logger = getLogger(__name__)
 
@@ -726,10 +726,10 @@ class CompareModels:
 
         for i, ml in enumerate(self.models):
             if ml.noise() is not None:
-                r = ps.stats.core.acf(ml.noise(), full_output=True)
+                r = acf(ml.noise(), full_output=True)
                 label = "Autocorrelation Noise"
             else:
-                r = ps.stats.core.acf(ml.residuals(), full_output=True)
+                r = acf(ml.residuals(), full_output=True)
                 label = "Autocorrelation Residuals"
             conf = r.conf.rolling(10, min_periods=1).mean().values
 

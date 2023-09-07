@@ -10,7 +10,7 @@ import numpy as np
 from pandas import DataFrame, Series, Timestamp
 from scipy.stats import gaussian_kde, norm, probplot
 
-from pastas.modelcompare import CompareModels
+from pastas.plotting.modelcompare import CompareModels
 from pastas.stats.core import acf as get_acf
 from pastas.stats.metrics import evp, rmse
 from pastas.typing import ArrayLike, Axes, Figure, Model, TimestampType

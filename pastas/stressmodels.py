@@ -399,7 +399,7 @@ class StepModel(StressModelBase):
     -----
     The step trend is calculated as follows. First, a binary series is created,
     with zero values before tstart, and ones after the start. This series is
-    convoluted with the block response to simulate a step trend.
+    convolved with the block response to simulate a step trend.
     """
 
     _name = "StepModel"
@@ -1301,7 +1301,7 @@ class RechargeModel(StressModelBase):
         -------
         stress: pandas.Series
             When no istress is selected, this return the estimated recharge flux that
-            is convoluted with a response function on the simulate method.
+            is convolved with a response function on the simulate method.
         """
         if tmin is None:
             tmin = self.tmin

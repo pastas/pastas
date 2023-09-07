@@ -24,9 +24,9 @@ from pandas import (
 # Internal Pastas
 from pastas.decorators import get_stressmodel
 from pastas.io.base import _load_model, dump
-from pastas.modelplots import Plotting, _table_formatter_stderr
 from pastas.modelstats import Statistics
 from pastas.noisemodels import NoiseModel
+from pastas.plotting.modelplots import Plotting, _table_formatter_stderr
 from pastas.solver import LeastSquares
 from pastas.stressmodels import Constant
 from pastas.timeseries import TimeSeries
@@ -81,6 +81,8 @@ class Model:
     >>> oseries = pd.Series([1,2,1], index=pd.to_datetime(range(3), unit="D"))
     >>> ml = Model(oseries)
     """
+
+    _accessors = set()
 
     def __init__(
         self,
