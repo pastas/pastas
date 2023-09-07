@@ -1303,9 +1303,16 @@ class RechargeModel(StressModelBase):
             fastpath=True,
         )
         if normalize_stresses:
-            h = h + self.rfunc.gain(p[: self.rfunc.nparam]) * (
-                self.prec._fill_before_value - p[-1] * self.evap._fill_before_value
-            )
+            # only supported for a Linear Recharge Model
+            gain = self.rfunc.gain(p[: self.rfunc.nparam])
+            if istress == 0:
+                h += gain * self.prec._fill_before_value
+            elif istress == 1:
+                h += gain * p[-1] * self.evap._fill_before_value
+            else:
+                h += gain * (
+                    self.prec._fill_before_value - p[-1] * self.evap._fill_before_value
+                )
         return h
 
     def get_stress(
