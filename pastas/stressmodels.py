@@ -274,53 +274,50 @@ class StressModel(StressModelBase):
         the scale factor is used to set the initial value and the bounds of the gain
         parameter, computed as 1 / gain_scale_factor.
 
+    Time series settings
+    --------------------
+    fill_nan : {"drop", "mean", "interpolate"} or float
+        Method for filling NaNs.
+           * `drop`: drop NaNs from time series
+           * `mean`: fill NaNs with mean value of time series
+           * `interpolate`: fill NaNs by interpolating between finite values
+           * `float`: fill NaN with provided value, e.g. 0.0
+    fill_before : {"mean", "bfill"} or float
+        Method for extending time series into past.
+           * `mean`: extend time series into past with mean value of time series
+           * `bfill`: extend time series into past by back-filling first value
+           * `float`: extend time series into past with provided value, e.g. 0.0
+    fill_after : {"mean", "ffill"} or float
+        Method for extending time series into future.
+           * `mean`: extend time series into future with mean value of time series
+           * `ffill`: extend time series into future by forward-filling last value
+           * `float`: extend time series into future with provided value, e.g. 0.0
+    sample_up : {"mean", "interpolate", "divide"} or float
+        Method for up-sampling time series (increasing frequency, e.g. going from weekly
+        to daily values).
+           * `bfill` or `backfill`: fill up-sampled time steps by back-filling current
+           values
+           * `ffill or `pad`: fill up-sampled time steps by forward-filling current values
+           * `mean`: fill up-sampled time steps with mean of timeseries
+           * `interpolate`: fill up-sampled time steps by interpolating between current
+           values
+           * `divide`: fill up-sampled steps with current value divided by length of
+           current time steps (i.e. spread value over new time steps).
+    sample_down : {"mean", "drop", "sum", "min", "max"}
+        Method for down-sampling time series (decreasing frequency, e.g. going from
+        daily to weekly values).
+           * `mean`: resample time series by taking the mean
+           * `drop`: resample the time series by taking the mean, dropping any NaN-values
+           * `sum`: resample time series by summing values
+           * `max`: resample time series with maximum value
+           * `min`: resample time series with minimum value
+
     Examples
     --------
     >>> import pastas as ps
     >>> import pandas as pd
     >>> sm = ps.StressModel(stress=pd.Series(), rfunc=ps.Gamma(), name="Prec",
     >>>                     settings="prec")
-
-    Time series settings
-    --------------------
-    Time series settings is a dictionary defining logic for filling and up- or
-    downsampling time series.
-
-    fill_nan : {"drop", "mean", "interpolate"} or float
-        Method for filling NaNs.
-        * `drop`: drop NaNs from time series
-        * `mean`: fill NaNs with mean value of time series
-        * `interpolate`: fill NaNs by interpolating between finite values
-        * `float`: fill NaN with provided value, e.g. 0.0
-    fill_before : {"mean", "bfill"} or float
-        Method for extending time series into past.
-        * `mean`: extend time series into past with mean value of time series
-        * `bfill`: extend time series into past by back-filling first value
-        * `float`: extend time series into past with provided value, e.g. 0.0
-    fill_after : {"mean", "ffill"} or float
-        Method for extending time series into future.
-        * `mean`: extend time series into future with mean value of time series
-        * `ffill`: extend time series into future by forward-filling last value
-        * `float`: extend time series into future with provided value, e.g. 0.0
-    sample_up : {"mean", "interpolate", "divide"} or float
-        Method for up-sampling time series (increasing frequency, e.g. going from weekly
-        to daily values).
-        * `bfill` or `backfill`: fill up-sampled time steps by back-filling current
-        values
-        * `ffill or `pad`: fill up-sampled time steps by forward-filling current values
-        * `mean`: fill up-sampled time steps with mean of timeseries
-        * `interpolate`: fill up-sampled time steps by interpolating between current
-        values
-        * `divide`: fill up-sampled steps with current value divided by length of
-        current time steps (i.e. spread value over new time steps).
-    sample_down : {"mean", "drop", "sum", "min", "max"}
-        Method for down-sampling time series (decreasing frequency, e.g. going from
-        daily to weekly values).
-        * `mean`: resample time series by taking the mean
-        * `drop`: resample the time series by taking the mean, dropping any NaN-values
-        * `sum`: resample time series by summing values
-        * `max`: resample time series with maximum value
-        * `min`: resample time series with minimum value
 
     See Also
     --------
@@ -721,44 +718,41 @@ class WellModel(StressModelBase):
 
     Time series settings
     --------------------
-    Time series settings is a dictionary defining logic for filling and up- or
-    downsampling time series.
-
     fill_nan : {"drop", "mean", "interpolate"} or float
         Method for filling NaNs.
-        * `drop`: drop NaNs from time series
-        * `mean`: fill NaNs with mean value of time series
-        * `interpolate`: fill NaNs by interpolating between finite values
-        * `float`: fill NaN with provided value, e.g. 0.0
+           * `drop`: drop NaNs from time series
+           * `mean`: fill NaNs with mean value of time series
+           * `interpolate`: fill NaNs by interpolating between finite values
+           * `float`: fill NaN with provided value, e.g. 0.0
     fill_before : {"mean", "bfill"} or float
         Method for extending time series into past.
-        * `mean`: extend time series into past with mean value of time series
-        * `bfill`: extend time series into past by back-filling first value
-        * `float`: extend time series into past with provided value, e.g. 0.0
+           * `mean`: extend time series into past with mean value of time series
+           * `bfill`: extend time series into past by back-filling first value
+           * `float`: extend time series into past with provided value, e.g. 0.0
     fill_after : {"mean", "ffill"} or float
         Method for extending time series into future.
-        * `mean`: extend time series into future with mean value of time series
-        * `ffill`: extend time series into future by forward-filling last value
-        * `float`: extend time series into future with provided value, e.g. 0.0
+           * `mean`: extend time series into future with mean value of time series
+           * `ffill`: extend time series into future by forward-filling last value
+           * `float`: extend time series into future with provided value, e.g. 0.0
     sample_up : {"mean", "interpolate", "divide"} or float
         Method for up-sampling time series (increasing frequency, e.g. going from weekly
         to daily values).
-        * `bfill` or `backfill`: fill up-sampled time steps by back-filling current
-        values
-        * `ffill or `pad`: fill up-sampled time steps by forward-filling current values
-        * `mean`: fill up-sampled time steps with mean of timeseries
-        * `interpolate`: fill up-sampled time steps by interpolating between current
-        values
-        * `divide`: fill up-sampled steps with current value divided by length of
-        current time steps (i.e. spread value over new time steps).
+           * `bfill` or `backfill`: fill up-sampled time steps by back-filling current
+           values
+           * `ffill or `pad`: fill up-sampled time steps by forward-filling current values
+           * `mean`: fill up-sampled time steps with mean of timeseries
+           * `interpolate`: fill up-sampled time steps by interpolating between current
+           values
+           * `divide`: fill up-sampled steps with current value divided by length of
+           current time steps (i.e. spread value over new time steps).
     sample_down : {"mean", "drop", "sum", "min", "max"}
         Method for down-sampling time series (decreasing frequency, e.g. going from
         daily to weekly values).
-        * `mean`: resample time series by taking the mean
-        * `drop`: resample the time series by taking the mean, dropping any NaN-values
-        * `sum`: resample time series by summing values
-        * `max`: resample time series with maximum value
-        * `min`: resample time series with minimum value
+           * `mean`: resample time series by taking the mean
+           * `drop`: resample the time series by taking the mean, dropping any NaN-values
+           * `sum`: resample time series by summing values
+           * `max`: resample time series with maximum value
+           * `min`: resample time series with minimum value
 
     Notes
     -----
@@ -1140,44 +1134,41 @@ class RechargeModel(StressModelBase):
 
     Time series settings
     --------------------
-    Time series settings is a dictionary defining logic for filling and up- or
-    downsampling time series.
-
     fill_nan : {"drop", "mean", "interpolate"} or float
         Method for filling NaNs.
-        * `drop`: drop NaNs from time series
-        * `mean`: fill NaNs with mean value of time series
-        * `interpolate`: fill NaNs by interpolating between finite values
-        * `float`: fill NaN with provided value, e.g. 0.0
+           * `drop`: drop NaNs from time series
+           * `mean`: fill NaNs with mean value of time series
+           * `interpolate`: fill NaNs by interpolating between finite values
+           * `float`: fill NaN with provided value, e.g. 0.0
     fill_before : {"mean", "bfill"} or float
         Method for extending time series into past.
-        * `mean`: extend time series into past with mean value of time series
-        * `bfill`: extend time series into past by back-filling first value
-        * `float`: extend time series into past with provided value, e.g. 0.0
+           * `mean`: extend time series into past with mean value of time series
+           * `bfill`: extend time series into past by back-filling first value
+           * `float`: extend time series into past with provided value, e.g. 0.0
     fill_after : {"mean", "ffill"} or float
         Method for extending time series into future.
-        * `mean`: extend time series into future with mean value of time series
-        * `ffill`: extend time series into future by forward-filling last value
-        * `float`: extend time series into future with provided value, e.g. 0.0
+           * `mean`: extend time series into future with mean value of time series
+           * `ffill`: extend time series into future by forward-filling last value
+           * `float`: extend time series into future with provided value, e.g. 0.0
     sample_up : {"mean", "interpolate", "divide"} or float
         Method for up-sampling time series (increasing frequency, e.g. going from weekly
         to daily values).
-        * `bfill` or `backfill`: fill up-sampled time steps by back-filling current
-        values
-        * `ffill or `pad`: fill up-sampled time steps by forward-filling current values
-        * `mean`: fill up-sampled time steps with mean of timeseries
-        * `interpolate`: fill up-sampled time steps by interpolating between current
-        values
-        * `divide`: fill up-sampled steps with current value divided by length of
-        current time steps (i.e. spread value over new time steps).
+           * `bfill` or `backfill`: fill up-sampled time steps by back-filling current
+           values
+           * `ffill or `pad`: fill up-sampled time steps by forward-filling current values
+           * `mean`: fill up-sampled time steps with mean of timeseries
+           * `interpolate`: fill up-sampled time steps by interpolating between current
+           values
+           * `divide`: fill up-sampled steps with current value divided by length of
+           current time steps (i.e. spread value over new time steps).
     sample_down : {"mean", "drop", "sum", "min", "max"}
         Method for down-sampling time series (decreasing frequency, e.g. going from
         daily to weekly values).
-        * `mean`: resample time series by taking the mean
-        * `drop`: resample the time series by taking the mean, dropping any NaN-values
-        * `sum`: resample time series by summing values
-        * `max`: resample time series with maximum value
-        * `min`: resample time series with minimum value
+           * `mean`: resample time series by taking the mean
+           * `drop`: resample the time series by taking the mean, dropping any NaN-values
+           * `sum`: resample time series by summing values
+           * `max`: resample time series with maximum value
+           * `min`: resample time series with minimum value
 
     Notes
     -----
@@ -1781,44 +1772,41 @@ class ChangeModel(StressModelBase):
 
     Time series settings
     --------------------
-    Time series settings is a dictionary defining logic for filling and up- or
-    downsampling time series.
-
     fill_nan : {"drop", "mean", "interpolate"} or float
         Method for filling NaNs.
-        * `drop`: drop NaNs from time series
-        * `mean`: fill NaNs with mean value of time series
-        * `interpolate`: fill NaNs by interpolating between finite values
-        * `float`: fill NaN with provided value, e.g. 0.0
+           * `drop`: drop NaNs from time series
+           * `mean`: fill NaNs with mean value of time series
+           * `interpolate`: fill NaNs by interpolating between finite values
+           * `float`: fill NaN with provided value, e.g. 0.0
     fill_before : {"mean", "bfill"} or float
         Method for extending time series into past.
-        * `mean`: extend time series into past with mean value of time series
-        * `bfill`: extend time series into past by back-filling first value
-        * `float`: extend time series into past with provided value, e.g. 0.0
+           * `mean`: extend time series into past with mean value of time series
+           * `bfill`: extend time series into past by back-filling first value
+           * `float`: extend time series into past with provided value, e.g. 0.0
     fill_after : {"mean", "ffill"} or float
         Method for extending time series into future.
-        * `mean`: extend time series into future with mean value of time series
-        * `ffill`: extend time series into future by forward-filling last value
-        * `float`: extend time series into future with provided value, e.g. 0.0
+           * `mean`: extend time series into future with mean value of time series
+           * `ffill`: extend time series into future by forward-filling last value
+           * `float`: extend time series into future with provided value, e.g. 0.0
     sample_up : {"mean", "interpolate", "divide"} or float
         Method for up-sampling time series (increasing frequency, e.g. going from weekly
         to daily values).
-        * `bfill` or `backfill`: fill up-sampled time steps by back-filling current
-        values
-        * `ffill or `pad`: fill up-sampled time steps by forward-filling current values
-        * `mean`: fill up-sampled time steps with mean of timeseries
-        * `interpolate`: fill up-sampled time steps by interpolating between current
-        values
-        * `divide`: fill up-sampled steps with current value divided by length of
-        current time steps (i.e. spread value over new time steps).
+           * `bfill` or `backfill`: fill up-sampled time steps by back-filling current
+           values
+           * `ffill or `pad`: fill up-sampled time steps by forward-filling current values
+           * `mean`: fill up-sampled time steps with mean of timeseries
+           * `interpolate`: fill up-sampled time steps by interpolating between current
+           values
+           * `divide`: fill up-sampled steps with current value divided by length of
+           current time steps (i.e. spread value over new time steps).
     sample_down : {"mean", "drop", "sum", "min", "max"}
         Method for down-sampling time series (decreasing frequency, e.g. going from
         daily to weekly values).
-        * `mean`: resample time series by taking the mean
-        * `drop`: resample the time series by taking the mean, dropping any NaN-values
-        * `sum`: resample time series by summing values
-        * `max`: resample time series with maximum value
-        * `min`: resample time series with minimum value
+           * `mean`: resample time series by taking the mean
+           * `drop`: resample the time series by taking the mean, dropping any NaN-values
+           * `sum`: resample time series by summing values
+           * `max`: resample time series with maximum value
+           * `min`: resample time series with minimum value
 
     Notes
     -----
