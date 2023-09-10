@@ -215,5 +215,3 @@ def register_plotly_extension():
     logger.info(
         "Registered plotly plotting methods in Model class, e.g. `ml.plotly.plot()`."
     )
-
-
