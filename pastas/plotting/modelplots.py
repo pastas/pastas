@@ -3,7 +3,7 @@
 import logging
 
 # Type Hinting
-from typing import List, Optional, Union
+from typing import List, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,16 +11,15 @@ from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import LogFormatter, MultipleLocator
 from pandas import Series, Timestamp, concat
 
-from pastas.typing import Axes, Figure, Model, TimestampType
-
-from ..decorators import model_tmin_tmax
-from .plots import (
+from pastas.decorators import model_tmin_tmax
+from pastas.plotting.plots import cum_frequency, diagnostics, series
+from pastas.plotting.plotutil import (
+    _get_height_ratios,
+    _get_stress_series,
     _table_formatter_params,
     _table_formatter_stderr,
-    cum_frequency,
-    diagnostics,
-    series,
 )
+from pastas.typing import Axes, Figure, Model, TimestampType
 
 logger = logging.getLogger(__name__)
 
@@ -1003,30 +1002,3 @@ class Plotting:
         pdf.savefig(fig, orientation="portrait", dpi=dpi)
         pdf.close()
         return fig
-
-
-def _get_height_ratios(ylims: List[Union[list, tuple]]) -> List[float]:
-    height_ratios = []
-    for ylim in ylims:
-        hr = ylim[1] - ylim[0]
-        if np.isnan(hr):
-            hr = 0.0
-        height_ratios.append(hr)
-    return height_ratios
-
-
-def _get_stress_series(ml, split: bool = True) -> List[Series]:
-    stresses = []
-    for name in ml.stressmodels.keys():
-        nstress = len(ml.stressmodels[name].stress)
-        if split and nstress > 1:
-            for istress in range(nstress):
-                stress = ml.get_stress(name, istress=istress)
-                stresses.append(stress)
-        else:
-            stress = ml.get_stress(name)
-            if isinstance(stress, list):
-                stresses.extend(stress)
-            else:
-                stresses.append(stress)
-    return stresses

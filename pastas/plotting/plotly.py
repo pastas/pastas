@@ -5,7 +5,7 @@ from plotly.subplots import make_subplots
 from scipy.stats import norm, probplot
 
 from pastas.extensions import register_model_accessor
-from pastas.plotting.modelplots import (
+from pastas.plotting.plotutil import (
     _get_height_ratios,
     _table_formatter_params,
     _table_formatter_stderr,

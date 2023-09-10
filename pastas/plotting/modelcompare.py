@@ -9,8 +9,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from pandas import DataFrame, concat
 
-from ..stats.core import acf
-from ..typing import Axes, Model
+from pastas.plotting.plotutil import _table_formatter_params
+from pastas.stats.core import acf
+from pastas.typing import Axes, Model
 
 logger = getLogger(__name__)
 
@@ -797,7 +798,7 @@ class CompareModels:
             self.models,
             param_selection=param_selection,
             param_col=param_col,
-        ).applymap(ps.plots._table_formatter_params)
+        ).applymap(_table_formatter_params)
 
         # add separate column with parameter names
         params.loc[:, "Parameters"] = params.index
