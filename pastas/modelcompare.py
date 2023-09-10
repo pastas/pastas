@@ -10,6 +10,7 @@ import numpy as np
 from pandas import DataFrame, concat
 
 import pastas as ps
+from pastas.rfunc import HantushWellModel
 from pastas.typing import Axes, Model
 
 logger = getLogger(__name__)
@@ -559,7 +560,7 @@ class CompareModels:
                     if response == "step":
                         kwargs = {}
                         if ml.stressmodels[smn].rfunc is not None:
-                            if ml.stressmodels[smn].rfunc._name == "HantushWellModel":
+                            if isinstance(ml.stressmodels[smn].rfunc, HantushWellModel):
                                 kwargs = {"warn": False}
                         step = ml.get_step_response(smn, add_0=True, **kwargs)
                         if step is None:

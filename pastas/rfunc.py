@@ -262,7 +262,7 @@ class RfuncBase:
         if isinstance(dt, np.ndarray):
             return dt
         else:
-            if self._name == "HantushWellModel":
+            if isinstance(self, HantushWellModel):
                 tmax = self.get_tmax(p, cutoff, warn=warn)
             else:
                 tmax = self.get_tmax(p, cutoff)

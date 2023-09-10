@@ -11,6 +11,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import LogFormatter, MultipleLocator
 from pandas import Series, Timestamp, concat
 
+from pastas.rfunc import HantushWellModel
 from pastas.typing import Axes, Figure, Model, TimestampType
 
 from .decorators import model_tmin_tmax
@@ -267,7 +268,7 @@ class Plotting:
             # plot the step response
             rkwargs = {}
             if self.ml.stressmodels[sm_name].rfunc is not None:
-                if self.ml.stressmodels[sm_name].rfunc._name == "HantushWellModel":
+                if isinstance(self.ml.stressmodels[sm_name].rfunc, HantushWellModel):
                     rkwargs = {"warn": False}
             response = self.ml._get_response(
                 block_or_step=block_or_step, name=sm_name, add_0=True, **rkwargs
