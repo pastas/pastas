@@ -1,7 +1,7 @@
 import matplotlib as mpl
 
 from pastas import Model
-from pastas.plots import TrackSolve, compare
+from pastas.plotting.plots import TrackSolve, compare
 
 mpl.use("Agg")  # prevent _tkinter.TclError: Can't find a usable tk.tcl error
 
