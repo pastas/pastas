@@ -59,18 +59,20 @@ class TimeSeries:
         Method for up-sampling time series (increasing frequency, e.g. going from weekly
         to daily values).
            * `bfill` or `backfill`: fill up-sampled time steps by back-filling current
-           values
-           * `ffill or `pad`: fill up-sampled time steps by forward-filling current values
+             values
+           * `ffill or `pad`: fill up-sampled time steps by forward-filling current
+             values
            * `mean`: fill up-sampled time steps with mean of timeseries
            * `interpolate`: fill up-sampled time steps by interpolating between current
-           values
+             values
            * `divide`: fill up-sampled steps with current value divided by length of
            current time steps (i.e. spread value over new time steps).
     sample_down : {"mean", "drop", "sum", "min", "max"}
         Method for down-sampling time series (decreasing frequency, e.g. going from
         daily to weekly values).
            * `mean`: resample time series by taking the mean
-           * `drop`: resample the time series by taking the mean, dropping any NaN-values
+           * `drop`: resample the time series by taking the mean, dropping any
+             NaN-values
            * `sum`: resample time series by summing values
            * `max`: resample time series with maximum value
            * `min`: resample time series with minimum value
