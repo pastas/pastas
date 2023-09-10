@@ -60,7 +60,7 @@ class TimeSeries:
         to daily values).
            * `bfill` or `backfill`: fill up-sampled time steps by back-filling current
              values
-           * `ffill or `pad`: fill up-sampled time steps by forward-filling current
+           * `ffill` or `pad`: fill up-sampled time steps by forward-filling current
              values
            * `mean`: fill up-sampled time steps with mean of timeseries
            * `interpolate`: fill up-sampled time steps by interpolating between current
