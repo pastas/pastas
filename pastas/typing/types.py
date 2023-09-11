@@ -99,7 +99,7 @@ class StressSettingsDict(TypedDict):
            * `interpolate`: fill up-sampled time steps by interpolating between current
              values
            * `divide`: fill up-sampled steps with current value divided by length of
-           current time steps (i.e. spread value over new time steps).
+             current time steps (i.e. spread value over new time steps).
     sample_down : {"mean", "drop", "sum", "min", "max"}
         Method for down-sampling time series (decreasing frequency, e.g. going from
         daily to weekly values).
