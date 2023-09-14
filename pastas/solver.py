@@ -62,6 +62,7 @@ class BaseSolver:
         self.nfev = nfev  # number of function evaluations
         self.obj_func = obj_func
         self.result = None  # Object returned by the optimization method
+        self.kwargs = kwargs
 
     def set_model(self, ml: Model):
         """Method to set the Pastas Model instance.
@@ -291,7 +292,7 @@ class BaseSolver:
         )
 
     def get_parameter_sample(
-        self, name: Optional[str] = None, n: int = None, max_iter: int = 10
+        self, name: Optional[str] = None, n: Optional[int] = None, max_iter: int = 10
     ) -> ArrayLike:
         """Method to obtain a parameter sets for monte carlo analyses.
 
@@ -483,6 +484,8 @@ class LeastSquares(BaseSolver):
         callback: Optional[CallBack] = None,
         **kwargs,
     ) -> Tuple[bool, ArrayLike, ArrayLike]:
+        if self.kwargs:
+            kwargs.update(self.kwargs)
         self.vary = self.ml.parameters.vary.values.astype(bool)
         self.initial = self.ml.parameters.initial.values.copy()
         parameters = self.ml.parameters.loc[self.vary]
@@ -612,6 +615,8 @@ class LmfitSolve(BaseSolver):
         method: Optional[str] = "leastsq",
         **kwargs,
     ) -> Tuple[bool, ArrayLike, ArrayLike]:
+        if self.kwargs:
+            kwargs.update(self.kwargs)
         # Deal with the parameters
         parameters = lmfit.Parameters()
         p = self.ml.parameters.loc[:, ["initial", "pmin", "pmax", "vary"]]
