@@ -207,27 +207,3 @@ def validate_name(name: str, raise_error: bool = False) -> str:
                 logger.warning(msg)
 
     return name
-
-
-def register_plotly_extension():
-    from pastas.plotting.plotly import Plotly
-
-    logger.info(
-        "Registered plotly plotting methods in Model class, e.g. `ml.plotly.plot()`."
-    )
-
-
-def register_plugin(module, target="plugins"):
-    import pastas as ps
-
-    objs = [o for o in dir(module) if not o.startswith("_")]
-    if target is not None:
-        try:
-            target = getattr(ps, target)
-        except AttributeError:
-            setattr(ps, target, module)
-            target = getattr(ps, target)
-    else:
-        target = ps
-    for obj in objs:
-        setattr(target, obj, getattr(module, obj))
