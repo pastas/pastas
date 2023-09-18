@@ -119,6 +119,8 @@ napoleon_type_aliases = {
     "ml": "pastas.model.Model",
     "TimestampType": "pandas.Timestamp",
 }
+# add custom section to docstrings in Parameters style
+napoleon_custom_sections = [("Time series settings", "params_style")]
 
 # -- Autodoc, autosummary, and autosectionlabel settings ------------------------------
 

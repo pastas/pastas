@@ -23,7 +23,14 @@ import numpy as np
 from pandas import DataFrame, Series, Timedelta, Timestamp, concat, date_range
 from scipy.signal import fftconvolve
 
-from pastas.typing import ArrayLike, Model, Recharge, RFunc, TimestampType
+from pastas.typing import (
+    ArrayLike,
+    Model,
+    Recharge,
+    RFunc,
+    StressSettingsDict,
+    TimestampType,
+)
 
 from .decorators import njit, set_parameter
 from .recharge import Linear
@@ -233,7 +240,6 @@ class StressModelBase:
         Notes
         -----
         To update the settings of the time series, use the `update_stress` method.
-
         """
         if len(self.stress) == 0:
             settings = None
@@ -258,15 +264,55 @@ class StressModel(StressModelBase):
         you don't want to define if response is positive or negative.
     settings: dict or str, optional
         The settings of the stress. This can be a string referring to a predefined
-        settings dict (defined in ps.rcParams["timeseries"]), or a dict with the
-        settings to apply. Refer to the docs of pastas.Timeseries for further
-        information.
+        settings dictionary (defined in ps.rcParams["timeseries"]), or a dictionary with
+        the settings to apply. For more information refer to Time series settings
+        section below.
     metadata: dict, optional
         dictionary containing metadata about the stress. This is passed onto the
         TimeSeries object.
     gain_scale_factor: float, optional
         the scale factor is used to set the initial value and the bounds of the gain
         parameter, computed as 1 / gain_scale_factor.
+
+    Time series settings
+    --------------------
+    fill_nan : {"drop", "mean", "interpolate"} or float
+        Method for filling NaNs.
+           * `drop`: drop NaNs from time series
+           * `mean`: fill NaNs with mean value of time series
+           * `interpolate`: fill NaNs by interpolating between finite values
+           * `float`: fill NaN with provided value, e.g. 0.0
+    fill_before : {"mean", "bfill"} or float
+        Method for extending time series into past.
+           * `mean`: extend time series into past with mean value of time series
+           * `bfill`: extend time series into past by back-filling first value
+           * `float`: extend time series into past with provided value, e.g. 0.0
+    fill_after : {"mean", "ffill"} or float
+        Method for extending time series into future.
+           * `mean`: extend time series into future with mean value of time series
+           * `ffill`: extend time series into future by forward-filling last value
+           * `float`: extend time series into future with provided value, e.g. 0.0
+    sample_up : {"mean", "interpolate", "divide"} or float
+        Method for up-sampling time series (increasing frequency, e.g. going from weekly
+        to daily values).
+           * `bfill` or `backfill`: fill up-sampled time steps by back-filling current
+             values
+           * `ffill` or `pad`: fill up-sampled time steps by forward-filling current
+             values
+           * `mean`: fill up-sampled time steps with mean of timeseries
+           * `interpolate`: fill up-sampled time steps by interpolating between current
+             values
+           * `divide`: fill up-sampled steps with current value divided by length of
+             current time steps (i.e. spread value over new time steps).
+    sample_down : {"mean", "drop", "sum", "min", "max"}
+        Method for down-sampling time series (decreasing frequency, e.g. going from
+        daily to weekly values).
+           * `mean`: resample time series by taking the mean
+           * `drop`: resample the time series by taking the mean, dropping any
+             NaN-values
+           * `sum`: resample time series by summing values
+           * `max`: resample time series with maximum value
+           * `min`: resample time series with minimum value
 
     Examples
     --------
@@ -289,7 +335,7 @@ class StressModel(StressModelBase):
         rfunc: RFunc,
         name: str,
         up: bool = True,
-        settings: Optional[Union[dict, str]] = None,
+        settings: Optional[Union[str, StressSettingsDict]] = None,
         metadata: Optional[dict] = None,
         gain_scale_factor: Optional[float] = None,
     ) -> None:
@@ -365,7 +411,6 @@ class StressModel(StressModelBase):
         Notes
         -----
         Settings and metadata are exported with the stress.
-
         """
         data = {
             "class": self._name,
@@ -469,7 +514,6 @@ class StepModel(StressModelBase):
         -------
         data: dict
             dictionary with all necessary information to reconstruct object.
-
         """
         data = {
             "class": self._name,
@@ -583,7 +627,6 @@ class LinearTrend(StressModelBase):
         Returns
         -------
         data: dict
-
         """
         data = {
             "class": self._name,
@@ -669,11 +712,51 @@ class WellModel(StressModelBase):
         level.
     settings: str, list of dict, optional
         The settings of the stress. By default this is "well". This can be a string
-        referring to a predefined settings dict (defined in
-        ps.rcParams["timeseries"]), or a dict with the settings to apply. Refer
-        to the docs of pastas.Timeseries for further information.
+        referring to a predefined settings dictionary (defined in
+        ps.rcParams["timeseries"]), or a dictionary with the settings to apply. For more
+        information, refer to Time series settings section below.
     sort_wells: bool, optional
         sort wells from closest to furthest, by default True.
+
+    Time series settings
+    --------------------
+    fill_nan : {"drop", "mean", "interpolate"} or float
+        Method for filling NaNs.
+           * `drop`: drop NaNs from time series
+           * `mean`: fill NaNs with mean value of time series
+           * `interpolate`: fill NaNs by interpolating between finite values
+           * `float`: fill NaN with provided value, e.g. 0.0
+    fill_before : {"mean", "bfill"} or float
+        Method for extending time series into past.
+           * `mean`: extend time series into past with mean value of time series
+           * `bfill`: extend time series into past by back-filling first value
+           * `float`: extend time series into past with provided value, e.g. 0.0
+    fill_after : {"mean", "ffill"} or float
+        Method for extending time series into future.
+           * `mean`: extend time series into future with mean value of time series
+           * `ffill`: extend time series into future by forward-filling last value
+           * `float`: extend time series into future with provided value, e.g. 0.0
+    sample_up : {"mean", "interpolate", "divide"} or float
+        Method for up-sampling time series (increasing frequency, e.g. going from weekly
+        to daily values).
+           * `bfill` or `backfill`: fill up-sampled time steps by back-filling current
+             values
+           * `ffill` or `pad`: fill up-sampled time steps by forward-filling current
+             values
+           * `mean`: fill up-sampled time steps with mean of timeseries
+           * `interpolate`: fill up-sampled time steps by interpolating between current
+             values
+           * `divide`: fill up-sampled steps with current value divided by length of
+             current time steps (i.e. spread value over new time steps).
+    sample_down : {"mean", "drop", "sum", "min", "max"}
+        Method for down-sampling time series (decreasing frequency, e.g. going from
+        daily to weekly values).
+           * `mean`: resample time series by taking the mean
+           * `drop`: resample the time series by taking the mean, dropping any
+             NaN-values
+           * `sum`: resample time series by summing values
+           * `max`: resample time series with maximum value
+           * `min`: resample time series with minimum value
 
     Notes
     -----
@@ -694,7 +777,7 @@ class WellModel(StressModelBase):
         distances: ArrayLike,
         rfunc: Optional[RFunc] = None,
         up: bool = False,
-        settings: str = "well",
+        settings: Union[str, StressSettingsDict] = "well",
         sort_wells: bool = True,
         metadata: Optional[list] = None,
     ) -> None:
@@ -901,7 +984,6 @@ class WellModel(StressModelBase):
         p : array_like
             parameters for each stress as row of array, if istress is used returns
             only one row.
-
         """
         if model is None:
             p = self.parameters.initial.values
@@ -1039,34 +1121,69 @@ class RechargeModel(StressModelBase):
         It depends on the recharge model if this argument is required or not. The
         temperature series should be provided in degrees Celsius.
     settings: list of dicts or str, optional
-        The settings of the precipitation and evaporation time series, in this order.
-        This can be a string referring to a predefined settings dict (defined in
-        ps.rcParams["timeseries"]), or a dict with the settings to apply. Refer to
-        the docs of pastas.Timeseries for further information.
+        The settings of the precipitation, evaporation and optionally temperature time
+        series, in this order. By default ("prec", "evap", "evap"). This can be a string
+        referring to a predefined settings dict (defined in ps.rcParams["timeseries"]),
+        or a dict with the settings to apply. For more information refer to Time Series
+        Settings section below for more information.
     metadata: tuple of dicts or list of dicts, optional
         dictionary containing metadata about the stress. This is passed onto the
         TimeSeries object.
-
-    See Also
-    --------
-    pastas.rfunc
-    pastas.timeseries.TimeSeries
-    pastas.recharge
-
-    Notes
-    -----
-    This stress model computes the contribution of precipitation and potential
-    evaporation in two steps. In the first step a recharge flux is computed by a
-    model determined by the input argument `recharge`. In the second step this
-    recharge flux is convoluted with a response function to obtain the contribution
-    of recharge to the groundwater levels. If a nonlinear recharge model is used, the
-    precipitation should be in mm/d.
 
     Examples
     --------
     >>> sm = ps.RechargeModel(rain, evap, rfunc=ps.Exponential(),
     >>>                       recharge=ps.rch.FlexModel(), name="rch")
     >>> ml.add_stressmodel(sm)
+
+    Time series settings
+    --------------------
+    fill_nan : {"drop", "mean", "interpolate"} or float
+        Method for filling NaNs.
+           * `drop`: drop NaNs from time series
+           * `mean`: fill NaNs with mean value of time series
+           * `interpolate`: fill NaNs by interpolating between finite values
+           * `float`: fill NaN with provided value, e.g. 0.0
+    fill_before : {"mean", "bfill"} or float
+        Method for extending time series into past.
+           * `mean`: extend time series into past with mean value of time series
+           * `bfill`: extend time series into past by back-filling first value
+           * `float`: extend time series into past with provided value, e.g. 0.0
+    fill_after : {"mean", "ffill"} or float
+        Method for extending time series into future.
+           * `mean`: extend time series into future with mean value of time series
+           * `ffill`: extend time series into future by forward-filling last value
+           * `float`: extend time series into future with provided value, e.g. 0.0
+    sample_up : {"mean", "interpolate", "divide"} or float
+        Method for up-sampling time series (increasing frequency, e.g. going from weekly
+        to daily values).
+           * `bfill` or `backfill`: fill up-sampled time steps by back-filling current
+             values
+           * `ffill` or `pad`: fill up-sampled time steps by forward-filling current
+             values
+           * `mean`: fill up-sampled time steps with mean of timeseries
+           * `interpolate`: fill up-sampled time steps by interpolating between current
+             values
+           * `divide`: fill up-sampled steps with current value divided by length of
+             current time steps (i.e. spread value over new time steps).
+    sample_down : {"mean", "drop", "sum", "min", "max"}
+        Method for down-sampling time series (decreasing frequency, e.g. going from
+        daily to weekly values).
+           * `mean`: resample time series by taking the mean
+           * `drop`: resample the time series by taking the mean, dropping any
+             NaN-values
+           * `sum`: resample time series by summing values
+           * `max`: resample time series with maximum value
+           * `min`: resample time series with minimum value
+
+    Notes
+    -----
+    This stress model computes the contribution of precipitation and potential
+    evaporation in two steps. In the first step a recharge flux is computed by a
+    model determined by the input argument `recharge`. In the second step this
+    recharge flux is convolved with a response function to obtain the contribution
+    of recharge to the groundwater levels. If a nonlinear recharge model is used, the
+    precipitation should be in mm/d.
 
     Warnings
     --------
@@ -1080,6 +1197,11 @@ class RechargeModel(StressModelBase):
     the precipitation series are in m/d instead of mm/d. Please check the units of the
     precipitation series.
 
+    See Also
+    --------
+    pastas.rfunc
+    pastas.timeseries.TimeSeries
+    pastas.recharge
     """
 
     _name = "RechargeModel"
@@ -1092,7 +1214,11 @@ class RechargeModel(StressModelBase):
         name: str = "recharge",
         recharge: Optional[Recharge] = None,
         temp: Optional[Series] = None,
-        settings: Tuple[Union[str, dict], Union[str, dict], Union[str, dict]] = (
+        settings: Tuple[
+            Union[str, StressSettingsDict],
+            Union[str, StressSettingsDict],
+            Union[str, StressSettingsDict],
+        ] = (
             "prec",
             "evap",
             "evap",
@@ -1403,7 +1529,6 @@ class RechargeModel(StressModelBase):
         Notes
         -----
         Settings and metadata are exported with the stress.
-
         """
         data = {
             "class": self._name,
@@ -1553,7 +1678,6 @@ class TarsoModel(RechargeModel):
         Notes
         -----
         Settings and metadata are exported with the stress.
-
         """
         data = super().to_dict(series)
         data["dmin"] = self.dmin
@@ -1562,8 +1686,8 @@ class TarsoModel(RechargeModel):
 
     @staticmethod
     def _check_stressmodel_compatibility(ml: Model) -> None:
-        """Internal method to check if no other stressmodels, a constants or a
-        transform is used."""
+        """Internal method to check if no other stressmodels, a constants or a transform
+        is used."""
         msg = (
             "A TarsoModel cannot be combined with %s. Either remove the TarsoModel or "
             "the %s."
@@ -1578,8 +1702,8 @@ class TarsoModel(RechargeModel):
     @staticmethod
     @njit
     def tarso(p: ArrayLike, r: ArrayLike, dt: float) -> ArrayLike:
-        """Calculates the head based on exponential decay of the previous timestep
-        and recharge, using two thresholds."""
+        """Calculates the head based on exponential decay of the previous timestep and
+        recharge, using two thresholds."""
         A0, a0, d0, A1, a1, d1 = p
 
         # calculate physical meaning of these parameters
@@ -1646,11 +1770,51 @@ class ChangeModel(StressModelBase):
     settings: dict or str, optional
         The settings of the stress. This can be a string referring to a predefined
         settings dict (defined in ps.rcParams["timeseries"]), or a dict with the
-        settings to apply. Refer to the docs of pastas.Timeseries for further
-        information.
+        settings to apply. For more information, refer to the docs of pastas.Timeseries
+        for further information.
     metadata: dict, optional
         dictionary containing metadata about the stress. This is passed onto the
         TimeSeries object.
+
+    Time series settings
+    --------------------
+    fill_nan : {"drop", "mean", "interpolate"} or float
+        Method for filling NaNs.
+           * `drop`: drop NaNs from time series
+           * `mean`: fill NaNs with mean value of time series
+           * `interpolate`: fill NaNs by interpolating between finite values
+           * `float`: fill NaN with provided value, e.g. 0.0
+    fill_before : {"mean", "bfill"} or float
+        Method for extending time series into past.
+           * `mean`: extend time series into past with mean value of time series
+           * `bfill`: extend time series into past by back-filling first value
+           * `float`: extend time series into past with provided value, e.g. 0.0
+    fill_after : {"mean", "ffill"} or float
+        Method for extending time series into future.
+           * `mean`: extend time series into future with mean value of time series
+           * `ffill`: extend time series into future by forward-filling last value
+           * `float`: extend time series into future with provided value, e.g. 0.0
+    sample_up : {"mean", "interpolate", "divide"} or float
+        Method for up-sampling time series (increasing frequency, e.g. going from weekly
+        to daily values).
+           * `bfill` or `backfill`: fill up-sampled time steps by back-filling current
+             values
+           * `ffill` or `pad`: fill up-sampled time steps by forward-filling current
+             values
+           * `mean`: fill up-sampled time steps with mean of timeseries
+           * `interpolate`: fill up-sampled time steps by interpolating between current
+             values
+           * `divide`: fill up-sampled steps with current value divided by length of
+             current time steps (i.e. spread value over new time steps).
+    sample_down : {"mean", "drop", "sum", "min", "max"}
+        Method for down-sampling time series (decreasing frequency, e.g. going from
+        daily to weekly values).
+           * `mean`: resample time series by taking the mean
+           * `drop`: resample the time series by taking the mean, dropping any
+             NaN-values
+           * `sum`: resample time series by summing values
+           * `max`: resample time series with maximum value
+           * `min`: resample time series with minimum value
 
     Notes
     -----
@@ -1667,7 +1831,7 @@ class ChangeModel(StressModelBase):
         name: str,
         tchange: Union[str, TimestampType],
         up: bool = True,
-        settings: Optional[Union[dict, str]] = None,
+        settings: Optional[Union[str, StressSettingsDict]] = None,
         metadata: Optional[dict] = None,
     ) -> None:
         stress = TimeSeries(stress, settings=settings, metadata=metadata)
@@ -1771,7 +1935,6 @@ class ChangeModel(StressModelBase):
         Notes
         -----
         Settings and metadata are exported with the stress.
-
         """
         data = {
             "stress": self.stress[0].to_dict(series=series),
