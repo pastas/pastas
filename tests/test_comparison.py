@@ -33,7 +33,7 @@ def test_comparison_plot_custom(ml: ps.Model, ml_sm: ps.Model) -> None:
     mc.plot_contribution(axn="con{i}")
     mc.plot_table_diagnostics(axn="dia", diag_col="Statistic")
     mc.plot_acf(axn="acf")
-    mc.share_xaxes(
+    ps.plots.share_xaxes(
         [
             mc.axes["ose"],
             mc.axes["sim"],

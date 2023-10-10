@@ -3,12 +3,13 @@
 import logging
 
 # Type Hinting
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
+import matplotlib.patheffects as patheffects
 import matplotlib.pyplot as plt
 import numpy as np
-from pandas import DataFrame, Series, Timestamp
-from scipy.stats import gaussian_kde, norm, probplot
+from pandas import DataFrame, Series, Timestamp, concat
+from scipy.stats import gaussian_kde, norm, pearsonr, probplot
 
 from pastas.modelcompare import CompareModels
 from pastas.stats.core import acf as get_acf
@@ -972,3 +973,105 @@ def _table_formatter_stderr(s: float, na_rep: str = "") -> str:
         return f"{s * 100.:.2e}%"
     else:
         return f"{s:.2%}"
+
+
+def pairplot(
+    data: Union[DataFrame, List[Series]],
+    nbins: Optional[int] = None,
+    axes_lims: Optional[Tuple[float]] = None,
+) -> Dict[str, Axes]:
+    """pairplot after Seaborn pairplot"""
+    if isinstance(data, list):
+        data = concat(data, axis=1)
+
+    df = data.dropna(how="any")
+
+    columns = df.columns
+
+    mosaic = []
+    for i, column in enumerate(columns):
+        cols = [f"scatter_{x}-{column}" for x in columns]
+        cols[i] = f"hist_{column}"
+        mosaic.append(cols)
+
+    mosaic = np.array(mosaic)
+
+    f, axd = plt.subplot_mosaic(mosaic, figsize=(6.5, 6))
+
+    if axes_lims is None:
+        xleft, xright = None, None
+        ybottom, ytop = None, None
+    else:
+        xleft, xright = axes_lims
+        ybottom, ytop = axes_lims
+    for i, (column, mos) in enumerate(zip(columns, mosaic)):
+        # plot histogram
+        if nbins is None:
+            nbins = int(np.ceil(1 + np.log2(len(df.loc[:, column].values))))
+        counts, bins = np.histogram(df.loc[:, column].values, bins=nbins)
+        scaled_counts = (
+            df.loc[:, column].max()
+            * (counts - np.min(counts))
+            / (np.max(counts) - np.min(counts))
+        )
+        axd[f"hist_{column}"].hist(x=bins[:-1], bins=bins, weights=scaled_counts)
+        axd[f"hist_{column}"].set_xlim(xleft, xright)
+        axd[f"hist_{column}"].set_ylim(ybottom, ytop)
+
+        # plot scatter
+        other_cols = [x for x in columns if x is not column]
+        for col in other_cols:
+            axd[f"scatter_{column}-{col}"].scatter(
+                df.loc[:, column].values,
+                df.loc[:, col].values,
+                alpha=0.6,
+                s=20,
+                edgecolor="white",
+                linewidth=0.3,
+            )
+            r, _ = pearsonr(df.loc[:, column].values, df.loc[:, col].values)
+            axd[f"scatter_{column}-{col}"].annotate(
+                f"r = {r:.2f}",
+                xy=(0.5, 0.95),
+                horizontalalignment="center",
+                verticalalignment="top",
+                xycoords="axes fraction",
+                color="k",
+                path_effects=[
+                    patheffects.withStroke(linewidth=2, foreground="white"),
+                    patheffects.Normal(),
+                ],
+            )
+            axd[f"scatter_{column}-{col}"].set_xlim(xleft, xright)
+            axd[f"scatter_{column}-{col}"].set_ylim(ybottom, ytop)
+
+        # set labels
+        axd[mos[0]].set_ylabel(column)
+        if (mos == mosaic[-1]).all():
+            [axd[j].set_xlabel(x) for x, j in zip(columns, mos)]
+
+        # share x and y axis per row and columns
+        share_yaxes([axd[j] for j in mos])
+
+    [share_xaxes([axd[x] for x in mosaic[:, j]]) for j in range(len(columns))]
+
+    f.tight_layout()
+
+    return axd
+
+
+def share_xaxes(axes: List[Axes]) -> None:
+    """share x-axes"""
+    for i, iax in enumerate(axes):
+        if i < (len(axes) - 1):
+            iax.sharex(axes[-1])
+            for t in iax.get_xticklabels():
+                t.set_visible(False)
+
+
+def share_yaxes(axes: List[Axes]) -> None:
+    """share y-axes"""
+    for iax in axes[1:]:
+        iax.sharey(axes[0])
+        for t in iax.get_yticklabels():
+            t.set_visible(False)
