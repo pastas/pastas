@@ -11,7 +11,7 @@ from pandas import DataFrame, concat
 
 import pastas as ps
 from pastas.rfunc import HantushWellModel
-from pastas.typing import Axes, Model
+from pastas.typing import Model
 
 logger = getLogger(__name__)
 
@@ -854,31 +854,6 @@ class CompareModels:
         cols = diags.columns.to_list()[-1:] + diags.columns.to_list()[:-1]
         return self.plot_table(axn=axn, df=diags[cols])
 
-    def share_xaxes(self, axes: List[Axes]) -> None:
-        """share x-axes.
-
-        Parameters
-        ----------
-        axes : list of matplotlib.Axes
-            list of axes objects.
-        """
-        for i, iax in enumerate(axes):
-            if i < (len(axes) - 1):
-                iax.sharex(axes[-1])
-                for t in iax.get_xticklabels():
-                    t.set_visible(False)
-
-    def share_yaxes(self, axes: List[Axes]) -> None:
-        """share y-axes.
-
-        Parameters
-        ----------
-        axes : list of matplotlib.Axes
-            list of axes objects.
-        """
-        for iax in axes[1:]:
-            iax.sharey(axes[0])
-
     def plot(
         self,
         smdict: Optional[dict] = None,
@@ -965,9 +940,9 @@ class CompareModels:
                 xshare_right.append(self.axes[axn])
 
         if len(xshare_left) > 1:
-            self.share_xaxes(xshare_left)
+            ps.plots.share_xaxes(xshare_left)
         if len(xshare_right) > 1:
-            self.share_xaxes(xshare_right)
+            ps.plots.share_xaxes(xshare_right)
 
         # met
         _ = self.plot_table_metrics()
