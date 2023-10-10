@@ -978,7 +978,6 @@ def _table_formatter_stderr(s: float, na_rep: str = "") -> str:
 def pairplot(
     data: Union[DataFrame, List[Series]],
     nbins: Optional[int] = None,
-    axes_lims: Optional[Tuple[float]] = None,
 ) -> Dict[str, Axes]:
     """pairplot after Seaborn pairplot"""
     if isinstance(data, list):
@@ -998,12 +997,6 @@ def pairplot(
 
     f, axd = plt.subplot_mosaic(mosaic, figsize=(6.5, 6))
 
-    if axes_lims is None:
-        xleft, xright = None, None
-        ybottom, ytop = None, None
-    else:
-        xleft, xright = axes_lims
-        ybottom, ytop = axes_lims
     for i, (column, mos) in enumerate(zip(columns, mosaic)):
         # plot histogram
         if nbins is None:
@@ -1015,8 +1008,6 @@ def pairplot(
             / (np.max(counts) - np.min(counts))
         )
         axd[f"hist_{column}"].hist(x=bins[:-1], bins=bins, weights=scaled_counts)
-        axd[f"hist_{column}"].set_xlim(xleft, xright)
-        axd[f"hist_{column}"].set_ylim(ybottom, ytop)
 
         # plot scatter
         other_cols = [x for x in columns if x is not column]
@@ -1042,8 +1033,6 @@ def pairplot(
                     patheffects.Normal(),
                 ],
             )
-            axd[f"scatter_{column}-{col}"].set_xlim(xleft, xright)
-            axd[f"scatter_{column}-{col}"].set_ylim(ybottom, ytop)
 
         # set labels
         axd[mos[0]].set_ylabel(column)
