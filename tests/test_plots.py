@@ -1,9 +1,9 @@
-import matplotlib as mpl
+from pandas import Series
 
 from pastas import Model
-from pastas.plots import TrackSolve, compare
+from pastas.plots import TrackSolve, compare, pairplot
 
-mpl.use("Agg")  # prevent _tkinter.TclError: Can't find a usable tk.tcl error
+# mpl.use("Agg")  # prevent _tkinter.TclError: Can't find a usable tk.tcl error
 
 
 def test_plot(ml: Model) -> None:
@@ -55,3 +55,7 @@ def test_tracksolve(ml: Model) -> None:
 
 def test_summary_pdf(ml: Model) -> None:
     _ = ml.plots.summary_pdf()
+
+
+def test_pairplot(prec: Series, pevap: Series, head: Series) -> None:
+    _ = pairplot([prec, pevap, head])
