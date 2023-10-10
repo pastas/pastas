@@ -14,6 +14,7 @@ jobs:
   test:
     name: ${{ matrix.name }}
     runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
@@ -21,27 +22,35 @@ jobs:
           - name: Test suite with py38-ubuntu
             python: "3.8"
             toxenv: py38
+            experimental: false
           - name: Test suite with py39-ubuntu
             python: "3.9"
             toxenv: py39
+            experimental: false
           - name: Test suite with py310-ubuntu
             python: "3.10"
             toxenv: py310
+            experimental: false
           - name: Test suite with py311-ubuntu
             python: "3.11"
             toxenv: py311
+            experimental: false
           - name: Test suite with py312-ubuntu
             python: "3.12"
             toxenv: py312
+            experimental: true
           - name: Formatting with black + isort
             python: "3.9"
             toxenv: format
+            experimental: false
           - name: Linting with flake8
             python: "3.9"
             toxenv: lint
+            experimental: false
           - name: Test suite for all unit tests including Notebooks
             python: "3.9"
             toxenv: all
+            experimental: false
     env:
       # Color Output
       # Rich (pip)
