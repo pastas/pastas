@@ -2,10 +2,9 @@
 
 import logging
 
-# Type Hinting
 from typing import Dict, List, Optional, Tuple, Union
 
-import matplotlib.patheffects as patheffects
+import matplotlib.patheffects as path_effects
 import matplotlib.pyplot as plt
 import numpy as np
 from pandas import DataFrame, Series, Timestamp, concat
@@ -1029,20 +1028,20 @@ def pairplot(
                 xycoords="axes fraction",
                 color="k",
                 path_effects=[
-                    patheffects.withStroke(linewidth=2, foreground="white"),
-                    patheffects.Normal(),
+                    path_effects.withStroke(linewidth=2, foreground="white"),
+                    path_effects.Normal(),
                 ],
             )
 
         # set labels
         axd[mos[0]].set_ylabel(column)
         if (mos == mosaic[-1]).all():
-            [axd[j].set_xlabel(x) for x, j in zip(columns, mos)]
+            _ = [axd[j].set_xlabel(x) for x, j in zip(columns, mos)]
 
         # share x and y axis per row and columns
         share_yaxes([axd[j] for j in mos])
 
-    [share_xaxes([axd[x] for x in mosaic[:, j]]) for j in range(len(columns))]
+    _ = [share_xaxes([axd[x] for x in mosaic[:, j]]) for j in range(len(columns))]
 
     f.tight_layout()
 
