@@ -37,7 +37,7 @@ class Plotly:
     """
 
     def __init__(self, model):
-        self.model = model
+        self._model = model
 
     def plot(self, tmin=None, tmax=None):
         """Plotly version of pastas.Model.plot().
@@ -57,8 +57,8 @@ class Plotly:
 
         traces = []
 
-        o = self.model.observations()
-        o_nu = self.model.oseries.series.drop(o.index)
+        o = self._model.observations()
+        o_nu = self._model.oseries.series.drop(o.index)
 
         # add oseries
         if not o_nu.empty:
@@ -76,7 +76,7 @@ class Plotly:
                 y=o.values,
                 mode="markers",
                 marker={"color": "black", "size": 5},
-                name=self.model.oseries.name,
+                name=self._model.oseries.name,
                 legendgroup="oseries",
             )
             traces.append(trace_oseries_nu)
@@ -87,18 +87,18 @@ class Plotly:
                 y=o.values,
                 mode="markers",
                 marker_color="black",
-                name=self.model.oseries.name,
+                name=self._model.oseries.name,
                 legendgroup="oseries",
             )
             traces.append(trace_oseries)
 
-        sim = self.model.simulate(tmin=tmin, tmax=tmax)
+        sim = self._model.simulate(tmin=tmin, tmax=tmax)
         trace_sim = go.Scattergl(
             x=sim.index,
             y=sim.values,
             mode="lines",
             marker_color="#1F77B4",
-            name=f"Sim (R<sup>2</sup> = {self.model.stats.rsq():.3f})",
+            name=f"Sim (R<sup>2</sup> = {self._model.stats.rsq():.3f})",
             legendgroup="sim",
         )
         traces.append(trace_sim)
@@ -138,21 +138,21 @@ class Plotly:
             dictionary containing plotly subplots data and layout
         """
         if tmin is None:
-            tmin = self.model.settings["tmin"]
+            tmin = self._model.settings["tmin"]
         if tmax is None:
-            tmax = self.model.settings["tmax"]
+            tmax = self._model.settings["tmax"]
 
         # for collecting data
         traces = []
 
         # dimensions
-        nsm = len(self.model.stressmodels)
+        nsm = len(self._model.stressmodels)
         nrows = 2 + nsm
         naxes = 2 + 2 * nsm
 
         # oseries
-        o = self.model.observations()
-        o_nu = self.model.oseries.series.drop(o.index)
+        o = self._model.observations()
+        o_nu = self._model.oseries.series.drop(o.index)
 
         trace_oseries_nu = go.Scattergl(
             x=o_nu.index,
@@ -172,7 +172,7 @@ class Plotly:
             y=o.values,
             mode="markers",
             marker={"color": "black", "size": 5},
-            name=self.model.oseries.name,
+            name=self._model.oseries.name,
             legendgroup="1",
             xaxis="x",
             yaxis="y",
@@ -180,13 +180,13 @@ class Plotly:
         traces.append(trace_oseries)
 
         # simulation
-        sim = self.model.simulate()
+        sim = self._model.simulate()
         trace_sim = go.Scattergl(
             x=sim.index,
             y=sim.values,
             mode="lines",
             marker_color="#1F77B4",
-            name=f"simulation (R<sup>2</sup> = {self.model.stats.rsq():.3f})",
+            name=f"simulation (R<sup>2</sup> = {self._model.stats.rsq():.3f})",
             legendgroup="2",
             xaxis="x",
             yaxis="y",
@@ -194,7 +194,7 @@ class Plotly:
         traces.append(trace_sim)
 
         # residuals
-        res = self.model.residuals()
+        res = self._model.residuals()
         trace_res = go.Scattergl(
             x=res.index,
             y=res.values,
@@ -209,7 +209,7 @@ class Plotly:
         traces.append(trace_res)
 
         # noise
-        noise = self.model.noise()
+        noise = self._model.noise()
         trace_noise = go.Scattergl(
             x=noise.index,
             y=noise.values,
@@ -224,7 +224,7 @@ class Plotly:
         traces.append(trace_noise)
 
         # contributions
-        contribs = self.model.get_contributions(
+        contribs = self._model.get_contributions(
             split=False,  # tmin=tmin, tmax=tmax, return_warmup=return_warmup
         )
         for i, c in enumerate(contribs):
@@ -245,7 +245,7 @@ class Plotly:
             traces.append(trace_c)
 
             # response
-            response = self.model._get_response(
+            response = self._model._get_response(
                 block_or_step="step", name=c.name, add_0=True
             )
             trace_r = go.Scatter(
@@ -288,7 +288,7 @@ class Plotly:
         dy = 0.01
 
         # parameter table
-        p = self.model.parameters.copy().loc[:, ["name", "optimal", "stderr"]]
+        p = self._model.parameters.copy().loc[:, ["name", "optimal", "stderr"]]
         p.loc[:, "name"] = p.index
         stderr = p.loc[:, "stderr"] / p.loc[:, "optimal"]
         p.loc[:, "optimal"] = p.loc[:, "optimal"].apply(_table_formatter_params)
@@ -381,7 +381,7 @@ class Plotly:
         fig = go.Figure(data=traces, layout=layout)
 
         # add titles for subplots
-        labels = ["residuals / noise"] + list(self.model.stressmodels.keys())
+        labels = ["residuals / noise"] + list(self._model.stressmodels.keys())
         for i, lbl in enumerate(labels):
             fig.add_annotation(
                 xref="paper",
@@ -468,13 +468,13 @@ class Plotly:
             plotly figure with model diagnostics
         """
         # prepare data
-        sim = self.model.simulate()
-        series = self.model.noise()
+        sim = self._model.simulate()
+        series = self._model.noise()
         df_acf = acf(series, full_output=True)
         x = df_acf.index.total_seconds() / (24 * 60 * 60)
         conf = df_acf["conf"].rolling(10, min_periods=1).mean().values
 
-        if self.model.interpolate_simulation:
+        if self._model.interpolate_simulation:
             sim_interpolated = np.interp(series.index.asi8, sim.index.asi8, sim.values)
             sim = pd.Series(index=series.index, data=sim_interpolated)
 

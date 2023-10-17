@@ -41,6 +41,7 @@ from pastas.timeseries import validate_oseries, validate_stress
 from pastas.transform import ThresholdTransform
 from pastas.utils import initialize_logger, set_log_level
 from pastas.version import __version__, show_versions
+from pastas import extensions
 
 logger = logging.getLogger(__name__)
 initialize_logger(logger)

@@ -59,6 +59,7 @@ ci = [
     "corner",
     "emcee",
     "tqdm",
+    "plotly",
 ]
 rtd = [
     "pastas[solvers]",
