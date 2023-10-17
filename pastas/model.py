@@ -1618,7 +1618,7 @@ class Model:
         else:
             if p is None:
                 p = self.get_parameters(name)
-            if isinstance(self.stressmodels[name].rfunc, HantushWellModel):
+            if self.stressmodels[name].rfunc._name == "HantushWellModel":
                 kwargs = {"warn": warn}
             else:
                 kwargs = {}
