@@ -16,27 +16,27 @@ def test_no_noise(ml: ps.Model):
 # test the uncertainty method here
 def test_pred_interval(ml: ps.Model):
     ml.solve(solver=ps.LeastSquares())
-    ml.fit.prediction_interval(n=10)
+    ml.solver.prediction_interval(n=10)
 
 
 def test_ci_simulation(ml: ps.Model):
     ml.solve(solver=ps.LeastSquares())
-    ml.fit.ci_simulation(n=10)
+    ml.solver.ci_simulation(n=10)
 
 
 def test_ci_block_response(ml: ps.Model):
     ml.solve(solver=ps.LeastSquares())
-    ml.fit.ci_block_response(name="rch", n=10)
+    ml.solver.ci_block_response(name="rch", n=10)
 
 
 def test_ci_step_response(ml: ps.Model):
     ml.solve(solver=ps.LeastSquares())
-    ml.fit.ci_step_response(name="rch", n=10)
+    ml.solver.ci_step_response(name="rch", n=10)
 
 
 def test_ci_contribution(ml: ps.Model):
     ml.solve(solver=ps.LeastSquares())
-    ml.fit.ci_contribution(name="rch", n=10)
+    ml.solver.ci_contribution(name="rch", n=10)
 
 
 # Test the EmceeSolver

@@ -120,7 +120,7 @@ legacy_tox_ini = """
     extras = formatting
     commands =
             black pastas --check --diff
-            isort pastas --diff --profile=black
+            isort pastas --check --diff --profile=black
 
     [testenv:lint]
     description = run linters

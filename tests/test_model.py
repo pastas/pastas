@@ -103,7 +103,7 @@ def test_load_model(ml: ps.Model) -> None:
 
     # check if parameters and pcov dataframes are equal
     assert ml.parameters.equals(ml2.parameters)
-    assert ml.fit.pcov.equals(ml2.fit.pcov)
+    assert ml.solver.pcov.equals(ml2.solver.pcov)
 
 
 def test_model_copy(ml_empty: ps.Model) -> None:
