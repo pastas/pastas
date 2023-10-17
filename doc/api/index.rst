@@ -19,13 +19,11 @@ left-hand menu you will find the different categories of the API documentation.
     recharge
     solver
     objective_functions
-    modelplots.Plotting
-    modelcompare.CompareModels
+    plotting
     timeseries.TimeSeries
     timeseries_utils
     utils
     timer.SolveTimer
-    plots
     stats
 
 .. toctree::
