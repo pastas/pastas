@@ -10,6 +10,7 @@ import numpy as np
 from pandas import DataFrame, concat
 
 import pastas as ps
+from pastas.plots import share_yaxes
 from pastas.rfunc import HantushWellModel
 from pastas.typing import Model
 
@@ -854,6 +855,27 @@ class CompareModels:
         cols = diags.columns.to_list()[-1:] + diags.columns.to_list()[:-1]
         return self.plot_table(axn=axn, df=diags[cols])
 
+    def share_xaxes(
+        self,
+        axes: List[Axes],
+    ):
+        """share x-axes.
+        Parameters
+        ----------
+        axes : list of matplotlib.Axes
+            list of axes objects.
+        """
+        ps.plots.share_xaxes(axes=axes)
+
+    def share_yaxes(self, axes: List[Axes]):
+        """share y-axes.
+        Parameters
+        ----------
+        axes : list of matplotlib.Axes
+            list of axes objects.
+        """
+        ps.plots.share_yaxes(axes=axes)
+
     def plot(
         self,
         smdict: Optional[dict] = None,
@@ -940,9 +962,9 @@ class CompareModels:
                 xshare_right.append(self.axes[axn])
 
         if len(xshare_left) > 1:
-            ps.plots.share_xaxes(xshare_left)
+            self.share_xaxes(xshare_left)
         if len(xshare_right) > 1:
-            ps.plots.share_xaxes(xshare_right)
+            self.share_xaxes(xshare_right)
 
         # met
         _ = self.plot_table_metrics()
