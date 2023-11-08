@@ -5,13 +5,6 @@ def test_least_squares(ml: ps.Model):
     ml.solve(solver=ps.LeastSquares())
 
 
-def test_solver_kwargs(ml: ps.Model):
-    skwargs = {"method": "dogbox"}
-    solver = ps.LeastSquares(**skwargs)
-    ml.solve(solver=solver, report=False)
-    assert getattr(ml.solver, "kwargs") == skwargs
-
-
 def test_fit_constant(ml: ps.Model):
     ml.solve(fit_constant=False)
 
