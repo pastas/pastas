@@ -62,6 +62,11 @@ class BaseSolver:
         self.nfev = nfev  # number of function evaluations
         self.obj_func = obj_func
         self.result = None  # Object returned by the optimization method
+        if kwargs:
+            logger.warning(
+                "kwargs to the solver instance are ignored, please provide the"
+                "kwargs to the model.solve method."
+            )
 
     def set_model(self, ml: Model):
         """Method to set the Pastas Model instance.
