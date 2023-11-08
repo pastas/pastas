@@ -976,9 +976,23 @@ def _table_formatter_stderr(s: float, na_rep: str = "") -> str:
 
 def pairplot(
     data: Union[DataFrame, List[Series]],
-    nbins: Optional[int] = None,
+    bins: Optional[int] = None,
 ) -> Dict[str, Axes]:
-    """pairplot after Seaborn pairplot"""
+    """Plot correlation between time series on of values on the same time steps.
+    Based on seaborn pairplot method.
+
+    Parameters
+    ----------
+    data : Union[DataFrame, List[Series]]
+        List of Series or Dataframe with DateTime index
+    bins : Optional[int], optional
+        Number of bins in the histogram, by default None which uses Sturge's
+        Rule to determine the number bins
+
+    Returns
+    -------
+    Dict[str, Axes]
+    """
     if isinstance(data, list):
         data = concat(data, axis=1)
 
@@ -998,9 +1012,9 @@ def pairplot(
 
     for i, (column, mos) in enumerate(zip(columns, mosaic)):
         # plot histogram
-        if nbins is None:
-            nbins = int(np.ceil(1 + np.log2(len(df.loc[:, column].values))))
-        counts, bins = np.histogram(df.loc[:, column].values, bins=nbins)
+        if bins is None:
+            bins = int(np.ceil(1 + np.log2(len(df.loc[:, column].values))))
+        counts, bins = np.histogram(df.loc[:, column].values, bins=bins)
         scaled_counts = (
             df.loc[:, column].max()
             * (counts - np.min(counts))

@@ -21,6 +21,7 @@ from .plots import (
     cum_frequency,
     diagnostics,
     series,
+    pairplot,
 )
 
 logger = logging.getLogger(__name__)
@@ -1004,6 +1005,36 @@ class Plotting:
         pdf.savefig(fig, orientation="portrait", dpi=dpi)
         pdf.close()
         return fig
+
+    @model_tmin_tmax
+    def pairplot(
+        self,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+        bins: Optional[int] = None,
+        split: bool = True,
+    ) -> dict[str, Axes]:
+        """Method to plot all the time series going into a Pastas Model.
+
+        Parameters
+        ----------
+        tmin: str or pd.Timestamp
+        tmax: str or pd.Timestamp
+        bins : Optional[int], optional
+            Number of bins in the histogram, by default None which uses Sturge's
+            Rule to determine the number bins
+        split: bool, optional
+            Split the stresses in multiple stresses when possible.
+
+        Returns
+        -------
+        matplotlib.axes.Axes
+        """
+        obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        stresses = _get_stress_series(self.ml, split=split)
+        series = [obs] + list(stresses)
+        axd = pairplot(data=series, bins=bins)
+        return axd
 
 
 def _get_height_ratios(ylims: List[Union[list, tuple]]) -> List[float]:
