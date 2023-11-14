@@ -209,19 +209,20 @@ class Plotly:
         traces.append(trace_res)
 
         # noise
-        noise = self._model.noise()
-        trace_noise = go.Scattergl(
-            x=noise.index,
-            y=noise.values,
-            mode="lines",
-            marker_color="#1F77B4",
-            name="noise",
-            # legendgroup="noise",
-            xaxis="x",
-            yaxis="y2",
-            showlegend=False,
-        )
-        traces.append(trace_noise)
+        if self._model.settings["noise"]:
+            noise = self._model.noise()
+            trace_noise = go.Scattergl(
+                x=noise.index,
+                y=noise.values,
+                mode="lines",
+                marker_color="#1F77B4",
+                name="noise",
+                # legendgroup="residuals",
+                xaxis="x",
+                yaxis="y2",
+                showlegend=False,
+            )
+            traces.append(trace_noise)
 
         # contributions
         contribs = self._model.get_contributions(
@@ -381,7 +382,10 @@ class Plotly:
         fig = go.Figure(data=traces, layout=layout)
 
         # add titles for subplots
-        labels = ["residuals / noise"] + list(self._model.stressmodels.keys())
+        rnlabel = [
+            "residuals / noise" if self._model.settings["noise"] else "residuals"
+        ]
+        labels = rnlabel + list(self._model.stressmodels.keys())
         for i, lbl in enumerate(labels):
             fig.add_annotation(
                 xref="paper",
@@ -469,7 +473,13 @@ class Plotly:
         """
         # prepare data
         sim = self._model.simulate()
-        series = self._model.noise()
+        if self._model.settings["noise"]:
+            series = self._model.noise()
+            resnoisename = 'noise'
+        else:
+            series = self._model.residuals()
+            resnoisename = 'residuals'
+
         df_acf = acf(series, full_output=True)
         x = df_acf.index.total_seconds() / (24 * 60 * 60)
         conf = df_acf["conf"].rolling(10, min_periods=1).mean().values
@@ -491,7 +501,7 @@ class Plotly:
                 [{}, {}],
             ],
             subplot_titles=[
-                f"Noise (&#956;={series.mean():.1f})",
+                f"{resnoisename} (&#956;={series.mean():.1f})",
                 "Autocorrelation",
                 "Histogram",
                 "Probability plot",
@@ -509,7 +519,7 @@ class Plotly:
                 y=series.values,
                 line_color="rgba(31,119,180,1)",
                 showlegend=False,
-                name="Noise",
+                name=resnoisename,
             ),
             row=1,
             col=1,
@@ -674,7 +684,7 @@ class Plotly:
         )
 
         # update x-axes, y-axes
-        fig.update_yaxes(title_text="Noise", title_standoff=0, row=1, col=1)
+        fig.update_yaxes(title_text=resnoisename, title_standoff=0, row=1, col=1)
 
         fig.update_xaxes(title_text="Lags [d]", title_standoff=0, row=2, col=1)
         fig.update_yaxes(title_text="ACF [-]", title_standoff=0, row=2, col=1)
