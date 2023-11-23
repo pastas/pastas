@@ -17,10 +17,10 @@ Pastas: Analysis of Groundwater Time Series
    :target: https://pypi.org/project/pastas/
 .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1465866.svg
    :target: https://doi.org/10.5281/zenodo.1465866
-.. image:: https://api.codacy.com/project/badge/Grade/952f41c453854064ba0ee1fa0a0b4434
-   :target: https://www.codacy.com/gh/pastas/pastas
+.. image:: https://app.codacy.com/project/badge/Grade/952f41c453854064ba0ee1fa0a0b4434
+   :target: https://app.codacy.com/gh/pastas/pastas/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade
 .. image:: https://api.codacy.com/project/badge/Coverage/952f41c453854064ba0ee1fa0a0b4434
-   :target: https://www.codacy.com/gh/pastas/pastas
+   :target: https://app.codacy.com/gh/pastas/pastas/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_coverage9
 .. image:: https://readthedocs.org/projects/pastas/badge/?version=latest
    :target: https://pastas.readthedocs.io/en/latest/?badge=latest
 .. image:: https://mybinder.org/badge_logo.svg
