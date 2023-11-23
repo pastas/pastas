@@ -309,7 +309,7 @@ def colwell_components(
 
     hx = -(x / z * log(x / z)).sum()
     hy = -(y / z * log(y / z)).sum()
-    hxy = -(df / z * log(df / z, where=df != 0)).sum().sum()
+    hxy = -(df / z * log(df / z, where=df.values != 0)).sum().sum()
 
     # Compute final components
     p = 1 - (hxy - hy) / log(bins)  # Predictability
