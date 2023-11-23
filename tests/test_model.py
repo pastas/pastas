@@ -63,6 +63,7 @@ def test_armamodel() -> None:
     ml = ps.Model(obs, name="Test_Model", noisemodel=False)
     ml.add_noisemodel(ps.ArmaModel())
     ml.solve()
+    ml.to_file("test.pas")
 
 
 def test_del_noisemodel(ml_empty: ps.Model) -> None:
