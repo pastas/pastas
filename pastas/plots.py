@@ -3,7 +3,7 @@
 import logging
 
 # Type Hinting
-from typing import List, Optional, Tuple, Dict
+from typing import Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
