@@ -39,7 +39,6 @@ class NoiseModelBase:
     def __init__(self) -> None:
         self.nparam = 1
         self.name = "noise"
-        self.norm = None
         self.parameters = DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
         )
