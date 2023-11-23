@@ -454,7 +454,7 @@ class StepModel(StressModelBase):
         tstart: TimestampType,
         name: str,
         rfunc: Optional[RFunc] = None,
-        up: bool = True,
+        up: bool = None,
     ) -> None:
         if rfunc is None:
             rfunc = One()

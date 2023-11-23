@@ -475,10 +475,10 @@ class Plotly:
         sim = self._model.simulate()
         if self._model.settings["noise"]:
             series = self._model.noise()
-            resnoisename = 'noise'
+            resnoisename = "noise"
         else:
             series = self._model.residuals()
-            resnoisename = 'residuals'
+            resnoisename = "residuals"
 
         df_acf = acf(series, full_output=True)
         x = df_acf.index.total_seconds() / (24 * 60 * 60)
