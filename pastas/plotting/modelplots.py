@@ -12,14 +12,13 @@ from matplotlib.ticker import LogFormatter, MultipleLocator
 from pandas import Series, Timestamp, concat
 
 from pastas.decorators import model_tmin_tmax
-from pastas.plotting.plots import cum_frequency, series
+from pastas.plotting.plots import cum_frequency, diagnostics, series
 from pastas.plotting.plotutil import (
     _get_height_ratios,
     _get_stress_series,
     _table_formatter_params,
     _table_formatter_stderr,
 )
-from pastas.stats.tests import diagnostics
 from pastas.typing import Axes, Figure, Model, TimestampType
 
 logger = logging.getLogger(__name__)
