@@ -58,21 +58,27 @@ class CompareModels:
         mc.figure.savefig("modelcomparison.png")
     """
 
-    def __init__(self, models: Optional[List[Model]] = None) -> None:
+    def __init__(self, models: List[Model], names: Optional[List[str]] = None) -> None:
         """Initialize model compare class.
 
         Parameters
         ----------
         models : list of ps.Model, optional
             list of models to compare.
+        names : list of str, optional
+            override model names
         """
         self.models = models
         # ensure unique model names
-        modelnames = [iml.name for iml in self.models]
+        if names is not None:
+            modelnames = names
+        else:
+            modelnames = [iml.name for iml in self.models]
         if len(set(modelnames)) < len(modelnames):
             logger.warning("Duplicate model names, appending a suffix.")
             modelnames = [f"{iml.name}_{i}" for i, iml in enumerate(self.models)]
         self.modelnames = modelnames
+
         # attributes that are set and used later
         self.figure = None
         self.axes = None
@@ -318,9 +324,11 @@ class CompareModels:
         """
         if models is None:
             models = self.models
-            modelnames = self.modelnames
-        else:
+
+        if self.modelnames is None:
             modelnames = [iml.name for iml in models]
+        else:
+            modelnames = self.modelnames
 
         metrics = concat(
             [ml.stats.summary(stats=metric_selection) for ml in models],
@@ -356,9 +364,11 @@ class CompareModels:
         """
         if models is None:
             models = self.models
-            modelnames = self.modelnames
-        else:
+
+        if self.modelnames is None:
             modelnames = [iml.name for iml in models]
+        else:
+            modelnames = self.modelnames
 
         params = concat([ml.parameters[param_col] for ml in models], axis=1, sort=False)
         params.columns = modelnames
@@ -454,11 +464,15 @@ class CompareModels:
             axs = self.axes
 
         for i, ml in enumerate(self.models):
+            if self.modelnames is not None:
+                name = self.modelnames[i]
+            else:
+                name = ml.model
             simulation = ml.simulate()
             axs[axn].plot(
                 simulation.index,
                 simulation.values,
-                label=ml.name,
+                label=name,
                 linestyle="-",
                 color=self.cmap(i),
             )
