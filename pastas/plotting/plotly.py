@@ -283,10 +283,20 @@ class Plotly:
         hrs = _get_height_ratios(ylims)
 
         # subplot positions and spacing
-        y_pos = 1 - np.cumsum(np.array(hrs) / np.sum(hrs))
-        x_pos = 0.67
         dx = 0.015
         dy = 0.01
+        hrs = np.array(hrs)
+        # add whitespace
+        hrs[[0, -1]] += dy
+        hrs[1:-1] += 2 * dy
+        # calculate y-positions
+        y_pos = 1 - np.cumsum(np.concatenate([np.zeros(1), hrs]) / np.sum(hrs))
+        x_pos = 0.67
+        # get tops and bottoms of axes from y-position array
+        ytops = y_pos[:-1].copy()
+        ytops[1:] -= dy  # create half of whitespace by decreasing tops
+        ybots = y_pos[1:].copy()
+        ybots[:-1] += dy  # create other half of whitespace by increasing bottoms
 
         # parameter table
         p = self._model.parameters.copy().loc[:, ["name", "optimal", "stderr"]]
@@ -324,7 +334,7 @@ class Plotly:
                 anchor=f"y{nrows}",
             ),
             yaxis=dict(
-                domain=[y_pos[0] + dy, 1.0],
+                domain=[ybots[0], ytops[0]],
                 anchor="x",
             ),
             # row 1, col 0 - residuals/noise plot
@@ -333,7 +343,7 @@ class Plotly:
                 anchor="y2",
             ),
             yaxis2=dict(
-                domain=[y_pos[1] + dy, y_pos[0] - dy],
+                domain=[ybots[1], ytops[1]],
                 anchor="x2",
                 scaleanchor="y",
             ),
@@ -358,7 +368,7 @@ class Plotly:
                 anchor=f"y{iax_contrib}",
             )
             layout_dict[f"yaxis{iax_contrib}"] = dict(
-                domain=[y_pos[irow] + dy, y_pos[irow - 1] - dy],
+                domain=[ybots[irow], ytops[irow]],
                 anchor=f"x{iax_contrib}",
                 scaleanchor="y",
             )
@@ -373,7 +383,7 @@ class Plotly:
                 anchor=f"y{naxes}",
             )
             layout_dict[f"yaxis{iax_response}"] = dict(
-                domain=[y_pos[irow] + dy, y_pos[irow - 1] - dy],
+                domain=[ybots[irow], ytops[irow]],
                 anchor=f"x{3+nsm}",
             )
 
@@ -391,7 +401,7 @@ class Plotly:
                 xref="paper",
                 yref="paper",
                 x=0.015,
-                y=y_pos[i],
+                y=y_pos[i + 1],
                 xanchor="left",
                 yanchor="middle",
                 showarrow=False,
@@ -423,7 +433,7 @@ class Plotly:
             xref="paper",
             yref="paper",
             x=x_pos + dx + 0.015,
-            y=y_pos[1],
+            y=y_pos[2],
             xanchor="left",
             yanchor="middle",
             showarrow=False,
