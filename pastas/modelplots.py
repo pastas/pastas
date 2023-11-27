@@ -3,7 +3,7 @@
 import logging
 
 # Type Hinting
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,6 +12,7 @@ from matplotlib.ticker import LogFormatter, MultipleLocator
 from pandas import Series, Timestamp, concat
 
 from pastas.rfunc import HantushWellModel
+from pastas.timeseries_utils import _get_dt
 from pastas.typing import Axes, Figure, Model, TimestampType
 
 from .decorators import model_tmin_tmax
@@ -832,6 +833,7 @@ class Plotting:
         tmin: Optional[TimestampType] = None,
         tmax: Optional[TimestampType] = None,
         figsize: tuple = (10, 8),
+        stackcolors: Optional[Union[Dict, List]] = None,
         stacklegend: bool = False,
         stacklegend_kws: Optional[dict] = None,
         **kwargs,
@@ -845,8 +847,16 @@ class Plotting:
         tmin : str or pandas.Timestamp, optional
         tmax : str or pandas.Timestamp, optional
         figsize : tuple, optional
+        stackcolors : dict or list, optional
+            Either dictionary with stress names as keys and colors as values, or a
+            list of colors. By default None which applies colors according to the
+            order of stresses in the StressModel. Passing a dictionary can be useful
+            to apply the same color to each stress across multiple figures.
         stacklegend : bool, optional
             Add legend to the stacked plot.
+        stacklegend_kws : dict, optional
+            dict with keyword arguments for stackplot legend
+
 
         Returns
         -------
@@ -869,7 +879,20 @@ class Plotting:
             contributions = []
             sml = self.ml.stressmodels[sm]
             if (len(sml.stress) > 0) and (sml._name == "WellModel"):
+                if stackcolors is None:
+                    stackcolors = {
+                        wnam: f"C{iw+1}" for iw, wnam in enumerate(sml.distances.index)
+                    }
+                elif isinstance(stackcolors, list):
+                    stackcolors = {
+                        name: icolor
+                        for name, icolor in zip(sml.distances.index, stackcolors)
+                    }
+                elif not isinstance(stackcolors, dict):
+                    raise TypeError("stackcolors must be None, list, or dict.")
                 nsplit = sml.get_nsplit()
+                ax_step = axes[i]  # step response axis
+                ax_step.lines[0].remove()  # remove step response for r=1 m
                 if nsplit > 1:
                     for istress in range(len(sml.stress)):
                         h = self.ml.get_contribution(
@@ -879,20 +902,29 @@ class Plotting:
                         if name is None:
                             name = sm
                         contributions.append((name, h))
+
+                        # plot step responses for each well, scaled with distance
+                        p = sml.get_parameters(istress=istress)
+                        step = self.ml.get_step_response(sm, p=p)
+                        ax_step.plot(step.index, step, c=stackcolors[name], label=name)
+                        # recalculate y-limits step response axes
+                        ax_step.relim()
                 else:
                     h = self.ml.get_contribution(sm, tmin=tmin, tmax=tmax)
                     name = sm
                     contributions.append((name, h))
+
                 contributions.sort(key=custom_sort)
 
                 # add stacked plot to correct axes
                 ax = axes[i - 1]
                 ax.lines[0].remove()  # delete existing line
 
+                names = [c[0] for c in contributions]  # get names
                 contrib = [c[1] for c in contributions]  # get time series
                 vstack = concat(contrib, axis=1, sort=False)
-                names = [c[0] for c in contributions]  # get names
-                ax.stackplot(vstack.index, vstack.values.T, labels=names)
+                colors = [stackcolors[name] for name in names]
+                ax.stackplot(vstack.index, vstack.values.T, colors=colors, labels=names)
                 if stacklegend:
                     if stacklegend_kws is None:
                         stacklegend_kws = {}

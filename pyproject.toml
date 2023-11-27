@@ -37,6 +37,7 @@ classifiers = [
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
     'Topic :: Scientific/Engineering :: Hydrology',
 ]
 
@@ -92,7 +93,7 @@ markers = ["notebooks: run notebooks", "bnotebooks: run benchmark notebooks"]
 legacy_tox_ini = """
     [tox]
     requires = tox>=4
-    env_list = format, lint, notebooks, py{38,39,310,311}
+    env_list = format, lint, notebooks, py{38,39,310,311,312}
 
     [testenv]
     description = run unit tests
@@ -119,7 +120,7 @@ legacy_tox_ini = """
     extras = formatting
     commands =
             black pastas --check --diff
-            isort pastas --diff --profile=black
+            isort pastas --check --diff --profile=black
 
     [testenv:lint]
     description = run linters
