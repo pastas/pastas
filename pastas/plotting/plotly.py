@@ -297,6 +297,7 @@ class Plotly:
         ytops[1:] -= dy  # create half of whitespace by decreasing tops
         ybots = y_pos[1:].copy()
         ybots[:-1] += dy  # create other half of whitespace by increasing bottoms
+        ybots[ybots < 0] = 0  # should alway be > 0
 
         # parameter table
         p = self._model.parameters.copy().loc[:, ["name", "optimal", "stderr"]]
