@@ -1042,7 +1042,7 @@ class Plotting:
         tmax: Optional[TimestampType] = None,
         bins: Optional[int] = None,
         split: bool = True,
-    ) -> dict[str, Axes]:
+    ) -> Dict[str, Axes]:
         """Method to plot all the time series going into a Pastas Model.
         Parameters
         ----------
