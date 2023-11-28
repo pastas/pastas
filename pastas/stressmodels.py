@@ -14,11 +14,11 @@ See Also
 pastas.model.Model.add_stressmodel
 """
 
+from inspect import isclass
 from logging import getLogger
 
 # Type Hinting
 from typing import List, Optional, Tuple, Union
-from inspect import isclass
 
 import numpy as np
 from pandas import DataFrame, Series, Timedelta, Timestamp, concat, date_range
