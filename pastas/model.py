@@ -132,6 +132,7 @@ class Model:
             "noise": noisemodel,
             "solver": None,
             "fit_constant": True,
+            "freq_obs": None,
         }
 
         if constant:
@@ -639,8 +640,10 @@ class Model:
         else:
             tmax = self.get_tmax(tmax, use_oseries=False, use_stresses=True)
         if freq is None:
-            freq = self.settings["freq"]
-
+            if self.settings["freq_obs"] is None:
+                freq = self.settings["freq"]
+            else:
+                freq = self.settings["freq_obs"]
         for key, setting in zip([tmin, tmax, freq], ["tmin", "tmax", "freq"]):
             if key != self.settings[setting]:
                 update_observations = True
@@ -669,6 +672,7 @@ class Model:
         weights: Optional[Series] = None,
         initial: bool = True,
         fit_constant: bool = True,
+        freq_obs: Optional[str] = None,
     ) -> None:
         """Method to initialize the model.
 
@@ -687,6 +691,7 @@ class Model:
         self.settings["noise"] = noise
         self.settings["weights"] = weights
         self.settings["fit_constant"] = fit_constant
+        self.settings["freq_obs"] = freq_obs
 
         # Set the frequency & warmup
         if freq:
@@ -710,12 +715,9 @@ class Model:
             self.settings["warmup"],
             update_sim_index=True,
         )
-        self.oseries_calib = self.observations(
-            tmin=self.settings["tmin"],
-            tmax=self.settings["tmax"],
-            freq=self.settings["freq"],
-            update_observations=True,
-        )
+
+        # self.observations get tmin, tmax, freq, and freq_obs from self.settings
+        self.oseries_calib = self.observations(update_observations=True)
         self.interpolate_simulation = None
 
         # Initialize parameters
@@ -742,6 +744,7 @@ class Model:
         initial: bool = True,
         weights: Optional[Series] = None,
         fit_constant: bool = True,
+        freq_obs: Optional[str] = None,
         **kwargs,
     ) -> None:
         """Method to solve the time series model.
@@ -780,6 +783,12 @@ class Model:
         fit_constant: bool, optional
             Argument that determines if the constant is fitted as a parameter. If it
             is set to False, the constant is set equal to the mean of the residuals.
+        freq_obs: str, optional
+            String with the frequency of the observations that the model will be
+            calibrated on. Must be one of the following (D, h, m, s, ms, us, ns) or a
+            multiple of that e.g. "7D". Should generally be larger than the frequency
+            of the original observations and the model frequency (freq). If freq_obs
+            is not set, the frequency of the model (freq) will be used.
         **kwargs: dict, optional
             All keyword arguments will be passed onto minimization method from the
             solver. It depends on the solver used which arguments can be used.
@@ -799,7 +808,9 @@ class Model:
         """
 
         # Initialize the model
-        self.initialize(tmin, tmax, freq, warmup, noise, weights, initial, fit_constant)
+        self.initialize(
+            tmin, tmax, freq, warmup, noise, weights, initial, fit_constant, freq_obs
+        )
 
         if self.oseries_calib.empty:
             raise ValueError(
