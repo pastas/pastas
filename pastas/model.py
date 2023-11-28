@@ -171,7 +171,7 @@ class Model:
         )
 
     def add_stressmodel(
-        self, stressmodel: Union[StressModel, List[StressModel]], replace: bool = False
+        self, stressmodel: Union[StressModel, List[StressModel]], replace: bool = True
     ) -> None:
         """Add a stressmodel to the main model.
 
@@ -182,7 +182,7 @@ class Model:
             provided (e.g., ml.add_stressmodel([sm1, sm2]) in one call.
         replace: bool, optional
             force replace the stressmodel if a stressmodel with the same name already
-            exists. Not recommended but useful at times. Default is False.
+            exists. Not recommended but useful at times. Default is True.
 
         Notes
         -----
@@ -215,6 +215,11 @@ class Model:
                 "for this model. Select another name."
             )
         else:
+            if stressmodel.name in self.stressmodels.keys():
+                self.logger.warning(
+                    "The name for the stressmodel you are trying to add already "
+                    "exists for this model. The stressmodel is replaced."
+                )
             self.stressmodels[stressmodel.name] = stressmodel
             self.parameters = self.get_init_parameters(initial=False)
             stressmodel.update_stress(freq=self.settings["freq"])
