@@ -18,6 +18,7 @@ from logging import getLogger
 
 # Type Hinting
 from typing import List, Optional, Tuple, Union
+from inspect import isclass
 
 import numpy as np
 from pandas import DataFrame, Series, Timedelta, Timestamp, concat, date_range
@@ -80,6 +81,11 @@ class StressModelBase:
         self.freq = None
 
         if rfunc is not None:
+            if isclass(rfunc):
+                raise TypeError(
+                    "the rfunc argument must be an instance of response function, not "
+                    "a class. Please provide an instance, e.g., ps.Exponential()"
+                )
             rfunc.update_rfunc_settings(up=up, gain_scale_factor=gain_scale_factor)
         self.rfunc = rfunc
 
