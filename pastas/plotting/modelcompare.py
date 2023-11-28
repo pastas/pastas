@@ -9,8 +9,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from pandas import DataFrame, concat
 
-import pastas as ps
-from pastas.rfunc import HantushWellModel
+from pastas.plotting.plotutil import _table_formatter_params
+from pastas.stats.core import acf
 from pastas.typing import Axes, Model
 
 logger = getLogger(__name__)
@@ -574,7 +574,7 @@ class CompareModels:
                     if response == "step":
                         kwargs = {}
                         if ml.stressmodels[smn].rfunc is not None:
-                            if isinstance(ml.stressmodels[smn].rfunc, HantushWellModel):
+                            if ml.stressmodels[smn].rfunc._name == "HantushWellModel":
                                 kwargs = {"warn": False}
                         step = ml.get_step_response(smn, add_0=True, **kwargs)
                         if step is None:
@@ -741,10 +741,10 @@ class CompareModels:
 
         for i, ml in enumerate(self.models):
             if ml.noise() is not None:
-                r = ps.stats.core.acf(ml.noise(), full_output=True)
+                r = acf(ml.noise(), full_output=True)
                 label = "Autocorrelation Noise"
             else:
-                r = ps.stats.core.acf(ml.residuals(), full_output=True)
+                r = acf(ml.residuals(), full_output=True)
                 label = "Autocorrelation Residuals"
             conf = r.conf.rolling(10, min_periods=1).mean().values
 
@@ -812,7 +812,7 @@ class CompareModels:
             self.models,
             param_selection=param_selection,
             param_col=param_col,
-        ).applymap(ps.plots._table_formatter_params)
+        ).applymap(_table_formatter_params)
 
         # add separate column with parameter names
         params.loc[:, "Parameters"] = params.index

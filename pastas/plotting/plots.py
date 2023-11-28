@@ -10,7 +10,7 @@ import numpy as np
 from pandas import DataFrame, Series, Timestamp
 from scipy.stats import gaussian_kde, norm, probplot
 
-from pastas.modelcompare import CompareModels
+from pastas.plotting.modelcompare import CompareModels
 from pastas.stats.core import acf as get_acf
 from pastas.stats.metrics import evp, rmse
 from pastas.typing import ArrayLike, Axes, Figure, Model, TimestampType
@@ -932,49 +932,3 @@ class TrackSolve:
         self.fig.axes[1].set_ylim(top=1.05 * self.rmse_res.max())
 
         return fig.axes
-
-
-def _table_formatter_params(s: float, na_rep: str = "") -> str:
-    """Internal method for formatting parameters in tables in Pastas plots.
-
-    Parameters
-    ----------
-    s : float
-        value to format.
-
-    Returns
-    -------
-    str
-        float formatted as str.
-    """
-    if np.isnan(s):
-        return na_rep
-    elif np.floor(np.log10(np.abs(s))) <= -2:
-        return f"{s:.2e}"
-    elif np.floor(np.log10(np.abs(s))) > 5:
-        return f"{s:.2e}"
-    else:
-        return f"{s:.2f}"
-
-
-def _table_formatter_stderr(s: float, na_rep: str = "") -> str:
-    """Internal method for formatting stderrs in tables in Pastas plots.
-
-    Parameters
-    ----------
-    s : float
-        value to format.
-
-    Returns
-    -------
-    str
-        float formatted as str.
-    """
-    if np.isnan(s):
-        return na_rep
-    elif np.floor(np.log10(np.abs(s))) <= -4:
-        return f"{s * 100.:.2e}%"
-    elif np.floor(np.log10(np.abs(s))) > 3:
-        return f"{s * 100.:.2e}%"
-    else:
-        return f"{s:.2%}"

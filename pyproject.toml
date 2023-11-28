@@ -15,7 +15,7 @@ maintainers = [
     { name = "R. Calje", email = "r.calje@artesia-water.nl" },
     { name = "F. Schaars", email = "f.schaars@artesia-water.nl" },
     { name = "D.A. Brakenhoff", email = "d.brakenhoff@artesia-water.nl" },
-    { name = "O. Ebbens", email = "o.ebbens@artesia-water.nl" },
+    { name = "O.N. Ebbens", email = "o.ebbens@artesia-water.nl" },
     { name = "M.A. Vonk", email = "vonk.mart@gmail.com" },
 ]
 requires-python = ">= 3.8"
@@ -60,6 +60,7 @@ ci = [
     "corner",
     "emcee",
     "tqdm",
+    "plotly",
 ]
 rtd = [
     "pastas[solvers]",
