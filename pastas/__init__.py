@@ -8,6 +8,7 @@ import pastas.plots as plots
 import pastas.recharge as rch
 import pastas.stats as stats
 import pastas.timeseries_utils as ts
+from pastas import plugins
 
 from .decorators import set_use_numba
 from .model import Model
