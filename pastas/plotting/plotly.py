@@ -307,7 +307,7 @@ class Plotly:
         p.loc[:, "stderr"] = stderr.abs().apply(_table_formatter_stderr)
 
         tab = go.Table(
-            domain=dict(x=[x_pos + dx, 1.0], y=[y_pos[1] + dy, 1.0]),
+            domain=dict(x=[x_pos + dx, 1.0], y=[y_pos[2] + dy, 1.0]),
             header=dict(
                 values=[
                     "<b>Parameter</b>",
@@ -321,7 +321,7 @@ class Plotly:
             cells=dict(
                 values=[p[k].tolist() for k in p.columns],
                 align=["left", "right", "right"],
-                height=40,
+                height=30,
             ),
             columnwidth=[100, 70, 70],
         )
