@@ -10,6 +10,7 @@ from pandas import DataFrame, Series, Timestamp, concat
 from scipy.stats import gaussian_kde, norm, pearsonr, probplot
 
 from pastas.plotting.modelcompare import CompareModels
+from pastas.plotting.plotutil import share_xaxes, share_yaxes
 from pastas.stats.core import acf as get_acf
 from pastas.stats.metrics import evp, rmse
 from pastas.typing import ArrayLike, Axes, Figure, Model, TimestampType
@@ -1017,20 +1018,3 @@ def pairplot(
     f.tight_layout()
 
     return axd
-
-
-def share_xaxes(axes: List[Axes]) -> None:
-    """share x-axes"""
-    for i, iax in enumerate(axes):
-        if i < (len(axes) - 1):
-            iax.sharex(axes[-1])
-            for t in iax.get_xticklabels():
-                t.set_visible(False)
-
-
-def share_yaxes(axes: List[Axes]) -> None:
-    """share y-axes"""
-    for iax in axes[1:]:
-        iax.sharey(axes[0])
-        for t in iax.get_yticklabels():
-            t.set_visible(False)

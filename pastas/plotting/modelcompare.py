@@ -9,8 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from pandas import DataFrame, concat
 
-from pastas.plotting.plots import share_xaxes, share_yaxes
-from pastas.plotting.plotutil import _table_formatter_params
+from pastas.plotting.plotutil import _table_formatter_params, share_xaxes, share_yaxes
 from pastas.stats.core import acf
 from pastas.typing import Axes, Model
 
