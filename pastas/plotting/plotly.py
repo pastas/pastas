@@ -280,23 +280,27 @@ class Plotly:
                     ylims.append((contrib.min(), hs.max()))
             else:
                 ylims.append((hs.min(), hs.max()))
-        hrs = _get_height_ratios(ylims)
-
+        hrs = np.asarray(_get_height_ratios(ylims))
+        # claim at least 1% figure height for zero contributions for visibility
+        hrs = hrs.clip(min=0.01 * np.sum(hrs))
         # subplot positions and spacing
         dx = 0.015
         dy = 0.01
-        hrs = np.array(hrs) / np.sum(hrs)
+        # calculate whitespace
+        wspace = (2 * len(hrs) - 2) * dy
+        # scale plot heights
+        hrs_frac = hrs / np.sum(hrs) * (1 - wspace)
         # add whitespace
-        hrs[[0, -1]] += dy
-        hrs[1:-1] += 2 * dy
-        # calculate y-positions
-        y_pos = 1 - np.cumsum(np.concatenate([np.zeros(1), hrs]) / np.sum(hrs))
+        hrs_frac[[0, -1]] += dy
+        hrs_frac[1:-1] += 2 * dy
+        # calculate y-mid positions (between plots)
+        y_pos = 1 - np.cumsum(np.concatenate([np.zeros(1), hrs_frac]))
         x_pos = 0.67
         # get tops and bottoms of axes from y-position array
         ytops = y_pos[:-1].copy()
-        ytops[1:] -= dy  # create half of whitespace by decreasing tops
+        ytops[1:] -= dy  # half of whitespace by lowering tops by dy
         ybots = y_pos[1:].copy()
-        ybots[:-1] += dy  # create other half of whitespace by increasing bottoms
+        ybots[:-1] += dy  # create other half of whitespace by raising bottoms by dy
         ybots[ybots < 0] = 0  # floating point issues, should alway be > 0
 
         # parameter table
