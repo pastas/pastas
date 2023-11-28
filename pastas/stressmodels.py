@@ -14,6 +14,7 @@ See Also
 pastas.model.Model.add_stressmodel
 """
 
+from inspect import isclass
 from logging import getLogger
 
 # Type Hinting
@@ -80,6 +81,11 @@ class StressModelBase:
         self.freq = None
 
         if rfunc is not None:
+            if isclass(rfunc):
+                raise TypeError(
+                    "the rfunc argument must be an instance of response function, not "
+                    "a class. Please provide an instance, e.g., ps.Exponential()"
+                )
             rfunc.update_rfunc_settings(up=up, gain_scale_factor=gain_scale_factor)
         self.rfunc = rfunc
 
