@@ -285,7 +285,7 @@ class Plotly:
         # subplot positions and spacing
         dx = 0.015
         dy = 0.01
-        hrs = np.array(hrs)
+        hrs = np.array(hrs) / np.sum(hrs)
         # add whitespace
         hrs[[0, -1]] += dy
         hrs[1:-1] += 2 * dy
@@ -297,7 +297,7 @@ class Plotly:
         ytops[1:] -= dy  # create half of whitespace by decreasing tops
         ybots = y_pos[1:].copy()
         ybots[:-1] += dy  # create other half of whitespace by increasing bottoms
-        ybots[ybots < 0] = 0  # should alway be > 0
+        ybots[ybots < 0] = 0  # floating point issues, should alway be > 0
 
         # parameter table
         p = self._model.parameters.copy().loc[:, ["name", "optimal", "stderr"]]
