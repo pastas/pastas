@@ -600,7 +600,6 @@ class Model:
         tmin: Optional[TimestampType] = None,
         tmax: Optional[TimestampType] = None,
         freq: Optional[str] = None,
-        freq_obs: Optional[str] = None,
         update_observations: bool = False,
     ) -> Series:
         """Method that returns the observations series used for calibration.
@@ -640,11 +639,10 @@ class Model:
         else:
             tmax = self.get_tmax(tmax, use_oseries=False, use_stresses=True)
         if freq is None:
-            freq = self.settings["freq"]
-        if freq_obs is None:
-            freq_obs = self.settings["freq_obs"]
-        if freq_obs is not None:
-            freq = freq_obs
+            if self.settings["freq_obs"] is None:
+                freq = self.settings["freq"]
+            else:
+                freq = self.settings["freq_obs"]
         for key, setting in zip([tmin, tmax, freq], ["tmin", "tmax", "freq"]):
             if key != self.settings[setting]:
                 update_observations = True
@@ -716,13 +714,9 @@ class Model:
             self.settings["warmup"],
             update_sim_index=True,
         )
-        self.oseries_calib = self.observations(
-            tmin=self.settings["tmin"],
-            tmax=self.settings["tmax"],
-            freq=self.settings["freq"],
-            freq_obs=self.settings["freq_obs"],
-            update_observations=True,
-        )
+
+        # self.observations get tmin, tmax, freq, and freq_obs from self.settings
+        self.oseries_calib = self.observations(update_observations=True)
         self.interpolate_simulation = None
 
         # Initialize parameters
@@ -788,6 +782,12 @@ class Model:
         fit_constant: bool, optional
             Argument that determines if the constant is fitted as a parameter. If it
             is set to False, the constant is set equal to the mean of the residuals.
+        freq_obs: str, optional
+            String with the frequency of the observations that the model will be
+            calibrated on. Must be one of the following (D, h, m, s, ms, us, ns) or a
+            multiple of that e.g. "7D". Should generally be larger than the frequency
+            of the original observations and the model frequency (freq). If freq_obs
+            is not set, the frequency of the model (freq) will be used.
         **kwargs: dict, optional
             All keyword arguments will be passed onto minimization method from the
             solver. It depends on the solver used which arguments can be used.
