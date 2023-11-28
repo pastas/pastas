@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from pandas import DataFrame, concat
 
+from pastas.plots import share_xaxes, share_yaxes
 from pastas.plotting.plotutil import _table_formatter_params
 from pastas.stats.core import acf
 from pastas.typing import Axes, Model
@@ -876,11 +877,7 @@ class CompareModels:
         axes : list of matplotlib.Axes
             list of axes objects.
         """
-        for i, iax in enumerate(axes):
-            if i < (len(axes) - 1):
-                iax.sharex(axes[-1])
-                for t in iax.get_xticklabels():
-                    t.set_visible(False)
+        share_xaxes(axes)
 
     def share_yaxes(self, axes: List[Axes]) -> None:
         """share y-axes.
@@ -890,8 +887,7 @@ class CompareModels:
         axes : list of matplotlib.Axes
             list of axes objects.
         """
-        for iax in axes[1:]:
-            iax.sharey(axes[0])
+        share_yaxes(axes)
 
     def plot(
         self,
