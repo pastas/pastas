@@ -15,7 +15,7 @@ maintainers = [
     { name = "R. Calje", email = "r.calje@artesia-water.nl" },
     { name = "F. Schaars", email = "f.schaars@artesia-water.nl" },
     { name = "D.A. Brakenhoff", email = "d.brakenhoff@artesia-water.nl" },
-    { name = "O. Ebbens", email = "o.ebbens@artesia-water.nl" },
+    { name = "O.N. Ebbens", email = "o.ebbens@artesia-water.nl" },
     { name = "M.A. Vonk", email = "vonk.mart@gmail.com" },
 ]
 requires-python = ">= 3.8"
@@ -37,6 +37,7 @@ classifiers = [
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
     'Topic :: Scientific/Engineering :: Hydrology',
 ]
 
@@ -59,6 +60,7 @@ ci = [
     "corner",
     "emcee",
     "tqdm",
+    "plotly",
 ]
 rtd = [
     "pastas[solvers]",
@@ -92,7 +94,7 @@ markers = ["notebooks: run notebooks", "bnotebooks: run benchmark notebooks"]
 legacy_tox_ini = """
     [tox]
     requires = tox>=4
-    env_list = format, lint, notebooks, py{38,39,310,311}
+    env_list = format, lint, notebooks, py{38,39,310,311,312}
 
     [testenv]
     description = run unit tests

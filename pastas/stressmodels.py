@@ -14,6 +14,7 @@ See Also
 pastas.model.Model.add_stressmodel
 """
 
+from inspect import isclass
 from logging import getLogger
 
 # Type Hinting
@@ -80,6 +81,11 @@ class StressModelBase:
         self.freq = None
 
         if rfunc is not None:
+            if isclass(rfunc):
+                raise TypeError(
+                    "the rfunc argument must be an instance of response function, not "
+                    "a class. Please provide an instance, e.g., ps.Exponential()"
+                )
             rfunc.update_rfunc_settings(up=up, gain_scale_factor=gain_scale_factor)
         self.rfunc = rfunc
 
@@ -444,7 +450,7 @@ class StepModel(StressModelBase):
     -----
     The step trend is calculated as follows. First, a binary series is created,
     with zero values before tstart, and ones after the start. This series is
-    convoluted with the block response to simulate a step trend.
+    convolved with the block response to simulate a step trend.
     """
 
     _name = "StepModel"
@@ -454,7 +460,7 @@ class StepModel(StressModelBase):
         tstart: TimestampType,
         name: str,
         rfunc: Optional[RFunc] = None,
-        up: bool = True,
+        up: bool = None,
     ) -> None:
         if rfunc is None:
             rfunc = One()
@@ -1427,7 +1433,7 @@ class RechargeModel(StressModelBase):
         -------
         stress: pandas.Series
             When no istress is selected, this return the estimated recharge flux that
-            is convoluted with a response function on the simulate method.
+            is convolved with a response function on the simulate method.
         """
         if tmin is None:
             tmin = self.tmin

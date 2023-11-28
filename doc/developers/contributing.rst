@@ -7,6 +7,19 @@ GitHub, where Pastas is hosted, also has `good tutorials <https://help.github
 .com/en/github/collaborating-with-issues-and-pull-requests>`_ to learn how
 to commit code changes to GitHub open source projects. Let's start!
 
+.. note::
+    If you are new to GitHub, we recommend to first read the `GitHub
+    documentation <https://help.github.com/en/github>`_ to learn how to
+    use GitHub.
+
+0. Pick an Issue
+----------------
+Before you start, it is a good idea to check if there are any issues that you can help 
+with. You can find a list of issues that are open on the `GitHub Issues page 
+<https://github.com/pastas/pastas/labels/good-first-issue>`_` with the tag 
+"good-first-issue". These issues are a good place to start if you are new to Pastas 
+and want to contribute to the project.
+
 1. Create a GitHub Issue
 ------------------------
 Before you start you can start a GitHub Issue describing the changes you
