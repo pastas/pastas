@@ -20,7 +20,6 @@ from pandas import DataFrame, Series
 from scipy.linalg import svd
 from scipy.optimize import least_squares
 
-
 from pastas.objective_functions import GaussianLikelihood
 from pastas.typing import ArrayLike, CallBack, Function, Model
 
@@ -62,6 +61,11 @@ class BaseSolver:
         self.nfev = nfev  # number of function evaluations
         self.obj_func = obj_func
         self.result = None  # Object returned by the optimization method
+        if kwargs:
+            logger.warning(
+                "kwargs to the solver instance are ignored, please provide the"
+                "kwargs to the model.solve method."
+            )
 
     def set_model(self, ml: Model):
         """Method to set the Pastas Model instance.
@@ -715,7 +719,7 @@ class EmceeSolve(BaseSolver):
 
     To obtain the MCMC chains, use:
 
-    >>> ml.fit.sampler.get_chain(flat=True, discard=3000)
+    >>> ml.solver.sampler.get_chain(flat=True, discard=3000)
 
     References
     ----------

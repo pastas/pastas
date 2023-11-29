@@ -118,11 +118,22 @@ def _load_model(data: dict) -> Model:
         n = getattr(ps.noisemodels, data["noisemodel"].pop("class"))()
         ml.add_noisemodel(n)
 
-    # Add fit object to the model
+    # Add solver object to the model from pas-files < 1.3.0  TODO Deprecate
     if "fit" in data.keys():
+        logger.warning(
+            "The solver object is stored in the model.solver attribute since Pastas "
+            "1.3. Please update your pas-file to the new format by loading and saving "
+            "the file with Pastas 1.3."
+        )
         solver = getattr(ps.solver, data["fit"].pop("class"))
-        ml.fit = solver(**data["fit"])
-        ml.fit.set_model(ml)
+        ml.solver = solver(**data["fit"])
+        ml.solver.set_model(ml)
+
+    # Add solver object to the model
+    if "solver" in data.keys():
+        solver = getattr(ps.solver, data["solver"].pop("class"))
+        ml.solver = solver(**data["solver"])
+        ml.solver.set_model(ml)
 
     # Add parameters, use update to maintain correct order
     ml.parameters = ml.get_init_parameters(noise=ml.settings["noise"])

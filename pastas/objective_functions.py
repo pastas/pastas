@@ -2,7 +2,7 @@
 `EmceeSolve` solver.   
 
 """
-from numpy import pi, log
+from numpy import log, pi
 from pandas import DataFrame
 
 
