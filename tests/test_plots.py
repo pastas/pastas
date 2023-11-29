@@ -1,7 +1,7 @@
 import matplotlib as mpl
 
 from pastas import Model
-from pastas.plots import TrackSolve, compare
+from pastas.plotting.plots import TrackSolve, compare
 
 mpl.use("Agg")  # prevent _tkinter.TclError: Can't find a usable tk.tcl error
 
@@ -45,7 +45,7 @@ def test_contributions_pie(ml: Model) -> None:
 def test_compare(ml: Model) -> None:
     ml2 = ml.copy()
     models = [ml, ml2]
-    _ = compare(models)
+    _ = compare(models, names=["ml1", "ml2"])
 
 
 def test_tracksolve(ml: Model) -> None:

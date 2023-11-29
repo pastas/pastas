@@ -13,7 +13,7 @@ prec = read_csv("tests/data/rain.csv", index_col=[0], parse_dates=True).squeeze(
 evap = read_csv("tests/data/evap.csv", index_col=[0], parse_dates=True).squeeze() * 1e-3
 
 
-def generate_synthetic_heads(input, rfunc, params, const=10.0, cutoff=0.9999, dt=1.0):
+def generate_synthetic_heads(input, rfunc, params, const=10.0, cutoff=0.999, dt=1.0):
     # Generate the head
     step = rfunc.block(params, cutoff=cutoff, dt=dt)
 
@@ -63,6 +63,7 @@ def test_armamodel() -> None:
     ml = ps.Model(obs, name="Test_Model", noisemodel=False)
     ml.add_noisemodel(ps.ArmaModel())
     ml.solve()
+    ml.to_file("test.pas")
 
 
 def test_del_noisemodel(ml_empty: ps.Model) -> None:

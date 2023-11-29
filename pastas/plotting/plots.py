@@ -3,14 +3,14 @@
 import logging
 
 # Type Hinting
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
 from pandas import DataFrame, Series, Timestamp
 from scipy.stats import gaussian_kde, norm, probplot
 
-from pastas.modelcompare import CompareModels
+from pastas.plotting.modelcompare import CompareModels
 from pastas.stats.core import acf as get_acf
 from pastas.stats.metrics import evp, rmse
 from pastas.typing import ArrayLike, Axes, Figure, Model, TimestampType
@@ -20,7 +20,12 @@ logger = logging.getLogger(__name__)
 __all__ = ["compare", "series", "acf", "diagnostics", "cum_frequency", "TrackSolve"]
 
 
-def compare(models: List[Model], adjust_height: bool = True, **kwargs) -> Axes:
+def compare(
+    models: List[Model],
+    names: Optional[List[str]] = None,
+    adjust_height: bool = True,
+    **kwargs,
+) -> Dict:
     """Plot multiple Pastas models in one figure to visually compare models.
 
     Notes
@@ -33,6 +38,8 @@ def compare(models: List[Model], adjust_height: bool = True, **kwargs) -> Axes:
     models: list
         List of pastas Models, works for N models, but certain things might not
         display nicely if the list gets too long.
+    names : list of str
+        override model names by passing a list of names
     adjust_height: bool, optional
         Adjust the height of the graphs, so that the vertical scale of all the
         subplots on the left is equal. Default is False, in which case the axes are
@@ -45,9 +52,8 @@ def compare(models: List[Model], adjust_height: bool = True, **kwargs) -> Axes:
     -------
     matplotlib.axes
     """
-    mc = CompareModels(models)
+    mc = CompareModels(models, names=names)
     mc.plot(adjust_height=adjust_height, **kwargs)
-
     return mc.axes
 
 
@@ -926,49 +932,3 @@ class TrackSolve:
         self.fig.axes[1].set_ylim(top=1.05 * self.rmse_res.max())
 
         return fig.axes
-
-
-def _table_formatter_params(s: float, na_rep: str = "") -> str:
-    """Internal method for formatting parameters in tables in Pastas plots.
-
-    Parameters
-    ----------
-    s : float
-        value to format.
-
-    Returns
-    -------
-    str
-        float formatted as str.
-    """
-    if np.isnan(s):
-        return na_rep
-    elif np.floor(np.log10(np.abs(s))) <= -2:
-        return f"{s:.2e}"
-    elif np.floor(np.log10(np.abs(s))) > 5:
-        return f"{s:.2e}"
-    else:
-        return f"{s:.2f}"
-
-
-def _table_formatter_stderr(s: float, na_rep: str = "") -> str:
-    """Internal method for formatting stderrs in tables in Pastas plots.
-
-    Parameters
-    ----------
-    s : float
-        value to format.
-
-    Returns
-    -------
-    str
-        float formatted as str.
-    """
-    if np.isnan(s):
-        return na_rep
-    elif np.floor(np.log10(np.abs(s))) <= -4:
-        return f"{s * 100.:.2e}%"
-    elif np.floor(np.log10(np.abs(s))) > 3:
-        return f"{s * 100.:.2e}%"
-    else:
-        return f"{s:.2%}"

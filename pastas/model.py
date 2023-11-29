@@ -24,9 +24,9 @@ from pandas import (
 # Internal Pastas
 from pastas.decorators import get_stressmodel
 from pastas.io.base import _load_model, dump
-from pastas.modelplots import Plotting, _table_formatter_stderr
 from pastas.modelstats import Statistics
 from pastas.noisemodels import NoiseModel
+from pastas.plotting.modelplots import Plotting, _table_formatter_stderr
 from pastas.solver import LeastSquares
 from pastas.stressmodels import Constant
 from pastas.timeseries import TimeSeries
@@ -82,6 +82,8 @@ class Model:
     >>> ml = Model(oseries)
     """
 
+    _accessors = set()
+
     def __init__(
         self,
         oseries: Series,
@@ -131,6 +133,7 @@ class Model:
             "noise": noisemodel,
             "solver": None,
             "fit_constant": True,
+            "freq_obs": None,
         }
 
         if constant:
@@ -169,7 +172,7 @@ class Model:
         )
 
     def add_stressmodel(
-        self, stressmodel: Union[StressModel, List[StressModel]], replace: bool = False
+        self, stressmodel: Union[StressModel, List[StressModel]], replace: bool = True
     ) -> None:
         """Add a stressmodel to the main model.
 
@@ -180,7 +183,7 @@ class Model:
             provided (e.g., ml.add_stressmodel([sm1, sm2]) in one call.
         replace: bool, optional
             force replace the stressmodel if a stressmodel with the same name already
-            exists. Not recommended but useful at times. Default is False.
+            exists. Not recommended but useful at times. Default is True.
 
         Notes
         -----
@@ -213,6 +216,11 @@ class Model:
                 "for this model. Select another name."
             )
         else:
+            if stressmodel.name in self.stressmodels.keys():
+                self.logger.warning(
+                    "The name for the stressmodel you are trying to add already "
+                    "exists for this model. The stressmodel is replaced."
+                )
             self.stressmodels[stressmodel.name] = stressmodel
             self.parameters = self.get_init_parameters(initial=False)
             stressmodel.update_stress(freq=self.settings["freq"])
@@ -638,8 +646,10 @@ class Model:
         else:
             tmax = self.get_tmax(tmax, use_oseries=False, use_stresses=True)
         if freq is None:
-            freq = self.settings["freq"]
-
+            if self.settings["freq_obs"] is None:
+                freq = self.settings["freq"]
+            else:
+                freq = self.settings["freq_obs"]
         for key, setting in zip([tmin, tmax, freq], ["tmin", "tmax", "freq"]):
             if key != self.settings[setting]:
                 update_observations = True
@@ -668,6 +678,7 @@ class Model:
         weights: Optional[Series] = None,
         initial: bool = True,
         fit_constant: bool = True,
+        freq_obs: Optional[str] = None,
     ) -> None:
         """Method to initialize the model.
 
@@ -686,6 +697,7 @@ class Model:
         self.settings["noise"] = noise
         self.settings["weights"] = weights
         self.settings["fit_constant"] = fit_constant
+        self.settings["freq_obs"] = freq_obs
 
         # Set the frequency & warmup
         if freq:
@@ -709,12 +721,9 @@ class Model:
             self.settings["warmup"],
             update_sim_index=True,
         )
-        self.oseries_calib = self.observations(
-            tmin=self.settings["tmin"],
-            tmax=self.settings["tmax"],
-            freq=self.settings["freq"],
-            update_observations=True,
-        )
+
+        # self.observations get tmin, tmax, freq, and freq_obs from self.settings
+        self.oseries_calib = self.observations(update_observations=True)
         self.interpolate_simulation = None
 
         # Initialize parameters
@@ -741,6 +750,7 @@ class Model:
         initial: bool = True,
         weights: Optional[Series] = None,
         fit_constant: bool = True,
+        freq_obs: Optional[str] = None,
         **kwargs,
     ) -> None:
         """Method to solve the time series model.
@@ -779,6 +789,12 @@ class Model:
         fit_constant: bool, optional
             Argument that determines if the constant is fitted as a parameter. If it
             is set to False, the constant is set equal to the mean of the residuals.
+        freq_obs: str, optional
+            String with the frequency of the observations that the model will be
+            calibrated on. Must be one of the following (D, h, m, s, ms, us, ns) or a
+            multiple of that e.g. "7D". Should generally be larger than the frequency
+            of the original observations and the model frequency (freq). If freq_obs
+            is not set, the frequency of the model (freq) will be used.
         **kwargs: dict, optional
             All keyword arguments will be passed onto minimization method from the
             solver. It depends on the solver used which arguments can be used.
@@ -798,7 +814,9 @@ class Model:
         """
 
         # Initialize the model
-        self.initialize(tmin, tmax, freq, warmup, noise, weights, initial, fit_constant)
+        self.initialize(
+            tmin, tmax, freq, warmup, noise, weights, initial, fit_constant, freq_obs
+        )
 
         if self.oseries_calib.empty:
             raise ValueError(

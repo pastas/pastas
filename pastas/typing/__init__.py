@@ -7,10 +7,12 @@ from .types import (
     Function,
     Model,
     NoiseModel,
+    OseriesSettingsDict,
     Recharge,
     RFunc,
     Solver,
     StressModel,
+    StressSettingsDict,
     TimeSeries,
     TimestampType,
 )
