@@ -102,4 +102,5 @@ you to cite the Pastas article published in Groundwater journal as follows:
     API Docs <api/index>
     Benchmarks <benchmarks/index>
     Developers <developers/index>
+    Map <map>
     About <about/index>

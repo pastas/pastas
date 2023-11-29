@@ -108,6 +108,10 @@ html_context = {
     "doc_path": "doc",
 }
 
+html_sidebars = {
+    "map": [],  # Test what page looks like with no sidebar items
+}
+
 # -- Napoleon settings ----------------------------------------------------------------
 
 napoleon_include_init_with_doc = False
