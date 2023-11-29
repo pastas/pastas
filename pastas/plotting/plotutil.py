@@ -3,6 +3,8 @@ from typing import List, Union
 import numpy as np
 from pandas import Series
 
+from pastas.typing import Axes
+
 
 def _table_formatter_params(s: float, na_rep: str = "") -> str:
     """Internal method for formatting parameters in tables in Pastas plots.
@@ -75,3 +77,20 @@ def _get_stress_series(ml, split: bool = True) -> List[Series]:
             else:
                 stresses.append(stress)
     return stresses
+
+
+def share_xaxes(axes: List[Axes]) -> None:
+    """share x-axes"""
+    for i, iax in enumerate(axes):
+        if i < (len(axes) - 1):
+            iax.sharex(axes[-1])
+            for t in iax.get_xticklabels():
+                t.set_visible(False)
+
+
+def share_yaxes(axes: List[Axes]) -> None:
+    """share y-axes"""
+    for iax in axes[1:]:
+        iax.sharey(axes[0])
+        for t in iax.get_yticklabels():
+            t.set_visible(False)
