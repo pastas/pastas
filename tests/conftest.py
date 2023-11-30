@@ -13,6 +13,21 @@ obs = (
 
 
 @pytest.fixture
+def prec() -> Series:
+    return rain
+
+
+@pytest.fixture
+def pevap() -> Series:
+    return evap
+
+
+@pytest.fixture
+def head() -> Series:
+    return obs
+
+
+@pytest.fixture
 def ml_empty() -> ps.Model:
     ml_empty = ps.Model(obs, name="Test_Model")
     return ml_empty

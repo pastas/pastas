@@ -3,7 +3,7 @@
 import logging
 
 # Type Hinting
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,16 +11,15 @@ from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import LogFormatter, MultipleLocator
 from pandas import Series, Timestamp, concat
 
-from pastas.typing import Axes, Figure, Model, TimestampType
-
-from .decorators import model_tmin_tmax
-from .plots import (
+from pastas.decorators import model_tmin_tmax
+from pastas.plotting.plots import cum_frequency, diagnostics, pairplot, series
+from pastas.plotting.plotutil import (
+    _get_height_ratios,
+    _get_stress_series,
     _table_formatter_params,
     _table_formatter_stderr,
-    cum_frequency,
-    diagnostics,
-    series,
 )
+from pastas.typing import Axes, Figure, Model, TimestampType
 
 logger = logging.getLogger(__name__)
 
@@ -107,6 +106,7 @@ class Plotting:
             tmin = Timestamp(tmin)
         if tmax is not None:
             tmax = Timestamp(tmax)
+
         ax.set_xlim(tmin, tmax)
         ax.set_ylabel("Groundwater levels [meter]")
         ax.set_title("Results of {}".format(self.ml.name))
@@ -831,6 +831,7 @@ class Plotting:
         tmin: Optional[TimestampType] = None,
         tmax: Optional[TimestampType] = None,
         figsize: tuple = (10, 8),
+        stackcolors: Optional[Union[Dict, List]] = None,
         stacklegend: bool = False,
         stacklegend_kws: Optional[dict] = None,
         **kwargs,
@@ -844,8 +845,16 @@ class Plotting:
         tmin : str or pandas.Timestamp, optional
         tmax : str or pandas.Timestamp, optional
         figsize : tuple, optional
+        stackcolors : dict or list, optional
+            Either dictionary with stress names as keys and colors as values, or a
+            list of colors. By default None which applies colors according to the
+            order of stresses in the StressModel. Passing a dictionary can be useful
+            to apply the same color to each stress across multiple figures.
         stacklegend : bool, optional
             Add legend to the stacked plot.
+        stacklegend_kws : dict, optional
+            dict with keyword arguments for stackplot legend
+
 
         Returns
         -------
@@ -868,7 +877,20 @@ class Plotting:
             contributions = []
             sml = self.ml.stressmodels[sm]
             if (len(sml.stress) > 0) and (sml._name == "WellModel"):
+                if stackcolors is None:
+                    stackcolors = {
+                        wnam: f"C{iw+1}" for iw, wnam in enumerate(sml.distances.index)
+                    }
+                elif isinstance(stackcolors, list):
+                    stackcolors = {
+                        name: icolor
+                        for name, icolor in zip(sml.distances.index, stackcolors)
+                    }
+                elif not isinstance(stackcolors, dict):
+                    raise TypeError("stackcolors must be None, list, or dict.")
                 nsplit = sml.get_nsplit()
+                ax_step = axes[i]  # step response axis
+                ax_step.lines[0].remove()  # remove step response for r=1 m
                 if nsplit > 1:
                     for istress in range(len(sml.stress)):
                         h = self.ml.get_contribution(
@@ -878,20 +900,29 @@ class Plotting:
                         if name is None:
                             name = sm
                         contributions.append((name, h))
+
+                        # plot step responses for each well, scaled with distance
+                        p = sml.get_parameters(istress=istress)
+                        step = self.ml.get_step_response(sm, p=p)
+                        ax_step.plot(step.index, step, c=stackcolors[name], label=name)
+                        # recalculate y-limits step response axes
+                        ax_step.relim()
                 else:
                     h = self.ml.get_contribution(sm, tmin=tmin, tmax=tmax)
                     name = sm
                     contributions.append((name, h))
+
                 contributions.sort(key=custom_sort)
 
                 # add stacked plot to correct axes
                 ax = axes[i - 1]
                 ax.lines[0].remove()  # delete existing line
 
+                names = [c[0] for c in contributions]  # get names
                 contrib = [c[1] for c in contributions]  # get time series
                 vstack = concat(contrib, axis=1, sort=False)
-                names = [c[0] for c in contributions]  # get names
-                ax.stackplot(vstack.index, vstack.values.T, labels=names)
+                colors = [stackcolors[name] for name in names]
+                ax.stackplot(vstack.index, vstack.values.T, colors=colors, labels=names)
                 if stacklegend:
                     if stacklegend_kws is None:
                         stacklegend_kws = {}
@@ -1004,29 +1035,30 @@ class Plotting:
         pdf.close()
         return fig
 
-
-def _get_height_ratios(ylims: List[Union[list, tuple]]) -> List[float]:
-    height_ratios = []
-    for ylim in ylims:
-        hr = ylim[1] - ylim[0]
-        if np.isnan(hr):
-            hr = 0.0
-        height_ratios.append(hr)
-    return height_ratios
-
-
-def _get_stress_series(ml, split: bool = True) -> List[Series]:
-    stresses = []
-    for name in ml.stressmodels.keys():
-        nstress = len(ml.stressmodels[name].stress)
-        if split and nstress > 1:
-            for istress in range(nstress):
-                stress = ml.get_stress(name, istress=istress)
-                stresses.append(stress)
-        else:
-            stress = ml.get_stress(name)
-            if isinstance(stress, list):
-                stresses.extend(stress)
-            else:
-                stresses.append(stress)
-    return stresses
+    @model_tmin_tmax
+    def pairplot(
+        self,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+        bins: Optional[int] = None,
+        split: bool = True,
+    ) -> Dict[str, Axes]:
+        """Method to plot all the time series going into a Pastas Model.
+        Parameters
+        ----------
+        tmin: str or pd.Timestamp
+        tmax: str or pd.Timestamp
+        bins : Optional[int], optional
+            Number of bins in the histogram, by default None which uses Sturge's
+            Rule to determine the number bins
+        split: bool, optional
+            Split the stresses in multiple stresses when possible.
+        Returns
+        -------
+        matplotlib.axes.Axes
+        """
+        obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        stresses = _get_stress_series(self.ml, split=split)
+        series = [obs] + list(stresses)
+        axd = pairplot(data=series, bins=bins)
+        return axd

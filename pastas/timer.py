@@ -19,8 +19,9 @@ This will print the following to the console::
 
 try:
     from tqdm.auto import tqdm
-except ModuleNotFoundError as e:
-    raise e("SolveTimer requires 'tqdm' to be installed.")
+except ImportError:
+    msg = "SolveTimer requires 'tqdm' to be installed."
+    raise ImportError(msg) from None
 
 # Type Hinting
 from typing import Optional
