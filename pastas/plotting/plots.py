@@ -1,16 +1,16 @@
 """This module contains all the plotting methods in Pastas."""
 
 import logging
+from typing import Dict, List, Optional, Tuple, Union
 
-# Type Hinting
-from typing import Dict, List, Optional, Tuple
-
+import matplotlib.patheffects as path_effects
 import matplotlib.pyplot as plt
 import numpy as np
-from pandas import DataFrame, Series, Timestamp
-from scipy.stats import gaussian_kde, norm, probplot
+from pandas import DataFrame, Series, Timestamp, concat
+from scipy.stats import gaussian_kde, norm, pearsonr, probplot
 
 from pastas.plotting.modelcompare import CompareModels
+from pastas.plotting.plotutil import share_xaxes, share_yaxes
 from pastas.stats.core import acf as get_acf
 from pastas.stats.metrics import evp, rmse
 from pastas.typing import ArrayLike, Axes, Figure, Model, TimestampType
@@ -932,3 +932,89 @@ class TrackSolve:
         self.fig.axes[1].set_ylim(top=1.05 * self.rmse_res.max())
 
         return fig.axes
+
+
+def pairplot(
+    data: Union[DataFrame, List[Series]],
+    bins: Optional[int] = None,
+) -> Dict[str, Axes]:
+    """Plot correlation between time series on of values on the same time steps.
+    Based on seaborn pairplot method.
+    Parameters
+    ----------
+    data : Union[DataFrame, List[Series]]
+        List of Series or Dataframe with DateTime index
+    bins : Optional[int], optional
+        Number of bins in the histogram, by default None which uses Sturge's
+        Rule to determine the number bins
+    Returns
+    -------
+    Dict[str, Axes]
+    """
+    if isinstance(data, list):
+        data = concat(data, axis=1)
+
+    df = data.dropna(how="any")
+
+    columns = df.columns
+
+    mosaic = []
+    for i, column in enumerate(columns):
+        cols = [f"scatter_{x}-{column}" for x in columns]
+        cols[i] = f"hist_{column}"
+        mosaic.append(cols)
+
+    mosaic = np.array(mosaic)
+
+    f, axd = plt.subplot_mosaic(mosaic, figsize=(6.5, 6))
+
+    for i, (column, mos) in enumerate(zip(columns, mosaic)):
+        # plot histogram
+        if bins is None:
+            bins = int(np.ceil(1 + np.log2(len(df.loc[:, column].values))))
+        counts, bins = np.histogram(df.loc[:, column].values, bins=bins)
+        scaled_counts = (
+            df.loc[:, column].max()
+            * (counts - np.min(counts))
+            / (np.max(counts) - np.min(counts))
+        )
+        axd[f"hist_{column}"].hist(x=bins[:-1], bins=bins, weights=scaled_counts)
+
+        # plot scatter
+        other_cols = [x for x in columns if x is not column]
+        for col in other_cols:
+            axd[f"scatter_{column}-{col}"].scatter(
+                df.loc[:, column].values,
+                df.loc[:, col].values,
+                alpha=0.6,
+                s=20,
+                edgecolor="white",
+                linewidth=0.3,
+            )
+            r, _ = pearsonr(df.loc[:, column].values, df.loc[:, col].values)
+            axd[f"scatter_{column}-{col}"].annotate(
+                f"r = {r:.2f}",
+                xy=(0.5, 0.95),
+                horizontalalignment="center",
+                verticalalignment="top",
+                xycoords="axes fraction",
+                color="k",
+                path_effects=[
+                    path_effects.withStroke(linewidth=2, foreground="white"),
+                    path_effects.Normal(),
+                ],
+            )
+
+        # set labels
+        axd[mos[0]].set_ylabel(column)
+        if (mos == mosaic[-1]).all():
+            _ = [axd[j].set_xlabel(x) for x, j in zip(columns, mos)]
+
+        # share x and y axis per row and columns
+        share_yaxes([axd[j] for j in mos])
+
+    _ = [share_xaxes([axd[x] for x in mosaic[:, j]]) for j in range(len(columns))]
+
+    f.tight_layout()
+
+    return axd

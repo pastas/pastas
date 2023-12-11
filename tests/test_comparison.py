@@ -42,3 +42,9 @@ def test_comparison_plot_custom(ml: ps.Model, ml_sm: ps.Model) -> None:
             mc.axes["con1"],
         ]
     )
+    mc.share_yaxes(
+        [
+            mc.axes["ose"],
+            mc.axes["sim"],
+        ]
+    )
