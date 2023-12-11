@@ -2,7 +2,7 @@
 # Type Hinting
 from typing import Optional, Tuple
 
-from numpy import arange, diff, log, nan, isnan, sqrt, ndarray, where, split, linspace
+from numpy import diff, log, nan, isnan, sqrt, ndarray, where, split, linspace
 from pandas import DataFrame, DatetimeIndex, Series, Timedelta, cut, concat, to_datetime
 from scipy.stats import linregress
 
@@ -492,9 +492,9 @@ def low_pulse_count(series: Series, quantile: float = 0.2) -> float:
     sel = h.astype(int).diff().replace(0.0, nan).shift(-1).dropna().index
 
     # Deal with pulses in the beginning and end of the time series
-    if h[0]:
+    if h.iloc[0]:
         sel = sel.append(series.index[:1]).sort_values()
-    if h[-1]:
+    if h.iloc[-1]:
         sel = sel.append(series.index[-1:]).sort_values()
 
     return sel.size / 2 / series.index.year.unique().size
@@ -529,9 +529,9 @@ def high_pulse_count(series: Series, quantile: float = 0.8) -> float:
     """
     h = series > series.quantile(quantile)
     sel = h.astype(int).diff().replace(0.0, nan).shift(-1).dropna().index
-    if h[0]:
+    if h.iloc[0]:
         sel = sel.append(series.index[:1]).sort_values()
-    if h[-1]:
+    if h.iloc[-1]:
         sel = sel.append(series.index[-1:]).sort_values()
     return sel.size / 2 / series.index.year.unique().size
 
@@ -567,9 +567,9 @@ def low_pulse_duration(series: Series, quantile: float = 0.2) -> float:
     h = series < series.quantile(quantile)
     sel = h.astype(int).diff().replace(0.0, nan).shift(-1).dropna().index
 
-    if h[0]:
+    if h.iloc[0]:
         sel = sel.append(series.index[:1]).sort_values()
-    if h[-1]:
+    if h.iloc[-1]:
         sel = sel.append(series.index[-1:]).sort_values()
 
     return (diff(sel.to_numpy()) / Timedelta("1D"))[::2].mean()
@@ -606,9 +606,9 @@ def high_pulse_duration(series: Series, quantile: float = 0.8) -> float:
     h = series > series.quantile(quantile)
     sel = h.astype(int).diff().replace(0.0, nan).shift(-1).dropna().index
 
-    if h[0]:
+    if h.iloc[0]:
         sel = sel.append(series.index[:1]).sort_values()
-    if h[-1]:
+    if h.iloc[-1]:
         sel = sel.append(series.index[-1:]).sort_values()
 
     return (diff(sel.to_numpy()) / Timedelta("1D"))[::2].mean()
@@ -940,9 +940,11 @@ def _get_events_binned(
     # Bin the data and compute the mean
     binned = Series(dtype=float)
     for g in data.groupby(
-        cut(data.index, bins=min(bins, data.index.max())).sort_values()
+        cut(data.index, bins=min(bins, data.index.max())).sort_values(), observed=False
     ):
-        binned[g[0].mid] = g[1]["difference"].dropna(axis=1).mean()[0]
+        value = g[1]["difference"].dropna(axis=1).mean()
+        if not value.empty:
+            binned[g[0].mid] = value.iloc[0]
 
     binned = binned[binned != 0].dropna()
     return binned
@@ -1158,7 +1160,7 @@ def _baselevel(series: Series, normalize: bool = False) -> Tuple[Series, Series]
     if normalize:
         series = _normalize(series)
 
-    # A/B. Selecting minima hm over 5-day periods
+    # A/B. Selecting minima hm over 21-day periods
     hm = series.resample("21D").min().dropna()
 
     # C. define the turning point ht (0.9 * head < adjacent heads)
