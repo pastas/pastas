@@ -1,14 +1,14 @@
 """This module contains methods to compute the groundwater signatures."""
 # Type Hinting
+from logging import getLogger
 from typing import Optional, Tuple
 
 from numpy import diff, isnan, linspace, log, nan, ndarray, split, sqrt, where
 from pandas import DataFrame, DatetimeIndex, Series, Timedelta, concat, cut, to_datetime
 from scipy.stats import linregress
 
-from pastas.stats.core import acf
 import pastas as ps
-from logging import getLogger
+from pastas.stats.core import acf
 
 __all__ = [
     "cv_period_mean",
