@@ -2,10 +2,11 @@
 # Type Hinting
 from typing import Optional, Tuple
 
-from numpy import diff, log, nan, isnan, sqrt, ndarray, where, split, linspace
-from pandas import DataFrame, DatetimeIndex, Series, Timedelta, cut, concat, to_datetime
+from numpy import diff, isnan, linspace, log, nan, ndarray, split, sqrt, where
+from pandas import DataFrame, DatetimeIndex, Series, Timedelta, concat, cut, to_datetime
 from scipy.stats import linregress
 
+from pastas.stats.core import acf
 import pastas as ps
 from logging import getLogger
 
@@ -38,6 +39,8 @@ __all__ = [
     "richards_pathlength",
     "richards_baker_index",
     "baselevel_stability",
+    "magnitude",
+    "autocorrelation",
 ]
 
 logger = getLogger(__name__)
@@ -81,7 +84,10 @@ def cv_period_mean(series: Series, normalize: bool = False, freq: str = "M") -> 
 
     Notes
     -----
-    Coefficient of variation of mean monthly heads :cite:t:`hughes_hydrological_1989`.
+    Coefficient of variation of mean monthly heads, adapted after
+    :cite:t:`hughes_hydrological_1989`. The higher the coefficient of variation, the
+    more variable the mean head is, and vice versa. The coefficient of variation is the
+    standard deviation divided by the mean.
 
     """
     if normalize:
@@ -107,10 +113,11 @@ def cv_date_min(series: Series) -> float:
 
     Notes
     -----
-    Coefficient of variation of the date of annual minimum groundwater head adapted
-    from :cite:t:`richter_method_1996`. Instead of the Julian date, the day the year is
+    Coefficient of variation of the date of annual minimum head adapted from
+    :cite:t:`richter_method_1996`. Instead of the Julian date, the day the year is
     used. If there are multiple dates with the same minimum head, the first date is
-    chosen.
+    chosen. The higher the coefficient of variation, the more variable the date of the
+    annual minimum head is, and vice versa.
 
     """
     data = series.groupby(series.index.year).idxmin().dropna().values
@@ -137,7 +144,8 @@ def cv_date_max(series: Series) -> float:
     Coefficient of variation of the date of annual maximum head adapted from
     :cite:t:`richter_method_1996`. Instead of the Julian date, the day the year is
     used. If there are multiple dates with the same maximum head, the first date is
-    chosen.
+    chosen. The higher the coefficient of variation, the more variable the date of the
+    maximum head is, and vice versa.
 
     """
     data = series.groupby(series.index.year).idxmax().dropna().values
@@ -147,7 +155,7 @@ def cv_date_max(series: Series) -> float:
 
 
 def parde_seasonality(series: Series, normalize: bool = True) -> float:
-    """Parde seasonality according to :cite:t:`parde_fleuves_1933`.
+    """Parde seasonality according to :cite:t:`parde_fleuves_1933`, adapted for heads.
 
     Parameters
     ----------
@@ -165,7 +173,8 @@ def parde_seasonality(series: Series, normalize: bool = True) -> float:
     Pardé seasonality is the difference between the maximum and minimum Pardé
     coefficient. A Pardé series consists of 12 Pardé coefficients, corresponding to
     12 months. Pardé coefficient for, for example, January is its long-term monthly
-    mean groundwater head divided by the overall mean groundwater head.
+    mean head divided by the overall mean head. The higher the Pardé seasonality, the
+    more seasonal the head is, and vice versa.
 
     """
     coefficients = parde_coefficients(series=series, normalize=normalize)
@@ -192,7 +201,7 @@ def parde_coefficients(series: Series, normalize: bool = True) -> Series:
     Pardé seasonality is the difference between the maximum and minimum Pardé
     coefficient. A Pardé series consists of 12 Pardé coefficients, corresponding to
     12 months. Pardé coefficient for, for example, January is its long-term monthly
-    mean groundwater head divided by the overall mean groundwater head.
+    mean head divided by the overall mean head.
 
     """
     if normalize:
@@ -204,7 +213,7 @@ def parde_coefficients(series: Series, normalize: bool = True) -> Series:
 
 
 def _martens(series: Series, normalize: bool = False) -> Tuple[Series, Series]:
-    """Functions for the average seasonal fluctuation and inter annual fluctuation.
+    """Function for the average seasonal fluctuation and inter annual fluctuation.
 
     Parameters
     ----------
@@ -255,12 +264,17 @@ def avg_seasonal_fluctuation(series: Series, normalize: bool = False) -> float:
 
     Notes
     -----
-    Mean annual difference between the averaged 3 highest monthly groundwater heads
-    per year and the averaged 3 lowest monthly groundwater heads per year.
+    Mean annual difference between the averaged 3 highest monthly heads
+    per year and the averaged 3 lowest monthly heads per year.
 
     Average seasonal fluctuation (s):
 
         s = MHW - MLW
+
+    Warning: In this formulating the water table is referenced to a certain datum and
+    positive, not as depth below the surface!
+
+    A higher value of s indicates a more seasonal head, and vice versa.
 
     """
 
@@ -285,8 +299,8 @@ def interannual_variation(series: Series, normalize: bool = False) -> float:
 
     Notes
     -----
-    The average between the range in annually averaged 3 highest monthly groundwater
-    heads and the range in annually averaged 3 lowest monthly groundwater heads.
+    The average between the range in annually averaged 3 highest monthly heads and the
+    range in annually averaged 3 lowest monthly heads.
 
     Inter-yearly variation of high and low water table (y):
 
@@ -294,6 +308,8 @@ def interannual_variation(series: Series, normalize: bool = False) -> float:
 
     Warning: In this formulating the water table is referenced to a certain datum and
     positive, not as depth below the surface!
+
+    A higher value of y indicates a more variable head, and vice versa.
 
     """
 
@@ -477,7 +493,7 @@ def low_pulse_count(series: Series, quantile: float = 0.2) -> float:
 
     Notes
     -----
-    Number of times during which the groundwater head drops below a certain threshold.
+    Number of times during which the head drops below a certain threshold.
     The threshold is defined as the 20th percentile of non-exceedance
     :cite:t:`richter_method_1996`.
 
@@ -512,13 +528,13 @@ def high_pulse_count(series: Series, quantile: float = 0.8) -> float:
 
     Returns
     -------
-    float
+    float:
         Average number of times the series exceeds a certain threshold per year.
 
     Notes
     -----
-    Number of times during which the groundwater head exceeds a certain threshold.
-    The threshold is defined as the 80th percentile of non-exceedance.
+    Number of times during which the head exceeds a certain threshold. The threshold is
+    defined as the 80th percentile of non-exceedance.
 
     Warning
     -------
@@ -549,13 +565,12 @@ def low_pulse_duration(series: Series, quantile: float = 0.2) -> float:
     Returns
     -------
     float:
-        Average duration (in days) of pulses where the groundwater head drops below
-        a certain threshold.
+        Average duration (in days) of pulses where the head drops below a certain
+        threshold.
 
     Notes
     -----
-    Average duration of pulses (in days) where the groundwater head drops below a
-    certain threshold.
+    Average duration of pulses (in days) where the head drops below a certain threshold.
 
     Warning
     -------
@@ -588,13 +603,13 @@ def high_pulse_duration(series: Series, quantile: float = 0.8) -> float:
     Returns
     -------
     float:
-        Average duration (in days) of pulses where the groundwater head drops below
-        a certain threshold.
+        Average duration (in days) of pulses where the head drops below a certain
+        threshold.
 
     Notes
     -----
-    Average duration of pulses where the groundwater head drops exceeds a certain
-    threshold. The threshold is defined as the 80th percentile of non-exceedance.
+    Average duration of pulses where the head drops exceeds a certain threshold. The
+    threshold is defined as the 80th percentile of non-exceedance.
 
     Warning
     -------
@@ -627,7 +642,7 @@ def _get_differences(series: Series, normalize: bool = False) -> Series:
     Returns
     -------
     differences: pandas.Series
-        Differences in the time series.
+        Differences in the time series in L/day.
 
     Notes
     -----
@@ -657,7 +672,8 @@ def rise_rate(series: Series, normalize: bool = False) -> float:
     Returns
     -------
     float:
-        Mean of positive head changes from one day to the next.
+        Mean of positive head changes from one day to the next. The units of the rise
+        rate are L/day (L defined by the input).
 
     Notes
     -----
@@ -682,7 +698,9 @@ def fall_rate(series: Series, normalize: bool = False) -> float:
 
     Returns
     -------
-    float
+    float:
+        Mean of negative head changes from one day to the next. The units of the fall
+        rate are L/day (L defined by the input).
 
     Notes
     -----
@@ -691,7 +709,7 @@ def fall_rate(series: Series, normalize: bool = False) -> float:
 
     """
     differences = _get_differences(series, normalize=normalize)
-    falls = differences[differences < 0]
+    falls = differences.loc[differences < 0]
 
     return falls.mean()
 
@@ -708,11 +726,13 @@ def cv_rise_rate(series: Series, normalize: bool = True) -> float:
 
     Returns
     -------
-    float
+    float:
+        Coefficient of Variation in rise rate.
 
     Notes
     -----
-    Coefficient of Variation in rise rate :cite:p:`richter_method_1996`.
+    Coefficient of variation in rise rate :cite:p:`richter_method_1996`. The higher the
+    coefficient of variation, the more variable the rise rate is, and vice versa.
 
     """
     differences = _get_differences(series, normalize=normalize)
@@ -737,7 +757,8 @@ def cv_fall_rate(series: Series, normalize: bool = False) -> float:
 
     Notes
     -----
-    Coefficient of Variation in fall rate :cite:p:`richter_method_1996`.
+    Coefficient of Variation in fall rate :cite:p:`richter_method_1996`. The higher the
+    coefficient of variation, the more variable the fall rate is, and vice versa.
 
     """
     differences = _get_differences(series, normalize=normalize)
@@ -757,13 +778,16 @@ def magnitude(series: Series) -> float:
 
     Returns
     -------
-    float
+    float:
+        Difference of peak head to base head, divided by base head.
 
     Notes
     -----
     Difference of peak head to base head, divided by base head.
 
       ..math:: (h_max - h_min ) / h_min
+
+    The higher the magnitude, the more variable the head is, and vice versa.
 
     """
 
@@ -785,7 +809,8 @@ def reversals_avg(series: Series) -> float:
     Notes
     -----
     Average annual number of rises and falls (i.e., change of sign) in daily head
-    :cite:p:`richter_method_1996`.
+    :cite:p:`richter_method_1996`. The higher the number of reversals, the more
+    variable the head is, and vice versa.
 
     """
     reversals = (
@@ -804,7 +829,8 @@ def reversals_cv(series: Series) -> float:
 
     Returns
     -------
-    float
+    float:
+        Coefficient of Variation in annual number of rises and falls.
 
     Notes
     -----
@@ -832,7 +858,16 @@ def mean_annual_maximum(series: Series, normalize: bool = True) -> float:
 
     Returns
     -------
-    float
+    float:
+        Mean of annual maximum.
+
+    Notes
+    -----
+    Mean of annual maximum :cite:p:`clausen_flow_2000`.
+
+    Warning
+    -------
+    This signatures is sensitive to the base level of the time series.
 
     """
     if normalize:
@@ -862,7 +897,8 @@ def bimodality_coefficient(series: Series, normalize: bool = True) -> float:
 
     ..math:: b = (s^2 + 1 ) / k
 
-    Adapted from the R 'modes' package.
+    Adapted from the R 'modes' package. The higher the bimodality coefficient, the more
+    bimodal the head distribution is, and vice versa.
 
     """
     if normalize:
@@ -911,7 +947,7 @@ def _get_events_binned(
     if normalize:
         series = _normalize(series)
 
-    series.name = "difference"
+    series.name = "difference"  # Name the series for the split function
 
     # Get the negative differences
     h = series.dropna().copy()
@@ -929,7 +965,7 @@ def _get_events_binned(
     events = [
         ev.reset_index().loc[:, "difference"]
         for ev in events
-        if not ev.empty and ev.size > 1
+        if not ev.empty and ev.size > 1  # Drop empty events and events with one value
     ]
     events = concat(events, axis=1)
 
@@ -953,7 +989,7 @@ def _get_events_binned(
 def recession_constant(
     series: Series, bins: int = 20, normalize: bool = False
 ) -> float:
-    """Recession constant after :cite:t:`kirchner_catchments_2009`.
+    """Recession constant adapted after :cite:t:`kirchner_catchments_2009`.
 
     Parameters
     ----------
@@ -1011,7 +1047,7 @@ def recovery_constant(series: Series, bins: int = 20, normalize: bool = False) -
 
 
 def duration_curve_slope(
-    series: Series, l: float = 0.1, u: float = 0.9, normalize: bool = False
+    series: Series, l: float = 0.1, u: float = 0.9, normalize: bool = True
 ) -> float:
     """Slope of the head duration curve between percentile l and u after
     :cite:t:`oudin_are_2010`.
@@ -1020,7 +1056,7 @@ def duration_curve_slope(
     ----------
     series: pandas.Series
         Pandas Series with DatetimeIndex and head values.
-    l: float
+    l: float, optional
         lower percentile, a float between 0 and 1, lower than u.
     u: float, optional
         upper percentile, a float between 0 and 1, higher than l.
@@ -1029,16 +1065,22 @@ def duration_curve_slope(
 
     Returns
     -------
-    float
+    float:
+        Slope of the head duration curve between percentile l and u.
 
     Notes
     -----
-    Slope of the head duration curve between percentile l and u.
+    Slope of the head duration curve between percentile l and u. The more negative the
+    slope, the more values are above or below the percentile l and u, and vice versa.
+
+    Note that the slope is negative, contrary to the flow duration curve commonly used
+    in surface water hydrology.
 
     """
     if normalize:
         series = _normalize(series)
 
+    # Get the series between the percentiles
     s = series[
         (series > series.quantile(l)) & (series < series.quantile(u))
     ].sort_values(ascending=False)
@@ -1070,11 +1112,13 @@ def duration_curve_ratio(
 
     Returns
     -------
-    float
+    float:
+        Ratio of the duration curve between the percentile l and u.
 
     Notes
     -----
-    ratio of the duration curve between the percentile l and u.
+    Ratio of the duration curve between the percentile l and u. The higher the ratio,
+    the flatter the head duration curve, and vice versa.
 
     """
     if normalize:
@@ -1100,8 +1144,7 @@ def richards_pathlength(series: Series, normalize: bool = True) -> float:
 
     Notes
     -----
-    The path length of the time series, standardized by time series length and the
-    median head.
+    The path length of the time series, standardized by time series length and median.
 
     """
     if normalize:
@@ -1110,8 +1153,9 @@ def richards_pathlength(series: Series, normalize: bool = True) -> float:
     series = series.dropna()
     dt = diff(series.index.to_numpy()) / Timedelta("1D")
     dh = series.diff().dropna()
+
     # sum(dt) is more fair with irregular time series
-    return sum(sqrt(dh**2 + dt**2)) / sum(dt)
+    return sum(sqrt(dh**2 + dt**2)) / (sum(dt) * series.median())
 
 
 def richards_baker_index(series: Series, normalize: bool = True) -> float:
@@ -1137,10 +1181,12 @@ def richards_baker_index(series: Series, normalize: bool = True) -> float:
     if normalize:
         series = _normalize(series)
 
-    return series.diff().dropna().abs().sum()
+    return series.diff().dropna().abs().sum() / series.sum()
 
 
-def _baselevel(series: Series, normalize: bool = False) -> Tuple[Series, Series]:
+def _baselevel(
+    series: Series, normalize: bool = False, period="30D"
+) -> Tuple[Series, Series]:
     """Baselevel function for the baseflow index and stability.
 
     Parameters
@@ -1149,6 +1195,9 @@ def _baselevel(series: Series, normalize: bool = False) -> Tuple[Series, Series]
         Pandas Series with DatetimeIndex and head values.
     normalize: bool, optional
         normalize the time series to values between zero and one.
+    period: str, optional
+        Period to resample the time series to in days (e.g., '10D' or '90D'). Default
+        is 30 days.
 
     Returns
     -------
@@ -1161,14 +1210,14 @@ def _baselevel(series: Series, normalize: bool = False) -> Tuple[Series, Series]
         series = _normalize(series)
 
     # A/B. Selecting minima hm over 21-day periods
-    hm = series.resample("21D").min().dropna()
+    hm = series.resample(period).min().dropna()
 
     # C. define the turning point ht (0.9 * head < adjacent heads)
     ht = Series(dtype=float)
     ht[hm.index[0]] = hm.iloc[0]
 
     for i, h in enumerate(hm.iloc[1:-1], start=1):
-        if (1 * h < hm.iloc[i - 1]) & (1 * h < hm.iloc[i + 1]):
+        if (0.9 * h < hm.iloc[i - 1]) & (0.9 * h < hm.iloc[i + 1]):
             ht[hm.index[i]] = h
 
     ht[hm.index[-1]] = hm.iloc[-1]
@@ -1180,12 +1229,12 @@ def _baselevel(series: Series, normalize: bool = False) -> Tuple[Series, Series]
     ht = ht.resample("D").interpolate()
 
     # E. Assign a base head to each day
-    # ht[ht > series.resample("D").mean().loc[ht.index]] = series.resample("D").mean()
+    ht[ht > series.resample("D").mean().loc[ht.index]] = series.resample("D").mean()
 
     return series, ht
 
 
-def baselevel_index(series: Series, normalize: bool = False) -> float:
+def baselevel_index(series: Series, normalize: bool = False, period="30D") -> float:
     """Base level index according to :cite:t:`organization_manual_2008`.
 
     Parameters
@@ -1194,6 +1243,9 @@ def baselevel_index(series: Series, normalize: bool = False) -> float:
         Pandas Series with DatetimeIndex and head values.
     normalize: bool, optional
         normalize the time series to values between zero and one.
+    period: str, optional
+        Period to resample the time series to in days (e.g., '10D' or '90D'). Default
+        is 30 days.
 
     Returns
     -------
@@ -1202,17 +1254,17 @@ def baselevel_index(series: Series, normalize: bool = False) -> float:
     Notes
     -----
     Adapted analogously to its application in streamflow. Here, a baselevel time
-    series is separated from a 5-day minimum groundwater head in a moving window. BLI
+    series is separated from a X-day minimum head in a moving window. BLI
     equals the total sum of heads of original time series divided by the total sum of
     heads from the baseflow type of time series.
 
     """
 
-    series, ht = _baselevel(series, normalize=normalize)
+    series, ht = _baselevel(series, normalize=normalize, period=period)
     return ht.sum() / series.sum()
 
 
-def baselevel_stability(series: Series, normalize: bool = False) -> float:
+def baselevel_stability(series: Series, normalize: bool = False, period="30D") -> float:
     """Baselevel stability after :cite:t:`heudorfer_index-based_2019`.
 
     Parameters
@@ -1221,6 +1273,9 @@ def baselevel_stability(series: Series, normalize: bool = False) -> float:
         Pandas Series with DatetimeIndex and head values.
     normalize: bool, optional
         normalize the time series to values between zero and one.
+    period: str, optional
+        Period to resample the time series to in days (e.g., '10D' or '90D'). Default
+        is 30 days.
 
     Returns
     -------
@@ -1236,125 +1291,39 @@ def baselevel_stability(series: Series, normalize: bool = False) -> float:
 
     """
 
-    _, ht = _baselevel(series, normalize=normalize)
+    _, ht = _baselevel(series, normalize=normalize, period=period)
 
     return ht.resample("A").mean().max() - ht.resample("A").mean().min()
 
 
-def hurst_exponent(series: Series):
-    """Hurst exponent according to :cite:t:`wang_characteristic-based_2006`.
-
-    Returns
-    -------
-
-    Notes
-    -----
-    The slope of a linear model fitted to the relationship between the sample size
-    and the logarithmized sample range of k contiguous subsamples from the time series.
-
-    """
-    return NotImplementedError
-
-
-def autocorr(series: Series, freq: str = "w"):
-    """Lag where the first peak in the autocorrelation function occurs after
-    :cite:t:`wang_characteristic-based_2006`.
-
-    Returns
-    -------
-
-    Notes
-    -----
-    Lag where the first peak in the autocorrelation function occurs.
-
-    """
-    return NotImplementedError
-
-
-def lyapunov_exponent(series: Series, normalize: bool = True):
-    """The exponential rate of divergence of nearby data points after
-    :cite:t:`hilborn_chaos_2000`.
+def autocorrelation(series: Series, cutoff: float = 0.7, **kwargs) -> float:
+    """Lag where the autocorrelation function reaches a cut-off value.
 
     Parameters
     ----------
     series: pandas.Series
         Pandas Series with DatetimeIndex and head values.
-    normalize: bool, optional
-        normalize the time series to values between zero and one.
+    cutoff: float, optional
+        Cut-off value for the autocorrelation function. Default is 0.7.
+    kwargs: dict, optional
+        Additional keyword arguments are passed to the pandas.Series.autocorr method.
 
     Returns
     -------
+    float:
+        Lag in days where the autocorrelation function reaches a cut-off value.
 
     Notes
     -----
-    The exponential rate of divergence of nearby data points when moving away in time
-    from a certain data point in the series. Iteratively estimated for every point in
-    the time series, then averaged.
+    Lag in days where the first peak in the autocorrelation function occurs.
 
     """
-    return NotImplementedError
+    c = acf(series.dropna(), **kwargs)  # Compute the autocorrelation function
 
-
-def peak_timescale(series: Series):
-    """Area under peak divided by difference of peak head to peak base after
-    :cite:t:`gaal_flood_2012`.
-
-    Returns
-    -------
-
-    Notes
-    -----
-    Area under peak divided by difference of peak head to peak base, averaged over
-    all peaks.
-
-    """
-    return NotImplementedError
-
-
-def excess_mass(series: Series):
-    """Test statistic of the dip test, after :cite:t:`hartigan_dip_1985`.
-
-    Returns
-    -------
-
-    Notes
-    -----
-    Test statistic of the dip test; maximum distance between the empirical
-    distribution and the best fitting unimodal distribution. By default, the best
-    fitting distribution is the uniform.
-
-    """
-    return NotImplementedError
-
-
-def critical_bandwidth(series: Series):
-    """Test statistic of the Silverman test, after :cite:t:`silverman_using_1981`.
-
-    Returns
-    -------
-
-    Notes
-    -----
-    Test statistic of the Silverman test; minimum kernel bandwidth required to create
-    an unimodal distribution estimated by fitting a Kernel Density Estimation.
-
-    """
-    return NotImplementedError
-
-
-def peak_base_time(series: Series):
-    """Difference between peak and base head, standardized by duration of peak after
-    :cite:t:`heudorfer_index-based_2019`.
-
-    Returns
-    -------
-
-    Notes
-    -----
-    Difference between peak and base head, standardized by duration of peak.
-
-    """
-    return NotImplementedError
+    if c.min() > cutoff:
+        return nan
+    else:
+        return (c < cutoff).idxmax() / Timedelta("1D")
 
 
 def summary(series: Series, signatures: Optional[list] = None) -> Series:
@@ -1365,24 +1334,26 @@ def summary(series: Series, signatures: Optional[list] = None) -> Series:
     series: pandas.Series
         pandas Series with DatetimeIndex
     signatures: list
-        By default all available signatures are returned.
+        list of signatures to return. By default all available signatures are returned.
 
     Returns
     -------
     data: pandas.Series
-        Pandas series with every row a signature
+        Pandas series with every row a signature and the signature value.
 
     Examples
     --------
     >>> idx = date_range("2000", "2010")
     >>> head = Series(index=idx, data=np.random.rand(len(idx)), dtype=float)
     >>> ps.stats.signatures.summary(head)
+
     """
     if signatures is None:
         signatures = __all__
 
     data = Series(index=signatures, dtype=float)
 
+    # Get the signatures
     for signature in signatures:
         func = getattr(ps.stats.signatures, signature)
         data.loc[signature] = func(series)
