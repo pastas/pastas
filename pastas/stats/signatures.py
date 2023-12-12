@@ -476,7 +476,7 @@ def colwell_contingency(
     )[2]
 
 
-def low_pulse_count(series: Series, quantile: float = 0.2) -> float:
+def low_pulse_count(series: Series, quantile: float = 0.2, rolling_window="7D") -> float:
     """Average number of times the series exceeds a certain threshold per year.
 
     Parameters
@@ -485,6 +485,9 @@ def low_pulse_count(series: Series, quantile: float = 0.2) -> float:
         Pandas Series with DatetimeIndex and head values.
     quantile: float, optional
         Quantile used as a threshold.
+    rolling_window: str, optional
+        Rolling window to use for smoothing the time series. Default is 7 days. Set to 
+        None to disable. See the pandas documentation for more information. 
 
     Returns
     -------
@@ -504,6 +507,9 @@ def low_pulse_count(series: Series, quantile: float = 0.2) -> float:
     series first.
 
     """
+    if rolling_window is not None:
+        series = series.rolling(rolling_window).mean()
+
     h = series < series.quantile(quantile)
     sel = h.astype(int).diff().replace(0.0, nan).shift(-1).dropna().index
 
@@ -516,7 +522,7 @@ def low_pulse_count(series: Series, quantile: float = 0.2) -> float:
     return sel.size / 2 / series.index.year.unique().size
 
 
-def high_pulse_count(series: Series, quantile: float = 0.8) -> float:
+def high_pulse_count(series: Series, quantile: float = 0.8, rolling_window="7D") -> float:
     """Average number of times the series exceeds a certain threshold per year.
 
     Parameters
@@ -525,6 +531,9 @@ def high_pulse_count(series: Series, quantile: float = 0.8) -> float:
         Pandas Series with DatetimeIndex and head values.
     quantile: float, optional
         Quantile used as a threshold.
+    rolling_window: str, optional
+        Rolling window to use for smoothing the time series. Default is 7 days. Set to
+        None to disable. See the pandas documentation for more information.
 
     Returns
     -------
@@ -543,6 +552,9 @@ def high_pulse_count(series: Series, quantile: float = 0.8) -> float:
     series first.
 
     """
+    if rolling_window is not None:
+        series = series.rolling(rolling_window).mean()
+
     h = series > series.quantile(quantile)
     sel = h.astype(int).diff().replace(0.0, nan).shift(-1).dropna().index
     if h.iloc[0]:
@@ -552,7 +564,7 @@ def high_pulse_count(series: Series, quantile: float = 0.8) -> float:
     return sel.size / 2 / series.index.year.unique().size
 
 
-def low_pulse_duration(series: Series, quantile: float = 0.2) -> float:
+def low_pulse_duration(series: Series, quantile: float = 0.2, rolling_window="7D") -> float:
     """Average duration of pulses where the head is below a certain threshold.
 
     Parameters
@@ -561,6 +573,9 @@ def low_pulse_duration(series: Series, quantile: float = 0.2) -> float:
         Pandas Series with DatetimeIndex and head values.
     quantile: float, optional
         Quantile used as a threshold.
+    rolling_window: str, optional
+        Rolling window to use for smoothing the time series. Default is 7 days. Set to
+        None to disable. See the pandas documentation for more information.
 
     Returns
     -------
@@ -579,6 +594,9 @@ def low_pulse_duration(series: Series, quantile: float = 0.2) -> float:
     series first.
 
     """
+    if rolling_window is not None:
+        series = series.rolling(rolling_window).mean()
+
     h = series < series.quantile(quantile)
     sel = h.astype(int).diff().replace(0.0, nan).shift(-1).dropna().index
 
@@ -590,7 +608,7 @@ def low_pulse_duration(series: Series, quantile: float = 0.2) -> float:
     return (diff(sel.to_numpy()) / Timedelta("1D"))[::2].mean()
 
 
-def high_pulse_duration(series: Series, quantile: float = 0.8) -> float:
+def high_pulse_duration(series: Series, quantile: float = 0.8, rolling_window="7D") -> float:
     """Average duration of pulses where the head exceeds a certain threshold.
 
     Parameters
@@ -599,6 +617,9 @@ def high_pulse_duration(series: Series, quantile: float = 0.8) -> float:
         Pandas Series with DatetimeIndex and head values.
     quantile: float, optional
         Quantile used as a threshold.
+    rolling_window: str, optional
+        Rolling window to use for smoothing the time series. Default is 7 days. Set to
+        None to disable. See the pandas documentation for more information.
 
     Returns
     -------
@@ -618,6 +639,9 @@ def high_pulse_duration(series: Series, quantile: float = 0.8) -> float:
     series first.
 
     """
+    if rolling_window is not None:
+        series = series.rolling(rolling_window).mean()
+
     h = series > series.quantile(quantile)
     sel = h.astype(int).diff().replace(0.0, nan).shift(-1).dropna().index
 
