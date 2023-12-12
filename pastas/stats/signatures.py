@@ -86,8 +86,8 @@ def cv_period_mean(series: Series, normalize: bool = False, freq: str = "M") -> 
     -----
     Coefficient of variation of mean monthly heads, adapted after
     :cite:t:`hughes_hydrological_1989`. The higher the coefficient of variation, the
-    more variable the mean head is, and vice versa. The coefficient of variation is the
-    standard deviation divided by the mean.
+    more variable the mean monthly head is throughout the year, and vice versa. The
+    coefficient of variation is the standard deviation divided by the mean.
 
     """
     if normalize:
@@ -236,13 +236,14 @@ def _martens(series: Series, normalize: bool = False) -> Tuple[Series, Series]:
     average is then taken over all years.
 
     """
-
     if normalize:
         series = _normalize(series)
 
     s = series.resample("M")
-    hl = s.min().groupby(s.min().index.year).nsmallest(3).groupby(level=0).mean()
-    hw = s.max().groupby(s.max().index.year).nlargest(3).groupby(level=0).mean()
+    s_min = s.min()
+    s_max = s.max()
+    hl = s_min.groupby(s_min.index.year).nsmallest(3).groupby(level=0).mean()
+    hw = s_max.groupby(s_max.index.year).nlargest(3).groupby(level=0).mean()
 
     return hl, hw
 
@@ -845,9 +846,8 @@ def reversals_avg(series: Series) -> float:
     variable the head is, and vice versa.
 
     """
-    reversals = (
-        (series.diff()[series.diff() != 0.0] > 0).astype(int).diff().replace(-1, 1)
-    )
+    series_diff = series.diff()
+    reversals = (series_diff[series_diff != 0.0] > 0).astype(int).diff().replace(-1, 1)
     return reversals.resample("A").sum().mean()
 
 
@@ -870,12 +870,10 @@ def reversals_cv(series: Series) -> float:
     :cite:p:`richter_method_1996`.
 
     """
-    reversals = (
-        (series.diff()[series.diff() != 0.0] > 0).astype(int).diff().replace(-1, 1)
-    )
-    return (
-        reversals.resample("A").sum().std(ddof=1) / reversals.resample("A").sum().mean()
-    )
+    series_diff = series.diff()
+    reversals = (series_diff[series_diff != 0.0] > 0).astype(int).diff().replace(-1, 1)
+    annual_sum = reversals.resample("A").sum()
+    return annual_sum.std(ddof=1) / annual_sum.mean()
 
 
 def mean_annual_maximum(series: Series, normalize: bool = True) -> float:
@@ -937,17 +935,19 @@ def bimodality_coefficient(series: Series, normalize: bool = True) -> float:
         series = _normalize(series)
     series = series.dropna()
     n = series.size
+    series_mean_diff = series - series.mean()
+
     # Compute the skew for a finite sample
     skew = (
         (1 / n)
-        * sum((series - series.mean()) ** 3)
-        / (((1 / n) * sum((series - series.mean()) ** 2)) ** 1.5)
+        * sum(series_mean_diff**3)
+        / (((1 / n) * sum(series_mean_diff**2)) ** 1.5)
     )
     skew *= (sqrt(n * (n - 1))) / (n - 2)
 
     # Compute the kurtosis for a finite sample
-    kurt = (1 / n) * sum((series - series.mean()) ** 4) / (
-        ((1 / n) * sum((series - series.mean()) ** 2)) ** 2
+    kurt = (1 / n) * sum(series_mean_diff**4) / (
+        ((1 / n) * sum(series_mean_diff**2)) ** 2
     ) - 3
     kurt = ((n - 1) * ((n + 1) * kurt - 3 * (n - 1)) / ((n - 2) * (n - 3))) + 3
 
