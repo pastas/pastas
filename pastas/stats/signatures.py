@@ -40,7 +40,7 @@ __all__ = [
     "richards_baker_index",
     "baselevel_stability",
     "magnitude",
-    "autocorrelation",
+    "autocorr_time",
 ]
 
 logger = getLogger(__name__)
@@ -476,7 +476,9 @@ def colwell_contingency(
     )[2]
 
 
-def low_pulse_count(series: Series, quantile: float = 0.2, rolling_window="7D") -> float:
+def low_pulse_count(
+    series: Series, quantile: float = 0.2, rolling_window="7D"
+) -> float:
     """Average number of times the series exceeds a certain threshold per year.
 
     Parameters
@@ -486,8 +488,8 @@ def low_pulse_count(series: Series, quantile: float = 0.2, rolling_window="7D") 
     quantile: float, optional
         Quantile used as a threshold.
     rolling_window: str, optional
-        Rolling window to use for smoothing the time series. Default is 7 days. Set to 
-        None to disable. See the pandas documentation for more information. 
+        Rolling window to use for smoothing the time series. Default is 7 days. Set to
+        None to disable. See the pandas documentation for more information.
 
     Returns
     -------
@@ -504,7 +506,7 @@ def low_pulse_count(series: Series, quantile: float = 0.2, rolling_window="7D") 
     -------
     This method is sensitive to measurement noise, e.g., every change is sign in the
     differences is counted as a pulse. Therefore, it is recommended to smooth the time
-    series first.
+    series first (which is also the default).
 
     """
     if rolling_window is not None:
@@ -522,7 +524,9 @@ def low_pulse_count(series: Series, quantile: float = 0.2, rolling_window="7D") 
     return sel.size / 2 / series.index.year.unique().size
 
 
-def high_pulse_count(series: Series, quantile: float = 0.8, rolling_window="7D") -> float:
+def high_pulse_count(
+    series: Series, quantile: float = 0.8, rolling_window="7D"
+) -> float:
     """Average number of times the series exceeds a certain threshold per year.
 
     Parameters
@@ -549,7 +553,7 @@ def high_pulse_count(series: Series, quantile: float = 0.8, rolling_window="7D")
     -------
     This method is sensitive to measurement noise, e.g., every change is sign in the
     differences is counted as a pulse. Therefore, it is recommended to smooth the time
-    series first.
+    series first (which is also the default).
 
     """
     if rolling_window is not None:
@@ -564,7 +568,9 @@ def high_pulse_count(series: Series, quantile: float = 0.8, rolling_window="7D")
     return sel.size / 2 / series.index.year.unique().size
 
 
-def low_pulse_duration(series: Series, quantile: float = 0.2, rolling_window="7D") -> float:
+def low_pulse_duration(
+    series: Series, quantile: float = 0.2, rolling_window="7D"
+) -> float:
     """Average duration of pulses where the head is below a certain threshold.
 
     Parameters
@@ -591,7 +597,7 @@ def low_pulse_duration(series: Series, quantile: float = 0.2, rolling_window="7D
     -------
     This method is sensitive to measurement noise, e.g., every change is sign in the
     differences is counted as a pulse. Therefore, it is recommended to smooth the time
-    series first.
+    series first (which is also the default).
 
     """
     if rolling_window is not None:
@@ -608,7 +614,9 @@ def low_pulse_duration(series: Series, quantile: float = 0.2, rolling_window="7D
     return (diff(sel.to_numpy()) / Timedelta("1D"))[::2].mean()
 
 
-def high_pulse_duration(series: Series, quantile: float = 0.8, rolling_window="7D") -> float:
+def high_pulse_duration(
+    series: Series, quantile: float = 0.8, rolling_window="7D"
+) -> float:
     """Average duration of pulses where the head exceeds a certain threshold.
 
     Parameters
@@ -636,7 +644,7 @@ def high_pulse_duration(series: Series, quantile: float = 0.8, rolling_window="7
     -------
     This method is sensitive to measurement noise, e.g., every change is sign in the
     differences is counted as a pulse. Therefore, it is recommended to smooth the time
-    series first.
+    series first (which is also the default).
 
     """
     if rolling_window is not None:
@@ -1320,8 +1328,8 @@ def baselevel_stability(series: Series, normalize: bool = False, period="30D") -
     return ht.resample("A").mean().max() - ht.resample("A").mean().min()
 
 
-def autocorrelation(series: Series, cutoff: float = 0.7, **kwargs) -> float:
-    """Lag where the autocorrelation function reaches a cut-off value.
+def autocorr_time(series: Series, cutoff: float = 0.7, **kwargs) -> float:
+    """Lag where the autocorrelation function exceeds a cut-off value.
 
     Parameters
     ----------
@@ -1330,16 +1338,20 @@ def autocorrelation(series: Series, cutoff: float = 0.7, **kwargs) -> float:
     cutoff: float, optional
         Cut-off value for the autocorrelation function. Default is 0.7.
     kwargs: dict, optional
-        Additional keyword arguments are passed to the pandas.Series.autocorr method.
+        Additional keyword arguments are passed to the pastas acf method.
 
     Returns
     -------
     float:
-        Lag in days where the autocorrelation function reaches a cut-off value.
+        Lag in days where the autocorrelation function exceeds the cutoff value.
 
     Notes
     -----
-    Lag in days where the first peak in the autocorrelation function occurs.
+    Lag in days where the autocorrelation function exceeds the cutoff value for the
+    first time. The higher the lag, the more autocorrelated the time series is, and
+    vice versa. In practical terms higher values mean that the groundwater system has
+    a longer memory and the response to changes in the forcing are visible longer in
+    the head time series.
 
     """
     c = acf(series.dropna(), **kwargs)  # Compute the autocorrelation function
@@ -1379,6 +1391,13 @@ def summary(series: Series, signatures: Optional[list] = None) -> Series:
 
     # Get the signatures
     for signature in signatures:
+        # Check if the signature is valid
+        if signature not in __all__:
+            msg = "Signature %s is not a valid signature."
+            logger.error(msg, signature)
+            raise ValueError(msg % signature)
+
+        # Get the function and compute the signature
         func = getattr(ps.stats.signatures, signature)
         data.loc[signature] = func(series)
 
