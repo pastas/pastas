@@ -1079,7 +1079,7 @@ def recovery_constant(series: Series, bins: int = 20, normalize: bool = False) -
 
 
 def duration_curve_slope(
-    series: Series, l: float = 0.1, u: float = 0.9, normalize: bool = True
+    series: Series, l: float = 0.1, u: float = 0.9, normalize: bool = False
 ) -> float:
     """Slope of the head duration curve between percentile l and u after
     :cite:t:`oudin_are_2010`.
@@ -1217,7 +1217,7 @@ def richards_baker_index(series: Series, normalize: bool = True) -> float:
 
 
 def _baselevel(
-    series: Series, normalize: bool = False, period="30D"
+    series: Series, normalize: bool = True, period="30D"
 ) -> Tuple[Series, Series]:
     """Baselevel function for the baseflow index and stability.
 
@@ -1266,7 +1266,7 @@ def _baselevel(
     return series, ht
 
 
-def baselevel_index(series: Series, normalize: bool = False, period="30D") -> float:
+def baselevel_index(series: Series, normalize: bool = True, period="30D") -> float:
     """Base level index according to :cite:t:`organization_manual_2008`.
 
     Parameters
@@ -1296,7 +1296,7 @@ def baselevel_index(series: Series, normalize: bool = False, period="30D") -> fl
     return ht.sum() / series.sum()
 
 
-def baselevel_stability(series: Series, normalize: bool = False, period="30D") -> float:
+def baselevel_stability(series: Series, normalize: bool = True, period="30D") -> float:
     """Baselevel stability after :cite:t:`heudorfer_index-based_2019`.
 
     Parameters
