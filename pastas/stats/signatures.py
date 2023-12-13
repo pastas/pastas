@@ -115,6 +115,55 @@ def cv_period_mean(series: Series, normalize: bool = False, freq: str = "M") -> 
     return cv
 
 
+def _cv_date_min_max(series: Series, stat: str) -> float:
+    """Method to compute the circular coefficient of variation of the date of annual
+    minimum or maximum head.
+
+    Parameters
+    ----------
+    series : Series
+        Pandas Series with DatetimeIndex and head values.
+    stat : str
+        "min" or "max" to compute the cv of the date of the annual minimum or maximum
+        head.
+
+    Returns
+    -------
+    float
+        Circular coefficient of variation of the date of annual minimum or maximum
+        head.
+
+    """
+    if stat == "min":
+        data = series.groupby(series.index.year).idxmin().dropna().values
+    elif stat == "max":
+        data = series.groupby(series.index.year).idxmax().dropna().values
+
+    doy = DatetimeIndex(data).dayofyear.to_numpy(float)
+
+    m = 365.25
+    two_pi = 2 * pi
+
+    thetas = array(doy) * two_pi / m
+    c = cos(thetas).sum()
+    s = sin(thetas).sum()
+    r = sqrt(c**2 + s**2) / doy.size
+
+    if (s > 0) & (c > 0):
+        mean_theta = arctan(s / c)
+    elif c < 0:
+        mean_theta = arctan(s / c) + pi
+    elif (s < 0) & (c > 0):
+        mean_theta = arctan(s / c) + two_pi
+    else:
+        # This should never happen
+        raise ValueError("Something went wrong in the circular statistics.")
+
+    mu = mean_theta * m / two_pi
+    std = sqrt(-2 * log(r)) * m / two_pi
+    return std / mu
+
+
 def cv_date_min(series: Series) -> float:
     """Coefficient of variation of the date of annual minimum head.
 
@@ -130,16 +179,14 @@ def cv_date_min(series: Series) -> float:
 
     Notes
     -----
-    Coefficient of variation of the date of annual minimum head adapted from
-    :cite:t:`richter_method_1996`. Instead of the Julian date, the day the year is
-    used. If there are multiple dates with the same minimum head, the first date is
-    chosen. The higher the coefficient of variation, the more variable the date of the
-    annual minimum head is, and vice versa.
+    Coefficient of variation of the date of annual minimum head computed using circular
+    statistics as described in :cite:t:`fisher_statistical_1995` (page 32). If there
+    are multiple dates with the same minimum head, the first date is chosen. The higher
+    the coefficient of variation, the more variable the date of the annual minimum head
+    is, and vice versa.
 
     """
-    data = series.groupby(series.index.year).idxmin().dropna().values
-    data = DatetimeIndex(data).dayofyear.to_numpy(float)
-    cv = data.std(ddof=1) / data.mean()
+    cv = _cv_date_min_max(series, stat="min")
     return cv
 
 
@@ -158,16 +205,14 @@ def cv_date_max(series: Series) -> float:
 
     Notes
     -----
-    Coefficient of variation of the date of annual maximum head adapted from
-    :cite:t:`richter_method_1996`. Instead of the Julian date, the day the year is
-    used. If there are multiple dates with the same maximum head, the first date is
-    chosen. The higher the coefficient of variation, the more variable the date of the
-    maximum head is, and vice versa.
+    Coefficient of variation of the date of annual maximum head computed using circular
+    statistics as described in :cite:t:`fisher_statistical_1995` (page 32). If there
+    are multiple dates with the same maximum head, the first date is chosen. The higher
+    the coefficient of variation, the more variable the date of the maximum head is,
+    and vice versa.
 
     """
-    data = series.groupby(series.index.year).idxmax().dropna().values
-    data = DatetimeIndex(data).dayofyear.to_numpy(float)
-    cv = data.std(ddof=1) / data.mean()
+    cv = _cv_date_min_max(series, stat="max")
     return cv
 
 
