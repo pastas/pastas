@@ -1428,7 +1428,7 @@ def _date_min_max(series: Series, stat: str) -> float:
         # This should never happen
         raise ValueError("Something went wrong in the circular statistics.")
 
-    return mean_theta * 365 / two_pi
+    return mean_theta * 365.25 / two_pi
 
 
 def date_min(series) -> float:
@@ -1451,7 +1451,7 @@ def date_min(series) -> float:
 
     The average date is computed by taking the average of the day of the year of the
     minimum head value for each year, using circular statistics. We refer to
-    :cite:t:`jammalamadaka_topics_2001` (page 31) for more information on circular
+    :cite:t:`fisher_statistical_1995` (page 31) for more information on circular
     statistics.
 
     """
@@ -1478,7 +1478,7 @@ def date_max(series) -> float:
 
     The average date is computed by taking the average of the day of the year of the
     maximum head value for each year, using circular statistics. We refer to
-    :cite:t:`jammalamadaka_topics_2001` (page 31) for more information on circular
+    :cite:t:`fisher_statistical_1995` (page 31) for more information on circular
     statistics.
 
     """
