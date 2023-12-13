@@ -1431,7 +1431,7 @@ def _date_min_max(series: Series, stat: str) -> float:
     return mean_theta * 365.25 / two_pi
 
 
-def date_min(series) -> float:
+def date_min(series: Series) -> float:
     """Compute the average date of the minimum head value with circular statistics.
 
     Parameters
@@ -1458,7 +1458,7 @@ def date_min(series) -> float:
     return _date_min_max(series, "min")
 
 
-def date_max(series) -> float:
+def date_max(series: Series) -> float:
     """Compute the average date of the maximum head value with circular statistics.
 
     Parameters
