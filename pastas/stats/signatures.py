@@ -3,7 +3,22 @@
 from logging import getLogger
 from typing import Optional, Tuple
 
-from numpy import diff, isnan, linspace, log, nan, ndarray, split, sqrt, where
+from numpy import (
+    arctan,
+    array,
+    cos,
+    diff,
+    isnan,
+    linspace,
+    log,
+    nan,
+    ndarray,
+    pi,
+    sin,
+    split,
+    sqrt,
+    where,
+)
 from pandas import DataFrame, DatetimeIndex, Series, Timedelta, concat, cut, to_datetime
 from scipy.stats import linregress
 
@@ -41,6 +56,8 @@ __all__ = [
     "baselevel_stability",
     "magnitude",
     "autocorr_time",
+    "date_min",
+    "date_max",
 ]
 
 logger = getLogger(__name__)
@@ -1360,6 +1377,112 @@ def autocorr_time(series: Series, cutoff: float = 0.7, **kwargs) -> float:
         return nan
     else:
         return (c < cutoff).idxmax() / Timedelta("1D")
+
+
+def _date_min_max(series: Series, stat: str) -> float:
+    """Compute the average date of the minimum head value with circular statistics.
+
+    Parameters
+    ----------
+    series: pandas.Series
+        Pandas Series with DatetimeIndex and head values.
+    stat: str
+        Either "min" or "max". If "min", the average date of the minimum head value is
+        computed. If "max", the average date of the maximum head value is computed.
+
+    Returns
+    -------
+    float:
+        Average date of the minimum or maximum head value.
+
+    Notes
+    -----
+    The average date is computed by taking the average of the day of the year of the
+    minimum head value for each year, using circular statistics. We refer to
+    :cite:t:`fisher_statistical_1995` (page 31) for more information on circular
+    statistics.
+
+    """
+    # Get the day of the year of the minimum head value for each year
+    if stat == "min":
+        data = series.groupby(series.index.year).idxmin().dropna().values
+    elif stat == "max":
+        data = series.groupby(series.index.year).idxmax().dropna().values
+
+    doy = DatetimeIndex(data).dayofyear.to_numpy(float)
+
+    m = 365.25
+    two_pi = 2 * pi
+
+    thetas = array(doy) * two_pi / m
+    c = cos(thetas).sum()
+    s = sin(thetas).sum()
+
+    if (s > 0) & (c > 0):
+        mean_theta = arctan(s / c)
+    elif c < 0:
+        mean_theta = arctan(s / c) + pi
+    elif (s < 0) & (c > 0):
+        mean_theta = arctan(s / c) + two_pi
+    else:
+        # This should never happen
+        raise ValueError("Something went wrong in the circular statistics.")
+
+    return mean_theta * 365 / two_pi
+
+
+def date_min(series) -> float:
+    """Compute the average date of the minimum head value with circular statistics.
+
+    Parameters
+    ----------
+    series: pandas.Series
+        Pandas Series with DatetimeIndex and head values.
+
+    Returns
+    -------
+    float:
+        Average date of the minimum head value.
+
+    Notes
+    -----
+    Average date of the minimum head value. The higher the date, the later the minimum
+    head value occurs in the year, and vice versa.
+
+    The average date is computed by taking the average of the day of the year of the
+    minimum head value for each year, using circular statistics. We refer to
+    :cite:t:`jammalamadaka_topics_2001` (page 31) for more information on circular
+    statistics.
+
+    """
+    return _date_min_max(series, "min")
+
+
+def date_max(series) -> float:
+    """Compute the average date of the maximum head value with circular statistics.
+
+    Parameters
+    ----------
+    series: pandas.Series
+        Pandas Series with DatetimeIndex and head values.
+
+    Returns
+    -------
+    float:
+        Average date of the maximum head value.
+
+    Notes
+    -----
+    Average date of the maximum head value. The higher the date, the later the maximum
+    head value occurs in the year, and vice versa.
+
+    The average date is computed by taking the average of the day of the year of the
+    maximum head value for each year, using circular statistics. We refer to
+    :cite:t:`jammalamadaka_topics_2001` (page 31) for more information on circular
+    statistics.
+
+    """
+    return _date_min_max(series, "max")
 
 
 def summary(series: Series, signatures: Optional[list] = None) -> Series:
