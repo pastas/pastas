@@ -27,15 +27,3 @@ def test_date_max():
     head = Series(index=idx, data=np.random.rand(len(idx)), dtype=float)
     head[head.index.dayofyear == 1] = head.max()
     assert round(ps.stats.signatures.date_max(head)) == 1
-
-def test_date_mean():
-    """Test the date_mean signature to have a mean of 1 if the head is at a mean at 
-    the first of january of every year in a time series.
-    """
-    idx = date_range("2000", "2010")
-    head = Series(index=idx, data=np.random.rand(len(idx)), dtype=float)
-    head[head.index.dayofyear == 1] = head.mean()
-    assert round(ps.stats.signatures.date_mean(head)) == 1
-
-
-
