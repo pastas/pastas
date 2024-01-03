@@ -45,6 +45,9 @@ from pastas.utils import validate_name
 from pastas.version import __version__
 
 
+logger = getLogger(__name__)
+
+
 class Model:
     """Class that initiates a Pastas time series model.
 
@@ -93,8 +96,6 @@ class Model:
         metadata: Optional[dict] = None,
         freq: str = "D",
     ) -> None:
-        self.logger = getLogger(__name__)
-
         # Construct the different model components
         self.oseries = TimeSeries(oseries, settings="oseries", metadata=metadata)
 
@@ -211,13 +212,13 @@ class Model:
             for sm in stressmodel:
                 self.add_stressmodel(sm)
         elif (stressmodel.name in self.stressmodels.keys()) and not replace:
-            self.logger.error(
+            logger.error(
                 "The name for the stressmodel you are trying to add already exists "
                 "for this model. Select another name."
             )
         else:
             if stressmodel.name in self.stressmodels.keys():
-                self.logger.warning(
+                logger.warning(
                     "The name for the stressmodel you are trying to add already "
                     "exists for this model. The stressmodel is replaced."
                 )
@@ -229,7 +230,7 @@ class Model:
             if (stressmodel.tmin > self.oseries.series.index.max()) or (
                 stressmodel.tmax < self.oseries.series.index.min()
             ):
-                self.logger.warning(
+                logger.warning(
                     "The stress of the stressmodel has no overlap with ml.oseries."
                 )
         self._check_stressmodel_compatibility()
@@ -318,7 +319,7 @@ class Model:
     def del_constant(self) -> None:
         """Method to safely delete the Constant from the Model."""
         if self.constant is None:
-            self.logger.warning("No constant is present in this model.")
+            logger.warning("No constant is present in this model.")
         else:
             self.constant = None
             self.parameters = self.get_init_parameters(initial=False)
@@ -326,7 +327,7 @@ class Model:
     def del_transform(self) -> None:
         """Method to safely delete the transform from the Model."""
         if self.transform is None:
-            self.logger.warning("No transform is present in this model.")
+            logger.warning("No transform is present in this model.")
         else:
             self.transform = None
             self.parameters = self.get_init_parameters(initial=False)
@@ -334,7 +335,7 @@ class Model:
     def del_noisemodel(self) -> None:
         """Method to safely delete the noise model from the Model."""
         if self.noisemodel is None:
-            self.logger.warning("No noisemodel is present in this model.")
+            logger.warning("No noisemodel is present in this model.")
         else:
             self.noisemodel = None
             self.parameters = self.get_init_parameters(initial=False)
@@ -436,7 +437,7 @@ class Model:
                 "are provided for each stress model "
                 "(e.g. `ps.StressModel(stress, settings='prec')`!"
             )
-            self.logger.error(msg)
+            logger.error(msg)
             raise ValueError(msg)
 
         sim.name = "Simulation"
@@ -492,7 +493,7 @@ class Model:
         if self.interpolate_simulation is None:
             if oseries_calib.index.difference(sim.index).size != 0:
                 self.interpolate_simulation = True
-                self.logger.info(
+                logger.info(
                     "There are observations between the simulation time steps. Linear "
                     "interpolation between simulated values is used."
                 )
@@ -510,7 +511,7 @@ class Model:
 
         if res.hasnans:
             res = res.dropna()
-            self.logger.warning("Nan-values were removed from the residuals.")
+            logger.warning("Nan-values were removed from the residuals.")
 
         if self.normalize_residuals:
             res = res.subtract(res.values.mean())
@@ -563,7 +564,7 @@ class Model:
         This method returns None if no noise model is present in the model.
         """
         if self.noisemodel is None or self.settings["noise"] is False:
-            self.logger.error(
+            logger.error(
                 "Noise cannot be calculated if there is no noisemodel present or is "
                 "not used during parameter estimation."
             )
@@ -688,7 +689,7 @@ class Model:
         if noise is None and self.noisemodel:
             noise = True
         elif noise is True and self.noisemodel is None:
-            self.logger.warning(
+            logger.warning(
                 "Warning, solving with noise=True while no noisemodel is present. "
                 "noise set to False."
             )
@@ -839,7 +840,7 @@ class Model:
             noise=self.settings["noise"], weights=weights, **kwargs
         )
         if not success:
-            self.logger.warning("Model parameters could not be estimated well.")
+            logger.warning("Model parameters could not be estimated well.")
 
         if self.settings["fit_constant"] is False:
             # Determine the residuals and set the constant to their mean
@@ -865,7 +866,7 @@ class Model:
             "Attribute 'fit' is deprecated and will be removed in a future version. "
             "Use 'solver' instead."
         )
-        self.logger.warning(msg)
+        logger.warning(msg)
 
         return self.solver
 
@@ -915,7 +916,7 @@ class Model:
         """
         if name not in self.parameters.index:
             msg = "parameter %s is not present in the model"
-            self.logger.error(msg, name)
+            logger.error(msg, name)
             raise KeyError(msg, name)
 
         # Because either of the following is not necessarily present
@@ -989,7 +990,7 @@ class Model:
                         time_offsets.add(_get_time_offset(t[mask][0], freq))
         if len(time_offsets) > 1:
             msg = "The time-offset with the frequency is not the same for all stresses."
-            self.logger.error(msg)
+            logger.error(msg)
             raise (Exception(msg))
         if len(time_offsets) == 1:
             return next(iter(time_offsets))
@@ -1238,9 +1239,7 @@ class Model:
             p = self.parameters
 
         if p.optimal.hasnans:
-            self.logger.warning(
-                "Model is not optimized yet, initial parameters are used."
-            )
+            logger.warning("Model is not optimized yet, initial parameters are used.")
             parameters = p.initial
         else:
             parameters = p.optimal
@@ -1494,7 +1493,7 @@ class Model:
             Pandas.Series with the response, None if not present.
         """
         if self.stressmodels[name].rfunc is None:
-            self.logger.warning("Stressmodel %s has no rfunc.", name)
+            logger.warning("Stressmodel %s has no rfunc.", name)
             return None
         else:
             block_or_step = getattr(self.stressmodels[name].rfunc, block_or_step)
@@ -1629,7 +1628,7 @@ class Model:
         to a recharge pulse has taken place.
         """
         if self.stressmodels[name].rfunc is None:
-            self.logger.warning("Stressmodel %s has no rfunc", name)
+            logger.warning("Stressmodel %s has no rfunc", name)
             return None
         else:
             if p is None:
@@ -1907,13 +1906,16 @@ class Model:
 
         len_oseries_calib = (self.settings["tmax"] - self.settings["tmin"]).days
 
+        # only check stressmodels with a response function
+        sm_names = [key for key, item in self.stressmodels.items() if item.rfunc is not None]
+
         check = DataFrame(
-            index=self.stressmodels.keys(),
+            index=sm_names,
             columns=["len_oseries_calib", "response_tmax", "check_ok"],
         )
         check["len_oseries_calib"] = len_oseries_calib
 
-        for sm_name in self.stressmodels:
+        for sm_name in sm_names:
             if self.stressmodels[sm_name].rfunc._name == "HantushWellModel":
                 kwargs = {"warn": False}
             else:
