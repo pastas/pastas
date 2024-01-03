@@ -27,6 +27,7 @@ from pastas.io.base import _load_model, dump
 from pastas.modelstats import Statistics
 from pastas.noisemodels import NoiseModel
 from pastas.plotting.modelplots import Plotting, _table_formatter_stderr
+from pastas.rfunc import HantushWellModel
 from pastas.solver import LeastSquares
 from pastas.stressmodels import Constant
 from pastas.timeseries import TimeSeries
@@ -1632,7 +1633,7 @@ class Model:
         else:
             if p is None:
                 p = self.get_parameters(name)
-            if self.stressmodels[name].rfunc._name == "HantushWellModel":
+            if isinstance(self.stressmodels[name].rfunc, HantushWellModel):
                 kwargs = {"warn": warn}
             else:
                 kwargs = {}
@@ -1916,8 +1917,8 @@ class Model:
         )
         check["len_oseries_calib"] = len_oseries_calib
 
-        for sm_name in sm_names:
-            if self.stressmodels[sm_name].rfunc._name == "HantushWellModel":
+        for sm_name in self.stressmodels:
+            if isinstance(self.stressmodels[sm_name].rfunc, HantushWellModel):
                 kwargs = {"warn": False}
             else:
                 kwargs = {}
