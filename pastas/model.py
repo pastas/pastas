@@ -1907,7 +1907,9 @@ class Model:
         len_oseries_calib = (self.settings["tmax"] - self.settings["tmin"]).days
 
         # only check stressmodels with a response function
-        sm_names = [key for key, item in self.stressmodels.items() if item.rfunc is not None]
+        sm_names = [
+            key for key, item in self.stressmodels.items() if item.rfunc is not None
+        ]
 
         check = DataFrame(
             index=sm_names,
