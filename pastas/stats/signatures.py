@@ -1059,7 +1059,8 @@ def _get_events_binned(
     events = [
         ev.reset_index().loc[:, "difference"]
         for ev in events
-        if not ev.empty and ev.size > 1  # Drop empty events and events with one value
+        # Drop empty events and events with less than 5 events.
+        if not ev.empty and ev.size > 5
     ]
     events = concat(events, axis=1)
 
@@ -1070,11 +1071,13 @@ def _get_events_binned(
     # Bin the data and compute the mean
     binned = Series(dtype=float)
     for g in data.groupby(
-        cut(data.index, bins=min(bins, data.index.max())).sort_values(), observed=False
+        cut(data.index, bins=min(bins, data.index.max())), observed=False
     ):
-        value = g[1]["difference"].dropna(axis=1).mean()
-        if not value.empty:
-            binned[g[0].mid] = value.iloc[0]
+        # Only use bins with more than 5 events
+        if g[1]["difference"].dropna(axis=1).columns.size > 5:
+            value = g[1]["difference"].dropna(axis=1).mean(axis=1)
+            if not value.empty:
+                binned[g[0].mid] = value.iloc[0]
 
     binned = binned[binned != 0].dropna()
     return binned
