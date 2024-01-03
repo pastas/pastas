@@ -44,7 +44,6 @@ from pastas.typing import Solver, StressModel, TimestampType
 from pastas.utils import validate_name
 from pastas.version import __version__
 
-
 logger = getLogger(__name__)
 
 
