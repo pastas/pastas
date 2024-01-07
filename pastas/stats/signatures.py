@@ -1,7 +1,7 @@
 """This module contains methods to compute the groundwater signatures."""
 # Type Hinting
 from logging import getLogger
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 from numpy import (
     arctan,
@@ -1393,7 +1393,7 @@ def baselevel_stability(series: Series, normalize: bool = True, period="30D") ->
     return ht.resample("A").mean().max() - ht.resample("A").mean().min()
 
 
-def autocorr_time(series: Series, cutoff: float = 0.7, **kwargs) -> float:
+def autocorr_time(series: Series, cutoff: float = 0.8, **kwargs) -> float:
     """Lag where the autocorrelation function exceeds a cut-off value.
 
     Parameters
@@ -1533,32 +1533,38 @@ def date_max(series: Series) -> float:
     return _date_min_max(series, "max")
 
 
-def summary(series: Series, signatures: Optional[list] = None) -> Series:
+def summary(data: Union[DataFrame, Series], signatures: Optional[list] = None) -> DataFrame:
     """Method to get many signatures for a time series.
 
     Parameters
     ----------
-    series: pandas.Series
-        pandas Series with DatetimeIndex
+    data: Union[pandas.DataFrame, pandas.Series]
+        pandas DataFrame or Series with DatetimeIndex
     signatures: list
         list of signatures to return. By default all available signatures are returned.
 
     Returns
     -------
-    data: pandas.Series
-        Pandas series with every row a signature and the signature value.
+    result: pandas.DataFrame
+        Pandas DataFrame with every row a signature and the signature value for each column.
 
     Examples
     --------
     >>> idx = date_range("2000", "2010")
-    >>> head = Series(index=idx, data=np.random.rand(len(idx)), dtype=float)
-    >>> ps.stats.signatures.summary(head)
+    >>> data = np.random.rand(len(idx), 3)
+    >>> df = DataFrame(index=idx, data=data, columns=["A", "B", "C"], dtype=float)
+    >>> ps.stats.signatures.summary(df)
 
     """
     if signatures is None:
         signatures = __all__
 
-    data = Series(index=signatures, dtype=float)
+    if isinstance(data, DataFrame):
+        result = DataFrame(index=signatures, columns=data.columns, dtype=float)
+    elif isinstance(data, Series):
+        result = DataFrame(index=signatures, columns=[data.name], dtype=float)
+    else:
+        raise ValueError("Invalid data type. Expected DataFrame or Series.")
 
     # Get the signatures
     for signature in signatures:
@@ -1568,8 +1574,11 @@ def summary(series: Series, signatures: Optional[list] = None) -> Series:
             logger.error(msg, signature)
             raise ValueError(msg % signature)
 
-        # Get the function and compute the signature
+        # Get the function and compute the signature for each column/series
         func = getattr(ps.stats.signatures, signature)
-        data.loc[signature] = func(series)
+        if isinstance(data, DataFrame):
+            result.loc[signature] = data.apply(func)
+        elif isinstance(data, Series):
+            result.loc[signature] = func(data)
 
-    return data
+    return result
