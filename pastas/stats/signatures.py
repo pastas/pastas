@@ -959,7 +959,7 @@ def mean_annual_maximum(series: Series, normalize: bool = True) -> float:
 
     Warning
     -------
-    This signatures is sensitive to the base level of the time series if normalize is 
+    This signatures is sensitive to the base level of the time series if normalize is
     set to False.
 
     """
@@ -1018,8 +1018,12 @@ def bimodality_coefficient(series: Series, normalize: bool = True) -> float:
 
 
 def _get_events_binned(
-    series: Series, normalize: bool = False, up: bool = True, bins: int = 20, 
-    min_event_length: int = 5
+    series: Series,
+    normalize: bool = False,
+    up: bool = True,
+    bins: int = 300,
+    min_event_length: int = 10,
+    min_n_events: int = 2,
 ) -> Series:
     """Get the recession or recovery events and bin them.
 
@@ -1035,6 +1039,8 @@ def _get_events_binned(
         Number of bins to bin the data to.
     min_event_length : int, optional
         Minimum length of an event in days. Events shorter than this are discarded.
+    min_n_events : int, optional
+        Minimum number of events in a bin. Bins with less events are discarded.
 
     Returns
     -------
@@ -1060,13 +1066,19 @@ def _get_events_binned(
     # Split the data into events
     events = split(h, where(isnan(h.values))[0])
     events = [ev[~isnan(ev.values)] for ev in events if not isinstance(ev, ndarray)]
-    events = [
-        ev.reset_index().loc[:, "difference"]
-        for ev in events
+
+    events_new = []
+
+    for ev in events:
         # Drop empty events and events with less than 5 events.
-        if not ev.empty and (ev.index[-1] - ev.index[0]).days > min_event_length
-    ]
-    events = concat(events, axis=1)
+        if ev.empty or ev.index.size < 2:
+            pass
+        else:
+            ev.index = (ev.index - ev.index[0]).days
+            if ev.index[-1] > min_event_length:
+                events_new.append(ev)
+
+    events = concat(events_new, axis=1)
 
     # Subtract the absolute value of the first day of each event
     data = events - events.iloc[0, :]
@@ -1078,7 +1090,7 @@ def _get_events_binned(
         cut(data.index, bins=min(bins, data.index.max())), observed=False
     ):
         # Only use bins with more than 5 events
-        if g[1]["difference"].dropna(axis=1).columns.size > 5:
+        if g[1]["difference"].dropna(axis=1).columns.size > min_n_events:
             value = g[1]["difference"].dropna(axis=1).mean(axis=1)
             if not value.empty:
                 binned[g[0].mid] = value.iloc[0]
@@ -1088,7 +1100,11 @@ def _get_events_binned(
 
 
 def recession_constant(
-    series: Series, bins: int = 20, normalize: bool = False, min_event_length: int = 5
+    series: Series,
+    bins: int = 300,
+    normalize: bool = False,
+    min_event_length: int = 10,
+    min_n_events: int = 2,
 ) -> float:
     """Recession constant adapted after :cite:t:`kirchner_catchments_2009`.
 
@@ -1102,6 +1118,8 @@ def recession_constant(
         normalize the time series to values between zero and one.
     min_event_length: int, optional
         Minimum length of an event in days. Events shorter than this are discarded.
+    min_n_events: int, optional
+        Minimum number of events in a bin. Bins with less events are discarded.
 
     Returns
     -------
@@ -1113,16 +1131,27 @@ def recession_constant(
     plot of negative head versus negative head one time step ahead.
 
     """
-    binned = _get_events_binned(series, normalize=normalize, up=False, bins=bins, 
-                                min_event_length=min_event_length)
+    binned = _get_events_binned(
+        series,
+        normalize=normalize,
+        up=False,
+        bins=bins,
+        min_event_length=min_event_length,
+        min_n_events=min_n_events,
+    )
 
     # Fit the linear model to the binned data and return the slope
     fit = linregress(log(binned.index), log(-binned.values))
     return fit.slope
 
 
-def recovery_constant(series: Series, bins: int = 20, normalize: bool = False, 
-                      min_event_length: int = 5 ) -> float:
+def recovery_constant(
+    series: Series,
+    bins: int = 300,
+    normalize: bool = False,
+    min_event_length: int = 10,
+    min_n_events: int = 2,
+) -> float:
     """Recovery constant after :cite:t:`kirchner_catchments_2009`.
 
     Parameters
@@ -1135,6 +1164,8 @@ def recovery_constant(series: Series, bins: int = 20, normalize: bool = False,
         normalize the time series to values between zero and one.
     min_event_length: int, optional
         Minimum length of an event in days. Events shorter than this are discarded.
+    min_n_events: int, optional
+        Minimum number of events in a bin. Bins with less events are discarded.
 
     Returns
     -------
@@ -1146,8 +1177,13 @@ def recovery_constant(series: Series, bins: int = 20, normalize: bool = False,
     plot of positive head versus positive head one time step ahead.
 
     """
-    binned = _get_events_binned(series, normalize=normalize, up=True, bins=bins,
-                                min_event_length=min_event_length)
+    binned = _get_events_binned(
+        series,
+        normalize=normalize,
+        up=True,
+        bins=bins,
+        min_event_length=min_event_length,
+    )
 
     # Fit the linear model to the binned data and return the slope
     fit = linregress(log(binned.index), log(binned.values))
@@ -1317,12 +1353,12 @@ def _baselevel(
     if normalize:
         series = _normalize(series)
 
-    # A/B. Selecting minima hm over 21-day periods
+    # A/B. Selecting minima hm over a period
     hm = series.resample(period).min().dropna()
+    series = series.resample("D").interpolate()
 
     # C. define the turning point ht (0.9 * head < adjacent heads)
-    ht = Series(dtype=float)
-    ht[hm.index[0]] = hm.iloc[0]
+    ht = Series(index=[hm.index[0]], data=[hm.iloc[0]], dtype=float)
 
     for i, h in enumerate(hm.iloc[1:-1], start=1):
         if (0.9 * h < hm.iloc[i - 1]) & (0.9 * h < hm.iloc[i + 1]):
@@ -1337,13 +1373,13 @@ def _baselevel(
     ht = ht.resample("D").interpolate()
 
     # E. Assign a base head to each day
-    ht[ht > series.resample("D").mean().loc[ht.index]] = series.resample("D").mean()
+    ht[ht > series.loc[ht.index]] = series
 
     return series, ht
 
 
 def baselevel_index(series: Series, normalize: bool = True, period="30D") -> float:
-    """Base level index according to :cite:t:`organization_manual_2008`.
+    """Base level index (BLI) according to :cite:t:`organization_manual_2008`.
 
     Parameters
     ----------
@@ -1364,7 +1400,7 @@ def baselevel_index(series: Series, normalize: bool = True, period="30D") -> flo
     Adapted analogously to its application in streamflow. Here, a baselevel time
     series is separated from a X-day minimum head in a moving window. BLI
     equals the total sum of heads of original time series divided by the total sum of
-    heads from the baseflow type of time series.
+    heads from the baseflow type of time series. Both these time series are resampled
 
     """
 
@@ -1544,7 +1580,9 @@ def date_max(series: Series) -> float:
     return _date_min_max(series, "max")
 
 
-def summary(data: Union[DataFrame, Series], signatures: Optional[list] = None) -> DataFrame:
+def summary(
+    data: Union[DataFrame, Series], signatures: Optional[list] = None
+) -> DataFrame:
     """Method to get many signatures for a time series.
 
     Parameters
