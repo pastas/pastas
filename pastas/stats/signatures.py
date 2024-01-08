@@ -939,7 +939,7 @@ def reversals_cv(series: Series) -> float:
 
 
 def mean_annual_maximum(series: Series, normalize: bool = True) -> float:
-    """Mean of annual maximum after :cite:t:`clausen_flow_2000`.
+    """Mean of annual maximum head after :cite:t:`clausen_flow_2000`.
 
     Parameters
     ----------
@@ -951,15 +951,16 @@ def mean_annual_maximum(series: Series, normalize: bool = True) -> float:
     Returns
     -------
     float:
-        Mean of annual maximum.
+        Mean of annual maximum head.
 
     Notes
     -----
-    Mean of annual maximum :cite:p:`clausen_flow_2000`.
+    Mean of annual maximum head :cite:p:`clausen_flow_2000`.
 
     Warning
     -------
-    This signatures is sensitive to the base level of the time series.
+    This signatures is sensitive to the base level of the time series if normalize is 
+    set to False.
 
     """
     if normalize:
@@ -1017,7 +1018,8 @@ def bimodality_coefficient(series: Series, normalize: bool = True) -> float:
 
 
 def _get_events_binned(
-    series: Series, normalize: bool = False, up: bool = True, bins: int = 20
+    series: Series, normalize: bool = False, up: bool = True, bins: int = 20, 
+    min_event_length: int = 5
 ) -> Series:
     """Get the recession or recovery events and bin them.
 
@@ -1031,6 +1033,8 @@ def _get_events_binned(
         If True, get the recovery events, if False, get the recession events.
     bins : int, optional
         Number of bins to bin the data to.
+    min_event_length : int, optional
+        Minimum length of an event in days. Events shorter than this are discarded.
 
     Returns
     -------
@@ -1060,7 +1064,7 @@ def _get_events_binned(
         ev.reset_index().loc[:, "difference"]
         for ev in events
         # Drop empty events and events with less than 5 events.
-        if not ev.empty and ev.size > 5
+        if not ev.empty and (ev.index[-1] - ev.index[0]).days > min_event_length
     ]
     events = concat(events, axis=1)
 
@@ -1084,7 +1088,7 @@ def _get_events_binned(
 
 
 def recession_constant(
-    series: Series, bins: int = 20, normalize: bool = False
+    series: Series, bins: int = 20, normalize: bool = False, min_event_length: int = 5
 ) -> float:
     """Recession constant adapted after :cite:t:`kirchner_catchments_2009`.
 
@@ -1096,6 +1100,8 @@ def recession_constant(
         Number of bins to bin the data to.
     normalize: bool, optional
         normalize the time series to values between zero and one.
+    min_event_length: int, optional
+        Minimum length of an event in days. Events shorter than this are discarded.
 
     Returns
     -------
@@ -1107,14 +1113,16 @@ def recession_constant(
     plot of negative head versus negative head one time step ahead.
 
     """
-    binned = _get_events_binned(series, normalize=normalize, up=False, bins=bins)
+    binned = _get_events_binned(series, normalize=normalize, up=False, bins=bins, 
+                                min_event_length=min_event_length)
 
     # Fit the linear model to the binned data and return the slope
     fit = linregress(log(binned.index), log(-binned.values))
     return fit.slope
 
 
-def recovery_constant(series: Series, bins: int = 20, normalize: bool = False) -> float:
+def recovery_constant(series: Series, bins: int = 20, normalize: bool = False, 
+                      min_event_length: int = 5 ) -> float:
     """Recovery constant after :cite:t:`kirchner_catchments_2009`.
 
     Parameters
@@ -1125,10 +1133,12 @@ def recovery_constant(series: Series, bins: int = 20, normalize: bool = False) -
         Number of bins to bin the data to.
     normalize: bool, optional
         normalize the time series to values between zero and one.
+    min_event_length: int, optional
+        Minimum length of an event in days. Events shorter than this are discarded.
 
     Returns
     -------
-    float
+    float: Recovery constant.
 
     Notes
     -----
@@ -1136,7 +1146,8 @@ def recovery_constant(series: Series, bins: int = 20, normalize: bool = False) -
     plot of positive head versus positive head one time step ahead.
 
     """
-    binned = _get_events_binned(series, normalize=normalize, up=True, bins=bins)
+    binned = _get_events_binned(series, normalize=normalize, up=True, bins=bins,
+                                min_event_length=min_event_length)
 
     # Fit the linear model to the binned data and return the slope
     fit = linregress(log(binned.index), log(binned.values))
