@@ -8,6 +8,7 @@ from numpy import (
     array,
     cos,
     diff,
+    exp,
     isnan,
     linspace,
     log,
@@ -21,6 +22,7 @@ from numpy import (
 )
 from pandas import DataFrame, DatetimeIndex, Series, Timedelta, concat, cut, to_datetime
 from scipy.stats import linregress
+from scipy.optimize import curve_fit
 
 import pastas as ps
 from pastas.stats.core import acf
@@ -1070,7 +1072,7 @@ def _get_events_binned(
     events_new = []
 
     for ev in events:
-        # Drop empty events and events with less than 5 events.
+        # Drop empty events and events shorter than min_events_length.
         if ev.empty or ev.index.size < 2:
             pass
         else:
@@ -1078,6 +1080,8 @@ def _get_events_binned(
             if ev.index[-1] > min_event_length:
                 events_new.append(ev)
 
+    if len(events_new) == 0:
+        return Series(dtype=float)
     events = concat(events_new, axis=1)
 
     # Subtract the absolute value of the first day of each event
@@ -1104,7 +1108,7 @@ def recession_constant(
     bins: int = 300,
     normalize: bool = False,
     min_event_length: int = 10,
-    min_n_events: int = 2,
+    min_n_events: int = 1,
 ) -> float:
     """Recession constant adapted after :cite:t:`kirchner_catchments_2009`.
 
@@ -1127,8 +1131,7 @@ def recession_constant(
 
     Notes
     -----
-    Slope of the linear model fitted to percentile-wise binned means in a log-log
-    plot of negative head versus negative head one time step ahead.
+    Recession constant adapted after :cite:t:`kirchner_catchments_2009`, which is the decay constant of the exponential model fitted to the percentile-wise binned means.
 
     """
     binned = _get_events_binned(
@@ -1140,10 +1143,16 @@ def recession_constant(
         min_n_events=min_n_events,
     )
 
-    # Fit the linear model to the binned data and return the slope
-    fit = linregress(log(binned.index), log(-binned.values))
-    return fit.slope
+    # Deal with the case that binned is empty
+    if binned.empty:
+        return nan
 
+    # Fit an exponential model to the binned data and return the decay constant
+    f = lambda t, *p: -p[0] * (1 - exp(-t / p[1]))
+    popt, _ = curve_fit(
+        f, binned.index, binned.values, p0=[1, 100], bounds=(0, [100, 1e3])
+    )
+    return popt[1]
 
 def recovery_constant(
     series: Series,
@@ -1184,6 +1193,10 @@ def recovery_constant(
         bins=bins,
         min_event_length=min_event_length,
     )
+
+    # Deal with the case that binned is empty
+    if binned.empty:
+        return nan
 
     # Fit the linear model to the binned data and return the slope
     fit = linregress(log(binned.index), log(binned.values))
