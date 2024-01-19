@@ -34,5 +34,5 @@ sm = ps.stressmodels.StepModel("2007", "Step", rfunc=ps.One())
 ml.add_stressmodel(sm)
 
 # solve
-ml.solve()
+ml.solve(noise=True)
 ml.plots.decomposition()
