@@ -687,7 +687,14 @@ class Model:
         manually. See the solve-method for a description of the arguments.
         """
         if noise is None and self.noisemodel:
-            noise = True
+            msg = (
+                "The default of noise=True is deprecated and will be changed to "
+                "False in a future version of pastas. Pass noise=True to retain "
+                "current behavior or noise=False to adopt the future default and "
+                "silence this warning."
+            )
+            logger.warning(msg)
+            noise = True  # will be changed to False from pastas version 2.0.0
         elif noise is True and self.noisemodel is None:
             logger.warning(
                 "Warning, solving with noise=True while no noisemodel is present. "
@@ -745,7 +752,7 @@ class Model:
         tmax: Optional[TimestampType] = None,
         freq: Optional[str] = None,
         warmup: Optional[float] = None,
-        noise: bool = True,
+        noise: Optional[bool] = None,  # will be changed to False in version 2.0.0
         solver: Optional[Solver] = None,
         report: bool = True,
         initial: bool = True,
@@ -771,8 +778,9 @@ class Model:
             Warmup period (in Days) for which the simulation is calculated, but not
             used for the calibration period.
         noise: bool, optional
-            Argument that determines if a noisemodel is used (only if present). The
-            default is noise=True.
+            Argument that determines if a noisemodel is used (only if present). When
+            noise = None, noise is set to True before pastas version 2.0.0, and to False
+            after version 2.0.0. The default is noise=None.
         solver: Class pastas.solver.Solver, optional
             Instance of a pastas Solver class used to solve the model. Options are:
             ps.LeastSquares() (default) or ps.LmfitSolve(). An instance is needed as
