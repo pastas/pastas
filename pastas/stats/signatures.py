@@ -907,12 +907,27 @@ def reversals_avg(series: Series) -> float:
     -----
     Average annual number of rises and falls (i.e., change of sign) in daily head
     :cite:p:`richter_method_1996`. The higher the number of reversals, the more
-    variable the head is, and vice versa.
+    variable the head is, and vice versa. If the head data is not daily, a warning is
+    issued and nan is returned.
 
     """
-    series_diff = series.diff()
-    reversals = (series_diff[series_diff != 0.0] > 0).astype(int).diff().replace(-1, 1)
-    return reversals.resample("A").sum().mean()
+    # Get the time step in days
+    dt = diff(series.index.to_numpy()) / Timedelta("1D")
+
+    # Check if the time step is approximately daily
+    if not (dt > 0.9).all() & (dt < 1.1).all():
+        msg = (
+            "The time step is not approximately daily. "
+            "This may lead to incorrect results."
+        )
+        logger.warning(msg)
+        return nan
+    else:
+        series_diff = series.diff()
+        reversals = (
+            (series_diff[series_diff != 0.0] > 0).astype(int).diff().replace(-1, 1)
+        )
+        return reversals.resample("A").sum().mean()
 
 
 def reversals_cv(series: Series) -> float:
@@ -931,13 +946,29 @@ def reversals_cv(series: Series) -> float:
     Notes
     -----
     Coefficient of Variation in annual number of rises and falls in daily head
-    :cite:p:`richter_method_1996`.
+    :cite:p:`richter_method_1996`. If the coefficient of variation is high, the number
+    of reversals is highly variable, and vice versa. If the head data is not daily, a
+    warning is issued and nan is returned.
 
     """
-    series_diff = series.diff()
-    reversals = (series_diff[series_diff != 0.0] > 0).astype(int).diff().replace(-1, 1)
-    annual_sum = reversals.resample("A").sum()
-    return annual_sum.std(ddof=1) / annual_sum.mean()
+    # Get the time step in days
+    dt = diff(series.index.to_numpy()) / Timedelta("1D")
+
+    # Check if the time step is approximately daily
+    if not (dt > 0.9).all() & (dt < 1.1).all():
+        msg = (
+            "The time step is not approximately daily. "
+            "This may lead to incorrect results."
+        )
+        logger.warning(msg)
+        return nan
+    else:
+        series_diff = series.diff()
+        reversals = (
+            (series_diff[series_diff != 0.0] > 0).astype(int).diff().replace(-1, 1)
+        )
+        annual_sum = reversals.resample("A").sum()
+        return annual_sum.std(ddof=1) / annual_sum.mean()
 
 
 def mean_annual_maximum(series: Series, normalize: bool = True) -> float:
@@ -1094,8 +1125,8 @@ def _get_events_binned(
         cut(data.index, bins=min(bins, data.index.max())), observed=False
     ):
         # Only use bins with more than 5 events
-        if g[1]["difference"].dropna(axis=1).columns.size > min_n_events:
-            value = g[1]["difference"].dropna(axis=1).mean(axis=1)
+        if g[1].dropna(axis=1).columns.size > min_n_events:
+            value = g[1].dropna(axis=1).mean(axis=1)
             if not value.empty:
                 binned[g[0].mid] = value.iloc[0]
 
@@ -1108,7 +1139,7 @@ def recession_constant(
     bins: int = 300,
     normalize: bool = False,
     min_event_length: int = 10,
-    min_n_events: int = 1,
+    min_n_events: int = 2,
 ) -> float:
     """Recession constant adapted after :cite:t:`kirchner_catchments_2009`.
 
@@ -1153,6 +1184,7 @@ def recession_constant(
         f, binned.index, binned.values, p0=[1, 100], bounds=(0, [100, 1e3])
     )
     return popt[1]
+
 
 def recovery_constant(
     series: Series,
@@ -1513,9 +1545,9 @@ def _date_min_max(series: Series, stat: str) -> float:
     """
     # Get the day of the year of the minimum head value for each year
     if stat == "min":
-        data = series.groupby(series.index.year).idxmin().dropna().values
+        data = series.groupby(series.index.year).idxmin(skipna=True).dropna().values
     elif stat == "max":
-        data = series.groupby(series.index.year).idxmax().dropna().values
+        data = series.groupby(series.index.year).idxmax(skipna=True).dropna().values
 
     doy = DatetimeIndex(data).dayofyear.to_numpy(float)
 
