@@ -1,4 +1,5 @@
 """This module contains methods to compute the groundwater signatures."""
+
 # Type Hinting
 from logging import getLogger
 from typing import Optional, Tuple, Union
@@ -137,9 +138,9 @@ def _cv_date_min_max(series: Series, stat: str) -> float:
 
     """
     if stat == "min":
-        data = series.groupby(series.index.year).idxmin().dropna().values
+        data = series.groupby(series.index.year).idxmin(skipna=True).dropna().values
     elif stat == "max":
-        data = series.groupby(series.index.year).idxmax().dropna().values
+        data = series.groupby(series.index.year).idxmax(skipna=True).dropna().values
 
     doy = DatetimeIndex(data).dayofyear.to_numpy(float)
 
