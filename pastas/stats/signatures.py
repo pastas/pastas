@@ -22,8 +22,8 @@ from numpy import (
     where,
 )
 from pandas import DataFrame, DatetimeIndex, Series, Timedelta, concat, cut, to_datetime
-from scipy.stats import linregress
 from scipy.optimize import curve_fit
+from scipy.stats import linregress
 
 import pastas as ps
 from pastas.stats.core import acf
@@ -53,9 +53,9 @@ __all__ = [
     "recovery_constant",
     "duration_curve_slope",
     "duration_curve_ratio",
-    "baselevel_index",
     "richards_pathlength",
     "richards_baker_index",
+    "baselevel_index",
     "baselevel_stability",
     "magnitude",
     "autocorr_time",
@@ -488,8 +488,8 @@ def colwell_constancy(
 
     Returns
     -------
-    p, c, m: float, float, float
-        predictability, constancy, contingency
+    c: float
+        Colwell's constancy.
 
     Notes
     -----
@@ -526,8 +526,8 @@ def colwell_contingency(
 
     Returns
     -------
-    p, c, m: float, float, float
-        predictability, constancy, contingency
+    m: float
+         Colwell's contingency.
 
     Notes
     -----
@@ -866,8 +866,8 @@ def cv_fall_rate(series: Series, normalize: bool = False) -> float:
 
 
 def magnitude(series: Series) -> float:
-    """Difference of peak head to base head, divided by base head after
-    :cite:t:`hannah_approach_2000`.
+    """Difference between the minimum and maximum heads, divided by the minimum head
+    adapted after :cite:t:`hannah_approach_2000`.
 
     Parameters
     ----------
@@ -877,11 +877,11 @@ def magnitude(series: Series) -> float:
     Returns
     -------
     float:
-        Difference of peak head to base head, divided by base head.
+        Difference between the minimum and maximum heads, divided by the minimum head.
 
     Notes
     -----
-    Difference of peak head to base head, divided by base head.
+    Difference between the minimum and maximum heads, divided by the minimum head.
 
       ..math:: (h_max - h_min ) / h_min
 
@@ -1347,37 +1347,10 @@ def richards_pathlength(series: Series, normalize: bool = True) -> float:
     # sum(dt) is more fair with irregular time series
     return sum(sqrt(dh**2 + dt**2)) / (sum(dt) * series.median())
 
-
-def richards_baker_index(series: Series, normalize: bool = True) -> float:
-    """Richards-Baker index according to :cite:t:`baker_new_2004`.
-
-    Parameters
-    ----------
-    series: pandas.Series
-        Pandas Series with DatetimeIndex and head values.
-    normalize: bool, optional
-        normalize the time series to values between zero and one.
-
-    Returns
-    -------
-    float
-
-    Notes
-    -----
-    Sum of absolute values of day-to-day changes in head divided by the sum of scaled
-    daily head. Equivalent the Richards Pathlength without the time component.
-
-    """
-    if normalize:
-        series = _normalize(series)
-
-    return series.diff().dropna().abs().sum() / series.sum()
-
-
 def _baselevel(
     series: Series, normalize: bool = True, period="30D"
 ) -> Tuple[Series, Series]:
-    """Baselevel function for the baseflow index and stability.
+    """Baselevel function for the baselevel index and stability.
 
     Parameters
     ----------
@@ -1425,7 +1398,7 @@ def _baselevel(
 
 
 def baselevel_index(series: Series, normalize: bool = True, period="30D") -> float:
-    """Base level index (BLI) according to :cite:t:`organization_manual_2008`.
+    """Base level index (BLI) adapted after :cite:t:`organization_manual_2008`.
 
     Parameters
     ----------
@@ -1446,7 +1419,8 @@ def baselevel_index(series: Series, normalize: bool = True, period="30D") -> flo
     Adapted analogously to its application in streamflow. Here, a baselevel time
     series is separated from a X-day minimum head in a moving window. BLI
     equals the total sum of heads of original time series divided by the total sum of
-    heads from the baseflow type of time series. Both these time series are resampled
+    heads from the baselevel time series. Both these time series are resampled to daily 
+    heads by interpolation for consistency.
 
     """
 
@@ -1464,7 +1438,7 @@ def baselevel_stability(series: Series, normalize: bool = True, period="30D") ->
     normalize: bool, optional
         normalize the time series to values between zero and one.
     period: str, optional
-        Period to resample the time series to in days (e.g., '10D' or '90D'). Default
+        Period to resample the time series to, in days (e.g., '10D' or '90D'). Default
         is 30 days.
 
     Returns
