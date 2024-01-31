@@ -953,9 +953,10 @@ def magnitude(series: Series) -> float:
 
     Notes
     -----
-    Difference between the minimum and maximum heads, divided by the minimum head.
+    Difference between the minimum and maximum heads, divided by the minimum head:
 
-      ..math:: (h_max - h_min ) / h_min
+    ..math::
+        (h_max - h_min ) / h_min
 
     The higher the magnitude, the more variable the head is, and vice versa.
 
@@ -1094,9 +1095,10 @@ def bimodality_coefficient(series: Series, normalize: bool = True) -> float:
     Notes
     -----
     Squared product moment skewness (s) plus one, divided by product moment kurtosis
-    (k).
+    (k):
 
-    ..math:: b = (s^2 + 1 ) / k
+    ..math::
+        b = (s^2 + 1 ) / k
 
     Adapted from the R 'modes' package. The higher the bimodality coefficient, the more
     bimodal the head distribution is, and vice versa.
@@ -1244,7 +1246,8 @@ def recession_constant(
     declines, and vice versa. The following function is fitted to the binned data
     (similar to the Exponential response function in Pastas):
 
-    ..math:: h(t) = - h_0 * (1 - exp(-t / c))
+    ..math::
+        h(t) = - h_0 * (1 - exp(-t / c))
 
     where h(t) is the head at time t, h_0 is the final head as t goes to infinity, and
     c is the recession constant.
@@ -1315,7 +1318,8 @@ def recovery_constant(
     recovers, and vice versa. The following function is fitted to the binned data
     (similar to the Exponential response function in Pastas):
 
-    ..math:: h(t) = h_0 * (1 - exp(-t / c))
+    ..math::
+        h(t) = h_0 * (1 - exp(-t / c))
 
     where h(t) is the head at time t, h_0 is the final head as t goes to infinity, and
     c is the recovery constant.
@@ -1532,7 +1536,7 @@ def baselevel_index(series: Series, normalize: bool = True, period="30D") -> flo
     Returns
     -------
     float: 
-    Base level index.
+        Base level index.
 
     Notes
     -----
@@ -1564,7 +1568,7 @@ def baselevel_stability(series: Series, normalize: bool = True, period="30D") ->
     Returns
     -------
     float: 
-    Base level stability.
+        Base level stability.
 
     Notes
     -----
