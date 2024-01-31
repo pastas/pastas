@@ -204,7 +204,7 @@ def cv_date_min(series: Series) -> float:
     are multiple dates with the same minimum head, the first date is chosen. The higher
     the coefficient of variation, the more variable the date of the annual minimum head
     is, and vice versa.
-    
+
     """
     cv = _cv_date_min_max(series, stat="min")
     return cv
@@ -248,7 +248,7 @@ def parde_seasonality(series: Series, normalize: bool = True) -> float:
 
     Returns
     -------
-    float: 
+    float:
         Parde seasonality.
 
     Notes
@@ -267,41 +267,41 @@ def parde_seasonality(series: Series, normalize: bool = True) -> float:
 def _parde_coefficients(series: Series, normalize: bool = True) -> Series:
     """Parde coefficients for each month :cite:t:`parde_fleuves_1933`.
 
-        Parameters
-        ----------
-        series: pandas.Series
-            Pandas Series with DatetimeIndex and head values.
-        normalize: bool, optional
-            normalize the time series to values between zero and one.
+    Parameters
+    ----------
+    series: pandas.Series
+        Pandas Series with DatetimeIndex and head values.
+    normalize: bool, optional
+        normalize the time series to values between zero and one.
 
-        Returns
-        -------
-        coefficients: pandas.Series
-            Parde coefficients for each month.
+    Returns
+    -------
+    coefficients: pandas.Series
+        Parde coefficients for each month.
 
-        Notes
-        -----
-        Pardé seasonality is the difference between the maximum and minimum Pardé
-        coefficient. A Pardé series consists of 12 Pardé coefficients, corresponding to
-        12 months. Pardé coefficient for, for example, January is its long-term monthly
-        mean head divided by the overall mean head.
+    Notes
+    -----
+    Pardé seasonality is the difference between the maximum and minimum Pardé
+    coefficient. A Pardé series consists of 12 Pardé coefficients, corresponding to
+    12 months. Pardé coefficient for, for example, January is its long-term monthly
+    mean head divided by the overall mean head.
 
-        Examples
-        --------
-        >>> import pandas as pd
-        >>> from pastas.stats.signatures import parde_coefficients
-        >>> series = pd.Series([1, 2, 3, 4, 5, 6],
-                            index=pd.date_range(start='2022-01-01', periods=6, freq='M'))
-        >>> coefficients = parde_coefficients(series)
-        >>> print(coefficients)
-        month
-        1    0.0
-        2    0.4
-        3    0.8
-        4    1.2
-        5    1.6
-        6    2.0
-        dtype: float64
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from pastas.stats.signatures import parde_coefficients
+    >>> series = pd.Series([1, 2, 3, 4, 5, 6],
+                        index=pd.date_range(start='2022-01-01', periods=6, freq='M'))
+    >>> coefficients = parde_coefficients(series)
+    >>> print(coefficients)
+    month
+    1    0.0
+    2    0.4
+    3    0.8
+    4    1.2
+    5    1.6
+    6    2.0
+    dtype: float64
 
     """
     if normalize:
@@ -810,7 +810,7 @@ def rise_rate(
     rolling_window: str, optional
         Rolling window to use for smoothing the time series. Default is 7 days. Set to
         None to disable. See the pandas documentation for more information.
-    
+
     Returns
     -------
     float:
@@ -992,7 +992,7 @@ def reversals_avg(series: Series) -> float:
     # Check if the time step is approximately daily
     if not (dt > 0.9).all() & (dt < 1.1).all():
         msg = (
-            "The time step is not approximately daily (>10\% of time steps are" 
+            "The time step is not approximately daily (>10% of time steps are"
             "non-daily). This may lead to incorrect results."
         )
         logger.warning(msg)
@@ -1089,7 +1089,7 @@ def bimodality_coefficient(series: Series, normalize: bool = True) -> float:
 
     Returns
     -------
-    float: 
+    float:
         Bimodality coefficient.
 
     Notes
@@ -1235,7 +1235,7 @@ def recession_constant(
 
     Returns
     -------
-    float: 
+    float:
         Recession constant in days.
 
     Notes
@@ -1308,7 +1308,7 @@ def recovery_constant(
 
     Returns
     -------
-    float: 
+    float:
         Recovery constant.
 
     Notes
@@ -1535,7 +1535,7 @@ def baselevel_index(series: Series, normalize: bool = True, period="30D") -> flo
 
     Returns
     -------
-    float: 
+    float:
         Base level index.
 
     Notes
@@ -1567,7 +1567,7 @@ def baselevel_stability(series: Series, normalize: bool = True, period="30D") ->
 
     Returns
     -------
-    float: 
+    float:
         Base level stability.
 
     Notes
