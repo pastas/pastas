@@ -109,6 +109,15 @@ def cv_period_mean(series: Series, normalize: bool = False, freq: str = "M") -> 
     more variable the mean monthly head is throughout the year, and vice versa. The
     coefficient of variation is the standard deviation divided by the mean.
 
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from pastas.stats.signatures import cv_period_mean
+    >>> series = pd.Series([1, 2, 3, 4, 5, 6],
+                        index=pd.date_range(start='2022-01-01', periods=6, freq='M'))
+    >>> cv = cv_period_mean(series)
+    >>> print(cv)
+
     """
     if normalize:
         series = _normalize(series)
@@ -132,9 +141,17 @@ def _cv_date_min_max(series: Series, stat: str) -> float:
 
     Returns
     -------
-    float
+    float:
         Circular coefficient of variation of the date of annual minimum or maximum
         head.
+
+    Notes
+    -----
+    Coefficient of variation of the date of annual minimum or maximum head computed
+    using circular statistics as described in :cite:t:`fisher_statistical_1995` (page
+    32). If there are multiple dates with the same minimum or maximum head, the first
+    date is chosen. The higher the coefficient of variation, the more variable the date
+    of the annual minimum or maximum head is, and vice versa.
 
     """
     if stat == "min":
@@ -187,7 +204,7 @@ def cv_date_min(series: Series) -> float:
     are multiple dates with the same minimum head, the first date is chosen. The higher
     the coefficient of variation, the more variable the date of the annual minimum head
     is, and vice versa.
-
+    
     """
     cv = _cv_date_min_max(series, stat="min")
     return cv
@@ -231,7 +248,8 @@ def parde_seasonality(series: Series, normalize: bool = True) -> float:
 
     Returns
     -------
-    float: Parde seasonality.
+    float: 
+        Parde seasonality.
 
     Notes
     -----
@@ -242,48 +260,48 @@ def parde_seasonality(series: Series, normalize: bool = True) -> float:
     more seasonal the head is, and vice versa.
 
     """
-    coefficients = parde_coefficients(series=series, normalize=normalize)
+    coefficients = _parde_coefficients(series=series, normalize=normalize)
     return coefficients.max() - coefficients.min()
 
 
-def parde_coefficients(series: Series, normalize: bool = True) -> Series:
+def _parde_coefficients(series: Series, normalize: bool = True) -> Series:
     """Parde coefficients for each month :cite:t:`parde_fleuves_1933`.
 
-    Parameters
-    ----------
-    series: pandas.Series
-        Pandas Series with DatetimeIndex and head values.
-    normalize: bool, optional
-        normalize the time series to values between zero and one.
+        Parameters
+        ----------
+        series: pandas.Series
+            Pandas Series with DatetimeIndex and head values.
+        normalize: bool, optional
+            normalize the time series to values between zero and one.
 
-    Returns
-    -------
-    coefficients: pandas.Series
-        Parde coefficients for each month.
+        Returns
+        -------
+        coefficients: pandas.Series
+            Parde coefficients for each month.
 
-    Notes
-    -----
-    Pardé seasonality is the difference between the maximum and minimum Pardé
-    coefficient. A Pardé series consists of 12 Pardé coefficients, corresponding to
-    12 months. Pardé coefficient for, for example, January is its long-term monthly
-    mean head divided by the overall mean head.
+        Notes
+        -----
+        Pardé seasonality is the difference between the maximum and minimum Pardé
+        coefficient. A Pardé series consists of 12 Pardé coefficients, corresponding to
+        12 months. Pardé coefficient for, for example, January is its long-term monthly
+        mean head divided by the overall mean head.
 
-    Examples
-    --------
-    >>> import pandas as pd
-    >>> from pastas.stats.signatures import parde_coefficients
-    >>> series = pd.Series([1, 2, 3, 4, 5, 6],
-                        index=pd.date_range(start='2022-01-01', periods=6, freq='M'))
-    >>> coefficients = parde_coefficients(series)
-    >>> print(coefficients)
-    month
-    1    0.333333
-    2    0.666667
-    3    1.000000
-    4    1.333333
-    5    1.666667
-    6    2.000000
-    dtype: float64
+        Examples
+        --------
+        >>> import pandas as pd
+        >>> from pastas.stats.signatures import parde_coefficients
+        >>> series = pd.Series([1, 2, 3, 4, 5, 6],
+                            index=pd.date_range(start='2022-01-01', periods=6, freq='M'))
+        >>> coefficients = parde_coefficients(series)
+        >>> print(coefficients)
+        month
+        1    0.0
+        2    0.4
+        3    0.8
+        4    1.2
+        5    1.6
+        6    2.0
+        dtype: float64
 
     """
     if normalize:
@@ -295,7 +313,7 @@ def parde_coefficients(series: Series, normalize: bool = True) -> Series:
 
 
 def _martens(series: Series, normalize: bool = False) -> Tuple[Series, Series]:
-    """Function for the average seasonal fluctuation and inter annual fluctuation.
+    """Function for the average seasonal fluctuation and interannual fluctuation.
 
     Parameters
     ----------
@@ -307,9 +325,9 @@ def _martens(series: Series, normalize: bool = False) -> Tuple[Series, Series]:
     Returns
     -------
     hl: pandas.Series
-        Lowest heads in a year.
+        Average of the three lowest heads in a year.
     hw: pandas.Series
-        Largest heads in a year.
+        Average of the three largest heads in a year.
 
     Notes
     -----
@@ -331,7 +349,7 @@ def _martens(series: Series, normalize: bool = False) -> Tuple[Series, Series]:
 
 
 def avg_seasonal_fluctuation(series: Series, normalize: bool = False) -> float:
-    """Classification according to :cite:t:`martens_groundwater_2013`.
+    """Average seasonal fluctuation after :cite:t:`martens_groundwater_2013`.
 
     Parameters
     ----------
@@ -354,10 +372,12 @@ def avg_seasonal_fluctuation(series: Series, normalize: bool = False) -> float:
 
         s = MHW - MLW
 
-    Warning: In this formulating the water table is referenced to a certain datum and
-    positive, not as depth below the surface!
-
     A higher value of s indicates a more seasonal head, and vice versa.
+
+    Warning
+    -------
+    In this formulating the water table is referenced to a certain datum and
+    positive, not as depth below the surface!
 
     """
 
@@ -377,22 +397,24 @@ def interannual_variation(series: Series, normalize: bool = False) -> float:
 
     Returns
     -------
-    float
-        Interannual variation (y).
+    float:
+        Interannual variation (s).
 
     Notes
     -----
     The average between the range in annually averaged 3 highest monthly heads and the
     range in annually averaged 3 lowest monthly heads.
 
-    Inter-yearly variation of high and low water table (y):
+    Inter-yearly variation of high and low water table (s):
 
-        y = ((max_HW - min_HW) + (max_LW - min_LW)) / 2
+        s = ((max_HW - min_HW) + (max_LW - min_LW)) / 2
 
-    Warning: In this formulating the water table is referenced to a certain datum and
+    A higher value of s indicates a more variable head, and vice versa.
+
+    Warning
+    -------
+    In this formulating the water table is referenced to a certain datum and
     positive, not as depth below the surface!
-
-    A higher value of y indicates a more variable head, and vice versa.
 
     """
 
@@ -400,7 +422,7 @@ def interannual_variation(series: Series, normalize: bool = False) -> float:
     return ((hw.max() - hw.min()) + (hl.max() - hl.min())) / 2
 
 
-def colwell_components(
+def _colwell_components(
     series: Series,
     bins: int = 11,
     freq: str = "W",
@@ -514,7 +536,7 @@ def colwell_constancy(
     the absolute number of possible states.
 
     """
-    return colwell_components(
+    return _colwell_components(
         series=series, bins=bins, freq=freq, method=method, normalize=normalize
     )[1]
 
@@ -554,13 +576,13 @@ def colwell_contingency(
     according to definition in information theory, see reference for details.
 
     """
-    return colwell_components(
+    return _colwell_components(
         series=series, bins=bins, freq=freq, method=method, normalize=normalize
     )[2]
 
 
 def low_pulse_count(
-    series: Series, quantile: float = 0.2, rolling_window="7D"
+    series: Series, quantile: float = 0.2, rolling_window: Union[str, None] = "7D"
 ) -> float:
     """Average number of times the series exceeds a certain threshold per year.
 
@@ -608,7 +630,7 @@ def low_pulse_count(
 
 
 def high_pulse_count(
-    series: Series, quantile: float = 0.8, rolling_window="7D"
+    series: Series, quantile: float = 0.8, rolling_window: Union[str, None] = "7D"
 ) -> float:
     """Average number of times the series exceeds a certain threshold per year.
 
@@ -652,7 +674,7 @@ def high_pulse_count(
 
 
 def low_pulse_duration(
-    series: Series, quantile: float = 0.2, rolling_window="7D"
+    series: Series, quantile: float = 0.2, rolling_window: Union[str, None] = "7D"
 ) -> float:
     """Average duration of pulses where the head is below a certain threshold.
 
@@ -698,7 +720,7 @@ def low_pulse_duration(
 
 
 def high_pulse_duration(
-    series: Series, quantile: float = 0.8, rolling_window="7D"
+    series: Series, quantile: float = 0.8, rolling_window: Union[str, None] = "7D"
 ) -> float:
     """Average duration of pulses where the head exceeds a certain threshold.
 
@@ -774,7 +796,9 @@ def _get_differences(series: Series, normalize: bool = False) -> Series:
     return differences
 
 
-def rise_rate(series: Series, normalize: bool = False) -> float:
+def rise_rate(
+    series: Series, normalize: bool = False, rolling_window: Union[str, None] = "7D"
+) -> float:
     """Mean of positive head changes from one day to the next.
 
     Parameters
@@ -783,7 +807,10 @@ def rise_rate(series: Series, normalize: bool = False) -> float:
         Pandas Series with DatetimeIndex and head values.
     normalize: bool, optional
         normalize the time series to values between zero and one.
-
+    rolling_window: str, optional
+        Rolling window to use for smoothing the time series. Default is 7 days. Set to
+        None to disable. See the pandas documentation for more information.
+    
     Returns
     -------
     float:
@@ -795,13 +822,18 @@ def rise_rate(series: Series, normalize: bool = False) -> float:
     Mean rate of positive changes in head from one day to the next.
 
     """
+    if rolling_window is not None:
+        series = series.rolling(rolling_window).mean()
+
     differences = _get_differences(series, normalize=normalize)
     rises = differences[differences > 0]
 
     return rises.mean()
 
 
-def fall_rate(series: Series, normalize: bool = False) -> float:
+def fall_rate(
+    series: Series, normalize: bool = False, rolling_window: Union[str, None] = "7D"
+) -> float:
     """Mean negative head changes from one day to the next.
 
     Parameters
@@ -810,6 +842,9 @@ def fall_rate(series: Series, normalize: bool = False) -> float:
         Pandas Series with DatetimeIndex and head values.
     normalize: bool, optional
         normalize the time series to values between zero and one.
+    rolling_window: str, optional
+        Rolling window to use for smoothing the time series. Default is 7 days. Set to
+        None to disable. See the pandas documentation for more information.
 
     Returns
     -------
@@ -823,13 +858,18 @@ def fall_rate(series: Series, normalize: bool = False) -> float:
     :cite:t:`richter_method_1996`.
 
     """
+    if rolling_window is not None:
+        series = series.rolling(rolling_window).mean()
+
     differences = _get_differences(series, normalize=normalize)
     falls = differences.loc[differences < 0]
 
     return falls.mean()
 
 
-def cv_rise_rate(series: Series, normalize: bool = True) -> float:
+def cv_rise_rate(
+    series: Series, normalize: bool = True, rolling_window: Union[str, None] = "7D"
+) -> float:
     """Coefficient of Variation in rise rate.
 
     Parameters
@@ -838,6 +878,9 @@ def cv_rise_rate(series: Series, normalize: bool = True) -> float:
         Pandas Series with DatetimeIndex and head values.
     normalize: bool, optional
         normalize the time series to values between zero and one.
+    rolling_window: str, optional
+        Rolling window to use for smoothing the time series. Default is 7 days. Set to
+        None to disable. See the pandas documentation for more information.
 
     Returns
     -------
@@ -850,13 +893,18 @@ def cv_rise_rate(series: Series, normalize: bool = True) -> float:
     coefficient of variation, the more variable the rise rate is, and vice versa.
 
     """
+    if rolling_window is not None:
+        series = series.rolling(rolling_window).mean()
+
     differences = _get_differences(series, normalize=normalize)
     rises = differences[differences > 0]
 
     return rises.std(ddof=1) / rises.mean()
 
 
-def cv_fall_rate(series: Series, normalize: bool = False) -> float:
+def cv_fall_rate(
+    series: Series, normalize: bool = False, rolling_window: Union[str, None] = "7D"
+) -> float:
     """Coefficient of Variation in fall rate.
 
     Parameters
@@ -865,10 +913,14 @@ def cv_fall_rate(series: Series, normalize: bool = False) -> float:
         Pandas Series with DatetimeIndex and head values.
     normalize: bool, optional
         normalize the time series to values between zero and one.
+    rolling_window: str, optional
+        Rolling window to use for smoothing the time series. Default is 7 days. Set to
+        None to disable. See the pandas documentation for more information.
 
     Returns
     -------
-    float
+    float:
+        Coefficient of Variation in fall rate.
 
     Notes
     -----
@@ -876,6 +928,9 @@ def cv_fall_rate(series: Series, normalize: bool = False) -> float:
     coefficient of variation, the more variable the fall rate is, and vice versa.
 
     """
+    if rolling_window is not None:
+        series = series.rolling(rolling_window).mean()
+
     differences = _get_differences(series, normalize=normalize)
     falls = differences[differences < 0]
 
@@ -919,7 +974,8 @@ def reversals_avg(series: Series) -> float:
 
     Returns
     -------
-    float
+    float:
+        Average number of rises and falls in daily head per year.
 
     Notes
     -----
@@ -935,8 +991,8 @@ def reversals_avg(series: Series) -> float:
     # Check if the time step is approximately daily
     if not (dt > 0.9).all() & (dt < 1.1).all():
         msg = (
-            "The time step is not approximately daily. "
-            "This may lead to incorrect results."
+            "The time step is not approximately daily (>10\% of time steps are" 
+            "non-daily). This may lead to incorrect results."
         )
         logger.warning(msg)
         return nan
@@ -1032,7 +1088,8 @@ def bimodality_coefficient(series: Series, normalize: bool = True) -> float:
 
     Returns
     -------
-    float: Bimodality coefficient.
+    float: 
+        Bimodality coefficient.
 
     Notes
     -----
@@ -1095,7 +1152,7 @@ def _get_events_binned(
 
     Returns
     -------
-    Series
+    Series:
         Binned events.
 
     """
@@ -1176,7 +1233,8 @@ def recession_constant(
 
     Returns
     -------
-    float: Recession constant in days.
+    float: 
+        Recession constant in days.
 
     Notes
     -----
@@ -1247,7 +1305,8 @@ def recovery_constant(
 
     Returns
     -------
-    float: Recovery constant.
+    float: 
+        Recovery constant.
 
     Notes
     -----
@@ -1386,7 +1445,9 @@ def richards_pathlength(series: Series, normalize: bool = True) -> float:
 
     Returns
     -------
-    float
+    float:
+        The path length of the time series, standardized by time series length and
+        median.
 
     Notes
     -----
@@ -1425,6 +1486,7 @@ def _baselevel(
         Pandas Series of the original for
     ht: pandas.Series
         Pandas Series for the base head
+
     """
     if normalize:
         series = _normalize(series)
@@ -1469,7 +1531,8 @@ def baselevel_index(series: Series, normalize: bool = True, period="30D") -> flo
 
     Returns
     -------
-    float: Base level index.
+    float: 
+    Base level index.
 
     Notes
     -----
@@ -1500,7 +1563,8 @@ def baselevel_stability(series: Series, normalize: bool = True, period="30D") ->
 
     Returns
     -------
-    float: Base level stability.
+    float: 
+    Base level stability.
 
     Notes
     -----
