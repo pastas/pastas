@@ -10,6 +10,7 @@ from numpy import (
     cos,
     diff,
     exp,
+    isclose,
     isnan,
     linspace,
     log,
@@ -54,7 +55,6 @@ __all__ = [
     "duration_curve_slope",
     "duration_curve_ratio",
     "richards_pathlength",
-    "richards_baker_index",
     "baselevel_index",
     "baselevel_stability",
     "magnitude",
@@ -119,8 +119,8 @@ def cv_period_mean(series: Series, normalize: bool = False, freq: str = "M") -> 
 
 
 def _cv_date_min_max(series: Series, stat: str) -> float:
-    """Method to compute the circular coefficient of variation of the date of annual
-    minimum or maximum head.
+    """Method to compute the coefficient of variation of the date of annual
+    minimum or maximum head using circular statistics.
 
     Parameters
     ----------
@@ -267,6 +267,23 @@ def parde_coefficients(series: Series, normalize: bool = True) -> Series:
     coefficient. A Pardé series consists of 12 Pardé coefficients, corresponding to
     12 months. Pardé coefficient for, for example, January is its long-term monthly
     mean head divided by the overall mean head.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from pastas.stats.signatures import parde_coefficients
+    >>> series = pd.Series([1, 2, 3, 4, 5, 6],
+                        index=pd.date_range(start='2022-01-01', periods=6, freq='M'))
+    >>> coefficients = parde_coefficients(series)
+    >>> print(coefficients)
+    month
+    1    0.333333
+    2    0.666667
+    3    1.000000
+    4    1.333333
+    5    1.666667
+    6    2.000000
+    dtype: float64
 
     """
     if normalize:
@@ -1159,11 +1176,20 @@ def recession_constant(
 
     Returns
     -------
-    float: Recession constant.
+    float: Recession constant in days.
 
     Notes
     -----
-    Recession constant adapted after :cite:t:`kirchner_catchments_2009`, which is the decay constant of the exponential model fitted to the percentile-wise binned means.
+    Recession constant adapted after :cite:t:`kirchner_catchments_2009`, which is the
+    decay constant of the exponential model fitted to the percentile-wise binned means
+    of the recession segments. The higher the recession constant, the slower the head
+    declines, and vice versa. The following function is fitted to the binned data
+    (similar to the Exponential response function in Pastas):
+
+    ..math:: h(t) = - h_0 * (1 - exp(-t / c))
+
+    where h(t) is the head at time t, h_0 is the final head as t goes to infinity, and
+    c is the recession constant.
 
     """
     binned = _get_events_binned(
@@ -1184,7 +1210,17 @@ def recession_constant(
     popt, _ = curve_fit(
         f, binned.index, binned.values, p0=[1, 100], bounds=(0, [100, 1e3])
     )
-    return popt[1]
+
+    # Return nan and raise warning if the decay constant is close to the boundary
+    if isclose(popt[1], 0.0) or isclose(popt[1], 1e3):
+        msg = (
+            "The estimated recession constant ({:.2f}) is close to the boundary. "
+            "This may lead to incorrect results.".format(popt[1])
+        )
+        logger.warning(msg)
+        return nan
+    else:
+        return popt[1]
 
 
 def recovery_constant(
@@ -1215,8 +1251,15 @@ def recovery_constant(
 
     Notes
     -----
-    Slope of the linear model fitted to percentile-wise binned means in a log-log
-    plot of positive head versus positive head one time step ahead.
+    Time constant of the exponential function fitted to percentile-wise binned means
+    of the recovery segments. The higher the recovery constant, the slower the head
+    recovers, and vice versa. The following function is fitted to the binned data
+    (similar to the Exponential response function in Pastas):
+
+    ..math:: h(t) = h_0 * (1 - exp(-t / c))
+
+    where h(t) is the head at time t, h_0 is the final head as t goes to infinity, and
+    c is the recovery constant.
 
     """
     binned = _get_events_binned(
@@ -1231,9 +1274,22 @@ def recovery_constant(
     if binned.empty:
         return nan
 
-    # Fit the linear model to the binned data and return the slope
-    fit = linregress(log(binned.index), log(binned.values))
-    return fit.slope
+    # Fit an exponential model to the binned data and return the recovery constant
+    f = lambda t, *p: p[0] * (1 - exp(-t / p[1]))
+    popt, _ = curve_fit(
+        f, binned.index, binned.values, p0=[1, 100], bounds=(0, [100, 1e3])
+    )
+
+    # Return nan and raise warning if the recovery constant is close to the boundary
+    if isclose(popt[1], 0.0) or isclose(popt[1], 1e3):
+        msg = (
+            "The estimated recovery constant ({:.2f}) is close to the boundary. "
+            "This may lead to incorrect results.".format(popt[1])
+        )
+        logger.warning(msg)
+        return nan
+    else:
+        return popt[1]
 
 
 def duration_curve_slope(
@@ -1347,6 +1403,7 @@ def richards_pathlength(series: Series, normalize: bool = True) -> float:
     # sum(dt) is more fair with irregular time series
     return sum(sqrt(dh**2 + dt**2)) / (sum(dt) * series.median())
 
+
 def _baselevel(
     series: Series, normalize: bool = True, period="30D"
 ) -> Tuple[Series, Series]:
@@ -1419,7 +1476,7 @@ def baselevel_index(series: Series, normalize: bool = True, period="30D") -> flo
     Adapted analogously to its application in streamflow. Here, a baselevel time
     series is separated from a X-day minimum head in a moving window. BLI
     equals the total sum of heads of original time series divided by the total sum of
-    heads from the baselevel time series. Both these time series are resampled to daily 
+    heads from the baselevel time series. Both these time series are resampled to daily
     heads by interpolation for consistency.
 
     """
