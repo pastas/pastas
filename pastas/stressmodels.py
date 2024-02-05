@@ -1620,6 +1620,7 @@ class TarsoModel(RechargeModel):
         self.dmin = dmin
         self.dmax = dmax
         super().__init__(prec=prec, evap=evap, rfunc=rfunc, **kwargs)
+        self.nsplit = 1
 
     def set_init_parameters(self) -> None:
         # parameters for the first drainage level

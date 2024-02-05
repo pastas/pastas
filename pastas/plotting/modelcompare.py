@@ -11,6 +11,7 @@ import numpy as np
 from pandas import DataFrame, concat
 
 from pastas.plotting.plotutil import _table_formatter_params, share_xaxes, share_yaxes
+from pastas.rfunc import HantushWellModel
 from pastas.stats.core import acf
 from pastas.typing import Axes, Model
 
@@ -575,7 +576,7 @@ class CompareModels:
                     if response == "step":
                         kwargs = {}
                         if ml.stressmodels[smn].rfunc is not None:
-                            if ml.stressmodels[smn].rfunc._name == "HantushWellModel":
+                            if isinstance(ml.stressmodels[smn].rfunc, HantushWellModel):
                                 kwargs = {"warn": False}
                         step = ml.get_step_response(smn, add_0=True, **kwargs)
                         if step is None:
@@ -596,7 +597,7 @@ class CompareModels:
                     elif response == "block":
                         kwargs = {}
                         if ml.stressmodels[smn].rfunc is not None:
-                            if ml.stressmodels[smn].rfunc._name == "HantushWellModel":
+                            if isinstance(ml.stressmodels[smn].rfunc, HantushWellModel):
                                 kwargs = {"warn": False}
                         block = ml.get_block_response(smn, **kwargs)
                         if block is None:
