@@ -354,9 +354,9 @@ class StressModel(StressModelBase):
             tmax=stress.series.index.max(),
             rfunc=rfunc,
             up=up,
-            gain_scale_factor=stress.series.std()
-            if gain_scale_factor is None
-            else gain_scale_factor,
+            gain_scale_factor=(
+                stress.series.std() if gain_scale_factor is None else gain_scale_factor
+            ),
         )
 
         self.gain_scale_factor = gain_scale_factor

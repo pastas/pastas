@@ -1,5 +1,6 @@
 """This module contains tools for visually comparing multiple models.
 """
+
 from itertools import combinations
 from logging import getLogger
 from typing import List, Optional, Tuple
