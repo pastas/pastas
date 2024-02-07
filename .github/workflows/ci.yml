@@ -38,7 +38,7 @@ jobs:
           - name: Test suite with py312-ubuntu
             python: "3.12"
             toxenv: py312
-            experimental: true
+            experimental: false
           - name: Formatting with black + isort
             python: "3.9"
             toxenv: format
@@ -63,7 +63,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
           check-latest: true
