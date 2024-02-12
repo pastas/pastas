@@ -22,7 +22,7 @@ requires-python = ">= 3.8"
 dependencies = [
     "numpy >= 1.17",
     "matplotlib >= 3.1",
-    "pandas >= 1.1, < 2.1",
+    "pandas >= 1.1",
     "scipy >= 1.8",
     "numba >= 0.51",
 ]
