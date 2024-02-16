@@ -1794,11 +1794,11 @@ class Model:
             "Interp.": "Yes" if self.interpolate_simulation else "No",
         }
 
-        parameters = self.parameters.loc[:, ["optimal", "stderr", "initial", "vary"]]
-        stderr = parameters.loc[:, "stderr"] / parameters.loc[:, "optimal"]
-        parameters.loc[:, "stderr"] = "±" + stderr.abs().apply(
+        parameters = self.parameters.loc[:, ["optimal", "initial", "vary"]].copy()
+        stderr = self.parameters.loc[:, "stderr"] / self.parameters.loc[:, "optimal"]
+        parameters.loc[:, "stderr"] = stderr.abs().apply(
             _table_formatter_stderr, na_rep="nan"
-        ).astype(str)
+        )
 
         # Determine the width of the fit_report based on the parameters
         width = len(parameters.to_string().split("\n")[1])

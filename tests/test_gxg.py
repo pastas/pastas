@@ -43,7 +43,7 @@ class TestGXG(object):
             [x.month + x.day for x in idx],
             index=idx,
         )
-        v = ps.stats.glg(s, year_offset="a")
+        v = ps.stats.glg(s, year_offset="YE")
         assert v == 16.0
 
     def test_glg_fill_limit(self) -> None:

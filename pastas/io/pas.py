@@ -53,7 +53,7 @@ def pastas_hook(obj: dict):
             # Necessary to maintain order when using the JSON format!
             value = json.loads(value, object_pairs_hook=OrderedDict)
             param = DataFrame(data=value, columns=value.keys()).T
-            obj[key] = param.apply(to_numeric, errors="ignore")
+            obj[key] = param.apply(to_numeric).infer_objects()
         else:
             try:
                 obj[key] = json.loads(value, object_hook=pastas_hook)

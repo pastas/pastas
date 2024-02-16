@@ -117,7 +117,7 @@ def ghg(
     output: str = "mean",
     min_n_meas: int = 16,
     min_n_years: int = 8,
-    year_offset: str = "YE-mar",
+    year_offset: str = "YE-MAR",
 ) -> Union[Series, float]:
     """Calculate the 'Gemiddelde Hoogste Grondwaterstand' (Average High
     Groundwater Level)
@@ -205,7 +205,7 @@ def glg(
     output: str = "mean",
     min_n_meas: int = 16,
     min_n_years: int = 8,
-    year_offset: str = "YE-mar",
+    year_offset: str = "YE-MAR",
 ) -> Union[Series, float]:
     """Calculate the 'Gemiddelde Laagste Grondwaterstand' (Average Low GW Level).
 
@@ -367,7 +367,7 @@ def gg(
     output: str = "mean",
     min_n_meas: int = 16,
     min_n_years: int = 8,
-    year_offset: str = "YE-mar",
+    year_offset: str = "YE-MAR",
 ) -> Union[Series, float]:
     """Calculate the 'Gemiddelde Grondwaterstand' (Average Groundwater Level).
 

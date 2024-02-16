@@ -23,7 +23,7 @@ from numpy import (
     pi,
     sqrt,
 )
-from pandas import DataFrame, Series, Timedelta, TimedeltaIndex
+from pandas import DataFrame, Series, Timedelta, to_timedelta
 from scipy.stats import norm
 
 from pastas.typing import ArrayLike
@@ -195,8 +195,9 @@ def ccf(
     result = DataFrame(
         data={"ccf": c, "conf": conf, "n": b},
         dtype=float,
-        index=TimedeltaIndex(lags, unit="D", name="Lags"),
+        index=to_timedelta(lags, unit="D"),
     )
+    result.index.name = "Lags"
 
     result = result.where(result.n > min_obs).dropna()
 
