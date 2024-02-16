@@ -1002,7 +1002,7 @@ def reversals_avg(series: Series) -> float:
         reversals = (
             (series_diff[series_diff != 0.0] > 0).astype(int).diff().replace(-1, 1)
         )
-        return reversals.resample("A").sum().mean()
+        return reversals.resample("YE").sum().mean()
 
 
 def reversals_cv(series: Series) -> float:
@@ -1042,7 +1042,7 @@ def reversals_cv(series: Series) -> float:
         reversals = (
             (series_diff[series_diff != 0.0] > 0).astype(int).diff().replace(-1, 1)
         )
-        annual_sum = reversals.resample("A").sum()
+        annual_sum = reversals.resample("YE").sum()
         return annual_sum.std(ddof=1) / annual_sum.mean()
 
 
@@ -1074,7 +1074,7 @@ def mean_annual_maximum(series: Series, normalize: bool = True) -> float:
     if normalize:
         series = _normalize(series)
 
-    return series.resample("A").max().mean()
+    return series.resample("YE").max().mean()
 
 
 def bimodality_coefficient(series: Series, normalize: bool = True) -> float:
@@ -1582,7 +1582,7 @@ def baselevel_stability(series: Series, normalize: bool = True, period="30D") ->
 
     _, ht = _baselevel(series, normalize=normalize, period=period)
 
-    return ht.resample("A").mean().max() - ht.resample("A").mean().min()
+    return ht.resample("YE").mean().max() - ht.resample("YE").mean().min()
 
 
 def autocorr_time(series: Series, cutoff: float = 0.8, **kwargs) -> float:
@@ -1746,7 +1746,7 @@ def summary(
     --------
     >>> idx = date_range("2000", "2010")
     >>> data = np.random.rand(len(idx), 3)
-    >>> df = DataFrame(index=idx, data=data, columns=["A", "B", "C"], dtype=float)
+    >>> df = DataFrame(index=idx, data=data, columns=["YE", "B", "C"], dtype=float)
     >>> ps.stats.signatures.summary(df)
 
     """
