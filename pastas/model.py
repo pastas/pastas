@@ -406,9 +406,7 @@ class Model:
         if p is None:
             p = self.get_parameters()
 
-        sim = Series(
-            data=np.zeros(sim_index.size, dtype=float), index=sim_index, fastpath=True
-        )
+        sim = Series(data=np.zeros(sim_index.size, dtype=float), index=sim_index)
 
         istart = 0  # Track parameters index to pass to stressmodel object
         for sm in self.stressmodels.values():
