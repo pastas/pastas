@@ -54,7 +54,7 @@ class TestGXG(object):
             fill_method="linear",
             limit=15,
             output="yearly",
-            year_offset="a",
+            year_offset="YE",
             min_n_meas=1,
         )
         assert v.notna().sum() == 2
@@ -67,7 +67,7 @@ class TestGXG(object):
             fill_method="linear",
             limit=None,
             output="yearly",
-            year_offset="a",
+            year_offset="YE",
             min_n_meas=1,
         )
         assert v.notna().sum() == 3
