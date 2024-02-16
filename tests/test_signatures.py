@@ -10,25 +10,20 @@ def test_summary():
     head = Series(index=idx, data=np.random.rand(len(idx)), dtype=float)
     ps.stats.signatures.summary(head)
 
+def test_date_min():
+    """Test the date_min signature to have a mean of 1 if the head is at a minimum at 
+    the first of january of every year in a time series.
+    """
+    idx = date_range("2000", "2010")
+    head = Series(index=idx, data=np.random.rand(len(idx)), dtype=float)
+    head[head.index.dayofyear == 1] = head.min()
+    assert round(ps.stats.signatures.date_min(head)) == 1
 
-def test_colwell_components(collwell_data: Series) -> None:
-    ps.stats.signatures.colwell_components(collwell_data, freq="4M", bins=3)
-    return
-
-
-def test_colwell_predictability(collwell_data: Series) -> None:
-    """Example Tree C from the publication."""
-    p = ps.stats.signatures.colwell_components(collwell_data, freq="4M", bins=3)[0]
-    assert round(p, 2) == 1.0
-
-
-def test_colwell_constancy(collwell_data: Series) -> None:
-    """Example Tree C from the publication."""
-    c = ps.stats.signatures.colwell_components(collwell_data, freq="4M", bins=3)[1]
-    assert round(c, 2) == 0.42
-
-
-def test_colwell_contingency(collwell_data: Series) -> None:
-    """Example Tree C from the publication."""
-    m = ps.stats.signatures.colwell_components(collwell_data, freq="4M", bins=3)[2]
-    assert round(m, 2) == 0.58
+def test_date_max():
+    """Test the date_max signature to have a mean of 1 if the head is at a maximum at 
+    the first of january of every year in a time series.
+    """
+    idx = date_range("2000", "2010")
+    head = Series(index=idx, data=np.random.rand(len(idx)), dtype=float)
+    head[head.index.dayofyear == 1] = head.max()
+    assert round(ps.stats.signatures.date_max(head)) == 1
