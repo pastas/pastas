@@ -88,7 +88,7 @@ def _get_stress_dt(freq: str) -> float:
     # Get the frequency string and multiplier
     offset = to_offset(freq)
     if hasattr(offset, "delta"):
-        dt = offset.delta / Timedelta(1, "D")
+        dt = Timedelta(offset) / Timedelta(1, "D")
     else:
         num = offset.n
         freq = offset._prefix
@@ -132,7 +132,7 @@ def _get_dt(freq: str) -> float:
         Number of days.
     """
     # Get the frequency string and multiplier
-    dt = to_offset(freq).delta / Timedelta(1, "D")
+    dt = Timedelta(to_offset(freq)) / Timedelta(1, "D")
     return dt
 
 
@@ -335,7 +335,7 @@ def get_equidistant_series_nearest(
     series : pandas.Series
         original (non-equidistant) time series
     freq : str
-        frequency of the new equidistant time series (i.e. "H", "D", "7D", etc.)
+        frequency of the new equidistant time series (i.e. "h", "D", "7D", etc.)
     minimize_data_loss : bool, optional
         if set to True, method will attempt use any unsampled points from original
         time series to fill some remaining NaNs in the new equidistant time series.

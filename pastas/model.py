@@ -1798,7 +1798,7 @@ class Model:
         stderr = parameters.loc[:, "stderr"] / parameters.loc[:, "optimal"]
         parameters.loc[:, "stderr"] = "±" + stderr.abs().apply(
             _table_formatter_stderr, na_rep="nan"
-        )
+        ).astype(str)
 
         # Determine the width of the fit_report based on the parameters
         width = len(parameters.to_string().split("\n")[1])

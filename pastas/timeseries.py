@@ -4,7 +4,7 @@ from logging import getLogger
 from typing import Optional, Union
 
 import pandas as pd
-from pandas import Series
+from pandas import Series, Timedelta
 from pandas.tseries.frequencies import to_offset
 
 from .rcparams import rcParams
@@ -324,7 +324,7 @@ class TimeSeries:
             elif method == "interpolate":
                 series = series.asfreq(freq).interpolate(method="time")
             elif method == "divide":
-                dt = series.index.to_series().diff() / to_offset(freq).delta
+                dt = series.index.to_series().diff() / Timedelta(to_offset(freq))
                 series = series / dt
                 series = series.asfreq(freq, method="bfill")
             elif isinstance(method, float):

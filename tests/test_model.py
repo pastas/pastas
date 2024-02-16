@@ -199,7 +199,7 @@ def test_model_freq_h():
     ht = generate_synthetic_heads(tides, rf_tide, (A_tide, a_tide), dt=1 / 24.0)
 
     # model with hourly timestep
-    ml_h = ps.Model(ht, name="tidal_model", freq="H")
+    ml_h = ps.Model(ht, name="tidal_model", freq="h")
     sm = ps.StressModel(
         tides,
         rfunc=ps.Exponential(),
@@ -209,5 +209,5 @@ def test_model_freq_h():
     ml_h.add_stressmodel(sm)
     ml_h.solve(noise=False, report=False)
 
-    assert ml_h.simulate().index.freq == "H"
+    assert ml_h.simulate().index.freq == "h"
     assert ml_h.stats.rsq() > 0.99999
