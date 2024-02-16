@@ -20,6 +20,7 @@ from pandas import (
     to_numeric,
     to_timedelta,
 )
+from io import StringIO as stringIO
 
 logger = getLogger(__name__)
 
@@ -38,7 +39,7 @@ def pastas_hook(obj: dict):
             obj[key] = val
         elif key == "series":
             try:
-                obj[key] = read_json(value, typ="series", orient="split")
+                obj[key] = read_json(stringIO(value), typ="series", orient="split")
             except:
                 obj[key] = value
             if isinstance(obj[key], Series):

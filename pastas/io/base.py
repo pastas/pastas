@@ -138,7 +138,8 @@ def _load_model(data: dict) -> Model:
     # Add parameters, use update to maintain correct order
     ml.parameters = ml.get_init_parameters(noise=ml.settings["noise"])
     ml.parameters.update(data["parameters"])
-    ml.parameters = ml.parameters.apply(to_numeric)
+    # Convert parameters to numeric
+    # ml.parameters = ml.parameters.apply(to_numeric)
 
     # When initial values changed
     for param, value in ml.parameters.loc[:, "initial"].items():
