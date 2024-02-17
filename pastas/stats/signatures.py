@@ -85,7 +85,7 @@ def _normalize(series: Series) -> Series:
     return series
 
 
-def cv_period_mean(series: Series, normalize: bool = False, freq: str = "M") -> float:
+def cv_period_mean(series: Series, normalize: bool = False, freq: str = "ME") -> float:
     """Coefficient of variation of the mean head over a period (default monthly).
 
     Parameters
@@ -339,7 +339,7 @@ def _martens(series: Series, normalize: bool = False) -> Tuple[Series, Series]:
     if normalize:
         series = _normalize(series)
 
-    s = series.resample("M")
+    s = series.resample("ME")
     s_min = s.min()
     s_max = s.max()
     hl = s_min.groupby(s_min.index.year).nsmallest(3).groupby(level=0).mean()
@@ -439,7 +439,7 @@ def _colwell_components(
     bins: int
         number of bins to determine the states of the groundwater.
     freq: str, optional
-        frequency to resample the series to. Possible options are "D", "W", or "M".
+        frequency to resample the series to. Possible options are "D", "W", or "ME".
     method: str, optional
         Method to use for resampling. Only "mean" is allowed now.
     normalize: bool, optional
@@ -473,7 +473,7 @@ def _colwell_components(
     )
     df = DataFrame(binned, dtype=float)
 
-    if freq == "M":
+    if freq == "ME":
         df["time"] = df.index.isocalendar().month
     elif freq == "W":
         df["time"] = df.index.isocalendar().week

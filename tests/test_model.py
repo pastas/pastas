@@ -20,7 +20,7 @@ def generate_synthetic_heads(input, rfunc, params, const=10.0, cutoff=0.999, dt=
     h = const * np.ones(len(input) + step.size)
 
     for i in range(len(input)):
-        h[i : i + step.size] += input[i] * step
+        h[i : i + step.size] += input.iloc[i] * step
 
     head = Series(
         index=input.index,
@@ -190,7 +190,7 @@ def test_model_freq_h():
     a_tide = 0.15
 
     # sine with period 12 hrs 25 minutes and amplitude 1.5 m
-    tidx = date_range(obs.index[0], obs.index[-1] + Timedelta(hours=23), freq="H")
+    tidx = date_range(obs.index[0], obs.index[-1] + Timedelta(hours=23), freq="h")
     tides = Series(
         index=tidx,
         data=1.5 * np.sin(2 * np.pi * np.arange(tidx.size) / (0.517375)),

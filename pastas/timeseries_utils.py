@@ -39,7 +39,7 @@ def _frequency_is_supported(freq: str) -> str:
     http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
     The frequency can be a multiple of these offsets, like '7D'. Because of the use
     in convolution, only frequencies with an equidistant offset are allowed. This
-    means monthly ('M'), yearly ('Y') or even weekly ('W') frequencies are not
+    means monthly ('ME'), yearly ('YE') or even weekly ('W') frequencies are not
     allowed. Use '7D' for a weekly simulation.
 
     D   calendar day frequency

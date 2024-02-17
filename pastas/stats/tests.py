@@ -508,7 +508,7 @@ def diagnostics(
         df.loc["Stoffer-Toloi", cols] = "Autocorr.", stat, p
 
     df["Reject H0 ($\\alpha$={:.2f})".format(alpha)] = df.loc[:, "P-value"] < alpha
-    df[["Statistic", "P-value"]] = df[["Statistic", "P-value"]].applymap(
+    df[["Statistic", "P-value"]] = df[["Statistic", "P-value"]].map(
         float_fmt.format
     )
 
