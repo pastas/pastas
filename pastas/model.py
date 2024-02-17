@@ -1193,7 +1193,7 @@ class Model:
         if noise is None:
             noise = self.settings["noise"]
 
-        frames = [DataFrame(columns=self.parameters.columns)]
+        frames = [DataFrame(columns=self.parameters.columns, dtype=float)]
 
         for sm in self.stressmodels.values():
             frames.append(sm.parameters)
@@ -1206,6 +1206,7 @@ class Model:
 
         parameters = concat(frames)
         parameters = parameters.infer_objects()
+        parameters.loc[:, "vary"] = parameters.loc[:, "vary"].astype(bool)
 
         # Set initial parameters to optimal parameters from model
         if not initial:

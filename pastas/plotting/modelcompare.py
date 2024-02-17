@@ -401,7 +401,7 @@ class CompareModels:
         else:
             modelnames = [iml.name for iml in models]
 
-        diags = DataFrame(index=modelnames, dtype=float)
+        diags = DataFrame(index=modelnames)
         for i, ml in enumerate(models):
             mldiag = ml.stats.diagnostics()
             diags.loc[modelnames[i], mldiag.index] = mldiag[diag_col].values

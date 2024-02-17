@@ -479,11 +479,7 @@ def diagnostics(
 
     # Shapiroo-Wilk test for Normality
     stat, p = shapiro(series)
-    df.loc["Shapiroo", cols] = (
-        "Normality",
-        stat,
-        p,
-    )
+    df.loc["Shapiroo", cols] = "Normality", stat, p
 
     # D'Agostino test for Normality
     stat, p = normaltest(series)
@@ -509,5 +505,5 @@ def diagnostics(
 
     df["Reject H0 ($\\alpha$={:.2f})".format(alpha)] = df.loc[:, "P-value"] < alpha
     df[["Statistic", "P-value"]] = df[["Statistic", "P-value"]].map(float_fmt.format)
-
+    df = df.astype(str)
     return df

@@ -178,7 +178,7 @@ def _infer_fixed_freq(tindex: Index) -> str:
         return freq
 
     offset = to_offset(freq)
-    if to_offset(offset.rule_code).is_anchored():
+    if to_offset(offset.rule_code).n == 1:
         dt = _get_stress_dt(freq)
         return f"{dt}D"
 
