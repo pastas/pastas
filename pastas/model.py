@@ -1193,7 +1193,7 @@ class Model:
         if noise is None:
             noise = self.settings["noise"]
 
-        frames = [DataFrame(columns=self.parameters.columns, dtype=float)]
+        frames = [DataFrame(columns=self.parameters.columns)]
 
         for sm in self.stressmodels.values():
             frames.append(sm.parameters)

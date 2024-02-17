@@ -401,7 +401,7 @@ class CompareModels:
         else:
             modelnames = [iml.name for iml in models]
 
-        diags = DataFrame(index=modelnames)
+        diags = DataFrame(index=modelnames, dtype=float)
         for i, ml in enumerate(models):
             mldiag = ml.stats.diagnostics()
             diags.loc[modelnames[i], mldiag.index] = mldiag[diag_col].values
@@ -814,7 +814,7 @@ class CompareModels:
             self.models,
             param_selection=param_selection,
             param_col=param_col,
-        ).applymap(_table_formatter_params)
+        ).map(_table_formatter_params)
 
         # add separate column with parameter names
         params.loc[:, "Parameters"] = params.index
