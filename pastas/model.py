@@ -1193,7 +1193,7 @@ class Model:
         if noise is None:
             noise = self.settings["noise"]
 
-        frames = [DataFrame(columns=self.parameters.columns, dtype=float)]
+        frames = []
 
         for sm in self.stressmodels.values():
             frames.append(sm.parameters)
@@ -1206,13 +1206,14 @@ class Model:
 
         parameters = concat(frames)
         parameters = parameters.infer_objects()
-        parameters.loc[:, "vary"] = parameters.loc[:, "vary"].astype(bool)
+        parameters["stderr"] = np.nan
+        parameters["optimal"] = np.nan
 
         # Set initial parameters to optimal parameters from model
         if not initial:
-            parameters.initial.update(self.parameters.optimal)
-            parameters.optimal.update(self.parameters.optimal)
-            parameters.stderr.update(self.parameters.stderr)
+            parameters.update({"initial": self.parameters.loc[:, "optimal"]})
+            parameters.update({"optimal": self.parameters.loc[:, "optimal"]})
+            parameters.update({"stderr": self.parameters.loc[:, "stderr"]})
 
         return parameters
 

@@ -8,6 +8,7 @@ R.A. Collenteur - August 2017
 import datetime
 import json
 from collections import OrderedDict
+from io import StringIO as stringIO
 from logging import getLogger
 
 from pandas import (
@@ -20,7 +21,6 @@ from pandas import (
     to_numeric,
     to_timedelta,
 )
-from io import StringIO as stringIO
 
 logger = getLogger(__name__)
 
