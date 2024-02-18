@@ -1204,10 +1204,13 @@ class Model:
         if self.noisemodel and noise:
             frames.append(self.noisemodel.parameters)
 
-        parameters = concat(frames)
-        parameters = parameters.infer_objects()
-        parameters["stderr"] = np.nan
-        parameters["optimal"] = np.nan
+        if not frames:
+            parameters = DataFrame(columns=self.parameters.columns)
+        else:
+            parameters = concat(frames)
+            parameters = parameters.infer_objects()
+            parameters["stderr"] = np.nan
+            parameters["optimal"] = np.nan
 
         # Set initial parameters to optimal parameters from model
         if not initial:

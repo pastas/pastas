@@ -404,7 +404,7 @@ class CompareModels:
         diags = DataFrame(index=modelnames)
         for i, ml in enumerate(models):
             mldiag = ml.stats.diagnostics()
-            diags.loc[modelnames[i], mldiag.index] = mldiag[diag_col].values
+            diags.loc[modelnames[i], mldiag.index] = mldiag.loc[:, diag_col].values
 
         return diags.transpose()
 
