@@ -321,10 +321,14 @@ class Plotting:
             loc="left",
             fontsize=plt.rcParams["legend.fontsize"],
         )
-        p = self.ml.parameters.copy().loc[:, ["name", "optimal", "stderr"]]
+        p = self.ml.parameters.loc[:, ["name"]].copy()
         p.loc[:, "name"] = p.index
-        stderr = p.loc[:, "stderr"] / p.loc[:, "optimal"]
-        p.loc[:, "optimal"] = p.loc[:, "optimal"].apply(_table_formatter_params)
+        stderr = (
+            self.ml.parameters.loc[:, "stderr"] / self.ml.parameters.loc[:, "optimal"]
+        )
+        p.loc[:, "optimal"] = self.ml.parameters.loc[:, "optimal"].apply(
+            _table_formatter_params
+        )
         p.loc[:, "stderr"] = stderr.abs().apply(_table_formatter_stderr)
 
         ax3.axis("off")

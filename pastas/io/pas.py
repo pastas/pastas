@@ -8,6 +8,7 @@ R.A. Collenteur - August 2017
 import datetime
 import json
 from collections import OrderedDict
+from io import StringIO as stringIO
 from logging import getLogger
 
 from pandas import (
@@ -38,7 +39,7 @@ def pastas_hook(obj: dict):
             obj[key] = val
         elif key == "series":
             try:
-                obj[key] = read_json(value, typ="series", orient="split")
+                obj[key] = read_json(stringIO(value), typ="series", orient="split")
             except:
                 obj[key] = value
             if isinstance(obj[key], Series):
@@ -52,7 +53,7 @@ def pastas_hook(obj: dict):
             # Necessary to maintain order when using the JSON format!
             value = json.loads(value, object_pairs_hook=OrderedDict)
             param = DataFrame(data=value, columns=value.keys()).T
-            obj[key] = param.apply(to_numeric, errors="ignore")
+            obj[key] = param.infer_objects()
         else:
             try:
                 obj[key] = json.loads(value, object_hook=pastas_hook)
