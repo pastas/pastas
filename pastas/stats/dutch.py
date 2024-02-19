@@ -469,7 +469,7 @@ def _in_spring(series: Series) -> Series:
     def isinspring(x):
         return ((x.month == 3) and (x.day >= 14)) or ((x.month == 4) and (x.day < 15))
 
-    return Series(series.index.apply(isinspring), index=series.index)
+    return Series([isinspring(x) for x in series.index], index=series.index)
 
 
 def _gxg(
