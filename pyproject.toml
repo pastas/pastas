@@ -100,7 +100,7 @@ legacy_tox_ini = """
     description = run unit tests
     extras = ci
     commands =
-            pytest tests -m "not notebooks" -m "not bnotebooks"
+            pytest tests -m "not notebooks and not bnotebooks"
 
     [testenv:all]
     description = run all unit tests (including Notebooks) and obtain coverage
