@@ -43,7 +43,7 @@ class TestGXG(object):
             [x.month + x.day for x in idx],
             index=idx,
         )
-        v = ps.stats.glg(s, year_offset="YE")
+        v = ps.stats.glg(s, year_offset="A")
         assert v == 16.0
 
     def test_glg_fill_limit(self) -> None:
@@ -54,7 +54,7 @@ class TestGXG(object):
             fill_method="linear",
             limit=15,
             output="yearly",
-            year_offset="YE",
+            year_offset="A",
             min_n_meas=1,
         )
         assert v.notna().sum() == 2
@@ -67,7 +67,7 @@ class TestGXG(object):
             fill_method="linear",
             limit=None,
             output="yearly",
-            year_offset="YE",
+            year_offset="A",
             min_n_meas=1,
         )
         assert v.notna().sum() == 3

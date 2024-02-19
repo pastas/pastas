@@ -816,7 +816,7 @@ class CompareModels:
             self.models,
             param_selection=param_selection,
             param_col=param_col,
-        ).map(_table_formatter_params)
+        ).apply(lambda x: x.apply(_table_formatter_params), axis=1)
 
         # add separate column with parameter names
         params.loc[:, "Parameters"] = params.index
