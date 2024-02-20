@@ -1,5 +1,6 @@
 """This module contains tools for visually comparing multiple models.
 """
+
 from itertools import combinations
 from logging import getLogger
 from typing import List, Optional, Tuple
@@ -400,12 +401,14 @@ class CompareModels:
         else:
             modelnames = [iml.name for iml in models]
 
-        diags = DataFrame(index=modelnames)
-        for i, ml in enumerate(models):
+        diags = []
+        for ml in models:
             mldiag = ml.stats.diagnostics()
-            diags.loc[modelnames[i], mldiag.index] = mldiag[diag_col].values
+            diags.append(mldiag.loc[:, diag_col])
 
-        return diags.transpose()
+        diags = concat(diags, axis=1, sort=False)
+        diags.columns = modelnames
+        return diags
 
     def plot_oseries(self, axn: str = "sim") -> None:
         """Plot all oseries, unless all oseries are the same.
@@ -813,7 +816,7 @@ class CompareModels:
             self.models,
             param_selection=param_selection,
             param_col=param_col,
-        ).applymap(_table_formatter_params)
+        ).apply(lambda x: x.apply(_table_formatter_params), axis=1)
 
         # add separate column with parameter names
         params.loc[:, "Parameters"] = params.index

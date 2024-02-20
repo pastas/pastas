@@ -9,7 +9,7 @@ def test_rfunc(rfunc_name) -> None:
         rfunc = getattr(ps.rfunc, rfunc_name)()
         if rfunc_name == "HantushWellModel":
             rfunc.set_distances(100.0)
-        p = rfunc.get_init_parameters("test").initial
+        p = rfunc.get_init_parameters("test").initial.to_numpy()
         rfunc.block(p)
         rfunc.step(p)
 
@@ -30,7 +30,7 @@ def test_to_dict_rfuncs(rfunc_name) -> None:
         rfunc1.set_distances(100.0)
         rfunc2.set_distances(100.0)
 
-    p1 = rfunc1.get_init_parameters("test").initial
-    p2 = rfunc2.get_init_parameters("test").initial
+    p1 = rfunc1.get_init_parameters("test").initial.to_numpy()
+    p2 = rfunc2.get_init_parameters("test").initial.to_numpy()
 
     assert (rfunc1.step(p1) - rfunc2.step(p2)).sum() == 0.0

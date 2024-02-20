@@ -45,11 +45,11 @@ def _table_formatter_stderr(s: float, na_rep: str = "") -> str:
     if np.isnan(s):
         return na_rep
     elif np.floor(np.log10(np.abs(s))) <= -4:
-        return f"{s * 100.:.2e}%"
+        return f"±{s * 100.:.2e}%"
     elif np.floor(np.log10(np.abs(s))) > 3:
-        return f"{s * 100.:.2e}%"
+        return f"±{s * 100.:.2e}%"
     else:
-        return f"{s:.2%}"
+        return f"±{s:.2%}"
 
 
 def _get_height_ratios(ylims: List[Union[list, tuple]]) -> List[float]:

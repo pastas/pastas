@@ -354,9 +354,9 @@ class StressModel(StressModelBase):
             tmax=stress.series.index.max(),
             rfunc=rfunc,
             up=up,
-            gain_scale_factor=stress.series.std()
-            if gain_scale_factor is None
-            else gain_scale_factor,
+            gain_scale_factor=(
+                stress.series.std() if gain_scale_factor is None else gain_scale_factor
+            ),
         )
 
         self.gain_scale_factor = gain_scale_factor
@@ -401,7 +401,6 @@ class StressModel(StressModelBase):
             data=fftconvolve(stress, b, "full")[:npoints],
             index=stress.index,
             name=self.name,
-            fastpath=True,
         )
         return h
 
@@ -509,7 +508,6 @@ class StepModel(StressModelBase):
             data=fftconvolve(h, b, "full")[:npoints],
             index=h.index,
             name=self.name,
-            fastpath=True,
         )
         return h
 
@@ -875,7 +873,7 @@ class WellModel(StressModelBase):
             p_with_r = np.concatenate([p, np.array([r])])
             b = self._get_block(p_with_r, dt, tmin, tmax)
             c = fftconvolve(stress, b, "full")[:npoints]
-            h = h.add(Series(c, index=stress.index, fastpath=True), fill_value=0.0)
+            h = h.add(Series(c, index=stress.index), fill_value=0.0)
         if istress is not None:
             if isinstance(istress, list):
                 h.name = self.name + "_" + "+".join(str(i) for i in istress)
@@ -1402,7 +1400,6 @@ class RechargeModel(StressModelBase):
             data=fftconvolve(stress, b, "full")[: stress.size],
             index=self.prec.series.index,
             name=name,
-            fastpath=True,
         )
 
     def get_stress(
@@ -1457,7 +1454,6 @@ class RechargeModel(StressModelBase):
                 data=stress,
                 index=self.prec.series.index,
                 name="recharge",
-                fastpath=True,
             )
         elif istress == 0:
             return self.prec.series
@@ -1919,13 +1915,11 @@ class ChangeModel(StressModelBase):
             data=fftconvolve(stress, rfunc1, "full")[:npoints],
             index=stress.index,
             name="1",
-            fastpath=True,
         )
         h2 = Series(
             data=fftconvolve(stress, rfunc2, "full")[:npoints],
             index=stress.index,
             name="1",
-            fastpath=True,
         )
         h = omega * h1 + (1 - omega) * h2
 
