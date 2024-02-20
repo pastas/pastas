@@ -9,6 +9,7 @@ import pastas.recharge as rch
 import pastas.stats as stats
 import pastas.timeseries_utils as ts
 from pastas import extensions
+from pastas.dataset import load_dataset
 from pastas.decorators import set_use_numba
 from pastas.model import Model
 from pastas.noisemodels import ArmaModel, NoiseModel
@@ -40,7 +41,6 @@ from pastas.stressmodels import (
 )
 from pastas.timeseries import validate_oseries, validate_stress
 from pastas.transform import ThresholdTransform
-from pastas.dataset import load_dataset
 from pastas.utils import initialize_logger, set_log_level
 from pastas.version import __version__, show_versions
 

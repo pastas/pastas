@@ -30,15 +30,17 @@ def load_dataset(name: str) -> Union[DataFrame, Dict[str, DataFrame]]:
 
     Raises
     ------
-    Exception: If the request status code is not 200.
+    Exception: If the request status code is not 200 (OK), an exception is raised. This
+    is likely due to an invalid folder name. Check the pastas-data repository on GitHub
+    for available datasets.
 
     Examples
     --------
     >>> ps.load_dataset("collenteur_2021")
-    Returns the dataset from the "collenteur_2023" subfolder as a pandas DataFrame.
+    Returns the dataset from the "collenteur_2021" subfolder as a pandas DataFrame.
 
     >>> ps.load_dataset("collenteur_2023")
-    Returns a dictionary with datasets from the "collenteur_2021" subfolder. The keys
+    Returns a dictionary with datasets from the "collenteur_2023" subfolder. The keys
     are the file names and the values are pandas DataFrames.
 
     """
@@ -52,7 +54,7 @@ def load_dataset(name: str) -> Union[DataFrame, Dict[str, DataFrame]]:
         )
 
     # Get the folder from the pastas-data repository
-    r = requests.api.get(f"{GITHUB_URL}/{name}/")
+    r = requests.get(f"{GITHUB_URL}/{name}/")
 
     # Check if requests status is okay, otherwise raise error and return status code
     if not r.status_code == 200:
@@ -74,3 +76,8 @@ def load_dataset(name: str) -> Union[DataFrame, Dict[str, DataFrame]]:
         return list(data.values())[0]
     elif len(data) > 1:
         return data
+    else:
+        raise Exception(
+            f"No csv files found in the folder {name}. Check the pastas-data repository "
+            "on GitHub for available datasets."
+        )
