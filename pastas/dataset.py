@@ -32,6 +32,15 @@ def load_dataset(name: str) -> Union[DataFrame, Dict[str, DataFrame]]:
     ------
     Exception: If the request status code is not 200.
 
+    Examples
+    --------
+    >>> ps.load_dataset("collenteur_2021")
+    Returns the dataset from the "collenteur_2023" subfolder as a pandas DataFrame.
+
+    >>> ps.load_dataset("collenteur_2023")
+    Returns a dictionary with datasets from the "collenteur_2021" subfolder. The keys
+    are the file names and the values are pandas DataFrames.
+
     """
     # Try to import requests, if not installed raise error
     try:
