@@ -5,8 +5,9 @@ a subfolder in the pastas-data repository.
 
 """
 
-from pandas import read_csv, DataFrame
-from typing import Union, Dict
+from typing import Dict, Union
+
+from pandas import DataFrame, read_csv
 
 GITHUB_URL = "https://api.github.com/repos/pastas/pastas-data/contents/"
 
