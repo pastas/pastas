@@ -82,3 +82,50 @@ def load_dataset(name: str) -> Union[DataFrame, Dict[str, DataFrame]]:
             f"No csv files found in the folder {name}. Check the pastas-data repository "
             "on GitHub for available datasets."
         )
+
+
+def list_datasets() -> list[str]:
+    """Print a list of available datasets in the pastas-data repository on GitHub.
+
+    Returns
+    -------
+    list[str]
+        A list of available datasets in the pastas-data repository on GitHub.
+        Prints a list of available datasets in the pastas-data repository on GitHub.
+
+    Examples
+    --------
+    >>> ps.list_datasets()
+    Prints a list of available datasets in the pastas-data repository on GitHub.
+
+    """
+    # Try to import requests, if not installed raise error
+    try:
+        import requests
+    except ImportError:
+        raise ImportError(
+            "The requests package is required to load datasets from the pastas-data "
+            "repository. Install requests using 'pip install requests'."
+        )
+
+    # Get the folder from the pastas-data repository
+    r = requests.get(GITHUB_URL)
+
+    # Check if requests status is okay, otherwise raise error and return status code
+    if not r.status_code == 200:
+        raise Exception(f"Error: {r.status_code}. Reason: {r.reason}. ")
+
+    # Get information about the files in the folder
+    data = []
+
+    # Loop over the files in the folder
+    for file in r.json():
+        if file["type"] == "dir":
+            data.append(file["name"])
+
+    # Print the list of datasets
+    print("Available datasets in the pastas-data repository on GitHub:")
+    for folder in data:
+        print(f" - {folder}")
+    print(f"Use ps.load_dataset('folder_name') to load a dataset from the repository.")
+    return data

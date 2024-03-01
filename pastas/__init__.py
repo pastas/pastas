@@ -9,7 +9,7 @@ import pastas.recharge as rch
 import pastas.stats as stats
 import pastas.timeseries_utils as ts
 from pastas import extensions
-from pastas.dataset import load_dataset
+from pastas.dataset import load_dataset, list_datasets
 from pastas.decorators import set_use_numba
 from pastas.model import Model
 from pastas.noisemodels import ArmaModel, NoiseModel

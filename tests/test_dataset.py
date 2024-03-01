@@ -1,5 +1,5 @@
 import pytest
-from pastas.dataset import load_dataset
+from pastas.dataset import load_dataset, list_datasets
 from pandas import DataFrame
 
 
@@ -22,3 +22,11 @@ def test_invalid_folder_name():
     # Test loading dataset with invalid folder name
     with pytest.raises(Exception):
         load_dataset("invalid_folder_name")
+
+
+def test_list_datasets():
+    # Test listing available datasets
+    list_datasets()
+    # Add assertions here to verify the output of the function
+    # For example, you can check if the output contains certain dataset names
+    # assert "collenteur_2021" in list_datasets()
