@@ -5,7 +5,7 @@ a subfolder in the pastas-data repository.
 
 """
 
-from typing import Dict, Union, List
+from typing import Dict, List, Union
 
 from pandas import DataFrame, read_csv
 
