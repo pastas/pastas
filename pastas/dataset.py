@@ -5,7 +5,7 @@ a subfolder in the pastas-data repository.
 
 """
 
-from typing import Dict, Union
+from typing import Dict, Union, List
 
 from pandas import DataFrame, read_csv
 
@@ -84,7 +84,7 @@ def load_dataset(name: str) -> Union[DataFrame, Dict[str, DataFrame]]:
         )
 
 
-def list_datasets() -> list[str]:
+def list_datasets() -> List[str]:
     """Print a list of available datasets in the pastas-data repository on GitHub.
 
     Returns
