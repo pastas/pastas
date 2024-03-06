@@ -44,6 +44,7 @@ class Statistics:
         "nse",
         "evp",
         "rsq",
+        "kge",
         "bic",
         "aic",
     ]
@@ -67,7 +68,7 @@ class Statistics:
 
     def __repr__(self):
         msg = """This module contains all the statistical functions included in Pastas.
-        
+
         To obtain a list of all statistics that are included type:
 
     >>> print(ml.stats.ops)"""
@@ -277,6 +278,36 @@ class Statistics:
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         return metrics.rsq(obs=obs, res=res, weighted=weighted, **kwargs)
+
+    @model_tmin_tmax
+    def kge(
+        self,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+        weighted: bool = False,
+        modified: bool = False,
+        **kwargs,
+    ) -> float:
+        """Kling-Gupta Efficiency.
+
+        Parameters
+        ----------
+        tmin: str or pandas.Timestamp, optional
+        tmax: str or pandas.Timestamp, optional
+        weighted: bool, optional
+            If weighted is True, the variances are computed using the time step
+            between observations as weights. Default is False.
+        modified: bool, optional
+            Use the modified kge if True
+        See Also
+        --------
+        pastas.stats.kge
+        """
+        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        return metrics.kge(
+            obs=obs, sim=sim, weighted=weighted, modified=modified, **kwargs
+        )
 
     @model_tmin_tmax
     def kge_2012(
