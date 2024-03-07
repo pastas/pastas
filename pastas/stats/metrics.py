@@ -12,10 +12,9 @@ or directly from a Pastas model:
 >>> ml.stats.rmse()
 """
 
-from logging import getLogger
-
-# Type Hinting
+from logging import captureWarnings, getLogger
 from typing import Optional
+from warnings import warn
 
 from numpy import abs as npabs
 from numpy import average, log, nan, sqrt
@@ -33,9 +32,13 @@ __all__ = [
     "bic",
     "aic",
     "pearsonr",
-    "kge_2012",
+    "kge",
 ]
+
+captureWarnings(True)
 logger = getLogger(__name__)
+warnings_logger = getLogger("py.warnings")
+warnings_logger.addHandler(logger)
 
 
 # Absolute Error Metrics
@@ -511,6 +514,82 @@ def aic(
 
 
 # Forecast Error Metrics
+
+
+def kge(
+    obs: Series,
+    sim: Series,
+    missing: str = "drop",
+    weighted: bool = False,
+    max_gap: int = 30,
+    modified: bool = False,
+) -> float:
+    """Compute the (weighted) Kling-Gupta Efficiency (KGE).
+
+    Parameters
+    ----------
+    sim: pandas.Series
+        Series with the simulated values.
+    obs: pandas.Series
+        The Series with the observed values.
+    missing: str, optional
+        string with the rule to deal with missing values. Only "drop" is
+        supported now.
+    weighted: bool, optional
+        Weight the values by the normalized time step to account for
+        irregular time series. Default is False.
+    max_gap: int, optional
+        maximum allowed gap period in days to use for the computation of the
+        weights. All time steps larger than max_gap are replace with the
+        max_gap value. Default value is 30 days.
+    modified: bool, optional
+        Use the modified KGE as proposed by :cite:t:`kling_runoff_2012`.
+        According to the article this ensures that the bias and variability
+        ratios are not cross-correlated, which otherwise may occur when inputs
+        are biased.
+
+    Notes
+    -----
+    The (weighted) Kling-Gupta Efficiency :cite:t:`kling_runoff_2012` is
+    computed as follows:
+
+    .. math:: \\text{KGE} = 1 - \\sqrt{(r-1)^2 + (\\beta-1)^2 - (\\gamma-1)^2}
+
+    where :math:`\\beta = \\bar{x} / \\bar{y}` and :math:`\\gamma =
+    \\frac{\\bar{\\sigma}_x}{\\bar{\\sigma}_y}`. If modified equals True,
+    :math:`\\gamma = \\frac{\\bar{\\sigma}_x / \\bar{x}}{\\bar{\\sigma}_y /
+    \\bar{y}}`. If weighted equals True, the weighted mean, variance and
+    pearson correlation are used.
+    """
+    if missing == "drop":
+        obs = obs.dropna()
+
+    sim = sim.reindex(obs.index).dropna()
+
+    # Return nan if the time indices of the sim and obs don't match
+    if sim.index.size == 0:
+        logger.warning("Time indices of the sim and obs don't match.")
+        return nan
+
+    r = pearsonr(obs=obs, sim=sim, weighted=weighted, max_gap=max_gap)
+
+    mu_sim = mean(sim, weighted=weighted, max_gap=max_gap)
+    mu_obs = mean(obs, weighted=weighted, max_gap=max_gap)
+
+    beta = mu_sim / mu_obs
+    if modified:
+        gamma = (std(sim, weighted=weighted, max_gap=max_gap) / mu_sim) / (
+            std(obs, weighted=weighted, max_gap=max_gap) / mu_obs
+        )
+    else:
+        gamma = std(sim, weighted=weighted, max_gap=max_gap) / std(
+            obs, weighted=weighted, max_gap=max_gap
+        )
+
+    kge = 1 - sqrt((r - 1) ** 2 + (beta - 1) ** 2 + (gamma - 1) ** 2)
+    return kge
+
+
 def kge_2012(
     obs: Series,
     sim: Series,
@@ -549,28 +628,20 @@ def kge_2012(
     weighted equals True, the weighted mean, variance and pearson
     correlation are used.
     """
-    if missing == "drop":
-        obs = obs.dropna()
 
-    sim = sim.reindex(obs.index).dropna()
-
-    # Return nan if the time indices of the sim and obs don't match
-    if sim.index.size == 0:
-        logger.warning("Time indices of the sim and obs don't match.")
-        return nan
-
-    r = pearsonr(obs=obs, sim=sim, weighted=weighted, max_gap=max_gap)
-
-    mu_sim = mean(sim, weighted=weighted, max_gap=max_gap)
-    mu_obs = mean(obs, weighted=weighted, max_gap=max_gap)
-
-    beta = mu_sim / mu_obs
-    gamma = (std(sim, weighted=weighted, max_gap=max_gap) / mu_sim) / (
-        std(obs, weighted=weighted, max_gap=max_gap) / mu_obs
+    warn(
+        "This function `kge_2012` will be deprecated in Pastas version 2.0. Please use"
+        "`pastas.stats.kge(modified=True)` to get the same outcome.",
+        category=FutureWarning,
     )
-
-    kge = 1 - sqrt((r - 1) ** 2 + (beta - 1) ** 2 + (gamma - 1) ** 2)
-    return kge
+    return kge(
+        obs=obs,
+        sim=sim,
+        missing=missing,
+        weighted=weighted,
+        max_gap=max_gap,
+        modified=True,
+    )
 
 
 def _compute_err(
