@@ -543,7 +543,10 @@ def kge(
         weights. All time steps larger than max_gap are replace with the
         max_gap value. Default value is 30 days.
     modified: bool, optional
-        Use the modified
+        Use the modified KGE as proposed by :cite:t:`kling_runoff_2012`.
+        According to the article this ensures that the bias and variability
+        ratios are not cross-correlated, which otherwise may occur when inputs
+        are biased.
 
     Notes
     -----

@@ -298,7 +298,8 @@ class Statistics:
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
         modified: bool, optional
-            Use the modified kge if True
+            Use the modified KGE as proposed by :cite:t:`kling_runoff_2012`.
+
         See Also
         --------
         pastas.stats.kge
