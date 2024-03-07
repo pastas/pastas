@@ -12,19 +12,15 @@ or directly from a Pastas model:
 >>> ml.stats.rmse()
 """
 
-import warnings
 from logging import captureWarnings, getLogger
-
-# Type Hinting
 from typing import Optional
+from warnings import warn
 
 from numpy import abs as npabs
 from numpy import average, log, nan, sqrt
 from pandas import Series
 
 from pastas.stats.core import _get_weights, mean, std, var
-
-captureWarnings(True)
 
 __all__ = [
     "rmse",
@@ -38,7 +34,11 @@ __all__ = [
     "pearsonr",
     "kge",
 ]
+
+captureWarnings(True)
 logger = getLogger(__name__)
+warnings_logger = getLogger("py.warnings")
+warnings_logger.addHandler(logger)
 
 
 # Absolute Error Metrics
@@ -629,7 +629,7 @@ def kge_2012(
     correlation are used.
     """
 
-    warnings.warn(
+    warn(
         "This function `kge_2012` will be deprecated in Pastas version 2.0. Please use"
         "`pastas.stats.kge(modified=True)` to get the same outcome.",
         category=FutureWarning,
