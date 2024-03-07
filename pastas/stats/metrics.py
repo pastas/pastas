@@ -556,7 +556,7 @@ def kge(
     .. math:: \\text{KGE} = 1 - \\sqrt{(r-1)^2 + (\\beta-1)^2 - (\\gamma-1)^2}
 
     where :math:`\\beta = \\bar{x} / \\bar{y}` and :math:`\\gamma =
-    \\frac{\\bar{\\sigma}_x}{\\bar{\\sigma}_y}}`. If modified equals True,
+    \\frac{\\bar{\\sigma}_x}{\\bar{\\sigma}_y}`. If modified equals True,
     :math:`\\gamma = \\frac{\\bar{\\sigma}_x / \\bar{x}}{\\bar{\\sigma}_y /
     \\bar{y}}`. If weighted equals True, the weighted mean, variance and
     pearson correlation are used.
