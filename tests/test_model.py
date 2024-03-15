@@ -20,7 +20,7 @@ def generate_synthetic_heads(input, rfunc, params, const=10.0, cutoff=0.999, dt=
     h = const * np.ones(len(input) + step.size)
 
     for i in range(len(input)):
-        h[i : i + step.size] += input[i] * step
+        h[i : i + step.size] += input.iloc[i] * step
 
     head = Series(
         index=input.index,
@@ -190,7 +190,7 @@ def test_model_freq_h():
     a_tide = 0.15
 
     # sine with period 12 hrs 25 minutes and amplitude 1.5 m
-    tidx = date_range(obs.index[0], obs.index[-1] + Timedelta(hours=23), freq="H")
+    tidx = date_range(obs.index[0], obs.index[-1] + Timedelta(hours=23), freq="h")
     tides = Series(
         index=tidx,
         data=1.5 * np.sin(2 * np.pi * np.arange(tidx.size) / (0.517375)),
@@ -199,7 +199,7 @@ def test_model_freq_h():
     ht = generate_synthetic_heads(tides, rf_tide, (A_tide, a_tide), dt=1 / 24.0)
 
     # model with hourly timestep
-    ml_h = ps.Model(ht, name="tidal_model", freq="H")
+    ml_h = ps.Model(ht, name="tidal_model", freq="h")
     sm = ps.StressModel(
         tides,
         rfunc=ps.Exponential(),
@@ -209,5 +209,5 @@ def test_model_freq_h():
     ml_h.add_stressmodel(sm)
     ml_h.solve(noise=False, report=False)
 
-    assert ml_h.simulate().index.freq == "H"
+    assert ml_h.simulate().index.freq == "h"
     assert ml_h.stats.rsq() > 0.99999

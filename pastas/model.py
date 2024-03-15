@@ -406,9 +406,7 @@ class Model:
         if p is None:
             p = self.get_parameters()
 
-        sim = Series(
-            data=np.zeros(sim_index.size, dtype=float), index=sim_index, fastpath=True
-        )
+        sim = Series(data=np.zeros(sim_index.size, dtype=float), index=sim_index)
 
         istart = 0  # Track parameters index to pass to stressmodel object
         for sm in self.stressmodels.values():
@@ -1203,7 +1201,7 @@ class Model:
         if noise is None:
             noise = self.settings["noise"]
 
-        frames = [DataFrame(columns=self.parameters.columns)]
+        frames = []
 
         for sm in self.stressmodels.values():
             frames.append(sm.parameters)
@@ -1214,14 +1212,19 @@ class Model:
         if self.noisemodel and noise:
             frames.append(self.noisemodel.parameters)
 
-        parameters = concat(frames)
-        parameters = parameters.infer_objects()
+        if not frames:
+            parameters = DataFrame(columns=self.parameters.columns)
+        else:
+            parameters = concat(frames)
+            parameters = parameters.infer_objects()
+            parameters["stderr"] = np.nan
+            parameters["optimal"] = np.nan
 
         # Set initial parameters to optimal parameters from model
         if not initial:
-            parameters.initial.update(self.parameters.optimal)
-            parameters.optimal.update(self.parameters.optimal)
-            parameters.stderr.update(self.parameters.stderr)
+            parameters.update({"initial": self.parameters.loc[:, "optimal"]})
+            parameters.update({"optimal": self.parameters.loc[:, "optimal"]})
+            parameters.update({"stderr": self.parameters.loc[:, "stderr"]})
 
         return parameters
 
@@ -1804,9 +1807,9 @@ class Model:
             "Interp.": "Yes" if self.interpolate_simulation else "No",
         }
 
-        parameters = self.parameters.loc[:, ["optimal", "stderr", "initial", "vary"]]
-        stderr = parameters.loc[:, "stderr"] / parameters.loc[:, "optimal"]
-        parameters.loc[:, "stderr"] = "±" + stderr.abs().apply(
+        parameters = self.parameters.loc[:, ["optimal", "initial", "vary"]].copy()
+        stderr = self.parameters.loc[:, "stderr"] / self.parameters.loc[:, "optimal"]
+        parameters.loc[:, "stderr"] = stderr.abs().apply(
             _table_formatter_stderr, na_rep="nan"
         )
 
