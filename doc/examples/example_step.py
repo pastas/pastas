@@ -3,6 +3,7 @@ This is an example with a step in the observations, which we add artificially.
 We model this step through a StepModel.
 
 """
+
 import pandas as pd
 
 import pastas as ps

@@ -213,7 +213,9 @@ class NoiseModel(NoiseModelBase):
             w *= np.exp(1.0 / (2.0 * odelt.size) * np.sum(np.log(1.0 - exp)))
         return Series(data=w, index=res.index, name="noise_weights")
 
-    def get_correction(self, res: Series, p: ArrayLike, tindex: DatetimeIndex) -> Series:
+    def get_correction(
+        self, res: Series, p: ArrayLike, tindex: DatetimeIndex
+    ) -> Series:
         """Get the correction for a forecast using the noise model.
 
         Parameters
@@ -246,8 +248,12 @@ class NoiseModel(NoiseModelBase):
         last_residual = res.iloc[-1]
         last_date = res.index[-1]
         dt = (tindex - last_date).days
-        correction = Series(index=tindex, name = "correction", dtype=float,
-                            data=np.exp(-dt / alpha) * last_residual)
+        correction = Series(
+            index=tindex,
+            name="correction",
+            dtype=float,
+            data=np.exp(-dt / alpha) * last_residual,
+        )
         return correction
 
     def to_dict(self) -> dict:
