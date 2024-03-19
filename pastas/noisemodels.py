@@ -24,7 +24,7 @@ pastas.model.Model.add_noisemodel
 from typing import Optional
 
 import numpy as np
-from pandas import DataFrame, Series, Timedelta
+from pandas import DataFrame, Series, Timedelta, DatetimeIndex
 
 from pastas.typing import ArrayLike
 
@@ -212,6 +212,43 @@ class NoiseModel(NoiseModelBase):
         if self.norm:
             w *= np.exp(1.0 / (2.0 * odelt.size) * np.sum(np.log(1.0 - exp)))
         return Series(data=w, index=res.index, name="noise_weights")
+
+    def get_correction(self, res: Series, p: ArrayLike, tindex: DatetimeIndex) -> Series:
+        """Get the correction for a forecast using the noise model.
+
+        Parameters
+        ----------
+        res : Series
+            The residual series.
+        p : ArrayLike
+            The parameters of the noise model.
+        tindex : DatetimeIndex
+            The index of the forecast.
+
+        Returns
+        -------
+        Series
+            The correction to the forecast.
+
+        Notes
+        -----
+        The correction is calculated as:
+
+        .. math::
+
+                correction = \\exp(-\\Delta t / \\alpha) * last_residual
+
+            where :math:`\\Delta t` is the time difference between the last observation
+            and the forecast, and :math:`\\alpha` is the noise parameter.
+
+        """
+        alpha = p[0]
+        last_residual = res.iloc[-1]
+        last_date = res.index[-1]
+        dt = (tindex - last_date).days
+        correction = Series(index=tindex, name = "correction", dtype=float,
+                            data=np.exp(-dt / alpha) * last_residual)
+        return correction
 
     def to_dict(self) -> dict:
         """Method to return a dict to store the noise model"""
