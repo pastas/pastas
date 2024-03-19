@@ -1,6 +1,9 @@
 import logging
 from importlib import import_module, metadata
 from platform import python_version
+from matplotlib import __version__ as mplversion
+
+mplversion
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +47,7 @@ def show_versions(lmfit: bool = True, latexify: bool = True) -> None:
         f"NumPy version: {metadata.version('numpy')}\n"
         f"Pandas version: {metadata.version('pandas')}\n"
         f"SciPy version: {metadata.version('scipy')}\n"
-        f"Matplotlib version: {metadata.version('matplotlib')}\n"
+        f"Matplotlib version: {mplversion}\n"
         f"Numba version: {metadata.version('numba')}"
     )
 
