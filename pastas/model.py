@@ -480,12 +480,16 @@ class Model:
             tmax = self.settings["tmax"]
         if freq is None:
             freq = self.settings["freq"]
+        if self.settings["freq_obs"] is None:
+            freq_obs = freq
+        else:
+            freq_obs = self.settings["freq_obs"]
 
         # simulate model
         sim = self.simulate(p, tmin, tmax, freq, warmup, return_warmup=False)
 
         # Get the oseries calibration series
-        oseries_calib = self.observations(tmin, tmax, freq)
+        oseries_calib = self.observations(tmin, tmax, freq_obs)
 
         # Get simulation at the correct indices
         if self.interpolate_simulation is None:
