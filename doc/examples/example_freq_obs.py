@@ -28,5 +28,5 @@ sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential(), name="rechar
 ml.add_stressmodel(sm)
 
 # Solve and only fit on one observation per year
-ml.solve(freq_obs="365D")
+ml.solve(freq_obs="365D", noise=True)
 ml.plot()
