@@ -242,13 +242,20 @@ class Plotting:
             # plot the contribution
             nsplit = sm.get_nsplit()
             if split and nsplit > 1:
-                for _ in range(nsplit):
+                for istress in range(nsplit):
                     ax = fig.add_subplot(gs[i + 2, 0], sharex=ax1)
                     contribs[i].plot(ax=ax, x_compat=True)
                     ax.legend(loc=(0, 1), ncol=3, frameon=False)
                     if adjust_height:
                         ax.set_ylim(ylims[i + 2])
+
                     i = i + 1
+
+                    # plot the response
+                    axb, rmin, rmax = self._plot_response_in_results(
+                        sm_name, block_or_step, rmin, rmax, axb, gs, i, istress=istress
+                    )
+
             else:
                 ax = fig.add_subplot(gs[i + 2, 0], sharex=ax1)
                 contribs[i].plot(ax=ax, x_compat=True)
@@ -265,27 +272,10 @@ class Plotting:
                     ax.set_ylim(ylims[i + 2])
                 i = i + 1
 
-            # plot the step response
-            rkwargs = {}
-            if self.ml.stressmodels[sm_name].rfunc is not None:
-                if isinstance(self.ml.stressmodels[sm_name].rfunc, HantushWellModel):
-                    rkwargs = {"warn": False}
-            response = self.ml._get_response(
-                block_or_step=block_or_step, name=sm_name, add_0=True, **rkwargs
-            )
-
-            if response is not None:
-                rmax = max(rmax, response.index.max())
-                axb = fig.add_subplot(gs[i + 1, 1], sharex=axb)
-                response.plot(ax=axb)
-                if block_or_step == "block":
-                    title = "Block response"
-                    rmin = response.index[1]
-                    axb.set_xscale("log")
-                    axb.xaxis.set_major_formatter(LogFormatter())
-                else:
-                    title = "Step response"
-                axb.set_title(title, fontsize=plt.rcParams["legend.fontsize"])
+                # plot the response
+                axb, rmin, rmax = self._plot_response_in_results(
+                    sm_name, block_or_step, rmin, rmax, axb, gs, i
+                )
 
         if axb is not None:
             axb.set_xlim(rmin, rmax)
@@ -340,6 +330,36 @@ class Plotting:
         )
 
         return fig.axes
+
+    def _plot_response_in_results(
+        self, sm_name, block_or_step, rmin, rmax, axb, gs, i, istress=None
+    ):
+        """Internal method to plot the response of a Stressmodel in the results-plot"""
+        rkwargs = {}
+        if self.ml.stressmodels[sm_name].rfunc is not None:
+            if isinstance(self.ml.stressmodels[sm_name].rfunc, HantushWellModel):
+                rkwargs = {"warn": False}
+        response = self.ml._get_response(
+            block_or_step=block_or_step,
+            name=sm_name,
+            add_0=True,
+            istress=istress,
+            **rkwargs,
+        )
+
+        if response is not None:
+            rmax = max(rmax, response.index.max())
+            axb = gs.figure.add_subplot(gs[i + 1, 1], sharex=axb)
+            response.plot(ax=axb)
+            if block_or_step == "block":
+                title = "Block response"
+                rmin = response.index[1]
+                axb.set_xscale("log")
+                axb.xaxis.set_major_formatter(LogFormatter())
+            else:
+                title = "Step response"
+            axb.set_title(title, fontsize=plt.rcParams["legend.fontsize"])
+        return axb, rmin, rmax
 
     @model_tmin_tmax
     def decomposition(
