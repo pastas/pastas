@@ -52,15 +52,16 @@ def _frequency_is_supported(freq: str) -> str:
 
     """
     offset = to_offset(freq)
-    if not hasattr(offset, "delta"):
+    try:
+        Timedelta(offset)
+    except:
         msg = "Frequency {} not supported.".format(freq)
         logger.error(msg)
         raise ValueError(msg)
+    if offset.n == 1:
+        freq = offset.name
     else:
-        if offset.n == 1:
-            freq = offset.name
-        else:
-            freq = str(offset.n) + offset.name
+        freq = str(offset.n) + offset.name
     return freq
 
 
@@ -87,9 +88,9 @@ def _get_stress_dt(freq: str) -> float:
         return None
     # Get the frequency string and multiplier
     offset = to_offset(freq)
-    if hasattr(offset, "delta"):
+    try:
         dt = Timedelta(offset) / Timedelta(1, "D")
-    else:
+    except:
         num = offset.n
         freq = offset._prefix
         if freq in ["A", "Y", "AS", "YS", "BA", "BY", "BAS", "BYS"]:
