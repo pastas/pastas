@@ -1520,6 +1520,36 @@ class RechargeModel(StressModelBase):
         df.index = self.prec.series.index
         return df
 
+    def get_parameters(self, model=None, istress: Optional[int] = None) -> ArrayLike:
+        """Get parameters and return as array
+
+        Parameters
+        ----------
+        model : pastas.Model, optional
+            if provided, return optimal model parameters, else return initial
+            parameters.
+        istress : int, optional
+            if provided, return specific parameter set, else return all parameters.
+
+        Returns
+        -------
+        p : array_like
+            parameters for each stress as row of array, if istress is used returns
+            only one row.
+        """
+        if model is None:
+            p = self.parameters.initial.values
+        else:
+            p = model.get_parameters(self.name)
+
+        if istress is not None and isinstance(self.recharge, Linear):
+            if istress == 0:
+                p = p[:-1]
+            elif istress == 1:
+                p[0] *= p[-1]
+                p = p[:-1]
+        return p
+
     def to_dict(self, series: bool = True) -> dict:
         """Method to export the RechargeModel object.
 
