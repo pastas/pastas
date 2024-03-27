@@ -3,6 +3,7 @@ This test file is meant for developing purposes. Providing an easy method to
 test the functioning of Pastas during development.
 
 """
+
 import pandas as pd
 
 import pastas as ps
