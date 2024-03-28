@@ -17,10 +17,10 @@ from typing import Optional
 from warnings import warn
 
 from numpy import abs as npabs
-from numpy import average, log, nan, sqrt
+from numpy import average, dot, log, nan, sqrt
 from pandas import Series
 
-from pastas.stats.core import _get_weights, mean, std, var
+from pastas.stats.core import _get_weights, covar, mean, std, var
 
 __all__ = [
     "rmse",
@@ -248,6 +248,7 @@ def evp(
     missing: str = "drop",
     weighted: bool = False,
     max_gap: int = 30,
+    modified: bool = False,
 ) -> float:
     """Compute the (weighted) Explained Variance Percentage (EVP).
 
@@ -293,17 +294,15 @@ def evp(
     if obs.var() == 0.0:
         return 100.0
     else:
-        return (
-            max(
-                0.0,
-                (
-                    1
-                    - var(err, weighted=weighted, max_gap=max_gap)
-                    / var(obs, weighted=weighted, max_gap=max_gap)
-                ),
-            )
-            * 100
+        ev = 1 - var(err, weighted=weighted, max_gap=max_gap) / var(
+            obs, weighted=weighted, max_gap=max_gap
         )
+        if modified:
+            if sim is None:
+                sim = obs + err
+            dcov = 2 * covar(sim, -err, weighted=weighted, max_gap=max_gap)
+            return max(0.0, ev - dcov) * 100.0
+        return max(0.0, ev) * 100.0
 
 
 def nse(
