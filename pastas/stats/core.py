@@ -357,6 +357,31 @@ def var(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
     return sigma
 
 
+def covar(x: Series, y: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
+    """Method to compute the (weighted) covariance between two time series.
+
+    Parameters
+    ----------
+    x: pandas.Series
+        Series with the values and a DatetimeIndex as an index.
+    y: pandas.Series
+        Series with the values and a DatetimeIndex as an index.
+    weighted: bool, optional
+        Weight the values by the normalized time step to account for irregular time
+        series. Default is True.
+    max_gap: int, optional
+        maximum allowed gap period in days to use for the computation of the weights.
+        All time steps larger than max_gap are replace with the mean weight. Default
+        value is 90 days.
+
+    """
+    wx = _get_weights(x, weighted=weighted, max_gap=max_gap)
+    wy = _get_weights(x, weighted=weighted, max_gap=max_gap)
+    mux = average(x.to_numpy(), weights=wx)
+    muy = average(y.to_numpy(), weights=wy)
+    return sum((x * wx - mux) * (y * wy - muy)) / (len(x) - 1)
+
+
 def std(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
     """Method to compute the (weighted) variance of a time series.
 
