@@ -271,13 +271,16 @@ def evp(
         maximum allowed gap period in days to use for the computation of the weights.
         All time steps larger than max_gap are replace with the max_gap value.
         Default value is 30 days.
+    modified: bool, optional
+        Compute the modified EVP which takes into account the covariance between the
+        model simulation and residuals.
 
     Notes
     -----
     Commonly used goodness-of-fit metric groundwater level models as computed in
     :cite:t:`von_asmuth_groundwater_2012`.
 
-    .. math:: \\text{EVP} = \\frac{\\sigma_h^2 - \\sigma_r^2}{\\sigma_h^2}
+    .. math:: \\text{EVP} = (1 - \\frac{\\sigma_h^2 - \\sigma_r^2}{\\sigma_h^2})
         * 100
 
     where :math:`\\sigma_h^2` is the variance of the observations and
