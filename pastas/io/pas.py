@@ -78,7 +78,7 @@ class PastasEncoder(json.JSONEncoder):
     """
 
     def default(self, o):
-        if isinstance(o, (Timestamp, datetime.datetime)):
+        if isinstance(o, (Timestamp, datetime.datetime, datetime.date)):
             return o.isoformat()
         elif isinstance(o, Series):
             return o.to_json(date_format="iso", orient="split")
