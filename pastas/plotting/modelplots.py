@@ -267,11 +267,15 @@ class Plotting:
 
             # plot the step response
             rkwargs = {}
+            p = None
             if self.ml.stressmodels[sm_name].rfunc is not None:
                 if isinstance(self.ml.stressmodels[sm_name].rfunc, HantushWellModel):
                     rkwargs = {"warn": False}
+                    p = self.ml.stressmodels[sm_name].get_parameters(
+                        model=self.ml, istress=0
+                    )
             response = self.ml._get_response(
-                block_or_step=block_or_step, name=sm_name, add_0=True, **rkwargs
+                block_or_step=block_or_step, name=sm_name, p=p, add_0=True, **rkwargs
             )
 
             if response is not None:
