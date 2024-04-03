@@ -143,7 +143,7 @@ class NoiseModel(NoiseModelBase):
         w = 1 / \\sqrt{(1 - \\exp(-2 \\Delta t / \\alpha))}
 
     The units of the alpha parameter is always in days. The first value of the noise
-    is the residual ($v(t=0=r(t=0)$). First weight is 1 / sig_residuals (i.e.,
+    is the residual (:math:`v(t=0=r(t=0)`). First weight is 1 / sig_residuals (i.e.,
     delt = infty). Normalization of weights as in :cite:t:`von_asmuth_modeling_2005`,
     optional.
     """
@@ -240,8 +240,8 @@ class NoiseModel(NoiseModelBase):
 
                 correction = \\exp(-\\Delta t / \\alpha) * last_residual
 
-            where :math:`\\Delta t` is the time difference between the last observation
-            and the forecast, and :math:`\\alpha` is the noise parameter.
+        where :math:`\\Delta t` is the time difference between the last observation
+        and the forecast, and :math:`\\alpha` is the noise parameter.
 
         """
         alpha = p[0]
@@ -264,22 +264,22 @@ class NoiseModel(NoiseModelBase):
 
 class ArmaModel(NoiseModelBase):
     """ARMA(1,1) Noise model to simulate the noise as defined in
-        :cite:t:`collenteur_estimation_2021`.
+    :cite:t:`collenteur_estimation_2021`.
 
-        Notes
-        -----
-        Calculates the noise according to:
-    F
-        .. math::
-            \\upsilon_t = r_t - r_{t-1} e^{-\\Delta t/\\alpha} - \\upsilon_{t-1}
-            e^{-\\Delta t/\\beta}
+    Notes
+    -----
+    Calculates the noise according to:
 
-        The units of the alpha and beta parameters are always in days.
+    .. math::
+        \\upsilon_t = r_t - r_{t-1} e^{-\\Delta t/\\alpha} - \\upsilon_{t-1}
+        e^{-\\Delta t/\\beta}
 
-        Warnings
-        --------
-        This model has only been tested on regular time steps and should not be used for
-        irregular time steps yet.
+    The units of the alpha and beta parameters are always in days.
+
+    Warnings
+    --------
+    This model has only been tested on regular time steps and should not be used for
+    irregular time steps yet.
     """
 
     _name = "ArmaModel"
