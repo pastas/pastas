@@ -911,7 +911,7 @@ class Plotting:
                         contributions.append((name, h))
 
                         # plot step responses for each well, scaled with distance
-                        p = sml.get_parameters(istress=istress)
+                        p = sml.get_parameters(model=self.ml, istress=istress)
                         step = self.ml.get_step_response(sm, p=p)
                         ax_step.plot(step.index, step, c=stackcolors[name], label=name)
                         # recalculate y-limits step response axes
