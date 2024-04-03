@@ -130,8 +130,8 @@ class Model:
             msg = (
                 "The default of noisemodel=True in Model is deprecated and will be "
                 "changed to False in a future version of pastas. Pass noisemodel=True "
-                "to retain current behavior or noisemodel=False to  adopt the future "
-                "default and silence this warning. For ore information, see the GitHUB-"
+                "to retain current behavior or noisemodel=False to adopt the future "
+                "default and silence this warning. For more information, see the GitHUB-"
                 "issue: https://github.com/pastas/pastas/issues/667"
             )
             logger.warning(msg)
