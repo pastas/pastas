@@ -20,7 +20,7 @@ temp = pd.read_csv("data/heby_temp.csv", index_col=0, parse_dates=True).squeeze(
 tmin = "1985"  # Needs warmup
 tmax = "2018"
 
-ml = ps.Model(head)
+ml = ps.Model(head, noisemodel=True)
 sm = ps.RechargeModel(
     prec,
     evap,

@@ -30,7 +30,7 @@ def generate_synthetic_heads(input, rfunc, params, const=10.0, cutoff=0.999, dt=
 
 
 def test_create_model() -> None:
-    ml = ps.Model(obs, name="Test_Model")
+    ps.Model(obs, name="Test_Model", noisemodel=True)
 
 
 def test_add_stressmodel(ml_empty: ps.Model, sm_prec) -> None:
@@ -199,7 +199,7 @@ def test_model_freq_h():
     ht = generate_synthetic_heads(tides, rf_tide, (A_tide, a_tide), dt=1 / 24.0)
 
     # model with hourly timestep
-    ml_h = ps.Model(ht, name="tidal_model", freq="h")
+    ml_h = ps.Model(ht, name="tidal_model", freq="h", noisemodel=True)
     sm = ps.StressModel(
         tides,
         rfunc=ps.Exponential(),

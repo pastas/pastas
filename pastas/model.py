@@ -91,7 +91,7 @@ class Model:
         self,
         oseries: Series,
         constant: bool = True,
-        noisemodel: bool = True,
+        noisemodel: Optional[bool] = None,
         name: Optional[str] = None,
         metadata: Optional[dict] = None,
         freq: str = "D",
@@ -140,6 +140,15 @@ class Model:
         if constant:
             constant = Constant(initial=self.oseries.series.mean(), name="constant")
             self.add_constant(constant)
+        if noisemodel is None:
+            msg = (
+                "The default of noisemodel=True is deprecated and will be changed to "
+                "False in a future version of pastas. Pass noisemodel=True to retain "
+                "current behavior or noisemodel=False to adopt the future default and "
+                "silence this warning."
+            )
+            logger.warning(msg)
+            noisemodel = True  # will be changed to False from pastas version 2.0.0
         if noisemodel:
             self.add_noisemodel(NoiseModel())
 
@@ -684,15 +693,8 @@ class Model:
         This method is called by the solve-method, but can also be triggered
         manually. See the solve-method for a description of the arguments.
         """
-        if noise is None and self.noisemodel:
-            msg = (
-                "The default of noise=True is deprecated and will be changed to "
-                "False in a future version of pastas. Pass noise=True to retain "
-                "current behavior or noise=False to adopt the future default and "
-                "silence this warning."
-            )
-            logger.warning(msg)
-            noise = True  # will be changed to False from pastas version 2.0.0
+        if noise is None:
+            noise = self.noisemodel is not None
         elif noise is True and self.noisemodel is None:
             logger.warning(
                 "Warning, solving with noise=True while no noisemodel is present. "
