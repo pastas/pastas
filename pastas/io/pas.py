@@ -11,6 +11,14 @@ from collections import OrderedDict
 from io import StringIO as stringIO
 from logging import getLogger
 
+try:
+    from shapely.geometry.base import BaseGeometry
+
+    SHAPELY = True
+except ModuleNotFoundError:
+    SHAPELY = False
+    BaseGeometry = None
+
 from pandas import (
     DataFrame,
     Series,
@@ -18,7 +26,6 @@ from pandas import (
     Timestamp,
     isna,
     read_json,
-    to_numeric,
     to_timedelta,
 )
 
@@ -90,6 +97,8 @@ class PastasEncoder(json.JSONEncoder):
             if isinstance(o, datetime.timedelta):
                 o = to_timedelta(o)
             return o.to_timedelta64().__str__()
+        elif SHAPELY and isinstance(o, BaseGeometry):
+            return o.wkt
         elif isna(o):
             return None
         else:
