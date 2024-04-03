@@ -29,13 +29,13 @@ def head() -> Series:
 
 @pytest.fixture
 def ml_empty() -> ps.Model:
-    ml_empty = ps.Model(obs, name="Test_Model")
+    ml_empty = ps.Model(obs, name="Test_Model", noisemodel=True)
     return ml_empty
 
 
 @pytest.fixture
 def ml() -> ps.Model:
-    ml = ps.Model(obs, name="Test_Model")
+    ml = ps.Model(obs, name="Test_Model", noisemodel=True)
     sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma(), name="rch")
     ml.add_stressmodel(sm)
     return ml
@@ -43,7 +43,7 @@ def ml() -> ps.Model:
 
 @pytest.fixture
 def ml_sm() -> ps.Model:
-    ml_sm = ps.Model(obs.dropna(), name="Test_Model")
+    ml_sm = ps.Model(obs.dropna(), name="Test_Model", noisemodel=True)
     sm1 = ps.StressModel(rain, rfunc=ps.Exponential(), name="prec", settings="prec")
     sm2 = ps.StressModel(evap, rfunc=ps.Exponential(), name="evap", settings="evap")
     ml_sm.add_stressmodel([sm1, sm2])
@@ -52,7 +52,7 @@ def ml_sm() -> ps.Model:
 
 @pytest.fixture
 def ml_no_settings() -> ps.Model:
-    ml_no_settings = ps.Model(obs.dropna(), name="Test_Model")
+    ml_no_settings = ps.Model(obs.dropna(), name="Test_Model", noisemodel=True)
     sm1 = ps.StressModel(rain, rfunc=ps.Exponential(), name="prec")
     sm2 = ps.StressModel(evap, rfunc=ps.Exponential(), name="evap")
     ml_no_settings.add_stressmodel([sm1, sm2])

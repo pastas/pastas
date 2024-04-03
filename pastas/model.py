@@ -59,8 +59,10 @@ class Model:
     constant: bool, optional
         Add a constant to the model (Default=True).
     noisemodel: bool, optional
-        Add the default noisemodel to the model. A custom noisemodel can be added
-        later in the modelling process as well.
+        Add the default noisemodel to the model. A custom noisemodel can be added later
+        in the modelling process as well. When noisemodel is None, noisemodel is set to
+        True before pastas version 2.0.0, and to False after version 2.0.0. The default
+        is noise=None.
     name: str, optional
         String with the name of the model, used in plotting and saving.
     metadata: dict, optional
@@ -124,6 +126,16 @@ class Model:
         self.transform = None
         self.noisemodel = None
 
+        if noisemodel is None:
+            msg = (
+                "The default of noisemodel=True is deprecated and will be changed to "
+                "False in a future version of pastas. Pass noisemodel=True to retain "
+                "current behavior or noisemodel=False to adopt the future default and "
+                "silence this warning."
+            )
+            logger.warning(msg)
+            noisemodel = True  # will be changed to False from pastas version 2.0.0
+
         # Default solve/simulation settings
         self.settings = {
             "tmin": None,
@@ -140,15 +152,7 @@ class Model:
         if constant:
             constant = Constant(initial=self.oseries.series.mean(), name="constant")
             self.add_constant(constant)
-        if noisemodel is None:
-            msg = (
-                "The default of noisemodel=True is deprecated and will be changed to "
-                "False in a future version of pastas. Pass noisemodel=True to retain "
-                "current behavior or noisemodel=False to adopt the future default and "
-                "silence this warning."
-            )
-            logger.warning(msg)
-            noisemodel = True  # will be changed to False from pastas version 2.0.0
+
         if noisemodel:
             self.add_noisemodel(NoiseModel())
 
@@ -779,8 +783,8 @@ class Model:
             used for the calibration period.
         noise: bool, optional
             Argument that determines if a noisemodel is used (only if present). When
-            noise = None, noise is set to True before pastas version 2.0.0, and to False
-            after version 2.0.0. The default is noise=None.
+            noise is None, noise is set to True if a noisemodel is present. The default
+            is noise=None.
         solver: Class pastas.solver.Solver, optional
             Instance of a pastas Solver class used to solve the model. Options are:
             ps.LeastSquares() (default) or ps.LmfitSolve(). An instance is needed as
