@@ -253,6 +253,28 @@ class StressModelBase:
             settings = {stress.name: stress.settings for stress in self.stress}
         return settings
 
+    def get_parameters(self, model=None) -> ArrayLike:
+        """Get parameters and return as array.
+
+        Parameters
+        ----------
+        model : pastas.Model, optional
+            If provided, and the model is solved, return optimal model parameter-values.
+            Otherwise, return initial parameter-values.
+        istress : int, optional
+            if provided, return specific parameter set, else return all parameters.
+
+        Returns
+        -------
+        p : array_like
+            An array of the parameters of the stressmodel.
+        """
+        if model is None:
+            p = self.parameters.initial.values
+        else:
+            p = model.get_parameters(self.name)
+        return p
+
 
 class StressModel(StressModelBase):
     """Stress model convoluting a stress with a response function.
@@ -978,8 +1000,8 @@ class WellModel(StressModelBase):
         Parameters
         ----------
         model : pastas.Model, optional
-            if provided, return optimal model parameters, else return initial
-            parameters.
+            If provided, and the model is solved, return optimal model parameter-values.
+            Otherwise, return initial parameter-values.
         istress : int, optional
             if provided, return specific parameter set, else return all parameters.
 
@@ -1521,21 +1543,20 @@ class RechargeModel(StressModelBase):
         return df
 
     def get_parameters(self, model=None, istress: Optional[int] = None) -> ArrayLike:
-        """Get parameters and return as array
+        """Get parameters and return as array.
 
         Parameters
         ----------
         model : pastas.Model, optional
-            if provided, return optimal model parameters, else return initial
-            parameters.
+            If provided, and the model is solved, return optimal model parameter-values.
+            Otherwise, return initial parameter-values.
         istress : int, optional
             if provided, return specific parameter set, else return all parameters.
 
         Returns
         -------
         p : array_like
-            parameters for each stress as row of array, if istress is used returns
-            only one row.
+            An array of the parameters of the stressmodel.
         """
         if model is None:
             p = self.parameters.initial.values
