@@ -24,8 +24,7 @@ pastas.model.Model.add_noisemodel
 from typing import Optional
 
 import numpy as np
-from pandas import DataFrame, Series, Timedelta, DatetimeIndex
-
+from pandas import DataFrame, DatetimeIndex, Series, Timedelta
 from pastas.typing import ArrayLike
 
 from .decorators import njit, set_parameter
