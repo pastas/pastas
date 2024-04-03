@@ -1,13 +1,13 @@
-from bokeh.plotting import figure, show
+from bokeh.layouts import column, row
 from bokeh.models import (
     ColumnDataSource,
     DataTable,
-    TableColumn,
-    StringFormatter,
     RangeTool,
     ScientificFormatter,
+    StringFormatter,
+    TableColumn,
 )
-from bokeh.layouts import row, column
+from bokeh.plotting import figure, show
 
 from pastas.extensions import register_model_accessor
 
@@ -74,7 +74,7 @@ class Bokeh:
 
         """
 
-        data = self._model.get_output_series(tmin=tmin, tmax=tmax)
+        data = self._model.get_output_series(tmin=tmin, tmax=tmax, split=False)
         source = ColumnDataSource(data)
         rsq = self._model.stats.rsq(tmin=tmin, tmax=tmax)
 
@@ -140,7 +140,7 @@ class Bokeh:
         >>> fig = ml.bokeh.results()
 
         """
-        data = self._model.get_output_series(tmin=tmin, tmax=tmax)
+        data = self._model.get_output_series(tmin=tmin, tmax=tmax, split=False)
         ranges = data.max() - data.min()
         ranges = ranges.drop([ranges.iloc[:2].idxmin(), "Noise"])
         heights = (ranges / ranges.sum() * (height - 50)).values.astype(int)
@@ -185,6 +185,15 @@ class Bokeh:
             x_axis_type="datetime",
             x_axis_location=None,
         )
+
+        res_plot.scatter(
+            "index",
+            "Residuals",
+            source=source,
+            color="black",
+            alpha=0.7,
+            legend_label="Residuals",
+        )
         res_plot.line(
             "index",
             "Residuals",
@@ -196,6 +205,7 @@ class Bokeh:
 
         if self._model.settings["noise"]:
             res_plot.line("index", "Noise", source=source, legend_label="Noise")
+            res_plot.scatter("index", "Noise", source=source, legend_label="Noise")
 
         res_plot.legend.ncols = 2
 
@@ -229,10 +239,11 @@ class Bokeh:
         rfunc_plot = None
 
         for i, smname in enumerate(self._model.stressmodels.keys(), start=2):
-            if i == data.columns.size:
-                x_axis_location = "bottom"
+            if i == int(len(self._model.stressmodels) + 1):
+                x_axis_location = "below"
             else:
                 x_axis_location = None
+
             contrib_plot = figure(
                 y_axis_label="Rise",
                 toolbar_location=None,
@@ -248,6 +259,7 @@ class Bokeh:
                 xrange = rfunc_plot.x_range
             else:
                 xrange = False
+
             rfunc_plot = figure(
                 x_axis_label=None,
                 toolbar_location=None,

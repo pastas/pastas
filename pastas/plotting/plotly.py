@@ -19,7 +19,7 @@ class Plotly:
 
     Usage
     -----
-    >>> ps.utils.register_plotly_extension()
+    >>> ps.extensions.register_plotly_extension()
     INFO: Registered plotly plotting methods in Model class, e.g. `ml.plotly.plot()`.
     >>> fig = ml.plotly.results()
     >>> fig.write_html("results_figure.html")
