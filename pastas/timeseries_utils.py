@@ -267,7 +267,7 @@ def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> S
         # calculate the cumulative sum
         s_new = s_new.cumsum()
 
-        # add NaNs at none-existing values in series at index
+        # add NaNs at non-existing values in series at index
         s_new = s_new.combine_first(Series(np.NaN, index))
 
         # interpolate these NaN's, only keep values at index
@@ -276,7 +276,7 @@ def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> S
         # calculate the diff again (inverse of cumsum)
         s_new = s_new.diff()
 
-        # devide by the timestep again
+        # divide by the timestep again
         s_new = s_new / _get_dt_array(s_new.index)
 
         # set values after the end of the original series to NaN
