@@ -7,9 +7,10 @@
     :nosignatures:
 
     plots
-    modelplots
+    modelplots.Plotting
+    plotly.Plotly
+    bokeh.Bokeh
     modelcompare
     plotutil
-    plotly
 
 """
