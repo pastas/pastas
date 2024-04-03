@@ -577,10 +577,14 @@ class CompareModels:
                         continue
                     if response == "step":
                         kwargs = {}
+                        p = None
                         if ml.stressmodels[smn].rfunc is not None:
                             if isinstance(ml.stressmodels[smn].rfunc, HantushWellModel):
                                 kwargs = {"warn": False}
-                        step = ml.get_step_response(smn, add_0=True, **kwargs)
+                                p = ml.stressmodels[smn].get_parameters(
+                                    model=ml, istress=0
+                                )
+                        step = ml.get_step_response(smn, p=p, add_0=True, **kwargs)
                         if step is None:
                             continue
                         if self.axes is None:
@@ -598,10 +602,14 @@ class CompareModels:
                             )
                     elif response == "block":
                         kwargs = {}
+                        p = None
                         if ml.stressmodels[smn].rfunc is not None:
                             if isinstance(ml.stressmodels[smn].rfunc, HantushWellModel):
                                 kwargs = {"warn": False}
-                        block = ml.get_block_response(smn, **kwargs)
+                                p = ml.stressmodels[smn].get_parameters(
+                                    model=ml, istress=0
+                                )
+                        block = ml.get_block_response(smn, p=p, add_0=True, **kwargs)
                         if block is None:
                             continue
                         if self.axes is None:
