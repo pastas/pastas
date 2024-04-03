@@ -1,4 +1,4 @@
-"""This module contains all the plotting methods for Pastas Models."""
+"""This module contains plotting methods for Pastas Models."""
 
 import logging
 
