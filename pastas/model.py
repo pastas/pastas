@@ -1540,6 +1540,9 @@ class Model:
     def get_block_response(
         self,
         name: str,
+        p: Optional[ArrayLike] = None,
+        add_0: bool = False,
+        dt: Optional[float] = None,
         **kwargs,
     ) -> Union[Series, None]:
         """Method to obtain the block response for a stressmodel.
@@ -1566,12 +1569,17 @@ class Model:
             Pandas.Series with the block response. The index is based on the
             frequency that is present in the model.settings.
         """
-        return self._get_response(block_or_step="block", name=name, **kwargs)
+        return self._get_response(
+            block_or_step="block", name=name, dt=dt, p=p, add_0=add_0, **kwargs
+        )
 
     @get_stressmodel
     def get_step_response(
         self,
         name,
+        p: Optional[ArrayLike] = None,
+        add_0: bool = False,
+        dt: Optional[float] = None,
         **kwargs,
     ) -> Union[Series, None]:
         """Method to obtain the step response for a stressmodel.
@@ -1598,7 +1606,9 @@ class Model:
             Pandas.Series with the step response. The index is based on the frequency
             that is present in the model.settings.
         """
-        return self._get_response(block_or_step="step", name=name, **kwargs)
+        return self._get_response(
+            block_or_step="step", name=name, dt=dt, p=p, add_0=add_0, **kwargs
+        )
 
     @get_stressmodel
     def get_response_tmax(
