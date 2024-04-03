@@ -1,3 +1,5 @@
+"""This module contains utility functions for plotting.
+"""
 from typing import List, Union
 
 import numpy as np
