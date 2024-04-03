@@ -103,7 +103,7 @@ class Bokeh:
             "index",
             "Simulation",
             source=source,
-            legend_label=r"Simulation (R$$^2$$ = {:.2f})".format(rsq),
+            legend_label=r"Simulation (R2 = {:.2f})".format(rsq),
             line_width=2,
         )
         p.legend.ncols = 2
@@ -145,6 +145,8 @@ class Bokeh:
         ranges = ranges.drop([ranges.iloc[:2].idxmin(), "Noise"])
         heights = (ranges / ranges.sum() * (height - 50)).values.astype(int)
         source = ColumnDataSource(data)
+        rsq = self._model.stats.rsq(tmin=tmin, tmax=tmax)
+
         TOOLS = "zoom_in,zoom_out,reset,pan,xwheel_zoom,box_zoom,undo"
 
         p = figure(
@@ -170,7 +172,7 @@ class Bokeh:
             "index",
             "Simulation",
             source=source,
-            legend_label="Simulation",
+            legend_label=r"Simulation (R2 = {:.2f})".format(rsq),
         )
         p.legend.ncols = 2
 
@@ -283,7 +285,7 @@ class Bokeh:
             y_axis_type=None,
             tools="",
             toolbar_location=None,
-            background_fill_color="#efefef",
+            background_fill_color="#ffffff",
         )
 
         range_tool = RangeTool(x_range=p.x_range)
