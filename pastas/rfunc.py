@@ -170,13 +170,7 @@ class RfuncBase:
         """
         return
 
-    def block(
-        self,
-        p: ArrayLike,
-        dt: float = 1.0,
-        cutoff: Optional[float] = None,
-        maxtmax: Optional[int] = None,
-    ) -> ArrayLike:
+    def block(self, p: ArrayLike, dt: float = 1.0, **kwargs) -> ArrayLike:
         """Method to return the block function.
 
         Parameters
@@ -186,17 +180,15 @@ class RfuncBase:
             parameters.
         dt: float
             timestep as a multiple of one day.
-        cutoff: float, optional
-            proportion after which the step function is cut off.
-        maxtmax: int, optional
-            Maximum timestep to compute the block response for.
+        kwargs: dict
+            kwargs are passed onto self.step()
 
         Returns
         -------
         s: array_like
             Array with the block response.
         """
-        s = self.step(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
+        s = self.step(p=p, dt=dt, **kwargs)
         return np.append(s[0], np.subtract(s[1:], s[:-1]))
 
     @staticmethod
