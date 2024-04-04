@@ -11,7 +11,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import LogFormatter, MultipleLocator
 from pandas import Series, Timestamp, concat
 
-from pastas.decorators import model_tmin_tmax
+from pastas.decorators import PastasDeprecationWarning, model_tmin_tmax
 from pastas.plotting.plots import cum_frequency, diagnostics, pairplot, series
 from pastas.plotting.plotutil import (
     _get_height_ratios,
@@ -748,6 +748,7 @@ class Plotting:
 
         return axes
 
+    @PastasDeprecationWarning
     @model_tmin_tmax
     def contributions_pie(
         self,
