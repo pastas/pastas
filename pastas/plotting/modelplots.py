@@ -339,6 +339,9 @@ class Plotting:
         if self.ml.stressmodels[sm_name].rfunc is not None:
             if isinstance(self.ml.stressmodels[sm_name].rfunc, HantushWellModel):
                 rkwargs = {"warn": False}
+                if istress is None:
+                    # show the response of the first well, which gives more information than istress = None
+                    istress = 0
         response = self.ml._get_response(
             block_or_step=block_or_step,
             name=sm_name,
