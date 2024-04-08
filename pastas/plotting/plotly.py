@@ -1,3 +1,6 @@
+"""This module contains interactive plots for Pastas models.
+"""
+
 import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
@@ -10,6 +13,7 @@ from pastas.plotting.plotutil import (
     _table_formatter_params,
     _table_formatter_stderr,
 )
+from pastas.rfunc import HantushWellModel
 from pastas.stats import acf
 
 
@@ -246,8 +250,16 @@ class Plotly:
             traces.append(trace_c)
 
             # response
+            rkwargs = {}
+            p = None
+            if self._model.stressmodels[c.name].rfunc is not None:
+                if isinstance(self._model.stressmodels[c.name].rfunc, HantushWellModel):
+                    rkwargs = {"warn": False}
+                    p = self._model.stressmodels[c.name].get_parameters(
+                        model=self._model, istress=0
+                    )
             response = self._model._get_response(
-                block_or_step="step", name=c.name, add_0=True
+                block_or_step="step", name=c.name, p=p, add_0=True, **rkwargs
             )
             trace_r = go.Scatter(
                 x=response.index,

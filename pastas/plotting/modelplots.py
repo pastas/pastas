@@ -1,4 +1,4 @@
-"""This module contains all the plotting methods for Pastas Models."""
+"""This module contains plotting methods for Pastas Models."""
 
 import logging
 
@@ -267,11 +267,15 @@ class Plotting:
 
             # plot the step response
             rkwargs = {}
+            p = None
             if self.ml.stressmodels[sm_name].rfunc is not None:
                 if isinstance(self.ml.stressmodels[sm_name].rfunc, HantushWellModel):
                     rkwargs = {"warn": False}
+                    p = self.ml.stressmodels[sm_name].get_parameters(
+                        model=self.ml, istress=0
+                    )
             response = self.ml._get_response(
-                block_or_step=block_or_step, name=sm_name, add_0=True, **rkwargs
+                block_or_step=block_or_step, name=sm_name, p=p, add_0=True, **rkwargs
             )
 
             if response is not None:
@@ -908,7 +912,7 @@ class Plotting:
                         contributions.append((name, h))
 
                         # plot step responses for each well, scaled with distance
-                        p = sml.get_parameters(istress=istress)
+                        p = sml.get_parameters(model=self.ml, istress=istress)
                         step = self.ml.get_step_response(sm, p=p)
                         ax_step.plot(step.index, step, c=stackcolors[name], label=name)
                         # recalculate y-limits step response axes
