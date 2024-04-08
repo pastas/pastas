@@ -1465,7 +1465,7 @@ class Model:
             for contrib in contribs:
                 df.append(contrib)
 
-        df = concat(df, axis=1)
+        df = concat(df, axis=1, sort=True)
         return df
 
     def _get_response(

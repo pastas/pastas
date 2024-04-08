@@ -1,4 +1,4 @@
-"""This module contains all the plotting methods for Pastas Models."""
+"""This module contains plotting methods for Pastas Models."""
 
 import logging
 
@@ -11,7 +11,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import LogFormatter, MultipleLocator
 from pandas import Series, Timestamp, concat
 
-from pastas.decorators import model_tmin_tmax
+from pastas.decorators import PastasDeprecationWarning, model_tmin_tmax
 from pastas.plotting.plots import cum_frequency, diagnostics, pairplot, series
 from pastas.plotting.plotutil import (
     _get_height_ratios,
@@ -768,6 +768,7 @@ class Plotting:
 
         return axes
 
+    @PastasDeprecationWarning
     @model_tmin_tmax
     def contributions_pie(
         self,
@@ -927,7 +928,7 @@ class Plotting:
                         contributions.append((name, h))
 
                         # plot step responses for each well, scaled with distance
-                        p = sml.get_parameters(istress=istress)
+                        p = sml.get_parameters(model=self.ml, istress=istress)
                         step = self.ml.get_step_response(sm, p=p)
                         ax_step.plot(step.index, step, c=stackcolors[name], label=name)
                         # recalculate y-limits step response axes

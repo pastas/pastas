@@ -1,4 +1,4 @@
-"""This module contains all the plotting methods in Pastas."""
+"""This module contains plotting methods for Pastas."""
 
 import logging
 from typing import Dict, List, Optional, Tuple, Union
