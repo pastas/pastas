@@ -1475,6 +1475,7 @@ class Model:
         p: Optional[ArrayLike] = None,
         dt: Optional[float] = None,
         add_0: bool = False,
+        istress: Optional[int] = None,
         **kwargs,
     ) -> Union[Series, None]:
         """Internal method to compute the block and step response.
@@ -1492,6 +1493,9 @@ class Model:
             timestep for the response function.
         add_0: bool, optional
             Add a zero at t=0.
+        istress: int, optional
+            When multiple stresses are present in a stressmodel, this keyword can be
+            used to obtain the respone to an individual stress.
         kwargs: dict: passed to rfunc.step() or rfunc.block()
 
         Returns
@@ -1510,6 +1514,9 @@ class Model:
 
         if dt is None:
             dt = _get_dt(self.settings["freq"])
+        if istress is not None and self.stressmodels[name].get_nsplit() > 1:
+            p = self.stressmodels[name].get_parameters(model=self, istress=istress)
+
         response = block_or_step(p, dt, **kwargs)
 
         if add_0:
@@ -1553,7 +1560,8 @@ class Model:
             Adds 0 at t=0 at the start of the response, defaults to False.
         dt: float, optional
             timestep for the response function.
-        kwargs: dict
+        kwargs: dict, optional
+            Kwargs are passed onto _get_response()
 
         Returns
         -------
@@ -1589,6 +1597,8 @@ class Model:
             Adds 0 at t=0 at the start of the response, defaults to False.
         dt: float, optional
             timestep for the response function.
+        kwargs: dict, optional
+            Kwargs are passed onto _get_response()
 
         Returns
         -------
