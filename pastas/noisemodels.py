@@ -8,7 +8,7 @@ Examples
 By default, a noise model is added to a Pastas model. It is possible to replace the
 default model with different models as follows:
 
->>> n = ps.ArmaModel()
+>>> n = ps.ARMANoiseModel()
 >>> ml.add_noisemodel(n)
 
 or, to delete the noise model from the model:
