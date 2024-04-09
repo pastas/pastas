@@ -474,7 +474,7 @@ def aic(
     missing: str = "drop",
     nparam: int = 1,
 ) -> float:
-    """Compute the corrected Akaike Information Criterium (AICc).
+    """Compute the Akaike Information Criterium (AIC).
 
     Parameters
     ----------
@@ -499,8 +499,9 @@ def aic(
 
     .. math:: \\text{AIC} = -2 log(L) + 2 nparam
 
-    where :math:`n_{param}` is the number of calibration parameters and L is the
-    likelihood function for the model. In the case of ordinary least squares
+    where :math:`n_{param}` is the number of calibration parameters and L is
+    the likelihood function for the model. In the case of ordinary least
+    squares:
 
     .. math:: log(L) = - (nobs / 2) * log(RSS / -nobs)
 
@@ -553,15 +554,13 @@ def aicc(
 
     .. math:: \\text{AIC} = -2 log(L) + 2 nparam - (2 nparam (nparam + 1) / (nobs - nparam - 1))
 
-    where :math:`n_{param}` is the number of calibration parameters, n is the
-    number of observations and L is the likelihood function for the model. In
-    the case of ordinary least squares
+    where :math:`n_{param}` is the number of calibration parameters, nobs is
+    the number of observations and L is the likelihood function for the model.
+    In the case of ordinary least squares:
 
     .. math:: log(L) = - (nobs / 2) * log(RSS / -nobs)
 
-    where RSS denotes the residual sum of squares and nobs the number of
-    observations.
-
+    where RSS denotes the residual sum of squares.
     """
     err = _compute_err(obs=obs, sim=sim, res=res, missing=missing)
 
