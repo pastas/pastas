@@ -20,8 +20,11 @@ See Also
 pastas.model.Model.add_noisemodel
 """
 
+from logging import captureWarnings, getLogger
+
 # Type Hinting
 from typing import Optional
+from warnings import warn
 
 import numpy as np
 from pandas import DataFrame, DatetimeIndex, Series, Timedelta
@@ -30,7 +33,13 @@ from pastas.typing import ArrayLike
 
 from .decorators import njit, set_parameter
 
-__all__ = ["NoiseModel", "ArmaModel"]
+captureWarnings(True)
+logger = getLogger(__name__)
+warnings_logger = getLogger("py.warnings")
+warnings_logger.addHandler(logger)
+
+
+__all__ = ["AR1NoiseModel", "ARMANoiseModel"]
 
 
 class NoiseModelBase:
@@ -119,7 +128,7 @@ class NoiseModelBase:
         return 1
 
 
-class NoiseModel(NoiseModelBase):
+class AR1NoiseModel(NoiseModelBase):
     """Noise model with exponential decay of the residuals and weighting.
 
     Parameters
@@ -148,7 +157,7 @@ class NoiseModel(NoiseModelBase):
     optional.
     """
 
-    _name = "NoiseModel"
+    _name = "AR1NoiseModel"
 
     def __init__(self, norm: bool = True) -> None:
         NoiseModelBase.__init__(self)
@@ -262,7 +271,14 @@ class NoiseModel(NoiseModelBase):
         return data
 
 
-class ArmaModel(NoiseModelBase):
+def NoiseModel(*args, **kwargs) -> AR1NoiseModel:
+    warn(
+        "The NoiseModel class will be deprecated in Pastas version 2.0. Please use AR1NoiseModel to get the expected behavior.",
+        category=FutureWarning,
+    )
+    n = AR1NoiseModel(*args, **kwargs)
+    n._name = "NoiseModel"
+    return n
     """ARMA(1,1) Noise model to simulate the noise as defined in
     :cite:t:`collenteur_estimation_2021`.
 

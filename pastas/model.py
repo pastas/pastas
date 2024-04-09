@@ -25,7 +25,7 @@ from pandas import (
 from pastas.decorators import get_stressmodel
 from pastas.io.base import _load_model, dump
 from pastas.modelstats import Statistics
-from pastas.noisemodels import NoiseModel
+from pastas.noisemodels import AR1NoiseModel
 from pastas.plotting.modelplots import Plotting, _table_formatter_stderr
 from pastas.rfunc import HantushWellModel
 from pastas.solver import LeastSquares
@@ -142,7 +142,7 @@ class Model:
             constant = Constant(initial=self.oseries.series.mean(), name="constant")
             self.add_constant(constant)
         if noisemodel:
-            self.add_noisemodel(NoiseModel())
+            self.add_noisemodel(AR1NoiseModel())
 
         # File Information
         self.file_info = self._get_file_info()
@@ -285,7 +285,7 @@ class Model:
 
         Examples
         --------
-        >>> n = ps.NoiseModel()
+        >>> n = ps.AR1NoiseModel()
         >>> ml.add_noisemodel(n)
         """
         self.noisemodel = noisemodel
@@ -695,7 +695,7 @@ class Model:
         elif noise is True and self.noisemodel is None:
             logger.warning(
                 "Cannot solve with noise=True while no noisemodel is present. "
-                "Add a noisemodel with Model.add_noisemodel(ps.NoiseModel()) "
+                "Add a noisemodel with Model.add_noisemodel(ps.AR1NoiseModel()) "
                 "to replicate results from pastas < 1.5. "
                 "Solving without a noisemodel."
             )
