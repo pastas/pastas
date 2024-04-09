@@ -99,8 +99,8 @@ you to cite the Pastas article published in Groundwater journal as follows:
 
     User Guide <userguide/index>
     Examples <examples/index>
-    API Docs <api/index>
+    Reference <api/index>
     Benchmarks <benchmarks/index>
-    Developers <developers/index>
-    Map <map>
+    Contribute <developers/index>
     About <about/index>
+    Map <map>
