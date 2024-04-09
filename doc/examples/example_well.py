@@ -17,7 +17,7 @@ head = pd.read_csv(
 
 # Create the time series model
 ml = ps.Model(head, name="head")
-ml.add_noisemodel(ps.NoiseModel())
+ml.add_noisemodel(ps.AR1NoiseModel())
 
 # read weather data
 rain = pd.read_csv(
