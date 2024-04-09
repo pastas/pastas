@@ -36,7 +36,7 @@ ml.set_parameter("rch_kv", vary=False)
 
 # Solve the Pastas model
 ml.solve(tmin=tmin, tmax=tmax, fit_constant=False, report=False)
-ml.add_noisemodel(ps.NoiseModel)
+ml.add_noisemodel(ps.NoiseModel())
 ml.set_parameter("rch_ks", vary=False)
 ml.solve(tmin=tmin, tmax=tmax, fit_constant=False, initial=False)
 

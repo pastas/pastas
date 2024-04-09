@@ -15,7 +15,7 @@ obs = pd.read_csv("data/head_nb1.csv", index_col=0, parse_dates=True).squeeze("c
 
 # Create the time series model
 ml = ps.Model(obs, name="head")
-ml.add_noisemodel(ps.NoiseModel)
+ml.add_noisemodel(ps.NoiseModel())
 
 # read weather data
 rain = pd.read_csv("data/rain_nb1.csv", index_col=0, parse_dates=True).squeeze(
