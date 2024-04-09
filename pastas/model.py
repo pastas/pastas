@@ -297,6 +297,7 @@ class Model:
         if freq_in_days > noise_alpha:
             self.noisemodel._set_initial("noise_alpha", freq_in_days)
 
+        self.settings["noise"] = True
         self.parameters = self.get_init_parameters(initial=False)
 
     @get_stressmodel
