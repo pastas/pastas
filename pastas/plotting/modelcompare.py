@@ -842,17 +842,18 @@ class CompareModels:
             name of labeled axes to plot table on, by default "met"
         metric_selection : list, optional
             list of str describing which metrics to include, by default None which
-            uses ["rsq", "aic"].
+            uses ["rsq", "aicc"].
         """
         if metric_selection is None:
-            metric_selection = ["rsq", "aic"]
+            metric_selection = ["rsq", "aicc"]
 
         metrics = self.get_metrics(self.models, metric_selection=metric_selection)
-        for met in ["aic", "bic"]:
+        for met in ["aic", "aicc", "bic"]:
             if met in metrics.index:
                 metrics.loc[met] -= metrics.loc[met].min()
+                metname = "AICc" if met == "aicc" else met.upper()
                 metrics = metrics.rename(
-                    index={met: f"\N{GREEK CAPITAL LETTER DELTA}{met.upper()}"}
+                    index={met: f"\N{GREEK CAPITAL LETTER DELTA}{metname}"}
                 )
         if "rsq" in metrics.index:
             metrics = metrics.rename(index={"rsq": "R\N{SUPERSCRIPT TWO}"})
