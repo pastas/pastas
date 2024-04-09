@@ -60,6 +60,7 @@ ci = [
     "emcee",
     "tqdm",
     "plotly",
+    "bokeh >= 3.0",
 ]
 rtd = [
     "pastas[solvers]",
