@@ -992,7 +992,7 @@ def reversals_avg(series: Series) -> float:
     # Check if the time step is approximately daily
     if not (dt > 0.9).all() & (dt < 1.1).all():
         msg = (
-            "The time step is not approximately daily (>10% of time steps are"
+            "The time step is not approximately daily (>10%% of time steps are"
             "non-daily). This may lead to incorrect results."
         )
         logger.warning(msg)
@@ -1275,10 +1275,10 @@ def recession_constant(
     # Return nan and raise warning if the decay constant is close to the boundary
     if isclose(popt[1], 0.0) or isclose(popt[1], 1e3):
         msg = (
-            "The estimated recession constant ({:.2f}) is close to the boundary. "
-            "This may lead to incorrect results.".format(popt[1])
+            "The estimated recession constant (%s) is close to the boundary. "
+            "This may lead to incorrect results."
         )
-        logger.warning(msg)
+        logger.warning(msg, round(popt[1], 2))
         return nan
     else:
         return popt[1]
@@ -1346,10 +1346,10 @@ def recovery_constant(
     # Return nan and raise warning if the recovery constant is close to the boundary
     if isclose(popt[1], 0.0) or isclose(popt[1], 1e3):
         msg = (
-            "The estimated recovery constant ({:.2f}) is close to the boundary. "
-            "This may lead to incorrect results.".format(popt[1])
+            "The estimated recovery constant (%s) is close to the boundary. "
+            "This may lead to incorrect results."
         )
-        logger.warning(msg)
+        logger.warning(msg, round(popt[1], 2))
         return nan
     else:
         return popt[1]
