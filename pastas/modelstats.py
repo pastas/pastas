@@ -47,7 +47,7 @@ class Statistics:
         "kge",
         "bic",
         "aic",
-        "aicc"
+        "aicc",
     ]
 
     def __init__(self, ml: Model):

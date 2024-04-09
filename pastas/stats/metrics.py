@@ -502,9 +502,9 @@ def aic(
     where :math:`n_{param}` is the number of calibration parameters and L is the
     likelihood function for the model. In the case of ordinary least squares
 
-    .. math:: log(L) = - (n / 2) * log(RSS / -n)
+    .. math:: log(L) = - (nobs / 2) * log(RSS / -nobs)
 
-    where RSS denotes the residual sum of squares and n the number of
+    where RSS denotes the residual sum of squares and nobs the number of
     observations.
     """
     err = _compute_err(obs=obs, sim=sim, res=res, missing=missing)
@@ -517,6 +517,7 @@ def aic(
     n = err.index.size
 
     return n * log((err.to_numpy() ** 2.0).sum() / n) + 2.0 * nparam
+
 
 def aicc(
     obs: Optional[Series] = None,
@@ -550,15 +551,15 @@ def aicc(
     The corrected Akaike Information Criterium (AICc)
     :cite:p:`burnham_aic_2011` is computed as follows:
 
-    .. math:: \\text{AIC} = -2 log(L) + 2 nparam - (2 nparam (nparam + 1) / (n - nparam - 1))
+    .. math:: \\text{AIC} = -2 log(L) + 2 nparam - (2 nparam (nparam + 1) / (nobs - nparam - 1))
 
     where :math:`n_{param}` is the number of calibration parameters, n is the
     number of observations and L is the likelihood function for the model. In
     the case of ordinary least squares
 
-    .. math:: log(L) = - (n / 2) * log(RSS / -n)
+    .. math:: log(L) = - (nobs / 2) * log(RSS / -nobs)
 
-    where RSS denotes the residual sum of squares and n the number of
+    where RSS denotes the residual sum of squares and nobs the number of
     observations.
 
     """
@@ -568,6 +569,7 @@ def aicc(
 
     c_term = (2 * nparam * (nparam + 1)) / (n - nparam - 1)
     return aic(res=-err, nparam=nparam) + c_term
+
 
 # Forecast Error Metrics
 
