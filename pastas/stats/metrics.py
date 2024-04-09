@@ -474,7 +474,7 @@ def aic(
     missing: str = "drop",
     nparam: int = 1,
 ) -> float:
-    """Compute the corrected Akaike Information Criterium (AICc).
+    """Compute the Akaike Information Criterium (AIC).
 
     Parameters
     ----------
