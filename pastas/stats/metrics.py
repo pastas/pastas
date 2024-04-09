@@ -474,7 +474,7 @@ def aic(
     missing: str = "drop",
     nparam: int = 1,
 ) -> float:
-    """Compute the Akaike Information Criterium (AIC).
+    """Compute the corrected Akaike Information Criterium (AICc).
 
     Parameters
     ----------
@@ -483,13 +483,14 @@ def aic(
     sim: pandas.Series, optional
         The Series with the simulated values.
     res: pandas.Series, optional
-        The Series with the residual values. If time series for the residuals are
-        provided, the sim and obs arguments are ignored. Note that the residuals
-        must be computed as `obs - sim` here.
+        The Series with the residual values. If time series for the residuals
+        are provided, the sim and obs arguments are ignored. Note that the
+        residuals must be computed as `obs - sim` here.
     nparam: int, optional
         number of calibrated parameters.
     missing: str, optional
-        string with the rule to deal with missing values. Only "drop" is supported now.
+        string with the rule to deal with missing values. Only "drop" is
+        supported now.
 
     Notes
     -----
@@ -499,7 +500,12 @@ def aic(
     .. math:: \\text{AIC} = -2 log(L) + 2 nparam
 
     where :math:`n_{param}` is the number of calibration parameters and L is the
-    likelihood function for the model.
+    likelihood function for the model. In the case of ordinary least squares
+
+    .. math:: log(L) = - (n / 2) * log(RSS / -n)
+
+    where RSS denotes the residual sum of squares and n the number of
+    observations.
     """
     err = _compute_err(obs=obs, sim=sim, res=res, missing=missing)
 
