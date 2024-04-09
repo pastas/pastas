@@ -1825,12 +1825,16 @@ class Model:
                 _table_formatter_stderr, na_rep="nan"
             )
 
-        if par_uncertainty:
-            # Determine the width of the fit_report based on the parameters
-            width = len(parameters.to_string().split("\n")[1])
-        else:
-            # Determine the width of the fit_report based on the parameters
-            width = len(parameters.to_string().split("\n")[1]) + 7
+        # determine width of the fit_report
+        len_fit = max([len(v) for v in fit.values()]) + max(
+            [len(v) for v in fit.keys()]
+        )
+        len_model = max([len(v) for v in model.values() if isinstance(v, str)]) + max(
+            [len(v) for v in model.keys()]
+        )
+        len_param = len(parameters.to_string().split("\n")[1])
+        width = max((len_fit + len_model + 8), len_param)
+        string = "{:{fill}{align}{width}}"
         string = "{:{fill}{align}{width}}"
 
         # Create the first header with model information and stats
