@@ -512,6 +512,58 @@ def aic(
 
     return n * log((err.to_numpy() ** 2.0).sum() / n) + 2.0 * nparam
 
+def aicc(
+    obs: Optional[Series] = None,
+    sim: Optional[Series] = None,
+    res: Optional[Series] = None,
+    missing: str = "drop",
+    nparam: int = 1,
+) -> float:
+    """Compute the Akaike Information Criterium with second order
+    bias correction for the number of observations (AICc)
+
+    Parameters
+    ----------
+    obs: pandas.Series, optional
+        Series with the observed values.
+    sim: pandas.Series, optional
+        The Series with the simulated values.
+    res: pandas.Series, optional
+        The Series with the residual values. If time series for the residuals
+        are provided, the sim and obs arguments are ignored. Note that the
+        residuals must be computed as `obs - sim` here.
+    nparam: int, optional
+        number of calibrated parameters.
+    missing: str, optional
+        string with the rule to deal with missing values. Only "drop" is
+        supported now.
+
+    Notes
+    -----
+
+    The corrected Akaike Information Criterium (AICc)
+    :cite:p:`burnham_aic_2011` is computed as follows:
+
+    .. math:: \\text{AIC} = -2 log(L) + 2 nparam - (2 nparam (nparam + 1) / (n - nparam - 1))
+
+    where :math:`n_{param}` is the number of calibration parameters, n is the
+    number of observations and L is the likelihood function for the model. In
+    the case of ordinary least squares
+
+    .. math:: log(L) = - (n / 2) * log(RSS / -n)
+
+    where RSS denotes the residual sum of squares and n the number of
+    observations.
+
+    """
+    err = _compute_err(obs=obs, sim=sim, res=res, missing=missing)
+
+    aic = aic(res=-err, nparam=nparam)
+
+    n = err.index.size
+
+    c_term = (2 * nparam * (nparam + 1)) / (n - nparam - 1)
+    return aic + c_term
 
 # Forecast Error Metrics
 
