@@ -50,7 +50,12 @@ def test_bic():
 
 def test_aic():
     aic = ps.stats.metrics.aic(obs=obs, sim=sim)
-    assert pytest.approx(aic, tol) == 9.487208
+    assert pytest.approx(aic, tol) == -10.314282
+
+
+def test_aicc():
+    aicc = ps.stats.metrics.aicc(obs=obs, sim=sim)
+    assert pytest.approx(aicc, tol) == -8.314282
 
 
 def test_kge():

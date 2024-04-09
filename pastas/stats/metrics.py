@@ -564,12 +564,10 @@ def aicc(
     """
     err = _compute_err(obs=obs, sim=sim, res=res, missing=missing)
 
-    aic = aic(res=-err, nparam=nparam)
-
     n = err.index.size
 
     c_term = (2 * nparam * (nparam + 1)) / (n - nparam - 1)
-    return aic + c_term
+    return aic(res=-err, nparam=nparam) + c_term
 
 # Forecast Error Metrics
 
