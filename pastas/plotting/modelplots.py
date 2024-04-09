@@ -98,8 +98,8 @@ class Plotting:
 
         if simulation:
             sim = self.ml.simulate(tmin=tmin, tmax=tmax)
-            r2 = round(self.ml.stats.rsq(tmin=tmin, tmax=tmax) * 100, 1)
-            sim.plot(ax=ax, label=f"{sim.name} ($R^2$ = {r2}%)")
+            r2 = self.ml.stats.rsq(tmin=tmin, tmax=tmax)
+            sim.plot(ax=ax, label=f"{sim.name} ($R^2$={r2:.2%})")
 
         # Dress up the plot
         # temporary fix, as set_xlim currently does not work with strings mpl=3.6.1
@@ -109,8 +109,7 @@ class Plotting:
             tmax = Timestamp(tmax)
 
         ax.set_xlim(tmin, tmax)
-        ax.set_ylabel("Groundwater levels [meter]")
-        ax.set_title("Results of {}".format(self.ml.name))
+        ax.set_ylabel("Head")
 
         if legend:
             ax.legend(ncol=2, numpoints=3)
@@ -223,6 +222,7 @@ class Plotting:
         sim.plot(ax=ax1, x_compat=True, label=f"{sim.name} ($R^2$={r2:.2%})")
         ax1.legend(loc=(0, 1), ncol=3, frameon=False, numpoints=3)
         ax1.set_ylim(ylims[0])
+        ax1.set_ylabel("Head")
 
         # Residuals and noise
         ax2 = fig.add_subplot(gs[1, 0], sharex=ax1)
@@ -246,6 +246,7 @@ class Plotting:
                     ax = fig.add_subplot(gs[i + 2, 0], sharex=ax1)
                     contribs[i].plot(ax=ax, x_compat=True)
                     ax.legend(loc=(0, 1), ncol=3, frameon=False)
+                    ax.set_ylabel("Rise")
                     if adjust_height:
                         ax.set_ylim(ylims[i + 2])
 
@@ -268,6 +269,7 @@ class Plotting:
                     fontsize=plt.rcParams["legend.fontsize"],
                 )
                 ax.legend(loc=(0, 1), ncol=3, frameon=False)
+                ax.set_ylabel("Rise")
                 if adjust_height:
                     ax.set_ylim(ylims[i + 2])
                 i = i + 1
@@ -486,12 +488,14 @@ class Plotting:
             ax=axes[0],
             x_compat=True,
         )
-        sim.plot(ax=axes[0], x_compat=True)
+
+        r2 = self.ml.stats.rsq(tmin=tmin, tmax=tmax)
+        sim.plot(ax=axes[0], x_compat=True, label=f"{sim.name} ($R^2$={r2:.2%})")
         if set_axes_properties:
-            axes[0].set_title("observations vs. simulation")
             axes[0].set_ylim(ylims[0])
         axes[0].grid(True)
         axes[0].legend(ncol=3, frameon=False, numpoints=3)
+        axes[0].set_ylabel("Head")
 
         if ytick_base and set_axes_properties:
             if isinstance(ytick_base, bool):
@@ -516,6 +520,7 @@ class Plotting:
                 ax.set_ylim(ylims[i + 1])
             ax.grid(True)
             ax.minorticks_off()
+            ax.set_ylabel("Rise")
         if set_axes_properties:
             # temporary fix, as set_xlim currently does not work with strings mpl=3.6.1
             if tmin is not None:
