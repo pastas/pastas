@@ -279,6 +279,9 @@ def NoiseModel(*args, **kwargs) -> AR1NoiseModel:
     n = AR1NoiseModel(*args, **kwargs)
     n._name = "NoiseModel"
     return n
+
+
+class ARMANoiseModel(NoiseModelBase):
     """ARMA(1,1) Noise model to simulate the noise as defined in
     :cite:t:`collenteur_estimation_2021`.
 
@@ -298,7 +301,7 @@ def NoiseModel(*args, **kwargs) -> AR1NoiseModel:
     irregular time steps yet.
     """
 
-    _name = "ArmaModel"
+    _name = "ARMANoiseModel"
 
     def __init__(self) -> None:
         NoiseModelBase.__init__(self)
@@ -359,3 +362,13 @@ def NoiseModel(*args, **kwargs) -> AR1NoiseModel:
                 - a[i - 1] * pm * np.exp(-odelt[i - 1] / np.abs(beta))
             )
         return a
+
+
+def ArmaModel(*args, **kwargs) -> ARMANoiseModel:
+    warn(
+        "The ArmaModel class will be deprecated in Pastas version 2.0. Please use ARMANoiseMOdel to get the expected behavior.",
+        category=FutureWarning,
+    )
+    n = ARMANoiseModel(*args, **kwargs)
+    n._name = "ArmaModel"
+    return n
