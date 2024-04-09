@@ -1,5 +1,6 @@
-import pastas as ps
 import pytest
+
+import pastas as ps
 
 
 def test_frequency_is_supported():

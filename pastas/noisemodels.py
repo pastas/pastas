@@ -39,7 +39,7 @@ warnings_logger = getLogger("py.warnings")
 warnings_logger.addHandler(logger)
 
 
-__all__ = ["AR1NoiseModel", "ARMANoiseModel"]
+__all__ = ["ARNoiseModel", "ARMANoiseModel"]
 
 
 class NoiseModelBase:
@@ -128,7 +128,7 @@ class NoiseModelBase:
         return 1
 
 
-class AR1NoiseModel(NoiseModelBase):
+class ARNoiseModel(NoiseModelBase):
     """Noise model with exponential decay of the residuals and weighting.
 
     Parameters
@@ -157,7 +157,7 @@ class AR1NoiseModel(NoiseModelBase):
     optional.
     """
 
-    _name = "AR1NoiseModel"
+    _name = "ARNoiseModel"
 
     def __init__(self, norm: bool = True) -> None:
         NoiseModelBase.__init__(self)
@@ -271,12 +271,12 @@ class AR1NoiseModel(NoiseModelBase):
         return data
 
 
-def NoiseModel(*args, **kwargs) -> AR1NoiseModel:
+def NoiseModel(*args, **kwargs) -> ARNoiseModel:
     warn(
-        "The NoiseModel class will be deprecated in Pastas version 2.0. Please use AR1NoiseModel to get the expected behavior.",
+        "The NoiseModel class will be deprecated in Pastas version 2.0. Please use ARNoiseModel to get the expected behavior.",
         category=FutureWarning,
     )
-    n = AR1NoiseModel(*args, **kwargs)
+    n = ARNoiseModel(*args, **kwargs)
     n._name = "NoiseModel"
     return n
 
