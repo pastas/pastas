@@ -212,10 +212,13 @@ class Model:
             for sm in stressmodel:
                 self.add_stressmodel(sm)
         elif (stressmodel.name in self.stressmodels.keys()) and not replace:
-            logger.error(
+            msg = (
                 "The name for the stressmodel you are trying to add already exists "
                 "for this model. Select another name."
             )
+            logger.error(msg)
+            raise ValueError(msg)
+
         else:
             if stressmodel.name in self.stressmodels.keys():
                 logger.warning(
@@ -429,7 +432,6 @@ class Model:
             sim = sim.loc[tmin:tmax]
 
         if sim.hasnans:
-            sim = sim.dropna()
             msg = (
                 "Simulation contains NaN-values. Check if time series settings "
                 "are provided for each stress model "
@@ -566,7 +568,7 @@ class Model:
         This method returns None if no noise model is present in the model.
         """
         if self.noisemodel is None or self.settings["noise"] is False:
-            logger.error(
+            logger.warning(
                 "Noise cannot be calculated if there is no noisemodel present or is "
                 "not used during parameter estimation."
             )
@@ -736,6 +738,7 @@ class Model:
         if self.settings["fit_constant"] is False:
             if self.transform is not None:
                 msg = "fit_constant needs to be True (for now) when a transform is used"
+                logger.error(msg)
                 raise Exception(msg)
             self.parameters.loc["constant_d", "vary"] = False
             self.parameters.loc["constant_d", "initial"] = 0.0
@@ -822,9 +825,9 @@ class Model:
         )
 
         if self.oseries_calib.empty:
-            raise ValueError(
-                "Calibration series 'oseries_calib' is empty! Check 'tmin' or 'tmax'."
-            )
+            msg = "Calibration series 'oseries_calib' is empty! Check 'tmin' or 'tmax'."
+            logger.error(msg)
+            raise ValueError(msg)
 
         # If a solver is provided, use that one
         if solver is not None:
@@ -919,7 +922,7 @@ class Model:
         if name not in self.parameters.index:
             msg = "parameter %s is not present in the model"
             logger.error(msg, name)
-            raise KeyError(msg, name)
+            raise KeyError(msg % name)
 
         # Because either of the following is not necessarily present
         noisemodel = self.noisemodel.name if self.noisemodel else "NotPresent"
@@ -941,9 +944,10 @@ class Model:
         # Move pmin and pmax based on the initial
         if move_bounds and initial:
             if pmin or pmax:
-                raise KeyError(
-                    "Either pmin/pmax or move_bounds must be provided, but not both."
-                )
+                msg = "Either pmin/pmax or move_bounds must be provided, but not both."
+                logger.error(msg)
+                raise KeyError(msg)
+
             factor = initial / self.parameters.loc[name, "initial"]
             pmin = self.parameters.loc[name, "pmin"] * factor
             pmax = self.parameters.loc[name, "pmax"] * factor
@@ -993,7 +997,7 @@ class Model:
         if len(time_offsets) > 1:
             msg = "The time-offset with the frequency is not the same for all stresses."
             logger.error(msg)
-            raise (Exception(msg))
+            raise Exception(msg)
         if len(time_offsets) == 1:
             return next(iter(time_offsets))
         else:

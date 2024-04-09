@@ -153,12 +153,12 @@ class TimeSeries:
                 if settings in self._predefined_settings.keys():
                     settings = self._predefined_settings[settings]
                 else:
-                    error = (
-                        f"Settings shortcut code '{settings}' is not in the "
-                        f"predefined settings options. Please choose from"
-                        f" {self._predefined_settings.keys()}"
+                    msg = (
+                        "Settings shortcut code '%s' is not in the predefined "
+                        "settings options. Please choose from %s.",
                     )
-                    raise KeyError(error)
+
+                    raise KeyError(msg, settings, self._predefined_settings.keys())
             self._update_settings(**settings)
 
         self.update_series(force_update=True, **self.settings)
@@ -447,10 +447,12 @@ class TimeSeries:
         if tmin is None:
             pass
         elif pd.Timestamp(tmin) > series.index.max():
-            logger.error(
+            msg = (
                 "The tmin is later than the last value of the time series. Pastas "
                 "does not support this. Please extend time series manually."
             )
+            logger.error(msg)
+            raise ValueError(msg)
         elif pd.Timestamp(tmin) >= series.index.min():
             series = series.loc[pd.Timestamp(tmin) :]
         else:
@@ -490,13 +492,12 @@ class TimeSeries:
                 )
             elif method is None:
                 msg = (
-                    f"Time Series '{self.name}': cannot be extended into past to"
-                    f" {series.index.min()} as 'fill_before' method is 'None'. "
-                    "Provide settings to stress model, e.g. "
-                    "`ps.StressModel(stress, settings='prec')`."
+                    "Time Series '%s': cannot be extended into past to %s as "
+                    "'fill_before' method is 'None'. Provide settings to stress model,"
+                    "e.g. `ps.StressModel(stress, settings='prec')`."
                 )
-                logger.error(msg)
-                raise ValueError(msg)
+                logger.error(msg, self.name, series.index.min())
+                raise ValueError(msg % (self.name, series.index.min()))
             else:
                 logger.info(
                     "Time Series '%s': User-defined option for fill_before '%s' is not "
@@ -516,10 +517,12 @@ class TimeSeries:
         if tmax is None:
             pass
         elif pd.Timestamp(tmax) <= series.index.min():
-            logger.error(
+            msg = (
                 "The tmax is before the first value of the time series. Pastas does "
                 "not support this. Please extend time series manually."
             )
+            logger.error(msg)
+            raise ValueError(msg)
         elif pd.Timestamp(tmax) <= series.index.max():
             series = series.loc[: pd.Timestamp(tmax)]
         else:
@@ -559,13 +562,12 @@ class TimeSeries:
                 )
             elif method is None:
                 msg = (
-                    f"Time Series '{self.name}': cannot be extended into future to"
-                    f" {series.index.max()} as 'fill_after' method is 'None'. "
-                    "Provide settings to stress model, e.g. "
-                    "`ps.StressModel(stress, settings='prec')`."
+                    "Time Series '%s': cannot be extended into future to %s as "
+                    "'fill_after' method is 'None'. Provide settings to stress model, "
+                    "e.g. `ps.StressModel(stress, settings='prec')`."
                 )
-                logger.error(msg)
-                raise ValueError(msg)
+                logger.error(msg, self.name, series.index.max())
+                raise ValueError(msg % (self.name, series.index.max()))
             else:
                 logger.warning(
                     "Time Series '%s': User-defined option for fill_after '%s' is not "
@@ -711,58 +713,58 @@ def _validate_series(series: Series, equidistant: bool = True):
 
     # 0. Make sure it is a Series and not something else (e.g., DataFrame)
     if not isinstance(series, pd.Series):
-        msg = f"Expected a Pandas Series, got {type(series)}"
-        logger.error(msg)
-        raise ValueError(msg)
+        msg = "Expected a Pandas Series, got %s"
+        logger.error(msg, type(series))
+        raise ValueError(msg % type(series))
 
     name = series.name  # Only Series have a name, DateFrame do not
 
     # 1. Make sure the values are floats
     if not pd.api.types.is_float_dtype(series):
-        msg = f"Values of time series {name} are not dtype=float."
-        logger.error(msg)
-        raise ValueError(msg)
+        msg = "Values of time series %s are not dtype=float."
+        logger.error(msg, name)
+        raise ValueError(msg % name)
 
     # 2. Make sure the index is a DatetimeIndex
     if not isinstance(series.index, pd.DatetimeIndex):
-        msg = f"Index of series {name} is not a pandas.DatetimeIndex."
-        logger.error(msg)
-        raise ValueError(msg)
+        msg = "Index of series %s is not a pandas.DatetimeIndex."
+        logger.error(msg, name)
+        raise ValueError(msg % name)
 
     # 3. Make sure the indices are datetime64
     if not pd.api.types.is_datetime64_dtype(series.index):
-        msg = f"Indices os series {name} are not datetime64."
-        logger.error(msg)
-        raise ValueError(msg)
+        msg = "Indices os series %s are not datetime64."
+        logger.error(msg, name)
+        raise ValueError(msg % name)
 
     # 4. Make sure there are no NaT in index
     if series.index.hasnans:
         msg = (
-            f"The index of series {name} contains NaNs. "
+            "The index of series %s contains NaNs. "
             "Try to remove these with `series.loc[series.index.dropna()]`."
         )
-        logger.error(msg)
-        raise ValueError(msg)
+        logger.error(msg, name)
+        raise ValueError(msg % name)
 
     # 5. Make sure the index is monotonically increasing
     if not series.index.is_monotonic_increasing:
         msg = (
-            f"The time-indices of series {name} are not monotonically increasing. Try "
-            f"to use `series.sort_index()` to fix it."
+            "The time-indices of series %s are not monotonically increasing. Try "
+            "to use `series.sort_index()` to fix it."
         )
-        logger.error(msg)
-        raise ValueError(msg)
+        logger.error(msg, name)
+        raise ValueError(msg % name)
 
     # 6. Make sure there are no duplicate indices
     if not series.index.is_unique:
         msg = (
-            f"duplicate time-indexes were found in the time series {name}. Make sure "
+            "duplicate time-indexes were found in the time series %s. Make sure "
             "there are no duplicate indices. For example by "
             "`grouped = series.groupby(level=0); series = grouped.mean()`"
             "or `series = series.loc[~series.index.duplicated(keep='first/last')]`"
         )
-        logger.error(msg)
-        raise ValueError(msg)
+        logger.error(msg, name)
+        raise ValueError(msg % name)
 
     # 7. Make sure the time series has no nan-values
     if series.hasnans:
@@ -776,11 +778,11 @@ def _validate_series(series: Series, equidistant: bool = True):
     if equidistant:
         if not pd.infer_freq(series.index):
             msg = (
-                f"The frequency of the index of time series {name} could not be "
-                f"inferred. Please provide a time series with a regular time step."
+                "The frequency of the index of time series %s could not be "
+                "inferred. Please provide a time series with a regular time step."
             )
-            logger.error(msg)
-            raise ValueError(msg)
+            logger.error(msg, name)
+            raise ValueError(msg % name)
 
     # If all checks are passed, return True
     return True

@@ -198,12 +198,13 @@ def validate_name(name: str, raise_error: bool = False) -> str:
     for char in ilchar:
         if char in name:
             msg = (
-                f"User-provided name '{name}' contains illegal character. Please "
-                f"remove '{char}' from name."
+                "User-provided name '%s' contains illegal character. Please "
+                "remove '%s' from name."
             )
             if raise_error:
-                raise Exception(msg)
+                logger.error(msg, name, char)
+                raise Exception(msg % (name, char))
             else:
-                logger.warning(msg)
+                logger.warning(msg, name, char)
 
     return name

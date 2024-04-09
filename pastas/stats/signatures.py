@@ -482,7 +482,7 @@ def _colwell_components(
     else:
         msg = "freq %s is not a supported option."
         logger.error(msg, freq)
-        raise ValueError(msg)
+        raise ValueError(msg % freq)
 
     df["values"] = 1.0
     df = df.pivot_table(columns="head", index="time", aggfunc="sum", values="values")

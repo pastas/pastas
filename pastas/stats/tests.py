@@ -249,7 +249,10 @@ def runs_test(series: Series, cutoff: str = "median") -> Tuple[float, float]:
     elif isinstance(cutoff, float):
         pass
     else:
-        raise NotImplementedError(f"Cutoff criterion {cutoff} is not " f"implemented.")
+        msg = """Cutoff criterion %s is not implemented. Cutoff should be 'mean',
+                 'median', or a float value."""
+        logger.error(msg, cutoff)
+        raise NotImplementedError(msg % cutoff)
 
     r[r > cutoff] = 1
     r[r < cutoff] = 0

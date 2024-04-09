@@ -18,11 +18,9 @@ def set_parameter(function: Function) -> Function:
     @wraps(function)
     def _set_parameter(self, name: str, value: float, **kwargs):
         if name not in self.parameters.index:
-            logger.error(
-                "Parameter name %s does not exist, please choose from %s",
-                name,
-                self.parameters.index,
-            )
+            msg = "Parameter name %s does not exist, please choose from %s"
+            logger.error(msg, name, self.parameters.index)
+            raise KeyError(msg % (name, self.parameters.index))
         else:
             return function(self, name, value, **kwargs)
 
@@ -33,11 +31,12 @@ def get_stressmodel(function: Function) -> Function:
     @wraps(function)
     def _get_stressmodel(self, name: str, **kwargs):
         if name not in self.stressmodels.keys():
-            logger.error(
+            msg = (
                 "The stressmodel name you provided is not in the stressmodels dict. "
-                "Please select from the following list: %s",
-                self.stressmodels.keys(),
+                "Please select from the following list: %s"
             )
+            logger.error(msg, self.stressmodels.keys())
+            raise KeyError(msg % self.stressmodels.keys())
         else:
             return function(self, name, **kwargs)
 

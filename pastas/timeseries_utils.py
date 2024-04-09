@@ -55,9 +55,9 @@ def _frequency_is_supported(freq: str) -> str:
     try:
         Timedelta(offset)
     except:
-        msg = "Frequency {} not supported.".format(freq)
-        logger.error(msg)
-        raise ValueError(msg)
+        msg = "Frequency %s not supported."
+        logger.error(msg, freq)
+        raise ValueError(msg % freq)
     if offset.n == 1:
         freq = offset.name
     else:
