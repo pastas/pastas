@@ -25,6 +25,7 @@ left-hand menu you will find the different categories of the API documentation.
     utils
     timer.SolveTimer
     stats
+    dataset
 
 .. toctree::
     :hidden:

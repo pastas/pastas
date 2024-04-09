@@ -3,7 +3,7 @@
 
 from itertools import combinations
 from logging import getLogger
-from typing import List, Optional, Tuple
+from typing import List, Optional
 from warnings import warn
 
 import matplotlib.pyplot as plt
@@ -92,9 +92,9 @@ class CompareModels:
     def initialize_figure(
         self,
         mosaic: Optional[List[List[str]]] = None,
-        figsize: Tuple[int, int] = (10, 8),
         cmap: str = "tab10",
         return_ax: bool = False,
+        **fig_kwargs,
     ) -> None:
         """initialize a custom figure based on a mosaic.
 
@@ -112,7 +112,7 @@ class CompareModels:
 
         self.cmap = plt.get_cmap(cmap)
 
-        figure, axes = plt.subplot_mosaic(mosaic, figsize=figsize)
+        figure, axes = plt.subplot_mosaic(mosaic, **fig_kwargs)
         if return_ax:
             return axes
 
@@ -123,9 +123,9 @@ class CompareModels:
     def initialize_adjust_height_figure(
         self,
         mosaic: Optional[List[List[str]]] = None,
-        figsize: Tuple[int] = (10, 8),
         cmap: str = "tab10",
         smdict: Optional[dict] = None,
+        **fig_kwargs,
     ) -> None:
         """initialize subplots based on a mosaic with equal vertical scales.
 
@@ -226,8 +226,8 @@ class CompareModels:
         self.mosaic = mosaic
         fig, axes = plt.subplot_mosaic(
             self.mosaic,
-            figsize=figsize,
             gridspec_kw=dict(height_ratios=heights_list),
+            **fig_kwargs,
         )
 
         self.figure = fig
@@ -577,10 +577,14 @@ class CompareModels:
                         continue
                     if response == "step":
                         kwargs = {}
+                        p = None
                         if ml.stressmodels[smn].rfunc is not None:
                             if isinstance(ml.stressmodels[smn].rfunc, HantushWellModel):
                                 kwargs = {"warn": False}
-                        step = ml.get_step_response(smn, add_0=True, **kwargs)
+                                p = ml.stressmodels[smn].get_parameters(
+                                    model=ml, istress=0
+                                )
+                        step = ml.get_step_response(smn, p=p, add_0=True, **kwargs)
                         if step is None:
                             continue
                         if self.axes is None:
@@ -598,10 +602,14 @@ class CompareModels:
                             )
                     elif response == "block":
                         kwargs = {}
+                        p = None
                         if ml.stressmodels[smn].rfunc is not None:
                             if isinstance(ml.stressmodels[smn].rfunc, HantushWellModel):
                                 kwargs = {"warn": False}
-                        block = ml.get_block_response(smn, **kwargs)
+                                p = ml.stressmodels[smn].get_parameters(
+                                    model=ml, istress=0
+                                )
+                        block = ml.get_block_response(smn, p=p, add_0=True, **kwargs)
                         if block is None:
                             continue
                         if self.axes is None:
@@ -897,11 +905,11 @@ class CompareModels:
         smdict: Optional[dict] = None,
         normalized: bool = False,
         param_selection: Optional[list] = None,
-        figsize: Optional[tuple] = (10, 8),
         grid: bool = True,
         legend: bool = True,
         adjust_height: bool = False,
         legend_kwargs: Optional[dict] = None,
+        **fig_kwargs,
     ) -> None:
         """plot the models in a comparison plot.
 
@@ -921,8 +929,6 @@ class CompareModels:
             zero, by default False.
         param_selection : list, optional
             list of (sub)strings of which parameters to show in table, by default None.
-        figsize : tuple, optional
-            figure size, by default (10, 8).
         grid : bool, optional
             grid in each subplot, by default True.
         legend : bool, optional
@@ -935,10 +941,12 @@ class CompareModels:
             pass legend keyword arguments to plots.
         """
         self.adjust_height = adjust_height
+        if "figsize" not in fig_kwargs:
+            fig_kwargs["figsize"] = (10, 8)
         if self.axes is None and not self.adjust_height:
-            self.initialize_figure(figsize=figsize)
+            self.initialize_figure(**fig_kwargs)
         if self.axes is None and self.adjust_height:
-            self.initialize_adjust_height_figure(smdict=smdict, figsize=figsize)
+            self.initialize_adjust_height_figure(smdict=smdict, **fig_kwargs)
 
         # sim
         _ = self.plot_oseries()
