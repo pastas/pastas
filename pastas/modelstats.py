@@ -47,6 +47,7 @@ class Statistics:
         "kge",
         "bic",
         "aic",
+        "aicc"
     ]
 
     def __init__(self, ml: Model):
@@ -374,7 +375,7 @@ class Statistics:
 
         See Also
         --------
-        pastas.stats.bic
+        pastas.stats.aic
         """
         nparam = self.ml.parameters["vary"].sum()
         if self.ml.settings["noise"]:
@@ -384,6 +385,30 @@ class Statistics:
         else:
             res = self.ml.residuals(tmin=tmin, tmax=tmax)
         return metrics.aic(res=res, nparam=nparam)
+
+    @model_tmin_tmax
+    def aicc(
+        self, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None
+    ) -> float:
+        """Akaike Information Criterium with second order bias correction (AICc).
+
+        Parameters
+        ----------
+        tmin: str or pandas.Timestamp, optional
+        tmax: str or pandas.Timestamp, optional
+
+        See Also
+        --------
+        pastas.stats.aicc
+        """
+        nparam = self.ml.parameters["vary"].sum()
+        if self.ml.settings["noise"]:
+            res = self.ml.noise(tmin=tmin, tmax=tmax) * self.ml.noise_weights(
+                tmin=tmin, tmax=tmax
+            )
+        else:
+            res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        return metrics.aicc(res=res, nparam=nparam)
 
     @model_tmin_tmax
     def summary(
