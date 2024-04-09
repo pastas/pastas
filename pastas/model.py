@@ -851,11 +851,10 @@ class Model:
         self._solve_success = success  # store for fit_report
 
         if report:
-            if isinstance(report, str):
-                output = report
+            if isinstance(report, str) and report == "full":
+                print(self.fit_report(par_correlations=True, par_uncertainty=True))
             else:
-                output = None
-            print(self.fit_report(output=output))
+                print(self.fit_report())
 
     @property
     def fit(self):
@@ -1745,19 +1744,27 @@ class Model:
 
     def fit_report(
         self,
-        output: str = "basic",
+        par_correlations: bool = False,
+        par_uncertainty: bool = False,
         warnings: bool = True,
+        output: str = None,
     ) -> str:
         """Method that reports on the fit after a model is optimized.
 
         Parameters
         ----------
-        output: str, optional
-            If any other value than "full" is provided, the parameter correlations
-            will be removed from the output.
+        par_correlations : bool, optional
+            If True the parameter correlations are shown.
+        par_uncertainty : bool, optional
+            If True the parameter unctertainty values are shown. Please be aware of the
+            conditions for reliable uncertainty estimates, more information here:
+            https://pastas.readthedocs.io/en/latest/examples/uncertainty.html
         warnings : bool, optional
             print warnings in case of optimization failure, parameters hitting
             bounds, or length of responses exceeding calibration period.
+        output : str, optional (deprecated)
+            deprecated argument, use par_correlations and par_uncertainty arguments
+            instead.
 
         Returns
         -------
@@ -1799,14 +1806,32 @@ class Model:
             "Interp.": "Yes" if self.interpolate_simulation else "No",
         }
 
-        parameters = self.parameters.loc[:, ["optimal", "initial", "vary"]].copy()
-        stderr = self.parameters.loc[:, "stderr"] / self.parameters.loc[:, "optimal"]
-        parameters.loc[:, "stderr"] = stderr.abs().apply(
-            _table_formatter_stderr, na_rep="nan"
-        )
+        if output is not None:
+            msg = (
+                "argument 'output' of the 'fit_report method' is deprecated and will"
+                "be removed in a future version. Use 'par_correlations=True' instead."
+            )
+            logger.warning(msg)
+            if isinstance(output, str) and output=='full':
+                par_correlations = True
 
-        # Determine the width of the fit_report based on the parameters
-        width = len(parameters.to_string().split("\n")[1])
+        parameters = self.parameters.loc[:, ["optimal", "initial", "vary"]].copy()
+
+        if par_uncertainty:
+            stderr = (
+                self.parameters.loc[:, "stderr"] / self.parameters.loc[:, "optimal"]
+            )
+            parameters.loc[:, "stderr"] = stderr.abs().apply(
+                _table_formatter_stderr, na_rep="nan"
+            )
+
+        
+        if par_uncertainty:
+            # Determine the width of the fit_report based on the parameters
+            width = len(parameters.to_string().split("\n")[1])
+        else:
+            # Determine the width of the fit_report based on the parameters
+            width = len(parameters.to_string().split("\n")[1])+7
         string = "{:{fill}{align}{width}}"
 
         # Create the first header with model information and stats
@@ -1832,7 +1857,7 @@ class Model:
             f"{parameters.to_string()}"
         )
 
-        if output == "full":
+        if par_correlations:
             cor = DataFrame(columns=["value"])
             for idx, col in combinations(self.solver.pcor, 2):
                 if np.abs(self.solver.pcor.loc[idx, col]) > 0.5:
