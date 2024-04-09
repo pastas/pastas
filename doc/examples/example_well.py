@@ -16,7 +16,8 @@ head = pd.read_csv(
 ).squeeze("columns")
 
 # Create the time series model
-ml = ps.Model(head, name="head", noisemodel=True)
+ml = ps.Model(head, name="head")
+ml.add_noisemodel(ps.NoiseModel())
 
 # read weather data
 rain = pd.read_csv(

@@ -70,7 +70,7 @@ Quick Example
             evap = pd.read_csv("evap.csv", index_col=0, parse_dates=True).squeeze("columns")
 
             # Create and calibrate model
-            ml = ps.Model(obs, name="head", noisemodel=True)
+            ml = ps.Model(obs, name="head")
             sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential(), name="recharge")
             ml.add_stressmodel(sm)
             ml.solve()
