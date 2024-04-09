@@ -1812,7 +1812,7 @@ class Model:
                 "be removed in a future version. Use 'par_correlations=True' instead."
             )
             logger.warning(msg)
-            if isinstance(output, str) and output=='full':
+            if isinstance(output, str) and output == "full":
                 par_correlations = True
 
         parameters = self.parameters.loc[:, ["optimal", "initial", "vary"]].copy()
@@ -1825,13 +1825,12 @@ class Model:
                 _table_formatter_stderr, na_rep="nan"
             )
 
-        
         if par_uncertainty:
             # Determine the width of the fit_report based on the parameters
             width = len(parameters.to_string().split("\n")[1])
         else:
             # Determine the width of the fit_report based on the parameters
-            width = len(parameters.to_string().split("\n")[1])+7
+            width = len(parameters.to_string().split("\n")[1]) + 7
         string = "{:{fill}{align}{width}}"
 
         # Create the first header with model information and stats
