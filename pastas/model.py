@@ -93,7 +93,7 @@ class Model:
         self,
         oseries: Series,
         constant: bool = True,
-        noisemodel = None,  # will be removed in version 2.0.0
+        noisemodel=None,  # will be removed in version 2.0.0
         name: Optional[str] = None,
         metadata: Optional[dict] = None,
         freq: str = "D",
@@ -150,7 +150,7 @@ class Model:
                 "this warning and add a noisemodel in future versions, set "
                 "noisemodel=None, and use Model.add_noisemodel(n), where n is an "
                 "instance of a noisemodel (e.g., n = ps.NoiseModel()) or simply "
-                "set noisemodel=False. In the latter case, no noisemodel will be added."
+                "set to noisemodel=None. In the latter case, no noisemodel will be added."
             )
             logger.error(msg)
             raise ValueError(msg)
@@ -768,7 +768,7 @@ class Model:
         tmax: Optional[TimestampType] = None,
         freq: Optional[str] = None,
         warmup: Optional[float] = None,
-        noise = None,  # will be removed in version 2.0.0
+        noise=None,  # will be removed in version 2.0.0
         solver: Optional[Solver] = None,
         report: bool = True,
         initial: bool = True,
