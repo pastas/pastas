@@ -159,7 +159,7 @@ def test_modelstats(ml: ps.Model) -> None:
 
 def test_fit_report(ml: ps.Model) -> None:
     ml.solve(report=False)
-    ml.fit_report(par_correlations=True, par_uncertainty=True)
+    ml.fit_report(corr=True, stderr=True)
 
 
 def test_model_freq_geq_daily() -> None:
