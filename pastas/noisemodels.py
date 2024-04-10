@@ -36,7 +36,7 @@ from .decorators import njit, set_parameter
 captureWarnings(True)
 logger = getLogger(__name__)
 warnings_logger = getLogger("py.warnings")
-warnings_logger.addHandler(logger)
+logger.addHandler(warnings_logger)
 
 
 __all__ = ["ARNoiseModel", "ARMANoiseModel"]
