@@ -856,7 +856,7 @@ class Model:
 
         if report:
             if isinstance(report, str) and report == "full":
-                print(self.fit_report(par_correlations=True, par_uncertainty=True))
+                print(self.fit_report(corr=True, stderr=True))
             else:
                 print(self.fit_report())
 
@@ -1758,8 +1758,8 @@ class Model:
 
     def fit_report(
         self,
-        par_correlations: bool = False,
-        par_uncertainty: bool = False,
+        corr: bool = False,
+        stderr: bool = False,
         warnings: bool = True,
         output: str = None,
     ) -> str:
@@ -1767,17 +1767,18 @@ class Model:
 
         Parameters
         ----------
-        par_correlations : bool, optional
+        corr : bool, optional
             If True the parameter correlations are shown.
-        par_uncertainty : bool, optional
-            If True the parameter unctertainty values are shown. Please be aware of the
-            conditions for reliable uncertainty estimates, more information here:
-            https://pastas.readthedocs.io/en/latest/examples/uncertainty.html
+        stderr : bool, optional
+            If True the standard error of the parameter values are shown. Please be
+            aware of the conditions for reliable uncertainty estimates, more information
+            here:
+            https://pastas.readthedocs.io/en/master/examples/diagnostic_checking.html
         warnings : bool, optional
             print warnings in case of optimization failure, parameters hitting
             bounds, or length of responses exceeding calibration period.
         output : str, optional (deprecated)
-            deprecated argument, use par_correlations and par_uncertainty arguments
+            deprecated argument, use corr and stderr arguments
             instead.
 
         Returns
@@ -1823,15 +1824,15 @@ class Model:
         if output is not None:
             msg = (
                 "argument 'output' of the 'fit_report method' is deprecated and will"
-                "be removed in a future version. Use 'par_correlations=True' instead."
+                "be removed in a future version. Use 'corr=True' instead."
             )
             logger.warning(msg)
             if isinstance(output, str) and output == "full":
-                par_correlations = True
+                corr = True
 
         parameters = self.parameters.loc[:, ["optimal", "initial", "vary"]].copy()
 
-        if par_uncertainty:
+        if stderr:
             stderr = (
                 self.parameters.loc[:, "stderr"] / self.parameters.loc[:, "optimal"]
             )
@@ -1874,7 +1875,7 @@ class Model:
             f"{parameters.to_string()}"
         )
 
-        if par_correlations:
+        if corr:
             cor = DataFrame(columns=["value"])
             for idx, col in combinations(self.solver.pcor, 2):
                 if np.abs(self.solver.pcor.loc[idx, col]) > 0.5:

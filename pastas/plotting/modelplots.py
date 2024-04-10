@@ -127,7 +127,7 @@ class Plotting:
         adjust_height: bool = True,
         return_warmup: bool = False,
         block_or_step: str = "step",
-        par_uncertainty: bool = False,
+        stderr: bool = False,
         fig: Optional[Figure] = None,
         **kwargs,
     ) -> Axes:
@@ -148,10 +148,11 @@ class Plotting:
             Show the warmup-period. Default is false.
         block_or_step: str, optional
             Plot the block- or step-response on the right. Default is 'step'.
-        par_uncertainty : bool, optional
-            If True the parameter unctertainty values are shown. Please be aware of the
-            conditions for reliable uncertainty estimates, more information here:
-            https://pastas.readthedocs.io/en/latest/examples/uncertainty.html
+        stderr : bool, optional
+            If True the standard error of the parameter values are shown. Please be
+            aware of the conditions for reliable uncertainty estimates, more
+            information here:
+            https://pastas.readthedocs.io/en/master/examples/diagnostic_checking.html
         fig: matplotib.Figure instance, optional
             Optionally provide a matplotib.Figure instance to plot onto.
         **kwargs: dict, optional
@@ -321,7 +322,7 @@ class Plotting:
         p.loc[:, "optimal"] = self.ml.parameters.loc[:, "optimal"].apply(
             _table_formatter_params
         )
-        if par_uncertainty:
+        if stderr:
             stderr = (
                 self.ml.parameters.loc[:, "stderr"]
                 / self.ml.parameters.loc[:, "optimal"]

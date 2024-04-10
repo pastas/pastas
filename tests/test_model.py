@@ -75,11 +75,9 @@ def test_solve_model(ml: ps.Model) -> None:
 
 
 def test_solve_empty_model(ml: ps.Model) -> None:
-    try:
+    with pytest.raises(ValueError) as excinfo:
         ml.solve(tmin="2016")
-    except ValueError as e:
-        if not e.args[0].startswith("Calibration series"):
-            raise e
+    assert excinfo.value.args[0].startswith("Calibration series")
 
 
 def test_save_model(ml: ps.Model) -> None:
