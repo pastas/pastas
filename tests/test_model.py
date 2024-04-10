@@ -78,9 +78,7 @@ def test_solve_empty_model(ml: ps.Model) -> None:
     try:
         ml.solve(tmin="2016")
     except ValueError as e:
-        if e.args[0].startswith("Calibration series"):
-            return None
-        else:
+        if not e.args[0].startswith("Calibration series"):
             raise e
 
 
@@ -162,6 +160,7 @@ def test_modelstats(ml: ps.Model) -> None:
 
 
 def test_fit_report(ml: ps.Model) -> None:
+    ml.solve(report=False)
     ml.fit_report(par_correlations=True, par_uncertainty=True)
 
 
