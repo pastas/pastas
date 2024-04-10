@@ -161,6 +161,10 @@ def test_modelstats(ml: ps.Model) -> None:
     ml.stats.summary()
 
 
+def test_fit_report(ml: ps.Model) -> None:
+    ml.fit_report(par_correlations=True, par_uncertainty=True)
+
+
 def test_model_freq_geq_daily() -> None:
     rf_rch = ps.Exponential()
     A_rch = 800
