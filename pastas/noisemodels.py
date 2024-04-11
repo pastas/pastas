@@ -21,10 +21,7 @@ pastas.model.Model.add_noisemodel
 """
 
 from logging import getLogger
-
-# Type Hinting
 from typing import Optional
-from warnings import warn
 
 import numpy as np
 from pandas import DataFrame, DatetimeIndex, Series, Timedelta
