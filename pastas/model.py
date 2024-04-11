@@ -145,15 +145,16 @@ class Model:
         if noisemodel is not None:
             msg = (
                 "The noisemodel argument is deprecated and will be removed in Pastas "
-                "version 2.0.0. By default, no noisemodel is added anymore and a "
-                "noisemodel has to be explicitely added to the Pastas model. To silent "
-                "this warning and add a noisemodel in future versions, set "
-                "noisemodel=None, and use Model.add_noisemodel(n), where n is an "
-                "instance of a noisemodel (e.g., n = ps.NoiseModel()) or simply "
-                "set to noisemodel=None. In the latter case, no noisemodel will be added."
+                "version 2.0.0. The future default will be that no noisemodel is added "
+                "anymore and a noisemodel has to be explicitely added to the Pastas "
+                "model. To silence this warning and add a noisemodel in future versions,"
+                " set noisemodel=False, and use Model.add_noisemodel(n), where n is an "
+                "instance of a noisemodel (e.g., n = ps.NoiseModel()). "
             )
-            logger.error(msg)
-            raise ValueError(msg)
+            logger.warning(msg)
+            # For Pastas 1.5.0, still add a noisemodel by default, but with warning.
+            if noisemodel is True or noisemodel is None:
+                self.add_noisemodel(NoiseModel())
 
         # File Information
         self.file_info = self._get_file_info()
