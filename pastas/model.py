@@ -133,7 +133,7 @@ class Model:
             "freq": freq,
             "warmup": Timedelta(3650, "D"),
             "time_offset": Timedelta(0),
-            "noise": noisemodel,
+            "noise": False,
             "solver": None,
             "fit_constant": True,
             "freq_obs": None,
@@ -144,18 +144,23 @@ class Model:
             self.add_constant(constant)
 
         if noisemodel is not None:
-            msg = (
-                "The noisemodel argument is deprecated and will be removed in Pastas "
-                "version 2.0.0. The future default will be that no noisemodel is added "
-                "anymore and a noisemodel has to be explicitely added to the Pastas "
-                "model. To silence this warning and add a noisemodel in future versions,"
-                " set noisemodel=False, and use Model.add_noisemodel(n), where n is an "
-                "instance of a noisemodel (e.g., n = ps.NoiseModel()). "
-            )
-            logger.warning(msg)
-            # For Pastas 1.5.0, still add a noisemodel by default, but with warning.
-            if noisemodel is True or noisemodel is None:
-                self.add_noisemodel(ARNoiseModel())
+            if noisemodel is True:
+                msg = (
+                    "The noisemodel argument is deprecated and will be removed in Pastas "
+                    "version 2.0.0. The new default is that no noisemodel is added "
+                    "anymore and a noisemodel has to be explicitely added to the Pastas "
+                    "model by the user. To silence this warning, set noisemodel=None and"
+                    "use `ml.add_noisemodel`, if a noisemodel is desired. "
+                )
+            elif noisemodel is False:
+                msg = (
+                    "The noisemodel argument is deprecated and will be removed in Pastas "
+                    "version 2.0.0. The new default is that no noisemodel is added "
+                    "anymore and a noisemodel has to be explicitely added to the Pastas "
+                    "model by the user. To silence this warning, set noisemodel=None. "
+                )
+            logger.error(msg)
+            raise ValueError(msg)
 
         # File Information
         self.file_info = self._get_file_info()
@@ -305,6 +310,7 @@ class Model:
         -----
         As of Pastas version 1.5.0, a noisemodel should added to the model using this
         method, and is not added by default anymore when constructing as Pastas Model.
+        If a noisemodel is present, it will always be used during optimization.
 
         """
         self.noisemodel = noisemodel
@@ -715,7 +721,8 @@ class Model:
             msg = (
                 "The noise argument is deprecated and will be removed in Pastas "
                 "version 2.0.0. The new behavior is that if a noise model is present, "
-                "it will be used. To solve without a noisemodel, remove the noisemodel "
+                "it will be used. To add a noisemodel, use ml.add_noisemodel method. "
+                "To solve without a noisemodel, remove the noisemodel "
                 "first using ml.del_noisemodel()."
             )
             logger.error(msg)
@@ -798,10 +805,10 @@ class Model:
             used for the calibration period.
         noise: bool, optional
             This argument is deprecated and will be removed in Pastas version 2.0.0.
-            To solve using a noisemodel, add a noisemodel to the model using
-            ml.add_noisemodel(n), where n is an instance of a noisemodel (e.g.,
-            n = ps.NoiseModel()). To solve without a noisemodel, remove the
-            noisemodel first using ml.del_noisemodel(). Default is None.
+            To solve using a noisemodel (i.e. noise=True), add a noisemodel to the
+            model using ml.add_noisemodel(n), where n is an instance of a noisemodel
+            (e.g., n = ps.NoiseModel()). To solve without a noisemodel (noise=False),
+            remove the noisemodel first (if present) using ml.del_noisemodel().
         solver: Class pastas.solver.Solver, optional
             Instance of a pastas Solver class used to solve the model. Options are:
             ps.LeastSquares() (default) or ps.LmfitSolve(). An instance is needed as
@@ -843,20 +850,32 @@ class Model:
             Different solver objects are available to estimate parameters.
         """
         if noise is not None:
-            msg = (
-                "The noise argument is deprecated and will be removed in Pastas "
-                "version 2.0.0. If a noise model is present, it will be used. To "
-                "solve without a noisemodel, remove the noisemodel first using "
-                "ml.del_noisemodel(). To add and use a noisemodel, use "
-                "ml.add_noisemodel(n), where n is an instance of a noisemodel (e.g., "
-                "n = ps.NoiseModel())."
-            )
+            if noise is True:
+                msg = (
+                    "The noise argument is deprecated and will be removed in Pastas "
+                    "version 2.0.0. To solve using a noisemodel, add a noisemodel to the "
+                    "model using ml.add_noisemodel(n), where n is an instance of a "
+                    "noisemodel (e.g., n = ps.NoiseModel())."
+                )
+            elif noise is False:
+                msg = (
+                    "The noise argument is deprecated and will be removed in Pastas "
+                    "version 2.0.0. To solve without a noisemodel, remove the noisemodel "
+                    "first (if present) using ml.del_noisemodel()."
+                )
             logger.error(msg)
             raise ValueError(msg)
 
         # Initialize the model
         self.initialize(
-            tmin, tmax, freq, warmup, noise, weights, initial, fit_constant, freq_obs
+            tmin=tmin,
+            tmax=tmax,
+            freq=freq,
+            warmup=warmup,
+            weights=weights,
+            initial=initial,
+            fit_constant=fit_constant,
+            freq_obs=freq_obs,
         )
 
         if self.oseries_calib.empty:
