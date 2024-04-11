@@ -20,7 +20,7 @@ See Also
 pastas.model.Model.add_noisemodel
 """
 
-from logging import captureWarnings, getLogger
+from logging import getLogger
 
 # Type Hinting
 from typing import Optional
@@ -33,11 +33,7 @@ from pastas.typing import ArrayLike
 
 from .decorators import njit, set_parameter
 
-captureWarnings(True)
 logger = getLogger(__name__)
-warnings_logger = getLogger("py.warnings")
-logger.addHandler(warnings_logger)
-
 
 __all__ = ["ARNoiseModel", "ARMANoiseModel"]
 
@@ -272,9 +268,9 @@ class ARNoiseModel(NoiseModelBase):
 
 
 def NoiseModel(*args, **kwargs) -> ARNoiseModel:
-    warn(
-        "The NoiseModel class will be deprecated in Pastas version 2.0. Please use ARNoiseModel to get the expected behavior.",
-        category=FutureWarning,
+    logger.warning(
+        "The NoiseModel class will be deprecated in Pastas version 2.0."
+        "Please use ARNoiseModel to get the expected behavior."
     )
     n = ARNoiseModel(*args, **kwargs)
     n._name = "NoiseModel"
@@ -365,9 +361,9 @@ class ARMANoiseModel(NoiseModelBase):
 
 
 def ArmaModel(*args, **kwargs) -> ARMANoiseModel:
-    warn(
-        "The ArmaModel class will be deprecated in Pastas version 2.0. Please use ARMANoiseMOdel to get the expected behavior.",
-        category=FutureWarning,
+    logger.warning(
+        "The ArmaModel class will be deprecated in Pastas version 2.0."
+        "Please use ARMANoiseMOdel to get the expected behavior."
     )
     n = ARMANoiseModel(*args, **kwargs)
     n._name = "ArmaModel"
