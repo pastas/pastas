@@ -61,7 +61,7 @@ def test_add_noisemodel(ml_empty: ps.Model) -> None:
 
 
 def test_armamodel() -> None:
-    ml = ps.Model(obs, name="Test_Model", noisemodel=False)
+    ml = ps.Model(obs, name="Test_Model")
     ml.add_noisemodel(ps.ArmaModel())
     ml.solve()
     ml.to_file("test.pas")
@@ -175,7 +175,7 @@ def test_model_freq_geq_daily() -> None:
     models = []
     freqs = ["1D", "7D", "14D", "28D"]
     for freq in freqs:
-        iml = ps.Model(head, name=freq, noisemodel=False)
+        iml = ps.Model(head, name=freq)
         rm = ps.RechargeModel(prec, evap, rfunc=rf_rch, name="recharge")
         iml.add_stressmodel(rm)
         iml.solve(freq=freq, noise=False, report=False)

@@ -8,7 +8,7 @@ if ml.transform is not None:
 ml.del_noisemodel()
 
 # first solve and plot to see the model-performance
-ml.solve(noise=False)
+ml.solve()
 ax = ml.plots.results()
 
 # get the precipitation and evaporation
