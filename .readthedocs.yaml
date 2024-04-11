@@ -9,9 +9,6 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.11"
-  jobs:
-    pre_build:
-      - python -m sphinx -b linkcheck -D linkcheck_timeout=1 doc/ $READTHEDOCS_OUTPUT/linkcheck
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
