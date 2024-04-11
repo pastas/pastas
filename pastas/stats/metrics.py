@@ -31,6 +31,7 @@ __all__ = [
     "rsq",
     "bic",
     "aic",
+    "aicc",
     "pearsonr",
     "kge",
 ]
@@ -38,7 +39,7 @@ __all__ = [
 captureWarnings(True)
 logger = getLogger(__name__)
 warnings_logger = getLogger("py.warnings")
-warnings_logger.addHandler(logger)
+logger.addHandler(warnings_logger)
 
 
 # Absolute Error Metrics
@@ -550,7 +551,7 @@ def aicc(
     -----
 
     The corrected Akaike Information Criterium (AICc)
-    :cite:p:`burnham_aic_2011` is computed as follows:
+    :cite:p:`suguria_aicc_1978` is computed as follows:
 
     .. math:: \\text{AIC} = -2 log(L) + 2 nparam - (2 nparam (nparam + 1) / (nobs - nparam - 1))
 
