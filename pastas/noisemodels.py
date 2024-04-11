@@ -360,7 +360,7 @@ class ARMANoiseModel(NoiseModelBase):
 def ArmaModel(*args, **kwargs) -> ARMANoiseModel:
     logger.warning(
         "The ArmaModel class will be deprecated in Pastas version 2.0."
-        "Please use ARMANoiseMOdel to get the expected behavior."
+        "Please use ARMANoiseModel to get the expected behavior."
     )
     n = ARMANoiseModel(*args, **kwargs)
     n._name = "ArmaModel"
