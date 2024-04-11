@@ -84,15 +84,9 @@ def _load_model(data: dict) -> Model:
     else:
         name = None
 
-    if "noisemodel" in data.keys():
-        noise = True
-    else:
-        noise = False
-
     ml = ps.Model(
         oseries=oseries,
         constant=constant,
-        noisemodel=noise,
         name=name,
         metadata=metadata,
     )

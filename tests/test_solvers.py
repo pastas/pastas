@@ -10,7 +10,8 @@ def test_fit_constant(ml: ps.Model):
 
 
 def test_no_noise(ml: ps.Model):
-    ml.solve(noise=False)
+    ml.del_noisemodel()
+    ml.solve()
 
 
 # test the uncertainty method here
@@ -44,10 +45,10 @@ def test_ci_contribution(ml: ps.Model):
 
 def test_emcee(ml: ps.Model):
     ml.solve(solver=ps.LeastSquares())
+    ml.del_noisemodel()
     ml.solve(
         solver=ps.EmceeSolve(nwalkers=20),
         initial=False,
         fit_constant=False,
-        noise=False,
         steps=10,
     )

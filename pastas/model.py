@@ -59,9 +59,10 @@ class Model:
     constant: bool, optional
         Add a constant to the model (Default=True).
     noisemodel: bool, optional
-        When true, add the default noisemodel to the model. A custom noisemodel can be
-        added later in the modelling process as well, using Model.add_noisemodel().
-        This argument will be removed in Pastas version 2.0.0. The default is False.
+        The noisemodel argument is deprecated and will be removed in Pastas version
+        2.0.0. To add a noisemodel, use ml.add_noisemodel(n), where is an instance
+        of a noisemodel (e.g., n = ps.NoiseModel()). The use of the noisemodel
+        argument will raise a ValueError.
     name: str, optional
         String with the name of the model, used in plotting and saving.
     metadata: dict, optional
@@ -92,7 +93,7 @@ class Model:
         self,
         oseries: Series,
         constant: bool = True,
-        noisemodel: bool = False,  # will be removed in version 2.0.0
+        noisemodel=None,  # will be removed in version 2.0.0
         name: Optional[str] = None,
         metadata: Optional[dict] = None,
         freq: str = "D",
@@ -141,8 +142,20 @@ class Model:
         if constant:
             constant = Constant(initial=self.oseries.series.mean(), name="constant")
             self.add_constant(constant)
-        if noisemodel:
-            self.add_noisemodel(ARNoiseModel())
+
+        if noisemodel is not None:
+            msg = (
+                "The noisemodel argument is deprecated and will be removed in Pastas "
+                "version 2.0.0. The future default will be that no noisemodel is added "
+                "anymore and a noisemodel has to be explicitely added to the Pastas "
+                "model. To silence this warning and add a noisemodel in future versions,"
+                " set noisemodel=False, and use Model.add_noisemodel(n), where n is an "
+                "instance of a noisemodel (e.g., n = ps.NoiseModel()). "
+            )
+            logger.warning(msg)
+            # For Pastas 1.5.0, still add a noisemodel by default, but with warning.
+            if noisemodel is True or noisemodel is None:
+                self.add_noisemodel(ARNoiseModel())
 
         # File Information
         self.file_info = self._get_file_info()
@@ -287,6 +300,12 @@ class Model:
         --------
         >>> n = ps.ARNoiseModel()
         >>> ml.add_noisemodel(n)
+
+        Notes
+        -----
+        As of Pastas version 1.5.0, a noisemodel should added to the model using this
+        method, and is not added by default anymore when constructing as Pastas Model.
+
         """
         self.noisemodel = noisemodel
         self.noisemodel.set_init_parameters(oseries=self.oseries.series)
@@ -341,6 +360,7 @@ class Model:
         else:
             self.noisemodel = None
             self.parameters = self.get_init_parameters(initial=False)
+            self.settings["noise"] = False
 
     def simulate(
         self,
@@ -568,7 +588,7 @@ class Model:
         This method returns None if no noise model is present in the model.
         """
         if self.noisemodel is None or self.settings["noise"] is False:
-            logger.error(
+            logger.warning(
                 "Noise cannot be calculated if there is no noisemodel present or is "
                 "not used during parameter estimation."
             )
@@ -690,18 +710,18 @@ class Model:
         This method is called by the solve-method, but can also be triggered
         manually. See the solve-method for a description of the arguments.
         """
-        if noise is None and self.noisemodel:
-            noise = True
-        elif noise is True and self.noisemodel is None:
-            logger.warning(
-                "Cannot solve with noise=True while no noisemodel is present. "
-                "Add a noisemodel with Model.add_noisemodel(ps.ARNoiseModel()) "
-                "to replicate results from pastas < 1.5. "
-                "Solving without a noisemodel."
-            )
-            noise = False
 
-        self.settings["noise"] = noise
+        if noise is not None:
+            msg = (
+                "The noise argument is deprecated and will be removed in Pastas "
+                "version 2.0.0. The new behavior is that if a noise model is present, "
+                "it will be used. To solve without a noisemodel, remove the noisemodel "
+                "first using ml.del_noisemodel()."
+            )
+            logger.error(msg)
+            raise ValueError(msg)
+
+        # Set the settings
         self.settings["weights"] = weights
         self.settings["fit_constant"] = fit_constant
         self.settings["freq_obs"] = freq_obs
@@ -751,7 +771,7 @@ class Model:
         tmax: Optional[TimestampType] = None,
         freq: Optional[str] = None,
         warmup: Optional[float] = None,
-        noise: bool = True,  # will be removed in version 2.0.0
+        noise=None,  # will be removed in version 2.0.0
         solver: Optional[Solver] = None,
         report: bool = True,
         initial: bool = True,
@@ -777,8 +797,11 @@ class Model:
             Warmup period (in Days) for which the simulation is calculated, but not
             used for the calibration period.
         noise: bool, optional
-            Argument that determines if a noisemodel is used (only if present). This
-            argument will be removed in Pastas version 2.0.0. The default is True.
+            This argument is deprecated and will be removed in Pastas version 2.0.0.
+            To solve using a noisemodel, add a noisemodel to the model using
+            ml.add_noisemodel(n), where n is an instance of a noisemodel (e.g.,
+            n = ps.NoiseModel()). To solve without a noisemodel, remove the
+            noisemodel first using ml.del_noisemodel(). Default is None.
         solver: Class pastas.solver.Solver, optional
             Instance of a pastas Solver class used to solve the model. Options are:
             ps.LeastSquares() (default) or ps.LmfitSolve(). An instance is needed as
@@ -819,6 +842,17 @@ class Model:
         pastas.solver
             Different solver objects are available to estimate parameters.
         """
+        if noise is not None:
+            msg = (
+                "The noise argument is deprecated and will be removed in Pastas "
+                "version 2.0.0. If a noise model is present, it will be used. To "
+                "solve without a noisemodel, remove the noisemodel first using "
+                "ml.del_noisemodel(). To add and use a noisemodel, use "
+                "ml.add_noisemodel(n), where n is an instance of a noisemodel (e.g., "
+                "n = ps.NoiseModel())."
+            )
+            logger.error(msg)
+            raise ValueError(msg)
 
         # Initialize the model
         self.initialize(
