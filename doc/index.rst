@@ -46,7 +46,7 @@ project? Check out the :doc:`Developers <developers/index>` section.
     .. grid-item-card:: More Pastas
         :link: https://github.com/pastas/
 
-        Find out more useful resources developed by the Pastas community!
+        Find out more useful resources developed by the Pastas community on GitHub!
 
 
 Quick Example
