@@ -178,7 +178,7 @@ def test_model_freq_geq_daily() -> None:
         iml = ps.Model(head, name=freq)
         rm = ps.RechargeModel(prec, evap, rfunc=rf_rch, name="recharge")
         iml.add_stressmodel(rm)
-        iml.solve(freq=freq, noise=False, report=False)
+        iml.solve(freq=freq, report=False)
         models.append(iml)
 
     comparison = ps.CompareModels(models)
@@ -201,7 +201,6 @@ def test_model_freq_h():
 
     # model with hourly timestep
     ml_h = ps.Model(ht, name="tidal_model", freq="h")
-    ml_h.add_noisemodel(ps.NoiseModel())
     sm = ps.StressModel(
         tides,
         rfunc=ps.Exponential(),
@@ -209,7 +208,7 @@ def test_model_freq_h():
         settings="waterlevel",
     )
     ml_h.add_stressmodel(sm)
-    ml_h.solve(noise=False, report=False)
+    ml_h.solve(report=False)
 
     assert ml_h.simulate().index.freq == "h"
     assert ml_h.stats.rsq() > 0.99999
