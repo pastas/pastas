@@ -1806,7 +1806,7 @@ class Model:
             "EVP": f"{self.stats.evp():.2f}",
             "R2": f"{self.stats.rsq():.2f}",
             "RMSE": f"{self.stats.rmse():.2f}",
-            "AIC": f"{self.stats.aic():.2f}",
+            "AICc": f"{self.stats.aicc():.2f}",
             "BIC": f"{self.stats.bic():.2f}",
             "Obj": f"{self.solver.obj_func:.2f}",
             "___": "",
