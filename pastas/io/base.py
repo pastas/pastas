@@ -115,6 +115,7 @@ def _load_model(data: dict) -> Model:
     # Add noisemodel if present
     if "noisemodel" in data.keys():
         # fixes to read pas-files from before pastas version 1.5
+        # TODO: uncomment in pastas 2.0.0
         # if data["noisemodel"]["class"] == "NoiseModel":
         #     data["noisemodel"]["class"] = "ArNoiseModel"
         # if data["noisemodel"]["class"] == "ArmaModel":
