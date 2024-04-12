@@ -148,16 +148,18 @@ class Model:
                 msg = (
                     "The noisemodel argument is deprecated and will be removed in Pastas "
                     "version 2.0.0. The new default is that no noisemodel is added "
-                    "anymore and a noisemodel has to be explicitely added to the Pastas "
-                    "model by the user. To silence this warning, set noisemodel=None and"
-                    "use `ml.add_noisemodel`, if a noisemodel is desired. "
+                    "anymore and a noisemodel has to be added explicitely to a Pastas "
+                    "model by the user. To fix this error, do not pass a "
+                    "noisemodel keyword to Model and use `ml.add_noisemodel`, if a "
+                    "noisemodel is desired. See this issue on GitHub for more "
+                    "information: https://github.com/pastas/pastas/issues/735"
                 )
             elif noisemodel is False:
                 msg = (
                     "The noisemodel argument is deprecated and will be removed in Pastas "
                     "version 2.0.0. The new default is that no noisemodel is added "
-                    "anymore and a noisemodel has to be explicitely added to the Pastas "
-                    "model by the user. To silence this warning, set noisemodel=None. "
+                    "anymore, so passing noisemodel=False is not needed anymore. To "
+                    "fix this error, do not pass noisemodel=False to Model."
                 )
             logger.error(msg)
             raise ValueError(msg)
@@ -720,10 +722,12 @@ class Model:
         if noise is not None:
             msg = (
                 "The noise argument is deprecated and will be removed in Pastas "
-                "version 2.0.0. The new behavior is that if a noise model is present, "
-                "it will be used. To add a noisemodel, use ml.add_noisemodel method. "
-                "To solve without a noisemodel, remove the noisemodel "
-                "first using ml.del_noisemodel()."
+                "version 2.0.0. The new behavior is that a noise model will always be "
+                "used if it is present. To add a noisemodel to a model called ml, "
+                "use the ml.add_noisemodel method. To solve without a noisemodel, "
+                "make sure sure no noisemodel is added or remove a noisemodel with "
+                "ml.del_noisemodel() before solving. See this issue on GitHub for "
+                "more information: https://github.com/pastas/pastas/issues/735"
             )
             logger.error(msg)
             raise ValueError(msg)
@@ -853,15 +857,19 @@ class Model:
             if noise is True:
                 msg = (
                     "The noise argument is deprecated and will be removed in Pastas "
-                    "version 2.0.0. To solve using a noisemodel, add a noisemodel to the "
-                    "model using ml.add_noisemodel(n), where n is an instance of a "
-                    "noisemodel (e.g., n = ps.ArNoiseModel())."
+                    "version 2.0.0. To solve using a noisemodel, add a noisemodel to a "
+                    "model called ml using ml.add_noisemodel(n), where n is an instance "
+                    "of a noisemodel (e.g., n = ps.ArNoiseModel()). See this issue on "
+                    "GitHub for more information: "
+                    "https://github.com/pastas/pastas/issues/735"
                 )
             elif noise is False:
                 msg = (
                     "The noise argument is deprecated and will be removed in Pastas "
                     "version 2.0.0. To solve without a noisemodel, remove the noisemodel "
-                    "first (if present) using ml.del_noisemodel()."
+                    "(if present) from a model called ml using ml.del_noisemodel() before "
+                    "solving. See this issue on GitHub for more information: "
+                    "https://github.com/pastas/pastas/issues/735"
                 )
             logger.error(msg)
             raise ValueError(msg)
