@@ -1,5 +1,5 @@
 import pytest
-from pastas.dataset import load_dataset, list_datasets
+from pastas.dataset import list_datasets, load_dataset
 from pandas import DataFrame
 
 

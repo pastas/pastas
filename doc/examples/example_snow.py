@@ -35,9 +35,10 @@ ml.add_stressmodel(sm)
 ml.set_parameter("rch_kv", vary=False)
 
 # Solve the Pastas model
-ml.solve(tmin=tmin, tmax=tmax, noise=False, fit_constant=False, report=False)
+ml.solve(tmin=tmin, tmax=tmax, fit_constant=False, report=False)
+ml.add_noisemodel(ps.ArNoiseModel())
 ml.set_parameter("rch_ks", vary=False)
-ml.solve(tmin=tmin, tmax=tmax, noise=True, fit_constant=False, initial=False)
+ml.solve(tmin=tmin, tmax=tmax, fit_constant=False, initial=False)
 
 ml.plots.results()
 

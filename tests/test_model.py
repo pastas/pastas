@@ -31,6 +31,7 @@ def generate_synthetic_heads(input, rfunc, params, const=10.0, cutoff=0.999, dt=
 
 def test_create_model() -> None:
     ml = ps.Model(obs, name="Test_Model")
+    ml.add_noisemodel(ps.ArNoiseModel())
 
 
 def test_add_stressmodel(ml_empty: ps.Model, sm_prec) -> None:
@@ -56,12 +57,12 @@ def test_del_constant(ml_empty: ps.Model) -> None:
 
 
 def test_add_noisemodel(ml_empty: ps.Model) -> None:
-    ml_empty.add_noisemodel(ps.NoiseModel())
+    ml_empty.add_noisemodel(ps.ArNoiseModel())
 
 
 def test_armamodel() -> None:
-    ml = ps.Model(obs, name="Test_Model", noisemodel=False)
-    ml.add_noisemodel(ps.ArmaModel())
+    ml = ps.Model(obs, name="Test_Model")
+    ml.add_noisemodel(ps.ArmaNoiseModel())
     ml.solve()
     ml.to_file("test.pas")
 
@@ -175,10 +176,10 @@ def test_model_freq_geq_daily() -> None:
     models = []
     freqs = ["1D", "7D", "14D", "28D"]
     for freq in freqs:
-        iml = ps.Model(head, name=freq, noisemodel=False)
+        iml = ps.Model(head, name=freq)
         rm = ps.RechargeModel(prec, evap, rfunc=rf_rch, name="recharge")
         iml.add_stressmodel(rm)
-        iml.solve(freq=freq, noise=False, report=False)
+        iml.solve(freq=freq, report=False)
         models.append(iml)
 
     comparison = ps.CompareModels(models)
@@ -208,7 +209,7 @@ def test_model_freq_h():
         settings="waterlevel",
     )
     ml_h.add_stressmodel(sm)
-    ml_h.solve(noise=False, report=False)
+    ml_h.solve(report=False)
 
     assert ml_h.simulate().index.freq == "h"
     assert ml_h.stats.rsq() > 0.99999
