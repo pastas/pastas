@@ -147,15 +147,16 @@ class Model:
                     "The noisemodel argument is deprecated and will be removed in Pastas "
                     "version 2.0.0. The new default is that no noisemodel is added "
                     "anymore and a noisemodel has to be explicitely added to the Pastas "
-                    "model by the user. To silence this warning, set noisemodel=None and"
-                    "use `ml.add_noisemodel`, if a noisemodel is desired. "
+                    "model by the user. To silence this warning, do not pass a "
+                    "noisemodel-parameter to Model and use `ml.add_noisemodel`, if a "
+                    "noisemodel is desired. "
                 )
             elif noisemodel is False:
                 msg = (
                     "The noisemodel argument is deprecated and will be removed in Pastas "
                     "version 2.0.0. The new default is that no noisemodel is added "
-                    "anymore and a noisemodel has to be explicitely added to the Pastas "
-                    "model by the user. To silence this warning, set noisemodel=None. "
+                    "anymore, so passing noismodel=False is not needed anymore. To "
+                    "silence this warning, do not pass a noisemodel-parameter to Model. "
                 )
             logger.error(msg)
             raise ValueError(msg)
