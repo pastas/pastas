@@ -76,13 +76,9 @@ def test_solve_model(ml: ps.Model) -> None:
 
 
 def test_solve_empty_model(ml: ps.Model) -> None:
-    try:
+    with pytest.raises(ValueError) as excinfo:
         ml.solve(tmin="2016")
-    except ValueError as e:
-        if e.args[0].startswith("Calibration series"):
-            return None
-        else:
-            raise e
+    assert excinfo.value.args[0].startswith("Calibration series")
 
 
 def test_save_model(ml: ps.Model) -> None:
@@ -160,6 +156,11 @@ def test_model_sim_w_nans_error(ml_no_settings):
 def test_modelstats(ml: ps.Model) -> None:
     ml.solve()
     ml.stats.summary()
+
+
+def test_fit_report(ml: ps.Model) -> None:
+    ml.solve(report=False)
+    ml.fit_report(corr=True, stderr=True)
 
 
 def test_model_freq_geq_daily() -> None:
