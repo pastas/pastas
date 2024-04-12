@@ -376,10 +376,10 @@ def covar(x: Series, y: Series, weighted: bool = True, max_gap: int = 30) -> Arr
 
     """
     wx = _get_weights(x, weighted=weighted, max_gap=max_gap)
-    wy = _get_weights(x, weighted=weighted, max_gap=max_gap)
+    wy = _get_weights(y, weighted=weighted, max_gap=max_gap)
     mux = average(x.to_numpy(), weights=wx)
     muy = average(y.to_numpy(), weights=wy)
-    return sum((x * wx - mux) * (y * wy - muy)) / (len(x) - 1)
+    return sum((x - mux) * (y - muy)) / (len(x) - 1)
 
 
 def std(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
