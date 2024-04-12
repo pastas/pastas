@@ -724,7 +724,7 @@ class Model:
                 "use the ml.add_noisemodel method. To solve without a noisemodel, "
                 "make sure sure no noisemodel is added or remove a noisemodel with "
                 "ml.del_noisemodel() before solving. See this issue on GitHub for "
-                "more information: https://github.com/pastas/pastas/issues/735"""
+                "more information: https://github.com/pastas/pastas/issues/735"
             )
             logger.error(msg)
             raise ValueError(msg)
@@ -858,7 +858,7 @@ class Model:
                     "model called ml using ml.add_noisemodel(n), where n is an instance "
                     "of a noisemodel (e.g., n = ps.NoiseModel()). See this issue on "
                     "GitHub for more information: "
-                    "https://github.com/pastas/pastas/issues/735""
+                    "https://github.com/pastas/pastas/issues/735"
                 )
             elif noise is False:
                 msg = (
@@ -866,7 +866,7 @@ class Model:
                     "version 2.0.0. To solve without a noisemodel, remove the noisemodel "
                     "(if present) from a model called ml using ml.del_noisemodel() before "
                     "solving. See this issue on GitHub for more information: "
-                    "https://github.com/pastas/pastas/issues/735""
+                    "https://github.com/pastas/pastas/issues/735"
                 )
             logger.error(msg)
             raise ValueError(msg)
