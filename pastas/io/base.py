@@ -114,6 +114,11 @@ def _load_model(data: dict) -> Model:
 
     # Add noisemodel if present
     if "noisemodel" in data.keys():
+        # fixes to read pas-files from before pastas version 1.5
+        # if data["noisemodel"]["class"] == "NoiseModel":
+        #     data["noisemodel"]["class"] = "ArNoiseModel"
+        # if data["noisemodel"]["class"] == "ArmaModel":
+        #     data["noisemodel"]["class"] = "ArmaNoiseModel"
         n = getattr(ps.noisemodels, data["noisemodel"].pop("class"))()
         ml.add_noisemodel(n)
 

@@ -266,8 +266,8 @@ class ArNoiseModel(NoiseModelBase):
 
 def NoiseModel(*args, **kwargs) -> ArNoiseModel:
     logger.warning(
-        "The NoiseModel class will be deprecated in Pastas version 2.0."
-        "Please use ArNoiseModel to get the expected behavior."
+        "NoiseModel has been renamed to ArNoiseModel and will be deprecated in Pastas "
+        "version 2.0. Please use ArNoiseModel."
     )
     n = ArNoiseModel(*args, **kwargs)
     n._name = "NoiseModel"
@@ -359,8 +359,8 @@ class ArmaNoiseModel(NoiseModelBase):
 
 def ArmaModel(*args, **kwargs) -> ArmaNoiseModel:
     logger.warning(
-        "The ArmaModel class will be deprecated in Pastas version 2.0."
-        "Please use ArmaNoiseModel to get the expected behavior."
+        "ArmaModel has been renamed to ArmaNoiseModel and will be deprecated in Pastas "
+        "version 2.0. Please use ArmaNoiseModel."
     )
     n = ArmaNoiseModel(*args, **kwargs)
     n._name = "ArmaModel"
