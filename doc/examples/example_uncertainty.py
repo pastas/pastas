@@ -8,7 +8,7 @@ ps.set_log_level("ERROR")
 # read observations and create the time series model
 obs = pd.read_csv("data/head_nb1.csv", index_col=0, parse_dates=True).squeeze("columns")
 ml = ps.Model(obs, name="groundwater_head")
-ml.add_noisemodel(ps.NoiseModel())
+ml.add_noisemodel(ps.ArNoiseModel())
 
 # read weather data and create stressmodel
 rain = pd.read_csv("data/rain_nb1.csv", index_col=0, parse_dates=True).squeeze(

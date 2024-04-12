@@ -31,7 +31,7 @@ def generate_synthetic_heads(input, rfunc, params, const=10.0, cutoff=0.999, dt=
 
 def test_create_model() -> None:
     ml = ps.Model(obs, name="Test_Model")
-    ml.add_noisemodel(ps.NoiseModel())
+    ml.add_noisemodel(ps.ArNoiseModel())
 
 
 def test_add_stressmodel(ml_empty: ps.Model, sm_prec) -> None:
@@ -57,12 +57,12 @@ def test_del_constant(ml_empty: ps.Model) -> None:
 
 
 def test_add_noisemodel(ml_empty: ps.Model) -> None:
-    ml_empty.add_noisemodel(ps.NoiseModel())
+    ml_empty.add_noisemodel(ps.ArNoiseModel())
 
 
 def test_armamodel() -> None:
     ml = ps.Model(obs, name="Test_Model")
-    ml.add_noisemodel(ps.ArmaModel())
+    ml.add_noisemodel(ps.ArmaNoiseModel())
     ml.solve()
     ml.to_file("test.pas")
 

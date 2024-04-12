@@ -25,6 +25,7 @@ from pandas import (
 from pastas.decorators import get_stressmodel
 from pastas.io.base import _load_model, dump
 from pastas.modelstats import Statistics
+from pastas.noisemodels import ArNoiseModel
 from pastas.plotting.modelplots import Plotting, _table_formatter_stderr
 from pastas.rfunc import HantushWellModel
 from pastas.solver import LeastSquares
@@ -60,7 +61,7 @@ class Model:
     noisemodel: bool, optional
         The noisemodel argument is deprecated and will be removed in Pastas version
         2.0.0. To add a noisemodel, use ml.add_noisemodel(n), where is an instance
-        of a noisemodel (e.g., n = ps.NoiseModel()). The use of the noisemodel
+        of a noisemodel (e.g., n = ps.ArNoiseModel()). The use of the noisemodel
         argument will raise a ValueError.
     name: str, optional
         String with the name of the model, used in plotting and saving.
@@ -141,6 +142,7 @@ class Model:
         if constant:
             constant = Constant(initial=self.oseries.series.mean(), name="constant")
             self.add_constant(constant)
+
         if noisemodel is not None:
             if noisemodel is True:
                 msg = (
@@ -303,7 +305,7 @@ class Model:
 
         Examples
         --------
-        >>> n = ps.NoiseModel()
+        >>> n = ps.ArNoiseModel()
         >>> ml.add_noisemodel(n)
 
         Notes
@@ -716,6 +718,7 @@ class Model:
         This method is called by the solve-method, but can also be triggered
         manually. See the solve-method for a description of the arguments.
         """
+
         if noise is not None:
             msg = (
                 "The noise argument is deprecated and will be removed in Pastas "
@@ -808,7 +811,7 @@ class Model:
             This argument is deprecated and will be removed in Pastas version 2.0.0.
             To solve using a noisemodel (i.e. noise=True), add a noisemodel to the
             model using ml.add_noisemodel(n), where n is an instance of a noisemodel
-            (e.g., n = ps.NoiseModel()). To solve without a noisemodel (noise=False),
+            (e.g., n = ps.ArNoiseModel()). To solve without a noisemodel (noise=False),
             remove the noisemodel first (if present) using ml.del_noisemodel().
         solver: Class pastas.solver.Solver, optional
             Instance of a pastas Solver class used to solve the model. Options are:
@@ -856,7 +859,7 @@ class Model:
                     "The noise argument is deprecated and will be removed in Pastas "
                     "version 2.0.0. To solve using a noisemodel, add a noisemodel to a "
                     "model called ml using ml.add_noisemodel(n), where n is an instance "
-                    "of a noisemodel (e.g., n = ps.NoiseModel()). See this issue on "
+                    "of a noisemodel (e.g., n = ps.ArNoiseModel()). See this issue on "
                     "GitHub for more information: "
                     "https://github.com/pastas/pastas/issues/735"
                 )
