@@ -8,7 +8,7 @@ Examples
 By default, a noise model is added to a Pastas model. It is possible to replace the
 default model with different models as follows:
 
->>> n = ps.ARMANoiseModel()
+>>> n = ps.ArmaNoiseModel()
 >>> ml.add_noisemodel(n)
 
 or, to delete the noise model from the model:
@@ -32,7 +32,7 @@ from .decorators import njit, set_parameter
 
 logger = getLogger(__name__)
 
-__all__ = ["ARNoiseModel", "ARMANoiseModel"]
+__all__ = ["ArNoiseModel", "ArmaNoiseModel"]
 
 
 class NoiseModelBase:
@@ -121,7 +121,7 @@ class NoiseModelBase:
         return 1
 
 
-class ARNoiseModel(NoiseModelBase):
+class ArNoiseModel(NoiseModelBase):
     """Noise model with exponential decay of the residuals and weighting.
 
     Parameters
@@ -150,7 +150,7 @@ class ARNoiseModel(NoiseModelBase):
     optional.
     """
 
-    _name = "ARNoiseModel"
+    _name = "ArNoiseModel"
 
     def __init__(self, norm: bool = True) -> None:
         NoiseModelBase.__init__(self)
@@ -264,17 +264,17 @@ class ARNoiseModel(NoiseModelBase):
         return data
 
 
-def NoiseModel(*args, **kwargs) -> ARNoiseModel:
+def NoiseModel(*args, **kwargs) -> ArNoiseModel:
     logger.warning(
         "The NoiseModel class will be deprecated in Pastas version 2.0."
-        "Please use ARNoiseModel to get the expected behavior."
+        "Please use ArNoiseModel to get the expected behavior."
     )
-    n = ARNoiseModel(*args, **kwargs)
+    n = ArNoiseModel(*args, **kwargs)
     n._name = "NoiseModel"
     return n
 
 
-class ARMANoiseModel(NoiseModelBase):
+class ArmaNoiseModel(NoiseModelBase):
     """ARMA(1,1) Noise model to simulate the noise as defined in
     :cite:t:`collenteur_estimation_2021`.
 
@@ -294,7 +294,7 @@ class ARMANoiseModel(NoiseModelBase):
     irregular time steps yet.
     """
 
-    _name = "ARMANoiseModel"
+    _name = "ArmaNoiseModel"
 
     def __init__(self) -> None:
         NoiseModelBase.__init__(self)
@@ -357,11 +357,11 @@ class ARMANoiseModel(NoiseModelBase):
         return a
 
 
-def ArmaModel(*args, **kwargs) -> ARMANoiseModel:
+def ArmaModel(*args, **kwargs) -> ArmaNoiseModel:
     logger.warning(
         "The ArmaModel class will be deprecated in Pastas version 2.0."
-        "Please use ARMANoiseModel to get the expected behavior."
+        "Please use ArmaNoiseModel to get the expected behavior."
     )
-    n = ARMANoiseModel(*args, **kwargs)
+    n = ArmaNoiseModel(*args, **kwargs)
     n._name = "ArmaModel"
     return n

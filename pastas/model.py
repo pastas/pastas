@@ -25,7 +25,7 @@ from pandas import (
 from pastas.decorators import get_stressmodel
 from pastas.io.base import _load_model, dump
 from pastas.modelstats import Statistics
-from pastas.noisemodels import ARNoiseModel
+from pastas.noisemodels import ArNoiseModel
 from pastas.plotting.modelplots import Plotting, _table_formatter_stderr
 from pastas.rfunc import HantushWellModel
 from pastas.solver import LeastSquares
@@ -303,7 +303,7 @@ class Model:
 
         Examples
         --------
-        >>> n = ps.ARNoiseModel()
+        >>> n = ps.ArNoiseModel()
         >>> ml.add_noisemodel(n)
 
         Notes
