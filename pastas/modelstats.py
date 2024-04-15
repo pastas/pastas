@@ -233,6 +233,7 @@ class Statistics:
         tmin: Optional[TimestampType] = None,
         tmax: Optional[TimestampType] = None,
         weighted: bool = False,
+        modified: bool = False,
         **kwargs,
     ) -> float:
         """Explained variance percentage.
@@ -244,6 +245,9 @@ class Statistics:
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
+        modified: bool, optional
+            Compute the modified EVP which takes into account the covariance between the
+            model simulation and residuals.
 
         See Also
         --------
@@ -251,7 +255,7 @@ class Statistics:
         """
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return metrics.evp(obs=obs, res=res, weighted=weighted, **kwargs)
+        return metrics.evp(obs=obs, res=res, weighted=weighted, modified=modified, **kwargs)
 
     @model_tmin_tmax
     def rsq(
