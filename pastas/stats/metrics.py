@@ -303,7 +303,7 @@ def evp(
         if modified:
             if sim is None:
                 sim = obs + err
-            dcov = 2 * covar(sim, -err, weighted=weighted, max_gap=max_gap)
+            dcov = 2 * covar(sim, -err, weighted=weighted, max_gap=max_gap)# / var(obs)
             return max(0.0, ev - dcov) * 100.0
         return max(0.0, ev) * 100.0
 
