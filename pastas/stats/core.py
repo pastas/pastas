@@ -379,7 +379,7 @@ def covar(x: Series, y: Series, weighted: bool = True, max_gap: int = 30) -> Arr
     wy = _get_weights(y, weighted=weighted, max_gap=max_gap)
     mux = average(x.to_numpy(), weights=wx)
     muy = average(y.to_numpy(), weights=wy)
-    return sum((x - mux) * (y - muy)) / (len(x) - 1)
+    return sum((x - mux) * (y - muy)) / (x.size - 1)
 
 
 def std(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
