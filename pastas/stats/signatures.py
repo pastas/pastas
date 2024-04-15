@@ -85,7 +85,7 @@ def _normalize(series: Series) -> Series:
     return series
 
 
-def cv_period_mean(series: Series, normalize: bool = False, freq: str = "M") -> float:
+def cv_period_mean(series: Series, normalize: bool = False, freq: str = "ME") -> float:
     """Coefficient of variation of the mean head over a period (default monthly).
 
     Parameters
@@ -1074,7 +1074,7 @@ def mean_annual_maximum(series: Series, normalize: bool = True) -> float:
     if normalize:
         series = _normalize(series)
 
-    return series.resample("A").max().mean()
+    return series.resample("YE").max().mean()
 
 
 def bimodality_coefficient(series: Series, normalize: bool = True) -> float:
@@ -1582,7 +1582,7 @@ def baselevel_stability(series: Series, normalize: bool = True, period="30D") ->
 
     _, ht = _baselevel(series, normalize=normalize, period=period)
 
-    return ht.resample("A").mean().max() - ht.resample("A").mean().min()
+    return ht.resample("YE").mean().max() - ht.resample("YE").mean().min()
 
 
 def autocorr_time(series: Series, cutoff: float = 0.8, **kwargs) -> float:
