@@ -357,7 +357,14 @@ def get_equidistant_series_nearest(
     """
 
     # build new equidistant index
-    idx = date_range(series.index[0], series.index[-1], freq=freq)
+    t_offset = _get_time_offset(series.index, freq).value_counts().idxmax()
+    # use t_offset to pick time that will keep the most data without shifting in time
+    # from the original series.
+    idx = date_range(
+        series.index[0].floor(freq) + t_offset,
+        series.index[-1].ceil(freq) + t_offset,
+        freq=freq,
+    )
 
     # get linear interpolated index from original series
     fl = interpolate.interp1d(
