@@ -101,7 +101,7 @@ def q_gvg(
     inspring = _in_spring(series)
     if any(inspring):
         if by_year:
-            return series.loc[inspring].resample("YE").median().mean()
+            return series.loc[inspring].resample("A").median().mean()
         else:
             return series.loc[inspring].median()
     else:
@@ -117,7 +117,7 @@ def ghg(
     output: str = "mean",
     min_n_meas: int = 16,
     min_n_years: int = 8,
-    year_offset: str = "YE-MAR",
+    year_offset: str = "A-MAR",
 ) -> Union[Series, float]:
     """Calculate the 'Gemiddelde Hoogste Grondwaterstand' (Average High
     Groundwater Level)
@@ -205,7 +205,7 @@ def glg(
     output: str = "mean",
     min_n_meas: int = 16,
     min_n_years: int = 8,
-    year_offset: str = "YE-MAR",
+    year_offset: str = "A-MAR",
 ) -> Union[Series, float]:
     """Calculate the 'Gemiddelde Laagste Grondwaterstand' (Average Low GW Level).
 
@@ -292,7 +292,7 @@ def gvg(
     output: str = "mean",
     min_n_meas: int = 2,
     min_n_years: int = 8,
-    year_offset: str = "YE",
+    year_offset: str = "A",
 ) -> Union[Series, float]:
     """Calculate the 'Gemiddelde Voorjaars Grondwaterstand' (Average Spring GW Level).
 
@@ -367,7 +367,7 @@ def gg(
     output: str = "mean",
     min_n_meas: int = 16,
     min_n_years: int = 8,
-    year_offset: str = "YE-MAR",
+    year_offset: str = "A-MAR",
 ) -> Union[Series, float]:
     """Calculate the 'Gemiddelde Grondwaterstand' (Average Groundwater Level).
 
@@ -652,6 +652,6 @@ def _q_gxg(
         series = series.loc[:tmax]
     series = series.resample("d").median()
     if by_year:
-        return series.resample("YE").apply(lambda s: s.quantile(q)).mean()
+        return series.resample("A").apply(lambda s: s.quantile(q)).mean()
     else:
         return series.quantile(q)
