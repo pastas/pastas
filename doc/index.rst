@@ -14,7 +14,7 @@ project? Check out the :doc:`Developers <developers/index>` section.
         :link: userguide/index
         :link-type: doc
 
-        User guide on the basic concepts of Pastas.
+        User guide on installation and the basic concepts of Pastas.
 
     .. grid-item-card:: Examples
         :link: examples/index
@@ -22,16 +22,16 @@ project? Check out the :doc:`Developers <developers/index>` section.
 
         Examples of Pastas usage.
 
-    .. grid-item-card:: Code Reference
+    .. grid-item-card:: API Reference
         :link: api/index
         :link-type: doc
 
-        Pastas code reference.
+        Pastas application programming interface (API) reference.
 
 
 .. grid::
 
-    .. grid-item-card:: Contribute
+    .. grid-item-card:: Development
         :link: developers/index
         :link-type: doc
 
@@ -99,8 +99,8 @@ you to cite the Pastas article published in Groundwater journal as follows:
 
     User Guide <userguide/index>
     Examples <examples/index>
-    Reference <api/index>
+    API Reference <api/index>
     Benchmarks <benchmarks/index>
-    Contribute <developers/index>
+    Development <developers/index>
     About <about/index>
     Map <map>
