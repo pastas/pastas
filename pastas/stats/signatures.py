@@ -1,4 +1,5 @@
-"""This module contains methods to compute the groundwater signatures."""
+"""This module contains methods to compute the groundwater signatures. Part of the
+signatures selection is based on the work of :cite:t:`heudorfer_index-based_2019`."""
 
 # Type Hinting
 from logging import getLogger
