@@ -126,6 +126,7 @@ class Plotting:
         adjust_height: bool = True,
         return_warmup: bool = False,
         block_or_step: str = "step",
+        stderr: bool = False,
         fig: Optional[Figure] = None,
         **kwargs,
     ) -> Axes:
@@ -146,6 +147,11 @@ class Plotting:
             Show the warmup-period. Default is false.
         block_or_step: str, optional
             Plot the block- or step-response on the right. Default is 'step'.
+        stderr : bool, optional
+            If True the standard error of the parameter values are shown. Please be
+            aware of the conditions for reliable uncertainty estimates, more
+            information here:
+            https://pastas.readthedocs.io/en/master/examples/diagnostic_checking.html
         fig: matplotib.Figure instance, optional
             Optionally provide a matplotib.Figure instance to plot onto.
         **kwargs: dict, optional
@@ -315,13 +321,15 @@ class Plotting:
         )
         p = self.ml.parameters.loc[:, ["name"]].copy()
         p.loc[:, "name"] = p.index
-        stderr = (
-            self.ml.parameters.loc[:, "stderr"] / self.ml.parameters.loc[:, "optimal"]
-        )
         p.loc[:, "optimal"] = self.ml.parameters.loc[:, "optimal"].apply(
             _table_formatter_params
         )
-        p.loc[:, "stderr"] = stderr.abs().apply(_table_formatter_stderr)
+        if stderr:
+            stderr = (
+                self.ml.parameters.loc[:, "stderr"]
+                / self.ml.parameters.loc[:, "optimal"]
+            )
+            p.loc[:, "stderr"] = stderr.abs().apply(_table_formatter_stderr)
 
         ax3.axis("off")
         ax3.table(
