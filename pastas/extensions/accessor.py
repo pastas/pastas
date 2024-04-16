@@ -1,5 +1,7 @@
 # copied and adapted from pandas/core/accessor.py
-import warnings
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class CachedAccessor:
@@ -84,12 +86,11 @@ def _register_accessor(name: str, cls):
 
     def decorator(accessor):
         if hasattr(cls, name):
-            warnings.warn(
-                f"registration of accessor {repr(accessor)} under name "
-                f"{repr(name)} for type {repr(cls)} is overriding a preexisting "
-                "attribute with the same name.",
-                UserWarning,
+            msg = (
+                "registration of accessor %s under name %s for type %s is overriding"
+                " a preexisting attribute with the same name."
             )
+            logger.warning(msg, repr(accessor), repr(name), repr(cls))
         setattr(cls, name, CachedAccessor(name, accessor))
         cls._accessors.add(name)
         return accessor

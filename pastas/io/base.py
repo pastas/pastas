@@ -37,7 +37,9 @@ def load(fname: str, **kwargs) -> Model:
 
     """
     if not path.exists(fname):
-        logger.error("File not found: %s", fname)
+        msg = "File not found: %s"
+        logger.error(msg, fname)
+        raise FileNotFoundError(msg % fname)
 
     # Dynamic import of the export module
     load_mod = import_module(f"pastas.io{path.splitext(fname)[1]}")
@@ -49,12 +51,14 @@ def load(fname: str, **kwargs) -> Model:
 
     # A single catch for old pas-files, no longer supported
     if version.parse(file_version) < version.parse("0.23.0"):
-        raise UserWarning(
+        msg = (
             "This file was created with a Pastas version prior to 0.23 "
             "and cannot be loaded with Pastas >= 1.0. Please load and "
             "save the file with Pastas 0.23 first to update the file "
             "format."
         )
+        logger.error(msg)
+        raise ValueError(msg)
 
     ml = _load_model(data)
 

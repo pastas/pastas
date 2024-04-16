@@ -351,8 +351,9 @@ class BaseSolver:
 
         if samples.shape[0] < n:
             logger.warning(
-                "Parameter sample size is smaller than n: "
-                f"{samples.shape[0]}/{n}. Increase 'max_iter'."
+                "Parameter sample size is smaller than n: %s/%s Increase 'max_iter'.",
+                samples.shape[0],
+                n,
             )
         return samples[:n, :]
 
@@ -1016,7 +1017,7 @@ class EmceeSolve(BaseSolver):
 
         if np.isnan(loc) or np.isnan(scale):
             msg = "Location and/or scale parameter is NaN."
-            logger.error(msg=msg)
+            logger.error(msg)
             raise ValueError(msg)
 
         return getattr(mod, dist)(loc=loc, scale=scale)
@@ -1066,7 +1067,7 @@ class EmceeSolve(BaseSolver):
         if name not in self.parameters.index:
             msg = "parameter %s is not present in the solver."
             self.logger.error(msg, name)
-            raise KeyError(msg, name)
+            raise KeyError(msg % name)
 
         # Set the initial value
         if initial is not None:
