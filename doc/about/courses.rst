@@ -6,4 +6,4 @@ Every now and then (on-site) Pastas courses and workshops are held. Please check
 private courses on request. To organize such a workshop please contact one of the following:
 
 - For courses in the Netherlands, please contact Artesia (info[AT]artesia-water.nl)
-- For international courses, please contact Raoul Collenteur (Raoul.Collenteur[AT]eawag.ch)
+- For international courses, please contact Raoul Collenteur (Raoul.Collenteur[AT]hydroconsult.ch)

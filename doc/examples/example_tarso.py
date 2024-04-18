@@ -5,9 +5,10 @@ import pastas as ps
 ml = ps.io.load("data/B28H1808_2_pastas-0-23-0.pas")
 if ml.transform is not None:
     ml.del_transform()
+ml.del_noisemodel()
 
 # first solve and plot to see the model-performance
-ml.solve(noise=False)
+ml.solve()
 ax = ml.plots.results()
 
 # get the precipitation and evaporation
@@ -27,5 +28,5 @@ sm = ps.TarsoModel(
 ml.add_stressmodel(sm)
 
 # and solve and plot again
-ml.solve(noise=False)
+ml.solve()
 ax = ml.plots.results()

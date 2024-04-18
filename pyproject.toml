@@ -18,7 +18,7 @@ maintainers = [
     { name = "O.N. Ebbens", email = "o.ebbens@artesia-water.nl" },
     { name = "M.A. Vonk", email = "vonk.mart@gmail.com" },
 ]
-requires-python = ">= 3.8"
+requires-python = ">= 3.9"
 dependencies = [
     "numpy >= 1.17",
     "matplotlib >= 3.1",
@@ -33,7 +33,6 @@ classifiers = [
     'Intended Audience :: Other Audience',
     'License :: OSI Approved :: MIT License',
     'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
@@ -61,6 +60,7 @@ ci = [
     "emcee",
     "tqdm",
     "plotly",
+    "bokeh >= 3.0",
 ]
 rtd = [
     "pastas[solvers]",
@@ -94,7 +94,7 @@ markers = ["notebooks: run notebooks", "bnotebooks: run benchmark notebooks"]
 legacy_tox_ini = """
     [tox]
     requires = tox>=4
-    env_list = format, lint, notebooks, py{38,39,310,311,312}
+    env_list = format, lint, notebooks, py{39,310,311,312}
 
     [testenv]
     description = run unit tests

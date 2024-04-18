@@ -10,3 +10,10 @@ def register_plotly():
     from pastas.plotting.plotly import Plotly
 
     logger.info("Registered plotly extension in Model class, e.g. `ml.plotly.plot()`.")
+
+
+def register_bokeh():
+    """Register Bokeh extension for pastas.Model class for interactive plotting."""
+    from pastas.plotting.bokeh import Bokeh
+
+    logger.info("Registered bokeh extension in Model class, e.g. `ml.bokeh.plot()`.")

@@ -37,7 +37,9 @@ def load(fname: str, **kwargs) -> Model:
 
     """
     if not path.exists(fname):
-        logger.error("File not found: %s", fname)
+        msg = "File not found: %s"
+        logger.error(msg, fname)
+        raise FileNotFoundError(msg % fname)
 
     # Dynamic import of the export module
     load_mod = import_module(f"pastas.io{path.splitext(fname)[1]}")
@@ -49,12 +51,14 @@ def load(fname: str, **kwargs) -> Model:
 
     # A single catch for old pas-files, no longer supported
     if version.parse(file_version) < version.parse("0.23.0"):
-        raise UserWarning(
+        msg = (
             "This file was created with a Pastas version prior to 0.23 "
             "and cannot be loaded with Pastas >= 1.0. Please load and "
             "save the file with Pastas 0.23 first to update the file "
             "format."
         )
+        logger.error(msg)
+        raise ValueError(msg)
 
     ml = _load_model(data)
 
@@ -84,20 +88,19 @@ def _load_model(data: dict) -> Model:
     else:
         name = None
 
-    if "noisemodel" in data.keys():
-        noise = True
-    else:
-        noise = False
-
     ml = ps.Model(
         oseries=oseries,
         constant=constant,
-        noisemodel=noise,
         name=name,
         metadata=metadata,
     )
 
     if "settings" in data.keys():
+        if "noise" in data["settings"]:
+            if not data["settings"]["noise"] and "noisemodel" in data:
+                # file is saved before pastas 1.5, and solved with ml.solve(noise=False)
+                # remove noisemodel from data
+                data.pop("noisemodel")
         ml.settings.update(data["settings"])
     if "file_info" in data.keys():
         ml.file_info.update(data["file_info"])
@@ -115,6 +118,12 @@ def _load_model(data: dict) -> Model:
 
     # Add noisemodel if present
     if "noisemodel" in data.keys():
+        # fixes to read pas-files from before pastas version 1.5
+        # TODO: uncomment in pastas 2.0.0
+        # if data["noisemodel"]["class"] == "NoiseModel":
+        #     data["noisemodel"]["class"] = "ArNoiseModel"
+        # if data["noisemodel"]["class"] == "ArmaModel":
+        #     data["noisemodel"]["class"] = "ArmaNoiseModel"
         n = getattr(ps.noisemodels, data["noisemodel"].pop("class"))()
         ml.add_noisemodel(n)
 

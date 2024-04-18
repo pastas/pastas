@@ -1,4 +1,4 @@
-"""This module contains all the plotting methods for Pastas Models."""
+"""This module contains plotting methods for Pastas Models."""
 
 import logging
 
@@ -11,7 +11,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import LogFormatter, MultipleLocator
 from pandas import Series, Timestamp, concat
 
-from pastas.decorators import model_tmin_tmax
+from pastas.decorators import PastasDeprecationWarning, model_tmin_tmax
 from pastas.plotting.plots import cum_frequency, diagnostics, pairplot, series
 from pastas.plotting.plotutil import (
     _get_height_ratios,
@@ -98,8 +98,8 @@ class Plotting:
 
         if simulation:
             sim = self.ml.simulate(tmin=tmin, tmax=tmax)
-            r2 = round(self.ml.stats.rsq(tmin=tmin, tmax=tmax) * 100, 1)
-            sim.plot(ax=ax, label=f"{sim.name} ($R^2$ = {r2}%)")
+            r2 = self.ml.stats.rsq(tmin=tmin, tmax=tmax)
+            sim.plot(ax=ax, label=f"{sim.name} ($R^2$={r2:.2%})")
 
         # Dress up the plot
         # temporary fix, as set_xlim currently does not work with strings mpl=3.6.1
@@ -109,8 +109,7 @@ class Plotting:
             tmax = Timestamp(tmax)
 
         ax.set_xlim(tmin, tmax)
-        ax.set_ylabel("Groundwater levels [meter]")
-        ax.set_title("Results of {}".format(self.ml.name))
+        ax.set_ylabel("Head")
 
         if legend:
             ax.legend(ncol=2, numpoints=3)
@@ -127,6 +126,7 @@ class Plotting:
         adjust_height: bool = True,
         return_warmup: bool = False,
         block_or_step: str = "step",
+        stderr: bool = False,
         fig: Optional[Figure] = None,
         **kwargs,
     ) -> Axes:
@@ -147,6 +147,11 @@ class Plotting:
             Show the warmup-period. Default is false.
         block_or_step: str, optional
             Plot the block- or step-response on the right. Default is 'step'.
+        stderr : bool, optional
+            If True the standard error of the parameter values are shown. Please be
+            aware of the conditions for reliable uncertainty estimates, more
+            information here:
+            https://pastas.readthedocs.io/en/master/examples/diagnostic_checking.html
         fig: matplotib.Figure instance, optional
             Optionally provide a matplotib.Figure instance to plot onto.
         **kwargs: dict, optional
@@ -223,6 +228,7 @@ class Plotting:
         sim.plot(ax=ax1, x_compat=True, label=f"{sim.name} ($R^2$={r2:.2%})")
         ax1.legend(loc=(0, 1), ncol=3, frameon=False, numpoints=3)
         ax1.set_ylim(ylims[0])
+        ax1.set_ylabel("Head")
 
         # Residuals and noise
         ax2 = fig.add_subplot(gs[1, 0], sharex=ax1)
@@ -242,13 +248,21 @@ class Plotting:
             # plot the contribution
             nsplit = sm.get_nsplit()
             if split and nsplit > 1:
-                for _ in range(nsplit):
+                for istress in range(nsplit):
                     ax = fig.add_subplot(gs[i + 2, 0], sharex=ax1)
                     contribs[i].plot(ax=ax, x_compat=True)
                     ax.legend(loc=(0, 1), ncol=3, frameon=False)
+                    ax.set_ylabel("Rise")
                     if adjust_height:
                         ax.set_ylim(ylims[i + 2])
+
                     i = i + 1
+
+                    # plot the response
+                    axb, rmin, rmax = self._plot_response_in_results(
+                        sm_name, block_or_step, rmin, rmax, axb, gs, i, istress=istress
+                    )
+
             else:
                 ax = fig.add_subplot(gs[i + 2, 0], sharex=ax1)
                 contribs[i].plot(ax=ax, x_compat=True)
@@ -261,31 +275,15 @@ class Plotting:
                     fontsize=plt.rcParams["legend.fontsize"],
                 )
                 ax.legend(loc=(0, 1), ncol=3, frameon=False)
+                ax.set_ylabel("Rise")
                 if adjust_height:
                     ax.set_ylim(ylims[i + 2])
                 i = i + 1
 
-            # plot the step response
-            rkwargs = {}
-            if self.ml.stressmodels[sm_name].rfunc is not None:
-                if isinstance(self.ml.stressmodels[sm_name].rfunc, HantushWellModel):
-                    rkwargs = {"warn": False}
-            response = self.ml._get_response(
-                block_or_step=block_or_step, name=sm_name, add_0=True, **rkwargs
-            )
-
-            if response is not None:
-                rmax = max(rmax, response.index.max())
-                axb = fig.add_subplot(gs[i + 1, 1], sharex=axb)
-                response.plot(ax=axb)
-                if block_or_step == "block":
-                    title = "Block response"
-                    rmin = response.index[1]
-                    axb.set_xscale("log")
-                    axb.xaxis.set_major_formatter(LogFormatter())
-                else:
-                    title = "Step response"
-                axb.set_title(title, fontsize=plt.rcParams["legend.fontsize"])
+                # plot the response
+                axb, rmin, rmax = self._plot_response_in_results(
+                    sm_name, block_or_step, rmin, rmax, axb, gs, i
+                )
 
         if axb is not None:
             axb.set_xlim(rmin, rmax)
@@ -323,13 +321,15 @@ class Plotting:
         )
         p = self.ml.parameters.loc[:, ["name"]].copy()
         p.loc[:, "name"] = p.index
-        stderr = (
-            self.ml.parameters.loc[:, "stderr"] / self.ml.parameters.loc[:, "optimal"]
-        )
         p.loc[:, "optimal"] = self.ml.parameters.loc[:, "optimal"].apply(
             _table_formatter_params
         )
-        p.loc[:, "stderr"] = stderr.abs().apply(_table_formatter_stderr)
+        if stderr:
+            stderr = (
+                self.ml.parameters.loc[:, "stderr"]
+                / self.ml.parameters.loc[:, "optimal"]
+            )
+            p.loc[:, "stderr"] = stderr.abs().apply(_table_formatter_stderr)
 
         ax3.axis("off")
         ax3.table(
@@ -340,6 +340,39 @@ class Plotting:
         )
 
         return fig.axes
+
+    def _plot_response_in_results(
+        self, sm_name, block_or_step, rmin, rmax, axb, gs, i, istress=None
+    ):
+        """Internal method to plot the response of a Stressmodel in the results-plot"""
+        rkwargs = {}
+        if self.ml.stressmodels[sm_name].rfunc is not None:
+            if isinstance(self.ml.stressmodels[sm_name].rfunc, HantushWellModel):
+                rkwargs = {"warn": False}
+                if istress is None:
+                    # show the response of the first well, which gives more information than istress = None
+                    istress = 0
+        response = self.ml._get_response(
+            block_or_step=block_or_step,
+            name=sm_name,
+            add_0=True,
+            istress=istress,
+            **rkwargs,
+        )
+
+        if response is not None:
+            rmax = max(rmax, response.index.max())
+            axb = gs.figure.add_subplot(gs[i + 1, 1], sharex=axb)
+            response.plot(ax=axb)
+            if block_or_step == "block":
+                title = "Block response"
+                rmin = response.index[1]
+                axb.set_xscale("log")
+                axb.xaxis.set_major_formatter(LogFormatter())
+            else:
+                title = "Step response"
+            axb.set_title(title, fontsize=plt.rcParams["legend.fontsize"])
+        return axb, rmin, rmax
 
     @model_tmin_tmax
     def decomposition(
@@ -463,12 +496,14 @@ class Plotting:
             ax=axes[0],
             x_compat=True,
         )
-        sim.plot(ax=axes[0], x_compat=True)
+
+        r2 = self.ml.stats.rsq(tmin=tmin, tmax=tmax)
+        sim.plot(ax=axes[0], x_compat=True, label=f"{sim.name} ($R^2$={r2:.2%})")
         if set_axes_properties:
-            axes[0].set_title("observations vs. simulation")
             axes[0].set_ylim(ylims[0])
         axes[0].grid(True)
         axes[0].legend(ncol=3, frameon=False, numpoints=3)
+        axes[0].set_ylabel("Head")
 
         if ytick_base and set_axes_properties:
             if isinstance(ytick_base, bool):
@@ -493,6 +528,7 @@ class Plotting:
                 ax.set_ylim(ylims[i + 1])
             ax.grid(True)
             ax.minorticks_off()
+            ax.set_ylabel("Rise")
         if set_axes_properties:
             # temporary fix, as set_xlim currently does not work with strings mpl=3.6.1
             if tmin is not None:
@@ -748,6 +784,7 @@ class Plotting:
 
         return axes
 
+    @PastasDeprecationWarning
     @model_tmin_tmax
     def contributions_pie(
         self,
@@ -907,7 +944,7 @@ class Plotting:
                         contributions.append((name, h))
 
                         # plot step responses for each well, scaled with distance
-                        p = sml.get_parameters(istress=istress)
+                        p = sml.get_parameters(model=self.ml, istress=istress)
                         step = self.ml.get_step_response(sm, p=p)
                         ax_step.plot(step.index, step, c=stackcolors[name], label=name)
                         # recalculate y-limits step response axes

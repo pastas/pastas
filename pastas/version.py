@@ -4,7 +4,7 @@ from platform import python_version
 
 logger = logging.getLogger(__name__)
 
-__version__ = "1.4.0"
+__version__ = "1.5.0"
 
 
 def check_numba_scipy() -> bool:
@@ -21,7 +21,7 @@ def check_numba_scipy() -> bool:
     scipy_version_nsc = scipy_version_nsc[0].split(",")[0].split("=")[-1]
     if scipy_version > scipy_version_nsc:
         logger.warning(
-            f"numba_scipy supports SciPy<={scipy_version_nsc}, found {scipy_version}"
+            "numba_scipy supports SciPy<=%s, found %s", scipy_version_nsc, scipy_version
         )
         return False
     return True

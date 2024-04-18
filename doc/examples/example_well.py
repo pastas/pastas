@@ -5,6 +5,7 @@ test the functioning of Pastas recharge module during development.
 Author: R.A. Collenteur, University of Graz.
 
 """
+
 import pandas as pd
 
 import pastas as ps
@@ -16,6 +17,7 @@ head = pd.read_csv(
 
 # Create the time series model
 ml = ps.Model(head, name="head")
+ml.add_noisemodel(ps.ArNoiseModel())
 
 # read weather data
 rain = pd.read_csv(
@@ -37,5 +39,5 @@ sm = ps.StressModel(well, rfunc=ps.Exponential(), name="well", up=False)
 ml.add_stressmodel(sm)
 
 # Solve
-ml.solve(noise=True)
+ml.solve()
 ml.plots.results()

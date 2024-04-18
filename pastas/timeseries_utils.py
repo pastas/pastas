@@ -52,15 +52,16 @@ def _frequency_is_supported(freq: str) -> str:
 
     """
     offset = to_offset(freq)
-    if not hasattr(offset, "delta"):
-        msg = "Frequency {} not supported.".format(freq)
-        logger.error(msg)
-        raise ValueError(msg)
+    try:
+        Timedelta(offset)
+    except:
+        msg = "Frequency %s not supported."
+        logger.error(msg, freq)
+        raise ValueError(msg % freq)
+    if offset.n == 1:
+        freq = offset.name
     else:
-        if offset.n == 1:
-            freq = offset.name
-        else:
-            freq = str(offset.n) + offset.name
+        freq = str(offset.n) + offset.name
     return freq
 
 
@@ -87,9 +88,9 @@ def _get_stress_dt(freq: str) -> float:
         return None
     # Get the frequency string and multiplier
     offset = to_offset(freq)
-    if hasattr(offset, "delta"):
+    try:
         dt = Timedelta(offset) / Timedelta(1, "D")
-    else:
+    except:
         num = offset.n
         freq = offset._prefix
         if freq in ["A", "Y", "AS", "YS", "BA", "BY", "BAS", "BYS"]:
@@ -266,7 +267,7 @@ def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> S
         # calculate the cumulative sum
         s_new = s_new.cumsum()
 
-        # add NaNs at none-existing values in series at index
+        # add NaNs at non-existing values in series at index
         s_new = s_new.combine_first(Series(np.NaN, index))
 
         # interpolate these NaN's, only keep values at index
@@ -275,7 +276,7 @@ def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> S
         # calculate the diff again (inverse of cumsum)
         s_new = s_new.diff()
 
-        # devide by the timestep again
+        # divide by the timestep again
         s_new = s_new / _get_dt_array(s_new.index)
 
         # set values after the end of the original series to NaN
@@ -356,7 +357,14 @@ def get_equidistant_series_nearest(
     """
 
     # build new equidistant index
-    idx = date_range(series.index[0], series.index[-1], freq=freq)
+    t_offset = _get_time_offset(series.index, freq).value_counts().idxmax()
+    # use t_offset to pick time that will keep the most data without shifting in time
+    # from the original series.
+    idx = date_range(
+        series.index[0].floor(freq) + t_offset,
+        series.index[-1].ceil(freq) + t_offset,
+        freq=freq,
+    )
 
     # get linear interpolated index from original series
     fl = interpolate.interp1d(

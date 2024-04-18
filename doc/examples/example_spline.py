@@ -3,6 +3,7 @@ This test file is meant for developing purposes. Providing an easy method to
 test the functioning of Pastas during development.
 
 """
+
 import pandas as pd
 
 import pastas as ps
@@ -25,22 +26,28 @@ evap = pd.read_csv("data/evap_nb1.csv", index_col=0, parse_dates=True).squeeze(
 
 # Solve with an Exponential response function
 ml1 = ps.Model(obs, name="Exp")
+if noise:
+    ml1.add_noisemodel(ps.ArNoiseModel())
 sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential())
 ml1.add_stressmodel(sm)
-ml1.solve(noise=noise, fit_constant=fit_constant)
+ml1.solve(fit_constant=fit_constant)
 
 # Solve with a Gamma response function
 ml2 = ps.Model(obs, name="Gamma")
+if noise:
+    ml2.add_noisemodel(ps.ArNoiseModel())
 sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma())
 ml2.add_stressmodel(sm)
-ml2.solve(noise=noise, fit_constant=fit_constant)
+ml2.solve(fit_constant=fit_constant)
 
 # Solve with a Spline response function
 ml3 = ps.Model(obs, name="Spline")
+if noise:
+    ml3.add_noisemodel(ps.ArNoiseModel())
 rfunc = ps.Spline(t=[1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024])
 sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=rfunc)
 ml3.add_stressmodel(sm)
-ml3.solve(noise=noise, fit_constant=fit_constant)
+ml3.solve(fit_constant=fit_constant)
 
 # Compare both models
 axes = ps.plots.compare([ml1, ml2, ml3])

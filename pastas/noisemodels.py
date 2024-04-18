@@ -8,7 +8,7 @@ Examples
 By default, a noise model is added to a Pastas model. It is possible to replace the
 default model with different models as follows:
 
->>> n = ps.ArmaModel()
+>>> n = ps.ArmaNoiseModel()
 >>> ml.add_noisemodel(n)
 
 or, to delete the noise model from the model:
@@ -20,17 +20,19 @@ See Also
 pastas.model.Model.add_noisemodel
 """
 
-# Type Hinting
+from logging import getLogger
 from typing import Optional
 
 import numpy as np
-from pandas import DataFrame, Series, Timedelta
+from pandas import DataFrame, DatetimeIndex, Series, Timedelta
 
 from pastas.typing import ArrayLike
 
 from .decorators import njit, set_parameter
 
-__all__ = ["NoiseModel", "ArmaModel"]
+logger = getLogger(__name__)
+
+__all__ = ["ArNoiseModel", "ArmaNoiseModel"]
 
 
 class NoiseModelBase:
@@ -119,7 +121,7 @@ class NoiseModelBase:
         return 1
 
 
-class NoiseModel(NoiseModelBase):
+class ArNoiseModel(NoiseModelBase):
     """Noise model with exponential decay of the residuals and weighting.
 
     Parameters
@@ -143,12 +145,12 @@ class NoiseModel(NoiseModelBase):
         w = 1 / \\sqrt{(1 - \\exp(-2 \\Delta t / \\alpha))}
 
     The units of the alpha parameter is always in days. The first value of the noise
-    is the residual ($v(t=0=r(t=0)$). First weight is 1 / sig_residuals (i.e.,
+    is the residual (:math:`v(t=0=r(t=0)`). First weight is 1 / sig_residuals (i.e.,
     delt = infty). Normalization of weights as in :cite:t:`von_asmuth_modeling_2005`,
     optional.
     """
 
-    _name = "NoiseModel"
+    _name = "ArNoiseModel"
 
     def __init__(self, norm: bool = True) -> None:
         NoiseModelBase.__init__(self)
@@ -213,33 +215,86 @@ class NoiseModel(NoiseModelBase):
             w *= np.exp(1.0 / (2.0 * odelt.size) * np.sum(np.log(1.0 - exp)))
         return Series(data=w, index=res.index, name="noise_weights")
 
+    def get_correction(
+        self, res: Series, p: ArrayLike, tindex: DatetimeIndex
+    ) -> Series:
+        """Get the correction for a forecast using the noise model.
+
+        Parameters
+        ----------
+        res : Series
+            The residual series.
+        p : ArrayLike
+            The parameters of the noise model.
+        tindex : DatetimeIndex
+            The index of the forecast.
+
+        Returns
+        -------
+        Series
+            The correction to the forecast.
+
+        Notes
+        -----
+        The correction is calculated as:
+
+        .. math::
+
+                correction = \\exp(-\\Delta t / \\alpha) * last_residual
+
+        where :math:`\\Delta t` is the time difference between the last observation
+        and the forecast, and :math:`\\alpha` is the noise parameter.
+
+        """
+        alpha = p[0]
+        last_residual = res.iloc[-1]
+        last_date = res.index[-1]
+        dt = (tindex - last_date).days
+        correction = Series(
+            index=tindex,
+            name="correction",
+            dtype=float,
+            data=np.exp(-dt / alpha) * last_residual,
+        )
+        return correction
+
     def to_dict(self) -> dict:
         """Method to return a dict to store the noise model"""
         data = {"class": self._name, "norm": self.norm}
         return data
 
 
-class ArmaModel(NoiseModelBase):
+def NoiseModel(*args, **kwargs) -> ArNoiseModel:
+    logger.warning(
+        "NoiseModel has been renamed to ArNoiseModel and will be deprecated in Pastas "
+        "version 2.0. Please use ArNoiseModel."
+    )
+    n = ArNoiseModel(*args, **kwargs)
+    n._name = "NoiseModel"
+    return n
+
+
+class ArmaNoiseModel(NoiseModelBase):
     """ARMA(1,1) Noise model to simulate the noise as defined in
-        :cite:t:`collenteur_estimation_2021`.
+    :cite:t:`collenteur_estimation_2021`.
 
-        Notes
-        -----
-        Calculates the noise according to:
-    F
-        .. math::
-            \\upsilon_t = r_t - r_{t-1} e^{-\\Delta t/\\alpha} - \\upsilon_{t-1}
-            e^{-\\Delta t/\\beta}
+    Notes
+    -----
+    Calculates the noise according to:
 
-        The units of the alpha and beta parameters are always in days.
+    .. math::
+        \\upsilon_t = r_t - r_{t-1} e^{-\\Delta t/\\alpha} - \\upsilon_{t-1}
+        e^{-\\Delta t/\\beta}
 
-        Warnings
-        --------
-        This model has only been tested on regular time steps and should not be used for
-        irregular time steps yet.
+    The units of the alpha and beta parameters are always in days.
+
+    Warnings
+    --------
+    This model has only been tested on regular time steps and should not be used for
+    irregular time steps yet.
     """
 
-    _name = "ArmaModel"
+    _name = "ArmaNoiseModel"
 
     def __init__(self) -> None:
         NoiseModelBase.__init__(self)
@@ -300,3 +355,13 @@ class ArmaModel(NoiseModelBase):
                 - a[i - 1] * pm * np.exp(-odelt[i - 1] / np.abs(beta))
             )
         return a
+
+
+def ArmaModel(*args, **kwargs) -> ArmaNoiseModel:
+    logger.warning(
+        "ArmaModel has been renamed to ArmaNoiseModel and will be deprecated in Pastas "
+        "version 2.0. Please use ArmaNoiseModel."
+    )
+    n = ArmaNoiseModel(*args, **kwargs)
+    n._name = "ArmaModel"
+    return n

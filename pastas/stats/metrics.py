@@ -12,10 +12,9 @@ or directly from a Pastas model:
 >>> ml.stats.rmse()
 """
 
-from logging import getLogger
-
-# Type Hinting
+from logging import captureWarnings, getLogger
 from typing import Optional
+from warnings import warn
 
 from numpy import abs as npabs
 from numpy import average, log, nan, sqrt
@@ -32,10 +31,15 @@ __all__ = [
     "rsq",
     "bic",
     "aic",
+    "aicc",
     "pearsonr",
-    "kge_2012",
+    "kge",
 ]
+
+captureWarnings(True)
 logger = getLogger(__name__)
+warnings_logger = getLogger("py.warnings")
+logger.addHandler(warnings_logger)
 
 
 # Absolute Error Metrics
@@ -480,13 +484,14 @@ def aic(
     sim: pandas.Series, optional
         The Series with the simulated values.
     res: pandas.Series, optional
-        The Series with the residual values. If time series for the residuals are
-        provided, the sim and obs arguments are ignored. Note that the residuals
-        must be computed as `obs - sim` here.
+        The Series with the residual values. If time series for the residuals
+        are provided, the sim and obs arguments are ignored. Note that the
+        residuals must be computed as `obs - sim` here.
     nparam: int, optional
         number of calibrated parameters.
     missing: str, optional
-        string with the rule to deal with missing values. Only "drop" is supported now.
+        string with the rule to deal with missing values. Only "drop" is
+        supported now.
 
     Notes
     -----
@@ -495,8 +500,14 @@ def aic(
 
     .. math:: \\text{AIC} = -2 log(L) + 2 nparam
 
-    where :math:`n_{param}` is the number of calibration parameters and L is the
-    likelihood function for the model.
+    where :math:`n_{param}` is the number of calibration parameters and L is
+    the likelihood function for the model. In the case of ordinary least
+    squares:
+
+    .. math:: log(L) = - (nobs / 2) * log(RSS / -nobs)
+
+    where RSS denotes the residual sum of squares and nobs the number of
+    observations.
     """
     err = _compute_err(obs=obs, sim=sim, res=res, missing=missing)
 
@@ -510,7 +521,133 @@ def aic(
     return n * log((err.to_numpy() ** 2.0).sum() / n) + 2.0 * nparam
 
 
+def aicc(
+    obs: Optional[Series] = None,
+    sim: Optional[Series] = None,
+    res: Optional[Series] = None,
+    missing: str = "drop",
+    nparam: int = 1,
+) -> float:
+    """Compute the Akaike Information Criterium with second order
+    bias correction for the number of observations (AICc)
+
+    Parameters
+    ----------
+    obs: pandas.Series, optional
+        Series with the observed values.
+    sim: pandas.Series, optional
+        The Series with the simulated values.
+    res: pandas.Series, optional
+        The Series with the residual values. If time series for the residuals
+        are provided, the sim and obs arguments are ignored. Note that the
+        residuals must be computed as `obs - sim` here.
+    nparam: int, optional
+        number of calibrated parameters.
+    missing: str, optional
+        string with the rule to deal with missing values. Only "drop" is
+        supported now.
+
+    Notes
+    -----
+
+    The corrected Akaike Information Criterium (AICc)
+    :cite:p:`suguria_aicc_1978` is computed as follows:
+
+    .. math:: \\text{AIC} = -2 log(L) + 2 nparam - (2 nparam (nparam + 1) / (nobs - nparam - 1))
+
+    where :math:`n_{param}` is the number of calibration parameters, nobs is
+    the number of observations and L is the likelihood function for the model.
+    In the case of ordinary least squares:
+
+    .. math:: log(L) = - (nobs / 2) * log(RSS / -nobs)
+
+    where RSS denotes the residual sum of squares.
+    """
+    err = _compute_err(obs=obs, sim=sim, res=res, missing=missing)
+
+    n = err.index.size
+
+    c_term = (2 * nparam * (nparam + 1)) / (n - nparam - 1)
+    return aic(res=-err, nparam=nparam) + c_term
+
+
 # Forecast Error Metrics
+
+
+def kge(
+    obs: Series,
+    sim: Series,
+    missing: str = "drop",
+    weighted: bool = False,
+    max_gap: int = 30,
+    modified: bool = False,
+) -> float:
+    """Compute the (weighted) Kling-Gupta Efficiency (KGE).
+
+    Parameters
+    ----------
+    sim: pandas.Series
+        Series with the simulated values.
+    obs: pandas.Series
+        The Series with the observed values.
+    missing: str, optional
+        string with the rule to deal with missing values. Only "drop" is
+        supported now.
+    weighted: bool, optional
+        Weight the values by the normalized time step to account for
+        irregular time series. Default is False.
+    max_gap: int, optional
+        maximum allowed gap period in days to use for the computation of the
+        weights. All time steps larger than max_gap are replace with the
+        max_gap value. Default value is 30 days.
+    modified: bool, optional
+        Use the modified KGE as proposed by :cite:t:`kling_runoff_2012`.
+        According to the article this ensures that the bias and variability
+        ratios are not cross-correlated, which otherwise may occur when inputs
+        are biased.
+
+    Notes
+    -----
+    The (weighted) Kling-Gupta Efficiency :cite:t:`kling_runoff_2012` is
+    computed as follows:
+
+    .. math:: \\text{KGE} = 1 - \\sqrt{(r-1)^2 + (\\beta-1)^2 - (\\gamma-1)^2}
+
+    where :math:`\\beta = \\bar{x} / \\bar{y}` and :math:`\\gamma =
+    \\frac{\\bar{\\sigma}_x}{\\bar{\\sigma}_y}`. If modified equals True,
+    :math:`\\gamma = \\frac{\\bar{\\sigma}_x / \\bar{x}}{\\bar{\\sigma}_y /
+    \\bar{y}}`. If weighted equals True, the weighted mean, variance and
+    pearson correlation are used.
+    """
+    if missing == "drop":
+        obs = obs.dropna()
+
+    sim = sim.reindex(obs.index).dropna()
+
+    # Return nan if the time indices of the sim and obs don't match
+    if sim.index.size == 0:
+        logger.warning("Time indices of the sim and obs don't match.")
+        return nan
+
+    r = pearsonr(obs=obs, sim=sim, weighted=weighted, max_gap=max_gap)
+
+    mu_sim = mean(sim, weighted=weighted, max_gap=max_gap)
+    mu_obs = mean(obs, weighted=weighted, max_gap=max_gap)
+
+    beta = mu_sim / mu_obs
+    if modified:
+        gamma = (std(sim, weighted=weighted, max_gap=max_gap) / mu_sim) / (
+            std(obs, weighted=weighted, max_gap=max_gap) / mu_obs
+        )
+    else:
+        gamma = std(sim, weighted=weighted, max_gap=max_gap) / std(
+            obs, weighted=weighted, max_gap=max_gap
+        )
+
+    kge = 1 - sqrt((r - 1) ** 2 + (beta - 1) ** 2 + (gamma - 1) ** 2)
+    return kge
+
+
 def kge_2012(
     obs: Series,
     sim: Series,
@@ -549,28 +686,20 @@ def kge_2012(
     weighted equals True, the weighted mean, variance and pearson
     correlation are used.
     """
-    if missing == "drop":
-        obs = obs.dropna()
 
-    sim = sim.reindex(obs.index).dropna()
-
-    # Return nan if the time indices of the sim and obs don't match
-    if sim.index.size == 0:
-        logger.warning("Time indices of the sim and obs don't match.")
-        return nan
-
-    r = pearsonr(obs=obs, sim=sim, weighted=weighted, max_gap=max_gap)
-
-    mu_sim = mean(sim, weighted=weighted, max_gap=max_gap)
-    mu_obs = mean(obs, weighted=weighted, max_gap=max_gap)
-
-    beta = mu_sim / mu_obs
-    gamma = (std(sim, weighted=weighted, max_gap=max_gap) / mu_sim) / (
-        std(obs, weighted=weighted, max_gap=max_gap) / mu_obs
+    warn(
+        "This function `kge_2012` will be deprecated in Pastas version 2.0. Please use"
+        "`pastas.stats.kge(modified=True)` to get the same outcome.",
+        category=FutureWarning,
     )
-
-    kge = 1 - sqrt((r - 1) ** 2 + (beta - 1) ** 2 + (gamma - 1) ** 2)
-    return kge
+    return kge(
+        obs=obs,
+        sim=sim,
+        missing=missing,
+        weighted=weighted,
+        max_gap=max_gap,
+        modified=True,
+    )
 
 
 def _compute_err(

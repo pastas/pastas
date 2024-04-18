@@ -25,7 +25,7 @@ from pandas import (
 from pastas.decorators import get_stressmodel
 from pastas.io.base import _load_model, dump
 from pastas.modelstats import Statistics
-from pastas.noisemodels import NoiseModel
+from pastas.noisemodels import ArNoiseModel
 from pastas.plotting.modelplots import Plotting, _table_formatter_stderr
 from pastas.rfunc import HantushWellModel
 from pastas.solver import LeastSquares
@@ -59,8 +59,10 @@ class Model:
     constant: bool, optional
         Add a constant to the model (Default=True).
     noisemodel: bool, optional
-        Add the default noisemodel to the model. A custom noisemodel can be added
-        later in the modelling process as well.
+        The noisemodel argument is deprecated and will be removed in Pastas version
+        2.0.0. To add a noisemodel, use ml.add_noisemodel(n), where is an instance
+        of a noisemodel (e.g., n = ps.ArNoiseModel()). The use of the noisemodel
+        argument will raise a ValueError.
     name: str, optional
         String with the name of the model, used in plotting and saving.
     metadata: dict, optional
@@ -91,7 +93,7 @@ class Model:
         self,
         oseries: Series,
         constant: bool = True,
-        noisemodel: bool = True,
+        noisemodel=None,  # will be removed in version 2.0.0
         name: Optional[str] = None,
         metadata: Optional[dict] = None,
         freq: str = "D",
@@ -131,7 +133,7 @@ class Model:
             "freq": freq,
             "warmup": Timedelta(3650, "D"),
             "time_offset": Timedelta(0),
-            "noise": noisemodel,
+            "noise": False,
             "solver": None,
             "fit_constant": True,
             "freq_obs": None,
@@ -140,8 +142,27 @@ class Model:
         if constant:
             constant = Constant(initial=self.oseries.series.mean(), name="constant")
             self.add_constant(constant)
-        if noisemodel:
-            self.add_noisemodel(NoiseModel())
+
+        if noisemodel is not None:
+            if noisemodel is True:
+                msg = (
+                    "The noisemodel argument is deprecated and will be removed in Pastas "
+                    "version 2.0.0. The new default is that no noisemodel is added "
+                    "anymore and a noisemodel has to be added explicitly to a Pastas "
+                    "model by the user. To fix this error, do not pass a "
+                    "noisemodel keyword to Model and use `ml.add_noisemodel`, if a "
+                    "noisemodel is desired. See this issue on GitHub for more "
+                    "information: https://github.com/pastas/pastas/issues/735"
+                )
+            elif noisemodel is False:
+                msg = (
+                    "The noisemodel argument is deprecated and will be removed in Pastas "
+                    "version 2.0.0. The new default is that no noisemodel is added "
+                    "anymore, so passing noisemodel=False is not needed anymore. To "
+                    "fix this error, do not pass noisemodel=False to Model."
+                )
+            logger.error(msg)
+            raise ValueError(msg)
 
         # File Information
         self.file_info = self._get_file_info()
@@ -212,10 +233,13 @@ class Model:
             for sm in stressmodel:
                 self.add_stressmodel(sm)
         elif (stressmodel.name in self.stressmodels.keys()) and not replace:
-            logger.error(
+            msg = (
                 "The name for the stressmodel you are trying to add already exists "
                 "for this model. Select another name."
             )
+            logger.error(msg)
+            raise ValueError(msg)
+
         else:
             if stressmodel.name in self.stressmodels.keys():
                 logger.warning(
@@ -284,8 +308,15 @@ class Model:
 
         Examples
         --------
-        >>> n = ps.NoiseModel()
+        >>> n = ps.ArNoiseModel()
         >>> ml.add_noisemodel(n)
+
+        Notes
+        -----
+        As of Pastas version 1.5.0, a noisemodel should be added to the model using this
+        method, and is not added by default anymore when constructing as Pastas Model.
+        If a noisemodel is present, it will always be used during optimization.
+
         """
         self.noisemodel = noisemodel
         self.noisemodel.set_init_parameters(oseries=self.oseries.series)
@@ -296,6 +327,7 @@ class Model:
         if freq_in_days > noise_alpha:
             self.noisemodel._set_initial("noise_alpha", freq_in_days)
 
+        self.settings["noise"] = True
         self.parameters = self.get_init_parameters(initial=False)
 
     @get_stressmodel
@@ -339,6 +371,7 @@ class Model:
         else:
             self.noisemodel = None
             self.parameters = self.get_init_parameters(initial=False)
+            self.settings["noise"] = False
 
     def simulate(
         self,
@@ -429,7 +462,6 @@ class Model:
             sim = sim.loc[tmin:tmax]
 
         if sim.hasnans:
-            sim = sim.dropna()
             msg = (
                 "Simulation contains NaN-values. Check if time series settings "
                 "are provided for each stress model "
@@ -480,12 +512,16 @@ class Model:
             tmax = self.settings["tmax"]
         if freq is None:
             freq = self.settings["freq"]
+        if self.settings["freq_obs"] is None:
+            freq_obs = freq
+        else:
+            freq_obs = self.settings["freq_obs"]
 
         # simulate model
         sim = self.simulate(p, tmin, tmax, freq, warmup, return_warmup=False)
 
         # Get the oseries calibration series
-        oseries_calib = self.observations(tmin, tmax, freq)
+        oseries_calib = self.observations(tmin, tmax, freq_obs)
 
         # Get simulation at the correct indices
         if self.interpolate_simulation is None:
@@ -562,7 +598,7 @@ class Model:
         This method returns None if no noise model is present in the model.
         """
         if self.noisemodel is None or self.settings["noise"] is False:
-            logger.error(
+            logger.warning(
                 "Noise cannot be calculated if there is no noisemodel present or is "
                 "not used during parameter estimation."
             )
@@ -684,16 +720,21 @@ class Model:
         This method is called by the solve-method, but can also be triggered
         manually. See the solve-method for a description of the arguments.
         """
-        if noise is None and self.noisemodel:
-            noise = True
-        elif noise is True and self.noisemodel is None:
-            logger.warning(
-                "Warning, solving with noise=True while no noisemodel is present. "
-                "noise set to False."
-            )
-            noise = False
 
-        self.settings["noise"] = noise
+        if noise is not None:
+            msg = (
+                "The noise argument is deprecated and will be removed in Pastas "
+                "version 2.0.0. The new behavior is that a noise model will always be "
+                "used if it is present. To add a noisemodel to a model called ml, "
+                "use the ml.add_noisemodel method. To solve without a noisemodel, "
+                "make sure sure no noisemodel is added or remove a noisemodel with "
+                "ml.del_noisemodel() before solving. See this issue on GitHub for "
+                "more information: https://github.com/pastas/pastas/issues/735"
+            )
+            logger.error(msg)
+            raise ValueError(msg)
+
+        # Set the settings
         self.settings["weights"] = weights
         self.settings["fit_constant"] = fit_constant
         self.settings["freq_obs"] = freq_obs
@@ -732,6 +773,7 @@ class Model:
         if self.settings["fit_constant"] is False:
             if self.transform is not None:
                 msg = "fit_constant needs to be True (for now) when a transform is used"
+                logger.error(msg)
                 raise Exception(msg)
             self.parameters.loc["constant_d", "vary"] = False
             self.parameters.loc["constant_d", "initial"] = 0.0
@@ -743,7 +785,7 @@ class Model:
         tmax: Optional[TimestampType] = None,
         freq: Optional[str] = None,
         warmup: Optional[float] = None,
-        noise: bool = True,
+        noise=None,  # will be removed in version 2.0.0
         solver: Optional[Solver] = None,
         report: bool = True,
         initial: bool = True,
@@ -769,8 +811,11 @@ class Model:
             Warmup period (in Days) for which the simulation is calculated, but not
             used for the calibration period.
         noise: bool, optional
-            Argument that determines if a noisemodel is used (only if present). The
-            default is noise=True.
+            This argument is deprecated and will be removed in Pastas version 2.0.0.
+            To solve using a noisemodel (i.e. noise=True), add a noisemodel to the
+            model using ml.add_noisemodel(n), where n is an instance of a noisemodel
+            (e.g., n = ps.ArNoiseModel()). To solve without a noisemodel (noise=False),
+            remove the noisemodel first (if present) using ml.del_noisemodel().
         solver: Class pastas.solver.Solver, optional
             Instance of a pastas Solver class used to solve the model. Options are:
             ps.LeastSquares() (default) or ps.LmfitSolve(). An instance is needed as
@@ -811,16 +856,43 @@ class Model:
         pastas.solver
             Different solver objects are available to estimate parameters.
         """
+        if noise is not None:
+            if noise is True:
+                msg = (
+                    "The noise argument is deprecated and will be removed in Pastas "
+                    "version 2.0.0. To solve using a noisemodel, add a noisemodel to a "
+                    "model called ml using ml.add_noisemodel(n), where n is an instance "
+                    "of a noisemodel (e.g., n = ps.ArNoiseModel()). See this issue on "
+                    "GitHub for more information: "
+                    "https://github.com/pastas/pastas/issues/735"
+                )
+            elif noise is False:
+                msg = (
+                    "The noise argument is deprecated and will be removed in Pastas "
+                    "version 2.0.0. To solve without a noisemodel, remove the noisemodel "
+                    "(if present) from a model called ml using ml.del_noisemodel() before "
+                    "solving. See this issue on GitHub for more information: "
+                    "https://github.com/pastas/pastas/issues/735"
+                )
+            logger.error(msg)
+            raise ValueError(msg)
 
         # Initialize the model
         self.initialize(
-            tmin, tmax, freq, warmup, noise, weights, initial, fit_constant, freq_obs
+            tmin=tmin,
+            tmax=tmax,
+            freq=freq,
+            warmup=warmup,
+            weights=weights,
+            initial=initial,
+            fit_constant=fit_constant,
+            freq_obs=freq_obs,
         )
 
         if self.oseries_calib.empty:
-            raise ValueError(
-                "Calibration series 'oseries_calib' is empty! Check 'tmin' or 'tmax'."
-            )
+            msg = "Calibration series 'oseries_calib' is empty! Check 'tmin' or 'tmax'."
+            logger.error(msg)
+            raise ValueError(msg)
 
         # If a solver is provided, use that one
         if solver is not None:
@@ -851,11 +923,10 @@ class Model:
         self._solve_success = success  # store for fit_report
 
         if report:
-            if isinstance(report, str):
-                output = report
+            if isinstance(report, str) and report == "full":
+                print(self.fit_report(corr=True, stderr=True))
             else:
-                output = None
-            print(self.fit_report(output=output))
+                print(self.fit_report())
 
     @property
     def fit(self):
@@ -915,7 +986,7 @@ class Model:
         if name not in self.parameters.index:
             msg = "parameter %s is not present in the model"
             logger.error(msg, name)
-            raise KeyError(msg, name)
+            raise KeyError(msg % name)
 
         # Because either of the following is not necessarily present
         noisemodel = self.noisemodel.name if self.noisemodel else "NotPresent"
@@ -937,9 +1008,10 @@ class Model:
         # Move pmin and pmax based on the initial
         if move_bounds and initial:
             if pmin or pmax:
-                raise KeyError(
-                    "Either pmin/pmax or move_bounds must be provided, but not both."
-                )
+                msg = "Either pmin/pmax or move_bounds must be provided, but not both."
+                logger.error(msg)
+                raise KeyError(msg)
+
             factor = initial / self.parameters.loc[name, "initial"]
             pmin = self.parameters.loc[name, "pmin"] * factor
             pmax = self.parameters.loc[name, "pmax"] * factor
@@ -989,7 +1061,7 @@ class Model:
         if len(time_offsets) > 1:
             msg = "The time-offset with the frequency is not the same for all stresses."
             logger.error(msg)
-            raise (Exception(msg))
+            raise Exception(msg)
         if len(time_offsets) == 1:
             return next(iter(time_offsets))
         else:
@@ -1461,7 +1533,7 @@ class Model:
             for contrib in contribs:
                 df.append(contrib)
 
-        df = concat(df, axis=1)
+        df = concat(df, axis=1, sort=True)
         return df
 
     def _get_response(
@@ -1471,6 +1543,7 @@ class Model:
         p: Optional[ArrayLike] = None,
         dt: Optional[float] = None,
         add_0: bool = False,
+        istress: Optional[int] = None,
         **kwargs,
     ) -> Union[Series, None]:
         """Internal method to compute the block and step response.
@@ -1488,6 +1561,9 @@ class Model:
             timestep for the response function.
         add_0: bool, optional
             Add a zero at t=0.
+        istress: int, optional
+            When multiple stresses are present in a stressmodel, this keyword can be
+            used to obtain the respone to an individual stress.
         kwargs: dict: passed to rfunc.step() or rfunc.block()
 
         Returns
@@ -1506,6 +1582,9 @@ class Model:
 
         if dt is None:
             dt = _get_dt(self.settings["freq"])
+        if istress is not None and self.stressmodels[name].get_nsplit() > 1:
+            p = self.stressmodels[name].get_parameters(model=self, istress=istress)
+
         response = block_or_step(p, dt, **kwargs)
 
         if add_0:
@@ -1549,7 +1628,8 @@ class Model:
             Adds 0 at t=0 at the start of the response, defaults to False.
         dt: float, optional
             timestep for the response function.
-        kwargs: dict
+        kwargs: dict, optional
+            Kwargs are passed onto _get_response()
 
         Returns
         -------
@@ -1585,6 +1665,8 @@ class Model:
             Adds 0 at t=0 at the start of the response, defaults to False.
         dt: float, optional
             timestep for the response function.
+        kwargs: dict, optional
+            Kwargs are passed onto _get_response()
 
         Returns
         -------
@@ -1745,19 +1827,28 @@ class Model:
 
     def fit_report(
         self,
-        output: str = "basic",
+        corr: bool = False,
+        stderr: bool = False,
         warnings: bool = True,
+        output: str = None,
     ) -> str:
         """Method that reports on the fit after a model is optimized.
 
         Parameters
         ----------
-        output: str, optional
-            If any other value than "full" is provided, the parameter correlations
-            will be removed from the output.
+        corr : bool, optional
+            If True the parameter correlations are shown.
+        stderr : bool, optional
+            If True the standard error of the parameter values are shown. Please be
+            aware of the conditions for reliable uncertainty estimates, more information
+            here:
+            https://pastas.readthedocs.io/en/master/examples/diagnostic_checking.html
         warnings : bool, optional
             print warnings in case of optimization failure, parameters hitting
             bounds, or length of responses exceeding calibration period.
+        output : str, optional (deprecated)
+            deprecated argument, use corr and stderr arguments
+            instead.
 
         Returns
         -------
@@ -1792,21 +1883,42 @@ class Model:
             "EVP": f"{self.stats.evp():.2f}",
             "R2": f"{self.stats.rsq():.2f}",
             "RMSE": f"{self.stats.rmse():.2f}",
-            "AIC": f"{self.stats.aic():.2f}",
+            "AICc": f"{self.stats.aicc():.2f}",
             "BIC": f"{self.stats.bic():.2f}",
             "Obj": f"{self.solver.obj_func:.2f}",
             "___": "",
             "Interp.": "Yes" if self.interpolate_simulation else "No",
         }
 
-        parameters = self.parameters.loc[:, ["optimal", "initial", "vary"]].copy()
-        stderr = self.parameters.loc[:, "stderr"] / self.parameters.loc[:, "optimal"]
-        parameters.loc[:, "stderr"] = stderr.abs().apply(
-            _table_formatter_stderr, na_rep="nan"
-        )
+        if output is not None:
+            msg = (
+                "argument 'output' of the 'fit_report method' is deprecated and will"
+                "be removed in a future version. Use 'corr=True' instead."
+            )
+            logger.warning(msg)
+            if isinstance(output, str) and output == "full":
+                corr = True
 
-        # Determine the width of the fit_report based on the parameters
-        width = len(parameters.to_string().split("\n")[1])
+        parameters = self.parameters.loc[:, ["optimal", "initial", "vary"]].copy()
+
+        if stderr:
+            stderr = (
+                self.parameters.loc[:, "stderr"] / self.parameters.loc[:, "optimal"]
+            )
+            parameters.loc[:, "stderr"] = stderr.abs().apply(
+                _table_formatter_stderr, na_rep="nan"
+            )
+
+        # determine width of the fit_report
+        len_fit = max([len(v) for v in fit.values()]) + max(
+            [len(v) for v in fit.keys()]
+        )
+        len_model = max([len(v) for v in model.values() if isinstance(v, str)]) + max(
+            [len(v) for v in model.keys()]
+        )
+        len_param = len(parameters.to_string().split("\n")[1])
+        width = max((len_fit + len_model + 8), len_param)
+        string = "{:{fill}{align}{width}}"
         string = "{:{fill}{align}{width}}"
 
         # Create the first header with model information and stats
@@ -1832,7 +1944,7 @@ class Model:
             f"{parameters.to_string()}"
         )
 
-        if output == "full":
+        if corr:
             cor = DataFrame(columns=["value"])
             for idx, col in combinations(self.solver.pcor, 2):
                 if np.abs(self.solver.pcor.loc[idx, col]) > 0.5:

@@ -44,8 +44,10 @@ class Statistics:
         "nse",
         "evp",
         "rsq",
+        "kge",
         "bic",
         "aic",
+        "aicc",
     ]
 
     def __init__(self, ml: Model):
@@ -67,7 +69,7 @@ class Statistics:
 
     def __repr__(self):
         msg = """This module contains all the statistical functions included in Pastas.
-        
+
         To obtain a list of all statistics that are included type:
 
     >>> print(ml.stats.ops)"""
@@ -279,6 +281,37 @@ class Statistics:
         return metrics.rsq(obs=obs, res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
+    def kge(
+        self,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+        weighted: bool = False,
+        modified: bool = False,
+        **kwargs,
+    ) -> float:
+        """Kling-Gupta Efficiency.
+
+        Parameters
+        ----------
+        tmin: str or pandas.Timestamp, optional
+        tmax: str or pandas.Timestamp, optional
+        weighted: bool, optional
+            If weighted is True, the variances are computed using the time step
+            between observations as weights. Default is False.
+        modified: bool, optional
+            Use the modified KGE as proposed by :cite:t:`kling_runoff_2012`.
+
+        See Also
+        --------
+        pastas.stats.kge
+        """
+        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        return metrics.kge(
+            obs=obs, sim=sim, weighted=weighted, modified=modified, **kwargs
+        )
+
+    @model_tmin_tmax
     def kge_2012(
         self,
         tmin: Optional[TimestampType] = None,
@@ -342,7 +375,7 @@ class Statistics:
 
         See Also
         --------
-        pastas.stats.bic
+        pastas.stats.aic
         """
         nparam = self.ml.parameters["vary"].sum()
         if self.ml.settings["noise"]:
@@ -352,6 +385,30 @@ class Statistics:
         else:
             res = self.ml.residuals(tmin=tmin, tmax=tmax)
         return metrics.aic(res=res, nparam=nparam)
+
+    @model_tmin_tmax
+    def aicc(
+        self, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None
+    ) -> float:
+        """Akaike Information Criterium with second order bias correction (AICc).
+
+        Parameters
+        ----------
+        tmin: str or pandas.Timestamp, optional
+        tmax: str or pandas.Timestamp, optional
+
+        See Also
+        --------
+        pastas.stats.aicc
+        """
+        nparam = self.ml.parameters["vary"].sum()
+        if self.ml.settings["noise"]:
+            res = self.ml.noise(tmin=tmin, tmax=tmax) * self.ml.noise_weights(
+                tmin=tmin, tmax=tmax
+            )
+        else:
+            res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        return metrics.aicc(res=res, nparam=nparam)
 
     @model_tmin_tmax
     def summary(

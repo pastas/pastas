@@ -88,7 +88,6 @@ html_use_smartypants = True
 html_show_sourcelink = True
 
 html_theme_options = {
-    "github_url": "https://github.com/pastas/pastas",
     "use_edit_page_button": True,
     "header_links_before_dropdown": 6,
     "icon_links": [
@@ -99,6 +98,7 @@ html_theme_options = {
             "type": "fontawesome",  # Default is fontawesome
         }
     ],
+    "announcement": "The default behavior for adding and solving with noisemodels has changed from Pastas 1.5. <a href='https://github.com/pastas/pastas/issues/735'>Find more information here</a>",
 }
 
 html_context = {
@@ -180,3 +180,6 @@ intersphinx_mapping = {
 
 nb_execution_allow_errors = True  # Allow errors in notebooks, to see the error online
 nb_execution_mode = "auto"
+nb_merge_streams = True
+myst_enable_extensions = ["dollarmath", "amsmath"]
+myst_dmath_double_inline = True
