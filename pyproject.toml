@@ -7,7 +7,7 @@ name = "pastas"
 dynamic = ["version"]
 description = "Pastas is an open-source Python framework for the analysis of groundwater time series."
 license = { file = "LICENSE" }
-readme = "README.rst"
+readme = "README.md"
 authors = [{ name = "Collenteur et al. 2019" }]
 maintainers = [
     { name = "R.A. Collenteur", email = "raoulcollenteur@gmail.com" },
