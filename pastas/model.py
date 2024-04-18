@@ -148,7 +148,7 @@ class Model:
                 msg = (
                     "The noisemodel argument is deprecated and will be removed in Pastas "
                     "version 2.0.0. The new default is that no noisemodel is added "
-                    "anymore and a noisemodel has to be added explicitely to a Pastas "
+                    "anymore and a noisemodel has to be added explicitly to a Pastas "
                     "model by the user. To fix this error, do not pass a "
                     "noisemodel keyword to Model and use `ml.add_noisemodel`, if a "
                     "noisemodel is desired. See this issue on GitHub for more "
@@ -313,7 +313,7 @@ class Model:
 
         Notes
         -----
-        As of Pastas version 1.5.0, a noisemodel should added to the model using this
+        As of Pastas version 1.5.0, a noisemodel should be added to the model using this
         method, and is not added by default anymore when constructing as Pastas Model.
         If a noisemodel is present, it will always be used during optimization.
 
