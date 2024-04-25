@@ -43,7 +43,7 @@ classifiers = [
 [project.urls]
 homepage = "https://pastas.dev"
 repository = "https://github.com/pastas/pastas"
-documentation = "https://pastas.readthedocs.io/en/latest/"
+documentation = "https://pastas.readthedocs.io"
 
 [project.optional-dependencies]
 solvers = ["lmfit >= 1.0.0", "emcee >= 3.0"]
