@@ -67,11 +67,15 @@ def load_dataset(name: str) -> Union[DataFrame, Dict[str, DataFrame]]:
     data = {}
 
     # Loop over the files in the folder
-    for file in r.json():
-        if file["name"].endswith(".csv"):
-            # Read file
-            df = read_csv(file["download_url"], index_col=0, parse_dates=True)
-            data[file["name"].split(".")[0]] = df
+    rjson = r.json()
+    read_csv_kwargs = requests.get(
+        [x for x in rjson if x["name"] == "settings.json"][0]["download_url"]
+    ).json()
+    for file in rjson:
+        fname = file["name"]
+        if fname.endswith(".csv"):
+            df = read_csv(file["download_url"], **read_csv_kwargs[fname])
+            data[fname.split(".")[0]] = df
 
     # Return the data, if only one file is found return the dataframe, otherwise return
     # a dictionary with the dataframes
