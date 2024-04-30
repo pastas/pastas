@@ -90,8 +90,8 @@ def load_dataset(name: str) -> Union[DataFrame, Dict[str, DataFrame]]:
         )
 
 
-def list_datasets() -> List[str]:
 @lru_cache
+def list_datasets(silent: bool = True) -> List[str]:
     """Print a list of available datasets in the pastas-data repository on GitHub.
 
     Returns
@@ -131,8 +131,11 @@ def list_datasets() -> List[str]:
             data.append(file["name"])
 
     # Print the list of datasets
-    print("Available datasets in the pastas-data repository on GitHub:")
-    for folder in data:
-        print(f" - {folder}")
-    print(f"Use ps.load_dataset('folder_name') to load a dataset from the repository.")
+    if not silent:
+        print("Available datasets in the pastas-data repository on GitHub:")
+        for folder in data:
+            print(f" - {folder}")
+        print(
+            f"Use ps.load_dataset('folder_name') to load a dataset from the repository."
+        )
     return data
