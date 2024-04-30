@@ -1,6 +1,7 @@
 import pytest
-from pastas.dataset import list_datasets, load_dataset
 from pandas import DataFrame
+
+from pastas.dataset import list_datasets, load_dataset
 
 
 def test_load_single_csv():
