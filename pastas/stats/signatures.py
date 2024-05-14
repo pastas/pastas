@@ -3,7 +3,7 @@ signatures selection is based on the work of :cite:t:`heudorfer_index-based_2019
 
 # Type Hinting
 from logging import getLogger
-from typing import Literal, Optional, Tuple, Union
+from typing import Optional, Tuple, Union
 
 from numpy import (
     arctan,
