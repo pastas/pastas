@@ -93,13 +93,13 @@ def _get_stress_dt(freq: str) -> float:
     except:
         num = offset.n
         freq = offset._prefix
-        if freq in ["A", "Y", "AS", "YS", "BA", "BY", "BAS", "BYS"]:
+        if freq in ["A", "Y", "AS", "YS", "YE", "BA", "BY", "BAS", "BYS"]:
             # year
             dt = num * 365
         elif freq in ["BQ", "BQS", "Q", "QS"]:
             # quarter
             dt = num * 90
-        elif freq in ["BM", "BMS", "CBM", "CBMS", "M", "MS"]:
+        elif freq in ["BM", "BMS", "CBM", "CBMS", "M", "MS", "ME"]:
             # month
             dt = num * 30
         elif freq in ["SM", "SMS"]:
