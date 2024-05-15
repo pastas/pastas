@@ -350,11 +350,13 @@ class BaseSolver:
                 it += 1
 
         if samples.shape[0] < n:
-            logger.warning(
-                "Parameter sample size is smaller than n: %s/%s Increase 'max_iter'.",
-                samples.shape[0],
-                n,
-            )
+            suggestion = "You could try increasing 'max_iter'."
+            if samples.shape[0] == 0:
+                raise Exception(f"No parameter samples were found within {max_iter} runs. " + suggestion)
+            else:
+                logger.warning(
+                    f"Parameter sample size is smaller than n: {samples.shape[0]}/{n}. " + suggestion
+                )
         return samples[:n, :]
 
     def _get_realizations(
