@@ -23,6 +23,7 @@ from numpy import (
     sqrt,
     where,
 )
+from packaging.version import parse as parse_version
 from pandas import DataFrame, DatetimeIndex, Series, Timedelta
 from pandas import __version__ as pd_version
 from pandas import concat, cut, to_datetime
@@ -32,8 +33,11 @@ from scipy.stats import linregress
 import pastas as ps
 from pastas.stats.core import acf
 
-year_offset = "YE" if pd_version >= "2.2.0" else "A"
-month_offset = "ME" if pd_version >= "2.2.0" else "M"
+pandas_version = parse_version(pd_version)
+
+year_offset = "YE" if pandas_version >= parse_version("2.2.0") else "A"
+
+month_offset = "ME" if pandas_version >= parse_version("2.2.0") else "M"
 
 __all__ = [
     "cv_period_mean",
