@@ -358,7 +358,9 @@ class BaseSolver:
                 )
             else:
                 logger.warning(
-                    f"Parameter sample size is smaller than n: %s/%s. ".format(max_iter, n)
+                    f"Parameter sample size is smaller than n: %s/%s. ".format(
+                        max_iter, n
+                    )
                     + suggestion
                 )
         return samples[:n, :]
