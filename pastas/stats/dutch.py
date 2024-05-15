@@ -8,10 +8,17 @@ groundwater time series in the Netherlands.
 from typing import Optional, Union
 
 from numpy import nan
-from pandas import Series, Timedelta, concat, date_range
+from packaging.version import parse as parse_version
+from pandas import Series, Timedelta
+from pandas import __version__ as pd_version
+from pandas import concat, date_range
 
 from pastas.timeseries_utils import get_sample
 from pastas.typing import Function, TimestampType
+
+pandas_version = parse_version(pd_version)
+
+year_offset = "YE" if pandas_version >= parse_version("2.2.0") else "A"
 
 
 def q_ghg(
@@ -101,7 +108,7 @@ def q_gvg(
     inspring = _in_spring(series)
     if any(inspring):
         if by_year:
-            return series.loc[inspring].resample("A").median().mean()
+            return series.loc[inspring].resample(year_offset).median().mean()
         else:
             return series.loc[inspring].median()
     else:
@@ -117,7 +124,7 @@ def ghg(
     output: str = "mean",
     min_n_meas: int = 16,
     min_n_years: int = 8,
-    year_offset: str = "A-MAR",
+    year_offset: str = year_offset + "-MAR",
 ) -> Union[Series, float]:
     """Calculate the 'Gemiddelde Hoogste Grondwaterstand' (Average High
     Groundwater Level)
@@ -144,8 +151,8 @@ def ghg(
         Minimum number of measurements per year (at maximum 24).
     min_n_years: int, optional
         Minimum number of years.
-    year_offset: resampling offset. Use 'a' for calendar years
-        (jan 1 to dec 31) and 'a-mar' for hydrological years (apr 1 to mar 31).
+    year_offset: resampling offset. Use 'YE' for calendar years
+        (jan 1 to dec 31) and 'YE-MAR' for hydrological years (apr 1 to mar 31).
 
     Returns
     -------
@@ -205,7 +212,7 @@ def glg(
     output: str = "mean",
     min_n_meas: int = 16,
     min_n_years: int = 8,
-    year_offset: str = "A-MAR",
+    year_offset: str = year_offset + "-MAR",
 ) -> Union[Series, float]:
     """Calculate the 'Gemiddelde Laagste Grondwaterstand' (Average Low GW Level).
 
@@ -231,8 +238,8 @@ def glg(
         Minimum number of measurements per year (at maximum 24).
     min_n_years: int, optional
         Minimum number of years.
-    year_offset: resampling offset. Use 'a' for calendar years
-        (jan 1 to dec 31) and 'a-mar' for hydrological years (apr 1 to mar 31).
+    year_offset: resampling offset. Use 'YE' for calendar years
+        (jan 1 to dec 31) and 'YE-MAR' for hydrological years (apr 1 to mar 31).
 
     Returns
     -------
@@ -292,7 +299,7 @@ def gvg(
     output: str = "mean",
     min_n_meas: int = 2,
     min_n_years: int = 8,
-    year_offset: str = "A",
+    year_offset: str = year_offset,
 ) -> Union[Series, float]:
     """Calculate the 'Gemiddelde Voorjaars Grondwaterstand' (Average Spring GW Level).
 
@@ -318,8 +325,8 @@ def gvg(
         Minimum number of measurements per year (at maximum 3).
     min_n_years: int, optional
         Minimum number of years.
-    year_offset: resampling offset. Use 'a' for calendar years
-        (jan 1 to dec 31) and 'a-mar' for hydrological years (apr 1 to mar 31).
+    year_offset: resampling offset. Use "YE" for calendar years
+        (jan 1 to dec 31) and "YE-MAR" for hydrological years (apr 1 to mar 31).
 
     Returns
     -------
@@ -367,7 +374,7 @@ def gg(
     output: str = "mean",
     min_n_meas: int = 16,
     min_n_years: int = 8,
-    year_offset: str = "A-MAR",
+    year_offset: str = year_offset + "-MAR",
 ) -> Union[Series, float]:
     """Calculate the 'Gemiddelde Grondwaterstand' (Average Groundwater Level).
 
@@ -393,8 +400,8 @@ def gg(
         Minimum number of measurements per year (at maximum 24).
     min_n_years: int, optional
         Minimum number of years.
-    year_offset: resampling offset. Use 'a' for calendar years (jan 1 to dec 31) and
-    'a-mar' for hydrological years (apr 1 to mar 31).
+    year_offset: resampling offset. Use "YE" for calendar years (jan 1 to dec 31) and
+    'YE-MAR' for hydrological years (apr 1 to mar 31).
 
     Returns
     -------
@@ -512,8 +519,8 @@ def _gxg(
     min_n_years: int
         Minimum number of years.
     year_offset: string
-        resampling offset. Use 'a' for calendar years (jan 1 to dec 31) and 'a-mar'
-        for hydrological years (apr 1 to mar 31)
+        resampling offset. Use "YE" for calendar years (jan 1 to dec 31) and
+        'YE-MAR' for hydrological years (apr 1 to mar 31)
 
 
     Returns
@@ -652,6 +659,6 @@ def _q_gxg(
         series = series.loc[:tmax]
     series = series.resample("d").median()
     if by_year:
-        return series.resample("A").apply(lambda s: s.quantile(q)).mean()
+        return series.resample(year_offset).apply(lambda s: s.quantile(q)).mean()
     else:
         return series.quantile(q)

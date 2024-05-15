@@ -21,7 +21,10 @@ from logging import getLogger
 from typing import List, Optional, Tuple, Union
 
 import numpy as np
-from pandas import DataFrame, Series, Timedelta, Timestamp, concat, date_range
+from packaging.version import parse as parse_version
+from pandas import DataFrame, Series, Timedelta, Timestamp
+from pandas import __version__ as pd_version
+from pandas import concat, date_range
 from scipy.signal import fftconvolve
 
 from pastas.typing import (
@@ -38,6 +41,8 @@ from .recharge import Linear
 from .rfunc import Exponential, HantushWellModel, One
 from .timeseries import TimeSeries
 from .utils import validate_name
+
+pandas_version = parse_version(pd_version)
 
 logger = getLogger(__name__)
 
@@ -1321,7 +1326,8 @@ class RechargeModel(StressModelBase):
             # precipitation in the world, then the precipitation is very likely in m/d
             # and not in mm/d. In this case a warning is given for nonlinear models.
 
-            if self.prec.series.resample("A").sum().max() < 12:
+            freq_offset = "YE" if pandas_version >= parse_version("2.2.0") else "A"
+            if self.prec.series.resample(freq_offset).sum().max() < 12:
                 msg = (
                     "The maximum annual precipitation is smaller than 12 m/d. Please "
                     "double-check if the stresses are in mm/d and not in m/d."
