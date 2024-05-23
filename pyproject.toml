@@ -122,7 +122,7 @@ legacy_tox_ini = """
     extras = ruffing
     commands =
             ruff check --preview
-            ruff format --check --preview
+            ruff format --check
 
     [testenv:ruff_fix]
     description = run ruff locally and fix issues
