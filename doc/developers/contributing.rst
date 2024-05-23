@@ -51,11 +51,15 @@ more about the formatting of code and docstrings.
 
 .. note::
     To make sure your code is up to standards, you can run the following:
-    - ruff check --extend-select I --fix
-    - ruff format
-    Or use the git pre-commit hook by installing it with `pip install
-    pre-commit` and running `pre-commit install` in the active python
-    environment.
+    - `ruff check --extend-select I --fix`
+    - `ruff format`
+    or use tox:
+    - `tox -e ruff_fix`
+
+.. note::
+    If you want to make sure your code is formatted and linted on every commit:
+    consider using the git pre-commit hook by installing it with `pip install
+    pre-commit` and running `pre-commit install` in the root of the repository.
 
 4. Test Code
 -----------
