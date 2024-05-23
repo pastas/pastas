@@ -127,5 +127,5 @@ def list_datasets() -> List[str]:
     print("Available datasets in the pastas-data repository on GitHub:")
     for folder in data:
         print(f" - {folder}")
-    print(f"Use ps.load_dataset('folder_name') to load a dataset from the repository.")
+    print("Use ps.load_dataset('folder_name') to load a dataset from the repository.")
     return data

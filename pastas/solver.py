@@ -353,14 +353,12 @@ class BaseSolver:
             suggestion = "You could try increasing 'max_iter'."
             if samples.shape[0] == 0:
                 raise Exception(
-                    "No parameter samples were found within %s runs. ".format(max_iter)
+                    "No parameter samples were found within %s runs. " % max_iter
                     + suggestion
                 )
             else:
                 logger.warning(
-                    f"Parameter sample size is smaller than n: %s/%s. ".format(
-                        max_iter, n
-                    )
+                    "Parameter sample size is smaller than n: %s/%s. " % (max_iter, n)
                     + suggestion
                 )
         return samples[:n, :]

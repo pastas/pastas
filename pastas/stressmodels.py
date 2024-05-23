@@ -22,9 +22,8 @@ from typing import List, Optional, Tuple, Union
 
 import numpy as np
 from packaging.version import parse as parse_version
-from pandas import DataFrame, Series, Timedelta, Timestamp
+from pandas import DataFrame, Series, Timedelta, Timestamp, concat, date_range
 from pandas import __version__ as pd_version
-from pandas import concat, date_range
 from scipy.signal import fftconvolve
 
 from pastas.typing import (

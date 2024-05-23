@@ -5,7 +5,6 @@ from logging import getLogger
 from os import path
 
 from packaging import version
-from pandas import to_numeric
 
 import pastas as ps
 

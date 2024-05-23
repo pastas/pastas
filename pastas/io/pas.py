@@ -47,7 +47,8 @@ def pastas_hook(obj: dict):
         elif key == "series":
             try:
                 obj[key] = read_json(stringIO(value), typ="series", orient="split")
-            except:
+            except Exception as e:
+                logger.error(e)
                 obj[key] = value
             if isinstance(obj[key], Series):
                 obj[key].index = obj[key].index.tz_localize(None)
@@ -64,7 +65,8 @@ def pastas_hook(obj: dict):
         else:
             try:
                 obj[key] = json.loads(value, object_hook=pastas_hook)
-            except:
+            except Exception as e:
+                logger.error(e)
                 obj[key] = value
     return obj
 

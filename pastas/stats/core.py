@@ -230,10 +230,9 @@ def _compute_ccf_rectangle(
     """Internal numba-optimized method to compute the ccf."""
     c = empty_like(lags)
     b = empty_like(lags)
-    l = len(lags)
     n = len(t_x)
 
-    for k in range(l):
+    for k in range(len(lags)):
         cl = 0.0
         b_sum = 0.0
         for i in range(n):
@@ -263,13 +262,12 @@ def _compute_ccf_gaussian(
     """Internal numba-optimized method to compute the ccf."""
     c = empty_like(lags)
     b = empty_like(lags)
-    l = len(lags)
     n = len(t_x)
 
     den1 = -2 * bin_width**2  # denominator 1
     den2 = sqrt(2 * pi * bin_width)  # denominator 2
 
-    for k in range(l):
+    for k in range(len(lags)):
         cl = 0.0
         b_sum = 0.0
 

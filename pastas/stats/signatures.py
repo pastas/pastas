@@ -24,9 +24,8 @@ from numpy import (
     where,
 )
 from packaging.version import parse as parse_version
-from pandas import DataFrame, DatetimeIndex, Series, Timedelta
+from pandas import DataFrame, DatetimeIndex, Series, Timedelta, concat, cut, to_datetime
 from pandas import __version__ as pd_version
-from pandas import concat, cut, to_datetime
 from scipy.optimize import curve_fit
 from scipy.stats import linregress
 
@@ -1279,7 +1278,9 @@ def recession_constant(
         return nan
 
     # Fit an exponential model to the binned data and return the decay constant
-    f = lambda t, *p: -p[0] * (1 - exp(-t / p[1]))
+    def f(t, p):
+        return -p[0] * (1 - exp(-t / p[1]))
+
     popt, _ = curve_fit(
         f, binned.index, binned.values, p0=[1, 100], bounds=(0, [100, 1e3])
     )
@@ -1349,8 +1350,10 @@ def recovery_constant(
     if binned.empty:
         return nan
 
-    # Fit an exponential model to the binned data and return the recovery constant
-    f = lambda t, *p: p[0] * (1 - exp(-t / p[1]))
+    # Fit an exponential model to the binned data and return the decay constant
+    def f(t, p):
+        return -p[0] * (1 - exp(-t / p[1]))
+
     popt, _ = curve_fit(
         f, binned.index, binned.values, p0=[1, 100], bounds=(0, [100, 1e3])
     )
@@ -1368,7 +1371,10 @@ def recovery_constant(
 
 
 def duration_curve_slope(
-    series: Series, l: float = 0.1, u: float = 0.9, normalize: bool = False
+    series: Series,
+    l: float = 0.1,  # noqa: E741
+    u: float = 0.9,
+    normalize: bool = False,
 ) -> float:
     """Slope of the head duration curve between percentile l and u after
     :cite:t:`oudin_are_2010`.
@@ -1415,7 +1421,10 @@ def duration_curve_slope(
 
 
 def duration_curve_ratio(
-    series: Series, l: float = 0.1, u: float = 0.9, normalize: bool = True
+    series: Series,
+    l: float = 0.1,  # noqa: E741
+    u: float = 0.9,
+    normalize: bool = True,
 ) -> float:
     """Ratio of the head duration curve between the percentile l and u after
     :cite:t:`richards_measures_1990`.
