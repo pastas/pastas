@@ -1278,7 +1278,7 @@ def recession_constant(
         return nan
 
     # Fit an exponential model to the binned data and return the decay constant
-    def f(t, p):
+    def f(t, *p):
         return -p[0] * (1 - exp(-t / p[1]))
 
     popt, _ = curve_fit(
@@ -1351,7 +1351,7 @@ def recovery_constant(
         return nan
 
     # Fit an exponential model to the binned data and return the decay constant
-    def f(t, p):
+    def f(t, *p):
         return -p[0] * (1 - exp(-t / p[1]))
 
     popt, _ = curve_fit(
