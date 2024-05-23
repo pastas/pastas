@@ -51,7 +51,7 @@ more about the formatting of code and docstrings.
 
 .. note::
     To make sure your code is up to standards, you can run the following:
-    - ruff check --select-extend I --fix
+    - ruff check --extend-select I --fix
     - ruff format
     Or use the git pre-commit hook by installing it with `pip install
     pre-commit` and running `pre-commit install` in the active python

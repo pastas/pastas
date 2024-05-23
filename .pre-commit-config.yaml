@@ -6,7 +6,7 @@ repos:
       # Run the linter.
       - id: ruff
         types_or: [python, pyi, jupyter]
-        args: ["--select-extend", "I", "--fix"]
+        args: ["--extend-select", "I", "--fix"]
       # Run the formatter.
       - id: ruff-format
         types_or: [python, pyi, jupyter]
