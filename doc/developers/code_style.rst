@@ -2,25 +2,24 @@ Pastas Code Style
 =================
 This page provides information on the code style to use when writing code for Pastas.
 
-Black formatting
+Formatting and Linting
 ----------------
 To ensure high quality code that is easy to read and maintain we follow the
-`Black <https://black.readthedocs.io/en/stable/index.html>`_ code formatting standard.
-Please checkout the `Black Documentation <https://black.readthedocs.io/en/stable/index.html>`_
-on how to format Python code this way.
+`Ruff <https://docs.astral.sh/ruff/>`_ code standard. Please checkout the `Ruff
+Documentation <https://docs.astral.sh/ruff/>`_ on how to format Python code
+this way.
 
 Type Hints
 ----------
-Pastas uses TypeHinting, which is used to check user-provided input options. Please provide
-TypeHints when creating new methods and classes.
+Pastas uses Type Hinting, which is used to check user-provided input options.
+Please provide Type Hints when creating new methods and classes.
 
 Docstrings
 ----------
-Documentation is
-created using `Sphinxdoc <http://www.sphinx-doc.org>`_. Docstrings within
-the method or class need to be written in `NumPy docformat <https://numpydoc
-.readthedocs.io/en/latest/format.html#docstring-standard>`_ to enable
-automatic documentation on this website.
+Documentation is created using `Sphinxdoc <http://www.sphinx-doc.org>`_.
+Docstrings within the method or class need to be written in `NumPy docformat
+<https://numpydoc .readthedocs.io/en/latest/format.html#docstring-standard>`_
+to enable automatic documentation on this website.
 
 Optimization
 ------------
