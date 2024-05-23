@@ -121,7 +121,7 @@ legacy_tox_ini = """
     basepython = python3.10
     extras = ruffing
     commands =
-            ruff check --preview
+            ruff check --extend-select I --preview
             ruff format --check
 
     [testenv:ruff_fix]
