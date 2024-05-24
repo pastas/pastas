@@ -1819,7 +1819,7 @@ class Model:
         try:
             file_info["owner"] = getlogin()
         except Exception as e:
-            logger.error(e)
+            logger.debug(e)
             file_info["owner"] = "Unknown"
 
         return file_info

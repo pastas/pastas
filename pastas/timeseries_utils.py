@@ -56,7 +56,8 @@ def _frequency_is_supported(freq: str) -> str:
         Timedelta(offset)
     except Exception as e:
         msg = "Frequency %s not supported."
-        logger.error(msg, freq, e)
+        logger.error(msg, freq)
+        logger.debug(e)
         raise ValueError(msg % freq)
     if offset.n == 1:
         freq = offset.name
@@ -91,7 +92,7 @@ def _get_stress_dt(freq: str) -> float:
     try:
         dt = Timedelta(offset) / Timedelta(1, "D")
     except Exception as e:
-        logging.error(e)
+        logging.debug(e)
         num = offset.n
         freq = offset._prefix
         if freq in ["A", "Y", "AS", "YS", "YE", "BA", "BY", "BAS", "BYS"]:
