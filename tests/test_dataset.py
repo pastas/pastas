@@ -27,7 +27,7 @@ def test_invalid_folder_name():
 
 def test_list_datasets():
     # Test listing available datasets
-    list_datasets()
+    list_datasets(silent=False)
     # Add assertions here to verify the output of the function
     # For example, you can check if the output contains certain dataset names
     # assert "collenteur_2021" in list_datasets()

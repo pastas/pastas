@@ -48,7 +48,7 @@ documentation = "https://pastas.readthedocs.io"
 [project.optional-dependencies]
 solvers = ["lmfit >= 1.0.0", "emcee >= 3.0"]
 latexify = ["latexify-py"]
-full = ["pastas[latexify,solvers]"]
+full = ["pastas[latexify,solvers]", "requests"]
 formatting = ["isort", "black[jupyter]"]
 linting = ["flake8"]
 pytesting = ["pytest>=7", "pytest-cov", "pytest-sugar"]
