@@ -136,6 +136,6 @@ def list_datasets(silent: bool = True) -> List[str]:
         for folder in data:
             print(f" - {folder}")
         print(
-            f"Use ps.load_dataset('folder_name') to load a dataset from the repository."
+            "Use ps.load_dataset('folder_name') to load a dataset from the repository."
         )
     return data

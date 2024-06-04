@@ -1,4 +1,4 @@
-name: CI
+name: CI PYTEST
 
 on:
   push:
@@ -34,14 +34,6 @@ jobs:
           - name: Test suite with py312-ubuntu
             python: "3.12"
             toxenv: py312
-            experimental: false
-          - name: Formatting with black + isort
-            python: "3.9"
-            toxenv: format
-            experimental: false
-          - name: Linting with flake8
-            python: "3.9"
-            toxenv: lint
             experimental: false
           - name: Test suite for all unit tests including Notebooks
             python: "3.9"

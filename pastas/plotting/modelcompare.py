@@ -1,5 +1,4 @@
-"""This module contains tools for visually comparing multiple models.
-"""
+"""This module contains tools for visually comparing multiple models."""
 
 from itertools import combinations
 from logging import getLogger

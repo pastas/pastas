@@ -257,10 +257,7 @@ class Bokeh:
                 x_range=p.x_range,
             )
 
-            if rfunc_plot is not None:
-                xrange = rfunc_plot.x_range
-            else:
-                xrange = False
+            # xrange = False if rfunc_plot is None else rfunc_plot.x_range
 
             rfunc_plot = figure(
                 x_axis_label=None,

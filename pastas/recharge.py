@@ -669,7 +669,7 @@ class Berendrecht(RechargeBase):
         fc: float = 1.0,
         sr: float = 0.5,
         de: float = 250.0,
-        l: float = -2.0,
+        l: float = -2.0,  # noqa: E741
         m: float = 0.5,
         ks: float = 50.0,
         dt: float = 1.0,

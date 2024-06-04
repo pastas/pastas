@@ -1,5 +1,5 @@
-"""This module contains the objective functions that can be used with the pastas 
-`EmceeSolve` solver.   
+"""This module contains the objective functions that can be used with the pastas
+`EmceeSolve` solver.
 
 """
 

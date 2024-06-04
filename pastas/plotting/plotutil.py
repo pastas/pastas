@@ -1,5 +1,4 @@
-"""This module contains utility functions for plotting.
-"""
+"""This module contains utility functions for plotting."""
 
 from typing import List, Union
 
