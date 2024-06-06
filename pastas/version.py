@@ -27,19 +27,23 @@ def check_numba_scipy() -> bool:
     return True
 
 
-def show_versions(lmfit: bool = True, latexify: bool = True) -> None:
-    """Method to print the version of dependencies.
+def get_versions(optional: bool = False) -> str:
+    """Method to get the version of dependencies.
 
     Parameters
     ----------
-    lmfit: bool, optional
-        Print the version of LMfit if installed.
-    latexify: bool, optional
-        Print the version of Latexify if installed.
+    optional: bool, optional
+        Add the version of optional dependencies if installed.
+
+    Returns
+    -------
+    str
+        String with the version of the dependencies.
 
     """
 
     msg = (
+        f"Pastas version: {__version__}\n"
         f"Python version: {python_version()}\n"
         f"NumPy version: {metadata.version('numpy')}\n"
         f"Pandas version: {metadata.version('pandas')}\n"
@@ -48,22 +52,39 @@ def show_versions(lmfit: bool = True, latexify: bool = True) -> None:
         f"Numba version: {metadata.version('numba')}"
     )
 
-    if lmfit:
-        msg += "\nLMfit version: "
-        try:
-            import_module("lmfit")
-            msg += f"{metadata.version('lmfit')}"
-        except ImportError:
-            msg += "Not Installed"
+    if optional:
+        msg += "\nOptional Dependencies:"
 
-    if latexify:
-        msg += "\nLatexify version: "
-        try:
-            import_module("latexify")
-            msg += f"{metadata.version('latexify-py')}"
-        except ImportError:
-            msg += "Not Installed"
+        msg += "\nRequests version: "
 
-    msg += f"\nPastas version: {__version__}"
+        optional_dependencies = (
+            "requests",
+            "lmfit",
+            "emcee",
+            "bokeh",
+            "plotly",
+            "latexify",
+        )
+        for module in optional_dependencies:
+            try:
+                import_module(module)
+                module_name = module if module != "latexify" else "latexify-py"
+                msg += f"{metadata.version(module_name)}"
+            except ImportError:
+                msg += "Not Installed"
+
+    return msg
+
+
+def show_versions(optional: bool = False) -> None:
+    """Method to print the version of dependencies.
+
+    Parameters
+    ----------
+    optional: bool, optional
+        Print the version of optional dependencies if installed
+
+    """
+    msg = get_versions(optional=optional)
 
     return print(msg)
