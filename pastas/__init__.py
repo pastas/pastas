@@ -39,6 +39,7 @@ from pastas.stressmodels import (
     StressModel,
     TarsoModel,
     WellModel,
+    RiverModel,
 )
 from pastas.timeseries import validate_oseries, validate_stress
 from pastas.transform import ThresholdTransform

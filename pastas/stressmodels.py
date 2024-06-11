@@ -2002,3 +2002,116 @@ class ChangeModel(StressModelBase):
             "up": self.rfunc1.up,
         }
         return data
+
+from pandas import Series
+from typing import Optional, Union
+from pastas.typing import RFunc, StressSettingsDict, ArrayLike, TimestampType
+from pastas.timeseries import TimeSeries
+from pastas.stressmodels import StressModelBase
+
+
+class RiverModel(StressModelBase):
+    """Stress model convoluting a stress with a response function."""
+
+    _name = "StressModel"
+
+    def __init__(
+        self,
+        stress: Series,
+        rfunc: RFunc,
+        name: str,
+        up: bool = True,
+        settings: Optional[Union[str, StressSettingsDict]] = None,
+        metadata: Optional[dict] = None,
+        gain_scale_factor: Optional[float] = None,
+    ) -> None:
+        stress = TimeSeries(stress, settings=settings, metadata=metadata)
+
+        StressModelBase.__init__(
+            self,
+            name=name,
+            tmin=stress.series.index.min(),
+            tmax=stress.series.index.max(),
+            rfunc=rfunc,
+            up=up,
+            gain_scale_factor=(
+                stress.series.std() if gain_scale_factor is None else gain_scale_factor
+            ),
+        )
+
+        self.gain_scale_factor = gain_scale_factor
+        self.freq = stress.settings["freq"]
+        self.stress.append(stress)
+        self.set_init_parameters()
+
+    def set_init_parameters(self) -> None:
+        """Set the initial parameters (back) to their default values."""
+        self.parameters = self.rfunc.get_init_parameters(self.name)
+
+        self.parameters.loc[self.name + "_a0"] = (
+            1,
+            -np.inf,
+            np.inf,
+            True,
+            self.name,
+            "uniform",
+        )
+
+        self.parameters.loc[self.name + "_slope"] = (
+            0.01,
+            0,
+            1,
+            True,
+            self.name,
+            "uniform",
+        )
+
+    def simulate(
+        self,
+        p: ArrayLike,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+        freq: Optional[str] = None,
+        dt: float = 1.0,
+    ) -> Series:
+        """Simulates the head contribution.
+
+        Parameters
+        ----------
+        p: array_like
+            array_like object with the values as floats representing the model
+            parameters.
+        tmin: str, optional
+        tmax: str, optional
+        freq: str, optional
+        dt: int, optional
+
+        Returns
+        -------
+        pandas.Series
+            The simulated head contribution.
+        """
+        p = p.copy()
+        self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
+        stress = self.stress[0].series.copy()
+
+        A = self.get_A(p[-2:], stress)
+
+        n = stress.index.size
+        r = np.zeros((n, n))
+
+        for i, pA in enumerate(A):
+            p[0] *= pA
+            ri = self.rfunc.block(p[0 : self.rfunc.nparam]) * stress.iloc[i]
+            l = min(n - i, ri.size)
+            r[i, i : i + l] = ri[:l]
+
+        h = Series(data=r.sum(axis=0), index=stress.index, name=self.name)
+        return h
+
+    def get_A(self, p, stress):
+        S = stress.values.copy()
+        S = (S - S.min()) / (S.max() - S.min())
+        a0, a = p
+        A = a0 + S * a
+        return A
