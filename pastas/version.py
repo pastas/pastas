@@ -27,13 +27,19 @@ def check_numba_scipy() -> bool:
     return True
 
 
-def get_versions(optional: bool = False) -> str:
+def get_versions(optional: bool = False,
+                 lmfit: bool = False,
+                 latexify: bool = False) -> str:
     """Method to get the version of dependencies.
 
     Parameters
     ----------
     optional: bool, optional
         Add the version of optional dependencies if installed.
+    lmfit: bool, optional
+        Print the version of LMfit if installed. Deprecated since v1.6.0.
+    latexify: bool, optional
+        Print the version of Latexify if installed. Deprecated since v1.6.0.
 
     Returns
     -------
@@ -41,6 +47,12 @@ def get_versions(optional: bool = False) -> str:
         String with the version of the dependencies.
 
     """
+    if lmfit:
+        logger.warning("The lmfit argument is deprecated and will be removed in a "
+                       "future version.")
+    if latexify:
+        logger.warning("The latexify argument is deprecated and will be removed in a "
+                       "future version.")
 
     msg = (
         f"Pastas version: {__version__}\n"
