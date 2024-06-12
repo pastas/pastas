@@ -29,8 +29,6 @@ ts = ps.Model(obs)
 # we can add a handler only for pastas:
 # ps.utils.initialize_logger()
 # or we can set a handler directly via the logging package:
-
-
 logging.basicConfig(level=logging.INFO)
 
 ts = ps.Model(obs)
