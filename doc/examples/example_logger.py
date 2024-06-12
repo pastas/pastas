@@ -27,7 +27,13 @@ ts = ps.Model(obs)
 
 # we need to initialize a handler to also print info-messages
 # we can add a handler only for pastas:
-# ps.utils.initialize_logger()
+ps.utils.initialize_logger()
+
+ts = ps.Model(obs)
+
+# remove the handler again, as we do not want double log-messages after the next step
+ps.utils.remove_console_handler()
+
 # or we can set a handler directly via the logging package:
 logging.basicConfig(level=logging.INFO)
 
