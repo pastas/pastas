@@ -58,9 +58,6 @@ warnings.warn(
     stacklevel=2,
 )
 
-logger = logging.getLogger(__name__)
-initialize_logger(logger)
-
 # Register matplotlib converters when using Pastas
 # https://github.com/pastas/pastas/issues/92
 
