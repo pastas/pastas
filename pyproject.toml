@@ -20,11 +20,11 @@ maintainers = [
 ]
 requires-python = ">= 3.9"
 dependencies = [
-    "numpy >= 1.17",
-    "matplotlib >= 3.1",
-    "pandas >= 1.1",
-    "scipy >= 1.8",
-    "numba >= 0.51",
+    "numpy >= 1.22.4",
+    "matplotlib >= 3.6.1",
+    "pandas >= 2.1",
+    "scipy >= 1.8.1, !=1.13.0",
+    "numba >= 0.55.2",
 ]
 keywords = ["hydrology", "groundwater", "timeseries", "analysis"]
 classifiers = [
