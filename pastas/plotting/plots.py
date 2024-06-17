@@ -625,7 +625,6 @@ class TrackSolve:
             noise = self._noise(self.ml.parameters.initial.values)
             self.rmse_noise = np.array([rmse(res=noise)])
 
-
         # get observations
         self.obs = self.ml.observations(tmin=self.tmin, tmax=self.tmax)
         # calculate EVP
