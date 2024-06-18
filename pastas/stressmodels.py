@@ -1681,8 +1681,8 @@ class TarsoModel(RechargeModel):
         pd0 = Series(
             {
                 "initial": initial,
-                "pmin": np.NaN,
-                "pmax": np.NaN,
+                "pmin": np.nan,
+                "pmax": np.nan,
                 "vary": True,
                 "name": self.name,
                 "dist": "uniform",
@@ -1777,7 +1777,7 @@ class TarsoModel(RechargeModel):
         d_e = (c1 / (c0 + c1)) * d0 + (c0 / (c0 + c1)) * d1
         a_e = S1 * c_e
 
-        h = np.full(len(r), np.NaN)
+        h = np.full(len(r), np.nan)
         for i in range(len(r)):
             if i == 0:
                 h0 = (d0 + d1) / 2
