@@ -624,10 +624,6 @@ class TrackSolve:
         if self.ml.settings["noise"] and self.ml.noisemodel is not None:
             noise = self._noise(self.ml.parameters.initial.values)
             self.rmse_noise = np.array([rmse(res=noise)])
-        else:
-            # drop noise parameter if noisemodel exists but noise
-            # in settings is False
-            self.parameters.drop(columns=["noise_alpha"], inplace=True)
 
         # get observations
         self.obs = self.ml.observations(tmin=self.tmin, tmax=self.tmax)

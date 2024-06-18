@@ -270,7 +270,7 @@ def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> S
         s_new = s_new.cumsum()
 
         # add NaNs at non-existing values in series at index
-        s_new = s_new.combine_first(Series(np.NaN, index))
+        s_new = s_new.combine_first(Series(np.nan, index))
 
         # interpolate these NaN's, only keep values at index
         s_new = s_new.interpolate("time")[index]
@@ -282,7 +282,7 @@ def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> S
         s_new = s_new / _get_dt_array(s_new.index)
 
         # set values after the end of the original series to NaN
-        s_new[s_new.index > s.index[-1]] = np.NaN
+        s_new[s_new.index > s.index[-1]] = np.nan
     else:
         t_e = s.index.asi8
         t_s = t_e - dt
@@ -303,7 +303,7 @@ def _get_dt_array(index):
 
 @njit
 def _ts_resample_slow(t_s, t_e, v, t_new):
-    v_new = np.full(t_new.shape, np.NaN)
+    v_new = np.full(t_new.shape, np.nan)
     for i in range(1, len(t_new)):
         t_s_new = t_new[i - 1]
         t_e_new = t_new[i]
