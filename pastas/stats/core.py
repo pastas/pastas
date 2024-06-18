@@ -210,6 +210,8 @@ def _preprocess(x: Series, max_gap: float) -> Tuple[ArrayLike, ArrayLike, float]
     """Internal method to preprocess the time series."""
     dt = x.index.to_series().diff().dropna().values / Timedelta(1, "D")
     dt_mu = dt[dt < max_gap].mean()  # Deal with big gaps if present
+    if int(dt_mu) == 0:
+        dt_mu = 1  # Prevent division by zero error
     t = dt.cumsum()
 
     # Normalize the values and create numpy arrays
