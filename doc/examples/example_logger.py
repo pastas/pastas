@@ -7,6 +7,7 @@ This example is meant to show the logger methods of pastas
 import logging
 
 import pandas as pd
+
 import pastas as ps
 
 # When the script running pastas (this script) does not initialize a logger,
