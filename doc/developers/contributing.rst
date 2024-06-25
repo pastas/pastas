@@ -30,15 +30,15 @@ and allows others to help you work out a solution.
 2. Fork and install Pastas
 --------------------------
 To start making changes to the original code, you need to make a local copy of
-the Pastas, called "Forking" in git-language. You can read how to fork a GitHub
+Pastas, called "Forking" in git-language. You can read how to fork a GitHub
 repository `here
 <https://help.github.com/en/github/getting-started-with-github/fork-a-repo>`_.
 To use all the development tools; install Pastas in development mode by running
 `pip install -e .[dev]` in the root of the repository. This will install all
-development dependencies such as `tox`, `ruff`, `pre=commit` and `pytest`.
+development dependencies such as `tox`, `ruff`, `pre-commit` and `pytest`.
 
 .. note::
-    Make sure to make changes in the make changes in a new branch that branches
+    Make sure to make changes in a new branch that branches
     of the Dev-branch. This way you can easily create a Pull Request later on.
 
 3. Write Code
@@ -63,10 +63,10 @@ more about the formatting of code and docstrings.
 
 4. Test Code
 -----------
-The ensure a proper functioning of the Pastas, it is important to supply tests
+The ensure a proper functioning of Pastas, it is important to supply tests
 in the test-suite (`see here <https://github
 .com/pastas/pastas/tree/master/tests>`_). The ensure a proper functioning of
-the Pastas, the software is automatically tested using Github Actions when
+Pastas, the software is automatically tested using Github Actions when
 changes are made. Pastas uses `pytest <https://docs.pytest.org/en/stable/>`_ to
 run tests.
 
