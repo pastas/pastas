@@ -20,11 +20,11 @@ maintainers = [
 ]
 requires-python = ">= 3.9"
 dependencies = [
-    "numpy >= 1.17",
-    "matplotlib >= 3.1",
-    "pandas >= 1.1",
-    "scipy >= 1.8",
-    "numba >= 0.51",
+    "numpy >= 1.22.4",
+    "matplotlib >= 3.6.1",
+    "pandas >= 2.1",
+    "scipy >= 1.8.1, !=1.13.0",
+    "numba >= 0.55.2",
 ]
 keywords = ["hydrology", "groundwater", "timeseries", "analysis"]
 classifiers = [
@@ -43,14 +43,17 @@ classifiers = [
 [project.urls]
 homepage = "https://pastas.dev"
 repository = "https://github.com/pastas/pastas"
-documentation = "https://pastas.readthedocs.io/en/latest/"
+documentation = "https://pastas.readthedocs.io"
 
 [project.optional-dependencies]
 solvers = ["lmfit >= 1.0.0", "emcee >= 3.0"]
 latexify = ["latexify-py"]
-full = ["pastas[latexify,solvers]"]
-formatting = ["isort", "black[jupyter]"]
-linting = ["flake8"]
+interactive = ["bokeh", "plotly"]
+datasets = ["requests"]
+full = ["pastas[latexify,solvers,interactive,datasets]"]
+ruffing = ["ruff"]
+formatting = ["pastas[ruffing]"]
+linting = ["pastas[ruffing]"]
 pytesting = ["pytest>=7", "pytest-cov", "pytest-sugar"]
 ci = [
     "pastas[pytesting,solvers]",
@@ -74,7 +77,7 @@ rtd = [
     "sphinx-design",
     "myst_nb",
 ]
-dev = ["tox", "pastas[formatting,linting,ci,rtd]"]
+dev = ["tox", "pre-commit", "pastas[ruffing,ci,rtd]"]
 numbascipy = ["numba-scipy >= 0.3.1"]
 
 [tool.setuptools.dynamic]
@@ -94,7 +97,7 @@ markers = ["notebooks: run notebooks", "bnotebooks: run benchmark notebooks"]
 legacy_tox_ini = """
     [tox]
     requires = tox>=4
-    env_list = format, lint, notebooks, py{39,310,311,312}
+    env_list = ruff, notebooks, py{39,310,311,312}
 
     [testenv]
     description = run unit tests
@@ -115,20 +118,19 @@ legacy_tox_ini = """
     commands =
             pytest tests -m "bnotebooks"
 
-    [testenv:format]
-    description = run formatters
-    basepython = python3.9
-    extras = formatting
+    [testenv:ruff]
+    description = run ruff checks
+    basepython = python3.10
+    extras = ruffing
     commands =
-            black pastas --check --diff
-            isort pastas --check --diff --profile=black
+            ruff check --extend-select I --preview
+            ruff format --check
 
-    [testenv:lint]
-    description = run linters
-    basepython = python3.9
-    extras = linting
+    [testenv:ruff_fix]
+    description = run ruff locally and fix issues
+    extras = ruffing
     commands =
-            flake8 pastas --count --show-source --exit-zero --max-line-length=88 --ignore=E203,W503,W504
-            flake8 pastas --count --exit-zero --max-line-length=88 --statistics --ignore=E203,W503,W504
+            ruff check --extend-select I --fix
+            ruff format
 
 """

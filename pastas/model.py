@@ -25,7 +25,6 @@ from pandas import (
 from pastas.decorators import get_stressmodel
 from pastas.io.base import _load_model, dump
 from pastas.modelstats import Statistics
-from pastas.noisemodels import ArNoiseModel
 from pastas.plotting.modelplots import Plotting, _table_formatter_stderr
 from pastas.rfunc import HantushWellModel
 from pastas.solver import LeastSquares
@@ -38,10 +37,9 @@ from pastas.timeseries_utils import (
     get_sample,
 )
 from pastas.transform import ThresholdTransform
-from pastas.typing import ArrayLike
+from pastas.typing import ArrayLike, Solver, StressModel, TimestampType
 from pastas.typing import Model as ModelType
 from pastas.typing import NoiseModel as NoiseModelType
-from pastas.typing import Solver, StressModel, TimestampType
 from pastas.utils import validate_name
 from pastas.version import __version__
 
@@ -1820,7 +1818,8 @@ class Model:
 
         try:
             file_info["owner"] = getlogin()
-        except:
+        except Exception as e:
+            logger.debug(e)
             file_info["owner"] = "Unknown"
 
         return file_info

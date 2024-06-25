@@ -57,7 +57,7 @@ def _register_accessor(name: str, cls):
 
     .. code-block:: python
 
-        def __init__(self, pastas_object):  # noqa: E999
+        def __init__(self, pastas_object):
             ...
 
     Examples

@@ -9,14 +9,12 @@ import sys
 from datetime import date
 
 import requests
-
-year = date.today().strftime("%Y")
-
 from matplotlib import use
 
-use("agg")
-
 from pastas import __version__
+
+year = date.today().strftime("%Y")
+use("agg")
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the

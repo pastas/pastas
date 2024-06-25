@@ -54,9 +54,10 @@ def _frequency_is_supported(freq: str) -> str:
     offset = to_offset(freq)
     try:
         Timedelta(offset)
-    except:
+    except Exception as e:
         msg = "Frequency %s not supported."
         logger.error(msg, freq)
+        logger.debug(e)
         raise ValueError(msg % freq)
     if offset.n == 1:
         freq = offset.name
@@ -90,16 +91,17 @@ def _get_stress_dt(freq: str) -> float:
     offset = to_offset(freq)
     try:
         dt = Timedelta(offset) / Timedelta(1, "D")
-    except:
+    except Exception as e:
+        logging.debug(e)
         num = offset.n
         freq = offset._prefix
-        if freq in ["A", "Y", "AS", "YS", "BA", "BY", "BAS", "BYS"]:
+        if freq in ["A", "Y", "AS", "YS", "YE", "BA", "BY", "BAS", "BYS"]:
             # year
             dt = num * 365
         elif freq in ["BQ", "BQS", "Q", "QS"]:
             # quarter
             dt = num * 90
-        elif freq in ["BM", "BMS", "CBM", "CBMS", "M", "MS"]:
+        elif freq in ["BM", "BMS", "CBM", "CBMS", "M", "MS", "ME"]:
             # month
             dt = num * 30
         elif freq in ["SM", "SMS"]:
@@ -268,7 +270,7 @@ def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> S
         s_new = s_new.cumsum()
 
         # add NaNs at non-existing values in series at index
-        s_new = s_new.combine_first(Series(np.NaN, index))
+        s_new = s_new.combine_first(Series(np.nan, index))
 
         # interpolate these NaN's, only keep values at index
         s_new = s_new.interpolate("time")[index]
@@ -280,7 +282,7 @@ def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> S
         s_new = s_new / _get_dt_array(s_new.index)
 
         # set values after the end of the original series to NaN
-        s_new[s_new.index > s.index[-1]] = np.NaN
+        s_new[s_new.index > s.index[-1]] = np.nan
     else:
         t_e = s.index.asi8
         t_s = t_e - dt
@@ -301,7 +303,7 @@ def _get_dt_array(index):
 
 @njit
 def _ts_resample_slow(t_s, t_e, v, t_new):
-    v_new = np.full(t_new.shape, np.NaN)
+    v_new = np.full(t_new.shape, np.nan)
     for i in range(1, len(t_new)):
         t_s_new = t_new[i - 1]
         t_e_new = t_new[i]

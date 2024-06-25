@@ -5,6 +5,7 @@ a subfolder in the pastas-data repository.
 
 """
 
+from functools import lru_cache
 from typing import Dict, List, Union
 
 from pandas import DataFrame, read_csv
@@ -12,6 +13,7 @@ from pandas import DataFrame, read_csv
 GITHUB_URL = "https://api.github.com/repos/pastas/pastas-data/contents/"
 
 
+@lru_cache
 def load_dataset(name: str) -> Union[DataFrame, Dict[str, DataFrame]]:
     """Load csv-files from a subfolder in the pastas dataset repository on GitHub.
 
@@ -65,11 +67,15 @@ def load_dataset(name: str) -> Union[DataFrame, Dict[str, DataFrame]]:
     data = {}
 
     # Loop over the files in the folder
-    for file in r.json():
-        if file["name"].endswith(".csv"):
-            # Read file
-            df = read_csv(file["download_url"], index_col=0, parse_dates=True)
-            data[file["name"].split(".")[0]] = df
+    rjson = r.json()
+    read_csv_kwargs = requests.get(
+        [x for x in rjson if x["name"] == "settings.json"][0]["download_url"]
+    ).json()
+    for file in rjson:
+        fname = file["name"]
+        if fname.endswith(".csv"):
+            df = read_csv(file["download_url"], **read_csv_kwargs[fname])
+            data[fname.split(".")[0]] = df
 
     # Return the data, if only one file is found return the dataframe, otherwise return
     # a dictionary with the dataframes
@@ -84,7 +90,8 @@ def load_dataset(name: str) -> Union[DataFrame, Dict[str, DataFrame]]:
         )
 
 
-def list_datasets() -> List[str]:
+@lru_cache
+def list_datasets(silent: bool = True) -> List[str]:
     """Print a list of available datasets in the pastas-data repository on GitHub.
 
     Returns
@@ -124,8 +131,11 @@ def list_datasets() -> List[str]:
             data.append(file["name"])
 
     # Print the list of datasets
-    print("Available datasets in the pastas-data repository on GitHub:")
-    for folder in data:
-        print(f" - {folder}")
-    print(f"Use ps.load_dataset('folder_name') to load a dataset from the repository.")
+    if not silent:
+        print("Available datasets in the pastas-data repository on GitHub:")
+        for folder in data:
+            print(f" - {folder}")
+        print(
+            "Use ps.load_dataset('folder_name') to load a dataset from the repository."
+        )
     return data

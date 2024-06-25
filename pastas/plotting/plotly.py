@@ -1,5 +1,4 @@
-"""This module contains interactive plots for Pastas models.
-"""
+"""This module contains interactive plots for Pastas models."""
 
 import numpy as np
 import pandas as pd
@@ -598,7 +597,7 @@ class Plotly:
         )
 
         # normality
-        counts, bins = np.histogram(series.values, bins=50)
+        _, bins = np.histogram(series.values, bins=50)
         bins = 0.5 * (bins[:-1] + bins[1:])
         fig.add_trace(
             go.Histogram(

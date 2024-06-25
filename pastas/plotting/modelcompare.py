@@ -1,5 +1,4 @@
-"""This module contains tools for visually comparing multiple models.
-"""
+"""This module contains tools for visually comparing multiple models."""
 
 from itertools import combinations
 from logging import getLogger
@@ -990,6 +989,12 @@ class CompareModels:
             self.share_xaxes(xshare_left)
         if len(xshare_right) > 1:
             self.share_xaxes(xshare_right)
+
+        # xlim bounds
+        tmintmax = self.get_tmin_tmax()
+        tmin = tmintmax.loc[:, "tmin"].min()
+        tmax = tmintmax.loc[:, "tmax"].max()
+        self.axes["sim"].set_xlim(tmin, tmax)
 
         # met
         _ = self.plot_table_metrics()

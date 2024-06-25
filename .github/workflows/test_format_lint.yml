@@ -1,9 +1,11 @@
-name: CI NB
+name: CI RUFF
 
 on:
+  push:
   pull_request:
     branches:
       - master
+      - dev
 
 jobs:
   test:
@@ -13,9 +15,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: Test suite for benchmark Notebooks
+          - name: Formatting and linting with ruff
             python: "3.10"
-            toxenv: notebooks
+            toxenv: ruff
     env:
       # Color Output
       # Rich (pip)

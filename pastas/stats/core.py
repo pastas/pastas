@@ -210,6 +210,8 @@ def _preprocess(x: Series, max_gap: float) -> Tuple[ArrayLike, ArrayLike, float]
     """Internal method to preprocess the time series."""
     dt = x.index.to_series().diff().dropna().values / Timedelta(1, "D")
     dt_mu = dt[dt < max_gap].mean()  # Deal with big gaps if present
+    if int(dt_mu) == 0:
+        dt_mu = 1  # Prevent division by zero error
     t = dt.cumsum()
 
     # Normalize the values and create numpy arrays
@@ -230,10 +232,9 @@ def _compute_ccf_rectangle(
     """Internal numba-optimized method to compute the ccf."""
     c = empty_like(lags)
     b = empty_like(lags)
-    l = len(lags)
     n = len(t_x)
 
-    for k in range(l):
+    for k in range(len(lags)):
         cl = 0.0
         b_sum = 0.0
         for i in range(n):
@@ -263,13 +264,12 @@ def _compute_ccf_gaussian(
     """Internal numba-optimized method to compute the ccf."""
     c = empty_like(lags)
     b = empty_like(lags)
-    l = len(lags)
     n = len(t_x)
 
     den1 = -2 * bin_width**2  # denominator 1
     den2 = sqrt(2 * pi * bin_width)  # denominator 2
 
-    for k in range(l):
+    for k in range(len(lags)):
         cl = 0.0
         b_sum = 0.0
 

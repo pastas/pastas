@@ -23,12 +23,20 @@ from numpy import (
     sqrt,
     where,
 )
+from packaging.version import parse as parse_version
 from pandas import DataFrame, DatetimeIndex, Series, Timedelta, concat, cut, to_datetime
+from pandas import __version__ as pd_version
 from scipy.optimize import curve_fit
 from scipy.stats import linregress
 
 import pastas as ps
 from pastas.stats.core import acf
+
+pandas_version = parse_version(pd_version)
+
+year_offset = "YE" if pandas_version >= parse_version("2.2.0") else "A"
+
+month_offset = "ME" if pandas_version >= parse_version("2.2.0") else "M"
 
 __all__ = [
     "cv_period_mean",
@@ -86,7 +94,9 @@ def _normalize(series: Series) -> Series:
     return series
 
 
-def cv_period_mean(series: Series, normalize: bool = False, freq: str = "M") -> float:
+def cv_period_mean(
+    series: Series, normalize: bool = False, freq: str = month_offset
+) -> float:
     """Coefficient of variation of the mean head over a period (default monthly).
 
     Parameters
@@ -340,7 +350,7 @@ def _martens(series: Series, normalize: bool = False) -> Tuple[Series, Series]:
     if normalize:
         series = _normalize(series)
 
-    s = series.resample("M")
+    s = series.resample(month_offset)
     s_min = s.min()
     s_max = s.max()
     hl = s_min.groupby(s_min.index.year).nsmallest(3).groupby(level=0).mean()
@@ -440,7 +450,7 @@ def _colwell_components(
     bins: int
         number of bins to determine the states of the groundwater.
     freq: str, optional
-        frequency to resample the series to. Possible options are "D", "W", or "M".
+        frequency to resample the series to. Possible options are "D", "W", "M" or "ME".
     method: str, optional
         Method to use for resampling. Only "mean" is allowed now.
     normalize: bool, optional
@@ -474,7 +484,7 @@ def _colwell_components(
     )
     df = DataFrame(binned, dtype=float)
 
-    if freq == "M":
+    if freq in ("M", "ME"):
         df["time"] = df.index.isocalendar().month
     elif freq == "W":
         df["time"] = df.index.isocalendar().week
@@ -1003,7 +1013,7 @@ def reversals_avg(series: Series) -> float:
         reversals = (
             (series_diff[series_diff != 0.0] > 0).astype(int).diff().replace(-1, 1)
         )
-        return reversals.resample("A").sum().mean()
+        return reversals.resample(year_offset).sum().mean()
 
 
 def reversals_cv(series: Series) -> float:
@@ -1043,7 +1053,7 @@ def reversals_cv(series: Series) -> float:
         reversals = (
             (series_diff[series_diff != 0.0] > 0).astype(int).diff().replace(-1, 1)
         )
-        annual_sum = reversals.resample("A").sum()
+        annual_sum = reversals.resample(year_offset).sum()
         return annual_sum.std(ddof=1) / annual_sum.mean()
 
 
@@ -1075,7 +1085,7 @@ def mean_annual_maximum(series: Series, normalize: bool = True) -> float:
     if normalize:
         series = _normalize(series)
 
-    return series.resample("A").max().mean()
+    return series.resample(year_offset).max().mean()
 
 
 def bimodality_coefficient(series: Series, normalize: bool = True) -> float:
@@ -1268,7 +1278,9 @@ def recession_constant(
         return nan
 
     # Fit an exponential model to the binned data and return the decay constant
-    f = lambda t, *p: -p[0] * (1 - exp(-t / p[1]))
+    def f(t, *p):
+        return -p[0] * (1 - exp(-t / p[1]))
+
     popt, _ = curve_fit(
         f, binned.index, binned.values, p0=[1, 100], bounds=(0, [100, 1e3])
     )
@@ -1338,8 +1350,10 @@ def recovery_constant(
     if binned.empty:
         return nan
 
-    # Fit an exponential model to the binned data and return the recovery constant
-    f = lambda t, *p: p[0] * (1 - exp(-t / p[1]))
+    # Fit an exponential model to the binned data and return the decay constant
+    def f(t, *p):
+        return -p[0] * (1 - exp(-t / p[1]))
+
     popt, _ = curve_fit(
         f, binned.index, binned.values, p0=[1, 100], bounds=(0, [100, 1e3])
     )
@@ -1357,7 +1371,10 @@ def recovery_constant(
 
 
 def duration_curve_slope(
-    series: Series, l: float = 0.1, u: float = 0.9, normalize: bool = False
+    series: Series,
+    l: float = 0.1,  # noqa: E741
+    u: float = 0.9,
+    normalize: bool = False,
 ) -> float:
     """Slope of the head duration curve between percentile l and u after
     :cite:t:`oudin_are_2010`.
@@ -1404,7 +1421,10 @@ def duration_curve_slope(
 
 
 def duration_curve_ratio(
-    series: Series, l: float = 0.1, u: float = 0.9, normalize: bool = True
+    series: Series,
+    l: float = 0.1,  # noqa: E741
+    u: float = 0.9,
+    normalize: bool = True,
 ) -> float:
     """Ratio of the head duration curve between the percentile l and u after
     :cite:t:`richards_measures_1990`.
@@ -1583,7 +1603,7 @@ def baselevel_stability(series: Series, normalize: bool = True, period="30D") ->
 
     _, ht = _baselevel(series, normalize=normalize, period=period)
 
-    return ht.resample("A").mean().max() - ht.resample("A").mean().min()
+    return ht.resample(year_offset).mean().max() - ht.resample(year_offset).mean().min()
 
 
 def autocorr_time(series: Series, cutoff: float = 0.8, **kwargs) -> float:
@@ -1747,7 +1767,7 @@ def summary(
     --------
     >>> idx = date_range("2000", "2010")
     >>> data = np.random.rand(len(idx), 3)
-    >>> df = DataFrame(index=idx, data=data, columns=["A", "B", "C"], dtype=float)
+    >>> df = DataFrame(index=idx, data=data, columns=[year_offset, "B", "C"], dtype=float)
     >>> ps.stats.signatures.summary(df)
 
     """

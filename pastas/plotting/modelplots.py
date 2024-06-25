@@ -1022,16 +1022,14 @@ class Plotting:
         return axes
 
     @model_tmin_tmax
-    def summary_pdf(
+    def summary(
         self,
         tmin: Optional[TimestampType] = None,
         tmax: Optional[TimestampType] = None,
-        fname: Optional[str] = None,
-        dpi: int = 150,
         results_kwargs: Optional[dict] = None,
         diagnostics_kwargs: Optional[dict] = None,
     ) -> Figure:
-        """Create a PDF file (A4) with the results and diagnostics plot.
+        """Create a plot with the results and diagnostics plot.
 
         Parameters
         ----------
@@ -1050,16 +1048,12 @@ class Plotting:
         -------
         fig: matplotlib.pyplot.Figure instance
         """
-        if fname is None:
-            fname = "{}.pdf".format(self.ml.name)
 
         if results_kwargs is None:
             results_kwargs = {}
 
         if diagnostics_kwargs is None:
             diagnostics_kwargs = {}
-
-        pdf = PdfPages(fname)
 
         fig = plt.figure(figsize=(8.27, 11.69), dpi=50)
 
@@ -1073,6 +1067,45 @@ class Plotting:
         fig2.suptitle("Model Diagnostics", fontweight="bold")
 
         plt.subplots_adjust(left=0.1, top=0.9, right=0.95, bottom=0.1)
+        return fig
+
+    @model_tmin_tmax
+    def summary_pdf(
+        self,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+        results_kwargs: Optional[dict] = None,
+        diagnostics_kwargs: Optional[dict] = None,
+        fname: Optional[str] = None,
+        dpi: int = 150,
+    ) -> Figure:
+        """Create a PDF file (A4) with the results and diagnostics plot.
+
+        Parameters
+        ----------
+        tmin: str or pd.Timestamp, optional
+        tmax: str or pd.Timestamp, optional
+        results_kwargs: dict, optional
+            dictionary passed on to ml.plots.results method.
+        diagnostics_kwargs: dict, optional
+            dictionary passed on to ml.plots.diagnostics method.
+        fname: str, optional
+            string with the file name / path to store the PDF file.
+        dpi: int, optional
+            dpi to save the figure with.
+
+        Returns
+        -------
+        fig: matplotlib.pyplot.Figure instance
+        """
+        fname = "{}.pdf".format(self.ml.name) if fname is None else fname
+        pdf = PdfPages(fname)
+        fig = self.summary(
+            tmin=tmin,
+            tmax=tmax,
+            results_kwargs=results_kwargs,
+            diagnostics_kwargs=diagnostics_kwargs,
+        )
         pdf.savefig(fig, orientation="portrait", dpi=dpi)
         pdf.close()
         return fig

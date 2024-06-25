@@ -74,8 +74,7 @@ def set_console_handler(
 
 
 def set_log_level(level: str) -> None:
-    """Set the log-level of the console. This method is just a wrapper around
-    set_console_handler.
+    """Set the log-level for Pastas.
 
     Parameters
     ----------
@@ -89,7 +88,8 @@ def set_log_level(level: str) -> None:
     >>> import pandas as ps
     >>> ps.set_log_level("ERROR")
     """
-    set_console_handler(level=level)
+    logger = logging.getLogger("pastas")
+    logger.setLevel(level)
 
 
 def remove_console_handler(logger: Optional[Any] = None) -> None:

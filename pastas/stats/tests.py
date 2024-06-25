@@ -1,6 +1,4 @@
-"""The following methods may be used for the diagnostic checking of the residual time series of a calibrated (Pastas) model.
-
-"""
+"""The following methods may be used for the diagnostic checking of the residual time series of a calibrated (Pastas) model."""
 
 from logging import getLogger
 
