@@ -39,7 +39,7 @@ Basics
 
 `A basic model`_
 
-`Fixating parameters while fitting`_
+`Fixing parameters while fitting`_
 
 `Calibration`_
 
@@ -47,7 +47,7 @@ Basics
 
 .. _Preprocessing user-provided time series: prepare_timeseries.html
 .. _A basic model: basic_model.html
-.. _Fixating parameters while fitting: fix_parameters.html
+.. _Fixing parameters while fitting: fix_parameters.html
 .. _Calibration: calibration_options.html
 .. _Modeling with different timesteps: modeling_timestep.html
 
