@@ -13,7 +13,7 @@
 [![image](https://app.codacy.com/project/badge/Grade/952f41c453854064ba0ee1fa0a0b4434)](https://app.codacy.com/gh/pastas/pastas/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![image](https://api.codacy.com/project/badge/Coverage/952f41c453854064ba0ee1fa0a0b4434)](https://app.codacy.com/gh/pastas/pastas/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_coverage9)
 [![image](https://readthedocs.org/projects/pastas/badge/?version=latest)](https://pastas.readthedocs.io/en/latest/?badge=latest)
-[![image](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/pastas/pastas/master?filepath=examples%2Fnotebooks%2F1_basic_model.ipynb)
+[![GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/pastas/pastas?quickstart=1)
 
 ## Pastas: what is it?
 
@@ -31,11 +31,11 @@ analysis tools.
 -   Examples can be found on the [examples directory on the
     documentation
     website](https://pastas.readthedocs.io/en/dev/examples/index.html)
--   View and edit a working example notebook of a Pastas model in
-    [MyBinder](https://mybinder.org/v2/gh/pastas/pastas/master?filepath=examples%2Fnotebooks%2F1_basic_model.ipynb)
 -   A list of publications that use Pastas is available in a [dedicated
     Zotero
     group](https://www.zotero.org/groups/4846685/pastas/items/32FS5PTW/item-list)
+* View and edit the example notebooks of Pastas in
+  [GitHub Codespaces](https://codespaces.new/pastas/pastas?quickstart=1))
 
 ## Get in Touch
 
