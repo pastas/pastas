@@ -48,7 +48,7 @@ documentation = "https://pastas.readthedocs.io"
 [project.optional-dependencies]
 solvers = ["lmfit >= 1.0.0", "emcee >= 3.0"]
 latexify = ["latexify-py"]
-interactive = ["bokeh", "plotly"]
+interactive = ["bokeh >= 3.0", "plotly"]
 datasets = ["requests"]
 full = ["pastas[latexify,solvers,interactive,datasets]"]
 ruffing = ["ruff"]
@@ -56,14 +56,11 @@ formatting = ["pastas[ruffing]"]
 linting = ["pastas[ruffing]"]
 pytesting = ["pytest>=7", "pytest-cov", "pytest-sugar"]
 ci = [
-    "pastas[pytesting,solvers]",
+    "pastas[pytesting,solvers,interactive]",
     "jupyter",
     "coverage",
     "corner",
-    "emcee",
     "tqdm",
-    "plotly",
-    "bokeh >= 3.0",
 ]
 rtd = [
     "pastas[solvers,latexify]",
