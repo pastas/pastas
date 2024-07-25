@@ -58,10 +58,13 @@ def pastas_hook(obj: dict):
             else:
                 obj[key] = Timedelta(value)
         elif key in ["parameters", "pcov"]:
-            # Necessary to maintain order when using the JSON format!
-            value = json.loads(value, object_pairs_hook=OrderedDict)
-            param = DataFrame(data=value, columns=value.keys()).T
-            obj[key] = param.infer_objects()
+            if value is not None:
+                # Necessary to maintain order when using the JSON format!
+                value = json.loads(value, object_pairs_hook=OrderedDict)
+                param = DataFrame(data=value, columns=value.keys()).T
+                obj[key] = param.infer_objects()
+            else:
+                obj[key] = value
         else:
             try:
                 obj[key] = json.loads(value, object_hook=pastas_hook)
