@@ -86,6 +86,9 @@ line-length = 88
 [tool.isort]
 profile = "black"
 
+[tool.ruff]
+extend-include = ["*.ipynb"]
+
 [tool.pytest.ini_options]
 addopts = "--strict-markers --durations=0"
 markers = ["notebooks: run notebooks", "bnotebooks: run benchmark notebooks"]
