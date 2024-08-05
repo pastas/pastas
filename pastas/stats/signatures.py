@@ -868,7 +868,7 @@ def fall_rate(
 
 
 def cv_rise_rate(
-    series: Series, normalize: bool = True, rolling_window: Union[str, None] = "7D"
+    series: Series, normalize: bool = False, rolling_window: Union[str, None] = "7D"
 ) -> float:
     """Coefficient of Variation in rise rate.
 
