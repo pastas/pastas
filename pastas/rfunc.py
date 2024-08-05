@@ -1514,7 +1514,7 @@ class Edelman(RfuncBase):
         **kwargs,
     ) -> None:
         logger.warning(
-            "This response function `Edelman` will be deprecated in Pastas "
+            "The `Edelman` response function will be deprecated in Pastas "
             "version 2.0 (https://github.com/pastas/pastas/issues/475). Please "
             "use the pastas-plugins library if you want to keep using this "
             "response function.",
