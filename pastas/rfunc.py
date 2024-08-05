@@ -2,7 +2,6 @@
 """This module contains all the response functions available in Pastas."""
 
 from logging import getLogger
-from warnings import warn
 
 import numpy as np
 from numpy import pi
@@ -1514,12 +1513,11 @@ class Edelman(RfuncBase):
         cutoff: float = 0.999,
         **kwargs,
     ) -> None:
-        warn(
+        logger.warning(
             "This response function `Edelman` will be deprecated in Pastas "
             "version 2.0 (https://github.com/pastas/pastas/issues/475). Please "
             "use the pastas-plugins library if you want to keep using this "
             "response function.",
-            category=FutureWarning,
         )
         RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
         self.nparam = 1
