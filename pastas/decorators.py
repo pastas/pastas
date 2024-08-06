@@ -95,7 +95,7 @@ def PastasDeprecationWarning(remove_version: str, reason: str = "") -> Any:
                 logger.warning(msg)
             else:
                 msg = (
-                    "%s is deprecated and has been removed in Pastas version %s. "
+                    "%s is deprecated and was removed in Pastas version %s. "
                     % (name, remove_version)
                 ) + reason
                 raise DeprecationWarning(msg)
