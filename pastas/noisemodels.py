@@ -357,7 +357,7 @@ class ArmaNoiseModel(NoiseModelBase):
 
 
 @PastasDeprecationWarning(
-    remove_version="2.0.0", reasoon="Please use `ps.ArmaNoiseModel` instead."
+    remove_version="2.0.0", reason="Please use `ps.ArmaNoiseModel` instead."
 )
 def ArmaModel(*args, **kwargs) -> ArmaNoiseModel:
     n = ArmaNoiseModel(*args, **kwargs)
