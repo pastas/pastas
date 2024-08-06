@@ -22,7 +22,7 @@ from pandas import (
 )
 
 # Internal Pastas
-from pastas.decorators import get_stressmodel
+from pastas.decorators import get_stressmodel, PastasDeprecationWarning
 from pastas.io.base import _load_model, dump
 from pastas.modelstats import Statistics
 from pastas.plotting.modelplots import Plotting, _table_formatter_stderr
@@ -927,6 +927,7 @@ class Model:
                 print(self.fit_report())
 
     @property
+    @PastasDeprecationWarning(remove_version="2.0.0", reason="Use 'ml.solver' instead.")
     def fit(self):
         """Deprecated attribute, use ml.solver instead."""
         msg = (
