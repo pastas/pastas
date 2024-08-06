@@ -3,7 +3,6 @@
 from itertools import combinations
 from logging import getLogger
 from typing import List, Optional
-from warnings import warn
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -660,7 +659,7 @@ class CompareModels:
 
         if smdict is None and self.smdict is None:
             if self.adjust_height:
-                warn(
+                logger.info(
                     "When combining stressmodels into one subplot in combination "
                     "with 'adjust_height', provide 'smdict' to "
                     "`initialize_adjust_height_figure()` for best results."

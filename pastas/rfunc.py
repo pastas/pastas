@@ -1513,6 +1513,12 @@ class Edelman(RfuncBase):
         cutoff: float = 0.999,
         **kwargs,
     ) -> None:
+        logger.warning(
+            "The `Edelman` response function will be deprecated in Pastas "
+            "version 2.0 (https://github.com/pastas/pastas/issues/475). Please "
+            "use the pastas-plugins library if you want to keep using this "
+            "response function.",
+        )
         RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
         self.nparam = 1
 

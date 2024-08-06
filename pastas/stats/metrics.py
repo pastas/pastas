@@ -14,7 +14,6 @@ or directly from a Pastas model:
 
 from logging import captureWarnings, getLogger
 from typing import Optional
-from warnings import warn
 
 from numpy import abs as npabs
 from numpy import average, log, nan, sqrt
@@ -687,10 +686,9 @@ def kge_2012(
     correlation are used.
     """
 
-    warn(
+    logger.warning(
         "This function `kge_2012` will be deprecated in Pastas version 2.0. Please use"
         "`pastas.stats.kge(modified=True)` to get the same outcome.",
-        category=FutureWarning,
     )
     return kge(
         obs=obs,
