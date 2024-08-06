@@ -784,7 +784,13 @@ class Plotting:
 
         return axes
 
-    @PastasDeprecationWarning
+    @PastasDeprecationWarning(
+        remove_version="1.6.0",
+        reason=(
+            "Quantifying contributions in one plot is ambiguous. "
+            "Users are encouraged develop this themselves."
+        ),
+    )
     @model_tmin_tmax
     def contributions_pie(
         self,
