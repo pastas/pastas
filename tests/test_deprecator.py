@@ -1,5 +1,6 @@
-from pastas.decorators import PastasDeprecationWarning
 import pytest
+
+from pastas.decorators import PastasDeprecationWarning
 
 
 def test_class_deprecation():

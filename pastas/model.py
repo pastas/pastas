@@ -22,7 +22,7 @@ from pandas import (
 )
 
 # Internal Pastas
-from pastas.decorators import get_stressmodel, PastasDeprecationWarning
+from pastas.decorators import PastasDeprecationWarning, get_stressmodel
 from pastas.io.base import _load_model, dump
 from pastas.modelstats import Statistics
 from pastas.plotting.modelplots import Plotting, _table_formatter_stderr
