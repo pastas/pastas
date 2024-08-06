@@ -107,6 +107,45 @@ def PastasDeprecationWarning(remove_version: str, reason: str = "") -> Any:
     return wrapper
 
 
+def deprecate_args_or_kwargs(
+    name: str, remove_version: str, reason: str = "", force_raise: bool = False
+):
+    """Provide a warning or error when a function argument is deprecated.
+
+    Parameters
+    ----------
+    name: str
+        The name of the argument that is deprecated.
+    remove_version: str
+        The version in which the argument will be removed.
+    reason: str, optional
+        The reason why the argument is deprecated. Or provide a message that tells the
+        user which alternative should be used.
+    force_raise: bool, optional
+        If True, raise a DeprecationWarning even if remove_version is still in the
+        future. Default is False.
+    """
+    if (not force_raise) and (CURRENT_PASTAS_VERSION < parse_version(remove_version)):
+        msg = (
+            "The '%s' argument is deprecated and will be removed in Pastas version %s. "
+            % (name, remove_version)
+        ) + reason
+        logger.warning(msg)
+    else:
+        if force_raise:
+            msg = (
+                "The %s argument is deprecated and will be removed in Pastas version %s. "
+                % (name, remove_version)
+            ) + reason
+        else:
+            msg = (
+                "The %s argument is deprecated and was removed in Pastas version %s. "
+                % (name, remove_version)
+            ) + reason
+
+        raise DeprecationWarning(msg)
+
+
 def njit(function: Optional[Function] = None, parallel: bool = False) -> Function:
     def njit_decorator(f: Function):
         try:

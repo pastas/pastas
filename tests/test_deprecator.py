@@ -1,6 +1,6 @@
 import pytest
 
-from pastas.decorators import PastasDeprecationWarning
+from pastas.decorators import PastasDeprecationWarning, deprecate_args_or_kwargs
 
 
 def test_class_deprecation():
@@ -64,3 +64,18 @@ def test_function_deprecation():
 
     with pytest.raises(DeprecationWarning):
         foo(1)  # raises error
+
+
+def test_deprecate_args_or_kwargs():
+    # log warning for future deprecation
+    deprecate_args_or_kwargs("test", remove_version="999.0.0", reason="Boo!")
+
+    # force error even for future deprecation
+    with pytest.raises(DeprecationWarning):
+        deprecate_args_or_kwargs(
+            "test", remove_version="999.0.0", reason="Boo!", force_raise=True
+        )
+
+    # raise error for past deprecation
+    with pytest.raises(DeprecationWarning):
+        deprecate_args_or_kwargs("test", remove_version="1.0.0", reason="Boo!")
