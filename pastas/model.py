@@ -22,7 +22,11 @@ from pandas import (
 )
 
 # Internal Pastas
-from pastas.decorators import PastasDeprecationWarning, get_stressmodel
+from pastas.decorators import (
+    PastasDeprecationWarning,
+    deprecate_args_or_kwargs,
+    get_stressmodel,
+)
 from pastas.io.base import _load_model, dump
 from pastas.modelstats import Statistics
 from pastas.plotting.modelplots import Plotting, _table_formatter_stderr
@@ -144,23 +148,25 @@ class Model:
         if noisemodel is not None:
             if noisemodel is True:
                 msg = (
-                    "The noisemodel argument is deprecated and will be removed in Pastas "
-                    "version 2.0.0. The new default is that no noisemodel is added "
+                    "The new default is that no noisemodel is added "
                     "anymore and a noisemodel has to be added explicitly to a Pastas "
                     "model by the user. To fix this error, do not pass a "
                     "noisemodel keyword to Model and use `ml.add_noisemodel`, if a "
                     "noisemodel is desired. See this issue on GitHub for more "
                     "information: https://github.com/pastas/pastas/issues/735"
                 )
+                deprecate_args_or_kwargs(
+                    "noisemodel", "2.0.0", reason=msg, force_raise=True
+                )
             elif noisemodel is False:
                 msg = (
-                    "The noisemodel argument is deprecated and will be removed in Pastas "
-                    "version 2.0.0. The new default is that no noisemodel is added "
+                    "The new default is that no noisemodel is added "
                     "anymore, so passing noisemodel=False is not needed anymore. To "
                     "fix this error, do not pass noisemodel=False to Model."
                 )
-            logger.error(msg)
-            raise ValueError(msg)
+                deprecate_args_or_kwargs(
+                    "noisemodel", "2.0.0", reason=msg, force_raise=True
+                )
 
         # File Information
         self.file_info = self._get_file_info()
@@ -721,16 +727,14 @@ class Model:
 
         if noise is not None:
             msg = (
-                "The noise argument is deprecated and will be removed in Pastas "
-                "version 2.0.0. The new behavior is that a noise model will always be "
+                "The new behavior is that a noise model will always be "
                 "used if it is present. To add a noisemodel to a model called ml, "
                 "use the ml.add_noisemodel method. To solve without a noisemodel, "
                 "make sure sure no noisemodel is added or remove a noisemodel with "
                 "ml.del_noisemodel() before solving. See this issue on GitHub for "
                 "more information: https://github.com/pastas/pastas/issues/735"
             )
-            logger.error(msg)
-            raise ValueError(msg)
+            deprecate_args_or_kwargs("noise", "2.0.0", reason=msg, force_raise=True)
 
         # Set the settings
         self.settings["weights"] = weights
@@ -857,23 +861,21 @@ class Model:
         if noise is not None:
             if noise is True:
                 msg = (
-                    "The noise argument is deprecated and will be removed in Pastas "
-                    "version 2.0.0. To solve using a noisemodel, add a noisemodel to a "
+                    "To solve using a noisemodel, add a noisemodel to a "
                     "model called ml using ml.add_noisemodel(n), where n is an instance "
                     "of a noisemodel (e.g., n = ps.ArNoiseModel()). See this issue on "
                     "GitHub for more information: "
                     "https://github.com/pastas/pastas/issues/735"
                 )
+                deprecate_args_or_kwargs("noise", "2.0.0", reason=msg, force_raise=True)
             elif noise is False:
                 msg = (
-                    "The noise argument is deprecated and will be removed in Pastas "
-                    "version 2.0.0. To solve without a noisemodel, remove the noisemodel "
-                    "(if present) from a model called ml using ml.del_noisemodel() before "
+                    "To solve without a noisemodel, remove the noisemodel "
+                    "(if present) from a model using ml.del_noisemodel() before "
                     "solving. See this issue on GitHub for more information: "
                     "https://github.com/pastas/pastas/issues/735"
                 )
-            logger.error(msg)
-            raise ValueError(msg)
+                deprecate_args_or_kwargs("noise", "2.0.0", reason=msg, force_raise=True)
 
         # Initialize the model
         self.initialize(
@@ -1891,11 +1893,8 @@ class Model:
         }
 
         if output is not None:
-            msg = (
-                "argument 'output' of the 'fit_report method' is deprecated and will"
-                "be removed in a future version. Use 'corr=True' instead."
-            )
-            logger.warning(msg)
+            msg = "Use 'corr=True' instead."
+            deprecate_args_or_kwargs("output", "2.0.0", reason=msg)
             if isinstance(output, str) and output == "full":
                 corr = True
 
