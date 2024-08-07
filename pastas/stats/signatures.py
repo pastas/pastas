@@ -1593,7 +1593,7 @@ def autocorr_time(series: Series, cutoff: float = 0.8, **kwargs) -> float:
     series: pandas.Series
         Pandas Series with DatetimeIndex and head values.
     cutoff: float, optional
-        Cut-off value for the autocorrelation function. Default is 0.7.
+        Cut-off value for the autocorrelation function. Default is 0.8.
     kwargs: dict, optional
         Additional keyword arguments are passed to the pastas acf method.
 
