@@ -912,6 +912,12 @@ class Model:
         solver = LeastSquares() if solver is None else solver
         if self.solver is None:
             self.add_solver(solver=solver)
+        elif self.solver._name != solver._name:
+            logger.info(
+                "Replacing original solver `%s` with new solver `%s`."
+                % (self.solver._name, solver._name)
+            )
+            self.add_solver(solver=solver)
 
         # Solve model
         success, optimal, stderr = self.solver.solve(
