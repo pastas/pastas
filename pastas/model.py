@@ -777,37 +777,24 @@ class Model:
             self.parameters.loc["constant_d", "initial"] = 0.0
             self.normalize_residuals = True
 
-    def add_solver(
-        self,
-        solver: Solver,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
-        freq: Optional[str] = None,
-        warmup: Optional[float] = None,
-        initial: bool = True,
-        weights: Optional[Series] = None,
-        fit_constant: bool = True,
-        freq_obs: Optional[str] = None,
-    ) -> None:
-        # Initialize the model
-        self.initialize(
-            tmin=tmin,
-            tmax=tmax,
-            freq=freq,
-            warmup=warmup,
-            weights=weights,
-            initial=initial,
-            fit_constant=fit_constant,
-            freq_obs=freq_obs,
-        )
+    def add_solver(self, solver: Solver) -> None:
+        """Method to add a solver to the model.
 
-        if self.oseries_calib.empty:
-            msg = "Calibration series 'oseries_calib' is empty! Check 'tmin' or 'tmax'."
-            logger.error(msg)
-            raise ValueError(msg)
+        Parameters
+        ----------
+        solver: Class pastas.solver.Solver
+        Instance of a pastas Solver class used to solve the model. Options
+        are: ps.LeastSquares(), ps.LmfitSolve() or ps.EmceeSolve(). An
+        instance is needed as of Pastas 0.23, not a class!
 
+        See Also
+        --------
+        pastas.solver
+            Different solver objects are available to estimate parameters.
+        """
         self.solver = solver
-        self.solver.set_model(self)
+        if self.solver.model is None:
+            self.solver.set_model(self)
         self.settings["solver"] = self.solver._name
 
     def solve(
@@ -823,6 +810,7 @@ class Model:
         weights: Optional[Series] = None,
         fit_constant: bool = True,
         freq_obs: Optional[str] = None,
+        initialize: bool = True,
         **kwargs,
     ) -> None:
         """Method to solve the time series model.
@@ -908,21 +896,22 @@ class Model:
             logger.error(msg)
             raise ValueError(msg)
 
+        if initialize:
+            self.initialize(
+                tmin=tmin,
+                tmax=tmax,
+                freq=freq,
+                warmup=warmup,
+                weights=weights,
+                initial=initial,
+                fit_constant=fit_constant,
+                freq_obs=freq_obs,
+            )
+
         # Create the default solver if None is provided or already present
         if self.solver is None:
             solver = LeastSquares()
-
-        self.add_solver(
-            solver=solver,
-            tmin=tmin,
-            tmax=tmax,
-            freq=freq,
-            warmup=warmup,
-            weights=weights,
-            initial=initial,
-            fit_constant=fit_constant,
-            freq_obs=freq_obs,
-        )
+            self.add_solver(solver=solver)
 
         # Solve model
         success, optimal, stderr = self.solver.solve(
