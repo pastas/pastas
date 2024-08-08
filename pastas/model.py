@@ -777,6 +777,39 @@ class Model:
             self.parameters.loc["constant_d", "initial"] = 0.0
             self.normalize_residuals = True
 
+    def add_solver(
+        self,
+        solver: Solver,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+        freq: Optional[str] = None,
+        warmup: Optional[float] = None,
+        initial: bool = True,
+        weights: Optional[Series] = None,
+        fit_constant: bool = True,
+        freq_obs: Optional[str] = None,
+    ) -> None:
+        # Initialize the model
+        self.initialize(
+            tmin=tmin,
+            tmax=tmax,
+            freq=freq,
+            warmup=warmup,
+            weights=weights,
+            initial=initial,
+            fit_constant=fit_constant,
+            freq_obs=freq_obs,
+        )
+
+        if self.oseries_calib.empty:
+            msg = "Calibration series 'oseries_calib' is empty! Check 'tmin' or 'tmax'."
+            logger.error(msg)
+            raise ValueError(msg)
+
+        self.solver = solver
+        self.solver.set_model(self)
+        self.settings["solver"] = self.solver._name
+
     def solve(
         self,
         tmin: Optional[TimestampType] = None,
@@ -875,8 +908,12 @@ class Model:
             logger.error(msg)
             raise ValueError(msg)
 
-        # Initialize the model
-        self.initialize(
+        # Create the default solver if None is provided or already present
+        if self.solver is None:
+            solver = LeastSquares()
+
+        self.add_solver(
+            solver=solver,
             tmin=tmin,
             tmax=tmax,
             freq=freq,
@@ -886,22 +923,6 @@ class Model:
             fit_constant=fit_constant,
             freq_obs=freq_obs,
         )
-
-        if self.oseries_calib.empty:
-            msg = "Calibration series 'oseries_calib' is empty! Check 'tmin' or 'tmax'."
-            logger.error(msg)
-            raise ValueError(msg)
-
-        # If a solver is provided, use that one
-        if solver is not None:
-            self.solver = solver
-            self.solver.set_model(self)
-        # Create the default solver if None is provided or already present
-        elif self.solver is None:
-            self.solver = LeastSquares()
-            self.solver.set_model(self)
-
-        self.settings["solver"] = self.solver._name
 
         # Solve model
         success, optimal, stderr = self.solver.solve(
