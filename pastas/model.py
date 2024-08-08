@@ -793,7 +793,7 @@ class Model:
             Different solver objects are available to estimate parameters.
         """
         self.solver = solver
-        if self.solver.model is None:
+        if self.solver.ml is None:
             self.solver.set_model(self)
         self.settings["solver"] = self.solver._name
 
