@@ -909,8 +909,8 @@ class Model:
             )
 
         # Create the default solver if None is provided or already present
+        solver = LeastSquares() if solver is None else solver
         if self.solver is None:
-            solver = LeastSquares()
             self.add_solver(solver=solver)
 
         # Solve model
