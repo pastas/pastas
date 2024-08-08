@@ -908,6 +908,11 @@ class Model:
                 freq_obs=freq_obs,
             )
 
+        if self.oseries_calib.empty:
+            msg = "Calibration series 'oseries_calib' is empty! Check 'tmin' or 'tmax'."
+            logger.error(msg)
+            raise ValueError(msg)
+
         # Create the default solver if None is provided or already present
         solver = LeastSquares() if solver is None else solver
         if self.solver is None:
