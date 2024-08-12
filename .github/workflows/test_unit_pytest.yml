@@ -36,7 +36,7 @@ jobs:
             toxenv: py312
             experimental: false
           - name: Test suite with py313-ubuntu
-            python: "3.13"
+            python: "3.13.0rc1"
             toxenv: py313
             experimental: true
           - name: Test suite for all unit tests including Notebooks
