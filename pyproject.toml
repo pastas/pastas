@@ -97,7 +97,7 @@ markers = ["notebooks: run notebooks", "bnotebooks: run benchmark notebooks"]
 legacy_tox_ini = """
     [tox]
     requires = tox>=4
-    env_list = ruff, notebooks, py{39,310,311,312}
+    env_list = ruff, notebooks, py{39,310,311,312,313}
 
     [testenv]
     description = run unit tests
