@@ -137,7 +137,7 @@ def ghg(
     tmax: pandas.Timestamp, optional
         The highest index to take into account.
     fill_method : str
-        see .. :mod: pastas.stats.__gxg__
+        see .. :mod: pastas.stats.dutch._gxg
     limit : int or None, optional
         Maximum number of days to fill using fill method, use None to fill nothing.
     output : str, optional
@@ -224,7 +224,7 @@ def glg(
     tmax: pandas.Timestamp, optional
         The highest index to take into account.
     fill_method : str, optional
-        see .. :mod: pastas.stats.__gxg__
+        see .. :mod: pastas.stats.dutch._gxg
     limit : int or None, optional
         Maximum number of days to fill using fill method, use None to fill nothing.
     output : str, optional
@@ -311,7 +311,7 @@ def gvg(
     tmax: pandas.Timestamp, optional
         The highest index to take into account.
     fill_method : str, optional
-        see .. :mod: pastas.stats.__gxg__
+        see .. :mod: pastas.stats.dutch._gxg
     limit : int or None, optional
         Maximum number of days to fill using fill method, use None to fill nothing.
     output : str, optional
@@ -386,7 +386,7 @@ def gg(
     tmax: pandas.Timestamp, optional
         The highest index to take into account.
     fill_method : str, optional
-        see .. :mod: pastas.stats.__gxg__
+        see .. :mod: pastas.stats.dutch._gxg
     limit : int or None, optional
         Maximum number of days to fill using fill method, use None to fill nothing.
     output : str, optional
