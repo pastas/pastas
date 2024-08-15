@@ -794,7 +794,7 @@ class Model:
             Different solver objects are available to estimate parameters.
         """
         self.solver = solver
-        if self.solver.ml is None:
+        if not hasattr(self.solver, "ml") or self.solver.ml is None:
             self.solver.set_model(self)
         self.settings["solver"] = self.solver._name
 
