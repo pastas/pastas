@@ -782,10 +782,11 @@ class Model:
 
         Parameters
         ----------
-        solver: Class pastas.solver.Solver
-        Instance of a pastas Solver class used to solve the model. Options
-        are: ps.LeastSquares(), ps.LmfitSolve() or ps.EmceeSolve(). An
-        instance is needed as of Pastas 0.23, not a class!
+        solver: pastas.solver.Solver
+            Instance of a pastas Solver class used to solve the model. Options are:
+            ps.LeastSquares(), ps.LmfitSolve() or ps.EmceeSolve(). An instance
+            (e.g. ps.LeastSquares()) is needed as of Pastas 0.23, not a class (e.g.
+            ps.LeastSquares)!
 
         See Also
         --------
@@ -858,6 +859,12 @@ class Model:
             multiple of that e.g. "7D". Should generally be larger than the frequency
             of the original observations and the model frequency (freq). If freq_obs
             is not set, the frequency of the model (freq) will be used.
+        initialize: bool, optional
+            If True, the model is initialized via the Model.initialize() method
+            (setting certain model settings) before solving. If False, the
+            model is not initialized before solving. Note that the latter is an
+            advanced option since some model settings can be missing. Default
+            is True.
         **kwargs: dict, optional
             All keyword arguments will be passed onto minimization method from the
             solver. It depends on the solver used which arguments can be used.
