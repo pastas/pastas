@@ -321,7 +321,7 @@ class Model:
 
         # check whether noise_alpha is not smaller than ml.settings["freq"]
         freq_in_days = _get_dt(self.settings["freq"])
-        noise_alpha = self.noisemodel.parameters.initial.iloc[0]
+        noise_alpha = self.noisemodel.parameters.initial.iat[0]
         if freq_in_days > noise_alpha:
             self.noisemodel._set_initial("noise_alpha", freq_in_days)
 

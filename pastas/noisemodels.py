@@ -247,7 +247,7 @@ class ArNoiseModel(NoiseModelBase):
 
         """
         alpha = p[0]
-        last_residual = res.iloc[-1]
+        last_residual = res.iat[-1]
         last_date = res.index[-1]
         dt = (tindex - last_date).days
         correction = Series(
