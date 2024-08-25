@@ -1704,7 +1704,7 @@ class TarsoModel(RechargeModel):
                 "dist": "uniform",
             }
         )
-        p1.at[f"{self.name}_d"] = pd1
+        p1.loc[f"{self.name}_d"] = pd1
         p1.index = [f"{x}1" for x in p1.index]
 
         # parameters for the recharge-method
