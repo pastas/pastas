@@ -1947,7 +1947,7 @@ class Model:
             cor = DataFrame(columns=["value"])
             for idx, col in combinations(self.solver.pcor, 2):
                 if np.abs(self.solver.pcor.at[idx, col]) > 0.5:
-                    cor.at[f"{idx} {col}"] = self.solver.pcor.at[idx, col]
+                    cor.at[f"{idx} {col}"] = self.solver.pcor.loc[idx, col]
 
             corr = (
                 f"\n\nParameter correlations |rho| > 0.5\n"
