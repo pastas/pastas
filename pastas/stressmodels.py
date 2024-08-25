@@ -114,7 +114,7 @@ class StressModelBase:
         -----
         The preferred method for parameter setting is through the model.
         """
-        self.parameters.loc[name, "initial"] = value
+        self.parameters.at[name, "initial"] = value
 
     @set_parameter
     def _set_pmin(self, name: str, value: float) -> None:
@@ -124,7 +124,7 @@ class StressModelBase:
         -----
         The preferred method for parameter setting is through the model.
         """
-        self.parameters.loc[name, "pmin"] = value
+        self.parameters.at[name, "pmin"] = value
 
     @set_parameter
     def _set_pmax(self, name: str, value: float) -> None:
@@ -134,7 +134,7 @@ class StressModelBase:
         -----
         The preferred method for parameter setting is through the model.
         """
-        self.parameters.loc[name, "pmax"] = value
+        self.parameters.at[name, "pmax"] = value
 
     @set_parameter
     def _set_vary(self, name: str, value: float) -> None:
@@ -144,7 +144,7 @@ class StressModelBase:
         -----
         The preferred method for parameter setting is through the model.
         """
-        self.parameters.loc[name, "vary"] = bool(value)
+        self.parameters.at[name, "vary"] = bool(value)
 
     @set_parameter
     def _set_dist(self, name: str, value: str) -> None:
@@ -154,7 +154,7 @@ class StressModelBase:
         -----
         The preferred method for parameter setting is through the model.
         """
-        self.parameters.loc[name, "dist"] = str(value)
+        self.parameters.at[name, "dist"] = str(value)
 
     def update_stress(
         self,
@@ -506,7 +506,7 @@ class StepModel(StressModelBase):
         tmax = Timestamp.max.toordinal()
         tinit = self.tstart.toordinal()
 
-        self.parameters.loc[self.name + "_tstart"] = (
+        self.parameters.at[self.name + "_tstart"] = (
             tinit,
             tmin,
             tmax,
@@ -595,7 +595,7 @@ class LinearTrend(StressModelBase):
         tmin = Timestamp.min.toordinal()
         tmax = Timestamp.max.toordinal()
 
-        self.parameters.loc[self.name + "_a"] = (
+        self.parameters.at[self.name + "_a"] = (
             0.0,
             -np.inf,
             np.inf,
@@ -603,7 +603,7 @@ class LinearTrend(StressModelBase):
             self.name,
             "uniform",
         )
-        self.parameters.loc[self.name + "_tstart"] = (
+        self.parameters.at[self.name + "_tstart"] = (
             start,
             tmin,
             tmax,
@@ -611,7 +611,7 @@ class LinearTrend(StressModelBase):
             self.name,
             "uniform",
         )
-        self.parameters.loc[self.name + "_tend"] = (
+        self.parameters.at[self.name + "_tend"] = (
             end,
             tmin,
             tmax,
@@ -642,7 +642,7 @@ class LinearTrend(StressModelBase):
             tmax = Timestamp.fromordinal(int(p[2]))
 
         trend = tindex.to_series().diff() / Timedelta(1, "D")
-        trend.loc[:tmin] = 0
+        trend.at[:tmin] = 0
         trend.loc[tmax:] = 0
         trend = trend.cumsum() * p[0]
         return trend.rename(self.name)
@@ -689,7 +689,7 @@ class Constant(StressModelBase):
         self.set_init_parameters()
 
     def set_init_parameters(self):
-        self.parameters.loc[self.name + "_d"] = (
+        self.parameters.at[self.name + "_d"] = (
             self.initial,
             np.nan,
             np.nan,
@@ -1107,11 +1107,11 @@ class WellModel(StressModelBase):
             model.logger.warning("Covariance matrix contains only NaNs!")
 
         # get parameters and (co)variances
-        A = model.parameters.loc[self.name + "_A", "optimal"]
-        b = model.parameters.loc[self.name + "_b", "optimal"]
-        var_A = model.solver.pcov.loc[self.name + "_A", self.name + "_A"]
-        var_b = model.solver.pcov.loc[self.name + "_b", self.name + "_b"]
-        cov_Ab = model.solver.pcov.loc[self.name + "_A", self.name + "_b"]
+        A = model.parameters.at[self.name + "_A", "optimal"]
+        b = model.parameters.at[self.name + "_b", "optimal"]
+        var_A = model.solver.pcov.at[self.name + "_A", self.name + "_A"]
+        var_b = model.solver.pcov.at[self.name + "_b", self.name + "_b"]
+        cov_Ab = model.solver.pcov.at[self.name + "_A", self.name + "_b"]
 
         if istress is None and r is None:
             r = np.asarray(self.distances)
@@ -1688,7 +1688,7 @@ class TarsoModel(RechargeModel):
                 "dist": "uniform",
             }
         )
-        p0.loc[f"{self.name}_d"] = pd0
+        p0.at[f"{self.name}_d"] = pd0
         p0.index = [f"{x}0" for x in p0.index]
 
         # parameters for the second drainage level
@@ -1704,7 +1704,7 @@ class TarsoModel(RechargeModel):
                 "dist": "uniform",
             }
         )
-        p1.loc[f"{self.name}_d"] = pd1
+        p1.at[f"{self.name}_d"] = pd1
         p1.index = [f"{x}1" for x in p1.index]
 
         # parameters for the recharge-method
@@ -1927,7 +1927,7 @@ class ChangeModel(StressModelBase):
         tmax = Timestamp.max.toordinal()
         tchange = self.tchange.toordinal()
 
-        self.parameters.loc[self.name + "_beta"] = (
+        self.parameters.at[self.name + "_beta"] = (
             0.0,
             -np.inf,
             np.inf,
@@ -1935,7 +1935,7 @@ class ChangeModel(StressModelBase):
             self.name,
             "uniform",
         )
-        self.parameters.loc[self.name + "_tchange"] = (
+        self.parameters.at[self.name + "_tchange"] = (
             tchange,
             tmin,
             tmax,
