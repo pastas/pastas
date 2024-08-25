@@ -689,7 +689,7 @@ class Constant(StressModelBase):
         self.set_init_parameters()
 
     def set_init_parameters(self):
-        self.parameters.at[self.name + "_d"] = (
+        self.parameters.loc[self.name + "_d"] = (
             self.initial,
             np.nan,
             np.nan,
