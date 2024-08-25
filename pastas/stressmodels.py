@@ -506,7 +506,7 @@ class StepModel(StressModelBase):
         tmax = Timestamp.max.toordinal()
         tinit = self.tstart.toordinal()
 
-        self.parameters.at[self.name + "_tstart"] = (
+        self.parameters.loc[self.name + "_tstart"] = (
             tinit,
             tmin,
             tmax,
@@ -595,7 +595,7 @@ class LinearTrend(StressModelBase):
         tmin = Timestamp.min.toordinal()
         tmax = Timestamp.max.toordinal()
 
-        self.parameters.at[self.name + "_a"] = (
+        self.parameters.loc[self.name + "_a"] = (
             0.0,
             -np.inf,
             np.inf,
@@ -603,7 +603,7 @@ class LinearTrend(StressModelBase):
             self.name,
             "uniform",
         )
-        self.parameters.at[self.name + "_tstart"] = (
+        self.parameters.loc[self.name + "_tstart"] = (
             start,
             tmin,
             tmax,
@@ -611,7 +611,7 @@ class LinearTrend(StressModelBase):
             self.name,
             "uniform",
         )
-        self.parameters.at[self.name + "_tend"] = (
+        self.parameters.loc[self.name + "_tend"] = (
             end,
             tmin,
             tmax,
@@ -642,7 +642,7 @@ class LinearTrend(StressModelBase):
             tmax = Timestamp.fromordinal(int(p[2]))
 
         trend = tindex.to_series().diff() / Timedelta(1, "D")
-        trend.at[:tmin] = 0
+        trend.loc[:tmin] = 0
         trend.loc[tmax:] = 0
         trend = trend.cumsum() * p[0]
         return trend.rename(self.name)
@@ -1927,7 +1927,7 @@ class ChangeModel(StressModelBase):
         tmax = Timestamp.max.toordinal()
         tchange = self.tchange.toordinal()
 
-        self.parameters.at[self.name + "_beta"] = (
+        self.parameters.loc[self.name + "_beta"] = (
             0.0,
             -np.inf,
             np.inf,
@@ -1935,7 +1935,7 @@ class ChangeModel(StressModelBase):
             self.name,
             "uniform",
         )
-        self.parameters.at[self.name + "_tchange"] = (
+        self.parameters.loc[self.name + "_tchange"] = (
             tchange,
             tmin,
             tmax,
