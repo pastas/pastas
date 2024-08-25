@@ -1688,7 +1688,7 @@ class TarsoModel(RechargeModel):
                 "dist": "uniform",
             }
         )
-        p0.at[f"{self.name}_d"] = pd0
+        p0.loc[f"{self.name}_d"] = pd0
         p0.index = [f"{x}0" for x in p0.index]
 
         # parameters for the second drainage level
