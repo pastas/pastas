@@ -449,7 +449,7 @@ class Statistics:
         stats = DataFrame(columns=["Value"])
 
         for k in stats_to_compute:
-            stats.loc[k] = getattr(self, k)(tmin=tmin, tmax=tmax)
+            stats.at[k] = getattr(self, k)(tmin=tmin, tmax=tmax)
 
         stats.index.name = "Statistic"
         return stats

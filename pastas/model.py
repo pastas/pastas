@@ -2077,11 +2077,11 @@ class Model:
                 pmax = -np.inf
 
             # determine hits
-            upperhit.loc[p] = np.allclose(
-                self.parameters.loc[p, "optimal"], pmax, atol=atol, rtol=1e-5
+            upperhit.at[p] = np.allclose(
+                self.parameters.at[p, "optimal"], pmax, atol=atol, rtol=1e-5
             )
-            lowerhit.loc[p] = np.allclose(
-                self.parameters.loc[p, "optimal"], pmin, atol=atol, rtol=1e-5
+            lowerhit.at[p] = np.allclose(
+                self.parameters.at[p, "optimal"], pmin, atol=atol, rtol=1e-5
             )
 
         return lowerhit, upperhit
