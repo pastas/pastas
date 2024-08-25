@@ -645,7 +645,7 @@ class LmfitSolve(BaseSolver):
         parameters = lmfit.Parameters()
         p = self.ml.parameters.loc[:, ["initial", "pmin", "pmax", "vary"]]
         for k in p.index:
-            pp = np.where(p.loc[k].isnull(), None, p.loc[k])
+            pp = np.where(p.at[k].isnull(), None, p.at[k])
             parameters.add(k, value=pp[0], min=pp[1], max=pp[2], vary=pp[3])
 
         # Create the Minimizer object and minimize
@@ -1095,27 +1095,27 @@ class EmceeSolve(BaseSolver):
 
         # Set the initial value
         if initial is not None:
-            self.parameters.loc[name, "initial"] = float(initial)
+            self.parameters.at[name, "initial"] = float(initial)
 
         # Set the vary property
         if vary is not None:
-            self.parameters.loc[name, "vary"] = bool(vary)
+            self.parameters.at[name, "vary"] = bool(vary)
 
         # Set the minimum value
         if pmin is not None:
-            self.parameters.loc[name, "pmin"] = float(pmin)
+            self.parameters.at[name, "pmin"] = float(pmin)
 
         # Set the maximum value
         if pmax is not None:
-            self.parameters.loc[name, "pmax"] = float(pmax)
+            self.parameters.at[name, "pmax"] = float(pmax)
 
         # Set the optimal value
         if optimal is not None:
-            self.parameters.loc[name, "optimal"] = float(optimal)
+            self.parameters.at[name, "optimal"] = float(optimal)
 
         # Set the distribution
         if dist is not None:
-            self.parameters.loc[name, "dist"] = str(dist)
+            self.parameters.at[name, "dist"] = str(dist)
 
     def to_dict(self) -> dict:
         """This method is not supported for this solver.
