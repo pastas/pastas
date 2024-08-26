@@ -793,7 +793,7 @@ class WellModel(StressModelBase):
     This class implements convolution of multiple series with the same response
     function. This can be applied when dealing with multiple wells in a time series
     model. The distance(s) from the pumping well(s) to the monitoring well have to be
-    provided for each stress.
+    provided for each stress. See :cite:t:`brakenhoff_application_2022` for more details on the methods for this model.
 
     Only works with the HantushWellModel response function.
     """
