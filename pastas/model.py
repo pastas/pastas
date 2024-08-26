@@ -327,7 +327,7 @@ class Model:
 
         # check whether noise_alpha is not smaller than ml.settings["freq"]
         freq_in_days = _get_dt(self.settings["freq"])
-        noise_alpha = self.noisemodel.parameters.initial.iloc[0]
+        noise_alpha = self.noisemodel.parameters.initial.iat[0]
         if freq_in_days > noise_alpha:
             self.noisemodel._set_initial("noise_alpha", freq_in_days)
 
@@ -777,8 +777,8 @@ class Model:
                 msg = "fit_constant needs to be True (for now) when a transform is used"
                 logger.error(msg)
                 raise Exception(msg)
-            self.parameters.loc["constant_d", "vary"] = False
-            self.parameters.loc["constant_d", "initial"] = 0.0
+            self.parameters.at["constant_d", "vary"] = False
+            self.parameters.at["constant_d", "initial"] = 0.0
             self.normalize_residuals = True
 
     def add_solver(self, solver: Solver) -> None:
@@ -1023,7 +1023,7 @@ class Model:
         transform = self.transform.name if self.transform else "NotPresent"
 
         # Get the model component for the parameter
-        cat = self.parameters.loc[name, "name"]
+        cat = self.parameters.at[name, "name"]
 
         if cat in self.stressmodels.keys():
             obj = self.stressmodels[cat]
@@ -1041,28 +1041,28 @@ class Model:
                 logger.error(msg)
                 raise KeyError(msg)
 
-            factor = initial / self.parameters.loc[name, "initial"]
-            pmin = self.parameters.loc[name, "pmin"] * factor
-            pmax = self.parameters.loc[name, "pmax"] * factor
+            factor = initial / self.parameters.at[name, "initial"]
+            pmin = self.parameters.at[name, "pmin"] * factor
+            pmax = self.parameters.at[name, "pmax"] * factor
 
         # Set the parameter properties
         if initial is not None:
             obj._set_initial(name, initial)
-            self.parameters.loc[name, "initial"] = initial
+            self.parameters.at[name, "initial"] = initial
         if vary is not None:
             obj._set_vary(name, vary)
-            self.parameters.loc[name, "vary"] = bool(vary)
+            self.parameters.at[name, "vary"] = bool(vary)
         if pmin is not None:
             obj._set_pmin(name, pmin)
-            self.parameters.loc[name, "pmin"] = pmin
+            self.parameters.at[name, "pmin"] = pmin
         if pmax is not None:
             obj._set_pmax(name, pmax)
-            self.parameters.loc[name, "pmax"] = pmax
+            self.parameters.at[name, "pmax"] = pmax
         if dist is not None:
             obj._set_dist(name, dist)
-            self.parameters.loc[name, "dist"] = dist
+            self.parameters.at[name, "dist"] = dist
         if optimal is not None:
-            self.parameters.loc[name, "optimal"] = optimal
+            self.parameters.at[name, "optimal"] = optimal
 
     def _get_time_offset(self, freq: str) -> Timedelta:
         """Internal method to get the time offsets from the stressmodels.
@@ -1997,15 +1997,15 @@ class Model:
 
             if nhits > 0:
                 for p in upperhit.index:
-                    if upperhit.loc[p]:
+                    if upperhit.at[p]:
                         msg.append(
                             f"Parameter '{p}' on upper bound: "
-                            f"{self.parameters.loc[p, 'pmax']:.2e}"
+                            f"{self.parameters.at[p, 'pmax']:.2e}"
                         )
-                    elif lowerhit.loc[p]:
+                    elif lowerhit.at[p]:
                         msg.append(
                             f"Parameter '{p}' on lower bound: "
-                            f"{self.parameters.loc[p, 'pmin']:.2e}"
+                            f"{self.parameters.at[p, 'pmin']:.2e}"
                         )
             # check response t_cutoff vs length calibration period
             response_tmax_check = self._check_response_tmax()
@@ -2064,7 +2064,7 @@ class Model:
                 kwargs = {"warn": False}
             else:
                 kwargs = {}
-            check.loc[sm_name, "response_tmax"] = self.get_response_tmax(
+            check.at[sm_name, "response_tmax"] = self.get_response_tmax(
                 sm_name, cutoff=cutoff, **kwargs
             )
 
@@ -2088,8 +2088,8 @@ class Model:
         lowerhit = Series(index=self.parameters.index, dtype=bool)
 
         for p in self.parameters.index:
-            pmax = self.parameters.loc[p, "pmax"]
-            pmin = self.parameters.loc[p, "pmin"]
+            pmax = self.parameters.at[p, "pmax"]
+            pmin = self.parameters.at[p, "pmin"]
 
             # calculate atol based on minimum, with max 1e-8
             # otherwise set 1 order of magnitude lower than minimum value
@@ -2105,11 +2105,11 @@ class Model:
                 pmax = -np.inf
 
             # determine hits
-            upperhit.loc[p] = np.allclose(
-                self.parameters.loc[p, "optimal"], pmax, atol=atol, rtol=1e-5
+            upperhit.at[p] = np.allclose(
+                self.parameters.at[p, "optimal"], pmax, atol=atol, rtol=1e-5
             )
-            lowerhit.loc[p] = np.allclose(
-                self.parameters.loc[p, "optimal"], pmin, atol=atol, rtol=1e-5
+            lowerhit.at[p] = np.allclose(
+                self.parameters.at[p, "optimal"], pmin, atol=atol, rtol=1e-5
             )
 
         return lowerhit, upperhit
