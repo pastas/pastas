@@ -645,7 +645,7 @@ class LmfitSolve(BaseSolver):
         parameters = lmfit.Parameters()
         p = self.ml.parameters.loc[:, ["initial", "pmin", "pmax", "vary"]]
         for k in p.index:
-            pp = np.where(p.at[k].isnull(), None, p.at[k])
+            pp = np.where(p.loc[k].isnull(), None, p.loc[k])
             parameters.add(k, value=pp[0], min=pp[1], max=pp[2], vary=pp[3])
 
         # Create the Minimizer object and minimize
