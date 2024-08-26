@@ -20,7 +20,7 @@ def generate_synthetic_heads(input, rfunc, params, const=10.0, cutoff=0.999, dt=
     h = const * np.ones(len(input) + step.size)
 
     for i in range(len(input)):
-        h[i : i + step.size] += input.iloc[i] * step
+        h[i : i + step.size] += input.iat[i] * step
 
     head = Series(
         index=input.index,

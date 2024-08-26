@@ -39,7 +39,7 @@ Basics
 
 `A basic model`_
 
-`Fixating parameters while fitting`_
+`Fixing parameters while fitting`_
 
 `Calibration`_
 

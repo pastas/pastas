@@ -150,6 +150,10 @@ class BaseSolver:
             DataFrame of length number of observations and two columns labeled
             0.025 and 0.975 (numerical values) containing the 2.5% and 97.5%
             prediction interval (for alpha=0.05)
+        **kwargs
+            Additional keyword arguments are passed to the `ml.simulate()` method.
+            For example, `tmin` and `tmax` can be passed as keyword arguments to compute
+            the prediction interval for a specific period.
 
         Notes
         -----
@@ -179,6 +183,10 @@ class BaseSolver:
             DataFrame of length number of observations and two columns labeled
             0.025 and 0.975 (numerical values) containing the 2.5% and 97.5%
             interval (for alpha=0.05)
+        **kwargs
+            Additional keyword arguments are passed to the `ml.simulate()` method.
+            For example, `tmin` and `tmax` can be passed as keyword arguments to compute
+            the confidence interval for a specific period.
 
         Notes
         -----
@@ -207,6 +215,9 @@ class BaseSolver:
             DataFrame of length number of observations and two columns labeled
             0.025 and 0.975 (numerical values) containing the 2.5% and 97.5%
             interval (for alpha=0.05)
+        **kwargs
+            Additional keyword arguments are passed to the `ml.get_block_response()`
+            method.
 
         Notes
         -----
@@ -242,6 +253,9 @@ class BaseSolver:
             DataFrame of length number of observations and two columns labeled
             0.025 and 0.975 (numerical values) containing the 2.5% and 97.5%
             interval (for alpha=0.05)
+        **kwargs
+            Additional keyword arguments are passed to the `ml.get_step_response()`
+            method.
 
         Notes
         -----
@@ -276,7 +290,11 @@ class BaseSolver:
         data : Pandas.DataFrame
             DataFrame of length number of observations and two columns labeled
             0.025 and 0.975 (numerical values) containing the 2.5% and 97.5%
-            interval (for alpha=0.05)
+            interval (for alpha=0.05).
+        **kwargs
+            Additional keyword arguments are passed to the `ml.get_contribution()`
+            method. For example, `tmin` and `tmax` can be passed as keyword arguments to
+            compute the confidence interval of a contribution for a specific period.
 
         Notes
         -----
@@ -1077,27 +1095,27 @@ class EmceeSolve(BaseSolver):
 
         # Set the initial value
         if initial is not None:
-            self.parameters.loc[name, "initial"] = float(initial)
+            self.parameters.at[name, "initial"] = float(initial)
 
         # Set the vary property
         if vary is not None:
-            self.parameters.loc[name, "vary"] = bool(vary)
+            self.parameters.at[name, "vary"] = bool(vary)
 
         # Set the minimum value
         if pmin is not None:
-            self.parameters.loc[name, "pmin"] = float(pmin)
+            self.parameters.at[name, "pmin"] = float(pmin)
 
         # Set the maximum value
         if pmax is not None:
-            self.parameters.loc[name, "pmax"] = float(pmax)
+            self.parameters.at[name, "pmax"] = float(pmax)
 
         # Set the optimal value
         if optimal is not None:
-            self.parameters.loc[name, "optimal"] = float(optimal)
+            self.parameters.at[name, "optimal"] = float(optimal)
 
         # Set the distribution
         if dist is not None:
-            self.parameters.loc[name, "dist"] = str(dist)
+            self.parameters.at[name, "dist"] = str(dist)
 
     def to_dict(self) -> dict:
         """This method is not supported for this solver.

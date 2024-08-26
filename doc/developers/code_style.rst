@@ -3,7 +3,7 @@ Pastas Code Style
 This page provides information on the code style to use when writing code for Pastas.
 
 Formatting and Linting
-----------------
+----------------------
 To ensure high quality code that is easy to read and maintain we follow the
 `Ruff <https://docs.astral.sh/ruff/>`_ code standard. Please checkout the `Ruff
 Documentation <https://docs.astral.sh/ruff/>`_ on how to format Python code

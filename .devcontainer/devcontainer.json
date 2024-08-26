@@ -1,0 +1,16 @@
+{
+    "name": "Pastas",
+    // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+    "image": "mcr.microsoft.com/devcontainers/python:0-3.11",
+    "updateContentCommand": "chmod u+x .devcontainer/setup.sh && .devcontainer/setup.sh && chmod 666 .devcontainer/setup.sh",
+    "postAttachCommand": "code doc/examples/basic_model.ipynb", //alternative for customizations openFile -> https://github.com/orgs/community/discussions/58399#discussioncomment-6222762
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "github.codespaces",
+                "ms-python.python",
+                "ms-toolsai.jupyter"
+            ]
+        }
+    }
+}

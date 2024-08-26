@@ -1,3 +1,4 @@
+import pytest
 from pandas import Series
 
 from pastas import Model
@@ -39,7 +40,8 @@ def test_stresses(ml: Model) -> None:
 
 
 def test_contributions_pie(ml: Model) -> None:
-    _ = ml.plots.contributions_pie()
+    with pytest.raises(DeprecationWarning):
+        _ = ml.plots.contributions_pie()
 
 
 def test_compare(ml: Model) -> None:
