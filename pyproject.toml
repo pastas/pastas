@@ -88,6 +88,9 @@ profile = "black"
 
 [tool.ruff]
 extend-include = ["*.ipynb"]
+lint.extend-select = ["I"]
+show-fixes = true
+fix = true
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers --durations=0"
