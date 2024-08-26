@@ -222,7 +222,7 @@ class FlexModel(RechargeBase):
         parameters.loc[name + "_lp"] = (0.25, 1e-5, 1, False, name, "uniform")
         parameters.loc[name + "_ks"] = (100.0, 1e-5, 1e4, True, name, "uniform")
         parameters.loc[name + "_gamma"] = (2.0, 1e-5, 20.0, True, name, "uniform")
-        parameters.loc[name + "_kv"] = (1.0, 0.25, 2.0, False, name, "uniform")
+        parameters.loc[name + "_kv"] = (1.0, 0.25, 2.0, True, name, "uniform")
         if self.interception:
             parameters.loc[name + "_simax"] = (2.0, 0.0, 10.0, False, name, "uniform")
         if self.gw_uptake:
