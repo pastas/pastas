@@ -11,6 +11,12 @@ a large number of non-published reports, partly listed in a `GitHub repo here <h
 Peer-reviewed publications
 --------------------------
 
+2024
+****
+.. bibliography:: publications.bib
+    :list: bullet
+    :filter: year == "2024"
+
 2023
 ****
 .. bibliography:: publications.bib
