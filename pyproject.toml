@@ -80,12 +80,6 @@ numbascipy = ["numba-scipy >= 0.3.1"]
 [tool.setuptools.dynamic]
 version = { attr = "pastas.version.__version__" }
 
-[tool.black]
-line-length = 88
-
-[tool.isort]
-profile = "black"
-
 [tool.ruff]
 extend-include = ["*.ipynb"]
 lint.extend-select = ["I"]
