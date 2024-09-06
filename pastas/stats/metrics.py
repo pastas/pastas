@@ -647,6 +647,7 @@ def kge(
     kge = 1 - sqrt((r - 1) ** 2 + (beta - 1) ** 2 + (gamma - 1) ** 2)
     return kge
 
+
 @PastasDeprecationWarning(
     remove_version="2.0",
     reason="""This function `kge_2012` will be deprecated in Pastas version 2.0. Please
