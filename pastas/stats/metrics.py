@@ -19,6 +19,7 @@ from numpy import abs as npabs
 from numpy import average, log, nan, sqrt
 from pandas import Series
 
+from pastas.decorators import PastasDeprecationWarning
 from pastas.stats.core import _get_weights, mean, std, var
 
 __all__ = [
@@ -646,7 +647,11 @@ def kge(
     kge = 1 - sqrt((r - 1) ** 2 + (beta - 1) ** 2 + (gamma - 1) ** 2)
     return kge
 
-
+@PastasDeprecationWarning(
+    remove_version="2.0",
+    reason="""This function `kge_2012` will be deprecated in Pastas version 2.0. Please
+    use `pastas.stats.kge(modified=True)` to get the same outcome.""",
+)
 def kge_2012(
     obs: Series,
     sim: Series,
@@ -685,11 +690,6 @@ def kge_2012(
     weighted equals True, the weighted mean, variance and pearson
     correlation are used.
     """
-
-    logger.warning(
-        "This function `kge_2012` will be deprecated in Pastas version 2.0. Please use"
-        "`pastas.stats.kge(modified=True)` to get the same outcome.",
-    )
     return kge(
         obs=obs,
         sim=sim,
