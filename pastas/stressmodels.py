@@ -114,7 +114,7 @@ class StressModelBase:
         -----
         The preferred method for parameter setting is through the model.
         """
-        self.parameters.loc[name, "initial"] = value
+        self.parameters.at[name, "initial"] = value
 
     @set_parameter
     def _set_pmin(self, name: str, value: float) -> None:
@@ -124,7 +124,7 @@ class StressModelBase:
         -----
         The preferred method for parameter setting is through the model.
         """
-        self.parameters.loc[name, "pmin"] = value
+        self.parameters.at[name, "pmin"] = value
 
     @set_parameter
     def _set_pmax(self, name: str, value: float) -> None:
@@ -134,7 +134,7 @@ class StressModelBase:
         -----
         The preferred method for parameter setting is through the model.
         """
-        self.parameters.loc[name, "pmax"] = value
+        self.parameters.at[name, "pmax"] = value
 
     @set_parameter
     def _set_vary(self, name: str, value: float) -> None:
@@ -144,7 +144,7 @@ class StressModelBase:
         -----
         The preferred method for parameter setting is through the model.
         """
-        self.parameters.loc[name, "vary"] = bool(value)
+        self.parameters.at[name, "vary"] = bool(value)
 
     @set_parameter
     def _set_dist(self, name: str, value: str) -> None:
@@ -154,7 +154,7 @@ class StressModelBase:
         -----
         The preferred method for parameter setting is through the model.
         """
-        self.parameters.loc[name, "dist"] = str(value)
+        self.parameters.at[name, "dist"] = str(value)
 
     def update_stress(
         self,
@@ -793,7 +793,7 @@ class WellModel(StressModelBase):
     This class implements convolution of multiple series with the same response
     function. This can be applied when dealing with multiple wells in a time series
     model. The distance(s) from the pumping well(s) to the monitoring well have to be
-    provided for each stress.
+    provided for each stress. See :cite:t:`brakenhoff_application_2022` for more details on the methods for this model.
 
     Only works with the HantushWellModel response function.
     """
@@ -1107,11 +1107,11 @@ class WellModel(StressModelBase):
             model.logger.warning("Covariance matrix contains only NaNs!")
 
         # get parameters and (co)variances
-        A = model.parameters.loc[self.name + "_A", "optimal"]
-        b = model.parameters.loc[self.name + "_b", "optimal"]
-        var_A = model.solver.pcov.loc[self.name + "_A", self.name + "_A"]
-        var_b = model.solver.pcov.loc[self.name + "_b", self.name + "_b"]
-        cov_Ab = model.solver.pcov.loc[self.name + "_A", self.name + "_b"]
+        A = model.parameters.at[self.name + "_A", "optimal"]
+        b = model.parameters.at[self.name + "_b", "optimal"]
+        var_A = model.solver.pcov.at[self.name + "_A", self.name + "_A"]
+        var_b = model.solver.pcov.at[self.name + "_b", self.name + "_b"]
+        cov_Ab = model.solver.pcov.at[self.name + "_A", self.name + "_b"]
 
         if istress is None and r is None:
             r = np.asarray(self.distances)

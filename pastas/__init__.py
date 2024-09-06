@@ -1,4 +1,4 @@
-# flake8: noqa
+# ruff: noqa: D104 F401
 import logging
 import warnings
 

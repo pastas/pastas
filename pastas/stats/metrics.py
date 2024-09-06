@@ -14,12 +14,12 @@ or directly from a Pastas model:
 
 from logging import captureWarnings, getLogger
 from typing import Optional
-from warnings import warn
 
 from numpy import abs as npabs
 from numpy import average, log, nan, sqrt
 from pandas import Series
 
+from pastas.decorators import PastasDeprecationWarning
 from pastas.stats.core import _get_weights, mean, std, var
 
 __all__ = [
@@ -648,6 +648,11 @@ def kge(
     return kge
 
 
+@PastasDeprecationWarning(
+    remove_version="2.0",
+    reason="""This function `kge_2012` will be deprecated in Pastas version 2.0. Please
+    use `pastas.stats.kge(modified=True)` to get the same outcome.""",
+)
 def kge_2012(
     obs: Series,
     sim: Series,
@@ -686,12 +691,6 @@ def kge_2012(
     weighted equals True, the weighted mean, variance and pearson
     correlation are used.
     """
-
-    warn(
-        "This function `kge_2012` will be deprecated in Pastas version 2.0. Please use"
-        "`pastas.stats.kge(modified=True)` to get the same outcome.",
-        category=FutureWarning,
-    )
     return kge(
         obs=obs,
         sim=sim,

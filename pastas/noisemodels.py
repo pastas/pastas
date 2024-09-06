@@ -28,7 +28,7 @@ from pandas import DataFrame, DatetimeIndex, Series, Timedelta
 
 from pastas.typing import ArrayLike
 
-from .decorators import njit, set_parameter
+from .decorators import PastasDeprecationWarning, njit, set_parameter
 
 logger = getLogger(__name__)
 
@@ -69,7 +69,7 @@ class NoiseModelBase:
         -----
         The preferred method for parameter setting is through the model.
         """
-        self.parameters.loc[name, "initial"] = value
+        self.parameters.at[name, "initial"] = value
 
     @set_parameter
     def _set_pmin(self, name: str, value: float) -> None:
@@ -79,7 +79,7 @@ class NoiseModelBase:
         -----
         The preferred method for parameter setting is through the model.
         """
-        self.parameters.loc[name, "pmin"] = value
+        self.parameters.at[name, "pmin"] = value
 
     @set_parameter
     def _set_pmax(self, name: str, value: float) -> None:
@@ -89,7 +89,7 @@ class NoiseModelBase:
         -----
         The preferred method for parameter setting is through the model.
         """
-        self.parameters.loc[name, "pmax"] = value
+        self.parameters.at[name, "pmax"] = value
 
     @set_parameter
     def _set_vary(self, name: str, value: float) -> None:
@@ -99,7 +99,7 @@ class NoiseModelBase:
         -----
         The preferred method for parameter setting is through the model.
         """
-        self.parameters.loc[name, "vary"] = value
+        self.parameters.at[name, "vary"] = value
 
     @set_parameter
     def _set_dist(self, name: str, value: str) -> None:
@@ -109,7 +109,7 @@ class NoiseModelBase:
         -----
         The preferred method for parameter setting is through the model.
         """
-        self.parameters.loc[name, "dist"] = str(value)
+        self.parameters.at[name, "dist"] = str(value)
 
     def to_dict(self) -> dict:
         """Method to return a dict to store the noise model"""
@@ -247,7 +247,7 @@ class ArNoiseModel(NoiseModelBase):
 
         """
         alpha = p[0]
-        last_residual = res.iloc[-1]
+        last_residual = res.iat[-1]
         last_date = res.index[-1]
         dt = (tindex - last_date).days
         correction = Series(
@@ -264,11 +264,10 @@ class ArNoiseModel(NoiseModelBase):
         return data
 
 
+@PastasDeprecationWarning(
+    remove_version="2.0.0", reason="Please use `ps.ArNoiseModel` instead."
+)
 def NoiseModel(*args, **kwargs) -> ArNoiseModel:
-    logger.warning(
-        "NoiseModel has been renamed to ArNoiseModel and will be deprecated in Pastas "
-        "version 2.0. Please use ArNoiseModel."
-    )
     n = ArNoiseModel(*args, **kwargs)
     n._name = "NoiseModel"
     return n
@@ -357,11 +356,10 @@ class ArmaNoiseModel(NoiseModelBase):
         return a
 
 
+@PastasDeprecationWarning(
+    remove_version="2.0.0", reason="Please use `ps.ArmaNoiseModel` instead."
+)
 def ArmaModel(*args, **kwargs) -> ArmaNoiseModel:
-    logger.warning(
-        "ArmaModel has been renamed to ArmaNoiseModel and will be deprecated in Pastas "
-        "version 2.0. Please use ArmaNoiseModel."
-    )
     n = ArmaNoiseModel(*args, **kwargs)
     n._name = "ArmaModel"
     return n

@@ -31,6 +31,7 @@ except ImportError:
 # Type Hinting
 from typing import Optional, Union
 
+from pastas.decorators import PastasDeprecationWarning
 from pastas.typing import ArrayLike
 
 logger = getLogger(__name__)
@@ -1479,6 +1480,13 @@ class DoubleExponential(RfuncBase):
         return s
 
 
+@PastasDeprecationWarning(
+    remove_version="2.0.0",
+    reason=(
+        "Please use the pastas-plugins library if you want to keep using this "
+        "response function (https://github.com/pastas/pastas/issues/475)."
+    ),
+)
 class Edelman(RfuncBase):
     """The function of Edelman, describing the propagation of an instantaneous
     water level change into an adjacent half-infinite aquifer.
