@@ -504,7 +504,7 @@ class LeastSquares(BaseSolver):
         **kwargs,
     ) -> None:
         BaseSolver.__init__(self, pcov=pcov, nfev=nfev, **kwargs)
-
+        self.p_estimates = []
     def solve(
         self,
         noise: bool = True,
@@ -553,6 +553,7 @@ class LeastSquares(BaseSolver):
     ) -> ArrayLike:
         par = self.initial
         par[self.vary] = p
+        self.p_estimates.append(list(p))
         return self.misfit(p=par, noise=noise, weights=weights, callback=callback)
 
     def _get_covariances(
