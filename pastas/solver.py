@@ -18,7 +18,7 @@ from typing import Optional, Tuple, Union
 import numpy as np
 from pandas import DataFrame, Series
 from scipy.linalg import svd
-from scipy.optimize import least_squares
+from scipy.optimize import least_squares, Bounds
 
 from pastas.objective_functions import GaussianLikelihood
 from pastas.typing import ArrayLike, CallBack, Function, Model
@@ -505,6 +505,7 @@ class LeastSquares(BaseSolver):
     ) -> None:
         BaseSolver.__init__(self, pcov=pcov, nfev=nfev, **kwargs)
         self.p_estimates = []
+
     def solve(
         self,
         noise: bool = True,
@@ -517,16 +518,33 @@ class LeastSquares(BaseSolver):
         parameters = self.ml.parameters.loc[self.vary]
 
         # Set the boundaries
-        bounds = (
-            np.where(parameters.pmin.isnull(), -np.inf, parameters.pmin),
-            np.where(parameters.pmax.isnull(), np.inf, parameters.pmax),
-        )
+        method = kwargs.pop("method") if "method" in kwargs else "trf"
+        if method == "lm":
+            logger.info(
+                "Method 'lm' does not support boundaries. Ignoring Pastas'"
+                "`pmin` and `pmax` parameter bounds and setting them to `nan`."
+            )
+            bounds = Bounds(
+                lb=np.full(len(parameters), -np.inf),
+                ub=np.full(len(parameters), np.inf),
+                keep_feasible=True,
+            )
+            # set to nan because that's what is used by the solver
+            self.ml.parameters.loc[self.vary, "pmin"] = np.nan
+            self.ml.parameters.loc[self.vary, "pmax"] = np.nan
+        else:
+            bounds = Bounds(
+                lb=np.where(parameters.pmin.isnull(), -np.inf, parameters.pmin),
+                ub=np.where(parameters.pmax.isnull(), np.inf, parameters.pmax),
+                keep_feasible=True,
+            )
 
         self.result = least_squares(
             self.objfunction,
             bounds=bounds,
             x0=parameters.initial.values,
             args=(noise, weights, callback),
+            method=method,
             **kwargs,
         )
 
