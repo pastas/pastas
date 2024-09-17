@@ -18,7 +18,7 @@ from typing import Optional, Tuple, Union
 import numpy as np
 from pandas import DataFrame, Series
 from scipy.linalg import svd
-from scipy.optimize import least_squares, Bounds
+from scipy.optimize import Bounds, least_squares
 
 from pastas.objective_functions import GaussianLikelihood
 from pastas.typing import ArrayLike, CallBack, Function, Model
