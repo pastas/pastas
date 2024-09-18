@@ -591,8 +591,10 @@ class LeastSquares(BaseSolver):
 
         Notes
         -----
-        This method is copied from Scipy, please refer to:
-        https://github.com/scipy/scipy/blob/v1.0.0/scipy/optimize/optimize.py
+        This method is copied from Scipy:
+        https://github.com/scipy/scipy/blob/92d2a8592782ee19a1161d0bf3fc2241ba78bb63/scipy/optimize/_minpack_py.py#L1029-L1055
+        Please refer to the SciPy optimization module::
+        https://docs.scipy.org/doc/scipy/reference/optimize.html
         """
         cost = 2 * cost  # res.cost is half sum of squares!
 
