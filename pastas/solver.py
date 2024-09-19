@@ -589,8 +589,9 @@ class LeastSquares(BaseSolver):
         jacobian : ArrayLike
             The jacobian matrix with dimensions nobs, npar.
         cost : float
-            The cost value of the scipy.optimize.OptimizeResult, typically half
-            the sum of squares.
+            The cost value of the scipy.optimize.OptimizeResult which is half
+            the sum of squares. That's why the cost is multiplied by a factor
+            of two internally to get the sum of squares.
         absolute_sigma : bool, optional
             If True, `sigma` is used in an absolute sense and the estimated
             parameter covariance `pcov` reflects these absolute values. If
@@ -625,9 +626,12 @@ class LeastSquares(BaseSolver):
 
         if method == "lm":
             # https://github.com/scipy/scipy/blob/92d2a8592782ee19a1161d0bf3fc2241ba78bb63/scipy/optimize/_minpack_py.py#L480C9-L499C38
-            # fjac A permutation of the R matrix of a QR factorization of the final approximate Jacobian matrix.
+            # fjac A permutation of the R matrix of a QR factorization of the
+            # final approximate Jacobian matrix.
             _, fjac = np.linalg.qr(jacobian)
-            # leastsq expects the jacobian to be in fortran order (npar, nobs) that why it is transposed in the original code
+            # leastsq expects the fjacobian to be in fortran order (npar, nobs)
+            # that why it is transposed in the original code
+
             ipvt = np.arange(1, npar + 1, dtype=int)
             n = len(ipvt)
             r = np.triu(fjac[:n, :])
@@ -648,7 +652,10 @@ class LeastSquares(BaseSolver):
                 # inverse of permuted matrix is a permutation of matrix inverse
                 invR, trtri_info = inv_triu(r)  # default: upper, non-unit diag
                 if trtri_info != 0:  # explicit comparison for readability
-                    raise LinAlgError(f"trtri returned info {trtri_info}")
+                    logger.warning(
+                        f"LinAlgError in trtri. LAPACK trtri returned info: {trtri_info}"
+                    )
+                    raise LinAlgError
                 invR[perm] = invR.copy()
                 pcov = invR @ invR.T  # cov_x in the original code
             except (LinAlgError, ValueError):
@@ -662,23 +669,22 @@ class LeastSquares(BaseSolver):
             VT = VT[: s.size]
             pcov = np.dot(VT.T / s**2, VT)
 
-        warn_cov = False
         if pcov is None or np.isnan(pcov).any():
             # indeterminate covariance
             pcov = np.full(shape=(npar, npar), fill_value=np.inf, dtype=float)
-            warn_cov = True
+            logger.warning(
+                "Covariance of the parameters could not be estimated. "
+                "The covariance of the parameters is set to infinity."
+            )
         elif not absolute_sigma:
             if nobs > npar:
                 pcov = pcov * s_sq
             else:
                 pcov = np.full(shape=(npar, npar), fill_value=np.inf, dtype=float)
-                warn_cov = True
-
-        if warn_cov:
-            logger.warning(
-                "Covariance of the parameters could not be estimated. "
-                "The covariance of the parameters is set to infinity."
-            )
+                logger.warning(
+                    "Covariance of the parameters could not be estimated. "
+                    "The covariance of the parameters is set to infinity."
+                )
 
         return pcov
 
