@@ -655,6 +655,7 @@ class Plotting:
         stressmodels: Optional[List[str]] = None,
         ax: Optional[Axes] = None,
         figsize: Optional[tuple] = None,
+        legend: bool = True,
         **kwargs,
     ) -> Axes:
         """Plot the block response for a specific stressmodels.
@@ -667,6 +668,8 @@ class Plotting:
             Axes to add the plot to.
         figsize: tuple, optional
             Tuple with the height and width of the figure in inches.
+        legend: bool, optional
+            Boolean to determine to show the legend. Default is True.
 
         Returns
         -------
@@ -688,9 +691,10 @@ class Plotting:
             else:
                 logger.warning("Stressmodel %s not in stressmodels list.", name)
 
-        plt.xlim(0)
-        plt.xlabel("Time [days]")
-        plt.legend(legend)
+        ax.set_xlim(0)
+        ax.set_xlabel("Time [days]")
+        if legend:
+            ax.legend(legend)
         return ax
 
     def step_response(
@@ -698,6 +702,7 @@ class Plotting:
         stressmodels: Optional[List[str]] = None,
         ax: Optional[Axes] = None,
         figsize: Optional[tuple] = None,
+        legend: bool = True,
         **kwargs,
     ) -> Axes:
         """Plot the step response for a specific stressmodels.
@@ -706,6 +711,12 @@ class Plotting:
         ----------
         stressmodels: list, optional
             List with the stressmodels to plot the block response for.
+        ax: matplotlib.axes.Axes, optional
+            Axes to add the plot to.
+        figsize: tuple, optional
+            Tuple with the height and width of the figure in inches.
+        legend: bool, optional
+            Boolean to determine to show the legend. Default is True.
 
         Returns
         -------
@@ -727,9 +738,10 @@ class Plotting:
             else:
                 logger.warning("Stressmodel %s not in stressmodels list.", name)
 
-        plt.xlim(0)
-        plt.xlabel("Time [days]")
-        plt.legend(legend)
+        ax.set_xlim(0)
+        ax.set_xlabel("Time [days]")
+        if legend:
+            ax.legend(legend)
         return ax
 
     @model_tmin_tmax
