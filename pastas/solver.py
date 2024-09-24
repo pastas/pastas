@@ -7,7 +7,6 @@ noise series.
 To solve a model the following syntax can be used:
 
 >>> ml.solve(solver=ps.LeastSquares())
-dummy_line
 """
 
 import importlib
