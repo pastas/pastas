@@ -870,7 +870,7 @@ class Hantush(RfuncBase):
         # approximate formula for tmax
         if cutoff is None:
             cutoff = self.cutoff
-        a, b = p[1:]
+        a, b = p[1], p[2]
         rho = 2 * np.sqrt(b)
         return lambertw(1 / ((1 - cutoff) * k0(rho))).real * a
 
