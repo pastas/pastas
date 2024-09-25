@@ -592,6 +592,8 @@ class LeastSquares(BaseSolver):
             The cost value of the scipy.optimize.OptimizeResult which is half
             the sum of squares. That's why the cost is multiplied by a factor
             of two internally to get the sum of squares.
+        method : Literal["trf", "dogbox", "lm"], optional
+            Algorithm with which the minimization is performed. Default is "trf".
         absolute_sigma : bool, optional
             If True, `sigma` is used in an absolute sense and the estimated
             parameter covariance `pcov` reflects these absolute values. If
@@ -604,8 +606,6 @@ class LeastSquares(BaseSolver):
             residuals after the fit. Default is False.
             Mathematically, ``pcov(absolute_sigma=False) =
             pcov(absolute_sigma=True) * chisq(popt)/(M-N)``
-        method : Literal["trf", "dogbox", "lm"], optional
-            Algorithm with which the minimization is performed. Default is "trf".
 
         Returns
         -------
