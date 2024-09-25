@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 
 import numpy as np
 from IPython.display import display
@@ -82,7 +82,7 @@ def response_memory(
     ml,
     cutoff: float = 0.95,
     factor_length_oseries: float = 0.5,
-    stressmodel: Optional[list[str] | str] = None,
+    stressmodel: Optional[Union[list[str], str]] = None,
 ):
     """Check if response function memory is shorter than fraction of calibration period.
 
@@ -188,7 +188,7 @@ def response_memory(
 def uncertainty_gain(
     ml: Model,
     n_std: float = 2.0,
-    stressmodel: Optional[list[str] | str] = None,
+    stressmodel: Optional[Union[list[str], str]] = None,
 ):
     """Check if the gain is larger than n_std times the uncertainty in the gain.
 
@@ -220,7 +220,7 @@ def uncertainty_gain(
     return df
 
 
-def parameter_bounds(ml: Model, parameters: Optional[list[str] | str] = None):
+def parameter_bounds(ml: Model, parameters: Optional[Union[list[str], str]] = None):
     """Check if the optimal parameter values are not on the lower or upper bounds.
 
     Parameters
@@ -265,7 +265,7 @@ def parameter_bounds(ml: Model, parameters: Optional[list[str] | str] = None):
 
 def uncertainty_parameters(
     ml: Model,
-    parameters: Optional[list[str] | str] = None,
+    parameters: Optional[Union[list[str], str]] = None,
     n_std: float = 2.0,
 ):
     """Check if parameter value is larger than n_std times the standard deviation.
@@ -456,7 +456,7 @@ def _diagnostic_test(ml: Model, test: str, p_threshold: float = 0.05, **kwargs):
     return df
 
 
-def checklist(ml: Model, checks: list[str | Callable | dict], report=True):
+def checklist(ml: Model, checks: list[Union[str, Callable, dict]], report=True):
     """Run a list of checks on a Pastas model.
 
     Parameters
