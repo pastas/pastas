@@ -54,6 +54,12 @@ def ml_sm() -> ps.Model:
 
 
 @pytest.fixture
+def ml_solved(ml: ps.Model) -> ps.Model:
+    ml.solve()
+    return ml
+
+
+@pytest.fixture
 def ml_no_settings() -> ps.Model:
     ml_no_settings = ps.Model(obs.dropna(), name="Test_Model")
     ml_no_settings.add_noisemodel(ps.ArNoiseModel())
