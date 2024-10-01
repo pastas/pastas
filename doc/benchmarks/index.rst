@@ -12,7 +12,3 @@ Pastas is built on numerous scientific works. This section contains a number of 
     noisemodel
     armamodel
     pastas_uncertainty_benchmark
-
-.. note::
-    The benchmark notebooks are currently not included in the continuous integration and are thus not
-    run on a regular basis like the other notebooks.
