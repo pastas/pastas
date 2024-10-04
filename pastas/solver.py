@@ -13,12 +13,12 @@ import importlib
 from logging import getLogger
 
 # Type Hinting
-from typing import Optional, Tuple, Union
+from typing import Literal, Optional, Tuple, Union
 
 import numpy as np
 from pandas import DataFrame, Series
-from scipy.linalg import svd
-from scipy.optimize import least_squares
+from scipy.linalg import LinAlgError, get_lapack_funcs, svd
+from scipy.optimize import Bounds, least_squares
 
 from pastas.objective_functions import GaussianLikelihood
 from pastas.typing import ArrayLike, CallBack, Function, Model
@@ -517,21 +517,40 @@ class LeastSquares(BaseSolver):
         parameters = self.ml.parameters.loc[self.vary]
 
         # Set the boundaries
-        bounds = (
-            np.where(parameters.pmin.isnull(), -np.inf, parameters.pmin),
-            np.where(parameters.pmax.isnull(), np.inf, parameters.pmax),
-        )
+        method = kwargs.pop("method") if "method" in kwargs else "trf"
+        if method == "lm":
+            logger.info(
+                "Method 'lm' does not support boundaries. Ignoring Pastas'"
+                "`pmin` and `pmax` parameter bounds and setting them to `nan`."
+            )
+            bounds = Bounds(
+                lb=np.full(len(parameters), -np.inf),
+                ub=np.full(len(parameters), np.inf),
+                keep_feasible=True,
+            )
+            # set to nan because that's what is used by the solver
+            self.ml.parameters.loc[self.vary, "pmin"] = np.nan
+            self.ml.parameters.loc[self.vary, "pmax"] = np.nan
+        else:
+            bounds = Bounds(
+                lb=np.where(parameters.pmin.isnull(), -np.inf, parameters.pmin),
+                ub=np.where(parameters.pmax.isnull(), np.inf, parameters.pmax),
+                keep_feasible=True,
+            )
 
         self.result = least_squares(
             self.objfunction,
             bounds=bounds,
             x0=parameters.initial.values,
             args=(noise, weights, callback),
+            method=method,
             **kwargs,
         )
 
         self.pcov = DataFrame(
-            self._get_covariances(self.result.jac, self.result.cost),
+            LeastSquares.get_covariances(
+                self.result.jac, self.result.cost, method=method, absolute_sigma=False
+            ),
             index=parameters.index,
             columns=parameters.index,
         )
@@ -555,53 +574,117 @@ class LeastSquares(BaseSolver):
         par[self.vary] = p
         return self.misfit(p=par, noise=noise, weights=weights, callback=callback)
 
-    def _get_covariances(
-        self, jacobian: ArrayLike, cost: float, absolute_sigma: bool = False
+    @staticmethod
+    def get_covariances(
+        jacobian: ArrayLike,
+        cost: float,
+        method: Literal["trf", "dogbox", "lm"] = "trf",
+        absolute_sigma: bool = False,
     ) -> ArrayLike:
-        """Internal method to get the covariance matrix from the jacobian.
+        """
+        Method to get the covariance matrix from the jacobian.
 
         Parameters
         ----------
-        jacobian: array_like
-        cost: float
-        absolute_sigma: bool
-            Default is False.
+        jacobian : ArrayLike
+            The jacobian matrix with dimensions nobs, npar.
+        cost : float
+            The cost value of the scipy.optimize.OptimizeResult which is half
+            the sum of squares. That's why the cost is multiplied by a factor
+            of two internally to get the sum of squares.
+        method : Literal["trf", "dogbox", "lm"], optional
+            Algorithm with which the minimization is performed. Default is "trf".
+        absolute_sigma : bool, optional
+            If True, `sigma` is used in an absolute sense and the estimated
+            parameter covariance `pcov` reflects these absolute values. If
+            False (default), only the relative magnitudes of the `sigma` values
+            matter. The returned parameter covariance matrix `pcov` is based on
+            scaling `sigma` by a constant factor. This constant is set by
+            demanding that the reduced `chisq` for the optimal parameters
+            `popt` when using the *scaled* `sigma` equals unity. In other
+            words, `sigma` is scaled to match the sample variance of the
+            residuals after the fit. Default is False.
+            Mathematically, ``pcov(absolute_sigma=False) =
+            pcov(absolute_sigma=True) * chisq(popt)/(M-N)``
 
         Returns
         -------
         pcov: array_like
-            array with the covariance matrix.
+            numpy array with the covariance matrix.
 
         Notes
         -----
-        This method is copied from Scipy, please refer to:
-        https://github.com/scipy/scipy/blob/v1.0.0/scipy/optimize/optimize.py
+        This method is copied from Scipy:
+        https://github.com/scipy/scipy/blob/92d2a8592782ee19a1161d0bf3fc2241ba78bb63/scipy/optimize/_minpack_py.py
+        Please refer to the SciPy optimization module::
+        https://docs.scipy.org/doc/scipy/reference/optimize.html
         """
-        cost = 2 * cost  # res.cost is half sum of squares!
 
-        # Do Moore-Penrose inverse discarding zero singular values.
-        _, s, VT = svd(jacobian, full_matrices=False)
-        threshold = np.finfo(float).eps * max(jacobian.shape) * s[0]
-        s = s[s > threshold]
-        VT = VT[: s.size]
-        pcov = np.dot(VT.T / s**2, VT)
-        n_param = self.ml.parameters.index.size
-        warn_cov = False
-        if pcov is None:
+        nobs, npar = jacobian.shape
+        cost = 2 * cost  # res.cost is half sum of squares!
+        s_sq = cost / (nobs - npar)  # variance of the residuals
+
+        if method == "lm":
+            # https://github.com/scipy/scipy/blob/92d2a8592782ee19a1161d0bf3fc2241ba78bb63/scipy/optimize/_minpack_py.py#L480C9-L499C38
+            # fjac A permutation of the R matrix of a QR factorization of the
+            # final approximate Jacobian matrix.
+            _, fjac = np.linalg.qr(jacobian)
+            # leastsq expects the fjacobian to be in fortran order (npar, nobs)
+            # that why it is transposed in the original code
+
+            ipvt = np.arange(1, npar + 1, dtype=int)
+            n = len(ipvt)
+            r = np.triu(fjac[:n, :])
+
+            # old method deprecated in scipy 1.10.0 since
+            # the explicit dot product was not necessary and sometimes
+            # the result was not symmetric positive definite.
+            # See https://github.com/scipy/scipy/issues/4555.
+            # old method
+            # perm = np.take(np.eye(n), ipvt - 1, 0)
+            # R = np.dot(r, perm)
+            # cov_x = np.linalg.inv(np.dot(np.transpose(R), R))
+
+            # new method:
+            perm = ipvt - 1
+            inv_triu = get_lapack_funcs("trtri", (r,))
+            try:
+                # inverse of permuted matrix is a permutation of matrix inverse
+                invR, trtri_info = inv_triu(r)  # default: upper, non-unit diag
+                if trtri_info != 0:  # explicit comparison for readability
+                    logger.warning(
+                        f"LinAlgError in trtri. LAPACK trtri returned info: {trtri_info}"
+                    )
+                    raise LinAlgError
+                invR[perm] = invR.copy()
+                pcov = invR @ invR.T  # cov_x in the original code
+            except (LinAlgError, ValueError):
+                pcov = None
+        else:
+            # https://github.com/scipy/scipy/blob/92d2a8592782ee19a1161d0bf3fc2241ba78bb63/scipy/optimize/_minpack_py.py#L1029-L1055
+            # Do Moore-Penrose inverse discarding zero singular values.
+            _, s, VT = svd(jacobian, full_matrices=False)
+            threshold = np.finfo(float).eps * max(jacobian.shape) * s[0]
+            s = s[s > threshold]
+            VT = VT[: s.size]
+            pcov = np.dot(VT.T / s**2, VT)
+
+        if pcov is None or np.isnan(pcov).any():
             # indeterminate covariance
-            pcov = np.zeros((n_param, n_param), dtype=float)
-            pcov.fill(np.inf)
-            warn_cov = True
+            pcov = np.full(shape=(npar, npar), fill_value=np.inf, dtype=float)
+            logger.warning(
+                "Covariance of the parameters could not be estimated. "
+                "The covariance of the parameters is set to infinity."
+            )
         elif not absolute_sigma:
-            if self.ml.oseries.series.index.size > n_param:
-                s_sq = cost / (self.ml.oseries.series.index.size - n_param)
+            if nobs > npar:
                 pcov = pcov * s_sq
             else:
-                pcov.fill(np.inf)
-                warn_cov = True
-
-        if warn_cov:
-            logger.warning("Covariance of the parameters could not be estimated")
+                pcov = np.full(shape=(npar, npar), fill_value=np.inf, dtype=float)
+                logger.warning(
+                    "Covariance of the parameters could not be estimated. "
+                    "The covariance of the parameters is set to infinity."
+                )
 
         return pcov
 
