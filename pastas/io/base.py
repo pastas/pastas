@@ -150,9 +150,15 @@ def _load_model(data: dict) -> Model:
     # Convert parameters to numeric
     ml.parameters = ml.parameters.infer_objects()
 
-    # When initial values changed
-    for param, value in ml.parameters.loc[:, "initial"].items():
-        ml.set_parameter(name=param, initial=value)
+    # When parameter initial values and bounds changed
+    for pname, data in ml.parameters.iterrows():
+        ml.set_parameter(
+            name=pname,
+            initial=data.at["initial"],
+            vary=data.at["vary"],
+            pmin=data.at["pmin"],
+            pmax=data.at["pmax"],
+        )
 
     return ml
 
