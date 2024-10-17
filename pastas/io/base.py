@@ -151,13 +151,13 @@ def _load_model(data: dict) -> Model:
     ml.parameters = ml.parameters.infer_objects()
 
     # When parameter initial values and bounds changed
-    for pname, data in ml.parameters.iterrows():
+    for pname, pdata in ml.parameters.iterrows():
         ml.set_parameter(
             name=pname,
-            initial=data.at["initial"],
-            vary=data.at["vary"],
-            pmin=data.at["pmin"],
-            pmax=data.at["pmax"],
+            initial=pdata.at["initial"],
+            vary=pdata.at["vary"],
+            pmin=pdata.at["pmin"],
+            pmax=pdata.at["pmax"],
         )
 
     return ml
