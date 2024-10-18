@@ -5,6 +5,11 @@ def test_least_squares(ml: ps.Model):
     ml.solve(solver=ps.LeastSquares())
 
 
+def test_least_squares_lm(ml: ps.Model):
+    ml.solve(solver=ps.LeastSquares(), method="lm")
+    assert ml.parameters.loc[ml.parameters.vary, "pmin"].isna().all()
+
+
 def test_fit_constant(ml: ps.Model):
     ml.solve(fit_constant=False)
 
