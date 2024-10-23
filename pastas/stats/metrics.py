@@ -12,7 +12,7 @@ or directly from a Pastas model:
 >>> ml.stats.rmse()
 """
 
-from logging import captureWarnings, getLogger
+from logging import getLogger
 from typing import Optional
 
 from numpy import abs as npabs
@@ -36,11 +36,7 @@ __all__ = [
     "kge",
 ]
 
-captureWarnings(True)
 logger = getLogger(__name__)
-warnings_logger = getLogger("py.warnings")
-logger.addHandler(warnings_logger)
-
 
 # Absolute Error Metrics
 
