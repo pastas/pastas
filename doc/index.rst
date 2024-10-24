@@ -65,9 +65,9 @@ Quick Example
             import pastas as ps
 
             # Read observations of head and meteorological data
-            obs: pd.Series = pd.read_csv("head.csv", index_col="datetime", parse_dates=True).squeeze()
-            prec: pd.Series = pd.read_csv("prec.csv", index_col="datetime", parse_dates=True).squeeze()
-            evap: pd.Series = pd.read_csv("evap.csv", index_col="datetime", parse_dates=True).squeeze()
+            obs: pd.Series = pd.read_csv("head.csv", index_col="datetime", parse_dates=["datetime"]).squeeze()
+            prec: pd.Series = pd.read_csv("prec.csv", index_col="datetime", parse_dates=["datetime"]).squeeze()
+            evap: pd.Series = pd.read_csv("evap.csv", index_col="datetime", parse_dates=["datetime"]).squeeze()
 
             # Create and calibrate model
             ml: ps.Model = ps.Model(obs, name="head")
