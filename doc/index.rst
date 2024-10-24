@@ -60,18 +60,18 @@ Quick Example
 
         .. code-block:: python
 
-            # Import python packages
+            # Import Python packages
             import pandas as pd
             import pastas as ps
 
-            # Read observations of head and meteorological data
-            obs: pd.Series = pd.read_csv("head.csv", index_col="datetime", parse_dates=["datetime"]).squeeze()
-            prec: pd.Series = pd.read_csv("prec.csv", index_col="datetime", parse_dates=["datetime"]).squeeze()
-            evap: pd.Series = pd.read_csv("evap.csv", index_col="datetime", parse_dates=["datetime"]).squeeze()
+            # Load head and meteorological observations into a pandas Series
+            obs = pd.read_csv("head.csv", index_col="datetime", parse_dates=["datetime"]).squeeze()
+            prec = pd.read_csv("prec.csv", index_col="datetime", parse_dates=["datetime"]).squeeze()
+            evap = pd.read_csv("evap.csv", index_col="datetime", parse_dates=["datetime"]).squeeze()
 
-            # Create and calibrate model
-            ml: ps.Model = ps.Model(obs, name="head")
-            sm: ps.StressModel = ps.RechargeModel(prec, evap, rfunc=ps.Exponential(), name="recharge")
+            # Create and calibrate Pastas model
+            ml = ps.Model(obs, name="head")
+            sm = ps.RechargeModel(prec, evap, rfunc=ps.Exponential(), name="recharge")
             ml.add_stressmodel(sm)
             ml.solve()
 
