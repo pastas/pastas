@@ -131,3 +131,13 @@ legacy_tox_ini = """
             ruff format
 
 """
+
+[tool.codespell]
+skip = "*.pdf"
+ignore-regex = "[A-Za-z0-9+/]{100,}"  # base64-encoded data in *.ipynb files
+ignore-words-list = [
+    "delt",
+    "te",
+    "theses",
+    "Bilt",
+]
