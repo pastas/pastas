@@ -143,7 +143,7 @@ class CompareModels:
             Dictionary with integers (index) as keys and list of stressmodel names as
             values that have to be in each subplot. For example, `{0: ['prec',
             'evap'], 1: ['rech']}` where stressmodels 'prec' and 'evap' are plotted
-            in the first respons function window and 'rech' in the second. By
+            in the first response function window and 'rech' in the second. By
             default, None, which creates a separate subplot for each stressmodel.
         """
         self.adjust_height = True
@@ -544,7 +544,7 @@ class CompareModels:
             Dictionary with integers (index) as keys and list of stressmodel names as
             values that have to be in each subplot. For example, `{0: ['prec',
             'evap'], 1: ['rech']}` where stressmodels 'prec' and 'evap' are plotted
-            in the first respons function window and 'rech' in the second. By
+            in the first response function window and 'rech' in the second. By
             default, None, which creates a separate subplot for each stressmodel.
         axn : str, optional
             name of labeled axes to plot response functions on, by default "rf{i}".
@@ -856,7 +856,7 @@ class CompareModels:
         if "rsq" in metrics.index:
             metrics = metrics.rename(index={"rsq": "R\N{SUPERSCRIPT TWO}"})
 
-        # add seperate column with parameter names
+        # add separate column with parameter names
         metrics.loc[:, "Metrics"] = metrics.index
         cols = metrics.columns.to_list()[-1:] + metrics.columns.to_list()[:-1]
         return self.plot_table(axn=axn, df=metrics[cols].round(2))
@@ -873,7 +873,7 @@ class CompareModels:
         diag_col : str, optional
             name of diagnostics column to obtain, by default "P-value".
         """
-        # add seperate column with parameter names
+        # add separate column with parameter names
         diags = self.get_diagnostics(self.models, diag_col=diag_col)
         diags.loc[:, f"Test\n{diag_col}"] = diags.index
         cols = diags.columns.to_list()[-1:] + diags.columns.to_list()[:-1]
