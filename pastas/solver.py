@@ -1095,27 +1095,27 @@ class EmceeSolve(BaseSolver):
 
         # Set the initial value
         if initial is not None:
-            self.parameters.loc[name, "initial"] = float(initial)
+            self.parameters.at[name, "initial"] = float(initial)
 
         # Set the vary property
         if vary is not None:
-            self.parameters.loc[name, "vary"] = bool(vary)
+            self.parameters.at[name, "vary"] = bool(vary)
 
         # Set the minimum value
         if pmin is not None:
-            self.parameters.loc[name, "pmin"] = float(pmin)
+            self.parameters.at[name, "pmin"] = float(pmin)
 
         # Set the maximum value
         if pmax is not None:
-            self.parameters.loc[name, "pmax"] = float(pmax)
+            self.parameters.at[name, "pmax"] = float(pmax)
 
         # Set the optimal value
         if optimal is not None:
-            self.parameters.loc[name, "optimal"] = float(optimal)
+            self.parameters.at[name, "optimal"] = float(optimal)
 
         # Set the distribution
         if dist is not None:
-            self.parameters.loc[name, "dist"] = str(dist)
+            self.parameters.at[name, "dist"] = str(dist)
 
     def to_dict(self) -> dict:
         """This method is not supported for this solver.

@@ -1,3 +1,4 @@
+import pytest
 from pandas import Series
 
 from pastas import Model
@@ -39,7 +40,8 @@ def test_stresses(ml: Model) -> None:
 
 
 def test_contributions_pie(ml: Model) -> None:
-    _ = ml.plots.contributions_pie()
+    with pytest.raises(DeprecationWarning):
+        _ = ml.plots.contributions_pie()
 
 
 def test_compare(ml: Model) -> None:
@@ -59,3 +61,17 @@ def test_summary_pdf(ml: Model) -> None:
 
 def test_pairplot(prec: Series, pevap: Series, head: Series) -> None:
     _ = pairplot([prec, pevap, head])
+
+
+def test_plot_contribution(ml: Model) -> None:
+    _ = ml.plots.contribution(name="rch")
+    _ = ml.plots.contribution(
+        name="rch", plot_stress=True, plot_response=True, block_or_step="step"
+    )
+    _ = ml.plots.contribution(
+        name="rch",
+        plot_stress=True,
+        plot_response=True,
+        block_or_step="block",
+        istress=1,
+    )
