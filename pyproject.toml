@@ -24,7 +24,7 @@ dependencies = [
     "matplotlib >= 3.6.1",
     "pandas >= 2.1",
     "scipy >= 1.8.1, !=1.13.0",
-    "numba >= 0.55.2",
+    "numba == 0.61.0rc1",
 ]
 keywords = ["hydrology", "groundwater", "timeseries", "analysis"]
 classifiers = [
@@ -37,6 +37,7 @@ classifiers = [
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
     'Topic :: Scientific/Engineering :: Hydrology',
 ]
 
@@ -117,7 +118,6 @@ legacy_tox_ini = """
 
     [testenv:ruff]
     description = run ruff checks
-    basepython = python3.10
     extras = ruffing
     commands =
             ruff check --extend-select I --preview
