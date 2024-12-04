@@ -2,7 +2,6 @@ import logging
 from typing import Callable, Optional, Union
 
 import numpy as np
-from IPython.display import display
 from matplotlib.colors import rgb2hex
 from pandas import DataFrame, concat
 
@@ -134,8 +133,8 @@ def response_memory(
         tmem: float
             Time to the cutoff value, i.e. the memory of the response function.
         """
-        t = rfunc.get_t(p, dt=1.0, cutoff=0.999)
-        step = rfunc.step(p, cutoff=0.999) / sm.rfunc.gain(p)
+        t = rfunc.get_t(p, dt=1.0, cutoff=1.0 - (1.0 - cutoff) / 10.0)
+        step = rfunc.step(p, cutoff=1.0 - (1.0 - cutoff) / 10.0) / sm.rfunc.gain(p)
         tmem = np.interp(cutoff, step, t)
         return tmem
 
@@ -537,7 +536,13 @@ def print_check_report(df):
             )
         return colors
 
-    display(df.style.apply(boolean_row_styler, column="pass", axis=1))
+    # try pretty display, otherwise fall back to print
+    try:
+        from IPython.display import display
+
+        display(df.style.apply(boolean_row_styler, column="pass", axis=1))
+    except ModuleNotFoundError:
+        print(df)
 
 
 # list of checks, based on Brakenhoff et al. (2022).
