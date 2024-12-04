@@ -46,6 +46,8 @@ def _table_formatter_stderr(s: float, na_rep: str = "") -> str:
     """
     if np.isnan(s):
         return na_rep
+    elif s == 0.0:
+        return f"±{s * 100:.2e}%"
     elif np.floor(np.log10(np.abs(s))) <= -4:
         return f"±{s * 100.:.2e}%"
     elif np.floor(np.log10(np.abs(s))) > 3:
