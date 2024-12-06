@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, Optional, Union
+from typing import Callable, Optional
 
 import numpy as np
 from matplotlib.colors import rgb2hex
@@ -52,7 +52,7 @@ def _stat_ufunc_threshold(
     label = f"{statistic}{operators[ufunc.__name__]}{threshold}"
     df = DataFrame(
         index=[label],
-        columns=["statistic", "operator", "threshold", "unit", "pass", "comment"],
+        columns=["statistic", "operator", "threshold", "dimensions", "pass", "comment"],
     )
     df.index.name = "check"
     df.loc[label] = [val, operators[ufunc.__name__], threshold, "-", check, ""]
@@ -81,7 +81,7 @@ def response_memory(
     ml,
     cutoff: float = 0.95,
     factor_length_oseries: float = 0.5,
-    stressmodel: Optional[Union[list[str], str]] = None,
+    names: Optional[list[str] | str] = None,
 ):
     """Check if response function memory is shorter than fraction of calibration period.
 
@@ -94,7 +94,7 @@ def response_memory(
     factor_length_oseries: float, optional
         Factor to multiply the length of the observation series with to get the
         maximum allowed memory. Default is 0.5, e.g. half of the calibration period.
-    stressmodel: list or str, optional
+    names: list or str, optional
         List of stressmodel names to check the memory for. Default is None, which
         means all stressmodels are checked.
 
@@ -105,18 +105,19 @@ def response_memory(
     """
     len_oseries_calib = (ml.settings["tmax"] - ml.settings["tmin"]).days
 
-    if stressmodel is None:
-        stressmodel = list(ml.stressmodels.keys())
-    elif stressmodel is not None and not isinstance(stressmodel, list):
-        stressmodel = [stressmodel]
+    if names is None:
+        names = list(ml.stressmodels.keys())
+    elif names is not None and not isinstance(names, list):
+        names = [names]
 
     df = DataFrame(
-        columns=["statistic", "operator", "threshold", "unit", "pass", "comment"]
+        columns=["statistic", "operator", "threshold", "dimensions", "pass", "comment"]
     )
     df.index.name = "check"
-    unit = "days"
+    # unit = "days"
+    dim = "[T]"
 
-    def interp_step(cutoff: float, p: np.ndarray, rfunc: RfuncBase):
+    def interp_step(cutoff: float, p: np.ndarray[float], rfunc: RfuncBase):
         """Helper function to interpolate the step response to compute the memory.
 
         Parameters
@@ -138,7 +139,7 @@ def response_memory(
         tmem = np.interp(cutoff, step, t)
         return tmem
 
-    for sm_name in stressmodel:
+    for sm_name in names:
         sm = ml.stressmodels[sm_name]
         if sm._name == "WellModel":
             # HantushWellModel means the response function changes with distance
@@ -157,8 +158,9 @@ def response_memory(
                     tmem,
                     "<",
                     factor_length_oseries * len_oseries_calib,
-                    unit,
+                    dim,
                     check,
+                    "",
                 ]
         elif sm.rfunc._name == "Hantush":
             # get_tmax is a conservative approximation for Hantush,
@@ -167,7 +169,13 @@ def response_memory(
             p = ml.get_parameters(sm_name)
             tmem = interp_step(cutoff, p, sm.rfunc)
             check = tmem < factor_length_oseries * len_oseries_calib
-            df.loc[lbl] = [tmem, factor_length_oseries * len_oseries_calib, unit, check]
+            df.loc[lbl] = [
+                tmem,
+                factor_length_oseries * len_oseries_calib,
+                dim,
+                check,
+                "",
+            ]
         else:
             # for response functions where get_tmax is exact
             tmem = ml.get_response_tmax(sm_name, cutoff=cutoff)
@@ -177,7 +185,7 @@ def response_memory(
                 tmem,
                 "<",
                 factor_length_oseries * len_oseries_calib,
-                unit,
+                dim,
                 check,
                 "",
             ]
@@ -187,7 +195,7 @@ def response_memory(
 def uncertainty_gain(
     ml: Model,
     n_std: float = 2.0,
-    stressmodel: Optional[Union[list[str], str]] = None,
+    names: Optional[list[str] | str] = None,
 ):
     """Check if the gain is larger than n_std times the uncertainty in the gain.
 
@@ -197,7 +205,7 @@ def uncertainty_gain(
         Pastas model instance.
     n_std: int, optional
         Number of standard deviations to compare the the gain to. Default is 2.
-    stressmodel: list or str, optional
+    names: list or str, optional
         List of stressmodel names to check the gain for. Default is None, which
         means all stressmodels are checked.
 
@@ -206,20 +214,20 @@ def uncertainty_gain(
     df: pandas.DataFrame
         DataFrame with the results of the check.
     """
-    if stressmodel is None:
-        stressmodel = list(ml.stressmodels.keys())
-    elif stressmodel is not None and not isinstance(stressmodel, list):
-        stressmodel = [stressmodel]
+    if names is None:
+        names = list(ml.stressmodels.keys())
+    elif names is not None and not isinstance(names, list):
+        names = [names]
 
     results = []
-    for sm_name in stressmodel:
+    for sm_name in names:
         results.append(_uncertainty_parameter(ml, sm_name + "_A", n_std=n_std))
     df = concat(results)
-    df["unit"] = "[L] / (unit stress)"
+    df["dimensions"] = "[L] / (unit stress)"
     return df
 
 
-def parameter_bounds(ml: Model, parameters: Optional[Union[list[str], str]] = None):
+def parameter_bounds(ml: Model, parameters: Optional[list[str] | str] = None):
     """Check if the optimal parameter values are not on the lower or upper bounds.
 
     Parameters
@@ -240,7 +248,7 @@ def parameter_bounds(ml: Model, parameters: Optional[Union[list[str], str]] = No
     elif isinstance(parameters, str):
         parameters = [parameters]
     df = DataFrame(
-        columns=["statistic", "operator", "threshold", "unit", "pass", "comment"]
+        columns=["statistic", "operator", "threshold", "dimensions", "pass", "comment"]
     )
     df.index.name = "check"
     upper, lower = ml._check_parameters_bounds()
@@ -255,7 +263,7 @@ def parameter_bounds(ml: Model, parameters: Optional[Union[list[str], str]] = No
             ml.parameters.loc[param, "optimal"],
             "within",
             bounds,
-            guess_unit(param),
+            guess_unit_or_dims(param),
             check,
             "",
         )
@@ -264,7 +272,7 @@ def parameter_bounds(ml: Model, parameters: Optional[Union[list[str], str]] = No
 
 def uncertainty_parameters(
     ml: Model,
-    parameters: Optional[Union[list[str], str]] = None,
+    parameters: Optional[list[str] | str] = None,
     n_std: float = 2.0,
 ):
     """Check if parameter value is larger than n_std times the standard deviation.
@@ -313,7 +321,7 @@ def _uncertainty_parameter(ml, parameter, n_std=2):
         DataFrame with the results of the check.
     """
     df = DataFrame(
-        columns=["statistic", "operator", "threshold", "unit", "pass", "comment"]
+        columns=["statistic", "operator", "threshold", "dimensions", "pass", "comment"]
     )
     df.index.name = "check"
     # get stressmodel
@@ -334,7 +342,7 @@ def _uncertainty_parameter(ml, parameter, n_std=2):
                 p,
                 ">",
                 n_std * std,
-                guess_unit(parameter),
+                guess_unit_or_dims(parameter),
                 check,
                 "Assumes estimate of σ is reliable.",
             ]
@@ -346,38 +354,44 @@ def _uncertainty_parameter(ml, parameter, n_std=2):
             p,
             ">",
             n_std * std,
-            guess_unit(parameter),
+            guess_unit_or_dims(parameter),
             check,
             "Assumes estimate of σ is reliable.",
         ]
     return df
 
 
-def guess_unit(parameter):
-    """Guess the unit of a parameter based on its name.
+def guess_unit_or_dims(parameter, return_dims=True):
+    """Guess the unit or dimension of a parameter based on its name.
 
     Parameters
     ----------
     parameter : str
         Name of the parameter.
+    return_dims : bool, optional
+        if True, return parameter dimensions (default). If False, return
+        specific units where they can be determined from the parameter name
 
     Returns
     -------
-    unit : str
-        Guessed unit of the parameter.
+    unit or dim: str
+        Guessed unit or dimensions of the parameter.
     """
     if "_A" in parameter:
         sm = "_".join(parameter.split("_")[:-1])
-        unit = f"[L] / (unit '{sm}' stress)"
+        unit = dim = f"[L] / (unit '{sm}' stress)"
     elif parameter == "noise_alpha":
         unit = "days"
+        dim = "[T]"
     elif parameter == "constant_d":
-        unit = "[L]"
+        unit = dim = "[L]"
     elif parameter.endswith("_f"):
         unit = "-"
+        dim = "[-]"
     else:
         unit = ""
-    return unit
+        dim = ""
+    return dim if return_dims else unit
 
 
 def acf_runs_test(ml: Model, p_threshold: float = 0.05):
@@ -395,7 +409,7 @@ def acf_runs_test(ml: Model, p_threshold: float = 0.05):
     df: pandas.DataFrame
         DataFrame with the results of the check.
     """
-    return _diagnostic_test(ml, "runs_test", p_threshold=p_threshold)
+    return _diagnostic_test(ml, "runs_test", alpha=p_threshold)
 
 
 def acf_stoffer_toloi_test(ml: Model, p_threshold: float = 0.05, **kwargs):
@@ -415,10 +429,10 @@ def acf_stoffer_toloi_test(ml: Model, p_threshold: float = 0.05, **kwargs):
     df: pandas.DataFrame
         DataFrame with the results of the check.
     """
-    return _diagnostic_test(ml, "stoffer_toloi", p_threshold=p_threshold, **kwargs)
+    return _diagnostic_test(ml, "stoffer_toloi", alpha=p_threshold, **kwargs)
 
 
-def _diagnostic_test(ml: Model, test: str, p_threshold: float = 0.05, **kwargs):
+def _diagnostic_test(ml: Model, test: str, alpha: float = 0.05, **kwargs):
     """Internal method to get the result of a diagnostic test.
 
     Parameters
@@ -428,7 +442,7 @@ def _diagnostic_test(ml: Model, test: str, p_threshold: float = 0.05, **kwargs):
     test: str
         Name of the diagnostic test to perform, must be one of
         ["runs_test", "stoffer_toloi", "durbin_watson", "ljung_box"].
-    p_threshold: float, optional
+    alpha: float, optional
         Threshold value for the p-value of the diagnostic test. Default is 0.05.
     **kwargs
         Additional keyword arguments to pass to the diagnostic test.
@@ -444,18 +458,18 @@ def _diagnostic_test(ml: Model, test: str, p_threshold: float = 0.05, **kwargs):
         logger.warning("No noise model found in model. Using residuals instead.")
         noise = ml.residuals()
     _, p = dtest(noise.iloc[1:], **kwargs)
-    check = p > p_threshold
+    check = p > alpha
     label = f"{test} (p > α)"
     df = DataFrame(
         index=[label],
-        columns=["statistic", "operator", "threshold", "unit", "pass", "comment"],
+        columns=["statistic", "operator", "threshold", "dimensions", "pass", "comment"],
     )
     df.index.name = "check"
-    df.loc[label] = [p, ">", p_threshold, "-", check, ""]
+    df.loc[label] = [p, ">", alpha, "-", check, ""]
     return df
 
 
-def checklist(ml: Model, checks: list[Union[str, Callable, dict]], report=True):
+def checklist(ml: Model, checks: list[str | Callable | dict], report=True):
     """Run a list of checks on a Pastas model.
 
     Parameters
@@ -469,7 +483,7 @@ def checklist(ml: Model, checks: list[Union[str, Callable, dict]], report=True):
              e.g. "rsq_geq_threshold".
            * If a callable, it must be a function that takes a model instance as an
              argument and return a DataFrame with columns:
-             ["statistic", "operator", "threshold", "unit", "pass", "comment"]].
+             ["statistic", "operator", "threshold", "dimensions", "pass", "comment"]].
            * If a dict, it must have a key "func" with a function to perform the check,
              additional dictionary entries are passed to the function as kwargs.
     report: bool, optional
