@@ -1592,7 +1592,7 @@ class Model:
             Add a zero at t=0.
         istress: int, optional
             When multiple stresses are present in a stressmodel, this keyword can be
-            used to obtain the respone to an individual stress.
+            used to obtain the response to an individual stress.
         kwargs: dict: passed to rfunc.step() or rfunc.block()
 
         Returns

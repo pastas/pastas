@@ -214,7 +214,7 @@ def runs_test(series: Series, cutoff: str = "median") -> Tuple[float, float]:
 
     where $R$ is the number of runs, :math:`\\bar{R}` the expected number of runs and
     :math:`\\sigma_R` the standard deviation of the number of runs. A run is defined
-    as the number of sequences of exclusively postitive and negative values in the
+    as the number of sequences of exclusively positive and negative values in the
     time series.
 
     **Considerations for this test:**

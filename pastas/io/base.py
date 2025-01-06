@@ -234,7 +234,7 @@ def _unpack_series(data: dict):
 
     Returns
     -------
-    series, metadata, setings: dict
+    series, metadata, settings: dict
 
     """
     series = data["series"]
