@@ -90,7 +90,9 @@ def response_memory(
     ml: pastas.Model
         Pastas model instance.
     cutoff: float, optional
-        Cutoff value for the response function. Default is 0.95.
+        Cutoff value for the length of the response function. Default is 0.95, which
+        means that the response function is cutoff at the time the step response is at
+        95% of the gain.
     factor_length_oseries: float, optional
         Factor to multiply the length of the observation series with to get the
         maximum allowed memory. Default is 0.5, e.g. half of the calibration period.
@@ -194,7 +196,7 @@ def response_memory(
 
 def uncertainty_gain(
     ml: Model,
-    n_std: float = 2.0,
+    n_std: float = 1.96,
     names: Optional[list[str] | str] = None,
 ):
     """Check if the gain is larger than n_std times the uncertainty in the gain.
@@ -204,7 +206,7 @@ def uncertainty_gain(
     ml: pastas.Model
         Pastas model instance.
     n_std: int, optional
-        Number of standard deviations to compare the the gain to. Default is 2.
+        Number of standard errors to compare the the gain to. Default is 1.96.
     names: list or str, optional
         List of stressmodel names to check the gain for. Default is None, which
         means all stressmodels are checked.
@@ -273,7 +275,7 @@ def parameter_bounds(ml: Model, parameters: Optional[list[str] | str] = None):
 def uncertainty_parameters(
     ml: Model,
     parameters: Optional[list[str] | str] = None,
-    n_std: float = 2.0,
+    n_std: float = 1.96,
 ):
     """Check if parameter value is larger than n_std times the standard deviation.
 
@@ -288,7 +290,7 @@ def uncertainty_parameters(
         List of parameter names to check the uncertainty for. Default is None, which
         means all parameters are checked.
     n_std: float, optional
-        Number of standard deviations to compare the parameter to. Default is 2.
+        Number of standard deviations to compare the parameter to. Default is 1.96.
 
     """
     if parameters is None:
@@ -303,7 +305,7 @@ def uncertainty_parameters(
     return concat(results)
 
 
-def _uncertainty_parameter(ml, parameter, n_std=2):
+def _uncertainty_parameter(ml, parameter, n_std=1.96):
     """Internal method to check if parameter value is larger than n_std * std.
 
     Parameters
@@ -313,7 +315,7 @@ def _uncertainty_parameter(ml, parameter, n_std=2):
     parameter: str
         Name of the parameter to check.
     n_std: float, optional
-        Number of standard deviations to compare the parameter to. Default is 2.
+        Number of standard deviations to compare the parameter to. Default is 1.96.
 
     Returns
     -------
@@ -564,6 +566,6 @@ checks_brakenhoff_2022 = [
     {"func": rsq_geq_threshold, "threshold": 0.7},
     {"func": response_memory, "cutoff": 0.95, "factor_length_oseries": 0.5},
     {"func": acf_runs_test},
-    {"func": uncertainty_parameters, "n_std": 2},
+    {"func": uncertainty_parameters, "n_std": 1.96},
     {"func": parameter_bounds},
 ]
