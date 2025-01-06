@@ -71,7 +71,7 @@ def acf(
     -------
     result: pandas.Series or pandas.DataFrame
         If full_output=True, a DataFrame with columns "acf", "conf", and "n",
-        containning the autocorrelation function, confidence intervals (depends on
+        containing the autocorrelation function, confidence intervals (depends on
         alpha), and the number of samples n used to compute these, respectively. If
         full_output=False, only the ACF is returned.
 
@@ -155,7 +155,7 @@ def ccf(
     -------
     result: pandas.Series or pandas.DataFrame
         If full_output=True, a DataFrame with columns "ccf", "conf", and "n",
-        containning the cross-correlation function, confidence intervals (depends on
+        containing the cross-correlation function, confidence intervals (depends on
         alpha), and the number of samples n used to compute these, respectively. If
         full_output=False, only the CCF is returned.
 

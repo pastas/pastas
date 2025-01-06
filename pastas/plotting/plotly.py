@@ -36,7 +36,7 @@ class Plotly:
         table,interactive version of `ml.plots.results()`
     diagnostics
         plot noise, autocorrelation, distribution of noise and heteroscedasticity,
-        interactive verison of `ml.plots.diagnostics()`
+        interactive version of `ml.plots.diagnostics()`
     """
 
     def __init__(self, model):
@@ -315,7 +315,7 @@ class Plotly:
         ytops[1:] -= dy  # half of whitespace by lowering tops by dy
         ybots = y_pos[1:].copy()
         ybots[:-1] += dy  # create other half of whitespace by raising bottoms by dy
-        ybots[ybots < 0] = 0  # floating point issues, should alway be > 0
+        ybots[ybots < 0] = 0  # floating point issues, should always be > 0
 
         # parameter table
         p = self._model.parameters.copy().loc[:, ["name", "optimal", "stderr"]]
