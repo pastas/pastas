@@ -12,6 +12,7 @@ import pastas.timeseries_utils as ts
 from pastas import extensions
 from pastas.dataset import list_datasets, load_dataset
 from pastas.decorators import set_use_numba
+from pastas.forecast import forecast
 from pastas.model import Model
 from pastas.noisemodels import ArmaModel, ArmaNoiseModel, ArNoiseModel, NoiseModel
 from pastas.plotting.modelcompare import CompareModels
