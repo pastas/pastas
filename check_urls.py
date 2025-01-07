@@ -1,0 +1,29 @@
+import re
+from pathlib import Path
+
+import requests
+
+
+def check_urls(file_path):
+    url_pattern = re.compile(r"https?://[^\s]+")
+    with open(file_path, "r") as file:
+        content = file.read()
+        urls = url_pattern.findall(content)
+        for url in urls:
+            try:
+                response = requests.head(url, allow_redirects=True, timeout=5)
+                if response.status_code != 200:
+                    print(f"URL {url} returned status code {response.status_code}")
+            except requests.RequestException as e:
+                print(f"URL {url} could not be reached: {e}")
+
+
+def main():
+    project_dir = Path(__file__).parent
+    for file_path in project_dir.rglob("*"):
+        if file_path.is_file() and file_path.suffix in {".py", ".md", ".toml"}:
+            check_urls(file_path)
+
+
+if __name__ == "__main__":
+    main()
