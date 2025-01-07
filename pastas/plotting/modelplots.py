@@ -151,7 +151,7 @@ class Plotting:
             If True the standard error of the parameter values are shown. Please be
             aware of the conditions for reliable uncertainty estimates, more
             information here:
-            https://pastas.readthedocs.io/master/examples/diagnostic_checking.html
+            https://pastas.readthedocs.io/stable/examples/diagnostic_checking.html
         fig: matplotib.Figure instance, optional
             Optionally provide a matplotib.Figure instance to plot onto.
         **kwargs: dict, optional
