@@ -49,8 +49,7 @@ def get_versions(
     """
     if lmfit:
         logger.warning(
-            "The lmfit argument is deprecated and will be removed in a "
-            "future version."
+            "The lmfit argument is deprecated and will be removed in a future version."
         )
     if latexify:
         logger.warning(

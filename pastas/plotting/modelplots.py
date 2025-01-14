@@ -939,7 +939,8 @@ class Plotting:
             if (len(sml.stress) > 0) and (sml._name == "WellModel"):
                 if stackcolors is None:
                     stackcolors = {
-                        wnam: f"C{iw+1}" for iw, wnam in enumerate(sml.distances.index)
+                        wnam: f"C{iw + 1}"
+                        for iw, wnam in enumerate(sml.distances.index)
                     }
                 elif isinstance(stackcolors, list):
                     stackcolors = {

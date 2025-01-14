@@ -1962,7 +1962,7 @@ class Model:
         len_val4 = max([len(v) for v in fit.values()])
         wspace = width - (8 + 23 + 9 + len_val4)
         for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
-            basic += f"{val1:<8}{val2:<23}{val3:<9}" f"{val4:>{wspace + len_val4}}\n"
+            basic += f"{val1:<8}{val2:<23}{val3:<9}{val4:>{wspace + len_val4}}\n"
 
         # Create the parameters block
         params = (

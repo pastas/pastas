@@ -419,9 +419,7 @@ def diagnostics(
     series.plot(ax=ax)
     ax.set_ylabel(series.name)
     ax.set_xlim(series.index.min(), series.index.max())
-    ax.set_title(
-        f"{series.name} (n={series.size :.0f}, $\\mu$" f"={series.mean() :.2f})"
-    )
+    ax.set_title(f"{series.name} (n={series.size:.0f}, $\\mu$={series.mean():.2f})")
     ax.grid()
     ax.tick_params(axis="x", labelrotation=0)
     for label in ax.get_xticklabels():
