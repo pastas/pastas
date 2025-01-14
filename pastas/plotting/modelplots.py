@@ -151,7 +151,7 @@ class Plotting:
             If True the standard error of the parameter values are shown. Please be
             aware of the conditions for reliable uncertainty estimates, more
             information here:
-            https://pastas.readthedocs.io/en/master/examples/diagnostic_checking.html
+            https://pastas.readthedocs.io/stable/examples/diagnostic_checking.html
         fig: matplotib.Figure instance, optional
             Optionally provide a matplotib.Figure instance to plot onto.
         **kwargs: dict, optional
@@ -939,7 +939,8 @@ class Plotting:
             if (len(sml.stress) > 0) and (sml._name == "WellModel"):
                 if stackcolors is None:
                     stackcolors = {
-                        wnam: f"C{iw+1}" for iw, wnam in enumerate(sml.distances.index)
+                        wnam: f"C{iw + 1}"
+                        for iw, wnam in enumerate(sml.distances.index)
                     }
                 elif isinstance(stackcolors, list):
                     stackcolors = {

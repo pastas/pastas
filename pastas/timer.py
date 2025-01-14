@@ -80,6 +80,6 @@ class SolveTimer(tqdm):
         if self.max_time is not None:
             if self.format_dict["elapsed"] > self.max_time:
                 raise ExceededMaxSolveTime(
-                    "Model solve time exceeded" f" {self.max_time} seconds!"
+                    f"Model solve time exceeded {self.max_time} seconds!"
                 )
         return displayed

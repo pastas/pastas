@@ -270,7 +270,7 @@ class Plotly:
                 marker_color="#1F77B4",
                 name=f"{c.name}",
                 # legendgroup=f"contrib{i}",
-                xaxis=f"x{3+nsm}",
+                xaxis=f"x{3 + nsm}",
                 yaxis=f"y{iax_response}",
                 showlegend=False,
             )
@@ -406,7 +406,7 @@ class Plotly:
             )
             layout_dict[f"yaxis{iax_response}"] = dict(
                 domain=[ybots[irow], ytops[irow]],
-                anchor=f"x{3+nsm}",
+                anchor=f"x{3 + nsm}",
             )
 
         layout = go.Layout(layout_dict)
@@ -485,7 +485,7 @@ class Plotly:
             dragmode="pan",
         )
         update_labels = {f"yaxis{i}": {"title": "[m]"} for i in range(3, nrows + 1)}
-        update_labels[f"xaxis{nrows+1}"] = {"title": "time [d]"}
+        update_labels[f"xaxis{nrows + 1}"] = {"title": "time [d]"}
         fig.update_layout(**update_labels)
 
         return fig

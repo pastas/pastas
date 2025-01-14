@@ -4,7 +4,7 @@ from platform import python_version
 
 logger = logging.getLogger(__name__)
 
-__version__ = "1.8.0b"
+__version__ = "1.8.0"
 
 
 def check_numba_scipy() -> bool:
@@ -49,8 +49,7 @@ def get_versions(
     """
     if lmfit:
         logger.warning(
-            "The lmfit argument is deprecated and will be removed in a "
-            "future version."
+            "The lmfit argument is deprecated and will be removed in a future version."
         )
     if latexify:
         logger.warning(
