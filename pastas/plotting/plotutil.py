@@ -49,9 +49,9 @@ def _table_formatter_stderr(s: float, na_rep: str = "") -> str:
     elif s == 0.0:
         return f"±{s * 100:.2e}%"
     elif np.floor(np.log10(np.abs(s))) <= -4:
-        return f"±{s * 100.:.2e}%"
+        return f"±{s * 100.0:.2e}%"
     elif np.floor(np.log10(np.abs(s))) > 3:
-        return f"±{s * 100.:.2e}%"
+        return f"±{s * 100.0:.2e}%"
     else:
         return f"±{s:.2%}"
 

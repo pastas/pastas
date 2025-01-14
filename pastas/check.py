@@ -150,7 +150,7 @@ def response_memory(
             nwells = sm.distances.index.size
             for iw in range(nwells):
                 lbl = (
-                    f"t{cutoff*100:.0f}_{sm_name} ({sm.distances.index[iw]}) <"
+                    f"t{cutoff * 100:.0f}_{sm_name} ({sm.distances.index[iw]}) <"
                     f" {factor_length_oseries} Δt_calib"
                 )
                 p = sm.get_parameters(ml, istress=iw)
@@ -167,7 +167,7 @@ def response_memory(
         elif sm.rfunc._name == "Hantush":
             # get_tmax is a conservative approximation for Hantush,
             # so it is better to interpolate step response to compute the memory
-            lbl = f"response_t{cutoff*100:.0f}_{sm_name}"
+            lbl = f"response_t{cutoff * 100:.0f}_{sm_name}"
             p = ml.get_parameters(sm_name)
             tmem = interp_step(cutoff, p, sm.rfunc)
             check = tmem < factor_length_oseries * len_oseries_calib
@@ -182,7 +182,7 @@ def response_memory(
             # for response functions where get_tmax is exact
             tmem = ml.get_response_tmax(sm_name, cutoff=cutoff)
             check = tmem < factor_length_oseries * len_oseries_calib
-            lbl = f"t{cutoff*100:.0f}_{sm_name} < {factor_length_oseries} Δt_calib"
+            lbl = f"t{cutoff * 100:.0f}_{sm_name} < {factor_length_oseries} Δt_calib"
             df.loc[lbl] = [
                 tmem,
                 "<",
@@ -542,12 +542,12 @@ def print_check_report(df):
             )
         elif row[column]:  # check passed
             colors[row.size - 2] = (
-                f"background-color: {rgb2hex((231/255, 255/255, 239/255))}; "
+                f"background-color: {rgb2hex((231 / 255, 255 / 255, 239 / 255))}; "
                 "color: darkgreen"
             )
         else:  # check failed
             colors[row.size - 2] = (
-                f"background-color: {rgb2hex((255/255, 238/255, 238/255))}; "
+                f"background-color: {rgb2hex((255 / 255, 238 / 255, 238 / 255))}; "
                 "color: darkred"
             )
         return colors
