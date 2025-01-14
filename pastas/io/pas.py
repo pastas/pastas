@@ -11,6 +11,8 @@ from collections import OrderedDict
 from io import StringIO as stringIO
 from logging import getLogger
 
+from numpy import integer
+
 try:
     from shapely.geometry.base import BaseGeometry
 
@@ -106,5 +108,7 @@ class PastasEncoder(json.JSONEncoder):
             return o.wkt
         elif isna(o):
             return None
+        elif isinstance(o, integer):
+            return int(o)
         else:
             return super(PastasEncoder, self).default(o)

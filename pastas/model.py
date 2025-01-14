@@ -1592,7 +1592,7 @@ class Model:
             Add a zero at t=0.
         istress: int, optional
             When multiple stresses are present in a stressmodel, this keyword can be
-            used to obtain the respone to an individual stress.
+            used to obtain the response to an individual stress.
         kwargs: dict: passed to rfunc.step() or rfunc.block()
 
         Returns
@@ -1872,7 +1872,7 @@ class Model:
             If True the standard error of the parameter values are shown. Please be
             aware of the conditions for reliable uncertainty estimates, more information
             here:
-            https://pastas.readthedocs.io/en/master/examples/diagnostic_checking.html
+            https://pastas.readthedocs.io/stable/examples/diagnostic_checking.html
         warnings : bool, optional
             print warnings in case of optimization failure, parameters hitting
             bounds, or length of responses exceeding calibration period.
@@ -1962,7 +1962,7 @@ class Model:
         len_val4 = max([len(v) for v in fit.values()])
         wspace = width - (8 + 23 + 9 + len_val4)
         for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
-            basic += f"{val1:<8}{val2:<23}{val3:<9}" f"{val4:>{wspace + len_val4}}\n"
+            basic += f"{val1:<8}{val2:<23}{val3:<9}{val4:>{wspace + len_val4}}\n"
 
         # Create the parameters block
         params = (

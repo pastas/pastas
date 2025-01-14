@@ -389,7 +389,7 @@ class TimeSeries:
 
         if success:
             logger.info(
-                "Time Series '%s' was sampled down to freq %s with method " "%s.",
+                "Time Series '%s' was sampled down to freq %s with method %s.",
                 self.name,
                 freq,
                 method,
