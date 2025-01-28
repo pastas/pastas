@@ -390,7 +390,7 @@ def stoffer_toloi(
     de0 = dz0 / da0
 
     # initialize, compute all correlation up to one year.
-    nlags = 365  # Hard-coded for now
+    nlags = min(365, nobs - 1)
     dz = zeros(nlags)
     da = zeros(nlags)
     de = zeros(nlags)
