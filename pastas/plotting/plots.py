@@ -68,6 +68,7 @@ def series(
     tmax: Optional[TimestampType] = None,
     labels: Optional[List[str]] = None,
     figsize: tuple = (10, 5),
+    colors: Optional[List[str]] = None,
 ) -> Axes:
     """Plot all the input time Series in a single plot.
 
@@ -94,6 +95,9 @@ def series(
         List with the labels for each subplot.
     figsize: tuple
         Set the size of the figure.
+    colors: List of str, optional
+        List of colors to use for the series. If not provided, default matplotlib
+        colors will be used.
 
     Returns
     -------
@@ -192,9 +196,11 @@ def series(
             axes[0, 2].axis("off")
 
     if stresses is not None:
-        for i, stress in enumerate(stresses, start=rows - len(stresses)):
+        if colors is None:
+            colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+        for i, (stress, color) in enumerate(zip(stresses, colors), start=rows - len(stresses)):
             stress = stress[tmin:tmax].dropna()
-            stress.plot(ax=axes[i, 0], color="k")
+            stress.plot(ax=axes[i, 0], color=color)
             if titles:
                 axes[i, 0].set_title(stress.name)
             if labels is not None:
@@ -204,7 +210,7 @@ def series(
                 stress.hist(
                     ax=axes[i, 1],
                     orientation="horizontal",
-                    color="k",
+                    color=color,
                     weights=np.ones(len(stress)) / len(stress) * 100,
                     bins=int(np.ceil(1 + np.log2(len(stress)))),
                     grid=False,
@@ -213,7 +219,7 @@ def series(
                 stress.hist(
                     ax=axes[i, 1],
                     orientation="horizontal",
-                    color="k",
+                    color=color,
                     bins=int(np.ceil(1 + np.log2(len(stress)))),
                     grid=False,
                     density=True,
@@ -229,7 +235,7 @@ def series(
                 if hist:
                     colour = "C1"
                 else:
-                    colour = "k"
+                    colour = color
                 axes[i, 1].plot(gkde.evaluate(ind), ind, color=colour)
             if table:
                 if i > 0:

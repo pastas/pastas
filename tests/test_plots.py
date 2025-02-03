@@ -2,7 +2,7 @@ import pytest
 from pandas import Series
 
 from pastas import Model
-from pastas.plotting.plots import TrackSolve, compare, pairplot
+from pastas.plotting.plots import TrackSolve, compare, pairplot, series
 
 # mpl.use("Agg")  # prevent _tkinter.TclError: Can't find a usable tk.tcl error
 
@@ -75,3 +75,12 @@ def test_plot_contribution(ml: Model) -> None:
         block_or_step="block",
         istress=1,
     )
+
+
+def test_series_colors_specified(prec: Series, pevap: Series, head: Series) -> None:
+    colors = ["red", "blue"]
+    _ = series(head, stresses=[prec, pevap], colors=colors)
+
+
+def test_series_default_colors(prec: Series, pevap: Series, head: Series) -> None:
+    _ = series(head, stresses=[prec, pevap])
