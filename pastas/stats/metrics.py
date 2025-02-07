@@ -777,10 +777,13 @@ def picp(obs: Series, bounds: DataFrame):
 
     """
     # Check if the DateTimeIndex of the observations and the bounds match
-    if not obs.index.equals(bounds.index):
+    if not obs.index.isin(bounds.index).all():
         msg = "The DateTimeIndex of the observations and the bounds do not match."
         logger.error(msg)
         raise ValueError(msg)
+
+    if not obs.index.equals(bounds.index):
+        bounds = bounds.loc[obs.index, :]
 
     # Determine if the observations are within the prediction intervals
     a = (obs >= bounds.iloc[:, 0]) & (obs <= bounds.iloc[:, 1])

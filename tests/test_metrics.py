@@ -67,3 +67,34 @@ def test_kge():
 def test_kge_modified():
     kgem = ps.stats.metrics.kge(obs=obs, sim=sim, modified=True)
     assert pytest.approx(kgem, tol) == 0.99247
+
+    def test_picp():
+        bounds = pd.DataFrame(
+            {"lower": [9.0, 14.0, 19.0, 24.0], "upper": [11.0, 16.0, 21.0, 26.0]},
+            index=index,
+        )
+        picp_value = ps.stats.metrics.picp(obs=obs, bounds=bounds)
+        assert pytest.approx(picp_value, tol) == 1.0
+
+    def test_picp_partial_coverage():
+        bounds = pd.DataFrame(
+            {"lower": [9.0, 14.0, 19.0, 24.0], "upper": [10.5, 15.0, 20.5, 25.0]},
+            index=index,
+        )
+        picp_value = ps.stats.metrics.picp(obs=obs, bounds=bounds)
+        assert pytest.approx(picp_value, tol) == 0.75
+
+    def test_picp_no_coverage():
+        bounds = pd.DataFrame(
+            {"lower": [0.0, 0.0, 0.0, 0.0], "upper": [1.0, 1.0, 1.0, 1.0]}, index=index
+        )
+        picp_value = ps.stats.metrics.picp(obs=obs, bounds=bounds)
+        assert pytest.approx(picp_value, tol) == 0.0
+
+    def test_picp_mismatched_index():
+        bounds = pd.DataFrame(
+            {"lower": [9.0, 14.0, 19.0, 24.0], "upper": [11.0, 16.0, 21.0, 26.0]},
+            index=pd.date_range("2010-01-02", "2010-01-05", freq="D"),
+        )
+        with pytest.raises(ValueError):
+            ps.stats.metrics.picp(obs=obs, bounds=bounds)
