@@ -200,7 +200,7 @@ def series(
         for i, stress in enumerate(stresses, start=rows - len(stresses)):
             stress = stress[tmin:tmax].dropna()
             if colors_stresses is None:
-                colors_stresses = list(mcolors.BASE_COLORS.keys())
+                colors_stresses = list(mcolors.TABLEAU_COLORS.keys())
             try:
                 color_stress = colors_stresses[i-1]
             except Exception as e:
