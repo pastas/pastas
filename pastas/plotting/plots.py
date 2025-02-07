@@ -3,6 +3,7 @@
 import logging
 from typing import Dict, List, Optional, Tuple, Union
 
+import matplotlib.colors as mcolors
 import matplotlib.patheffects as path_effects
 import matplotlib.pyplot as plt
 import numpy as np
@@ -66,7 +67,9 @@ def series(
     titles: bool = True,
     tmin: Optional[TimestampType] = None,
     tmax: Optional[TimestampType] = None,
+    colors_stresses: Optional[List[str]] = None,
     labels: Optional[List[str]] = None,
+
     figsize: tuple = (10, 5),
 ) -> Axes:
     """Plot all the input time Series in a single plot.
@@ -90,6 +93,8 @@ def series(
         Set the titles or not. Taken from the name attribute of the series.
     tmin: str or pd.Timestamp
     tmax: str or pd.Timestamp
+    colors_stresses: List of str
+        List with the matplotlib colorcodes to use for plotting each stress timeseries.
     labels: List of str
         List with the labels for each subplot.
     figsize: tuple
@@ -194,11 +199,12 @@ def series(
     if stresses is not None:
         for i, stress in enumerate(stresses, start=rows - len(stresses)):
             stress = stress[tmin:tmax].dropna()
-            if colors_stresses == None:
+            if colors_stresses is None:
                 colors_stresses = list(mcolors.BASE_COLORS.keys())
             try:
                 color_stress = colors_stresses[i-1]
-            except:
+            except Exception as e:
+                print(f"{e} for user defined colors, using black color for plotting")
                 color_stress = "k"
             stress.plot(ax=axes[i, 0], color=color_stress)
             if titles:
