@@ -752,7 +752,8 @@ def picp(obs: Series, bounds: DataFrame):
     obs : pandas.Series
         Pandas Series with the measured time series and a DateTimeIndex.
     bounds : DataFrame
-        DataFrame with the lower (first column) and upper (second columns) bounds of the prediction intervals.
+        DataFrame with the lower (first column) and upper (second columns) bounds of the
+        prediction intervals.
 
     Notes
     -----
@@ -770,8 +771,8 @@ def picp(obs: Series, bounds: DataFrame):
     >>> import pandas as pd
     >>> import numpy as np
     >>> from pastas.stats import picp
-    >>> np.random.seed(0)
-    >>> obs = pd.Series(np.random.rand(100), index=pd.date_range("2000-01-01", periods=100))
+    >>> obs = pd.Series(np.random.rand(100),
+                        index=pd.date_range("2000-01-01", periods=100))
     >>> bounds = pd.DataFrame(np.random.rand(100, 2), index=obs.index)
     >>> picp(obs, bounds)
 
