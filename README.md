@@ -1,7 +1,5 @@
 # Pastas: Analysis of Groundwater Time Series
 
-> [!IMPORTANT]
-> As of Pastas 1.5, noisemodels are not added to the Pastas models by default anymore. [Read more about this change here](https://github.com/pastas/pastas/issues/735).
 
 ![image](/doc/_static/logo_small.png)
 
