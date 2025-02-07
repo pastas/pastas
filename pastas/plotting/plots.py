@@ -115,6 +115,8 @@ def series(
             tmax = head.index[-1]
     if stresses is not None:
         rows += len(stresses)
+    if colors_stresses is None:
+        colors_stresses = list(mcolors.TABLEAU_COLORS.keys())
     sharex = True
     gridspec_kw = {}
     cols = 1
@@ -201,11 +203,9 @@ def series(
     if stresses is not None:
         for i, stress in enumerate(stresses, start=rows - len(stresses)):
             stress = stress[tmin:tmax].dropna()
-            if colors_stresses is None:
-                colors_stresses = list(mcolors.TABLEAU_COLORS.keys())
-            try:
-                color_stress = colors_stresses[i-1]
-            except Exception:
+            if i <= len(colors_stresses):
+                color_stress = colors_stresses[i - 1]
+            else:
                 color_stress = "k"
             stress.plot(ax=axes[i, 0], color=color_stress)
             if titles:
