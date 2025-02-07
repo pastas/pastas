@@ -3,6 +3,7 @@
 import logging
 from typing import Dict, List, Optional, Tuple, Union
 
+import matplotlib.colors as mcolors
 import matplotlib.patheffects as path_effects
 import matplotlib.pyplot as plt
 import numpy as np
@@ -66,6 +67,7 @@ def series(
     titles: bool = True,
     tmin: Optional[TimestampType] = None,
     tmax: Optional[TimestampType] = None,
+    colors_stresses: Optional[List[str]] = None,
     labels: Optional[List[str]] = None,
     figsize: tuple = (10, 5),
 ) -> Axes:
@@ -90,6 +92,10 @@ def series(
         Set the titles or not. Taken from the name attribute of the series.
     tmin: str or pd.Timestamp
     tmax: str or pd.Timestamp
+    colors_stresses: List of str
+        List with the matplotlib colorcodes to use for plotting each stress timeseries.
+        If list is shorter than number of stresses, the remaining stresses are plotted
+        in black. If None (default), default matplotlib colors will be used.
     labels: List of str
         List with the labels for each subplot.
     figsize: tuple
@@ -108,6 +114,8 @@ def series(
             tmax = head.index[-1]
     if stresses is not None:
         rows += len(stresses)
+    if colors_stresses is None:
+        colors_stresses = list(mcolors.TABLEAU_COLORS.keys())
     sharex = True
     gridspec_kw = {}
     cols = 1
@@ -194,7 +202,11 @@ def series(
     if stresses is not None:
         for i, stress in enumerate(stresses, start=rows - len(stresses)):
             stress = stress[tmin:tmax].dropna()
-            stress.plot(ax=axes[i, 0], color="k")
+            if i <= len(colors_stresses):
+                color_stress = colors_stresses[i - 1]
+            else:
+                color_stress = "k"
+            stress.plot(ax=axes[i, 0], color=color_stress)
             if titles:
                 axes[i, 0].set_title(stress.name)
             if labels is not None:
@@ -204,7 +216,7 @@ def series(
                 stress.hist(
                     ax=axes[i, 1],
                     orientation="horizontal",
-                    color="k",
+                    color=color_stress,
                     weights=np.ones(len(stress)) / len(stress) * 100,
                     bins=int(np.ceil(1 + np.log2(len(stress)))),
                     grid=False,
@@ -213,7 +225,7 @@ def series(
                 stress.hist(
                     ax=axes[i, 1],
                     orientation="horizontal",
-                    color="k",
+                    color=color_stress,
                     bins=int(np.ceil(1 + np.log2(len(stress)))),
                     grid=False,
                     density=True,
