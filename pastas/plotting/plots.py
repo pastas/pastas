@@ -94,7 +94,9 @@ def series(
     tmin: str or pd.Timestamp
     tmax: str or pd.Timestamp
     colors_stresses: List of str
-        List with the matplotlib colorcodes to use for plotting each stress timeseries.
+        List with the matplotlib colorcodes to use for plotting each stress timeseries. 
+        If list is shorter than number of stresses, the remaining stresses are plotted 
+        in black. If None (default), default matplotlib colors will be used.
     labels: List of str
         List with the labels for each subplot.
     figsize: tuple
@@ -203,8 +205,7 @@ def series(
                 colors_stresses = list(mcolors.TABLEAU_COLORS.keys())
             try:
                 color_stress = colors_stresses[i-1]
-            except Exception as e:
-                print(f"{e} for user defined colors, using black color for plotting")
+            except Exception:
                 color_stress = "k"
             stress.plot(ax=axes[i, 0], color=color_stress)
             if titles:
