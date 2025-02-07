@@ -44,6 +44,14 @@ def ml() -> ps.Model:
 
 
 @pytest.fixture
+def ml_no_noisemodel() -> ps.Model:
+    ml = ps.Model(obs, name="Test_Model")
+    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma(), name="rch")
+    ml.add_stressmodel(sm)
+    return ml
+
+
+@pytest.fixture
 def ml_sm() -> ps.Model:
     ml_sm = ps.Model(obs.dropna(), name="Test_Model")
     ml_sm.add_noisemodel(ps.ArNoiseModel())
