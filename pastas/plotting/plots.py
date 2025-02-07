@@ -69,7 +69,6 @@ def series(
     tmax: Optional[TimestampType] = None,
     colors_stresses: Optional[List[str]] = None,
     labels: Optional[List[str]] = None,
-
     figsize: tuple = (10, 5),
 ) -> Axes:
     """Plot all the input time Series in a single plot.
@@ -94,8 +93,8 @@ def series(
     tmin: str or pd.Timestamp
     tmax: str or pd.Timestamp
     colors_stresses: List of str
-        List with the matplotlib colorcodes to use for plotting each stress timeseries. 
-        If list is shorter than number of stresses, the remaining stresses are plotted 
+        List with the matplotlib colorcodes to use for plotting each stress timeseries.
+        If list is shorter than number of stresses, the remaining stresses are plotted
         in black. If None (default), default matplotlib colors will be used.
     labels: List of str
         List with the labels for each subplot.
