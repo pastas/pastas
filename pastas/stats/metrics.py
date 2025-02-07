@@ -17,7 +17,7 @@ from typing import Optional
 
 from numpy import abs as npabs
 from numpy import average, log, nan, sqrt
-from pandas import DataFrame, Series
+from pandas import Series
 
 from pastas.decorators import PastasDeprecationWarning
 from pastas.stats.core import _get_weights, mean, std, var
