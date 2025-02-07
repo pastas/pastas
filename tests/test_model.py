@@ -154,8 +154,10 @@ def test_model_sim_w_nans_error(ml_no_settings):
 
 
 def test_modelstats(ml: ps.Model) -> None:
+    ml.del_noisemodel()
     ml.solve()
-    ml.stats.summary()
+    summary = ml.stats.summary()   
+    assert not summary.isnull().values.any(), "Nan value in summary"
 
 
 def test_fit_report(ml: ps.Model) -> None:
