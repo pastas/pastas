@@ -17,7 +17,7 @@ from typing import Optional
 
 from numpy import abs as npabs
 from numpy import average, log, nan, sqrt
-from pandas import DataFrame, Series
+from pandas import Series
 
 from pastas.decorators import PastasDeprecationWarning
 from pastas.stats.core import _get_weights, mean, std, var
@@ -742,46 +742,3 @@ def _compute_err(
         err = err.dropna()
 
     return err
-
-
-def picp(obs: Series, bounds: DataFrame):
-    """Compute the prediction interval coverage probability (PICP).
-
-    Parameters
-    ----------
-    obs : pandas.Series
-        Pandas Series with the measured time series and a DateTimeIndex.
-    bounds : DataFrame
-        DataFrame with the lower (first column) and upper (second columns) bounds of the prediction intervals.
-
-    Notes
-    -----
-    The Prediction Interval Coverage Probability (PICP) is computed as follows:
-
-    .. math:: PICP = \frac{1}{N} \sum _{i=1}^N a_i,
-        a_i =
-        \begin{cases}
-             1 & \text{if }h_i \in [\hat{h_i}^L, \hat{h_i}^U], \\
-             0 & \text{otherwise} \\
-        \end{cases}
-
-    Examples
-    --------
-    >>> import pandas as pd
-    >>> import numpy as np
-    >>> from pastas.stats import picp
-    >>> np.random.seed(0)
-    >>> obs = pd.Series(np.random.rand(100), index=pd.date_range("2000-01-01", periods=100))
-    >>> bounds = pd.DataFrame(np.random.rand(100, 2), index=obs.index)
-    >>> picp(obs, bounds)
-
-    """
-    # Check if the DateTimeIndex of the observations and the bounds match
-    if not obs.index.equals(bounds.index):
-        msg = "The DateTimeIndex of the observations and the bounds do not match."
-        logger.error(msg)
-        raise ValueError(msg)
-
-    # Determine if the observations are within the prediction intervals
-    a = (obs >= bounds.iloc[:, 0]) & (obs <= bounds.iloc[:, 1])
-    return a.mean()
