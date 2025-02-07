@@ -43,7 +43,7 @@ def sgi(series: Series, period=1) -> Series:
         # Loop over the months
         for month in range(1, 13, period):
             sel = array(range(period))+month
-            data = series[series.index.month in sel]
+            data = series[series.index.month.isin(sel)]
             n = data.size  # Number of observations
             pmin = 1 / (2 * n)
             pmax = 1 - pmin
