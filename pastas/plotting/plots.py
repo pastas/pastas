@@ -194,7 +194,13 @@ def series(
     if stresses is not None:
         for i, stress in enumerate(stresses, start=rows - len(stresses)):
             stress = stress[tmin:tmax].dropna()
-            stress.plot(ax=axes[i, 0], color="k")
+            if colors_stresses == None:
+                colors_stresses = list(mcolors.BASE_COLORS.keys())
+            try:
+                color_stress = colors_stresses[i-1]
+            except:
+                color_stress = "k"
+            stress.plot(ax=axes[i, 0], color=color_stress)
             if titles:
                 axes[i, 0].set_title(stress.name)
             if labels is not None:
@@ -204,7 +210,7 @@ def series(
                 stress.hist(
                     ax=axes[i, 1],
                     orientation="horizontal",
-                    color="k",
+                    color=color_stress,
                     weights=np.ones(len(stress)) / len(stress) * 100,
                     bins=int(np.ceil(1 + np.log2(len(stress)))),
                     grid=False,
@@ -213,7 +219,7 @@ def series(
                 stress.hist(
                     ax=axes[i, 1],
                     orientation="horizontal",
-                    color="k",
+                    color=color_stress,
                     bins=int(np.ceil(1 + np.log2(len(stress)))),
                     grid=False,
                     density=True,
