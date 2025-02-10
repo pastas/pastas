@@ -70,6 +70,7 @@ def series(
     colors_stresses: Optional[List[str]] = None,
     labels: Optional[List[str]] = None,
     figsize: tuple = (10, 5),
+    **kwargs,
 ) -> Axes:
     """Plot all the input time Series in a single plot.
 
@@ -100,20 +101,22 @@ def series(
         List with the labels for each subplot.
     figsize: tuple
         Set the size of the figure.
+    kwargs: 
+        keyword arguments passed to plotting functions of stress timeseries
 
     Returns
     -------
     matplotlib.Axes
     """
-    rows = 0
+    nrows = 0
     if head is not None:
-        rows += 1
+        nrows += 1
         if tmin is None:
             tmin = head.index[0]
         if tmax is None:
             tmax = head.index[-1]
     if stresses is not None:
-        rows += len(stresses)
+        nrows += len(stresses)
     if colors_stresses is None:
         colors_stresses = list(mcolors.TABLEAU_COLORS.keys())
     sharex = True
@@ -129,16 +132,16 @@ def series(
             cols += 1
             gridspec_kw["width_ratios"].append(1)
     fig, axes = plt.subplots(
-        rows,
+        nrows,
         cols,
         figsize=figsize,
         sharex=sharex,
         sharey="row",
         gridspec_kw=gridspec_kw,
     )
-    if rows == 1 and cols == 1:
+    if nrows == 1 and cols == 1:
         axes = np.array([[axes]])
-    elif rows == 1:
+    elif nrows == 1:
         axes = axes[np.newaxis]
     elif cols == 1:
         axes = axes[:, np.newaxis]
@@ -147,8 +150,8 @@ def series(
     if kde:
         axes[-1, 1].set_xlabel("Density [-]")
     if head is not None:
-        head = head[tmin:tmax].dropna()
-        head.plot(ax=axes[0, 0], marker=".", linestyle=" ", color="k")
+        #head = head[tmin:tmax].dropna() # why do we need dropna? why do we nee 
+        head.plot(ax=axes[0, 0], marker=".", linestyle=" ", color="k", **kwargs)
         if titles:
             axes[0, 0].set_title(head.name)
         if labels is not None:
@@ -200,13 +203,13 @@ def series(
             axes[0, 2].axis("off")
 
     if stresses is not None:
-        for i, stress in enumerate(stresses, start=rows - len(stresses)):
+        for i, stress in enumerate(stresses, start=nrows - len(stresses)):
             stress = stress[tmin:tmax].dropna()
             if i <= len(colors_stresses):
                 color_stress = colors_stresses[i - 1]
             else:
                 color_stress = "k"
-            stress.plot(ax=axes[i, 0], color=color_stress)
+            stress.plot(ax=axes[i, 0], color=color_stress, **kwargs)
             if titles:
                 axes[i, 0].set_title(stress.name)
             if labels is not None:
@@ -258,13 +261,8 @@ def series(
                 )
                 axes[i, 2].axis("off")
 
-    # temporary fix, as set_xlim currently does not work with strings mpl=3.6.1
-    if tmin is not None:
-        tmin = Timestamp(tmin)
-    if tmax is not None:
-        tmax = Timestamp(tmax)
-    axes[0, 0].set_xlim([tmin, tmax])
-    axes[0, 0].minorticks_off()
+    for irow in range(0, nrows - 1): 
+        axes[irow, 0].set_xticklabels('')
 
     fig.tight_layout()
     return axes
