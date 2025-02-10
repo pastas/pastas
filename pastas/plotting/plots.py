@@ -119,13 +119,11 @@ def series(
         nrows += len(stresses)
     if colors_stresses is None:
         colors_stresses = list(mcolors.TABLEAU_COLORS.keys())
-    sharex = True
     gridspec_kw = {}
     cols = 1
     if table and not hist and kde:
         hist = True
     if hist or kde:
-        sharex = False
         gridspec_kw["width_ratios"] = [3, 1]
         cols += 1
         if table:
@@ -135,7 +133,6 @@ def series(
         nrows,
         cols,
         figsize=figsize,
-        sharex=sharex,
         sharey="row",
         gridspec_kw=gridspec_kw,
     )
@@ -260,9 +257,10 @@ def series(
                     bbox=(0, 0, 1, 1), colWidths=(1.5, 1), cellText=stress_stats
                 )
                 axes[i, 2].axis("off")
-
-    for irow in range(0, nrows - 1):
+    for irow in range(0, nrows - 1):  # share axes of series (first column)
         axes[irow, 0].set_xticklabels("")
+        axes[irow, 0].set_xlabel("")
+        axes[irow + 1, 0].sharex(axes[0, 0])
 
     fig.tight_layout()
     return axes
