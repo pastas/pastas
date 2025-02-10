@@ -101,7 +101,7 @@ def series(
         List with the labels for each subplot.
     figsize: tuple
         Set the size of the figure.
-    kwargs: 
+    kwargs:
         keyword arguments passed to plotting functions of stress timeseries
 
     Returns
@@ -150,7 +150,7 @@ def series(
     if kde:
         axes[-1, 1].set_xlabel("Density [-]")
     if head is not None:
-        #head = head[tmin:tmax].dropna() # why do we need dropna? why do we nee 
+        # head = head[tmin:tmax].dropna() # why do we need dropna? why do we nee
         head.plot(ax=axes[0, 0], marker=".", linestyle=" ", color="k", **kwargs)
         if titles:
             axes[0, 0].set_title(head.name)
@@ -261,8 +261,8 @@ def series(
                 )
                 axes[i, 2].axis("off")
 
-    for irow in range(0, nrows - 1): 
-        axes[irow, 0].set_xticklabels('')
+    for irow in range(0, nrows - 1):
+        axes[irow, 0].set_xticklabels("")
 
     fig.tight_layout()
     return axes
