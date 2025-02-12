@@ -7,7 +7,11 @@ Formatting and Linting
 To ensure high quality code that is easy to read and maintain we follow the
 `Ruff <https://docs.astral.sh/ruff/>`_ code standard. Please checkout the `Ruff
 Documentation <https://docs.astral.sh/ruff/>`_ on how to format Python code
-this way.
+this way. Use these commands locally to autoformat with ruff::
+
+    ruff check --fix
+    ruff format
+
 
 Type Hints
 ----------
