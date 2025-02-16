@@ -38,7 +38,11 @@ def sgi(series: Series, period=1) -> Series:
     if isinstance(series, DataFrame):
         series = series.apply(sgi, period=period)
     elif isinstance(series, Series):
-        series = series.dropna().copy()  # Create a copy to ensure series is untouched.
+        # Create a copy to ensure series is untouched.
+        # Set dtype to avoid conflict when assinging SGI values
+        series = Series(data=series.values, index=series.index,
+                        dtype='float64', copy=True)
+        series.dropna(inplace=True)
 
         # Loop over the months
         for month in range(1, 13, period):
