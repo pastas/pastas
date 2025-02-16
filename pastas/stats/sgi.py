@@ -36,7 +36,7 @@ def sgi(series: Series, period=1) -> Series:
         raise Exception("SGI can only be called with period = 1, 2, or 3; not"+
                         str(period))
     if isinstance(series, DataFrame):
-        series = series.apply(sgi)
+        series = series.apply(sgi, period=period)
     elif isinstance(series, Series):
         series = series.dropna().copy()  # Create a copy to ensure series is untouched.
 
