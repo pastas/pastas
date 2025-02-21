@@ -441,10 +441,17 @@ class Statistics:
 
         >>> ml.stats.summary(stats=["mae", "rmse"])
         """
+
         if stats is None:
             stats_to_compute = self.ops
         else:
             stats_to_compute = stats
+
+        # Remove rmsn if no noise model
+        if "rmsn" in stats_to_compute and not (
+            self.ml.noisemodel and self.ml.settings["noise"]
+        ):
+            stats_to_compute.remove("rmsn")
 
         stats = DataFrame(columns=["Value"])
 
