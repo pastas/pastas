@@ -1,6 +1,6 @@
 """This module contains methods to compute the Standardized Groundwater Index."""
 
-from numpy import linspace, array
+from numpy import array, linspace
 from pandas import DataFrame, Series
 from scipy.stats import norm
 
@@ -32,21 +32,23 @@ def sgi(series: Series, period=1) -> Series:
     across different wells. It may be useful to resample the time series to a
     monthly interval before computing the SGI.
     """
-    if period != 1 and period != 2 and period !=3 :
-        raise Exception("SGI can only be called with period = 1, 2, or 3; not"+
-                        str(period))
+    if period != 1 and period != 2 and period != 3:
+        raise Exception(
+            "SGI can only be called with period = 1, 2, or 3; not" + str(period)
+        )
     if isinstance(series, DataFrame):
         series = series.apply(sgi, period=period)
     elif isinstance(series, Series):
         # Create a copy to ensure series is untouched.
         # Set dtype to avoid conflict when assinging SGI values
-        series = Series(data=series.values, index=series.index,
-                        dtype='float64', copy=True)
+        series = Series(
+            data=series.values, index=series.index, dtype="float64", copy=True
+        )
         series.dropna(inplace=True)
 
         # Loop over the months
         for month in range(1, 13, period):
-            sel = array(range(period))+month
+            sel = array(range(period)) + month
             data = series[series.index.month.isin(sel)]
             n = data.size  # Number of observations
             pmin = 1 / (2 * n)
