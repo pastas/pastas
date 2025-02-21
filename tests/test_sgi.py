@@ -39,8 +39,7 @@ for period in [0, 1, 2, 3, 4, "a"]:
         if period in [1, 2, 3]:
             raise Exception("sgi should work for period=" + str(period))
     if period == 1:
-        print(sgiArr[1], -0.295179)
-        assert abs(sgiArr[1] - -0.295179) < 0.001
+        assert abs(sgiArr.iloc[1] - -0.295179) < 0.001
 
 plt.xlim(dataset.index.values[0], dataset.index.values[-1])
 plt.ylabel("SGI")
