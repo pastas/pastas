@@ -1,24 +1,28 @@
-import pandas as pd
+import pytest
+from pandas import Series, concat
 
 import pastas as ps
 
-fileurl = "https://raw.githubusercontent.com/pastas/pastas/master/doc/examples/data"
-dataset = pd.read_csv(f"{fileurl}/head_nb1.csv", index_col=0, parse_dates=True)
+tol = 1e-3
 
-series = pd.Series(dataset["head"] * 100.0, dtype="int64")
 
-for period in [0, 1, 2, 3, 4, "a"]:
-    aLabel = "SGI-" + str(period)
-    sgiArr = period
-    try:
-        # with dataset
-        sgiArr = ps.stats.sgi(dataset, period=period)
-        # with Series
-        sgiArr = ps.stats.sgi(series, period=period)
-    except:
-        # ruff check   gives error for line above
-        #              E722 Do not use bare `except`
-        if period in [1, 2, 3]:
-            raise Exception("sgi should work for period=" + str(period))
-    if period == 1:
-        assert abs(sgiArr.iloc[1] - -0.295179) < 0.001
+def test_sgi_period1(head: Series) -> None:
+    sgi = ps.stats.sgi(head, period=1)
+    assert pytest.approx(sgi.iat[30], tol) == -0.812
+
+
+def test_sgi_df(head: Series) -> None:
+    df = concat([head, head], axis=1)
+    sgi = ps.stats.sgi(df, period=1)
+    assert pytest.approx(sgi.iat[30, 0], tol) == -0.812
+    assert pytest.approx(sgi.iat[30, 1], tol) == -0.812
+
+
+def test_sgi_period2(head: Series) -> None:
+    sgi = ps.stats.sgi(head, period=2)
+    assert pytest.approx(sgi.iat[30], tol) == -1.258
+
+
+def test_sgi_perioderror(head: Series) -> None:
+    with pytest.raises(ValueError):
+        _ = ps.stats.sgi(head, period=4)
