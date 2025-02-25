@@ -36,7 +36,8 @@ def sgi(series: Series, timescaleMonths: int = 1) -> Series:
     """
     if timescaleMonths not in (1, 2, 3):
         raise ValueError(
-            "SGI can only be called with timescaleMonths = 1, 2, or 3; not" + str(timescaleMonths)
+            "SGI can only be called with timescaleMonths = 1, 2, or 3; not"
+            + str(timescaleMonths)
         )
     if isinstance(series, DataFrame):
         series = series.apply(sgi, timescaleMonths=timescaleMonths)
