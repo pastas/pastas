@@ -1,16 +1,8 @@
 import numpy as np
 import pytest
-from pandas import Series, Timedelta, date_range, read_csv
+from pandas import Series, Timedelta, date_range
 
 import pastas as ps
-
-obs = (
-    read_csv("tests/data/obs.csv", index_col=0, parse_dates=True)
-    .squeeze("columns")
-    .dropna()
-)
-prec = read_csv("tests/data/rain.csv", index_col=[0], parse_dates=True).squeeze() * 1e-3
-evap = read_csv("tests/data/evap.csv", index_col=[0], parse_dates=True).squeeze() * 1e-3
 
 
 def generate_synthetic_heads(input, rfunc, params, const=10.0, cutoff=0.999, dt=1.0):
@@ -29,7 +21,7 @@ def generate_synthetic_heads(input, rfunc, params, const=10.0, cutoff=0.999, dt=
     return head
 
 
-def test_create_model() -> None:
+def test_create_model(obs: Series) -> None:
     ml = ps.Model(obs, name="Test_Model")
     ml.add_noisemodel(ps.ArNoiseModel())
 
@@ -170,21 +162,21 @@ def test_fit_report(ml: ps.Model) -> None:
     ml.fit_report(corr=True, stderr=True)
 
 
-def test_model_freq_geq_daily() -> None:
+def test_model_freq_geq_daily(prec: Series, pevap: Series) -> None:
     rf_rch = ps.Exponential()
     A_rch = 800
     a_rch = 50
     f_rch = -1.3
     constant = 20
 
-    stress = prec + f_rch * evap
+    stress = prec + f_rch * pevap
     head = generate_synthetic_heads(stress, rf_rch, (A_rch, a_rch), const=constant)
 
     models = []
     freqs = ["1D", "7D", "14D", "28D"]
     for freq in freqs:
         iml = ps.Model(head, name=freq)
-        rm = ps.RechargeModel(prec, evap, rfunc=rf_rch, name="recharge")
+        rm = ps.RechargeModel(prec, pevap, rfunc=rf_rch, name="recharge")
         iml.add_stressmodel(rm)
         iml.solve(freq=freq, report=False)
         models.append(iml)
@@ -193,7 +185,7 @@ def test_model_freq_geq_daily() -> None:
     assert (comparison.get_metrics(metric_selection=["rsq"]).squeeze() > 0.99).all()
 
 
-def test_model_freq_h():
+def test_model_freq_h(obs: Series):
     rf_tide = ps.Exponential()
     A_tide = 1.0
     a_tide = 0.15

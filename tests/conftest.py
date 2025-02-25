@@ -1,12 +1,19 @@
+from pathlib import Path
+
 import pytest
 from pandas import Series, read_csv, to_datetime
 
 import pastas as ps
 
-rain = read_csv("tests/data/rain.csv", index_col=0, parse_dates=True).squeeze("columns")
-evap = read_csv("tests/data/evap.csv", index_col=0, parse_dates=True).squeeze("columns")
+data_path = Path(__file__).parent / "data"
+rain = read_csv(data_path / "rain.csv", index_col=0, parse_dates=True).squeeze(
+    "columns"
+)
+evap = read_csv(data_path / "evap.csv", index_col=0, parse_dates=True).squeeze(
+    "columns"
+)
 obs = (
-    read_csv("tests/data/obs.csv", index_col=0, parse_dates=True)
+    read_csv(data_path / "obs.csv", index_col=0, parse_dates=True)
     .squeeze("columns")
     .dropna()
 )

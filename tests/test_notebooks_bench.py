@@ -1,11 +1,11 @@
 import os
 import shutil
+from pathlib import Path
 
 import pytest
 
-pathname = os.path.join("doc", "benchmarks")
-# get list of notebooks to run
-files = [f for f in os.listdir(pathname) if f.endswith(".ipynb")]
+pathname = Path(__file__).parent.parent / "doc/benchmarks"
+files = list(pathname.glob("*.ipynb"))
 
 testdir = "build"
 if os.path.isdir(os.path.join(pathname, testdir)):
