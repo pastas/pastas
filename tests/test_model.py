@@ -21,8 +21,8 @@ def generate_synthetic_heads(input, rfunc, params, const=10.0, cutoff=0.999, dt=
     return head
 
 
-def test_create_model(obs: Series) -> None:
-    ml = ps.Model(obs, name="Test_Model")
+def test_create_model(head: Series) -> None:
+    ml = ps.Model(head, name="Test_Model")
     ml.add_noisemodel(ps.ArNoiseModel())
 
 
@@ -52,8 +52,8 @@ def test_add_noisemodel(ml_empty: ps.Model) -> None:
     ml_empty.add_noisemodel(ps.ArNoiseModel())
 
 
-def test_armamodel() -> None:
-    ml = ps.Model(obs, name="Test_Model")
+def test_armamodel(head: Series) -> None:
+    ml = ps.Model(head, name="Test_Model")
     ml.add_noisemodel(ps.ArmaNoiseModel())
     ml.solve()
     ml.to_file("test.pas")
@@ -185,13 +185,13 @@ def test_model_freq_geq_daily(prec: Series, pevap: Series) -> None:
     assert (comparison.get_metrics(metric_selection=["rsq"]).squeeze() > 0.99).all()
 
 
-def test_model_freq_h(obs: Series):
+def test_model_freq_h(head: Series):
     rf_tide = ps.Exponential()
     A_tide = 1.0
     a_tide = 0.15
 
     # sine with period 12 hrs 25 minutes and amplitude 1.5 m
-    tidx = date_range(obs.index[0], obs.index[-1] + Timedelta(hours=23), freq="h")
+    tidx = date_range(head.index[0], head.index[-1] + Timedelta(hours=23), freq="h")
     tides = Series(
         index=tidx,
         data=1.5 * np.sin(2 * np.pi * np.arange(tidx.size) / (0.517375)),
