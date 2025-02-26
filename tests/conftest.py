@@ -43,19 +43,19 @@ def head() -> Series:
 
 
 @pytest.fixture
-def rm() -> ps.RechargeModel:
+def rm(prec: Series, evap: Series) -> ps.RechargeModel:
     rm = ps.RechargeModel(prec=prec, evap=evap, rfunc=ps.Gamma(), name="rch")
     return rm
 
 
 @pytest.fixture
-def sm_prec() -> ps.StressModel:
+def sm_prec(prec: Series) -> ps.StressModel:
     sm_prec = ps.StressModel(prec, rfunc=ps.Exponential(), name="prec", settings="prec")
     return sm_prec
 
 
 @pytest.fixture
-def sm_evap() -> ps.StressModel:
+def sm_evap(evap: Series) -> ps.StressModel:
     sm_evap = ps.StressModel(evap, rfunc=ps.Exponential(), name="evap", settings="evap")
     return sm_evap
 
