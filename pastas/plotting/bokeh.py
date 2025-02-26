@@ -216,7 +216,7 @@ class Bokeh:
         res_plot.legend.ncols = 2
 
         # Parameter Table
-        df = ColumnDataSource(self._model.parameters.loc[:, ["optimal"]])
+        df = ColumnDataSource(self._model.parameters.loc[:, ["optimal", "stderr"]])
         columns = [
             TableColumn(
                 field="index",
