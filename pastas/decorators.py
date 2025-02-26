@@ -189,3 +189,10 @@ def latexfun(
         return latexify_decorator(function)
 
     return latexify_decorator
+
+def documented_by(original: Optional[Function] = None) -> Function:
+    def wrapper(target):
+        target.__doc__ = original.__doc__
+        return target
+
+    return wrapper

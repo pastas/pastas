@@ -30,7 +30,7 @@ from pandas import DataFrame
 
 from pastas.typing import Model, TimestampType
 
-from .decorators import model_tmin_tmax
+from .decorators import documented_by, model_tmin_tmax
 from .stats import diagnostics, metrics
 
 
@@ -461,6 +461,7 @@ class Statistics:
         stats.index.name = "Statistic"
         return stats
 
+    @documented_by(diagnostics)
     @model_tmin_tmax
     def diagnostics(
         self,
@@ -480,3 +481,4 @@ class Statistics:
         return diagnostics(
             series=series, alpha=alpha, nparam=nparam, stats=stats, float_fmt=float_fmt
         )
+
