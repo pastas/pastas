@@ -1,11 +1,11 @@
 import os
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pytest
 
-pathname = os.path.join("doc", "examples")
-# get list of examples to run
-files = [f for f in os.listdir(pathname) if f.endswith(".py")]
+pathname = Path(__file__).parent.parent / "doc/examples"
+files = list(pathname.glob("*.py"))
 
 
 @pytest.mark.parametrize("file", files)

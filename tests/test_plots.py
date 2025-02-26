@@ -59,8 +59,8 @@ def test_summary_pdf(ml: Model) -> None:
     _ = ml.plots.summary_pdf()
 
 
-def test_pairplot(prec: Series, pevap: Series, head: Series) -> None:
-    _ = pairplot([prec, pevap, head])
+def test_pairplot(prec: Series, evap: Series, head: Series) -> None:
+    _ = pairplot([prec, evap, head])
 
 
 def test_plot_contribution(ml: Model) -> None:
