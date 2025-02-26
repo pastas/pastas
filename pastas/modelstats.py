@@ -481,4 +481,3 @@ class Statistics:
         return diagnostics(
             series=series, alpha=alpha, nparam=nparam, stats=stats, float_fmt=float_fmt
         )
-
