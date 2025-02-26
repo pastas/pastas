@@ -919,7 +919,8 @@ class EmceeSolve(BaseSolver):
             self.parameters[self.parameters.vary].initial.values,
         )
         ndim = pinit.size
-        pinit = pinit + 1e-2 * np.random.randn(self.nwalkers, ndim)
+
+        pinit = pinit + np.abs(pinit) * 1e-2 * np.random.randn(self.nwalkers, ndim)
 
         # Create sampler and run mcmc
         if self.parallel:
