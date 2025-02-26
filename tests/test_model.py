@@ -26,7 +26,7 @@ def test_create_model(head: Series) -> None:
     ml.add_noisemodel(ps.ArNoiseModel())
 
 
-def test_add_stressmodel(ml_empty: ps.Model, sm_prec) -> None:
+def test_add_stressmodel(ml_empty: ps.Model, sm_prec: ps.StressModel) -> None:
     ml_empty.add_stressmodel(sm_prec)
 
 
@@ -59,8 +59,8 @@ def test_armamodel(head: Series) -> None:
     ml.to_file("test.pas")
 
 
-def test_del_noisemodel(ml_empty: ps.Model) -> None:
-    ml_empty.del_noisemodel()
+def test_del_noisemodel(ml_noise_only: ps.Model) -> None:
+    ml_noise_only.del_noisemodel()
 
 
 def test_solve_model(ml: ps.Model) -> None:
@@ -140,9 +140,12 @@ def test_get_output_series_arguments(ml: ps.Model) -> None:
     ml.get_output_series(split=False, add_contributions=False)
 
 
-def test_model_sim_w_nans_error(ml_no_settings):
+def test_model_sim_w_nans_error(ml_noise_only: ps.Model, prec: Series, evap: Series):
+    sm1 = ps.StressModel(prec, rfunc=ps.Exponential(), name="prec", settings=None)
+    sm2 = ps.StressModel(evap, rfunc=ps.Exponential(), name="evap", settings=None)
+    ml_noise_only.add_stressmodel([sm1, sm2])
     with pytest.raises(ValueError) as _:
-        ml_no_settings.solve()
+        ml_noise_only.solve()
 
 
 def test_modelstats(ml: ps.Model) -> None:
@@ -151,9 +154,9 @@ def test_modelstats(ml: ps.Model) -> None:
     assert not summary.isnull().values.any(), "Nan value in summary"
 
 
-def test_modelstats_no_noisemodel(ml_no_noisemodel: ps.Model) -> None:
-    ml_no_noisemodel.solve()
-    summary = ml_no_noisemodel.stats.summary()
+def test_modelstats_no_noisemodel(ml_rm: ps.Model) -> None:
+    ml_rm.solve()
+    summary = ml_rm.stats.summary()
     assert not summary.isnull().values.any(), "Nan value in summary"
 
 
@@ -162,21 +165,21 @@ def test_fit_report(ml: ps.Model) -> None:
     ml.fit_report(corr=True, stderr=True)
 
 
-def test_model_freq_geq_daily(prec: Series, pevap: Series) -> None:
+def test_model_freq_geq_daily(prec: Series, evap: Series) -> None:
     rf_rch = ps.Exponential()
     A_rch = 800
     a_rch = 50
     f_rch = -1.3
     constant = 20
 
-    stress = prec + f_rch * pevap
+    stress = prec + f_rch * evap
     head = generate_synthetic_heads(stress, rf_rch, (A_rch, a_rch), const=constant)
 
     models = []
     freqs = ["1D", "7D", "14D", "28D"]
     for freq in freqs:
         iml = ps.Model(head, name=freq)
-        rm = ps.RechargeModel(prec, pevap, rfunc=rf_rch, name="recharge")
+        rm = ps.RechargeModel(prec, evap, rfunc=rf_rch, name="recharge")
         iml.add_stressmodel(rm)
         iml.solve(freq=freq, report=False)
         models.append(iml)
