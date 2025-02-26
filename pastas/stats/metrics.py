@@ -34,6 +34,7 @@ __all__ = [
     "aicc",
     "pearsonr",
     "kge",
+    "picp",
 ]
 
 logger = getLogger(__name__)
@@ -742,6 +743,9 @@ def _compute_err(
         err = err.dropna()
 
     return err
+
+
+# Prediction Interval Metrics
 
 
 def picp(obs: Series, bounds: DataFrame):
