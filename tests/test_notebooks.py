@@ -1,3 +1,4 @@
+#%%
 import os
 import shutil
 from pathlib import Path
@@ -19,7 +20,7 @@ def test_notebook(file) -> None:
     cwd = os.getcwd()
 
     os.chdir(pathname)
-    if file not in [
+    if file.name not in [
         "prepare_timeseries.ipynb",
         "emcee_uncertainty.ipynb",
     ]:
