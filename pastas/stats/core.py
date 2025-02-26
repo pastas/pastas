@@ -6,6 +6,7 @@ time steps often observed in hydrological time series.
 """
 
 # Type Hinting
+from logging import getLogger
 from typing import Tuple, Union
 
 from numpy import (
@@ -30,16 +31,19 @@ from pastas.typing import ArrayLike
 
 from ..decorators import njit
 
+logger = getLogger(__name__)
+
 
 def acf(
     x: Series,
     lags: ArrayLike = 365,
-    bin_method: str = "rectangle",
+    bin_method: str = "regular",
     bin_width: float = 0.5,
     max_gap: float = inf,
     min_obs: int = 50,
     full_output: bool = False,
     alpha: float = 0.05,
+    fallback_bin_method: str = "gaussian",
 ) -> Union[Series, DataFrame]:
     """Calculate the autocorrelation function for irregular time steps.
 
@@ -77,12 +81,16 @@ def acf(
 
     Notes
     -----
-    Calculate the autocorrelation function for irregular timesteps based on the
-    slotting technique. Different methods (kernels) to bin the data are available.
-    Method here is based on :cite:t:`rehfeld_comparison_2011`.
+    The ACF method primarily tries to estimate the autocorrelation using common
+    techniques if the time step between the measurements is regular. If the time step
+    is irregular, the method falls back to an alternative method to calculate the
+    autocorrelation function for irregular timesteps based on the slotting technique
+    :cite:t:`rehfeld_comparison_2011`. Different methods (kernels) to bin the data are
+    available.
 
-    If the time series have regular time step we recommend to use the acf method from
-    the Statsmodels package.
+    Estimating the autocorrelation for irregular time steps can be challenging.
+    Depending on the data and the binning method and settings used, the correlation can
+    be above 1 or below -1. If this occurs, a warning is raised.
 
     Examples
     --------
@@ -106,6 +114,7 @@ def acf(
         min_obs=min_obs,
         full_output=full_output,
         alpha=alpha,
+        fallback_bin_method=fallback_bin_method,
     )
     c.name = "ACF"
     if full_output:
@@ -118,12 +127,13 @@ def ccf(
     x: Series,
     y: Series,
     lags: ArrayLike = 365,
-    bin_method: str = "rectangle",
+    bin_method: str = "gaussian",
     bin_width: float = 0.5,
     max_gap: float = inf,
     min_obs: int = 50,
     full_output: bool = False,
     alpha: float = 0.05,
+    fallback_bin_method: str = "gaussian",
 ) -> Union[Series, DataFrame]:
     """Method to compute the cross-correlation for irregular time series.
 
@@ -150,6 +160,10 @@ def ccf(
         If True, also estimated uncertainties are returned. Default is False.
     alpha: float
         alpha level to compute the confidence interval (e.g., 1-alpha).
+    fallback_bin_method: str, optional
+        method to determine the type of bin used to compute the correlations if the
+        data has irregular time steps between the measurements. Options are "gaussian"
+        (default) and "rectangle" .
 
     Returns
     -------
@@ -162,15 +176,35 @@ def ccf(
     Examples
     --------
     >>> ccf = ps.stats.ccf(x, y, bin_method="gaussian")
-    """
-    # prepare the time indices for x and y
-    if x.index.inferred_freq and y.index.inferred_freq:
-        bin_method = "regular"
-    elif bin_method == "regular":
-        raise Warning(
-            "time series does not have regular time steps, choose different bin_method."
-        )
 
+    Notes
+    -----
+    The CCF method primarily tries to estimate the autocorrelation using common
+    techniques if the time step between the measurements is regular. If the time step
+    is irregular, the method falls back to an alternative method to calculate the
+    autocorrelation function for irregular timesteps based on the slotting technique
+    :cite:t:`rehfeld_comparison_2011`. Different methods (kernels) to bin the data are
+    available.
+
+    Estimating the autocorrelation for irregular time steps can be challenging.
+    Depending on the data and the binning method and settings used, the correlation can
+    be above 1 or below -1. If this occurs, a warning is raised.
+
+    """
+    # Check if the time series have regular time steps
+    if (
+        not x.index.inferred_freq
+        and not y.index.inferred_freq
+        and bin_method == "regular"
+    ):
+        msg = (
+            f"time series does not have regular time steps, the fallback_bin_method"
+            f"'{fallback_bin_method}' is applied"
+        )
+        logger.warning(msg)
+        bin_method = fallback_bin_method
+
+    # prepare the time indices for x and y
     x, t_x, dt_x_mu = _preprocess(x, max_gap=max_gap)
     y, t_y, dt_y_mu = _preprocess(y, max_gap=max_gap)
     dt_mu = max(dt_x_mu, dt_y_mu)  # The mean time step from both series
@@ -200,6 +234,15 @@ def ccf(
 
     result = result.where(result.n > min_obs).dropna()
 
+    # Raise a warning if the correlation is above 1 or below -1
+    if (result.ccf > 1).any() or (result.ccf < -1).any():
+        msg = (
+            "The correlation is above 1 or below -1. This can occur due to the "
+            "binning method used. Please check the data and the binning method and "
+            "use the autocorrelation function with extreme care."
+        )
+        logger.warning(msg)
+
     if full_output:
         return result
     else:
@@ -210,8 +253,7 @@ def _preprocess(x: Series, max_gap: float) -> Tuple[ArrayLike, ArrayLike, float]
     """Internal method to preprocess the time series."""
     dt = x.index.to_series().diff().dropna().values / Timedelta(1, "D")
     dt_mu = dt[dt < max_gap].mean()  # Deal with big gaps if present
-    if int(dt_mu) == 0:
-        dt_mu = 1  # Prevent division by zero error
+    dt_mu = max(dt_mu, 1)  # Prevent division by zero error
     t = dt.cumsum()
 
     # Normalize the values and create numpy arrays
@@ -292,9 +334,15 @@ def _compute_ccf_regular(
     lags: ArrayLike, x: ArrayLike, y: ArrayLike
 ) -> Tuple[ArrayLike, ArrayLike]:
     c = empty_like(lags)
+    n = len(x)
     for i, lag in enumerate(lags):
-        c[i] = corrcoef(x[: -int(lag)], y[int(lag) :])[0, 1]
-    b = len(x) - lags
+        lag = int(lag)
+        if lag < n:
+            c[i] = corrcoef(x[: n - lag], y[lag:])[0, 1]
+        else:
+            c[i] = nan
+    b = n - lags
+    b[b <= 0] = 1e-16  # Prevent division by zero error
     return c, b
 
 
