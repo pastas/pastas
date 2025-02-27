@@ -146,7 +146,12 @@ class Bokeh:
         """
         data = self._model.get_output_series(tmin=tmin, tmax=tmax, split=False)
         ranges = data.max() - data.min()
-        ranges = ranges.drop([ranges.iloc[:2].idxmin(), "Noise"])
+
+        ranges = ranges.drop(ranges.iloc[:2].idxmin())
+
+        if self._model.settings["noise"]:
+            ranges = ranges.drop("Noise")
+
         heights = (ranges / ranges.sum() * (height - 50)).values.astype(int)
         source = ColumnDataSource(data)
         rsq = self._model.stats.rsq(tmin=tmin, tmax=tmax)
