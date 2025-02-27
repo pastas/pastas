@@ -1,17 +1,18 @@
 ---
 name: Bug report
-about: Create a report to help us improve Pastas
-title: "[BUG]"
+about: An unexpected problem or behavior
 labels: bug
+type: Bug
 assignees: ''
-
 ---
 
 **Describe the bug**
 A clear and concise description of what the bug is.
 
-**To Reproduce**
-`#Code to reproduce the behavior`
+**Code to reproduce**
+```python
+# Code to reproduce the behavior
+```
 
 **Expected behavior**
 A clear and concise description of what you expected to happen.
@@ -20,7 +21,12 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **Python package version**
- - run `ps.show_versions()` for this
+Run `ps.show_versions()` for this
 
 **Additional context**
 Add any other context about the problem here.
+
+**Checklist**
+- [ ] Add labels
+- [ ] Add issue type
+- [ ] Assign yourself, a Pastas developer or no one

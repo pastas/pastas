@@ -1,40 +1,24 @@
 ---
-name: Development
-about: Suggest new features to implement into Pastas
-title: "[DEVELOPMENT]"
-labels: development
+name: Feature
+about: A request, idea or new functionality
+type: Feature
 assignees: ''
-
 ---
 
 **Describe the proposed feature**
-A clear and concise description of what the proposed new feature is.
+A clear and concise description of what the proposed feature or enhancement is.
 
 **Expected usage**
-A clear and concise description of what you expected to happen.
+A clear and concise description of what you expect to happen.
 
-`#Code to show the expected the behavior`
+```python
+# Code to show the expected the behavior
+```
 
 **Additional context**
 Add any other context about the feature here.
 
-
----
-name: Enhancement
-about: Suggest an enhancement of the existing code in Pastas
-title: "[ENHANCEMENT]"
-labels: enhancement
-assignees: ''
-
----
-
-**Describe the proposed enhancement**
-A clear and concise description of what the proposed enhancement is.
-
-**Expected behavior**
-A clear and concise description of what you expected to happen.
-
-`#Code to reproduce the behavior`
-
-**Additional context**
-Add any other context about the problem here.
+**Checklist**
+- [ ] Add labels
+- [ ] Add issue type
+- [ ] Assign yourself, a Pastas developer or no one
