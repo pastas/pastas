@@ -1003,7 +1003,7 @@ def reversals_avg(series: Series) -> float:
     # Check if the time step is approximately daily
     if not (dt > 0.9).all() & (dt < 1.1).all():
         msg = (
-            "The time step is not approximately daily (>10%% of time steps are"
+            "The time step is not approximately daily (>10%% of time steps are "
             "non-daily). This may lead to incorrect results."
         )
         logger.warning(msg)
@@ -1172,8 +1172,6 @@ def _get_events_binned(
     if normalize:
         series = _normalize(series)
 
-    series.name = "difference"  # Name the series for the split function
-
     # Get the negative differences
     h = series.dropna().copy()
 
@@ -1185,7 +1183,9 @@ def _get_events_binned(
         h[h.diff() > 0] = nan
 
     # Split the data into events
-    events = split(h, where(isnan(h.values))[0])
+    events = []
+    for event in split(h.index, where(isnan(h.values))[0]):
+        events.append(h.loc[event])
     events = [ev[~isnan(ev.values)] for ev in events if not isinstance(ev, ndarray)]
 
     events_new = []
@@ -1770,6 +1770,12 @@ def summary(
     >>> df = DataFrame(index=idx, data=data, columns=[year_offset, "B", "C"], dtype=float)
     >>> ps.stats.signatures.summary(df)
 
+    Notes
+    -----
+    Rather than throwing an error when a signature cannot be computed, a warning is
+    issued and the value is set to np.nan. This allows the user to still use the
+    results of the other signatures.
+
     """
     if signatures is None:
         signatures = __all__
@@ -1778,6 +1784,7 @@ def summary(
         result = DataFrame(index=signatures, columns=data.columns, dtype=float)
     elif isinstance(data, Series):
         result = DataFrame(index=signatures, columns=[data.name], dtype=float)
+        data = data.to_frame()
     else:
         raise ValueError("Invalid data type. Expected DataFrame or Series.")
 
@@ -1791,9 +1798,13 @@ def summary(
 
         # Get the function and compute the signature for each column/series
         func = getattr(ps.stats.signatures, signature)
-        if isinstance(data, DataFrame):
-            result.loc[signature] = data.apply(func)
-        elif isinstance(data, Series):
-            result.loc[signature] = func(data)
+
+        for col in data.columns:
+            try:
+                result.loc[signature, col] = func(data[col])
+            except Exception as e:
+                msg = f"Could not compute signature {signature} for column {col}: {e}"
+                logger.warning(msg)
+                result.loc[signature, col] = nan
 
     return result
