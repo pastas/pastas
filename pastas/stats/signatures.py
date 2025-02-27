@@ -1784,6 +1784,7 @@ def summary(
         result = DataFrame(index=signatures, columns=data.columns, dtype=float)
     elif isinstance(data, Series):
         result = DataFrame(index=signatures, columns=[data.name], dtype=float)
+        data = data.to_frame()
     else:
         raise ValueError("Invalid data type. Expected DataFrame or Series.")
 
@@ -1797,22 +1798,13 @@ def summary(
 
         # Get the function and compute the signature for each column/series
         func = getattr(ps.stats.signatures, signature)
-        if isinstance(data, DataFrame):
-            for col in data.columns:
-                try:
-                    result.loc[signature, col] = func(data[col])
-                except Exception as e:
-                    msg = (
-                        f"Could not compute signature {signature} for column {col}: {e}"
-                    )
-                    logger.warning(msg)
-                    result.loc[signature, col] = nan
-        elif isinstance(data, Series):
+
+        for col in data.columns:
             try:
-                result.loc[signature, data.name] = func(data)
+                result.loc[signature, col] = func(data[col])
             except Exception as e:
-                msg = f"Could not compute signature {signature} for series {data.name}: {e}"
+                msg = f"Could not compute signature {signature} for column {col}: {e}"
                 logger.warning(msg)
-                result.loc[signature, data.name] = nan
+                result.loc[signature, col] = nan
 
     return result
