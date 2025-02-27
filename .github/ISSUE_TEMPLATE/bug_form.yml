@@ -1,0 +1,54 @@
+name: Bug Form
+description: Form for an unexpected problem or behavior
+type: "Bug"
+labels: ["bug"]
+body:
+  - type: checkboxes
+    attributes:
+      label: Is there an existing issue for this?
+      description: Please search to see if an issue already exists for the bug you encountered.
+      options:
+        - label: I have searched the existing issues
+          required: true
+  - type: textarea
+    attributes:
+      label: Describe the bug
+      description: A concise description of what you're experiencing.
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Expected behavior
+      description: A concise description of what you expected to happen.
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Code to reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. In this environment `ps.show_versions()`
+        2. Run
+        ```python
+        # Code to reproduce the behavior
+        ```
+        3. Gives output or error...
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Anything else?
+      description: |
+        Links? References? Anything that will give us more context about the issue you are encountering!
+
+        Tip: You can attach images or log files by clicking this area to highlight it and then dragging files in.
+    validations:
+      required: false
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our [code of conduct](https://github.com/pastas/pastas?tab=coc-ov-file)
+      options:
+        - label: I agree to follow Pastas code of conduct
+          required: true

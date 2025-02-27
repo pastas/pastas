@@ -9,22 +9,19 @@ labels: bug
 ### Describe the bug
 A clear and concise description of what the bug is.
 
+### Expected behavior
+A clear and concise description of what you expected to happen.
+
 ### Code to reproduce
 ```python
 # Code to reproduce the behavior
 ```
 
-### Expected behavior
-A clear and concise description of what you expected to happen.
-
-### Screenshots
-If applicable, add screenshots to help explain your problem.
-
-### Python package version
+### Package and Python version
 Run `ps.show_versions()` for this
 
 ### Additional context
-Add any other context about the problem here.
+Add any other context about the problem here. If applicable, add screenshots to help explain your problem.
 
 ### Issue checklist
 - [ ] Add labels
