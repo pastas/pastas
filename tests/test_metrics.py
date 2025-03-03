@@ -36,12 +36,12 @@ def test_evp():
 
 def test_nse():
     nse = ps.stats.metrics.nse(obs=obs, sim=sim)
-    assert pytest.approx(nse, tol) == 0.99855
+    assert pytest.approx(nse, tol) == 0.998550
 
 
 def test_nnse():
     nnse = ps.stats.metrics.nnse(obs=obs, sim=sim)
-    assert pytest.approx(nnse, tol) == 0.99855
+    assert pytest.approx(nnse, tol) == 0.998552
 
 
 def test_rsq():
