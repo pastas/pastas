@@ -39,6 +39,11 @@ def test_nse():
     assert pytest.approx(nse, tol) == 0.99855
 
 
+def test_nnse():
+    nnse = ps.stats.metrics.nnse(obs=obs, sim=sim)
+    assert pytest.approx(nnse, tol) == 0.99855
+
+
 def test_rsq():
     rsq = ps.stats.metrics.rsq(obs=obs, sim=sim)
     assert pytest.approx(rsq, tol) == 0.99855
