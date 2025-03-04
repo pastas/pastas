@@ -56,8 +56,8 @@ def acf(
         numpy array containing the lags in days for which the cross-correlation if
         calculated. Defaults is all lags from 1 to 365 days.
     bin_method: str, optional
-        method to determine the type of bin. Options are "rectangle" (default),
-        "gaussian" and "regular" (for regular timesteps).
+        method to determine the type of bin. Options are "regular" for regular data
+        (default), ans "gaussian" and "rectangle" for irregular data.
     bin_width: float, optional
         number of days used as the width for the bin to calculate the correlation.
     max_gap: float, optional
@@ -127,7 +127,7 @@ def ccf(
     x: Series,
     y: Series,
     lags: ArrayLike = 365,
-    bin_method: str = "gaussian",
+    bin_method: str = "regular",
     bin_width: float = 0.5,
     max_gap: float = inf,
     min_obs: int = 50,
@@ -146,8 +146,8 @@ def ccf(
         numpy array containing the lags in days for which the cross-correlation is
         calculated. Defaults is all lags from 1 to 365 days.
     bin_method: str, optional
-        method to determine the type of bin. Options are "rectangle" (default),
-        "gaussian" and "regular" (for regular timesteps).
+        method to determine the type of bin. Options are "regular" for regular data
+        (default), ans "gaussian" and "rectangle" for irregular data.
     bin_width: float, optional
         number of days used as the width for the bin to calculate the correlation.
     max_gap: float, optional
@@ -179,16 +179,16 @@ def ccf(
 
     Notes
     -----
-    The CCF method primarily tries to estimate the autocorrelation using common
+    The CCF method primarily tries to estimate the correlation using common
     techniques if the time step between the measurements is regular. If the time step
     is irregular, the method falls back to an alternative method to calculate the
-    autocorrelation function for irregular timesteps based on the slotting technique
+    correlation function for irregular timesteps based on the slotting technique
     :cite:t:`rehfeld_comparison_2011`. Different methods (kernels) to bin the data are
     available.
 
-    Estimating the autocorrelation for irregular time steps can be challenging.
-    Depending on the data and the binning method and settings used, the correlation can
-    be above 1 or below -1. If this occurs, a warning is raised.
+    Estimating the correlation for irregular time steps can be challenging. Depending
+    on the data and the binning method and settings used, the correlation can be above
+    1 or below -1. If this occurs, a warning is raised.
 
     """
     # Check if the time series have regular time steps
