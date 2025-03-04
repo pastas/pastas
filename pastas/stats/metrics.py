@@ -12,13 +12,14 @@ or directly from a Pastas model:
 >>> ml.stats.rmse()
 """
 
-from logging import captureWarnings, getLogger
+from logging import getLogger
 from typing import Optional
 
 from numpy import abs as npabs
 from numpy import average, log, nan, sqrt
-from pandas import Series
+from pandas import DataFrame, Series
 
+from pastas.decorators import PastasDeprecationWarning
 from pastas.stats.core import _get_weights, mean, std, var
 
 __all__ = [
@@ -26,6 +27,7 @@ __all__ = [
     "sse",
     "mae",
     "nse",
+    "nnse",
     "evp",
     "rsq",
     "bic",
@@ -33,13 +35,10 @@ __all__ = [
     "aicc",
     "pearsonr",
     "kge",
+    "picp",
 ]
 
-captureWarnings(True)
 logger = getLogger(__name__)
-warnings_logger = getLogger("py.warnings")
-logger.addHandler(warnings_logger)
-
 
 # Absolute Error Metrics
 
@@ -355,6 +354,60 @@ def nse(
     return 1 - (w * err.to_numpy() ** 2).sum() / (w * (obs.to_numpy() - mu) ** 2).sum()
 
 
+def nnse(
+    obs: Series,
+    sim: Optional[Series] = None,
+    res: Optional[Series] = None,
+    missing: str = "drop",
+    weighted: bool = False,
+    max_gap: int = 30,
+) -> float:
+    """Compute the (weighted) Normalized Nash-Sutcliffe Efficiency (NNSE).
+
+    Parameters
+    ----------
+    obs: pandas.Series
+        Series with the observed values.
+    sim: pandas.Series, optional
+        The Series with the simulated values.
+    res: pandas.Series, optional
+        The Series with the residual values. If time series for the residuals are
+        provided, the sim and obs arguments are ignored. Note that the residuals
+        must be computed as `obs - sim` here.
+    missing: str, optional
+        string with the rule to deal with missing values. Only "drop" is supported now.
+    weighted: bool, optional
+        If weighted is True, the variances are computed using the time step between
+        observations as weights. Default is False.
+    max_gap: int, optional
+        maximum allowed gap period in days to use for the computation of the weights.
+        All time steps larger than max_gap are replace with the max_gap value.
+        Default value is 30 days.
+
+    Notes
+    -----
+    NNSE computed according to :cite:t:`nash_normalized_2006`
+
+    .. math:: \\text{NNSE} = 1 / (2 - NSE)
+
+    This metric normalizes the NSE between ~0 and 1 instead of -infinity and 1.
+    So the optimal value for NNSE is 1, same as the NSE. However, an NNSE value
+    of 0.5 corresponds to an NSE of 0, while the worst possible NNSE value is ~0.
+    """
+    nnse = 1 / (
+        2
+        - nse(
+            obs=obs,
+            sim=sim,
+            res=res,
+            missing=missing,
+            weighted=weighted,
+            max_gap=max_gap,
+        )
+    )
+    return nnse
+
+
 def rsq(
     obs: Series,
     sim: Optional[Series] = None,
@@ -647,6 +700,11 @@ def kge(
     return kge
 
 
+@PastasDeprecationWarning(
+    remove_version="2.0",
+    reason="""This function `kge_2012` will be deprecated in Pastas version 2.0. Please
+    use `pastas.stats.kge(modified=True)` to get the same outcome.""",
+)
 def kge_2012(
     obs: Series,
     sim: Series,
@@ -685,11 +743,6 @@ def kge_2012(
     weighted equals True, the weighted mean, variance and pearson
     correlation are used.
     """
-
-    logger.warning(
-        "This function `kge_2012` will be deprecated in Pastas version 2.0. Please use"
-        "`pastas.stats.kge(modified=True)` to get the same outcome.",
-    )
     return kge(
         obs=obs,
         sim=sim,
@@ -745,3 +798,53 @@ def _compute_err(
         err = err.dropna()
 
     return err
+
+
+# Prediction Interval Metrics
+
+
+def picp(obs: Series, bounds: DataFrame):
+    """Compute the prediction interval coverage probability (PICP).
+
+    Parameters
+    ----------
+    obs : pandas.Series
+        Pandas Series with the measured time series and a DateTimeIndex.
+    bounds : DataFrame
+        DataFrame with the lower (first column) and upper (second columns) bounds of the
+        prediction intervals.
+
+    Notes
+    -----
+    The Prediction Interval Coverage Probability (PICP) is computed as follows:
+
+    .. math:: PICP = \frac{1}{N} \sum _{i=1}^N a_i,
+        a_i =
+        \begin{cases}
+             1 & \text{if }h_i \in [\hat{h_i}^L, \hat{h_i}^U], \\
+             0 & \text{otherwise} \\
+        \end{cases}
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> import numpy as np
+    >>> from pastas.stats import picp
+    >>> obs = pd.Series(np.random.rand(100),
+                        index=pd.date_range("2000-01-01", periods=100))
+    >>> bounds = pd.DataFrame(np.random.rand(100, 2), index=obs.index)
+    >>> picp(obs, bounds)
+
+    """
+    # Check if the DateTimeIndex of the observations and the bounds match
+    if not obs.index.isin(bounds.index).all():
+        msg = "The DateTimeIndex of the observations and the bounds do not match."
+        logger.error(msg)
+        raise ValueError(msg)
+
+    if not obs.index.equals(bounds.index):
+        bounds = bounds.loc[obs.index, :]
+
+    # Determine if the observations are within the prediction intervals
+    a = (obs >= bounds.iloc[:, 0]) & (obs <= bounds.iloc[:, 1])
+    return a.mean()

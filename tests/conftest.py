@@ -1,84 +1,101 @@
+from pathlib import Path
+
 import pytest
 from pandas import Series, read_csv, to_datetime
 
 import pastas as ps
 
-rain = read_csv("tests/data/rain.csv", index_col=0, parse_dates=True).squeeze("columns")
-evap = read_csv("tests/data/evap.csv", index_col=0, parse_dates=True).squeeze("columns")
-obs = (
-    read_csv("tests/data/obs.csv", index_col=0, parse_dates=True)
-    .squeeze("columns")
-    .dropna()
-)
+data_path = Path(__file__).parent / "data"
+
+
+def get_prec():
+    prec = read_csv(data_path / "rain.csv", index_col=0, parse_dates=True).squeeze()
+    return prec
+
+
+def get_evap():
+    evap = read_csv(data_path / "evap.csv", index_col=0, parse_dates=True).squeeze()
+    return evap
+
+
+def get_head() -> Series:
+    head = (
+        read_csv(data_path / "obs.csv", index_col=0, parse_dates=True)
+        .squeeze()
+        .dropna()
+    )
+    return head
 
 
 @pytest.fixture
 def prec() -> Series:
-    return rain
+    return get_prec()
 
 
 @pytest.fixture
-def pevap() -> Series:
-    return evap
+def evap() -> Series:
+    return get_evap()
 
 
 @pytest.fixture
 def head() -> Series:
-    return obs
+    return get_head()
 
 
 @pytest.fixture
-def ml_empty() -> ps.Model:
-    ml_empty = ps.Model(obs, name="Test_Model")
+def rm(prec: Series, evap: Series) -> ps.RechargeModel:
+    rm = ps.RechargeModel(prec=prec, evap=evap, rfunc=ps.Gamma(), name="rch")
+    return rm
+
+
+@pytest.fixture
+def sm_prec(prec: Series) -> ps.StressModel:
+    sm_prec = ps.StressModel(prec, rfunc=ps.Exponential(), name="prec", settings="prec")
+    return sm_prec
+
+
+@pytest.fixture
+def sm_evap(evap: Series) -> ps.StressModel:
+    sm_evap = ps.StressModel(evap, rfunc=ps.Exponential(), name="evap", settings="evap")
+    return sm_evap
+
+
+@pytest.fixture
+def ml_empty(head: Series) -> ps.Model:
+    ml_empty = ps.Model(head, name="Test_Model")
+    return ml_empty
+
+
+@pytest.fixture
+def ml_rm(ml_empty: ps.NoiseModel, rm: ps.RechargeModel) -> ps.Model:
+    ml_empty.add_stressmodel(rm)
+    return ml_empty
+
+
+@pytest.fixture
+def ml_sm(
+    ml_noise_only: ps.Model, sm_prec: ps.StressModel, sm_evap: ps.StressModel
+) -> ps.Model:
+    ml_noise_only.add_stressmodel([sm_prec, sm_evap])
+    return ml_noise_only
+
+
+@pytest.fixture
+def ml_noise_only(ml_empty: ps.NoiseModel) -> ps.Model:
     ml_empty.add_noisemodel(ps.ArNoiseModel())
     return ml_empty
 
 
 @pytest.fixture
-def ml() -> ps.Model:
-    ml = ps.Model(obs, name="Test_Model")
-    ml.add_noisemodel(ps.ArNoiseModel())
-    sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma(), name="rch")
-    ml.add_stressmodel(sm)
+def ml(ml_rm: ps.Model) -> ps.Model:
+    ml_rm.add_noisemodel(ps.ArNoiseModel())
+    return ml_rm
+
+
+@pytest.fixture
+def ml_solved(ml: ps.Model) -> ps.Model:
+    ml.solve()
     return ml
-
-
-@pytest.fixture
-def ml_sm() -> ps.Model:
-    ml_sm = ps.Model(obs.dropna(), name="Test_Model")
-    ml_sm.add_noisemodel(ps.ArNoiseModel())
-    sm1 = ps.StressModel(rain, rfunc=ps.Exponential(), name="prec", settings="prec")
-    sm2 = ps.StressModel(evap, rfunc=ps.Exponential(), name="evap", settings="evap")
-    ml_sm.add_stressmodel([sm1, sm2])
-    return ml_sm
-
-
-@pytest.fixture
-def ml_no_settings() -> ps.Model:
-    ml_no_settings = ps.Model(obs.dropna(), name="Test_Model")
-    ml_no_settings.add_noisemodel(ps.ArNoiseModel())
-    sm1 = ps.StressModel(rain, rfunc=ps.Exponential(), name="prec")
-    sm2 = ps.StressModel(evap, rfunc=ps.Exponential(), name="evap")
-    ml_no_settings.add_stressmodel([sm1, sm2])
-    return ml_no_settings
-
-
-@pytest.fixture
-def rm() -> ps.RechargeModel:
-    rm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma(), name="rch")
-    return rm
-
-
-@pytest.fixture
-def sm_prec() -> ps.StressModel:
-    sm_prec = ps.StressModel(rain, rfunc=ps.Exponential(), name="prec")
-    return sm_prec
-
-
-@pytest.fixture
-def sm_evap() -> ps.StressModel:
-    sm_evap = ps.StressModel(evap, rfunc=ps.Exponential(), name="evap")
-    return sm_evap
 
 
 @pytest.fixture

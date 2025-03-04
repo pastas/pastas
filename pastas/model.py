@@ -22,7 +22,11 @@ from pandas import (
 )
 
 # Internal Pastas
-from pastas.decorators import get_stressmodel
+from pastas.decorators import (
+    PastasDeprecationWarning,
+    deprecate_args_or_kwargs,
+    get_stressmodel,
+)
 from pastas.io.base import _load_model, dump
 from pastas.modelstats import Statistics
 from pastas.plotting.modelplots import Plotting, _table_formatter_stderr
@@ -144,23 +148,25 @@ class Model:
         if noisemodel is not None:
             if noisemodel is True:
                 msg = (
-                    "The noisemodel argument is deprecated and will be removed in Pastas "
-                    "version 2.0.0. The new default is that no noisemodel is added "
+                    "The new default is that no noisemodel is added "
                     "anymore and a noisemodel has to be added explicitly to a Pastas "
                     "model by the user. To fix this error, do not pass a "
                     "noisemodel keyword to Model and use `ml.add_noisemodel`, if a "
                     "noisemodel is desired. See this issue on GitHub for more "
                     "information: https://github.com/pastas/pastas/issues/735"
                 )
+                deprecate_args_or_kwargs(
+                    "noisemodel", "2.0.0", reason=msg, force_raise=True
+                )
             elif noisemodel is False:
                 msg = (
-                    "The noisemodel argument is deprecated and will be removed in Pastas "
-                    "version 2.0.0. The new default is that no noisemodel is added "
+                    "The new default is that no noisemodel is added "
                     "anymore, so passing noisemodel=False is not needed anymore. To "
                     "fix this error, do not pass noisemodel=False to Model."
                 )
-            logger.error(msg)
-            raise ValueError(msg)
+                deprecate_args_or_kwargs(
+                    "noisemodel", "2.0.0", reason=msg, force_raise=True
+                )
 
         # File Information
         self.file_info = self._get_file_info()
@@ -321,7 +327,7 @@ class Model:
 
         # check whether noise_alpha is not smaller than ml.settings["freq"]
         freq_in_days = _get_dt(self.settings["freq"])
-        noise_alpha = self.noisemodel.parameters.initial.iloc[0]
+        noise_alpha = self.noisemodel.parameters.initial.iat[0]
         if freq_in_days > noise_alpha:
             self.noisemodel._set_initial("noise_alpha", freq_in_days)
 
@@ -721,16 +727,14 @@ class Model:
 
         if noise is not None:
             msg = (
-                "The noise argument is deprecated and will be removed in Pastas "
-                "version 2.0.0. The new behavior is that a noise model will always be "
+                "The new behavior is that a noise model will always be "
                 "used if it is present. To add a noisemodel to a model called ml, "
                 "use the ml.add_noisemodel method. To solve without a noisemodel, "
                 "make sure sure no noisemodel is added or remove a noisemodel with "
                 "ml.del_noisemodel() before solving. See this issue on GitHub for "
                 "more information: https://github.com/pastas/pastas/issues/735"
             )
-            logger.error(msg)
-            raise ValueError(msg)
+            deprecate_args_or_kwargs("noise", "2.0.0", reason=msg, force_raise=True)
 
         # Set the settings
         self.settings["weights"] = weights
@@ -773,9 +777,30 @@ class Model:
                 msg = "fit_constant needs to be True (for now) when a transform is used"
                 logger.error(msg)
                 raise Exception(msg)
-            self.parameters.loc["constant_d", "vary"] = False
-            self.parameters.loc["constant_d", "initial"] = 0.0
+            self.parameters.at["constant_d", "vary"] = False
+            self.parameters.at["constant_d", "initial"] = 0.0
             self.normalize_residuals = True
+
+    def add_solver(self, solver: Solver) -> None:
+        """Method to add a solver to the model.
+
+        Parameters
+        ----------
+        solver: pastas.solver.Solver
+            Instance of a pastas Solver class used to solve the model. Options are:
+            ps.LeastSquares(), ps.LmfitSolve() or ps.EmceeSolve(). An instance
+            (e.g. ps.LeastSquares()) is needed as of Pastas 0.23, not a class (e.g.
+            ps.LeastSquares)!
+
+        See Also
+        --------
+        pastas.solver
+            Different solver objects are available to estimate parameters.
+        """
+        self.solver = solver
+        if not hasattr(self.solver, "ml") or self.solver.ml is None:
+            self.solver.set_model(self)
+        self.settings["solver"] = self.solver._name
 
     def solve(
         self,
@@ -790,6 +815,7 @@ class Model:
         weights: Optional[Series] = None,
         fit_constant: bool = True,
         freq_obs: Optional[str] = None,
+        initialize: bool = True,
         **kwargs,
     ) -> None:
         """Method to solve the time series model.
@@ -837,6 +863,12 @@ class Model:
             multiple of that e.g. "7D". Should generally be larger than the frequency
             of the original observations and the model frequency (freq). If freq_obs
             is not set, the frequency of the model (freq) will be used.
+        initialize: bool, optional
+            If True, the model is initialized via the Model.initialize() method
+            (setting certain model settings) before solving. If False, the
+            model is not initialized before solving. Note that the latter is an
+            advanced option since some model settings can be missing. Default
+            is True.
         **kwargs: dict, optional
             All keyword arguments will be passed onto minimization method from the
             solver. It depends on the solver used which arguments can be used.
@@ -857,51 +889,49 @@ class Model:
         if noise is not None:
             if noise is True:
                 msg = (
-                    "The noise argument is deprecated and will be removed in Pastas "
-                    "version 2.0.0. To solve using a noisemodel, add a noisemodel to a "
+                    "To solve using a noisemodel, add a noisemodel to a "
                     "model called ml using ml.add_noisemodel(n), where n is an instance "
                     "of a noisemodel (e.g., n = ps.ArNoiseModel()). See this issue on "
                     "GitHub for more information: "
                     "https://github.com/pastas/pastas/issues/735"
                 )
+                deprecate_args_or_kwargs("noise", "2.0.0", reason=msg, force_raise=True)
             elif noise is False:
                 msg = (
-                    "The noise argument is deprecated and will be removed in Pastas "
-                    "version 2.0.0. To solve without a noisemodel, remove the noisemodel "
-                    "(if present) from a model called ml using ml.del_noisemodel() before "
+                    "To solve without a noisemodel, remove the noisemodel "
+                    "(if present) from a model using ml.del_noisemodel() before "
                     "solving. See this issue on GitHub for more information: "
                     "https://github.com/pastas/pastas/issues/735"
                 )
-            logger.error(msg)
-            raise ValueError(msg)
+                deprecate_args_or_kwargs("noise", "2.0.0", reason=msg, force_raise=True)
 
-        # Initialize the model
-        self.initialize(
-            tmin=tmin,
-            tmax=tmax,
-            freq=freq,
-            warmup=warmup,
-            weights=weights,
-            initial=initial,
-            fit_constant=fit_constant,
-            freq_obs=freq_obs,
-        )
+        if initialize:
+            self.initialize(
+                tmin=tmin,
+                tmax=tmax,
+                freq=freq,
+                warmup=warmup,
+                weights=weights,
+                initial=initial,
+                fit_constant=fit_constant,
+                freq_obs=freq_obs,
+            )
 
         if self.oseries_calib.empty:
             msg = "Calibration series 'oseries_calib' is empty! Check 'tmin' or 'tmax'."
             logger.error(msg)
             raise ValueError(msg)
 
-        # If a solver is provided, use that one
-        if solver is not None:
-            self.solver = solver
-            self.solver.set_model(self)
         # Create the default solver if None is provided or already present
-        elif self.solver is None:
-            self.solver = LeastSquares()
-            self.solver.set_model(self)
-
-        self.settings["solver"] = self.solver._name
+        solver = LeastSquares() if solver is None else solver
+        if self.solver is None:
+            self.add_solver(solver=solver)
+        elif self.solver._name != solver._name:
+            logger.info(
+                "Replacing original solver `%s` with new solver `%s`."
+                % (self.solver._name, solver._name)
+            )
+            self.add_solver(solver=solver)
 
         # Solve model
         success, optimal, stderr = self.solver.solve(
@@ -927,6 +957,7 @@ class Model:
                 print(self.fit_report())
 
     @property
+    @PastasDeprecationWarning(remove_version="2.0.0", reason="Use 'ml.solver' instead.")
     def fit(self):
         """Deprecated attribute, use ml.solver instead."""
         msg = (
@@ -992,7 +1023,7 @@ class Model:
         transform = self.transform.name if self.transform else "NotPresent"
 
         # Get the model component for the parameter
-        cat = self.parameters.loc[name, "name"]
+        cat = self.parameters.at[name, "name"]
 
         if cat in self.stressmodels.keys():
             obj = self.stressmodels[cat]
@@ -1010,28 +1041,28 @@ class Model:
                 logger.error(msg)
                 raise KeyError(msg)
 
-            factor = initial / self.parameters.loc[name, "initial"]
-            pmin = self.parameters.loc[name, "pmin"] * factor
-            pmax = self.parameters.loc[name, "pmax"] * factor
+            factor = initial / self.parameters.at[name, "initial"]
+            pmin = self.parameters.at[name, "pmin"] * factor
+            pmax = self.parameters.at[name, "pmax"] * factor
 
         # Set the parameter properties
         if initial is not None:
             obj._set_initial(name, initial)
-            self.parameters.loc[name, "initial"] = initial
+            self.parameters.at[name, "initial"] = initial
         if vary is not None:
             obj._set_vary(name, vary)
-            self.parameters.loc[name, "vary"] = bool(vary)
+            self.parameters.at[name, "vary"] = bool(vary)
         if pmin is not None:
             obj._set_pmin(name, pmin)
-            self.parameters.loc[name, "pmin"] = pmin
+            self.parameters.at[name, "pmin"] = pmin
         if pmax is not None:
             obj._set_pmax(name, pmax)
-            self.parameters.loc[name, "pmax"] = pmax
+            self.parameters.at[name, "pmax"] = pmax
         if dist is not None:
             obj._set_dist(name, dist)
-            self.parameters.loc[name, "dist"] = dist
+            self.parameters.at[name, "dist"] = dist
         if optimal is not None:
-            self.parameters.loc[name, "optimal"] = optimal
+            self.parameters.at[name, "optimal"] = optimal
 
     def _get_time_offset(self, freq: str) -> Timedelta:
         """Internal method to get the time offsets from the stressmodels.
@@ -1561,7 +1592,7 @@ class Model:
             Add a zero at t=0.
         istress: int, optional
             When multiple stresses are present in a stressmodel, this keyword can be
-            used to obtain the respone to an individual stress.
+            used to obtain the response to an individual stress.
         kwargs: dict: passed to rfunc.step() or rfunc.block()
 
         Returns
@@ -1841,7 +1872,7 @@ class Model:
             If True the standard error of the parameter values are shown. Please be
             aware of the conditions for reliable uncertainty estimates, more information
             here:
-            https://pastas.readthedocs.io/en/master/examples/diagnostic_checking.html
+            https://pastas.readthedocs.io/stable/examples/diagnostic_checking.html
         warnings : bool, optional
             print warnings in case of optimization failure, parameters hitting
             bounds, or length of responses exceeding calibration period.
@@ -1890,11 +1921,8 @@ class Model:
         }
 
         if output is not None:
-            msg = (
-                "argument 'output' of the 'fit_report method' is deprecated and will"
-                "be removed in a future version. Use 'corr=True' instead."
-            )
-            logger.warning(msg)
+            msg = "Use 'corr=True' instead."
+            deprecate_args_or_kwargs("output", "2.0.0", reason=msg)
             if isinstance(output, str) and output == "full":
                 corr = True
 
@@ -1934,7 +1962,7 @@ class Model:
         len_val4 = max([len(v) for v in fit.values()])
         wspace = width - (8 + 23 + 9 + len_val4)
         for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
-            basic += f"{val1:<8}{val2:<23}{val3:<9}" f"{val4:>{wspace + len_val4}}\n"
+            basic += f"{val1:<8}{val2:<23}{val3:<9}{val4:>{wspace + len_val4}}\n"
 
         # Create the parameters block
         params = (
@@ -1969,15 +1997,15 @@ class Model:
 
             if nhits > 0:
                 for p in upperhit.index:
-                    if upperhit.loc[p]:
+                    if upperhit.at[p]:
                         msg.append(
                             f"Parameter '{p}' on upper bound: "
-                            f"{self.parameters.loc[p, 'pmax']:.2e}"
+                            f"{self.parameters.at[p, 'pmax']:.2e}"
                         )
-                    elif lowerhit.loc[p]:
+                    elif lowerhit.at[p]:
                         msg.append(
                             f"Parameter '{p}' on lower bound: "
-                            f"{self.parameters.loc[p, 'pmin']:.2e}"
+                            f"{self.parameters.at[p, 'pmin']:.2e}"
                         )
             # check response t_cutoff vs length calibration period
             response_tmax_check = self._check_response_tmax()
@@ -2036,7 +2064,7 @@ class Model:
                 kwargs = {"warn": False}
             else:
                 kwargs = {}
-            check.loc[sm_name, "response_tmax"] = self.get_response_tmax(
+            check.at[sm_name, "response_tmax"] = self.get_response_tmax(
                 sm_name, cutoff=cutoff, **kwargs
             )
 
@@ -2060,8 +2088,8 @@ class Model:
         lowerhit = Series(index=self.parameters.index, dtype=bool)
 
         for p in self.parameters.index:
-            pmax = self.parameters.loc[p, "pmax"]
-            pmin = self.parameters.loc[p, "pmin"]
+            pmax = self.parameters.at[p, "pmax"]
+            pmin = self.parameters.at[p, "pmin"]
 
             # calculate atol based on minimum, with max 1e-8
             # otherwise set 1 order of magnitude lower than minimum value
@@ -2077,11 +2105,11 @@ class Model:
                 pmax = -np.inf
 
             # determine hits
-            upperhit.loc[p] = np.allclose(
-                self.parameters.loc[p, "optimal"], pmax, atol=atol, rtol=1e-5
+            upperhit.at[p] = np.allclose(
+                self.parameters.at[p, "optimal"], pmax, atol=atol, rtol=1e-5
             )
-            lowerhit.loc[p] = np.allclose(
-                self.parameters.loc[p, "optimal"], pmin, atol=atol, rtol=1e-5
+            lowerhit.at[p] = np.allclose(
+                self.parameters.at[p, "optimal"], pmin, atol=atol, rtol=1e-5
             )
 
         return lowerhit, upperhit

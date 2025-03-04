@@ -18,7 +18,7 @@ maintainers = [
     { name = "O.N. Ebbens", email = "o.ebbens@artesia-water.nl" },
     { name = "M.A. Vonk", email = "vonk.mart@gmail.com" },
 ]
-requires-python = ">= 3.9"
+requires-python = ">= 3.10"
 dependencies = [
     "numpy >= 1.22.4",
     "matplotlib >= 3.6.1",
@@ -33,10 +33,10 @@ classifiers = [
     'Intended Audience :: Other Audience',
     'License :: OSI Approved :: MIT License',
     'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
     'Topic :: Scientific/Engineering :: Hydrology',
 ]
 
@@ -81,14 +81,11 @@ numbascipy = ["numba-scipy >= 0.3.1"]
 [tool.setuptools.dynamic]
 version = { attr = "pastas.version.__version__" }
 
-[tool.black]
-line-length = 88
-
-[tool.isort]
-profile = "black"
-
 [tool.ruff]
 extend-include = ["*.ipynb"]
+lint.extend-select = ["I"]
+show-fixes = true
+fix = true
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers --durations=0"
@@ -98,7 +95,7 @@ markers = ["notebooks: run notebooks", "bnotebooks: run benchmark notebooks"]
 legacy_tox_ini = """
     [tox]
     requires = tox>=4
-    env_list = ruff, notebooks, py{39,310,311,312}
+    env_list = ruff, notebooks, py{310,311,312,313}
 
     [testenv]
     description = run unit tests
@@ -121,7 +118,6 @@ legacy_tox_ini = """
 
     [testenv:ruff]
     description = run ruff checks
-    basepython = python3.10
     extras = ruffing
     commands =
             ruff check --extend-select I --preview
@@ -135,3 +131,8 @@ legacy_tox_ini = """
             ruff format
 
 """
+
+[tool.codespell]
+skip = "*.pdf"
+ignore-regex = "[A-Za-z0-9+/]{100,}"                 # base64-encoded data in *.ipynb files
+ignore-words-list = ["delt", "te", "theses", "Bilt"]

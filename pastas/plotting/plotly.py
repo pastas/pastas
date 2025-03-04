@@ -36,7 +36,7 @@ class Plotly:
         table,interactive version of `ml.plots.results()`
     diagnostics
         plot noise, autocorrelation, distribution of noise and heteroscedasticity,
-        interactive verison of `ml.plots.diagnostics()`
+        interactive version of `ml.plots.diagnostics()`
     """
 
     def __init__(self, model):
@@ -123,7 +123,7 @@ class Plotly:
 
         return go.Figure(data=traces, layout=go.Layout(layout))
 
-    def results(self, tmin=None, tmax=None):
+    def results(self, tmin=None, tmax=None, stderr=False):
         """Plotly version of pastas.Model.plots.results().
 
         Parameters
@@ -134,6 +134,8 @@ class Plotly:
             start time for model results, by default None
         tmax : pd.Timestamp, optional
             end time for model results, by default None
+        stderr : bool, optional
+            include standard errors in parameter table, by default False
 
         Returns
         -------
@@ -154,7 +156,7 @@ class Plotly:
         naxes = 2 + 2 * nsm
 
         # oseries
-        o = self._model.observations()
+        o = self._model.observations(tmin=tmin, tmax=tmax)
         o_nu = self._model.oseries.series.drop(o.index)
 
         trace_oseries_nu = go.Scattergl(
@@ -183,7 +185,7 @@ class Plotly:
         traces.append(trace_oseries)
 
         # simulation
-        sim = self._model.simulate()
+        sim = self._model.simulate(tmin=tmin, tmax=tmax)
         trace_sim = go.Scattergl(
             x=sim.index,
             y=sim.values,
@@ -197,7 +199,7 @@ class Plotly:
         traces.append(trace_sim)
 
         # residuals
-        res = self._model.residuals()
+        res = self._model.residuals(tmin=tmin, tmax=tmax)
         trace_res = go.Scattergl(
             x=res.index,
             y=res.values,
@@ -213,7 +215,7 @@ class Plotly:
 
         # noise
         if self._model.settings["noise"]:
-            noise = self._model.noise()
+            noise = self._model.noise(tmin=tmin, tmax=tmax)
             trace_noise = go.Scattergl(
                 x=noise.index,
                 y=noise.values,
@@ -229,7 +231,10 @@ class Plotly:
 
         # contributions
         contribs = self._model.get_contributions(
-            split=False,  # tmin=tmin, tmax=tmax, return_warmup=return_warmup
+            split=False,
+            tmin=tmin,
+            tmax=tmax,
+            # return_warmup=return_warmup,
         )
         for i, c in enumerate(contribs):
             iax_contrib = 3 + i
@@ -267,7 +272,7 @@ class Plotly:
                 marker_color="#1F77B4",
                 name=f"{c.name}",
                 # legendgroup=f"contrib{i}",
-                xaxis=f"x{3+nsm}",
+                xaxis=f"x{3 + nsm}",
                 yaxis=f"y{iax_response}",
                 showlegend=False,
             )
@@ -312,14 +317,20 @@ class Plotly:
         ytops[1:] -= dy  # half of whitespace by lowering tops by dy
         ybots = y_pos[1:].copy()
         ybots[:-1] += dy  # create other half of whitespace by raising bottoms by dy
-        ybots[ybots < 0] = 0  # floating point issues, should alway be > 0
+        ybots[ybots < 0] = 0  # floating point issues, should always be > 0
 
         # parameter table
-        p = self._model.parameters.copy().loc[:, ["name", "optimal", "stderr"]]
+        col_names = ["name", "optimal", "stderr"] if stderr else ["name", "optimal"]
+        p = self._model.parameters.copy().loc[:, col_names]
         p.loc[:, "name"] = p.index
-        stderr = p.loc[:, "stderr"] / p.loc[:, "optimal"]
-        p.loc[:, "optimal"] = p.loc[:, "optimal"].apply(_table_formatter_params)
-        p.loc[:, "stderr"] = stderr.abs().apply(_table_formatter_stderr)
+        optimal = p.loc[:, "optimal"].copy()
+        p["optimal"] = p["optimal"].astype(str)
+        p.loc[:, "optimal"] = optimal.apply(_table_formatter_params)
+
+        if stderr:
+            stderr = p.loc[:, "stderr"] / optimal
+            p["stderr"] = p["stderr"].astype(str)
+            p.loc[:, "stderr"] = stderr.abs().apply(_table_formatter_stderr)
 
         tab = go.Table(
             domain=dict(x=[x_pos + dx, 1.0], y=[y_pos[2] + dy, 1.0]),
@@ -327,7 +338,7 @@ class Plotly:
                 values=[
                     "<b>Parameter</b>",
                     "<b>Optimal</b>",
-                    "<b>Std. Err.</b>",
+                    "<b>Std. Err.</b>" if stderr else "",
                 ],
                 font=dict(size=12),
                 align=["left", "center", "center"],
@@ -400,7 +411,7 @@ class Plotly:
             )
             layout_dict[f"yaxis{iax_response}"] = dict(
                 domain=[ybots[irow], ytops[irow]],
-                anchor=f"x{3+nsm}",
+                anchor=f"x{3 + nsm}",
             )
 
         layout = go.Layout(layout_dict)
@@ -479,7 +490,7 @@ class Plotly:
             dragmode="pan",
         )
         update_labels = {f"yaxis{i}": {"title": "[m]"} for i in range(3, nrows + 1)}
-        update_labels[f"xaxis{nrows+1}"] = {"title": "time [d]"}
+        update_labels[f"xaxis{nrows + 1}"] = {"title": "time [d]"}
         fig.update_layout(**update_labels)
 
         return fig

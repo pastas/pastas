@@ -389,7 +389,7 @@ class TimeSeries:
 
         if success:
             logger.info(
-                "Time Series '%s' was sampled down to freq %s with method " "%s.",
+                "Time Series '%s' was sampled down to freq %s with method %s.",
                 self.name,
                 freq,
                 method,
@@ -472,7 +472,7 @@ class TimeSeries:
                     mean_value,
                 )
             elif method == "bfill":
-                first_value = series.loc[series.first_valid_index()]
+                first_value = series.at[series.first_valid_index()]
                 series = series.fillna(method="bfill")  # Default option
                 logger.info(
                     "Time Series '%s' was extended in the past to %s with the first "
@@ -542,7 +542,7 @@ class TimeSeries:
                     mean_value,
                 )
             elif method == "ffill":
-                last_value = series.loc[series.last_valid_index()]
+                last_value = series.at[series.last_valid_index()]
                 series = series.fillna(method="ffill")
                 logger.info(
                     "Time Series '%s' was extended in the future to %s with the last "

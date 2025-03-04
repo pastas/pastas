@@ -66,8 +66,10 @@ def series(
     titles: bool = True,
     tmin: Optional[TimestampType] = None,
     tmax: Optional[TimestampType] = None,
+    colors_stresses: Optional[List[str]] = None,
     labels: Optional[List[str]] = None,
     figsize: tuple = (10, 5),
+    **kwargs,
 ) -> Axes:
     """Plot all the input time Series in a single plot.
 
@@ -90,47 +92,53 @@ def series(
         Set the titles or not. Taken from the name attribute of the series.
     tmin: str or pd.Timestamp
     tmax: str or pd.Timestamp
+    colors_stresses: List of str
+        List with the matplotlib colorcodes to use for plotting each stress timeseries.
+        If list is shorter than number of stresses, the remaining stresses are plotted
+        in black. If None (default), default matplotlib colors will be used.
     labels: List of str
         List with the labels for each subplot.
     figsize: tuple
         Set the size of the figure.
+    kwargs:
+        keyword arguments passed to plotting functions of stress timeseries
 
     Returns
     -------
     matplotlib.Axes
     """
-    rows = 0
+    nrows = 0
     if head is not None:
-        rows += 1
-        if tmin is None:
-            tmin = head.index[0]
-        if tmax is None:
-            tmax = head.index[-1]
+        nrows += 1
+        tmin = head.index[0] if tmin is None else tmin
+        tmax = head.index[-1] if tmax is None else tmax
     if stresses is not None:
-        rows += len(stresses)
-    sharex = True
+        nrows += len(stresses)
+    if colors_stresses is None:
+        colors_stresses = plt.rcParams["axes.prop_cycle"].by_key()["color"]
     gridspec_kw = {}
     cols = 1
-    if table and not hist and kde:
+    if table and not hist and not kde:
+        logging.info(
+            "Plotting the table is not possible without hist=True or kde=True. Adding the historgram."
+        )
         hist = True
     if hist or kde:
-        sharex = False
         gridspec_kw["width_ratios"] = [3, 1]
         cols += 1
         if table:
             cols += 1
             gridspec_kw["width_ratios"].append(1)
-    fig, axes = plt.subplots(
-        rows,
+    _, axes = plt.subplots(
+        nrows,
         cols,
         figsize=figsize,
-        sharex=sharex,
         sharey="row",
         gridspec_kw=gridspec_kw,
     )
-    if rows == 1 and cols == 1:
+    if nrows == 1 and cols == 1:
         axes = np.array([[axes]])
-    elif rows == 1:
+    elif nrows == 1:
         axes = axes[np.newaxis]
     elif cols == 1:
         axes = axes[:, np.newaxis]
@@ -139,29 +147,23 @@ def series(
     if kde:
         axes[-1, 1].set_xlabel("Density [-]")
     if head is not None:
-        head = head[tmin:tmax].dropna()
-        head.plot(ax=axes[0, 0], marker=".", linestyle=" ", color="k")
+        head.plot(
+            ax=axes[0, 0], marker=".", linestyle=" ", color="k", xlabel="", **kwargs
+        )
         if titles:
             axes[0, 0].set_title(head.name)
         if labels is not None:
             axes[0, 0].set_ylabel(labels[0])
-        if hist and kde is False:
+        if hist:
+            weights = None if kde else np.ones(len(head)) / len(head) * 100
             head.hist(
                 ax=axes[0, 1],
                 orientation="horizontal",
                 color="k",
-                weights=np.ones(len(head)) / len(head) * 100,
+                weights=weights,
                 bins=int(np.ceil(1 + np.log2(len(head)))),
                 grid=False,
-            )
-        if kde and hist:
-            head.hist(
-                ax=axes[0, 1],
-                orientation="horizontal",
-                color="k",
-                bins=int(np.ceil(1 + np.log2(len(head)))),
-                grid=False,
-                density=True,
+                density=kde,
             )
         if kde:
             gkde = gaussian_kde(head, bw_method="scott")
@@ -171,11 +173,8 @@ def series(
                 np.max(head) + 0.1 * sample_range,
                 1000,
             )
-            if hist:
-                colour = "C1"
-            else:
-                colour = "k"
-            axes[0, 1].plot(gkde.evaluate(ind), ind, color=colour)
+            color = "darkgrey" if hist else "k"
+            axes[0, 1].plot(gkde.evaluate(ind), ind, color=color)
         if table:
             # stats table
             head_stats = [
@@ -192,48 +191,39 @@ def series(
             axes[0, 2].axis("off")
 
     if stresses is not None:
-        for i, stress in enumerate(stresses, start=rows - len(stresses)):
+        for i, stress in enumerate(stresses, start=nrows - len(stresses)):
             stress = stress[tmin:tmax].dropna()
-            stress.plot(ax=axes[i, 0], color="k")
+            if i <= len(colors_stresses):
+                color_stress = colors_stresses[i - 1]
+            else:
+                color_stress = "k"
+            stress.plot(ax=axes[i, 0], color=color_stress, xlabel="", **kwargs)
             if titles:
                 axes[i, 0].set_title(stress.name)
             if labels is not None:
                 axes[i, 0].set_ylabel(labels[i])
             if hist:
-                # histogram
+                weights = None if kde else np.ones(len(stress)) / len(stress) * 100
                 stress.hist(
                     ax=axes[i, 1],
                     orientation="horizontal",
-                    color="k",
-                    weights=np.ones(len(stress)) / len(stress) * 100,
+                    color=color_stress,
+                    weights=weights,
                     bins=int(np.ceil(1 + np.log2(len(stress)))),
                     grid=False,
-                )
-            if kde and hist:
-                stress.hist(
-                    ax=axes[i, 1],
-                    orientation="horizontal",
-                    color="k",
-                    bins=int(np.ceil(1 + np.log2(len(stress)))),
-                    grid=False,
-                    density=True,
+                    density=kde,
                 )
             if kde:
                 gkde = gaussian_kde(stress, bw_method="scott")
                 sample_range = np.max(stress) - np.min(stress)
                 ind = np.linspace(
                     np.min(stress) - 0.1 * sample_range,
-                    np.min(stress) + 0.1 * sample_range,
+                    np.max(stress) + 0.1 * sample_range,
                     1000,
                 )
-                if hist:
-                    colour = "C1"
-                else:
-                    colour = "k"
-                axes[i, 1].plot(gkde.evaluate(ind), ind, color=colour)
+                color = "darkgrey" if hist else color_stress
+                axes[i, 1].plot(gkde.evaluate(ind), ind, color=color)
             if table:
-                if i > 0:
-                    axes[i, 0].sharex(axes[0, 0])
                 # stats table
                 stress_stats = [
                     ["Count", f"{stress.count():0.0f}"],
@@ -246,15 +236,8 @@ def series(
                 )
                 axes[i, 2].axis("off")
 
-    # temporary fix, as set_xlim currently does not work with strings mpl=3.6.1
-    if tmin is not None:
-        tmin = Timestamp(tmin)
-    if tmax is not None:
-        tmax = Timestamp(tmax)
-    axes[0, 0].set_xlim([tmin, tmax])
-    axes[0, 0].minorticks_off()
+    share_xaxes(axes[:, 0])
 
-    fig.tight_layout()
     return axes
 
 
@@ -419,9 +402,7 @@ def diagnostics(
     series.plot(ax=ax)
     ax.set_ylabel(series.name)
     ax.set_xlim(series.index.min(), series.index.max())
-    ax.set_title(
-        f"{series.name} (n={series.size :.0f}, $\\mu$" f"={series.mean() :.2f})"
-    )
+    ax.set_title(f"{series.name} (n={series.size:.0f}, $\\mu$={series.mean():.2f})")
     ax.grid()
     ax.tick_params(axis="x", labelrotation=0)
     for label in ax.get_xticklabels():

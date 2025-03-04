@@ -37,7 +37,7 @@ def acf(
     bin_method: str = "rectangle",
     bin_width: float = 0.5,
     max_gap: float = inf,
-    min_obs: int = 20,
+    min_obs: int = 50,
     full_output: bool = False,
     alpha: float = 0.05,
 ) -> Union[Series, DataFrame]:
@@ -71,7 +71,7 @@ def acf(
     -------
     result: pandas.Series or pandas.DataFrame
         If full_output=True, a DataFrame with columns "acf", "conf", and "n",
-        containning the autocorrelation function, confidence intervals (depends on
+        containing the autocorrelation function, confidence intervals (depends on
         alpha), and the number of samples n used to compute these, respectively. If
         full_output=False, only the ACF is returned.
 
@@ -121,7 +121,7 @@ def ccf(
     bin_method: str = "rectangle",
     bin_width: float = 0.5,
     max_gap: float = inf,
-    min_obs: int = 20,
+    min_obs: int = 50,
     full_output: bool = False,
     alpha: float = 0.05,
 ) -> Union[Series, DataFrame]:
@@ -155,7 +155,7 @@ def ccf(
     -------
     result: pandas.Series or pandas.DataFrame
         If full_output=True, a DataFrame with columns "ccf", "conf", and "n",
-        containning the cross-correlation function, confidence intervals (depends on
+        containing the cross-correlation function, confidence intervals (depends on
         alpha), and the number of samples n used to compute these, respectively. If
         full_output=False, only the CCF is returned.
 
@@ -242,13 +242,13 @@ def _compute_ccf_rectangle(
                 d = abs(t_x[i] - t_y[j]) - lags[k]
                 if abs(d) <= bin_width:
                     cl += x[i] * y[j]
-                    b_sum += 1
+                    b_sum += 1.0
         if b_sum == 0.0:
             c[k] = nan
-            b[k] = 0.01  # Prevent division by zero error
+            b[k] = 1e-16  # Prevent division by zero error
         else:
             c[k] = cl / b_sum
-            b[k] = b_sum / 2  # divide by 2 because we over count in for-loop
+            b[k] = b_sum / 2.0  # divide by 2 because we over count in for-loop
     return c, b
 
 
@@ -281,10 +281,10 @@ def _compute_ccf_gaussian(
                 b_sum += d
         if b_sum == 0.0:
             c[k] = nan
-            b[k] = 0.01  # Prevent division by zero error
+            b[k] = 1e-16  # Prevent division by zero error
         else:
             c[k] = cl / b_sum
-            b[k] = b_sum / 2  # divide by 2 because we over count in for-loop
+            b[k] = b_sum / 2.0  # divide by 2 because we over count in for-loop
     return c, b
 
 

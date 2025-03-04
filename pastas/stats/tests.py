@@ -214,7 +214,7 @@ def runs_test(series: Series, cutoff: str = "median") -> Tuple[float, float]:
 
     where $R$ is the number of runs, :math:`\\bar{R}` the expected number of runs and
     :math:`\\sigma_R` the standard deviation of the number of runs. A run is defined
-    as the number of sequences of exclusively postitive and negative values in the
+    as the number of sequences of exclusively positive and negative values in the
     time series.
 
     **Considerations for this test:**
@@ -390,7 +390,7 @@ def stoffer_toloi(
     de0 = dz0 / da0
 
     # initialize, compute all correlation up to one year.
-    nlags = 365  # Hard-coded for now
+    nlags = min(365, nobs - 1)
     dz = zeros(nlags)
     da = zeros(nlags)
     de = zeros(nlags)

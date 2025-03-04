@@ -84,7 +84,7 @@ class ThresholdTransform:
         -----
         The preferred method for parameter setting is through the model.
         """
-        self.parameters.loc[name, "initial"] = value
+        self.parameters.at[name, "initial"] = value
 
     @set_parameter
     def _set_pmin(self, name: str, value: float) -> None:
@@ -94,7 +94,7 @@ class ThresholdTransform:
         -----
         The preferred method for parameter setting is through the model.
         """
-        self.parameters.loc[name, "pmin"] = value
+        self.parameters.at[name, "pmin"] = value
 
     @set_parameter
     def _set_pmax(self, name: str, value: float) -> None:
@@ -104,7 +104,7 @@ class ThresholdTransform:
         -----
         The preferred method for parameter setting is through the model.
         """
-        self.parameters.loc[name, "pmax"] = value
+        self.parameters.at[name, "pmax"] = value
 
     @set_parameter
     def _set_vary(self, name: str, value: float) -> None:
@@ -114,7 +114,7 @@ class ThresholdTransform:
         -----
         The preferred method for parameter setting is through the model.
         """
-        self.parameters.loc[name, "vary"] = bool(value)
+        self.parameters.at[name, "vary"] = bool(value)
 
     @set_parameter
     def _set_dist(self, name: str, value: str) -> None:
@@ -124,7 +124,7 @@ class ThresholdTransform:
         -----
         The preferred method for parameter setting is through the model.
         """
-        self.parameters.loc[name, "dist"] = str(value)
+        self.parameters.at[name, "dist"] = str(value)
 
     def simulate(self, h: Series, p: ArrayLike) -> Series:
         if self.nparam == 1:

@@ -151,7 +151,7 @@ class Plotting:
             If True the standard error of the parameter values are shown. Please be
             aware of the conditions for reliable uncertainty estimates, more
             information here:
-            https://pastas.readthedocs.io/en/master/examples/diagnostic_checking.html
+            https://pastas.readthedocs.io/stable/examples/diagnostic_checking.html
         fig: matplotib.Figure instance, optional
             Optionally provide a matplotib.Figure instance to plot onto.
         **kwargs: dict, optional
@@ -655,6 +655,7 @@ class Plotting:
         stressmodels: Optional[List[str]] = None,
         ax: Optional[Axes] = None,
         figsize: Optional[tuple] = None,
+        legend: bool = True,
         **kwargs,
     ) -> Axes:
         """Plot the block response for a specific stressmodels.
@@ -667,6 +668,8 @@ class Plotting:
             Axes to add the plot to.
         figsize: tuple, optional
             Tuple with the height and width of the figure in inches.
+        legend: bool, optional
+            Boolean to determine to show the legend. Default is True.
 
         Returns
         -------
@@ -688,9 +691,10 @@ class Plotting:
             else:
                 logger.warning("Stressmodel %s not in stressmodels list.", name)
 
-        plt.xlim(0)
-        plt.xlabel("Time [days]")
-        plt.legend(legend)
+        ax.set_xlim(0)
+        ax.set_xlabel("Time [days]")
+        if legend:
+            ax.legend(legend)
         return ax
 
     def step_response(
@@ -698,6 +702,7 @@ class Plotting:
         stressmodels: Optional[List[str]] = None,
         ax: Optional[Axes] = None,
         figsize: Optional[tuple] = None,
+        legend: bool = True,
         **kwargs,
     ) -> Axes:
         """Plot the step response for a specific stressmodels.
@@ -706,6 +711,12 @@ class Plotting:
         ----------
         stressmodels: list, optional
             List with the stressmodels to plot the block response for.
+        ax: matplotlib.axes.Axes, optional
+            Axes to add the plot to.
+        figsize: tuple, optional
+            Tuple with the height and width of the figure in inches.
+        legend: bool, optional
+            Boolean to determine to show the legend. Default is True.
 
         Returns
         -------
@@ -727,9 +738,10 @@ class Plotting:
             else:
                 logger.warning("Stressmodel %s not in stressmodels list.", name)
 
-        plt.xlim(0)
-        plt.xlabel("Time [days]")
-        plt.legend(legend)
+        ax.set_xlim(0)
+        ax.set_xlabel("Time [days]")
+        if legend:
+            ax.legend(legend)
         return ax
 
     @model_tmin_tmax
@@ -784,7 +796,13 @@ class Plotting:
 
         return axes
 
-    @PastasDeprecationWarning
+    @PastasDeprecationWarning(
+        remove_version="1.6.0",
+        reason=(
+            "Quantifying contributions in one plot is ambiguous. "
+            "Users are encouraged develop this themselves."
+        ),
+    )
     @model_tmin_tmax
     def contributions_pie(
         self,
@@ -921,7 +939,8 @@ class Plotting:
             if (len(sml.stress) > 0) and (sml._name == "WellModel"):
                 if stackcolors is None:
                     stackcolors = {
-                        wnam: f"C{iw+1}" for iw, wnam in enumerate(sml.distances.index)
+                        wnam: f"C{iw + 1}"
+                        for iw, wnam in enumerate(sml.distances.index)
                     }
                 elif isinstance(stackcolors, list):
                     stackcolors = {
@@ -1137,3 +1156,143 @@ class Plotting:
         series = [obs] + list(stresses)
         axd = pairplot(data=series, bins=bins)
         return axd
+
+    @model_tmin_tmax
+    def contribution(
+        self,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+        name: Optional[str] = None,
+        plot_stress: bool = True,
+        plot_response: bool = False,
+        block_or_step: str = "step",
+        istress: Optional[int] = None,
+        ax: Optional[plt.Axes] = None,
+        **kwargs,
+    ):
+        """Plot the contribution of a stressmodel and optionally the stress and the response.
+
+        Parameters
+        ----------
+        tmin: str or pd.Timestamp, optional
+        tmax: str or pd.Timestamp, optional
+        name: str, optional
+            Name of the stressmodel to plot the contribution for.
+        plot_stress: bool, optional
+            Plot the stress on an overlay axes.
+        plot_response: bool, optional
+            Plot the step response on a separate axes on the right.
+        block_or_step: str, optional
+            Type of response to plot, either 'block' or 'step'. Default is 'step'.
+        istress: int, optional
+            Index of the stress to plot the response for. Default is None.
+        ax: dict or matplotlib.axes.Axes, optional
+            Dictionary containing axes with 'con' and 'rf' as keys, or a single axes
+            instance for the contribution plot.
+        kwargs: dict, optional
+            Passed to the stress plot.
+
+        Returns
+        -------
+        axes: dict
+            Dictionary containing the axes for the contribution, and optionally the
+            stress and response.
+        """
+        if name is None:
+            raise ValueError(
+                "Please provide a name for the stressmodel: "
+                f"{list(self.ml.stressmodels.keys())}"
+            )
+        c = self.ml.get_contribution(name, tmin=tmin, tmax=tmax, istress=istress)
+
+        if ax is None:
+            if plot_response:
+                _, axes = plt.subplot_mosaic(
+                    [["con", "con", "con", "con", "rf"]],
+                    constrained_layout=True,
+                    figsize=(10, 2),
+                )
+
+            else:
+                _, axes = plt.subplot_mosaic(
+                    [["con"]],
+                    constrained_layout=True,
+                    figsize=(10, 2),
+                )
+        else:
+            if not isinstance(ax, dict):
+                axes = {"con": ax}
+
+        axes["con"].plot(c.index, c, label=f"contribution {c.name}")
+
+        if plot_stress:
+            sm = self.ml.stressmodels[name]
+            # get stress
+            if sm._name == "RechargeModel":
+                # compute recharge
+                s = sm.get_stress(tmin=tmin, tmax=tmax, istress=istress)
+                stress_name = s.name
+            else:
+                s = self.ml.get_stress(name, tmin=tmin, tmax=tmax, istress=istress)
+                # if multiple stresses, sum stresses together
+                if isinstance(s, list):
+                    s = concat(s, axis=1).sum(axis=1, fill_value=0.0)
+                    stress_name = name
+                else:
+                    stress_name = s.name
+
+            # use up to flip stress if necessary
+            up = 1.0 if sm.rfunc.up in [True, None] else -1.0
+
+            # add second axes for stress
+            axes["stress"] = axes["con"].twinx()
+            if "c" not in kwargs:
+                color = kwargs.pop("color", (0.4, 0.4, 0.4))
+            axes["stress"].plot(
+                s.index,
+                up * s,
+                color=color,
+                lw=1.0,
+                label="stress",
+                **kwargs,
+            )
+            axes["stress"].set_ylabel(f"stress '{stress_name}'")
+            # flip order of stress and contributions axes (contributions on top)
+            axes["con"].patch.set_visible(False)
+            axes["stress"].patch.set_visible(True)
+            axes["con"].set_zorder(axes["stress"].get_zorder() + 1)
+            # add both lines to legend
+            h1, l1 = axes["con"].get_legend_handles_labels()
+            h2, l2 = axes["stress"].get_legend_handles_labels()
+            axes["con"].legend(
+                h1 + h2, l1 + l2, loc=(0, 1), frameon=False, ncol=2, fontsize="small"
+            )
+        else:
+            axes["con"].legend(loc=(0, 1), frameon=False, ncol=1, fontsize="small")
+
+        if plot_response:
+            if "rf" not in axes:
+                raise ValueError(
+                    "No axes defined for response. "
+                    "Provide a dictionary containing axes with 'con' and 'rf' as keys."
+                )
+            if block_or_step == "step":
+                self.step_response(stressmodels=[name], ax=axes["rf"], legend=False)
+            else:
+                self.block_response(stressmodels=[name], ax=axes["rf"], legend=False)
+            axes["rf"].yaxis.set_label_position("right")
+            axes["rf"].yaxis.tick_right()
+            h3, _ = axes["rf"].get_legend_handles_labels()
+            if len(h3) == 1:
+                axes["rf"].legend(
+                    h3,
+                    [f"{block_or_step} response"],
+                    loc=(0, 1),
+                    frameon=False,
+                    fontsize="small",
+                )
+            axes["rf"].grid(True)
+
+        axes["con"].grid(True)
+        axes["con"].set_ylabel("rise")
+        return axes

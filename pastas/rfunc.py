@@ -31,6 +31,7 @@ except ImportError:
 # Type Hinting
 from typing import Optional, Union
 
+from pastas.decorators import PastasDeprecationWarning
 from pastas.typing import ArrayLike
 
 logger = getLogger(__name__)
@@ -869,7 +870,7 @@ class Hantush(RfuncBase):
         # approximate formula for tmax
         if cutoff is None:
             cutoff = self.cutoff
-        a, b = p[1:]
+        a, b = p[1], p[2]
         rho = 2 * np.sqrt(b)
         return lambertw(1 / ((1 - cutoff) * k0(rho))).real * a
 
@@ -1479,6 +1480,13 @@ class DoubleExponential(RfuncBase):
         return s
 
 
+@PastasDeprecationWarning(
+    remove_version="2.0.0",
+    reason=(
+        "Please use the pastas-plugins library if you want to keep using this "
+        "response function (https://github.com/pastas/pastas/issues/475)."
+    ),
+)
 class Edelman(RfuncBase):
     """The function of Edelman, describing the propagation of an instantaneous
     water level change into an adjacent half-infinite aquifer.
@@ -1513,12 +1521,6 @@ class Edelman(RfuncBase):
         cutoff: float = 0.999,
         **kwargs,
     ) -> None:
-        logger.warning(
-            "The `Edelman` response function will be deprecated in Pastas "
-            "version 2.0 (https://github.com/pastas/pastas/issues/475). Please "
-            "use the pastas-plugins library if you want to keep using this "
-            "response function.",
-        )
         RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
         self.nparam = 1
 

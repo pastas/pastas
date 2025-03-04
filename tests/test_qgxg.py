@@ -75,16 +75,12 @@ class TestQGXG(object):
         print("calculated GXG's percentile method: \n")
         print(
             (
-                "GHG: {ghg:.2f} m+NAP\n"
-                "GLG: {glg:.2f} m+NAP\n"
-                "GVG: {gvg:.2f} m+NAP\n"
+                "GHG: {ghg:.2f} m+NAP\nGLG: {glg:.2f} m+NAP\nGVG: {gvg:.2f} m+NAP\n"
             ).format(ghg=ghg, glg=glg, gvg=gvg)
         )
         print("Menyanthes GXG's: \n")
         print(
             (
-                "GHG: {ghg:.2f} m+NAP\n"
-                "GLG: {glg:.2f} m+NAP\n"
-                "GVG: {gvg:.2f} m+NAP\n"
+                "GHG: {ghg:.2f} m+NAP\nGLG: {glg:.2f} m+NAP\nGVG: {gvg:.2f} m+NAP\n"
             ).format(ghg=-3.23, glg=-3.82, gvg=-3.43)
         )
