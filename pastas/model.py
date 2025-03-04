@@ -1860,6 +1860,7 @@ class Model:
         corr: bool = False,
         stderr: bool = False,
         warnings: bool = True,
+        colored: bool = True,
         output: str = None,
     ) -> str:
         """Method that reports on the fit after a model is optimized.
@@ -1876,6 +1877,8 @@ class Model:
         warnings : bool, optional
             print warnings in case of optimization failure, parameters hitting
             bounds, or length of responses exceeding calibration period.
+        colored : bool, optional
+            print the parameters that hit the bounds in color.
         output : str, optional (deprecated)
             deprecated argument, use corr and stderr arguments
             instead.
@@ -1964,11 +1967,29 @@ class Model:
         for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
             basic += f"{val1:<8}{val2:<23}{val3:<9}{val4:>{wspace + len_val4}}\n"
 
+        # add colors to parameters that hit the optimisation bounds
+        if colored:
+            warningc = "\033[93m"
+            endc = "\033[0m"
+            hit_bounds = (self.parameters["optimal"] <= self.parameters["pmin"]) | (
+                self.parameters["optimal"] >= self.parameters["pmax"]
+            )
+            params_list = parameters.to_string().split("\n")
+            for irow in np.where(hit_bounds)[0]:
+                params_row = params_list[irow + 1]
+                old_val = params_row.split()[1]
+                params_list[irow + 1] = params_row.replace(
+                    old_val, warningc + old_val + endc
+                )
+            params_str = "\n".join(params_list)
+        else:
+            params_str = parameters.to_string()
+
         # Create the parameters block
         params = (
             f"\nParameters ({parameters.vary.sum()} optimized)\n"
             f"{string.format('', fill='=', align='>', width=width)}\n"
-            f"{parameters.to_string()}"
+            f"{params_str}"
         )
 
         if corr:
