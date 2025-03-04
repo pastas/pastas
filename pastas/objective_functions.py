@@ -85,8 +85,8 @@ class GaussianLikelihoodAr1:
 
     .. math::
         \\log(L) = -\\frac{N-1}{2}\\log(2\\pi\\sigma^2) +
-         \\frac{\\sum_{t=1}^N{-(\\epsilon_t - \\phi \\epsilon_{t-\\Delta t})^2}
-        {2\\sigma^2}}
+         \\frac{\\sum_{t=1}^N(-(\\epsilon_t - \\phi \\epsilon_{t-\\Delta t})^2}
+        {2\\sigma^2})
 
     where :math:`N` is the number of observations, :math:`\\sigma^2` is the
     variance of the residuals, :math:`\\epsilon_t` is the residual at time
