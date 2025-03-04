@@ -8,11 +8,11 @@ from pandas import DataFrame
 
 
 class GaussianLikelihood:
-    """Gaussian likelihood function.
+    """Gaussian likelihood function for homoscedastic, autocorrelated errors.
 
     Notes
     -----
-    The Gaussian log-likelihood function is defined as:
+    The Gaussian log-likelihood function :cite:p:`smith_modeling_2015` is defined as:
 
     .. math::
         \\log(L) = -\\frac{N}{2}\\log(2\\pi\\sigma^2) +
@@ -46,7 +46,7 @@ class GaussianLikelihood:
         parameters = DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "stderr", "name", "dist"]
         )
-        parameters.loc[name + "_sigma"] = (0.05, 1e-10, 1, True, 0.01, name, "uniform")
+        parameters.loc[name + "_var"] = (0.05, 1e-10, 1, True, 0.01, name, "uniform")
         return parameters
 
     def compute(self, rv, p):
@@ -65,9 +65,9 @@ class GaussianLikelihood:
             Log-likelihood
 
         """
-        sigma = p[-1]
+        var = p[-1]
         N = rv.size
-        ln = -0.5 * N * log(2 * pi * sigma) + sum(-(rv**2) / (2 * sigma))
+        ln = -0.5 * N * log(2 * pi * var) + sum(-(rv**2) / (2 * var))
         return ln
 
 
@@ -76,18 +76,19 @@ class GaussianLikelihoodAr1:
 
     Notes
     -----
-    The Gaussian log-likelihood function with AR1 autocorrelated residual is defined as:
+    The Gaussian log-likelihood function with AR1 autocorrelated residuals
+    :cite:p:`smith_modeling_2015` is defined as:
 
     .. math::
         \\log(L) = -\\frac{N-1}{2}\\log(2\\pi\\sigma^2) +
-        \\frac{\\sum_{i=1}^N - (\\epsilon_i - \\phi \\epsilon_{i-\\Delta t})^2}
-        {2\\sigma^2}
+        \\frac{\\sum_{i=1}^N - ((\\epsilon_i - \\phi \\epsilon_{i-\\Delta t})^2}
+        {2\\sigma^2})
 
     where :math:`N` is the number of observations, :math:`\\sigma^2` is the
     variance of the residuals, :math:`\\epsilon_i` is the residual at time
-    :math:`i` and :math:`\\mu` is the mean of the residuals. :math:`\\Delta t` is
-    the time step between the observations. :math:`\\phi` is the autoregressive
-    parameter. The parameters :math:`\\phi` and :math:`\\sigma^2` need to be estimated.
+    :math:`i`. :math:`\\Delta t` is the time step between the observations.
+    :math:`\\phi` is the autoregressive parameter. The parameters :math:`\\phi` and
+    :math:`\\sigma^2` need to be estimated.
 
     """
 
@@ -113,8 +114,8 @@ class GaussianLikelihoodAr1:
         parameters = DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "stderr", "name", "dist"]
         )
-        parameters.loc[name + "_sigma"] = (0.05, 1e-10, 1, True, 0.01, name, "uniform")
-        parameters.loc[name + "_theta"] = (
+        parameters.loc[name + "_var"] = (0.05, 1e-10, 1, True, 0.01, name, "uniform")
+        parameters.loc[name + "_phi"] = (
             0.5,
             1e-10,
             0.99999,
@@ -141,10 +142,10 @@ class GaussianLikelihoodAr1:
             Log-likelihood.
 
         """
-        sigma = p[-2]
-        theta = p[-1]
+        var = p[-2]
+        phi = p[-1]
         N = rv.size
-        ln = -(N - 1) / 2 * log(2 * pi * sigma) + sum(
-            -((rv[1:] - theta * rv[0:-1]) ** 2) / (2 * sigma)
+        ln = -(N - 1) / 2 * log(2 * pi * var) + sum(
+            -((rv[1:] - phi * rv[0:-1]) ** 2) / (2 * var)
         )
         return ln
