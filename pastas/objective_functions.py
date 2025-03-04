@@ -8,7 +8,7 @@ from pandas import DataFrame
 
 
 class GaussianLikelihood:
-    """Gaussian likelihood function for homoscedastic, autocorrelated errors.
+    """Gaussian likelihood function for homoscedastic, uncorrelated errors.
 
     Notes
     -----
@@ -16,11 +16,15 @@ class GaussianLikelihood:
 
     .. math::
         \\log(L) = -\\frac{N}{2}\\log(2\\pi\\sigma^2) +
-        \\frac{\\sum_{i=1}^N - \\epsilon_i^2}{2\\sigma^2}
+        \\frac{\\sum_{t=1}^N - \\epsilon_t^2}{2\\sigma^2}
 
     where :math:`N` is the number of observations, :math:`\\sigma^2` is the variance of
-    the residuals, and :math:`\\epsilon_i` is the residual at time :math:`i`. The
+    the residuals, and :math:`\\epsilon_t` is the residual at time :math:`t`. The
     parameter :math:`\\sigma^2` need to be estimated.
+
+    Notes
+    -----
+    The current implementation is valid for equidistant time series only.
 
     """
 
@@ -72,7 +76,7 @@ class GaussianLikelihood:
 
 
 class GaussianLikelihoodAr1:
-    """Gaussian likelihood function with AR1 autocorrelated residuals.
+    """Gaussian likelihood function for homoscedastic, autocorrelated residuals.
 
     Notes
     -----
@@ -81,14 +85,18 @@ class GaussianLikelihoodAr1:
 
     .. math::
         \\log(L) = -\\frac{N-1}{2}\\log(2\\pi\\sigma^2) +
-        \\frac{\\sum_{i=1}^N - ((\\epsilon_i - \\phi \\epsilon_{i-\\Delta t})^2}
-        {2\\sigma^2})
+         \\frac{\\sum_{t=1}^N{-(\\epsilon_t - \\phi \\epsilon_{t-\\Delta t})^2}
+        {2\\sigma^2}}
 
     where :math:`N` is the number of observations, :math:`\\sigma^2` is the
-    variance of the residuals, :math:`\\epsilon_i` is the residual at time
-    :math:`i`. :math:`\\Delta t` is the time step between the observations.
+    variance of the residuals, :math:`\\epsilon_t` is the residual at time
+    :math:`t`. :math:`\\Delta t` is the time step between the observations.
     :math:`\\phi` is the autoregressive parameter. The parameters :math:`\\phi` and
     :math:`\\sigma^2` need to be estimated.
+
+    Notes
+    -----
+    The current implementation is valid for equidistant time series only.
 
     """
 
