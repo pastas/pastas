@@ -15,12 +15,12 @@ class GaussianLikelihood:
     The Gaussian log-likelihood function :cite:p:`smith_modeling_2015` is defined as:
 
     .. math::
-        \\log(L) = -\\frac{N}{2}\\log(2\\pi\\sigma^2) +
-        \\frac{\\sum_{t=1}^N - \\epsilon_t^2}{2\\sigma^2}
+        \\log(L) = -\\frac{N}{2}\\log(2\\pi\\sigma^2) -
+        \\frac{\\sum_{t=1}^N \\epsilon_t^2}{2\\sigma^2}
 
     where :math:`N` is the number of observations, :math:`\\sigma^2` is the variance of
     the residuals, and :math:`\\epsilon_t` is the residual at time :math:`t`. The
-    parameter :math:`\\sigma^2` need to be estimated.
+    parameter :math:`\\sigma^2` needs to be estimated.
 
     The current implementation is valid for equidistant time series only.
 
@@ -82,9 +82,9 @@ class GaussianLikelihoodAr1:
     :cite:p:`smith_modeling_2015` is defined as:
 
     .. math::
-        \\log(L) = -\\frac{N-1}{2}\\log(2\\pi\\sigma^2) +
-         \\frac{\\sum_{t=1}^N(-(\\epsilon_t - \\phi \\epsilon_{t-\\Delta t})^2}
-        {2\\sigma^2})
+        \\log(L) = -\\frac{N-1}{2}\\log(2\\pi\\sigma^2) -
+         \\frac{\\sum_{t=1}^N(\\epsilon_t - \\phi \\epsilon_{t-\\Delta t})^2}
+        {2\\sigma^2}
 
     where :math:`N` is the number of observations, :math:`\\sigma^2` is the
     variance of the residuals, :math:`\\epsilon_t` is the residual at time
