@@ -22,8 +22,6 @@ class GaussianLikelihood:
     the residuals, and :math:`\\epsilon_t` is the residual at time :math:`t`. The
     parameter :math:`\\sigma^2` need to be estimated.
 
-    Notes
-    -----
     The current implementation is valid for equidistant time series only.
 
     """
@@ -94,8 +92,6 @@ class GaussianLikelihoodAr1:
     :math:`\\phi` is the autoregressive parameter. The parameters :math:`\\phi` and
     :math:`\\sigma^2` need to be estimated.
 
-    Notes
-    -----
     The current implementation is valid for equidistant time series only.
 
     """
