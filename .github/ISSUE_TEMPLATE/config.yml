@@ -1,8 +1,5 @@
 blank_issues_enabled: true
 contact_links:
-  - name: Pastas Issues
-    url: https://github.com/pastas/pastas/issues
-    about: Please report bugs, features or tasks here.
   - name: Pastas Discussions
     url: https://github.com/orgs/pastas/discussions
-    about: Please drop questions, thoughts or ideas here.
+    about: Please open a discussion if you have questions, thoughts or ideas.

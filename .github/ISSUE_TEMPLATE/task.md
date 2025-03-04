@@ -15,3 +15,4 @@ Add any other context about the feature here.
 - [ ] Add labels
 - [ ] Add issue type
 - [ ] Assign yourself, a Pastas developer or no one
+- [ ] Check if there is not already an existing issue for this task
