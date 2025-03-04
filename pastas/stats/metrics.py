@@ -390,6 +390,9 @@ def nnse(
 
     .. math:: \\text{NNSE} = 1 / (2 - NSE)
 
+    This metric normalizes the NSE between ~0 and 1 instead of -infinity and 1.
+    So the optimal value for NNSE is 1, same as the NSE. However, an NNSE value
+    of 0.5 corresponds to an NSE of 0, while the worst possible NNSE value is ~0.
     """
     nnse = 1 / (
         2
