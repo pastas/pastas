@@ -9,6 +9,7 @@ time steps often observed in hydrological time series.
 from logging import getLogger
 from typing import Tuple, Union
 
+from numba import prange
 from numpy import (
     append,
     arange,
@@ -20,6 +21,7 @@ from numpy import (
     exp,
     inf,
     nan,
+    ndarray,
     ones,
     pi,
     sqrt,
@@ -262,7 +264,7 @@ def _preprocess(x: Series, max_gap: float) -> Tuple[ArrayLike, ArrayLike, float]
     return x, t, dt_mu
 
 
-@njit
+@njit(parallel=True, nogil=True, cache=True)
 def _compute_ccf_rectangle(
     lags: ArrayLike,
     t_x: ArrayLike,
@@ -276,12 +278,14 @@ def _compute_ccf_rectangle(
     b = empty_like(lags)
     n = len(t_x)
 
-    for k in range(len(lags)):
+    for k in prange(len(lags)):
         cl = 0.0
         b_sum = 0.0
-        for i in range(n):
-            for j in range(n):
-                d = abs(t_x[i] - t_y[j]) - lags[k]
+        lag_k = lags[k]
+        # traverse the lower diagonal of NxN matrix: np.dot(x.T, y)
+        for j in range(n):
+            for i in range(j, n):
+                d = abs(t_x[i] - t_y[j]) - lag_k
                 if abs(d) <= bin_width:
                     cl += x[i] * y[j]
                     b_sum += 1.0
@@ -290,11 +294,11 @@ def _compute_ccf_rectangle(
             b[k] = 1e-16  # Prevent division by zero error
         else:
             c[k] = cl / b_sum
-            b[k] = b_sum / 2.0  # divide by 2 because we over count in for-loop
+            b[k] = b_sum
     return c, b
 
 
-@njit
+@njit(parallel=True, nogil=True, cache=True)
 def _compute_ccf_gaussian(
     lags: ArrayLike,
     t_x: ArrayLike,
@@ -311,14 +315,14 @@ def _compute_ccf_gaussian(
     den1 = -2 * bin_width**2  # denominator 1
     den2 = sqrt(2 * pi * bin_width)  # denominator 2
 
-    for k in range(len(lags)):
+    for k in prange(len(lags)):
         cl = 0.0
         b_sum = 0.0
-
-        for i in range(n):
-            for j in range(n):
-                d = t_x[i] - t_y[j] - lags[k]
-                d = exp(d**2 / den1) / den2
+        lag_k = lags[k]
+        # traverse the lower diagonal of NxN matrix: np.dot(x.T, y)
+        for j in range(n):
+            for i in range(j, n):
+                d = exp((t_x[i] - t_y[j] - lag_k) ** 2 / den1) / den2
                 cl += x[i] * y[j] * d
                 b_sum += d
         if b_sum == 0.0:
@@ -326,19 +330,21 @@ def _compute_ccf_gaussian(
             b[k] = 1e-16  # Prevent division by zero error
         else:
             c[k] = cl / b_sum
-            b[k] = b_sum / 2.0  # divide by 2 because we over count in for-loop
+            b[k] = b_sum
     return c, b
 
 
+@njit(parallel=True, nogil=True, cache=True)
 def _compute_ccf_regular(
     lags: ArrayLike, x: ArrayLike, y: ArrayLike
 ) -> Tuple[ArrayLike, ArrayLike]:
     c = empty_like(lags)
     n = len(x)
-    for i, lag in enumerate(lags):
-        lag = int(lag)
+    for i in prange(len(lags)):
+        lag = int(lags[i])
         if lag < n:
-            c[i] = corrcoef(x[: n - lag], y[lag:])[0, 1]
+            # flip x, y to match numpy/scipy correlate output order
+            c[i] = corrcoef(y[: n - lag], x[lag:])[0, 1]
         else:
             c[i] = nan
     b = n - lags
