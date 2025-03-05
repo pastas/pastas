@@ -117,7 +117,7 @@ def acf(
         full_output=full_output,
         alpha=alpha,
         fallback_bin_method=fallback_bin_method,
-    )
+    ).iloc[1:]  # drop first value, which is always 1
     c.name = "ACF"
     if full_output:
         return c.rename(columns={"ccf": "acf"})
@@ -212,9 +212,9 @@ def ccf(
     dt_mu = max(dt_x_mu, dt_y_mu)  # The mean time step from both series
 
     if isinstance(lags, int) and bin_method == "regular":
-        lags = arange(int(dt_mu), lags + 1, int(dt_mu), dtype=float)
+        lags = arange(0, lags, int(dt_mu), dtype=float)
     elif isinstance(lags, int):
-        lags = arange(1.0, lags + 1, dtype=float)
+        lags = arange(0, lags + 1, dtype=float)
     elif isinstance(lags, list):
         lags = array(lags, dtype=float)
 
