@@ -223,7 +223,7 @@ def ccf(
     elif bin_method == "gaussian":
         c, b = _compute_ccf_gaussian(lags, t_x, x, t_y, y, bin_width)
     elif bin_method == "regular":
-        c, b = _compute_ccf_regular(arange(1.0, len(lags) + 1), x, y)
+        c, b = _compute_ccf_regular(arange(0, len(lags), dtype=float), x, y)
     else:
         raise NotImplementedError
 
