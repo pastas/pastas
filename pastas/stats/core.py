@@ -291,10 +291,12 @@ def _compute_ccf_rectangle(
         lag_k = lags[k]
         # traverse the lower diagonal of NxN matrix: np.dot(x.T, y)
         for j in range(n):
+            yj = y[j]
+            t_yj = t_y[j]
             for i in range(j, n):
-                d = abs(t_x[i] - t_y[j]) - lag_k
+                d = abs(t_x[i] - t_yj) - lag_k
                 if abs(d) <= bin_width:
-                    cl += x[i] * y[j]
+                    cl += x[i] * yj
                     b_sum += 1.0
         if b_sum == 0.0:
             c[k] = nan
@@ -321,17 +323,22 @@ def _compute_ccf_gaussian(
 
     den1 = -2 * bin_width**2  # denominator 1
     den2 = sqrt(2 * pi * bin_width)  # denominator 2
-
+    six_den2 = 6 * den2  # six std. dev.
     for k in prange(len(lags)):
         cl = 0.0
         b_sum = 0.0
         lag_k = lags[k]
         # traverse the lower diagonal of NxN matrix: np.dot(x.T, y)
         for j in range(n):
+            t_yj = t_y[j]
+            yj = y[j]
             for i in range(j, n):
-                d = exp((t_x[i] - t_y[j] - lag_k) ** 2 / den1) / den2
-                cl += x[i] * y[j] * d
-                b_sum += d
+                dtlag = t_x[i] - t_yj - lag_k
+                if abs(dtlag) < six_den2:
+                    d = exp(dtlag**2 / den1) / den2
+                    # if d > 1e-5:
+                    cl += x[i] * yj * d
+                    b_sum += d
         if b_sum == 0.0:
             c[k] = nan
             b[k] = 1e-16  # Prevent division by zero error
