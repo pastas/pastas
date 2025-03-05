@@ -348,13 +348,12 @@ def _compute_ccf_gaussian(
     return c, b
 
 
-@njit(parallel=False, nogil=False, cache=False)
 def _compute_ccf_regular(
     lags: ArrayLike, x: ArrayLike, y: ArrayLike
 ) -> Tuple[ArrayLike, ArrayLike]:
     c = empty_like(lags)
     n = len(x)
-    for i in prange(len(lags)):
+    for i in range(len(lags)):
         lag = int(lags[i])
         if lag < n:
             # flip x, y to match numpy/scipy correlate output order
