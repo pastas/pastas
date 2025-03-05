@@ -15,7 +15,7 @@ def sgi(series: Series, timescale_months: int = 1) -> Series:
         Pandas time series of the groundwater levels
         for which the SGI is to be determined
     timescale_months: integer, optional
-        Length of the aggredation period in months (default: 1; allowed: 1, 2, 3)
+        Length of the aggregation period in months (default: 1; allowed: 1, 2, 3)
 
     Returns
     -------
