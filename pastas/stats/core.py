@@ -348,7 +348,7 @@ def _compute_ccf_gaussian(
     return c, b
 
 
-@njit(parallel=True, nogil=True, cache=True)
+@njit(parallel=False, nogil=False, cache=False)
 def _compute_ccf_regular(
     lags: ArrayLike, x: ArrayLike, y: ArrayLike
 ) -> Tuple[ArrayLike, ArrayLike]:
