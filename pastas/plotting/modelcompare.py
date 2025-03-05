@@ -6,7 +6,7 @@ from typing import List, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
-from pandas import DataFrame, concat
+from pandas import concat, DataFrame, Timestamp
 
 from pastas.plotting.plotutil import _table_formatter_params, share_xaxes, share_yaxes
 from pastas.rfunc import HantushWellModel
@@ -58,7 +58,13 @@ class CompareModels:
         mc.figure.savefig("modelcomparison.png")
     """
 
-    def __init__(self, models: List[Model], names: Optional[List[str]] = None) -> None:
+    def __init__(
+        self,
+        models: List[Model],
+        names: Optional[List[str]] = None,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+    ) -> None:
         """Initialize model compare class.
 
         Parameters
@@ -67,6 +73,12 @@ class CompareModels:
             list of models to compare.
         names : list of str, optional
             override model names
+        tmin: TimestampType, optional
+            Timestamp with a start date for the simulation period (E.g. '1980'). If none
+            is provided, the tmin from the oseries is used.
+        tmax: TimestampType, optional
+            Timestamp with an end date for the simulation period (E.g. '2010'). If none
+            is provided, the tmax from the oseries is used.
         """
         self.models = models
         # ensure unique model names
@@ -79,6 +91,16 @@ class CompareModels:
             modelnames = [f"{iml.name}_{i}" for i, iml in enumerate(self.models)]
         self.modelnames = modelnames
 
+        # prevent NaT types which cause various pandas issues
+        if not tmin:
+            self.tmin = None
+        else:
+            self.tmin = Timestamp(tmin)
+        if not tmax:
+            self.tmax = None
+        else:
+            self.tmax = Timestamp(tmax)
+        
         # attributes that are set and used later
         self.figure = None
         self.axes = None
@@ -408,24 +430,13 @@ class CompareModels:
         diags.columns = modelnames
         return diags
 
-    def plot_oseries(
-            self,
-            axn: str = "sim",
-            tmin: Optional[TimestampType] = None,
-            tmax: Optional[TimestampType] = None,
-        ) -> None:
+    def plot_oseries(self, axn: str = "sim") -> None:
         """Plot all oseries, unless all oseries are the same.
 
         Parameters
         ----------
         axn : str, optional
             name of labeled axes to plot oseries on, by default "sim".
-        tmin : TimestampType, optional
-            start date for the plot period (E.g. '1980'). If none is provided, the
-            tmin from the oseries is used.
-        tmax : TimestampType, optional
-            end date for the plot period (E.g. '2010'). If none is provided, the 
-            tmax from the oseries is used.
         """
         if self.axes is None:
             axs = self.initialize_figure(
@@ -434,7 +445,7 @@ class CompareModels:
         else:
             axs = self.axes
 
-        oseries = [ml.oseries.series[tmin:tmax] for ml in self.models]
+        oseries = [ml.oseries.series[self.tmin : self.tmax] for ml in self.models]
         equals = np.array([])
         for pair in combinations(oseries, 2):
             equals = np.append(equals, np.array_equal(pair[0], pair[1]))
@@ -461,24 +472,13 @@ class CompareModels:
                 )
         return axs[axn]
 
-    def plot_simulation(
-        self,
-        axn: str = "sim",
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
-    ) -> None:
+    def plot_simulation(self, axn: str = "sim") -> None:
         """plot model simulation.
 
         Parameters
         ----------
         axn : str, optional
             name of labeled axes to plot model simulations on, by default "sim".
-        tmin : TimestampType, optional
-            start date for the plot period (E.g. '1980'). If none is provided, the
-            tmin from the oseries is used.
-        tmax : TimestampType, optional
-            end date for the plot period (E.g. '2010'). If none is provided, the 
-            tmax from the oseries is used.
         """
         if self.axes is None:
             axs = self.initialize_figure(
@@ -492,7 +492,7 @@ class CompareModels:
                 name = self.modelnames[i]
             else:
                 name = ml.model
-            simulation = ml.simulate(tmin=tmin, tmax=tmax)
+            simulation = ml.simulate(tmin=self.tmin, tmax=self.tmax)
             axs[axn].plot(
                 simulation.index,
                 simulation.values,
@@ -503,24 +503,13 @@ class CompareModels:
 
         return axs[axn]
 
-    def plot_residuals(
-        self,
-        axn: str = "res",
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
-    ) -> None:
+    def plot_residuals(self, axn: str = "res") -> None:
         """plot residuals.
 
         Parameters
         ----------
         axn : str, optional
             name of labeled axes to plot residuals on, by default "res".
-        tmin : TimestampType, optional
-            start date for the plot period (E.g. '1980'). If none is provided, the
-            tmin from the oseries is used.
-        tmax : TimestampType, optional
-            end date for the plot period (E.g. '2010'). If none is provided, the 
-            tmax from the oseries is used.
         """
         if self.axes is None:
             axs = self.initialize_figure(
@@ -530,7 +519,7 @@ class CompareModels:
             axs = self.axes
 
         for i, ml in enumerate(self.models):
-            residuals = ml.residuals(tmin=tmin, tmax=tmax)
+            residuals = ml.residuals(tmin=self.tmin, tmax=self.tmax)
             axs[axn].plot(
                 residuals.index,
                 residuals.values,
@@ -539,24 +528,13 @@ class CompareModels:
             )
         return axs[axn]
 
-    def plot_noise(
-        self,
-        axn: str = "res",
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
-    ) -> None:
+    def plot_noise(self, axn: str = "res") -> None:
         """plot noise.
 
         Parameters
         ----------
         axn : str, optional
             name of labeled axes to plot noise on, by default "res".
-        tmin : TimestampType, optional
-            start date for the plot period (E.g. '1980'). If none is provided, the
-            tmin from the oseries is used.
-        tmax : TimestampType, optional
-            end date for the plot period (E.g. '2010'). If none is provided, the 
-            tmax from the oseries is used.
         """
         if self.axes is None:
             axs = self.initialize_figure(
@@ -567,7 +545,7 @@ class CompareModels:
 
         for i, ml in enumerate(self.models):
             if ml.settings["noise"]:
-                noise = ml.noise(tmin=tmin, tmax=tmax)
+                noise = ml.noise(tmin=self.tmin, tmax=self.tmax)
                 axs[axn].plot(
                     noise.index,
                     noise.values,
@@ -675,8 +653,6 @@ class CompareModels:
         smdict: Optional[dict] = None,
         axn: str = "con{i}",
         normalized: bool = False,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
     ) -> None:
         """plot stressmodel contributions.
 
@@ -697,12 +673,6 @@ class CompareModels:
         normalized : bool, optional
             normalize contributions with min/max depending on mean value, by default
             False.
-        tmin : TimestampType, optional
-            start date for the plot period (E.g. '1980'). If none is provided, the
-            tmin from the oseries is used.
-        tmax : TimestampType, optional
-            end date for the plot period (E.g. '2010'). If none is provided, the 
-            tmax from the oseries is used.
         """
         if self.axes is None:
             axs = self.initialize_figure(
@@ -727,7 +697,9 @@ class CompareModels:
                 for smn in namlist:
                     if smn not in ml.stressmodels:
                         continue
-                    for con in ml.get_contributions(split=False, tmin=tmin, tmax=tmax):
+                    for con in ml.get_contributions(
+                        split=False, tmin=self.tmin, tmax=self.tmax
+                    ):
                         if smn in con.name:
                             label = f"{con.name}"
                             if normalized:
@@ -959,8 +931,6 @@ class CompareModels:
         grid: bool = True,
         legend: bool = True,
         adjust_height: bool = False,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
         legend_kwargs: Optional[dict] = {},
         **fig_kwargs,
     ) -> None:
@@ -990,12 +960,6 @@ class CompareModels:
             adjust the height of the graphs, so that the vertical scale of all the
             subplots on the left is equal. Default is False. When combining stress
             contributions in one subplot, please also provide smdict for best results.
-        tmin : TimestampType, optional
-            start date for the simulation period (E.g. '1980'). If none is provided, the
-            tmin from the oseries is used.
-        tmax : TimestampType, optional
-            end date for the simulation period (E.g. '2010'). If none is provided, the 
-            tmax from the oseries is used.
         legend_kwargs : dict, optional
             pass legend keyword arguments to plots.
         **fig_kwargs
@@ -1010,15 +974,15 @@ class CompareModels:
             self.initialize_adjust_height_figure(smdict=smdict, **fig_kwargs)
 
         # sim
-        _ = self.plot_oseries(tmin=tmin, tmax=tmax)
-        _ = self.plot_simulation(tmin=tmin, tmax=tmax)
+        _ = self.plot_oseries()
+        _ = self.plot_simulation()
 
         # res
-        _ = self.plot_residuals(tmin=tmin, tmax=tmax)
-        _ = self.plot_noise(tmin=tmin, tmax=tmax)
+        _ = self.plot_residuals()
+        _ = self.plot_noise()
 
         # smn, rfn
-        _ = self.plot_contribution(smdict=smdict, normalized=normalized, tmin=tmin, tmax=tmax)
+        _ = self.plot_contribution(smdict=smdict, normalized=normalized)
         _ = self.plot_response(smdict=smdict)
 
         # share x-axes
@@ -1050,11 +1014,13 @@ class CompareModels:
             self.share_xaxes(xshare_right)
 
         # xlim bounds
-        tmintmax = self.get_tmin_tmax()
+        # TODO: convert strings to timestamps for matplotlib
+        tmin, tmax = self.tmin, self.tmax
+        default_tmintmax = self.get_tmin_tmax()
         if not tmin:
-            tmin = tmintmax.loc[:, "tmin"].min()
+            tmin = default_tmintmax.loc[:, "tmin"].min()
         if not tmax:
-            tmax = tmintmax.loc[:, "tmax"].max()
+            tmax = default_tmintmax.loc[:, "tmax"].max()
         self.axes["sim"].set_xlim(tmin, tmax)
 
         # met
