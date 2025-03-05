@@ -100,11 +100,14 @@ Model Evaluation
 
 `MCMC uncertainty`_
 
+`MCMC vs. LS`_
+
 .. _Comparing models visually: comparing_models.html
 .. _Diagnostic checking: diagnostic_checking.html
 .. _`Reducing autocorrelation`: timestep_analysis.html
 .. _Uncertainty quantification: uncertainty.html
 .. _MCMC uncertainty: uncertainty_emcee.html
+.. _MCMC vs. LS: uncertainty_ls_mcmc.html
 
 
 Applications
