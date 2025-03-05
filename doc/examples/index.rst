@@ -28,6 +28,7 @@ on the `examples directory on GitHub <https://github.com/pastas/pastas/tree/mast
     timestep_analysis
     uncertainty
     uncertainty_emcee
+    uncertainty_ls_mcmc
     standardized_groundwater_index
     signatures
 
