@@ -217,6 +217,10 @@ def ccf(
         lags = arange(0, lags + 1, dtype=float)
     elif isinstance(lags, list):
         lags = array(lags, dtype=float)
+    elif isinstance(lags, ndarray):
+        # ensure dtype float otherwise numba will
+        # create integer arrays for the results
+        lags = lags.astype(float)
 
     if bin_method == "rectangle":
         c, b = _compute_ccf_rectangle(lags, t_x, x, t_y, y, bin_width)
