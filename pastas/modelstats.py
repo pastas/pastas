@@ -184,7 +184,7 @@ class Statistics:
         weighted: bool = False,
         **kwargs,
     ) -> float:
-        """Nash-Sutcliffe coefficient for model fit .
+        """Nash-Sutcliffe Efficiency for model fit .
 
         Parameters
         ----------
@@ -201,6 +201,33 @@ class Statistics:
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
         return metrics.nse(obs=obs, res=res, weighted=weighted, **kwargs)
+
+    @model_tmin_tmax
+    def nnse(
+        self,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+        weighted: bool = False,
+        **kwargs,
+    ) -> float:
+        """Normalized Nash-Sutcliffe Efficiency for model fit .
+
+        Parameters
+        ----------
+        tmin: str or pandas.Timestamp, optional
+        tmax: str or pandas.Timestamp, optional
+        weighted: bool, optional
+            If weighted is True, the variances are computed using the time step
+            between observations as weights. Default is False.
+
+        See Also
+        --------
+        pastas.stats.nnse
+        """
+        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        obs = self.ml.observations(tmin=tmin, tmax=tmax)
+
+        return metrics.nnse(obs=obs, res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
     def pearsonr(
