@@ -215,7 +215,7 @@ def ccf(
     dt_mu = max(dt_x_mu, dt_y_mu)  # The mean time step from both series
 
     if isinstance(lags, int) and bin_method == "regular":
-        lags = arange(0, lags, int(dt_mu), dtype=float)
+        lags = arange(0, lags + 1, int(dt_mu), dtype=float)
     elif isinstance(lags, int):
         lags = arange(0, lags + 1, dtype=float)
     elif isinstance(lags, list):
@@ -230,7 +230,7 @@ def ccf(
     elif bin_method == "gaussian":
         c, b = _compute_ccf_gaussian(lags, t_x, x, t_y, y, bin_width)
     elif bin_method == "regular":
-        c, b = _compute_ccf_regular(arange(0, len(lags), dtype=float), x, y)
+        c, b = _compute_ccf_regular(lags, x, y)
     else:
         raise NotImplementedError
 
