@@ -117,7 +117,10 @@ def acf(
         full_output=full_output,
         alpha=alpha,
         fallback_bin_method=fallback_bin_method,
-    ).iloc[1:]  # drop first value, which is always 1
+    )
+    # drop value for lag=0 by default, unless explicitly included
+    if c.index[0] == Timedelta(0) and isinstance(lags, int):
+        c = c.drop(c.index[0])
     c.name = "ACF"
     if full_output:
         return c.rename(columns={"ccf": "acf"})
