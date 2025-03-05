@@ -100,7 +100,7 @@ class CompareModels:
             self.tmax = None
         else:
             self.tmax = Timestamp(tmax)
-        
+
         # attributes that are set and used later
         self.figure = None
         self.axes = None
