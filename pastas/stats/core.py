@@ -9,6 +9,7 @@ time steps often observed in hydrological time series.
 from logging import getLogger
 from typing import Tuple, Union
 
+from numba import prange
 from numpy import (
     append,
     arange,
@@ -20,6 +21,7 @@ from numpy import (
     exp,
     inf,
     nan,
+    ndarray,
     ones,
     pi,
     sqrt,
@@ -116,6 +118,9 @@ def acf(
         alpha=alpha,
         fallback_bin_method=fallback_bin_method,
     )
+    # drop value for lag=0 by default, unless explicitly included
+    if c.index[0] == Timedelta(0) and isinstance(lags, int):
+        c = c.drop(c.index[0])
     c.name = "ACF"
     if full_output:
         return c.rename(columns={"ccf": "acf"})
@@ -210,18 +215,22 @@ def ccf(
     dt_mu = max(dt_x_mu, dt_y_mu)  # The mean time step from both series
 
     if isinstance(lags, int) and bin_method == "regular":
-        lags = arange(int(dt_mu), lags + 1, int(dt_mu), dtype=float)
+        lags = arange(0, lags + 1, int(dt_mu), dtype=float)
     elif isinstance(lags, int):
-        lags = arange(1.0, lags + 1, dtype=float)
+        lags = arange(0, lags + 1, dtype=float)
     elif isinstance(lags, list):
         lags = array(lags, dtype=float)
+    elif isinstance(lags, ndarray):
+        # ensure dtype float otherwise numba will
+        # create integer arrays for the results
+        lags = lags.astype(float)
 
     if bin_method == "rectangle":
         c, b = _compute_ccf_rectangle(lags, t_x, x, t_y, y, bin_width)
     elif bin_method == "gaussian":
         c, b = _compute_ccf_gaussian(lags, t_x, x, t_y, y, bin_width)
     elif bin_method == "regular":
-        c, b = _compute_ccf_regular(arange(1.0, len(lags) + 1), x, y)
+        c, b = _compute_ccf_regular(lags, x, y)
     else:
         raise NotImplementedError
 
@@ -235,7 +244,10 @@ def ccf(
     result = result.where(result.n > min_obs).dropna()
 
     # Raise a warning if the correlation is above 1 or below -1
-    if (result.ccf > 1).any() or (result.ccf < -1).any():
+    # NOTE: Using 1.01 to avoid excessive warnings when using binning methods for
+    # irregular timesteps. In those cases correlations sometimes exceed 1 by a small
+    # amount.
+    if (result.ccf.abs() > 1.01).any():
         msg = (
             "The correlation is above 1 or below -1. This can occur due to the "
             "binning method used. Please check the data and the binning method and "
@@ -262,7 +274,7 @@ def _preprocess(x: Series, max_gap: float) -> Tuple[ArrayLike, ArrayLike, float]
     return x, t, dt_mu
 
 
-@njit
+@njit(parallel=True, nogil=True, cache=True)
 def _compute_ccf_rectangle(
     lags: ArrayLike,
     t_x: ArrayLike,
@@ -276,25 +288,29 @@ def _compute_ccf_rectangle(
     b = empty_like(lags)
     n = len(t_x)
 
-    for k in range(len(lags)):
+    for k in prange(len(lags)):
         cl = 0.0
         b_sum = 0.0
-        for i in range(n):
-            for j in range(n):
-                d = abs(t_x[i] - t_y[j]) - lags[k]
+        lag_k = lags[k]
+        # traverse the lower diagonal of NxN matrix: np.dot(x.T, y)
+        for j in range(n):
+            yj = y[j]
+            t_yj = t_y[j]
+            for i in range(j, n):
+                d = abs(t_x[i] - t_yj) - lag_k
                 if abs(d) <= bin_width:
-                    cl += x[i] * y[j]
+                    cl += x[i] * yj
                     b_sum += 1.0
         if b_sum == 0.0:
             c[k] = nan
             b[k] = 1e-16  # Prevent division by zero error
         else:
             c[k] = cl / b_sum
-            b[k] = b_sum / 2.0  # divide by 2 because we over count in for-loop
+            b[k] = b_sum
     return c, b
 
 
-@njit
+@njit(parallel=True, nogil=True, cache=True)
 def _compute_ccf_gaussian(
     lags: ArrayLike,
     t_x: ArrayLike,
@@ -310,23 +326,28 @@ def _compute_ccf_gaussian(
 
     den1 = -2 * bin_width**2  # denominator 1
     den2 = sqrt(2 * pi * bin_width)  # denominator 2
-
-    for k in range(len(lags)):
+    six_den2 = 6 * den2  # six std. dev.
+    for k in prange(len(lags)):
         cl = 0.0
         b_sum = 0.0
-
-        for i in range(n):
-            for j in range(n):
-                d = t_x[i] - t_y[j] - lags[k]
-                d = exp(d**2 / den1) / den2
-                cl += x[i] * y[j] * d
-                b_sum += d
+        lag_k = lags[k]
+        # traverse the lower diagonal of NxN matrix: np.dot(x.T, y)
+        for j in range(n):
+            t_yj = t_y[j]
+            yj = y[j]
+            for i in range(j, n):
+                dtlag = t_x[i] - t_yj - lag_k
+                if abs(dtlag) < six_den2:
+                    d = exp(dtlag**2 / den1) / den2
+                    # if d > 1e-5:
+                    cl += x[i] * yj * d
+                    b_sum += d
         if b_sum == 0.0:
             c[k] = nan
             b[k] = 1e-16  # Prevent division by zero error
         else:
             c[k] = cl / b_sum
-            b[k] = b_sum / 2.0  # divide by 2 because we over count in for-loop
+            b[k] = b_sum
     return c, b
 
 
@@ -335,10 +356,11 @@ def _compute_ccf_regular(
 ) -> Tuple[ArrayLike, ArrayLike]:
     c = empty_like(lags)
     n = len(x)
-    for i, lag in enumerate(lags):
-        lag = int(lag)
+    for i in range(len(lags)):
+        lag = int(lags[i])
         if lag < n:
-            c[i] = corrcoef(x[: n - lag], y[lag:])[0, 1]
+            # flip x, y to match numpy/scipy correlate output order
+            c[i] = corrcoef(y[: n - lag], x[lag:])[0, 1]
         else:
             c[i] = nan
     b = n - lags
