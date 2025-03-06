@@ -244,7 +244,10 @@ def ccf(
     result = result.where(result.n > min_obs).dropna()
 
     # Raise a warning if the correlation is above 1 or below -1
-    if (result.ccf > 1).any() or (result.ccf < -1).any():
+    # NOTE: Using 1.01 to avoid excessive warnings when using binning methods for
+    # irregular timesteps. In those cases correlations sometimes exceed 1 by a small
+    # amount.
+    if (result.ccf.abs() > 1.01).any():
         msg = (
             "The correlation is above 1 or below -1. This can occur due to the "
             "binning method used. Please check the data and the binning method and "
