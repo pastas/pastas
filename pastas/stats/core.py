@@ -57,7 +57,7 @@ def acf(
         calculated. Defaults is all lags from 1 to 365 days.
     bin_method: str, optional
         method to determine the type of bin. Options are "regular" for regular data
-        (default), ans "gaussian" and "rectangle" for irregular data.
+        (default), and "gaussian" and "rectangle" for irregular data.
     bin_width: float, optional
         number of days used as the width for the bin to calculate the correlation.
     max_gap: float, optional
@@ -147,7 +147,7 @@ def ccf(
         calculated. Defaults is all lags from 1 to 365 days.
     bin_method: str, optional
         method to determine the type of bin. Options are "regular" for regular data
-        (default), ans "gaussian" and "rectangle" for irregular data.
+        (default), and "gaussian" and "rectangle" for irregular data.
     bin_width: float, optional
         number of days used as the width for the bin to calculate the correlation.
     max_gap: float, optional

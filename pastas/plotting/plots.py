@@ -120,7 +120,7 @@ def series(
     cols = 1
     if table and not hist and not kde:
         logging.info(
-            "Plotting the table is not possible without hist=True or kde=True. Adding the historgram."
+            "Plotting the table is not possible without hist=True or kde=True. Adding the histogram."
         )
         hist = True
     if hist or kde:
