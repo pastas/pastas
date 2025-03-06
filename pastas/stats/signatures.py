@@ -595,7 +595,7 @@ def colwell_contingency(
 def low_pulse_count(
     series: Series, quantile: float = 0.2, rolling_window: Union[str, None] = "7D"
 ) -> float:
-    """Average number of times the series exceeds a certain threshold per year.
+    """Average number of times the series is below a certain threshold per year.
 
     Parameters
     ----------

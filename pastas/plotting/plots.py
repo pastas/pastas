@@ -120,7 +120,7 @@ def series(
     cols = 1
     if table and not hist and not kde:
         logging.info(
-            "Plotting the table is not possible without hist=True or kde=True. Adding the historgram."
+            "Plotting the table is not possible without hist=True or kde=True. Adding the histogram."
         )
         hist = True
     if hist or kde:
@@ -284,6 +284,12 @@ def acf(
     >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
     >>>                 data=np.random.rand(1000))
     >>> ps.plots.acf(res)
+
+    Raises
+    ------
+    Warning if the ACF is empty. The plot will still be created to ensure that scripts
+    will still run when dealing with many models.
+
     """
     if ax is None:
         _, ax = plt.subplots(1, 1, figsize=figsize)
@@ -294,21 +300,23 @@ def acf(
     r = get_acf(series, full_output=True, alpha=alpha, lags=lags, **acf_options)
 
     if r.empty:
-        raise ValueError(
+        # Raise a warning
+        logger.warning(
             "The computed autocorrelation function has no values. Changing the input "
-            "arguments ('acf_options') for calculating ACF may help."
+            "arguments ('acf_options') for calculating ACF may help. No data will be "
+            "plotted."
         )
-
-    if smooth_conf:
-        conf = r.conf.rolling(10, min_periods=1).mean().values
     else:
-        conf = r.conf.values
+        if smooth_conf:
+            conf = r.conf.rolling(10, min_periods=1).mean().values
+        else:
+            conf = r.conf.values
 
-    ax.fill_between(r.index.days, conf, -conf, alpha=0.3)
-    ax.vlines(r.index.days, [0], r.loc[:, "acf"].values, color=color)
+        ax.fill_between(r.index.days, conf, -conf, alpha=0.3)
+        ax.vlines(r.index.days, [0], r.loc[:, "acf"].values, color=color)
+        ax.set_xlim(0, r.index.days.max())
 
     ax.set_xlabel("Lag [Days]")
-    ax.set_xlim(0, r.index.days.max())
     ax.set_ylabel("Autocorrelation [-]")
     ax.set_title("Autocorrelation plot")
 
