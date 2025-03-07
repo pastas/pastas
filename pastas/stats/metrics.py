@@ -27,6 +27,7 @@ __all__ = [
     "sse",
     "mae",
     "nse",
+    "nnse",
     "evp",
     "rsq",
     "bic",
@@ -351,6 +352,60 @@ def nse(
     mu = average(obs.to_numpy(), weights=w)
 
     return 1 - (w * err.to_numpy() ** 2).sum() / (w * (obs.to_numpy() - mu) ** 2).sum()
+
+
+def nnse(
+    obs: Series,
+    sim: Optional[Series] = None,
+    res: Optional[Series] = None,
+    missing: str = "drop",
+    weighted: bool = False,
+    max_gap: int = 30,
+) -> float:
+    """Compute the (weighted) Normalized Nash-Sutcliffe Efficiency (NNSE).
+
+    Parameters
+    ----------
+    obs: pandas.Series
+        Series with the observed values.
+    sim: pandas.Series, optional
+        The Series with the simulated values.
+    res: pandas.Series, optional
+        The Series with the residual values. If time series for the residuals are
+        provided, the sim and obs arguments are ignored. Note that the residuals
+        must be computed as `obs - sim` here.
+    missing: str, optional
+        string with the rule to deal with missing values. Only "drop" is supported now.
+    weighted: bool, optional
+        If weighted is True, the variances are computed using the time step between
+        observations as weights. Default is False.
+    max_gap: int, optional
+        maximum allowed gap period in days to use for the computation of the weights.
+        All time steps larger than max_gap are replace with the max_gap value.
+        Default value is 30 days.
+
+    Notes
+    -----
+    NNSE computed according to :cite:t:`nash_normalized_2006`
+
+    .. math:: \\text{NNSE} = 1 / (2 - NSE)
+
+    This metric normalizes the NSE between ~0 and 1 instead of -infinity and 1.
+    So the optimal value for NNSE is 1, same as the NSE. However, an NNSE value
+    of 0.5 corresponds to an NSE of 0, while the worst possible NNSE value is ~0.
+    """
+    nnse = 1 / (
+        2
+        - nse(
+            obs=obs,
+            sim=sim,
+            res=res,
+            missing=missing,
+            weighted=weighted,
+            max_gap=max_gap,
+        )
+    )
+    return nnse
 
 
 def rsq(
