@@ -165,6 +165,10 @@ def test_fit_report(ml: ps.Model) -> None:
     ml.fit_report(corr=True, stderr=True)
 
 
+def test_response_tmax_warnings_fit_report(ml: ps.Model) -> None:
+    ml.solve(warmup=1, tmin="2010", tmax="2011")
+
+
 def test_model_freq_geq_daily(prec: Series, evap: Series) -> None:
     rf_rch = ps.Exponential()
     A_rch = 800
