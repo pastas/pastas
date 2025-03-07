@@ -6,7 +6,7 @@ from typing import List, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
-from pandas import concat, DataFrame, Timestamp
+from pandas import DataFrame, Timestamp, concat
 
 from pastas.plotting.plotutil import _table_formatter_params, share_xaxes, share_yaxes
 from pastas.rfunc import HantushWellModel
@@ -931,7 +931,7 @@ class CompareModels:
         grid: bool = True,
         legend: bool = True,
         adjust_height: bool = False,
-        legend_kwargs: Optional[dict] = {},
+        legend_kwargs: Optional[dict] = None,
         **fig_kwargs,
     ) -> None:
         """plot the models in a comparison plot.
@@ -992,6 +992,8 @@ class CompareModels:
             if axn not in ("tab", "met", "dia"):
                 self.axes[axn].grid(grid)
                 if legend and not axn.startswith("rf"):
+                    if legend_kwargs is None:
+                        legend_kwargs = {}
                     _, labels = self.axes[axn].get_legend_handles_labels()
                     self.axes[axn].legend(
                         ncol=legend_kwargs.pop(
