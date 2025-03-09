@@ -24,6 +24,8 @@ def compare(
     models: List[Model],
     names: Optional[List[str]] = None,
     adjust_height: bool = True,
+    tmin: Optional[TimestampType] = None,
+    tmax: Optional[TimestampType] = None,
     **kwargs,
 ) -> Dict:
     """Plot multiple Pastas models in one figure to visually compare models.
@@ -45,6 +47,12 @@ def compare(
         subplots on the left is equal. Default is False, in which case the axes are
         not rescaled to include all data, so certain data might not be visible. Set
         False to ensure you can see all data.
+    tmin: TimestampType, optional
+        Timestamp with a start date for the simulation period (E.g. '1980'). If none
+        is provided, the tmin from the oseries is used.
+    tmax: TimestampType, optional
+        Timestamp with an end date for the simulation period (E.g. '2010'). If none
+        is provided, the tmax from the oseries is used.
     **kwargs
         The kwargs are passed to the CompareModels.plot() function.
 
@@ -52,7 +60,7 @@ def compare(
     -------
     matplotlib.axes
     """
-    mc = CompareModels(models, names=names)
+    mc = CompareModels(models, names=names, tmin=tmin, tmax=tmax)
     mc.plot(adjust_height=adjust_height, **kwargs)
     return mc.axes
 

@@ -8,6 +8,13 @@ def test_comparison_plot(ml: ps.Model, ml_sm: ps.Model) -> None:
     _ = mc.plot(legend_kwargs={"ncol": 2})
 
 
+def test_comparison_plot_sim_kwargs(ml, ml_sm) -> None:
+    ml.solve()
+    ml_sm.solve()
+    mc = ps.CompareModels(models=[ml, ml_sm], tmin="2011", tmax="2014")
+    _ = mc.plot()
+
+
 def test_comparison_plot_custom(ml: ps.Model, ml_sm: ps.Model) -> None:
     ml.solve()
     ml_sm.solve()
