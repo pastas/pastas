@@ -25,6 +25,7 @@ from packaging.version import parse as parse_version
 from pandas import DataFrame, Series, Timedelta, Timestamp, concat, date_range
 from pandas import __version__ as pd_version
 from scipy.signal import fftconvolve
+from scipy.special import k0
 
 from pastas.typing import (
     ArrayLike,
@@ -37,7 +38,7 @@ from pastas.typing import (
 
 from .decorators import njit, set_parameter
 from .recharge import Linear
-from .rfunc import Exponential, HantushWellModel, One
+from .rfunc import Exponential, Hantush, HantushWellModel, One
 from .timeseries import TimeSeries
 from .utils import validate_name
 
@@ -257,7 +258,7 @@ class StressModelBase:
             settings = {stress.name: stress.settings for stress in self.stress}
         return settings
 
-    def get_parameters(self, model=None) -> ArrayLike:
+    def get_parameters(self, model=None, istress=None) -> ArrayLike:
         """Get parameters and return as array.
 
         Parameters
@@ -273,6 +274,8 @@ class StressModelBase:
         p : array_like
             An array of the parameters of the stressmodel.
         """
+        if istress is not None:
+            logger.warning("istress is not supported for stressmodel {self.name}")
         if model is None:
             p = self.parameters.initial.values
         else:
@@ -814,9 +817,9 @@ class WellModel(StressModelBase):
         # check response function
         if rfunc is None:
             rfunc = HantushWellModel()
-        elif not isinstance(rfunc, HantushWellModel):
+        elif not isinstance(rfunc, (HantushWellModel, Hantush)):
             raise NotImplementedError(
-                "WellModel only supports the rfunc HantushWellModel!"
+                "WellModel only supports the rfunc HantushWellModel or Hantush!"
             )
 
         # check if number of stresses and distances match
@@ -868,15 +871,22 @@ class WellModel(StressModelBase):
             up=up,
             gain_scale_factor=gain_scale_factor,
         )
-
-        self.rfunc.set_distances(self.distances.values)
+        if isinstance(self.rfunc, HantushWellModel):
+            self.rfunc.set_distances(self.distances.values)
+        else:
+            self.hwm = HantushWellModel()
+            self.hwm.update_rfunc_settings(up=up, gain_scale_factor=gain_scale_factor)
+            self.hwm.set_distances(self.distances.values)
 
         self.stress = stress
         self.freq = self.stress[0].settings["freq"]
         self.set_init_parameters()
 
     def set_init_parameters(self) -> None:
-        self.parameters = self.rfunc.get_init_parameters(self.name)
+        if isinstance(self.rfunc, Hantush):
+            self.parameters = self.hwm.get_init_parameters(self.name)
+        else:
+            self.parameters = self.rfunc.get_init_parameters(self.name)
 
     def simulate(
         self,
@@ -896,7 +906,8 @@ class WellModel(StressModelBase):
         for name, r in distances.items():
             stress = stress_df.loc[:, name]
             npoints = stress.index.size
-            p_with_r = np.concatenate([p, np.array([r])])
+            # if istress is defined, r is allready processed in p
+            p_with_r = self.process_r_in_p(p, r) if istress is None else p
             b = self._get_block(p_with_r, dt, tmin, tmax)
             c = fftconvolve(stress, b, "full")[:npoints]
             h = h.add(Series(c, index=stress.index), fill_value=0.0)
@@ -1019,14 +1030,19 @@ class WellModel(StressModelBase):
             p = self.parameters.initial.values
         else:
             p = model.get_parameters(self.name)
+        if istress is not None:
+            r = self.get_distances(istress=istress).iloc[0]
+            p = self.process_r_in_p(p, r)
+        return p
 
-        distances = self.get_distances(istress=istress).values
-        if distances.size > 1:
-            p_with_r = np.concatenate(
-                [np.tile(p, (distances.size, 1)), distances[:, np.newaxis]], axis=1
-            )
+    def process_r_in_p(self, p, r):
+        if isinstance(self.rfunc, Hantush):
+            Aprime, a, bprime = p
+            A = Aprime * k0(2 * r * np.exp(bprime / 2))
+            b = np.exp(bprime) * r**2
+            p_with_r = [A, a, b]
         else:
-            p_with_r = np.r_[p, distances]
+            p_with_r = np.r_[p, r]
         return p_with_r
 
     def dump_stress(self, series: bool = True) -> list:
@@ -1410,16 +1426,13 @@ class RechargeModel(StressModelBase):
         """
         if p is None:
             p = self.parameters.initial.values
-        b = self._get_block(p[: self.rfunc.nparam], dt, tmin, tmax)
+        b = self._get_block(p, dt, tmin, tmax)
         stress = self.get_stress(
             p=p, tmin=tmin, tmax=tmax, freq=freq, istress=istress
         ).values
         name = self.name
 
         if istress is not None:
-            if istress == 1 and self.nsplit > 1:
-                # only happen when Linear is used as the recharge model
-                stress = stress * p[-1]
             if self.stress[istress].name is not None:
                 name = f"{self.name} ({self.stress[istress].name})"
 

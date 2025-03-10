@@ -32,7 +32,7 @@ from pastas.modelstats import Statistics
 from pastas.plotting.modelplots import Plotting, _table_formatter_stderr
 from pastas.rfunc import HantushWellModel
 from pastas.solver import LeastSquares
-from pastas.stressmodels import Constant
+from pastas.stressmodels import Constant, WellModel
 from pastas.timeseries import TimeSeries
 from pastas.timeseries_utils import (
     _frequency_is_supported,
@@ -1417,7 +1417,7 @@ class Model:
             Pandas.Series with the contribution.
         """
         if p is None:
-            p = self.get_parameters(name)
+            p = self.stressmodels[name].get_parameters(self, istress=istress)
 
         if tmin is None:
             tmin = self.settings["tmin"]
@@ -1607,12 +1607,18 @@ class Model:
             block_or_step = getattr(self.stressmodels[name].rfunc, block_or_step)
 
         if p is None:
-            p = self.get_parameters(name)
+            if isinstance(self.stressmodels[name], WellModel) and istress is None:
+                logger.warning(
+                    "Returning the response of the first stress in WellModel"
+                )
+                istress = 0
+            if istress is not None and self.stressmodels[name].get_nsplit() > 1:
+                p = self.stressmodels[name].get_parameters(model=self, istress=istress)
+            else:
+                p = self.get_parameters(name)
 
         if dt is None:
             dt = _get_dt(self.settings["freq"])
-        if istress is not None and self.stressmodels[name].get_nsplit() > 1:
-            p = self.stressmodels[name].get_parameters(model=self, istress=istress)
 
         response = block_or_step(p, dt, **kwargs)
 
