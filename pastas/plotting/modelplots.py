@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import LogFormatter, MultipleLocator
-from pandas import Series, Timestamp, concat
+from pandas import Series, Timedelta, Timestamp, concat
 
 from pastas.decorators import PastasDeprecationWarning, model_tmin_tmax
 from pastas.plotting.plots import cum_frequency, diagnostics, pairplot, series
@@ -18,6 +18,7 @@ from pastas.plotting.plotutil import (
     _get_stress_series,
     _table_formatter_params,
     _table_formatter_stderr,
+    plot_series_with_gaps,
 )
 from pastas.rfunc import HantushWellModel
 from pastas.typing import Axes, Figure, Model, TimestampType
@@ -232,10 +233,17 @@ class Plotting:
 
         # Residuals and noise
         ax2 = fig.add_subplot(gs[1, 0], sharex=ax1)
-        res.plot(ax=ax2, color="k", x_compat=True)
+        plot_series_with_gaps(
+            res, gap=Timedelta(1, unit=self.ml.settings["freq"]), ax=ax2, color="k"
+        )
         if self.ml.settings["noise"] and self.ml.noisemodel:
             noise = self.ml.noise(tmin=tmin, tmax=tmax)
-            noise.plot(ax=ax2, x_compat=True)
+            plot_series_with_gaps(
+                noise,
+                gap=Timedelta(1, unit=self.ml.settings["freq"]),
+                ax=ax2,
+                color="C0",
+            )
         ax2.axhline(0.0, color="k", linestyle="--", zorder=0)
         ax2.legend(loc=(0, 1), ncol=3, frameon=False)
 

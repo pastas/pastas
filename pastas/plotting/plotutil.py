@@ -3,7 +3,7 @@
 from typing import List, Union
 
 import numpy as np
-from pandas import Series
+from pandas import Series, Timedelta
 
 from pastas.typing import Axes
 
@@ -98,3 +98,28 @@ def share_yaxes(axes: List[Axes]) -> None:
         iax.sharey(axes[0])
         for t in iax.get_yticklabels():
             t.set_visible(False)
+
+
+def plot_series_with_gaps(series: Series, gap: Timedelta, ax: Axes, **kwargs) -> None:
+    """Plot a pandas Series with gaps.
+
+    Parameters
+    ----------
+    series: pd.Series
+        The series to plot.
+    gap: pd.Timedelta
+        The gap between the data points.
+    ax: Axes
+        The axes to plot on.
+    kwargs: dict
+        Additional keyword arguments that are passed to the plot method.
+    """
+    s_split = (series.index.diff() > gap).cumsum()
+
+    series.name = kwargs.pop("label") if "label" in kwargs else series.name
+
+    for i, gr in series.groupby(s_split):
+        label = None if i > 0 else series.name
+        ax.plot(gr.index, gr.values, label=label, **kwargs)
+
+    return ax
