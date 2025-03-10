@@ -497,7 +497,8 @@ class Statistics:
         stats: tuple = (),
         float_fmt: str = "{0:.2f}",
     ) -> DataFrame:
-        """Methods to compute various diagnostics checks for a time series.
+        """Methods to compute various diagnostics checks for the noise time series. If
+        no NoiseModel is used, the diagnostics are computed on the model residuals.
 
         Parameters
         ----------
