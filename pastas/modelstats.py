@@ -502,9 +502,11 @@ class Statistics:
         Parameters
         ----------
         tmin: str or pandas.Timestamp, optional
-            Start date of the residual time series to compute the diagnostics checks for.
+            Start date of the residual / noise time series to compute the diagnostics
+            checks for.
         tmax: str or pandas.Timestamp, optional
-            End date of the residuals time series to compute the diagnostics checks for.
+            End date of the residuals / noise time series to compute the diagnostics
+            checks for.
         alpha: float, optional
             significance level to use for the hypothesis testing.
         stats: tuple, optional
