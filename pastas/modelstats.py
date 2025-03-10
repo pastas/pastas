@@ -497,6 +497,37 @@ class Statistics:
         stats: tuple = (),
         float_fmt: str = "{0:.2f}",
     ) -> DataFrame:
+        """Methods to compute various diagnostics checks for the noise time series. If
+        no NoiseModel is used, the diagnostics are computed on the model residuals.
+
+        Parameters
+        ----------
+        tmin: str or pandas.Timestamp, optional
+            Start date of the residual / noise time series to compute the diagnostics
+            checks for.
+        tmax: str or pandas.Timestamp, optional
+            End date of the residuals / noise time series to compute the diagnostics
+            checks for.
+        alpha: float, optional
+            significance level to use for the hypothesis testing.
+        stats: tuple, optional
+            Tuple with the diagnostic checks to perform. Not implemented yet.
+        float_fmt: str
+            String to use for formatting the floats in the returned DataFrame.
+
+        Returns
+        -------
+        df: Pandas.DataFrame
+            DataFrame with the information for the diagnostics checks. The final column
+            in this DataFrame report if the Null-Hypothesis is rejected. If H0 is not
+            rejected (=False) the data is in agreement with one of the properties of
+            white noise (e.g., normally distributed).
+
+        See Also
+        --------
+        pastas.stats.diagnostics
+
+        """
         if self.ml.noisemodel and self.ml.settings["noise"]:
             series = self.ml.noise(tmin=tmin, tmax=tmax)
             nparam = self.ml.noisemodel.nparam
