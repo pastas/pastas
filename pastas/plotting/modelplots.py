@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import LogFormatter, MultipleLocator
-from pandas import Series, Timedelta, Timestamp, concat
+from pandas import Series, Timestamp, concat
 
 from pastas.decorators import PastasDeprecationWarning, model_tmin_tmax
 from pastas.plotting.plots import cum_frequency, diagnostics, pairplot, series
@@ -233,14 +233,14 @@ class Plotting:
 
         # Residuals and noise
         ax2 = fig.add_subplot(gs[1, 0], sharex=ax1)
-        plot_series_with_gaps(
-            res, gap=Timedelta(1, unit=self.ml.settings["freq"]), ax=ax2, color="k"
-        )
+        # Assume at least 10% of index range is a reasonable gap
+        gap_min = 0.1 * (res.index.max() - res.index.min())
+        plot_series_with_gaps(res, gap_min=gap_min, ax=ax2, color="k")
         if self.ml.settings["noise"] and self.ml.noisemodel:
             noise = self.ml.noise(tmin=tmin, tmax=tmax)
             plot_series_with_gaps(
                 noise,
-                gap=Timedelta(1, unit=self.ml.settings["freq"]),
+                gap_min=gap_min,
                 ax=ax2,
                 color="C0",
             )

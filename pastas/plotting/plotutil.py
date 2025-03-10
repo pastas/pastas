@@ -100,21 +100,23 @@ def share_yaxes(axes: List[Axes]) -> None:
             t.set_visible(False)
 
 
-def plot_series_with_gaps(series: Series, gap: Timedelta, ax: Axes, **kwargs) -> None:
+def plot_series_with_gaps(
+    series: Series, gap_min: Timedelta, ax: Axes, **kwargs
+) -> None:
     """Plot a pandas Series with gaps.
 
     Parameters
     ----------
     series: pd.Series
         The series to plot.
-    gap: pd.Timedelta
-        The gap between the data points.
+    gap_min: pd.Timedelta
+        Minimum time delta to be considered as a gap
     ax: Axes
         The axes to plot on.
     kwargs: dict
         Additional keyword arguments that are passed to the plot method.
     """
-    s_split = (series.index.diff() > gap).cumsum()
+    s_split = (series.index.diff() >= gap_min).cumsum()
 
     series.name = kwargs.pop("label") if "label" in kwargs else series.name
 
