@@ -14,7 +14,9 @@ def test_example(file) -> None:
     os.chdir(pathname)
     try:
         # run each example
-        exec(open(file).read())
+        with open(file) as f:
+            code = f.read()
+            exec(code, {"__file__": str(file)})
         plt.close("all")
     except Exception as e:
         os.chdir(cwd)
