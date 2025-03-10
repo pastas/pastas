@@ -123,7 +123,7 @@ class Plotly:
 
         return go.Figure(data=traces, layout=go.Layout(layout))
 
-    def results(self, tmin=None, tmax=None):
+    def results(self, tmin=None, tmax=None, stderr=False):
         """Plotly version of pastas.Model.plots.results().
 
         Parameters
@@ -134,6 +134,8 @@ class Plotly:
             start time for model results, by default None
         tmax : pd.Timestamp, optional
             end time for model results, by default None
+        stderr : bool, optional
+            include standard errors in parameter table, by default False
 
         Returns
         -------
@@ -318,23 +320,24 @@ class Plotly:
         ybots[ybots < 0] = 0  # floating point issues, should always be > 0
 
         # parameter table
-        p = self._model.parameters.copy().loc[:, ["name", "optimal", "stderr"]]
+        col_names = ["name", "optimal", "stderr"] if stderr else ["name", "optimal"]
+        p = self._model.parameters.copy().loc[:, col_names]
         p.loc[:, "name"] = p.index
         optimal = p.loc[:, "optimal"].copy()
-        stderr = p.loc[:, "stderr"] / optimal
         p["optimal"] = p["optimal"].astype(str)
         p.loc[:, "optimal"] = optimal.apply(_table_formatter_params)
-        p["stderr"] = p["stderr"].astype(str)
-        p.loc[:, "stderr"] = stderr.abs().apply(_table_formatter_stderr)
+
+        values = ["<b>Parameter</b>", "<b>Optimal</b>"]
+        if stderr:
+            values.append("<b>Std. Err.</b>")
+            stderr_values = p.loc[:, "stderr"] / optimal
+            p["stderr"] = p["stderr"].astype(str)
+            p.loc[:, "stderr"] = stderr_values.abs().apply(_table_formatter_stderr)
 
         tab = go.Table(
             domain=dict(x=[x_pos + dx, 1.0], y=[y_pos[2] + dy, 1.0]),
             header=dict(
-                values=[
-                    "<b>Parameter</b>",
-                    "<b>Optimal</b>",
-                    "<b>Std. Err.</b>",
-                ],
+                values=values,
                 font=dict(size=12),
                 align=["left", "center", "center"],
                 height=40,
@@ -344,7 +347,7 @@ class Plotly:
                 align=["left", "right", "right"],
                 height=30,
             ),
-            columnwidth=[100, 70, 70],
+            columnwidth=[100, 70, 70] if stderr else [100, 70],
         )
 
         traces.append(tab)

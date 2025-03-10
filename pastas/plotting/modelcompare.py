@@ -6,12 +6,12 @@ from typing import List, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
-from pandas import DataFrame, concat
+from pandas import DataFrame, Timestamp, concat
 
 from pastas.plotting.plotutil import _table_formatter_params, share_xaxes, share_yaxes
 from pastas.rfunc import HantushWellModel
 from pastas.stats.core import acf
-from pastas.typing import Axes, Model
+from pastas.typing import Axes, Model, TimestampType
 
 logger = getLogger(__name__)
 
@@ -58,7 +58,13 @@ class CompareModels:
         mc.figure.savefig("modelcomparison.png")
     """
 
-    def __init__(self, models: List[Model], names: Optional[List[str]] = None) -> None:
+    def __init__(
+        self,
+        models: List[Model],
+        names: Optional[List[str]] = None,
+        tmin: Optional[TimestampType] = None,
+        tmax: Optional[TimestampType] = None,
+    ) -> None:
         """Initialize model compare class.
 
         Parameters
@@ -67,6 +73,12 @@ class CompareModels:
             list of models to compare.
         names : list of str, optional
             override model names
+        tmin: TimestampType, optional
+            Timestamp with a start date for the simulation period (E.g. '1980'). If none
+            is provided, the tmin from the oseries is used.
+        tmax: TimestampType, optional
+            Timestamp with an end date for the simulation period (E.g. '2010'). If none
+            is provided, the tmax from the oseries is used.
         """
         self.models = models
         # ensure unique model names
@@ -78,6 +90,16 @@ class CompareModels:
             logger.warning("Duplicate model names, appending a suffix.")
             modelnames = [f"{iml.name}_{i}" for i, iml in enumerate(self.models)]
         self.modelnames = modelnames
+
+        # prevent NaT types which cause various pandas issues
+        if not tmin:
+            self.tmin = None
+        else:
+            self.tmin = Timestamp(tmin)
+        if not tmax:
+            self.tmax = None
+        else:
+            self.tmax = Timestamp(tmax)
 
         # attributes that are set and used later
         self.figure = None
@@ -423,7 +445,7 @@ class CompareModels:
         else:
             axs = self.axes
 
-        oseries = [ml.oseries.series for ml in self.models]
+        oseries = [ml.oseries.series[self.tmin : self.tmax] for ml in self.models]
         equals = np.array([])
         for pair in combinations(oseries, 2):
             equals = np.append(equals, np.array_equal(pair[0], pair[1]))
@@ -470,7 +492,7 @@ class CompareModels:
                 name = self.modelnames[i]
             else:
                 name = ml.model
-            simulation = ml.simulate()
+            simulation = ml.simulate(tmin=self.tmin, tmax=self.tmax)
             axs[axn].plot(
                 simulation.index,
                 simulation.values,
@@ -497,7 +519,7 @@ class CompareModels:
             axs = self.axes
 
         for i, ml in enumerate(self.models):
-            residuals = ml.residuals()
+            residuals = ml.residuals(tmin=self.tmin, tmax=self.tmax)
             axs[axn].plot(
                 residuals.index,
                 residuals.values,
@@ -523,7 +545,7 @@ class CompareModels:
 
         for i, ml in enumerate(self.models):
             if ml.settings["noise"]:
-                noise = ml.noise()
+                noise = ml.noise(tmin=self.tmin, tmax=self.tmax)
                 axs[axn].plot(
                     noise.index,
                     noise.values,
@@ -675,7 +697,9 @@ class CompareModels:
                 for smn in namlist:
                     if smn not in ml.stressmodels:
                         continue
-                    for con in ml.get_contributions(split=False):
+                    for con in ml.get_contributions(
+                        split=False, tmin=self.tmin, tmax=self.tmax
+                    ):
                         if smn in con.name:
                             label = f"{con.name}"
                             if normalized:
@@ -938,6 +962,8 @@ class CompareModels:
             contributions in one subplot, please also provide smdict for best results.
         legend_kwargs : dict, optional
             pass legend keyword arguments to plots.
+        **fig_kwargs
+            pass keyword arguments to matplotlib.pyplot.subplot_mosaic.
         """
         self.adjust_height = adjust_height
         if "figsize" not in fig_kwargs:
@@ -990,9 +1016,12 @@ class CompareModels:
             self.share_xaxes(xshare_right)
 
         # xlim bounds
-        tmintmax = self.get_tmin_tmax()
-        tmin = tmintmax.loc[:, "tmin"].min()
-        tmax = tmintmax.loc[:, "tmax"].max()
+        tmin, tmax = self.tmin, self.tmax
+        default_tmintmax = self.get_tmin_tmax()
+        if not tmin:
+            tmin = default_tmintmax.loc[:, "tmin"].min()
+        if not tmax:
+            tmax = default_tmintmax.loc[:, "tmax"].max()
         self.axes["sim"].set_xlim(tmin, tmax)
 
         # met

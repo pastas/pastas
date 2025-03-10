@@ -9,6 +9,8 @@
 
 *.coverage*
 
+*.amlignore*
+
 pastas.egg-info
 pastas/gui/settings
 

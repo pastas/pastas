@@ -112,7 +112,9 @@ class Bokeh:
             show(p)
         return p
 
-    def results(self, tmin=None, tmax=None, height=500, width=800, show_plot=True):
+    def results(
+        self, tmin=None, tmax=None, height=500, width=800, show_plot=True, stderr=False
+    ):
         """Overview of the results of the pastas model.
 
         Parameters
@@ -127,6 +129,8 @@ class Bokeh:
            width of the plot, by default 800
         show_plot : bool, optional
             Show the plot (i.e., in Jupyter Notebooks), by default True
+        stderr : bool, optional
+            Show the standard error of the parameters, by default False
 
         Returns
         -------
@@ -142,7 +146,12 @@ class Bokeh:
         """
         data = self._model.get_output_series(tmin=tmin, tmax=tmax, split=False)
         ranges = data.max() - data.min()
-        ranges = ranges.drop([ranges.iloc[:2].idxmin(), "Noise"])
+
+        ranges = ranges.drop(ranges.iloc[:2].idxmin())
+
+        if self._model.settings["noise"]:
+            ranges = ranges.drop("Noise")
+
         heights = (ranges / ranges.sum() * (height - 50)).values.astype(int)
         source = ColumnDataSource(data)
         rsq = self._model.stats.rsq(tmin=tmin, tmax=tmax)
@@ -212,7 +221,7 @@ class Bokeh:
         res_plot.legend.ncols = 2
 
         # Parameter Table
-        df = ColumnDataSource(self._model.parameters.loc[:, ["optimal"]])
+        df = ColumnDataSource(self._model.parameters.loc[:, ["optimal", "stderr"]])
         columns = [
             TableColumn(
                 field="index",
@@ -225,6 +234,15 @@ class Bokeh:
                 formatter=ScientificFormatter(precision=2),
             ),
         ]
+        if stderr:
+            columns.append(
+                TableColumn(
+                    field="stderr",
+                    title="Stderr",
+                    formatter=ScientificFormatter(precision=2),
+                )
+            )
+
         table = DataTable(
             source=df,
             columns=columns,
