@@ -146,7 +146,7 @@ def deprecate_args_or_kwargs(
         raise DeprecationWarning(msg)
 
 
-def njit(function: Optional[Function] = None, **kwargs) -> Function:
+def njit(function: Function, **kwargs) -> Function:
     def njit_decorator(f: Function):
         try:
             if not USE_NUMBA:

@@ -1016,7 +1016,6 @@ class CompareModels:
             self.share_xaxes(xshare_right)
 
         # xlim bounds
-        # TODO: convert strings to timestamps for matplotlib
         tmin, tmax = self.tmin, self.tmax
         default_tmintmax = self.get_tmin_tmax()
         if not tmin:
