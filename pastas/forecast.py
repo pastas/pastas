@@ -133,6 +133,8 @@ def forecast(ml, forecasts, nparam=1, params=None, alpha=0.95, post_process=Fals
 
     df_list = []
 
+    dt = ml.settings["freq_obs"] / Timedelta("1D")
+
     # Generate forecasts with each ensemble member
     for m in range(n):
         # Update stresses with ensemble member data
@@ -155,10 +157,10 @@ def forecast(ml, forecasts, nparam=1, params=None, alpha=0.95, post_process=Fals
             # Get the residuals
             res = ml2.residuals(tmax=tmin, p=param).dropna()
 
-            # Compute the variance of the forecast error based on AR1 process
+            # Compute time-dependent variance of the forecast error based on AR1 process
             if post_process:
                 var = ml2.noise(p=param).var()
-                phi = exp(-1 / param[-1])
+                phi = exp(-dt / param[-1])
                 t = linspace(1, index.size, index.size)
                 var = var * (1 - phi ** (2 * t)) / (1 - phi**2)
             else:
@@ -187,4 +189,3 @@ def forecast(ml, forecasts, nparam=1, params=None, alpha=0.95, post_process=Fals
     df = DataFrame(data=concatenate(df_list).T, index=index, columns=mi, dtype=float)
 
     return df
-
