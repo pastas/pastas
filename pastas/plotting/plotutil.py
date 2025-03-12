@@ -107,17 +107,19 @@ def share_yaxes(axes: List[Axes]) -> None:
 def plot_series_with_gaps(
     series: Series, gap: Timedelta | None = None, ax: Axes | None = None, **kwargs
 ) -> Axes:
-    """Plot a pandas Series with gaps if index difference larger than gap.
+    """Plot a pandas Series with gaps if index difference is larger than gap.
 
     Parameters
     ----------
     series: pd.Series
         The series to plot.
     gap: Timedelta | None
-        Minimum percentage of series to be considered as a gap
+        Timedelta to be considered as a gap. If the difference between two
+        consecutive index values is larger than gap, a gap is inserted in the
+        plot. If None, the maximum value between the 95th percentile of the
+        differences and 50 days is used as gap.
     ax: Axes | None
-        The axes to plot on.
-
+        The axes to plot on. if None, a new figure is created.
     kwargs: dict
         Additional keyword arguments that are passed to the plot method.
     """
