@@ -137,7 +137,9 @@ def plot_series_with_gaps(
         label = None if i > 0 else series.name
         if len(gr) == 1:
             logger.info(
-                f"Isolated point found in series {series.name} with gap larger than {gap.days} days"
+                "Isolated point found in series %s with gap larger than %s days",
+                series.name,
+                gap.days,
             )
             c = kwargs.get("color", None)
             c = kwargs.get("c", c)
