@@ -6,7 +6,7 @@ from typing import List, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
-from pandas import DataFrame, Timedelta, Timestamp, concat
+from pandas import DataFrame, Timestamp, concat
 
 from pastas.plotting.plotutil import (
     _table_formatter_params,
@@ -527,7 +527,6 @@ class CompareModels:
             residuals = ml.residuals(tmin=self.tmin, tmax=self.tmax)
             plot_series_with_gaps(
                 series=residuals,
-                gap=Timedelta(1, ml.settings["freq"]),
                 ax=axs[axn],
                 label="Residuals",
                 color=self.cmap(i),
@@ -554,7 +553,6 @@ class CompareModels:
                 noise = ml.noise(tmin=self.tmin, tmax=self.tmax)
                 plot_series_with_gaps(
                     series=noise,
-                    gap=Timedelta(1, ml.settings["freq"]),
                     ax=axs[axn],
                     label="Noise",
                     color=self.cmap(i),

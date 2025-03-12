@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import matplotlib.patheffects as path_effects
 import matplotlib.pyplot as plt
 import numpy as np
-from pandas import DataFrame, Series, Timedelta, Timestamp, concat
+from pandas import DataFrame, Series, Timestamp, concat
 from scipy.stats import gaussian_kde, norm, pearsonr, probplot
 
 from pastas.plotting.modelcompare import CompareModels
@@ -415,7 +415,7 @@ def diagnostics(
 
     # Plot the residuals or noise series
     ax.axhline(0, c="k")
-    plot_series_with_gaps(series, gap=Timedelta(1, unit="D"), ax=ax2)
+    ax = plot_series_with_gaps(series, ax=ax)
     ax.set_ylabel(series.name)
     ax.set_xlim(series.index.min(), series.index.max())
     ax.set_title(f"{series.name} (n={series.size:.0f}, $\\mu$={series.mean():.2f})")

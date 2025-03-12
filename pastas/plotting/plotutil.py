@@ -3,7 +3,7 @@
 from typing import List, Union
 
 import numpy as np
-from pandas import Series, Timedelta
+from pandas import Series
 
 from pastas.typing import Axes
 
@@ -101,7 +101,7 @@ def share_yaxes(axes: List[Axes]) -> None:
 
 
 def plot_series_with_gaps(
-    series: Series, gap_min: Timedelta, ax: Axes, **kwargs
+    series: Series, ax: Axes, gap_ratio: float = 0.1, **kwargs
 ) -> None:
     """Plot a pandas Series with gaps.
 
@@ -109,13 +109,14 @@ def plot_series_with_gaps(
     ----------
     series: pd.Series
         The series to plot.
-    gap_min: pd.Timedelta
-        Minimum time delta to be considered as a gap
     ax: Axes
         The axes to plot on.
+    gap_ratio: float
+        Minimum percentage of series to be considered as a gap
     kwargs: dict
         Additional keyword arguments that are passed to the plot method.
     """
+    gap_min = gap_ratio * (series.index.max() - series.index.min())
     s_split = (series.index.diff() >= gap_min).cumsum()
 
     series.name = kwargs.pop("label") if "label" in kwargs else series.name

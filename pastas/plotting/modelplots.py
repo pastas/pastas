@@ -233,14 +233,11 @@ class Plotting:
 
         # Residuals and noise
         ax2 = fig.add_subplot(gs[1, 0], sharex=ax1)
-        # Assume at least 10% of index range is a reasonable gap
-        gap_min = 0.1 * (res.index.max() - res.index.min())
-        plot_series_with_gaps(res, gap_min=gap_min, ax=ax2, color="k")
+        ax2 = plot_series_with_gaps(res, ax=ax2, color="k")
         if self.ml.settings["noise"] and self.ml.noisemodel:
             noise = self.ml.noise(tmin=tmin, tmax=tmax)
             plot_series_with_gaps(
                 noise,
-                gap_min=gap_min,
                 ax=ax2,
                 color="C0",
             )
