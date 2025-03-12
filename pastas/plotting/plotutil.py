@@ -133,6 +133,8 @@ def plot_series_with_gaps(
     s_split = (series.index.diff() >= gap).cumsum()
 
     series.name = kwargs.pop("label") if "label" in kwargs else series.name
+    color = kwargs.pop("c", "k")
+    color = kwargs.pop("color", color)
     for i, gr in series.groupby(s_split):
         label = None if i > 0 else series.name
         if len(gr) == 1:
@@ -141,9 +143,7 @@ def plot_series_with_gaps(
                 series.name,
                 gap / Timedelta(1, "D"),
             )
-            c = kwargs.get("color", None)
-            c = kwargs.get("c", c)
-            ax.scatter(gr.index, gr.values, label=label, marker="_", s=3.0, c=c)
-        ax.plot(gr.index, gr.values, label=label, **kwargs)
+            ax.scatter(gr.index, gr.values, label=label, marker="_", s=3.0, color=color)
+        ax.plot(gr.index, gr.values, label=label, color=color, **kwargs)
 
     return ax
