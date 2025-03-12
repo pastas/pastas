@@ -1,11 +1,15 @@
 """This module contains utility functions for plotting."""
 
+import logging
 from typing import List, Union
 
+import matplotlib.pyplot as plt
 import numpy as np
-from pandas import Series
+from pandas import Series, Timedelta
 
 from pastas.typing import Axes
+
+logger = logging.getLogger(__name__)
 
 
 def _table_formatter_params(s: float, na_rep: str = "") -> str:
@@ -101,28 +105,41 @@ def share_yaxes(axes: List[Axes]) -> None:
 
 
 def plot_series_with_gaps(
-    series: Series, ax: Axes, gap_ratio: float = 0.1, **kwargs
+    series: Series, gap: Timedelta | None = None, ax: Axes | None = None, **kwargs
 ) -> None:
-    """Plot a pandas Series with gaps.
+    """Plot a pandas Series with gaps if index difference larger than gap.
 
     Parameters
     ----------
     series: pd.Series
         The series to plot.
-    ax: Axes
-        The axes to plot on.
-    gap_ratio: float
+    gap: Timedelta | None
         Minimum percentage of series to be considered as a gap
+    ax: Axes | None
+        The axes to plot on.
+
     kwargs: dict
         Additional keyword arguments that are passed to the plot method.
     """
-    gap_min = gap_ratio * (series.index.max() - series.index.min())
-    s_split = (series.index.diff() >= gap_min).cumsum()
+    if ax is None:
+        _, ax = plt.subplots()
+
+    if gap is None:
+        gapq = np.quantile(series.index.diff().dropna(), 0.95)
+        gap = max(gapq, Timedelta(50, unit="D"))
+
+    s_split = (series.index.diff() >= gap).cumsum()
 
     series.name = kwargs.pop("label") if "label" in kwargs else series.name
-
     for i, gr in series.groupby(s_split):
         label = None if i > 0 else series.name
+        if len(gr) == 1:
+            logger.info(
+                f"Isolated point found in series {series.name} with gap larger than {gap.days} days"
+            )
+            c = kwargs.get("color", None)
+            c = kwargs.get("c", c)
+            ax.scatter(gr.index, gr.values, label=label, marker="_", s=3.0, c=c)
         ax.plot(gr.index, gr.values, label=label, **kwargs)
 
     return ax
