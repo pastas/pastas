@@ -236,7 +236,7 @@ class Plotting:
         ax2 = plot_series_with_gaps(res, ax=ax2, color="k")
         if self.ml.settings["noise"] and self.ml.noisemodel:
             noise = self.ml.noise(tmin=tmin, tmax=tmax)
-            plot_series_with_gaps(
+            ax2 = plot_series_with_gaps(
                 noise,
                 ax=ax2,
                 color="C0",

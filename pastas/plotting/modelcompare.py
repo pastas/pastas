@@ -525,7 +525,7 @@ class CompareModels:
 
         for i, ml in enumerate(self.models):
             residuals = ml.residuals(tmin=self.tmin, tmax=self.tmax)
-            plot_series_with_gaps(
+            axs[axn] = plot_series_with_gaps(
                 series=residuals,
                 ax=axs[axn],
                 label="Residuals",
@@ -551,7 +551,7 @@ class CompareModels:
         for i, ml in enumerate(self.models):
             if ml.settings["noise"]:
                 noise = ml.noise(tmin=self.tmin, tmax=self.tmax)
-                plot_series_with_gaps(
+                axs[axn] = plot_series_with_gaps(
                     series=noise,
                     ax=axs[axn],
                     label="Noise",
