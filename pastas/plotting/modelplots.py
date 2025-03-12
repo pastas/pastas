@@ -236,11 +236,7 @@ class Plotting:
         ax2 = plot_series_with_gaps(res, ax=ax2, color="k")
         if self.ml.settings["noise"] and self.ml.noisemodel:
             noise = self.ml.noise(tmin=tmin, tmax=tmax)
-            ax2 = plot_series_with_gaps(
-                noise,
-                ax=ax2,
-                color="C0",
-            )
+            ax2 = plot_series_with_gaps(noise, ax=ax2, color="C0")
         ax2.axhline(0.0, color="k", linestyle="--", zorder=0)
         ax2.legend(loc=(0, 1), ncol=3, frameon=False)
 

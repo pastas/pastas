@@ -106,7 +106,7 @@ def share_yaxes(axes: List[Axes]) -> None:
 
 def plot_series_with_gaps(
     series: Series, gap: Timedelta | None = None, ax: Axes | None = None, **kwargs
-) -> None:
+) -> Axes:
     """Plot a pandas Series with gaps if index difference larger than gap.
 
     Parameters
