@@ -21,6 +21,8 @@ from pastas.plotting.plotutil import (
     share_xaxes,
 )
 from pastas.rfunc import HantushWellModel
+from pastas.stressmodels import ChangeModel, TarsoModel
+from pastas.timeseries_utils import _get_dt
 from pastas.typing import Axes, Figure, Model, TimestampType
 
 logger = logging.getLogger(__name__)
@@ -513,28 +515,84 @@ class Plotting:
     ):
         """Internal method to plot the response of a Stressmodel in the results-plot"""
         rkwargs = {}
-        if self.ml.stressmodels[sm_name].rfunc is not None:
-            if isinstance(self.ml.stressmodels[sm_name].rfunc, HantushWellModel):
-                rkwargs = {"warn": False}
-                if istress is None:
-                    # show the response of the first well, which gives more information than istress = None
-                    istress = 0
-        response = self.ml._get_response(
-            block_or_step=block_or_step,
-            name=sm_name,
-            add_0=True,
-            istress=istress,
-            **rkwargs,
-        )
+        sm = self.ml.stressmodels[sm_name]
+        if isinstance(sm.rfunc, HantushWellModel):
+            rkwargs = {"warn": False}
+            # show the response of the first well, which gives more information than istress = None
+            istress = 0 if istress is None else istress
+        elif isinstance(sm, (ChangeModel, TarsoModel)):
+            dt = _get_dt(self.ml.settings["freq"])
+            if isinstance(sm, ChangeModel):
+                parnames0 = [
+                    x.split("_")
+                    for x in list(sm.rfunc1.get_init_parameters(sm_name).index)
+                ]
+                response0 = getattr(sm.rfunc1, block_or_step)(
+                    p=self.ml.parameters.loc[
+                        [f"{x[0]}_1_{x[1]}" for x in parnames0], "optimal"
+                    ].values,
+                    dt=dt,
+                )
+                parnames1 = [
+                    x.split("_")
+                    for x in list(sm.rfunc2.get_init_parameters(sm_name).index)
+                ]
+                response1 = getattr(sm.rfunc2, block_or_step)(
+                    p=self.ml.parameters.loc[
+                        [f"{x[0]}_2_{x[1]}" for x in parnames1], "optimal"
+                    ].values,
+                    dt=dt,
+                )
+            elif isinstance(sm, TarsoModel):
+                parnames = list(sm.rfunc.get_init_parameters(sm_name).index)
+                response0 = getattr(sm.rfunc, block_or_step)(
+                    p=self.ml.parameters.loc[
+                        [f"{x}0" for x in parnames], "optimal"
+                    ].values,
+                    dt=dt,
+                )
+                response1 = getattr(sm.rfunc, block_or_step)(
+                    p=self.ml.parameters.loc[
+                        [f"{x}1" for x in parnames], "optimal"
+                    ].values,
+                    dt=dt,
+                )
+            responses = [
+                Series(
+                    np.insert(response, 0, 0.0),
+                    index=np.linspace(0, response.size * dt, response.size + 1),
+                    name=f"{sm_name}_rf{i}",
+                )
+                for i, response in enumerate([response0, response1])
+            ]
 
-        if response is not None:
-            ax.set_xlim(left=response.index[0], right=response.index[-1])
-            label = f"{block_or_step.capitalize()} response"
+        else:
+            responses = [
+                self.ml._get_response(
+                    block_or_step=block_or_step,
+                    name=sm_name,
+                    add_0=True,
+                    istress=istress,
+                    **rkwargs,
+                )
+            ]
+            if responses[0] is None:
+                return ax
+
+        xlim_left = min(
+            [x.index[0] if block_or_step == "step" else x.index[1] for x in responses]
+        )
+        xlim_right = max([x.index[-1] for x in responses])
+        for i, response in enumerate(responses):
+            if i == 0:
+                label = f"{block_or_step.capitalize()} response"
+                if block_or_step == "block":
+                    ax.set_xscale("log")
+                    ax.xaxis.set_major_formatter(LogFormatter())
+            else:
+                label = None
             ax.plot(response.index, response.values, label=label)
-            if block_or_step == "block":
-                ax.set_xlim(left=response.index[1], right=response.index[-1])
-                ax.set_xscale("log")
-                ax.xaxis.set_major_formatter(LogFormatter())
+        ax.set_xlim(left=xlim_left, right=xlim_right)
         return ax
 
     def _plot_parameters_table(self, ax: Axes, stderr: bool) -> None:

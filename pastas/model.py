@@ -1611,6 +1611,7 @@ class Model:
 
         if dt is None:
             dt = _get_dt(self.settings["freq"])
+
         if istress is not None and self.stressmodels[name].get_nsplit() > 1:
             p = self.stressmodels[name].get_parameters(model=self, istress=istress)
 
