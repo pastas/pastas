@@ -19,6 +19,19 @@ def test_results(ml: Model) -> None:
     _ = ml.plots.results()
 
 
+def test_results_kwargs(ml: Model) -> None:
+    _ = ml.plots.results(
+        split=True,
+        block_or_step="block",
+        adjust_height=False,
+        return_warmup=True,
+    )
+
+
+def test_results_mosaic(ml: Model) -> None:
+    _ = ml.plots.results_mosaic(stderr=True)
+
+
 def test_stacked_results(ml: Model) -> None:
     _ = ml.plots.stacked_results()
 
