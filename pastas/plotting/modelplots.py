@@ -248,16 +248,50 @@ class Plotting:
         i = 0
         for sm_name, sm in self.ml.stressmodels.items():
             # plot the contribution
-            nsplit = sm.get_nsplit()
-            for istress in range(nsplit):
+            if split and nsplit > 1:
+                for istress in range(nsplit):
+                    ax = fig.add_subplot(gs[i + 2, 0], sharex=ax1)
+                    contribs[i].plot(ax=ax, x_compat=True)
+                    ax.legend(loc=(0, 1), ncol=3, frameon=False)
+                    ax.set_ylabel("Rise")
+                    if adjust_height:
+                        ax.set_ylim(ylims[i + 2])
+
+                    i = i + 1
+
+                    # plot the response
+                    axb, rmin, rmax = self._plot_response_in_results(
+                        sm_name=sm_name,
+                        block_or_step=block_or_step,
+                        ax=axb,
+                        rmin=rmin,
+                        rmax=rmax,
+                        i=i,
+                        gs=gs,
+                        istress=istress,
+                    )
+                    axb.set_title(
+                        f"{block_or_step.capitalize()} response",
+                        fontsize=plt.rcParams["legend.fontsize"],
+                    )
+
+            else:
                 ax = fig.add_subplot(gs[i + 2, 0], sharex=ax1)
                 contribs[i].plot(ax=ax, x_compat=True)
+                title = [stress.name for stress in sm.stress]
+                if len(title) > 3:
+                    title = title[:3] + ["..."]
+                ax.set_title(
+                    f"Stresses: {title}",
+                    loc="right",
+                    fontsize=plt.rcParams["legend.fontsize"],
+                )
                 ax.legend(loc=(0, 1), ncol=3, frameon=False)
                 ax.set_ylabel("Rise")
                 if adjust_height:
                     ax.set_ylim(ylims[i + 2])
-
                 i = i + 1
+
                 # plot the response
                 axb, rmin, rmax = self._plot_response_in_results(
                     sm_name=sm_name,
@@ -267,21 +301,11 @@ class Plotting:
                     rmax=rmax,
                     i=i,
                     gs=gs,
-                    istress=istress if nsplit > 1 else None,
                 )
                 axb.set_title(
                     f"{block_or_step.capitalize()} response",
                     fontsize=plt.rcParams["legend.fontsize"],
                 )
-                if not split:
-                    title = [stress.name for stress in sm.stress]
-                    if len(title) > 3:
-                        title = title[:3] + ["..."]
-                    ax.set_title(
-                        f"Stresses: {title}",
-                        loc="right",
-                        fontsize=plt.rcParams["legend.fontsize"],
-                    )
 
         if axb is not None:
             axb.set_xlim(rmin, rmax)
