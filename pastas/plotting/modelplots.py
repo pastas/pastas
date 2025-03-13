@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Literal, Optional, Union
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
-from matplotlib.gridspec import GridSpec
 from matplotlib.ticker import LogFormatter, MultipleLocator
 from pandas import Series, Timestamp, concat
 
@@ -242,74 +241,44 @@ class Plotting:
         ax2.legend(loc=(0, 1), ncol=3, frameon=False)
 
         # Add a row for each stressmodel
-        rmin = 0  # tmin of the response
-        rmax = 0  # tmax of the response
-        axb = None
+        rmax = 0.0  # tmax of the response
+        ax_response = None
         i = 0
         for sm_name, sm in self.ml.stressmodels.items():
             # plot the contribution
-            nsplit = sm.get_nsplit()
-            if split and nsplit > 1:
-                for istress in range(nsplit):
-                    ax = fig.add_subplot(gs[i + 2, 0], sharex=ax1)
-                    contribs[i].plot(ax=ax, x_compat=True)
-                    ax.legend(loc=(0, 1), ncol=3, frameon=False)
-                    ax.set_ylabel("Rise")
-                    if adjust_height:
-                        ax.set_ylim(ylims[i + 2])
-
-                    i = i + 1
-
-                    # plot the response
-                    axb, rmin, rmax = self._plot_response_in_results(
-                        sm_name=sm_name,
-                        block_or_step=block_or_step,
-                        ax=axb,
-                        rmin=rmin,
-                        rmax=rmax,
-                        i=i,
-                        gs=gs,
-                        istress=istress,
-                    )
-                    axb.set_title(
-                        f"{block_or_step.capitalize()} response",
-                        fontsize=plt.rcParams["legend.fontsize"],
-                    )
-
-            else:
-                ax = fig.add_subplot(gs[i + 2, 0], sharex=ax1)
-                contribs[i].plot(ax=ax, x_compat=True)
-                title = [stress.name for stress in sm.stress]
-                if len(title) > 3:
-                    title = title[:3] + ["..."]
-                ax.set_title(
-                    f"Stresses: {title}",
-                    loc="right",
-                    fontsize=plt.rcParams["legend.fontsize"],
-                )
-                ax.legend(loc=(0, 1), ncol=3, frameon=False)
-                ax.set_ylabel("Rise")
+            nsplit = sm.get_nsplit() if split else 1
+            for istress in range(nsplit):
+                ax_contrib = fig.add_subplot(gs[i + 2, 0], sharex=ax1)
+                contribs[i].plot(ax=ax_contrib, x_compat=True)
+                ax_contrib.legend(loc=(0, 1), ncol=3, frameon=False)
+                ax_contrib.set_ylabel("Rise")
                 if adjust_height:
-                    ax.set_ylim(ylims[i + 2])
-                i = i + 1
+                    ax_contrib.set_ylim(ylims[i + 2])
+                if not split:
+                    title = [stress.name for stress in sm.stress]
+                    if len(title) > 3:
+                        title = title[:3] + ["..."]
+                        ax_contrib.set_title(
+                            f"Stresses: {title}",
+                            loc="right",
+                            fontsize=plt.rcParams["legend.fontsize"],
+                        )
 
-                # plot the response
-                axb, rmin, rmax = self._plot_response_in_results(
+                ax_response = gs.figure.add_subplot(gs[i + 2, 1], sharex=ax_response)
+                ax_response = self._plot_response_in_results(
                     sm_name=sm_name,
                     block_or_step=block_or_step,
-                    ax=axb,
-                    rmin=rmin,
-                    rmax=rmax,
-                    i=i,
-                    gs=gs,
+                    ax=ax_response,
+                    istress=istress if split else None,
                 )
-                axb.set_title(
+                ax_response_xlim = ax_response.get_xlim()
+                rmax = max(rmax, ax_response_xlim[1])
+                ax_response.set_xlim(left=ax_response_xlim[0], right=rmax)
+                ax_response.set_title(
                     f"{block_or_step.capitalize()} response",
                     fontsize=plt.rcParams["legend.fontsize"],
                 )
-
-        if axb is not None:
-            axb.set_xlim(rmin, rmax)
+                i += 1
 
         # xlim sets minorticks back after plots:
         ax1.minorticks_off()
@@ -336,7 +305,7 @@ class Plotting:
 
         # plot parameters table
         ax3 = fig.add_subplot(gs[0:2, 1])
-        self._plot_parameters_table(ax=ax3, stderr=stderr)
+        _ = self._plot_parameters_table(ax=ax3, stderr=stderr)
 
         return fig.axes
 
@@ -531,7 +500,7 @@ class Plotting:
                 k
             ].yaxis.tick_left()
 
-        self._plot_parameters_table(ax=axd["tab"], stderr=stderr)
+        _ = self._plot_parameters_table(ax=axd["tab"], stderr=stderr)
 
         return axd
 
@@ -540,10 +509,6 @@ class Plotting:
         sm_name: str,
         block_or_step: Literal["step", "block"],
         ax: Axes,
-        rmin: float | None = None,
-        rmax: float | None = None,
-        i: int | None = None,
-        gs: GridSpec | None = None,
         istress: int | None = None,
     ):
         """Internal method to plot the response of a Stressmodel in the results-plot"""
@@ -563,11 +528,6 @@ class Plotting:
         )
 
         if response is not None:
-            if rmax is not None:
-                rmax = max(rmax, response.index.max())
-            if gs is not None:
-                ax = gs.figure.add_subplot(gs[i + 1, 1], sharex=ax)
-
             ax.set_xlim(left=response.index[0], right=response.index[-1])
             label = f"{block_or_step.capitalize()} response"
             ax.plot(response.index, response.values, label=label)
@@ -575,7 +535,7 @@ class Plotting:
                 ax.set_xlim(left=response.index[1], right=response.index[-1])
                 ax.set_xscale("log")
                 ax.xaxis.set_major_formatter(LogFormatter())
-        return ax, rmin, rmax
+        return ax
 
     def _plot_parameters_table(self, ax: Axes, stderr: bool) -> None:
         """Internal method to plot the parameters table in the results-plot"""
@@ -602,6 +562,7 @@ class Plotting:
             colWidths=[p[col].str.len().max() for col in p.columns],
             colLabels=p.columns,
         )
+        return ax
 
     @model_tmin_tmax
     def decomposition(
