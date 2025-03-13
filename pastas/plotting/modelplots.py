@@ -375,7 +375,7 @@ class Plotting:
         contribs = {
             x.name: x
             for x in self.ml.get_contributions(
-                tmin=tmin, tmax=tmax, return_warmup=return_warmup
+                tmin=tmin, tmax=tmax, return_warmup=return_warmup,
             )
         }
 
