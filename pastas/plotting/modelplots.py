@@ -345,14 +345,43 @@ class Plotting:
         self,
         tmin: TimestampType | None = None,
         tmax: TimestampType | None = None,
-        block_or_step: str = "step",
         stderr: bool = True,
+        block_or_step: str = "step",
         return_warmup: bool = False,
+        adjust_height: bool = True,
         figsize: tuple[float, float] | None = None,
-        layout: Literal["constrained", "tight", "compressed", "none"] = "constrained",
+        layout: Literal["constrained", "tight", "compressed", "none"] | None = "constrained",
         fig_kwargs: dict[str, Any] = {},
     ) -> dict[str, Axes]:
-        """Plot the results of the model in a mosaic plot."""
+        """Plot the results of the model in a mosaic plot.
+
+        Parameters
+        ----------
+        tmin: str or pandas.Timestamp, optional
+        tmax: str or pandas.Timestamp, optional
+        stderr : bool, optional
+            If True the standard error of the parameter values are shown.
+        block_or_step: str, optional
+            Plot the block- or step-response on the right. Default is 'step'.
+        adjust_height: bool, optional
+            Adjust the height of the graphs, so that the vertical scale of all the
+            subplots on the left is equal. Default is True.
+        return_warmup: bool, optional
+            Show the warmup-period. Default is False.
+        figsize: tuple, optional
+            tuple of size 2 to determine the figure size in inches.
+
+        **kwargs: dict, optional
+            Optional arguments, passed on to the matplotlib.pyplot.figure method.
+
+        Returns
+        -------
+        Dictionary with the matplotlib.axes.Axes
+
+        Examples
+        --------
+        >>> ml.plots.results_mosaic()
+        """
 
         tmin = Timestamp(tmin) if tmin is not None else None
         tmax = Timestamp(tmax) if tmax is not None else None
@@ -374,6 +403,7 @@ class Plotting:
             )
         }
 
+        # setup ylims
         ylims = {
             "sim": [
                 min([sim.min(), o[tmin:tmax].min(), o_nu.min()]),
@@ -395,18 +425,18 @@ class Plotting:
             else:
                 ylim_c = [hs.min(), hs.max()]
             ylims[f"con_{cname}"] = ylim_c
-        height_ratios = _get_height_ratios(list(ylims.values()))
 
+        # construct mosoaic
         mosaic = [[x] for x in ylims]
         for mos in mosaic:
             if "con_" in mos[0]:
                 mos.append(f"rf_{mos[0].split('_', 1)[1]}")
             elif mos[0] in "sim" or "res":
                 mos.append("tab")
-        mosaic = np.array(mosaic, dtype=str)
 
         if "width_ratios" not in fig_kwargs:
-            fig_kwargs["width_ratios"] = [2.5, 1.0]
+            fig_kwargs["width_ratios"] = [2.0, 1.0]
+        height_ratios = _get_height_ratios(list(ylims.values())) if adjust_height else fig_kwargs.pop("height_ratios", None)
 
         figsize = (10, 4 + 2 * len(contribs)) if figsize is None else figsize
         _, axd = plt.subplot_mosaic(
@@ -470,13 +500,13 @@ class Plotting:
             )
 
         # share x-axes of simulation, residuals and contributions
-        share_xaxes([axd[k] for k in mosaic[:, 0]])
+        share_xaxes([axd[k] for k in [x[0] for x in mosaic]])
         axd["sim"].set_xlim(
             tmin - self.ml.settings["warmup"], tmax
         ) if return_warmup else axd["sim"].set_xlim(tmin, tmax)
 
         # add legend to the upper response axes and share x-axes of responses
-        response_axes = [axd[k] for k in mosaic[:, 1] if k.startswith("rf_")]
+        response_axes = [axd[k] for k in [x[1] for x in mosaic] if k.startswith("rf_")]
         response_axes[0].legend(loc=(0, 1), frameon=False)
 
         response_xlims = [ax.get_xlim() for ax in response_axes]
