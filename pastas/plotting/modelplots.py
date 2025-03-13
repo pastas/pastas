@@ -323,7 +323,7 @@ class Plotting:
         figsize: tuple[float, float] | None = None,
         layout: Literal["constrained", "tight", "compressed", "none"]
         | None = "constrained",
-        fig_kwargs: dict[str, Any] = {},
+        fig_kwargs: dict[str, Any] | None = None,
     ) -> dict[str, Axes]:
         """Plot the results of the model in a mosaic plot.
 
@@ -406,9 +406,10 @@ class Plotting:
         for mos in mosaic:
             if "con_" in mos[0]:
                 mos.append(f"rf_{mos[0].split('_', 1)[1]}")
-            elif mos[0] in "sim" or "res":
+            elif mos[0] in ("sim", "res"):
                 mos.append("tab")
 
+        fig_kwargs = {} if fig_kwargs is None else fig_kwargs
         if "width_ratios" not in fig_kwargs:
             fig_kwargs["width_ratios"] = [2.0, 1.0]
         height_ratios = (
