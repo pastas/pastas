@@ -374,6 +374,7 @@ class Plotting:
                 tmin=tmin,
                 tmax=tmax,
                 return_warmup=return_warmup,
+                split=False,
             )
         }
 
