@@ -249,50 +249,15 @@ class Plotting:
         for sm_name, sm in self.ml.stressmodels.items():
             # plot the contribution
             nsplit = sm.get_nsplit()
-            if split and nsplit > 1:
-                for istress in range(nsplit):
-                    ax = fig.add_subplot(gs[i + 2, 0], sharex=ax1)
-                    contribs[i].plot(ax=ax, x_compat=True)
-                    ax.legend(loc=(0, 1), ncol=3, frameon=False)
-                    ax.set_ylabel("Rise")
-                    if adjust_height:
-                        ax.set_ylim(ylims[i + 2])
-
-                    i = i + 1
-
-                    # plot the response
-                    axb, rmin, rmax = self._plot_response_in_results(
-                        sm_name=sm_name,
-                        block_or_step=block_or_step,
-                        ax=axb,
-                        rmin=rmin,
-                        rmax=rmax,
-                        i=i,
-                        gs=gs,
-                        istress=istress,
-                    )
-                    axb.set_title(
-                        f"{block_or_step.capitalize()} response",
-                        fontsize=plt.rcParams["legend.fontsize"],
-                    )
-
-            else:
+            for istress in range(nsplit):
                 ax = fig.add_subplot(gs[i + 2, 0], sharex=ax1)
                 contribs[i].plot(ax=ax, x_compat=True)
-                title = [stress.name for stress in sm.stress]
-                if len(title) > 3:
-                    title = title[:3] + ["..."]
-                ax.set_title(
-                    f"Stresses: {title}",
-                    loc="right",
-                    fontsize=plt.rcParams["legend.fontsize"],
-                )
                 ax.legend(loc=(0, 1), ncol=3, frameon=False)
                 ax.set_ylabel("Rise")
                 if adjust_height:
                     ax.set_ylim(ylims[i + 2])
-                i = i + 1
 
+                i = i + 1
                 # plot the response
                 axb, rmin, rmax = self._plot_response_in_results(
                     sm_name=sm_name,
@@ -302,11 +267,21 @@ class Plotting:
                     rmax=rmax,
                     i=i,
                     gs=gs,
+                    istress=istress if nsplit > 1 else None,
                 )
                 axb.set_title(
                     f"{block_or_step.capitalize()} response",
                     fontsize=plt.rcParams["legend.fontsize"],
                 )
+                if not split:
+                    title = [stress.name for stress in sm.stress]
+                    if len(title) > 3:
+                        title = title[:3] + ["..."]
+                    ax.set_title(
+                        f"Stresses: {title}",
+                        loc="right",
+                        fontsize=plt.rcParams["legend.fontsize"],
+                    )
 
         if axb is not None:
             axb.set_xlim(rmin, rmax)
@@ -350,7 +325,8 @@ class Plotting:
         return_warmup: bool = False,
         adjust_height: bool = True,
         figsize: tuple[float, float] | None = None,
-        layout: Literal["constrained", "tight", "compressed", "none"] | None = "constrained",
+        layout: Literal["constrained", "tight", "compressed", "none"]
+        | None = "constrained",
         fig_kwargs: dict[str, Any] = {},
     ) -> dict[str, Axes]:
         """Plot the results of the model in a mosaic plot.
@@ -436,9 +412,13 @@ class Plotting:
 
         if "width_ratios" not in fig_kwargs:
             fig_kwargs["width_ratios"] = [2.0, 1.0]
-        height_ratios = _get_height_ratios(list(ylims.values())) if adjust_height else fig_kwargs.pop("height_ratios", None)
+        height_ratios = (
+            _get_height_ratios(list(ylims.values()))
+            if adjust_height
+            else fig_kwargs.pop("height_ratios", None)
+        )
 
-        figsize = (10, 4 + 2 * len(contribs)) if figsize is None else figsize
+        figsize = (9, 4 + 2 * len(contribs)) if figsize is None else figsize
         _, axd = plt.subplot_mosaic(
             mosaic,
             height_ratios=height_ratios,
@@ -448,7 +428,9 @@ class Plotting:
         )
 
         # plot observations and simulation
-        axd["sim"].plot(o.index, o.values, linestyle="", marker=".", color="k", label=o.name)
+        axd["sim"].plot(
+            o.index, o.values, linestyle="", marker=".", color="k", label=o.name
+        )
         if not o_nu.empty:
             axd["sim"].plot(
                 o_nu.index,
