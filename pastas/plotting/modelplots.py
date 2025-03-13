@@ -3,7 +3,7 @@
 import logging
 
 # Type Hinting
-from typing import Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -345,13 +345,13 @@ class Plotting:
         self,
         tmin: TimestampType | None = None,
         tmax: TimestampType | None = None,
-        return_warmup: bool = False,
         block_or_step: str = "step",
         stderr: bool = True,
+        return_warmup: bool = False,
         figsize: tuple[float, float] | None = None,
         layout: Literal["constrained", "tight", "compressed", "none"] = "constrained",
-        fig_kwargs={},
-    ) -> dict[str, plt.Axes]:
+        fig_kwargs: dict[str, Any] = {},
+    ) -> dict[str, Axes]:
         """Plot the results of the model in a mosaic plot."""
 
         tmin = Timestamp(tmin) if tmin is not None else None
@@ -418,7 +418,7 @@ class Plotting:
         )
 
         # plot observations and simulation
-        axd["sim"].plot(o.index, o.values, linestyle="", marker=".", color="k")
+        axd["sim"].plot(o.index, o.values, linestyle="", marker=".", color="k", label=o.name)
         if not o_nu.empty:
             axd["sim"].plot(
                 o_nu.index,
@@ -463,7 +463,7 @@ class Plotting:
                 )
             axd[f"con_{sm_name}"].legend(loc=(0, 1), ncol=1, frameon=False)
             axd[f"con_{sm_name}"].set_ylim(ylims[f"con_{sm_name}"])
-            self._plot_response_in_results(
+            _ = self._plot_response_in_results(
                 sm_name=sm_name,
                 block_or_step=block_or_step,
                 ax=axd[f"rf_{sm_name}"],
@@ -475,15 +475,16 @@ class Plotting:
             tmin - self.ml.settings["warmup"], tmax
         ) if return_warmup else axd["sim"].set_xlim(tmin, tmax)
 
-        # share x-axes of the responses and add legend to the upper response axes
+        # add legend to the upper response axes and share x-axes of responses
         response_axes = [axd[k] for k in mosaic[:, 1] if k.startswith("rf_")]
+        response_axes[0].legend(loc=(0, 1), frameon=False)
+
         response_xlims = [ax.get_xlim() for ax in response_axes]
         share_xaxes(response_axes)
         response_axes[-1].set_xlim(
             left=min(x[0] for x in response_xlims),
             right=max(x[1] for x in response_xlims),
         )
-        response_axes[0].legend(loc=(0, 1), frameon=False)
 
         for k in axd:
             axd[k].grid(True)
@@ -499,7 +500,7 @@ class Plotting:
         self,
         sm_name: str,
         block_or_step: Literal["step", "block"],
-        ax: plt.Axes,
+        ax: Axes,
         rmin: float | None = None,
         rmax: float | None = None,
         i: int | None = None,
@@ -528,16 +529,16 @@ class Plotting:
             if gs is not None:
                 ax = gs.figure.add_subplot(gs[i + 1, 1], sharex=ax)
 
-            ax.set_xlim(left=response.index[0])
+            ax.set_xlim(left=response.index[0], right=response.index[-1])
             label = f"{block_or_step.capitalize()} response"
             ax.plot(response.index, response.values, label=label)
             if block_or_step == "block":
-                ax.set_xlim(left=response.index[1])
+                ax.set_xlim(left=response.index[1], right=response.index[-1])
                 ax.set_xscale("log")
                 ax.xaxis.set_major_formatter(LogFormatter())
         return ax, rmin, rmax
 
-    def _plot_parameters_table(self, ax: plt.Axes, stderr: bool) -> None:
+    def _plot_parameters_table(self, ax: Axes, stderr: bool) -> None:
         """Internal method to plot the parameters table in the results-plot"""
         ax.set_title(
             f"Model parameters ($n_c$={self.ml.parameters.vary.sum()})",
@@ -1359,7 +1360,7 @@ class Plotting:
         plot_response: bool = False,
         block_or_step: str = "step",
         istress: Optional[int] = None,
-        ax: Optional[plt.Axes] = None,
+        ax: Optional[Axes] = None,
         **kwargs,
     ):
         """Plot the contribution of a stressmodel and optionally the stress and the response.
