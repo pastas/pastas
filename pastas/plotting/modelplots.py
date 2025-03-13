@@ -3,11 +3,12 @@
 import logging
 
 # Type Hinting
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Literal, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
+from matplotlib.gridspec import GridSpec
 from matplotlib.ticker import LogFormatter, MultipleLocator
 from pandas import Series, Timestamp, concat
 
@@ -309,40 +310,24 @@ class Plotting:
             ax.grid(True)
 
         if isinstance(fig, plt.Figure):
-            fig.tight_layout(pad=0.0)  # Before making the table
+            fig.tight_layout(pad=0.0)  # before making the table
 
-        # Draw parameters table
+        # plot parameters table
         ax3 = fig.add_subplot(gs[0:2, 1])
-        n_free = self.ml.parameters.vary.sum()
-        ax3.set_title(
-            f"Model Parameters ($n_c$={n_free})",
-            loc="left",
-            fontsize=plt.rcParams["legend.fontsize"],
-        )
-        p = self.ml.parameters.loc[:, ["name"]].copy()
-        p.loc[:, "name"] = p.index
-        p.loc[:, "optimal"] = self.ml.parameters.loc[:, "optimal"].apply(
-            _table_formatter_params
-        )
-        if stderr:
-            stderr = (
-                self.ml.parameters.loc[:, "stderr"]
-                / self.ml.parameters.loc[:, "optimal"]
-            )
-            p.loc[:, "stderr"] = stderr.abs().apply(_table_formatter_stderr)
-
-        ax3.axis("off")
-        ax3.table(
-            bbox=(0.0, 0.0, 1.0, 1.0),
-            cellText=p.values,
-            colWidths=[0.5, 0.25, 0.25],
-            colLabels=p.columns,
-        )
+        self._plot_parameters_table(ax=ax3, stderr=stderr)
 
         return fig.axes
 
     def _plot_response_in_results(
-        self, sm_name, block_or_step, rmin, rmax, axb, gs, i, istress=None
+        self,
+        sm_name: str,
+        block_or_step: Literal["step", "block"],
+        rmin: float,
+        rmax: float,
+        ax: plt.Axes,
+        i: int | None = None,
+        gs: GridSpec | None = None,
+        istress: int | None = None,
     ):
         """Internal method to plot the response of a Stressmodel in the results-plot"""
         rkwargs = {}
@@ -362,17 +347,44 @@ class Plotting:
 
         if response is not None:
             rmax = max(rmax, response.index.max())
-            axb = gs.figure.add_subplot(gs[i + 1, 1], sharex=axb)
-            response.plot(ax=axb)
+            if gs is not None:
+                ax = gs.figure.add_subplot(gs[i + 1, 1], sharex=ax)
+            response.plot(ax=ax)
             if block_or_step == "block":
                 title = "Block response"
                 rmin = response.index[1]
-                axb.set_xscale("log")
-                axb.xaxis.set_major_formatter(LogFormatter())
+                ax.set_xscale("log")
+                ax.xaxis.set_major_formatter(LogFormatter())
             else:
                 title = "Step response"
-            axb.set_title(title, fontsize=plt.rcParams["legend.fontsize"])
-        return axb, rmin, rmax
+            ax.set_title(title, fontsize=plt.rcParams["legend.fontsize"])
+        return ax, rmin, rmax
+
+    def _plot_parameters_table(self, ax: plt.Axes, stderr: bool) -> None:
+        """Internal method to plot the parameters table in the results-plot"""
+        ax.set_title(
+            f"Model parameters ($n_c$={self.ml.parameters.vary.sum()})",
+            loc="left",
+            fontsize=plt.rcParams["legend.fontsize"],
+        )
+        p = self.ml.parameters.loc[:, ["name"]].copy()
+        p.loc[:, "name"] = p.index
+        p.loc[:, "optimal"] = self.ml.parameters.loc[:, "optimal"].apply(
+            _table_formatter_params
+        )
+        if stderr:
+            stderrper = (
+                self.ml.parameters.loc[:, "stderr"]
+                / self.ml.parameters.loc[:, "optimal"]
+            )
+            p.loc[:, "stderr"] = stderrper.abs().apply(_table_formatter_stderr)
+        ax.axis("off")
+        ax.table(
+            bbox=(0.0, 0.0, 1.0, 1.0),
+            cellText=p.values,
+            colWidths=[p[col].str.len().max() for col in p.columns],
+            colLabels=p.columns,
+        )
 
     @model_tmin_tmax
     def decomposition(
