@@ -248,6 +248,7 @@ class Plotting:
         i = 0
         for sm_name, sm in self.ml.stressmodels.items():
             # plot the contribution
+            nsplit = sm.get_nsplit()
             if split and nsplit > 1:
                 for istress in range(nsplit):
                     ax = fig.add_subplot(gs[i + 2, 0], sharex=ax1)
