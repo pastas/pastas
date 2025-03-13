@@ -517,11 +517,7 @@ class Plotting:
         """Internal method to plot the response of a Stressmodel in the results-plot"""
         rkwargs = {}
         sm = self.ml.stressmodels[sm_name]
-        if isinstance(sm.rfunc, HantushWellModel):
-            rkwargs = {"warn": False}
-            # show the response of the first well, which gives more information than istress = None
-            istress = 0 if istress is None else istress
-        elif isinstance(sm, (ChangeModel, TarsoModel)):
+        if isinstance(sm, (ChangeModel, TarsoModel)):
             dt = _get_dt(self.ml.settings["freq"])
             if isinstance(sm, ChangeModel):
                 parnames0 = [
@@ -566,8 +562,11 @@ class Plotting:
                 )
                 for i, response in enumerate([response0, response1])
             ]
-
         else:
+            if isinstance(sm.rfunc, HantushWellModel):
+                rkwargs = {"warn": False}
+                # show the response of the first well, which gives more information than istress = None
+                istress = 0 if istress is None else istress
             responses = [
                 self.ml._get_response(
                     block_or_step=block_or_step,
@@ -577,23 +576,27 @@ class Plotting:
                     **rkwargs,
                 )
             ]
-            if responses[0] is None:
-                return ax
 
-        xlim_left = min(
-            [x.index[0] if block_or_step == "step" else x.index[1] for x in responses]
-        )
-        xlim_right = max([x.index[-1] for x in responses])
-        for i, response in enumerate(responses):
-            if i == 0:
-                label = f"{block_or_step.capitalize()} response"
-                if block_or_step == "block":
-                    ax.set_xscale("log")
-                    ax.xaxis.set_major_formatter(LogFormatter())
-            else:
-                label = None
-            ax.plot(response.index, response.values, label=label)
-        ax.set_xlim(left=xlim_left, right=xlim_right)
+        responses = [x for x in responses if x is not None]
+        if responses:
+            xlim_left = min(
+                [
+                    x.index[0] if block_or_step == "step" else x.index[1]
+                    for x in responses
+                    if x is not None
+                ]
+            )
+            xlim_right = max([x.index[-1] for x in responses])
+            for i, response in enumerate(responses):
+                if i == 0:
+                    label = f"{block_or_step.capitalize()} response"
+                    if block_or_step == "block":
+                        ax.set_xscale("log")
+                        ax.xaxis.set_major_formatter(LogFormatter())
+                else:
+                    label = None
+                ax.plot(response.index, response.values, label=label)
+                ax.set_xlim(left=xlim_left, right=xlim_right)
         return ax
 
     def _plot_parameters_table(self, ax: Axes, stderr: bool) -> None:
