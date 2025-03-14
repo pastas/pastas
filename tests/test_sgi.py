@@ -7,7 +7,7 @@ tol = 1e-3
 
 
 def test_sgi_period1(head: Series) -> None:
-    sgi = ps.stats.sgi(head, timescaleMonths=1)
+    sgi = ps.stats.sgi(head, timescale_months=1)
     assert pytest.approx(sgi.iat[30], tol) == -0.812
 
 
