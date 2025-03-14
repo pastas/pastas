@@ -1477,12 +1477,10 @@ class Model:
             nsplit = self.stressmodels[name].get_nsplit()
             if split and nsplit > 1:
                 for istress in range(nsplit):
-                    contrib = self.get_contribution(
-                        name, istress=istress, **kwargs
-                    ).rename(f"{name}_{istress}")
+                    contrib = self.get_contribution(name, istress=istress, **kwargs)
                     contribs.append(contrib)
             else:
-                contrib = self.get_contribution(name, **kwargs).rename(name)
+                contrib = self.get_contribution(name, **kwargs)
                 contribs.append(contrib)
         return contribs
 
