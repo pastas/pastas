@@ -260,11 +260,11 @@ class Plotting:
                     title = [stress.name for stress in sm.stress]
                     if len(title) > 3:
                         title = title[:3] + ["..."]
-                        ax_contrib.set_title(
-                            f"Stresses: {title}",
-                            loc="right",
-                            fontsize=plt.rcParams["legend.fontsize"],
-                        )
+                    ax_contrib.set_title(
+                        f"Stresses: {title}",
+                        loc="right",
+                        fontsize=plt.rcParams["legend.fontsize"],
+                    )
 
                 ax_response = gs.figure.add_subplot(gs[i + 2, 1], sharex=ax_response)
                 ax_response = self._plot_response_in_results(
@@ -316,7 +316,7 @@ class Plotting:
         self,
         tmin: TimestampType | None = None,
         tmax: TimestampType | None = None,
-        stderr: bool = True,
+        stderr: bool = False,
         block_or_step: str = "step",
         return_warmup: bool = False,
         adjust_height: bool = True,
@@ -418,7 +418,7 @@ class Plotting:
             else fig_kwargs.pop("height_ratios", None)
         )
 
-        figsize = (9, 4 + 2 * len(contribs)) if figsize is None else figsize
+        figsize = (10, 4 + 2 * len(contribs)) if figsize is None else figsize
         _, axd = plt.subplot_mosaic(
             mosaic,
             height_ratios=height_ratios,
