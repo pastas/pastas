@@ -8,7 +8,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from pandas import DataFrame, Timestamp, concat
 
-from pastas.plotting.plotutil import _table_formatter_params, share_xaxes, share_yaxes
+from pastas.plotting.plotutil import (
+    _table_formatter_params,
+    plot_series_with_gaps,
+    share_xaxes,
+    share_yaxes,
+)
 from pastas.rfunc import HantushWellModel
 from pastas.stats.core import acf
 from pastas.typing import Axes, Model, TimestampType
@@ -520,9 +525,9 @@ class CompareModels:
 
         for i, ml in enumerate(self.models):
             residuals = ml.residuals(tmin=self.tmin, tmax=self.tmax)
-            axs[axn].plot(
-                residuals.index,
-                residuals.values,
+            axs[axn] = plot_series_with_gaps(
+                series=residuals,
+                ax=axs[axn],
                 label="Residuals",
                 color=self.cmap(i),
             )
@@ -546,12 +551,12 @@ class CompareModels:
         for i, ml in enumerate(self.models):
             if ml.settings["noise"]:
                 noise = ml.noise(tmin=self.tmin, tmax=self.tmax)
-                axs[axn].plot(
-                    noise.index,
-                    noise.values,
+                axs[axn] = plot_series_with_gaps(
+                    series=noise,
+                    ax=axs[axn],
                     label="Noise",
-                    linestyle="--",
                     color=self.cmap(i),
+                    linestyle="--",
                 )
         return axs[axn]
 
