@@ -18,8 +18,8 @@ from pastas.plotting.plotutil import (
     _get_stress_series,
     _table_formatter_params,
     _table_formatter_stderr,
-    share_xaxes,
     plot_series_with_gaps,
+    share_xaxes,
 )
 from pastas.rfunc import HantushWellModel
 from pastas.stressmodels import ChangeModel, TarsoModel
@@ -451,10 +451,10 @@ class Plotting:
         axd["sim"].set_ylim(bottom=ylims["sim"][0], top=ylims["sim"][1])
 
         # plot residuals (and noise if present)
-        axd["res"].plot(res.index, res.values, color="k", label="Residuals")
+        _ = plot_series_with_gaps(res, ax=axd["res"], color="k")
         if self.ml.settings["noise"] and self.ml.noisemodel:
             noise = self.ml.noise(tmin=tmin, tmax=tmax)
-            axd["res"].plot(noise.index, noise.values, label="Noise")
+            _ = plot_series_with_gaps(noise, ax=axd["res"], color="C0")
         axd["res"].axhline(0.0, color="k", linestyle="--", zorder=0)
         axd["res"].legend(loc=(0, 1), ncol=2, frameon=False)
 
