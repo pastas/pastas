@@ -57,13 +57,7 @@ def _table_formatter_stderr(s: float, na_rep: str = "") -> str:
 
 
 def _get_height_ratios(ylims: List[Union[list, tuple]]) -> List[float]:
-    height_ratios = []
-    for ylim in ylims:
-        hr = ylim[1] - ylim[0]
-        if np.isnan(hr):
-            hr = 0.0
-        height_ratios.append(hr)
-    return height_ratios
+    return [0.0 if np.isnan(ylim[1] - ylim[0]) else ylim[1] - ylim[0] for ylim in ylims]
 
 
 def _get_stress_series(ml, split: bool = True) -> List[Series]:

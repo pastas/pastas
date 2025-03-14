@@ -1970,14 +1970,14 @@ class ChangeModel(StressModelBase):
         h1 = Series(
             data=fftconvolve(stress, rfunc1, "full")[:npoints],
             index=stress.index,
-            name="1",
+            name=f"{self.name}_1",
         )
         h2 = Series(
             data=fftconvolve(stress, rfunc2, "full")[:npoints],
             index=stress.index,
-            name="1",
+            name=f"{self.name}_2",
         )
-        h = omega * h1 + (1 - omega) * h2
+        h = (omega * h1 + (1 - omega) * h2).rename(self.name)
 
         return h
 
