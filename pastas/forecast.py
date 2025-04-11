@@ -1,8 +1,7 @@
 from logging import getLogger
 
-from numpy import array, concatenate, exp, linspace, sqrt
+from numpy import array, concatenate, exp, linspace
 from pandas import DataFrame, MultiIndex, Timedelta, concat
-from scipy.stats import norm
 
 logger = getLogger(__name__)
 
@@ -167,11 +166,11 @@ def forecast(ml, forecasts, nparam=1, params=None, alpha=0.95, post_process=Fals
                 var = res.var()
 
             # critical z value for the confidence interval based on alpha
-            z = norm.ppf(1 - (1 - alpha) / 2)
-            stderr = z * sqrt(var)
+            # z = norm.ppf(1 - (1 - alpha) / 2)
+            # stderr = z * sqrt(var)
 
             # Store the results (mean, lower bound, upper bound)
-            data = array([sim, sim - stderr, sim + stderr])
+            data = array([sim, var])
 
             # Compute the correction from the noise model
             if post_process:
@@ -183,7 +182,7 @@ def forecast(ml, forecasts, nparam=1, params=None, alpha=0.95, post_process=Fals
 
     # Create DataFrames to store data
     mi = MultiIndex.from_product(
-        [range(n), range(nparam), ["mean", "lower_bound", "upper_bound"]],
+        [range(n), range(nparam), ["mean", "var"]],
         names=["ensemble_member", "param_member", "forecast"],
     )
     df = DataFrame(data=concatenate(df_list).T, index=index, columns=mi, dtype=float)
