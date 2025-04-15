@@ -1611,6 +1611,7 @@ class Model:
 
         if dt is None:
             dt = _get_dt(self.settings["freq"])
+
         if istress is not None and self.stressmodels[name].get_nsplit() > 1:
             p = self.stressmodels[name].get_parameters(model=self, istress=istress)
 
@@ -2007,12 +2008,16 @@ class Model:
                             f"Parameter '{p}' on lower bound: "
                             f"{self.parameters.at[p, 'pmin']:.2e}"
                         )
-            # check response t_cutoff vs length calibration period
+            # check response t_cutoff vs length calibration period and warmup period
             response_tmax_check = self._check_response_tmax()
-            if (~response_tmax_check["check_ok"]).any():
-                mask = ~response_tmax_check["check_ok"]
+            if (~response_tmax_check["check_response"]).any():
+                mask = ~response_tmax_check["check_response"]
                 for i in response_tmax_check.loc[mask].index:
                     msg.append(f"Response tmax for '{i}' > than calibration period.")
+            if (~response_tmax_check["check_warmup"]).any():
+                mask = ~response_tmax_check["check_warmup"]
+                for i in response_tmax_check.loc[mask].index:
+                    msg.append(f"Response tmax for '{i}' > than warmup period.")
 
             # create message
             if len(msg) > 0:
@@ -2055,9 +2060,20 @@ class Model:
 
         check = DataFrame(
             index=sm_names,
-            columns=["len_oseries_calib", "response_tmax", "check_ok"],
+            columns=[
+                "warmup",
+                "len_oseries_calib",
+                "response_tmax",
+                "check_warmup",
+                "check_response",
+            ],
         )
         check["len_oseries_calib"] = len_oseries_calib
+        check["len_warmup"] = (
+            self.settings["warmup"].days
+            if isinstance(self.settings["warmup"], Timedelta)
+            else Timedelta(self.settings["warmup"]).days
+        )
 
         for sm_name in self.stressmodels:
             if isinstance(self.stressmodels[sm_name].rfunc, HantushWellModel):
@@ -2068,7 +2084,8 @@ class Model:
                 sm_name, cutoff=cutoff, **kwargs
             )
 
-        check["check_ok"] = check["response_tmax"] < check["len_oseries_calib"]
+        check["check_warmup"] = check["response_tmax"] < check["warmup"]
+        check["check_response"] = check["response_tmax"] < check["len_oseries_calib"]
 
         return check
 

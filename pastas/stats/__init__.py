@@ -30,6 +30,7 @@ from .metrics import (
     kge_2012,
     mae,
     nse,
+    nnse,
     pearsonr,
     rmse,
     rsq,

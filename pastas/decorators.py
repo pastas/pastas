@@ -146,15 +146,15 @@ def deprecate_args_or_kwargs(
         raise DeprecationWarning(msg)
 
 
-def njit(function: Optional[Function] = None, parallel: bool = False) -> Function:
-    def njit_decorator(f: Function):
+def njit(function: Optional[Function] = None, **kwargs) -> Function:
+    def njit_decorator(f: Function) -> Function:
         try:
             if not USE_NUMBA:
                 return f
             else:
                 from numba import njit
 
-                fnumba = njit(f, parallel=parallel)
+                fnumba = njit(f, **kwargs)
                 return fnumba
         except ImportError:
             return f

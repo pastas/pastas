@@ -35,7 +35,8 @@ logger = getLogger(__name__)
 
 
 def load(fname: str) -> dict:
-    data = json.load(open(fname), object_hook=pastas_hook)
+    with open(fname, "r") as file:
+        data = json.load(file, object_hook=pastas_hook)
     return data
 
 
@@ -77,7 +78,8 @@ def pastas_hook(obj: dict):
 
 
 def dump(fname: str, data: dict) -> None:
-    json.dump(data, open(fname, "w"), indent=4, cls=PastasEncoder)
+    with open(fname, "w") as file:
+        json.dump(data, file, indent=4, cls=PastasEncoder)
     logger.info("%s file successfully exported", fname)
 
 

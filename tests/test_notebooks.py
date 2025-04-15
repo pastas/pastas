@@ -1,11 +1,11 @@
 import os
 import shutil
+from pathlib import Path
 
 import pytest
 
-pathname = os.path.join("doc", "examples")
-# get list of notebooks to run
-files = [f for f in os.listdir(pathname) if f.endswith(".ipynb")]
+pathname = Path(__file__).parent.parent / "doc/examples"
+files = list(pathname.glob("*.ipynb"))
 
 testdir = "build"
 if os.path.isdir(os.path.join(pathname, testdir)):
@@ -19,7 +19,7 @@ def test_notebook(file) -> None:
     cwd = os.getcwd()
 
     os.chdir(pathname)
-    if file not in [
+    if file.name not in [
         "prepare_timeseries.ipynb",
         "emcee_uncertainty.ipynb",
     ]:
