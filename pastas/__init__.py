@@ -5,17 +5,15 @@ import warnings
 from pandas.plotting import register_matplotlib_converters
 
 import pastas.objective_functions as objfunc
-import pastas.plotting.plots as plots
 import pastas.recharge as rch
-import pastas.stats as stats
 import pastas.timeseries_utils as ts
-from pastas import check, extensions
+from pastas import check, extensions, stats
 from pastas.dataset import list_datasets, load_dataset
 from pastas.decorators import set_use_numba
 from pastas.model import Model
 from pastas.noisemodels import ArmaModel, ArmaNoiseModel, ArNoiseModel, NoiseModel
+from pastas.plotting import TrackSolve, plots
 from pastas.plotting.modelcompare import CompareModels
-from pastas.plotting.plots import TrackSolve
 from pastas.rcparams import rcParams
 from pastas.rfunc import (
     DoubleExponential,
