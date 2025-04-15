@@ -88,3 +88,69 @@ def test_plot_contribution(ml_solved: Model) -> None:
         block_or_step="block",
         istress=1,
     )
+
+
+def test_series(ml_solved: Model) -> None:
+    """Test the series plot method."""
+    # Basic series plot
+    _ = ml_solved.plots.series()
+    # With specific settings
+    _ = ml_solved.plots.series(tmin="2011", tmax="2014")
+    # Test with different styles and subplots
+    _ = ml_solved.plots.series(figsize=(10, 8))
+
+
+def test_cum_frequency(ml_solved: Model) -> None:
+    """Test the cumulative frequency plot method."""
+    # Basic cumulative frequency plot
+    _ = ml_solved.plots.cum_frequency()
+    # With specific settings
+    _ = ml_solved.plots.cum_frequency(tmin="2011", tmax="2014")
+    # Test with custom arguments
+    _ = ml_solved.plots.cum_frequency(figsize=(8, 6))
+
+
+def test_standalone_series(prec: Series, evap: Series, head: Series) -> None:
+    """Test standalone series plotting function."""
+    from pastas.plotting.plots import series
+
+    # Basic usage with head only
+    axes = series(head=head)
+    assert axes is not None
+
+    # With stresses
+    stresses = [prec, evap]
+    axes = series(head=head, stresses=stresses)
+    assert axes is not None
+
+    # Various options
+    axes = series(
+        head=head,
+        stresses=stresses,
+        hist=True,
+        kde=True,
+        table=True,
+        titles=False,
+        tmin="2011",
+        tmax="2014",
+        figsize=(8, 6),
+    )
+    assert axes is not None
+
+
+def test_standalone_cum_frequency(head: Series) -> None:
+    """Test standalone cumulative frequency function."""
+    from pastas.plotting.plots import cum_frequency
+
+    # Basic usage
+    ax = cum_frequency(obs=head)
+    assert ax is not None
+
+    # With simulation series
+    sim = head + 0.1  # Create a simple sim series
+    ax = cum_frequency(obs=head, sim=sim)
+    assert ax is not None
+
+    # With custom figure size
+    ax = cum_frequency(obs=head, figsize=(8, 4))
+    assert ax is not None
