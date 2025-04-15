@@ -120,8 +120,9 @@ def _get_stress_dt(freq: str) -> float:
             raise (ValueError("freq of {} not supported".format(freq)))
 
     # Check if dt can be an integer, if so convert to int
-    if (dt).is_integer():
-        dt = int(dt)
+    if not isinstance(dt, int):
+        if (dt).is_integer():
+            dt = int(dt)
 
     return dt
 
