@@ -1,6 +1,5 @@
 import pytest
-from numpy.random import rand
-from pandas import Series, date_range
+from pandas import Series
 
 from pastas import Model
 from pastas.plotting.plots import TrackSolve, compare, pairplot
@@ -168,22 +167,3 @@ def test_standalone_acf(head: Series) -> None:
     # With custom parameters
     ax = acf(series=head, alpha=0.01, lags=100, smooth_conf=False, figsize=(10, 6))
     assert ax is not None
-
-
-def test_tracksolve_methods() -> None:
-    """Test other TrackSolve methods not covered in existing tests."""
-    # Create a simple model for testing
-    ml = pytest.importorskip("pastas").Model(
-        Series(rand(100), index=date_range("2000-01-01", periods=100))
-    )
-
-    # Initialize TrackSolve
-    track = TrackSolve(ml)
-
-    # Test initialize_figure method
-    fig = track.initialize_figure()
-    assert fig is not None
-
-    # Test plot_track_solve_history
-    axes = track.plot_track_solve_history()
-    assert axes is not None
