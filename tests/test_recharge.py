@@ -37,6 +37,7 @@ def test_flexmodel_no_interception(
     ml_empty.add_stressmodel(rm)
     ml_empty.simulate()
 
+
 def test_flexmodel_gw_uptake(ml_empty: ps.Model, prec: Series, evap: Series) -> None:
     rm = ps.RechargeModel(
         prec=prec, evap=evap, recharge=ps.rch.FlexModel(gw_uptake=True)
