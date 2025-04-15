@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+from numpy import arange, sin
 from pandas import Series, read_csv, to_datetime
 
 import pastas as ps
@@ -35,6 +36,14 @@ def prec() -> Series:
 @pytest.fixture
 def evap() -> Series:
     return get_evap()
+
+
+@pytest.fixture
+def temp() -> Series:
+    index = (
+        read_csv(data_path / "evap.csv", index_col=0, parse_dates=True).squeeze().index
+    )
+    return Series(index=index, data=sin(arange(index.size) / 2200), dtype=float)
 
 
 @pytest.fixture
