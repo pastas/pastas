@@ -29,7 +29,5 @@ def test_get_versions_optional():
     get_versions(optional=True)
 
 
-
 def test_show_versions(capsys):
     show_versions()
-
