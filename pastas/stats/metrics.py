@@ -818,12 +818,12 @@ def picp(obs: Series, bounds: DataFrame):
     -----
     The Prediction Interval Coverage Probability (PICP) is computed as follows:
 
-    .. math:: PICP = \frac{1}{N} \sum _{i=1}^N a_i,
+    .. math:: PICP = \\frac{1}{N} \\sum _{i=1}^N a_i,
         a_i =
-        \begin{cases}
-             1 & \text{if }h_i \in [\hat{h_i}^L, \hat{h_i}^U], \\
-             0 & \text{otherwise} \\
-        \end{cases}
+        \\begin{cases}
+             1 & \\text{if }h_i \in [\\hat{h_i}^L, \\hat{h_i}^U], \\
+             0 & \\text{otherwise} \\
+        \\end{cases}
 
     Examples
     --------
