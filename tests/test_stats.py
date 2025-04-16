@@ -1,7 +1,9 @@
 import numpy as np
 import pandas as pd
+import pytest
 
 import pastas as ps
+from pastas.stats.tests import durbin_watson, ljung_box
 
 
 def acf_func(**kwargs):
@@ -51,3 +53,119 @@ def test_stoffer_toloi():
     )
     _, pval = ps.stats.stoffer_toloi(res)
     assert pval > 1e-10
+
+
+@pytest.fixture
+def random_series():
+    """Create a random time series for testing."""
+    np.random.seed(42)  # For reproducibility
+    index = pd.date_range(start="2000-01-01", periods=1000, freq="D")
+    data = np.random.normal(0, 1, 1000)
+    return pd.Series(data=data, index=index)
+
+
+@pytest.fixture
+def autocorrelated_series():
+    """Create an autocorrelated time series for testing."""
+    np.random.seed(42)  # For reproducibility
+    index = pd.date_range(start="2000-01-01", periods=1000, freq="D")
+
+    # AR(1) process with phi=0.8 to create autocorrelation
+    data = np.zeros(1000)
+    data[0] = np.random.normal(0, 1)
+    for i in range(1, 1000):
+        data[i] = 0.8 * data[i - 1] + np.random.normal(0, 0.5)
+
+    return pd.Series(data=data, index=index)
+
+
+@pytest.fixture
+def irregular_series():
+    """Create an irregular time series for testing."""
+    np.random.seed(42)  # For reproducibility
+    # Create non-equidistant index
+    dates = pd.date_range(start="2000-01-01", periods=1200, freq="D")
+    # Randomly select 1000 dates
+    select_idx = np.sort(np.random.choice(1200, 1000, replace=False))
+    irregular_dates = dates[select_idx]
+
+    data = np.random.normal(0, 1, 1000)
+    return pd.Series(data=data, index=irregular_dates)
+
+
+def test_durbin_watson_random(random_series):
+    """Test durbin_watson on random data with no autocorrelation."""
+    dw_stat, _ = durbin_watson(random_series)
+    # For random data, DW should be close to 2
+    assert 1.8 < dw_stat < 2.2
+
+
+def test_durbin_watson_autocorrelated(autocorrelated_series):
+    """Test durbin_watson on autocorrelated data."""
+    dw_stat, _ = durbin_watson(autocorrelated_series)
+    # For positively autocorrelated data, DW should be < 2
+    assert dw_stat < 1.5
+
+
+def test_durbin_watson_irregular(irregular_series, caplog):
+    """Test durbin_watson with irregular time series (should warn)."""
+    durbin_watson(irregular_series)
+    # Check that a warning was logged
+    assert (
+        "should only be used for time series with equidistant time steps" in caplog.text
+    )
+
+
+def test_ljung_box_random(random_series):
+    """Test ljung_box on random data with no autocorrelation."""
+    q_stat, p_value = ljung_box(random_series, lags=15)
+
+    # For random data, p-value should be high (fail to reject H0)
+    assert p_value > 0.05
+    # Q-statistic should be relatively low
+    assert q_stat < 25  # This threshold may need adjustment
+
+
+def test_ljung_box_autocorrelated(autocorrelated_series):
+    """Test ljung_box on autocorrelated data."""
+    q_stat, p_value = ljung_box(autocorrelated_series, lags=15)
+
+    # For autocorrelated data, p-value should be low (reject H0)
+    assert p_value < 0.05
+    # Q-statistic should be relatively high
+    assert q_stat > 100  # This threshold may need adjustment
+
+
+def test_ljung_box_with_parameters(random_series):
+    """Test ljung_box with model parameters."""
+    # Test with nparam=2 (simulating 2 parameters in model)
+    q_stat, p_value = ljung_box(random_series, lags=15, nparam=2)
+
+    # Degrees of freedom should be reduced, affecting p-value
+    q_stat_no_param, p_value_no_param = ljung_box(random_series, lags=15, nparam=0)
+
+    # Same Q-statistic but different p-values due to different degrees of freedom
+    assert np.isclose(q_stat, q_stat_no_param)
+    assert p_value != p_value_no_param
+
+
+def test_ljung_box_full_output(random_series):
+    """Test ljung_box with full_output=True."""
+    result = ljung_box(random_series, lags=15, full_output=True)
+
+    # Should return a DataFrame
+    assert isinstance(result, pd.DataFrame)
+    # Should contain Q Stat and P-value columns
+    assert "Q Stat" in result.columns
+    assert "P-value" in result.columns
+    # Should have lags rows (excluding zero lag)
+    assert len(result) <= 15  # May be less if some lags couldn't be computed
+
+
+def test_ljung_box_irregular(irregular_series, caplog):
+    """Test ljung_box with irregular time series (should warn)."""
+    ljung_box(irregular_series, lags=15)
+    # Check that a warning was logged
+    assert (
+        "should only be used for time series with equidistant time steps" in caplog.text
+    )
