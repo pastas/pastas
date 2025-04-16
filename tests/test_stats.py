@@ -112,7 +112,8 @@ def test_durbin_watson_irregular(irregular_series, caplog):
     durbin_watson(irregular_series)
     # Check that a warning was logged
     assert (
-        "should only be used for time series with equidistant time steps" in caplog.text
+        "Durbin-Watson test should only be used for time series with equidistant time steps"
+        in caplog.text
     )
 
 
