@@ -452,11 +452,10 @@ def _get_spring(series: Series, min_n_meas: int) -> float:
         values of series in spring, or NaN if no values in spring.
     """
     inspring = _in_spring(series)
-    if inspring.sum() < min_n_meas:
-        return Series(nan)
+    if inspring.count() < min_n_meas:
+        return Series(dtype=series.dtype)
     else:
-        return series.loc[inspring]
-
+        return series.loc[inspring].dropna()
 
 def _in_spring(series: Series) -> Series:
     """Internal method to test if time series index is between 14 March and 15 April.
@@ -558,6 +557,10 @@ def _gxg(
     # first generate a daily series by averaging multiple measurements during the day
     series = series.resample("d").mean()
     select14or28 = True
+
+    if fill_method and limit is None:
+        limit = 1  # Set a default positive limit if not provided
+
     if fill_method is None:
         series = series.dropna()
     elif fill_method == "ffill":
