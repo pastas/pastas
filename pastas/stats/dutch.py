@@ -457,6 +457,7 @@ def _get_spring(series: Series, min_n_meas: int) -> float:
     else:
         return series.loc[inspring].dropna()
 
+
 def _in_spring(series: Series) -> Series:
     """Internal method to test if time series index is between 14 March and 15 April.
 

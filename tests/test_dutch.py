@@ -57,6 +57,7 @@ def biweekly_timeseries():
 
     return pd.Series(values, index=pd.DatetimeIndex(dates))
 
+
 def day_exists(year, month, day):
     """Check if a day exists in a given month and year."""
     try:
@@ -181,8 +182,9 @@ def test_get_spring(sample_timeseries):
 
     # Verify only spring values are returned
     for date in spring_values.index:
-        assert ((date.month == 3 and date.day >= 14) or
-                (date.month == 4 and date.day < 15))
+        assert (date.month == 3 and date.day >= 14) or (
+            date.month == 4 and date.day < 15
+        )
 
     # Test with insufficient measurements
     sparse_series = sample_timeseries.iloc[::10]  # Take every 10th value
@@ -193,8 +195,9 @@ def test_get_spring(sample_timeseries):
     else:
         # If we have values, make sure they are spring values
         for date in result.index:
-            assert ((date.month == 3 and date.day >= 14) or
-                    (date.month == 4 and date.day < 15))
+            assert (date.month == 3 and date.day >= 14) or (
+                date.month == 4 and date.day < 15
+            )
 
 
 def test_gg(biweekly_timeseries):
@@ -204,10 +207,14 @@ def test_gg(biweekly_timeseries):
     assert isinstance(result, float)
 
     # Test different outputs
-    result_yearly = ps.stats.gg(biweekly_timeseries, output='yearly', min_n_years=1, min_n_meas=1)
+    result_yearly = ps.stats.gg(
+        biweekly_timeseries, output="yearly", min_n_years=1, min_n_meas=1
+    )
     assert isinstance(result_yearly, pd.Series)
 
-    result_semi = ps.stats.gg(biweekly_timeseries, output='semimonthly', min_n_years=1, min_n_meas=1)
+    result_semi = ps.stats.gg(
+        biweekly_timeseries, output="semimonthly", min_n_years=1, min_n_meas=1
+    )
     assert isinstance(result_semi, pd.Series)
 
     # Verify average calculation
@@ -223,15 +230,21 @@ def test_ghg_outputs(biweekly_timeseries):
     assert isinstance(result_mean, float)
 
     # Test yearly output
-    result_yearly = ps.stats.ghg(biweekly_timeseries, output='yearly', min_n_years=1, min_n_meas=1)
+    result_yearly = ps.stats.ghg(
+        biweekly_timeseries, output="yearly", min_n_years=1, min_n_meas=1
+    )
     assert isinstance(result_yearly, pd.Series)
 
     # Test g3 output (selected data points used for calculation)
-    result_g3 = ps.stats.ghg(biweekly_timeseries, output='g3', min_n_years=1, min_n_meas=1)
+    result_g3 = ps.stats.ghg(
+        biweekly_timeseries, output="g3", min_n_years=1, min_n_meas=1
+    )
     assert isinstance(result_g3, pd.Series)
 
     # Test semimonthly output
-    result_semi = ps.stats.ghg(biweekly_timeseries, output='semimonthly', min_n_years=1, min_n_meas=1)
+    result_semi = ps.stats.ghg(
+        biweekly_timeseries, output="semimonthly", min_n_years=1, min_n_meas=1
+    )
     assert isinstance(result_semi, pd.Series)
 
     # Verify relationship between outputs
@@ -246,11 +259,15 @@ def test_glg_outputs(biweekly_timeseries):
     assert isinstance(result_mean, float)
 
     # Test yearly output
-    result_yearly = ps.stats.glg(biweekly_timeseries, output='yearly', min_n_years=1, min_n_meas=1)
+    result_yearly = ps.stats.glg(
+        biweekly_timeseries, output="yearly", min_n_years=1, min_n_meas=1
+    )
     assert isinstance(result_yearly, pd.Series)
 
     # Test g3 output (selected data points used for calculation)
-    result_g3 = ps.stats.glg(biweekly_timeseries, output='g3', min_n_years=1, min_n_meas=1)
+    result_g3 = ps.stats.glg(
+        biweekly_timeseries, output="g3", min_n_years=1, min_n_meas=1
+    )
     assert isinstance(result_g3, pd.Series)
 
     # Verify relationship between outputs
@@ -261,7 +278,7 @@ def test_glg_outputs(biweekly_timeseries):
 def test_gxg_min_requirements():
     """Test minimum requirements parameters for gxg functions."""
     # Create a short series that doesn't meet min_n_years requirement
-    short_index = pd.date_range('2020-01-01', '2020-12-31', freq='14D')
+    short_index = pd.date_range("2020-01-01", "2020-12-31", freq="14D")
     short_series = pd.Series(np.random.randn(len(short_index)), index=short_index)
 
     # Test with default requirements (should return NaN)
@@ -272,7 +289,7 @@ def test_gxg_min_requirements():
     assert isinstance(result, float)
 
     # Create a sparse series that doesn't meet min_n_meas requirement
-    sparse_index = pd.date_range('2018-01-01', '2021-12-31', freq='90D')
+    sparse_index = pd.date_range("2018-01-01", "2021-12-31", freq="90D")
     sparse_series = pd.Series(np.random.randn(len(sparse_index)), index=sparse_index)
 
     # Test with default requirements (should return NaN)
@@ -286,7 +303,7 @@ def test_gxg_min_requirements():
 def test_fill_methods(sample_timeseries):
     """Test different fill methods for gxg functions."""
     # Create series with strategic gaps
-    dates = pd.date_range('2019-01-01', '2021-12-31', freq='14D')
+    dates = pd.date_range("2019-01-01", "2021-12-31", freq="14D")
     values = np.sin(np.arange(len(dates)) * 0.2) * 10 + 100
     series = pd.Series(values, index=dates)
 
@@ -300,8 +317,7 @@ def test_fill_methods(sample_timeseries):
 
     for method in methods:
         results[method] = ps.stats.ghg(
-            series, fill_method=method, limit=10,
-            min_n_years=1, min_n_meas=4
+            series, fill_method=method, limit=10, min_n_years=1, min_n_meas=4
         )
 
     # Verify that different methods give different results
@@ -367,7 +383,6 @@ class TestGXG(object):
         )
         assert v.notna().sum() == 2
 
-
     def test_gvg(self) -> None:
         idx = pd.to_datetime(["20170314", "20170328", "20170414", "20170428"])
         s = pd.Series([1.0, 2.0, 3.0, 4], index=idx)
@@ -383,8 +398,6 @@ class TestGXG(object):
             s, fill_method=None, output="mean", min_n_meas=1, min_n_years=1
         )
         assert np.isnan(v)
-
-
 
 
 class TestQGXG(object):
