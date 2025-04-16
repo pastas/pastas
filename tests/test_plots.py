@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import pytest
 from pandas import Series
 
@@ -9,14 +10,17 @@ from pastas.plotting.plots import TrackSolve, compare, pairplot
 
 def test_plot(ml_solved: Model) -> None:
     _ = ml_solved.plot()
+    plt.close()
 
 
 def test_decomposition(ml_solved: Model) -> None:
     _ = ml_solved.plots.decomposition(min_ylim_diff=0.1)
+    plt.close()
 
 
 def test_results(ml_solved: Model) -> None:
     _ = ml_solved.plots.results()
+    plt.close()
 
 
 def test_results_kwargs(ml_solved: Model) -> None:
@@ -26,61 +30,77 @@ def test_results_kwargs(ml_solved: Model) -> None:
         adjust_height=False,
         return_warmup=True,
     )
+    plt.close()
 
 
 def test_results_mosaic(ml_solved: Model) -> None:
     _ = ml_solved.plots.results_mosaic(stderr=True)
+    plt.close()
 
 
 def test_stacked_results(ml_solved: Model) -> None:
     _ = ml_solved.plots.stacked_results()
+    plt.close()
 
 
 def test_block_response(ml_solved: Model) -> None:
     _ = ml_solved.plots.block_response()
+    plt.close()
 
 
 def test_step_response(ml: Model) -> None:
     _ = ml.plots.step_response()
+    plt.close()
 
 
 def test_diagnostics(ml_solved: Model) -> None:
     _ = ml_solved.plots.diagnostics(acf_options=dict(min_obs=10))
+    plt.close()
 
 
 def test_stresses(ml_solved: Model) -> None:
     _ = ml_solved.plots.stresses()
+    plt.close()
 
 
 def test_contributions_pie(ml_solved: Model) -> None:
     with pytest.raises(DeprecationWarning):
         _ = ml_solved.plots.contributions_pie()
+        plt.close()
 
 
 def test_compare(ml_solved: Model) -> None:
     ml2 = ml_solved.copy()
     models = [ml_solved, ml2]
     _ = compare(models, names=["ml1", "ml2"], tmin="2011", tmax="2014")
+    plt.close()
 
 
 def test_tracksolve(ml_solved: Model) -> None:
     track = TrackSolve(ml_solved)
     _ = ml_solved.solve(callback=track.plot_track_solve)
+    plt.close()
 
 
 def test_summary_pdf(ml_solved: Model) -> None:
     _ = ml_solved.plots.summary_pdf()
+    plt.close()
 
 
 def test_pairplot(prec: Series, evap: Series, head: Series) -> None:
     _ = pairplot([prec, evap, head])
+    plt.close()
 
 
 def test_plot_contribution(ml_solved: Model) -> None:
     _ = ml_solved.plots.contribution(name="rch")
+    plt.close()
+
     _ = ml_solved.plots.contribution(
         name="rch", plot_stress=True, plot_response=True, block_or_step="step"
     )
+    plt.close()
+
     _ = ml_solved.plots.contribution(
         name="rch",
         plot_stress=True,
@@ -88,26 +108,37 @@ def test_plot_contribution(ml_solved: Model) -> None:
         block_or_step="block",
         istress=1,
     )
+    plt.close()
 
 
 def test_series(ml_solved: Model) -> None:
     """Test the series plot method."""
     # Basic series plot
     _ = ml_solved.plots.series()
+    plt.close()
+
     # With specific settings
     _ = ml_solved.plots.series(tmin="2011", tmax="2014")
+    plt.close()
+
     # Test with different styles and subplots
     _ = ml_solved.plots.series(figsize=(10, 8))
+    plt.close()
 
 
 def test_cum_frequency(ml_solved: Model) -> None:
     """Test the cumulative frequency plot method."""
     # Basic cumulative frequency plot
     _ = ml_solved.plots.cum_frequency()
+    plt.close()
+
     # With specific settings
     _ = ml_solved.plots.cum_frequency(tmin="2011", tmax="2014")
+    plt.close()
+
     # Test with custom arguments
     _ = ml_solved.plots.cum_frequency(figsize=(8, 6))
+    plt.close()
 
 
 def test_standalone_series(prec: Series, evap: Series, head: Series) -> None:
@@ -117,11 +148,13 @@ def test_standalone_series(prec: Series, evap: Series, head: Series) -> None:
     # Basic usage with head only
     axes = series(head=head)
     assert axes is not None
+    plt.close()
 
     # With stresses
     stresses = [prec, evap]
     axes = series(head=head, stresses=stresses)
     assert axes is not None
+    plt.close()
 
     # Various options
     axes = series(
@@ -136,6 +169,7 @@ def test_standalone_series(prec: Series, evap: Series, head: Series) -> None:
         figsize=(8, 6),
     )
     assert axes is not None
+    plt.close()
 
 
 def test_standalone_cum_frequency(head: Series) -> None:
@@ -145,15 +179,18 @@ def test_standalone_cum_frequency(head: Series) -> None:
     # Basic usage
     ax = cum_frequency(obs=head)
     assert ax is not None
+    plt.close()
 
     # With simulation series
     sim = head + 0.1  # Create a simple sim series
     ax = cum_frequency(obs=head, sim=sim)
     assert ax is not None
+    plt.close()
 
     # With custom figure size
     ax = cum_frequency(obs=head, figsize=(8, 4))
     assert ax is not None
+    plt.close()
 
 
 def test_standalone_acf(head: Series) -> None:
@@ -163,7 +200,9 @@ def test_standalone_acf(head: Series) -> None:
     # Basic usage
     ax = acf(series=head)
     assert ax is not None
+    plt.close()
 
     # With custom parameters
     ax = acf(series=head, alpha=0.01, lags=100, smooth_conf=False, figsize=(10, 6))
     assert ax is not None
+    plt.close()

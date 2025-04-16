@@ -17,7 +17,7 @@ def daily_series():
 @pytest.fixture
 def hourly_series():
     """Create an hourly time series fixture."""
-    index = pd.date_range("2000-01-01", periods=100, freq="H")
+    index = pd.date_range("2000-01-01", periods=100, freq="h")
     data = np.random.rand(100)
     series = pd.Series(data=data, index=index, name="hourly_series")
     return series
@@ -120,23 +120,23 @@ def test_sample_up_methods(daily_series):
     ts = TimeSeries(daily_series)
 
     # Test "interpolate"
-    ts.update_series(freq="12H", sample_up="interpolate")
+    ts.update_series(freq="12h", sample_up="interpolate")
     assert len(ts.series) > len(daily_series)
 
     # Test "bfill"
-    ts.update_series(freq="12H", sample_up="bfill")
+    ts.update_series(freq="12h", sample_up="bfill")
     assert len(ts.series) > len(daily_series)
 
     # Test "ffill"
-    ts.update_series(freq="12H", sample_up="ffill")
+    ts.update_series(freq="12h", sample_up="ffill")
     assert len(ts.series) > len(daily_series)
 
     # Test "mean"
-    ts.update_series(freq="12H", sample_up="mean")
+    ts.update_series(freq="12h", sample_up="mean")
     assert len(ts.series) > len(daily_series)
 
     # Test float value
-    ts.update_series(freq="12H", sample_up=0.0)
+    ts.update_series(freq="12h", sample_up=0.0)
     assert len(ts.series) > len(daily_series)
 
 
