@@ -144,7 +144,9 @@ def test_likelihood_parameter_types(likelihood_class):
     assert isinstance(params.loc[:, "initial"].values[0], float)
     assert isinstance(params.loc[:, "pmin"].values[0], float)
     assert isinstance(params.loc[:, "pmax"].values[0], float)
-    # assert isinstance(params.loc[:, "vary"].values[0], bool)
-    # assert isinstance(params.loc[:, "stderr"].values[0], float)
+    assert isinstance(
+        params.loc[:, "vary"].values[0], (bool, np.bool_)
+    )  # Allow Python bool
+    assert isinstance(params.loc[:, "stderr"].values[0], float)
     assert isinstance(params.loc[:, "name"].values[0], str)
     assert isinstance(params.loc[:, "dist"].values[0], str)
