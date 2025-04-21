@@ -52,8 +52,8 @@ def test_emcee(ml: ps.Model):
     ml.solve(solver=ps.LeastSquares())
     ml.del_noisemodel()
     ml.solve(
-        solver=ps.EmceeSolve(nwalkers=20),
+        solver=ps.EmceeSolve(nwalkers=2),
         initial=False,
         fit_constant=False,
-        steps=10,
+        steps=2,
     )

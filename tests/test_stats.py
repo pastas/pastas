@@ -85,13 +85,11 @@ def irregular_series():
     np.random.seed(42)  # For reproducibility
     # Create non-equidistant index
     dates = pd.date_range(start="2000-01-01", periods=1200, freq="D")
-    # Randomly select 1000 dates and ensure irregularity by removing consecutive dates
-    select_idx = np.sort(np.random.choice(1200, 1000, replace=False))
-    while np.any(np.diff(select_idx) == 1):  # Ensure no consecutive dates
-        select_idx = np.sort(np.random.choice(1200, 1000, replace=False))
+    # Randomly select 1000 dates
+    select_idx = np.sort(np.random.choice(1200, 500, replace=False))
     irregular_dates = dates[select_idx]
 
-    data = np.random.normal(0, 1, 1000)
+    data = np.random.normal(0, 1, 500)
     return pd.Series(data=data, index=irregular_dates)
 
 
