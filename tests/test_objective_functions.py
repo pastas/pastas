@@ -29,7 +29,7 @@ class TestGaussianLikelihood:
         assert params.loc["test_var", "initial"] == 0.05
         assert params.loc["test_var", "pmin"] == 1e-10
         assert params.loc["test_var", "pmax"] == 1
-        assert params.loc["test_var", "vary"] == True
+        assert params.loc["test_var", "vary"]
         assert params.loc["test_var", "name"] == "test"
         assert params.loc["test_var", "dist"] == "uniform"
 
