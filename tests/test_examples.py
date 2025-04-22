@@ -16,7 +16,7 @@ def test_example(file) -> None:
         # run each example
         with open(file) as f:
             exec(compile(f.read(), file, "exec"))
-            # Report succes
+            # Report success
             print(f"Example {file} ran successfully.")
         plt.close("all")
     except Exception as e:
