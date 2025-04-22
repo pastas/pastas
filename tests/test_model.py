@@ -14,6 +14,10 @@ from pastas.model import Model
 # - ml_step_and_exp: Model with multiple stress models
 # - ml_noisemodel: Model with noise model
 # - ml_with_transform: Model with transform
+# - head: Series with head observations
+# - prec: Series with precipitation data
+# - evap: Series with evaporation data
+# - ml_solved: Already solved model
 
 
 @pytest.fixture
@@ -33,37 +37,8 @@ def simple_model():
     return ml
 
 
-# Use ml_rm from conftest for model_with_stressmodel tests
-@pytest.fixture
-def solved_model(ml_rm):
-    """Create a solved model using the basic model from conftest."""
-    ml_rm.solve(report=False)
-    return ml_rm
-
-
-# Use ml_step_and_exp for tests requiring multiple stressmodels
-@pytest.fixture
-def ml_step_and_exp(head, prec, evap):
-    """Create a model with multiple stress models (step and exponential)."""
-    ml = ps.Model(head)
-
-    # Add step model
-    sm1 = ps.StepModel("2010-01-01", name="step")
-    ml.add_stressmodel(sm1)
-
-    # Add exponential model
-    sm2 = ps.StressModel(
-        stress=evap, rfunc=ps.Exponential(), name="exponential", settings="prec"
-    )
-    ml.add_stressmodel(sm2)
-
-    return ml
-
-
 @pytest.fixture
 def fully_populated_model(ml_step_and_exp):
-    """Create a populated model using the model from conftest and adding components."""
-    # Add noise model if not present
     if ml_step_and_exp.noisemodel is None:
         noise = ps.ArNoiseModel()
         ml_step_and_exp.add_noisemodel(noise)
@@ -191,7 +166,9 @@ class TestModelComponents:
         prec = pd.Series(
             np.random.gamma(2, 1, size=len(dates)), index=dates, name="prec"
         )
-        sm = ps.StressModel(stress=prec, rfunc=ps.Exponential(), name="precipitation")
+        sm = ps.StressModel(
+            stress=prec, rfunc=ps.Exponential(), name="precipitation", settings="prec"
+        )
 
         # Add the stress model
         simple_model.add_stressmodel(sm)
@@ -347,9 +324,9 @@ class TestModelSimulation:
         # The last part of sim_warmup should be identical to sim
         assert_series_equal(sim_warmup.loc[sim.index], sim)
 
-    def test_residuals(self, solved_model):
+    def test_residuals(self, ml_solved):
         """Test residuals calculation."""
-        res = solved_model.residuals()
+        res = ml_solved.residuals()
 
         assert isinstance(res, pd.Series)
         assert res.name == "Residuals"
@@ -413,13 +390,13 @@ class TestModelParameters:
         p_opt = ml_rm.get_parameters()
         assert isinstance(p_opt, np.ndarray)
 
-    def test_get_parameters_by_name(self, ml_step_and_exp):
+    def test_get_parameters_by_name(self, ml_sm):
         """Test getting parameters for a specific component."""
         # Get all stressmodel names
-        sm_names = list(ml_step_and_exp.stressmodels.keys())
+        sm_names = list(ml_sm.stressmodels.keys())
 
-        p_all = ml_step_and_exp.get_parameters()
-        p_sm1 = ml_step_and_exp.get_parameters(sm_names[0])
+        p_all = ml_sm.get_parameters()
+        p_sm1 = ml_sm.get_parameters(sm_names[0])
 
         # p_sm1 should be shorter than p_all
         assert len(p_sm1) < len(p_all)
@@ -527,20 +504,20 @@ class TestModelSolving:
 
         assert ml_rm.settings["weights"] is weights
 
-    def test_fit_report(self, solved_model):
+    def test_fit_report(self, ml_solved):
         """Test fit report generation."""
-        report = solved_model.fit_report()
+        report = ml_solved.fit_report()
 
         assert isinstance(report, str)
         assert "Fit report" in report
         assert "Parameters" in report
 
         # Test with correlation matrix
-        report_corr = solved_model.fit_report(corr=True)
+        report_corr = ml_solved.fit_report(corr=True)
         assert "Parameter correlations" in report_corr
 
         # Test with stderr
-        report_stderr = solved_model.fit_report(stderr=True)
+        report_stderr = ml_solved.fit_report(stderr=True)
         assert "stderr" in report_stderr
 
 
@@ -560,60 +537,60 @@ class TestModelContributions:
         assert isinstance(contrib, pd.Series)
         assert contrib.name == first_sm_name
 
-    def test_get_contributions(self, ml_step_and_exp):
+    def test_get_contributions(self, ml_sm):
         """Test getting all contributions."""
-        ml_step_and_exp.solve(report=False)
-        contribs = ml_step_and_exp.get_contributions()
+        ml_sm.solve(report=False)
+        contribs = ml_sm.get_contributions()
 
         assert isinstance(contribs, list)
         assert len(contribs) >= 2  # At least two contributions
         assert all(isinstance(c, pd.Series) for c in contribs)
 
-    def test_get_output_series(self, solved_model):
+    def test_get_output_series(self, ml_solved):
         """Test getting all output series."""
-        df = solved_model.get_output_series()
+        df = ml_solved.get_output_series()
 
         assert isinstance(df, pd.DataFrame)
         assert "Head_Calibration" in df.columns
         assert "Simulation" in df.columns
         assert "Residuals" in df.columns
 
-    def test_get_block_response(self, solved_model):
+    def test_get_block_response(self, ml_solved):
         """Test getting block response."""
         # Get the first stressmodel name
-        first_sm_name = list(solved_model.stressmodels.keys())[0]
+        first_sm_name = list(ml_solved.stressmodels.keys())[0]
 
-        resp = solved_model.get_block_response(first_sm_name)
+        resp = ml_solved.get_block_response(first_sm_name)
 
         assert isinstance(resp, pd.Series)
         assert resp.index.name == "Time [days]"
 
-    def test_get_step_response(self, solved_model):
+    def test_get_step_response(self, ml_solved):
         """Test getting step response."""
         # Get the first stressmodel name
-        first_sm_name = list(solved_model.stressmodels.keys())[0]
+        first_sm_name = list(ml_solved.stressmodels.keys())[0]
 
-        resp = solved_model.get_step_response(first_sm_name)
+        resp = ml_solved.get_step_response(first_sm_name)
 
         assert isinstance(resp, pd.Series)
         assert resp.index.name == "Time [days]"
 
-    def test_get_response_tmax(self, solved_model):
+    def test_get_response_tmax(self, ml_solved):
         """Test getting response tmax."""
         # Get the first stressmodel name
-        first_sm_name = list(solved_model.stressmodels.keys())[0]
+        first_sm_name = list(ml_solved.stressmodels.keys())[0]
 
-        tmax = solved_model.get_response_tmax(first_sm_name)
+        tmax = ml_solved.get_response_tmax(first_sm_name)
 
         assert isinstance(tmax, float)
         assert tmax > 0
 
-    def test_get_stress(self, solved_model):
+    def test_get_stress(self, ml_solved):
         """Test getting stress series."""
         # Get the first stressmodel name
-        first_sm_name = list(solved_model.stressmodels.keys())[0]
+        first_sm_name = list(ml_solved.stressmodels.keys())[0]
 
-        stress = solved_model.get_stress(first_sm_name)
+        stress = ml_solved.get_stress(first_sm_name)
 
         assert isinstance(stress, pd.Series)
 
@@ -621,9 +598,9 @@ class TestModelContributions:
 class TestModelExportImport:
     """Test model export and import."""
 
-    def test_to_dict(self, solved_model):
+    def test_to_dict(self, ml_solved):
         """Test exporting model to dictionary."""
-        data = solved_model.to_dict()
+        data = ml_solved.to_dict()
 
         assert isinstance(data, dict)
         assert "name" in data
@@ -631,29 +608,29 @@ class TestModelExportImport:
         assert "parameters" in data
         assert "stressmodels" in data
 
-    def test_to_file_and_load(self, solved_model, tmp_path):
+    def test_to_file_and_load(self, ml_solved, tmp_path):
         """Test exporting model to file and loading it."""
         # Save model to file
         fname = tmp_path / "test_model.pas"
-        solved_model.to_file(fname)
+        ml_solved.to_file(fname)
 
         # Load model from file
         loaded_model = ps.io.load(fname)
 
         # Check basic properties
-        assert loaded_model.name == solved_model.name
-        assert loaded_model.oseries.name == solved_model.oseries.name
-        assert loaded_model.stressmodels.keys() == solved_model.stressmodels.keys()
+        assert loaded_model.name == ml_solved.name
+        assert loaded_model.oseries.name == ml_solved.oseries.name
+        assert loaded_model.stressmodels.keys() == ml_solved.stressmodels.keys()
 
         # Check parameters
         assert_frame_equal(
-            loaded_model.parameters.sort_index(), solved_model.parameters.sort_index()
+            loaded_model.parameters.sort_index(), ml_solved.parameters.sort_index()
         )
 
-    def test_copy(self, solved_model):
+    def test_copy(self, ml_solved):
         """Test copying a model."""
-        copy_model = solved_model.copy(name="copy_test")
+        copy_model = ml_solved.copy(name="copy_test")
 
         assert copy_model.name == "copy_test"
-        assert copy_model is not solved_model
-        assert_frame_equal(copy_model.parameters, solved_model.parameters)
+        assert copy_model is not ml_solved
+        assert_frame_equal(copy_model.parameters, ml_solved.parameters)

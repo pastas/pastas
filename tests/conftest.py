@@ -90,7 +90,9 @@ def ml_sm(
 
 
 @pytest.fixture
-def ml_noise_only(ml_empty: ps.NoiseModel) -> ps.Model:
+def ml_noise_only(
+    ml_empty: ps.Model,
+) -> ps.Model:  # Fixed type annotation from ps.NoiseModel to ps.Model
     ml_empty.add_noisemodel(ps.ArNoiseModel())
     return ml_empty
 
