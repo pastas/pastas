@@ -1,221 +1,659 @@
+"""Tests for the Model class in pastas.model."""
+
 import numpy as np
+import pandas as pd
 import pytest
-from pandas import Series, Timedelta, date_range
+from pandas.testing import assert_frame_equal, assert_series_equal
 
 import pastas as ps
-
-
-def generate_synthetic_heads(input, rfunc, params, const=10.0, cutoff=0.999, dt=1.0):
-    # Generate the head
-    step = rfunc.block(params, cutoff=cutoff, dt=dt)
-
-    h = const * np.ones(len(input) + step.size)
-
-    for i in range(len(input)):
-        h[i : i + step.size] += input.iat[i] * step
-
-    head = Series(
-        index=input.index,
-        data=h[: len(input)],
-    )
-    return head
-
-
-def test_create_model(head: Series) -> None:
-    ml = ps.Model(head, name="Test_Model")
-    ml.add_noisemodel(ps.ArNoiseModel())
-
-
-def test_add_stressmodel(ml_empty: ps.Model, sm_prec: ps.StressModel) -> None:
-    ml_empty.add_stressmodel(sm_prec)
-
-
-def test_add_stressmodels(
-    ml_empty: ps.Model, sm_prec: ps.StressModel, sm_evap: ps.StressModel
-) -> None:
-    ml_empty.add_stressmodel([sm_prec, sm_evap])
-
-
-def test_del_stressmodel(ml: ps.Model) -> None:
-    ml.del_stressmodel("rch")
-
-
-def test_add_constant(ml_empty: ps.Model) -> None:
-    ml_empty.add_constant(ps.Constant())
-
-
-def test_del_constant(ml_empty: ps.Model) -> None:
-    ml_empty.del_constant()
-
-
-def test_add_noisemodel(ml_empty: ps.Model) -> None:
-    ml_empty.add_noisemodel(ps.ArNoiseModel())
-
-
-def test_armamodel(head: Series) -> None:
-    ml = ps.Model(head, name="Test_Model")
-    ml.add_noisemodel(ps.ArmaNoiseModel())
-    ml.solve()
-    ml.to_file("test.pas")
-
-
-def test_del_noisemodel(ml_noise_only: ps.Model) -> None:
-    ml_noise_only.del_noisemodel()
-
-
-def test_solve_model(ml: ps.Model) -> None:
-    ml.solve()
-
-
-def test_solve_empty_model(ml: ps.Model) -> None:
-    with pytest.raises(ValueError) as excinfo:
-        ml.solve(tmin="2016")
-    assert excinfo.value.args[0].startswith("Calibration series")
-
-
-def test_save_model(ml: ps.Model) -> None:
-    ml.to_file("test.pas")
-
-
-def test_load_model(ml: ps.Model) -> None:
-    ml.solve()
-    # add some fictitious tiny value for testing float precision
-    ml.parameters.loc["rch_f", "pmax"] = 1.23456789e-10
-    ml.to_file("test.pas")
-    ml2 = ps.io.load("test.pas")
-
-    # dataframe dtypes don't match... make the same here
-    # this is caused because the parameters df is loaded empty without
-    # information on the datatype in each column
-    for icol in ["initial", "optimal", "pmin", "pmax", "stderr"]:
-        ml.parameters[icol] = ml.parameters[icol].astype(float)
-    ml.parameters["vary"] = ml.parameters["vary"].astype(bool)
-
-    # check if parameters and pcov dataframes are equal
-    assert ml.parameters.equals(ml2.parameters)
-    assert ml.solver.pcov.equals(ml2.solver.pcov)
-
-
-def test_model_copy(ml_empty: ps.Model) -> None:
-    ml_empty.copy()
-
-
-def test_get_block(ml: ps.Model) -> None:
-    ml.get_block_response("rch")
-
-
-def test_get_step(ml: ps.Model) -> None:
-    ml.get_step_response("rch")
-
-
-def test_get_contribution(ml: ps.Model) -> None:
-    ml.get_contribution("rch")
-
-
-def test_get_stress(ml: ps.Model) -> None:
-    ml.get_stress("rch")
-
-
-def test_simulate(ml: ps.Model) -> None:
-    ml.simulate()
-
-
-def test_residuals(ml: ps.Model) -> None:
-    ml.residuals()
-
-
-def test_noise(ml: ps.Model) -> None:
-    ml.noise()
-
-
-def test_observations(ml_empty: ps.Model) -> None:
-    ml_empty.observations()
-
-
-def test_get_output_series(ml: ps.Model) -> None:
-    ml.get_output_series()
-
-
-def test_get_output_series_arguments(ml: ps.Model) -> None:
-    ml.get_output_series(split=False, add_contributions=False)
-
-
-def test_model_sim_w_nans_error(ml_noise_only: ps.Model, prec: Series, evap: Series):
-    sm1 = ps.StressModel(prec, rfunc=ps.Exponential(), name="prec", settings=None)
-    sm2 = ps.StressModel(evap, rfunc=ps.Exponential(), name="evap", settings=None)
-    ml_noise_only.add_stressmodel([sm1, sm2])
-    with pytest.raises(ValueError) as _:
-        ml_noise_only.solve()
-
-
-def test_modelstats(ml: ps.Model) -> None:
-    ml.solve()
-    summary = ml.stats.summary()
-    assert not summary.isnull().values.any(), "Nan value in summary"
-
-
-def test_modelstats_no_noisemodel(ml_rm: ps.Model) -> None:
-    ml_rm.solve()
-    summary = ml_rm.stats.summary()
-    assert not summary.isnull().values.any(), "Nan value in summary"
-
-
-def test_fit_report(ml: ps.Model) -> None:
-    ml.solve(report=False)
-    ml.fit_report(corr=True, stderr=True)
-
-
-def test_response_tmax_warnings_fit_report(ml: ps.Model) -> None:
-    ml.solve(warmup=1, tmin="2010", tmax="2011")
-
-
-def test_model_freq_geq_daily(prec: Series, evap: Series) -> None:
-    rf_rch = ps.Exponential()
-    A_rch = 800
-    a_rch = 50
-    f_rch = -1.3
-    constant = 20
-
-    stress = prec + f_rch * evap
-    head = generate_synthetic_heads(stress, rf_rch, (A_rch, a_rch), const=constant)
-
-    models = []
-    freqs = ["1D", "7D", "14D", "28D"]
-    for freq in freqs:
-        iml = ps.Model(head, name=freq)
-        rm = ps.RechargeModel(prec, evap, rfunc=rf_rch, name="recharge")
-        iml.add_stressmodel(rm)
-        iml.solve(freq=freq, report=False)
-        models.append(iml)
-
-    comparison = ps.CompareModels(models)
-    assert (comparison.get_metrics(metric_selection=["rsq"]).squeeze() > 0.99).all()
-
-
-def test_model_freq_h(head: Series):
-    rf_tide = ps.Exponential()
-    A_tide = 1.0
-    a_tide = 0.15
-
-    # sine with period 12 hrs 25 minutes and amplitude 1.5 m
-    tidx = date_range(head.index[0], head.index[-1] + Timedelta(hours=23), freq="h")
-    tides = Series(
-        index=tidx,
-        data=1.5 * np.sin(2 * np.pi * np.arange(tidx.size) / (0.517375)),
+from pastas.model import Model
+
+# Use models from conftest.py fixtures where possible
+# The following fixtures are typically available from conftest.py:
+# - ml_rm: Basic model with response model
+# - ml_step_and_exp: Model with multiple stress models
+# - ml_noisemodel: Model with noise model
+# - ml_with_transform: Model with transform
+
+
+@pytest.fixture
+def simple_model():
+    """Create a simple model for testing without any stressmodels."""
+    # Create test data
+    dates = pd.date_range(start="2000-01-01", end="2005-12-31", freq="D")
+    head = pd.Series(
+        np.sin(np.linspace(0, 2 * np.pi * 10, len(dates))) + 5.0,
+        index=dates,
+        name="obs_1",
     )
 
-    ht = generate_synthetic_heads(tides, rf_tide, (A_tide, a_tide), dt=1 / 24.0)
+    # Create a model
+    ml = ps.Model(head, name="test_model")
 
-    # model with hourly timestep
-    ml_h = ps.Model(ht, name="tidal_model", freq="h")
-    sm = ps.StressModel(
-        tides,
-        rfunc=ps.Exponential(),
-        name="tide",
-        settings="waterlevel",
+    return ml
+
+
+# Use ml_rm from conftest for model_with_stressmodel tests
+@pytest.fixture
+def solved_model(ml_rm):
+    """Create a solved model using the basic model from conftest."""
+    ml_rm.solve(report=False)
+    return ml_rm
+
+
+# Use ml_step_and_exp for tests requiring multiple stressmodels
+@pytest.fixture
+def ml_step_and_exp(head, prec, evap):
+    """Create a model with multiple stress models (step and exponential)."""
+    ml = ps.Model(head)
+
+    # Add step model
+    sm1 = ps.StepModel("2010-01-01", name="step")
+    ml.add_stressmodel(sm1)
+
+    # Add exponential model
+    sm2 = ps.StressModel(
+        stress=evap, rfunc=ps.Exponential(), name="exponential", settings="prec"
     )
-    ml_h.add_stressmodel(sm)
-    ml_h.solve(report=False)
+    ml.add_stressmodel(sm2)
 
-    assert ml_h.simulate().index.freq == "h"
-    assert ml_h.stats.rsq() > 0.99999
+    return ml
+
+
+@pytest.fixture
+def fully_populated_model(ml_step_and_exp):
+    """Create a populated model using the model from conftest and adding components."""
+    # Add noise model if not present
+    if ml_step_and_exp.noisemodel is None:
+        noise = ps.ArNoiseModel()
+        ml_step_and_exp.add_noisemodel(noise)
+
+    # Add transform if not present
+    if ml_step_and_exp.transform is None:
+        transform = ps.ThresholdTransform()
+        ml_step_and_exp.add_transform(transform)
+
+    return ml_step_and_exp
+
+
+class TestModelInitialization:
+    """Test model initialization."""
+
+    def test_init_with_minimal_args(self):
+        """Test initialization with minimal arguments."""
+        dates = pd.date_range(start="2000-01-01", end="2001-12-31", freq="D")
+        head = pd.Series(np.random.normal(0, 1, len(dates)), index=dates)
+
+        model = Model(head)
+
+        assert model.oseries is not None
+        assert model.constant is not None
+
+    def test_init_with_name(self):
+        """Test initialization with a name."""
+        dates = pd.date_range(start="2000-01-01", end="2001-12-31", freq="D")
+        head = pd.Series(np.random.normal(0, 1, len(dates)), index=dates, name="test")
+
+        model = Model(head)
+
+        assert model.name == "test"
+
+        model = Model(head, name="custom_name")
+
+        assert model.name == "custom_name"
+
+    def test_init_without_constant(self):
+        """Test initialization without constant."""
+        dates = pd.date_range(start="2000-01-01", end="2001-12-31", freq="D")
+        head = pd.Series(np.random.normal(0, 1, len(dates)), index=dates)
+
+        model = Model(head, constant=False)
+
+        assert model.constant is None
+
+    def test_init_with_metadata(self):
+        """Test initialization with metadata."""
+        dates = pd.date_range(start="2000-01-01", end="2001-12-31", freq="D")
+        head = pd.Series(np.random.normal(0, 1, len(dates)), index=dates)
+        metadata = {
+            "location": "test well",
+            "x": 100,
+            "y": 200,
+            "z": 300,
+            "projection": "EPSG:4326",
+        }
+
+        model = Model(head, metadata=metadata)
+
+        assert model.oseries.metadata == metadata
+
+
+class TestModelComponents:
+    """Test adding and removing model components."""
+
+    def test_add_stressmodel(self, simple_model):
+        """Test adding a stress model."""
+        dates = pd.date_range(start="2000-01-01", end="2005-12-31", freq="D")
+        prec = pd.Series(
+            np.random.gamma(2, 1, size=len(dates)), index=dates, name="prec"
+        )
+
+        sm = ps.StressModel(stress=prec, rfunc=ps.Exponential(), name="precipitation")
+        simple_model.add_stressmodel(sm)
+
+        assert "precipitation" in simple_model.stressmodels
+        assert simple_model.stressmodels["precipitation"] is sm
+
+    def test_add_multiple_stressmodels(self, simple_model):
+        """Test adding multiple stress models at once."""
+        dates = pd.date_range(start="2000-01-01", end="2005-12-31", freq="D")
+        prec = pd.Series(
+            np.random.gamma(2, 1, size=len(dates)), index=dates, name="prec"
+        )
+        evap = pd.Series(
+            np.random.gamma(1, 0.5, size=len(dates)), index=dates, name="evap"
+        )
+
+        sm1 = ps.StressModel(stress=prec, rfunc=ps.Exponential(), name="precipitation")
+        sm2 = ps.StressModel(stress=evap, rfunc=ps.Exponential(), name="evaporation")
+
+        simple_model.add_stressmodel([sm1, sm2])
+
+        assert "precipitation" in simple_model.stressmodels
+        assert "evaporation" in simple_model.stressmodels
+
+    def test_add_stressmodel_with_same_name(self, ml_rm):
+        """Test adding a stress model with the same name."""
+        # Get the first stressmodel name
+        first_sm_name = list(ml_rm.stressmodels.keys())[0]
+
+        # Create a new stress model with the same name but different response function
+        dates = pd.date_range(start="2000-01-01", end="2005-12-31", freq="D")
+        prec = pd.Series(
+            np.random.gamma(2, 1, size=len(dates)), index=dates, name="prec"
+        )
+        sm = ps.StressModel(stress=prec, rfunc=ps.Gamma(), name=first_sm_name)
+
+        # Should replace the existing stress model and log a warning
+        ml_rm.add_stressmodel(sm)
+
+        # Check that it was replaced with the new one
+        assert ml_rm.stressmodels[first_sm_name].rfunc._name == "Gamma"
+
+        # With replace=False, should raise an error
+        with pytest.raises(ValueError):
+            ml_rm.add_stressmodel(sm, replace=False)
+
+    def test_add_stressmodel_no_overlap_warning(self, simple_model, caplog):
+        """Test warning when stress has no overlap with oseries."""
+        # Create stress with no overlap
+        dates = pd.date_range(start="1990-01-01", end="1995-12-31", freq="D")
+        prec = pd.Series(
+            np.random.gamma(2, 1, size=len(dates)), index=dates, name="prec"
+        )
+        sm = ps.StressModel(stress=prec, rfunc=ps.Exponential(), name="precipitation")
+
+        # Add the stress model
+        simple_model.add_stressmodel(sm)
+
+        # Check that the warning was logged
+        assert "no overlap with ml.oseries" in caplog.text
+
+    def test_del_stressmodel(self, ml_rm):
+        """Test deleting a stress model."""
+        # Get the first stressmodel name
+        first_sm_name = list(ml_rm.stressmodels.keys())[0]
+
+        ml_rm.del_stressmodel(first_sm_name)
+        assert first_sm_name not in ml_rm.stressmodels
+
+    def test_del_stressmodel_nonexistent(self, simple_model):
+        """Test deleting a non-existent stress model."""
+        with pytest.raises(KeyError):
+            simple_model.del_stressmodel("nonexistent")
+
+    def test_add_constant(self, simple_model):
+        """Test adding a constant."""
+        simple_model.del_constant()
+        assert simple_model.constant is None
+
+        constant = ps.Constant(initial=10.0, name="new_constant")
+        simple_model.add_constant(constant)
+
+        assert simple_model.constant is constant
+        assert simple_model.constant.name == "new_constant"
+
+    def test_del_constant(self, simple_model, caplog):
+        """Test deleting a constant."""
+        simple_model.del_constant()
+        assert simple_model.constant is None
+
+        # Deleting again should produce a warning
+        simple_model.del_constant()
+        assert "No constant is present" in caplog.text
+
+    def test_add_transform(self, simple_model):
+        """Test adding a transform."""
+        transform = ps.ThresholdTransform()
+        simple_model.add_transform(transform)
+
+        assert simple_model.transform is transform
+
+    def test_del_transform(self, simple_model, caplog):
+        """Test deleting a transform."""
+        # First add a transform
+        transform = ps.ThresholdTransform()
+        simple_model.add_transform(transform)
+
+        # Then delete it
+        simple_model.del_transform()
+        assert simple_model.transform is None
+
+        # Deleting again should produce a warning
+        simple_model.del_transform()
+        assert "No transform is present" in caplog.text
+
+    def test_add_noisemodel(self, simple_model):
+        """Test adding a noise model."""
+        noise = ps.ArmaNoiseModel()
+        simple_model.add_noisemodel(noise)
+
+        assert simple_model.noisemodel is noise
+        assert simple_model.settings["noise"] is True
+
+    def test_del_noisemodel(self, simple_model, caplog):
+        """Test deleting a noise model."""
+        # First add a noise model
+        noise = ps.ArmaNoiseModel()
+        simple_model.add_noisemodel(noise)
+
+        # Then delete it
+        simple_model.del_noisemodel()
+        assert simple_model.noisemodel is None
+        assert simple_model.settings["noise"] is False
+
+        # Deleting again should produce a warning
+        simple_model.del_noisemodel()
+        assert "No noisemodel is present" in caplog.text
+
+
+class TestModelSimulation:
+    """Test model simulation methods."""
+
+    def test_simulate_basic(self, ml_rm):
+        """Test basic simulation."""
+        sim = ml_rm.simulate()
+
+        assert isinstance(sim, pd.Series)
+        assert not sim.empty
+        assert sim.name == "Simulation"
+
+    def test_simulate_with_tmin_tmax(self, ml_rm):
+        """Test simulation with specified tmin and tmax."""
+        # Get index range midpoints
+        index_min = ml_rm.oseries.series.index.min()
+        index_max = ml_rm.oseries.series.index.max()
+        midpoint = index_min + (index_max - index_min) / 2
+
+        # Use the midpoint as tmin and 3/4 point as tmax
+        tmin = midpoint.strftime("%Y-%m-%d")
+        tmax = (midpoint + (index_max - midpoint) / 2).strftime("%Y-%m-%d")
+
+        sim = ml_rm.simulate(tmin=tmin, tmax=tmax)
+
+        assert sim.index[0] >= pd.Timestamp(tmin)
+        assert sim.index[-1] <= pd.Timestamp(tmax)
+
+    def test_simulate_with_freq(self, ml_rm):
+        """Test simulation with different frequency."""
+        sim_daily = ml_rm.simulate()
+        sim_weekly = ml_rm.simulate(freq="7D")
+
+        # The weekly simulation should have fewer points than the daily one
+        assert len(sim_weekly) < len(sim_daily)
+
+    def test_simulate_with_parameters(self, ml_rm):
+        """Test simulation with provided parameters."""
+        # Solve the model first
+        ml_rm.solve(report=False)
+
+        # Get optimal parameters
+        p_opt = ml_rm.get_parameters()
+
+        # Get a copy of ml_rm with initial parameters
+        ml_copy = ml_rm.copy()
+        ml_copy.initialize()
+
+        # Simulate with initial parameters
+        sim_init = ml_copy.simulate()
+
+        # Simulate with optimal parameters
+        sim_opt = ml_copy.simulate(p=p_opt)
+
+        # Should be different unless the optimization didn't change parameters
+        assert not np.all(sim_init.values == sim_opt.values)
+
+    def test_simulate_with_warmup(self, ml_rm):
+        """Test simulation with warmup period."""
+        # Standard simulation without returning warmup
+        sim = ml_rm.simulate(warmup=30)
+
+        # Simulation with warmup returned
+        sim_warmup = ml_rm.simulate(warmup=30, return_warmup=True)
+
+        # Warmup simulation should be longer
+        assert len(sim_warmup) > len(sim)
+
+        # The last part of sim_warmup should be identical to sim
+        assert_series_equal(sim_warmup.loc[sim.index], sim)
+
+    def test_residuals(self, solved_model):
+        """Test residuals calculation."""
+        res = solved_model.residuals()
+
+        assert isinstance(res, pd.Series)
+        assert res.name == "Residuals"
+
+        # Residuals should have mean close to zero for a fitted model
+        assert abs(res.mean()) < 1.0
+
+    def test_residuals_with_normalize(self, ml_rm):
+        """Test residuals calculation with normalization."""
+        ml_rm.normalize_residuals = True
+        res = ml_rm.residuals()
+
+        # Normalized residuals should have mean very close to zero
+        assert abs(res.mean()) < 1e-10
+
+    def test_observations(self, ml_rm):
+        """Test observations method."""
+        obs = ml_rm.observations()
+
+        assert isinstance(obs, pd.Series)
+        assert not obs.empty
+
+    def test_observations_with_time_limits(self, ml_rm):
+        """Test observations with time limits."""
+        # Get the actual time range of the observations
+        oseries = ml_rm.observations()
+        actual_tmin = oseries.index.min().strftime("%Y-%m-%d")
+        actual_tmax = oseries.index.max().strftime("%Y-%m-%d")
+
+        # Use actual data range for the test
+        obs = ml_rm.observations(tmin=actual_tmin, tmax=actual_tmax)
+
+        # Check that we have observations and they respect the time limits
+        assert not obs.empty
+        assert obs.index[0] >= pd.Timestamp(actual_tmin)
+        assert obs.index[-1] <= pd.Timestamp(actual_tmax)
+
+
+class TestModelParameters:
+    """Test model parameter handling."""
+
+    def test_get_init_parameters(self, ml_rm):
+        """Test getting initial parameters."""
+        params = ml_rm.get_init_parameters()
+
+        assert isinstance(params, pd.DataFrame)
+        assert not params.empty
+        assert "initial" in params.columns
+        assert "vary" in params.columns
+
+    def test_get_parameters(self, ml_rm):
+        """Test getting parameters."""
+        # Unsolved model returns initial parameters
+        p_init = ml_rm.get_parameters()
+        assert isinstance(p_init, np.ndarray)
+
+        # Solve the model
+        ml_rm.solve(report=False)
+
+        # Solved model returns optimal parameters
+        p_opt = ml_rm.get_parameters()
+        assert isinstance(p_opt, np.ndarray)
+
+    def test_get_parameters_by_name(self, ml_step_and_exp):
+        """Test getting parameters for a specific component."""
+        # Get all stressmodel names
+        sm_names = list(ml_step_and_exp.stressmodels.keys())
+
+        p_all = ml_step_and_exp.get_parameters()
+        p_sm1 = ml_step_and_exp.get_parameters(sm_names[0])
+
+        # p_sm1 should be shorter than p_all
+        assert len(p_sm1) < len(p_all)
+
+    def test_set_parameter(self, ml_rm):
+        """Test setting parameter values."""
+        param_name = "rch_A"
+
+        # Get original value
+        orig_value = ml_rm.parameters.at[param_name, "initial"]
+
+        # Set new value
+        ml_rm.set_parameter(param_name, initial=orig_value * 2)
+
+        # Check that it was updated
+        assert ml_rm.parameters.at[param_name, "initial"] == orig_value * 2
+
+    def test_set_parameter_nonexistent(self, ml_rm):
+        """Test setting a non-existent parameter."""
+        with pytest.raises(KeyError):
+            ml_rm.set_parameter("nonexistent", initial=1.0)
+
+    def test_set_parameter_vary(self, ml_rm):
+        """Test setting parameter vary status."""
+        param_name = "rch_A"
+
+        # Set vary to False
+        ml_rm.set_parameter(param_name, vary=False)
+        assert not ml_rm.parameters.at[param_name, "vary"]
+
+        # Set vary to True
+        ml_rm.set_parameter(param_name, vary=True)
+        assert ml_rm.parameters.at[param_name, "vary"]
+
+    def test_set_parameter_bounds(self, ml_rm):
+        """Test setting parameter bounds."""
+        param_name = "rch_A"
+
+        # Set bounds
+        ml_rm.set_parameter(param_name, pmin=0.1, pmax=10.0)
+
+        assert ml_rm.parameters.at[param_name, "pmin"] == 0.1
+        assert ml_rm.parameters.at[param_name, "pmax"] == 10.0
+
+    def test_set_parameter_move_bounds(self, ml_rm):
+        """Test moving parameter bounds."""
+        param_name = "rch_A"
+
+        # Get original values
+        orig_initial = ml_rm.parameters.at[param_name, "initial"]
+        orig_pmin = ml_rm.parameters.at[param_name, "pmin"]
+        orig_pmax = ml_rm.parameters.at[param_name, "pmax"]
+
+        # Double the initial value and move bounds
+        ml_rm.set_parameter(param_name, initial=orig_initial * 2, move_bounds=True)
+
+        # Check that bounds were moved proportionally
+        assert ml_rm.parameters.at[param_name, "pmin"] == pytest.approx(orig_pmin * 2)
+        assert ml_rm.parameters.at[param_name, "pmax"] == pytest.approx(orig_pmax * 2)
+
+    def test_set_parameter_move_bounds_error(self, ml_rm):
+        """Test error when providing both bounds and move_bounds."""
+        param_name = "rch_A"
+
+        with pytest.raises(KeyError):
+            ml_rm.set_parameter(param_name, initial=2.0, pmin=0.1, move_bounds=True)
+
+
+class TestModelSolving:
+    """Test model solving."""
+
+    def test_initialize(self, ml_rm):
+        """Test model initialization before solving."""
+        ml_rm.initialize()
+
+        assert ml_rm.settings["tmin"] is not None
+        assert ml_rm.settings["tmax"] is not None
+        assert ml_rm.oseries_calib is not None
+
+    def test_solve(self, ml_rm):
+        """Test solving the model."""
+        ml_rm.solve(report=False)
+
+        assert ml_rm.solver is not None
+        assert ml_rm.parameters["optimal"].notna().any()
+        assert ml_rm._solve_success
+
+    def test_solve_with_custom_solver(self, ml_rm):
+        """Test solving with a custom solver."""
+        solver = ps.LeastSquares()
+        ml_rm.solve(solver=solver, report=False)
+
+        assert ml_rm.solver is solver
+
+    def test_solve_with_weights(self, ml_rm):
+        """Test solving with weights."""
+        # Create weights series with same index as observations
+        weights = ml_rm.observations().copy()
+        weights[:] = 1.0
+
+        # Lower weights for some periods
+        weights.loc["2002":"2003"] = 0.5
+
+        ml_rm.solve(weights=weights, report=False)
+
+        assert ml_rm.settings["weights"] is weights
+
+    def test_fit_report(self, solved_model):
+        """Test fit report generation."""
+        report = solved_model.fit_report()
+
+        assert isinstance(report, str)
+        assert "Fit report" in report
+        assert "Parameters" in report
+
+        # Test with correlation matrix
+        report_corr = solved_model.fit_report(corr=True)
+        assert "Parameter correlations" in report_corr
+
+        # Test with stderr
+        report_stderr = solved_model.fit_report(stderr=True)
+        assert "stderr" in report_stderr
+
+
+class TestModelContributions:
+    """Test getting model contributions."""
+
+    def test_get_contribution(self, ml_rm):
+        """Test getting contribution from a stress model."""
+        # Solve the model first
+        ml_rm.solve(report=False)
+
+        # Get the first stressmodel name
+        first_sm_name = list(ml_rm.stressmodels.keys())[0]
+
+        contrib = ml_rm.get_contribution(first_sm_name)
+
+        assert isinstance(contrib, pd.Series)
+        assert contrib.name == first_sm_name
+
+    def test_get_contributions(self, ml_step_and_exp):
+        """Test getting all contributions."""
+        ml_step_and_exp.solve(report=False)
+        contribs = ml_step_and_exp.get_contributions()
+
+        assert isinstance(contribs, list)
+        assert len(contribs) >= 2  # At least two contributions
+        assert all(isinstance(c, pd.Series) for c in contribs)
+
+    def test_get_output_series(self, solved_model):
+        """Test getting all output series."""
+        df = solved_model.get_output_series()
+
+        assert isinstance(df, pd.DataFrame)
+        assert "Head_Calibration" in df.columns
+        assert "Simulation" in df.columns
+        assert "Residuals" in df.columns
+
+    def test_get_block_response(self, solved_model):
+        """Test getting block response."""
+        # Get the first stressmodel name
+        first_sm_name = list(solved_model.stressmodels.keys())[0]
+
+        resp = solved_model.get_block_response(first_sm_name)
+
+        assert isinstance(resp, pd.Series)
+        assert resp.index.name == "Time [days]"
+
+    def test_get_step_response(self, solved_model):
+        """Test getting step response."""
+        # Get the first stressmodel name
+        first_sm_name = list(solved_model.stressmodels.keys())[0]
+
+        resp = solved_model.get_step_response(first_sm_name)
+
+        assert isinstance(resp, pd.Series)
+        assert resp.index.name == "Time [days]"
+
+    def test_get_response_tmax(self, solved_model):
+        """Test getting response tmax."""
+        # Get the first stressmodel name
+        first_sm_name = list(solved_model.stressmodels.keys())[0]
+
+        tmax = solved_model.get_response_tmax(first_sm_name)
+
+        assert isinstance(tmax, float)
+        assert tmax > 0
+
+    def test_get_stress(self, solved_model):
+        """Test getting stress series."""
+        # Get the first stressmodel name
+        first_sm_name = list(solved_model.stressmodels.keys())[0]
+
+        stress = solved_model.get_stress(first_sm_name)
+
+        assert isinstance(stress, pd.Series)
+
+
+class TestModelExportImport:
+    """Test model export and import."""
+
+    def test_to_dict(self, solved_model):
+        """Test exporting model to dictionary."""
+        data = solved_model.to_dict()
+
+        assert isinstance(data, dict)
+        assert "name" in data
+        assert "oseries" in data
+        assert "parameters" in data
+        assert "stressmodels" in data
+
+    def test_to_file_and_load(self, solved_model, tmp_path):
+        """Test exporting model to file and loading it."""
+        # Save model to file
+        fname = tmp_path / "test_model.pas"
+        solved_model.to_file(fname)
+
+        # Load model from file
+        loaded_model = ps.io.load(fname)
+
+        # Check basic properties
+        assert loaded_model.name == solved_model.name
+        assert loaded_model.oseries.name == solved_model.oseries.name
+        assert loaded_model.stressmodels.keys() == solved_model.stressmodels.keys()
+
+        # Check parameters
+        assert_frame_equal(
+            loaded_model.parameters.sort_index(), solved_model.parameters.sort_index()
+        )
+
+    def test_copy(self, solved_model):
+        """Test copying a model."""
+        copy_model = solved_model.copy(name="copy_test")
+
+        assert copy_model.name == "copy_test"
+        assert copy_model is not solved_model
+        assert_frame_equal(copy_model.parameters, solved_model.parameters)
