@@ -126,7 +126,10 @@ def forecast(ml, forecasts, nparam=1, params=None, alpha=0.95, post_process=Fals
 
     # Generate parameter sets
     if params is None:
-        params = ml2.solver.get_parameter_sample(n=nparam)
+        params = ml2.solver.get_parameter_sample(n=nparam, max_iter=100)
+        # In case not enough samples could be drawn
+        if len(params) < nparam:
+            nparam = len(params)
     else:
         nparam = len(params)
 
