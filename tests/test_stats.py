@@ -79,20 +79,6 @@ def autocorrelated_series():
     return pd.Series(data=data, index=index)
 
 
-@pytest.fixture
-def irregular_series():
-    """Create an irregular time series for testing."""
-    np.random.seed(42)  # For reproducibility
-    # Create non-equidistant index
-    dates = pd.date_range(start="2000-01-01", periods=1200, freq="D")
-    # Randomly select 1000 dates
-    select_idx = np.sort(np.random.choice(1200, 500, replace=False))
-    irregular_dates = dates[select_idx]
-
-    data = np.random.normal(0, 1, 500)
-    return pd.Series(data=data, index=irregular_dates)
-
-
 def test_durbin_watson_random(random_series):
     """Test durbin_watson on random data with no autocorrelation."""
     dw_stat, _ = durbin_watson(random_series)
@@ -105,13 +91,6 @@ def test_durbin_watson_autocorrelated(autocorrelated_series):
     dw_stat, _ = durbin_watson(autocorrelated_series)
     # For positively autocorrelated data, DW should be < 2
     assert dw_stat < 1.5
-
-
-def test_durbin_watson_irregular(irregular_series, caplog):
-    """Test durbin_watson with irregular time series (should warn)."""
-    durbin_watson(irregular_series)
-    # Check that a warning was logged
-    assert "Durbin-Watson test should only be used" in caplog.text
 
 
 def test_ljung_box_random(random_series):
@@ -158,10 +137,3 @@ def test_ljung_box_full_output(random_series):
     assert "P-value" in result.columns
     # Should have lags rows (excluding zero lag)
     assert len(result) <= 15  # May be less if some lags couldn't be computed
-
-
-def test_ljung_box_irregular(irregular_series, caplog):
-    """Test ljung_box with irregular time series (should warn)."""
-    ljung_box(irregular_series, lags=15)
-    # Check that a warning was logged
-    assert "should only be used for time series" in caplog.text

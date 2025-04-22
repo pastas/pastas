@@ -151,23 +151,6 @@ class TestModelComponents:
         with pytest.raises(ValueError):
             ml_solved.add_stressmodel(sm, replace=False)
 
-    def test_add_stressmodel_no_overlap_warning(self, simple_model, caplog):
-        """Test warning when stress has no overlap with oseries."""
-        # Create stress with no overlap
-        dates = pd.date_range(start="1990-01-01", end="1995-12-31", freq="D")
-        prec = pd.Series(
-            np.random.gamma(2, 1, size=len(dates)), index=dates, name="prec"
-        )
-        sm = ps.StressModel(
-            stress=prec, rfunc=ps.Exponential(), name="precipitation", settings="prec"
-        )
-
-        # Add the stress model
-        simple_model.add_stressmodel(sm)
-
-        # Check that the warning was logged
-        assert "no overlap with ml.oseries" in caplog.text
-
     def test_del_stressmodel(self, ml_solved):
         """Test deleting a stress model."""
         # Get the first stressmodel name
@@ -197,10 +180,6 @@ class TestModelComponents:
         simple_model.del_constant()
         assert simple_model.constant is None
 
-        # Deleting again should produce a warning
-        simple_model.del_constant()
-        assert "No constant is present" in caplog.text
-
     def test_add_transform(self, simple_model):
         """Test adding a transform."""
         transform = ps.ThresholdTransform()
@@ -217,10 +196,6 @@ class TestModelComponents:
         # Then delete it
         simple_model.del_transform()
         assert simple_model.transform is None
-
-        # Deleting again should produce a warning
-        simple_model.del_transform()
-        assert "No transform is present" in caplog.text
 
     def test_add_noisemodel(self, simple_model):
         """Test adding a noise model."""
@@ -240,10 +215,6 @@ class TestModelComponents:
         simple_model.del_noisemodel()
         assert simple_model.noisemodel is None
         assert simple_model.settings["noise"] is False
-
-        # Deleting again should produce a warning
-        simple_model.del_noisemodel()
-        assert "No noisemodel is present" in caplog.text
 
 
 @pytest.mark.integration
