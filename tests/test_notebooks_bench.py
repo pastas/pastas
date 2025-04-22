@@ -13,7 +13,6 @@ if os.path.isdir(os.path.join(pathname, testdir)):
 os.mkdir(os.path.join(pathname, testdir))
 
 
-@pytest.mark.bnotebooks
 @pytest.mark.parametrize("file", files)
 def test_notebook(file) -> None:
     cwd = os.getcwd()
