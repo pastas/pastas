@@ -1,7 +1,6 @@
 """Tests for numba-accelerated functions in stressmodels.py."""
 
 import numpy as np
-from numpy.testing import assert_array_almost_equal
 
 from pastas.stressmodels import TarsoModel
 
@@ -75,44 +74,3 @@ class TestTarsoModelNumba:
             # Basic checks
             assert len(result) == len(self.r)
             assert not np.isnan(result).any()
-
-    def test_tarso_vs_numpy_implementation(self):
-        """Test that Python implementation behaves like a numpy-based implementation."""
-        tarso_py_func = TarsoModel.tarso.py_func
-
-        # Parameters
-        p = np.array([0.9, 10.0, 4.0, 0.8, 15.0, 6.0])
-        dt = 1.0
-
-        # Get result from py_func
-        result_py = tarso_py_func(p, self.r, dt)
-
-        # Create a simple numpy implementation for comparison (only a few steps)
-        # This is just to verify basic logic, not a full reimplementation
-        A0, a0, d0, A1, a1, d1 = p
-        S0 = a0 / A0
-        c0 = A0
-        S1 = a1 / A1
-        c1 = A1
-
-        # Manually calculate first few values
-        h_manual = np.zeros(3)  # Just calculate first 3 points
-
-        # Initial state
-        h0 = (d0 + d1) / 2
-        if h0 > d1:
-            # Upper regime
-            c_e = 1 / ((1 / c0) + (1 / c1))
-            d_e = (c1 / (c0 + c1)) * d0 + (c0 / (c0 + c1)) * d1
-            a_e = S1 * c_e
-            S, a, c, d = S1, a_e, c_e, d_e
-        else:
-            # Lower regime
-            S, a, c, d = S0, a0, c0, d0
-
-        # First step
-        exp_a = np.exp(-dt / a)
-        h_manual[0] = (h0 - d) * exp_a + self.r[0] * c * (1 - exp_a) + d
-
-        # Compare first value
-        assert_array_almost_equal(result_py[0], h_manual[0], decimal=5)

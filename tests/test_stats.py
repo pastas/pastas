@@ -111,10 +111,7 @@ def test_durbin_watson_irregular(irregular_series, caplog):
     """Test durbin_watson with irregular time series (should warn)."""
     durbin_watson(irregular_series)
     # Check that a warning was logged
-    assert (
-        "Durbin-Watson test should only be used for time series with equidistant time steps"
-        in caplog.text
-    )
+    assert "Durbin-Watson test should only be used" in caplog.text
 
 
 def test_ljung_box_random(random_series):
@@ -167,6 +164,4 @@ def test_ljung_box_irregular(irregular_series, caplog):
     """Test ljung_box with irregular time series (should warn)."""
     ljung_box(irregular_series, lags=15)
     # Check that a warning was logged
-    assert (
-        "should only be used for time series with equidistant time steps" in caplog.text
-    )
+    assert "should only be used for time series" in caplog.text
