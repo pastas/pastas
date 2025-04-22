@@ -45,7 +45,7 @@ class TestArNoiseModel:
 
         # Test initialization with norm=False
         model = ArNoiseModel(norm=False)
-        assert model.norm is False
+        assert not model.norm
 
     def test_set_init_parameters(self):
         """Test setting initial parameters with and without oseries."""
@@ -218,7 +218,7 @@ class TestParameterSetting:
 
         # Test setting vary
         model._set_vary("noise_alpha", False)
-        assert model.parameters.loc["noise_alpha", "vary"] == False
+        assert not model.parameters.loc["noise_alpha", "vary"]
 
         # Test setting distribution
         model._set_dist("noise_alpha", "normal")
