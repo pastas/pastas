@@ -23,10 +23,10 @@ class TestInputValidation:
         with pytest.raises(ValueError):
             TimeSeries(nan_series)
 
-    def test_invalid_model_parameters(self, ml_solved):
+    def test_invalid_model_parameters(self, ml_noisemodel):
         """Test handling of invalid model parameters."""
         # Use the ml_solved fixture from conftest.py
-        ml = ml_solved
+        ml = ml_noisemodel
 
         # Test invalid parameter name
         with pytest.raises(KeyError):

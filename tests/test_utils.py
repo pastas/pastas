@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
+# Use test utilities from the dedicated file
 from pastas import utils
 
 
@@ -23,18 +24,18 @@ def test_logger():
 class TestGetStressTminTmax:
     """Test get_stress_tmin_tmax function."""
 
-    def test_with_valid_model(self, ml_rm):
+    def test_with_valid_model(self, ml_solved):
         """Test with a valid model."""
         # Test function with real model from conftest
-        tmin, tmax = utils.get_stress_tmin_tmax(ml_rm)
+        tmin, tmax = utils.get_stress_tmin_tmax(ml_solved)
 
         # Verify correct types
         assert isinstance(tmin, pd.Timestamp)
         assert isinstance(tmax, pd.Timestamp)
 
         # Verify tmin and tmax make sense relative to stress data
-        for sm_name in ml_rm.stressmodels:
-            for stress in ml_rm.stressmodels[sm_name].stress:
+        for sm_name in ml_solved.stressmodels:
+            for stress in ml_solved.stressmodels[sm_name].stress:
                 stress_tmin = stress.series_original.index.min()
                 stress_tmax = stress.series_original.index.max()
                 # tmin should be <= each stress's max time

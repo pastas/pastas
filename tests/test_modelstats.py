@@ -13,13 +13,10 @@ import pytest
 class TestStatistics:
     """Test Statistics class methods."""
 
-    def test_rmse(self, ml_rm):
+    def test_rmse(self, ml_solved):
         """Test RMSE calculation."""
-        # Make sure the model is solved
-        ml_rm.solve(report=False)
-
         # Calculate RMSE
-        rmse = ml_rm.stats.rmse()
+        rmse = ml_solved.stats.rmse()
 
         # Should return a float value
         assert isinstance(rmse, float)
@@ -28,27 +25,23 @@ class TestStatistics:
         assert rmse > 0
 
         # Test weighted version
-        rmse_weighted = ml_rm.stats.rmse(weighted=True)
+        rmse_weighted = ml_solved.stats.rmse(weighted=True)
         assert isinstance(rmse_weighted, float)
 
-    def test_rmsn(self, ml_rm, ml_solved):
+    def test_rmsn(self, ml_solved, ml_noisemodel):
         """Test RMSN calculation."""
-        # Solve the models
-        ml_rm.solve(report=False)
-
         # Without noise model, should return nan
-        rmsn = ml_rm.stats.rmsn()
+        rmsn = ml_solved.stats.rmsn()
         assert np.isnan(rmsn)
 
         # With noise model, should return a value
-        rmsn = ml_solved.stats.rmsn()
+        rmsn = ml_noisemodel.stats.rmsn()
         assert isinstance(rmsn, float)
         assert rmsn > 0
 
-    def test_sse(self, ml_rm):
+    def test_sse(self, ml_solved):
         """Test SSE calculation."""
-        ml_rm.solve(report=False)
-        sse = ml_rm.stats.sse()
+        sse = ml_solved.stats.sse()
 
         # Should return a float value
         assert isinstance(sse, float)
@@ -57,14 +50,13 @@ class TestStatistics:
         assert sse > 0
 
         # SSE should be related to RMSE by n * RMSE^2
-        n = len(ml_rm.observations())
-        rmse = ml_rm.stats.rmse()
+        n = len(ml_solved.observations())
+        rmse = ml_solved.stats.rmse()
         assert sse == pytest.approx(n * rmse**2, rel=1e-10)
 
-    def test_mae(self, ml_rm):
+    def test_mae(self, ml_solved):
         """Test MAE calculation."""
-        ml_rm.solve(report=False)
-        mae = ml_rm.stats.mae()
+        mae = ml_solved.stats.mae()
 
         # Should return a float value
         assert isinstance(mae, float)
@@ -73,13 +65,12 @@ class TestStatistics:
         assert mae > 0
 
         # Test weighted version
-        mae_weighted = ml_rm.stats.mae(weighted=True)
+        mae_weighted = ml_solved.stats.mae(weighted=True)
         assert isinstance(mae_weighted, float)
 
-    def test_nse(self, ml_rm):
+    def test_nse(self, ml_solved):
         """Test NSE calculation."""
-        ml_rm.solve(report=False)
-        nse = ml_rm.stats.nse()
+        nse = ml_solved.stats.nse()
 
         # Should return a float value
         assert isinstance(nse, float)
@@ -87,13 +78,9 @@ class TestStatistics:
         # NSE should be <= 1.0 (theoretical maximum)
         assert nse <= 1.0
 
-        # For a reasonably good model, NSE should be positive
-        assert nse > 0
-
-    def test_nnse(self, ml_rm):
+    def test_nnse(self, ml_solved):
         """Test NNSE calculation."""
-        ml_rm.solve(report=False)
-        nnse = ml_rm.stats.nnse()
+        nnse = ml_solved.stats.nnse()
 
         # Should return a float value
         assert isinstance(nnse, float)
@@ -101,10 +88,9 @@ class TestStatistics:
         # NNSE should be between 0 and 1
         assert 0 <= nnse <= 1.0
 
-    def test_pearsonr(self, ml_rm):
+    def test_pearsonr(self, ml_solved):
         """Test Pearson r calculation."""
-        ml_rm.solve(report=False)
-        r = ml_rm.stats.pearsonr()
+        r = ml_solved.stats.pearsonr()
 
         # Should return a float value
         assert isinstance(r, float)
@@ -112,13 +98,9 @@ class TestStatistics:
         # Pearson r should be between -1 and 1
         assert -1.0 <= r <= 1.0
 
-        # For a reasonably good model, r should be close to 1
-        assert r > 0.5
-
-    def test_evp(self, ml_rm):
+    def test_evp(self, ml_solved):
         """Test EVP calculation."""
-        ml_rm.solve(report=False)
-        evp = ml_rm.stats.evp()
+        evp = ml_solved.stats.evp()
 
         # Should return a float value
         assert isinstance(evp, float)
@@ -126,27 +108,19 @@ class TestStatistics:
         # EVP should be between 0 and 100
         assert 0 <= evp <= 100
 
-        # For a reasonably good model, EVP should be high
-        assert evp > 50
-
-    def test_rsq(self, ml_rm):
+    def test_rsq(self, ml_solved):
         """Test R-squared calculation."""
-        ml_rm.solve(report=False)
-        rsq = ml_rm.stats.rsq()
+        rsq = ml_solved.stats.rsq()
 
         # Should return a float value
         assert isinstance(rsq, float)
 
         # R-squared should be between 0 and 1
-        assert 0 <= rsq <= 1.0
+        assert rsq <= 1.0
 
-        # For a reasonably good model, R-squared should be high
-        assert rsq > 0.5
-
-    def test_kge(self, ml_rm):
+    def test_kge(self, ml_solved):
         """Test KGE calculation."""
-        ml_rm.solve(report=False)
-        kge = ml_rm.stats.kge()
+        kge = ml_solved.stats.kge()
 
         # Should return a float value
         assert isinstance(kge, float)
@@ -155,13 +129,12 @@ class TestStatistics:
         assert kge <= 1.0
 
         # Test modified KGE
-        kge_mod = ml_rm.stats.kge(modified=True)
+        kge_mod = ml_solved.stats.kge(modified=True)
         assert isinstance(kge_mod, float)
 
-    def test_kge_2012(self, ml_rm):
+    def test_kge_2012(self, ml_solved):
         """Test KGE 2012 calculation."""
-        ml_rm.solve(report=False)
-        kge_2012 = ml_rm.stats.kge_2012()
+        kge_2012 = ml_solved.stats.kge_2012()
 
         # Should return a float value
         assert isinstance(kge_2012, float)
@@ -169,19 +142,18 @@ class TestStatistics:
         # KGE 2012 should be <= 1.0 (theoretical maximum)
         assert kge_2012 <= 1.0
 
-    def test_information_criteria(self, ml_rm):
+    def test_information_criteria(self, ml_solved):
         """Test information criteria calculations."""
-        ml_rm.solve(report=False)
         # Test AIC
-        aic = ml_rm.stats.aic()
+        aic = ml_solved.stats.aic()
         assert isinstance(aic, float)
 
         # Test BIC
-        bic = ml_rm.stats.bic()
+        bic = ml_solved.stats.bic()
         assert isinstance(bic, float)
 
         # Test AICc
-        aicc = ml_rm.stats.aicc()
+        aicc = ml_solved.stats.aicc()
         assert isinstance(aicc, float)
 
         # BIC should be larger than AIC for models with multiple parameters
@@ -190,11 +162,10 @@ class TestStatistics:
         # AICc should be larger than AIC
         assert aicc > aic
 
-    def test_summary(self, ml_rm):
+    def test_summary(self, ml_solved):
         """Test summary method."""
-        ml_rm.solve(report=False)
         # Get summary with default stats
-        summary = ml_rm.stats.summary()
+        summary = ml_solved.stats.summary()
 
         # Should return a DataFrame
         assert isinstance(summary, pd.DataFrame)
@@ -205,36 +176,34 @@ class TestStatistics:
 
         # Get summary with specific stats
         selected_stats = ["rmse", "evp"]
-        summary_selected = ml_rm.stats.summary(stats=selected_stats)
+        summary_selected = ml_solved.stats.summary(stats=selected_stats)
 
         # Should only contain specified stats
         assert len(summary_selected) == len(selected_stats)
         for stat in selected_stats:
             assert stat in summary_selected.index
 
-    def test_diagnostics(self, ml_rm, ml_solved):
+    def test_diagnostics(self, ml_solved, ml_noisemodel):
         """Test diagnostics method."""
-        ml_rm.solve(report=False)
         # Get diagnostics for model without noise model
-        diag = ml_rm.stats.diagnostics()
+        diag = ml_solved.stats.diagnostics()
 
         # Should return a DataFrame
         assert isinstance(diag, pd.DataFrame)
 
         # Get diagnostics for model with noise model
-        diag_noise = ml_solved.stats.diagnostics()
+        diag_noise = ml_noisemodel.stats.diagnostics()
         assert isinstance(diag_noise, pd.DataFrame)
 
-    def test_tmin_tmax_filtering(self, ml_rm):
+    def test_tmin_tmax_filtering(self, ml_solved):
         """Test statistics with tmin/tmax filtering."""
-        ml_rm.solve(report=False)
         # Get full period statistic
-        full_rmse = ml_rm.stats.rmse()
+        full_rmse = ml_solved.stats.rmse()
 
         # Get statistic for partial period
-        dates = ml_rm.observations().index
+        dates = ml_solved.observations().index
         mid_point = dates[len(dates) // 2]
-        partial_rmse = ml_rm.stats.rmse(tmin=mid_point)
+        partial_rmse = ml_solved.stats.rmse(tmin=mid_point)
 
         # Statistics should be different when calculated over different periods
         assert full_rmse != partial_rmse

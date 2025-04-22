@@ -4,56 +4,56 @@ from pandas import Series
 import pastas as ps
 
 
-def test_berendrecht(ml_empty: ps.Model, prec: Series, evap: Series) -> None:
+def test_berendrecht(ml_basic: ps.Model, prec: Series, evap: Series) -> None:
     rm = ps.RechargeModel(prec=prec, evap=evap, recharge=ps.rch.Berendrecht())
-    ml_empty.add_stressmodel(rm)
-    ml_empty.simulate()
+    ml_basic.add_stressmodel(rm)
+    ml_basic.simulate()
 
 
-def test_peterson(ml: ps.Model, prec: Series, evap: Series) -> None:
+def test_peterson(ml_basic: ps.Model, prec: Series, evap: Series) -> None:
     rm = ps.RechargeModel(prec=prec, evap=evap, recharge=ps.rch.Peterson())
-    ml.add_stressmodel(rm)
-    ml.simulate()
+    ml_basic.add_stressmodel(rm)
+    ml_basic.simulate()
 
 
-def test_linear(ml_empty: ps.Model, prec: Series, evap: Series) -> None:
+def test_linear(ml_basic: ps.Model, prec: Series, evap: Series) -> None:
     rm = ps.RechargeModel(prec=prec, evap=evap, recharge=ps.rch.Linear())
-    ml_empty.add_stressmodel(rm)
-    ml_empty.simulate()
+    ml_basic.add_stressmodel(rm)
+    ml_basic.simulate()
 
 
-def test_flexmodel(ml_empty: ps.Model, prec: Series, evap: Series) -> None:
+def test_flexmodel(ml_basic: ps.Model, prec: Series, evap: Series) -> None:
     rm = ps.RechargeModel(prec=prec, evap=evap, recharge=ps.rch.FlexModel())
-    ml_empty.add_stressmodel(rm)
-    ml_empty.simulate()
+    ml_basic.add_stressmodel(rm)
+    ml_basic.simulate()
 
 
 def test_flexmodel_no_interception(
-    ml_empty: ps.Model, prec: Series, evap: Series
+    ml_basic: ps.Model, prec: Series, evap: Series
 ) -> None:
     rm = ps.RechargeModel(
         prec=prec, evap=evap, recharge=ps.rch.FlexModel(interception=False)
     )
-    ml_empty.add_stressmodel(rm)
-    ml_empty.simulate()
+    ml_basic.add_stressmodel(rm)
+    ml_basic.simulate()
 
 
-def test_flexmodel_gw_uptake(ml_empty: ps.Model, prec: Series, evap: Series) -> None:
+def test_flexmodel_gw_uptake(ml_basic: ps.Model, prec: Series, evap: Series) -> None:
     rm = ps.RechargeModel(
         prec=prec, evap=evap, recharge=ps.rch.FlexModel(gw_uptake=True)
     )
-    ml_empty.add_stressmodel(rm)
-    ml_empty.simulate()
+    ml_basic.add_stressmodel(rm)
+    ml_basic.simulate()
 
 
 def test_flexmodel_snow(
-    ml_empty: ps.Model, prec: Series, evap: Series, temp: Series
+    ml_basic: ps.Model, prec: Series, evap: Series, temp: Series
 ) -> None:
     rm = ps.RechargeModel(
         prec=prec, evap=evap, temp=temp, recharge=ps.rch.FlexModel(snow=True)
     )
-    ml_empty.add_stressmodel(rm)
-    ml_empty.simulate(tmin=evap.index[0], tmax=evap.index[100])
+    ml_basic.add_stressmodel(rm)
+    ml_basic.simulate(tmin=evap.index[0], tmax=evap.index[100])
 
 
 def test_flexmodel_water_balance_rootzone(prec: Series, evap: Series) -> None:
