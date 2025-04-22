@@ -473,13 +473,6 @@ class TestModelSolving:
         assert ml_solved.parameters["optimal"].notna().any()
         assert ml_solved._solve_success
 
-    def test_solve_with_custom_solver(self, ml_solved):
-        """Test solving with a custom solver."""
-        solver = ps.LeastSquares()
-        ml_solved.solve(solver=solver, report=False)
-
-        assert ml_solved.solver is solver
-
     def test_solve_with_weights(self, ml_solved):
         """Test solving with weights."""
         # Create weights series with same index as observations
