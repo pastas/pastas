@@ -76,7 +76,7 @@ def ml_empty(head: Series) -> ps.Model:
 
 
 @pytest.fixture
-def ml_rm(ml_empty: ps.NoiseModel, rm: ps.RechargeModel) -> ps.Model:
+def ml_rm(ml_empty: ps.Model, rm: ps.RechargeModel) -> ps.Model:
     ml_empty.add_stressmodel(rm)
     return ml_empty
 
@@ -97,8 +97,9 @@ def ml_noise_only(ml_empty: ps.NoiseModel) -> ps.Model:
 
 @pytest.fixture
 def ml(ml_rm: ps.Model) -> ps.Model:
-    ml_rm.add_noisemodel(ps.ArNoiseModel())
-    return ml_rm
+    ml = ml_rm.copy()
+    ml.add_noisemodel(ps.ArNoiseModel())
+    return ml
 
 
 @pytest.fixture
