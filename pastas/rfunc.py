@@ -1021,7 +1021,12 @@ class Polder(RfuncBase):
         parameters = DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
         )
-        parameters.loc[name + "_A"] = (1, 0, 2, True, name, "uniform")
+        if self.up:
+            parameters.loc[name + "_A"] = (1, 0, 2, True, name, "uniform")
+        elif self.up is False:
+            parameters.loc[name + "_A"] = (-1, -2, 0, True, name, "uniform")
+        else:
+            parameters.loc[name + "_A"] = (1, -2, 2, True, name, "uniform")
         parameters.loc[name + "_a"] = (10, 0.01, 1000, True, name, "uniform")
         parameters.loc[name + "_b"] = (1, 1e-6, 25, True, name, "uniform")
         return parameters
@@ -1040,8 +1045,6 @@ class Polder(RfuncBase):
     def gain(self, p: ArrayLike) -> float:
         # the steady state solution of Mazure
         g = p[0] * np.exp(-np.sqrt(4 * p[2]))
-        if not self.up:
-            g = -g
         return g
 
     def step(
@@ -1055,8 +1058,6 @@ class Polder(RfuncBase):
         A, a, b = p
         s = A * self.polder_function(np.sqrt(b), np.sqrt(t / a))
         # / np.exp(-2 * np.sqrt(b))
-        if not self.up:
-            s = -s
         return s
 
     @staticmethod
