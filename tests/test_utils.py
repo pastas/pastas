@@ -2,6 +2,7 @@
 
 import logging
 from unittest.mock import MagicMock, patch
+from typing import Tuple, Any, Optional, Union, List
 
 import pandas as pd
 import pytest
@@ -11,7 +12,7 @@ from pastas import utils
 
 
 @pytest.fixture
-def test_logger():
+def test_logger() -> logging.Logger:
     """Create a test logger."""
     logger = logging.getLogger("test_pastas_logger")
     yield logger
@@ -24,7 +25,7 @@ def test_logger():
 class TestGetStressTminTmax:
     """Test get_stress_tmin_tmax function."""
 
-    def test_with_valid_model(self, ml_solved):
+    def test_with_valid_model(self, ml_solved: Any) -> None:
         """Test with a valid model."""
         # Test function with real model from conftest
         tmin, tmax = utils.get_stress_tmin_tmax(ml_solved)
@@ -44,7 +45,7 @@ class TestGetStressTminTmax:
                 assert tmin <= stress_tmax
                 assert tmax >= stress_tmin
 
-    def test_with_invalid_model(self):
+    def test_with_invalid_model(self) -> None:
         """Test with an invalid model type."""
         invalid_model = "Not a model"
 
@@ -55,7 +56,7 @@ class TestGetStressTminTmax:
 class TestLoggerFunctions:
     """Test logger-related utility functions."""
 
-    def test_initialize_logger(self, test_logger):
+    def test_initialize_logger(self, test_logger: logging.Logger) -> None:
         """Test initializing a logger."""
         utils.initialize_logger(test_logger, level=logging.DEBUG)
 
@@ -69,7 +70,7 @@ class TestLoggerFunctions:
             for handler in test_logger.handlers
         )
 
-    def test_set_console_handler(self, test_logger):
+    def test_set_console_handler(self, test_logger: logging.Logger) -> None:
         """Test setting a console handler."""
         # First ensure no console handlers
         utils.remove_console_handler(test_logger)
@@ -89,7 +90,7 @@ class TestLoggerFunctions:
         assert console_handlers[0].level == logging.WARNING
         assert console_handlers[0].formatter._fmt == "%(message)s"
 
-    def test_remove_console_handler(self, test_logger):
+    def test_remove_console_handler(self, test_logger: logging.Logger) -> None:
         """Test removing console handlers."""
         # Add console handler
         utils.set_console_handler(test_logger)
@@ -106,7 +107,9 @@ class TestLoggerFunctions:
         )
 
     @patch("pastas.utils.handlers.RotatingFileHandler")
-    def test_add_file_handlers(self, mock_handler, test_logger):
+    def test_add_file_handlers(
+        self, mock_handler: Any, test_logger: logging.Logger
+    ) -> None:
         """Test adding file handlers."""
         utils.add_file_handlers(
             test_logger,
@@ -120,7 +123,7 @@ class TestLoggerFunctions:
         assert call_args_list[0][0][0] == "test1.log"
         assert call_args_list[1][0][0] == "test2.log"
 
-    def test_remove_file_handlers(self, test_logger):
+    def test_remove_file_handlers(self, test_logger: logging.Logger) -> None:
         """Test removing file handlers."""
         # Mock a file handler
         fh = logging.handlers.RotatingFileHandler("dummy.log")
@@ -140,7 +143,7 @@ class TestLoggerFunctions:
         )
 
     @patch("pastas.utils.logging.getLogger")
-    def test_set_log_level(self, mock_get_logger):
+    def test_set_log_level(self, mock_get_logger: Any) -> None:
         """Test setting log level."""
         mock_logger = MagicMock()
         mock_get_logger.return_value = mock_logger
@@ -155,21 +158,21 @@ class TestValidateName:
     """Test validate_name function."""
 
     @patch("pastas.utils.platform", return_value="Linux")
-    def test_valid_name_linux(self, _):
+    def test_valid_name_linux(self, _: Any) -> None:
         """Test with valid name on Linux."""
         name = "valid_name-123"
         result = utils.validate_name(name)
         assert result == name
 
     @patch("pastas.utils.platform", return_value="Windows")
-    def test_valid_name_windows(self, _):
+    def test_valid_name_windows(self, _: Any) -> None:
         """Test with valid name on Windows."""
         name = "valid_name-123"
         result = utils.validate_name(name)
         assert result == name
 
     @patch("pastas.utils.platform", return_value="Linux")
-    def test_invalid_name_linux(self, _):
+    def test_invalid_name_linux(self, _: Any) -> None:
         """Test with invalid name on Linux platform."""
         name = "invalid/name with space"
 
@@ -179,7 +182,7 @@ class TestValidateName:
             assert mock_logger.warning.call_count == 2  # Both '/' and ' ' are invalid
 
     @patch("pastas.utils.platform", return_value="Windows")
-    def test_invalid_name_windows(self, _):
+    def test_invalid_name_windows(self, _: Any) -> None:
         """Test with invalid name on Windows platform."""
         name = "invalid:name"
 
@@ -189,7 +192,7 @@ class TestValidateName:
             mock_logger.warning.assert_called_once()
 
     @patch("pastas.utils.platform", return_value="Linux")
-    def test_invalid_name_raise_error(self, _):
+    def test_invalid_name_raise_error(self, _: Any) -> None:
         """Test with invalid name and raise_error=True."""
         name = "invalid/name"
 
@@ -198,7 +201,7 @@ class TestValidateName:
 
         assert "contains illegal character" in str(excinfo.value)
 
-    def test_non_string_name(self):
+    def test_non_string_name(self) -> None:
         """Test with non-string name."""
         name = 12345
         result = utils.validate_name(name)

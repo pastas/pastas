@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from typing import Any
 
 import pastas as ps
 from pastas.timeseries import TimeSeries
@@ -11,7 +12,7 @@ from pastas.timeseries import TimeSeries
 class TestInputValidation:
     """Test input validation for various Pastas components."""
 
-    def test_invalid_time_series_inputs(self):
+    def test_invalid_time_series_inputs(self) -> None:
         """Test handling of invalid time series inputs."""
         # Test with empty series
         empty_series = pd.Series([], dtype=float)
@@ -23,7 +24,7 @@ class TestInputValidation:
         with pytest.raises(ValueError):
             TimeSeries(nan_series)
 
-    def test_invalid_model_parameters(self, ml_noisemodel):
+    def test_invalid_model_parameters(self, ml_noisemodel: ps.Model) -> None:
         """Test handling of invalid model parameters."""
         # Use the ml_solved fixture from conftest.py
         ml = ml_noisemodel
@@ -56,7 +57,7 @@ class TestInputValidation:
         with pytest.raises(ValueError):
             ml.set_parameter(param_name, initial=10.0, pmin=1.0, pmax=5.0)
 
-    def test_invalid_solve_parameters(self):
+    def test_invalid_solve_parameters(self) -> None:
         """Test handling of invalid solve parameters."""
         dates = pd.date_range("2000", "2001", freq="D")
         head = pd.Series(np.random.normal(0, 1, len(dates)), index=dates)
@@ -70,7 +71,7 @@ class TestInputValidation:
         with pytest.raises(ValueError):
             ml.solve(freq="invalid_freq")
 
-    def test_incompatible_time_ranges(self):
+    def test_incompatible_time_ranges(self) -> None:
         """Test handling of incompatible time ranges between series."""
         # Create series with non-overlapping time ranges
         dates1 = pd.date_range("2000", "2001", freq="D")

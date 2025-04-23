@@ -15,7 +15,7 @@ from pastas.stats.dutch import (
 
 
 @pytest.fixture
-def sample_timeseries():
+def sample_timeseries() -> pd.Series:
     """Create a sample timeseries for testing."""
     # Create daily data spanning multiple years
     index = pd.date_range(start="2017-01-01", end="2021-12-31", freq="D")
@@ -34,7 +34,7 @@ def sample_timeseries():
 
 
 @pytest.fixture
-def biweekly_timeseries():
+def biweekly_timeseries() -> pd.Series:
     """Create a biweekly timeseries for testing."""
     # Create data on the 14th and 28th of each month
     dates = []
@@ -58,7 +58,7 @@ def biweekly_timeseries():
     return pd.Series(values, index=pd.DatetimeIndex(dates))
 
 
-def day_exists(year, month, day):
+def day_exists(year: int, month: int, day: int) -> bool:
     """Check if a day exists in a given month and year."""
     try:
         pd.Timestamp(year=year, month=month, day=day)
@@ -67,7 +67,7 @@ def day_exists(year, month, day):
         return False
 
 
-def test_in_spring():
+def test_in_spring() -> None:
     """Test the _in_spring helper function."""
     # Create test series with dates inside and outside spring
     index = pd.DatetimeIndex(
@@ -94,7 +94,7 @@ def test_in_spring():
     assert_series_equal(result, expected)
 
 
-def test_q_gxg():
+def test_q_gxg() -> None:
     """Test the _q_gxg helper function."""
     # Create test series with a seasonal pattern
     index = pd.date_range(start="2018-01-01", end="2020-12-31", freq="D")
@@ -118,7 +118,7 @@ def test_q_gxg():
     assert result_by_year != result_all
 
 
-def test_q_ghg(sample_timeseries):
+def test_q_ghg(sample_timeseries: pd.Series) -> None:
     """Test q_ghg function."""
     # Test default parameters
     result = q_ghg(sample_timeseries)
@@ -135,7 +135,7 @@ def test_q_ghg(sample_timeseries):
     assert isinstance(result_all, float)
 
 
-def test_q_glg(sample_timeseries):
+def test_q_glg(sample_timeseries: pd.Series) -> None:
     """Test q_glg function."""
     # Test default parameters
     result = q_glg(sample_timeseries)
@@ -145,7 +145,7 @@ def test_q_glg(sample_timeseries):
     assert q_glg(sample_timeseries) < q_ghg(sample_timeseries)
 
 
-def test_q_gvg(sample_timeseries):
+def test_q_gvg(sample_timeseries: pd.Series) -> None:
     """Test q_gvg function."""
     # Test default parameters
     result = q_gvg(sample_timeseries)
@@ -157,7 +157,7 @@ def test_q_gvg(sample_timeseries):
     assert result1 != result2
 
 
-def test_gvg(biweekly_timeseries):
+def test_gvg(biweekly_timeseries: pd.Series) -> None:
     """Test gvg function."""
     # Test default parameters
     result = gvg(biweekly_timeseries)
@@ -173,7 +173,7 @@ def test_gvg(biweekly_timeseries):
     assert isinstance(result_none, float) or np.isnan(result_none)
 
 
-def test_get_spring(sample_timeseries):
+def test_get_spring(sample_timeseries: pd.Series) -> None:
     """Test the _get_spring helper function."""
     from pastas.stats.dutch import _get_spring
 
@@ -200,7 +200,7 @@ def test_get_spring(sample_timeseries):
             )
 
 
-def test_gg(biweekly_timeseries):
+def test_gg(biweekly_timeseries: pd.Series) -> None:
     """Test gg function."""
     # Test default parameters
     result = ps.stats.gg(biweekly_timeseries, min_n_years=1, min_n_meas=1)
@@ -223,7 +223,7 @@ def test_gg(biweekly_timeseries):
     assert abs(result - mean_value) < 10.0
 
 
-def test_ghg_outputs(biweekly_timeseries):
+def test_ghg_outputs(biweekly_timeseries: pd.Series) -> None:
     """Test ghg function with various output formats."""
     # Test default parameters (mean output)
     result_mean = ps.stats.ghg(biweekly_timeseries, min_n_years=1, min_n_meas=1)
@@ -252,7 +252,7 @@ def test_ghg_outputs(biweekly_timeseries):
         assert abs(result_yearly.mean() - result_mean) < 1e-10
 
 
-def test_glg_outputs(biweekly_timeseries):
+def test_glg_outputs(biweekly_timeseries: pd.Series) -> None:
     """Test glg function with various output formats."""
     # Test default parameters (mean output)
     result_mean = ps.stats.glg(biweekly_timeseries, min_n_years=1, min_n_meas=1)
@@ -275,7 +275,7 @@ def test_glg_outputs(biweekly_timeseries):
         assert abs(result_yearly.mean() - result_mean) < 1e-10
 
 
-def test_gxg_min_requirements():
+def test_gxg_min_requirements() -> None:
     """Test minimum requirements parameters for gxg functions."""
     # Create a short series that doesn't meet min_n_years requirement
     short_index = pd.date_range("2020-01-01", "2020-12-31", freq="14D")
@@ -300,7 +300,7 @@ def test_gxg_min_requirements():
     assert isinstance(result, float)
 
 
-def test_fill_methods(sample_timeseries):
+def test_fill_methods(sample_timeseries: pd.Series) -> None:
     """Test different fill methods for gxg functions."""
     # Create series with strategic gaps
     dates = pd.date_range("2019-01-01", "2021-12-31", freq="14D")

@@ -1,46 +1,48 @@
+from typing import Any, Callable, Dict, List, Union
+
 import pandas as pd
 import pytest
 
 from pastas import Model, check
 
 
-def test_response_memory(ml_noisemodel: Model):
+def test_response_memory(ml_noisemodel: Model) -> None:
     df = check.response_memory(ml_noisemodel, cutoff=0.95, factor_length_oseries=0.5)
     assert df["pass"].item()
 
 
-def test_rsq_geq_threshold(ml_noisemodel: Model):
+def test_rsq_geq_threshold(ml_noisemodel: Model) -> None:
     # Fixed typo in function name (was "treshold")
     df = check.rsq_geq_threshold(ml_noisemodel, threshold=0.7)
     assert df["pass"].item()
 
 
-def test_acf_runs_test(ml_noisemodel: Model):
+def test_acf_runs_test(ml_noisemodel: Model) -> None:
     df = check.acf_runs_test(ml_noisemodel)
     assert df["pass"].item()
 
 
-def test_acf_stoffer_toloi(ml_noisemodel: Model):
+def test_acf_stoffer_toloi(ml_noisemodel: Model) -> None:
     df = check.acf_stoffer_toloi_test(ml_noisemodel)
     assert df["pass"].item()
 
 
-def test_parameter_bounds(ml_noisemodel: Model):
+def test_parameter_bounds(ml_noisemodel: Model) -> None:
     df = check.parameter_bounds(ml_noisemodel)
     assert df["pass"].all().item()
 
 
-def test_parameter_uncertainty(ml_noisemodel: Model):
+def test_parameter_uncertainty(ml_noisemodel: Model) -> None:
     df = check.uncertainty_parameters(ml_noisemodel, n_std=2)
     assert df["pass"].all().item()
 
 
-def test_uncertainty_gain(ml_noisemodel: Model):
+def test_uncertainty_gain(ml_noisemodel: Model) -> None:
     df = check.uncertainty_gain(ml_noisemodel, n_std=2)
     assert df["pass"].item()
 
 
-def test_checklist(ml_noisemodel: Model):
+def test_checklist(ml_noisemodel: Model) -> None:
     df = check.checklist(ml_noisemodel, check.checks_brakenhoff_2022)
     assert df["pass"].all().item()
 
@@ -51,7 +53,7 @@ def test_checklist(ml_noisemodel: Model):
 class TestOperatorsAndUtilities:
     """Test the operator mapping and utility functions."""
 
-    def test_operators_dict(self):
+    def test_operators_dict(self) -> None:
         """Test that the operators dictionary has correct mappings."""
         assert check.operators["greater_equal"] == ">="
         assert check.operators["less_equal"] == "<="  # Check the fixed operator
@@ -60,7 +62,7 @@ class TestOperatorsAndUtilities:
         assert check.operators["equal"] == "=="
         assert check.operators["not_equal"] != "=="
 
-    def test_guess_unit_or_dims(self):
+    def test_guess_unit_or_dims(self) -> None:
         """Test the guess_unit_or_dims function."""
         # Test _A parameter
         result = check.guess_unit_or_dims("precip_A")
@@ -87,36 +89,40 @@ class TestOperatorsAndUtilities:
 class TestChecklistFunction:
     """Test the checklist function with different input types."""
 
-    def test_checklist_with_string(self, ml_noisemodel: Model):
+    def test_checklist_with_string(self, ml_noisemodel: Model) -> None:
         """Test checklist with string function name."""
-        checks = ["rsq_geq_threshold"]
+        checks: List[str] = ["rsq_geq_threshold"]
         result = check.checklist(ml_noisemodel, checks, report=False)
 
         # Check that result has the expected format
         assert isinstance(result, pd.DataFrame)
         assert "rsq>=0.7" in result.index
 
-    def test_checklist_with_callable(self, ml_noisemodel: Model):
+    def test_checklist_with_callable(self, ml_noisemodel: Model) -> None:
         """Test checklist with callable function."""
-        checks = [lambda ml: check.rsq_geq_threshold(ml, threshold=0.8)]
+        checks: List[Callable[[Model], pd.DataFrame]] = [
+            lambda ml: check.rsq_geq_threshold(ml, threshold=0.8)
+        ]
         result = check.checklist(ml_noisemodel, checks, report=False)
 
         # Check that result has the expected format
         assert isinstance(result, pd.DataFrame)
         assert "rsq>=0.8" in result.index
 
-    def test_checklist_with_dict(self, ml_noisemodel: Model):
+    def test_checklist_with_dict(self, ml_noisemodel: Model) -> None:
         """Test checklist with dictionary."""
-        checks = [{"func": "rsq_geq_threshold", "threshold": 0.9}]
+        checks: List[Dict[str, Union[str, float]]] = [
+            {"func": "rsq_geq_threshold", "threshold": 0.9}
+        ]
         result = check.checklist(ml_noisemodel, checks, report=False)
 
         # Check that result has the expected format
         assert isinstance(result, pd.DataFrame)
         assert "rsq>=0.9" in result.index
 
-    def test_checklist_with_invalid_type(self, ml_noisemodel: Model):
+    def test_checklist_with_invalid_type(self, ml_noisemodel: Model) -> None:
         """Test checklist with invalid type."""
-        checks = [123]  # Not a string, callable, or dict
+        checks: List[int] = [123]  # Not a string, callable, or dict
         with pytest.raises(TypeError):
             check.checklist(ml_noisemodel, checks, report=False)
 
@@ -129,7 +135,11 @@ class TestChecklistFunction:
         (check.acf_stoffer_toloi_test, {"p_threshold": 0.01}),
     ],
 )
-def test_check_functions_parameterized(ml_noisemodel: Model, check_func, kwargs):
+def test_check_functions_parameterized(
+    ml_noisemodel: Model,
+    check_func: Callable[[Model, Any], pd.DataFrame],
+    kwargs: Dict[str, float],
+) -> None:
     """Test various check functions with different parameters."""
     df = check_func(ml_noisemodel, **kwargs)
     assert isinstance(df, pd.DataFrame)

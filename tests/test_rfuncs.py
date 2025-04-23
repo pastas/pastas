@@ -1,10 +1,11 @@
 import pytest
+from typing import Any, str
 
 import pastas as ps
 
 
 @pytest.mark.parametrize("rfunc_name", ps.rfunc.__all__)
-def test_rfunc(rfunc_name) -> None:
+def test_rfunc(rfunc_name: str) -> None:
     if rfunc_name not in []:
         rfunc = getattr(ps.rfunc, rfunc_name)()
         if rfunc_name == "HantushWellModel":
@@ -15,7 +16,7 @@ def test_rfunc(rfunc_name) -> None:
 
 
 @pytest.mark.parametrize("rfunc_name", ps.rfunc.__all__)
-def test_to_dict_rfuncs(rfunc_name) -> None:
+def test_to_dict_rfuncs(rfunc_name: str) -> None:
     rfunc1 = getattr(ps.rfunc, rfunc_name)(cutoff=0.5)
 
     # Create the exact same instance using to_dict

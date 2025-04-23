@@ -1,12 +1,13 @@
 import numpy as np
 import pandas as pd
 import pytest
+from typing import Dict, Any, Union, Optional
 
 from pastas.timeseries import TimeSeries, validate_oseries, validate_stress
 
 
 @pytest.fixture
-def daily_series():
+def daily_series() -> pd.Series:
     """Create a daily time series fixture."""
     index = pd.date_range("2000-01-01", periods=100, freq="D")
     data = np.random.rand(100)
@@ -15,7 +16,7 @@ def daily_series():
 
 
 @pytest.fixture
-def hourly_series():
+def hourly_series() -> pd.Series:
     """Create an hourly time series fixture."""
     index = pd.date_range("2000-01-01", periods=100, freq="h")
     data = np.random.rand(100)
@@ -24,7 +25,7 @@ def hourly_series():
 
 
 @pytest.fixture
-def series_with_nans():
+def series_with_nans() -> pd.Series:
     """Create a series with NaN values."""
     index = pd.date_range("2000-01-01", periods=100, freq="D")
     data = np.random.rand(100)
@@ -33,7 +34,7 @@ def series_with_nans():
     return series
 
 
-def test_timeseries_init(daily_series):
+def test_timeseries_init(daily_series: pd.Series) -> None:
     """Test TimeSeries initialization."""
     ts = TimeSeries(daily_series)
     assert ts.name == "test_series"
@@ -43,7 +44,7 @@ def test_timeseries_init(daily_series):
     assert ts._series_original is not None
 
 
-def test_timeseries_init_with_settings(daily_series):
+def test_timeseries_init_with_settings(daily_series: pd.Series) -> None:
     """Test TimeSeries initialization with custom settings."""
     settings = {
         "fill_nan": "interpolate",
@@ -56,20 +57,20 @@ def test_timeseries_init_with_settings(daily_series):
     assert ts.settings["fill_after"] == "mean"
 
 
-def test_timeseries_init_with_predefined_settings(daily_series):
+def test_timeseries_init_with_predefined_settings(daily_series: pd.Series) -> None:
     """Test TimeSeries initialization with predefined settings string."""
     ts = TimeSeries(daily_series, settings="oseries")
     # Assert that predefined settings were applied
     assert ts.settings != {}
 
 
-def test_timeseries_init_with_name(daily_series):
+def test_timeseries_init_with_name(daily_series: pd.Series) -> None:
     """Test TimeSeries initialization with custom name."""
     ts = TimeSeries(daily_series, name="custom_name")
     assert ts.name == "custom_name"
 
 
-def test_timeseries_init_with_metadata(daily_series):
+def test_timeseries_init_with_metadata(daily_series: pd.Series) -> None:
     """Test TimeSeries initialization with metadata."""
     metadata = {"location": "test", "units": "m"}
     ts = TimeSeries(daily_series, metadata=metadata)
@@ -77,7 +78,7 @@ def test_timeseries_init_with_metadata(daily_series):
     assert ts.metadata["units"] == "m"
 
 
-def test_timeseries_update_series(daily_series):
+def test_timeseries_update_series(daily_series: pd.Series) -> None:
     """Test updating series settings."""
     ts = TimeSeries(daily_series, settings="prec")
     # Update frequency
@@ -87,7 +88,7 @@ def test_timeseries_update_series(daily_series):
     assert len(ts.series) < len(daily_series)
 
 
-def test_timeseries_update_tmin_tmax(daily_series):
+def test_timeseries_update_tmin_tmax(daily_series: pd.Series) -> None:
     """Test updating tmin and tmax."""
     ts = TimeSeries(daily_series)
     new_tmin = "2000-01-15"
@@ -99,7 +100,7 @@ def test_timeseries_update_tmin_tmax(daily_series):
     assert ts.series.index.max() <= pd.Timestamp(new_tmax)
 
 
-def test_fill_nan_methods(series_with_nans):
+def test_fill_nan_methods(series_with_nans: pd.Series) -> None:
     """Test different fill_nan methods."""
     # Test "interpolate"
     ts_interpolate = TimeSeries(series_with_nans, settings={"fill_nan": "interpolate"})
@@ -115,7 +116,7 @@ def test_fill_nan_methods(series_with_nans):
     assert (ts_float.series[10:15] == 0.0).all()
 
 
-def test_sample_up_methods(daily_series):
+def test_sample_up_methods(daily_series: pd.Series) -> None:
     """Test different sample_up methods."""
     ts = TimeSeries(daily_series)
 
@@ -140,7 +141,7 @@ def test_sample_up_methods(daily_series):
     assert len(ts.series) > len(daily_series)
 
 
-def test_sample_down_methods(hourly_series):
+def test_sample_down_methods(hourly_series: pd.Series) -> None:
     """Test different sample_down methods."""
     ts = TimeSeries(hourly_series)
 
@@ -161,7 +162,7 @@ def test_sample_down_methods(hourly_series):
     assert len(ts.series) < len(hourly_series)
 
 
-def test_fill_before_methods(daily_series):
+def test_fill_before_methods(daily_series: pd.Series) -> None:
     """Test different fill_before methods."""
     # Create a time series that starts later
     ts = TimeSeries(daily_series)
@@ -179,7 +180,7 @@ def test_fill_before_methods(daily_series):
     assert ts.series.index.min() < daily_series.index.min()
 
 
-def test_fill_after_methods(daily_series):
+def test_fill_after_methods(daily_series: pd.Series) -> None:
     """Test different fill_after methods."""
     ts = TimeSeries(daily_series)
 
@@ -196,7 +197,7 @@ def test_fill_after_methods(daily_series):
     assert ts.series.index.max() > daily_series.index.max()
 
 
-def test_to_dict(daily_series):
+def test_to_dict(daily_series: pd.Series) -> None:
     """Test to_dict method."""
     ts = TimeSeries(daily_series)
 
@@ -212,7 +213,7 @@ def test_to_dict(daily_series):
     assert "series" not in result
 
 
-def test_validate_stress(daily_series):
+def test_validate_stress(daily_series: pd.Series) -> None:
     """Test validate_stress function."""
     # Valid series should pass
     assert validate_stress(daily_series) is True
@@ -224,7 +225,7 @@ def test_validate_stress(daily_series):
         validate_stress(irregular_series)
 
 
-def test_validate_oseries(daily_series):
+def test_validate_oseries(daily_series: pd.Series) -> None:
     """Test validate_oseries function."""
     # Valid series should pass
     assert validate_oseries(daily_series) is True
@@ -243,7 +244,9 @@ def test_validate_oseries(daily_series):
         validate_oseries(dup_series)
 
 
-def test_series_original_setter(daily_series, hourly_series):
+def test_series_original_setter(
+    daily_series: pd.Series, hourly_series: pd.Series
+) -> None:
     """Test setting series_original property."""
     ts = TimeSeries(daily_series)
     assert ts.freq_original == "1D"
@@ -254,7 +257,7 @@ def test_series_original_setter(daily_series, hourly_series):
     assert ts._series_original.equals(hourly_series)
 
 
-def test_series_setter_raises_error(daily_series):
+def test_series_setter_raises_error(daily_series: pd.Series) -> None:
     """Test that setting series directly raises an error."""
     ts = TimeSeries(daily_series)
     with pytest.raises(AttributeError):

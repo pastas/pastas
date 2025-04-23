@@ -1,5 +1,7 @@
 """Tests for the objective functions in pastas.objective_functions."""
 
+from typing import Any, Type
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -10,16 +12,16 @@ from pastas.objective_functions import GaussianLikelihood, GaussianLikelihoodAr1
 class TestGaussianLikelihood:
     """Test class for GaussianLikelihood."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Setup for the tests."""
         self.gl = GaussianLikelihood()
 
-    def test_init(self):
+    def test_init(self) -> None:
         """Test initialization."""
         assert self.gl.nparam == 1
         assert self.gl._name == "GaussianLikelihood"
 
-    def test_get_init_parameters(self):
+    def test_get_init_parameters(self) -> None:
         """Test get_init_parameters method."""
         params = self.gl.get_init_parameters("test")
 
@@ -33,7 +35,7 @@ class TestGaussianLikelihood:
         assert params.loc["test_var", "name"] == "test"
         assert params.loc["test_var", "dist"] == "uniform"
 
-    def test_compute(self):
+    def test_compute(self) -> None:
         """Test compute method."""
         # Create a simple residual array
         rv = np.array([0.1, -0.2, 0.3, -0.1, 0.2])
@@ -62,16 +64,16 @@ class TestGaussianLikelihood:
 class TestGaussianLikelihoodAr1:
     """Test class for GaussianLikelihoodAr1."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Setup for the tests."""
         self.glar1 = GaussianLikelihoodAr1()
 
-    def test_init(self):
+    def test_init(self) -> None:
         """Test initialization."""
         assert self.glar1.nparam == 2
         assert self.glar1._name == "GaussianLikelihoodAr1"
 
-    def test_get_init_parameters(self):
+    def test_get_init_parameters(self) -> None:
         """Test get_init_parameters method."""
         params = self.glar1.get_init_parameters("test")
 
@@ -90,7 +92,7 @@ class TestGaussianLikelihoodAr1:
         assert params.loc["test_phi", "pmin"] == 1e-10
         assert params.loc["test_phi", "pmax"] == 0.99999
 
-    def test_compute(self):
+    def test_compute(self) -> None:
         """Test compute method."""
         # Create auto-correlated residuals
         np.random.seed(42)
@@ -116,7 +118,7 @@ class TestGaussianLikelihoodAr1:
         ) / (2 * var)
         assert np.isclose(ll_correct, expected_ll)
 
-    def test_edge_cases(self):
+    def test_edge_cases(self) -> None:
         """Test edge cases."""
         # Test with extreme values of phi
         rv = np.array([0.1, 0.08, 0.064, 0.0512])  # Simple AR(1) process with phi=0.8
@@ -136,7 +138,7 @@ class TestGaussianLikelihoodAr1:
 @pytest.mark.parametrize(
     "likelihood_class", [GaussianLikelihood, GaussianLikelihoodAr1]
 )
-def test_likelihood_parameter_types(likelihood_class):
+def test_likelihood_parameter_types(likelihood_class: Type[Any]) -> None:
     """Test parameter types returned by get_init_parameters."""
     likelihood = likelihood_class()
     params = likelihood.get_init_parameters("test")

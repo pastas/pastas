@@ -2,6 +2,7 @@
 
 import time
 from unittest.mock import patch
+from typing import Any, Optional, Callable
 
 import pytest
 
@@ -11,7 +12,7 @@ from pastas.timer import ExceededMaxSolveTime, SolveTimer
 class TestSolveTimer:
     """Test class for SolveTimer."""
 
-    def test_init(self):
+    def test_init(self) -> None:
         """Test initialization of SolveTimer."""
         # Test default initialization
         timer = SolveTimer()
@@ -26,7 +27,7 @@ class TestSolveTimer:
         assert timer.total == 100
 
     @patch("pastas.timer.tqdm.update")
-    def test_timer_callback(self, mock_update):
+    def test_timer_callback(self, mock_update: Any) -> None:
         """Test the timer callback function."""
         # Setup mock return value for parent update method
         mock_update.return_value = True
@@ -45,7 +46,7 @@ class TestSolveTimer:
         mock_update.assert_called_once_with(5)
 
     @patch("pastas.timer.tqdm.__init__")
-    def test_custom_kwargs_passed_to_parent(self, mock_init):
+    def test_custom_kwargs_passed_to_parent(self, mock_init: Any) -> None:
         """Test that custom kwargs are passed to parent class."""
         mock_init.return_value = None
 
@@ -63,11 +64,11 @@ class TestSolveTimer:
     "tqdm" not in pytest.importorskip("tqdm").__file__,
     reason="Test requires tqdm to be installed directly, not as a vendored package",
 )
-def test_real_usage():
+def test_real_usage() -> None:
     """Test SolveTimer in a scenario closer to real usage."""
 
     # Create a mock function to simulate model.solve
-    def mock_solve(callback=None):
+    def mock_solve(callback: Optional[Callable] = None) -> None:
         for i in range(5):
             if callback:
                 callback(None)

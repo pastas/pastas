@@ -1,6 +1,7 @@
 """Common fixtures for pastas tests."""
 
 from pathlib import Path
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -12,7 +13,9 @@ data_path = Path(__file__).parent / "data"
 
 
 # Test data generation helpers
-def generate_test_data(start_date="2000-01-01", end_date="2005-12-31", freq="D"):
+def generate_test_data(
+    start_date: str = "2000-01-01", end_date: str = "2005-12-31", freq: str = "D"
+) -> Tuple[pd.Series, pd.Series, pd.Series, pd.Series, pd.Series]:
     """Generate test time series data."""
     dates = pd.date_range(start=start_date, end=end_date, freq=freq)
 
@@ -47,50 +50,50 @@ def generate_test_data(start_date="2000-01-01", end_date="2005-12-31", freq="D")
 
 # Basic test data fixtures
 @pytest.fixture(scope="session")
-def test_data():
+def test_data() -> Tuple[pd.Series, pd.Series, pd.Series, pd.Series, pd.Series]:
     """Return all test data series."""
     return generate_test_data()
 
 
 @pytest.fixture(scope="session")
-def head(test_data):
+def head(test_data: Tuple[pd.Series, ...]) -> pd.Series:
     """Return head observation series."""
     return test_data[0]
 
 
 @pytest.fixture(scope="session")
-def prec(test_data):
+def prec(test_data: Tuple[pd.Series, ...]) -> pd.Series:
     """Return precipitation series."""
     return test_data[1]
 
 
 @pytest.fixture(scope="session")
-def evap(test_data):
+def evap(test_data: Tuple[pd.Series, ...]) -> pd.Series:
     """Return evaporation series."""
     return test_data[2]
 
 
 @pytest.fixture(scope="session")
-def temp(test_data):
+def temp(test_data: Tuple[pd.Series, ...]) -> pd.Series:
     """Return temperature series."""
     return test_data[3]
 
 
 @pytest.fixture(scope="session")
-def step(test_data):
+def step(test_data: Tuple[pd.Series, ...]) -> pd.Series:
     """Return step series."""
     return test_data[4]
 
 
 # Model fixtures
 @pytest.fixture
-def ml_basic(head: pd.Series):
+def ml_basic(head: pd.Series) -> ps.Model:
     """Return a basic model with just a head series."""
     return ps.Model(head, name="basic_model")
 
 
 @pytest.fixture
-def ml_recharge(head, prec, evap):
+def ml_recharge(head: pd.Series, prec: pd.Series, evap: pd.Series) -> ps.Model:
     """Return a model with a recharge (rain) model."""
     ml = ps.Model(head, name="recharge_model")
     sm = ps.RechargeModel(prec, evap, name="rch", rfunc=ps.Exponential())
@@ -99,7 +102,7 @@ def ml_recharge(head, prec, evap):
 
 
 @pytest.fixture
-def ml_solved(ml_recharge: ps.Model):
+def ml_solved(ml_recharge: ps.Model) -> ps.Model:
     """Return a model with a recharge (rain) model."""
     ml = ml_recharge.copy()
     ml.solve(report=False)
@@ -107,7 +110,7 @@ def ml_solved(ml_recharge: ps.Model):
 
 
 @pytest.fixture
-def ml_sm(head, prec, evap):
+def ml_sm(head: pd.Series, prec: pd.Series, evap: pd.Series) -> ps.Model:
     """Return a model with multiple stress models."""
     ml = ps.Model(head, name="multistress_model")
     sm1 = ps.StressModel(prec, name="prec", rfunc=ps.Exponential(), settings="prec")
@@ -117,7 +120,7 @@ def ml_sm(head, prec, evap):
 
 
 @pytest.fixture
-def ml_step_and_exp(head, prec, step):
+def ml_step_and_exp(head: pd.Series, prec: pd.Series, step: pd.Series) -> ps.Model:
     """Return a model with step and exponential response functions."""
     ml = ps.Model(head, name="step_exp_model")
     sm1 = ps.StressModel(prec, name="prec", rfunc=ps.Exponential(), settings="prec")
@@ -127,7 +130,7 @@ def ml_step_and_exp(head, prec, step):
 
 
 @pytest.fixture
-def ml_with_transform(ml_solved: ps.Model):
+def ml_with_transform(ml_solved: ps.Model) -> ps.Model:
     """Add a transform to the basic recharge model."""
     transform = ps.ThresholdTransform()
     ml_solved.add_transform(transform)
@@ -135,7 +138,7 @@ def ml_with_transform(ml_solved: ps.Model):
 
 
 @pytest.fixture
-def ml_noisemodel(ml_solved: ps.Model):
+def ml_noisemodel(ml_solved: ps.Model) -> ps.Model:
     """Return an already solved model."""
     ml_copy = ml_solved.copy()
     noise = ps.ArNoiseModel()
@@ -145,7 +148,7 @@ def ml_noisemodel(ml_solved: ps.Model):
 
 
 # Test markers
-def pytest_configure(config):
+def pytest_configure(config: pytest.Config) -> None:
     """Configure pytest markers."""
     config.addinivalue_line("markers", "slow: mark test as slow")
     config.addinivalue_line("markers", "integration: mark as integration test")

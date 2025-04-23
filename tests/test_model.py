@@ -1,5 +1,7 @@
 """Tests for the Model class in pastas.model."""
 
+from typing import Any, Optional, Tuple
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -10,7 +12,7 @@ from pastas.model import Model
 
 
 @pytest.fixture
-def simple_model():
+def simple_model() -> ps.Model:
     """Create a simple model for testing without any stressmodels."""
     # Create test data
     dates = pd.date_range(start="2000-01-01", end="2005-12-31", freq="D")
@@ -27,7 +29,7 @@ def simple_model():
 
 
 @pytest.fixture
-def param_fixture(ml_solved):
+def param_fixture(ml_solved: ps.Model) -> Tuple[str, float, float, float, bool]:
     """Fixture to provide a consistent parameter for testing."""
     param_name = "rch_A"
     orig_value = ml_solved.parameters.at[param_name, "initial"]
@@ -46,7 +48,7 @@ def param_fixture(ml_solved):
 class TestModelInitialization:
     """Test model initialization."""
 
-    def test_init_with_minimal_args(self):
+    def test_init_with_minimal_args(self) -> None:
         """Test initialization with minimal arguments."""
         dates = pd.date_range(start="2000-01-01", end="2001-12-31", freq="D")
         head = pd.Series(np.random.normal(0, 1, len(dates)), index=dates)
@@ -56,7 +58,7 @@ class TestModelInitialization:
         assert model.oseries is not None
         assert model.constant is not None
 
-    def test_init_with_name(self):
+    def test_init_with_name(self) -> None:
         """Test initialization with a name."""
         dates = pd.date_range(start="2000-01-01", end="2001-12-31", freq="D")
         head = pd.Series(np.random.normal(0, 1, len(dates)), index=dates, name="test")
@@ -69,7 +71,7 @@ class TestModelInitialization:
 
         assert model.name == "custom_name"
 
-    def test_init_without_constant(self):
+    def test_init_without_constant(self) -> None:
         """Test initialization without constant."""
         dates = pd.date_range(start="2000-01-01", end="2001-12-31", freq="D")
         head = pd.Series(np.random.normal(0, 1, len(dates)), index=dates)
@@ -78,7 +80,7 @@ class TestModelInitialization:
 
         assert model.constant is None
 
-    def test_init_with_metadata(self):
+    def test_init_with_metadata(self) -> None:
         """Test initialization with metadata."""
         dates = pd.date_range(start="2000-01-01", end="2001-12-31", freq="D")
         head = pd.Series(np.random.normal(0, 1, len(dates)), index=dates)
@@ -98,7 +100,7 @@ class TestModelInitialization:
 class TestModelComponents:
     """Test adding and removing model components."""
 
-    def test_add_stressmodel(self, simple_model):
+    def test_add_stressmodel(self, simple_model: ps.Model) -> None:
         """Test adding a stress model."""
         dates = pd.date_range(start="2000-01-01", end="2005-12-31", freq="D")
         prec = pd.Series(
@@ -111,7 +113,7 @@ class TestModelComponents:
         assert "precipitation" in simple_model.stressmodels
         assert simple_model.stressmodels["precipitation"] is sm
 
-    def test_add_multiple_stressmodels(self, simple_model):
+    def test_add_multiple_stressmodels(self, simple_model: ps.Model) -> None:
         """Test adding multiple stress models at once."""
         dates = pd.date_range(start="2000-01-01", end="2005-12-31", freq="D")
         prec = pd.Series(
@@ -129,7 +131,7 @@ class TestModelComponents:
         assert "precipitation" in simple_model.stressmodels
         assert "evaporation" in simple_model.stressmodels
 
-    def test_add_stressmodel_with_same_name(self, ml_solved):
+    def test_add_stressmodel_with_same_name(self, ml_solved: ps.Model) -> None:
         """Test adding a stress model with the same name."""
         # Get the first stressmodel name
         first_sm_name = list(ml_solved.stressmodels.keys())[0]
@@ -151,7 +153,7 @@ class TestModelComponents:
         with pytest.raises(ValueError):
             ml_solved.add_stressmodel(sm, replace=False)
 
-    def test_del_stressmodel(self, ml_solved):
+    def test_del_stressmodel(self, ml_solved: ps.Model) -> None:
         """Test deleting a stress model."""
         # Get the first stressmodel name
         first_sm_name = list(ml_solved.stressmodels.keys())[0]
@@ -159,12 +161,12 @@ class TestModelComponents:
         ml_solved.del_stressmodel(first_sm_name)
         assert first_sm_name not in ml_solved.stressmodels
 
-    def test_del_stressmodel_nonexistent(self, simple_model):
+    def test_del_stressmodel_nonexistent(self, simple_model: ps.Model) -> None:
         """Test deleting a non-existent stress model."""
         with pytest.raises(KeyError):
             simple_model.del_stressmodel("nonexistent")
 
-    def test_add_constant(self, simple_model):
+    def test_add_constant(self, simple_model: ps.Model) -> None:
         """Test adding a constant."""
         simple_model.del_constant()
         assert simple_model.constant is None
@@ -175,19 +177,19 @@ class TestModelComponents:
         assert simple_model.constant is constant
         assert simple_model.constant.name == "constant"
 
-    def test_del_constant(self, simple_model, caplog):
+    def test_del_constant(self, simple_model: ps.Model, caplog: Any) -> None:
         """Test deleting a constant."""
         simple_model.del_constant()
         assert simple_model.constant is None
 
-    def test_add_transform(self, simple_model):
+    def test_add_transform(self, simple_model: ps.Model) -> None:
         """Test adding a transform."""
         transform = ps.ThresholdTransform()
         simple_model.add_transform(transform)
 
         assert simple_model.transform is transform
 
-    def test_del_transform(self, simple_model, caplog):
+    def test_del_transform(self, simple_model: ps.Model, caplog: Any) -> None:
         """Test deleting a transform."""
         # First add a transform
         transform = ps.ThresholdTransform()
@@ -197,7 +199,7 @@ class TestModelComponents:
         simple_model.del_transform()
         assert simple_model.transform is None
 
-    def test_add_noisemodel(self, simple_model):
+    def test_add_noisemodel(self, simple_model: ps.Model) -> None:
         """Test adding a noise model."""
         noise = ps.ArmaNoiseModel()
         simple_model.add_noisemodel(noise)
@@ -205,7 +207,7 @@ class TestModelComponents:
         assert simple_model.noisemodel is noise
         assert simple_model.settings["noise"] is True
 
-    def test_del_noisemodel(self, simple_model, caplog):
+    def test_del_noisemodel(self, simple_model: ps.Model, caplog: Any) -> None:
         """Test deleting a noise model."""
         # First add a noise model
         noise = ps.ArmaNoiseModel()
@@ -221,7 +223,7 @@ class TestModelComponents:
 class TestModelSimulation:
     """Test model simulation methods."""
 
-    def test_simulate_basic(self, ml_solved):
+    def test_simulate_basic(self, ml_solved: ps.Model) -> None:
         """Test basic simulation."""
         sim = ml_solved.simulate()
 
@@ -229,7 +231,7 @@ class TestModelSimulation:
         assert not sim.empty
         assert sim.name == "Simulation"
 
-    def test_simulate_with_tmin_tmax(self, ml_solved):
+    def test_simulate_with_tmin_tmax(self, ml_solved: ps.Model) -> None:
         """Test simulation with specified tmin and tmax."""
         # Get index range midpoints
         index_min = ml_solved.oseries.series.index.min()
@@ -245,7 +247,7 @@ class TestModelSimulation:
         assert sim.index[0] >= pd.Timestamp(tmin)
         assert sim.index[-1] <= pd.Timestamp(tmax)
 
-    def test_simulate_with_freq(self, ml_solved):
+    def test_simulate_with_freq(self, ml_solved: ps.Model) -> None:
         """Test simulation with different frequency."""
         sim_daily = ml_solved.simulate()
         sim_weekly = ml_solved.simulate(freq="7D")
@@ -253,7 +255,7 @@ class TestModelSimulation:
         # The weekly simulation should have fewer points than the daily one
         assert len(sim_weekly) < len(sim_daily)
 
-    def test_simulate_with_parameters(self, ml_solved):
+    def test_simulate_with_parameters(self, ml_solved: ps.Model) -> None:
         """Test simulation with provided parameters."""
         # Solve the model first
         ml_solved.solve(report=False)
@@ -274,7 +276,7 @@ class TestModelSimulation:
         # Should be different unless the optimization didn't change parameters
         assert not np.all(sim_init.values == sim_opt.values)
 
-    def test_simulate_with_warmup(self, ml_solved):
+    def test_simulate_with_warmup(self, ml_solved: ps.Model) -> None:
         """Test simulation with warmup period."""
         # Standard simulation without returning warmup
         sim = ml_solved.simulate(warmup=30)
@@ -288,7 +290,7 @@ class TestModelSimulation:
         # The last part of sim_warmup should be identical to sim
         assert_series_equal(sim_warmup.loc[sim.index], sim)
 
-    def test_residuals(self, ml_noisemodel):
+    def test_residuals(self, ml_noisemodel: ps.Model) -> None:
         """Test residuals calculation."""
         res = ml_noisemodel.residuals()
 
@@ -298,7 +300,7 @@ class TestModelSimulation:
         # Residuals should have mean close to zero for a fitted model
         assert abs(res.mean()) < 1.0
 
-    def test_residuals_with_normalize(self, ml_solved):
+    def test_residuals_with_normalize(self, ml_solved: ps.Model) -> None:
         """Test residuals calculation with normalization."""
         ml_solved.normalize_residuals = True
         res = ml_solved.residuals()
@@ -306,14 +308,14 @@ class TestModelSimulation:
         # Normalized residuals should have mean very close to zero
         assert abs(res.mean()) < 1e-10
 
-    def test_observations(self, ml_solved):
+    def test_observations(self, ml_solved: ps.Model) -> None:
         """Test observations method."""
         obs = ml_solved.observations()
 
         assert isinstance(obs, pd.Series)
         assert not obs.empty
 
-    def test_observations_with_time_limits(self, ml_solved):
+    def test_observations_with_time_limits(self, ml_solved: ps.Model) -> None:
         """Test observations with time limits."""
         # Get the actual time range of the observations
         oseries = ml_solved.observations()
@@ -332,7 +334,7 @@ class TestModelSimulation:
 class TestModelParameters:
     """Test model parameter handling."""
 
-    def test_get_init_parameters(self, ml_solved):
+    def test_get_init_parameters(self, ml_solved: ps.Model) -> None:
         """Test getting initial parameters."""
         params = ml_solved.get_init_parameters()
 
@@ -341,7 +343,7 @@ class TestModelParameters:
         assert "initial" in params.columns
         assert "vary" in params.columns
 
-    def test_get_parameters(self, ml_solved):
+    def test_get_parameters(self, ml_solved: ps.Model) -> None:
         """Test getting parameters."""
         # Unsolved model returns initial parameters
         p_init = ml_solved.get_parameters()
@@ -354,7 +356,7 @@ class TestModelParameters:
         p_opt = ml_solved.get_parameters()
         assert isinstance(p_opt, np.ndarray)
 
-    def test_get_parameters_by_name(self, ml_sm):
+    def test_get_parameters_by_name(self, ml_sm: ps.Model) -> None:
         """Test getting parameters for a specific component."""
         # Get all stressmodel names
         sm_names = list(ml_sm.stressmodels.keys())
@@ -374,8 +376,13 @@ class TestModelParameters:
         ],
     )
     def test_set_parameter_attributes(
-        self, ml_solved, param_fixture, param_attr, value, expected
-    ):
+        self,
+        ml_solved: ps.Model,
+        param_fixture: Tuple[str, float, float, float, bool],
+        param_attr: str,
+        value: Any,
+        expected: Any,
+    ) -> None:
         """Test setting different parameter attributes."""
         param_name = param_fixture[0]
 
@@ -385,12 +392,14 @@ class TestModelParameters:
         # Check that it was updated correctly
         assert ml_solved.parameters.at[param_name, param_attr] == expected
 
-    def test_set_parameter_nonexistent(self, ml_solved):
+    def test_set_parameter_nonexistent(self, ml_solved: ps.Model) -> None:
         """Test setting a non-existent parameter."""
         with pytest.raises(KeyError):
             ml_solved.set_parameter("nonexistent", initial=1.0)
 
-    def test_set_parameter_bounds(self, ml_solved, param_fixture):
+    def test_set_parameter_bounds(
+        self, ml_solved: ps.Model, param_fixture: Tuple[str, float, float, float, bool]
+    ) -> None:
         """Test setting parameter bounds."""
         param_name = param_fixture[0]
 
@@ -400,7 +409,9 @@ class TestModelParameters:
         assert ml_solved.parameters.at[param_name, "pmin"] == 0.1
         assert ml_solved.parameters.at[param_name, "pmax"] == 10.0
 
-    def test_set_parameter_move_bounds(self, ml_solved, param_fixture):
+    def test_set_parameter_move_bounds(
+        self, ml_solved: ps.Model, param_fixture: Tuple[str, float, float, float, bool]
+    ) -> None:
         """Test moving parameter bounds."""
         param_name, orig_initial, orig_pmin, orig_pmax, _ = param_fixture
 
@@ -416,7 +427,7 @@ class TestModelParameters:
             orig_pmax * 2
         )
 
-    def test_set_parameter_move_bounds_error(self, ml_solved):
+    def test_set_parameter_move_bounds_error(self, ml_solved: ps.Model) -> None:
         """Test error when providing both bounds and move_bounds."""
         param_name = "rch_A"
 
@@ -428,7 +439,7 @@ class TestModelParameters:
 class TestModelSolving:
     """Test model solving."""
 
-    def test_initialize(self, ml_solved):
+    def test_initialize(self, ml_solved: ps.Model) -> None:
         """Test model initialization before solving."""
         ml_solved.initialize()
 
@@ -436,7 +447,7 @@ class TestModelSolving:
         assert ml_solved.settings["tmax"] is not None
         assert ml_solved.oseries_calib is not None
 
-    def test_solve(self, ml_solved):
+    def test_solve(self, ml_solved: ps.Model) -> None:
         """Test solving the model."""
         ml_solved.solve(report=False)
 
@@ -444,7 +455,7 @@ class TestModelSolving:
         assert ml_solved.parameters["optimal"].notna().any()
         assert ml_solved._solve_success
 
-    def test_solve_with_weights(self, ml_solved):
+    def test_solve_with_weights(self, ml_solved: ps.Model) -> None:
         """Test solving with weights."""
         # Create weights series with same index as observations
         weights = ml_solved.observations().copy()
@@ -457,7 +468,7 @@ class TestModelSolving:
 
         assert ml_solved.settings["weights"] is weights
 
-    def test_fit_report(self, ml_noisemodel):
+    def test_fit_report(self, ml_noisemodel: ps.Model) -> None:
         """Test fit report generation."""
         report = ml_noisemodel.fit_report()
 
@@ -485,7 +496,9 @@ class TestModelContributions:
             ("get_step_response", None),
         ],
     )
-    def test_contribution_methods(self, ml_noisemodel, method_name, series_name):
+    def test_contribution_methods(
+        self, ml_noisemodel: ps.Model, method_name: str, series_name: Optional[str]
+    ) -> None:
         """Test various contribution-related methods."""
         # Get the first stressmodel name
         first_sm_name = list(ml_noisemodel.stressmodels.keys())[0]
@@ -503,7 +516,7 @@ class TestModelContributions:
         if method_name == "get_block_response":
             assert result.index.name == "Time [days]"
 
-    def test_get_contributions(self, ml_sm):
+    def test_get_contributions(self, ml_sm: ps.Model) -> None:
         """Test getting all contributions."""
         ml_sm.solve(report=False)
         contribs = ml_sm.get_contributions()
@@ -512,7 +525,7 @@ class TestModelContributions:
         assert len(contribs) >= 2  # At least two contributions
         assert all(isinstance(c, pd.Series) for c in contribs)
 
-    def test_get_output_series(self, ml_noisemodel):
+    def test_get_output_series(self, ml_noisemodel: ps.Model) -> None:
         """Test getting all output series."""
         df = ml_noisemodel.get_output_series()
 
@@ -521,7 +534,7 @@ class TestModelContributions:
         assert "Simulation" in df.columns
         assert "Residuals" in df.columns
 
-    def test_get_response_tmax(self, ml_noisemodel):
+    def test_get_response_tmax(self, ml_noisemodel: ps.Model) -> None:
         """Test getting response tmax."""
         # Get the first stressmodel name
         first_sm_name = list(ml_noisemodel.stressmodels.keys())[0]
@@ -531,7 +544,7 @@ class TestModelContributions:
         assert isinstance(tmax, float)
         assert tmax > 0
 
-    def test_get_stress(self, ml_noisemodel):
+    def test_get_stress(self, ml_noisemodel: ps.Model) -> None:
         """Test getting stress series."""
         # Get the first stressmodel name
         first_sm_name = list(ml_noisemodel.stressmodels.keys())[0]
@@ -544,7 +557,7 @@ class TestModelContributions:
 class TestModelExportImport:
     """Test model export and import."""
 
-    def test_to_dict(self, ml_noisemodel):
+    def test_to_dict(self, ml_noisemodel: ps.Model) -> None:
         """Test exporting model to dictionary."""
         data = ml_noisemodel.to_dict()
 
@@ -555,7 +568,7 @@ class TestModelExportImport:
         assert "stressmodels" in data
 
     @pytest.mark.slow
-    def test_to_file_and_load(self, ml_noisemodel, tmp_path):
+    def test_to_file_and_load(self, ml_noisemodel: ps.Model, tmp_path: Any) -> None:
         """Test exporting model to file and loading it."""
         # Save model to file
         fname = tmp_path / "test_model.pas"
@@ -574,7 +587,7 @@ class TestModelExportImport:
             loaded_model.parameters.sort_index(), ml_noisemodel.parameters.sort_index()
         )
 
-    def test_copy(self, ml_noisemodel):
+    def test_copy(self, ml_noisemodel: ps.Model) -> None:
         """Test copying a model."""
         copy_model = ml_noisemodel.copy(name="copy_test")
 

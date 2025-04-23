@@ -76,9 +76,9 @@ def test_compare(ml_noisemodel: Model) -> None:
     plt.close()
 
 
-def test_tracksolve(ml_noisemodel: Model) -> None:
-    track = TrackSolve(ml_noisemodel)
-    _ = ml_noisemodel.solve(callback=track.plot_track_solve)
+def test_tracksolve(ml_solved: Model) -> None:
+    track = TrackSolve(ml_solved)
+    _ = ml_solved.solve(callback=track.plot_track_solve)
     plt.close()
 
 

@@ -1,6 +1,7 @@
 """Tests for numba-accelerated functions in stressmodels.py."""
 
 import numpy as np
+from typing import Any, List, Optional
 
 from pastas.stressmodels import TarsoModel
 
@@ -8,14 +9,14 @@ from pastas.stressmodels import TarsoModel
 class TestTarsoModelNumba:
     """Test the numba-accelerated tarso function in TarsoModel."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Setup for tests."""
         # Create test data for recharge input
         np.random.seed(42)  # For reproducibility
         self.npoints = 100
         self.r = np.random.normal(1, 0.5, self.npoints)  # Simple recharge series
 
-    def test_tarso_py_func(self):
+    def test_tarso_py_func(self) -> None:
         """Test the Python implementation of the tarso function."""
         # Access the Python version directly via py_func attribute
         tarso_py_func = TarsoModel.tarso.py_func
@@ -35,7 +36,7 @@ class TestTarsoModelNumba:
         assert np.all(result >= p[2] - 1)  # Near or above d0
         assert np.all(result <= p[5] + 1)  # Near or below d1
 
-    def test_tarso_parameter_variations(self):
+    def test_tarso_parameter_variations(self) -> None:
         """Test tarso function with different parameter values."""
         tarso_py_func = TarsoModel.tarso.py_func
         dt = 1.0
@@ -62,7 +63,7 @@ class TestTarsoModelNumba:
             assert np.all(result >= p[2] - 2)
             assert np.all(result <= p[5] + 2)
 
-    def test_tarso_dt_variations(self):
+    def test_tarso_dt_variations(self) -> None:
         """Test tarso function with different time step values."""
         tarso_py_func = TarsoModel.tarso.py_func
         p = np.array([0.9, 10.0, 4.0, 0.8, 15.0, 6.0])

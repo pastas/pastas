@@ -1,6 +1,7 @@
 """Tests for the solver module in Pastas."""
 
 from unittest.mock import MagicMock, patch
+from typing import Any, Tuple, Optional, List, Dict, Union
 
 import numpy as np
 import pandas as pd
@@ -12,7 +13,7 @@ from pastas.solver import BaseSolver, EmceeSolve, LeastSquares, LmfitSolve
 
 
 @pytest.fixture
-def mock_model():
+def mock_model() -> MagicMock:
     """Create a mock model for solver testing."""
     model = MagicMock()
 
@@ -57,26 +58,26 @@ def mock_model():
 
 
 # Existing integration tests with real models
-def test_least_squares(ml_recharge: ps.Model):
+def test_least_squares(ml_recharge: ps.Model) -> None:
     ml_recharge.solve(solver=ps.LeastSquares())
 
 
-def test_least_squares_lm(ml_recharge: ps.Model):
+def test_least_squares_lm(ml_recharge: ps.Model) -> None:
     ml_recharge.solve(solver=ps.LeastSquares(), method="lm")
     assert ml_recharge.parameters.loc[ml_recharge.parameters.vary, "pmin"].isna().all()
 
 
-def test_fit_constant(ml_recharge: ps.Model):
+def test_fit_constant(ml_recharge: ps.Model) -> None:
     ml_recharge.solve(fit_constant=False)
 
 
-def test_no_noise(ml_recharge: ps.Model):
+def test_no_noise(ml_recharge: ps.Model) -> None:
     ml_recharge.del_noisemodel()
     ml_recharge.solve()
 
 
 # Tests for confidence intervals and prediction intervals
-def test_pred_interval(ml_recharge: ps.Model):
+def test_pred_interval(ml_recharge: ps.Model) -> None:
     ml_recharge.solve(solver=ps.LeastSquares())
     pi = ml_recharge.solver.prediction_interval(n=10)
     assert isinstance(pi, pd.DataFrame)
@@ -84,28 +85,28 @@ def test_pred_interval(ml_recharge: ps.Model):
     assert list(pi.columns) == [0.025, 0.975]
 
 
-def test_ci_simulation(ml_recharge: ps.Model):
+def test_ci_simulation(ml_recharge: ps.Model) -> None:
     ml_recharge.solve(solver=ps.LeastSquares())
     ci = ml_recharge.solver.ci_simulation(n=10)
     assert isinstance(ci, pd.DataFrame)
     assert ci.shape[1] == 2
 
 
-def test_ci_block_response(ml_recharge: ps.Model):
+def test_ci_block_response(ml_recharge: ps.Model) -> None:
     ml_recharge.solve(solver=ps.LeastSquares())
     ci = ml_recharge.solver.ci_block_response(name="rch", n=10)
     assert isinstance(ci, pd.DataFrame)
     assert ci.shape[1] == 2
 
 
-def test_ci_step_response(ml_recharge: ps.Model):
+def test_ci_step_response(ml_recharge: ps.Model) -> None:
     ml_recharge.solve(solver=ps.LeastSquares())
     ci = ml_recharge.solver.ci_step_response(name="rch", n=10)
     assert isinstance(ci, pd.DataFrame)
     assert ci.shape[1] == 2
 
 
-def test_ci_contribution(ml_recharge: ps.Model):
+def test_ci_contribution(ml_recharge: ps.Model) -> None:
     ml_recharge.solve(solver=ps.LeastSquares())
     ci = ml_recharge.solver.ci_contribution(name="rch", n=10)
     assert isinstance(ci, pd.DataFrame)
@@ -113,7 +114,7 @@ def test_ci_contribution(ml_recharge: ps.Model):
 
 
 # Test the EmceeSolver
-def test_emcee(ml_recharge: ps.Model):
+def test_emcee(ml_recharge: ps.Model) -> None:
     try:
         ml_recharge.solve(solver=ps.LeastSquares())
         ml_recharge.del_noisemodel()
@@ -131,7 +132,7 @@ def test_emcee(ml_recharge: ps.Model):
 class TestBaseSolver:
     """Test the BaseSolver class."""
 
-    def test_init_empty(self):
+    def test_init_empty(self) -> None:
         """Test empty initialization of BaseSolver."""
         solver = BaseSolver()
         assert solver._name == "BaseSolver"
@@ -139,7 +140,7 @@ class TestBaseSolver:
         assert solver.pcov is None
         assert solver.nfev is None
 
-    def test_init_with_params(self):
+    def test_init_with_params(self) -> None:
         """Test initialization with parameters."""
         pcov_data = [[0.1, 0.02], [0.02, 0.2]]
         pcov = DataFrame(pcov_data, index=["p1", "p2"], columns=["p1", "p2"])
@@ -157,13 +158,13 @@ class TestBaseSolver:
         )
         np.testing.assert_almost_equal(solver.pcor.values, expected_corr)
 
-    def test_set_model(self, mock_model):
+    def test_set_model(self, mock_model: MagicMock) -> None:
         """Test setting a model in the solver."""
         solver = BaseSolver()
         solver.set_model(mock_model)
         assert solver.ml is mock_model
 
-    def test_set_model_raises_warning(self, mock_model):
+    def test_set_model_raises_warning(self, mock_model: MagicMock) -> None:
         """Test that error is raised when setting a second model."""
         solver = BaseSolver()
         solver.set_model(mock_model)
@@ -177,7 +178,9 @@ class TestBaseSolver:
             (True, ["noise", "noise_weights"]),
         ],
     )
-    def test_misfit_basic(self, mock_model, noise, expected_calls):
+    def test_misfit_basic(
+        self, mock_model: MagicMock, noise: bool, expected_calls: List[str]
+    ) -> None:
         """Test misfit function with different noise settings."""
         solver = BaseSolver()
         solver.ml = mock_model
@@ -192,7 +195,7 @@ class TestBaseSolver:
         for method in expected_calls:
             assert getattr(mock_model, method).called
 
-    def test_misfit_with_weights(self, mock_model):
+    def test_misfit_with_weights(self, mock_model: MagicMock) -> None:
         """Test misfit function with weights."""
         solver = BaseSolver()
         solver.ml = mock_model
@@ -207,18 +210,18 @@ class TestBaseSolver:
         assert isinstance(weighted_result, np.ndarray)
         assert len(weighted_result) == 100
 
-    def test_misfit_returnseparate(self, mock_model):
+    def test_misfit_returnseparate(self, mock_model: MagicMock) -> None:
         """Test misfit function with returnseparate=True."""
         solver = BaseSolver()
         solver.ml = mock_model
 
         result = solver.misfit(p=np.array([1.0, 2.0]), noise=False, returnseparate=True)
 
-        assert isinstance(result, tuple)
+        assert isinstance(result, Tuple)
         assert len(result) == 3
         assert all(isinstance(arr, np.ndarray) for arr in result)
 
-    def test_to_dict(self):
+    def test_to_dict(self) -> None:
         """Test to_dict method."""
         solver = BaseSolver(nfev=100)
         data_dict = solver.to_dict()
@@ -231,13 +234,13 @@ class TestBaseSolver:
 class TestLeastSquares:
     """Test the LeastSquares solver class."""
 
-    def test_init(self):
+    def test_init(self) -> None:
         """Test initialization of LeastSquares solver."""
         solver = LeastSquares()
         assert solver._name == "LeastSquares"
 
     @patch("pastas.solver.least_squares")
-    def test_solve(self, mock_least_squares, mock_model):
+    def test_solve(self, mock_least_squares: MagicMock, mock_model: MagicMock) -> None:
         """Test solve method."""
         # Setup mock
         mock_result = MagicMock(
@@ -265,7 +268,7 @@ class TestLeastSquares:
         "method,absolute_sigma",
         [("trf", False), ("trf", True), ("lm", False), ("dogbox", False)],
     )
-    def test_get_covariances(self, method, absolute_sigma):
+    def test_get_covariances(self, method: str, absolute_sigma: bool) -> None:
         """Test get_covariances with different methods and parameters."""
         jacobian = np.array([[1.0, 0.5], [0.5, 1.0], [0.2, 0.3]])
         cost = 5.0
@@ -282,7 +285,7 @@ class TestLeastSquares:
 class TestOptionalSolvers:
     """Tests for solvers that depend on optional dependencies."""
 
-    def test_lmfit_solve_init(self):
+    def test_lmfit_solve_init(self) -> None:
         """Test LmfitSolve initialization."""
         try:
             solver = LmfitSolve()
@@ -290,7 +293,7 @@ class TestOptionalSolvers:
         except ImportError:
             pytest.skip("lmfit not installed")
 
-    def test_emcee_solve_init(self):
+    def test_emcee_solve_init(self) -> None:
         """Test EmceeSolve initialization."""
         try:
             solver = EmceeSolve()
@@ -300,7 +303,7 @@ class TestOptionalSolvers:
         except ImportError:
             pytest.skip("emcee not installed")
 
-    def test_emcee_to_dict_raises(self):
+    def test_emcee_to_dict_raises(self) -> None:
         """Test that EmceeSolve.to_dict raises NotImplementedError."""
         try:
             solver = EmceeSolve()
@@ -310,7 +313,7 @@ class TestOptionalSolvers:
             pytest.skip("emcee not installed")
 
 
-def pytest_configure(config):
+def pytest_configure(config: pytest.Config) -> None:
     """Configure pytest markers."""
     config.addinivalue_line(
         "markers", "optional: mark tests that require optional dependencies"

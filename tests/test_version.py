@@ -1,14 +1,15 @@
 from unittest.mock import patch
+from typing import Dict, Any
 
 from pastas.version import check_numba_scipy, get_versions, show_versions
 
 
-def test_check_numba_scipy_not_installed():
+def test_check_numba_scipy_not_installed() -> None:
     with patch("importlib.import_module", side_effect=ImportError):
         assert check_numba_scipy() is False
 
 
-def test_check_numba_scipy_version_mismatch():
+def test_check_numba_scipy_version_mismatch() -> None:
     with (
         patch("importlib.import_module") as mock_import_module,
         patch("importlib.metadata.version") as mock_version,
@@ -21,13 +22,13 @@ def test_check_numba_scipy_version_mismatch():
         assert check_numba_scipy() is False
 
 
-def test_get_versions_basic():
+def test_get_versions_basic() -> None:
     get_versions()
 
 
-def test_get_versions_optional():
+def test_get_versions_optional() -> None:
     get_versions(optional=True)
 
 
-def test_show_versions(capsys):
+def test_show_versions(capsys: Any) -> None:
     show_versions()

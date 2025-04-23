@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
+import pastas as ps
+
 # Use model fixtures from conftest.py instead of defining custom fixtures
 # We can use:
 # - ml_rm: Basic model with response model
@@ -13,7 +15,7 @@ import pytest
 class TestStatistics:
     """Test Statistics class methods."""
 
-    def test_rmse(self, ml_solved):
+    def test_rmse(self, ml_solved: ps.Model) -> None:
         """Test RMSE calculation."""
         # Calculate RMSE
         rmse = ml_solved.stats.rmse()
@@ -28,7 +30,7 @@ class TestStatistics:
         rmse_weighted = ml_solved.stats.rmse(weighted=True)
         assert isinstance(rmse_weighted, float)
 
-    def test_rmsn(self, ml_solved, ml_noisemodel):
+    def test_rmsn(self, ml_solved: ps.Model, ml_noisemodel: ps.Model) -> None:
         """Test RMSN calculation."""
         # Without noise model, should return nan
         rmsn = ml_solved.stats.rmsn()
@@ -39,7 +41,7 @@ class TestStatistics:
         assert isinstance(rmsn, float)
         assert rmsn > 0
 
-    def test_sse(self, ml_solved):
+    def test_sse(self, ml_solved: ps.Model) -> None:
         """Test SSE calculation."""
         sse = ml_solved.stats.sse()
 
@@ -54,7 +56,7 @@ class TestStatistics:
         rmse = ml_solved.stats.rmse()
         assert sse == pytest.approx(n * rmse**2, rel=1e-10)
 
-    def test_mae(self, ml_solved):
+    def test_mae(self, ml_solved: ps.Model) -> None:
         """Test MAE calculation."""
         mae = ml_solved.stats.mae()
 
@@ -68,7 +70,7 @@ class TestStatistics:
         mae_weighted = ml_solved.stats.mae(weighted=True)
         assert isinstance(mae_weighted, float)
 
-    def test_nse(self, ml_solved):
+    def test_nse(self, ml_solved: ps.Model) -> None:
         """Test NSE calculation."""
         nse = ml_solved.stats.nse()
 
@@ -78,7 +80,7 @@ class TestStatistics:
         # NSE should be <= 1.0 (theoretical maximum)
         assert nse <= 1.0
 
-    def test_nnse(self, ml_solved):
+    def test_nnse(self, ml_solved: ps.Model) -> None:
         """Test NNSE calculation."""
         nnse = ml_solved.stats.nnse()
 
@@ -88,7 +90,7 @@ class TestStatistics:
         # NNSE should be between 0 and 1
         assert 0 <= nnse <= 1.0
 
-    def test_pearsonr(self, ml_solved):
+    def test_pearsonr(self, ml_solved: ps.Model) -> None:
         """Test Pearson r calculation."""
         r = ml_solved.stats.pearsonr()
 
@@ -98,7 +100,7 @@ class TestStatistics:
         # Pearson r should be between -1 and 1
         assert -1.0 <= r <= 1.0
 
-    def test_evp(self, ml_solved):
+    def test_evp(self, ml_solved: ps.Model) -> None:
         """Test EVP calculation."""
         evp = ml_solved.stats.evp()
 
@@ -108,7 +110,7 @@ class TestStatistics:
         # EVP should be between 0 and 100
         assert 0 <= evp <= 100
 
-    def test_rsq(self, ml_solved):
+    def test_rsq(self, ml_solved: ps.Model) -> None:
         """Test R-squared calculation."""
         rsq = ml_solved.stats.rsq()
 
@@ -118,7 +120,7 @@ class TestStatistics:
         # R-squared should be between 0 and 1
         assert rsq <= 1.0
 
-    def test_kge(self, ml_solved):
+    def test_kge(self, ml_solved: ps.Model) -> None:
         """Test KGE calculation."""
         kge = ml_solved.stats.kge()
 
@@ -132,7 +134,7 @@ class TestStatistics:
         kge_mod = ml_solved.stats.kge(modified=True)
         assert isinstance(kge_mod, float)
 
-    def test_kge_2012(self, ml_solved):
+    def test_kge_2012(self, ml_solved: ps.Model) -> None:
         """Test KGE 2012 calculation."""
         kge_2012 = ml_solved.stats.kge_2012()
 
@@ -142,7 +144,7 @@ class TestStatistics:
         # KGE 2012 should be <= 1.0 (theoretical maximum)
         assert kge_2012 <= 1.0
 
-    def test_information_criteria(self, ml_solved):
+    def test_information_criteria(self, ml_solved: ps.Model) -> None:
         """Test information criteria calculations."""
         # Test AIC
         aic = ml_solved.stats.aic()
@@ -162,7 +164,7 @@ class TestStatistics:
         # AICc should be larger than AIC
         assert aicc > aic
 
-    def test_summary(self, ml_solved):
+    def test_summary(self, ml_solved: ps.Model) -> None:
         """Test summary method."""
         # Get summary with default stats
         summary = ml_solved.stats.summary()
@@ -183,7 +185,7 @@ class TestStatistics:
         for stat in selected_stats:
             assert stat in summary_selected.index
 
-    def test_diagnostics(self, ml_solved, ml_noisemodel):
+    def test_diagnostics(self, ml_solved: ps.Model, ml_noisemodel: ps.Model) -> None:
         """Test diagnostics method."""
         # Get diagnostics for model without noise model
         diag = ml_solved.stats.diagnostics()
@@ -195,7 +197,7 @@ class TestStatistics:
         diag_noise = ml_noisemodel.stats.diagnostics()
         assert isinstance(diag_noise, pd.DataFrame)
 
-    def test_tmin_tmax_filtering(self, ml_solved):
+    def test_tmin_tmax_filtering(self, ml_solved: ps.Model) -> None:
         """Test statistics with tmin/tmax filtering."""
         # Get full period statistic
         full_rmse = ml_solved.stats.rmse()

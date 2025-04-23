@@ -1,6 +1,7 @@
 """Tests for the stressmodels module."""
 
 from unittest.mock import patch
+from typing import Any, List, Optional, Tuple, Dict, Union
 
 import numpy as np
 import pandas as pd
@@ -21,7 +22,7 @@ from pastas.stressmodels import (
 
 
 @pytest.fixture
-def stress_data():
+def stress_data() -> pd.Series:
     """Create stress data for testing."""
     date_range = pd.date_range(start="2000-01-01", end="2002-12-31", freq="D")
     stress = pd.Series(np.random.rand(len(date_range)), index=date_range)
@@ -29,13 +30,15 @@ def stress_data():
 
 
 @pytest.fixture
-def response_function():
+def response_function() -> ps.rfunc.RfuncBase:
     """Create response function for testing."""
     return ps.Exponential()
 
 
 @pytest.fixture
-def basic_stress_model(stress_data, response_function):
+def basic_stress_model(
+    stress_data: pd.Series, response_function: ps.rfunc.RfuncBase
+) -> StressModel:
     """Create basic StressModel for testing."""
     return StressModel(
         stress=stress_data, rfunc=response_function, name="stress1", settings="prec"
@@ -45,7 +48,7 @@ def basic_stress_model(stress_data, response_function):
 class TestStressModelBase:
     """Test StressModelBase methods."""
 
-    def test_update_stress(self, basic_stress_model):
+    def test_update_stress(self, basic_stress_model: StressModel) -> None:
         """Test updating stress settings."""
         # Get original frequency
         original_freq = basic_stress_model.freq
@@ -60,7 +63,7 @@ class TestStressModelBase:
         # Reset to original frequency
         basic_stress_model.update_stress(freq=original_freq)
 
-    def test_get_stress(self, basic_stress_model):
+    def test_get_stress(self, basic_stress_model: StressModel) -> None:
         """Test getting stress."""
         stress = basic_stress_model.get_stress()
         assert isinstance(stress, pd.Series)
@@ -77,7 +80,9 @@ class TestStressModelBase:
 class TestStressModel:
     """Test StressModel."""
 
-    def test_init(self, stress_data, response_function):
+    def test_init(
+        self, stress_data: pd.Series, response_function: ps.rfunc.RfuncBase
+    ) -> None:
         """Test initialization."""
         sm = StressModel(stress=stress_data, rfunc=response_function, name="test")
         assert sm.name == "test"
@@ -92,7 +97,7 @@ class TestStressModel:
         )
         assert sm.stress[0].settings["fill_nan"] == "mean"
 
-    def test_simulate(self, basic_stress_model):
+    def test_simulate(self, basic_stress_model: StressModel) -> None:
         """Test simulate method."""
         # Get parameters
         p = basic_stress_model.parameters.initial.values
@@ -105,7 +110,7 @@ class TestStressModel:
         assert len(sim) == len(basic_stress_model.stress[0].series)
         assert not np.isnan(sim).any()
 
-    def test_to_dict(self, basic_stress_model):
+    def test_to_dict(self, basic_stress_model: StressModel) -> None:
         """Test to_dict method."""
         data = basic_stress_model.to_dict()
 
@@ -122,7 +127,7 @@ class TestStressModel:
 class TestStepModel:
     """Test StepModel."""
 
-    def test_init(self):
+    def test_init(self) -> None:
         """Test initialization."""
         sm = StepModel(tstart="2001-01-01", name="step1")
         assert sm.name == "step1"
@@ -132,7 +137,7 @@ class TestStepModel:
         assert sm.parameters.shape[0] > 0
         assert f"{sm.name}_tstart" in sm.parameters.index
 
-    def test_simulate(self):
+    def test_simulate(self) -> None:
         """Test simulate method."""
         sm = StepModel(tstart="2001-01-01", name="step1")
 
@@ -156,14 +161,14 @@ class TestStepModel:
 class TestLinearTrend:
     """Test LinearTrend."""
 
-    def test_init(self):
+    def test_init(self) -> None:
         """Test initialization."""
         sm = LinearTrend(start="2001-01-01", end="2002-01-01", name="trend1")
         assert sm.name == "trend1"
         assert sm.start == "2001-01-01"
         assert sm.end == "2002-01-01"
 
-    def test_simulate(self):
+    def test_simulate(self) -> None:
         """Test simulate method."""
         sm = LinearTrend(start="2001-01-01", end="2002-01-01", name="trend1")
 
@@ -196,7 +201,7 @@ class TestLinearTrend:
 class TestConstant:
     """Test Constant."""
 
-    def test_init(self):
+    def test_init(self) -> None:
         """Test initialization."""
         sm = Constant(name="constant", initial=5.0)
         assert sm.name == "constant"
@@ -205,7 +210,7 @@ class TestConstant:
         # Check parameter initialization
         assert sm.parameters.loc[f"{sm.name}_d", "initial"] == 5.0
 
-    def test_simulate(self):
+    def test_simulate(self) -> None:
         """Test simulate method."""
         sm = Constant(name="constant", initial=5.0)
 
@@ -217,7 +222,7 @@ class TestConstant:
 class TestTarsoModel:
     """Test TarsoModel."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Setup for tests."""
         # Create test data
         date_range = pd.date_range(start="2000-01-01", end="2002-12-31", freq="D")
@@ -232,7 +237,7 @@ class TestTarsoModel:
         # Create synthetic observations around drainage levels
         self.obs = pd.Series(np.random.normal(5, 1, len(date_range)), index=date_range)
 
-    def test_init_with_oseries(self):
+    def test_init_with_oseries(self) -> None:
         """Test initialization with observed series."""
         tm = TarsoModel(
             prec=self.prec,
@@ -244,7 +249,7 @@ class TestTarsoModel:
         assert tm.dmin == self.obs.min()
         assert tm.dmax == self.obs.max()
 
-    def test_init_with_levels(self):
+    def test_init_with_levels(self) -> None:
         """Test initialization with explicit drainage levels."""
         tm = TarsoModel(
             prec=self.prec,
@@ -257,7 +262,7 @@ class TestTarsoModel:
         assert tm.dmin == 3.0
         assert tm.dmax == 7.0
 
-    def test_init_error(self):
+    def test_init_error(self) -> None:
         """Test error when neither oseries nor levels are provided."""
         with pytest.raises(Exception) as e:
             TarsoModel(
@@ -267,7 +272,7 @@ class TestTarsoModel:
             )
         assert "Please specify either oseries or dmin and dmax" in str(e.value)
 
-    def test_initialization_conflict(self):
+    def test_initialization_conflict(self) -> None:
         """Test error when both oseries and levels are provided."""
         with pytest.raises(Exception) as e:
             TarsoModel(
@@ -280,7 +285,7 @@ class TestTarsoModel:
             )
         assert "Please specify either oseries or dmin and dmax" in str(e.value)
 
-    def test_tarso_function(self):
+    def test_tarso_function(self) -> None:
         """Test the tarso function directly."""
         tm = TarsoModel(
             prec=self.prec,
@@ -306,7 +311,7 @@ class TestTarsoModel:
         assert np.all(result >= p[2] - 1)  # Close to or above lower drainage level
         assert np.all(result <= p[5] + 1)  # Close to or below upper drainage level
 
-    def test_simulate(self):
+    def test_simulate(self) -> None:
         """Test simulate method."""
         tm = TarsoModel(
             prec=self.prec,
@@ -331,7 +336,7 @@ class TestTarsoModel:
         assert sim.min() >= tm.dmin - 1.0
         assert sim.max() <= tm.dmax + 1.0
 
-    def test_check_stressmodel_compatibility(self):
+    def test_check_stressmodel_compatibility(self) -> None:
         """Test compatibility check method."""
         # Create mock model with multiple stressmodels
         mock_model = type(
@@ -383,7 +388,7 @@ class TestTarsoModel:
 class TestRechargeModel:
     """Test RechargeModel."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Setup for tests."""
         # Create test data
         date_range = pd.date_range(start="2000-01-01", end="2001-12-31", freq="D")
@@ -402,7 +407,7 @@ class TestRechargeModel:
             index=date_range,
         )
 
-    def test_init_linear(self):
+    def test_init_linear(self) -> None:
         """Test initialization with Linear recharge model."""
         rm = RechargeModel(
             prec=self.prec,
@@ -417,7 +422,7 @@ class TestRechargeModel:
     @pytest.mark.skipif(
         not hasattr(ps.rch, "FlexModel"), reason="FlexModel not available"
     )
-    def test_init_flex(self):
+    def test_init_flex(self) -> None:
         """Test initialization with FlexModel recharge model."""
         rm = RechargeModel(
             prec=self.prec,
@@ -428,7 +433,7 @@ class TestRechargeModel:
         assert rm.name == "rech2"
         assert rm.recharge._name == "FlexModel"
 
-    def test_temperature_required(self):
+    def test_temperature_required(self) -> None:
         """Test error when temp is required but not provided."""
 
         # Create recharge model that needs temperature
@@ -442,7 +447,7 @@ class TestRechargeModel:
             )
         assert "requires a temperature series" in str(e.value)
 
-    def test_with_temperature(self):
+    def test_with_temperature(self) -> None:
         """Test initialization with temperature data."""
 
         # Create recharge model that needs temperature
@@ -460,7 +465,7 @@ class TestRechargeModel:
         assert len(rm.stress) == 3  # prec, evap, and temp
         assert rm.temp is not None
 
-    def test_get_stress(self):
+    def test_get_stress(self) -> None:
         """Test get_stress method."""
         rm = RechargeModel(
             prec=self.prec,
@@ -484,7 +489,7 @@ class TestRechargeModel:
 class TestWellModel:
     """Test WellModel."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Setup for tests."""
         # Create test data
         date_range = pd.date_range(start="2000-01-01", end="2001-12-31", freq="D")
@@ -503,7 +508,7 @@ class TestWellModel:
 
         self.distances = [100, 200, 300]  # in meters
 
-    def test_init(self):
+    def test_init(self) -> None:
         """Test initialization."""
         wm = WellModel(
             stress=[self.well1, self.well2, self.well3],
@@ -523,7 +528,7 @@ class TestWellModel:
         )
         assert wm_sorted.distances.iloc[0] < wm_sorted.distances.iloc[-1]
 
-    def test_init_error(self):
+    def test_init_error(self) -> None:
         """Test error when number of stresses and distances don't match."""
         with pytest.raises(ValueError) as e:
             WellModel(
@@ -536,7 +541,7 @@ class TestWellModel:
             in str(e.value).lower()
         )
 
-    def test_get_distances(self):
+    def test_get_distances(self) -> None:
         """Test get_distances method."""
         wm = WellModel(
             stress=[self.well1, self.well2, self.well3],
@@ -560,7 +565,7 @@ class TestWellModel:
         assert dist_multi.iloc[0] == self.distances[0]
         assert dist_multi.iloc[1] == self.distances[2]
 
-    def test_simulate(self):
+    def test_simulate(self) -> None:
         """Test simulate method."""
         wm = WellModel(
             stress=[self.well1, self.well2, self.well3],
@@ -588,7 +593,7 @@ class TestWellModel:
 class TestChangeModel:
     """Test ChangeModel."""
 
-    def test_init(self, stress_data):
+    def test_init(self, stress_data: pd.Series) -> None:
         """Test initialization."""
         cm = ChangeModel(
             stress=stress_data,
@@ -602,7 +607,7 @@ class TestChangeModel:
         assert cm.rfunc1._name == "Exponential"
         assert cm.rfunc2._name == "Gamma"
 
-    def test_simulate(self, stress_data):
+    def test_simulate(self, stress_data: pd.Series) -> None:
         """Test simulate method."""
         cm = ChangeModel(
             stress=stress_data,

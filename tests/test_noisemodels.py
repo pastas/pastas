@@ -4,12 +4,13 @@ import numpy as np
 import pandas as pd
 import pytest
 from pandas import Series
+from typing import List, Optional, Any
 
 from pastas.noisemodels import ArmaNoiseModel, ArNoiseModel
 
 
 @pytest.fixture
-def residual_series():
+def residual_series() -> Series:
     """Create a residual series for testing."""
     # Create daily data for 100 days
     dates = pd.date_range(start="2020-01-01", periods=100, freq="D")
@@ -19,7 +20,7 @@ def residual_series():
 
 
 @pytest.fixture
-def irregular_residual_series():
+def irregular_residual_series() -> Series:
     """Create an irregular residual series for testing."""
     # Create 100 dates with irregular spacing
     base_dates = pd.date_range(start="2020-01-01", periods=150, freq="D")
@@ -35,7 +36,7 @@ def irregular_residual_series():
 class TestArNoiseModel:
     """Test the AR noise model."""
 
-    def test_init(self):
+    def test_init(self) -> None:
         """Test initialization of AR noise model."""
         model = ArNoiseModel()
         assert model._name == "ArNoiseModel"
@@ -47,7 +48,7 @@ class TestArNoiseModel:
         model = ArNoiseModel(norm=False)
         assert not model.norm
 
-    def test_set_init_parameters(self):
+    def test_set_init_parameters(self) -> None:
         """Test setting initial parameters with and without oseries."""
         # Without oseries
         model = ArNoiseModel()
@@ -62,7 +63,7 @@ class TestArNoiseModel:
         model.set_init_parameters(oseries)
         assert model.parameters.loc["noise_alpha", "initial"] == 3.0  # 3D frequency
 
-    def test_simulate(self, residual_series):
+    def test_simulate(self, residual_series: Series) -> None:
         """Test noise simulation."""
         model = ArNoiseModel()
         alpha = 10.0  # Set alpha parameter
@@ -85,7 +86,7 @@ class TestArNoiseModel:
         )
         assert noise.iloc[1] == pytest.approx(expected_noise)
 
-    def test_weights(self, residual_series):
+    def test_weights(self, residual_series: Series) -> None:
         """Test weights calculation."""
         model = ArNoiseModel()
         alpha = 10.0
@@ -105,7 +106,7 @@ class TestArNoiseModel:
         # Should be different from normalized weights
         assert not np.allclose(weights.values, weights_no_norm.values)
 
-    def test_get_correction(self, residual_series):
+    def test_get_correction(self, residual_series: Series) -> None:
         """Test forecast correction."""
         model = ArNoiseModel()
         alpha = 10.0
@@ -131,7 +132,7 @@ class TestArNoiseModel:
         # Correction should decay with time
         assert abs(correction.iloc[-1]) < abs(correction.iloc[0])
 
-    def test_to_dict(self):
+    def test_to_dict(self) -> None:
         """Test conversion to dictionary."""
         model = ArNoiseModel(norm=False)
         data = model.to_dict()
@@ -143,7 +144,7 @@ class TestArNoiseModel:
 class TestArmaNoiseModel:
     """Test the ARMA noise model."""
 
-    def test_init(self):
+    def test_init(self) -> None:
         """Test initialization of ARMA noise model."""
         model = ArmaNoiseModel()
         assert model._name == "ArmaNoiseModel"
@@ -151,7 +152,7 @@ class TestArmaNoiseModel:
         assert "noise_alpha" in model.parameters.index
         assert "noise_beta" in model.parameters.index
 
-    def test_set_init_parameters(self):
+    def test_set_init_parameters(self) -> None:
         """Test setting initial parameters with and without oseries."""
         # Without oseries
         model = ArmaNoiseModel()
@@ -168,7 +169,7 @@ class TestArmaNoiseModel:
         assert model.parameters.loc["noise_alpha", "initial"] == 7.0  # 7D frequency
         assert model.parameters.loc["noise_beta", "initial"] == 1.0
 
-    def test_simulate(self, residual_series):
+    def test_simulate(self, residual_series: Series) -> None:
         """Test noise simulation."""
         model = ArmaNoiseModel()
         params = [10.0, 5.0]  # alpha, beta
@@ -184,7 +185,7 @@ class TestArmaNoiseModel:
         # First value should equal first residual
         assert noise.iloc[0] == residual_series.iloc[0]
 
-    def test_calculate_noise_edge_cases(self, residual_series):
+    def test_calculate_noise_edge_cases(self, residual_series: Series) -> None:
         """Test noise calculation with edge case parameters."""
         model = ArmaNoiseModel()
 
@@ -202,7 +203,7 @@ class TestArmaNoiseModel:
 class TestParameterSetting:
     """Test parameter setting methods."""
 
-    def test_set_parameter_methods(self):
+    def test_set_parameter_methods(self) -> None:
         """Test parameter setting methods."""
         model = ArNoiseModel()
 
@@ -225,7 +226,7 @@ class TestParameterSetting:
         assert model.parameters.loc["noise_alpha", "dist"] == "normal"
 
 
-def test_irregular_time_steps(irregular_residual_series):
+def test_irregular_time_steps(irregular_residual_series: Series) -> None:
     """Test noise models with irregular time steps."""
     ar_model = ArNoiseModel()
     arma_model = ArmaNoiseModel()

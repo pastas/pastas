@@ -3,11 +3,12 @@
 import numpy as np
 from numpy.random import random
 from numpy.testing import assert_array_almost_equal
+from typing import Tuple, Any, List
 
 from pastas.stats.core import _compute_ccf_gaussian, _compute_ccf_rectangle
 
 
-def test_compute_ccf_rectangle_py_func():
+def test_compute_ccf_rectangle_py_func() -> None:
     """Test the Python version of _compute_ccf_rectangle for coverage."""
     # Access the Python version directly via the py_func attribute
     py_func = _compute_ccf_rectangle.py_func
@@ -28,7 +29,7 @@ def test_compute_ccf_rectangle_py_func():
     assert len(b) == len(lags)
 
 
-def test_compute_ccf_gaussian_py_func():
+def test_compute_ccf_gaussian_py_func() -> None:
     """Test the Python version of _compute_ccf_gaussian for coverage."""
     # Access the Python version directly via the py_func attribute
     py_func = _compute_ccf_gaussian.py_func
@@ -49,7 +50,7 @@ def test_compute_ccf_gaussian_py_func():
     assert len(b) == len(lags)
 
 
-def test_rectangle_vs_gaussian_consistency():
+def test_rectangle_vs_gaussian_consistency() -> None:
     """Test that rectangle and gaussian methods produce similar results for simple cases."""
     # Create test data with small differences
     lags = np.array([0.0, 1.0, 2.0])
