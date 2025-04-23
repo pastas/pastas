@@ -102,7 +102,7 @@ def test_ljung_box_random(random_series: pd.Series) -> None:
     # For random data, p-value should be high (fail to reject H0)
     assert p_value > 0.05
     # Q-statistic should be relatively low
-    assert q_stat < 25  # This threshold may need adjustment
+    assert q_stat < 25
 
 
 def test_ljung_box_autocorrelated(autocorrelated_series: pd.Series) -> None:
@@ -112,7 +112,7 @@ def test_ljung_box_autocorrelated(autocorrelated_series: pd.Series) -> None:
     # For autocorrelated data, p-value should be low (reject H0)
     assert p_value < 0.05
     # Q-statistic should be relatively high
-    assert q_stat > 100  # This threshold may need adjustment
+    assert q_stat > 100
 
 
 def test_ljung_box_with_parameters(random_series: pd.Series) -> None:

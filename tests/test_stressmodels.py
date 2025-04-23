@@ -418,9 +418,6 @@ class TestRechargeModel:
         assert rm.recharge._name == "Linear"
         assert len(rm.stress) == 2  # prec and evap
 
-    @pytest.mark.skipif(
-        not hasattr(ps.rch, "FlexModel"), reason="FlexModel not available"
-    )
     def test_init_flex(self) -> None:
         """Test initialization with FlexModel recharge model."""
         rm = RechargeModel(

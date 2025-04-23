@@ -311,10 +311,3 @@ class TestOptionalSolvers:
                 solver.to_dict()
         except ImportError:
             pytest.skip("emcee not installed")
-
-
-def pytest_configure(config: pytest.Config) -> None:
-    """Configure pytest markers."""
-    config.addinivalue_line(
-        "markers", "optional: mark tests that require optional dependencies"
-    )

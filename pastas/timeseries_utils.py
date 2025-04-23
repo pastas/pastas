@@ -121,7 +121,7 @@ def _get_stress_dt(freq: str) -> float:
 
     # Check if dt can be an integer, if so convert to int
     if not isinstance(dt, int):
-        if (dt).is_integer():
+        if dt.is_integer():
             dt = int(dt)
 
     return dt
