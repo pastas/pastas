@@ -79,8 +79,8 @@ def set_log_level(level: str) -> None:
     Parameters
     ----------
     level: str
-        String with the level to log messages to the screen for. Options are: "INFO",
-        "WARNING", and "ERROR".
+        String with the level to log messages to the screen for.
+        Options are: "DEBUG", "INFO", "WARNING", and "ERROR".
 
     Examples
     --------
