@@ -1046,13 +1046,22 @@ class Model:
             pmax = self.parameters.at[name, "pmax"] * factor
 
         # Type checking for parameters
-        if initial is not None and not isinstance(initial, (int, float)):
+        if initial is not None and not (
+            isinstance(initial, (int, float))
+            or (hasattr(initial, "dtype") and np.issubdtype(initial.dtype, np.number))
+        ):
             raise TypeError(
                 f"Initial value must be a number, got {type(initial).__name__}"
             )
-        if pmin is not None and not isinstance(pmin, (int, float)):
+        if pmin is not None and not (
+            isinstance(pmin, (int, float))
+            or (hasattr(pmin, "dtype") and np.issubdtype(pmin.dtype, np.number))
+        ):
             raise TypeError(f"pmin must be a number, got {type(pmin).__name__}")
-        if pmax is not None and not isinstance(pmax, (int, float)):
+        if pmax is not None and not (
+            isinstance(pmax, (int, float))
+            or (hasattr(pmax, "dtype") and np.issubdtype(pmax.dtype, np.number))
+        ):
             raise TypeError(f"pmax must be a number, got {type(pmax).__name__}")
 
         # Set the parameter properties

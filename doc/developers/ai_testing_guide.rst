@@ -51,6 +51,24 @@ The AI may also generate tests that are not relevant to the code you have writte
 
 When using AI to generate tests, it is important to remember that the AI is not perfect and may not always generate the correct tests. It is important to review the generated tests and make sure they are correct before committing them to the codebase.
 
+Testing Numba-Accelerated Functions
+----------------------------------
+
+Pastas uses Numba's ``@njit`` decorator to accelerate certain numerical functions. These functions require special testing approaches:
+
+**Testing with .py_func**: When testing Numba-accelerated functions, use the ``.py_func`` attribute to access the Python implementation:
+
+   .. code-block:: python
+
+      from pastas.your_module import numba_accelerated_function
+
+      def test_numba_function_logic():
+          # Test the Python implementation directly
+          result = numba_accelerated_function.py_func(args)
+          assert result == expected_value
+
+When prompting AI to generate tests for Numba-accelerated functions, explicitly mention the need to use the ``.py_func`` attribute to test the Python implementation.
+
 Common AI Testing Pitfalls
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
