@@ -1,5 +1,3 @@
-from typing import str
-
 import pytest
 
 import pastas as ps
