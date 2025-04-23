@@ -3,7 +3,6 @@
 import numpy as np
 from numpy.random import random
 from numpy.testing import assert_array_almost_equal
-from typing import Tuple, Any, List
 
 from pastas.stats.core import _compute_ccf_gaussian, _compute_ccf_rectangle
 

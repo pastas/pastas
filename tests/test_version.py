@@ -1,5 +1,5 @@
+from typing import Any
 from unittest.mock import patch
-from typing import Dict, Any
 
 from pastas.version import check_numba_scipy, get_versions, show_versions
 

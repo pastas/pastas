@@ -1,7 +1,6 @@
 """Tests for the stressmodels module."""
 
 from unittest.mock import patch
-from typing import Any, List, Optional, Tuple, Dict, Union
 
 import numpy as np
 import pandas as pd

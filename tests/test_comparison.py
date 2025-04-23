@@ -1,5 +1,6 @@
+from typing import Dict, List
+
 import pastas as ps
-from typing import List, Dict
 
 
 def test_comparison_plot(ml_solved: ps.Model, ml_sm: ps.Model) -> None:

@@ -3,7 +3,6 @@
 import numpy as np
 import pandas as pd
 import pytest
-from typing import Any
 
 import pastas as ps
 from pastas.timeseries import TimeSeries

@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from pandas import Series
-from typing import List, Optional, Any
 
 from pastas.noisemodels import ArmaNoiseModel, ArNoiseModel
 

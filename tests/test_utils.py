@@ -1,8 +1,8 @@
 """Tests for utility functions in pastas.utils."""
 
 import logging
+from typing import Any
 from unittest.mock import MagicMock, patch
-from typing import Tuple, Any, Optional, Union, List
 
 import pandas as pd
 import pytest

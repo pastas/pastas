@@ -1,7 +1,6 @@
 """Tests for numba-accelerated functions in stressmodels.py."""
 
 import numpy as np
-from typing import Any, List, Optional
 
 from pastas.stressmodels import TarsoModel
 

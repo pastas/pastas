@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import pytest
-from typing import Dict, Any, Union, Optional
 
 from pastas.timeseries import TimeSeries, validate_oseries, validate_stress
 

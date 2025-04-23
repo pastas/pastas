@@ -1,8 +1,8 @@
 """Tests for the timer module."""
 
 import time
+from typing import Any, Callable, Optional
 from unittest.mock import patch
-from typing import Any, Optional, Callable
 
 import pytest
 

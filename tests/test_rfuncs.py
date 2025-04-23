@@ -1,5 +1,6 @@
+from typing import str
+
 import pytest
-from typing import Any, str
 
 import pastas as ps
 
