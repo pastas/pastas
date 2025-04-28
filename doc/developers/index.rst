@@ -12,6 +12,7 @@ serves to document code conventions and quick how-to's for maintainers and devel
 
     code_style
     contributing
+    ai_testing_guide
     new_release
     roadmap
 

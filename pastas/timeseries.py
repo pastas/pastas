@@ -271,9 +271,7 @@ class TimeSeries:
         update = False
         for key, value in kwargs.items():
             if key in ["tmin", "tmax"]:
-                if value is None:
-                    pass
-                else:
+                if value is not None:
                     value = pd.Timestamp(value)
             if (value != self.settings[key]) and (value is not None):
                 self.settings[key] = value

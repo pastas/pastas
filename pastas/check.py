@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 operators = {
     "greater_equal": ">=",
-    "less_equal": ">=",
+    "less_equal": "<=",  # Fixed: was incorrectly ">=", changed to "<="
     "greater_than": ">",
     "less_than": "<",
     "equal": "==",

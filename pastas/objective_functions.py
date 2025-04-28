@@ -48,7 +48,7 @@ class GaussianLikelihood:
         parameters = DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "stderr", "name", "dist"]
         )
-        parameters.loc[name + "_var"] = (0.05, 1e-10, 1, True, 0.01, name, "uniform")
+        parameters.loc[name + "_var"] = (0.05, 1e-10, 1.0, True, 0.01, name, "uniform")
         return parameters
 
     def compute(self, rv, p):
@@ -118,7 +118,7 @@ class GaussianLikelihoodAr1:
         parameters = DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "stderr", "name", "dist"]
         )
-        parameters.loc[name + "_var"] = (0.05, 1e-10, 1, True, 0.01, name, "uniform")
+        parameters.loc[name + "_var"] = (0.05, 1e-10, 1.0, True, 0.01, name, "uniform")
         parameters.loc[name + "_phi"] = (
             0.5,
             1e-10,

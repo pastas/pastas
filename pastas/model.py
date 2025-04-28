@@ -1045,6 +1045,25 @@ class Model:
             pmin = self.parameters.at[name, "pmin"] * factor
             pmax = self.parameters.at[name, "pmax"] * factor
 
+        # Type checking for parameters
+        if initial is not None and not (
+            isinstance(initial, (int, float))
+            or (hasattr(initial, "dtype") and np.issubdtype(initial.dtype, np.number))
+        ):
+            raise TypeError(
+                f"Initial value must be a number, got {type(initial).__name__}"
+            )
+        if pmin is not None and not (
+            isinstance(pmin, (int, float))
+            or (hasattr(pmin, "dtype") and np.issubdtype(pmin.dtype, np.number))
+        ):
+            raise TypeError(f"pmin must be a number, got {type(pmin).__name__}")
+        if pmax is not None and not (
+            isinstance(pmax, (int, float))
+            or (hasattr(pmax, "dtype") and np.issubdtype(pmax.dtype, np.number))
+        ):
+            raise TypeError(f"pmax must be a number, got {type(pmax).__name__}")
+
         # Set the parameter properties
         if initial is not None:
             obj._set_initial(name, initial)
@@ -1063,6 +1082,28 @@ class Model:
             self.parameters.at[name, "dist"] = dist
         if optimal is not None:
             self.parameters.at[name, "optimal"] = optimal
+
+        # Check if bounds are consistent
+        curr_pmin = self.parameters.at[name, "pmin"]
+        curr_pmax = self.parameters.at[name, "pmax"]
+        if curr_pmin is not None and curr_pmax is not None and curr_pmin > curr_pmax:
+            raise ValueError(
+                f"Lower bound (pmin={curr_pmin}) cannot be greater than upper bound (pmax={curr_pmax})"
+            )
+
+        # Check if initial value respects bounds
+        curr_initial = self.parameters.at[name, "initial"]
+        if curr_initial is not None:
+            if curr_pmin is not None and curr_initial < curr_pmin:
+                raise ValueError(
+                    f"Initial value ({curr_initial}) cannot be less than lower bound (pmin={curr_pmin})"
+                )
+            if curr_pmax is not None and curr_initial > curr_pmax:
+                raise ValueError(
+                    f"Initial value ({curr_initial}) cannot be greater than upper bound (pmax={curr_pmax})"
+                )
+
+        return
 
     def _get_time_offset(self, freq: str) -> Timedelta:
         """Internal method to get the time offsets from the stressmodels.
