@@ -1,12 +1,15 @@
 from logging import getLogger
+from typing import Any, Dict, List, Optional, Tuple
 
-from numpy import array, concatenate, exp, linspace
-from pandas import DataFrame, MultiIndex, Timedelta, concat
+from numpy import array, concatenate, exp, linspace, mean
+from pandas import DataFrame, DatetimeIndex, MultiIndex, Timedelta, concat
 
 logger = getLogger(__name__)
 
 
-def _check_forecast_data(forecasts):
+def _check_forecast_data(
+    forecasts: Dict[str, List[DataFrame]],
+) -> Tuple[int, Any, Any, DatetimeIndex]:
     """Internal method to check the integrity of the forecasts data.
 
     Parameters
@@ -34,41 +37,68 @@ def _check_forecast_data(forecasts):
     not the same, a warning is printed and a ValueError is raised.
 
     """
+    # Input validation
+    if not isinstance(forecasts, dict) or not forecasts:
+        msg = "Forecasts must be a non-empty dictionary"
+        logger.error(msg)
+        raise ValueError(msg)
+
     n = None
     tmax = None
     tmin = None
     index = None
 
-    for fc_data in forecasts.values():
+    for sm_name, fc_data in forecasts.items():
+        if not fc_data:
+            msg = f"No forecast data provided for stressmodel '{sm_name}'"
+            logger.warning(msg)
+            continue
+
         for fc in fc_data:
+            # Check if DataFrame is empty
+            if fc.empty:
+                msg = f"Empty DataFrame in forecasts for stressmodel '{sm_name}'"
+                logger.warning(msg)
+                continue
+
             # Check if the number of columns is the same for all DataFrames
             if n is None:
                 n = fc.columns.size
                 tmin = fc.index[0]
                 tmax = fc.index[-1]
                 index = fc.index
+                logger.debug(f"First forecast found with {n} ensemble members")
             # If the number of columns is not the same, raise an error
             elif n != fc.columns.size:
                 msg = (
-                    "The number of ensemble members is not the same for all forecasts. "
-                    "Please check the forecast data."
+                    f"The number of ensemble members is not the same for all forecasts. "
+                    f"Expected {n}, got {fc.columns.size} in stressmodel '{sm_name}'."
                 )
-                # logger.error(msg)
+                logger.error(msg)
                 raise ValueError(msg)
             elif tmin != fc.index[0] or tmax != fc.index[-1]:
                 msg = (
-                    "The time index of the forecasts is not the same for all forecasts."
-                    "tmax Please check the forecast data."
+                    "The time index of the forecasts is not the same for all forecasts. "
+                    "Please check the forecast data."
                 )
-                # logger.error(msg)
+                logger.error(msg)
                 raise ValueError(msg)
-            else:
-                pass
+
+    if n is None:
+        msg = "No valid forecast data found in any of the stressmodels"
+        logger.error(msg)
+        raise ValueError(msg)
 
     return n, tmin, tmax, index
 
 
-def forecast(ml, forecasts, nparam=1, params=None, alpha=0.95, post_process=False):
+def forecast(
+    ml: Any,
+    forecasts: Dict[str, List[DataFrame]],
+    nparam: int = 1,
+    params: Optional[List[List[float]]] = None,
+    post_process: bool = False,
+) -> DataFrame:
     """Method to forecast the head from ensembles of stress forecasts.
 
     Parameters
@@ -88,8 +118,6 @@ def forecast(ml, forecasts, nparam=1, params=None, alpha=0.95, post_process=Fals
     params: list, optional
         List of parameter sets to use for the forecasts. If None, parameter sets are
         generated using the solver of the model instance. Default is None.
-    alpha: float, optional
-        The confidence level to use for the prediction intervals. Default is 0.95.
     post_process: bool, optional
         If True, the forecasts are post-processed using the noise model of the model
         instance. Default is False. If True, a noise model should be present in the
@@ -100,7 +128,7 @@ def forecast(ml, forecasts, nparam=1, params=None, alpha=0.95, post_process=Fals
     -------
     df: pandas.DataFrame
         DataFrame containing the forecasts. The columns are a MultiIndex with the first
-        level the ensemble member and the second level the parameter member.
+        level the ensemble member, the second level the parameter member, and the third level the mean and the variance of each forecast member.
 
     Notes
     -----
@@ -115,6 +143,7 @@ def forecast(ml, forecasts, nparam=1, params=None, alpha=0.95, post_process=Fals
 
     # Check the integrity of the forecasts data
     n, tmin, tmax, index = _check_forecast_data(forecasts)
+    logger.info(f"Working with {n} ensemble members from {tmin} to {tmax}")
 
     if post_process and ml.noisemodel is None:
         msg = (
@@ -126,18 +155,37 @@ def forecast(ml, forecasts, nparam=1, params=None, alpha=0.95, post_process=Fals
 
     # Generate parameter sets
     if params is None:
+        logger.info(f"Generating {nparam} parameter samples")
         params = ml2.solver.get_parameter_sample(n=nparam, max_iter=100)
         # In case not enough samples could be drawn
         if len(params) < nparam:
+            logger.warning(
+                f"Could only generate {len(params)} parameter samples instead of requested {nparam}"
+            )
             nparam = len(params)
     else:
+        if len(params) == 0:
+            msg = "Empty parameter list provided"
+            logger.error(msg)
+            raise ValueError(msg)
         nparam = len(params)
-
-    df_list = []
+        logger.info(f"Using {nparam} provided parameter sets")
 
     dt = ml.settings["freq_obs"] / Timedelta("1D")
 
-    # Generate forecasts with each ensemble member
+    # Pre-compute residuals for each parameter set since they only depend on parameters
+    logger.info("Pre-computing residuals for each parameter set")
+    residuals = {}
+    for i, param in enumerate(params):
+        residuals[i] = ml2.residuals(tmax=tmin, p=param).dropna()
+
+    # Pre-compute time vector for variance calculation
+    t = linspace(1, index.size, index.size)
+
+    df_list = []
+
+    # Pre-process stresses for each ensemble member
+    logger.info("Processing forecast data for ensemble members")
     for m in range(n):
         # Update stresses with ensemble member data
         for sm_name, fc_data in forecasts.items():
@@ -156,31 +204,25 @@ def forecast(ml, forecasts, nparam=1, params=None, alpha=0.95, post_process=Fals
             # Generate the forecasts
             sim = ml2.simulate(tmin=tmin, tmax=tmax, p=param).values
 
-            # Get the residuals
-            res = ml2.residuals(tmax=tmin, p=param).dropna()
+            # Use pre-computed residuals
+            res = residuals[i]
 
-            # Compute time-dependent variance of the forecast error based on AR1 process
+            # Vectorized computation for time-dependent variance
             if post_process:
                 var = ml2.noise(p=param).var()
                 phi = exp(-dt / param[-1])
-                t = linspace(1, index.size, index.size)
+                # Use pre-computed time vector
                 var = var * (1 - phi ** (2 * t)) / (1 - phi**2)
             else:
                 var = res.var()
 
-            # critical z value for the confidence interval based on alpha
-            # z = norm.ppf(1 - (1 - alpha) / 2)
-            # stderr = z * sqrt(var)
-
-            # Store the results (mean, lower bound, upper bound)
+            # Store the results as numpy arrays for efficiency
             data = array([sim, var])
 
             # Compute the correction from the noise model
             if post_process:
-                correction = ml2.noisemodel.get_correction(
-                    res, [param[-1]], index
-                ).values
-                data = data + correction
+                corr = ml2.noisemodel.get_correction(res, [param[-1]], index).values
+                data += corr
             df_list.append(data)
 
     # Create DataFrames to store data
@@ -191,3 +233,66 @@ def forecast(ml, forecasts, nparam=1, params=None, alpha=0.95, post_process=Fals
     df = DataFrame(data=concatenate(df_list).T, index=index, columns=mi, dtype=float)
 
     return df
+
+
+def get_overall_mean_and_variance(df: DataFrame) -> Tuple[DataFrame, DataFrame]:
+    """Method to get the overall mean and variance of the a forecast ensemble.
+
+    Parameters
+    ----------
+    df: pandas.DataFrame
+        DataFrame containing the forecasts. The columns are a MultiIndex with the first
+        level the ensemble member, the second level the parameter member, and the third
+        level the mean and the variance of each forecast member. The index is a
+        DatetimeIndex with the time steps of the forecasts.
+
+    Returns
+    -------
+    mean: pandas.Series
+        Series with the mean of the forecasts.
+    var: pandas.Series
+        Series with the variance of the forecasts.
+
+    Notes
+    -----
+    This method is used to get the overall mean and variance of the forecasts. The
+    mean and variance are calculated from the ensemble members and parameter members
+    using the law of total variance.
+
+    Example
+    -------
+    >>> import pastas as ps
+    >>> import pandas as pd
+    >>> import numpy as np
+    >>> from pastas.forecast import get_overall_mean_and_variance
+
+    >>> # Create a sample DataFrame with forecasts
+    >>> index = pd.date_range("2023-01-01", periods=10, freq="D")
+    >>> data = np.random.rand(10, 6)
+    >>> columns = pd.MultiIndex.from_product(
+    ...     [range(3), range(2), ["mean", "var"]],
+    ...     names=["ensemble_member", "param_member", "forecast"],
+    ... )
+    >>> df = pd.DataFrame(data=data, index=index, columns=columns)
+    >>> # Call the function to get the overall mean and variance
+    >>> mean, var = get_overall_mean_and_variance(df)
+    >>> print(mean)
+
+    """
+    # Get the mean and variance of the forecasts
+    means = df.loc[:, (slice(None), slice(None), "mean")]
+    variances = df.loc[:, (slice(None), slice(None), "var")]
+
+    overall_mean = means.mean(axis=1)
+
+    # Step 2: Overall variance
+    # variance of the means
+    variance_of_means = mean((means.subtract(overall_mean, axis=0)) ** 2)
+
+    # mean of the variances
+    mean_of_variances = variances.mean(axis=1)
+
+    # total variance
+    overall_variance = variance_of_means + mean_of_variances
+
+    return overall_mean, overall_variance
