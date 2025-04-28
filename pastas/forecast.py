@@ -1,7 +1,7 @@
 from logging import getLogger
 from typing import Any, Dict, List, Optional, Tuple
 
-from numpy import array, concatenate, exp, linspace, mean
+from numpy import array, empty, exp, linspace, mean, ones
 from pandas import DataFrame, DatetimeIndex, MultiIndex, Timedelta, concat
 
 logger = getLogger(__name__)
@@ -171,19 +171,39 @@ def forecast(
         nparam = len(params)
         logger.info(f"Using {nparam} provided parameter sets")
 
-    dt = ml.settings["freq_obs"] / Timedelta("1D")
+    # Pre-allocate arrays for results to avoid append operations
+    forecast_length = len(index)
+    result_array = empty((n * nparam * 2, forecast_length))
 
     # Pre-compute residuals for each parameter set since they only depend on parameters
     logger.info("Pre-computing residuals for each parameter set")
     residuals = {}
+    noise_vars = {}
     for i, param in enumerate(params):
         residuals[i] = ml2.residuals(tmax=tmin, p=param).dropna()
+        # Pre-compute noise variances if post-processing is enabled
+        if post_process:
+            noise_vars[i] = ml2.noise(tmax=tmin, p=param).var()
 
     # Pre-compute time vector for variance calculation
     t = linspace(1, index.size, index.size)
 
-    df_list = []
+    # Pre-compute phi values for each parameter if post-processing is enabled
+    if post_process:
+        dt = ml2.settings["freq_obs"] / Timedelta("1D")
 
+        phi_values = {i: exp(-dt / param[-1]) for i, param in enumerate(params)}
+        # Pre-compute denominator term (1 - phi**2) which is constant for each parameter
+        phi_denominators = {i: 1 - phi**2 for i, phi in phi_values.items()}
+        # Pre-compute all variance scaling factors at once for better performance
+        phi_scaling_factors = {
+            i: (1 - phi ** (2 * t)) / denominator
+            for i, (phi, denominator) in enumerate(
+                zip(phi_values.values(), phi_denominators.values())
+            )
+        }
+
+    result_idx = 0
     # Pre-process stresses for each ensemble member
     logger.info("Processing forecast data for ensemble members")
     for m in range(n):
@@ -193,7 +213,7 @@ def forecast(
             for i, fc in enumerate(fc_data):
                 ts = concat(
                     [
-                        sm.stress[i].series_original.loc[: tmin - Timedelta(1, "D")],
+                        sm.stress[i].series_original.loc[: tmin - Timedelta("1D")],
                         fc.iloc[:, m],
                     ]
                 )
@@ -209,28 +229,25 @@ def forecast(
 
             # Vectorized computation for time-dependent variance
             if post_process:
-                var = ml2.noise(p=param).var()
-                phi = exp(-dt / param[-1])
-                # Use pre-computed time vector
-                var = var * (1 - phi ** (2 * t)) / (1 - phi**2)
-            else:
-                var = res.var()
+                # Use pre-computed scaling factors directly
+                var = phi_scaling_factors[i] * noise_vars[i]
 
-            # Store the results as numpy arrays for efficiency
-            data = array([sim, var])
-
-            # Compute the correction from the noise model
-            if post_process:
+                # Add the correction from the noise model
                 corr = ml2.noisemodel.get_correction(res, [param[-1]], index).values
-                data += corr
-            df_list.append(data)
+                sim = sim + corr
+            else:
+                var = res.var() * ones(forecast_length)
+
+            # Store directly in pre-allocated array instead of appending to list
+            result_array[result_idx : result_idx + 2] = array([sim, var])
+            result_idx += 2  # Bump index by 2 for mean and variance
 
     # Create DataFrames to store data
     mi = MultiIndex.from_product(
         [range(n), range(nparam), ["mean", "var"]],
         names=["ensemble_member", "param_member", "forecast"],
     )
-    df = DataFrame(data=concatenate(df_list).T, index=index, columns=mi, dtype=float)
+    df = DataFrame(data=result_array.T, index=index, columns=mi, dtype=float)
 
     return df
 
@@ -285,7 +302,6 @@ def get_overall_mean_and_variance(df: DataFrame) -> Tuple[DataFrame, DataFrame]:
 
     overall_mean = means.mean(axis=1)
 
-    # Step 2: Overall variance
     # variance of the means
     variance_of_means = mean((means.subtract(overall_mean, axis=0)) ** 2)
 
