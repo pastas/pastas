@@ -583,9 +583,7 @@ class TestModelExportImport:
         assert loaded_model.stressmodels.keys() == ml_noisemodel.stressmodels.keys()
 
         # Check parameters
-        assert_frame_equal(
-            loaded_model.parameters.sort_index(), ml_noisemodel.parameters.sort_index()
-        )
+        assert_frame_equal(loaded_model.parameters, ml_noisemodel.parameters)
 
     def test_copy(self, ml_noisemodel: ps.Model) -> None:
         """Test copying a model."""
