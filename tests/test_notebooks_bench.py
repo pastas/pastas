@@ -36,6 +36,8 @@ def test_notebook(file) -> None:
         msg = "could not run {}".format(file)
         assert ival == 0, msg
         assert os.path.isfile(os.path.join(testdir, file)), msg
+        # Report success
+        print(f"Notebook {file} ran successfully.")
     except Exception as e:
         os.chdir(cwd)
         raise Exception(e)

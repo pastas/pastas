@@ -1,111 +1,155 @@
-from pathlib import Path
+"""Common fixtures for pastas tests."""
 
+from pathlib import Path
+from typing import Tuple
+
+import numpy as np
+import pandas as pd
 import pytest
-from pandas import Series, read_csv, to_datetime
 
 import pastas as ps
 
 data_path = Path(__file__).parent / "data"
 
 
-def get_prec():
-    prec = read_csv(data_path / "rain.csv", index_col=0, parse_dates=True).squeeze()
-    return prec
+# Test data generation helpers
+def generate_test_data(
+    start_date: str = "2000-01-01", end_date: str = "2005-12-31", freq: str = "D"
+) -> Tuple[pd.Series, pd.Series, pd.Series, pd.Series, pd.Series]:
+    """Generate test time series data."""
+    dates = pd.date_range(start=start_date, end=end_date, freq=freq)
 
-
-def get_evap():
-    evap = read_csv(data_path / "evap.csv", index_col=0, parse_dates=True).squeeze()
-    return evap
-
-
-def get_head() -> Series:
+    # Observation series (head)
     head = (
-        read_csv(data_path / "obs.csv", index_col=0, parse_dates=True)
+        pd.read_csv(data_path / "obs.csv", index_col=0, parse_dates=True)
         .squeeze()
         .dropna()
     )
-    return head
+    # Precipitation series
+    prec = pd.read_csv(data_path / "rain.csv", index_col=0, parse_dates=True).squeeze()
+
+    # Evaporation series
+    evap = pd.read_csv(data_path / "evap.csv", index_col=0, parse_dates=True).squeeze()
+
+    # Temperature series
+    index = (
+        pd.read_csv(data_path / "evap.csv", index_col=0, parse_dates=True)
+        .squeeze()
+        .index
+    )
+    temp = pd.Series(
+        index=index, data=np.sin(np.arange(index.size) / 2200), dtype=float
+    )
+
+    # Step series (e.g., pumping)
+    step = pd.Series(np.zeros(len(dates)), index=dates, name="step")
+    step.loc[dates[len(dates) // 3] :] = 1.0  # Step at 1/3 of the time series
+
+    return head, prec, evap, temp, step
+
+
+# Basic test data fixtures
+@pytest.fixture(scope="session")
+def test_data() -> Tuple[pd.Series, pd.Series, pd.Series, pd.Series, pd.Series]:
+    """Return all test data series."""
+    return generate_test_data()
+
+
+@pytest.fixture(scope="session")
+def head(test_data: Tuple[pd.Series, ...]) -> pd.Series:
+    """Return head observation series."""
+    return test_data[0]
+
+
+@pytest.fixture(scope="session")
+def prec(test_data: Tuple[pd.Series, ...]) -> pd.Series:
+    """Return precipitation series."""
+    return test_data[1]
+
+
+@pytest.fixture(scope="session")
+def evap(test_data: Tuple[pd.Series, ...]) -> pd.Series:
+    """Return evaporation series."""
+    return test_data[2]
+
+
+@pytest.fixture(scope="session")
+def temp(test_data: Tuple[pd.Series, ...]) -> pd.Series:
+    """Return temperature series."""
+    return test_data[3]
+
+
+@pytest.fixture(scope="session")
+def step(test_data: Tuple[pd.Series, ...]) -> pd.Series:
+    """Return step series."""
+    return test_data[4]
+
+
+# Model fixtures
+@pytest.fixture
+def ml_basic(head: pd.Series) -> ps.Model:
+    """Return a basic model with just a head series."""
+    return ps.Model(head, name="basic_model")
 
 
 @pytest.fixture
-def prec() -> Series:
-    return get_prec()
-
-
-@pytest.fixture
-def evap() -> Series:
-    return get_evap()
-
-
-@pytest.fixture
-def head() -> Series:
-    return get_head()
-
-
-@pytest.fixture
-def rm(prec: Series, evap: Series) -> ps.RechargeModel:
-    rm = ps.RechargeModel(prec=prec, evap=evap, rfunc=ps.Gamma(), name="rch")
-    return rm
-
-
-@pytest.fixture
-def sm_prec(prec: Series) -> ps.StressModel:
-    sm_prec = ps.StressModel(prec, rfunc=ps.Exponential(), name="prec", settings="prec")
-    return sm_prec
-
-
-@pytest.fixture
-def sm_evap(evap: Series) -> ps.StressModel:
-    sm_evap = ps.StressModel(evap, rfunc=ps.Exponential(), name="evap", settings="evap")
-    return sm_evap
-
-
-@pytest.fixture
-def ml_empty(head: Series) -> ps.Model:
-    ml_empty = ps.Model(head, name="Test_Model")
-    return ml_empty
-
-
-@pytest.fixture
-def ml_rm(ml_empty: ps.NoiseModel, rm: ps.RechargeModel) -> ps.Model:
-    ml_empty.add_stressmodel(rm)
-    return ml_empty
-
-
-@pytest.fixture
-def ml_sm(
-    ml_noise_only: ps.Model, sm_prec: ps.StressModel, sm_evap: ps.StressModel
-) -> ps.Model:
-    ml_noise_only.add_stressmodel([sm_prec, sm_evap])
-    return ml_noise_only
-
-
-@pytest.fixture
-def ml_noise_only(ml_empty: ps.NoiseModel) -> ps.Model:
-    ml_empty.add_noisemodel(ps.ArNoiseModel())
-    return ml_empty
-
-
-@pytest.fixture
-def ml(ml_rm: ps.Model) -> ps.Model:
-    ml_rm.add_noisemodel(ps.ArNoiseModel())
-    return ml_rm
-
-
-@pytest.fixture
-def ml_solved(ml: ps.Model) -> ps.Model:
-    ml.solve()
+def ml_recharge(head: pd.Series, prec: pd.Series, evap: pd.Series) -> ps.Model:
+    """Return a model with a recharge (rain) model."""
+    ml = ps.Model(head, name="recharge_model")
+    sm = ps.RechargeModel(prec, evap, name="rch", rfunc=ps.Exponential())
+    ml.add_stressmodel(sm)
     return ml
 
 
 @pytest.fixture
-def collwell_data() -> Series:
-    """Example Tree C from the publication."""
-    n = 9
-    x = (
-        ["200{}-04-01".format(t) for t in range(0, n)]
-        + ["200{}-08-02".format(t) for t in range(0, n)]
-        + ["201{}-08-01".format(t) for t in range(0, n)]
-    )
-    y = [1] * n + [2] * n + [3] * n
-    return Series(y, index=to_datetime(x))
+def ml_solved(ml_recharge: ps.Model) -> ps.Model:
+    """Return a model with a recharge (rain) model."""
+    ml = ml_recharge.copy()
+    ml.solve(report=False)
+    return ml
+
+
+@pytest.fixture
+def ml_sm(head: pd.Series, prec: pd.Series, evap: pd.Series) -> ps.Model:
+    """Return a model with multiple stress models."""
+    ml = ps.Model(head, name="multistress_model")
+    sm1 = ps.StressModel(prec, name="prec", rfunc=ps.Exponential(), settings="prec")
+    sm2 = ps.StressModel(evap, name="evap", rfunc=ps.Exponential(), settings="evap")
+    ml.add_stressmodel([sm1, sm2])
+    return ml
+
+
+@pytest.fixture
+def ml_step_and_exp(head: pd.Series, prec: pd.Series, step: pd.Series) -> ps.Model:
+    """Return a model with step and exponential response functions."""
+    ml = ps.Model(head, name="step_exp_model")
+    sm1 = ps.StressModel(prec, name="prec", rfunc=ps.Exponential(), settings="prec")
+    sm2 = ps.StressModel(step, name="step", rfunc=ps.StepResponse())
+    ml.add_stressmodel([sm1, sm2])
+    return ml
+
+
+@pytest.fixture
+def ml_with_transform(ml_solved: ps.Model) -> ps.Model:
+    """Add a transform to the basic recharge model."""
+    transform = ps.ThresholdTransform()
+    ml_solved.add_transform(transform)
+    return ml_solved
+
+
+@pytest.fixture
+def ml_noisemodel(ml_solved: ps.Model) -> ps.Model:
+    """Return an already solved model."""
+    ml_copy = ml_solved.copy()
+    noise = ps.ArNoiseModel()
+    ml_copy.add_noisemodel(noise)
+    ml_copy.solve(report=False)
+    return ml_copy
+
+
+# Test markers
+def pytest_configure(config: pytest.Config) -> None:
+    """Configure pytest markers."""
+    config.addinivalue_line("markers", "slow: mark test as slow")
+    config.addinivalue_line("markers", "integration: mark as integration test")
+    config.addinivalue_line("markers", "plotting: mark as test that produces plots")

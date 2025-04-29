@@ -1,11 +1,15 @@
 """This module contains utility functions for plotting."""
 
+import logging
 from typing import List, Union
 
+import matplotlib.pyplot as plt
 import numpy as np
-from pandas import Series
+from pandas import Series, Timedelta
 
 from pastas.typing import Axes
+
+logger = logging.getLogger(__name__)
 
 
 def _table_formatter_params(s: float, na_rep: str = "") -> str:
@@ -59,13 +63,7 @@ def _table_formatter_stderr(s: float, na_rep: str = "") -> str:
 
 
 def _get_height_ratios(ylims: List[Union[list, tuple]]) -> List[float]:
-    height_ratios = []
-    for ylim in ylims:
-        hr = ylim[1] - ylim[0]
-        if np.isnan(hr):
-            hr = 0.0
-        height_ratios.append(hr)
-    return height_ratios
+    return [0.0 if np.isnan(ylim[1] - ylim[0]) else ylim[1] - ylim[0] for ylim in ylims]
 
 
 def _get_stress_series(ml, split: bool = True) -> List[Series]:
@@ -100,3 +98,48 @@ def share_yaxes(axes: List[Axes]) -> None:
         iax.sharey(axes[0])
         for t in iax.get_yticklabels():
             t.set_visible(False)
+
+
+def plot_series_with_gaps(
+    series: Series, gap: Timedelta | None = None, ax: Axes | None = None, **kwargs
+) -> Axes:
+    """Plot a pandas Series with gaps if index difference is larger than gap.
+
+    Parameters
+    ----------
+    series: pd.Series
+        The series to plot.
+    gap: Timedelta | None
+        Timedelta to be considered as a gap. If the difference between two
+        consecutive index values is larger than gap, a gap is inserted in the
+        plot. If None, the maximum value between the 95th percentile of the
+        differences and 50 days is used as gap.
+    ax: Axes | None
+        The axes to plot on. if None, a new figure is created.
+    kwargs: dict
+        Additional keyword arguments that are passed to the plot method.
+    """
+    if ax is None:
+        _, ax = plt.subplots()
+
+    if gap is None:
+        gapq = np.quantile(series.index.diff().dropna(), 0.95)
+        gap = max(gapq, Timedelta(50, unit="D"))
+
+    s_split = (series.index.diff() >= gap).cumsum()
+
+    series.name = kwargs.pop("label") if "label" in kwargs else series.name
+    color = kwargs.pop("c", "k")
+    color = kwargs.pop("color", color)
+    for i, gr in series.groupby(s_split):
+        label = None if i > 0 else series.name
+        if len(gr) == 1:
+            logger.info(
+                "Isolated point found in series %s with gap larger than %s days",
+                series.name,
+                gap / Timedelta(1, "D"),
+            )
+            ax.scatter(gr.index, gr.values, label=label, marker="_", s=3.0, color=color)
+        ax.plot(gr.index, gr.values, label=label, color=color, **kwargs)
+
+    return ax

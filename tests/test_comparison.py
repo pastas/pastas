@@ -1,25 +1,21 @@
+from typing import Dict, List
+
 import pastas as ps
 
 
-def test_comparison_plot(ml: ps.Model, ml_sm: ps.Model) -> None:
-    ml.solve()
-    ml_sm.solve()
-    mc = ps.CompareModels(models=[ml, ml_sm])
+def test_comparison_plot(ml_solved: ps.Model, ml_sm: ps.Model) -> None:
+    mc = ps.CompareModels(models=[ml_solved, ml_sm])
     _ = mc.plot(legend_kwargs={"ncol": 2})
 
 
-def test_comparison_plot_sim_kwargs(ml, ml_sm) -> None:
-    ml.solve()
-    ml_sm.solve()
-    mc = ps.CompareModels(models=[ml, ml_sm], tmin="2011", tmax="2014")
+def test_comparison_plot_sim_kwargs(ml_solved: ps.Model, ml_sm: ps.Model) -> None:
+    mc = ps.CompareModels(models=[ml_solved, ml_sm], tmin="2011", tmax="2014")
     _ = mc.plot()
 
 
-def test_comparison_plot_custom(ml: ps.Model, ml_sm: ps.Model) -> None:
-    ml.solve()
-    ml_sm.solve()
-    mc = ps.CompareModels(models=[ml, ml_sm])
-    mosaic = [
+def test_comparison_plot_custom(ml_solved: ps.Model, ml_sm: ps.Model) -> None:
+    mc = ps.CompareModels(models=[ml_solved, ml_sm])
+    mosaic: List[List[str]] = [
         ["ose", "ose", "met"],
         ["sim", "sim", "tab"],
         ["res", "res", "tab"],
@@ -27,7 +23,7 @@ def test_comparison_plot_custom(ml: ps.Model, ml_sm: ps.Model) -> None:
         ["con1", "con1", "dia"],
         ["acf", "acf", "dia"],
     ]
-    smdict = {0: ["rch", "prec"], 1: ["evap"]}
+    smdict: Dict[int, List[str]] = {0: ["rch", "prec"], 1: ["evap"]}
 
     mc.initialize_adjust_height_figure(
         mosaic, figsize=(16, 10), cmap="Dark2", smdict=smdict
