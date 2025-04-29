@@ -51,8 +51,6 @@ def test_gain_methods(rfunc_name: str, up: bool) -> None:
     # Set distances for HantushWellModel
     if rfunc_name == "HantushWellModel":
         rfunc.set_distances(100.0)
-    if rfunc_name == "HantushWellModel":
-        rfunc.set_distances(100.0)
 
     # Get parameters
     p = rfunc.get_init_parameters("test").initial.to_numpy()
