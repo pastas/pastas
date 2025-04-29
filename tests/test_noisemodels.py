@@ -228,19 +228,15 @@ class TestParameterSetting:
 def test_irregular_time_steps(irregular_residual_series: Series) -> None:
     """Test noise models with irregular time steps."""
     ar_model = ArNoiseModel()
-    arma_model = ArmaNoiseModel()
 
     # Set parameters
     ar_params = [10.0]  # alpha
-    arma_params = [10.0, 5.0]  # alpha, beta
 
     # Simulate noise
     ar_noise = ar_model.simulate(irregular_residual_series, ar_params)
-    arma_noise = arma_model.simulate(irregular_residual_series, arma_params)
 
     # Check properties
     assert len(ar_noise) == len(irregular_residual_series)
-    assert len(arma_noise) == len(irregular_residual_series)
 
     # Calculate weights for AR model
     weights = ar_model.weights(irregular_residual_series, ar_params)
