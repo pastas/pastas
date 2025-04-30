@@ -1,7 +1,7 @@
 from logging import getLogger
 from typing import Any, Dict, List, Optional, Tuple
 
-from numpy import array, empty, exp, linspace, mean, ones
+from numpy import array, empty, exp, linspace, ones
 from pandas import DataFrame, DatetimeIndex, MultiIndex, Timedelta, concat
 
 logger = getLogger(__name__)
@@ -296,14 +296,13 @@ def get_overall_mean_and_variance(df: DataFrame) -> Tuple[DataFrame, DataFrame]:
     >>> print(mean)
 
     """
-    # Get the mean and variance of the forecasts
     means = df.loc[:, (slice(None), slice(None), "mean")]
     variances = df.loc[:, (slice(None), slice(None), "var")]
 
     overall_mean = means.mean(axis=1)
 
     # variance of the means
-    variance_of_means = mean((means.subtract(overall_mean, axis=0)) ** 2)
+    variance_of_means = means.var(axis=1)
 
     # mean of the variances
     mean_of_variances = variances.mean(axis=1)
