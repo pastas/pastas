@@ -83,7 +83,7 @@ To get the latest development version, use:
 -   [Metran](https://github.com/pastas/metran) is a Python package to
     perform multivariate timeseries analysis using a technique called
     dynamic factor modelling.
--   [Hydropandas](https://github.com/ArtesiaWater/hydropandas/blob/master/examples/03_hydropandas_and_pastas.ipynb)
+-   [Hydropandas](https://hydropandas.readthedocs.io/en/stable/examples/03_hydropandas_and_pastas.html)
     can be used to obtain Dutch timeseries (KNMI, Dinoloket, ..)
 -   [PyEt](https://github.com/phydrus/pyet) can be used to compute
     potential evaporation from meteorological variables.
