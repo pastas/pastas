@@ -7,10 +7,13 @@ In this section the basic concepts of analyzing and modeling hydraulic head time
 .. toctree::
     :maxdepth: 1
 
-    getting_started
-    time_series
-    pastas_modeling
-    response_functions
-    stressmodels
-    post_processing
+    01_getting_started
+    02_workflow
+    03_preprocessing
+    04_model_setup
+    05_calibration
+    06_evaluation
+    07_uncertainty
+    comparison_selection
+    analysis
     faqs
