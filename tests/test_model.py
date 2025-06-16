@@ -234,8 +234,8 @@ class TestModelSimulation:
     def test_recharge_tmax_warning(self, ml_solved: ps.Model) -> None:
         ml_solved.set_parameter("rch_a", optimal=1e4)
         check = ml_solved._check_response_tmax()
-        assert not check.loc["rch", "check_warmup"].item()
-        assert not check.loc["rch", "check_response"].item()
+        assert not check.loc["rch", "check_warmup"]
+        assert not check.loc["rch", "check_response"]
 
     def test_simulate_with_tmin_tmax(self, ml_solved: ps.Model) -> None:
         """Test simulation with specified tmin and tmax."""
