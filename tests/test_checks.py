@@ -12,7 +12,6 @@ def test_response_memory(ml_noisemodel: Model) -> None:
 
 
 def test_rsq_geq_threshold(ml_noisemodel: Model) -> None:
-    # Fixed typo in function name (was "treshold")
     df = check.rsq_geq_threshold(ml_noisemodel, threshold=0.7)
     assert df["pass"].item()
 
