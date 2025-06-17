@@ -14,7 +14,7 @@ ask you to cite the Pastas article published in Groundwater journal as follows:
   .12925>`_. doi: 10.1111/gwat.12925.
 
 To cite a specific version of the Pastas software we recommend using the the
-DOI proivded through Zenodo for every major release of the software.
+DOI provided through Zenodo for every major release of the software.
 
 - Collenteur, R., Bakker, M., Caljé, R. & Schaars, F. (XXXX). Pastas:
   open-source software for time series analysis in hydrology (Version X.X.X).
