@@ -120,11 +120,12 @@ def plot_series_with_gaps(
     if ax is None:
         _, ax = plt.subplots()
 
+    td_diff = series.index[1:] - series.index[:-1]
     if gap is None:
-        gapq = np.quantile(series.index.diff().dropna(), 0.95)
+        gapq = np.quantile(td_diff, 0.95)
         gap = max(gapq, Timedelta(50, unit="D"))
 
-    s_split = (series.index.diff() >= gap).cumsum()
+    s_split = np.append(0.0, np.cumsum(td_diff >= gap))
 
     series.name = kwargs.pop("label") if "label" in kwargs else series.name
     color = kwargs.pop("c", "k")
