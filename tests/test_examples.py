@@ -15,8 +15,9 @@ def test_example(file) -> None:
     try:
         # run each example
         with open(file) as f:
-            code = f.read()
-            exec(code, {"__file__": str(file)})
+            exec(compile(f.read(), file, "exec"))
+            # Report success
+            print(f"Example {file} ran successfully.")
         plt.close("all")
     except Exception as e:
         os.chdir(cwd)

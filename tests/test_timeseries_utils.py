@@ -5,27 +5,27 @@ import pytest
 import pastas as ps
 
 
-def test_frequency_is_supported():
+def test_frequency_is_supported() -> None:
     ps.ts._frequency_is_supported("D")
     ps.ts._frequency_is_supported("7D")
     with pytest.raises(Exception):
         ps.ts._frequency_is_supported("SMS")
 
 
-def test_get_stress_dt():
+def test_get_stress_dt() -> None:
     assert ps.ts._get_stress_dt("D") == 1.0
     assert ps.ts._get_stress_dt("7D") == 7.0
     assert ps.ts._get_stress_dt("W") == 7.0
     assert ps.ts._get_stress_dt("SMS") == 15.0
 
 
-def test_time_series_sampling_methods():
+def test_time_series_sampling_methods() -> None:
     # some helper functions to compute differences in performance
-    def values_kept(s, original):
+    def values_kept(s: pd.Series, original: pd.Series) -> int:
         diff = set(original.dropna().values) & set(s.dropna().values)
         return len(diff)
 
-    def n_duplicates(s):
+    def n_duplicates(s: pd.Series) -> int:
         return (s.value_counts() >= 2).sum()
 
     # Create timeseries
