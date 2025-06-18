@@ -2102,7 +2102,7 @@ class Model:
         check = DataFrame(
             index=sm_names,
             columns=[
-                "warmup",
+                "len_warmup",
                 "len_oseries_calib",
                 "response_tmax",
                 "check_warmup",
@@ -2125,7 +2125,7 @@ class Model:
                 sm_name, cutoff=cutoff, **kwargs
             )
 
-        check["check_warmup"] = check["response_tmax"] < check["warmup"]
+        check["check_warmup"] = check["response_tmax"] < check["len_warmup"]
         check["check_response"] = check["response_tmax"] < check["len_oseries_calib"]
 
         return check
