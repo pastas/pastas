@@ -4,7 +4,7 @@ from platform import python_version
 
 logger = logging.getLogger(__name__)
 
-__version__ = "1.9.1.dev0"
+__version__ = "1.10.0"
 
 
 def check_numba_scipy() -> bool:
