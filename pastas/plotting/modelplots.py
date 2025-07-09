@@ -458,7 +458,7 @@ class Plotting:
         axd["res"].axhline(0.0, color="k", linestyle="--", zorder=0)
         axd["res"].legend(loc=(0, 1), ncol=2, frameon=False)
 
-        # plot the contributions and resposnes of the stressmodels
+        # plot the contributions and responses of the stressmodels
         for sm_name, sm in self.ml.stressmodels.items():
             axd[f"con_{sm_name}"].plot(
                 contribs[sm_name].index,

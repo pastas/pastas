@@ -43,7 +43,7 @@ def sgi(series: Series, timescale_months: int = 1) -> Series:
         series = series.apply(sgi, timescale_months=timescale_months)
     elif isinstance(series, Series):
         # Create a copy to ensure series is untouched.
-        # Set dtype to avoid conflict when assinging SGI values
+        # Set dtype to avoid conflict when assigning SGI values
         series = series.copy().dropna().astype(float)
 
         # Loop over the months

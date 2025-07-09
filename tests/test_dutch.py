@@ -94,24 +94,19 @@ def test_in_spring() -> None:
     assert_series_equal(result, expected)
 
 
-def test_q_gxg() -> None:
+def test_q_gxg(sample_timeseries: pd.Series) -> None:
     """Test the _q_gxg helper function."""
-    # Create test series with a seasonal pattern
-    index = pd.date_range(start="2018-01-01", end="2020-12-31", freq="D")
-    time = np.arange(len(index))
-    seasonal = 10 * np.sin(2 * np.pi * time / 365.25) + 100
-    series = pd.Series(seasonal, index=index)
 
     # Test q_gxg with different quantiles
-    result_high = _q_gxg(series, q=0.94, by_year=True)
-    result_low = _q_gxg(series, q=0.06, by_year=True)
+    result_high = _q_gxg(sample_timeseries, q=0.94, by_year=True)
+    result_low = _q_gxg(sample_timeseries, q=0.06, by_year=True)
 
     # High quantile should be higher than low quantile
     assert result_high > result_low
 
     # Test by_year parameter
-    result_by_year = _q_gxg(series, q=0.5, by_year=True)
-    result_all = _q_gxg(series, q=0.5, by_year=False)
+    result_by_year = _q_gxg(sample_timeseries, q=0.5, by_year=True)
+    result_all = _q_gxg(sample_timeseries, q=0.5, by_year=False)
 
     # Results should be roughly similar but not identical
     assert abs(result_by_year - result_all) < 1.0
@@ -170,7 +165,7 @@ def test_gvg(biweekly_timeseries: pd.Series) -> None:
 
     # Test with None limit (no filling)
     result_none = gvg(biweekly_timeseries, limit=None)
-    assert isinstance(result_none, float) or np.isnan(result_none)
+    assert isinstance(result_none, float)
 
 
 def test_get_spring(sample_timeseries: pd.Series) -> None:
@@ -220,7 +215,7 @@ def test_gg(biweekly_timeseries: pd.Series) -> None:
     # Verify average calculation
     mean_value = biweekly_timeseries.mean()
     # GG should be somewhat close to the mean of all values
-    assert abs(result - mean_value) < 10.0
+    assert abs(result - mean_value) < 1.0
 
 
 def test_ghg_outputs(biweekly_timeseries: pd.Series) -> None:
@@ -286,7 +281,7 @@ def test_gxg_min_requirements() -> None:
 
     # Test with relaxed requirements
     result = ps.stats.ghg(short_series, min_n_years=1, min_n_meas=4)
-    assert isinstance(result, float)
+    assert isinstance(result, float) and not np.isnan(result)
 
     # Create a sparse series that doesn't meet min_n_meas requirement
     sparse_index = pd.date_range("2018-01-01", "2021-12-31", freq="90D")
@@ -297,7 +292,7 @@ def test_gxg_min_requirements() -> None:
 
     # Test with relaxed requirements
     result = ps.stats.glg(sparse_series, min_n_meas=1, min_n_years=3)
-    assert isinstance(result, float)
+    assert isinstance(result, float) and not np.isnan(result)
 
 
 def test_fill_methods(sample_timeseries: pd.Series) -> None:
@@ -457,6 +452,7 @@ class TestQGXG(object):
         assert v == 5
 
     def test_q_gxg_series(self) -> None:
+        """Test q_gxg functions against reference values from Menyanthes."""
         s = pd.read_csv(
             "tests/data/hseries_gxg.csv",
             index_col=0,
@@ -464,19 +460,19 @@ class TestQGXG(object):
             parse_dates=True,
             dayfirst=True,
         ).squeeze("columns")
+
+        # Calculate GXG values
         ghg = ps.stats.q_ghg(s)
         glg = ps.stats.q_glg(s)
         gvg = ps.stats.q_gvg(s)
-        print("\n")
-        print("calculated GXG's percentile method: \n")
-        print(
-            (
-                "GHG: {ghg:.2f} m+NAP\nGLG: {glg:.2f} m+NAP\nGVG: {gvg:.2f} m+NAP\n"
-            ).format(ghg=ghg, glg=glg, gvg=gvg)
-        )
-        print("Menyanthes GXG's: \n")
-        print(
-            (
-                "GHG: {ghg:.2f} m+NAP\nGLG: {glg:.2f} m+NAP\nGVG: {gvg:.2f} m+NAP\n"
-            ).format(ghg=-3.23, glg=-3.82, gvg=-3.43)
-        )
+
+        # Reference values from Menyanthes
+        ref_ghg = -3.23
+        ref_glg = -3.82
+        ref_gvg = -3.43
+
+        # Assert that calculated values are close to reference values
+        # Using tolerance of 0.1m which is reasonable for groundwater levels
+        assert abs(ghg - ref_ghg) < 0.1, f"GHG expected {ref_ghg}, got {ghg:.2f}"
+        assert abs(glg - ref_glg) < 0.1, f"GLG expected {ref_glg}, got {glg:.2f}"
+        assert abs(gvg - ref_gvg) < 0.1, f"GVG expected {ref_gvg}, got {gvg:.2f}"

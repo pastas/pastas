@@ -6,11 +6,6 @@ import pytest
 
 import pastas as ps
 
-# Use model fixtures from conftest.py instead of defining custom fixtures
-# We can use:
-# - ml_rm: Basic model with response model
-# - ml_solved: Model with noise model
-
 
 class TestStatistics:
     """Test Statistics class methods."""

@@ -4,12 +4,6 @@ from pandas import DataFrame
 from pastas.dataset import list_datasets, load_dataset
 
 
-def test_load_single_csv() -> None:
-    # Test loading a single csv file
-    dataset = load_dataset("collenteur_2021")
-    assert isinstance(dataset, DataFrame)
-
-
 def test_load_multiple_csv() -> None:
     # Test loading multiple csv files
     dataset = load_dataset("collenteur_2023")

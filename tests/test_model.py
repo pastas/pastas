@@ -231,6 +231,12 @@ class TestModelSimulation:
         assert not sim.empty
         assert sim.name == "Simulation"
 
+    def test_recharge_tmax_warning(self, ml_solved: ps.Model) -> None:
+        ml_solved.set_parameter("rch_a", optimal=1e4)
+        check = ml_solved._check_response_tmax()
+        assert not check.loc["rch", "check_warmup"]
+        assert not check.loc["rch", "check_response"]
+
     def test_simulate_with_tmin_tmax(self, ml_solved: ps.Model) -> None:
         """Test simulation with specified tmin and tmax."""
         # Get index range midpoints
@@ -583,9 +589,7 @@ class TestModelExportImport:
         assert loaded_model.stressmodels.keys() == ml_noisemodel.stressmodels.keys()
 
         # Check parameters
-        assert_frame_equal(
-            loaded_model.parameters.sort_index(), ml_noisemodel.parameters.sort_index()
-        )
+        assert_frame_equal(loaded_model.parameters, ml_noisemodel.parameters)
 
     def test_copy(self, ml_noisemodel: ps.Model) -> None:
         """Test copying a model."""
