@@ -3,7 +3,7 @@ signatures selection is based on the work of :cite:t:`heudorfer_index-based_2019
 
 # Type Hinting
 from logging import getLogger
-from typing import Optional, Tuple, Union
+from typing import Literal
 
 from numpy import (
     arctan,
@@ -323,7 +323,7 @@ def _parde_coefficients(series: Series, normalize: bool = True) -> Series:
     return coefficients
 
 
-def _martens(series: Series, normalize: bool = False) -> Tuple[Series, Series]:
+def _martens(series: Series, normalize: bool = False) -> tuple[Series, Series]:
     """Function for the average seasonal fluctuation and interannual fluctuation.
 
     Parameters
@@ -436,10 +436,10 @@ def interannual_variation(series: Series, normalize: bool = False) -> float:
 def _colwell_components(
     series: Series,
     bins: int = 11,
-    freq: str = "W",
-    method: str = "mean",
+    freq: Literal["D", "W", "M", "ME"] = "W",
+    method: Literal["mean"] = "mean",
     normalize: bool = True,
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """Colwell's predictability, constant, and contingency
     :cite:t:`colwell_predictability_1974`.
 
@@ -491,8 +491,7 @@ def _colwell_components(
     elif freq == "D":
         df["time"] = df.index.isocalendar().day
     else:
-        msg = "freq %s is not a supported option."
-        logger.error(msg, freq)
+        msg = "Signature `colwell_`: freq %s is not a supported option."
         raise ValueError(msg % freq)
 
     df["values"] = 1.0
@@ -520,7 +519,7 @@ def colwell_constancy(
     freq: str = "W",
     method: str = "mean",
     normalize: bool = True,
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """Colwells constancy index after :cite:t:`colwell_predictability_1974`.
 
     Parameters
@@ -558,7 +557,7 @@ def colwell_contingency(
     freq: str = "W",
     method: str = "mean",
     normalize: bool = True,
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """Colwell's contingency :cite:t:`colwell_predictability_1974`
 
     Parameters
@@ -593,7 +592,7 @@ def colwell_contingency(
 
 
 def low_pulse_count(
-    series: Series, quantile: float = 0.2, rolling_window: Union[str, None] = "7D"
+    series: Series, quantile: float = 0.2, rolling_window: str | None = "7D"
 ) -> float:
     """Average number of times the series is below a certain threshold per year.
 
@@ -641,7 +640,7 @@ def low_pulse_count(
 
 
 def high_pulse_count(
-    series: Series, quantile: float = 0.8, rolling_window: Union[str, None] = "7D"
+    series: Series, quantile: float = 0.8, rolling_window: str | None = "7D"
 ) -> float:
     """Average number of times the series exceeds a certain threshold per year.
 
@@ -685,7 +684,7 @@ def high_pulse_count(
 
 
 def low_pulse_duration(
-    series: Series, quantile: float = 0.2, rolling_window: Union[str, None] = "7D"
+    series: Series, quantile: float = 0.2, rolling_window: str | None = "7D"
 ) -> float:
     """Average duration of pulses where the head is below a certain threshold.
 
@@ -731,7 +730,7 @@ def low_pulse_duration(
 
 
 def high_pulse_duration(
-    series: Series, quantile: float = 0.8, rolling_window: Union[str, None] = "7D"
+    series: Series, quantile: float = 0.8, rolling_window: str | None = "7D"
 ) -> float:
     """Average duration of pulses where the head exceeds a certain threshold.
 
@@ -808,7 +807,7 @@ def _get_differences(series: Series, normalize: bool = False) -> Series:
 
 
 def rise_rate(
-    series: Series, normalize: bool = False, rolling_window: Union[str, None] = "7D"
+    series: Series, normalize: bool = False, rolling_window: str | None = "7D"
 ) -> float:
     """Mean of positive head changes from one day to the next.
 
@@ -843,7 +842,7 @@ def rise_rate(
 
 
 def fall_rate(
-    series: Series, normalize: bool = False, rolling_window: Union[str, None] = "7D"
+    series: Series, normalize: bool = False, rolling_window: str | None = "7D"
 ) -> float:
     """Mean negative head changes from one day to the next.
 
@@ -879,7 +878,7 @@ def fall_rate(
 
 
 def cv_rise_rate(
-    series: Series, normalize: bool = True, rolling_window: Union[str, None] = "7D"
+    series: Series, normalize: bool = True, rolling_window: str | None = "7D"
 ) -> float:
     """Coefficient of Variation in rise rate.
 
@@ -914,7 +913,7 @@ def cv_rise_rate(
 
 
 def cv_fall_rate(
-    series: Series, normalize: bool = False, rolling_window: Union[str, None] = "7D"
+    series: Series, normalize: bool = False, rolling_window: str | None = "7D"
 ) -> float:
     """Coefficient of Variation in fall rate.
 
@@ -1003,8 +1002,8 @@ def reversals_avg(series: Series) -> float:
     # Check if the time step is approximately daily
     if not (dt > 0.9).all() & (dt < 1.1).all():
         msg = (
-            "The time step is not approximately daily (>10%% of time steps are "
-            "non-daily). This may lead to incorrect results."
+            "Signature `reversals_avg`: the time step is not approximately daily "
+            "(>10%% of time steps are non-daily). This may lead to incorrect results."
         )
         logger.warning(msg)
         return nan
@@ -1043,7 +1042,7 @@ def reversals_cv(series: Series) -> float:
     # Check if the time step is approximately daily
     if not (dt > 0.9).all() & (dt < 1.1).all():
         msg = (
-            "The time step is not approximately daily. "
+            "Signature `reversals_cv`: the time step is not approximately daily. "
             "This may lead to incorrect results."
         )
         logger.warning(msg)
@@ -1288,7 +1287,7 @@ def recession_constant(
     # Return nan and raise warning if the decay constant is close to the boundary
     if isclose(popt[1], 0.0) or isclose(popt[1], 1e3):
         msg = (
-            "The estimated recession constant (%s) is close to the boundary. "
+            "Signature `recession_constant`: the estimated recession constant (%s) is close to the boundary. "
             "This may lead to incorrect results."
         )
         logger.warning(msg, round(popt[1], 2))
@@ -1361,7 +1360,7 @@ def recovery_constant(
     # Return nan and raise warning if the recovery constant is close to the boundary
     if isclose(popt[1], 0.0) or isclose(popt[1], 1e3):
         msg = (
-            "The estimated recovery constant (%s) is close to the boundary. "
+            "Signature `recovery_constant`: the estimated recovery constant (%s) is close to the boundary. "
             "This may lead to incorrect results."
         )
         logger.warning(msg, round(popt[1], 2))
@@ -1492,7 +1491,7 @@ def richards_pathlength(series: Series, normalize: bool = True) -> float:
 
 def _baselevel(
     series: Series, normalize: bool = True, period="30D"
-) -> Tuple[Series, Series]:
+) -> tuple[Series, Series]:
     """Baselevel function for the baselevel index and stability.
 
     Parameters
@@ -1746,14 +1745,12 @@ def date_max(series: Series) -> float:
     return _date_min_max(series, "max")
 
 
-def summary(
-    data: Union[DataFrame, Series], signatures: Optional[list] = None
-) -> DataFrame:
+def summary(data: DataFrame | Series, signatures: list[str] | None = None) -> DataFrame:
     """Method to get many signatures for a time series.
 
     Parameters
     ----------
-    data: Union[pandas.DataFrame, pandas.Series]
+    data: pandas.DataFrame | pandas.Series
         pandas DataFrame or Series with DatetimeIndex
     signatures: list
         list of signatures to return. By default all available signatures are returned.
@@ -1803,7 +1800,7 @@ def summary(
             try:
                 result.loc[signature, col] = func(data[col])
             except Exception as e:
-                msg = f"Could not compute signature {signature} for column {col}: {e}"
+                msg = f"Signature '{signature}': Could not compute for series '{col}': {e}"
                 logger.warning(msg)
                 result.loc[signature, col] = nan
 
