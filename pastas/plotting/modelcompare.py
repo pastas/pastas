@@ -943,7 +943,9 @@ class CompareModels:
                 unique_labels.append(label)
             else:
                 idx = unique_labels.index(label)
-                hand = copy(unique_handles[idx]) # make a copy to avoid modifying handle in plot
+                hand = copy(
+                    unique_handles[idx]
+                )  # make a copy to avoid modifying handle in plot
                 hand.set_color("k")
                 unique_handles[idx] = hand
 
@@ -1020,8 +1022,10 @@ class CompareModels:
                 if legend and not axn.startswith("rf"):
                     legend_kwargs = {} if legend_kwargs is None else legend_kwargs
 
-                    handles, labels = self._get_legend_handles_labels_without_duplicates(
-                        self.axes[axn]
+                    handles, labels = (
+                        self._get_legend_handles_labels_without_duplicates(
+                            self.axes[axn]
+                        )
                     )
 
                     self.axes[axn].legend(
