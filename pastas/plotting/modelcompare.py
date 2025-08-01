@@ -931,6 +931,24 @@ class CompareModels:
         """
         share_yaxes(axes)
 
+    def _legend_without_duplicate_labels(
+        self, ax: plt.Axes
+    ) -> tuple[list[Any], list[str]]:
+        handles, labels = ax.get_legend_handles_labels()
+        unique_handles = []
+        unique_labels = []
+        for handle, label in zip(handles, labels):
+            if label not in unique_labels:
+                unique_handles.append(handle)
+                unique_labels.append(label)
+            else:
+                idx = unique_labels.index(label)
+                hand = copy(unique_handles[idx])
+                hand.set_color("k")
+                unique_handles[idx] = hand
+
+        return unique_handles, unique_labels
+
     def plot(
         self,
         smdict: Optional[dict] = None,
@@ -1000,10 +1018,15 @@ class CompareModels:
             if axn not in ("tab", "met", "dia"):
                 self.axes[axn].grid(grid)
                 if legend and not axn.startswith("rf"):
-                    if legend_kwargs is None:
-                        legend_kwargs = {}
-                    _, labels = self.axes[axn].get_legend_handles_labels()
+                    legend_kwargs = {} if legend_kwargs is None else legend_kwargs
+
+                    handles, labels = self._legend_without_duplicate_labels(
+                        self.axes[axn]
+                    )
+
                     self.axes[axn].legend(
+                        handles=handles,
+                        labels=labels,
                         ncol=legend_kwargs.pop(
                             "ncol", max([int(np.ceil(len(labels))), 4])
                         ),
