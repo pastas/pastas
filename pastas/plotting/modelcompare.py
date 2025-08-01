@@ -1045,6 +1045,8 @@ class CompareModels:
             self.share_xaxes(xshare_left)
         if len(xshare_right) > 1:
             self.share_xaxes(xshare_right)
+        for axn in xshare_right:
+            axn.yaxis.tick_right()
 
         # xlim bounds
         tmin, tmax = self.tmin, self.tmax
