@@ -138,7 +138,7 @@ def cv_period_mean(
     return cv
 
 
-def _cv_date_min_max(series: Series, stat: str) -> float:
+def _cv_date_min_max(series: Series, stat: Literal["min", "max"]) -> float:
     """Method to compute the coefficient of variation of the date of annual
     minimum or maximum head using circular statistics.
 
@@ -517,7 +517,7 @@ def colwell_constancy(
     series: Series,
     bins: int = 11,
     freq: str = "W",
-    method: str = "mean",
+    method: Literal["mean"] = "mean",
     normalize: bool = True,
 ) -> tuple[float, float, float]:
     """Colwells constancy index after :cite:t:`colwell_predictability_1974`.
@@ -555,7 +555,7 @@ def colwell_contingency(
     series: Series,
     bins: int = 11,
     freq: str = "W",
-    method: str = "mean",
+    method: Literal["mean"] = "mean",
     normalize: bool = True,
 ) -> tuple[float, float, float]:
     """Colwell's contingency :cite:t:`colwell_predictability_1974`
@@ -1540,7 +1540,7 @@ def _baselevel(
     return series, ht
 
 
-def baselevel_index(series: Series, normalize: bool = True, period="30D") -> float:
+def baselevel_index(series: Series, normalize: bool = True, period: str="30D") -> float:
     """Base level index (BLI) adapted after :cite:t:`organization_manual_2008`.
 
     Parameters
@@ -1572,7 +1572,7 @@ def baselevel_index(series: Series, normalize: bool = True, period="30D") -> flo
     return ht.sum() / series.sum()
 
 
-def baselevel_stability(series: Series, normalize: bool = True, period="30D") -> float:
+def baselevel_stability(series: Series, normalize: bool = True, period: str="30D") -> float:
     """Baselevel stability after :cite:t:`heudorfer_index-based_2019`.
 
     Parameters
@@ -1639,7 +1639,7 @@ def autocorr_time(series: Series, cutoff: float = 0.8, **kwargs) -> float:
         return (c < cutoff).idxmax() / Timedelta("1D")
 
 
-def _date_min_max(series: Series, stat: str) -> float:
+def _date_min_max(series: Series, stat: Literal["min", "max"]) -> float:
     """Compute the average date of the minimum head value with circular statistics.
 
     Parameters
@@ -1800,8 +1800,8 @@ def summary(data: DataFrame | Series, signatures: list[str] | None = None) -> Da
             try:
                 result.loc[signature, col] = func(data[col])
             except Exception as e:
-                msg = f"Signature '{signature}': Could not compute for series '{col}': {e}"
-                logger.warning(msg)
+                msg = f"Signature '{signature}': could not be computed for series '{col}': {e}"
+                logger.error(msg)
                 result.loc[signature, col] = nan
 
     return result
