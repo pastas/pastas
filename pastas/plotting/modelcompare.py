@@ -1,8 +1,9 @@
 """This module contains tools for visually comparing multiple models."""
 
+from copy import copy
 from itertools import combinations
 from logging import getLogger
-from typing import List, Optional
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -65,10 +66,10 @@ class CompareModels:
 
     def __init__(
         self,
-        models: List[Model],
-        names: Optional[List[str]] = None,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        models: list[Model],
+        names: list[str] | None = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
     ) -> None:
         """Initialize model compare class.
 
@@ -116,7 +117,7 @@ class CompareModels:
 
     def initialize_figure(
         self,
-        mosaic: Optional[List[List[str]]] = None,
+        mosaic: list[list[str]] | None = None,
         cmap: str = "tab10",
         return_ax: bool = False,
         **fig_kwargs,
@@ -147,9 +148,9 @@ class CompareModels:
 
     def initialize_adjust_height_figure(
         self,
-        mosaic: Optional[List[List[str]]] = None,
+        mosaic: list[list[str]] | None = None,
         cmap: str = "tab10",
-        smdict: Optional[dict] = None,
+        smdict: dict[int, list[str]] | None = None,
         **fig_kwargs,
     ) -> None:
         """initialize subplots based on a mosaic with equal vertical scales.
@@ -264,7 +265,7 @@ class CompareModels:
             if axlbl in ["sim", "res"] or axlbl.startswith("con"):
                 self.axes[axlbl].autoscale(enable=None, axis="y", tight=True)
 
-    def get_unique_stressmodels(self, models: List[Model] = None) -> List[str]:
+    def get_unique_stressmodels(self, models: list[Model] = None) -> list[str]:
         """Get all unique stressmodel names.
 
         Parameters
@@ -281,9 +282,7 @@ class CompareModels:
 
         return sm_unique
 
-    def get_default_mosaic(
-        self, n_stressmodels: Optional[int] = None
-    ) -> List[List[str]]:
+    def get_default_mosaic(self, n_stressmodels: int | None = None) -> list[list[str]]:
         """Get default mosaic for matplotlib.subplot_mosaic().
 
         Parameters
@@ -310,7 +309,7 @@ class CompareModels:
 
         return mosaic
 
-    def get_tmin_tmax(self, models: List[Model] = None) -> DataFrame:
+    def get_tmin_tmax(self, models: list[Model] = None) -> DataFrame:
         """get tmin and tmax of all models.
 
         Parameters
@@ -332,8 +331,8 @@ class CompareModels:
 
     def get_metrics(
         self,
-        models: Optional[List[Model]] = None,
-        metric_selection: Optional[List[str]] = None,
+        models: list[Model] | None = None,
+        metric_selection: list[str] | None = None,
     ) -> DataFrame:
         """get metrics of all models in a DataFrame.
 
@@ -369,9 +368,9 @@ class CompareModels:
 
     def get_parameters(
         self,
-        models: Optional[List[Model]] = None,
+        models: list[Model] | None = None,
         param_col: str = "optimal",
-        param_selection: Optional[List[str]] = None,
+        param_selection: list[str] | None = None,
     ) -> DataFrame:
         """get parameter values of all models in a DataFrame.
 
@@ -409,7 +408,7 @@ class CompareModels:
             return params
 
     def get_diagnostics(
-        self, models: Optional[List[Model]] = None, diag_col: str = "P-value"
+        self, models: list[Model] | None = None, diag_col: str = "P-value"
     ) -> DataFrame:
         """Get p-values of statistical tests in a DataFrame.
 
@@ -561,7 +560,10 @@ class CompareModels:
         return axs[axn]
 
     def plot_response(
-        self, smdict: Optional[dict] = None, axn: str = "rf{i}", response: str = "step"
+        self,
+        smdict: dict[int, list[str]] | None = None,
+        axn: str = "rf{i}",
+        response: str = "step",
     ) -> None:
         """plot step or block responses.
 
@@ -655,7 +657,7 @@ class CompareModels:
 
     def plot_contribution(
         self,
-        smdict: Optional[dict] = None,
+        smdict: dict[int, list[str]] | None = None,
         axn: str = "con{i}",
         normalized: bool = False,
     ) -> None:
@@ -729,9 +731,7 @@ class CompareModels:
         if self.axes is None:
             return axs[axn.format(i=0)]
 
-    def plot_stress(
-        self, axn: str = "stress", names: Optional[List[str]] = None
-    ) -> None:
+    def plot_stress(self, axn: str = "stress", names: list[str] | None = None) -> None:
         """plot stresses time series.
 
         Parameters
@@ -799,7 +799,7 @@ class CompareModels:
             )
         return axs[axn]
 
-    def plot_table(self, axn: str = "table", df: Optional[DataFrame] = None) -> None:
+    def plot_table(self, axn: str = "table", df: DataFrame | None = None) -> None:
         """Plot dataframe as table.
 
         Parameters
@@ -836,7 +836,7 @@ class CompareModels:
         self,
         axn: str = "tab",
         param_col: str = "optimal",
-        param_selection: Optional[List[str]] = None,
+        param_selection: list[str] | None = None,
     ) -> None:
         """plot model parameters table.
 
@@ -862,7 +862,7 @@ class CompareModels:
         return self.plot_table(axn=axn, df=params[cols])
 
     def plot_table_metrics(
-        self, axn: str = "met", metric_selection: Optional[List[str]] = None
+        self, axn: str = "met", metric_selection: list[str] | None = None
     ) -> None:
         """plot metrics table.
 
@@ -911,7 +911,7 @@ class CompareModels:
         cols = diags.columns.to_list()[-1:] + diags.columns.to_list()[:-1]
         return self.plot_table(axn=axn, df=diags[cols])
 
-    def share_xaxes(self, axes: List[Axes]) -> None:
+    def share_xaxes(self, axes: list[Axes]) -> None:
         """share x-axes.
 
         Parameters
@@ -921,7 +921,7 @@ class CompareModels:
         """
         share_xaxes(axes)
 
-    def share_yaxes(self, axes: List[Axes]) -> None:
+    def share_yaxes(self, axes: list[Axes]) -> None:
         """share y-axes.
 
         Parameters
@@ -951,13 +951,13 @@ class CompareModels:
 
     def plot(
         self,
-        smdict: Optional[dict] = None,
+        smdict: dict[int, list[str]] | None = None,
         normalized: bool = False,
-        param_selection: Optional[list] = None,
+        param_selection: list[str] | None = None,
         grid: bool = True,
         legend: bool = True,
         adjust_height: bool = False,
-        legend_kwargs: Optional[dict] = None,
+        legend_kwargs: dict[str, Any] | None = None,
         **fig_kwargs,
     ) -> None:
         """plot the models in a comparison plot.
