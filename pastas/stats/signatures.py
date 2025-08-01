@@ -1540,7 +1540,9 @@ def _baselevel(
     return series, ht
 
 
-def baselevel_index(series: Series, normalize: bool = True, period: str="30D") -> float:
+def baselevel_index(
+    series: Series, normalize: bool = True, period: str = "30D"
+) -> float:
     """Base level index (BLI) adapted after :cite:t:`organization_manual_2008`.
 
     Parameters
@@ -1572,7 +1574,9 @@ def baselevel_index(series: Series, normalize: bool = True, period: str="30D") -
     return ht.sum() / series.sum()
 
 
-def baselevel_stability(series: Series, normalize: bool = True, period: str="30D") -> float:
+def baselevel_stability(
+    series: Series, normalize: bool = True, period: str = "30D"
+) -> float:
     """Baselevel stability after :cite:t:`heudorfer_index-based_2019`.
 
     Parameters
