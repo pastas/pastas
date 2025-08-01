@@ -1061,4 +1061,4 @@ class CompareModels:
         # tab
         _ = self.plot_table_params(param_selection=param_selection)
 
-        self.figure.tight_layout(pad=0.0)
+        # self.figure.tight_layout(pad=0.0)
