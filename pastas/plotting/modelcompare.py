@@ -824,6 +824,9 @@ class CompareModels:
             colColours=[(1.0, 1.0, 1.0, 1.0)]
             + [self.cmap(i, alpha=0.75) for i in range(len(df.columns) - 1)],
             bbox=(0.0, 0.0, 1.0, 1.0),
+            colWidths=[
+                max(df[col].astype(str).str.len().max(), len(col)) for col in df.columns
+            ],
         )
         axs[axn].set_xticks([])
         axs[axn].set_yticks([])
