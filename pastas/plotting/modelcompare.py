@@ -931,7 +931,7 @@ class CompareModels:
         """
         share_yaxes(axes)
 
-    def _legend_without_duplicate_labels(
+    def _get_legend_handles_labels_without_duplicates(
         self, ax: plt.Axes
     ) -> tuple[list[Any], list[str]]:
         handles, labels = ax.get_legend_handles_labels()
@@ -943,7 +943,7 @@ class CompareModels:
                 unique_labels.append(label)
             else:
                 idx = unique_labels.index(label)
-                hand = copy(unique_handles[idx])
+                hand = copy(unique_handles[idx]) # make a copy to avoid modifying handle in plot
                 hand.set_color("k")
                 unique_handles[idx] = hand
 
@@ -1020,7 +1020,7 @@ class CompareModels:
                 if legend and not axn.startswith("rf"):
                     legend_kwargs = {} if legend_kwargs is None else legend_kwargs
 
-                    handles, labels = self._legend_without_duplicate_labels(
+                    handles, labels = self._get_legend_handles_labels_without_duplicates(
                         self.axes[axn]
                     )
 
