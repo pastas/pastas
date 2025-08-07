@@ -44,6 +44,7 @@ classifiers = [
 homepage = "https://pastas.dev"
 repository = "https://github.com/pastas/pastas"
 documentation = "https://pastas.readthedocs.io"
+installation = "https://pypi.org/project/pastas/"
 
 [project.optional-dependencies]
 solvers = ["lmfit >= 1.0.0", "emcee >= 3.0"]
@@ -88,50 +89,41 @@ fix = true
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers --durations=0"
-markers = ["notebooks: run notebooks", "bnotebooks: run benchmark notebooks", ]
+markers = ["notebooks: run notebooks", "bnotebooks: run benchmark notebooks"]
 
 [tool.tox]
-legacy_tox_ini = """
-    [tox]
-    requires = tox>=4
-    env_list = ruff, notebooks, py{310,311,312,313}
+requires = ["tox>=4"]
+env_list = ["py310", "py311", "py312", "py313", "ruff", "notebooks"]
 
-    [testenv]
-    description = run unit tests
-    extras = ci
-    commands =
-            pytest tests -m "not notebooks and not bnotebooks"
+[tool.tox.env_run_base]
+description = "run unit tests"
+extras = ["ci"]
+commands = [["pytest", "tests", "-m", '"not notebooks and not bnotebooks"']]
 
-    [testenv:all]
-    description = run all unit tests (including Notebooks) and obtain coverage
-    extras = ci
-    commands =
-            coverage run -m pytest tests -m "not bnotebooks"
-            coverage xml
+[tool.tox.env.all]
+description = "run all unit tests (including Notebooks) and obtain coverage"
+extras = ["ci"]
+commands = [
+    ["coverage", "run", "-m", "pytest", "tests", "-m", '"not bnotebooks"'],
+    ["coverage", "xml"],
+]
 
-    [testenv:notebooks]
-    description = run the benchmark notebooks
-    extras = ci
-    commands =
-            pytest tests -m "bnotebooks"
+[tool.tox.env.notebooks]
+description = "run the benchmark notebooks"
+extras = ["ci"]
+commands = [
+    ["pytest", "tests", "-m", '"bnotebooks"'],
+]
 
-    [testenv:ruff]
-    description = run ruff checks
-    extras = ruffing
-    commands =
-            ruff check --extend-select I --preview
-            ruff format --check
-
-    [testenv:ruff_fix]
-    description = run ruff locally and fix issues
-    extras = ruffing
-    commands =
-            ruff check --extend-select I --fix
-            ruff format
-
-"""
+[tool.tox.env.ruff]
+description = "run ruff checks"
+extras = ["ruffing"]
+commands = [
+    ["ruff", "check", "--extend-select", "I", "--preview"],
+    ["ruff", "format", "--check"],
+]
 
 [tool.codespell]
 skip = "*.pdf"
-ignore-regex = "[A-Za-z0-9+/]{100,}"                 # base64-encoded data in *.ipynb files
+ignore-regex = "[A-Za-z0-9+/]{100,}"  # base64-encoded data in *.ipynb files
 ignore-words-list = ["delt", "te", "theses", "Bilt"]
