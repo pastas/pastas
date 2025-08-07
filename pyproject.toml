@@ -98,13 +98,13 @@ env_list = ["py310", "py311", "py312", "py313", "ruff", "notebooks"]
 [tool.tox.env_run_base]
 description = "run unit tests"
 extras = ["ci"]
-commands = [["pytest", "tests", "-m", '"not notebooks and not bnotebooks"']]
+commands = [["pytest", "tests", "-m", "not notebooks and not bnotebooks"]]
 
 [tool.tox.env.all]
 description = "run all unit tests (including Notebooks) and obtain coverage"
 extras = ["ci"]
 commands = [
-    ["coverage", "run", "-m", "pytest", "tests", "-m", '"not bnotebooks"'],
+    ["coverage", "run", "-m", "pytest", "tests", "-m", "not bnotebooks"],
     ["coverage", "xml"],
 ]
 
@@ -112,7 +112,7 @@ commands = [
 description = "run the benchmark notebooks"
 extras = ["ci"]
 commands = [
-    ["pytest", "tests", "-m", '"bnotebooks"'],
+    ["pytest", "tests", "-m", "bnotebooks"],
 ]
 
 [tool.tox.env.ruff]
