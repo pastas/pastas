@@ -125,7 +125,8 @@ Applications
 Time Series Analysis Manual
 ---------------------------
 
-As part of a (Dutch) Manual on Time Series Analysis Notebooks were published using Pastas were published. The `notebooks <https://github.com/ArtesiaWater/stowa_handleiding_tijdreeksanalyse>` were translated in English and are available here:
+As part of a (Dutch) Manual on Time Series Analysis, Notebooks using Pastas were published.
+The `notebooks <https://github.com/ArtesiaWater/stowa_handleiding_tijdreeksanalyse>`_ were translated in English and are available here:
 
 `Preprocessing`_
 
@@ -135,24 +136,24 @@ As part of a (Dutch) Manual on Time Series Analysis Notebooks were published usi
 
 `Model assessment`_
 
-`Case Study 1 - Contribution assessment`_
+`Case Study 1 Assessing contributions`_
 
-`Case Study 2 - Characteristics`_
+`Case Study 2 Determining characteristics`_
 
-`Case Study 3 - System analysis`_
+`Case Study 3 System analysis`_
 
-`Case Study 4 - Forecasting`_
+`Case Study 4 Forecasting`_
 
 .. _Preprocessing: stowa_preprocessing.html
 .. _Model structure: stowa_model_structure.html
 .. _Model calibration: stowa_calibration.html
 .. _Model assessment: stowa_assessment.html
-.. _Case Study 1 - Contribution assessment: stowa_case_contribution_assessment.html
-.. _Case Study 2 - Characteristics: stowa_case_characteristics.html
-.. _Case Study 3 - System analysis: stowa_case_system_analysis.html
-.. _Case Study 4 - Forecasting: stowa_case_forecasting.html
+.. _Case Study 1 Assessing contributions: stowa_case_contribution_assessment.html
+.. _Case Study 2 Determining characteristics: stowa_case_characteristics.html
+.. _Case Study 3 System analysis: stowa_case_system_analysis.html
+.. _Case Study 4 Forecasting: stowa_case_forecasting.html
 
-Von Asmuth, J., Baggelaar, P., Bakker, M., Brakenhoff, D., Collenteur, R.,
+Reference: Von Asmuth, J., Baggelaar, P., Bakker, M., Brakenhoff, D., Collenteur, R.,
 Ebbens, O., Mondeel, H., Klop, S., & Schaars, F. (2021). Handleiding Tijdreeksanalyse
 (`STOWA rapport nr. 32 <https://www.stowa.nl/publicaties/handleiding-voor-het-uitvoeren-van-tijdreeksanalyses>`_).
 Stichting Toegepast Onderzoek Waterbeheer Amersfoort.
