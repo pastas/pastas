@@ -15,8 +15,6 @@
 
 """
 
-# flake8: noqa
-
 import pastas.stats.metrics as metrics
 import pastas.stats.signatures as signatures
 
