@@ -4,7 +4,6 @@ from .types import (
     Axes,
     CallBack,
     Figure,
-    Function,
     Model,
     NoiseModel,
     OseriesSettingsDict,

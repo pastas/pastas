@@ -10,6 +10,7 @@ To solve a model the following syntax can be used:
 """
 
 import importlib
+from collections.abc import Callable
 from logging import getLogger
 
 # Type Hinting
@@ -21,7 +22,7 @@ from scipy.linalg import LinAlgError, get_lapack_funcs, svd
 from scipy.optimize import Bounds, least_squares
 
 from pastas.objective_functions import GaussianLikelihood
-from pastas.typing import ArrayLike, CallBack, Function, Model
+from pastas.typing import ArrayLike, CallBack, Model
 
 logger = getLogger(__name__)
 
@@ -49,7 +50,7 @@ class BaseSolver:
         self,
         pcov: Optional[DataFrame] = None,
         nfev: Optional[int] = None,
-        obj_func: Optional[Function] = None,
+        obj_func: Optional[Callable] = None,
         **kwargs,
     ) -> None:
         self.ml = None
@@ -383,7 +384,7 @@ class BaseSolver:
 
     def _get_realizations(
         self,
-        func: Function,
+        func: Callable,
         n: Optional[int] = None,
         name: Optional[str] = None,
         max_iter: int = 10,
@@ -403,7 +404,7 @@ class BaseSolver:
 
     def _get_confidence_interval(
         self,
-        func: Function,
+        func: Callable,
         n: Optional[int] = None,
         name: Optional[str] = None,
         max_iter: int = 10,

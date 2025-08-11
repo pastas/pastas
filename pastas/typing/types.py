@@ -34,7 +34,6 @@ NoiseModel = TypeVar("NoiseModel", bound="ps.noisemodels.NoiseModelBase")  # Noi
 Solver = TypeVar("Solver", bound="ps.solver.BaseSolver")  # Base Solver
 Recharge = TypeVar("Recharge", bound="ps.recharge.RechargeBase")  # Recharge Base
 CallBack = TypeVar("CallBack", bound=Any)  # Callback
-Function = Callable[..., Any]  # Function (e.g. Objective Function)
 RFunc = TypeVar("RFunc", bound="ps.rfunc.RfuncBase")  # rFunc Base
 
 
