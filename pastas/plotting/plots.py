@@ -24,8 +24,8 @@ def compare(
     models: list[Model],
     names: Optional[list[str]] = None,
     adjust_height: bool = True,
-    tmin: Optional[TimestampType] = None,
-    tmax: Optional[TimestampType] = None,
+    tmin: TimestampType | None = None,
+    tmax: TimestampType | None = None,
     **kwargs,
 ) -> dict:
     """Plot multiple Pastas models in one figure to visually compare models.
@@ -72,8 +72,8 @@ def series(
     kde: bool = False,
     table: bool = False,
     titles: bool = True,
-    tmin: Optional[TimestampType] = None,
-    tmax: Optional[TimestampType] = None,
+    tmin: TimestampType | None = None,
+    tmax: TimestampType | None = None,
     colors_stresses: Optional[list[str]] = None,
     labels: Optional[list[str]] = None,
     figsize: tuple = (10, 5),
@@ -577,8 +577,8 @@ class TrackSolve:
     def __init__(
         self,
         ml: Model,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         update_iter: Optional[int] = None,
     ) -> None:
         logger.warning(

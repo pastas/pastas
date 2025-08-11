@@ -52,8 +52,8 @@ class Plotting:
     @model_tmin_tmax
     def plot(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         oseries: bool = True,
         simulation: bool = True,
         ax: Optional[Axes] = None,
@@ -123,8 +123,8 @@ class Plotting:
     @model_tmin_tmax
     def results(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         figsize: tuple = (10, 8),
         split: bool = False,
         adjust_height: bool = True,
@@ -631,8 +631,8 @@ class Plotting:
     @model_tmin_tmax
     def decomposition(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         ytick_base: bool = True,
         split: bool = True,
         figsize: tuple = (10, 8),
@@ -797,8 +797,8 @@ class Plotting:
     @model_tmin_tmax
     def diagnostics(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         figsize: tuple = (10, 5),
         bins: int = 50,
         acf_options: Optional[dict] = None,
@@ -871,8 +871,8 @@ class Plotting:
     @model_tmin_tmax
     def cum_frequency(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         ax: Optional[Axes] = None,
         figsize: tuple = (5, 2),
         **kwargs,
@@ -1001,8 +1001,8 @@ class Plotting:
     @model_tmin_tmax
     def stresses(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         cols: int = 1,
         split: bool = True,
         sharex: bool = True,
@@ -1060,8 +1060,8 @@ class Plotting:
     @model_tmin_tmax
     def contributions_pie(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         ax: Optional[Axes] = None,
         figsize: Optional[Figure] = None,
         split: bool = True,
@@ -1142,8 +1142,8 @@ class Plotting:
     @model_tmin_tmax
     def stacked_results(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         figsize: tuple = (10, 8),
         stackcolors: Optional[Union[Dict, list]] = None,
         stacklegend: bool = False,
@@ -1259,8 +1259,8 @@ class Plotting:
     @model_tmin_tmax
     def series(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         split: bool = True,
         **kwargs,
     ) -> Axes:
@@ -1297,8 +1297,8 @@ class Plotting:
     @model_tmin_tmax
     def summary(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         results_kwargs: Optional[dict] = None,
         diagnostics_kwargs: Optional[dict] = None,
     ) -> Figure:
@@ -1345,8 +1345,8 @@ class Plotting:
     @model_tmin_tmax
     def summary_pdf(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         results_kwargs: Optional[dict] = None,
         diagnostics_kwargs: Optional[dict] = None,
         fname: Optional[str] = None,
@@ -1386,8 +1386,8 @@ class Plotting:
     @model_tmin_tmax
     def pairplot(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         bins: Optional[int] = None,
         split: bool = True,
     ) -> Dict[str, Axes]:
@@ -1417,8 +1417,8 @@ class Plotting:
     @model_tmin_tmax
     def contribution(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         name: Optional[str] = None,
         plot_stress: bool = True,
         plot_response: bool = False,

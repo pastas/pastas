@@ -158,8 +158,8 @@ class StressModelBase:
 
     def update_stress(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         freq: Optional[str] = None,
     ) -> None:
         """Method to update the settings of the all stresses in the stress model.
@@ -194,8 +194,8 @@ class StressModelBase:
     def get_stress(
         self,
         p: Optional[ArrayLike] = None,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         freq: Optional[str] = None,
         istress: Optional[int] = None,
         **kwargs,
@@ -397,8 +397,8 @@ class StressModel(StressModelBase):
     def simulate(
         self,
         p: ArrayLike,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         freq: Optional[str] = None,
         dt: float = 1.0,
     ) -> Series:
@@ -518,8 +518,8 @@ class StepModel(StressModelBase):
     def simulate(
         self,
         p: ArrayLike,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         freq: Optional[str] = None,
         dt: float = 1.0,
     ) -> Series:
@@ -623,8 +623,8 @@ class LinearTrend(StressModelBase):
     def simulate(
         self,
         p: ArrayLike,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         freq: Optional[str] = None,
         dt: float = 1.0,
     ) -> Series:
@@ -881,8 +881,8 @@ class WellModel(StressModelBase):
     def simulate(
         self,
         p: Optional[ArrayLike] = None,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         freq: Optional[str] = None,
         dt: float = 1.0,
         istress: Optional[int] = None,
@@ -959,8 +959,8 @@ class WellModel(StressModelBase):
     def get_stress(
         self,
         p: Optional[ArrayLike] = None,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         freq: Optional[str] = None,
         istress: Optional[int] = None,
         squeeze: bool = True,
@@ -1344,8 +1344,8 @@ class RechargeModel(StressModelBase):
 
     def update_stress(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         freq: Optional[str] = None,
     ) -> None:
         """Method to update the settings of the all stresses in the stress model.
@@ -1382,8 +1382,8 @@ class RechargeModel(StressModelBase):
     def simulate(
         self,
         p: Optional[ArrayLike] = None,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         freq: Optional[str] = None,
         dt: float = 1.0,
         istress: Optional[int] = None,
@@ -1432,8 +1432,8 @@ class RechargeModel(StressModelBase):
     def get_stress(
         self,
         p: Optional[ArrayLike] = None,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         freq: Optional[str] = None,
         istress: Optional[int] = None,
         **kwargs,
@@ -1492,8 +1492,8 @@ class RechargeModel(StressModelBase):
     def get_water_balance(
         self,
         p: Optional[ArrayLike] = None,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         freq: Optional[str] = None,
     ) -> DataFrame:
         """Method to obtain the water balance components.
@@ -1716,8 +1716,8 @@ class TarsoModel(RechargeModel):
     def simulate(
         self,
         p: Optional[ArrayLike] = None,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         freq=None,
         dt: float = 1.0,
     ) -> Series:
@@ -1948,8 +1948,8 @@ class ChangeModel(StressModelBase):
     def simulate(
         self,
         p: ArrayLike,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         freq: Optional[str] = None,
         dt: float = 1.0,
     ) -> Series:
