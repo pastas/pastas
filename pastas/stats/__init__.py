@@ -1,3 +1,4 @@
+# ruff: noqa: F401
 """The stats sub-package contains statistical methods for Pastas.
 
 .. currentmodule:: pastas.stats

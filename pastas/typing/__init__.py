@@ -1,3 +1,4 @@
+# ruff: noqa: F401
 from .types import (
     ArrayLike,
     Axes,
