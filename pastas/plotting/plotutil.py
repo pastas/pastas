@@ -1,7 +1,7 @@
 """This module contains utility functions for plotting."""
 
 import logging
-from typing import Union, list
+from typing import list
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -60,7 +60,7 @@ def _table_formatter_stderr(s: float, na_rep: str = "") -> str:
         return f"±{s:.2%}"
 
 
-def _get_height_ratios(ylims: list[Union[list, tuple]]) -> list[float]:
+def _get_height_ratios(ylims: list[tuple[float, float]]) -> list[float]:
     return [0.0 if np.isnan(ylim[1] - ylim[0]) else ylim[1] - ylim[0] for ylim in ylims]
 
 

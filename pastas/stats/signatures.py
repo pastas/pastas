@@ -3,7 +3,7 @@ signatures selection is based on the work of :cite:t:`heudorfer_index-based_2019
 
 # Type Hinting
 from logging import getLogger
-from typing import Union, tuple
+from typing import tuple
 
 from numpy import (
     arctan,
@@ -593,7 +593,7 @@ def colwell_contingency(
 
 
 def low_pulse_count(
-    series: Series, quantile: float = 0.2, rolling_window: Union[str, None] = "7D"
+    series: Series, quantile: float = 0.2, rolling_window: str | None = "7D"
 ) -> float:
     """Average number of times the series is below a certain threshold per year.
 
@@ -641,7 +641,7 @@ def low_pulse_count(
 
 
 def high_pulse_count(
-    series: Series, quantile: float = 0.8, rolling_window: Union[str, None] = "7D"
+    series: Series, quantile: float = 0.8, rolling_window: str | None = "7D"
 ) -> float:
     """Average number of times the series exceeds a certain threshold per year.
 
@@ -685,7 +685,7 @@ def high_pulse_count(
 
 
 def low_pulse_duration(
-    series: Series, quantile: float = 0.2, rolling_window: Union[str, None] = "7D"
+    series: Series, quantile: float = 0.2, rolling_window: str | None = "7D"
 ) -> float:
     """Average duration of pulses where the head is below a certain threshold.
 
@@ -731,7 +731,7 @@ def low_pulse_duration(
 
 
 def high_pulse_duration(
-    series: Series, quantile: float = 0.8, rolling_window: Union[str, None] = "7D"
+    series: Series, quantile: float = 0.8, rolling_window: str | None = "7D"
 ) -> float:
     """Average duration of pulses where the head exceeds a certain threshold.
 
@@ -808,7 +808,7 @@ def _get_differences(series: Series, normalize: bool = False) -> Series:
 
 
 def rise_rate(
-    series: Series, normalize: bool = False, rolling_window: Union[str, None] = "7D"
+    series: Series, normalize: bool = False, rolling_window: str | None = "7D"
 ) -> float:
     """Mean of positive head changes from one day to the next.
 
@@ -843,7 +843,7 @@ def rise_rate(
 
 
 def fall_rate(
-    series: Series, normalize: bool = False, rolling_window: Union[str, None] = "7D"
+    series: Series, normalize: bool = False, rolling_window: str | None = "7D"
 ) -> float:
     """Mean negative head changes from one day to the next.
 
@@ -879,7 +879,7 @@ def fall_rate(
 
 
 def cv_rise_rate(
-    series: Series, normalize: bool = True, rolling_window: Union[str, None] = "7D"
+    series: Series, normalize: bool = True, rolling_window: str | None = "7D"
 ) -> float:
     """Coefficient of Variation in rise rate.
 
@@ -914,7 +914,7 @@ def cv_rise_rate(
 
 
 def cv_fall_rate(
-    series: Series, normalize: bool = False, rolling_window: Union[str, None] = "7D"
+    series: Series, normalize: bool = False, rolling_window: str | None = "7D"
 ) -> float:
     """Coefficient of Variation in fall rate.
 
@@ -1754,7 +1754,7 @@ def summary(
 
     Parameters
     ----------
-    data: Union[pandas.DataFrame, pandas.Series]
+    data: [pandas.DataFrame, pandas.Series]
         pandas DataFrame or Series with DatetimeIndex
     signatures: list
         list of signatures to return. By default all available signatures are returned.

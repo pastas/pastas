@@ -1,8 +1,7 @@
 from logging import getLogger
+from typing import Any
 
 # Type Hinting
-from typing import Optional, Union
-
 import pandas as pd
 from pandas import Series, Timedelta
 from pandas.tseries.frequencies import to_offset
@@ -96,7 +95,7 @@ class TimeSeries:
         self,
         series: Series,
         name: str | None = None,
-        settings: Optional[Union[str, dict]] = None,
+        settings: str | dict[str, Any] | None = None,
         metadata: dict | None = None,
     ) -> None:
         # Make sure we have a Pandas Series and not a 1D-DataFrame

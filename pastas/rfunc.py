@@ -29,7 +29,7 @@ except ImportError:
     prange = range
 
 # Type Hinting
-from typing import Literal, Union
+from typing import Literal
 
 from pastas.decorators import PastasDeprecationWarning
 from pastas.typing import ArrayLike
@@ -703,7 +703,7 @@ class HantushWellModel(RfuncBase):
         var_b: float,
         cov_Ab: float,
         r: float = 1.0,
-    ) -> Union[float, ArrayLike]:
+    ) -> float | ArrayLike:
         """Calculate variance of the gain from parameters A and b.
 
         Variance of the gain is calculated based on propagation of uncertainty using

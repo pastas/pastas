@@ -14,7 +14,7 @@ from collections.abc import Callable
 from logging import getLogger
 
 # Type Hinting
-from typing import Literal, Union, tuple
+from typing import Literal, tuple
 
 import numpy as np
 from pandas import DataFrame, Series
@@ -90,7 +90,7 @@ class BaseSolver:
         weights: Series | None = None,
         callback: CallBack | None = None,
         returnseparate: bool = False,
-    ) -> Union[ArrayLike, tuple[ArrayLike, ArrayLike, ArrayLike]]:
+    ) -> ArrayLike | tuple[ArrayLike, ArrayLike, ArrayLike]:
         """This method is called by all solvers to obtain a series that are
         minimized in the optimization process. It handles the application of
         the weights, a noisemodel and other optimization options.

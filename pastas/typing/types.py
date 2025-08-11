@@ -24,7 +24,7 @@ if TYPE_CHECKING:  # https://mypy.readthedocs.io/en/latest/runtime_troubles.html
     import pastas as ps
 
 # Internal Types
-TimestampType = TypeVar("TimestampType", bound=Union[str, Timestamp])  # Tmin or Tmax
+TimestampType = TypeVar("TimestampType", bound=str | Timestamp)  # Tmin or Tmax
 Model = TypeVar("Model", bound="ps.Model")  # Model
 TimeSeries = TypeVar("TimeSeries", bound="ps.timeseries.TimeSeries")  # Time Series
 StressModel = TypeVar(
@@ -112,6 +112,6 @@ class StressSettingsDict(TypedDict):
 
     sample_up: str
     sample_down: str
-    fill_nan: Union[str, float]
-    fill_before: Union[str, float]
-    fill_after: Union[str, float]
+    fill_nan: [str, float]
+    fill_before: str | float
+    fill_after: str | float

@@ -3,7 +3,7 @@
 import logging
 
 # Type Hinting
-from typing import Any, Dict, Literal, Optional, Union, list
+from typing import Any, Dict, Literal, list
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -57,7 +57,7 @@ class Plotting:
         oseries: bool = True,
         simulation: bool = True,
         ax: Axes | None = None,
-        figsize: Optional[tuple] = None,
+        figsize: tuple[float, float] | None = None,
         legend: bool = True,
         **kwargs,
     ) -> Axes:
@@ -906,9 +906,9 @@ class Plotting:
 
     def block_response(
         self,
-        stressmodels: Optional[list[str]] = None,
+        stressmodels: list[str] | None = None,
         ax: Axes | None = None,
-        figsize: Optional[tuple] = None,
+        figsize: tuple[float, float] | None = None,
         legend: bool = True,
         **kwargs,
     ) -> Axes:
@@ -953,9 +953,9 @@ class Plotting:
 
     def step_response(
         self,
-        stressmodels: Optional[list[str]] = None,
+        stressmodels: list[str] | None = None,
         ax: Axes | None = None,
-        figsize: Optional[tuple] = None,
+        figsize: tuple[float, float] | None = None,
         legend: bool = True,
         **kwargs,
     ) -> Axes:
@@ -1145,7 +1145,7 @@ class Plotting:
         tmin: TimestampType | None = None,
         tmax: TimestampType | None = None,
         figsize: tuple = (10, 8),
-        stackcolors: Optional[Union[Dict, list]] = None,
+        stackcolors: dict[str, str] | list[str] | None = None,
         stacklegend: bool = False,
         stacklegend_kws: dict | None = None,
         **kwargs,

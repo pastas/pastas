@@ -1,4 +1,4 @@
-from typing import Any, Callable, Union, dict, list
+from typing import Any, Callable, dict, list
 
 import pandas as pd
 import pytest
@@ -110,7 +110,7 @@ class TestChecklistFunction:
 
     def test_checklist_with_dict(self, ml_noisemodel: Model) -> None:
         """Test checklist with dictionary."""
-        checks: list[dict[str, Union[str, float]]] = [
+        checks: list[dict[str, str | float]] = [
             {"func": "rsq_geq_threshold", "threshold": 0.9}
         ]
         result = check.checklist(ml_noisemodel, checks, report=False)

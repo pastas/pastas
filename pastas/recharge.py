@@ -36,9 +36,6 @@ After solving a model, the simulated recharge flux can be obtained:
 
 from logging import getLogger
 
-# Type Hinting
-from typing import Union, tuple
-
 from numpy import add, exp, float64, multiply, nan_to_num, power, vstack, where, zeros
 from pandas import DataFrame
 
@@ -620,7 +617,7 @@ class Berendrecht(RechargeBase):
         dt: ArrayLike = 1.0,
         return_full: bool = False,
         **kwargs,
-    ) -> Union[ArrayLike, tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]]:
+    ) -> ArrayLike | tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
         """Simulate the recharge flux.
 
         Parameters
@@ -766,7 +763,7 @@ class Peterson(RechargeBase):
         dt: float = 1.0,
         return_full: bool = False,
         **kwargs,
-    ) -> Union[ArrayLike, tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]]:
+    ) -> ArrayLike | tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
         """Simulate the recharge flux.
 
         Parameters

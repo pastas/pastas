@@ -1,7 +1,7 @@
 """This module contains plotting methods for Pastas."""
 
 import logging
-from typing import Optional, Union, dict, list, tuple
+from typing import dict, list, tuple
 
 import matplotlib.patheffects as path_effects
 import matplotlib.pyplot as plt
@@ -22,7 +22,7 @@ __all__ = ["compare", "series", "acf", "diagnostics", "cum_frequency", "TrackSol
 
 def compare(
     models: list[Model],
-    names: Optional[list[str]] = None,
+    names: list[str] | None = None,
     adjust_height: bool = True,
     tmin: TimestampType | None = None,
     tmax: TimestampType | None = None,
@@ -67,15 +67,15 @@ def compare(
 
 def series(
     head: Series | None = None,
-    stresses: Optional[list[Series]] = None,
+    stresses: list[Series] | None = None,
     hist: bool = True,
     kde: bool = False,
     table: bool = False,
     titles: bool = True,
     tmin: TimestampType | None = None,
     tmax: TimestampType | None = None,
-    colors_stresses: Optional[list[str]] = None,
-    labels: Optional[list[str]] = None,
+    colors_stresses: list[str] | None = None,
+    labels: list[str] | None = None,
     figsize: tuple = (10, 5),
     **kwargs,
 ) -> Axes:
@@ -928,14 +928,14 @@ class TrackSolve:
 
 
 def pairplot(
-    data: Union[DataFrame, list[Series]],
+    data: DataFrame | list[Series],
     bins: int | None = None,
 ) -> dict[str, Axes]:
     """Plot correlation between time series on of values on the same time steps.
     Based on seaborn pairplot method.
     Parameters
     ----------
-    data : Union[DataFrame, list[Series]]
+    data : DataFrame | list[Series]
         List of Series or Dataframe with DateTime index
     bins : int | None, optional
         Number of bins in the histogram, by default None which uses Sturge's

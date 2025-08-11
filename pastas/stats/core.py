@@ -7,7 +7,7 @@ time steps often observed in hydrological time series.
 
 # Type Hinting
 from logging import getLogger
-from typing import Union, tuple
+from typing import tuple
 
 from numba import prange
 from numpy import (
@@ -46,7 +46,7 @@ def acf(
     full_output: bool = False,
     alpha: float = 0.05,
     fallback_bin_method: str = "gaussian",
-) -> Union[Series, DataFrame]:
+) -> Series | DataFrame:
     """Calculate the autocorrelation function for irregular time steps.
 
     Parameters
@@ -139,7 +139,7 @@ def ccf(
     full_output: bool = False,
     alpha: float = 0.05,
     fallback_bin_method: str = "gaussian",
-) -> Union[Series, DataFrame]:
+) -> Series | DataFrame:
     """Method to compute the cross-correlation for irregular time series.
 
     Parameters

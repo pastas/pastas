@@ -5,7 +5,7 @@ from logging import handlers
 from platform import platform
 
 # Type Hinting
-from typing import Any, Optional, tuple
+from typing import tuple
 
 from pandas import Timestamp
 
@@ -32,7 +32,7 @@ def get_stress_tmin_tmax(ml: ModelType) -> tuple[TimestampType, TimestampType]:
 
 
 def initialize_logger(
-    logger: Optional[Any] = None, level: Optional[Any] = logging.INFO
+    logger: logging.Logger | None = None, level: int | str | None = logging.INFO
 ) -> None:
     """Internal method to create a logger instance to log program output.
 
@@ -51,8 +51,8 @@ def initialize_logger(
 
 
 def set_console_handler(
-    logger: Optional[Any] = None,
-    level: Optional[Any] = logging.INFO,
+    logger: logging.Logger | None = None,
+    level: int | None = logging.INFO,
     fmt: str = "%(levelname)s: %(message)s",
 ) -> None:
     """Method to add a console handler to the logger of Pastas.
@@ -73,7 +73,7 @@ def set_console_handler(
     logger.addHandler(ch)
 
 
-def set_log_level(level: str) -> None:
+def set_log_level(level: int | str) -> None:
     """Set the log-level for Pastas.
 
     Parameters
@@ -92,7 +92,7 @@ def set_log_level(level: str) -> None:
     logger.setLevel(level)
 
 
-def remove_console_handler(logger: Optional[Any] = None) -> None:
+def remove_console_handler(logger: logging.Logger | None = None) -> None:
     """Method to remove the console handler to the logger of Pastas.
 
     Parameters
@@ -109,9 +109,9 @@ def remove_console_handler(logger: Optional[Any] = None) -> None:
 
 
 def add_file_handlers(
-    logger: Optional[Any] = None,
+    logger: logging.Logger | None = None,
     filenames: tuple[str] = ("info.log", "errors.log"),
-    levels: tuple[Any] = (logging.INFO, logging.ERROR),
+    levels: tuple[int] = (logging.INFO, logging.ERROR),
     maxBytes: int = 10485760,
     backupCount: int = 20,
     encoding: str = "utf8",
@@ -141,7 +141,7 @@ def add_file_handlers(
         logger.addHandler(fh)
 
 
-def remove_file_handlers(logger: Optional[logging.Logger] = None) -> None:
+def remove_file_handlers(logger: logging.Logger | None = None) -> None:
     """Method to remove any file handlers in the logger of Pastas.
 
     Parameters

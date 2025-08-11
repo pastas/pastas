@@ -18,7 +18,7 @@ from inspect import isclass
 from logging import getLogger
 
 # Type Hinting
-from typing import Any, Optional, Union
+from typing import Any
 
 import numpy as np
 from packaging.version import parse as parse_version
@@ -367,7 +367,7 @@ class StressModel(StressModelBase):
         rfunc: RFunc,
         name: str,
         up: bool = True,
-        settings: Optional[Union[str, StressSettingsDict]] = None,
+        settings: str | StressSettingsDict | None = None,
         metadata: dict | None = None,
         gain_scale_factor: float | None = None,
     ) -> None:
@@ -807,7 +807,7 @@ class WellModel(StressModelBase):
         distances: ArrayLike,
         rfunc: RFunc | None = None,
         up: bool = False,
-        settings: Union[str, StressSettingsDict] = "well",
+        settings: str | StressSettingsDict = "well",
         sort_wells: bool = True,
         metadata: list[dict[str, Any]] = None,
     ) -> None:
@@ -1242,18 +1242,18 @@ class RechargeModel(StressModelBase):
         evap: Series,
         rfunc: RFunc | None = None,
         name: str = "recharge",
-        recharge: Optional[Recharge] = None,
+        recharge: Recharge | None = None,
         temp: Series | None = None,
         settings: tuple[
-            Union[str, StressSettingsDict],
-            Union[str, StressSettingsDict],
-            Union[str, StressSettingsDict],
+            str | StressSettingsDict,
+            str | StressSettingsDict,
+            str | StressSettingsDict,
         ] = (
             "prec",
             "evap",
             "evap",
         ),
-        metadata: Optional[tuple[dict, dict, dict]] = (None, None, None),
+        metadata: tuple[dict | None, dict | None, dict | None] = (None, None, None),
     ) -> None:
         if rfunc is None:
             rfunc = Exponential()
@@ -1888,9 +1888,9 @@ class ChangeModel(StressModelBase):
         rfunc1: RFunc,
         rfunc2: RFunc,
         name: str,
-        tchange: Union[str, TimestampType],
+        tchange: str | TimestampType,
         up: bool = True,
-        settings: Optional[Union[str, StressSettingsDict]] = None,
+        settings: str | StressSettingsDict | None = None,
         metadata: dict | None = None,
     ) -> None:
         stress = TimeSeries(stress, settings=settings, metadata=metadata)
