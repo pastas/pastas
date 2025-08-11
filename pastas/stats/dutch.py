@@ -13,7 +13,7 @@ from pandas import Series, Timedelta, concat, date_range
 from pandas import __version__ as pd_version
 
 from pastas.timeseries_utils import get_sample
-from pastas.typing import Function, TimestampType
+from pastas.typing import TimestampType
 
 pandas_version = parse_version(pd_version)
 
@@ -480,7 +480,7 @@ def _in_spring(series: Series) -> Series:
 
 def _gxg(
     series: Series,
-    year_agg: Function,
+    year_agg: Callable,
     tmin: Optional[TimestampType],
     tmax: Optional[TimestampType],
     fill_method: str,
