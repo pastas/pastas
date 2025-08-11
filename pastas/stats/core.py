@@ -6,7 +6,6 @@ time steps often observed in hydrological time series.
 """
 
 from logging import getLogger
-from typing import tuple
 
 from numba import prange
 from numpy import (
