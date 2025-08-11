@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Callable, Union, dict, list
 
 import pandas as pd
 import pytest
@@ -90,7 +90,7 @@ class TestChecklistFunction:
 
     def test_checklist_with_string(self, ml_noisemodel: Model) -> None:
         """Test checklist with string function name."""
-        checks: List[str] = ["rsq_geq_threshold"]
+        checks: list[str] = ["rsq_geq_threshold"]
         result = check.checklist(ml_noisemodel, checks, report=False)
 
         # Check that result has the expected format
@@ -99,7 +99,7 @@ class TestChecklistFunction:
 
     def test_checklist_with_callable(self, ml_noisemodel: Model) -> None:
         """Test checklist with callable function."""
-        checks: List[Callable[[Model], pd.DataFrame]] = [
+        checks: list[Callable[[Model], pd.DataFrame]] = [
             lambda ml: check.rsq_geq_threshold(ml, threshold=0.8)
         ]
         result = check.checklist(ml_noisemodel, checks, report=False)
@@ -110,7 +110,7 @@ class TestChecklistFunction:
 
     def test_checklist_with_dict(self, ml_noisemodel: Model) -> None:
         """Test checklist with dictionary."""
-        checks: List[Dict[str, Union[str, float]]] = [
+        checks: list[dict[str, Union[str, float]]] = [
             {"func": "rsq_geq_threshold", "threshold": 0.9}
         ]
         result = check.checklist(ml_noisemodel, checks, report=False)
@@ -121,7 +121,7 @@ class TestChecklistFunction:
 
     def test_checklist_with_invalid_type(self, ml_noisemodel: Model) -> None:
         """Test checklist with invalid type."""
-        checks: List[int] = [123]  # Not a string, callable, or dict
+        checks: list[int] = [123]  # Not a string, callable, or dict
         with pytest.raises(TypeError):
             check.checklist(ml_noisemodel, checks, report=False)
 
@@ -137,7 +137,7 @@ class TestChecklistFunction:
 def test_check_functions_parameterized(
     ml_noisemodel: Model,
     check_func: Callable[[Model, Any], pd.DataFrame],
-    kwargs: Dict[str, float],
+    kwargs: dict[str, float],
 ) -> None:
     """Test various check functions with different parameters."""
     df = check_func(ml_noisemodel, **kwargs)

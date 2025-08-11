@@ -3,7 +3,7 @@
 import logging
 
 # Type Hinting
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, Literal, Optional, Union, list
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -906,7 +906,7 @@ class Plotting:
 
     def block_response(
         self,
-        stressmodels: Optional[List[str]] = None,
+        stressmodels: Optional[list[str]] = None,
         ax: Optional[Axes] = None,
         figsize: Optional[tuple] = None,
         legend: bool = True,
@@ -953,7 +953,7 @@ class Plotting:
 
     def step_response(
         self,
-        stressmodels: Optional[List[str]] = None,
+        stressmodels: Optional[list[str]] = None,
         ax: Optional[Axes] = None,
         figsize: Optional[tuple] = None,
         legend: bool = True,
@@ -1145,7 +1145,7 @@ class Plotting:
         tmin: Optional[TimestampType] = None,
         tmax: Optional[TimestampType] = None,
         figsize: tuple = (10, 8),
-        stackcolors: Optional[Union[Dict, List]] = None,
+        stackcolors: Optional[Union[Dict, list]] = None,
         stacklegend: bool = False,
         stacklegend_kws: Optional[dict] = None,
         **kwargs,
@@ -1280,7 +1280,7 @@ class Plotting:
             Number of bins in the histogram plot.
         titles: bool
             Set the titles or not. Taken from the name attribute of the Series.
-        labels: List of str
+        labels: list of str
             List with the labels for each subplot.
         figsize: tuple
             Set the size of the figure.

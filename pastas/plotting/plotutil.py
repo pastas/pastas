@@ -1,7 +1,7 @@
 """This module contains utility functions for plotting."""
 
 import logging
-from typing import List, Union
+from typing import Union, list
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -60,11 +60,11 @@ def _table_formatter_stderr(s: float, na_rep: str = "") -> str:
         return f"±{s:.2%}"
 
 
-def _get_height_ratios(ylims: List[Union[list, tuple]]) -> List[float]:
+def _get_height_ratios(ylims: list[Union[list, tuple]]) -> list[float]:
     return [0.0 if np.isnan(ylim[1] - ylim[0]) else ylim[1] - ylim[0] for ylim in ylims]
 
 
-def _get_stress_series(ml, split: bool = True) -> List[Series]:
+def _get_stress_series(ml, split: bool = True) -> list[Series]:
     stresses = []
     for name in ml.stressmodels.keys():
         nstress = len(ml.stressmodels[name].stress)
@@ -81,7 +81,7 @@ def _get_stress_series(ml, split: bool = True) -> List[Series]:
     return stresses
 
 
-def share_xaxes(axes: List[Axes]) -> None:
+def share_xaxes(axes: list[Axes]) -> None:
     """share x-axes"""
     for i, iax in enumerate(axes):
         if i < (len(axes) - 1):
@@ -90,7 +90,7 @@ def share_xaxes(axes: List[Axes]) -> None:
                 t.set_visible(False)
 
 
-def share_yaxes(axes: List[Axes]) -> None:
+def share_yaxes(axes: list[Axes]) -> None:
     """share y-axes"""
     for iax in axes[1:]:
         iax.sharey(axes[0])

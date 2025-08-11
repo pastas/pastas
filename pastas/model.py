@@ -7,7 +7,7 @@ from logging import getLogger
 from os import getlogin
 
 # Type Hinting
-from typing import List, Optional, Tuple, Union
+from typing import Optional, Union, list, tuple
 
 # External Dependencies
 import numpy as np
@@ -198,7 +198,7 @@ class Model:
         )
 
     def add_stressmodel(
-        self, stressmodel: Union[StressModel, List[StressModel]], replace: bool = True
+        self, stressmodel: Union[StressModel, list[StressModel]], replace: bool = True
     ) -> None:
         """Add a stressmodel to the main model.
 
@@ -1391,7 +1391,7 @@ class Model:
 
         return parameters.to_numpy(dtype=float)
 
-    def get_stressmodel_names(self) -> List[str]:
+    def get_stressmodel_names(self) -> list[str]:
         """Returns list of stressmodel names."""
         return list(self.stressmodels.keys())
 
@@ -1493,7 +1493,7 @@ class Model:
 
         return contrib
 
-    def get_contributions(self, split: bool = True, **kwargs) -> List[Series]:
+    def get_contributions(self, split: bool = True, **kwargs) -> list[Series]:
         """Method to get contributions of all stressmodels.
 
         Parameters
@@ -1807,7 +1807,7 @@ class Model:
         istress: Optional[int] = None,
         return_warmup: bool = False,
         p: Optional[ArrayLike] = None,
-    ) -> Union[Series, List[Series]]:
+    ) -> Union[Series, list[Series]]:
         """Method to obtain the stress(es) from the stressmodel.
 
         Parameters
@@ -2130,7 +2130,7 @@ class Model:
 
         return check
 
-    def _check_parameters_bounds(self) -> Tuple[Series, Series]:
+    def _check_parameters_bounds(self) -> tuple[Series, Series]:
         """Internal method to check if the optimal parameters are close to pmin or pmax.
 
         Returns

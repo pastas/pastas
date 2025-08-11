@@ -1,6 +1,6 @@
 """Tests for the Model class in pastas.model."""
 
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, tuple
 
 import numpy as np
 import pandas as pd
@@ -29,7 +29,7 @@ def simple_model() -> ps.Model:
 
 
 @pytest.fixture
-def param_fixture(ml_solved: ps.Model) -> Tuple[str, float, float, float, bool]:
+def param_fixture(ml_solved: ps.Model) -> tuple[str, float, float, float, bool]:
     """Fixture to provide a consistent parameter for testing."""
     param_name = "rch_A"
     orig_value = ml_solved.parameters.at[param_name, "initial"]
@@ -384,7 +384,7 @@ class TestModelParameters:
     def test_set_parameter_attributes(
         self,
         ml_solved: ps.Model,
-        param_fixture: Tuple[str, float, float, float, bool],
+        param_fixture: tuple[str, float, float, float, bool],
         param_attr: str,
         value: Any,
         expected: Any,
@@ -404,7 +404,7 @@ class TestModelParameters:
             ml_solved.set_parameter("nonexistent", initial=1.0)
 
     def test_set_parameter_bounds(
-        self, ml_solved: ps.Model, param_fixture: Tuple[str, float, float, float, bool]
+        self, ml_solved: ps.Model, param_fixture: tuple[str, float, float, float, bool]
     ) -> None:
         """Test setting parameter bounds."""
         param_name = param_fixture[0]
@@ -416,7 +416,7 @@ class TestModelParameters:
         assert ml_solved.parameters.at[param_name, "pmax"] == 10.0
 
     def test_set_parameter_move_bounds(
-        self, ml_solved: ps.Model, param_fixture: Tuple[str, float, float, float, bool]
+        self, ml_solved: ps.Model, param_fixture: tuple[str, float, float, float, bool]
     ) -> None:
         """Test moving parameter bounds."""
         param_name, orig_initial, orig_pmin, orig_pmax, _ = param_fixture

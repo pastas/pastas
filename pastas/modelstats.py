@@ -23,7 +23,7 @@ These methods may be used as follows.
 """
 
 # Type Hinting
-from typing import List, Optional
+from typing import Optional, list
 
 from numpy import nan
 from pandas import DataFrame
@@ -442,7 +442,7 @@ class Statistics:
         self,
         tmin: Optional[TimestampType] = None,
         tmax: Optional[TimestampType] = None,
-        stats: Optional[List[str]] = None,
+        stats: Optional[list[str]] = None,
     ) -> DataFrame:
         """Returns a Pandas DataFrame with goodness-of-fit metrics.
 

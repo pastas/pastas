@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import dict, list
 
 import pastas as ps
 
@@ -15,7 +15,7 @@ def test_comparison_plot_sim_kwargs(ml_solved: ps.Model, ml_sm: ps.Model) -> Non
 
 def test_comparison_plot_custom(ml_solved: ps.Model, ml_sm: ps.Model) -> None:
     mc = ps.CompareModels(models=[ml_solved, ml_sm])
-    mosaic: List[List[str]] = [
+    mosaic: list[list[str]] = [
         ["ose", "ose", "met"],
         ["sim", "sim", "tab"],
         ["res", "res", "tab"],
@@ -23,7 +23,7 @@ def test_comparison_plot_custom(ml_solved: ps.Model, ml_sm: ps.Model) -> None:
         ["con1", "con1", "dia"],
         ["acf", "acf", "dia"],
     ]
-    smdict: Dict[int, List[str]] = {0: ["rch", "prec"], 1: ["evap"]}
+    smdict: dict[int, list[str]] = {0: ["rch", "prec"], 1: ["evap"]}
 
     mc.initialize_adjust_height_figure(
         mosaic, figsize=(16, 10), cmap="Dark2", smdict=smdict

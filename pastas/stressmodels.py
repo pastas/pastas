@@ -18,7 +18,7 @@ from inspect import isclass
 from logging import getLogger
 
 # Type Hinting
-from typing import List, Optional, Tuple, Union
+from typing import Optional, Union, list, tuple
 
 import numpy as np
 from packaging.version import parse as parse_version
@@ -100,7 +100,7 @@ class StressModelBase:
         self.stress = []
 
     @property
-    def nparam(self) -> Tuple[int]:
+    def nparam(self) -> tuple[int]:
         return self.parameters.index.size
 
     def set_init_parameters(self) -> None:
@@ -802,7 +802,7 @@ class WellModel(StressModelBase):
 
     def __init__(
         self,
-        stress: List[Series],
+        stress: list[Series],
         name: str,
         distances: ArrayLike,
         rfunc: Optional[RFunc] = None,
@@ -1244,7 +1244,7 @@ class RechargeModel(StressModelBase):
         name: str = "recharge",
         recharge: Optional[Recharge] = None,
         temp: Optional[Series] = None,
-        settings: Tuple[
+        settings: tuple[
             Union[str, StressSettingsDict],
             Union[str, StressSettingsDict],
             Union[str, StressSettingsDict],
@@ -1253,7 +1253,7 @@ class RechargeModel(StressModelBase):
             "evap",
             "evap",
         ),
-        metadata: Optional[Tuple[dict, dict, dict]] = (None, None, None),
+        metadata: Optional[tuple[dict, dict, dict]] = (None, None, None),
     ) -> None:
         if rfunc is None:
             rfunc = Exponential()

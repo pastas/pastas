@@ -1,7 +1,7 @@
 """This module contains plotting methods for Pastas."""
 
 import logging
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Optional, Union, dict, list, tuple
 
 import matplotlib.patheffects as path_effects
 import matplotlib.pyplot as plt
@@ -21,13 +21,13 @@ __all__ = ["compare", "series", "acf", "diagnostics", "cum_frequency", "TrackSol
 
 
 def compare(
-    models: List[Model],
-    names: Optional[List[str]] = None,
+    models: list[Model],
+    names: Optional[list[str]] = None,
     adjust_height: bool = True,
     tmin: Optional[TimestampType] = None,
     tmax: Optional[TimestampType] = None,
     **kwargs,
-) -> Dict:
+) -> dict:
     """Plot multiple Pastas models in one figure to visually compare models.
 
     Notes
@@ -67,15 +67,15 @@ def compare(
 
 def series(
     head: Optional[Series] = None,
-    stresses: Optional[List[Series]] = None,
+    stresses: Optional[list[Series]] = None,
     hist: bool = True,
     kde: bool = False,
     table: bool = False,
     titles: bool = True,
     tmin: Optional[TimestampType] = None,
     tmax: Optional[TimestampType] = None,
-    colors_stresses: Optional[List[str]] = None,
-    labels: Optional[List[str]] = None,
+    colors_stresses: Optional[list[str]] = None,
+    labels: Optional[list[str]] = None,
     figsize: tuple = (10, 5),
     **kwargs,
 ) -> Axes:
@@ -85,7 +85,7 @@ def series(
     ----------
     head: pd.Series
         Pandas time series with DatetimeIndex.
-    stresses: List of pd.Series
+    stresses: list of pd.Series
         List with Pandas time series with DatetimeIndex.
     hist: bool
         Histogram for the series. The number of bins is determined with Sturges rule.
@@ -100,11 +100,11 @@ def series(
         Set the titles or not. Taken from the name attribute of the series.
     tmin: str or pd.Timestamp
     tmax: str or pd.Timestamp
-    colors_stresses: List of str
+    colors_stresses: list of str
         List with the matplotlib colorcodes to use for plotting each stress timeseries.
         If list is shorter than number of stresses, the remaining stresses are plotted
         in black. If None (default), default matplotlib colors will be used.
-    labels: List of str
+    labels: list of str
         List with the labels for each subplot.
     figsize: tuple
         Set the size of the figure.
@@ -279,7 +279,7 @@ def acf(
     ax: matplotlib.axes.Axes, optional
         Matplotlib Axes instance to plot the ACF on. A new Figure and Axes is created
         when no value for ax is provided.
-    figsize: Tuple, optional
+    figsize: tuple, optional
         2-D Tuple to determine the size of the figure created. Ignored if ax is also
         provided.
 
@@ -481,7 +481,7 @@ def cum_frequency(
     ax: matplotlib.axes.Axes, optional
         Matplotlib Axes instance to create the plot on. A new Figure and Axes is
         created when no value for ax is provided.
-    figsize: Tuple, optional
+    figsize: tuple, optional
         2-D Tuple to determine the size of the figure created. Ignored if ax is also
         provided.
 
@@ -717,7 +717,7 @@ class TrackSolve:
         return sim
 
     def initialize_figure(
-        self, figsize: Tuple[int] = (10, 8), dpi: int = 100
+        self, figsize: tuple[int] = (10, 8), dpi: int = 100
     ) -> Figure:
         """Initialize figure for plotting optimization progress.
 
@@ -898,7 +898,7 @@ class TrackSolve:
         plt.pause(1e-10)
         self.fig.canvas.draw()
 
-    def plot_track_solve_history(self, fig: Optional[Figure] = None) -> List[Axes]:
+    def plot_track_solve_history(self, fig: Optional[Figure] = None) -> list[Axes]:
         """Plot optimization history.
 
         Parameters
@@ -928,21 +928,21 @@ class TrackSolve:
 
 
 def pairplot(
-    data: Union[DataFrame, List[Series]],
+    data: Union[DataFrame, list[Series]],
     bins: Optional[int] = None,
-) -> Dict[str, Axes]:
+) -> dict[str, Axes]:
     """Plot correlation between time series on of values on the same time steps.
     Based on seaborn pairplot method.
     Parameters
     ----------
-    data : Union[DataFrame, List[Series]]
+    data : Union[DataFrame, list[Series]]
         List of Series or Dataframe with DateTime index
     bins : Optional[int], optional
         Number of bins in the histogram, by default None which uses Sturge's
         Rule to determine the number bins
     Returns
     -------
-    Dict[str, Axes]
+    dict[str, Axes]
     """
     if isinstance(data, list):
         data = concat(data, axis=1)

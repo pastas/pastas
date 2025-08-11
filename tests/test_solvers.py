@@ -1,6 +1,6 @@
 """Tests for the solver module in Pastas."""
 
-from typing import List, Tuple
+from typing import list, tuple
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -179,7 +179,7 @@ class TestBaseSolver:
         ],
     )
     def test_misfit_basic(
-        self, mock_model: MagicMock, noise: bool, expected_calls: List[str]
+        self, mock_model: MagicMock, noise: bool, expected_calls: list[str]
     ) -> None:
         """Test misfit function with different noise settings."""
         solver = BaseSolver()
@@ -217,7 +217,7 @@ class TestBaseSolver:
 
         result = solver.misfit(p=np.array([1.0, 2.0]), noise=False, returnseparate=True)
 
-        assert isinstance(result, Tuple)
+        assert isinstance(result, tuple)
         assert len(result) == 3
         assert all(isinstance(arr, np.ndarray) for arr in result)
 

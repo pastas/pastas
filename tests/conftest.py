@@ -1,7 +1,7 @@
 """Common fixtures for pastas tests."""
 
 from pathlib import Path
-from typing import Tuple
+from typing import tuple
 
 import numpy as np
 import pandas as pd
@@ -15,7 +15,7 @@ data_path = Path(__file__).parent / "data"
 # Test data generation helpers
 def generate_test_data(
     start_date: str = "2000-01-01", end_date: str = "2005-12-31", freq: str = "D"
-) -> Tuple[pd.Series, pd.Series, pd.Series, pd.Series, pd.Series]:
+) -> tuple[pd.Series, pd.Series, pd.Series, pd.Series, pd.Series]:
     """Generate test time series data."""
     dates = pd.date_range(start=start_date, end=end_date, freq=freq)
 
@@ -50,37 +50,37 @@ def generate_test_data(
 
 # Basic test data fixtures
 @pytest.fixture(scope="session")
-def test_data() -> Tuple[pd.Series, pd.Series, pd.Series, pd.Series, pd.Series]:
+def test_data() -> tuple[pd.Series, pd.Series, pd.Series, pd.Series, pd.Series]:
     """Return all test data series."""
     return generate_test_data()
 
 
 @pytest.fixture(scope="session")
-def head(test_data: Tuple[pd.Series, ...]) -> pd.Series:
+def head(test_data: tuple[pd.Series, ...]) -> pd.Series:
     """Return head observation series."""
     return test_data[0]
 
 
 @pytest.fixture(scope="session")
-def prec(test_data: Tuple[pd.Series, ...]) -> pd.Series:
+def prec(test_data: tuple[pd.Series, ...]) -> pd.Series:
     """Return precipitation series."""
     return test_data[1]
 
 
 @pytest.fixture(scope="session")
-def evap(test_data: Tuple[pd.Series, ...]) -> pd.Series:
+def evap(test_data: tuple[pd.Series, ...]) -> pd.Series:
     """Return evaporation series."""
     return test_data[2]
 
 
 @pytest.fixture(scope="session")
-def temp(test_data: Tuple[pd.Series, ...]) -> pd.Series:
+def temp(test_data: tuple[pd.Series, ...]) -> pd.Series:
     """Return temperature series."""
     return test_data[3]
 
 
 @pytest.fixture(scope="session")
-def step(test_data: Tuple[pd.Series, ...]) -> pd.Series:
+def step(test_data: tuple[pd.Series, ...]) -> pd.Series:
     """Return step series."""
     return test_data[4]
 

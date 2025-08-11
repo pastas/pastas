@@ -13,7 +13,7 @@ import importlib
 from logging import getLogger
 
 # Type Hinting
-from typing import Literal, Optional, Tuple, Union
+from typing import Literal, Optional, Union, tuple
 
 import numpy as np
 from pandas import DataFrame, Series
@@ -89,7 +89,7 @@ class BaseSolver:
         weights: Optional[Series] = None,
         callback: Optional[CallBack] = None,
         returnseparate: bool = False,
-    ) -> Union[ArrayLike, Tuple[ArrayLike, ArrayLike, ArrayLike]]:
+    ) -> Union[ArrayLike, tuple[ArrayLike, ArrayLike, ArrayLike]]:
         """This method is called by all solvers to obtain a series that are
         minimized in the optimization process. It handles the application of
         the weights, a noisemodel and other optimization options.
@@ -511,7 +511,7 @@ class LeastSquares(BaseSolver):
         weights: Optional[Series] = None,
         callback: Optional[CallBack] = None,
         **kwargs,
-    ) -> Tuple[bool, ArrayLike, ArrayLike]:
+    ) -> tuple[bool, ArrayLike, ArrayLike]:
         self.vary = self.ml.parameters.vary.values.astype(bool)
         self.initial = self.ml.parameters.initial.values.copy()
         parameters = self.ml.parameters.loc[self.vary]
@@ -723,7 +723,7 @@ class LmfitSolve(BaseSolver):
         callback: Optional[CallBack] = None,
         method: Optional[str] = "leastsq",
         **kwargs,
-    ) -> Tuple[bool, ArrayLike, ArrayLike]:
+    ) -> tuple[bool, ArrayLike, ArrayLike]:
         # Deal with the parameters
         parameters = lmfit.Parameters()
         p = self.ml.parameters.loc[:, ["initial", "pmin", "pmax", "vary"]]
@@ -890,7 +890,7 @@ class EmceeSolve(BaseSolver):
         steps: int = 5000,
         callback: Optional[CallBack] = None,
         **kwargs,
-    ) -> Tuple[bool, ArrayLike, ArrayLike]:
+    ) -> tuple[bool, ArrayLike, ArrayLike]:
         # Store initial parameters
         self.initial = np.append(
             self.ml.parameters.initial.values, self.parameters.initial.values

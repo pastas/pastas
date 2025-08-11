@@ -5,7 +5,7 @@ from logging import handlers
 from platform import platform
 
 # Type Hinting
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, tuple
 
 from pandas import Timestamp
 
@@ -15,7 +15,7 @@ from pastas.typing import TimestampType
 logger = logging.getLogger(__name__)
 
 
-def get_stress_tmin_tmax(ml: ModelType) -> Tuple[TimestampType, TimestampType]:
+def get_stress_tmin_tmax(ml: ModelType) -> tuple[TimestampType, TimestampType]:
     """Get the minimum and maximum time that all the stresses have data."""
     from pastas import Model
 
@@ -110,8 +110,8 @@ def remove_console_handler(logger: Optional[Any] = None) -> None:
 
 def add_file_handlers(
     logger: Optional[Any] = None,
-    filenames: Tuple[str] = ("info.log", "errors.log"),
-    levels: Tuple[Any] = (logging.INFO, logging.ERROR),
+    filenames: tuple[str] = ("info.log", "errors.log"),
+    levels: tuple[Any] = (logging.INFO, logging.ERROR),
     maxBytes: int = 10485760,
     backupCount: int = 20,
     encoding: str = "utf8",

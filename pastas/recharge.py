@@ -37,7 +37,7 @@ After solving a model, the simulated recharge flux can be obtained:
 from logging import getLogger
 
 # Type Hinting
-from typing import Tuple, Union
+from typing import Union, tuple
 
 from numpy import add, exp, float64, multiply, nan_to_num, power, vstack, where, zeros
 from pandas import DataFrame
@@ -326,7 +326,7 @@ class FlexModel(RechargeBase):
         ks: float = 100.0,
         gamma: float = 4.0,
         dt: float = 1.0,
-    ) -> Tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
+    ) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
         """Method to compute the water balance of the root zone reservoir.
 
         Parameters
@@ -395,7 +395,7 @@ class FlexModel(RechargeBase):
     @njit
     def get_interception_balance(
         pr: ArrayLike, ep: ArrayLike, simax: float = 2.0, dt: float = 1.0
-    ) -> Tuple[ArrayLike]:
+    ) -> tuple[ArrayLike]:
         """Method to compute the water balance of the interception reservoir.
 
         Parameters
@@ -450,7 +450,7 @@ class FlexModel(RechargeBase):
     @njit
     def get_snow_balance(
         prec: ArrayLike, temp: ArrayLike, tt: float = 0.0, k: float = 2.0
-    ) -> Tuple[ArrayLike, ArrayLike, ArrayLike]:
+    ) -> tuple[ArrayLike, ArrayLike, ArrayLike]:
         """Method to compute the water balance of the snow reservoir.
 
         Parameters
@@ -620,7 +620,7 @@ class Berendrecht(RechargeBase):
         dt: ArrayLike = 1.0,
         return_full: bool = False,
         **kwargs,
-    ) -> Union[ArrayLike, Tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]]:
+    ) -> Union[ArrayLike, tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]]:
         """Simulate the recharge flux.
 
         Parameters
@@ -673,7 +673,7 @@ class Berendrecht(RechargeBase):
         m: float = 0.5,
         ks: float = 50.0,
         dt: float = 1.0,
-    ) -> Tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
+    ) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
         """Internal method used for the recharge calculation."""
         n = prec.size
         # Create an empty arrays to store the fluxes and states
@@ -766,7 +766,7 @@ class Peterson(RechargeBase):
         dt: float = 1.0,
         return_full: bool = False,
         **kwargs,
-    ) -> Union[ArrayLike, Tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]]:
+    ) -> Union[ArrayLike, tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]]:
         """Simulate the recharge flux.
 
         Parameters
@@ -809,7 +809,7 @@ class Peterson(RechargeBase):
         beta: float = 0.5,
         gamma: float = 1.0,
         dt: float = 1.0,
-    ) -> Tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
+    ) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
         """Internal method used for the recharge calculation."""
         n = len(prec)
         # Create an empty arrays to store the fluxes and states

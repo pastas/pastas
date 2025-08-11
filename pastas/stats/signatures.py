@@ -3,7 +3,7 @@ signatures selection is based on the work of :cite:t:`heudorfer_index-based_2019
 
 # Type Hinting
 from logging import getLogger
-from typing import Optional, Tuple, Union
+from typing import Optional, Union, tuple
 
 from numpy import (
     arctan,
@@ -323,7 +323,7 @@ def _parde_coefficients(series: Series, normalize: bool = True) -> Series:
     return coefficients
 
 
-def _martens(series: Series, normalize: bool = False) -> Tuple[Series, Series]:
+def _martens(series: Series, normalize: bool = False) -> tuple[Series, Series]:
     """Function for the average seasonal fluctuation and interannual fluctuation.
 
     Parameters
@@ -439,7 +439,7 @@ def _colwell_components(
     freq: str = "W",
     method: str = "mean",
     normalize: bool = True,
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """Colwell's predictability, constant, and contingency
     :cite:t:`colwell_predictability_1974`.
 
@@ -520,7 +520,7 @@ def colwell_constancy(
     freq: str = "W",
     method: str = "mean",
     normalize: bool = True,
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """Colwells constancy index after :cite:t:`colwell_predictability_1974`.
 
     Parameters
@@ -558,7 +558,7 @@ def colwell_contingency(
     freq: str = "W",
     method: str = "mean",
     normalize: bool = True,
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """Colwell's contingency :cite:t:`colwell_predictability_1974`
 
     Parameters
@@ -1492,7 +1492,7 @@ def richards_pathlength(series: Series, normalize: bool = True) -> float:
 
 def _baselevel(
     series: Series, normalize: bool = True, period="30D"
-) -> Tuple[Series, Series]:
+) -> tuple[Series, Series]:
     """Baselevel function for the baselevel index and stability.
 
     Parameters

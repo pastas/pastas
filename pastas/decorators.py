@@ -1,6 +1,6 @@
 from functools import wraps
 from logging import getLogger
-from typing import Any, Dict, Optional
+from typing import Any, Optional, dict
 
 from packaging.version import parse as parse_version
 
@@ -167,7 +167,7 @@ def njit(function: Optional[Function] = None, **kwargs) -> Function:
 
 def latexfun(
     function: Optional[Function] = None,
-    identifiers: Optional[Dict[str, str]] = None,
+    identifiers: Optional[dict[str, str]] = None,
     use_math_symbols: bool = True,
     use_raw_function_name: bool = False,
 ) -> Function:
