@@ -16,8 +16,6 @@ pastas.model.Model.add_stressmodel
 
 from inspect import isclass
 from logging import getLogger
-
-# Type Hinting
 from typing import Any
 
 import numpy as np

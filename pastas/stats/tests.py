@@ -2,9 +2,6 @@
 
 from logging import getLogger
 
-# Type Hinting
-from typing import tuple
-
 from numpy import arange, cumsum, finfo, median, nan, sqrt, zeros
 from pandas import DataFrame, Series, date_range, infer_freq
 from scipy.stats import chi2, norm, normaltest, shapiro

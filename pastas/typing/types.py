@@ -1,7 +1,7 @@
 # flake8: noqa
 # Type hinting for Pastas library
 # Typing
-from typing import TYPE_CHECKING, Any, Callable, TypedDict, TypeVar, Union
+from typing import TYPE_CHECKING, Any, TypedDict, TypeVar
 
 # External libraries
 # Matplotlib

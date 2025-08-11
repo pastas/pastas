@@ -1,7 +1,6 @@
 """This module contains plotting methods for Pastas."""
 
 import logging
-from typing import dict, list, tuple
 
 import matplotlib.patheffects as path_effects
 import matplotlib.pyplot as plt

@@ -1,4 +1,5 @@
-from typing import Any, Callable, dict, list
+from collections.abc import Callable
+from typing import Any
 
 import pandas as pd
 import pytest

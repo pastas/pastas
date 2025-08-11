@@ -4,9 +4,6 @@ import logging
 from logging import handlers
 from platform import platform
 
-# Type Hinting
-from typing import tuple
-
 from pandas import Timestamp
 
 from pastas.typing import Model as ModelType

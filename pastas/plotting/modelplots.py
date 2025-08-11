@@ -1,9 +1,7 @@
 """This module contains plotting methods for Pastas Models."""
 
 import logging
-
-# Type Hinting
-from typing import Any, Dict, Literal, list
+from typing import Any, Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -1390,7 +1388,7 @@ class Plotting:
         tmax: TimestampType | None = None,
         bins: int | None = None,
         split: bool = True,
-    ) -> Dict[str, Axes]:
+    ) -> dict[str, Axes]:
         """Method to plot the correlation between all the time series going
         into a Pastas Model.
 

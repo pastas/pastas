@@ -1,7 +1,6 @@
 from logging import getLogger
 from typing import Any
 
-# Type Hinting
 import pandas as pd
 from pandas import Series, Timedelta
 from pandas.tseries.frequencies import to_offset

@@ -12,9 +12,7 @@ To solve a model the following syntax can be used:
 import importlib
 from collections.abc import Callable
 from logging import getLogger
-
-# Type Hinting
-from typing import Literal, tuple
+from typing import Literal
 
 import numpy as np
 from pandas import DataFrame, Series

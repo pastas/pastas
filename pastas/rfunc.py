@@ -28,7 +28,6 @@ try:
 except ImportError:
     prange = range
 
-# Type Hinting
 from typing import Literal
 
 from pastas.decorators import PastasDeprecationWarning

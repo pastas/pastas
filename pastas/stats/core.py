@@ -5,7 +5,6 @@ These methods are 'special' in the sense that they are able to deal with irregul
 time steps often observed in hydrological time series.
 """
 
-# Type Hinting
 from logging import getLogger
 from typing import tuple
 

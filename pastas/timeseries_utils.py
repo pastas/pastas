@@ -2,7 +2,6 @@
 
 import logging
 
-# Type Hinting
 import numpy as np
 from pandas import Index, Series, Timedelta, Timestamp, api, date_range, infer_freq
 from pandas.core.resample import Resampler

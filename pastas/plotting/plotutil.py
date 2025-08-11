@@ -1,7 +1,6 @@
 """This module contains utility functions for plotting."""
 
 import logging
-from typing import list
 
 import matplotlib.pyplot as plt
 import numpy as np

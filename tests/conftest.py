@@ -1,7 +1,6 @@
 """Common fixtures for pastas tests."""
 
 from pathlib import Path
-from typing import tuple
 
 import numpy as np
 import pandas as pd

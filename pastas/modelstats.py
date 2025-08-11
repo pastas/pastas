@@ -22,9 +22,6 @@ These methods may be used as follows.
     nse        0.929136
 """
 
-# Type Hinting
-from typing import list
-
 from numpy import nan
 from pandas import DataFrame
 

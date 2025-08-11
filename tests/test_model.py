@@ -1,6 +1,6 @@
 """Tests for the Model class in pastas.model."""
 
-from typing import Any, tuple
+from typing import Any
 
 import numpy as np
 import pandas as pd

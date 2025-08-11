@@ -23,8 +23,6 @@ except ImportError:
     msg = "SolveTimer requires 'tqdm' to be installed."
     raise ImportError(msg) from None
 
-# Type Hinting
-
 
 class ExceededMaxSolveTime(Exception):
     """Custom Exception when model optimization exceeds threshold."""

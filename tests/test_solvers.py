@@ -1,6 +1,5 @@
 """Tests for the solver module in Pastas."""
 
-from typing import list, tuple
 from unittest.mock import MagicMock, patch
 
 import numpy as np

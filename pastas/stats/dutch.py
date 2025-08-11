@@ -4,7 +4,6 @@ groundwater time series in the Netherlands.
 .. codeauthor:: R. Calje, T. van Steijn and R. Collenteur
 """
 
-# Type Hinting
 from collections.abc import Callable
 
 from numpy import nan
