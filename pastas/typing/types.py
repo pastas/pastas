@@ -112,6 +112,6 @@ class StressSettingsDict(TypedDict):
 
     sample_up: str
     sample_down: str
-    fill_nan: [str, float]
+    fill_nan: str | float
     fill_before: str | float
     fill_after: str | float
