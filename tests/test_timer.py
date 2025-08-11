@@ -1,7 +1,7 @@
 """Tests for the timer module."""
 
 import time
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 from unittest.mock import patch
 
 import pytest
@@ -68,7 +68,7 @@ def test_real_usage() -> None:
     """Test SolveTimer in a scenario closer to real usage."""
 
     # Create a mock function to simulate model.solve
-    def mock_solve(callback: Optional[Callable] = None) -> None:
+    def mock_solve(callback: Callable | None = None) -> None:
         for i in range(5):
             if callback:
                 callback(None)

@@ -95,9 +95,9 @@ class TimeSeries:
     def __init__(
         self,
         series: Series,
-        name: Optional[str] = None,
+        name: str | None = None,
         settings: Optional[Union[str, dict]] = None,
-        metadata: Optional[dict] = None,
+        metadata: dict | None = None,
     ) -> None:
         # Make sure we have a Pandas Series and not a 1D-DataFrame
         if isinstance(series, pd.DataFrame):
@@ -576,7 +576,7 @@ class TimeSeries:
 
         return series
 
-    def to_dict(self, series: Optional[bool] = True) -> dict:
+    def to_dict(self, series: bool | None = True) -> dict:
         """Method to export the Time Series to a json format.
 
         Parameters

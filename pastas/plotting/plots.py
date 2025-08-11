@@ -66,7 +66,7 @@ def compare(
 
 
 def series(
-    head: Optional[Series] = None,
+    head: Series | None = None,
     stresses: Optional[list[Series]] = None,
     hist: bool = True,
     kde: bool = False,
@@ -253,10 +253,10 @@ def acf(
     series: Series,
     alpha: float = 0.05,
     lags: int = 365,
-    acf_options: Optional[dict] = None,
+    acf_options: dict | None = None,
     smooth_conf: bool = True,
     color: str = "k",
-    ax: Optional[Axes] = None,
+    ax: Axes | None = None,
     figsize: tuple = (5, 2),
 ) -> Axes:
     """Plot of the autocorrelation function of a time series.
@@ -334,12 +334,12 @@ def acf(
 
 def diagnostics(
     series: Series,
-    sim: Optional[Series] = None,
+    sim: Series | None = None,
     alpha: float = 0.05,
     bins: int = 50,
-    acf_options: Optional[dict] = None,
+    acf_options: dict | None = None,
     figsize: tuple = (10, 5),
-    fig: Optional[Figure] = None,
+    fig: Figure | None = None,
     heteroscedasicity: bool = True,
     **kwargs,
 ) -> Axes:
@@ -466,8 +466,8 @@ def diagnostics(
 
 def cum_frequency(
     obs: Series,
-    sim: Optional[Series] = None,
-    ax: Optional[Axes] = None,
+    sim: Series | None = None,
+    ax: Axes | None = None,
     figsize: tuple = (5, 2),
 ) -> Axes:
     """Plot of the cumulative frequency of a time Series.
@@ -579,7 +579,7 @@ class TrackSolve:
         ml: Model,
         tmin: TimestampType | None = None,
         tmax: TimestampType | None = None,
-        update_iter: Optional[int] = None,
+        update_iter: int | None = None,
     ) -> None:
         logger.warning(
             "TrackSolve feature under development. If you find any bugs please post "
@@ -898,7 +898,7 @@ class TrackSolve:
         plt.pause(1e-10)
         self.fig.canvas.draw()
 
-    def plot_track_solve_history(self, fig: Optional[Figure] = None) -> list[Axes]:
+    def plot_track_solve_history(self, fig: Figure | None = None) -> list[Axes]:
         """Plot optimization history.
 
         Parameters
@@ -929,7 +929,7 @@ class TrackSolve:
 
 def pairplot(
     data: Union[DataFrame, list[Series]],
-    bins: Optional[int] = None,
+    bins: int | None = None,
 ) -> dict[str, Axes]:
     """Plot correlation between time series on of values on the same time steps.
     Based on seaborn pairplot method.
@@ -937,7 +937,7 @@ def pairplot(
     ----------
     data : Union[DataFrame, list[Series]]
         List of Series or Dataframe with DateTime index
-    bins : Optional[int], optional
+    bins : int | None, optional
         Number of bins in the histogram, by default None which uses Sturge's
         Rule to determine the number bins
     Returns

@@ -18,7 +18,7 @@ from inspect import isclass
 from logging import getLogger
 
 # Type Hinting
-from typing import Optional, Union, list, tuple
+from typing import Any, Optional, Union
 
 import numpy as np
 from packaging.version import parse as parse_version
@@ -75,7 +75,7 @@ class StressModelBase:
         name: str,
         tmin: TimestampType,
         tmax: TimestampType,
-        rfunc: Optional[RFunc] = None,
+        rfunc: RFunc | None = None,
         up: bool = True,
         gain_scale_factor: float = 1.0,
     ) -> None:
@@ -160,7 +160,7 @@ class StressModelBase:
         self,
         tmin: TimestampType | None = None,
         tmax: TimestampType | None = None,
-        freq: Optional[str] = None,
+        freq: str | None = None,
     ) -> None:
         """Method to update the settings of the all stresses in the stress model.
 
@@ -193,11 +193,11 @@ class StressModelBase:
 
     def get_stress(
         self,
-        p: Optional[ArrayLike] = None,
+        p: ArrayLike | None = None,
         tmin: TimestampType | None = None,
         tmax: TimestampType | None = None,
-        freq: Optional[str] = None,
-        istress: Optional[int] = None,
+        freq: str | None = None,
+        istress: int | None = None,
         **kwargs,
     ) -> DataFrame:
         """Returns the stress(es) of the time series object as a pandas DataFrame.
@@ -368,8 +368,8 @@ class StressModel(StressModelBase):
         name: str,
         up: bool = True,
         settings: Optional[Union[str, StressSettingsDict]] = None,
-        metadata: Optional[dict] = None,
-        gain_scale_factor: Optional[float] = None,
+        metadata: dict | None = None,
+        gain_scale_factor: float | None = None,
     ) -> None:
         stress = TimeSeries(stress, settings=settings, metadata=metadata)
 
@@ -399,7 +399,7 @@ class StressModel(StressModelBase):
         p: ArrayLike,
         tmin: TimestampType | None = None,
         tmax: TimestampType | None = None,
-        freq: Optional[str] = None,
+        freq: str | None = None,
         dt: float = 1.0,
     ) -> Series:
         """Simulates the head contribution.
@@ -484,7 +484,7 @@ class StepModel(StressModelBase):
         self,
         tstart: TimestampType,
         name: str,
-        rfunc: Optional[RFunc] = None,
+        rfunc: RFunc | None = None,
         up: bool = None,
     ) -> None:
         if rfunc is None:
@@ -520,7 +520,7 @@ class StepModel(StressModelBase):
         p: ArrayLike,
         tmin: TimestampType | None = None,
         tmax: TimestampType | None = None,
-        freq: Optional[str] = None,
+        freq: str | None = None,
         dt: float = 1.0,
     ) -> Series:
         tstart = Timestamp.fromordinal(int(p[-1]))
@@ -625,7 +625,7 @@ class LinearTrend(StressModelBase):
         p: ArrayLike,
         tmin: TimestampType | None = None,
         tmax: TimestampType | None = None,
-        freq: Optional[str] = None,
+        freq: str | None = None,
         dt: float = 1.0,
     ) -> Series:
         """Simulate the trend."""
@@ -699,7 +699,7 @@ class Constant(StressModelBase):
         )
 
     @staticmethod
-    def simulate(p: Optional[float] = None) -> float:
+    def simulate(p: float | None = None) -> float:
         return p
 
     def to_dict(self, **kwargs):
@@ -805,11 +805,11 @@ class WellModel(StressModelBase):
         stress: list[Series],
         name: str,
         distances: ArrayLike,
-        rfunc: Optional[RFunc] = None,
+        rfunc: RFunc | None = None,
         up: bool = False,
         settings: Union[str, StressSettingsDict] = "well",
         sort_wells: bool = True,
-        metadata: Optional[list] = None,
+        metadata: list[dict[str, Any]] = None,
     ) -> None:
         # check response function
         if rfunc is None:
@@ -880,12 +880,12 @@ class WellModel(StressModelBase):
 
     def simulate(
         self,
-        p: Optional[ArrayLike] = None,
+        p: ArrayLike | None = None,
         tmin: TimestampType | None = None,
         tmax: TimestampType | None = None,
-        freq: Optional[str] = None,
+        freq: str | None = None,
         dt: float = 1.0,
-        istress: Optional[int] = None,
+        istress: int | None = None,
         **kwargs,
     ) -> Series:
         distances = self.get_distances(istress=istress)
@@ -958,11 +958,11 @@ class WellModel(StressModelBase):
 
     def get_stress(
         self,
-        p: Optional[ArrayLike] = None,
+        p: ArrayLike | None = None,
         tmin: TimestampType | None = None,
         tmax: TimestampType | None = None,
-        freq: Optional[str] = None,
-        istress: Optional[int] = None,
+        freq: str | None = None,
+        istress: int | None = None,
         squeeze: bool = True,
         **kwargs,
     ) -> DataFrame:
@@ -989,7 +989,7 @@ class WellModel(StressModelBase):
             else:
                 return self.stress[istress].series.to_frame()
 
-    def get_distances(self, istress: Optional[int] = None) -> DataFrame:
+    def get_distances(self, istress: int | None = None) -> DataFrame:
         if istress is None:
             return self.distances
         elif isinstance(istress, list):
@@ -997,7 +997,7 @@ class WellModel(StressModelBase):
         else:
             return self.distances.iloc[istress : istress + 1]
 
-    def get_parameters(self, model=None, istress: Optional[int] = None) -> ArrayLike:
+    def get_parameters(self, model=None, istress: int | None = None) -> ArrayLike:
         """Get parameters including distance to observation point and return as array
         (dimensions = (nstresses, 4)).
 
@@ -1072,7 +1072,7 @@ class WellModel(StressModelBase):
         return data
 
     def variance_gain(
-        self, model: Model, istress: Optional[int] = None, r: Optional[ArrayLike] = None
+        self, model: Model, istress: int | None = None, r: ArrayLike | None = None
     ) -> float:
         """Calculate variance of the gain for WellModel.
 
@@ -1240,10 +1240,10 @@ class RechargeModel(StressModelBase):
         self,
         prec: Series,
         evap: Series,
-        rfunc: Optional[RFunc] = None,
+        rfunc: RFunc | None = None,
         name: str = "recharge",
         recharge: Optional[Recharge] = None,
-        temp: Optional[Series] = None,
+        temp: Series | None = None,
         settings: tuple[
             Union[str, StressSettingsDict],
             Union[str, StressSettingsDict],
@@ -1346,7 +1346,7 @@ class RechargeModel(StressModelBase):
         self,
         tmin: TimestampType | None = None,
         tmax: TimestampType | None = None,
-        freq: Optional[str] = None,
+        freq: str | None = None,
     ) -> None:
         """Method to update the settings of the all stresses in the stress model.
 
@@ -1381,12 +1381,12 @@ class RechargeModel(StressModelBase):
 
     def simulate(
         self,
-        p: Optional[ArrayLike] = None,
+        p: ArrayLike | None = None,
         tmin: TimestampType | None = None,
         tmax: TimestampType | None = None,
-        freq: Optional[str] = None,
+        freq: str | None = None,
         dt: float = 1.0,
-        istress: Optional[int] = None,
+        istress: int | None = None,
         **kwargs,
     ) -> Series:
         """Method to simulate the contribution of recharge to the head.
@@ -1431,11 +1431,11 @@ class RechargeModel(StressModelBase):
 
     def get_stress(
         self,
-        p: Optional[ArrayLike] = None,
+        p: ArrayLike | None = None,
         tmin: TimestampType | None = None,
         tmax: TimestampType | None = None,
-        freq: Optional[str] = None,
-        istress: Optional[int] = None,
+        freq: str | None = None,
+        istress: int | None = None,
         **kwargs,
     ) -> Series:
         """Method to obtain the recharge stress calculated by the model.
@@ -1491,10 +1491,10 @@ class RechargeModel(StressModelBase):
 
     def get_water_balance(
         self,
-        p: Optional[ArrayLike] = None,
+        p: ArrayLike | None = None,
         tmin: TimestampType | None = None,
         tmax: TimestampType | None = None,
-        freq: Optional[str] = None,
+        freq: str | None = None,
     ) -> DataFrame:
         """Method to obtain the water balance components.
 
@@ -1547,7 +1547,7 @@ class RechargeModel(StressModelBase):
         df.index = self.prec.series.index
         return df
 
-    def get_parameters(self, model=None, istress: Optional[int] = None) -> ArrayLike:
+    def get_parameters(self, model=None, istress: int | None = None) -> ArrayLike:
         """Get parameters and return as array.
 
         Parameters
@@ -1650,10 +1650,10 @@ class TarsoModel(RechargeModel):
         self,
         prec: Series,
         evap: Series,
-        oseries: Optional[Series] = None,
-        dmin: Optional[float] = None,
-        dmax: Optional[float] = None,
-        rfunc: Optional[RFunc] = None,
+        oseries: Series | None = None,
+        dmin: float | None = None,
+        dmax: float | None = None,
+        rfunc: RFunc | None = None,
         **kwargs,
     ) -> None:
         if oseries is not None:
@@ -1715,7 +1715,7 @@ class TarsoModel(RechargeModel):
 
     def simulate(
         self,
-        p: Optional[ArrayLike] = None,
+        p: ArrayLike | None = None,
         tmin: TimestampType | None = None,
         tmax: TimestampType | None = None,
         freq=None,
@@ -1891,7 +1891,7 @@ class ChangeModel(StressModelBase):
         tchange: Union[str, TimestampType],
         up: bool = True,
         settings: Optional[Union[str, StressSettingsDict]] = None,
-        metadata: Optional[dict] = None,
+        metadata: dict | None = None,
     ) -> None:
         stress = TimeSeries(stress, settings=settings, metadata=metadata)
 
@@ -1950,7 +1950,7 @@ class ChangeModel(StressModelBase):
         p: ArrayLike,
         tmin: TimestampType | None = None,
         tmax: TimestampType | None = None,
-        freq: Optional[str] = None,
+        freq: str | None = None,
         dt: float = 1.0,
     ) -> Series:
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)

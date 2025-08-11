@@ -56,7 +56,7 @@ class Plotting:
         tmax: TimestampType | None = None,
         oseries: bool = True,
         simulation: bool = True,
-        ax: Optional[Axes] = None,
+        ax: Axes | None = None,
         figsize: Optional[tuple] = None,
         legend: bool = True,
         **kwargs,
@@ -131,7 +131,7 @@ class Plotting:
         return_warmup: bool = False,
         block_or_step: str = "step",
         stderr: bool = False,
-        fig: Optional[Figure] = None,
+        fig: Figure | None = None,
         **kwargs,
     ) -> Axes:
         """Plot different results in one window to get a quick overview.
@@ -636,10 +636,10 @@ class Plotting:
         ytick_base: bool = True,
         split: bool = True,
         figsize: tuple = (10, 8),
-        axes: Optional[Axes] = None,
-        name: Optional[str] = None,
+        axes: Axes | None = None,
+        name: str | None = None,
         return_warmup: bool = False,
-        min_ylim_diff: Optional[float] = None,
+        min_ylim_diff: float | None = None,
         **kwargs,
     ) -> Axes:
         """Plot the decomposition of a time-series in the different stresses.
@@ -801,8 +801,8 @@ class Plotting:
         tmax: TimestampType | None = None,
         figsize: tuple = (10, 5),
         bins: int = 50,
-        acf_options: Optional[dict] = None,
-        fig: Optional[Figure] = None,
+        acf_options: dict | None = None,
+        fig: Figure | None = None,
         alpha: float = 0.05,
         **kwargs,
     ) -> Axes:
@@ -873,7 +873,7 @@ class Plotting:
         self,
         tmin: TimestampType | None = None,
         tmax: TimestampType | None = None,
-        ax: Optional[Axes] = None,
+        ax: Axes | None = None,
         figsize: tuple = (5, 2),
         **kwargs,
     ) -> Axes:
@@ -907,7 +907,7 @@ class Plotting:
     def block_response(
         self,
         stressmodels: Optional[list[str]] = None,
-        ax: Optional[Axes] = None,
+        ax: Axes | None = None,
         figsize: Optional[tuple] = None,
         legend: bool = True,
         **kwargs,
@@ -954,7 +954,7 @@ class Plotting:
     def step_response(
         self,
         stressmodels: Optional[list[str]] = None,
-        ax: Optional[Axes] = None,
+        ax: Axes | None = None,
         figsize: Optional[tuple] = None,
         legend: bool = True,
         **kwargs,
@@ -1062,11 +1062,11 @@ class Plotting:
         self,
         tmin: TimestampType | None = None,
         tmax: TimestampType | None = None,
-        ax: Optional[Axes] = None,
-        figsize: Optional[Figure] = None,
+        ax: Axes | None = None,
+        figsize: Figure | None = None,
         split: bool = True,
         partition: str = "std",
-        wedgeprops: Optional[dict] = None,
+        wedgeprops: dict | None = None,
         startangle: float = 90.0,
         autopct: str = "%1.1f%%",
         **kwargs,
@@ -1147,7 +1147,7 @@ class Plotting:
         figsize: tuple = (10, 8),
         stackcolors: Optional[Union[Dict, list]] = None,
         stacklegend: bool = False,
-        stacklegend_kws: Optional[dict] = None,
+        stacklegend_kws: dict | None = None,
         **kwargs,
     ) -> Axes:
         """Create a results plot, similar to `ml.plots.results()`, in which the
@@ -1299,8 +1299,8 @@ class Plotting:
         self,
         tmin: TimestampType | None = None,
         tmax: TimestampType | None = None,
-        results_kwargs: Optional[dict] = None,
-        diagnostics_kwargs: Optional[dict] = None,
+        results_kwargs: dict | None = None,
+        diagnostics_kwargs: dict | None = None,
     ) -> Figure:
         """Create a plot with the results and diagnostics plot.
 
@@ -1347,9 +1347,9 @@ class Plotting:
         self,
         tmin: TimestampType | None = None,
         tmax: TimestampType | None = None,
-        results_kwargs: Optional[dict] = None,
-        diagnostics_kwargs: Optional[dict] = None,
-        fname: Optional[str] = None,
+        results_kwargs: dict | None = None,
+        diagnostics_kwargs: dict | None = None,
+        fname: str | None = None,
         dpi: int = 150,
     ) -> Figure:
         """Create a PDF file (A4) with the results and diagnostics plot.
@@ -1388,7 +1388,7 @@ class Plotting:
         self,
         tmin: TimestampType | None = None,
         tmax: TimestampType | None = None,
-        bins: Optional[int] = None,
+        bins: int | None = None,
         split: bool = True,
     ) -> Dict[str, Axes]:
         """Method to plot the correlation between all the time series going
@@ -1398,7 +1398,7 @@ class Plotting:
         ----------
         tmin: str or pd.Timestamp
         tmax: str or pd.Timestamp
-        bins : Optional[int], optional
+        bins : int | None, optional
             Number of bins in the histogram, by default None which uses Sturge's
             rule to determine the number bins
         split: bool, optional
@@ -1419,12 +1419,12 @@ class Plotting:
         self,
         tmin: TimestampType | None = None,
         tmax: TimestampType | None = None,
-        name: Optional[str] = None,
+        name: str | None = None,
         plot_stress: bool = True,
         plot_response: bool = False,
         block_or_step: str = "step",
-        istress: Optional[int] = None,
-        ax: Optional[Axes] = None,
+        istress: int | None = None,
+        ax: Axes | None = None,
         **kwargs,
     ):
         """Plot the contribution of a stressmodel and optionally the stress and the response.

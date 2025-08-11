@@ -3,8 +3,6 @@
 import logging
 
 # Type Hinting
-from typing import Optional
-
 import numpy as np
 from pandas import Index, Series, Timedelta, Timestamp, api, date_range, infer_freq
 from pandas.core.resample import Resampler
@@ -472,7 +470,7 @@ def pandas_equidistant_sample(series: Series, freq: str) -> Series:
 
 
 def pandas_equidistant_nearest(
-    series: Series, freq: str, tolerance: Optional[str] = None
+    series: Series, freq: str, tolerance: str | None = None
 ) -> Series:
     """Create equidistant time series using pandas.reindex with method='nearest'.
 

@@ -3,7 +3,7 @@ signatures selection is based on the work of :cite:t:`heudorfer_index-based_2019
 
 # Type Hinting
 from logging import getLogger
-from typing import Optional, Union, tuple
+from typing import Union, tuple
 
 from numpy import (
     arctan,
@@ -1747,7 +1747,8 @@ def date_max(series: Series) -> float:
 
 
 def summary(
-    data: Union[DataFrame, Series], signatures: Optional[list] = None
+    data: DataFrame | Series,
+    signatures: list[str] | None = None,
 ) -> DataFrame:
     """Method to get many signatures for a time series.
 

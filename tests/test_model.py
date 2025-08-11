@@ -1,6 +1,6 @@
 """Tests for the Model class in pastas.model."""
 
-from typing import Any, Optional, tuple
+from typing import Any, tuple
 
 import numpy as np
 import pandas as pd
@@ -503,7 +503,7 @@ class TestModelContributions:
         ],
     )
     def test_contribution_methods(
-        self, ml_noisemodel: ps.Model, method_name: str, series_name: Optional[str]
+        self, ml_noisemodel: ps.Model, method_name: str, series_name: str | None
     ) -> None:
         """Test various contribution-related methods."""
         # Get the first stressmodel name
