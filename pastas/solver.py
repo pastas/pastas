@@ -10,10 +10,9 @@ To solve a model the following syntax can be used:
 """
 
 import importlib
+from collections.abc import Callable
 from logging import getLogger
-
-# Type Hinting
-from typing import Literal, Optional, Tuple, Union
+from typing import Literal
 
 import numpy as np
 from pandas import DataFrame, Series
@@ -21,7 +20,7 @@ from scipy.linalg import LinAlgError, get_lapack_funcs, svd
 from scipy.optimize import Bounds, least_squares
 
 from pastas.objective_functions import GaussianLikelihood
-from pastas.typing import ArrayLike, CallBack, Function, Model
+from pastas.typing import ArrayLike, CallBack, Model
 
 logger = getLogger(__name__)
 
@@ -47,9 +46,9 @@ class BaseSolver:
 
     def __init__(
         self,
-        pcov: Optional[DataFrame] = None,
-        nfev: Optional[int] = None,
-        obj_func: Optional[Function] = None,
+        pcov: DataFrame | None = None,
+        nfev: int | None = None,
+        obj_func: Callable | None = None,
         **kwargs,
     ) -> None:
         self.ml = None
@@ -86,10 +85,10 @@ class BaseSolver:
         self,
         p: ArrayLike,
         noise: bool,
-        weights: Optional[Series] = None,
-        callback: Optional[CallBack] = None,
+        weights: Series | None = None,
+        callback: CallBack | None = None,
         returnseparate: bool = False,
-    ) -> Union[ArrayLike, Tuple[ArrayLike, ArrayLike, ArrayLike]]:
+    ) -> ArrayLike | tuple[ArrayLike, ArrayLike, ArrayLike]:
         """This method is called by all solvers to obtain a series that are
         minimized in the optimization process. It handles the application of
         the weights, a noisemodel and other optimization options.
@@ -313,7 +312,7 @@ class BaseSolver:
         )
 
     def get_parameter_sample(
-        self, name: Optional[str] = None, n: int = None, max_iter: int = 10
+        self, name: str | None = None, n: int = None, max_iter: int = 10
     ) -> ArrayLike:
         """Method to obtain a parameter sets for monte carlo analyses.
 
@@ -383,9 +382,9 @@ class BaseSolver:
 
     def _get_realizations(
         self,
-        func: Function,
-        n: Optional[int] = None,
-        name: Optional[str] = None,
+        func: Callable,
+        n: int | None = None,
+        name: str | None = None,
         max_iter: int = 10,
         **kwargs,
     ) -> DataFrame:
@@ -403,9 +402,9 @@ class BaseSolver:
 
     def _get_confidence_interval(
         self,
-        func: Function,
-        n: Optional[int] = None,
-        name: Optional[str] = None,
+        func: Callable,
+        n: int | None = None,
+        name: str | None = None,
         max_iter: int = 10,
         alpha: float = 0.05,
         **kwargs,
@@ -417,7 +416,7 @@ class BaseSolver:
         )
         return data.quantile(q=q, axis=1).transpose()
 
-    def _get_covariance_matrix(self, name: Optional[str] = None) -> DataFrame:
+    def _get_covariance_matrix(self, name: str | None = None) -> DataFrame:
         """Internal method to obtain the covariance matrix from the model.
 
         Parameters
@@ -499,8 +498,8 @@ class LeastSquares(BaseSolver):
 
     def __init__(
         self,
-        pcov: Optional[DataFrame] = None,
-        nfev: Optional[int] = None,
+        pcov: DataFrame | None = None,
+        nfev: int | None = None,
         **kwargs,
     ) -> None:
         BaseSolver.__init__(self, pcov=pcov, nfev=nfev, **kwargs)
@@ -508,10 +507,10 @@ class LeastSquares(BaseSolver):
     def solve(
         self,
         noise: bool = True,
-        weights: Optional[Series] = None,
-        callback: Optional[CallBack] = None,
+        weights: Series | None = None,
+        callback: CallBack | None = None,
         **kwargs,
-    ) -> Tuple[bool, ArrayLike, ArrayLike]:
+    ) -> tuple[bool, ArrayLike, ArrayLike]:
         self.vary = self.ml.parameters.vary.values.astype(bool)
         self.initial = self.ml.parameters.initial.values.copy()
         parameters = self.ml.parameters.loc[self.vary]
@@ -704,8 +703,8 @@ class LmfitSolve(BaseSolver):
 
     def __init__(
         self,
-        pcov: Optional[DataFrame] = None,
-        nfev: Optional[int] = None,
+        pcov: DataFrame | None = None,
+        nfev: int | None = None,
         **kwargs,
     ) -> None:
         try:
@@ -719,11 +718,11 @@ class LmfitSolve(BaseSolver):
     def solve(
         self,
         noise: bool = True,
-        weights: Optional[Series] = None,
-        callback: Optional[CallBack] = None,
-        method: Optional[str] = "leastsq",
+        weights: Series | None = None,
+        callback: CallBack | None = None,
+        method: str | None = "leastsq",
         **kwargs,
-    ) -> Tuple[bool, ArrayLike, ArrayLike]:
+    ) -> tuple[bool, ArrayLike, ArrayLike]:
         # Deal with the parameters
         parameters = lmfit.Parameters()
         p = self.ml.parameters.loc[:, ["initial", "pmin", "pmax", "vary"]]
@@ -886,11 +885,11 @@ class EmceeSolve(BaseSolver):
     def solve(
         self,
         noise: bool = False,
-        weights: Optional[Series] = None,
+        weights: Series | None = None,
         steps: int = 5000,
-        callback: Optional[CallBack] = None,
+        callback: CallBack | None = None,
         **kwargs,
-    ) -> Tuple[bool, ArrayLike, ArrayLike]:
+    ) -> tuple[bool, ArrayLike, ArrayLike]:
         # Store initial parameters
         self.initial = np.append(
             self.ml.parameters.initial.values, self.parameters.initial.values
@@ -973,9 +972,9 @@ class EmceeSolve(BaseSolver):
     def log_probability(
         self,
         p: ArrayLike,
-        noise: Optional[bool] = False,
-        weights: Optional[Series] = None,
-        callback: Optional[CallBack] = None,
+        noise: bool | None = False,
+        weights: Series | None = None,
+        callback: CallBack | None = None,
     ) -> float:
         """Full log-probability called by Emcee.
 
@@ -1009,8 +1008,8 @@ class EmceeSolve(BaseSolver):
         self,
         p: ArrayLike,
         noise: bool,
-        weights: Optional[Series] = None,
-        callback: Optional[CallBack] = None,
+        weights: Series | None = None,
+        callback: CallBack | None = None,
     ) -> float:
         """Log-likelihood function.
 
@@ -1133,12 +1132,12 @@ class EmceeSolve(BaseSolver):
     def set_parameter(
         self,
         name: str,
-        initial: Optional[float] = None,
-        vary: Optional[bool] = None,
-        pmin: Optional[float] = None,
-        pmax: Optional[float] = None,
-        optimal: Optional[float] = None,
-        dist: Optional[str] = None,
+        initial: float | None = None,
+        vary: bool | None = None,
+        pmin: float | None = None,
+        pmax: float | None = None,
+        optimal: float | None = None,
+        dist: str | None = None,
     ) -> None:
         """Method to change the parameter properties.
 

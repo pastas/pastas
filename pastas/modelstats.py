@@ -22,9 +22,6 @@ These methods may be used as follows.
     nse        0.929136
 """
 
-# Type Hinting
-from typing import List, Optional
-
 from numpy import nan
 from pandas import DataFrame
 
@@ -78,8 +75,8 @@ class Statistics:
     @model_tmin_tmax
     def rmse(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         weighted: bool = False,
         **kwargs,
     ) -> float:
@@ -103,8 +100,8 @@ class Statistics:
     @model_tmin_tmax
     def rmsn(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         weighted: bool = False,
         **kwargs,
     ) -> float:
@@ -135,7 +132,7 @@ class Statistics:
 
     @model_tmin_tmax
     def sse(
-        self, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None
+        self, tmin: TimestampType | None = None, tmax: TimestampType | None = None
     ) -> float:
         """Sum of the squares of the error (SSE)
 
@@ -154,8 +151,8 @@ class Statistics:
     @model_tmin_tmax
     def mae(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         weighted: bool = False,
         **kwargs,
     ) -> float:
@@ -179,8 +176,8 @@ class Statistics:
     @model_tmin_tmax
     def nse(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         weighted: bool = False,
         **kwargs,
     ) -> float:
@@ -205,8 +202,8 @@ class Statistics:
     @model_tmin_tmax
     def nnse(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         weighted: bool = False,
         **kwargs,
     ) -> float:
@@ -232,8 +229,8 @@ class Statistics:
     @model_tmin_tmax
     def pearsonr(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         weighted: bool = False,
         **kwargs,
     ) -> float:
@@ -258,8 +255,8 @@ class Statistics:
     @model_tmin_tmax
     def evp(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         weighted: bool = False,
         **kwargs,
     ) -> float:
@@ -284,8 +281,8 @@ class Statistics:
     @model_tmin_tmax
     def rsq(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         weighted: bool = False,
         **kwargs,
     ) -> float:
@@ -310,8 +307,8 @@ class Statistics:
     @model_tmin_tmax
     def kge(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         weighted: bool = False,
         modified: bool = False,
         **kwargs,
@@ -341,8 +338,8 @@ class Statistics:
     @model_tmin_tmax
     def kge_2012(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         weighted: bool = False,
         **kwargs,
     ) -> float:
@@ -366,7 +363,7 @@ class Statistics:
 
     @model_tmin_tmax
     def bic(
-        self, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None
+        self, tmin: TimestampType | None = None, tmax: TimestampType | None = None
     ) -> float:
         """Bayesian Information Criterium (BIC).
 
@@ -391,7 +388,7 @@ class Statistics:
 
     @model_tmin_tmax
     def aic(
-        self, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None
+        self, tmin: TimestampType | None = None, tmax: TimestampType | None = None
     ) -> float:
         """Akaike Information Criterium (AIC).
 
@@ -415,7 +412,7 @@ class Statistics:
 
     @model_tmin_tmax
     def aicc(
-        self, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None
+        self, tmin: TimestampType | None = None, tmax: TimestampType | None = None
     ) -> float:
         """Akaike Information Criterium with second order bias correction (AICc).
 
@@ -440,9 +437,9 @@ class Statistics:
     @model_tmin_tmax
     def summary(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
-        stats: Optional[List[str]] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
+        stats: list[str] | None = None,
     ) -> DataFrame:
         """Returns a Pandas DataFrame with goodness-of-fit metrics.
 
@@ -491,8 +488,8 @@ class Statistics:
     @model_tmin_tmax
     def diagnostics(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         alpha: float = 0.05,
         stats: tuple = (),
         float_fmt: str = "{0:.2f}",

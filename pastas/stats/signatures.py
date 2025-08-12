@@ -1,7 +1,6 @@
 """This module contains methods to compute the groundwater signatures. Part of the
 signatures selection is based on the work of :cite:t:`heudorfer_index-based_2019`."""
 
-# Type Hinting
 from logging import getLogger
 from typing import Literal
 
@@ -1749,7 +1748,10 @@ def date_max(series: Series) -> float:
     return _date_min_max(series, "max")
 
 
-def summary(data: DataFrame | Series, signatures: list[str] | None = None) -> DataFrame:
+def summary(
+    data: DataFrame | Series,
+    signatures: list[str] | None = None,
+) -> DataFrame:
     """Method to get many signatures for a time series.
 
     Parameters

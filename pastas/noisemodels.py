@@ -21,7 +21,6 @@ pastas.model.Model.add_noisemodel
 """
 
 from logging import getLogger
-from typing import Optional
 
 import numpy as np
 from pandas import DataFrame, DatetimeIndex, Series, Timedelta
@@ -46,7 +45,7 @@ class NoiseModelBase:
             columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
         )
 
-    def set_init_parameters(self, oseries: Optional[Series] = None) -> None:
+    def set_init_parameters(self, oseries: Series | None = None) -> None:
         if oseries is not None:
             pinit = np.diff(oseries.index.to_numpy()) / Timedelta("1D")
             pinit = np.median(pinit)
