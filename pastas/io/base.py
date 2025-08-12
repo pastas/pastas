@@ -7,8 +7,6 @@ from os import path
 from packaging import version
 
 import pastas as ps
-
-# Type Hinting
 from pastas.typing import Model
 
 logger = getLogger(__name__)
