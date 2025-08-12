@@ -338,7 +338,7 @@ class Gamma(RfuncBase):
         parameters = DataFrame(
             [
                 (initial_A, pmin_A, pmax_A, True, name, "uniform"),
-                (1.0, 0.1, 5.0, True, name, "uniform"),
+                (1.0, 0.1, 100.0, True, name, "uniform"),
                 (10.0, 1e-2, 1e4, True, name, "uniform"),
             ],
             index=[name + "_A", name + "_n", name + "_a"],
@@ -426,7 +426,7 @@ class Exponential(RfuncBase):
         parameters = DataFrame(
             [
                 (initial_A, pmin_A, pmax_A, True, name, "uniform"),
-                (10.0, 1e-2, 1e4, True, name, "uniform"),
+                (10.0, 1e-2, 1e3, True, name, "uniform"),
             ],
             index=[name + "_A", name + "_a"],
             columns=["initial", "pmin", "pmax", "vary", "name", "dist"],
@@ -1573,7 +1573,7 @@ class Kraijenhoff(RfuncBase):
         parameters = DataFrame(
             [
                 (initial_A, pmin_A, pmax_A, True, name, "uniform"),
-                (1e2, 1e-2, 1e4, True, name, "uniform"),
+                (1e2, 1e-2, 1e5, True, name, "uniform"),
                 (0.0, 0.0, 0.499999, True, name, "uniform"),
             ],
             index=[name + "_A", name + "_a", name + "_b"],
