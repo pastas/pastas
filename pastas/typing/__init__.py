@@ -1,10 +1,9 @@
-# flake8: noqa
+# ruff: noqa: F401
 from .types import (
     ArrayLike,
     Axes,
     CallBack,
     Figure,
-    Function,
     Model,
     NoiseModel,
     OseriesSettingsDict,

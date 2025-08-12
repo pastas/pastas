@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, Optional
+from collections.abc import Callable
 
 import numpy as np
 from matplotlib.colors import rgb2hex
@@ -82,7 +82,7 @@ def _response_memory(
     threshold: float,
     label: str,
     cutoff: float = 0.95,
-    names: Optional[list[str] | str] = None,
+    names: list[str] | str | None = None,
 ):
     """Check if response function memory is shorter than threshold.
 
@@ -198,7 +198,7 @@ def response_memory(
     ml,
     cutoff: float = 0.95,
     factor_length_oseries: float = 0.5,
-    names: Optional[list[str] | str] = None,
+    names: list[str] | str | None = None,
 ):
     """Check if response function memory is shorter than fraction of calibration period.
 
@@ -229,7 +229,7 @@ def response_memory(
 
 
 def response_memory_vs_warmup(
-    ml, cutoff: float = 0.95, names: Optional[list[str] | str] = None
+    ml, cutoff: float = 0.95, names: list[str] | str | None = None
 ):
     """Check if response function memory is shorter than warmup.
 
@@ -259,7 +259,7 @@ def response_memory_vs_warmup(
 def uncertainty_gain(
     ml: Model,
     n_std: float = 1.96,
-    names: Optional[list[str] | str] = None,
+    names: list[str] | str | None = None,
 ):
     """Check if the gain is larger than n_std times the uncertainty in the gain.
 
@@ -291,7 +291,7 @@ def uncertainty_gain(
     return df
 
 
-def parameter_bounds(ml: Model, parameters: Optional[list[str] | str] = None):
+def parameter_bounds(ml: Model, parameters: list[str] | str | None = None):
     """Check if the optimal parameter values are not on the lower or upper bounds.
 
     Parameters
@@ -336,7 +336,7 @@ def parameter_bounds(ml: Model, parameters: Optional[list[str] | str] = None):
 
 def uncertainty_parameters(
     ml: Model,
-    parameters: Optional[list[str] | str] = None,
+    parameters: list[str] | str | None = None,
     n_std: float = 1.96,
 ):
     """Check if parameter value is larger than n_std times the standard deviation.
@@ -367,7 +367,7 @@ def uncertainty_parameters(
     return concat(results)
 
 
-def _uncertainty_parameter(ml, parameter, n_std=1.96):
+def _uncertainty_parameter(ml: Model, parameter: str, n_std: float = 1.96):
     """Internal method to check if parameter value is larger than n_std * std.
 
     Parameters

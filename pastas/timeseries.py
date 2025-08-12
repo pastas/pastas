@@ -1,7 +1,5 @@
 from logging import getLogger
-
-# Type Hinting
-from typing import Optional, Union
+from typing import Any
 
 import pandas as pd
 from pandas import Series, Timedelta
@@ -95,9 +93,9 @@ class TimeSeries:
     def __init__(
         self,
         series: Series,
-        name: Optional[str] = None,
-        settings: Optional[Union[str, dict]] = None,
-        metadata: Optional[dict] = None,
+        name: str | None = None,
+        settings: str | dict[str, Any] | None = None,
+        metadata: dict | None = None,
     ) -> None:
         # Make sure we have a Pandas Series and not a 1D-DataFrame
         if isinstance(series, pd.DataFrame):
@@ -576,7 +574,7 @@ class TimeSeries:
 
         return series
 
-    def to_dict(self, series: Optional[bool] = True) -> dict:
+    def to_dict(self, series: bool | None = True) -> dict:
         """Method to export the Time Series to a json format.
 
         Parameters
