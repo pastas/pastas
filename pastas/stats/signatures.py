@@ -2,6 +2,7 @@
 signatures selection is based on the work of :cite:t:`heudorfer_index-based_2019`."""
 
 from logging import getLogger
+from typing import Literal
 
 from numpy import (
     arctan,
@@ -136,7 +137,7 @@ def cv_period_mean(
     return cv
 
 
-def _cv_date_min_max(series: Series, stat: str) -> float:
+def _cv_date_min_max(series: Series, stat: Literal["min", "max"]) -> float:
     """Method to compute the coefficient of variation of the date of annual
     minimum or maximum head using circular statistics.
 
@@ -434,8 +435,8 @@ def interannual_variation(series: Series, normalize: bool = False) -> float:
 def _colwell_components(
     series: Series,
     bins: int = 11,
-    freq: str = "W",
-    method: str = "mean",
+    freq: Literal["D", "W", "M", "ME"] = "W",
+    method: Literal["mean"] = "mean",
     normalize: bool = True,
 ) -> tuple[float, float, float]:
     """Colwell's predictability, constant, and contingency
@@ -489,8 +490,7 @@ def _colwell_components(
     elif freq == "D":
         df["time"] = df.index.isocalendar().day
     else:
-        msg = "freq %s is not a supported option."
-        logger.error(msg, freq)
+        msg = "Signature `colwell_`: freq %s is not a supported option."
         raise ValueError(msg % freq)
 
     df["values"] = 1.0
@@ -516,7 +516,7 @@ def colwell_constancy(
     series: Series,
     bins: int = 11,
     freq: str = "W",
-    method: str = "mean",
+    method: Literal["mean"] = "mean",
     normalize: bool = True,
 ) -> tuple[float, float, float]:
     """Colwells constancy index after :cite:t:`colwell_predictability_1974`.
@@ -554,7 +554,7 @@ def colwell_contingency(
     series: Series,
     bins: int = 11,
     freq: str = "W",
-    method: str = "mean",
+    method: Literal["mean"] = "mean",
     normalize: bool = True,
 ) -> tuple[float, float, float]:
     """Colwell's contingency :cite:t:`colwell_predictability_1974`
@@ -1001,8 +1001,8 @@ def reversals_avg(series: Series) -> float:
     # Check if the time step is approximately daily
     if not (dt > 0.9).all() & (dt < 1.1).all():
         msg = (
-            "The time step is not approximately daily (>10%% of time steps are "
-            "non-daily). This may lead to incorrect results."
+            "Signature `reversals_avg`: the time step is not approximately daily "
+            "(>10%% of time steps are non-daily). This may lead to incorrect results."
         )
         logger.warning(msg)
         return nan
@@ -1041,7 +1041,7 @@ def reversals_cv(series: Series) -> float:
     # Check if the time step is approximately daily
     if not (dt > 0.9).all() & (dt < 1.1).all():
         msg = (
-            "The time step is not approximately daily. "
+            "Signature `reversals_cv`: the time step is not approximately daily. "
             "This may lead to incorrect results."
         )
         logger.warning(msg)
@@ -1286,7 +1286,7 @@ def recession_constant(
     # Return nan and raise warning if the decay constant is close to the boundary
     if isclose(popt[1], 0.0) or isclose(popt[1], 1e3):
         msg = (
-            "The estimated recession constant (%s) is close to the boundary. "
+            "Signature `recession_constant`: the estimated recession constant (%s) is close to the boundary. "
             "This may lead to incorrect results."
         )
         logger.warning(msg, round(popt[1], 2))
@@ -1359,7 +1359,7 @@ def recovery_constant(
     # Return nan and raise warning if the recovery constant is close to the boundary
     if isclose(popt[1], 0.0) or isclose(popt[1], 1e3):
         msg = (
-            "The estimated recovery constant (%s) is close to the boundary. "
+            "Signature `recovery_constant`: the estimated recovery constant (%s) is close to the boundary. "
             "This may lead to incorrect results."
         )
         logger.warning(msg, round(popt[1], 2))
@@ -1539,7 +1539,9 @@ def _baselevel(
     return series, ht
 
 
-def baselevel_index(series: Series, normalize: bool = True, period="30D") -> float:
+def baselevel_index(
+    series: Series, normalize: bool = True, period: str = "30D"
+) -> float:
     """Base level index (BLI) adapted after :cite:t:`organization_manual_2008`.
 
     Parameters
@@ -1571,7 +1573,9 @@ def baselevel_index(series: Series, normalize: bool = True, period="30D") -> flo
     return ht.sum() / series.sum()
 
 
-def baselevel_stability(series: Series, normalize: bool = True, period="30D") -> float:
+def baselevel_stability(
+    series: Series, normalize: bool = True, period: str = "30D"
+) -> float:
     """Baselevel stability after :cite:t:`heudorfer_index-based_2019`.
 
     Parameters
@@ -1638,7 +1642,7 @@ def autocorr_time(series: Series, cutoff: float = 0.8, **kwargs) -> float:
         return (c < cutoff).idxmax() / Timedelta("1D")
 
 
-def _date_min_max(series: Series, stat: str) -> float:
+def _date_min_max(series: Series, stat: Literal["min", "max"]) -> float:
     """Compute the average date of the minimum head value with circular statistics.
 
     Parameters
@@ -1752,7 +1756,7 @@ def summary(
 
     Parameters
     ----------
-    data: [pandas.DataFrame, pandas.Series]
+    data: pandas.DataFrame | pandas.Series
         pandas DataFrame or Series with DatetimeIndex
     signatures: list
         list of signatures to return. By default all available signatures are returned.
@@ -1802,8 +1806,8 @@ def summary(
             try:
                 result.loc[signature, col] = func(data[col])
             except Exception as e:
-                msg = f"Could not compute signature {signature} for column {col}: {e}"
-                logger.warning(msg)
+                msg = f"Signature '{signature}': could not be computed for series '{col}': {e}"
+                logger.error(msg)
                 result.loc[signature, col] = nan
 
     return result
