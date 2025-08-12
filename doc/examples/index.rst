@@ -125,8 +125,12 @@ Applications
 Time Series Analysis Manual
 ---------------------------
 
-As part of a (Dutch) Manual on Time Series Analysis, Notebooks using Pastas were published.
-The `notebooks <https://github.com/ArtesiaWater/stowa_handleiding_tijdreeksanalyse>`_ were translated in English and are available here:
+The `notebooks <https://github.com/ArtesiaWater/stowa_handleiding_tijdreeksanalyse>`_ from
+the Dutch Manual on Time Series Analysis, which use Pastas, have been translated into English
+and are available below. The full manual can be found here: Von Asmuth, J., Baggelaar, P.,
+Bakker, M., Brakenhoff, D., Collenteur, R., Ebbens, O., Mondeel, H., Klop, S., & Schaars, F. (2021).
+Handleiding Tijdreeksanalyse (`STOWA rapport nr. 32 <https://www.stowa.nl/publicaties/handleiding-voor-het-uitvoeren-van-tijdreeksanalyses>`_).
+Stichting Toegepast Onderzoek Waterbeheer, Amersfoort.
 
 `Preprocessing`_
 
@@ -148,12 +152,7 @@ The `notebooks <https://github.com/ArtesiaWater/stowa_handleiding_tijdreeksanaly
 .. _Model structure: stowa_model_structure.html
 .. _Model calibration: stowa_calibration.html
 .. _Model assessment: stowa_assessment.html
-.. _Case Study 1 Assessing contributions: stowa_case_contribution_assessment.html
-.. _Case Study 2 Determining characteristics: stowa_case_characteristics.html
-.. _Case Study 3 System analysis: stowa_case_system_analysis.html
-.. _Case Study 4 Forecasting: stowa_case_forecasting.html
-
-Reference: Von Asmuth, J., Baggelaar, P., Bakker, M., Brakenhoff, D., Collenteur, R.,
-Ebbens, O., Mondeel, H., Klop, S., & Schaars, F. (2021). Handleiding Tijdreeksanalyse
-(`STOWA rapport nr. 32 <https://www.stowa.nl/publicaties/handleiding-voor-het-uitvoeren-van-tijdreeksanalyses>`_).
-Stichting Toegepast Onderzoek Waterbeheer Amersfoort.
+.. _Case Study 1 Assessing contributions: stowa_cases_contribution_assessment.html
+.. _Case Study 2 Determining characteristics: stowa_cases_characteristics.html
+.. _Case Study 3 System analysis: stowa_cases_system_analysis.html
+.. _Case Study 4 Forecasting: stowa_cases_forecasting.html
