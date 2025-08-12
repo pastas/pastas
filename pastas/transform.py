@@ -6,7 +6,6 @@ These transforms are applied after the simulation, to incorporate nonlinear effe
 import numpy as np
 from pandas import DataFrame, Series
 
-# Type Hinting
 from pastas.typing import ArrayLike, Model
 
 from .decorators import set_parameter

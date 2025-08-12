@@ -1,7 +1,6 @@
-# flake8: noqa
 # Type hinting for Pastas library
 # Typing
-from typing import TYPE_CHECKING, Any, Callable, TypedDict, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Literal, TypedDict, TypeVar
 
 # External libraries
 # Matplotlib
@@ -24,7 +23,7 @@ if TYPE_CHECKING:  # https://mypy.readthedocs.io/en/latest/runtime_troubles.html
     import pastas as ps
 
 # Internal Types
-TimestampType = TypeVar("TimestampType", bound=Union[str, Timestamp])  # Tmin or Tmax
+TimestampType = TypeVar("TimestampType", bound=str | Timestamp)  # Tmin or Tmax
 Model = TypeVar("Model", bound="ps.Model")  # Model
 TimeSeries = TypeVar("TimeSeries", bound="ps.timeseries.TimeSeries")  # Time Series
 StressModel = TypeVar(
@@ -34,85 +33,75 @@ NoiseModel = TypeVar("NoiseModel", bound="ps.noisemodels.NoiseModelBase")  # Noi
 Solver = TypeVar("Solver", bound="ps.solver.BaseSolver")  # Base Solver
 Recharge = TypeVar("Recharge", bound="ps.recharge.RechargeBase")  # Recharge Base
 CallBack = TypeVar("CallBack", bound=Any)  # Callback
-Function = Callable[..., Any]  # Function (e.g. Objective Function)
 RFunc = TypeVar("RFunc", bound="ps.rfunc.RfuncBase")  # rFunc Base
 
 
 class OseriesSettingsDict(TypedDict):
     """
-    Time series settings is a dictionary defining logic for filling and up- or
-    downsampling time series.
+    Time series settings dictionary defining logic for filling and downsampling time series.
 
-    Time series settings
-    --------------------
-    fill_nan : {"drop", "mean", "interpolate"} or float
-        Method for filling NaNs.
-           * `drop`: drop NaNs from time series
-           * `mean`: fill NaNs with mean value of time series
-           * `interpolate`: fill NaNs by interpolating between finite values
-           * `float`: fill NaN with provided value, e.g. 0.0
+    Parameters
+    ----------
     sample_down : {"drop", "mean", "sum", "min", "max"}
-        Method for down-sampling time series (decreasing frequency, e.g. going from
-        daily to weekly values).
-           * `drop`: resample the time series by taking the mean, dropping any NaN-values
-           * `mean`: resample time series by taking the mean
-           * `sum`: resample time series by summing values
-           * `max`: resample time series with maximum value
-           * `min`: resample time series with minimum value
+      Method for down-sampling time series (decreasing frequency, e.g. daily to weekly).
+      - "drop": Drop NaNs from time series.
+      - "mean": Resample by taking the mean.
+      - "sum": Resample by summing values.
+      - "max": Resample with maximum value.
+      - "min": Resample with minimum value.
+    fill_nan : {"drop", "mean", "interpolate"} or float
+      Method for filling NaNs.
+      - "drop": Drop NaNs from time series.
+      - "mean": Fill NaNs with mean value of time series.
+      - "interpolate": Fill NaNs by interpolating between finite values.
+      - float: Fill NaN with provided value, e.g. 0.0.
     """
 
-    sample_down: str
-    fill_nan: str
+    sample_down: Literal["mean", "drop", "sum", "min", "max"]
+    fill_nan: Literal["drop", "mean", "interpolate"] | float
 
 
 class StressSettingsDict(TypedDict):
     """
-    Time series settings is a dictionary defining logic for filling and up- or
+    Stress time series settings dictionary defining logic for filling and up- or
     downsampling time series.
 
-    Time series settings
-    --------------------
-    fill_nan : {"drop", "mean", "interpolate"} or float
-        Method for filling NaNs.
-           * `drop`: drop NaNs from time series
-           * `mean`: fill NaNs with mean value of time series
-           * `interpolate`: fill NaNs by interpolating between finite values
-           * `float`: fill NaN with provided value, e.g. 0.0
-    fill_before : {"mean", "bfill"} or float
-        Method for extending time series into past.
-           * `mean`: extend time series into past with mean value of time series
-           * `bfill`: extend time series into past by back-filling first value
-           * `float`: extend time series into past with provided value, e.g. 0.0
-    fill_after : {"mean", "ffill"} or float
-        Method for extending time series into future.
-           * `mean`: extend time series into future with mean value of time series
-           * `ffill`: extend time series into future by forward-filling last value
-           * `float`: extend time series into future with provided value, e.g. 0.0
-    sample_up : {"mean", "interpolate", "divide"} or float
-        Method for up-sampling time series (increasing frequency, e.g. going from weekly
-        to daily values).
-           * `bfill` or `backfill`: fill up-sampled time steps by back-filling current
-             values
-           * `ffill` or `pad`: fill up-sampled time steps by forward-filling current
-             values
-           * `mean`: fill up-sampled time steps with mean of timeseries
-           * `interpolate`: fill up-sampled time steps by interpolating between current
-             values
-           * `divide`: fill up-sampled steps with current value divided by length of
-             current time steps (i.e. spread value over new time steps).
+    Parameters
+    ----------
+    sample_up : {"mean", "interpolate", "divide", "bfill", "ffill"}
+      Method for up-sampling time series (increasing frequency, e.g. weekly to daily).
+      - "mean": Fill up-sampled time steps with mean of timeseries.
+      - "interpolate": Fill up-sampled time steps by interpolating between current values.
+      - "divide": Fill up-sampled steps with current value divided by length of current time steps.
+      - "bfill": Back-fill up-sampled time steps with current values.
+      - "ffill": Forward-fill up-sampled time steps with current values.
     sample_down : {"mean", "drop", "sum", "min", "max"}
-        Method for down-sampling time series (decreasing frequency, e.g. going from
-        daily to weekly values).
-           * `mean`: resample time series by taking the mean
-           * `drop`: resample the time series by taking the mean, dropping any
-             NaN-values
-           * `sum`: resample time series by summing values
-           * `max`: resample time series with maximum value
-           * `min`: resample time series with minimum value
+      Method for down-sampling time series (decreasing frequency, e.g. daily to weekly).
+      - "mean": Resample time series by taking the mean.
+      - "drop": Resample by taking the mean, dropping any NaN-values.
+      - "sum": Resample by summing values.
+      - "max": Resample with maximum value.
+      - "min": Resample with minimum value.
+    fill_nan : {"drop", "mean", "interpolate"} or float
+      Method for filling NaNs.
+      - "drop": Drop NaNs from time series.
+      - "mean": Fill NaNs with mean value of time series.
+      - "interpolate": Fill NaNs by interpolating between finite values.
+      - float: Fill NaN with provided value, e.g. 0.0.
+    fill_before : {"mean", "bfill"} or float
+      Method for extending time series into the past.
+      - "mean": Extend into past with mean value of time series.
+      - "bfill": Back-fill into past with first value.
+      - float: Extend into past with provided value, e.g. 0.0.
+    fill_after : {"mean", "ffill"} or float
+      Method for extending time series into the future.
+      - "mean": Extend into future with mean value of time series.
+      - "ffill": Forward-fill into future with last value.
+      - float: Extend into future with provided value, e.g. 0.0.
     """
 
-    sample_up: str
-    sample_down: str
-    fill_nan: Union[str, float]
-    fill_before: Union[str, float]
-    fill_after: Union[str, float]
+    sample_up: Literal["mean", "interpolate", "divide", "bfill", "ffill"]
+    sample_down: Literal["mean", "drop", "sum", "min", "max"]
+    fill_nan: Literal["drop", "mean", "interpolate"] | float
+    fill_before: Literal["mean", "bfill"] | float
+    fill_after: Literal["mean", "ffill"] | float
