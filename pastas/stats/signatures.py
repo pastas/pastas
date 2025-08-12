@@ -1,9 +1,7 @@
 """This module contains methods to compute the groundwater signatures. Part of the
 signatures selection is based on the work of :cite:t:`heudorfer_index-based_2019`."""
 
-# Type Hinting
 from logging import getLogger
-from typing import Optional, Tuple, Union
 
 from numpy import (
     arctan,
@@ -323,7 +321,7 @@ def _parde_coefficients(series: Series, normalize: bool = True) -> Series:
     return coefficients
 
 
-def _martens(series: Series, normalize: bool = False) -> Tuple[Series, Series]:
+def _martens(series: Series, normalize: bool = False) -> tuple[Series, Series]:
     """Function for the average seasonal fluctuation and interannual fluctuation.
 
     Parameters
@@ -439,7 +437,7 @@ def _colwell_components(
     freq: str = "W",
     method: str = "mean",
     normalize: bool = True,
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """Colwell's predictability, constant, and contingency
     :cite:t:`colwell_predictability_1974`.
 
@@ -520,7 +518,7 @@ def colwell_constancy(
     freq: str = "W",
     method: str = "mean",
     normalize: bool = True,
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """Colwells constancy index after :cite:t:`colwell_predictability_1974`.
 
     Parameters
@@ -558,7 +556,7 @@ def colwell_contingency(
     freq: str = "W",
     method: str = "mean",
     normalize: bool = True,
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """Colwell's contingency :cite:t:`colwell_predictability_1974`
 
     Parameters
@@ -593,7 +591,7 @@ def colwell_contingency(
 
 
 def low_pulse_count(
-    series: Series, quantile: float = 0.2, rolling_window: Union[str, None] = "7D"
+    series: Series, quantile: float = 0.2, rolling_window: str | None = "7D"
 ) -> float:
     """Average number of times the series is below a certain threshold per year.
 
@@ -641,7 +639,7 @@ def low_pulse_count(
 
 
 def high_pulse_count(
-    series: Series, quantile: float = 0.8, rolling_window: Union[str, None] = "7D"
+    series: Series, quantile: float = 0.8, rolling_window: str | None = "7D"
 ) -> float:
     """Average number of times the series exceeds a certain threshold per year.
 
@@ -685,7 +683,7 @@ def high_pulse_count(
 
 
 def low_pulse_duration(
-    series: Series, quantile: float = 0.2, rolling_window: Union[str, None] = "7D"
+    series: Series, quantile: float = 0.2, rolling_window: str | None = "7D"
 ) -> float:
     """Average duration of pulses where the head is below a certain threshold.
 
@@ -731,7 +729,7 @@ def low_pulse_duration(
 
 
 def high_pulse_duration(
-    series: Series, quantile: float = 0.8, rolling_window: Union[str, None] = "7D"
+    series: Series, quantile: float = 0.8, rolling_window: str | None = "7D"
 ) -> float:
     """Average duration of pulses where the head exceeds a certain threshold.
 
@@ -808,7 +806,7 @@ def _get_differences(series: Series, normalize: bool = False) -> Series:
 
 
 def rise_rate(
-    series: Series, normalize: bool = False, rolling_window: Union[str, None] = "7D"
+    series: Series, normalize: bool = False, rolling_window: str | None = "7D"
 ) -> float:
     """Mean of positive head changes from one day to the next.
 
@@ -843,7 +841,7 @@ def rise_rate(
 
 
 def fall_rate(
-    series: Series, normalize: bool = False, rolling_window: Union[str, None] = "7D"
+    series: Series, normalize: bool = False, rolling_window: str | None = "7D"
 ) -> float:
     """Mean negative head changes from one day to the next.
 
@@ -879,7 +877,7 @@ def fall_rate(
 
 
 def cv_rise_rate(
-    series: Series, normalize: bool = True, rolling_window: Union[str, None] = "7D"
+    series: Series, normalize: bool = True, rolling_window: str | None = "7D"
 ) -> float:
     """Coefficient of Variation in rise rate.
 
@@ -914,7 +912,7 @@ def cv_rise_rate(
 
 
 def cv_fall_rate(
-    series: Series, normalize: bool = False, rolling_window: Union[str, None] = "7D"
+    series: Series, normalize: bool = False, rolling_window: str | None = "7D"
 ) -> float:
     """Coefficient of Variation in fall rate.
 
@@ -1492,7 +1490,7 @@ def richards_pathlength(series: Series, normalize: bool = True) -> float:
 
 def _baselevel(
     series: Series, normalize: bool = True, period="30D"
-) -> Tuple[Series, Series]:
+) -> tuple[Series, Series]:
     """Baselevel function for the baselevel index and stability.
 
     Parameters
@@ -1747,13 +1745,14 @@ def date_max(series: Series) -> float:
 
 
 def summary(
-    data: Union[DataFrame, Series], signatures: Optional[list] = None
+    data: DataFrame | Series,
+    signatures: list[str] | None = None,
 ) -> DataFrame:
     """Method to get many signatures for a time series.
 
     Parameters
     ----------
-    data: Union[pandas.DataFrame, pandas.Series]
+    data: [pandas.DataFrame, pandas.Series]
         pandas DataFrame or Series with DatetimeIndex
     signatures: list
         list of signatures to return. By default all available signatures are returned.

@@ -6,7 +6,6 @@ a subfolder in the pastas-data repository.
 """
 
 from functools import lru_cache
-from typing import Dict, List, Union
 
 from pandas import DataFrame, read_csv
 
@@ -14,7 +13,7 @@ GITHUB_URL = "https://api.github.com/repos/pastas/pastas-data/contents/"
 
 
 @lru_cache
-def load_dataset(name: str) -> Union[DataFrame, Dict[str, DataFrame]]:
+def load_dataset(name: str) -> DataFrame | dict[str, DataFrame]:
     """Load csv-files from a subfolder in the pastas dataset repository on GitHub.
 
     Parameters
@@ -26,7 +25,7 @@ def load_dataset(name: str) -> Union[DataFrame, Dict[str, DataFrame]]:
 
     Returns
     -------
-    Union[pd.DataFrame, Dict[str, pd.DataFrame]]
+    pd.DataFrame | dict[str, pd.DataFrame]
         The loaded dataset(s). If one csv file is found, returns a pandas DataFrame.
         If multiple csv files are found, returns a dictionary with file names as keys
         and dataframes as values.
@@ -91,7 +90,7 @@ def load_dataset(name: str) -> Union[DataFrame, Dict[str, DataFrame]]:
 
 
 @lru_cache
-def list_datasets(silent: bool = True) -> List[str]:
+def list_datasets(silent: bool = True) -> list[str]:
     """Print a list of available datasets in the pastas-data repository on GitHub.
 
     Returns
