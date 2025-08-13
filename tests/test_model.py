@@ -121,9 +121,8 @@ class TestModelComponents:
         )
 
         sm = ps.StressModel(stress=prec, rfunc=ps.Exponential(), name="precipitation")
-        simple_model.add_stressmodel(sm)
 
-        params = simple_model.get_stressmodel_parameters("precipitation")
+        params = sm.get_stressmodel_parameters("precipitation")
 
         assert isinstance(params, pd.DataFrame)
         assert (
