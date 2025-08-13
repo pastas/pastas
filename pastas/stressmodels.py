@@ -1918,7 +1918,8 @@ class ChangeModel(StressModelBase):
             [
                 self.rfunc1.get_init_parameters("{}_1".format(self.name)),
                 self.rfunc2.get_init_parameters("{}_2".format(self.name)),
-            ]
+            ],
+            axis=0,
         )
 
         tmin = Timestamp.min.toordinal()

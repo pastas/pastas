@@ -55,25 +55,6 @@ class RechargeBase:
         self.snow = False
         self.nparam = 0
 
-    @staticmethod
-    def get_init_parameters(name: str = "recharge") -> DataFrame:
-        """Method to obtain the initial parameters.
-
-        Parameters
-        ----------
-        name: str, optional
-            String with the name that is used as prefix for the parameters.
-
-        Returns
-        -------
-        parameters: pandas.DataFrame
-            Pandas DataFrame with the parameters.
-        """
-        parameters = DataFrame(
-            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
-        )
-        return parameters
-
     def simulate(self, prec, evap, p, dt=1.0, return_full=False, **kwargs):
         pass
 
@@ -112,10 +93,24 @@ class Linear(RechargeBase):
         self.nparam = 1
 
     def get_init_parameters(self, name: str = "recharge") -> DataFrame:
+        """Method to obtain the initial parameters.
+
+        Parameters
+        ----------
+        name: str, optional
+            String with the name that is used as prefix for the parameters.
+
+        Returns
+        -------
+        parameters: pandas.DataFrame
+            Pandas DataFrame with the parameters.
+        """
         parameters = DataFrame(
-            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
+            [(-1.0, -2.0, 0.0, True, name, "uniform")],
+            columns=["initial", "pmin", "pmax", "vary", "name", "dist"],
+            index=[name + "_f"],
         )
-        parameters.loc[name + "_f"] = (-1.0, -2.0, 0.0, True, name, "uniform")
+
         return parameters
 
     def simulate(
@@ -212,14 +207,35 @@ class FlexModel(RechargeBase):
             self.nparam += 2
 
     def get_init_parameters(self, name: str = "recharge") -> DataFrame:
+        """Method to obtain the initial parameters.
+
+        Parameters
+        ----------
+        name: str, optional
+            String with the name that is used as prefix for the parameters.
+
+        Returns
+        -------
+        parameters: pandas.DataFrame
+            Pandas DataFrame with the parameters.
+        """
         parameters = DataFrame(
-            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
+            [
+                (250.0, 1e-5, 1e3, True, name, "uniform"),  # srmax
+                (0.25, 1e-5, 1.0, False, name, "uniform"),  # lp
+                (100.0, 1e-5, 1e4, True, name, "uniform"),  # ks
+                (2.0, 1e-5, 20.0, True, name, "uniform"),  # gamma
+                (1.0, 0.25, 2.0, True, name, "uniform"),  # kv
+            ],
+            columns=["initial", "pmin", "pmax", "vary", "name", "dist"],
+            index=[
+                name + "_srmax",
+                name + "_lp",
+                name + "_ks",
+                name + "_gamma",
+                name + "_kv",
+            ],
         )
-        parameters.loc[name + "_srmax"] = (250.0, 1e-5, 1e3, True, name, "uniform")
-        parameters.loc[name + "_lp"] = (0.25, 1e-5, 1, False, name, "uniform")
-        parameters.loc[name + "_ks"] = (100.0, 1e-5, 1e4, True, name, "uniform")
-        parameters.loc[name + "_gamma"] = (2.0, 1e-5, 20.0, True, name, "uniform")
-        parameters.loc[name + "_kv"] = (1.0, 0.25, 2.0, True, name, "uniform")
         if self.interception:
             parameters.loc[name + "_simax"] = (2.0, 0.0, 10.0, False, name, "uniform")
         if self.gw_uptake:
@@ -597,16 +613,39 @@ class Berendrecht(RechargeBase):
         self.nparam = 7
 
     def get_init_parameters(self, name: str = "recharge") -> DataFrame:
+        """Method to obtain the initial parameters.
+
+        Parameters
+        ----------
+        name: str, optional
+            String with the name that is used as prefix for the parameters.
+
+        Returns
+        -------
+        parameters: pandas.DataFrame
+            Pandas DataFrame with the parameters.
+        """
         parameters = DataFrame(
-            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
+            [
+                (0.9, 0.7, 1.3, False, name, "uniform"),  # fi
+                (1.0, 0.7, 1.3, False, name, "uniform"),  # fc
+                (0.25, 1e-5, 1.0, False, name, "uniform"),  # sr
+                (250.0, 20.0, 1e3, True, name, "uniform"),  # de
+                (2.0, -4.0, 50.0, True, name, "uniform"),  # l
+                (0.5, 1e-5, 0.5, False, name, "uniform"),  # m
+                (100.0, 1.0, 1e4, True, name, "uniform"),  # ks
+            ],
+            columns=["initial", "pmin", "pmax", "vary", "name", "dist"],
+            index=[
+                name + "_fi",
+                name + "_fc",
+                name + "_sr",
+                name + "_de",
+                name + "_l",
+                name + "_m",
+                name + "_ks",
+            ],
         )
-        parameters.loc[name + "_fi"] = (0.9, 0.7, 1.3, False, name, "uniform")
-        parameters.loc[name + "_fc"] = (1.0, 0.7, 1.3, False, name, "uniform")
-        parameters.loc[name + "_sr"] = (0.25, 1e-5, 1.0, False, name, "uniform")
-        parameters.loc[name + "_de"] = (250.0, 20, 1e3, True, name, "uniform")
-        parameters.loc[name + "_l"] = (2.0, -4, 50, True, name, "uniform")
-        parameters.loc[name + "_m"] = (0.5, 1e-5, 0.5, False, name, "uniform")
-        parameters.loc[name + "_ks"] = (100.0, 1, 1e4, True, name, "uniform")
         return parameters
 
     def simulate(
@@ -745,14 +784,35 @@ class Peterson(RechargeBase):
         self.nparam = 5
 
     def get_init_parameters(self, name: str = "recharge") -> DataFrame:
+        """Method to obtain the initial parameters.
+
+        Parameters
+        ----------
+        name: str, optional
+            String with the name that is used as prefix for the parameters.
+
+        Returns
+        -------
+        parameters: pandas.DataFrame
+            Pandas DataFrame with the parameters.
+        """
         parameters = DataFrame(
-            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
+            [
+                (1.5, 0.5, 3.0, True, name, "uniform"),  # scap
+                (1.0, 0.0, 1.5, True, name, "uniform"),  # alpha
+                (1.0, 0.0, 3.0, True, name, "uniform"),  # ksat
+                (0.5, 0.0, 1.5, True, name, "uniform"),  # beta
+                (1.0, 0.0, 2.0, True, name, "uniform"),  # gamma
+            ],
+            columns=["initial", "pmin", "pmax", "vary", "name", "dist"],
+            index=[
+                name + "_scap",
+                name + "_alpha",
+                name + "_ksat",
+                name + "_beta",
+                name + "_gamma",
+            ],
         )
-        parameters.loc[name + "_scap"] = (1.5, 0.5, 3.0, True, name, "uniform")
-        parameters.loc[name + "_alpha"] = (1.0, 0.0, 1.5, True, name, "uniform")
-        parameters.loc[name + "_ksat"] = (1.0, 0.0, 3.0, True, name, "uniform")
-        parameters.loc[name + "_beta"] = (0.5, 0.0, 1.5, True, name, "uniform")
-        parameters.loc[name + "_gamma"] = (1.0, 0.0, 2.0, True, name, "uniform")
         return parameters
 
     def simulate(
