@@ -122,11 +122,9 @@ class TestModelComponents:
 
         sm = ps.StressModel(stress=prec, rfunc=ps.Exponential(), name="precipitation")
 
-        params = sm.get_stressmodel_parameters("precipitation")
-
-        assert isinstance(params, pd.DataFrame)
+        assert isinstance(sm.parameters, pd.DataFrame)
         assert (
-            params.columns
+            sm.parameters.columns
             == pd.Index(
                 [
                     "initial",
@@ -139,7 +137,7 @@ class TestModelComponents:
             )
         ).all()
         assert (
-            params.dtypes.values
+            sm.parameters.dtypes.values
             == np.array(
                 [
                     np.dtypes.Float64DType(),
