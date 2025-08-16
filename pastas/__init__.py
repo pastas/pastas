@@ -1,4 +1,4 @@
-# ruff: noqa: D104 F401
+# ruff: noqa: F401
 import logging
 import warnings
 
