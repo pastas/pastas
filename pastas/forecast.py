@@ -1,3 +1,5 @@
+"""This module contains methods to generate forecasts using a Pastas model instance."""
+
 from logging import getLogger
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -78,7 +80,7 @@ def _check_forecast_data(
                 raise ValueError(msg)
             elif tmin != fc.index[0] or tmax != fc.index[-1]:
                 msg = (
-                    "The time index of the forecasts is not the same for all forecasts. "
+                    "The time index of the forecasts is not the same for all forecasts."
                     "Please check the forecast data."
                 )
                 logger.error(msg)
@@ -133,9 +135,12 @@ def forecast(
     Notes
     -----
 
+    For efficiency, the iteration over the different ensemble members and parameters sets is done in the following order using a double for-loop:
+
     1. iterate over the ensemble members
     2. iterate over the parameter sets
-    3. generate the forecasts
+
+    Please note that only the AR1 noise model is supported at this moment for post-processing.
 
     """
     # Copy the model so old model is unaffected.
@@ -146,12 +151,10 @@ def forecast(
     logger.info(f"Working with {n} ensemble members from {tmin} to {tmax}")
 
     if post_process and ml.noisemodel is None:
-        msg = (
-            "No noisemodel is present in the model instance. "
-            "Please add a noisemodel to the model instance."
-        )
+        msg = "No noisemodel is present in the model instance. Please add a noisemodel to the model instance or set post_process=False. Please note that only the AR1 noise model is supported at this moment."
         logger.error(msg)
         raise ValueError(msg)
+
 
     # Generate parameter sets
     if params is None:
@@ -206,6 +209,8 @@ def forecast(
     result_idx = 0
     # Pre-process stresses for each ensemble member
     logger.info("Processing forecast data for ensemble members")
+
+    # 1. iterate over the ensemble members
     for m in range(n):
         # Update stresses with ensemble member data
         for sm_name, fc_data in forecasts.items():
@@ -219,7 +224,7 @@ def forecast(
                 )
                 sm.stress[i].series_original = ts
 
-        # Generate simulations for each parameter set
+        # 2. iterate over the parameter sets
         for i, param in enumerate(params):
             # Generate the forecasts
             sim = ml2.simulate(tmin=tmin, tmax=tmax, p=param).values
@@ -253,7 +258,7 @@ def forecast(
 
 
 def get_overall_mean_and_variance(df: DataFrame) -> Tuple[DataFrame, DataFrame]:
-    """Method to get the overall mean and variance of the a forecast ensemble.
+    """Method to get the overall mean and variance of the forecast ensemble.
 
     Parameters
     ----------
@@ -265,9 +270,9 @@ def get_overall_mean_and_variance(df: DataFrame) -> Tuple[DataFrame, DataFrame]:
 
     Returns
     -------
-    mean: pandas.Series
+    overall_mean: pandas.Series
         Series with the mean of the forecasts.
-    var: pandas.Series
+    overall_variance: pandas.Series
         Series with the variance of the forecasts.
 
     Notes
