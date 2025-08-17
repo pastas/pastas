@@ -155,7 +155,6 @@ def forecast(
         logger.error(msg)
         raise ValueError(msg)
 
-
     # Generate parameter sets
     if params is None:
         logger.info(f"Generating {nparam} parameter samples")
