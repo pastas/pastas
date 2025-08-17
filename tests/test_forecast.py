@@ -107,7 +107,7 @@ class TestGetOverallMeanAndVariance:
 
     def test_overall_mean_calculation(self) -> None:
         """Test that the overall mean is calculated correctly."""
-        mean, var = get_overall_mean_and_variance(self.df)
+        mean, _ = get_overall_mean_and_variance(self.df)
 
         # Expected mean is average of all mean values (1+2+3+4+5+6)/6 = 3.5
         assert isinstance(mean, Series)
@@ -118,12 +118,12 @@ class TestGetOverallMeanAndVariance:
         """Test that the overall variance is calculated correctly."""
         _, var = get_overall_mean_and_variance(self.df)
 
-        # Variance of means: ((1-3.5)² + (2-3.5)² + ... + (6-3.5)²)/6 = 2.92
+        # Variance of means: ((1-3.5)² + (2-3.5)² + ... + (6-3.5)²)/5 = 3.5 # ddof=1
         # Mean of variances: 0.5
-        # Expected total variance = 2.92 + 0.5 = 3.42
+        # Expected total variance = 3.5 + 0.5 = 4
         assert isinstance(var, Series)
         assert len(var) == len(self.index)
-        assert np.allclose(var, 3.4166666666666665)
+        assert (var == 4.0).all()
 
 
 @pytest.fixture
