@@ -123,7 +123,7 @@ class TestGetOverallMeanAndVariance:
         # Expected total variance = 2.92 + 0.5 = 3.42
         assert isinstance(var, Series)
         assert len(var) == len(self.index)
-        assert np.allclose(var, 3.416667)
+        assert np.allclose(var, 3.4166666666666665)
 
 
 @pytest.fixture
