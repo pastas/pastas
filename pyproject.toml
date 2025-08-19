@@ -104,26 +104,45 @@ commands = [["pytest", "tests", "-m", "not notebooks and not bnotebooks"]]
 description = "run all unit tests (including Notebooks) and obtain coverage"
 extras = ["ci"]
 commands = [
-    ["coverage", "run", "-m", "pytest", "tests", "-m", "not bnotebooks"],
-    ["coverage", "xml"],
+    [
+        "coverage",
+        "run",
+        "-m",
+        "pytest",
+        "tests",
+        "-m",
+        "not bnotebooks",
+    ],
+    [
+        "coverage",
+        "xml",
+    ],
 ]
 
 [tool.tox.env.notebooks]
 description = "run the benchmark notebooks"
 extras = ["ci"]
-commands = [
-    ["pytest", "tests", "-m", "bnotebooks"],
-]
+commands = [["pytest", "tests", "-m", "bnotebooks"]]
 
 [tool.tox.env.ruff]
 description = "run ruff checks"
 extras = ["ruffing"]
 commands = [
-    ["ruff", "check", "--extend-select", "I", "--preview"],
-    ["ruff", "format", "--check"],
+    [
+        "ruff",
+        "check",
+        "--extend-select",
+        "I",
+        "--preview",
+    ],
+    [
+        "ruff",
+        "format",
+        "--check",
+    ],
 ]
 
 [tool.codespell]
 skip = "*.pdf"
-ignore-regex = "[A-Za-z0-9+/]{100,}"  # base64-encoded data in *.ipynb files
+ignore-regex = "[A-Za-z0-9+/]{100,}"                 # base64-encoded data in *.ipynb files
 ignore-words-list = ["delt", "te", "theses", "Bilt"]
