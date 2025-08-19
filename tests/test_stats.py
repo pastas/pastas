@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -8,7 +6,7 @@ import pastas as ps
 from pastas.stats.tests import durbin_watson, ljung_box
 
 
-def acf_func(**kwargs) -> Tuple[np.ndarray, np.ndarray]:
+def acf_func(**kwargs) -> tuple[np.ndarray, np.ndarray]:
     index = pd.to_datetime(np.arange(0, 100, 1), unit="D", origin="2000")
     index = kwargs.pop("index", index)
     data = np.sin(np.linspace(0, 10 * np.pi, 100))

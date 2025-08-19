@@ -5,9 +5,7 @@ These methods are 'special' in the sense that they are able to deal with irregul
 time steps often observed in hydrological time series.
 """
 
-# Type Hinting
 from logging import getLogger
-from typing import Tuple, Union
 
 from numba import prange
 from numpy import (
@@ -46,7 +44,7 @@ def acf(
     full_output: bool = False,
     alpha: float = 0.05,
     fallback_bin_method: str = "gaussian",
-) -> Union[Series, DataFrame]:
+) -> Series | DataFrame:
     """Calculate the autocorrelation function for irregular time steps.
 
     Parameters
@@ -139,7 +137,7 @@ def ccf(
     full_output: bool = False,
     alpha: float = 0.05,
     fallback_bin_method: str = "gaussian",
-) -> Union[Series, DataFrame]:
+) -> Series | DataFrame:
     """Method to compute the cross-correlation for irregular time series.
 
     Parameters
@@ -261,7 +259,7 @@ def ccf(
         return result.ccf
 
 
-def _preprocess(x: Series, max_gap: float) -> Tuple[ArrayLike, ArrayLike, float]:
+def _preprocess(x: Series, max_gap: float) -> tuple[ArrayLike, ArrayLike, float]:
     """Internal method to preprocess the time series."""
     dt = x.index.to_series().diff().dropna().values / Timedelta(1, "D")
     dt_mu = dt[dt < max_gap].mean()  # Deal with big gaps if present
@@ -282,7 +280,7 @@ def _compute_ccf_rectangle(
     t_y: ArrayLike,
     y: ArrayLike,
     bin_width: float = 0.5,
-) -> Tuple[ArrayLike, ArrayLike]:
+) -> tuple[ArrayLike, ArrayLike]:
     """Internal numba-optimized method to compute the ccf."""
     c = empty_like(lags)
     b = empty_like(lags)
@@ -318,7 +316,7 @@ def _compute_ccf_gaussian(
     t_y: ArrayLike,
     y: ArrayLike,
     bin_width: float = 0.5,
-) -> Tuple[ArrayLike, ArrayLike]:
+) -> tuple[ArrayLike, ArrayLike]:
     """Internal numba-optimized method to compute the ccf."""
     c = empty_like(lags)
     b = empty_like(lags)
@@ -353,7 +351,7 @@ def _compute_ccf_gaussian(
 
 def _compute_ccf_regular(
     lags: ArrayLike, x: ArrayLike, y: ArrayLike
-) -> Tuple[ArrayLike, ArrayLike]:
+) -> tuple[ArrayLike, ArrayLike]:
     c = empty_like(lags)
     n = len(x)
     for i in range(len(lags)):

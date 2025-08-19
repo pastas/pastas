@@ -1,6 +1,6 @@
 """Tests for the Model class in pastas.model."""
 
-from typing import Any, Optional, Tuple
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -29,7 +29,7 @@ def simple_model() -> ps.Model:
 
 
 @pytest.fixture
-def param_fixture(ml_solved: ps.Model) -> Tuple[str, float, float, float, bool]:
+def param_fixture(ml_solved: ps.Model) -> tuple[str, float, float, float, bool]:
     """Fixture to provide a consistent parameter for testing."""
     param_name = "rch_A"
     orig_value = ml_solved.parameters.at[param_name, "initial"]
@@ -112,6 +112,43 @@ class TestModelComponents:
 
         assert "precipitation" in simple_model.stressmodels
         assert simple_model.stressmodels["precipitation"] is sm
+
+    def test_stressmodel_params(self, simple_model: ps.Model) -> None:
+        """Test getting stress model parameters."""
+        dates = pd.date_range(start="2000-01-01", end="2005-12-31", freq="D")
+        prec = pd.Series(
+            np.random.gamma(2, 1, size=len(dates)), index=dates, name="prec"
+        )
+
+        sm = ps.StressModel(stress=prec, rfunc=ps.Exponential(), name="precipitation")
+
+        assert isinstance(sm.parameters, pd.DataFrame)
+        assert (
+            sm.parameters.columns
+            == pd.Index(
+                [
+                    "initial",
+                    "pmin",
+                    "pmax",
+                    "vary",
+                    "name",
+                    "dist",
+                ]
+            )
+        ).all()
+        assert (
+            sm.parameters.dtypes.values
+            == np.array(
+                [
+                    np.dtypes.Float64DType(),
+                    np.dtypes.Float64DType(),
+                    np.dtypes.Float64DType(),
+                    np.dtypes.BoolDType(),
+                    np.dtypes.ObjectDType(),
+                    np.dtypes.ObjectDType(),
+                ]
+            )
+        ).all()
 
     def test_add_multiple_stressmodels(self, simple_model: ps.Model) -> None:
         """Test adding multiple stress models at once."""
@@ -384,7 +421,7 @@ class TestModelParameters:
     def test_set_parameter_attributes(
         self,
         ml_solved: ps.Model,
-        param_fixture: Tuple[str, float, float, float, bool],
+        param_fixture: tuple[str, float, float, float, bool],
         param_attr: str,
         value: Any,
         expected: Any,
@@ -404,7 +441,7 @@ class TestModelParameters:
             ml_solved.set_parameter("nonexistent", initial=1.0)
 
     def test_set_parameter_bounds(
-        self, ml_solved: ps.Model, param_fixture: Tuple[str, float, float, float, bool]
+        self, ml_solved: ps.Model, param_fixture: tuple[str, float, float, float, bool]
     ) -> None:
         """Test setting parameter bounds."""
         param_name = param_fixture[0]
@@ -416,7 +453,7 @@ class TestModelParameters:
         assert ml_solved.parameters.at[param_name, "pmax"] == 10.0
 
     def test_set_parameter_move_bounds(
-        self, ml_solved: ps.Model, param_fixture: Tuple[str, float, float, float, bool]
+        self, ml_solved: ps.Model, param_fixture: tuple[str, float, float, float, bool]
     ) -> None:
         """Test moving parameter bounds."""
         param_name, orig_initial, orig_pmin, orig_pmax, _ = param_fixture
@@ -503,7 +540,7 @@ class TestModelContributions:
         ],
     )
     def test_contribution_methods(
-        self, ml_noisemodel: ps.Model, method_name: str, series_name: Optional[str]
+        self, ml_noisemodel: ps.Model, method_name: str, series_name: str | None
     ) -> None:
         """Test various contribution-related methods."""
         # Get the first stressmodel name
