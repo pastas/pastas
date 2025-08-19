@@ -205,7 +205,7 @@ class TestForecast:
             )
 
             # Run forecast
-            result: DataFrame = forecast(mock_model, forecast_data, nparam=2)
+            result: DataFrame = forecast(mock_model, forecast_data, params=None)
 
             # Check results
             assert isinstance(result, DataFrame)
@@ -218,7 +218,7 @@ class TestForecast:
             assert set(result.columns.get_level_values(2)) == {"mean", "var"}
             assert result.shape == (
                 5,
-                8,
+                4,
             )  # 5 days, 2 ensemble members × 2 params × 2 (mean, var)
 
     def test_forecast_with_params(
