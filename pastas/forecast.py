@@ -199,7 +199,7 @@ def forecast(
         phi_denominators = {i: 1 - phi**2 for i, phi in phi_values.items()}
         # Pre-compute all variance scaling factors at once for better performance
         phi_scaling_factors = {
-            i: (1 - phi ** (2 * t)) / denominator
+            i: (1 - phi ** (2 * t / dt)) / denominator
             for i, (phi, denominator) in enumerate(
                 zip(phi_values.values(), phi_denominators.values())
             )
