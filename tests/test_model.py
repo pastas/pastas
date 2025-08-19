@@ -113,6 +113,43 @@ class TestModelComponents:
         assert "precipitation" in simple_model.stressmodels
         assert simple_model.stressmodels["precipitation"] is sm
 
+    def test_stressmodel_params(self, simple_model: ps.Model) -> None:
+        """Test getting stress model parameters."""
+        dates = pd.date_range(start="2000-01-01", end="2005-12-31", freq="D")
+        prec = pd.Series(
+            np.random.gamma(2, 1, size=len(dates)), index=dates, name="prec"
+        )
+
+        sm = ps.StressModel(stress=prec, rfunc=ps.Exponential(), name="precipitation")
+
+        assert isinstance(sm.parameters, pd.DataFrame)
+        assert (
+            sm.parameters.columns
+            == pd.Index(
+                [
+                    "initial",
+                    "pmin",
+                    "pmax",
+                    "vary",
+                    "name",
+                    "dist",
+                ]
+            )
+        ).all()
+        assert (
+            sm.parameters.dtypes.values
+            == np.array(
+                [
+                    np.dtypes.Float64DType(),
+                    np.dtypes.Float64DType(),
+                    np.dtypes.Float64DType(),
+                    np.dtypes.BoolDType(),
+                    np.dtypes.ObjectDType(),
+                    np.dtypes.ObjectDType(),
+                ]
+            )
+        ).all()
+
     def test_add_multiple_stressmodels(self, simple_model: ps.Model) -> None:
         """Test adding multiple stress models at once."""
         dates = pd.date_range(start="2000-01-01", end="2005-12-31", freq="D")
