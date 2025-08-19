@@ -6,6 +6,9 @@ from typing import Any
 from numpy import array, empty, exp, linspace, ones
 from pandas import DataFrame, DatetimeIndex, MultiIndex, Timedelta, concat
 
+from pastas.model import Model
+from pastas.noisemodels import ArNoiseModel
+
 logger = getLogger(__name__)
 
 
@@ -95,7 +98,7 @@ def _check_forecast_data(
 
 
 def forecast(
-    ml: Any,
+    ml: Model,
     forecasts: dict[str, list[DataFrame]],
     params: list[list[float]] | None = None,
     post_process: bool = False,
@@ -136,15 +139,15 @@ def forecast(
     Please note that only the AR1 noise model is supported at this moment for post-processing.
 
     """
-    # Copy the model so old model is unaffected when replacing the stresses.
-    ml2 = ml.copy()
-
     # Check the integrity of the forecasts data
     n, tmin, tmax, index = _check_forecast_data(forecasts)
     logger.info(f"Working with {n} ensemble members from {tmin} to {tmax}")
 
-    if post_process and ml2.noisemodel is None:
-        msg = "No noisemodel is present in the model instance. Please add a noisemodel to the model instance or set post_process=False. Please note that only the AR1 noise model is supported at this moment."
+    if post_process and not isinstance(ml.noisemodel, ArNoiseModel):
+        if ml.noisemodel is None:
+            msg = "No noise model present in the model instance. Please add a noise model to the model instance or set post_process=False."
+        else:
+            msg = "Only the AR1 noise model is supported for post-processing at this moment. Please use an AR1 noise model or set post_process=False."
         logger.error(msg)
         raise ValueError(msg)
 
@@ -152,7 +155,7 @@ def forecast(
     if params is None:
         logger.info("No parameter provided, using the optimal parameters.")
         # In case no parameters are provided, use optimal values
-        params = [ml2.parameters.loc[:, "optimal"].values]
+        params = [ml.parameters.loc[:, "optimal"].values]
         nparam = len(params)
     else:
         if len(params) == 0:
@@ -171,40 +174,43 @@ def forecast(
 
     residuals = {}
     vars = {}
+    day = Timedelta("1D")
 
     if post_process:
-        dt = ml2.settings["freq_obs"] / Timedelta("1D")
+        dt = ml.settings["freq_obs"] / day
         t = linspace(1, index.size, index.size)
         correction = {}
 
     # Preprocess residuals and variances for each parameter set as they only depend on parameters and not on ensemble members
     for i, param in enumerate(params):
-        residuals[i] = ml2.residuals(tmax=tmin, p=param).dropna()
+        residuals[i] = ml.residuals(tmax=tmin, p=param).dropna()
 
         if post_process:
             # Compute the time varying variance for the AR1 noise model
             phi = exp(-dt / param[-1])
-            denominator = 1 - phi**2
-            phi_scaling_factor = (1 - phi ** (2 * t / dt)) / denominator
-            vars[i] = ml2.noise(tmax=tmin, p=param).var() * phi_scaling_factor
+            denominator = 1.0 - phi**2
+            phi_scaling_factor = (1.0 - phi ** (2.0 * t / dt)) / denominator
+            vars[i] = ml.noise(tmax=tmin, p=param).var() * phi_scaling_factor
 
-            correction[i] = ml2.noisemodel.get_correction(
+            correction[i] = ml.noisemodel.get_correction(
                 residuals[i], [param[-1]], index
             ).values
         else:
             vars[i] = residuals[i].var() * ones(forecast_length)
 
+    # Copy the model so old model is unaffected when replacing the stresses.
+    ml = ml.copy()
     idx = 0
 
     # 1. iterate over the ensemble members
     for member in range(n):
         # Update stresses with ensemble member data
         for sm_name, fc_data in forecasts.items():
-            sm = ml2.stressmodels[sm_name]  # Select stressmodel
+            sm = ml.stressmodels[sm_name]  # Select stressmodel
             for i, fc in enumerate(fc_data):
                 ts = concat(
                     [
-                        sm.stress[i].series_original.loc[: tmin - Timedelta("1D")],
+                        sm.stress[i].series_original.loc[: tmin - day],
                         fc.iloc[:, member],
                     ]
                 )
@@ -213,9 +219,8 @@ def forecast(
         # 2. iterate over the parameter sets
         for i, param in enumerate(params):
             # Generate the forecasts
-            sim = ml2.simulate(tmin=tmin, tmax=tmax, p=param).values
+            sim = ml.simulate(tmin=tmin, tmax=tmax, p=param).values
 
-            # Vectorized computation for time-dependent variance
             if post_process:
                 # Add the correction from the noise model
                 sim = sim + correction[i]

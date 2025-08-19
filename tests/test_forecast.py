@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -30,14 +30,14 @@ class TestCheckForecastData:
 
     def test_no_valid_forecast_data(self) -> None:
         """Test that no valid forecast data raises a ValueError."""
-        forecasts: Dict[str, List[DataFrame]] = {"sm1": []}
+        forecasts: dict[str, list[DataFrame]] = {"sm1": []}
         with pytest.raises(ValueError, match="No valid forecast data found"):
             _check_forecast_data(forecasts)
 
     def test_empty_dataframe(self) -> None:
         """Test that empty DataFrames are handled correctly."""
         empty_df = pd.DataFrame()
-        forecasts: Dict[str, List[DataFrame]] = {"sm1": [empty_df]}
+        forecasts: dict[str, list[DataFrame]] = {"sm1": [empty_df]}
         with pytest.raises(ValueError, match="No valid forecast data found"):
             _check_forecast_data(forecasts)
 
@@ -46,7 +46,7 @@ class TestCheckForecastData:
         index: DatetimeIndex = pd.date_range("2023-01-01", periods=10, freq="D")
         df1: DataFrame = pd.DataFrame(np.random.rand(10, 3), index=index)
         df2: DataFrame = pd.DataFrame(np.random.rand(10, 4), index=index)
-        forecasts: Dict[str, List[DataFrame]] = {"sm1": [df1, df2]}
+        forecasts: dict[str, list[DataFrame]] = {"sm1": [df1, df2]}
         with pytest.raises(
             ValueError, match="number of ensemble members is not the same"
         ):
@@ -58,7 +58,7 @@ class TestCheckForecastData:
         index2: DatetimeIndex = pd.date_range("2023-01-02", periods=10, freq="D")
         df1: DataFrame = pd.DataFrame(np.random.rand(10, 3), index=index1)
         df2: DataFrame = pd.DataFrame(np.random.rand(10, 3), index=index2)
-        forecasts: Dict[str, List[DataFrame]] = {"sm1": [df1, df2]}
+        forecasts: dict[str, list[DataFrame]] = {"sm1": [df1, df2]}
         with pytest.raises(
             ValueError, match="time index of the forecasts is not the same"
         ):
@@ -69,7 +69,7 @@ class TestCheckForecastData:
         index: DatetimeIndex = pd.date_range("2023-01-01", periods=10, freq="D")
         df1: DataFrame = pd.DataFrame(np.random.rand(10, 3), index=index)
         df2: DataFrame = pd.DataFrame(np.random.rand(10, 3), index=index)
-        forecasts: Dict[str, List[DataFrame]] = {"sm1": [df1, df2]}
+        forecasts: dict[str, list[DataFrame]] = {"sm1": [df1, df2]}
         n, tmin, tmax, result_index = _check_forecast_data(forecasts)
         assert n == 3
         assert tmin == index[0]
@@ -132,7 +132,13 @@ def mock_model() -> MagicMock:
     model = MagicMock()
     model.copy.return_value = model
     model.settings = {"freq_obs": pd.Timedelta("1D")}
+    # Create a mock noisemodel with ArNoiseModel as its class for isinstance checks
     model.noisemodel = MagicMock()
+    model.noisemodel.__class__.__name__ = "ArNoiseModel"
+    # Make isinstance(model.noisemodel, ArNoiseModel) return True
+    from pastas.noisemodels import ArNoiseModel
+
+    model.noisemodel.__class__ = ArNoiseModel
 
     # Mock stressmodel with properly configured series
     sm1 = MagicMock()
@@ -177,7 +183,7 @@ def mock_model() -> MagicMock:
 
 
 @pytest.fixture
-def forecast_data() -> Dict[str, List[DataFrame]]:
+def forecast_data() -> dict[str, list[DataFrame]]:
     """Create forecast data for testing."""
     index: DatetimeIndex = pd.date_range("2023-01-01", periods=5, freq="D")
     df1: DataFrame = pd.DataFrame(np.ones((5, 2)), index=index)
@@ -188,7 +194,7 @@ def forecast_data() -> Dict[str, List[DataFrame]]:
 
 class TestForecast:
     def test_forecast_without_params(
-        self, mock_model: MagicMock, forecast_data: Dict[str, List[DataFrame]]
+        self, mock_model: MagicMock, forecast_data: dict[str, list[DataFrame]]
     ) -> None:
         """Test forecast without providing parameters."""
         with patch("pastas.forecast._check_forecast_data") as mock_check:
@@ -222,7 +228,7 @@ class TestForecast:
             )  # 5 days, 2 ensemble members × 2 params × 2 (mean, var)
 
     def test_forecast_with_params(
-        self, mock_model: MagicMock, forecast_data: Dict[str, List[DataFrame]]
+        self, mock_model: MagicMock, forecast_data: dict[str, list[DataFrame]]
     ) -> None:
         """Test forecast with provided parameters."""
         with patch("pastas.forecast._check_forecast_data") as mock_check:
@@ -238,7 +244,7 @@ class TestForecast:
                 np.zeros(5), index=pd.date_range("2023-01-01", "2023-01-05", freq="D")
             )
 
-            params: List[List[float]] = [[1.0, 2.0, 50.0], [3.0, 4.0, 60.0]]
+            params: list[list[float]] = [[1.0, 2.0, 50.0], [3.0, 4.0, 60.0]]
             result: DataFrame = forecast(mock_model, forecast_data, params=params)
 
             assert isinstance(result, DataFrame)
@@ -248,7 +254,7 @@ class TestForecast:
             )  # 5 days, 2 ensemble members × 2 params × 2 (mean, var)
 
     def test_forecast_with_post_processing(
-        self, mock_model: MagicMock, forecast_data: Dict[str, List[DataFrame]]
+        self, mock_model: MagicMock, forecast_data: dict[str, list[DataFrame]]
     ) -> None:
         """Test forecast with post-processing."""
         with patch("pastas.forecast._check_forecast_data") as mock_check:
@@ -265,7 +271,7 @@ class TestForecast:
                 index=pd.date_range("2023-01-01", "2023-01-05", freq="D"),
             )
 
-            params: List[List[float]] = [[1.0, 2.0, 50.0], [3.0, 4.0, 60.0]]
+            params: list[list[float]] = [[1.0, 2.0, 50.0], [3.0, 4.0, 60.0]]
             result: DataFrame = forecast(
                 mock_model, forecast_data, params=params, post_process=True
             )
@@ -281,17 +287,17 @@ class TestForecast:
             assert np.allclose(means.iloc[0, 0], 1.5)
 
     def test_forecast_no_noisemodel_with_post_processing(
-        self, mock_model: MagicMock, forecast_data: Dict[str, List[DataFrame]]
+        self, mock_model: MagicMock, forecast_data: dict[str, list[DataFrame]]
     ) -> None:
         """Test forecast with post-processing but no noise model."""
         # Remove noise model
         mock_model.noisemodel = None
 
-        with pytest.raises(ValueError, match="No noisemodel is present"):
+        with pytest.raises(ValueError, match="No noise model present"):
             forecast(mock_model, forecast_data, post_process=True)
 
     def test_forecast_empty_params(
-        self, mock_model: MagicMock, forecast_data: Dict[str, List[DataFrame]]
+        self, mock_model: MagicMock, forecast_data: dict[str, list[DataFrame]]
     ) -> None:
         """Test forecast with empty params list."""
         with pytest.raises(ValueError, match="Empty parameter list provided"):
