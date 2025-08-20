@@ -18,6 +18,7 @@ import numpy as np
 from pandas import DataFrame, Series
 from scipy.linalg import LinAlgError, get_lapack_funcs, svd
 from scipy.optimize import Bounds, least_squares
+from scipy.special import gammaincinv
 
 from pastas.objective_functions import GaussianLikelihood
 from pastas.typing import ArrayLike, CallBack, Model
@@ -688,6 +689,9 @@ class LeastSquares(BaseSolver):
         return pcov
 
 
+def response_a(response_tmax, response_n):
+    return response_tmax / gammaincinv(response_n, 0.999)
+
 class LmfitSolve(BaseSolver):
     """Solving the model using the LmFit :cite:p:`newville_lmfitlmfit-py_2019`.
 
@@ -728,7 +732,14 @@ class LmfitSolve(BaseSolver):
         p = self.ml.parameters.loc[:, ["initial", "pmin", "pmax", "vary"]]
         for k in p.index:
             pp = np.where(p.loc[k].isnull(), None, p.loc[k])
-            parameters.add(k, value=pp[0], min=pp[1], max=pp[2], vary=pp[3])
+            if self.ml.parameters.loc[k, 'dist'] == 'expression':
+                smname = self.ml.parameters.loc[k, 'name']
+                parameters._asteval.symtable['response_a'] = response_a
+                parameters.add(k, expr=f'response_a({smname}_tmax, {smname}_n)')
+            else:
+                parameters.add(k, value=pp[0], min=pp[1], max=pp[2], vary=pp[3])
+
+        
 
         # Create the Minimizer object and minimize
         self.mini = lmfit.Minimizer(

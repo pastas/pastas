@@ -383,6 +383,113 @@ class Gamma(RfuncBase):
         return A * t ** (n - 1) * np.exp(-t / a) / (a**n * gamma(n))
 
 
+class Gamma_tmaxbound(RfuncBase):
+    """Gamma response function with 3 parameters (A, a, and n) and a maximum bound for
+    tmax.
+
+    Parameters
+    ----------
+    up: bool or None, optional
+        indicates whether a positive stress will cause the head to go up (True,
+        default) or down (False), if None the head can go both ways.
+    tmax_bound : float or None, optional
+
+    gain_scale_factor: float, optional
+        mean value of the stress, used to set the initial value such that the final
+        step times the mean stress equals 1.
+    cutoff: float, optional
+        proportion after which the step function is cut off.
+    
+    Notes
+    -----
+    The impulse response function for this class can be viewed on the
+    Documentation website or using `latexify` by running the following code in a
+    Jupyter notebook environment::
+
+        ps.Gamma.impulse
+
+    The Gamma function is equal to the Exponential function when n=1.
+    """
+
+    _name = "Gamma_tmaxbound"
+
+    def __init__(
+        self,
+        tmax_bound: float,
+        cutoff: float = 0.999,
+        **kwargs,
+    ) -> None:
+        RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
+        self.nparam = 4
+        self.tmax_bound = tmax_bound
+
+    def get_init_parameters(self, name: str) -> DataFrame:
+        parameters = DataFrame(
+            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
+        )
+        if self.up:
+            parameters.loc[name + "_A"] = (
+                1 / self.gain_scale_factor,
+                1e-5,
+                100 / self.gain_scale_factor,
+                True,
+                name,
+                "uniform",
+            )
+        elif self.up is False:
+            parameters.loc[name + "_A"] = (
+                -1 / self.gain_scale_factor,
+                -100 / self.gain_scale_factor,
+                -1e-5,
+                True,
+                name,
+                "uniform",
+            )
+        else:
+            parameters.loc[name + "_A"] = (
+                1 / self.gain_scale_factor,
+                np.nan,
+                np.nan,
+                True,
+                name,
+                "uniform",
+            )
+
+        # if n is too small, the length of response function is close to zero
+        parameters.loc[name + "_n"] = (1, 0.01, 100, True, name, "uniform")
+
+        # add parameter for response tmax bound
+        tmax_init = gammaincinv(1, self.cutoff) * 10
+        parameters.loc[name + "_tmax"] = (tmax_init, 0, self.tmax_bound, True, name, "uniform")
+        parameters.loc[name + "_a"] = (10, -np.inf, np.inf, False, name, "expression")
+
+        return parameters
+
+    def get_tmax(self, p: ArrayLike, cutoff: float | None = None) -> float:
+        if cutoff is None:
+            cutoff = self.cutoff
+        return gammaincinv(p[1], cutoff) * p[3]
+
+    def gain(self, p: ArrayLike) -> float:
+        return p[0]
+
+    def step(
+        self,
+        p: ArrayLike,
+        dt: float = 1.0,
+        cutoff: float | None = None,
+        maxtmax: int | None = None,
+    ) -> ArrayLike:
+        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
+        s = p[0] * gammainc(p[1], t / p[3])
+        return s
+
+    @staticmethod
+    @latexfun(identifiers={"impulse": "theta", "gamma": "Gamma"})
+    def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
+        A, n, tmax, a = p
+        return A * t ** (n - 1) * np.exp(-t / a) / (a**n * gamma(n))
+
 class Exponential(RfuncBase):
     """Exponential response function with 2 parameters: A and a.
 

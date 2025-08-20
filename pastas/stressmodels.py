@@ -383,6 +383,11 @@ class StressModel(StressModelBase):
             ),
         )
 
+        if rfunc._name == "Gamma_tmaxbound":
+            self._response_tmax_bound = True
+        else:
+            self._response_tmax_bound = False
+
         self.gain_scale_factor = gain_scale_factor
         self.freq = stress.settings["freq"]
         self.stress.append(stress)
