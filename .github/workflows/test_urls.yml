@@ -1,4 +1,4 @@
-name: CI Active URL Check
+name: CI URLs
 
 on:
   pull_request:
