@@ -26,6 +26,8 @@ def _table_formatter_params(s: float, na_rep: str = "") -> str:
     """
     if np.isnan(s):
         return na_rep
+    elif s == 0.0:
+        return f"{s:.2f}"
     elif np.floor(np.log10(np.abs(s))) <= -2:
         return f"{s:.2e}"
     elif np.floor(np.log10(np.abs(s))) > 5:
