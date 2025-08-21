@@ -799,9 +799,6 @@ class Model:
         pastas.solver
             Different solver objects are available to estimate parameters.
         """
-        if self._response_tmax_bound and (solver._name != 'LmfitSolve'):
-            raise NotImplementedError('response tmax bound only implemented for solver: LmfitSolve please choose solver accordingly')
-
         self.solver = solver
         if not hasattr(self.solver, "ml") or self.solver.ml is None:
             self.solver.set_model(self)
@@ -937,6 +934,8 @@ class Model:
                 % (self.solver._name, solver._name)
             )
             self.add_solver(solver=solver)
+        if self._response_tmax_bound and (solver._name != 'LmfitSolve'):
+            raise NotImplementedError('response tmax bound only implemented for solver: LmfitSolve please choose solver accordingly')
 
         # Solve model
         success, optimal, stderr = self.solver.solve(

@@ -89,6 +89,12 @@ class StressModelBase:
                     "a class. Please provide an instance, e.g., ps.Exponential()"
                 )
             rfunc.update_rfunc_settings(up=up, gain_scale_factor=gain_scale_factor)
+
+            if rfunc._name == "Gamma_tmaxbound":
+                self._response_tmax_bound = True
+            else:
+                self._response_tmax_bound = False
+
         self.rfunc = rfunc
 
         self.parameters = DataFrame(
@@ -382,11 +388,6 @@ class StressModel(StressModelBase):
                 stress.series.std() if gain_scale_factor is None else gain_scale_factor
             ),
         )
-
-        if rfunc._name == "Gamma_tmaxbound":
-            self._response_tmax_bound = True
-        else:
-            self._response_tmax_bound = False
 
         self.gain_scale_factor = gain_scale_factor
         self.freq = stress.settings["freq"]
