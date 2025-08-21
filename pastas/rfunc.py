@@ -389,24 +389,24 @@ class Gamma_tmaxbound(RfuncBase):
 
     Parameters
     ----------
+    tmax_bound : float
+        upper bound of the tmax values of this response function.
+    cutoff: float, optional
+        proportion after which the step function is cut off.
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
-    tmax_bound : float or None, optional
-
     gain_scale_factor: float, optional
         mean value of the stress, used to set the initial value such that the final
         step times the mean stress equals 1.
-    cutoff: float, optional
-        proportion after which the step function is cut off.
-    
+
     Notes
     -----
     The impulse response function for this class can be viewed on the
     Documentation website or using `latexify` by running the following code in a
     Jupyter notebook environment::
 
-        ps.Gamma.impulse
+        ps.Gamma_tmaxbound.impulse
 
     The Gamma function is equal to the Exponential function when n=1.
     """
@@ -460,7 +460,14 @@ class Gamma_tmaxbound(RfuncBase):
 
         # add parameter for response tmax bound
         tmax_init = gammaincinv(1, self.cutoff) * 10
-        parameters.loc[name + "_tmax"] = (tmax_init, 0, self.tmax_bound, True, name, "uniform")
+        parameters.loc[name + "_tmax"] = (
+            tmax_init,
+            0,
+            self.tmax_bound,
+            True,
+            name,
+            "uniform",
+        )
         parameters.loc[name + "_a"] = (10, -np.inf, np.inf, False, name, "expression")
 
         return parameters
@@ -489,6 +496,7 @@ class Gamma_tmaxbound(RfuncBase):
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         A, n, tmax, a = p
         return A * t ** (n - 1) * np.exp(-t / a) / (a**n * gamma(n))
+
 
 class Exponential(RfuncBase):
     """Exponential response function with 2 parameters: A and a.

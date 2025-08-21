@@ -692,6 +692,7 @@ class LeastSquares(BaseSolver):
 def response_a(response_tmax, response_n):
     return response_tmax / gammaincinv(response_n, 0.999)
 
+
 class LmfitSolve(BaseSolver):
     """Solving the model using the LmFit :cite:p:`newville_lmfitlmfit-py_2019`.
 
@@ -732,14 +733,12 @@ class LmfitSolve(BaseSolver):
         p = self.ml.parameters.loc[:, ["initial", "pmin", "pmax", "vary"]]
         for k in p.index:
             pp = np.where(p.loc[k].isnull(), None, p.loc[k])
-            if self.ml.parameters.loc[k, 'dist'] == 'expression':
-                smname = self.ml.parameters.loc[k, 'name']
-                parameters._asteval.symtable['response_a'] = response_a
-                parameters.add(k, expr=f'response_a({smname}_tmax, {smname}_n)')
+            if self.ml.parameters.loc[k, "dist"] == "expression":
+                smname = self.ml.parameters.loc[k, "name"]
+                parameters._asteval.symtable["response_a"] = response_a
+                parameters.add(k, expr=f"response_a({smname}_tmax, {smname}_n)")
             else:
                 parameters.add(k, value=pp[0], min=pp[1], max=pp[2], vary=pp[3])
-
-        
 
         # Create the Minimizer object and minimize
         self.mini = lmfit.Minimizer(

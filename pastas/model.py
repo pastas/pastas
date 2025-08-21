@@ -262,7 +262,7 @@ class Model:
                 )
             if stressmodel._response_tmax_bound:
                 self._response_tmax_bound = True
-            
+
         self._check_stressmodel_compatibility()
 
     def add_constant(self, constant: Constant) -> None:
@@ -934,8 +934,10 @@ class Model:
                 % (self.solver._name, solver._name)
             )
             self.add_solver(solver=solver)
-        if self._response_tmax_bound and (solver._name != 'LmfitSolve'):
-            raise NotImplementedError('response tmax bound only implemented for solver: LmfitSolve please choose solver accordingly')
+        if self._response_tmax_bound and (solver._name != "LmfitSolve"):
+            raise NotImplementedError(
+                "response tmax bound only implemented for solver: LmfitSolve please choose solver accordingly"
+            )
 
         # Solve model
         success, optimal, stderr = self.solver.solve(
