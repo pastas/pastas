@@ -1,20 +1,20 @@
 """This module contains methods to generate forecasts using a Pastas model instance."""
 
 from logging import getLogger
-from typing import Any
 
 from numpy import array, empty, exp, linspace, ones
 from pandas import DataFrame, DatetimeIndex, MultiIndex, Timedelta, concat
 
 from pastas.model import Model
 from pastas.noisemodels import ArNoiseModel
+from pastas.typing import TimestampType
 
 logger = getLogger(__name__)
 
 
 def _check_forecast_data(
     forecasts: dict[str, list[DataFrame]],
-) -> tuple[int, Any, Any, DatetimeIndex]:
+) -> tuple[int, TimestampType, TimestampType, DatetimeIndex]:
     """Internal method to check the integrity of the forecasts data.
 
     Parameters
