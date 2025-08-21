@@ -1,9 +1,10 @@
-name: Code Spell Check on Release
+name: CI SPELLING
 
 on:
   pull_request:
     branches:
       - master
+      - dev
 
 jobs:
   code-spell-check:
@@ -11,10 +12,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          check-latest: true
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install codespell[toml]
+          pip install tox
 
-      - name: Run codespell
-        run: codespell
+      - name: Setup tox environment
+        run: tox -e codespell --notest
+
+      - name: Test
+        run: tox -e codespell --skip-pkg-install
