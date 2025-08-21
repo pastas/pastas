@@ -24,4 +24,4 @@ jobs:
         pip install requests
 
     - name: Run URL check script
-      run: python check_urls.py
+      run: python .github/workflows/url_check.py
