@@ -1,4 +1,4 @@
-name: Check URLs
+name: CI URLs
 
 on:
   pull_request:
@@ -24,4 +24,4 @@ jobs:
         pip install requests
 
     - name: Run URL check script
-      run: python check_urls.py
+      run: python .github/workflows/test_urls.py
