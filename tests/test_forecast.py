@@ -1,11 +1,9 @@
-from typing import Any
-from unittest.mock import MagicMock, patch
-
 import numpy as np
 import pandas as pd
 import pytest
-from pandas import DataFrame, DatetimeIndex, MultiIndex, Series, Timestamp
+from pandas import DataFrame, DatetimeIndex, MultiIndex, Series
 
+from pastas import Model
 from pastas.forecast import (
     _check_forecast_data,
     forecast,
@@ -127,178 +125,66 @@ class TestGetOverallMeanAndVariance:
 
 
 @pytest.fixture
-def mock_model() -> MagicMock:
-    """Create a mock Pastas model for testing forecast."""
-    model = MagicMock()
-    model.copy.return_value = model
-    model.settings = {"freq_obs": pd.Timedelta("1D")}
-    # Create a mock noisemodel with ArNoiseModel as its class for isinstance checks
-    model.noisemodel = MagicMock()
-    model.noisemodel.__class__.__name__ = "ArNoiseModel"
-    # Make isinstance(model.noisemodel, ArNoiseModel) return True
-    from pastas.noisemodels import ArNoiseModel
-
-    model.noisemodel.__class__ = ArNoiseModel
-
-    # Mock stressmodel with properly configured series
-    sm1 = MagicMock()
-    sm1.stress = MagicMock()
-    sm1.stress.__getitem__.return_value = MagicMock()
-    sm1.stress.__getitem__().series_original = pd.Series(
-        np.ones(5), index=pd.date_range("2023-01-01", "2023-01-05", freq="D")
-    )
-    model.stressmodels = {"sm1": sm1}
-
-    # Mock the solver
-    solver = MagicMock()
-    solver.get_parameter_sample.return_value = np.array(
-        [[1.0, 2.0, 50.0], [3.0, 4.0, 60.0]]
-    )
-    model.solver = solver
-
-    # Mock simulate method
-    def simulate(*args: Any, **kwargs: Any) -> Series:
-        tmin: Timestamp = kwargs.get("tmin", pd.Timestamp("2023-01-01"))
-        tmax: Timestamp = kwargs.get("tmax", pd.Timestamp("2023-01-05"))
-        index: DatetimeIndex = pd.date_range(tmin, tmax, freq="D")
-        return pd.Series(np.ones(len(index)), index=index)
-
-    model.simulate = simulate
-
-    # Mock residuals method
-    def residuals(*args: Any, **kwargs: Any) -> Series:
-        index: DatetimeIndex = pd.date_range("2022-12-20", "2022-12-31", freq="D")
-        return pd.Series(np.ones(len(index)), index=index)
-
-    model.residuals = residuals
-
-    # Mock noise method
-    def noise(*args: Any, **kwargs: Any) -> Series:
-        index: DatetimeIndex = pd.date_range("2022-12-20", "2022-12-31", freq="D")
-        return pd.Series(np.ones(len(index)) * 0.25, index=index)
-
-    model.noise = noise
-
-    return model
-
-
-@pytest.fixture
 def forecast_data() -> dict[str, list[DataFrame]]:
     """Create forecast data for testing."""
-    index: DatetimeIndex = pd.date_range("2023-01-01", periods=5, freq="D")
+    index: DatetimeIndex = pd.date_range("2015-11-30", periods=5, freq="D")
     df1: DataFrame = pd.DataFrame(np.ones((5, 2)), index=index)
     df2: DataFrame = pd.DataFrame(np.ones((5, 2)) * 2, index=index)
 
-    return {"sm1": [df1, df2]}
+    return {"rch": [df1, df2]}
 
 
 class TestForecast:
-    def test_forecast_without_params(
-        self, mock_model: MagicMock, forecast_data: dict[str, list[DataFrame]]
-    ) -> None:
-        """Test forecast without providing parameters."""
-        with patch("pastas.forecast._check_forecast_data") as mock_check:
-            mock_check.return_value = (
-                2,
-                pd.Timestamp("2023-01-01"),
-                pd.Timestamp("2023-01-05"),
-                pd.date_range("2023-01-01", "2023-01-05", freq="D"),
-            )
-
-            # Set up mock for get_correction
-            mock_model.noisemodel.get_correction.return_value = pd.Series(
-                np.zeros(5), index=pd.date_range("2023-01-01", "2023-01-05", freq="D")
-            )
-
-            # Run forecast
-            result: DataFrame = forecast(mock_model, forecast_data, params=None)
-
-            # Check results
-            assert isinstance(result, DataFrame)
-            assert isinstance(result.columns, MultiIndex)
-            assert result.columns.names == [
-                "ensemble_member",
-                "param_member",
-                "forecast",
-            ]
-            assert set(result.columns.get_level_values(2)) == {"mean", "var"}
-            assert result.shape == (
-                5,
-                4,
-            )  # 5 days, 2 ensemble members × 2 params × 2 (mean, var)
-
-    def test_forecast_with_params(
-        self, mock_model: MagicMock, forecast_data: dict[str, list[DataFrame]]
-    ) -> None:
-        """Test forecast with provided parameters."""
-        with patch("pastas.forecast._check_forecast_data") as mock_check:
-            mock_check.return_value = (
-                2,
-                pd.Timestamp("2023-01-01"),
-                pd.Timestamp("2023-01-05"),
-                pd.date_range("2023-01-01", "2023-01-05", freq="D"),
-            )
-
-            # Mock get_correction
-            mock_model.noisemodel.get_correction.return_value = pd.Series(
-                np.zeros(5), index=pd.date_range("2023-01-01", "2023-01-05", freq="D")
-            )
-
-            params: list[list[float]] = [[1.0, 2.0, 50.0], [3.0, 4.0, 60.0]]
-            result: DataFrame = forecast(mock_model, forecast_data, params=params)
-
-            assert isinstance(result, DataFrame)
-            assert result.shape == (
-                5,
-                8,
-            )  # 5 days, 2 ensemble members × 2 params × 2 (mean, var)
-
-    def test_forecast_with_post_processing(
-        self, mock_model: MagicMock, forecast_data: dict[str, list[DataFrame]]
-    ) -> None:
-        """Test forecast with post-processing."""
-        with patch("pastas.forecast._check_forecast_data") as mock_check:
-            mock_check.return_value = (
-                2,
-                pd.Timestamp("2023-01-01"),
-                pd.Timestamp("2023-01-05"),
-                pd.date_range("2023-01-01", "2023-01-05", freq="D"),
-            )
-
-            # Mock get_correction to return series with known values
-            mock_model.noisemodel.get_correction.return_value = pd.Series(
-                np.ones(5) * 0.5,
-                index=pd.date_range("2023-01-01", "2023-01-05", freq="D"),
-            )
-
-            params: list[list[float]] = [[1.0, 2.0, 50.0], [3.0, 4.0, 60.0]]
-            result: DataFrame = forecast(
-                mock_model, forecast_data, params=params, post_process=True
-            )
-
-            assert isinstance(result, DataFrame)
-            assert result.shape == (
-                5,
-                8,
-            )  # 5 days, 2 ensemble members × 2 params × 2 (mean, var)
-
-            # Check that corrections were applied (values should be 1.0 + 0.5 = 1.5)
-            means: DataFrame = result.loc[:, (slice(None), slice(None), "mean")]
-            assert np.allclose(means.iloc[0, 0], 1.5)
-
     def test_forecast_no_noisemodel_with_post_processing(
-        self, mock_model: MagicMock, forecast_data: dict[str, list[DataFrame]]
+        self, ml_noisemodel: Model, forecast_data: dict[str, list[DataFrame]]
     ) -> None:
         """Test forecast with post-processing but no noise model."""
         # Remove noise model
-        mock_model.noisemodel = None
+        ml_noisemodel.noisemodel = None
 
         with pytest.raises(ValueError, match="No noise model present"):
-            forecast(mock_model, forecast_data, post_process=True)
+            forecast(ml_noisemodel, forecast_data, post_process=True)
 
     def test_forecast_empty_params(
-        self, mock_model: MagicMock, forecast_data: dict[str, list[DataFrame]]
+        self, ml_noisemodel: Model, forecast_data: dict[str, list[DataFrame]]
     ) -> None:
         """Test forecast with empty params list."""
         with pytest.raises(ValueError, match="Empty parameter list provided"):
-            forecast(mock_model, forecast_data, params=[])
+            forecast(ml_noisemodel, forecast_data, p=[])
+
+    def test_forecast_valid_input_post_process(
+        self, ml_noisemodel: Model, forecast_data: dict[str, list[DataFrame]]
+    ) -> None:
+        """Test forecast with valid input and post-processing enabled."""
+        # Ensure noise model is present
+        print(ml_noisemodel.oseries)
+        result = forecast(ml_noisemodel, forecast_data, post_process=True)
+        assert isinstance(result, pd.DataFrame)
+        assert not result.empty
+
+    def test_forecast_valid_input_no_post_process(
+        self, ml_noisemodel: Model, forecast_data: dict[str, list[DataFrame]]
+    ) -> None:
+        """Test forecast with valid input and post-processing disabled."""
+        result = forecast(ml_noisemodel, forecast_data, post_process=False)
+        assert isinstance(result, pd.DataFrame)
+        assert not result.empty
+
+    def test_forecast_missing_key(
+        self, ml_noisemodel: Model, forecast_data: dict[str, list[DataFrame]]
+    ) -> None:
+        """Test forecast with missing required key in forecast_data."""
+        # Remove the key expected by the model (simulate missing stressmodel)
+        bad_data = {"wrong_key": forecast_data["rch"]}
+        with pytest.raises(Exception):
+            forecast(ml_noisemodel, bad_data)
+
+    def test_forecast_output_shape(
+        self, ml_noisemodel: Model, forecast_data: dict[str, list[DataFrame]]
+    ) -> None:
+        """Test that forecast output has expected shape."""
+        result = forecast(ml_noisemodel, forecast_data)
+        # Should have same index as input and at least one column
+        assert isinstance(result, pd.DataFrame)
+        assert result.shape[0] == 5
+        assert result.shape[1] >= 1

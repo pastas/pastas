@@ -7,7 +7,7 @@ from pandas import DataFrame, DatetimeIndex, MultiIndex, Timedelta, concat
 
 from pastas.model import Model
 from pastas.noisemodels import ArNoiseModel
-from pastas.typing import TimestampType
+from pastas.typing import ArrayLike, TimestampType
 
 logger = getLogger(__name__)
 
@@ -100,7 +100,7 @@ def _check_forecast_data(
 def forecast(
     ml: Model,
     forecasts: dict[str, list[DataFrame]],
-    params: list[list[float]] | None = None,
+    p: ArrayLike | None = None,
     post_process: bool = False,
 ) -> DataFrame:
     """Method to forecast the head from ensembles of stress forecasts.
@@ -113,7 +113,7 @@ def forecast(
         Dictionary containing the forecasts data. The keys are the stressmodel names
         and the values are lists of DataFrames containing the forecasts with a datetime
         index and each column a time series (i.e., one ensemble member).
-    params: list, optional
+    p: array_like, optional
         List of parameter sets to use for the forecasts. If None, a single parameter set is used that defaults to the optimal model parameters. Default is None.
     post_process: bool, optional
         If True, the forecasts are post-processed using the noise model of the model
@@ -152,17 +152,17 @@ def forecast(
         raise ValueError(msg)
 
     # Check which parameters sets should be used.
-    if params is None:
+    if p is None:
         logger.info("No parameter provided, using the optimal parameters.")
         # In case no parameters are provided, use optimal values
-        params = [ml.parameters.loc[:, "optimal"].values]
-        nparam = len(params)
+        p = [ml.parameters.loc[:, "optimal"].values]
+        nparam = len(p)
     else:
-        if len(params) == 0:
+        if len(p) == 0:
             msg = "Empty parameter list provided"
             logger.error(msg)
             raise ValueError(msg)
-        nparam = len(params)
+        nparam = len(p)
         logger.info(f"Using {nparam} provided parameter sets")
 
     # Pre-allocate arrays for results to avoid append operations
@@ -182,7 +182,7 @@ def forecast(
         correction = {}
 
     # Preprocess residuals and variances for each parameter set as they only depend on parameters and not on ensemble members
-    for i, param in enumerate(params):
+    for i, param in enumerate(p):
         residuals[i] = ml.residuals(tmax=tmin, p=param).dropna()
 
         if post_process:
@@ -217,7 +217,7 @@ def forecast(
                 sm.stress[i].series_original = ts
 
         # 2. iterate over the parameter sets
-        for i, param in enumerate(params):
+        for i, param in enumerate(p):
             # Generate the forecasts
             sim = ml.simulate(tmin=tmin, tmax=tmax, p=param).values
 
