@@ -55,6 +55,7 @@ full = ["pastas[latexify,solvers,interactive,datasets]"]
 ruffing = ["ruff"]
 formatting = ["pastas[ruffing]"]
 linting = ["pastas[ruffing]"]
+codespelling = ["codespell[toml]"]
 pytesting = ["pytest>=7", "pytest-cov", "pytest-sugar"]
 ci = [
     "pastas[pytesting,solvers,interactive]",
@@ -75,7 +76,7 @@ rtd = [
     "sphinx-design",
     "myst_nb",
 ]
-dev = ["tox", "pre-commit", "pastas[ruffing,ci,rtd]"]
+dev = ["tox", "pre-commit", "pastas[ruffing,codespelling,ci,rtd]"]
 numbascipy = ["numba-scipy >= 0.3.1"]
 
 [tool.setuptools.dynamic]
@@ -90,6 +91,11 @@ fix = true
 [tool.pytest.ini_options]
 addopts = "--strict-markers --durations=0"
 markers = ["notebooks: run notebooks", "bnotebooks: run benchmark notebooks"]
+
+[tool.codespell]
+skip = "*.pdf,*.csv,*.txt"
+ignore-regex = "[A-Za-z0-9+/]{100,}"                           # base64-encoded data in *.ipynb files
+ignore-words-list = ["delt", "te", "theses", "Bilt", "Strack"]
 
 [tool.tox]
 requires = ["tox>=4"]
@@ -142,7 +148,7 @@ commands = [
     ],
 ]
 
-[tool.codespell]
-skip = "*.pdf,*.csv,*.txt"
-ignore-regex = "[A-Za-z0-9+/]{100,}"                           # base64-encoded data in *.ipynb files
-ignore-words-list = ["delt", "te", "theses", "Bilt", "Strack"]
+[tool.tox.env.codespell]
+description = "run spelling checks"
+extras = ["codespelling"]
+commands = [["codespell"]]
