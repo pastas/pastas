@@ -31,6 +31,7 @@ on the `examples directory on GitHub <https://github.com/pastas/pastas/tree/mast
     uncertainty_ls_mcmc
     standardized_groundwater_index
     signatures
+    ensemble_predictions
 
 
 Basics
@@ -118,8 +119,11 @@ Applications
 
 `Groundwater signatures`_
 
+`Ensemble predictions`_
+
 .. _Standardized Groundwater Index: standardized_groundwater_index.html
 .. _Groundwater signatures: signatures.html
+.. _Ensemble predictions: ensemble_predictions.html
 
 
 Time Series Analysis Manual
