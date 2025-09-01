@@ -920,15 +920,15 @@ class Model:
             logger.error(msg)
             raise ValueError(msg)
 
-        # Create the default solver if None is provided or already present
-        solver = LeastSquares() if solver is None else solver
-        if self.solver is None:
-            self.add_solver(solver=solver)
-        elif self.solver._name != solver._name:
-            logger.info(
-                "Replacing original solver `%s` with new solver `%s`."
-                % (self.solver._name, solver._name)
-            )
+        if solver is not None:  # add solver if provided
+            if self.solver is None or self.solver._name != solver._name:
+                logger.info("Setting solver to `%s`." % solver._name)
+                self.add_solver(solver=solver)
+            else:
+                logger.info("Keeping original solver `%s`." % self.solver._name)
+        elif self.solver is None:  # add scipy least_squares if no solver provided
+            logger.debug("Adding LeastSquares as default solver.")
+            solver = LeastSquares()
             self.add_solver(solver=solver)
 
         # Solve model
