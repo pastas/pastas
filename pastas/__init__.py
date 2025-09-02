@@ -7,7 +7,7 @@ from pandas.plotting import register_matplotlib_converters
 import pastas.objective_functions as objfunc
 import pastas.recharge as rch
 import pastas.timeseries_utils as ts
-from pastas import check, extensions, stats
+from pastas import check, extensions, forecast, stats
 from pastas.dataset import list_datasets, load_dataset
 from pastas.decorators import set_use_numba
 from pastas.model import Model
