@@ -12,23 +12,6 @@ from pastas.model import Model
 
 
 @pytest.fixture
-def simple_model() -> ps.Model:
-    """Create a simple model for testing without any stressmodels."""
-    # Create test data
-    dates = pd.date_range(start="2000-01-01", end="2005-12-31", freq="D")
-    head = pd.Series(
-        np.sin(np.linspace(0, 2 * np.pi * 10, len(dates))) + 5.0,
-        index=dates,
-        name="obs_1",
-    )
-
-    # Create a model
-    ml = ps.Model(head, name="test_model")
-
-    return ml
-
-
-@pytest.fixture
 def param_fixture(ml_solved: ps.Model) -> tuple[str, float, float, float, bool]:
     """Fixture to provide a consistent parameter for testing."""
     param_name = "rch_A"
@@ -100,7 +83,7 @@ class TestModelInitialization:
 class TestModelComponents:
     """Test adding and removing model components."""
 
-    def test_add_stressmodel(self, simple_model: ps.Model) -> None:
+    def test_add_stressmodel(self, ml_basic: ps.Model) -> None:
         """Test adding a stress model."""
         dates = pd.date_range(start="2000-01-01", end="2005-12-31", freq="D")
         prec = pd.Series(
@@ -108,12 +91,12 @@ class TestModelComponents:
         )
 
         sm = ps.StressModel(stress=prec, rfunc=ps.Exponential(), name="precipitation")
-        simple_model.add_stressmodel(sm)
+        ml_basic.add_stressmodel(sm)
 
-        assert "precipitation" in simple_model.stressmodels
-        assert simple_model.stressmodels["precipitation"] is sm
+        assert "precipitation" in ml_basic.stressmodels
+        assert ml_basic.stressmodels["precipitation"] is sm
 
-    def test_stressmodel_params(self, simple_model: ps.Model) -> None:
+    def test_stressmodel_params(self, ml_basic: ps.Model) -> None:
         """Test getting stress model parameters."""
         dates = pd.date_range(start="2000-01-01", end="2005-12-31", freq="D")
         prec = pd.Series(
@@ -150,7 +133,7 @@ class TestModelComponents:
             )
         ).all()
 
-    def test_add_multiple_stressmodels(self, simple_model: ps.Model) -> None:
+    def test_add_multiple_stressmodels(self, ml_basic: ps.Model) -> None:
         """Test adding multiple stress models at once."""
         dates = pd.date_range(start="2000-01-01", end="2005-12-31", freq="D")
         prec = pd.Series(
@@ -163,10 +146,10 @@ class TestModelComponents:
         sm1 = ps.StressModel(stress=prec, rfunc=ps.Exponential(), name="precipitation")
         sm2 = ps.StressModel(stress=evap, rfunc=ps.Exponential(), name="evaporation")
 
-        simple_model.add_stressmodel([sm1, sm2])
+        ml_basic.add_stressmodel([sm1, sm2])
 
-        assert "precipitation" in simple_model.stressmodels
-        assert "evaporation" in simple_model.stressmodels
+        assert "precipitation" in ml_basic.stressmodels
+        assert "evaporation" in ml_basic.stressmodels
 
     def test_add_stressmodel_with_same_name(self, ml_solved: ps.Model) -> None:
         """Test adding a stress model with the same name."""
@@ -198,62 +181,62 @@ class TestModelComponents:
         ml_solved.del_stressmodel(first_sm_name)
         assert first_sm_name not in ml_solved.stressmodels
 
-    def test_del_stressmodel_nonexistent(self, simple_model: ps.Model) -> None:
+    def test_del_stressmodel_nonexistent(self, ml_basic: ps.Model) -> None:
         """Test deleting a non-existent stress model."""
         with pytest.raises(KeyError):
-            simple_model.del_stressmodel("nonexistent")
+            ml_basic.del_stressmodel("nonexistent")
 
-    def test_add_constant(self, simple_model: ps.Model) -> None:
+    def test_add_constant(self, ml_basic: ps.Model) -> None:
         """Test adding a constant."""
-        simple_model.del_constant()
-        assert simple_model.constant is None
+        ml_basic.del_constant()
+        assert ml_basic.constant is None
 
         constant = ps.Constant(initial=10.0, name="constant")
-        simple_model.add_constant(constant)
+        ml_basic.add_constant(constant)
 
-        assert simple_model.constant is constant
-        assert simple_model.constant.name == "constant"
+        assert ml_basic.constant is constant
+        assert ml_basic.constant.name == "constant"
 
-    def test_del_constant(self, simple_model: ps.Model, caplog: Any) -> None:
+    def test_del_constant(self, ml_basic: ps.Model, caplog: Any) -> None:
         """Test deleting a constant."""
-        simple_model.del_constant()
-        assert simple_model.constant is None
+        ml_basic.del_constant()
+        assert ml_basic.constant is None
 
-    def test_add_transform(self, simple_model: ps.Model) -> None:
+    def test_add_transform(self, ml_basic: ps.Model) -> None:
         """Test adding a transform."""
         transform = ps.ThresholdTransform()
-        simple_model.add_transform(transform)
+        ml_basic.add_transform(transform)
 
-        assert simple_model.transform is transform
+        assert ml_basic.transform is transform
 
-    def test_del_transform(self, simple_model: ps.Model, caplog: Any) -> None:
+    def test_del_transform(self, ml_basic: ps.Model, caplog: Any) -> None:
         """Test deleting a transform."""
         # First add a transform
         transform = ps.ThresholdTransform()
-        simple_model.add_transform(transform)
+        ml_basic.add_transform(transform)
 
         # Then delete it
-        simple_model.del_transform()
-        assert simple_model.transform is None
+        ml_basic.del_transform()
+        assert ml_basic.transform is None
 
-    def test_add_noisemodel(self, simple_model: ps.Model) -> None:
+    def test_add_noisemodel(self, ml_basic: ps.Model) -> None:
         """Test adding a noise model."""
         noise = ps.ArmaNoiseModel()
-        simple_model.add_noisemodel(noise)
+        ml_basic.add_noisemodel(noise)
 
-        assert simple_model.noisemodel is noise
-        assert simple_model.settings["noise"] is True
+        assert ml_basic.noisemodel is noise
+        assert ml_basic.settings["noise"] is True
 
-    def test_del_noisemodel(self, simple_model: ps.Model, caplog: Any) -> None:
+    def test_del_noisemodel(self, ml_basic: ps.Model, caplog: Any) -> None:
         """Test deleting a noise model."""
         # First add a noise model
         noise = ps.ArmaNoiseModel()
-        simple_model.add_noisemodel(noise)
+        ml_basic.add_noisemodel(noise)
 
         # Then delete it
-        simple_model.del_noisemodel()
-        assert simple_model.noisemodel is None
-        assert simple_model.settings["noise"] is False
+        ml_basic.del_noisemodel()
+        assert ml_basic.noisemodel is None
+        assert ml_basic.settings["noise"] is False
 
 
 @pytest.mark.integration
