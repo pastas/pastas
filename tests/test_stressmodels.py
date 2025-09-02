@@ -221,20 +221,12 @@ class TestConstant:
 class TestTarsoModel:
     """Test TarsoModel."""
 
-    def setup_method(self) -> None:
+    def setup_method(self, prec: pd.Series, evap: pd.Series, head: pd.Series) -> None:
         """Setup for tests."""
         # Create test data
-        date_range = pd.date_range(start="2000-01-01", end="2002-12-31", freq="D")
-        np.random.seed(42)  # For reproducibility
-
-        # Generate synthetic precipitation and evaporation
-        self.prec = pd.Series(np.random.gamma(1, 2, len(date_range)), index=date_range)
-        self.evap = pd.Series(
-            np.random.gamma(0.5, 1, len(date_range)), index=date_range
-        )
-
-        # Create synthetic observations around drainage levels
-        self.obs = pd.Series(np.random.normal(5, 1, len(date_range)), index=date_range)
+        self.prec = prec
+        self.evap = evap
+        self.obs = head
 
     def test_init_with_oseries(self) -> None:
         """Test initialization with observed series."""
