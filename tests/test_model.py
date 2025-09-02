@@ -31,22 +31,18 @@ def param_fixture(ml_solved: ps.Model) -> tuple[str, float, float, float, bool]:
 class TestModelInitialization:
     """Test model initialization."""
 
-    def test_init_with_minimal_args(self) -> None:
+    def test_init_with_minimal_args(self, head: pd.Series) -> None:
         """Test initialization with minimal arguments."""
-        dates = pd.date_range(start="2000-01-01", end="2001-12-31", freq="D")
-        head = pd.Series(np.random.normal(0, 1, len(dates)), index=dates)
 
         model = Model(head)
 
         assert model.oseries is not None
         assert model.constant is not None
 
-    def test_init_with_name(self) -> None:
+    def test_init_with_name(self, head: pd.Series) -> None:
         """Test initialization with a name."""
-        dates = pd.date_range(start="2000-01-01", end="2001-12-31", freq="D")
-        head = pd.Series(np.random.normal(0, 1, len(dates)), index=dates, name="test")
 
-        model = Model(head)
+        model = Model(head.rename("test"))
 
         assert model.name == "test"
 
@@ -54,19 +50,15 @@ class TestModelInitialization:
 
         assert model.name == "custom_name"
 
-    def test_init_without_constant(self) -> None:
+    def test_init_without_constant(self, head: pd.Series) -> None:
         """Test initialization without constant."""
-        dates = pd.date_range(start="2000-01-01", end="2001-12-31", freq="D")
-        head = pd.Series(np.random.normal(0, 1, len(dates)), index=dates)
 
         model = Model(head, constant=False)
 
         assert model.constant is None
 
-    def test_init_with_metadata(self) -> None:
+    def test_init_with_metadata(self, head: pd.Series) -> None:
         """Test initialization with metadata."""
-        dates = pd.date_range(start="2000-01-01", end="2001-12-31", freq="D")
-        head = pd.Series(np.random.normal(0, 1, len(dates)), index=dates)
         metadata = {
             "location": "test well",
             "x": 100,
@@ -83,12 +75,8 @@ class TestModelInitialization:
 class TestModelComponents:
     """Test adding and removing model components."""
 
-    def test_add_stressmodel(self, ml_basic: ps.Model) -> None:
+    def test_add_stressmodel(self, ml_basic: ps.Model, prec: pd.Series) -> None:
         """Test adding a stress model."""
-        dates = pd.date_range(start="2000-01-01", end="2005-12-31", freq="D")
-        prec = pd.Series(
-            np.random.gamma(2, 1, size=len(dates)), index=dates, name="prec"
-        )
 
         sm = ps.StressModel(stress=prec, rfunc=ps.Exponential(), name="precipitation")
         ml_basic.add_stressmodel(sm)
@@ -96,12 +84,8 @@ class TestModelComponents:
         assert "precipitation" in ml_basic.stressmodels
         assert ml_basic.stressmodels["precipitation"] is sm
 
-    def test_stressmodel_params(self, ml_basic: ps.Model) -> None:
+    def test_stressmodel_params(self, prec: pd.Series) -> None:
         """Test getting stress model parameters."""
-        dates = pd.date_range(start="2000-01-01", end="2005-12-31", freq="D")
-        prec = pd.Series(
-            np.random.gamma(2, 1, size=len(dates)), index=dates, name="prec"
-        )
 
         sm = ps.StressModel(stress=prec, rfunc=ps.Exponential(), name="precipitation")
 
@@ -133,15 +117,10 @@ class TestModelComponents:
             )
         ).all()
 
-    def test_add_multiple_stressmodels(self, ml_basic: ps.Model) -> None:
+    def test_add_multiple_stressmodels(
+        self, ml_basic: ps.Model, prec: pd.Series, evap: pd.Series
+    ) -> None:
         """Test adding multiple stress models at once."""
-        dates = pd.date_range(start="2000-01-01", end="2005-12-31", freq="D")
-        prec = pd.Series(
-            np.random.gamma(2, 1, size=len(dates)), index=dates, name="prec"
-        )
-        evap = pd.Series(
-            np.random.gamma(1, 0.5, size=len(dates)), index=dates, name="evap"
-        )
 
         sm1 = ps.StressModel(stress=prec, rfunc=ps.Exponential(), name="precipitation")
         sm2 = ps.StressModel(stress=evap, rfunc=ps.Exponential(), name="evaporation")
@@ -151,16 +130,14 @@ class TestModelComponents:
         assert "precipitation" in ml_basic.stressmodels
         assert "evaporation" in ml_basic.stressmodels
 
-    def test_add_stressmodel_with_same_name(self, ml_solved: ps.Model) -> None:
+    def test_add_stressmodel_with_same_name(
+        self, ml_solved: ps.Model, prec: pd.Series
+    ) -> None:
         """Test adding a stress model with the same name."""
         # Get the first stressmodel name
         first_sm_name = list(ml_solved.stressmodels.keys())[0]
 
         # Create a new stress model with the same name but different response function
-        dates = pd.date_range(start="2000-01-01", end="2005-12-31", freq="D")
-        prec = pd.Series(
-            np.random.gamma(2, 1, size=len(dates)), index=dates, name="prec"
-        )
         sm = ps.StressModel(stress=prec, rfunc=ps.Gamma(), name=first_sm_name)
 
         # Should replace the existing stress model and log a warning
@@ -197,7 +174,7 @@ class TestModelComponents:
         assert ml_basic.constant is constant
         assert ml_basic.constant.name == "constant"
 
-    def test_del_constant(self, ml_basic: ps.Model, caplog: Any) -> None:
+    def test_del_constant(self, ml_basic: ps.Model) -> None:
         """Test deleting a constant."""
         ml_basic.del_constant()
         assert ml_basic.constant is None
@@ -209,7 +186,7 @@ class TestModelComponents:
 
         assert ml_basic.transform is transform
 
-    def test_del_transform(self, ml_basic: ps.Model, caplog: Any) -> None:
+    def test_del_transform(self, ml_basic: ps.Model) -> None:
         """Test deleting a transform."""
         # First add a transform
         transform = ps.ThresholdTransform()
@@ -227,7 +204,7 @@ class TestModelComponents:
         assert ml_basic.noisemodel is noise
         assert ml_basic.settings["noise"] is True
 
-    def test_del_noisemodel(self, ml_basic: ps.Model, caplog: Any) -> None:
+    def test_del_noisemodel(self, ml_basic: ps.Model) -> None:
         """Test deleting a noise model."""
         # First add a noise model
         noise = ps.ArmaNoiseModel()
