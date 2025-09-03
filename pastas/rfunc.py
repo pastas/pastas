@@ -104,6 +104,8 @@ class RfuncBase:
                 gain_scale_factor = 1e-8  # arbitrary number to prevent division by zero
             elif gain_scale_factor < 0 and up is True:
                 gain_scale_factor = gain_scale_factor * -1
+            elif gain_scale_factor == 0.0:
+                gain_scale_factor = 1.0
             self.gain_scale_factor = gain_scale_factor
 
         if cutoff is not None:
