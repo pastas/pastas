@@ -11,13 +11,14 @@ To solve a model the following syntax can be used:
 
 import importlib
 from collections.abc import Callable
+from functools import partial
 from logging import getLogger
-from typing import Literal
+from typing import Any, Literal
 
 import numpy as np
 from pandas import DataFrame, Series
 from scipy.linalg import LinAlgError, get_lapack_funcs, svd
-from scipy.optimize import Bounds, least_squares
+from scipy.optimize import Bounds, approx_derivative, least_squares
 
 from pastas.objective_functions import GaussianLikelihood
 from pastas.typing import ArrayLike, CallBack, Model
@@ -475,6 +476,85 @@ class BaseSolver:
         return data
 
 
+def jacobian(
+    fun: Callable[[ArrayLike], ArrayLike],
+    x0: ArrayLike,
+    method: Literal["2-point", "3-point", "cs"] = "2-point",
+    rel_step: ArrayLike | None = None,
+    abs_step: ArrayLike | None = None,
+    bounds: tuple[float, float] | Bounds = (-np.inf, np.inf),
+    args: tuple = (),
+    kwargs: dict[str, Any] | None = None,
+) -> ArrayLike:
+    """Compute finite difference approximation of the derivatives of a
+    vector-valued function.
+
+    If a function maps from R^n to R^m, its derivatives form m-by-n matrix
+    called the Jacobian, where an element (i, j) is a partial derivative of
+    f[i] with respect to x[j].
+
+    From Scipy:
+    https://github.com/scipy/scipy/blob/f5841beffea5036832652bfc92b2a1356b7d1007/scipy/optimize/_numdiff.py#L278-L617
+
+    Parameters
+    ----------
+    fun : callable
+        Function of which to estimate the derivatives. The argument x
+        passed to this function is ndarray of shape (n,) (never a scalar
+        even if n=1). It must return 1-D array_like of shape (m,) or a scalar.
+    x0 : array_like of shape (n,)
+        Point at which to estimate the derivatives.
+    method : {'2-point', '3-point', 'cs'}, optional
+        Finite difference method to use:
+            - '2-point' - use the first order accuracy forward or backward
+                        difference.
+            - '3-point' - use central difference in interior points and the
+                        second order accuracy forward or backward difference
+                        near the boundary.
+            - 'cs' - use a complex-step finite difference scheme. This assumes
+                    that the user function is real-valued and can be
+                    analytically continued to the complex plane. Otherwise,
+                    produces bogus results.
+    rel_step : None or array_like, optional
+        Relative step size to use. If None (default) the absolute step size is
+        computed as ``h = rel_step * sign(x0) * max(1, abs(x0))``, with
+        `rel_step` being selected automatically, see Notes. Otherwise
+        ``h = rel_step * sign(x0) * abs(x0)``. For ``method='3-point'`` the
+        sign of `h` is ignored. The calculated step size is possibly adjusted
+        to fit into the bounds.
+    abs_step : array_like, optional
+        Absolute step size to use, possibly adjusted to fit into the bounds.
+        For ``method='3-point'`` the sign of `abs_step` is ignored. By default
+        relative steps are used, only if ``abs_step is not None`` are absolute
+        steps used.
+    bounds : tuple of array_like, optional
+        Lower and upper bounds on independent variables. Defaults to no bounds.
+        Each bound must match the size of `x0` or be a scalar, in the latter
+        case the bound will be the same for all variables. Use it to limit the
+        range of function evaluation.
+    args, kwargs : tuple and dict, optional
+        Additional arguments passed to `fun`. Both empty by default.
+        The calling signature is ``fun(x, *args, **kwargs)``.
+    """
+
+    jac = approx_derivative(
+        fun=fun,
+        x0=x0,
+        method=method,
+        rel_step=rel_step,
+        abs_step=abs_step,
+        f0=None,
+        bounds=bounds,
+        sparsity=None,
+        as_linear_operator=False,
+        args=args,
+        kwargs=kwargs,
+        full_output=False,
+        workers=None,
+    )
+    return jac
+
+
 class LeastSquares(BaseSolver):
     """Solver based on Scipy's least_squares method :cite:p:`virtanen_scipy_2020`.
 
@@ -537,13 +617,17 @@ class LeastSquares(BaseSolver):
                 keep_feasible=True,
             )
 
+        objfunction = partial(
+            self.objfunction, noise=noise, weights=weights, callback=callback
+        )
+        jac = partial(jacobian, fun=objfunction, bounds=bounds)
         self.result = least_squares(
-            self.objfunction,
+            objfunction,
+            jac=jac,
             bounds=bounds,
             x0=parameters.initial.values,
-            args=(noise, weights, callback),
             method=method,
-            **kwargs,
+            kwargs=kwargs,
         )
 
         self.pcov = DataFrame(
