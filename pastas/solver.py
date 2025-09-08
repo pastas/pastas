@@ -480,10 +480,10 @@ class BaseSolver:
 def jacobian(
     fun: Callable[[ArrayLike], ArrayLike],
     x0: ArrayLike,
-    method: Literal["2-point", "3-point", "cs"] = "2-point",
+    method: Literal["2-point", "3-point"] = "2-point",
     rel_step: ArrayLike | None = None,
     abs_step: ArrayLike | None = None,
-    bounds: tuple[float, float] = (-np.inf, np.inf),
+    bounds: tuple[float | ArrayLike, float | ArrayLike] = (-np.inf, np.inf),
     args: tuple = (),
     kwargs: dict[str, Any] | None = None,
 ) -> ArrayLike:
@@ -505,17 +505,13 @@ def jacobian(
         even if n=1). It must return 1-D array_like of shape (m,) or a scalar.
     x0 : array_like of shape (n,)
         Point at which to estimate the derivatives.
-    method : {'2-point', '3-point', 'cs'}, optional
+    method : {'2-point', '3-point'}, optional
         Finite difference method to use:
             - '2-point' - use the first order accuracy forward or backward
                         difference.
             - '3-point' - use central difference in interior points and the
                         second order accuracy forward or backward difference
                         near the boundary.
-            - 'cs' - use a complex-step finite difference scheme. This assumes
-                    that the user function is real-valued and can be
-                    analytically continued to the complex plane. Otherwise,
-                    produces bogus results.
     rel_step : None or array_like, optional
         Relative step size to use. If None (default) the absolute step size is
         computed as ``h = rel_step * sign(x0) * max(1, abs(x0))``, with
@@ -537,22 +533,27 @@ def jacobian(
         Additional arguments passed to `fun`. Both empty by default.
         The calling signature is ``fun(x, *args, **kwargs)``.
     """
+    if method in ("2-point", "3-point"):
+        jac = approx_derivative(
+            fun=fun,
+            x0=x0,
+            method=method,
+            rel_step=rel_step,
+            abs_step=abs_step,
+            f0=None,
+            bounds=bounds,
+            sparsity=None,
+            as_linear_operator=False,
+            args=args,
+            kwargs=kwargs,
+            full_output=False,
+            workers=None,
+        )
+    else:
+        raise ValueError(
+            "Method must be '2-point' or '3-point'. Got {method} which is not supported (yet)"
+        )
 
-    jac = approx_derivative(
-        fun=fun,
-        x0=x0,
-        method=method,
-        rel_step=rel_step,
-        abs_step=abs_step,
-        f0=None,
-        bounds=bounds,
-        sparsity=None,
-        as_linear_operator=False,
-        args=args,
-        kwargs=kwargs,
-        full_output=False,
-        workers=None,
-    )
     return jac
 
 
@@ -590,8 +591,30 @@ class LeastSquares(BaseSolver):
         noise: bool = True,
         weights: Series | None = None,
         callback: CallBack | None = None,
+        jac_method: Literal["2-point", "3-point"] = "2-point",
         **kwargs,
     ) -> tuple[bool, ArrayLike, ArrayLike]:
+        """Method to solve the model using scipy's least_squares method.
+
+        Parameters
+        ----------
+        noise: bool, optional
+            If True, the noise series is minimized. If False, the residuals
+            are minimized. Default is True.
+        weights: pandas.Series, optional
+            Series with weights to apply to the residuals or noise series.
+            Default is None, which means no weights are applied.
+        callback: ufunc, optional
+            function that is called after each iteration. the parameters are
+            provided to the func. E.g. "callback(parameters)" Default is None.
+        jac_method : Literal["2-point", "3-point"], optional
+            Method to use for the jacobian. Default is "2-point".
+            See `pastas.solver.jacobian` documentation for more info.
+        **kwargs
+            Additional keyword arguments are passed to the
+            `scipy.optimize.least_squares` function.
+        """
+
         self.vary = self.ml.parameters.vary.values.astype(bool)
         self.initial = self.ml.parameters.initial.values.copy()
         parameters = self.ml.parameters.loc[self.vary]
@@ -619,7 +642,8 @@ class LeastSquares(BaseSolver):
         objfunction = partial(
             self.objfunction, noise=noise, weights=weights, callback=callback
         )
-        jac = partial(jacobian, objfunction, bounds=bounds)
+
+        jac = partial(jacobian, objfunction, bounds=bounds, method=jac_method)
         self.result = least_squares(
             fun=objfunction,
             x0=parameters.initial.values,
@@ -652,6 +676,7 @@ class LeastSquares(BaseSolver):
     def objfunction(
         self, p: ArrayLike, noise: bool, weights: Series, callback: CallBack
     ) -> ArrayLike:
+        """Objective function to be minimized by the solver."""
         par = self.initial
         par[self.vary] = p
         return self.misfit(
@@ -856,6 +881,7 @@ class LmfitSolve(BaseSolver):
     def objfunction(
         self, parameters: DataFrame, noise: bool, weights: Series, callback: CallBack
     ) -> ArrayLike:
+        """Objective function to be minimized by the solver."""
         p = np.array([p.value for p in parameters.values()])
         return self.misfit(p=p, noise=noise, weights=weights, callback=callback)
 
