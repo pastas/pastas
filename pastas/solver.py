@@ -18,7 +18,8 @@ from typing import Any, Literal
 import numpy as np
 from pandas import DataFrame, Series
 from scipy.linalg import LinAlgError, get_lapack_funcs, svd
-from scipy.optimize import Bounds, approx_derivative, least_squares
+from scipy.optimize import least_squares
+from scipy.optimize._numdiff import approx_derivative
 
 from pastas.objective_functions import GaussianLikelihood
 from pastas.typing import ArrayLike, CallBack, Model
@@ -482,7 +483,7 @@ def jacobian(
     method: Literal["2-point", "3-point", "cs"] = "2-point",
     rel_step: ArrayLike | None = None,
     abs_step: ArrayLike | None = None,
-    bounds: tuple[float, float] | Bounds = (-np.inf, np.inf),
+    bounds: tuple[float, float] = (-np.inf, np.inf),
     args: tuple = (),
     kwargs: dict[str, Any] | None = None,
 ) -> ArrayLike:
@@ -493,7 +494,7 @@ def jacobian(
     called the Jacobian, where an element (i, j) is a partial derivative of
     f[i] with respect to x[j].
 
-    From Scipy:
+    From SciPy:
     https://github.com/scipy/scipy/blob/f5841beffea5036832652bfc92b2a1356b7d1007/scipy/optimize/_numdiff.py#L278-L617
 
     Parameters
@@ -602,30 +603,28 @@ class LeastSquares(BaseSolver):
                 "Method 'lm' does not support boundaries. Ignoring Pastas'"
                 "`pmin` and `pmax` parameter bounds and setting them to `nan`."
             )
-            bounds = Bounds(
-                lb=np.full(len(parameters), -np.inf),
-                ub=np.full(len(parameters), np.inf),
-                keep_feasible=True,
+            bounds = (
+                np.full(len(parameters), -np.inf),
+                np.full(len(parameters), np.inf),
             )
             # set to nan because that's what is used by the solver
             self.ml.parameters.loc[self.vary, "pmin"] = np.nan
             self.ml.parameters.loc[self.vary, "pmax"] = np.nan
         else:
-            bounds = Bounds(
-                lb=np.where(parameters.pmin.isnull(), -np.inf, parameters.pmin),
-                ub=np.where(parameters.pmax.isnull(), np.inf, parameters.pmax),
-                keep_feasible=True,
+            bounds = (
+                np.where(parameters.pmin.isnull(), -np.inf, parameters.pmin),
+                np.where(parameters.pmax.isnull(), np.inf, parameters.pmax),
             )
 
         objfunction = partial(
             self.objfunction, noise=noise, weights=weights, callback=callback
         )
-        jac = partial(jacobian, fun=objfunction, bounds=bounds)
+        jac = partial(jacobian, objfunction, bounds=bounds)
         self.result = least_squares(
-            objfunction,
+            fun=objfunction,
+            x0=parameters.initial.values,
             jac=jac,
             bounds=bounds,
-            x0=parameters.initial.values,
             method=method,
             kwargs=kwargs,
         )
@@ -655,7 +654,9 @@ class LeastSquares(BaseSolver):
     ) -> ArrayLike:
         par = self.initial
         par[self.vary] = p
-        return self.misfit(p=par, noise=noise, weights=weights, callback=callback)
+        return self.misfit(
+            p=par, noise=noise, weights=weights, callback=callback, returnseparate=False
+        )
 
     @staticmethod
     def get_covariances(
