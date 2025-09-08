@@ -13,7 +13,7 @@ import importlib
 from collections.abc import Callable
 from functools import partial
 from logging import getLogger
-from typing import Any, Literal
+from typing import Literal
 
 import numpy as np
 from pandas import DataFrame, Series
@@ -510,14 +510,14 @@ def jacobian(
             - '3-point' - use central difference in interior points and the
                         second order accuracy forward or backward difference
                         near the boundary.
-    rel_step : None or array_like, optional
+    rel_step : array_like or None, optional
         Relative step size to use. If None (default) the absolute step size is
         computed as ``h = rel_step * sign(x0) * max(1, abs(x0))``, with
         `rel_step` being selected automatically, see Notes. Otherwise
         ``h = rel_step * sign(x0) * abs(x0)``. For ``method='3-point'`` the
         sign of `h` is ignored. The calculated step size is possibly adjusted
         to fit into the bounds.
-    abs_step : array_like, optional
+    abs_step : array_like or None, optional
         Absolute step size to use, possibly adjusted to fit into the bounds.
         For ``method='3-point'`` the sign of `abs_step` is ignored. By default
         relative steps are used, only if ``abs_step is not None`` are absolute
