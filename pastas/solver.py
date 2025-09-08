@@ -484,8 +484,6 @@ def jacobian(
     rel_step: ArrayLike | None = None,
     abs_step: ArrayLike | None = None,
     bounds: tuple[float | ArrayLike, float | ArrayLike] = (-np.inf, np.inf),
-    args: tuple = (),
-    kwargs: dict[str, Any] | None = None,
 ) -> ArrayLike:
     """Compute finite difference approximation of the derivatives of a
     vector-valued function.
@@ -529,9 +527,6 @@ def jacobian(
         Each bound must match the size of `x0` or be a scalar, in the latter
         case the bound will be the same for all variables. Use it to limit the
         range of function evaluation.
-    args, kwargs : tuple and dict, optional
-        Additional arguments passed to `fun`. Both empty by default.
-        The calling signature is ``fun(x, *args, **kwargs)``.
     """
     if method in ("2-point", "3-point"):
         jac = approx_derivative(
@@ -540,14 +535,7 @@ def jacobian(
             method=method,
             rel_step=rel_step,
             abs_step=abs_step,
-            f0=None,
             bounds=bounds,
-            sparsity=None,
-            as_linear_operator=False,
-            args=args,
-            kwargs=kwargs,
-            full_output=False,
-            workers=None,
         )
     else:
         raise ValueError(
