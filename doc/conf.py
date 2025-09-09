@@ -96,7 +96,7 @@ html_theme_options = {
             "type": "fontawesome",  # Default is fontawesome
         }
     ],
-    "announcement": "The default behavior for adding and solving with noisemodels has changed from Pastas 1.5. <a href='https://github.com/pastas/pastas/issues/735'>Find more information here</a>",
+    "announcement": "",  # You can put an announcement (HTML) here
 }
 
 html_context = {
