@@ -579,7 +579,7 @@ class LeastSquares(BaseSolver):
         noise: bool = True,
         weights: Series | None = None,
         callback: CallBack | None = None,
-        jac_method: Literal["2-point", "3-point"] = "2-point",
+        jac: Callable[[ArrayLike], ArrayLike] | None = None,
         **kwargs,
     ) -> tuple[bool, ArrayLike, ArrayLike]:
         """Method to solve the model using scipy's least_squares method.
@@ -595,9 +595,12 @@ class LeastSquares(BaseSolver):
         callback: ufunc, optional
             function that is called after each iteration. the parameters are
             provided to the func. E.g. "callback(parameters)" Default is None.
-        jac_method : Literal["2-point", "3-point"], optional
-            Method to use for the jacobian. Default is "2-point".
-            See `pastas.solver.jacobian` documentation for more info.
+        jac: Callable[[ArrayLike], ArrayLike] | None = None, optional
+            Function to use for the jacobian. Default is the "2-point"
+            finite-difference approximation from See `pastas.solver.jacobian`
+            documentation for more info. The function must have the signature
+            `fun(x: ArrayLike) -> ArrayLike`, where `x` is the parameters
+            and the return value is the jacobian matrix.
         **kwargs
             Additional keyword arguments are passed to the
             `scipy.optimize.least_squares` function.
@@ -631,7 +634,9 @@ class LeastSquares(BaseSolver):
             self.objfunction, noise=noise, weights=weights, callback=callback
         )
 
-        jac = partial(jacobian, objfunction, bounds=bounds, method=jac_method)
+        if jac is None:
+            jac = partial(jacobian, objfunction, bounds=bounds, method="2-point")
+
         self.result = least_squares(
             fun=objfunction,
             x0=parameters.initial.values,
