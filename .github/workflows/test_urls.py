@@ -15,7 +15,6 @@ def check_urls(file_path):
     with open(file_path, "r", encoding="utf-8") as file:
         content = file.read()
         urls = url_pattern.findall(content)
-
         for url in urls:
             try:
                 response = requests.head(url, allow_redirects=True, timeout=5)
@@ -26,7 +25,8 @@ def check_urls(file_path):
 
 
 def main():
-    project_dir = Path(__file__).parent
+    project_dir = Path(__file__).parent.parent.parent
+    print(f"Checking URLs in {project_dir}")
     for file_path in project_dir.rglob("*"):
         if file_path.is_file() and file_path.suffix in {".py", ".md", ".toml"}:
             check_urls(file_path)
