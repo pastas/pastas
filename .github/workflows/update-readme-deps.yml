@@ -22,7 +22,7 @@ jobs:
         run: pip install tomlkit
 
       - name: Update README.md dependencies section
-        run: python .github/scripts/update_readme_deps.py
+        run: python .github/workflows/update_readme_deps.py
 
       - name: Commit changes
         run: |

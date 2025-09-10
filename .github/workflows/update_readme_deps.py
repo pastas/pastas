@@ -26,6 +26,7 @@ def update_readme(deps, folder):
     with open(Path.joinpath(folder, README), "w") as f:
         f.write(new_content)
 
+
 if __name__ == "__main__":
     project_dir = Path(__file__).parent.parent.parent
     deps = get_deps(project_dir)
