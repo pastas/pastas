@@ -95,11 +95,11 @@ necessary are automatically installed when using the pip install
 manager. To summarize, the dependencies necessary for a minimal function
 installation of Pastas
 
--   numpy\>=1.7
--   matplotlib\>=3.1
--   pandas\>=1.1
--   scipy\>=1.8
--   numba\>=0.51
+-   numpy >= 2.0.0
+-   matplotlib >= 3.9.0
+-   pandas >= 2.2.2
+-   scipy >= 1.13.0
+-   numba >= 0.60.0
 
 To install the most important optional dependencies (solver LmFit and
 function visualisation Latexify) at the same time with Pastas use:
