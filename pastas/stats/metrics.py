@@ -385,7 +385,7 @@ def nnse(
 
     Notes
     -----
-    NNSE computed according to :cite:t:`nash_normalized_2006`
+    NNSE computed according to :cite:t:`mathevet_bounded_2006`
 
     .. math:: \\text{NNSE} = 1 / (2 - NSE)
 
@@ -602,7 +602,7 @@ def aicc(
     -----
 
     The corrected Akaike Information Criterium (AICc)
-    :cite:p:`suguria_further_1978` is computed as follows:
+    :cite:p:`sugiura_further_1978` is computed as follows:
 
     .. math:: \\text{AIC} = -2 log(L) + 2 nparam - (2 nparam (nparam + 1) / (nobs - nparam - 1))
 
