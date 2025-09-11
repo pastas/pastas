@@ -1,13 +1,13 @@
 Using AI to Generate Unit Tests for Pastas
-=========================================
+==========================================
 
 Writing unit tests for Pastas can be time consuming and, let's be honest, a bit boring. Tests are critical, however, to ensure that the code works correctly when making further changes in the future. Artificial intelligence (AI) tools can help automate the generation of unit tests, making it easier to maintain high test coverage and ensure code quality. This guide provides recommendations for using AI tools (like GitHub Copilot or Cursor) to assist with creating and improving unit tests for the Pastas library, particularly when adding new functions and modules.
 
 Getting Started with AI-Assisted Testing
----------------------------------------
+----------------------------------------
 
 Prerequisites
-~~~~~~~~~~~~
+~~~~~~~~~~~~~
 
 - Understanding of Pastas core functionality
 - Access to an AI coding assistant (GitHub Copilot, ChatGPT, etc.)
@@ -52,7 +52,7 @@ The AI may also generate tests that are not relevant to the code you have writte
 When using AI to generate tests, it is important to remember that the AI is not perfect and may not always generate the correct tests. It is important to review the generated tests and make sure they are correct before committing them to the codebase.
 
 Testing Numba-Accelerated Functions
-----------------------------------
+-----------------------------------
 
 Pastas uses Numba's ``@njit`` decorator to accelerate certain numerical functions. These functions require special testing approaches:
 
@@ -70,7 +70,7 @@ Pastas uses Numba's ``@njit`` decorator to accelerate certain numerical function
 When prompting AI to generate tests for Numba-accelerated functions, explicitly mention the need to use the ``.py_func`` attribute to test the Python implementation.
 
 Common AI Testing Pitfalls
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 While AI tools can significantly accelerate test creation, be aware of these common issues:
 
@@ -83,7 +83,7 @@ While AI tools can significantly accelerate test creation, be aware of these com
 To address these issues, always run the tests locally before committing and be prepared to make adjustments.
 
 Effective Prompting Strategies
------------------------------
+------------------------------
 
 1. **Provide Context**: Share the relevant module code or function signature you want to test
 
@@ -110,7 +110,7 @@ Effective Prompting Strategies
       "Follow the testing pattern in test_rfuncs.py where we parametrize tests across all available response functions"
 
 Best Practices
-------------
+--------------
 
 DO:
 ~~~
@@ -130,7 +130,7 @@ DON'T:
 - Skip test validation because "the AI wrote it"
 
 Example Workflow
---------------
+----------------
 
 1. **Identify Untested Functionality**:
    Locate a Pastas module or function lacking test coverage
@@ -155,7 +155,7 @@ Example Workflow
    - Add to the test suite
 
 Example: Using AI to Create Parametrized Tests
---------------------------------------------
+----------------------------------------------
 
 Here's an example of how you might prompt AI to create a parametrized test:
 
@@ -166,7 +166,7 @@ Here's an example of how you might prompt AI to create a parametrized test:
    Include edge cases and expected failure conditions."
 
 Integration with Test Coverage Analysis
--------------------------------------
+---------------------------------------
 
 Use AI to help identify and address coverage gaps:
 
@@ -175,7 +175,7 @@ Use AI to help identify and address coverage gaps:
 3. Ask AI to generate tests specifically targeting uncovered code paths
 
 Maintenance and Updates
----------------------
+-----------------------
 
 As the Pastas codebase evolves:
 

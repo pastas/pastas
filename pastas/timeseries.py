@@ -35,8 +35,11 @@ class TimeSeries:
     series: pastas.TimeSeries
         Returns a pastas.TimeSeries object.
 
+    Other Parameters
+    ----------------
+
     Time series settings
-    --------------------
+
     fill_nan : {"drop", "mean", "interpolate"} or float
         Method for filling NaNs.
            * `drop`: drop NaNs from time series

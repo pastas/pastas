@@ -304,8 +304,11 @@ class StressModel(StressModelBase):
         the scale factor is used to set the initial value and the bounds of the gain
         parameter, computed as 1 / gain_scale_factor.
 
+    Other Parameters
+    ----------------
+
     Time series settings
-    --------------------
+
     fill_nan : {"drop", "mean", "interpolate"} or float
         Method for filling NaNs.
            * `drop`: drop NaNs from time series
@@ -746,8 +749,11 @@ class WellModel(StressModelBase):
     sort_wells: bool, optional
         sort wells from closest to furthest, by default True.
 
+    Other Parameters
+    ----------------
+
     Time series settings
-    --------------------
+
     fill_nan : {"drop", "mean", "interpolate"} or float
         Method for filling NaNs.
            * `drop`: drop NaNs from time series
@@ -1164,8 +1170,11 @@ class RechargeModel(StressModelBase):
     >>>                       recharge=ps.rch.FlexModel(), name="rch")
     >>> ml.add_stressmodel(sm)
 
+    Other Parameters
+    ----------------
+
     Time series settings
-    --------------------
+
     fill_nan : {"drop", "mean", "interpolate"} or float
         Method for filling NaNs.
            * `drop`: drop NaNs from time series
@@ -1333,12 +1342,10 @@ class RechargeModel(StressModelBase):
 
     def set_init_parameters(self) -> None:
         """Internal method to set the initial parameters."""
-        self.parameters = concat(
-            [
-                self.rfunc.get_init_parameters(self.name),
-                self.recharge.get_init_parameters(self.name),
-            ]
-        )
+        self.parameters = concat([
+            self.rfunc.get_init_parameters(self.name),
+            self.recharge.get_init_parameters(self.name),
+        ])
 
     def update_stress(
         self,
@@ -1676,32 +1683,28 @@ class TarsoModel(RechargeModel):
         # parameters for the first drainage level
         p0 = self.rfunc.get_init_parameters(self.name)
         initial = self.dmin + 0.5 * (self.dmax - self.dmin)
-        pd0 = Series(
-            {
-                "initial": initial,
-                "pmin": np.nan,
-                "pmax": np.nan,
-                "vary": True,
-                "name": self.name,
-                "dist": "uniform",
-            }
-        )
+        pd0 = Series({
+            "initial": initial,
+            "pmin": np.nan,
+            "pmax": np.nan,
+            "vary": True,
+            "name": self.name,
+            "dist": "uniform",
+        })
         p0.loc[f"{self.name}_d"] = pd0
         p0.index = [f"{x}0" for x in p0.index]
 
         # parameters for the second drainage level
         p1 = self.rfunc.get_init_parameters(self.name)
         initial = self.dmin + 0.75 * (self.dmax - self.dmin)
-        pd1 = Series(
-            {
-                "initial": initial,
-                "pmin": self.dmin,
-                "pmax": self.dmax,
-                "vary": True,
-                "name": self.name,
-                "dist": "uniform",
-            }
-        )
+        pd1 = Series({
+            "initial": initial,
+            "pmin": self.dmin,
+            "pmax": self.dmax,
+            "vary": True,
+            "name": self.name,
+            "dist": "uniform",
+        })
         p1.loc[f"{self.name}_d"] = pd1
         p1.index = [f"{x}1" for x in p1.index]
 
@@ -1833,8 +1836,11 @@ class ChangeModel(StressModelBase):
         dictionary containing metadata about the stress. This is passed onto the
         TimeSeries object.
 
+    Other Parameters
+    ----------------
+
     Time series settings
-    --------------------
+
     fill_nan : {"drop", "mean", "interpolate"} or float
         Method for filling NaNs.
            * `drop`: drop NaNs from time series

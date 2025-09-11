@@ -602,7 +602,7 @@ def aicc(
     -----
 
     The corrected Akaike Information Criterium (AICc)
-    :cite:p:`suguria_aicc_1978` is computed as follows:
+    :cite:p:`suguria_further_1978` is computed as follows:
 
     .. math:: \\text{AIC} = -2 log(L) + 2 nparam - (2 nparam (nparam + 1) / (nobs - nparam - 1))
 
