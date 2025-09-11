@@ -20,8 +20,8 @@ from pastas.stats import acf
 class Plotly:
     """Extension class for interactive plotly figures for pastas Models.
 
-    Usage
-    -----
+    Examples
+    --------
     >>> ps.extensions.register_plotly_extension()
     INFO: Registered plotly plotting methods in Model class, e.g. `ml.plotly.plot()`.
     >>> fig = ml.plotly.results()

@@ -384,8 +384,8 @@ def avg_seasonal_fluctuation(series: Series, normalize: bool = False) -> float:
 
     A higher value of s indicates a more seasonal head, and vice versa.
 
-    Warning
-    -------
+    Warnings
+    --------
     In this formulating the water table is referenced to a certain datum and
     positive, not as depth below the surface!
 
@@ -421,8 +421,8 @@ def interannual_variation(series: Series, normalize: bool = False) -> float:
 
     A higher value of s indicates a more variable head, and vice versa.
 
-    Warning
-    -------
+    Warnings
+    --------
     In this formulating the water table is referenced to a certain datum and
     positive, not as depth below the surface!
 
@@ -616,8 +616,8 @@ def low_pulse_count(
     The threshold is defined as the 20th percentile of non-exceedance
     :cite:t:`richter_method_1996`.
 
-    Warning
-    -------
+    Warnings
+    --------
     This method is sensitive to measurement noise, e.g., every change is sign in the
     differences is counted as a pulse. Therefore, it is recommended to smooth the time
     series first (which is also the default).
@@ -663,8 +663,8 @@ def high_pulse_count(
     Number of times during which the head exceeds a certain threshold. The threshold is
     defined as the 80th percentile of non-exceedance.
 
-    Warning
-    -------
+    Warnings
+    --------
     This method is sensitive to measurement noise, e.g., every change is sign in the
     differences is counted as a pulse. Therefore, it is recommended to smooth the time
     series first (which is also the default).
@@ -707,8 +707,8 @@ def low_pulse_duration(
     -----
     Average duration of pulses (in days) where the head drops below a certain threshold.
 
-    Warning
-    -------
+    Warnings
+    --------
     This method is sensitive to measurement noise, e.g., every change is sign in the
     differences is counted as a pulse. Therefore, it is recommended to smooth the time
     series first (which is also the default).
@@ -754,8 +754,8 @@ def high_pulse_duration(
     Average duration of pulses where the head drops exceeds a certain threshold. The
     threshold is defined as the 80th percentile of non-exceedance.
 
-    Warning
-    -------
+    Warnings
+    --------
     This method is sensitive to measurement noise, e.g., every change is sign in the
     differences is counted as a pulse. Therefore, it is recommended to smooth the time
     series first (which is also the default).
@@ -1074,8 +1074,8 @@ def mean_annual_maximum(series: Series, normalize: bool = True) -> float:
     -----
     Mean of annual maximum head :cite:p:`clausen_flow_2000`.
 
-    Warning
-    -------
+    Warnings
+    --------
     This signatures is sensitive to the base level of the time series if normalize is
     set to False.
 

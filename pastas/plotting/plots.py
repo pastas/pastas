@@ -931,7 +931,9 @@ def pairplot(
     bins: int | None = None,
 ) -> dict[str, Axes]:
     """Plot correlation between time series on of values on the same time steps.
+
     Based on seaborn pairplot method.
+
     Parameters
     ----------
     data : DataFrame | list[Series]
@@ -939,6 +941,7 @@ def pairplot(
     bins : int | None, optional
         Number of bins in the histogram, by default None which uses Sturge's
         Rule to determine the number bins
+
     Returns
     -------
     dict[str, Axes]
