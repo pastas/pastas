@@ -35,8 +35,11 @@ class TimeSeries:
     series: pastas.TimeSeries
         Returns a pastas.TimeSeries object.
 
+    Other Parameters
+    ----------------
+
     Time series settings
-    --------------------
+
     fill_nan : {"drop", "mean", "interpolate"} or float
         Method for filling NaNs.
            * `drop`: drop NaNs from time series
@@ -469,7 +472,7 @@ class TimeSeries:
                 )
             elif method == "bfill":
                 first_value = series.at[series.first_valid_index()]
-                series = series.fillna(method="bfill")  # Default option
+                series = series.bfill()  # Default option
                 logger.info(
                     "Time Series '%s' was extended in the past to %s with the first "
                     "value (%.2g) of the time series.",
@@ -539,7 +542,7 @@ class TimeSeries:
                 )
             elif method == "ffill":
                 last_value = series.at[series.last_valid_index()]
-                series = series.fillna(method="ffill")
+                series = series.ffill()
                 logger.info(
                     "Time Series '%s' was extended in the future to %s with the last "
                     "value (%.2g) of the time series.",

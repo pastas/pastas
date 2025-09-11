@@ -304,8 +304,11 @@ class StressModel(StressModelBase):
         the scale factor is used to set the initial value and the bounds of the gain
         parameter, computed as 1 / gain_scale_factor.
 
+    Other Parameters
+    ----------------
+
     Time series settings
-    --------------------
+
     fill_nan : {"drop", "mean", "interpolate"} or float
         Method for filling NaNs.
            * `drop`: drop NaNs from time series
@@ -746,8 +749,11 @@ class WellModel(StressModelBase):
     sort_wells: bool, optional
         sort wells from closest to furthest, by default True.
 
+    Other Parameters
+    ----------------
+
     Time series settings
-    --------------------
+
     fill_nan : {"drop", "mean", "interpolate"} or float
         Method for filling NaNs.
            * `drop`: drop NaNs from time series
@@ -1164,8 +1170,11 @@ class RechargeModel(StressModelBase):
     >>>                       recharge=ps.rch.FlexModel(), name="rch")
     >>> ml.add_stressmodel(sm)
 
+    Other Parameters
+    ----------------
+
     Time series settings
-    --------------------
+
     fill_nan : {"drop", "mean", "interpolate"} or float
         Method for filling NaNs.
            * `drop`: drop NaNs from time series
@@ -1833,8 +1842,11 @@ class ChangeModel(StressModelBase):
         dictionary containing metadata about the stress. This is passed onto the
         TimeSeries object.
 
+    Other Parameters
+    ----------------
+
     Time series settings
-    --------------------
+
     fill_nan : {"drop", "mean", "interpolate"} or float
         Method for filling NaNs.
            * `drop`: drop NaNs from time series

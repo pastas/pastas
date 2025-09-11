@@ -7,7 +7,7 @@ from pandas.plotting import register_matplotlib_converters
 import pastas.objective_functions as objfunc
 import pastas.recharge as rch
 import pastas.timeseries_utils as ts
-from pastas import check, extensions, stats
+from pastas import check, extensions, forecast, stats
 from pastas.dataset import list_datasets, load_dataset
 from pastas.decorators import set_use_numba
 from pastas.model import Model
@@ -44,18 +44,6 @@ from pastas.transform import ThresholdTransform
 from pastas.utils import set_log_level
 from pastas.version import __version__, show_versions
 
-
-def custom_formatwarning(msg, *args, **kwargs):
-    # ignore everything except the message
-    return str(msg)
-
-
-warnings.formatwarning = custom_formatwarning
-warnings.warn(
-    """DeprecationWarning: As of Pastas 1.5, no noisemodel is added to the pastas Model class by default anymore. To solve your model using a noisemodel, you have to explicitly add a noisemodel to your model before solving. For more information, and how to adapt your code, please see this issue on GitHub: https://github.com/pastas/pastas/issues/735""",
-    DeprecationWarning,
-    stacklevel=2,
-)
 
 logger = logging.getLogger(__name__)
 
