@@ -243,7 +243,7 @@ class FlexModel(RechargeBase):
         if self.snow:
             # see also https://doi.org/10.5194/egusphere-2025-1214
             parameters.loc[name + "_tt"] = (0.0, -10.0, 10.0, False, name, "uniform")
-            parameters.loc[name + "_k"] = (1.0, 4.0, 20.0, True, name, "uniform")
+            parameters.loc[name + "_k"] = (4.0, 0.5, 20.0, True, name, "uniform")
 
         return parameters
 
