@@ -335,17 +335,19 @@ class Statistics:
         # Get simulation at the correct indices
         if self.ml.interpolate_simulation:
             # interpolate simulation to times of observations
-            sim_interpolated = Series(interp(
-                obs.index.asi8, sim.index.asi8, sim.values
-            ), index=obs.index)
+            sim_interpolated = Series(
+                interp(obs.index.asi8, sim.index.asi8, sim.values), index=obs.index
+            )
         else:
-
             # All the observation indexes are in the simulation
             sim_interpolated = sim.reindex(obs.index)
-        
 
         return metrics.kge(
-            obs=obs, sim=sim_interpolated, weighted=weighted, modified=modified, **kwargs
+            obs=obs,
+            sim=sim_interpolated,
+            weighted=weighted,
+            modified=modified,
+            **kwargs,
         )
 
     @model_tmin_tmax
