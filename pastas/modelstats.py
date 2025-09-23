@@ -22,8 +22,8 @@ These methods may be used as follows.
     nse        0.929136
 """
 
-from numpy import nan
-from pandas import DataFrame
+from numpy import nan, interp
+from pandas import DataFrame, Series
 
 from pastas.typing import Model, TimestampType
 
@@ -329,10 +329,23 @@ class Statistics:
         --------
         pastas.stats.kge
         """
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+
+        # Get simulation at the correct indices
+        if self.ml.interpolate_simulation:
+            # interpolate simulation to times of observations
+            sim_interpolated = Series(interp(
+                obs.index.asi8, sim.index.asi8, sim.values
+            ), index=obs.index)
+        else:
+
+            # All the observation indexes are in the simulation
+            sim_interpolated = sim.reindex(obs.index)
+        
+
         return metrics.kge(
-            obs=obs, sim=sim, weighted=weighted, modified=modified, **kwargs
+            obs=obs, sim=sim_interpolated, weighted=weighted, modified=modified, **kwargs
         )
 
     @model_tmin_tmax

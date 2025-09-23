@@ -194,10 +194,10 @@ def pearsonr(
 
     Parameters
     ----------
-    sim: pandas.Series
-        The Series with the simulated values.
     obs: pandas.Series
         The Series with the observed values.
+    sim: pandas.Series
+        The Series with the simulated values.
     missing: str, optional
         string with the rule to deal with missing values in the observed series. Only
         "drop" is supported now.
