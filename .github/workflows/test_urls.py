@@ -26,7 +26,7 @@ def check_urls(file_path):
 
 
 def main():
-    project_dir = Path(__file__).parent
+    project_dir = Path(__file__).parent.parent.parent
     for file_path in project_dir.rglob("*"):
         if file_path.is_file() and file_path.suffix in {".py", ".md", ".toml"}:
             check_urls(file_path)

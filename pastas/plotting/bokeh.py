@@ -16,8 +16,8 @@ from pastas.extensions import register_model_accessor
 class Bokeh:
     """Extension class for interactive bokeh figures for pastas Models.
 
-    Usage
-    -----
+    Examples
+    --------
     >>> ps.extensions.register_bokeh()
     INFO: Registered bokeh plotting methods in Model class, e.g. `ml.bokeh.plot()`.
     >>> fig = ml.bokeh.results()
