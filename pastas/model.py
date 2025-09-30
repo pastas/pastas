@@ -1945,6 +1945,7 @@ class Model:
             "tmin": str(self.settings["tmin"]),
             "tmax": str(self.settings["tmax"]),
             "freq": self.settings["freq"],
+            "freq_obs": str(self.settings["freq_obs"]),
             "warmup": str(self.settings["warmup"]),
             "solver": self.settings["solver"],
         }
