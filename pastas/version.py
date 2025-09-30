@@ -11,6 +11,7 @@ import pandas as pd
 
 pd.options.future.infer_string = True
 
+
 def check_numba_scipy() -> bool:
     try:
         import_module("numba_scipy")
