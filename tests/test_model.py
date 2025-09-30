@@ -138,14 +138,16 @@ class TestModelComponents:
         ).all()
         assert (
             sm.parameters.dtypes.values
-            == np.array([
-                np.dtypes.Float64DType(),
-                np.dtypes.Float64DType(),
-                np.dtypes.Float64DType(),
-                np.dtypes.BoolDType(),
-                "str",
-                "str",
-            ])
+            == np.array(
+                [
+                    np.dtypes.Float64DType(),
+                    np.dtypes.Float64DType(),
+                    np.dtypes.Float64DType(),
+                    np.dtypes.BoolDType(),
+                    "str",
+                    "str",
+                ]
+            )
         ).all()
 
     def test_add_multiple_stressmodels(self, simple_model: ps.Model) -> None:
