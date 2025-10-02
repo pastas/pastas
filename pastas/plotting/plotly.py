@@ -48,12 +48,12 @@ class Plotly:
         Parameters
         ----------
         tmin: pandas.Timestamp or str, optional
-            A Timestamp or str is expected.
-            Start date for the period (E.g. '1980-01-01 00:00:00').
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00').
             start time for model simulation, by default None
         tmax: pandas.Timestamp or str, optional
-            A Timestamp or str is expected.
-            End date for the period (E.g. '2020-01-01 00:00:00').
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00').
             end time for model simulation, by default None
 
         Returns
@@ -135,12 +135,12 @@ class Plotly:
         ml : pastas.Model
             model to plot results for
         tmin: pandas.Timestamp or str, optional
-            A Timestamp or str is expected.
-            Start date for the period (E.g. '1980-01-01 00:00:00').
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00').
             start time for model results, by default None
         tmax: pandas.Timestamp or str, optional
-            A Timestamp or str is expected.
-            End date for the period (E.g. '2020-01-01 00:00:00').
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00').
             end time for model results, by default None
         stderr : bool, optional
             include standard errors in parameter table, by default False

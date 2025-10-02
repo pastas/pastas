@@ -33,8 +33,8 @@ def q_ghg(
     series: pandas.Series
         Series to calculate the GHG for.
     tmin, tmax: pandas.Timestamp or str, optional
-        A Timestamp or str is expected.
-        Start and end dates for the period (E.g. '1980-01-01 00:00:00' and '2020-01-01 00:00:00').
+        A string or pandas.Timestamp with the start and end dates for the
+        period (E.g. '1980-01-01 00:00:00' and '2020-01-01 00:00:00').
     q : float, optional
         quantile fraction of exceedance (default 0.94)
     by_year: bool, optional
@@ -64,8 +64,8 @@ def q_glg(
     series: pandas.Series
         Series to calculate the GLG for.
     tmin, tmax: pandas.Timestamp or str, optional
-        A Timestamp or str is expected.
-        Start and end dates for the period (E.g. '1980-01-01 00:00:00' and '2020-01-01 00:00:00').
+        A string or pandas.Timestamp with the start and end dates for the
+        period (E.g. '1980-01-01 00:00:00' and '2020-01-01 00:00:00').
     q : float, optional
         quantile, fraction of exceedance (default 0.06)
     by_year: bool, optional
@@ -93,8 +93,8 @@ def q_gvg(
     series: pandas.Series
         Series to calculate the GVG for.
     tmin, tmax: pandas.Timestamp or str, optional
-        A Timestamp or str is expected.
-        Start and end dates for the period (E.g. '1980-01-01 00:00:00' and '2020-01-01 00:00:00').
+        A string or pandas.Timestamp with the start and end dates for the
+        period (E.g. '1980-01-01 00:00:00' and '2020-01-01 00:00:00').
     by_year: bool, optional
         Take average over quantiles per year (default True)
 
@@ -667,11 +667,11 @@ def _q_gxg(
     q: float
         quantile fraction of exceedance.
     tmin: pandas.Timestamp or str, optional
-        A Timestamp or str is expected.
-        Start date for the period (E.g. '1980-01-01 00:00:00').
+        A string or pandas.Timestamp with the start date for the period
+        (E.g. '1980-01-01 00:00:00').
     tmax: pandas.Timestamp or str, optional
-        A Timestamp or str is expected.
-        End date for the period (E.g. '2020-01-01 00:00:00').
+        A string or pandas.Timestamp with the end date for the period
+        (E.g. '2020-01-01 00:00:00').
     by_year: bool, optional
         Take average over quantiles per year (default True).
     """

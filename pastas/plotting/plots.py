@@ -47,13 +47,13 @@ def compare(
         not rescaled to include all data, so certain data might not be visible. Set
         False to ensure you can see all data.
     tmin: pandas.Timestamp or str, optional
-        A Timestamp or str is expected.
-        Timestamp with a start date for the simulation period
+        A string or pandas.Timestamp with the start date for the
+        simulation period
         (E.g. '1980-01-01 00:00:00'). If none is provided, the tmin from
         the oseries is used.
     tmax: pandas.Timestamp or str, optional
-        A Timestamp or str is expected.
-        Timestamp with an end date for the simulation period
+        A string or pandas.Timestamp with the end date for the
+        simulation period
         (E.g. '2020-01-01 00:00:00'). If none is provided, the tmax from
         the oseries is used.
     **kwargs
