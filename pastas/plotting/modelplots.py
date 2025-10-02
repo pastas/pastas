@@ -63,9 +63,9 @@ class Plotting:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str or pandas.Timestamp, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
         oseries: bool, optional
             True to plot the observed time series.
@@ -138,9 +138,9 @@ class Plotting:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str or pandas.Timestamp, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
         figsize: tuple, optional
             tuple of size 2 to determine the figure size in inches.
@@ -332,9 +332,9 @@ class Plotting:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str or pandas.Timestamp, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
         stderr : bool, optional
             If True the standard error of the parameter values are shown.
@@ -650,9 +650,9 @@ class Plotting:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str or pandas.Timestamp, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
         ytick_base: Boolean or float, optional
             Make the ytick-base constant if True, set this base to float if a float.
@@ -816,9 +816,9 @@ class Plotting:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
+        tmin: TimestampType, optional
             start time for which to calculate the residuals.
-        tmax: str or pandas.Timestamp, optional
+        tmax: TimestampType, optional
             end time for which to calculate the residuals.
         figsize: tuple, optional
             Tuple with the height and width of the figure in inches.
@@ -889,9 +889,9 @@ class Plotting:
         ----------
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str or pandas.Timestamp, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
         ax: matplotlib.axes.Axes, optional
             Axes to add the plot to.
@@ -1021,9 +1021,9 @@ class Plotting:
 
         Parameters
         ----------
-        tmin: str or pd.Timestamp, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str or pd.Timestamp, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
         cols: int
             number of columns used for plotting.
@@ -1086,9 +1086,9 @@ class Plotting:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str or pandas.Timestamp, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
         ax: matplotlib.axes.Axes, optional
             The Axes to plot the pie chart on. A new figure and axes will be created of
@@ -1168,9 +1168,9 @@ class Plotting:
 
         Parameters
         ----------
-        tmin : str or pandas.Timestamp, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax : str or pandas.Timestamp, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
         figsize : tuple, optional
         stackcolors : dict or list, optional
@@ -1320,9 +1320,9 @@ class Plotting:
 
         Parameters
         ----------
-        tmin: str or pd.Timestamp, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str or pd.Timestamp, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
         fname: str, optional
             string with the file name / path to store the PDF file.
@@ -1372,9 +1372,9 @@ class Plotting:
 
         Parameters
         ----------
-        tmin: str or pd.Timestamp, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str or pd.Timestamp, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
         results_kwargs: dict, optional
             dictionary passed on to ml.plots.results method.
@@ -1449,9 +1449,9 @@ class Plotting:
 
         Parameters
         ----------
-        tmin: str or pd.Timestamp, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str or pd.Timestamp, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
         name: str, optional
             Name of the stressmodel to plot the contribution for.

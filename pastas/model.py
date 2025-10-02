@@ -391,12 +391,12 @@ class Model:
         p: array_like, optional
             array_like object with the values as floats representing the model
             parameters. See Model.get_parameters() for more info if parameters is None.
-        tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980-01-01'),
+        tmin: TimestampType, optional
+            Start date for the simulation period (E.g. '1980-01-01'),
             starting at 00:00:00. If none is provided, the tmin from the oseries is
             used.
-        tmax: str, optional
-            String with an end date for the simulation period (E.g. '2020-01-01'),
+        tmax: TimestampType, optional
+            End date for the simulation period (E.g. '2020-01-01'),
             inclusive up to 00:00:00 of that date. If none is provided, the tmax from
             the oseries is used.
         freq: str, optional
@@ -492,12 +492,12 @@ class Model:
         p: array_like, optional
             array_like object with the values as floats representing the model
             parameters. See Model.get_parameters() for more info if parameters is None.
-        tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980-01-01'),
+        tmin: TimestampType, optional
+            Start date for the simulation period (E.g. '1980-01-01'),
             starting at 00:00:00. If none is provided, the tmin from the oseries is
             used.
-        tmax: str, optional
-            String with an end date for the simulation period (E.g. '2020-01-01'),
+        tmax: TimestampType, optional
+            End date for the simulation period (E.g. '2020-01-01'),
             inclusive up to 00:00:00 of that date. If none is provided, the tmax from
             the oseries is used.
         freq: str, optional
@@ -574,12 +574,12 @@ class Model:
         p: array_like, optional
             array_like object with the values as floats representing the model
             parameters. See Model.get_parameters() for more info if parameters is None.
-        tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980-01-01'),
+        tmin: TimestampType, optional
+            Start date for the simulation period (E.g. '1980-01-01'),
             starting at 00:00:00. If none is provided, the tmin from the oseries is
             used.
-        tmax: str, optional
-            String with an end date for the simulation period (E.g. '2020-01-01'),
+        tmax: TimestampType, optional
+            End date for the simulation period (E.g. '2020-01-01'),
             inclusive up to 00:00:00 of that date. If none is provided, the tmax from
             the oseries is used.
         freq: str, optional
@@ -656,12 +656,12 @@ class Model:
 
         Parameters
         ----------
-        tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980-01-01'),
+        tmin: TimestampType, optional
+            Start date for the simulation period (E.g. '1980-01-01'),
             starting at 00:00:00. If none is provided, the tmin from the oseries is
             used.
-        tmax: str, optional
-            String with an end date for the simulation period (E.g. '2020-01-01'),
+        tmax: TimestampType, optional
+            End date for the simulation period (E.g. '2020-01-01'),
             inclusive up to 00:00:00 of that date. If none is provided, the tmax from
             the oseries is used.
         freq: str, optional
@@ -828,12 +828,12 @@ class Model:
 
         Parameters
         ----------
-        tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980-01-01'),
+        tmin: TimestampType, optional
+            Start date for the simulation period (E.g. '1980-01-01'),
             starting at 00:00:00. If none is provided, the tmin from the oseries is
             used.
-        tmax: str, optional
-            String with an end date for the simulation period (E.g. '2020-01-01'),
+        tmax: TimestampType, optional
+            End date for the simulation period (E.g. '2020-01-01'),
             inclusive up to 00:00:00 of that date. If none is provided, the tmax from
             the oseries is used.
         freq: str, optional
@@ -1204,7 +1204,7 @@ class Model:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
+        tmin: TimestampType, optional
             String with a year or date that can be turned into a pandas Timestamp
             (e.g. '1980-01-01'), starting at 00:00:00.
         use_oseries: bool, optional
@@ -1267,7 +1267,7 @@ class Model:
 
         Parameters
         ----------
-        tmax: str or pandas.Timestamp, optional
+        tmax: TimestampType, optional
             String with a year or date that can be turned into a pandas Timestamp
             (e.g. '2020-01-01'), inclusive up to 00:00:00 of that date.
         use_oseries: bool, optional
@@ -1440,12 +1440,12 @@ class Model:
         ----------
         name: str
             String with the name of the stressmodel.
-        tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980-01-01'),
+        tmin: TimestampType, optional
+            Start date for the simulation period (E.g. '1980-01-01'),
             starting at 00:00:00. If none is provided, the tmin from the oseries is
             used.
-        tmax: str, optional
-            String with an end date for the simulation period (E.g. '2020-01-01'),
+        tmax: TimestampType, optional
+            End date for the simulation period (E.g. '2020-01-01'),
             inclusive up to 00:00:00 of that date. If none is provided, the tmax from
             the oseries is used.
         freq: str, optional
@@ -1542,12 +1542,12 @@ class Model:
 
         Parameters
         ----------
-        tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980-01-01'),
+        tmin: TimestampType, optional
+            Start date for the simulation period (E.g. '1980-01-01'),
             starting at 00:00:00. If none is provided, the tmin from the oseries is
             used.
-        tmax: str, optional
-            String with an end date for the simulation period (E.g. '2020-01-01'),
+        tmax: TimestampType, optional
+            End date for the simulation period (E.g. '2020-01-01'),
             inclusive up to 00:00:00 of that date. If none is provided, the tmax from
             the oseries is used.
 
@@ -1574,12 +1574,12 @@ class Model:
 
         Parameters
         ----------
-        tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980-01-01'),
+        tmin: TimestampType, optional
+            Start date for the simulation period (E.g. '1980-01-01'),
             starting at 00:00:00. If none is provided, the tmin from the oseries is
             used.
-        tmax: str, optional
-            String with an end date for the simulation period (E.g. '2020-01-01'),
+        tmax: TimestampType, optional
+            End date for the simulation period (E.g. '2020-01-01'),
             inclusive up to 00:00:00 of that date. If none is provided, the tmax from
             the oseries is used.
         add_contributions: bool, optional
@@ -1828,12 +1828,12 @@ class Model:
         ----------
         name: str
             String with the name of the stressmodel.
-        tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980-01-01'),
+        tmin: TimestampType, optional
+            Start date for the simulation period (E.g. '1980-01-01'),
             starting at 00:00:00. If none is provided, the tmin from the oseries is
             used.
-        tmax: str, optional
-            String with an end date for the simulation period (E.g. '2020-01-01'),
+        tmax: TimestampType, optional
+            End date for the simulation period (E.g. '2020-01-01'),
             inclusive up to 00:00:00 of that date. If none is provided, the tmax from
             the oseries is used.
         freq: str, optional

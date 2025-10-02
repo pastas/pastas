@@ -84,9 +84,9 @@ class Statistics:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str or pandas.Timestamp, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
@@ -111,9 +111,9 @@ class Statistics:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str or pandas.Timestamp, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
@@ -142,9 +142,9 @@ class Statistics:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str or pandas.Timestamp, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
 
         See Also
@@ -166,9 +166,9 @@ class Statistics:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str or pandas.Timestamp, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
@@ -193,9 +193,9 @@ class Statistics:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str or pandas.Timestamp, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
@@ -221,9 +221,9 @@ class Statistics:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str or pandas.Timestamp, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
@@ -250,9 +250,9 @@ class Statistics:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str or pandas.Timestamp, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
@@ -278,9 +278,9 @@ class Statistics:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str or pandas.Timestamp, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
@@ -306,9 +306,9 @@ class Statistics:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str or pandas.Timestamp, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
@@ -335,9 +335,9 @@ class Statistics:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str or pandas.Timestamp, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
@@ -382,9 +382,9 @@ class Statistics:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str or pandas.Timestamp, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
@@ -407,9 +407,9 @@ class Statistics:
         Parameters
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str or pandas.Timestamp, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
 
         See Also
@@ -433,9 +433,9 @@ class Statistics:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str or pandas.Timestamp, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
 
         See Also
@@ -459,9 +459,9 @@ class Statistics:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str or pandas.Timestamp, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
 
         See Also
@@ -488,9 +488,9 @@ class Statistics:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str or pandas.Timestamp, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
         stats: list, optional
             list of statistics that need to be calculated. If nothing is provided,
@@ -544,10 +544,10 @@ class Statistics:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
+        tmin: TimestampType, optional
             Start date of the residual / noise time series to compute the diagnostics
             checks for.
-        tmax: str or pandas.Timestamp, optional
+        tmax: TimestampType, optional
             End date of the residuals / noise time series to compute the diagnostics
             checks for.
         alpha: float, optional

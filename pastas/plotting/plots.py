@@ -524,10 +524,10 @@ class TrackSolve:
     ----------
     ml : pastas.model.Model
         pastas Model to track
-    tmin : str or pandas.Timestamp, optional
+    tmin: TimestampType, optional
         start time for simulation, by default None which defaults to first index in
         ml.oseries.series
-    tmax : str or pandas.Timestamp, optional
+    tmax: TimestampType, optional
         end time for simulation, by default None which defaults to last index in
         ml.oseries.series
     update_iter : int, optional

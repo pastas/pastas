@@ -32,7 +32,7 @@ def q_ghg(
     ----------
     series: pandas.Series
         Series to calculate the GHG for.
-    tmin, tmax: pandas.Timestamp, optional
+    tmin, tmax: TimestampType, optional
         Start and end dates for the period (E.g. '1980-01-01' and '2020-01-01').
     q : float, optional
         quantile fraction of exceedance (default 0.94)
@@ -62,7 +62,7 @@ def q_glg(
     ----------
     series: pandas.Series
         Series to calculate the GLG for.
-    tmin, tmax: pandas.Timestamp, optional
+    tmin, tmax: TimestampType, optional
         Start and end dates for the period (E.g. '1980-01-01' and '2020-01-01').
     q : float, optional
         quantile, fraction of exceedance (default 0.06)
@@ -90,7 +90,7 @@ def q_gvg(
     ----------
     series: pandas.Series
         Series to calculate the GVG for.
-    tmin, tmax: pandas.Timestamp, optional
+    tmin, tmax: TimestampType, optional
         Start and end dates for the period (E.g. '1980-01-01' and '2020-01-01').
     by_year: bool, optional
         Take average over quantiles per year (default True)
@@ -134,9 +134,9 @@ def ghg(
     ----------
     series: pandas.Series with a DatetimeIndex
         The pandas Series of which the statistic is determined.
-    tmin: pandas.Timestamp, optional
+    tmin: TimestampType, optional
         The lowest index to take into account (E.g. '1980-01-01'), starting at 00:00:00.
-    tmax: pandas.Timestamp, optional
+    tmax: TimestampType, optional
         The highest index to take into account (E.g. '2020-01-01'), inclusive up to 00:00:00.
     fill_method : str
         see .. :mod: pastas.stats.dutch._gxg
@@ -221,9 +221,9 @@ def glg(
     ----------
     series: pandas.Series with a DatetimeIndex
         The pandas Series of which the statistic is determined.
-    tmin: pandas.Timestamp, optional
+    tmin: TimestampType, optional
         The lowest index to take into account (E.g. '1980-01-01'), starting at 00:00:00.
-    tmax: pandas.Timestamp, optional
+    tmax: TimestampType, optional
         The highest index to take into account (E.g. '2020-01-01'), inclusive up to 00:00:00.
     fill_method : str, optional
         see .. :mod: pastas.stats.dutch._gxg
@@ -308,9 +308,9 @@ def gvg(
     ----------
     series: pandas.Series with a DatetimeIndex
         The pandas Series of which the statistic is determined.
-    tmin: pandas.Timestamp, optional
+    tmin: TimestampType, optional
         The lowest index to take into account (E.g. '1980-01-01'), starting at 00:00:00.
-    tmax: pandas.Timestamp, optional
+    tmax: TimestampType, optional
         The highest index to take into account (E.g. '2020-01-01'), inclusive up to 00:00:00.
     fill_method : str, optional
         see .. :mod: pastas.stats.dutch._gxg
@@ -383,9 +383,9 @@ def gg(
     ----------
     series: pandas.Series with a DatetimeIndex
         The pandas Series of which the statistic is determined.
-    tmin: pandas.Timestamp, optional
+    tmin: TimestampType, optional
         The lowest index to take into account (E.g. '1980-01-01'), starting at 00:00:00.
-    tmax: pandas.Timestamp, optional
+    tmax: TimestampType, optional
         The highest index to take into account (E.g. '2020-01-01'), inclusive up to 00:00:00.
     fill_method : str, optional
         see .. :mod: pastas.stats.dutch._gxg
@@ -501,9 +501,9 @@ def _gxg(
         The pandas Series of which the statistic is determined.
     year_agg : function series -> scalar
         Aggregator function to one value per year.
-    tmin: pandas.Timestamp, optional
+    tmin: TimestampType, optional
         The lowest index to take into account (E.g. '1980-01-01'), starting at 00:00:00.
-    tmax: pandas.Timestamp, optional
+    tmax: TimestampType, optional
         The highest index to take into account (E.g. '2020-01-01'), inclusive up to 00:00:00.
     fill_method : str
         see notes below.
@@ -653,9 +653,9 @@ def _q_gxg(
         Series to calculate the GXG for.
     q: float
         quantile fraction of exceedance.
-    tmin: pandas.Timestamp, optional
+    tmin: TimestampType, optional
         Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-    tmax: pandas.Timestamp, optional
+    tmax: TimestampType, optional
         End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
     by_year: bool, optional
         Take average over quantiles per year (default True).

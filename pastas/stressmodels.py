@@ -167,12 +167,10 @@ class StressModelBase:
         freq: str, optional
             String representing the desired frequency of the time series. Must be one
             of the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
-        tmin: str or pandas.Timestamp, optional
-            String that can be converted to, or a Pandas Timestamp with the minimum
-            time of the series (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str or pandas.Timestamp, optional
-            String that can be converted to, or a Pandas Timestamp with the maximum
-            time of the series (E.g. '2020-01-01'), inclusive up to 00:00:00.
+        tmin: TimestampType, optional
+            Minimum time of the series (E.g. '1980-01-01'), starting at 00:00:00.
+        tmax: TimestampType, optional
+            Maximum time of the series (E.g. '2020-01-01'), inclusive up to 00:00:00.
 
         Notes
         -----
@@ -410,9 +408,9 @@ class StressModel(StressModelBase):
         p: array_like
             array_like object with the values as floats representing the model
             parameters.
-        tmin: str, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
         freq: str, optional
         dt: int, optional
@@ -1364,12 +1362,10 @@ class RechargeModel(StressModelBase):
         freq: str, optional
             String representing the desired frequency of the time series. Must be one
             of the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
-        tmin: str or pandas.Timestamp, optional
-            String that can be converted to, or a Pandas Timestamp with the minimum
-            time of the series (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: str or pandas.Timestamp, optional
-            String that can be converted to, or a Pandas Timestamp with the maximum
-            time of the series (E.g. '2020-01-01'), inclusive up to 00:00:00.
+        tmin: TimestampType, optional
+            Minimum time of the series (E.g. '1980-01-01'), starting at 00:00:00.
+        tmax: TimestampType, optional
+            Maximum time of the series (E.g. '2020-01-01'), inclusive up to 00:00:00.
 
         Notes
         -----
@@ -1405,9 +1401,9 @@ class RechargeModel(StressModelBase):
         p: array_like, optional
             array_like object with the values as floats representing the model
             parameters.
-        tmin: string, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: string, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
         freq: string, optional
         dt: float, optional
@@ -1456,9 +1452,9 @@ class RechargeModel(StressModelBase):
         p: array_like, optional
             array_like object with the values as floats representing the model
             parameters.
-        tmin: string, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: string, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
         freq: string, optional
         istress: int, optional
@@ -1516,9 +1512,9 @@ class RechargeModel(StressModelBase):
         p: array_like, optional
             array_like object with the values as floats representing the model
             parameters.
-        tmin: string, optional
+        tmin: TimestampType, optional
             Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
-        tmax: string, optional
+        tmax: TimestampType, optional
             End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
         freq: string, optional
 
