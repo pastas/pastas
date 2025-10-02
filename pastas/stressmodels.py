@@ -30,7 +30,6 @@ from pastas.typing import (
     Recharge,
     RFunc,
     StressSettingsDict,
-    TimestampType,
 )
 
 from .decorators import njit, set_parameter
@@ -71,8 +70,8 @@ class StressModelBase:
     def __init__(
         self,
         name: str,
-        tmin: TimestampType,
-        tmax: TimestampType,
+        tmin: Timestamp | str,
+        tmax: Timestamp | str,
         rfunc: RFunc | None = None,
         up: bool = True,
         gain_scale_factor: float = 1.0,
@@ -156,8 +155,8 @@ class StressModelBase:
 
     def update_stress(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
     ) -> None:
         """Method to update the settings of the all stresses in the stress model.
@@ -194,8 +193,8 @@ class StressModelBase:
     def get_stress(
         self,
         p: ArrayLike | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         istress: int | None = None,
         **kwargs,
@@ -229,7 +228,7 @@ class StressModelBase:
             return len(self.stress)
 
     def _get_block(
-        self, p: ArrayLike, dt: float, tmin: TimestampType, tmax: TimestampType
+        self, p: ArrayLike, dt: float, tmin: Timestamp | str, tmax: Timestamp | str
     ) -> ArrayLike:
         """Internal method to get the block-response function."""
         if tmin is not None and tmax is not None:
@@ -400,8 +399,8 @@ class StressModel(StressModelBase):
     def simulate(
         self,
         p: ArrayLike,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
     ) -> Series:
@@ -491,7 +490,7 @@ class StepModel(StressModelBase):
 
     def __init__(
         self,
-        tstart: TimestampType,
+        tstart: Timestamp | str,
         name: str,
         rfunc: RFunc | None = None,
         up: bool = None,
@@ -527,8 +526,8 @@ class StepModel(StressModelBase):
     def simulate(
         self,
         p: ArrayLike,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
     ) -> Series:
@@ -588,7 +587,7 @@ class LinearTrend(StressModelBase):
     _name = "LinearTrend"
 
     def __init__(
-        self, start: TimestampType, end: TimestampType, name: str = "trend"
+        self, start: Timestamp | str, end: Timestamp | str, name: str = "trend"
     ) -> None:
         StressModelBase.__init__(
             self, name=name, tmin=Timestamp.min, tmax=Timestamp.max
@@ -632,8 +631,8 @@ class LinearTrend(StressModelBase):
     def simulate(
         self,
         p: ArrayLike,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
     ) -> Series:
@@ -893,8 +892,8 @@ class WellModel(StressModelBase):
     def simulate(
         self,
         p: ArrayLike | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
         istress: int | None = None,
@@ -971,8 +970,8 @@ class WellModel(StressModelBase):
     def get_stress(
         self,
         p: ArrayLike | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         istress: int | None = None,
         squeeze: bool = True,
@@ -1359,8 +1358,8 @@ class RechargeModel(StressModelBase):
 
     def update_stress(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
     ) -> None:
         """Method to update the settings of the all stresses in the stress model.
@@ -1399,8 +1398,8 @@ class RechargeModel(StressModelBase):
     def simulate(
         self,
         p: ArrayLike | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
         istress: int | None = None,
@@ -1455,8 +1454,8 @@ class RechargeModel(StressModelBase):
     def get_stress(
         self,
         p: ArrayLike | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         istress: int | None = None,
         **kwargs,
@@ -1521,8 +1520,8 @@ class RechargeModel(StressModelBase):
     def get_water_balance(
         self,
         p: ArrayLike | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
     ) -> DataFrame:
         """Method to obtain the water balance components.
@@ -1751,8 +1750,8 @@ class TarsoModel(RechargeModel):
     def simulate(
         self,
         p: ArrayLike | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq=None,
         dt: float = 1.0,
     ) -> Series:
@@ -1926,7 +1925,7 @@ class ChangeModel(StressModelBase):
         rfunc1: RFunc,
         rfunc2: RFunc,
         name: str,
-        tchange: str | TimestampType,
+        tchange: str | Timestamp | str,
         up: bool = True,
         settings: str | StressSettingsDict | None = None,
         metadata: dict | None = None,
@@ -1987,8 +1986,8 @@ class ChangeModel(StressModelBase):
     def simulate(
         self,
         p: ArrayLike,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
     ) -> Series:

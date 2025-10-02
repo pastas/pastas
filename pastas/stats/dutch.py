@@ -8,11 +8,10 @@ from collections.abc import Callable
 
 from numpy import nan
 from packaging.version import parse as parse_version
-from pandas import Series, Timedelta, concat, date_range
+from pandas import Series, Timedelta, Timestamp, concat, date_range
 from pandas import __version__ as pd_version
 
 from pastas.timeseries_utils import get_sample
-from pastas.typing import TimestampType
 
 pandas_version = parse_version(pd_version)
 
@@ -21,8 +20,8 @@ year_offset = "YE" if pandas_version >= parse_version("2.2.0") else "A"
 
 def q_ghg(
     series: Series,
-    tmin: TimestampType | None = None,
-    tmax: TimestampType | None = None,
+    tmin: Timestamp | str | None = None,
+    tmax: Timestamp | str | None = None,
     q: float = 0.94,
     by_year: bool = True,
 ) -> Series:
@@ -51,8 +50,8 @@ def q_ghg(
 
 def q_glg(
     series: Series,
-    tmin: TimestampType | None = None,
-    tmax: TimestampType | None = None,
+    tmin: Timestamp | str | None = None,
+    tmax: Timestamp | str | None = None,
     q: float = 0.06,
     by_year: bool = True,
 ) -> Series:
@@ -82,8 +81,8 @@ def q_glg(
 
 def q_gvg(
     series: Series,
-    tmin: TimestampType | None = None,
-    tmax: TimestampType | None = None,
+    tmin: Timestamp | str | None = None,
+    tmax: Timestamp | str | None = None,
     by_year: bool = True,
 ) -> Series:
     """Gemiddeld Voorjaarsgrondwaterstand (GVG) also called MSGL (Mean Spring GW Level).
@@ -121,8 +120,8 @@ def q_gvg(
 
 def ghg(
     series: Series,
-    tmin: TimestampType | None = None,
-    tmax: TimestampType | None = None,
+    tmin: Timestamp | str | None = None,
+    tmax: Timestamp | str | None = None,
     fill_method: str = "nearest",
     limit: int = 0,
     output: str = "mean",
@@ -211,8 +210,8 @@ def ghg(
 
 def glg(
     series: Series,
-    tmin: TimestampType | None = None,
-    tmax: TimestampType | None = None,
+    tmin: Timestamp | str | None = None,
+    tmax: Timestamp | str | None = None,
     fill_method: str = "nearest",
     limit: int = 0,
     output: str = "mean",
@@ -300,8 +299,8 @@ def glg(
 
 def gvg(
     series: Series,
-    tmin: TimestampType | None = None,
-    tmax: TimestampType | None = None,
+    tmin: Timestamp | str | None = None,
+    tmax: Timestamp | str | None = None,
     fill_method: str = "linear",
     limit: int = 8,
     output: str = "mean",
@@ -377,8 +376,8 @@ def gvg(
 
 def gg(
     series: Series,
-    tmin: TimestampType | None = None,
-    tmax: TimestampType | None = None,
+    tmin: Timestamp | str | None = None,
+    tmax: Timestamp | str | None = None,
     fill_method: str = "nearest",
     limit: int = 0,
     output: str = "mean",
@@ -494,8 +493,8 @@ def _in_spring(series: Series) -> Series:
 def _gxg(
     series: Series,
     year_agg: Callable,
-    tmin: TimestampType | None,
-    tmax: TimestampType | None,
+    tmin: Timestamp | str | None,
+    tmax: Timestamp | str | None,
     fill_method: str,
     limit: int | None,
     output: str,
@@ -651,8 +650,8 @@ def _gxg(
 def _q_gxg(
     series: Series,
     q: float,
-    tmin: TimestampType | None = None,
-    tmax: TimestampType | None = None,
+    tmin: Timestamp | str | None = None,
+    tmax: Timestamp | str | None = None,
     by_year: bool = True,
 ) -> Series:
     """Dutch groundwater statistics GHG and GLG approximated by taking quantiles of

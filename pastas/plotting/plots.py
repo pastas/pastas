@@ -12,7 +12,7 @@ from pastas.plotting.modelcompare import CompareModels
 from pastas.plotting.plotutil import plot_series_with_gaps, share_xaxes, share_yaxes
 from pastas.stats.core import acf as get_acf
 from pastas.stats.metrics import evp, rmse
-from pastas.typing import ArrayLike, Axes, Figure, Model, TimestampType
+from pastas.typing import ArrayLike, Axes, Figure, Model
 
 logger = logging.getLogger(__name__)
 
@@ -23,8 +23,8 @@ def compare(
     models: list[Model],
     names: list[str] | None = None,
     adjust_height: bool = True,
-    tmin: TimestampType | None = None,
-    tmax: TimestampType | None = None,
+    tmin: Timestamp | str | None = None,
+    tmax: Timestamp | str | None = None,
     **kwargs,
 ) -> dict:
     """Plot multiple Pastas models in one figure to visually compare models.
@@ -75,8 +75,8 @@ def series(
     kde: bool = False,
     table: bool = False,
     titles: bool = True,
-    tmin: TimestampType | None = None,
-    tmax: TimestampType | None = None,
+    tmin: Timestamp | str | None = None,
+    tmax: Timestamp | str | None = None,
     colors_stresses: list[str] | None = None,
     labels: list[str] | None = None,
     figsize: tuple = (10, 5),
@@ -101,8 +101,8 @@ def series(
         observations, mean, skew and kurtosis.
     titles: bool
         Set the titles or not. Taken from the name attribute of the series.
-    tmin: str or pd.Timestamp
-    tmax: str or pd.Timestamp
+    tmin: str or Timestamp
+    tmax: str or Timestamp
     colors_stresses: list of str
         List with the matplotlib colorcodes to use for plotting each stress timeseries.
         If list is shorter than number of stresses, the remaining stresses are plotted
@@ -580,8 +580,8 @@ class TrackSolve:
     def __init__(
         self,
         ml: Model,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         update_iter: int | None = None,
     ) -> None:
         logger.warning(

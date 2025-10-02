@@ -39,7 +39,7 @@ from pastas.timeseries_utils import (
     get_sample,
 )
 from pastas.transform import ThresholdTransform
-from pastas.typing import ArrayLike, Solver, StressModel, TimestampType
+from pastas.typing import ArrayLike, Solver, StressModel
 from pastas.typing import Model as ModelType
 from pastas.typing import NoiseModel as NoiseModelType
 from pastas.utils import validate_name
@@ -378,8 +378,8 @@ class Model:
     def simulate(
         self,
         p: ArrayLike | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         warmup: float | None = None,
         return_warmup: bool = False,
@@ -484,8 +484,8 @@ class Model:
     def residuals(
         self,
         p: ArrayLike | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         warmup: float | None = None,
     ) -> Series:
@@ -570,8 +570,8 @@ class Model:
     def noise(
         self,
         p: ArrayLike | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         warmup: float | None = None,
     ) -> Series | None:
@@ -639,8 +639,8 @@ class Model:
     def noise_weights(
         self,
         p: list | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         warmup: float | None = None,
     ) -> ArrayLike:
@@ -659,8 +659,8 @@ class Model:
 
     def observations(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         update_observations: bool = False,
     ) -> Series:
@@ -731,8 +731,8 @@ class Model:
 
     def initialize(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         warmup: float | None = None,
         noise: bool | None = None,
@@ -826,8 +826,8 @@ class Model:
 
     def solve(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         warmup: float | None = None,
         noise: bool | None = None,
@@ -1216,7 +1216,7 @@ class Model:
 
     def get_tmin(
         self,
-        tmin: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
         use_oseries: bool = True,
         use_stresses: bool = False,
     ) -> Timestamp:
@@ -1280,7 +1280,7 @@ class Model:
 
     def get_tmax(
         self,
-        tmax: TimestampType | None = None,
+        tmax: Timestamp | str | None = None,
         use_oseries: bool = True,
         use_stresses: bool = False,
     ) -> Timestamp:
@@ -1448,8 +1448,8 @@ class Model:
     def get_contribution(
         self,
         name: str,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         warmup: float | None = None,
         istress: int | None = None,
@@ -1562,7 +1562,7 @@ class Model:
         return contribs
 
     def get_transform_contribution(
-        self, tmin: TimestampType | None = None, tmax: TimestampType | None = None
+        self, tmin: Timestamp | str | None = None, tmax: Timestamp | str | None = None
     ) -> Series:
         """Method to get the contribution of a transform.
 
@@ -1595,8 +1595,8 @@ class Model:
 
     def get_output_series(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         add_contributions: bool = True,
         split: bool = True,
     ) -> DataFrame:
@@ -1848,8 +1848,8 @@ class Model:
     def get_stress(
         self,
         name: str,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         warmup: float | None = None,
         istress: int | None = None,

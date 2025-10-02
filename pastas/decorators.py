@@ -4,8 +4,8 @@ from logging import getLogger
 from typing import Any
 
 from packaging.version import parse as parse_version
+from pandas import Timestamp
 
-from pastas.typing import TimestampType
 from pastas.version import __version__
 
 logger = getLogger(__name__)
@@ -52,8 +52,8 @@ def model_tmin_tmax(function: Callable) -> Callable:
     @wraps(function)
     def _model_tmin_tmax(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         *args,
         **kwargs,
     ):

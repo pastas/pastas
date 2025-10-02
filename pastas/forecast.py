@@ -3,18 +3,18 @@
 from logging import getLogger
 
 from numpy import array, empty, exp, linspace, ones
-from pandas import DataFrame, DatetimeIndex, MultiIndex, Timedelta, concat
+from pandas import DataFrame, DatetimeIndex, MultiIndex, Timedelta, Timestamp, concat
 
 from pastas.model import Model
 from pastas.noisemodels import ArNoiseModel
-from pastas.typing import ArrayLike, TimestampType
+from pastas.typing import ArrayLike
 
 logger = getLogger(__name__)
 
 
 def _check_forecast_data(
     forecasts: dict[str, list[DataFrame]],
-) -> tuple[int, TimestampType, TimestampType, DatetimeIndex]:
+) -> tuple[int, Timestamp | str, Timestamp | str, DatetimeIndex]:
     """Internal method to check the integrity of the forecasts data.
 
     Parameters

@@ -22,7 +22,7 @@ from pastas.plotting.plotutil import (
 from pastas.rfunc import HantushWellModel
 from pastas.stressmodels import ChangeModel, TarsoModel
 from pastas.timeseries_utils import _get_dt
-from pastas.typing import Axes, Figure, Model, TimestampType
+from pastas.typing import Axes, Figure, Model
 
 logger = logging.getLogger(__name__)
 
@@ -50,8 +50,8 @@ class Plotting:
     @model_tmin_tmax
     def plot(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         oseries: bool = True,
         simulation: bool = True,
         ax: Axes | None = None,
@@ -127,8 +127,8 @@ class Plotting:
     @model_tmin_tmax
     def results(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         figsize: tuple = (10, 8),
         split: bool = False,
         adjust_height: bool = True,
@@ -325,8 +325,8 @@ class Plotting:
     @model_tmin_tmax
     def results_mosaic(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         stderr: bool = False,
         block_or_step: str = "step",
         return_warmup: bool = False,
@@ -647,8 +647,8 @@ class Plotting:
     @model_tmin_tmax
     def decomposition(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         ytick_base: bool = True,
         split: bool = True,
         figsize: tuple = (10, 8),
@@ -819,8 +819,8 @@ class Plotting:
     @model_tmin_tmax
     def diagnostics(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         figsize: tuple = (10, 5),
         bins: int = 50,
         acf_options: dict | None = None,
@@ -893,8 +893,8 @@ class Plotting:
     @model_tmin_tmax
     def cum_frequency(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         ax: Axes | None = None,
         figsize: tuple = (5, 2),
         **kwargs,
@@ -1029,8 +1029,8 @@ class Plotting:
     @model_tmin_tmax
     def stresses(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         cols: int = 1,
         split: bool = True,
         sharex: bool = True,
@@ -1094,8 +1094,8 @@ class Plotting:
     @model_tmin_tmax
     def contributions_pie(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         ax: Axes | None = None,
         figsize: Figure | None = None,
         split: bool = True,
@@ -1182,8 +1182,8 @@ class Plotting:
     @model_tmin_tmax
     def stacked_results(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         figsize: tuple = (10, 8),
         stackcolors: dict[str, str] | list[str] | None = None,
         stacklegend: bool = False,
@@ -1305,8 +1305,8 @@ class Plotting:
     @model_tmin_tmax
     def series(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         split: bool = True,
         **kwargs,
     ) -> Axes:
@@ -1314,8 +1314,8 @@ class Plotting:
 
         Parameters
         ----------
-        tmin: str or pd.Timestamp
-        tmax: str or pd.Timestamp
+        tmin: str or Timestamp
+        tmax: str or Timestamp
         split: bool, optional
             Split the stresses in multiple stresses when possible.
         hist: bool
@@ -1343,8 +1343,8 @@ class Plotting:
     @model_tmin_tmax
     def summary(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         results_kwargs: dict | None = None,
         diagnostics_kwargs: dict | None = None,
     ) -> Figure:
@@ -1397,8 +1397,8 @@ class Plotting:
     @model_tmin_tmax
     def summary_pdf(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         results_kwargs: dict | None = None,
         diagnostics_kwargs: dict | None = None,
         fname: str | None = None,
@@ -1444,8 +1444,8 @@ class Plotting:
     @model_tmin_tmax
     def pairplot(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         bins: int | None = None,
         split: bool = True,
     ) -> dict[str, Axes]:
@@ -1454,8 +1454,8 @@ class Plotting:
 
         Parameters
         ----------
-        tmin: str or pd.Timestamp
-        tmax: str or pd.Timestamp
+        tmin: str or Timestamp
+        tmax: str or Timestamp
         bins : int | None, optional
             Number of bins in the histogram, by default None which uses Sturge's
             rule to determine the number bins
@@ -1475,8 +1475,8 @@ class Plotting:
     @model_tmin_tmax
     def contribution(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         name: str | None = None,
         plot_stress: bool = True,
         plot_response: bool = False,

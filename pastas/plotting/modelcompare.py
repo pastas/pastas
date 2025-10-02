@@ -17,7 +17,7 @@ from pastas.plotting.plotutil import (
 )
 from pastas.rfunc import HantushWellModel
 from pastas.stats.core import acf
-from pastas.typing import Axes, Model, TimestampType
+from pastas.typing import Axes, Model
 
 logger = getLogger(__name__)
 
@@ -68,8 +68,8 @@ class CompareModels:
         self,
         models: list[Model],
         names: list[str] | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
     ) -> None:
         """Initialize model compare class.
 
