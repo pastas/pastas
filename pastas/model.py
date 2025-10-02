@@ -1945,6 +1945,7 @@ class Model:
             "tmin": str(self.settings["tmin"]),
             "tmax": str(self.settings["tmax"]),
             "freq": self.settings["freq"],
+            "freq_obs": str(self.settings["freq_obs"]),
             "warmup": str(self.settings["warmup"]),
             "solver": self.settings["solver"],
         }
@@ -2000,9 +2001,9 @@ class Model:
 
         basic = ""
         len_val4 = max([len(v) for v in fit.values()])
-        wspace = width - (8 + 23 + 9 + len_val4)
+        wspace = width - (9 + 23 + 9 + len_val4)
         for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
-            basic += f"{val1:<8}{val2:<23}{val3:<9}{val4:>{wspace + len_val4}}\n"
+            basic += f"{val1:<9}{val2:<23}{val3:<9}{val4:>{wspace + len_val4}}\n"
 
         # Create the parameters block
         params = (
