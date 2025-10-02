@@ -172,7 +172,9 @@ class StressModelBase:
             (E.g. '1980-01-01 00:00:00').
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the maximum time of the series
-            (E.g. '2020-01-01 00:00:00').
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+
+            pandas.Timestamp internally.
 
         Notes
         -----
@@ -412,10 +414,12 @@ class StressModel(StressModelBase):
             parameters.
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the period
-            (E.g. '1980-01-01 00:00:00').
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the period
-            (E.g. '2020-01-01 00:00:00').
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         freq: str, optional
         dt: int, optional
 
@@ -1371,7 +1375,9 @@ class RechargeModel(StressModelBase):
             (E.g. '1980-01-01 00:00:00').
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the maximum time of the series
-            (E.g. '2020-01-01 00:00:00').
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+
+            pandas.Timestamp internally.
 
         Notes
         -----
@@ -1409,10 +1415,12 @@ class RechargeModel(StressModelBase):
             parameters.
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the period
-            (E.g. '1980-01-01 00:00:00').
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the period
-            (E.g. '2020-01-01 00:00:00').
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         freq: string, optional
         dt: float, optional
             Time step to use in the recharge calculation.
@@ -1462,10 +1470,12 @@ class RechargeModel(StressModelBase):
             parameters.
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the period
-            (E.g. '1980-01-01 00:00:00').
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the period
-            (E.g. '2020-01-01 00:00:00').
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         freq: string, optional
         istress: int, optional
             Return one of the stresses used for the recharge calculation. 0 for
@@ -1524,10 +1534,12 @@ class RechargeModel(StressModelBase):
             parameters.
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the period
-            (E.g. '1980-01-01 00:00:00').
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the period
-            (E.g. '2020-01-01 00:00:00').
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         freq: string, optional
 
         Returns

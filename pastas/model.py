@@ -393,12 +393,14 @@ class Model:
             parameters. See Model.get_parameters() for more info if parameters is None.
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the
-            simulation period (E.g. '1980-01-01 00:00:00').
+            simulation period (E.g. '1980-01-01 00:00:00'). Strings are
+            converted to pandas.Timestamp internally.
             If none is provided, the tmin from the oseries is
             used.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the
-            simulation period (E.g. '2020-01-01 00:00:00').
+            simulation period (E.g. '2020-01-01 00:00:00'). Strings are
+            converted to pandas.Timestamp internally.
             If none is provided, the tmax from
             the oseries is used.
         freq: str, optional
@@ -496,12 +498,14 @@ class Model:
             parameters. See Model.get_parameters() for more info if parameters is None.
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the
-            simulation period (E.g. '1980-01-01 00:00:00').
+            simulation period (E.g. '1980-01-01 00:00:00'). Strings are
+            converted to pandas.Timestamp internally.
             If none is provided, the tmin from the oseries is
             used.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the
-            simulation period (E.g. '2020-01-01 00:00:00').
+            simulation period (E.g. '2020-01-01 00:00:00'). Strings are
+            converted to pandas.Timestamp internally.
             If none is provided, the tmax from
             the oseries is used.
         freq: str, optional
@@ -580,12 +584,14 @@ class Model:
             parameters. See Model.get_parameters() for more info if parameters is None.
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the
-            simulation period (E.g. '1980-01-01 00:00:00').
+            simulation period (E.g. '1980-01-01 00:00:00'). Strings are
+            converted to pandas.Timestamp internally.
             If none is provided, the tmin from the oseries is
             used.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the
-            simulation period (E.g. '2020-01-01 00:00:00').
+            simulation period (E.g. '2020-01-01 00:00:00'). Strings are
+            converted to pandas.Timestamp internally.
             If none is provided, the tmax from
             the oseries is used.
         freq: str, optional
@@ -664,12 +670,14 @@ class Model:
         ----------
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the
-            simulation period (E.g. '1980-01-01 00:00:00').
+            simulation period (E.g. '1980-01-01 00:00:00'). Strings are
+            converted to pandas.Timestamp internally.
             If none is provided, the tmin from the oseries is
             used.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the
-            simulation period (E.g. '2020-01-01 00:00:00').
+            simulation period (E.g. '2020-01-01 00:00:00'). Strings are
+            converted to pandas.Timestamp internally.
             If none is provided, the tmax from
             the oseries is used.
         freq: str, optional
@@ -838,12 +846,14 @@ class Model:
         ----------
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the
-            simulation period (E.g. '1980-01-01 00:00:00').
+            simulation period (E.g. '1980-01-01 00:00:00'). Strings are
+            converted to pandas.Timestamp internally.
             If none is provided, the tmin from the oseries is
             used.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the
-            simulation period (E.g. '2020-01-01 00:00:00').
+            simulation period (E.g. '2020-01-01 00:00:00'). Strings are
+            converted to pandas.Timestamp internally.
             If none is provided, the tmax from
             the oseries is used.
         freq: str, optional
@@ -1216,7 +1226,8 @@ class Model:
         ----------
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp that can be turned into a pandas
-            Timestamp (e.g. '1980-01-01 00:00:00').
+            Timestamp (e.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         use_oseries: bool, optional
             Obtain the tmin and tmax from the oseries. Default is True.
         use_stresses: bool, optional
@@ -1279,7 +1290,8 @@ class Model:
         ----------
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp that can be turned into a pandas
-            Timestamp (e.g. '2020-01-01 00:00:00').
+            Timestamp (e.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         use_oseries: bool, optional
             Obtain the tmin and tmax from the oseries. Default is True.
         use_stresses: bool, optional
@@ -1452,12 +1464,14 @@ class Model:
             String with the name of the stressmodel.
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the
-            simulation period (E.g. '1980-01-01 00:00:00').
+            simulation period (E.g. '1980-01-01 00:00:00'). Strings are
+            converted to pandas.Timestamp internally.
             If none is provided, the tmin from the oseries is
             used.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the
-            simulation period (E.g. '2020-01-01 00:00:00').
+            simulation period (E.g. '2020-01-01 00:00:00'). Strings are
+            converted to pandas.Timestamp internally.
             If none is provided, the tmax from
             the oseries is used.
         freq: str, optional
@@ -1556,12 +1570,14 @@ class Model:
         ----------
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the
-            simulation period (E.g. '1980-01-01 00:00:00').
+            simulation period (E.g. '1980-01-01 00:00:00'). Strings are
+            converted to pandas.Timestamp internally.
             If none is provided, the tmin from the oseries is
             used.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the
-            simulation period (E.g. '2020-01-01 00:00:00').
+            simulation period (E.g. '2020-01-01 00:00:00'). Strings are
+            converted to pandas.Timestamp internally.
             If none is provided, the tmax from
             the oseries is used.
 
@@ -1590,12 +1606,14 @@ class Model:
         ----------
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the
-            simulation period (E.g. '1980-01-01 00:00:00').
+            simulation period (E.g. '1980-01-01 00:00:00'). Strings are
+            converted to pandas.Timestamp internally.
             If none is provided, the tmin from the oseries is
             used.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the
-            simulation period (E.g. '2020-01-01 00:00:00').
+            simulation period (E.g. '2020-01-01 00:00:00'). Strings are
+            converted to pandas.Timestamp internally.
             If none is provided, the tmax from
             the oseries is used.
         add_contributions: bool, optional
@@ -1846,12 +1864,14 @@ class Model:
             String with the name of the stressmodel.
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the
-            simulation period (E.g. '1980-01-01 00:00:00').
+            simulation period (E.g. '1980-01-01 00:00:00'). Strings are
+            converted to pandas.Timestamp internally.
             If none is provided, the tmin from the oseries is
             used.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the
-            simulation period (E.g. '2020-01-01 00:00:00').
+            simulation period (E.g. '2020-01-01 00:00:00'). Strings are
+            converted to pandas.Timestamp internally.
             If none is provided, the tmax from
             the oseries is used.
         freq: str, optional

@@ -51,11 +51,13 @@ class Bokeh:
         ----------
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the period
-            (E.g. '1980-01-01 00:00:00').
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
             start time for model simulation, by default None
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the period
-            (E.g. '2020-01-01 00:00:00').
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
             end time for model simulation, by default None
         height : int, optional
              height of the plot, by default 500
@@ -125,11 +127,13 @@ class Bokeh:
         ----------
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the period
-            (E.g. '1980-01-01 00:00:00').
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
             start time for model simulation, by default None
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the period
-            (E.g. '2020-01-01 00:00:00').
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
             end time for model simulation, by default None
         height : int, optional
              height of the plot, by default 500

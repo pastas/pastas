@@ -233,7 +233,9 @@ class TimeSeries:
             (E.g. '1980-01-01 00:00:00').
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the maximum time of the series
-            (E.g. '2020-01-01 00:00:00').
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+
+            pandas.Timestamp internally.
 
         Notes
         -----

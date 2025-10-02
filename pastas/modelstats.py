@@ -86,10 +86,12 @@ class Statistics:
         ----------
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the period
-            (E.g. '1980-01-01 00:00:00').
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the period
-            (E.g. '2020-01-01 00:00:00').
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -115,10 +117,12 @@ class Statistics:
         ----------
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the period
-            (E.g. '1980-01-01 00:00:00').
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the period
-            (E.g. '2020-01-01 00:00:00').
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -148,7 +152,8 @@ class Statistics:
         ----------
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the period
-            (E.g. '1980-01-01 00:00:00').
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the period
             (E.g. '2020-01-01 00:00:00').
@@ -174,10 +179,12 @@ class Statistics:
         ----------
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the period
-            (E.g. '1980-01-01 00:00:00').
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the period
-            (E.g. '2020-01-01 00:00:00').
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -203,10 +210,12 @@ class Statistics:
         ----------
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the period
-            (E.g. '1980-01-01 00:00:00').
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the period
-            (E.g. '2020-01-01 00:00:00').
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -233,10 +242,12 @@ class Statistics:
         ----------
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the period
-            (E.g. '1980-01-01 00:00:00').
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the period
-            (E.g. '2020-01-01 00:00:00').
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -264,10 +275,12 @@ class Statistics:
         ----------
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the period
-            (E.g. '1980-01-01 00:00:00').
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the period
-            (E.g. '2020-01-01 00:00:00').
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -294,10 +307,12 @@ class Statistics:
         ----------
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the period
-            (E.g. '1980-01-01 00:00:00').
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the period
-            (E.g. '2020-01-01 00:00:00').
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -324,10 +339,12 @@ class Statistics:
         ----------
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the period
-            (E.g. '1980-01-01 00:00:00').
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the period
-            (E.g. '2020-01-01 00:00:00').
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -355,10 +372,12 @@ class Statistics:
         ----------
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the period
-            (E.g. '1980-01-01 00:00:00').
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the period
-            (E.g. '2020-01-01 00:00:00').
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -404,10 +423,12 @@ class Statistics:
         ----------
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the period
-            (E.g. '1980-01-01 00:00:00').
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the period
-            (E.g. '2020-01-01 00:00:00').
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -431,7 +452,8 @@ class Statistics:
         ----------
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the period
-            (E.g. '1980-01-01 00:00:00').
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the period
             (E.g. '2020-01-01 00:00:00').
@@ -459,7 +481,8 @@ class Statistics:
         ----------
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the period
-            (E.g. '1980-01-01 00:00:00').
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the period
             (E.g. '2020-01-01 00:00:00').
@@ -487,7 +510,8 @@ class Statistics:
         ----------
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the period
-            (E.g. '1980-01-01 00:00:00').
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the period
             (E.g. '2020-01-01 00:00:00').
@@ -518,10 +542,12 @@ class Statistics:
         ----------
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the period
-            (E.g. '1980-01-01 00:00:00').
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the period
-            (E.g. '2020-01-01 00:00:00').
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         stats: list, optional
             list of statistics that need to be calculated. If nothing is provided,
             all statistics are returned.
