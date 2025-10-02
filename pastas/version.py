@@ -2,14 +2,16 @@ import logging
 from importlib import import_module, metadata
 from platform import python_version
 
+from pandas import options as pd_options
+
 logger = logging.getLogger(__name__)
 
 __version__ = "1.12.0b"
 
 # TODO: Remove before release but keep in dev for testing
-import pandas as pd
 
-pd.options.future.infer_string = True
+pd_options.future.infer_string = True
+
 
 def check_numba_scipy() -> bool:
     try:

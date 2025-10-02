@@ -22,7 +22,7 @@ These methods may be used as follows.
     nse        0.929136
 """
 
-from numpy import nan, interp
+from numpy import interp, nan
 from pandas import DataFrame, Series
 
 from pastas.typing import Model, TimestampType

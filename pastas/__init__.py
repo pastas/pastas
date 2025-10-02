@@ -44,7 +44,6 @@ from pastas.transform import ThresholdTransform
 from pastas.utils import set_log_level
 from pastas.version import __version__, show_versions
 
-
 logger = logging.getLogger(__name__)
 
 # Register matplotlib converters when using Pastas

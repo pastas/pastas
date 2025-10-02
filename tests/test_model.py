@@ -144,8 +144,8 @@ class TestModelComponents:
                     np.dtypes.Float64DType(),
                     np.dtypes.Float64DType(),
                     np.dtypes.BoolDType(),
-                    np.dtypes.ObjectDType(),
-                    np.dtypes.ObjectDType(),
+                    "str",
+                    "str",
                 ]
             )
         ).all()
