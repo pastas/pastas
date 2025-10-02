@@ -77,7 +77,6 @@ rtd = [
     "myst_nb",
 ]
 dev = ["tox", "pre-commit", "pastas[ruffing,codespelling,ci,rtd]"]
-numbascipy = ["numba-scipy >= 0.3.1"]
 
 [tool.setuptools.dynamic]
 version = { attr = "pastas.version.__version__" }
