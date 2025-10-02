@@ -392,10 +392,12 @@ class Model:
             array_like object with the values as floats representing the model
             parameters. See Model.get_parameters() for more info if parameters is None.
         tmin: TimestampType, optional
-            Start date for the simulation period (E.g. '1980-01-01 00:00:00'). If none is provided, the tmin from the oseries is
+            Start date for the simulation period (E.g. '1980-01-01 00:00:00').
+            If none is provided, the tmin from the oseries is
             used.
         tmax: TimestampType, optional
-            End date for the simulation period (E.g. '2020-01-01 00:00:00'). If none is provided, the tmax from
+            End date for the simulation period (E.g. '2020-01-01 00:00:00').
+            If none is provided, the tmax from
             the oseries is used.
         freq: str, optional
             String with the frequency the stressmodels are simulated. Must be one of
@@ -491,10 +493,12 @@ class Model:
             array_like object with the values as floats representing the model
             parameters. See Model.get_parameters() for more info if parameters is None.
         tmin: TimestampType, optional
-            Start date for the simulation period (E.g. '1980-01-01 00:00:00'). If none is provided, the tmin from the oseries is
+            Start date for the simulation period (E.g. '1980-01-01 00:00:00').
+            If none is provided, the tmin from the oseries is
             used.
         tmax: TimestampType, optional
-            End date for the simulation period (E.g. '2020-01-01 00:00:00'). If none is provided, the tmax from
+            End date for the simulation period (E.g. '2020-01-01 00:00:00').
+            If none is provided, the tmax from
             the oseries is used.
         freq: str, optional
             String with the frequency the stressmodels are simulated. Must be one of
@@ -571,10 +575,12 @@ class Model:
             array_like object with the values as floats representing the model
             parameters. See Model.get_parameters() for more info if parameters is None.
         tmin: TimestampType, optional
-            Start date for the simulation period (E.g. '1980-01-01 00:00:00'). If none is provided, the tmin from the oseries is
+            Start date for the simulation period (E.g. '1980-01-01 00:00:00').
+            If none is provided, the tmin from the oseries is
             used.
         tmax: TimestampType, optional
-            End date for the simulation period (E.g. '2020-01-01 00:00:00'). If none is provided, the tmax from
+            End date for the simulation period (E.g. '2020-01-01 00:00:00').
+            If none is provided, the tmax from
             the oseries is used.
         freq: str, optional
             String with the frequency the stressmodels are simulated. Must be one of
@@ -651,10 +657,12 @@ class Model:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the simulation period (E.g. '1980-01-01 00:00:00'). If none is provided, the tmin from the oseries is
+            Start date for the simulation period (E.g. '1980-01-01 00:00:00').
+            If none is provided, the tmin from the oseries is
             used.
         tmax: TimestampType, optional
-            End date for the simulation period (E.g. '2020-01-01 00:00:00'). If none is provided, the tmax from
+            End date for the simulation period (E.g. '2020-01-01 00:00:00').
+            If none is provided, the tmax from
             the oseries is used.
         freq: str, optional
             String with the frequency the stressmodels are simulated. Must be one of
@@ -821,10 +829,12 @@ class Model:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the simulation period (E.g. '1980-01-01 00:00:00'). If none is provided, the tmin from the oseries is
+            Start date for the simulation period (E.g. '1980-01-01 00:00:00').
+            If none is provided, the tmin from the oseries is
             used.
         tmax: TimestampType, optional
-            End date for the simulation period (E.g. '2020-01-01 00:00:00'). If none is provided, the tmax from
+            End date for the simulation period (E.g. '2020-01-01 00:00:00').
+            If none is provided, the tmax from
             the oseries is used.
         freq: str, optional
             String with the frequency the stressmodels are simulated. Must be one of
@@ -1196,7 +1206,7 @@ class Model:
         ----------
         tmin: TimestampType, optional
             String with a year or date that can be turned into a pandas Timestamp
-            (e.g. '1980-01-01 00:00:00'), starting at 00:00:00.
+            (e.g. '1980-01-01 00:00:00').
         use_oseries: bool, optional
             Obtain the tmin and tmax from the oseries. Default is True.
         use_stresses: bool, optional
@@ -1259,7 +1269,7 @@ class Model:
         ----------
         tmax: TimestampType, optional
             String with a year or date that can be turned into a pandas Timestamp
-            (e.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00 of that date.
+            (e.g. '2020-01-01 00:00:00').
         use_oseries: bool, optional
             Obtain the tmin and tmax from the oseries. Default is True.
         use_stresses: bool, optional
@@ -1431,10 +1441,12 @@ class Model:
         name: str
             String with the name of the stressmodel.
         tmin: TimestampType, optional
-            Start date for the simulation period (E.g. '1980-01-01 00:00:00'). If none is provided, the tmin from the oseries is
+            Start date for the simulation period (E.g. '1980-01-01 00:00:00').
+            If none is provided, the tmin from the oseries is
             used.
         tmax: TimestampType, optional
-            End date for the simulation period (E.g. '2020-01-01 00:00:00'). If none is provided, the tmax from
+            End date for the simulation period (E.g. '2020-01-01 00:00:00').
+            If none is provided, the tmax from
             the oseries is used.
         freq: str, optional
             String with the frequency the stressmodels are simulated. Must be one of
@@ -1531,10 +1543,12 @@ class Model:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the simulation period (E.g. '1980-01-01 00:00:00'). If none is provided, the tmin from the oseries is
+            Start date for the simulation period (E.g. '1980-01-01 00:00:00').
+            If none is provided, the tmin from the oseries is
             used.
         tmax: TimestampType, optional
-            End date for the simulation period (E.g. '2020-01-01 00:00:00'). If none is provided, the tmax from
+            End date for the simulation period (E.g. '2020-01-01 00:00:00').
+            If none is provided, the tmax from
             the oseries is used.
 
         Returns
@@ -1561,10 +1575,12 @@ class Model:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the simulation period (E.g. '1980-01-01 00:00:00'). If none is provided, the tmin from the oseries is
+            Start date for the simulation period (E.g. '1980-01-01 00:00:00').
+            If none is provided, the tmin from the oseries is
             used.
         tmax: TimestampType, optional
-            End date for the simulation period (E.g. '2020-01-01 00:00:00'). If none is provided, the tmax from
+            End date for the simulation period (E.g. '2020-01-01 00:00:00').
+            If none is provided, the tmax from
             the oseries is used.
         add_contributions: bool, optional
             Add the contributions from the different stresses or not.¬
@@ -1813,10 +1829,12 @@ class Model:
         name: str
             String with the name of the stressmodel.
         tmin: TimestampType, optional
-            Start date for the simulation period (E.g. '1980-01-01 00:00:00'). If none is provided, the tmin from the oseries is
+            Start date for the simulation period (E.g. '1980-01-01 00:00:00').
+            If none is provided, the tmin from the oseries is
             used.
         tmax: TimestampType, optional
-            End date for the simulation period (E.g. '2020-01-01 00:00:00'). If none is provided, the tmax from
+            End date for the simulation period (E.g. '2020-01-01 00:00:00').
+            If none is provided, the tmax from
             the oseries is used.
         freq: str, optional
             String with the frequency the stressmodels are simulated. Must be one of
