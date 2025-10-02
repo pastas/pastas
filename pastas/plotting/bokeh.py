@@ -50,8 +50,10 @@ class Bokeh:
         Parameters
         ----------
         tmin : pd.Timestamp, optional
+            Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
             start time for model simulation, by default None
         tmax : pd.Timestamp, optional
+            End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
             end time for model simulation, by default None
         height : int, optional
              height of the plot, by default 500
@@ -120,8 +122,10 @@ class Bokeh:
         Parameters
         ----------
         tmin : pd.Timestamp, optional
+            Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
             start time for model simulation, by default None
         tmax : pd.Timestamp, optional
+            End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
             end time for model simulation, by default None
         height : int, optional
              height of the plot, by default 500

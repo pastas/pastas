@@ -230,10 +230,10 @@ class TimeSeries:
             Possible values are: "mean" or a float value.
         tmin: str or pandas.Timestamp, optional
             String that can be converted to, or a Pandas Timestamp with the minimum
-            time of the series.
+            time of the series (E.g. '1980-01-01'), starting at 00:00:00.
         tmax: str or pandas.Timestamp, optional
             String that can be converted to, or a Pandas Timestamp with the maximum
-            time of the series.
+            time of the series (E.g. '2020-01-01'), inclusive up to 00:00:00.
 
         Notes
         -----

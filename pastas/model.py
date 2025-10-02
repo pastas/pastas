@@ -392,11 +392,13 @@ class Model:
             array_like object with the values as floats representing the model
             parameters. See Model.get_parameters() for more info if parameters is None.
         tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980'). If none
-            is provided, the tmin from the oseries is used.
+            String with a start date for the simulation period (E.g. '1980-01-01'),
+            starting at 00:00:00. If none is provided, the tmin from the oseries is
+            used.
         tmax: str, optional
-            String with an end date for the simulation period (E.g. '2010'). If none
-            is provided, the tmax from the oseries is used.
+            String with an end date for the simulation period (E.g. '2020-01-01'),
+            inclusive up to 00:00:00 of that date. If none is provided, the tmax from
+            the oseries is used.
         freq: str, optional
             String with the frequency the stressmodels are simulated. Must be one of
             the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
@@ -491,11 +493,13 @@ class Model:
             array_like object with the values as floats representing the model
             parameters. See Model.get_parameters() for more info if parameters is None.
         tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980'). If none
-            is provided, the tmin from the oseries is used.
+            String with a start date for the simulation period (E.g. '1980-01-01'),
+            starting at 00:00:00. If none is provided, the tmin from the oseries is
+            used.
         tmax: str, optional
-            String with an end date for the simulation period (E.g. '2010'). If none
-            is provided, the tmax from the oseries is used.
+            String with an end date for the simulation period (E.g. '2020-01-01'),
+            inclusive up to 00:00:00 of that date. If none is provided, the tmax from
+            the oseries is used.
         freq: str, optional
             String with the frequency the stressmodels are simulated. Must be one of
             the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
@@ -571,11 +575,13 @@ class Model:
             array_like object with the values as floats representing the model
             parameters. See Model.get_parameters() for more info if parameters is None.
         tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980'). If none
-            is provided, the tmin from the oseries is used.
+            String with a start date for the simulation period (E.g. '1980-01-01'),
+            starting at 00:00:00. If none is provided, the tmin from the oseries is
+            used.
         tmax: str, optional
-            String with an end date for the simulation period (E.g. '2010'). If none
-            is provided, the tmax from the oseries is used.
+            String with an end date for the simulation period (E.g. '2020-01-01'),
+            inclusive up to 00:00:00 of that date. If none is provided, the tmax from
+            the oseries is used.
         freq: str, optional
             String with the frequency the stressmodels are simulated. Must be one of
             the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
@@ -651,11 +657,13 @@ class Model:
         Parameters
         ----------
         tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980'). If none
-            is provided, the tmin from the oseries is used.
+            String with a start date for the simulation period (E.g. '1980-01-01'),
+            starting at 00:00:00. If none is provided, the tmin from the oseries is
+            used.
         tmax: str, optional
-            String with an end date for the simulation period (E.g. '2010'). If none
-            is provided, the tmax from the oseries is used.
+            String with an end date for the simulation period (E.g. '2020-01-01'),
+            inclusive up to 00:00:00 of that date. If none is provided, the tmax from
+            the oseries is used.
         freq: str, optional
             String with the frequency the stressmodels are simulated. Must be one of
             the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
@@ -821,11 +829,13 @@ class Model:
         Parameters
         ----------
         tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980'). If
-            none is provided, the tmin from the oseries is used.
+            String with a start date for the simulation period (E.g. '1980-01-01'),
+            starting at 00:00:00. If none is provided, the tmin from the oseries is
+            used.
         tmax: str, optional
-            String with an end date for the simulation period (E.g. '2010'). If none
-            is provided, the tmax from the oseries is used.
+            String with an end date for the simulation period (E.g. '2020-01-01'),
+            inclusive up to 00:00:00 of that date. If none is provided, the tmax from
+            the oseries is used.
         freq: str, optional
             String with the frequency the stressmodels are simulated. Must be one of
             the following (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
@@ -1148,10 +1158,10 @@ class Model:
         Parameters
         ----------
         tmin: pandas.Timestamp
-            String with a start date for the simulation period (E.g. '1980'). If none
+            String with a start date for the simulation period (E.g. '1980-01-01'). If none
             is provided, the tmin from the oseries is used.
         tmax: pandas.Timestamp
-            String with an end date for the simulation period (E.g. '2010'). If none
+            String with an end date for the simulation period (E.g. '2020-01-01'). If none
             is provided, the tmax from the oseries is used.
         freq: str
             String with the frequency the stressmodels are simulated. Must be one of
@@ -1195,8 +1205,8 @@ class Model:
         Parameters
         ----------
         tmin: str or pandas.Timestamp, optional
-            string with a year or date that can be turned into a pandas Timestamp (
-            e.g. pd.Timestamp(tmin)).
+            String with a year or date that can be turned into a pandas Timestamp
+            (e.g. '1980-01-01'), starting at 00:00:00.
         use_oseries: bool, optional
             Obtain the tmin and tmax from the oseries. Default is True.
         use_stresses: bool, optional
@@ -1258,8 +1268,8 @@ class Model:
         Parameters
         ----------
         tmax: str or pandas.Timestamp, optional
-            string with a year or date that can be turned into a pandas Timestamp (
-            e.g. pd.Timestamp(tmax)).
+            String with a year or date that can be turned into a pandas Timestamp
+            (e.g. '2020-01-01'), inclusive up to 00:00:00 of that date.
         use_oseries: bool, optional
             Obtain the tmin and tmax from the oseries. Default is True.
         use_stresses: bool, optional
@@ -1431,11 +1441,13 @@ class Model:
         name: str
             String with the name of the stressmodel.
         tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980'). If none
-            is provided, the tmin from the oseries is used.
+            String with a start date for the simulation period (E.g. '1980-01-01'),
+            starting at 00:00:00. If none is provided, the tmin from the oseries is
+            used.
         tmax: str, optional
-            String with an end date for the simulation period (E.g. '2010'). If none
-            is provided, the tmax from the oseries is used.
+            String with an end date for the simulation period (E.g. '2020-01-01'),
+            inclusive up to 00:00:00 of that date. If none is provided, the tmax from
+            the oseries is used.
         freq: str, optional
             String with the frequency the stressmodels are simulated. Must be one of
             the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
@@ -1531,11 +1543,13 @@ class Model:
         Parameters
         ----------
         tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980'). If none
-            is provided, the tmin from the oseries is used.
+            String with a start date for the simulation period (E.g. '1980-01-01'),
+            starting at 00:00:00. If none is provided, the tmin from the oseries is
+            used.
         tmax: str, optional
-            String with an end date for the simulation period (E.g. '2010'). If none
-            is provided, the tmax from the oseries is used.
+            String with an end date for the simulation period (E.g. '2020-01-01'),
+            inclusive up to 00:00:00 of that date. If none is provided, the tmax from
+            the oseries is used.
 
         Returns
         -------
@@ -1561,11 +1575,13 @@ class Model:
         Parameters
         ----------
         tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980'). If none
-            is provided, the tmin from the oseries is used.
+            String with a start date for the simulation period (E.g. '1980-01-01'),
+            starting at 00:00:00. If none is provided, the tmin from the oseries is
+            used.
         tmax: str, optional
-            String with an end date for the simulation period (E.g. '2010'). If none
-            is provided, the tmax from the oseries is used.
+            String with an end date for the simulation period (E.g. '2020-01-01'),
+            inclusive up to 00:00:00 of that date. If none is provided, the tmax from
+            the oseries is used.
         add_contributions: bool, optional
             Add the contributions from the different stresses or not.¬
         split: bool, optional
@@ -1813,11 +1829,13 @@ class Model:
         name: str
             String with the name of the stressmodel.
         tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980'). If none
-            is provided, the tmin from the oseries is used.
+            String with a start date for the simulation period (E.g. '1980-01-01'),
+            starting at 00:00:00. If none is provided, the tmin from the oseries is
+            used.
         tmax: str, optional
-            String with an end date for the simulation period (E.g. '2010'). If none
-            is provided, the tmax from the oseries is used.
+            String with an end date for the simulation period (E.g. '2020-01-01'),
+            inclusive up to 00:00:00 of that date. If none is provided, the tmax from
+            the oseries is used.
         freq: str, optional
             String with the frequency the stressmodels are simulated. Must be one of
             the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".

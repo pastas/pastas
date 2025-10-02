@@ -47,11 +47,13 @@ def compare(
         not rescaled to include all data, so certain data might not be visible. Set
         False to ensure you can see all data.
     tmin: TimestampType, optional
-        Timestamp with a start date for the simulation period (E.g. '1980'). If none
-        is provided, the tmin from the oseries is used.
+        Timestamp with a start date for the simulation period (E.g. '1980-01-01'),
+        starting at 00:00:00. If none is provided, the tmin from the oseries is
+        used.
     tmax: TimestampType, optional
-        Timestamp with an end date for the simulation period (E.g. '2010'). If none
-        is provided, the tmax from the oseries is used.
+        Timestamp with an end date for the simulation period (E.g. '2020-01-01'),
+        inclusive up to 00:00:00 of that date. If none is provided, the tmax from
+        the oseries is used.
     **kwargs
         The kwargs are passed to the CompareModels.plot() function.
 
