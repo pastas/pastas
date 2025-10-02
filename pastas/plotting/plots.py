@@ -154,6 +154,7 @@ def series(
     if kde:
         axes[-1, 1].set_xlabel("Density [-]")
     if head is not None:
+        head = head.loc[tmin:tmax].dropna()
         head.plot(
             ax=axes[0, 0], marker=".", linestyle=" ", color="k", xlabel="", **kwargs
         )
@@ -199,7 +200,7 @@ def series(
 
     if stresses is not None:
         for i, stress in enumerate(stresses, start=nrows - len(stresses)):
-            stress = stress[tmin:tmax].dropna()
+            stress = stress.loc[tmin:tmax].dropna()
             if i <= len(colors_stresses):
                 color_stress = colors_stresses[i - 1]
             else:
