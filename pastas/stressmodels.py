@@ -168,9 +168,9 @@ class StressModelBase:
             String representing the desired frequency of the time series. Must be one
             of the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
         tmin: TimestampType, optional
-            Minimum time of the series (E.g. '1980-01-01'), starting at 00:00:00.
+            Minimum time of the series (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
         tmax: TimestampType, optional
-            Maximum time of the series (E.g. '2020-01-01'), inclusive up to 00:00:00.
+            Maximum time of the series (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
 
         Notes
         -----
@@ -409,9 +409,9 @@ class StressModel(StressModelBase):
             array_like object with the values as floats representing the model
             parameters.
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
         freq: str, optional
         dt: int, optional
 
@@ -1363,9 +1363,9 @@ class RechargeModel(StressModelBase):
             String representing the desired frequency of the time series. Must be one
             of the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
         tmin: TimestampType, optional
-            Minimum time of the series (E.g. '1980-01-01'), starting at 00:00:00.
+            Minimum time of the series (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
         tmax: TimestampType, optional
-            Maximum time of the series (E.g. '2020-01-01'), inclusive up to 00:00:00.
+            Maximum time of the series (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
 
         Notes
         -----
@@ -1402,9 +1402,9 @@ class RechargeModel(StressModelBase):
             array_like object with the values as floats representing the model
             parameters.
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
         freq: string, optional
         dt: float, optional
             Time step to use in the recharge calculation.
@@ -1453,9 +1453,9 @@ class RechargeModel(StressModelBase):
             array_like object with the values as floats representing the model
             parameters.
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
         freq: string, optional
         istress: int, optional
             Return one of the stresses used for the recharge calculation. 0 for
@@ -1513,9 +1513,9 @@ class RechargeModel(StressModelBase):
             array_like object with the values as floats representing the model
             parameters.
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
         freq: string, optional
 
         Returns
