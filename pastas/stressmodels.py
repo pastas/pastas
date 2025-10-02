@@ -167,9 +167,11 @@ class StressModelBase:
         freq: str, optional
             String representing the desired frequency of the time series. Must be one
             of the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
-        tmin: TimestampType, optional
+        tmin: pandas.Timestamp or str, optional
+            A Timestamp or str is expected.
             Minimum time of the series (E.g. '1980-01-01 00:00:00').
-        tmax: TimestampType, optional
+        tmax: pandas.Timestamp or str, optional
+            A Timestamp or str is expected.
             Maximum time of the series (E.g. '2020-01-01 00:00:00').
 
         Notes
@@ -408,9 +410,11 @@ class StressModel(StressModelBase):
         p: array_like
             array_like object with the values as floats representing the model
             parameters.
-        tmin: TimestampType, optional
+        tmin: pandas.Timestamp or str, optional
+            A Timestamp or str is expected.
             Start date for the period (E.g. '1980-01-01 00:00:00').
-        tmax: TimestampType, optional
+        tmax: pandas.Timestamp or str, optional
+            A Timestamp or str is expected.
             End date for the period (E.g. '2020-01-01 00:00:00').
         freq: str, optional
         dt: int, optional
@@ -1362,9 +1366,11 @@ class RechargeModel(StressModelBase):
         freq: str, optional
             String representing the desired frequency of the time series. Must be one
             of the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
-        tmin: TimestampType, optional
+        tmin: pandas.Timestamp or str, optional
+            A Timestamp or str is expected.
             Minimum time of the series (E.g. '1980-01-01 00:00:00').
-        tmax: TimestampType, optional
+        tmax: pandas.Timestamp or str, optional
+            A Timestamp or str is expected.
             Maximum time of the series (E.g. '2020-01-01 00:00:00').
 
         Notes
@@ -1401,9 +1407,11 @@ class RechargeModel(StressModelBase):
         p: array_like, optional
             array_like object with the values as floats representing the model
             parameters.
-        tmin: TimestampType, optional
+        tmin: pandas.Timestamp or str, optional
+            A Timestamp or str is expected.
             Start date for the period (E.g. '1980-01-01 00:00:00').
-        tmax: TimestampType, optional
+        tmax: pandas.Timestamp or str, optional
+            A Timestamp or str is expected.
             End date for the period (E.g. '2020-01-01 00:00:00').
         freq: string, optional
         dt: float, optional
@@ -1452,9 +1460,11 @@ class RechargeModel(StressModelBase):
         p: array_like, optional
             array_like object with the values as floats representing the model
             parameters.
-        tmin: TimestampType, optional
+        tmin: pandas.Timestamp or str, optional
+            A Timestamp or str is expected.
             Start date for the period (E.g. '1980-01-01 00:00:00').
-        tmax: TimestampType, optional
+        tmax: pandas.Timestamp or str, optional
+            A Timestamp or str is expected.
             End date for the period (E.g. '2020-01-01 00:00:00').
         freq: string, optional
         istress: int, optional
@@ -1512,9 +1522,11 @@ class RechargeModel(StressModelBase):
         p: array_like, optional
             array_like object with the values as floats representing the model
             parameters.
-        tmin: TimestampType, optional
+        tmin: pandas.Timestamp or str, optional
+            A Timestamp or str is expected.
             Start date for the period (E.g. '1980-01-01 00:00:00').
-        tmax: TimestampType, optional
+        tmax: pandas.Timestamp or str, optional
+            A Timestamp or str is expected.
             End date for the period (E.g. '2020-01-01 00:00:00').
         freq: string, optional
 

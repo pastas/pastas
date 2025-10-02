@@ -46,11 +46,13 @@ def compare(
         subplots on the left is equal. Default is False, in which case the axes are
         not rescaled to include all data, so certain data might not be visible. Set
         False to ensure you can see all data.
-    tmin: TimestampType, optional
+    tmin: pandas.Timestamp or str, optional
+        A Timestamp or str is expected.
         Timestamp with a start date for the simulation period
         (E.g. '1980-01-01 00:00:00'). If none is provided, the tmin from
         the oseries is used.
-    tmax: TimestampType, optional
+    tmax: pandas.Timestamp or str, optional
+        A Timestamp or str is expected.
         Timestamp with an end date for the simulation period
         (E.g. '2020-01-01 00:00:00'). If none is provided, the tmax from
         the oseries is used.
@@ -524,10 +526,10 @@ class TrackSolve:
     ----------
     ml : pastas.model.Model
         pastas Model to track
-    tmin: TimestampType, optional
+    tmin: pandas.Timestamp or str, optional
         start time for simulation, by default None which defaults to first index in
         ml.oseries.series
-    tmax: TimestampType, optional
+    tmax: pandas.Timestamp or str, optional
         end time for simulation, by default None which defaults to last index in
         ml.oseries.series
     update_iter : int, optional
