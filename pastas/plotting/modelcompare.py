@@ -80,12 +80,10 @@ class CompareModels:
         names : list of str, optional
             override model names
         tmin: TimestampType, optional
-            Timestamp with a start date for the simulation period (E.g. '1980-01-01 00:00:00'),
-            starting at 00:00:00. If none is provided, the tmin from the oseries is
+            Timestamp with a start date for the simulation period (E.g. '1980-01-01 00:00:00'). If none is provided, the tmin from the oseries is
             used.
         tmax: TimestampType, optional
-            Timestamp with an end date for the simulation period (E.g. '2020-01-01 00:00:00'),
-            inclusive up to 00:00:00 of that date. If none is provided, the tmax from
+            Timestamp with an end date for the simulation period (E.g. '2020-01-01 00:00:00'). If none is provided, the tmax from
             the oseries is used.
         """
         self.models = models

@@ -85,9 +85,9 @@ class Statistics:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00').
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00').
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -112,9 +112,9 @@ class Statistics:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00').
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00').
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -143,9 +143,9 @@ class Statistics:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00').
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00').
 
         See Also
         --------
@@ -167,9 +167,9 @@ class Statistics:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00').
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00').
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -194,9 +194,9 @@ class Statistics:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00').
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00').
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -222,9 +222,9 @@ class Statistics:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00').
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00').
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -251,9 +251,9 @@ class Statistics:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00').
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00').
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -279,9 +279,9 @@ class Statistics:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00').
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00').
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -307,9 +307,9 @@ class Statistics:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00').
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00').
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -336,9 +336,9 @@ class Statistics:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00').
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00').
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -383,9 +383,9 @@ class Statistics:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00').
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00').
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -408,9 +408,9 @@ class Statistics:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00').
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00').
 
         See Also
         --------
@@ -434,9 +434,9 @@ class Statistics:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00').
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00').
 
         See Also
         --------
@@ -460,9 +460,9 @@ class Statistics:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00').
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00').
 
         See Also
         --------
@@ -489,9 +489,9 @@ class Statistics:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00').
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00').
         stats: list, optional
             list of statistics that need to be calculated. If nothing is provided,
             all statistics are returned.

@@ -64,9 +64,9 @@ class Plotting:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00').
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00').
         oseries: bool, optional
             True to plot the observed time series.
         simulation: bool, optional
@@ -139,9 +139,9 @@ class Plotting:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00').
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00').
         figsize: tuple, optional
             tuple of size 2 to determine the figure size in inches.
         split: bool, optional
@@ -333,9 +333,9 @@ class Plotting:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00').
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00').
         stderr : bool, optional
             If True the standard error of the parameter values are shown.
         block_or_step: str, optional
@@ -651,9 +651,9 @@ class Plotting:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00').
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00').
         ytick_base: Boolean or float, optional
             Make the ytick-base constant if True, set this base to float if a float.
         split: bool, optional
@@ -890,9 +890,9 @@ class Plotting:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00').
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00').
         ax: matplotlib.axes.Axes, optional
             Axes to add the plot to.
         figsize: tuple, optional
@@ -1022,9 +1022,9 @@ class Plotting:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00').
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00').
         cols: int
             number of columns used for plotting.
         split: bool, optional
@@ -1087,9 +1087,9 @@ class Plotting:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00').
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00').
         ax: matplotlib.axes.Axes, optional
             The Axes to plot the pie chart on. A new figure and axes will be created of
             not provided.
@@ -1169,9 +1169,9 @@ class Plotting:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00').
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00').
         figsize : tuple, optional
         stackcolors : dict or list, optional
             Either dictionary with stress names as keys and colors as values, or a
@@ -1321,9 +1321,9 @@ class Plotting:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00').
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00').
         fname: str, optional
             string with the file name / path to store the PDF file.
         dpi: int, optional
@@ -1373,9 +1373,9 @@ class Plotting:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00').
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00').
         results_kwargs: dict, optional
             dictionary passed on to ml.plots.results method.
         diagnostics_kwargs: dict, optional
@@ -1450,9 +1450,9 @@ class Plotting:
         Parameters
         ----------
         tmin: TimestampType, optional
-            Start date for the period (E.g. '1980-01-01 00:00:00'), starting at 00:00:00.
+            Start date for the period (E.g. '1980-01-01 00:00:00').
         tmax: TimestampType, optional
-            End date for the period (E.g. '2020-01-01 00:00:00'), inclusive up to 00:00:00.
+            End date for the period (E.g. '2020-01-01 00:00:00').
         name: str, optional
             Name of the stressmodel to plot the contribution for.
         plot_stress: bool, optional
