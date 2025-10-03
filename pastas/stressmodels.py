@@ -19,6 +19,7 @@ from logging import getLogger
 from typing import Any
 
 import numpy as np
+from cachetools import LRUCache
 from packaging.version import parse as parse_version
 from pandas import DataFrame, Series, Timedelta, Timestamp, concat, date_range
 from pandas import __version__ as pd_version
@@ -33,7 +34,7 @@ from pastas.typing import (
     TimestampType,
 )
 
-from .decorators import njit, set_parameter
+from .decorators import conditional_cachedmethod, njit, set_parameter
 from .recharge import Linear
 from .rfunc import Exponential, HantushWellModel, One
 from .timeseries import TimeSeries
@@ -76,6 +77,7 @@ class StressModelBase:
         rfunc: RFunc | None = None,
         up: bool = True,
         gain_scale_factor: float = 1.0,
+        max_cache_size: int = 32,
     ) -> None:
         self.name = validate_name(name)
         self.tmin = tmin
@@ -96,6 +98,8 @@ class StressModelBase:
         )
 
         self.stress = []
+
+        self._cache = LRUCache(maxsize=max_cache_size)
 
     @property
     def nparam(self) -> tuple[int]:
@@ -403,6 +407,17 @@ class StressModel(StressModelBase):
         freq: str | None = None,
         dt: float = 1.0,
     ) -> Series:
+        return self._simulate(tuple(p.tolist()), tmin, tmax, freq, dt)
+
+    @conditional_cachedmethod(lambda self: self._cache)
+    def _simulate(
+        self,
+        p: tuple,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
+        freq: str | None = None,
+        dt: float = 1.0,
+    ) -> Series:
         """Simulates the head contribution.
 
         Parameters
@@ -517,6 +532,17 @@ class StepModel(StressModelBase):
         )
 
     def simulate(
+        self,
+        p: ArrayLike,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
+        freq: str | None = None,
+        dt: float = 1.0,
+    ) -> Series:
+        return self._simulate(tuple(p.tolist()), tmin, tmax, freq, dt)
+
+    @conditional_cachedmethod(lambda self: self._cache)
+    def _simulate(
         self,
         p: ArrayLike,
         tmin: TimestampType | None = None,
@@ -890,7 +916,18 @@ class WellModel(StressModelBase):
         freq: str | None = None,
         dt: float = 1.0,
         istress: int | None = None,
-        **kwargs,
+    ) -> Series:
+        return self._simulate(tuple(p.tolist()), tmin, tmax, freq, dt, istress)
+
+    @conditional_cachedmethod(lambda self: self._cache)
+    def _simulate(
+        self,
+        p: ArrayLike | None = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
+        freq: str | None = None,
+        dt: float = 1.0,
+        istress: int | None = None,
     ) -> Series:
         distances = self.get_distances(istress=istress)
         stress_df = self.get_stress(
@@ -1394,7 +1431,18 @@ class RechargeModel(StressModelBase):
         freq: str | None = None,
         dt: float = 1.0,
         istress: int | None = None,
-        **kwargs,
+    ) -> Series:
+        return self._simulate(tuple(p.tolist()), tmin, tmax, freq, dt, istress)
+
+    @conditional_cachedmethod(lambda self: self._cache)
+    def _simulate(
+        self,
+        p: tuple | None = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
+        freq: str | None = None,
+        dt: float = 1.0,
+        istress: int | None = None,
     ) -> Series:
         """Method to simulate the contribution of recharge to the head.
 
@@ -1417,6 +1465,8 @@ class RechargeModel(StressModelBase):
         """
         if p is None:
             p = self.parameters.initial.values
+        else:
+            p = np.asarray(p)
         b = self._get_block(p[: self.rfunc.nparam], dt, tmin, tmax)
         stress = self.get_stress(
             p=p, tmin=tmin, tmax=tmax, freq=freq, istress=istress

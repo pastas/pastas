@@ -9,7 +9,7 @@ import pastas.recharge as rch
 import pastas.timeseries_utils as ts
 from pastas import check, extensions, forecast, stats
 from pastas.dataset import list_datasets, load_dataset
-from pastas.decorators import set_use_numba
+from pastas.decorators import set_use_cache, set_use_numba
 from pastas.model import Model
 from pastas.noisemodels import ArmaModel, ArmaNoiseModel, ArNoiseModel, NoiseModel
 from pastas.plotting import plots

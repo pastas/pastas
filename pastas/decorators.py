@@ -3,6 +3,7 @@ from functools import wraps
 from logging import getLogger
 from typing import Any
 
+from cachetools import cachedmethod
 from packaging.version import parse as parse_version
 
 from pastas.typing import TimestampType
@@ -11,12 +12,18 @@ from pastas.version import __version__
 logger = getLogger(__name__)
 
 USE_NUMBA = True
+USE_CACHE = False
 CURRENT_PASTAS_VERSION = parse_version(__version__)
 
 
 def set_use_numba(b: bool) -> None:
     global USE_NUMBA
     USE_NUMBA = b
+
+
+def set_use_cache(b: bool) -> None:
+    global USE_CACHE
+    USE_CACHE = b
 
 
 def set_parameter(function: Callable) -> Callable:
@@ -190,3 +197,22 @@ def latexfun(
         return latexify_decorator(function)
 
     return latexify_decorator
+
+
+def conditional_cachedmethod(cache_getter):
+    """Decorator to conditionally cache a method using cachetools.cachedmethod."""
+
+    def decorator(func):
+        # Wrap with cachedmethod, preserving signature
+        cached_func = cachedmethod(cache_getter)(func)
+
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            if USE_CACHE:
+                return cached_func(self, *args, **kwargs)
+            else:
+                return func(self, *args, **kwargs)
+
+        return wrapper
+
+    return decorator
