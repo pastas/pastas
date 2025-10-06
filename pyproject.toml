@@ -63,6 +63,7 @@ ci = [
     "coverage",
     "corner",
     "tqdm",
+    "cachetools",
 ]
 rtd = [
     "pastas[solvers,latexify]",
