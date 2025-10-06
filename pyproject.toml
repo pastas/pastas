@@ -38,6 +38,7 @@ classifiers = [
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
+    'Programming Language :: Python :: 3.14',
     'Topic :: Scientific/Engineering :: Hydrology',
 ]
 
@@ -99,7 +100,7 @@ ignore-words-list = ["delt", "te", "theses", "Bilt", "Strack"]
 
 [tool.tox]
 requires = ["tox>=4"]
-env_list = ["py310", "py311", "py312", "py313", "ruff", "notebooks"]
+env_list = ["py310", "py311", "py312", "py313", "py314", "ruff", "notebooks"]
 
 [tool.tox.env_run_base]
 description = "run unit tests"
