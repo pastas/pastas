@@ -732,7 +732,14 @@ def _validate_series(series: Series, equidistant: bool = True):
 
     # 3. Make sure the indices are datetime64
     if not pd.api.types.is_datetime64_dtype(series.index):
-        msg = "Indices os series %s are not datetime64."
+        if isinstance(series.index.dtype, pd.DatetimeTZDtype):
+            msg = (
+                "The index of series %s is timezone aware. Please convert "
+                "the series to timezone naive. Try using "
+                "`series.index = series.index.tz_localize(None)`."
+            )
+        else:
+            msg = "Indices os series %s are not datetime64."
         logger.error(msg, name)
         raise ValueError(msg % name)
 
