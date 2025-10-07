@@ -663,7 +663,7 @@ def validate_oseries(series: Series):
     0. Make sure the series is a Pandas.Series
     1. Make sure the values are floats
     2. Make sure the index is a DatetimeIndex
-    3. Make sure the indices are datetime64
+    3. Make sure the indices are datetime64 (and tz naive)
     4. Make sure the index has no NaT-values
     5. Make sure the index is monotonically increasing
     6. Make sure there are no duplicate indices
